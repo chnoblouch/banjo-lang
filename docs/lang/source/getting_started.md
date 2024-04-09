@@ -17,26 +17,25 @@
 
 ## Install Script
 
-You can use the install script from the ```banjo-releases``` repository to automatically download and extract banjo
-to ```$HOME/.banjo/```.
+You can use the install script to automatically download the latest release, extract it to ```$HOME/.banjo/```, and add it to the PATH environment variable.
 
 ### Windows (Powershell)
 
 ```powershell
-Invoke-WebRequest https://raw.githubusercontent.com/chnoblouch/banjo-releases/main/getbanjo.py | Select-Object -Expand Content | python
+Invoke-WebRequest https://raw.githubusercontent.com/chnoblouch/banjo-lang/main/getbanjo.py | Select-Object -Expand Content | python
 ```
 
 ### Linux and macOS
 
 ```sh
-curl -s https://raw.githubusercontent.com/chnoblouch/banjo-releases/main/getbanjo.py | python3
+curl -s https://raw.githubusercontent.com/chnoblouch/banjo-lang/main/getbanjo.py | python3
 ```
 
 ## Manual Installation
 
-1. Download the Banjo toolchain from [GitHub Releases](https://github.com/Chnoblouch/banjo-releases/releases/latest)
+1. Download the Banjo toolchain from [GitHub Releases](https://github.com/Chnoblouch/banjo-lang/releases/latest)
 2. Unzip the archive somewhere
-3. Add ```banjo-{arch}-{os}/bin``` to your ```PATH``` variable
+3. Add ```banjo-{arch}-{os}/bin``` to your ```PATH``` environment variable
 
 ## Creating a Project
 
