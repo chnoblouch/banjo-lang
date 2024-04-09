@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128">
+  <mask id="eye">
+    <rect x="0" y="0" width="128" height="128" fill="white" />
+    <polygon points="82,62 61,55 70,48" fill="black" />
+  </mask>
+
+  <clipPath id="clip">
+    <circle cx="64" cy="64" r="60" />
+  </clipPath>
+
+  <circle cx="64" cy="64" r="60" stroke="#382af7" stroke-width="8" fill="none" />
+  <polygon points="-32,128 24,80 44,36 73,16 66,32 88,58 112,69 105,89 79,92 75,128" fill="#382af7" mask="url(#eye)" style="clip-path: url(#clip)" /> 
+</svg>
