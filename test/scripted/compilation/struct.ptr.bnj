@@ -1,0 +1,29 @@
+#! output: 20 4 80
+
+struct Rect {
+	var width: i32;
+	var height: i32;
+	var area: i32;
+}
+
+func print_width_height(rect: *Rect) {
+	print((*rect).width);
+	print(" ");
+	print((*rect).height);
+}
+
+func update_area(rect: *Rect) {
+	var area = (*rect).width * (*rect).height;
+	(*rect).area = area;
+}
+
+func main() {
+	var rect: Rect;
+	rect.width = 20;
+	rect.height = 4;
+	
+	print_width_height(&rect);
+	update_area(&rect);
+	print(" ");
+	print(rect.area);
+}

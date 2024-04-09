@@ -1,0 +1,20 @@
+#! check_ok
+
+use std.test.{assert_eq, fail};
+
+union Number {
+	case Float(value: f32);
+	case Integer(value: i32);
+}
+
+func main() {
+	var number: Number = Number.Integer(100);
+	
+	switch number {
+		case float: Number.Float {
+			fail();
+		} case integer: Number.Integer {
+			assert_eq(integer.value, 100);
+		}
+	}
+}

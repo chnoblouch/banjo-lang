@@ -1,0 +1,35 @@
+use std.config;
+
+meta if config.OS == config.WINDOWS {
+    native func __acrt_iob_func(handle: i32) -> addr;
+
+    pub func get_stdin_stream() -> addr {
+        return __acrt_iob_func(0);
+    }
+
+    pub func get_stdout_stream() -> addr {
+        return __acrt_iob_func(1);
+    }
+
+    pub func get_stderr_stream() -> addr {
+        return __acrt_iob_func(2);
+    }
+}
+
+meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == config.ANDROID {
+    native var stdin: addr;
+    native var stdout: addr;
+    native var stderr: addr;
+
+    func get_stdin_stream() -> addr {
+        return stdin;
+    }
+
+    func get_stdout_stream() -> addr {
+        return stdout;
+    }
+
+    func get_stderr_stream() -> addr {
+        return stderr;
+    }
+}

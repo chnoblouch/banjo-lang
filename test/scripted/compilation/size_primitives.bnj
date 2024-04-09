@@ -1,0 +1,18 @@
+#! output: 1 2 4 8 1 2 4 8
+
+func print_size[T]() {
+	print(meta.size(T));
+	print(" ");
+}
+
+func main() {
+	print_size[i8]();
+	print_size[i16]();
+	print_size[i32]();
+	print_size[i64]();
+	
+	print_size[u8]();
+	print_size[u16]();
+	print_size[u32]();
+	print_size[u64]();
+}

@@ -1,0 +1,5 @@
+#! error: cannot find 'test' in this scope
+
+func main() {
+	test();
+}

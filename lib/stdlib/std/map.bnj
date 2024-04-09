@@ -1,0 +1,127 @@
+use std.memory;
+
+struct Entry[K, V] {
+    var key: K;
+    var value: V;
+    var next: *Entry[K, V];
+}
+
+struct Map[K, V] {
+    type EntryPtr = *Entry[K, V];
+
+	var entries: *EntryPtr;
+    var length: u32;
+    var capacity: u32;
+
+	pub func new() -> Map[K, V] {
+        var capacity: u32 = 128;
+        var alloc_size = capacity as usize * meta.size(EntryPtr);
+        
+        var entries = memory.alloc(alloc_size) as *EntryPtr;
+        for i in 0..capacity {
+            entries[i] = null;
+        }
+        
+		return Map[K, V] {
+			entries,
+            length: 0,
+            capacity
+		};
+	}
+	
+	pub func get(self, key: K) -> V {
+		return *self.ref(key);
+	}
+    
+    pub func contains(self, key: K) -> bool {
+		var index = self.get_index(&key);
+        var entry = self.entries[index];
+        
+        while entry != null as EntryPtr {
+            if entry.key == key {
+                return true;
+            }
+        
+            entry = entry.next;
+        }
+        
+        return false;
+	}
+	
+	pub func ref(self, key: K) -> *V {
+        var index = self.get_index(&key);
+        var entry = self.entries[index];
+        
+        while entry != null as EntryPtr {
+            if entry.key == key {
+                return &entry.value;
+            }
+        
+            entry = entry.next;
+        }
+        
+        return null;
+	}
+
+	pub func insert(self, key: K, value: V) {
+        var index = self.get_index(&key);
+        var dst = &self.entries[index];
+    
+        while *dst != null as EntryPtr {
+            dst = &(*dst).next;
+        }
+        
+        *dst = memory.box(Entry[K, V] {
+            key,
+            value,
+            next: null
+        });
+        
+        self.length += 1;
+	}
+	
+	pub func __iter__(self) -> MapIter[K, V] {
+		return MapIter[K, V] {
+			cur_bucket: self.entries,
+			cur_item: self.entries[0],
+			end: &self.entries[self.capacity]
+		};
+	}
+    
+    func get_index(self, key: *K) -> u32 {
+        var hash_code = hash(key);
+        var index = hash_code as u32 % self.capacity;
+        return 0;
+    }
+    
+    func hash(key: *K) -> u64 {
+        meta if type(K) == type(*i32) {
+            return *key as u64;
+        } else if type(K).has_method("__hash__") {
+            return key.__hash__();
+        } else {
+            return 0;
+        }
+    }
+}
+
+struct MapIter[K, V] {
+	var cur_bucket: **Entry[K, V];
+	var cur_item: *Entry[K, V];
+	var end: **Entry[K, V];
+	
+	pub func __next__(self) -> *Entry[K, V] {
+		while self.cur_item as addr == null {
+			self.cur_bucket += 1 as **Entry[K, V];			
+			if self.cur_bucket == self.end {
+				return null;
+			}
+			
+			self.cur_item = *self.cur_bucket;
+		}
+				
+		var value = self.cur_item;
+		self.cur_item = self.cur_item.next;
+		return value;
+	}
+}

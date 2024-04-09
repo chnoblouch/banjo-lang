@@ -1,0 +1,20 @@
+#! output: 5;8;12;17; 2;4;6;8;
+
+func main() {
+	var array = [5, 8, 12, 17];
+	
+	for value in array {
+		print(value);
+		print(";");
+	}
+	print(" ");
+	
+	for *value in array {
+		*value = *value / 2;
+	}
+	
+	for value in array {
+		print(value);
+		print(";");
+	}
+}

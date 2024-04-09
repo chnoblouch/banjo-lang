@@ -1,0 +1,23 @@
+use std.test.assert_eq;
+use std.convert.str;
+
+@test func test_insert_lookup() {
+    var map = Map[String, u32].new();
+    map.insert(str("one"), 1);
+    map.insert(str("three"), 3);
+    map.insert(str("sixty"), 60);
+    
+    assert_eq(map.get(str("one")), 1);
+    assert_eq(map.get(str("three")), 3);
+    assert_eq(map.get(str("sixty")), 60);
+}
+
+@test func test_length() {
+    var map = Map[i32, bool].new();
+    map.insert(1, true);
+    map.insert(-1, false);
+    map.insert(2, true);
+    map.insert(-2, false);
+    
+    assert_eq(map.length, 4);
+}

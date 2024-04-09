@@ -1,0 +1,149 @@
+use std.{config, memory};
+
+meta if config.OS == config.WINDOWS {
+    struct ProcessHandles {
+        var process: addr;
+        var thread: addr;
+        var stdin_write: addr;
+    }
+
+    struct SECURITY_ATTRIBUTES {
+        var nLength: u32;
+        var lpSecurityDescriptor: addr;
+        var bInheritHandle: u32;
+    }
+
+    struct STARTUPINFO {
+        var cb: i32;
+        var lpReserved: *u8;
+        var lpDesktop: *u8;
+        var lpTitle: *u8;
+        var dwX: i32;
+        var dwY: i32;
+        var dwXSize: i32;
+        var dwYSize: i32;
+        var dwXCountChars: i32;
+        var dwYCountChars: i32;
+        var dwFillAttribute: u32;
+        var dwFlags: u32;
+        var wShowWindow: u16;
+        var cbReserved2: u16;
+        var lpReserved2: *u8;
+        var hStdInput: addr;
+        var hStdOutput: addr;
+        var hStdError: addr;
+    }
+
+    struct PROCESS_INFORMATION {
+        var hProcess: addr;
+        var hThread: addr;
+        var dwProcessId: u32;
+        var dwThreadId: u32;
+    }
+
+    const STARTF_USESTDHANDLES: u32 = 0x100;
+    const STD_INPUT_HANDLE: u32 = 0xFFFFFFF6;  # -10
+    const STD_OUTPUT_HANDLE: u32 = 0xFFFFFFF5;  # -11
+    const STD_ERROR_HANDLE: u32 = 0xFFFFFFF4;  # -12
+
+    native func CreatePipe(
+        hReadPipe: *addr,
+        hWritePipe: *addr,
+        lpPipeAttributes: *SECURITY_ATTRIBUTES,
+        nSize: u32
+    ) -> bool;
+
+    native func CreateProcessA(
+        lpApplicationName: *u8,
+        lpCommandLine: *u8,
+        lpProcessAttributes: addr,
+        lpThreadAttributes: addr,
+        bInheritHandles: bool,
+        dwCreationFlags: u32,
+        lpEnvironment: addr,
+        lpCurrentDirectory: *u8,
+        lpStartupInfo: *STARTUPINFO,
+        lpProcessInformation: *PROCESS_INFORMATION
+    ) -> bool;
+
+    native func GetStdHandle(nStdHandle: u32) -> addr;
+    native func CloseHandle(hObject: addr) -> bool;
+
+    pub func spawn(command: *u8) -> addr {
+        var security_attrs: SECURITY_ATTRIBUTES = {
+            nLength: meta.size(SECURITY_ATTRIBUTES) as u32,
+            lpSecurityDescriptor: null,
+            bInheritHandle: 1 as u32,
+        };
+
+        var stdin_read: addr;
+        var stdin_write: addr;
+        if !CreatePipe(&stdin_read, &stdin_write, &security_attrs, 0 as u32) {
+            panic("Failed to create stdin pipe for process");
+        }
+
+        var startup_info = memory.zero[STARTUPINFO]();
+        startup_info.dwFlags = 0x100;
+        startup_info.hStdInput = GetStdHandle(-10 as u32);
+        startup_info.hStdOutput = GetStdHandle(-11 as u32);
+        startup_info.hStdError = GetStdHandle(-12 as u32);
+        
+        var process_info: PROCESS_INFORMATION;
+        
+        var result = CreateProcessA(
+            null as *u8,
+            command,
+            null,
+            null,
+            true,
+            0 as u32,
+            null,
+            null as *u8,
+            &startup_info,
+            &process_info
+        );
+        
+        CloseHandle(stdin_read);
+        
+        var handles = memory.box[ProcessHandles]();
+        handles.process = process_info.hProcess;
+        handles.thread = process_info.hThread;
+        handles.stdin_write = stdin_write;
+        return handles as addr;
+    }
+
+    native func WaitForSingleObject(hHandle: addr, dwMilliseconds: u32) -> u32;
+
+    pub func wait(process: addr) {
+        var handles = process as *ProcessHandles;
+        WaitForSingleObject(handles.process, 0xFFFFFFFF as u32);
+        CloseHandle(handles.process);
+        CloseHandle(handles.thread);
+        CloseHandle(handles.stdin_write);
+        
+        memory.free(process);
+    }
+
+    native func WriteFile(
+        hFile: addr,
+        lpBuffer: addr,
+        nNumberOfBytesToWrite: u32,
+        lpNumberOfBytesWritten: *u32,
+        lpOverlapped: addr
+    );
+
+    pub func write_stdin(process: addr, data: addr, length: usize) {
+        var handles = process as *ProcessHandles;
+        var num_bytes_written: u32;
+        WriteFile(handles.stdin_write, data, length as u32, &num_bytes_written, null);
+    }
+}
+
+meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == config.ANDROID {
+    pub func spawn(command: *u8) -> addr {
+        return null;
+    }
+    
+    pub func wait(process: addr) {
+    }
+}

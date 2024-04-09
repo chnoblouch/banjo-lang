@@ -1,0 +1,17 @@
+#! output: 0;1;2;5;6;7;
+
+func main() {
+	var i = 0;
+	
+	while i < 8 {
+		if i == 3 {
+			i = i + 2;
+			continue;
+		}
+	
+		print(i);
+		print(";");
+	
+		i = i + 1;
+	}
+}

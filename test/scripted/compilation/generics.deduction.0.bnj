@@ -1,0 +1,9 @@
+#! output: 10
+
+func test[T](value: T) {
+	print(value);
+}
+
+func main() {
+	test(10);
+}

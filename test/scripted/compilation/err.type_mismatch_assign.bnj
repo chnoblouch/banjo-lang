@@ -1,0 +1,6 @@
+#! error: type mismatch (expected 'i32', got 'bool')
+
+func main() {
+	var val: i32 = 5;
+	val = false;
+}

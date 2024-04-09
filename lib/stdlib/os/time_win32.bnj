@@ -1,0 +1,39 @@
+use std.config;
+
+meta if config.OS == config.WINDOWS {
+    struct FILETIME {
+        var dwLowDateTime: u32;
+        var dwHighDateTime: u32;
+    }
+    
+    native func GetSystemTimeAsFileTime(lpSystemTimeAsFileTime: *FILETIME);
+
+    native func QueryPerformanceCounter(lpPerformanceCount: *u64) -> bool;
+    native func QueryPerformanceFrequency(lpFrequency: *u64) -> bool;
+
+    pub func system_ticks() -> u64 {
+        var time: FILETIME;
+        GetSystemTimeAsFileTime(&time);
+        return time.dwLowDateTime as u64 | (time.dwHighDateTime as u64 << 32);
+    }
+    
+    pub func system_frequency() -> u64 {
+        return 10000000;
+    }
+    
+    pub func system_ticks_since_unix_epoch() -> u64 {
+        return 116444736000000000;
+    }
+
+    pub func monotonic_ticks() -> u64 {
+        var counter: u64;
+        QueryPerformanceCounter(&counter);
+        return counter;
+    }
+
+    pub func monotonic_frequency() -> u64 {
+        var frequency: u64;
+        QueryPerformanceFrequency(&frequency);
+        return frequency;
+    }
+}

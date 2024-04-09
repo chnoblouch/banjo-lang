@@ -1,0 +1,21 @@
+#! output: 0.5;true 2.1;false -1.8;false
+
+func print_tuple(tuple: (f32, bool)) {
+	print(tuple.0);
+	print(";");
+	print(tuple.1);
+	print(" ");
+}
+
+func main() {
+	var array = [
+		(0.5, true),
+		(2.1, false)
+	];
+	
+	print_tuple(array[0]);
+	print_tuple(array[1]);
+	
+	array.append((-1.8, false));
+	print_tuple(array[2]);
+}

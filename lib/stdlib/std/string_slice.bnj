@@ -1,0 +1,8 @@
+struct StringSlice {
+	var data: *u8;
+	var length: usize;
+	
+	pub func new(data: *u8, length: usize) -> StringSlice {
+		return StringSlice { data, length };
+	}
+}

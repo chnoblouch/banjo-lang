@@ -1,0 +1,79 @@
+use std.memory;
+
+native func ___banjo_f64_to_string(value: f64) -> *u8;
+
+pub func str[T](value: T) -> String {
+    meta if type(T) == type(i64) || type(T) == type(u64) || type(T) == type(*u8) {
+		return String.from(value);
+	} else if type(T) == type(usize) {
+		return String.from(value as u64);
+	} else if type(T) == type(i8) || type(T) == type(i16) || type(T) == type(i32) {
+		return String.from(value as i64);
+	} else if type(T) == type(u16) || type(T) == type(u32) {
+		return String.from(value as u64);
+	} else if type(T) == type(f32) || type(T) == type(f64) {
+		var string = ___banjo_f64_to_string(value as f64);
+		memory.free(string as addr);
+		return String.from(string);
+	} else if type(T) == type(u8) {
+		var string = String.new();
+		string.append(value);
+		return string;
+	} else if type(T) == type(bool) {
+		if value {
+			return String.from("true");
+		} else {
+			return String.from("false");
+		}
+	} else if type(T).is_enum {
+		meta for variant in type(T).variants {
+			if variant.1 as i64 == value as i64 {
+				return String.from(variant.0);
+			}
+		}
+	} else if type(T).has_method("__str__") {
+		return value.__str__();
+	} else if type(T).is_struct {
+		var string: String = "";
+		stringify_struct[T](&string, value, 0);
+		return string;
+	} else {
+		return String.from("?");
+	}
+}
+
+func stringify_struct[T](string: *String, value: T, indent: u32) {
+	string.append_cstr(type(T).name);
+	string.append_cstr(" {\n");
+	
+	var field_indent = indent + 4;
+	
+	meta for field in type(T).fields {
+		for _ in 0..field_indent { string.append(' '); }
+		string.append_cstr(field);
+		string.append_cstr(": ");
+		stringify_field(string, type(T).fieldof(value, field), field_indent);
+		string.append('\n');
+	}
+	
+	for _ in 0..indent { string.append(' '); }
+	string.append('}');
+}
+
+func stringify_field[T](string: *String, value: T, indent: u32) {
+	meta if type(T).is_struct && !type(T).has_method("__str__") {
+		stringify_struct(string, value, indent);
+	} else {
+		string.append_str(repr(value));
+	}
+}
+
+pub func repr[T](value: T) -> String {
+    meta if type(T) == type(*u8) {
+		return String.from(value).__repr__();
+	} else if type(T).has_method("__repr__") {
+		return value.__repr__();
+	} else {
+		return str(value);
+	}
+}

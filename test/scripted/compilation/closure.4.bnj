@@ -1,0 +1,14 @@
+#! output: 100!
+
+func run_closure(closure: |i32| -> void) {
+	closure(100);
+}
+
+func main() {
+	var suffix = "!";
+	
+	run_closure(|value: i32| {
+		print(value);
+		print(suffix);
+	});
+}

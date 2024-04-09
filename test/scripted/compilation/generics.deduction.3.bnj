@@ -1,0 +1,10 @@
+#! output: 100
+
+func deref[T](ptr: *T) {
+	print(*ptr);
+}
+
+func main() {
+	var value = 100;
+	deref(&value);
+}

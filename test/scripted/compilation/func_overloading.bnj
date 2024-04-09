@@ -1,0 +1,35 @@
+#! output: Test;100;true;5,10;
+
+func display(value: *u8) {
+	print(value);
+	print(";");
+}
+
+func display(value: i32) {
+	print(value);
+	print(";");
+}
+
+func display(value: bool) {
+	print(value);
+	print(";");
+}
+
+struct Point {
+	var x: u32;
+	var y: u32;
+}
+
+func display(point: Point) {
+	print(point.x);
+	print(",");
+	print(point.y);
+	print(";");
+}
+
+func main() {
+	display("Test");
+	display(100);
+	display(true);
+	display(Point { x: 5, y: 10 });
+}

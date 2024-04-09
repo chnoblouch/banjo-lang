@@ -1,0 +1,10 @@
+#! output: 35
+
+func main() {
+	var closure = |a: i32, b: i32| -> i32 {
+		return a + b;
+	};
+	
+	var result = closure(10, 25);
+	println(result);
+}

@@ -1,0 +1,18 @@
+#! output: before_consume;end_consume;deinit;end_main;
+
+struct Droppable {
+    func __deinit__(self) {
+        print("deinit;");
+    }
+}
+
+func consume(droppable: Droppable) {
+    print("end_consume;");
+}
+
+func main() {
+    var droppable = Droppable {};
+    print("before_consume;");
+    consume(droppable);
+    print("end_main;");
+}

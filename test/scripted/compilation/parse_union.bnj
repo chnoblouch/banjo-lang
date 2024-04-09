@@ -1,0 +1,66 @@
+#! check_compiles
+union Shape {
+	case Circle(radius: u32);
+	case Rectangle(width: u32, height: u32);
+}
+
+#! check_compiles
+union Shape {
+	case Circle(radius: u32,);
+	case Rectangle(width: u32, height: u32,);
+}
+
+#! check_compiles
+union Union {
+}
+
+#! check_compiles
+union Fruit {
+	case Apple();
+	case Orange();
+}
+
+#! error: expected identifier, got end of file
+union
+
+#! error: expected '{', got end of file
+union Shape
+
+#! error: file ends with unclosed block
+union Shape {
+
+#! error: expected identifier, got '}'
+union Shape {
+	case
+}
+	
+#! error: expected '(', got '}'
+union Shape {
+	case Circle
+}
+
+#! error: unexpected token '}'
+union Shape {
+	case Circle(
+}
+
+#! error: unexpected token '}'
+union Shape {
+	case Circle(radius
+}
+
+#! error: unexpected token '}'
+union Shape {
+	case Circle(radius: i32
+}
+
+#! error: expected ';', got '}'
+union Shape {
+	case Circle(radius: i32)
+}
+
+#! error: expected identifier, got '}'
+union Shape {
+	case Circle(radius: i32);
+	case 
+}

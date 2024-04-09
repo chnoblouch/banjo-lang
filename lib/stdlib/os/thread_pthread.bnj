@@ -1,0 +1,40 @@
+use std.config;
+
+meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == config.ANDROID {
+	struct timespec {
+		var tv_sec: u64;
+		var tv_nsec: u64;
+	}
+
+	native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
+	native func pthread_join(thread: usize, retval: *addr) -> i32;
+	native func nanosleep(req: *timespec, rem: *timespec);
+	native func get_nprocs() -> i32;
+
+	pub func spawn(function: func(addr), argument: addr) -> usize {
+		var handle: usize;
+		var result = pthread_create(&handle, null, function, argument);
+		return handle;
+	}
+
+	pub func join(handle: usize) {
+		var result = pthread_join(handle, null as *addr);
+	}
+
+	pub func close(handle: usize) {
+		# join already destroys the handle
+	}
+
+	pub func sleep(milliseconds: u32) {
+		var time = timespec {
+			tv_sec: (milliseconds / 1000) as u64,
+			tv_nsec: (milliseconds % 1000) as u64 * 1000000
+		};
+		
+		nanosleep(&time, null as *timespec);
+	}
+
+	pub func hardware_concurrency() -> u32 {
+		return get_nprocs() as u32;
+	}
+}

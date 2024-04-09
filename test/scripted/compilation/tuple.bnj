@@ -1,0 +1,25 @@
+#! output: 100;0.5;ABC;200;0.5;ABC;200;1.2;DEF;20;-2.3;GHI;
+
+func print_tuple(tuple: (i32, f32, *u8)) {
+	print(tuple.0);
+	print(";");
+	print(tuple.1);
+	print(";");
+	print(tuple.2);
+	print(";");
+}
+
+func main() {
+	var tuple: (i32, f32, *u8) = (100, 0.5, "ABC");
+	print_tuple(tuple);
+	
+	tuple.0 = 200;
+	print_tuple(tuple);
+	
+	tuple.1 = 1.2;
+	tuple.2 = "DEF";
+	print_tuple(tuple);
+	
+	tuple = (20, -2.3, "GHI");
+	print_tuple(tuple);
+}

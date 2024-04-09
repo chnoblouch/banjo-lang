@@ -1,0 +1,6 @@
+#! error: redefinition of 'a'
+
+func test() {
+	var a = 100;
+	var a = true;
+}

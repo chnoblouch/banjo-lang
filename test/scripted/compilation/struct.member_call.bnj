@@ -1,0 +1,17 @@
+#! output: Apple Red
+
+struct Fruit {
+	var name: *u8;
+	var color: *u8;
+	
+	func print(self) {
+		print(self.name);
+		print(" ");
+		print(self.color);
+	}
+}
+
+func main() {
+	var apple = Fruit { name: "Apple", color: "Red" };
+	apple.print();
+}

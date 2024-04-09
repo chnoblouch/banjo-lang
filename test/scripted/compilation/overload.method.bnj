@@ -1,0 +1,24 @@
+#! output: 10.2;18.2
+
+struct Float {
+    var value: f32;
+    
+    pub func add(self, value: f32) {
+        self.value += value;
+    }
+    
+    pub func add(self, value: i32) {
+        self.value += value as f32;
+    }
+}
+
+func main() {
+    var float = Float { value: 4.0 };
+    
+    float.add(6.2);
+    print(float.value);
+    print(";");
+    
+    float.add(8);
+    print(float.value);
+}

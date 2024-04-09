@@ -1,0 +1,33 @@
+#! output: 0 1 2
+
+struct Node {
+	var value: u32;
+	var children: [Node];
+}
+
+struct TreeBuilder {
+	var root: Node;
+	
+	func build(self) {
+		self.root.children.append(self.create_node(1));
+		self.root.children.append(self.create_node(2));
+	}
+	
+	func create_node(self, value: u32) -> Node {
+		return Node { value: value, children: [] };
+	}
+}
+
+func main() {
+	var builder = TreeBuilder {
+		root: Node { value: 0, children: [] }
+	};
+	
+	builder.build();
+	
+	print(builder.root.value);
+	print(" ");
+	print(builder.root.children[0].value);
+	print(" ");
+	print(builder.root.children[1].value);
+}

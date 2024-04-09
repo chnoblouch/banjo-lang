@@ -1,0 +1,17 @@
+#! output: 00
+
+func main() -> void {
+	var a = false;
+	
+	if a == true {
+		print(1);
+	} else {
+		print(0);
+	}
+	
+	if a == false {
+		print(0);
+	} else {
+		print(1);
+	}
+}

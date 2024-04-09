@@ -1,0 +1,77 @@
+#ifndef CODEGEN_LIVENESS_H
+#define CODEGEN_LIVENESS_H
+
+#include "codegen/reg_alloc_func.hpp"
+
+#include <ostream>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace codegen {
+
+struct BlockLiveness {
+    std::unordered_set<mcode::Register> defs;
+    std::unordered_set<mcode::Register> uses;
+    std::unordered_set<mcode::Register> ins;
+    std::unordered_set<mcode::Register> outs;
+};
+
+enum class InstrPhase { READ, WRITE };
+
+struct LiveRange {
+    unsigned block;
+    unsigned start;
+    unsigned end;
+
+    RegAllocRange to_ra_range(mcode::PhysicalReg reg) {
+        RegAllocPoint start_point{.instr = start, .stage = 1};
+        RegAllocPoint end_point{.instr = end, .stage = 0};
+        return {reg, start_point, end_point};
+    }
+};
+
+struct LiveRangeGroup {
+    mcode::Register reg = mcode::Register::from_virtual(-1);
+    std::vector<LiveRange> ranges;
+    std::vector<mcode::PhysicalReg> hints;
+};
+
+struct KillPoint {
+    long reg;
+    unsigned block;
+    unsigned instr;
+};
+
+class LivenessAnalysis {
+
+public:
+    RegAllocFunc &func;
+    std::vector<BlockLiveness> block_liveness;
+    std::unordered_map<mcode::Register, LiveRangeGroup> range_groups;
+    std::vector<KillPoint> kill_points;
+
+private:
+    LivenessAnalysis(RegAllocFunc &func);
+
+public:
+    static LivenessAnalysis compute(RegAllocFunc &func);
+    void dump(std::ostream &stream);
+
+private:
+    static void collect_uses_and_defs(RegAllocBlock &block, BlockLiveness &liveness);
+    static void compute_ins_and_outs(RegAllocFunc &func, LivenessAnalysis &analysis);
+
+    static void collect_blocks_post_order(
+        RegAllocFunc &func,
+        unsigned block_index,
+        std::vector<unsigned> &indices,
+        std::unordered_set<unsigned> &blocks_visited
+    );
+
+    static void compute_precise_live_ranges(RegAllocFunc &func, LivenessAnalysis &analysis);
+};
+
+} // namespace codegen
+
+#endif

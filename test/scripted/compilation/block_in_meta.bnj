@@ -1,0 +1,20 @@
+#! output: 1;1;1;1;
+
+func main() {
+    var a = 1;
+    var cond = true;
+    
+    meta if true {
+        if cond {
+            print(a);
+            print(";");
+        }
+    }
+    
+    meta for i in [0, 1, 2] {
+        if cond {
+            print(a);
+            print(";");
+        }
+    }
+}

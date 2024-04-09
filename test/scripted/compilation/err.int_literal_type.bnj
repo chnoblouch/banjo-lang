@@ -1,0 +1,11 @@
+#! error: cannot convert integer literal to type 'f32'
+
+func main() {
+    var a: f32 = 100;
+}
+
+#! error: cannot convert integer literal to type 'f64'
+
+func main() {
+    var a: f64 = 50;
+}

@@ -1,0 +1,78 @@
+use std.{io.{Reader, Writer, Error}, path.Path, memory, system.{panic, errno_str}, convert.str};
+use c.lib.stdio.{fopen, fseek, ftell, fread, fclose, SEEK_END, SEEK_SET};
+
+enum FileMode {
+	READ,
+	WRITE,
+	APPEND,
+	READ_WRITE,
+	READ_WRITE_ERASE,
+	READ_APPEND
+}
+
+struct File {
+	var os_file: addr;
+	
+	pub func open(path: Path, mode: FileMode) -> File except Error {
+		var c_mode: *u8;
+		
+		if mode == FileMode.READ { c_mode = "rb"; }
+		else if mode == FileMode.WRITE { c_mode = "wb"; }
+		else if mode == FileMode.APPEND { c_mode = "ab"; }
+		else if mode == FileMode.READ_WRITE { c_mode = "r+b"; }
+		else if mode == FileMode.READ_WRITE_ERASE { c_mode = "w+b"; }
+		else if mode == FileMode.READ_APPEND { c_mode = "a+b"; }
+	
+		var os_file = fopen(path.str().cstr(), c_mode);
+		if os_file == null {
+            return Error.last();
+		}
+		
+		return File { os_file };
+	}
+    
+    pub func open(path: *u8) -> File except Error {
+        return open(Path.from(str(path)), FileMode.READ);
+    }
+	
+	pub func reader(self) -> Reader {
+		return Reader { stream: self.os_file };
+	}
+	
+	pub func writer(self) -> Writer {
+		return Writer { stream: self.os_file };
+	}
+	
+	pub func read(self) -> (*u8, usize) {
+		var os_file = self.os_file;
+	
+		fseek(os_file, 0, SEEK_END);
+		var size = ftell(os_file) as usize;
+		fseek(os_file, 0, SEEK_SET);
+		
+		var data = memory.alloc(size) as *u8;
+		fread(data as addr, 1 as u64, size as u64, os_file);
+		
+		return (data, size);
+	}
+	
+	pub func read_str(self) -> *u8 {
+		var os_file = self.os_file;
+	
+		fseek(os_file, 0, SEEK_END);
+		var size = ftell(os_file);
+		fseek(os_file, 0, SEEK_SET);
+		
+		var alloc_size = (size + 1) as usize;
+		var string = memory.alloc(alloc_size) as *u8;
+		fread(string as addr, 1 as u64, size as u64, os_file);
+		
+		string[size] = 0;
+		
+		return string;
+	}
+	
+	func __deinit__(self) {
+		fclose(self.os_file);
+	}
+}

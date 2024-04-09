@@ -1,0 +1,112 @@
+use std.{test.assert_eq, convert.str};
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+struct Object {
+	var name: String;
+	var position: Point;
+	var age: u32;
+}
+
+enum Fruit {
+	APPLE = 0,
+	BANANA = 1,
+	ORANGE = 2,
+	PEAR = 3,
+}
+
+func assert_convert_str[T](value: T, expected: *u8) {
+	assert_eq(str(value), String.from(expected));
+}
+
+@test func test_i8() {
+	var a: i8 = 120;
+	assert_convert_str(a, "120");
+	
+	var b: i8 = -57;
+	assert_convert_str(b, "-57");
+}
+
+@test func test_i16() {
+	var a: i16 = 3248;
+	assert_convert_str(a, "3248");
+	
+	var b: i16 = -489;
+	assert_convert_str(b, "-489");
+}
+
+@test func test_i32() {
+	var a: i32 = 708389;
+	assert_convert_str(a, "708389");
+	
+	var b: i32 = -123894;
+	assert_convert_str(b, "-123894");
+}
+
+@test func test_u16() {
+	var a: u16 = 50172;
+	assert_convert_str(a, "50172");
+}
+
+@test func test_u32() {
+	var a: u32 = 3678983983;
+	assert_convert_str(a, "3678983983");
+}
+
+@test func test_f32() {
+	var a: f32 = 38.5123;
+	assert_convert_str(a, "38.5123");
+
+	var b: f32 = -0.5737;
+	assert_convert_str(b, "-0.5737");
+}
+
+@test func test_f64() {
+	var a: f64 = 58.4893;
+	assert_convert_str(a, "58.4893");
+	
+	var b: f64 = -238.924;
+	assert_convert_str(b, "-238.924");
+}
+
+@test func test_u8() {
+	assert_convert_str('c', "c");
+	assert_convert_str('0', "0");
+	assert_convert_str('.', ".");
+}
+
+@test func test_cstr() {
+	assert_convert_str("abcABC123!.", "abcABC123!.");
+}
+
+@test func test_bool() {
+	assert_convert_str(false, "false");
+	assert_convert_str(true, "true");
+}
+
+@test func test_struct() {
+	var point = Point {
+		x: 100,
+		y: -20
+	};
+	
+	assert_convert_str(point, "Point {\n    x: 100\n    y: -20\n}");
+
+	var object = Object {
+		name: "Tree",
+		position: point,
+		age: 48
+	};
+	
+	assert_convert_str(object, "Object {\n    name: \"Tree\"\n    position: Point {\n        x: 100\n        y: -20\n    }\n    age: 48\n}");
+}
+
+@test func test_enum() {
+    assert_convert_str(Fruit.APPLE, "APPLE");
+	assert_convert_str(Fruit.BANANA, "BANANA");
+	assert_convert_str(Fruit.ORANGE, "ORANGE");
+	assert_convert_str(Fruit.PEAR, "PEAR");
+}

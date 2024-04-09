@@ -1,0 +1,12 @@
+#! output: -2775
+
+func main() -> void {
+	var a = 5;
+	var b = 3;
+	var c = 2;
+	var d = 4;
+	var e = 10;
+	var f = 75;
+	var result = a * (b + c) - (d * e) * (f - a);
+	print(result);
+}

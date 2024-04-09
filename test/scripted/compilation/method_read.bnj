@@ -1,0 +1,17 @@
+#! output: 5 8
+
+struct Point {
+    var x: i32;
+    var y: i32;
+
+    func println(self) {
+        print(self.x);
+        print(" ");
+		print(self.y);
+    }
+}
+
+func main() {
+    var point = Point { x: 5, y: 8 };
+    point.println();
+}

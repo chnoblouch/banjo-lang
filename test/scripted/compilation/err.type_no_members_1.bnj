@@ -1,0 +1,6 @@
+#! error: type 'i32' has no members
+
+func main() {
+	var i = 100;
+	var m = i.member;
+}

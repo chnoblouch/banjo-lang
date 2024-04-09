@@ -1,0 +1,9 @@
+#! error: value 'other' was not found in this scope
+
+meta if 0 == 1 {
+	use other;
+}
+
+func main() {
+	println(other.VALUE);
+}

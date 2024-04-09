@@ -1,0 +1,16 @@
+func ms_abi void test()
+  %0 = alloca i32
+  %1 = alloca i64
+  store i32 100, i32* %0
+  store i64 250, i64* %1
+
+========
+
+func test
+  s0: 4
+  s1: 8
+  
+  sub rsp, 40
+  mov 4b [s0], 100
+  mov 8b [s1], 250
+  add rsp, 40

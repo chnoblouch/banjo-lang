@@ -1,0 +1,35 @@
+use std.memory;
+use os;
+
+struct Thread {
+	var handle: usize;
+
+	pub func spawn(target: ||) -> Thread {
+		var argument = memory.box(target) as addr;
+		var handle = os.thread.spawn(initializer, argument);
+		return Thread { handle: handle };
+	}
+
+    pub func __deinit__(self) {
+		os.thread.close(self.handle);
+	}
+
+	pub func join(self) {
+		os.thread.join(self.handle);
+	}
+	
+	func initializer(data: addr) {	
+		var pointer = data as *||;
+		var target = *pointer;
+		memory.free(data);
+		target();
+	}
+}
+
+pub func sleep(milliseconds: u32) {
+	os.thread.sleep(milliseconds);
+}
+
+pub func hardware_concurrency() -> u32 {
+	return os.thread.hardware_concurrency();
+}

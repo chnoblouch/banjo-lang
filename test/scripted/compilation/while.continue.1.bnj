@@ -1,0 +1,13 @@
+#! output: 0;1;2;3;4;
+
+func main() {
+	var i = 0;
+	
+	while i < 5 {
+		print(i);
+		print(";");	
+		i = i + 1;
+		continue;
+		print("never");
+	}
+}

@@ -1,0 +1,65 @@
+type Bool = u32;
+type Handle = addr;
+type Dword = u32;
+
+@[link_name=CloseHandle]
+native func close_handle(
+    object: Handle
+) -> Bool;
+
+# --- winbase.h ---
+
+const FORMAT_MESSAGE_ALLOCATE_BUFFER: u32 = 0x00000100;
+const FORMAT_MESSAGE_ARGUMENT_ARRAY: u32 = 0x00002000;
+const FORMAT_MESSAGE_FROM_HMODULE: u32 = 0x00000800;
+const FORMAT_MESSAGE_FROM_STRING: u32 = 0x00000400;
+const FORMAT_MESSAGE_FROM_SYSTEM: u32 = 0x00001000;
+const FORMAT_MESSAGE_IGNORE_INSERTS: u32 = 0x00000200;
+
+@[link_name=LocalFree]
+native func local_free(
+	mem: addr
+) -> addr;
+
+@[link_name=FormatMessageA]
+native func format_message(
+	flags: u32,
+	source: addr,
+	message_id: u32,
+	language_id: u32,
+	buffer: **u8,
+	size: u32,
+	arguments: addr
+) -> u32;
+
+# --- errhandlingapi.h ---
+
+@[link_name=GetLastError]
+native func get_last_error() -> Dword;
+
+# --- synchapi.h ---
+
+const INFINITE: Dword = 0xFFFFFFFF;
+
+const WAIT_ABANDONED: Dword = 0x00000080;
+const WAIT_OBJECT_0: Dword = 0x00000000;
+const WAIT_TIMEOUT: Dword = 0x00000102;
+const WAIT_FAILED: Dword = 0xFFFFFFFF;
+
+@[link_name=CreateMutexA]
+native func create_mutex(
+    mutex_attributes: addr,
+    initial_owner: u32,
+    name: *u8
+) -> Handle;
+
+@[link_name=ReleaseMutex]
+native func release_mutex(
+    handle: Handle
+) -> Bool;
+
+@[link_name=WaitForSingleObject]
+native func wait_for_single_object(
+    handle: Handle,
+    milliseconds: Dword
+) -> Dword;

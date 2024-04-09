@@ -1,0 +1,33 @@
+#! output: 4 7 13 4 7 13 4 7 13
+
+struct Point {
+	var x: i32;
+	var y: i32;
+	var z: i32;
+}
+
+func main() {
+	var a: Point;
+	a.x = 4;
+	a.y = 7;
+	a.z = 13;
+	
+	var b: Point;
+	b = a;
+	
+	var c = a;
+	
+	print_point(&a);
+	print(" ");
+	print_point(&b);
+	print(" ");
+	print_point(&c);
+}
+
+func print_point(point: *Point) {
+	print((*point).x);
+	print(" ");
+	print((*point).y);
+	print(" ");
+	print((*point).z);
+}

@@ -1,0 +1,28 @@
+use std.config;
+
+meta if config.OS == config.WINDOWS {
+    use winapi;
+    
+    type Mutex = winapi.Handle;
+    
+    pub func create() -> Mutex {
+        return winapi.create_mutex(null, 0, null);
+    }
+
+    pub func lock(mutex: Mutex) {
+        var result = winapi.wait_for_single_object(mutex, winapi.INFINITE);
+        if result != winapi.WAIT_OBJECT_0 {
+            panic("winapi: failed to acquire mutex");
+        }
+    }
+    
+    pub func unlock(mutex: Mutex) {
+        if !winapi.release_mutex(mutex) {
+            panic("winapi: failed to release mutex");
+        }
+    }
+    
+    pub func destroy(mutex: Mutex) {
+        winapi.close_handle(mutex);
+    }
+}

@@ -1,0 +1,59 @@
+use std.{memory, config};
+use c.lib.string.strcmp;
+
+struct StackFrame {
+	var address: addr;
+	var symbol: *u8;
+}
+
+native func ___acquire_stack_trace(frames: **StackFrame, num_frames: *u32);
+native func printf(format: *u8, value: u64);
+
+pub func print_stack_trace() {
+	meta if config.OS == config.WINDOWS {
+		var frames: *StackFrame;
+		var num_frames: u32;
+		___acquire_stack_trace(&frames, &num_frames);
+		
+		println("stack trace:");
+		
+		for i in 2..num_frames {
+			var frame = frames[i];
+			printf("  0x%016llX: ", frame.address as u64);
+			
+			if frame.symbol[0] == 'f' {
+				print("\x1B[0;36m");
+				print_symbol_demangled(frame.symbol);
+			} else if strcmp(frame.symbol, "main") == 0 {
+				print("\x1B[0;36m");
+				println(frame.symbol);
+			} else {
+				print("\x1B[0;2m");
+				println(frame.symbol);
+			}
+			
+			print("\x1B[0;0m");
+		}
+		
+		memory.free(frames as addr);
+	}
+}
+
+func print_symbol_demangled(symbol: *u8) {
+	symbol = symbol + 5 as *u8;
+	
+	var i = 0;
+	while true {
+		var c = symbol[i];
+		
+		if c == '$' {
+			break;
+		} else {
+			print(c);
+		}
+		
+		i = i + 1;
+	}
+	
+	print("\n");
+}

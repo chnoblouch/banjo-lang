@@ -1,0 +1,13 @@
+#! output: 1
+
+const A: i32 = 100;
+
+meta if A == 100 {
+	const B: i32 = 1; 
+} else {
+    const B: i32 = 0;
+}
+
+func main() {
+	println(B);
+}

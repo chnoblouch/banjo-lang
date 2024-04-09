@@ -1,0 +1,27 @@
+#! output: 4;7;5;15;7;4;13;52;6;
+
+func print_result(a: i32) {
+	print(a);
+	print(";");
+}
+
+func main() {
+	var a = 4;
+	print_result(a);
+	a += 3;
+	print_result(a);
+	a -= 2;
+	print_result(a);
+	a *= 3;
+	print_result(a);
+	a /= 2;
+	print_result(a);
+	a &= 12;
+	print_result(a);
+	a |= 9;
+	print_result(a);
+	a <<= 2;
+	print_result(a);
+	a >>= 3;
+	print_result(a);
+}

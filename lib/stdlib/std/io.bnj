@@ -1,0 +1,92 @@
+use c.lib.{stdio.{fread, ferror, fgetc, fputc, fwrite, fflush}, string.strlen};
+use os;
+
+struct Error {
+	var os_error: os.error.Error;
+	
+	pub func last() -> Error {
+		return Error {
+			os_error: os.error.last()
+		};
+	}
+	
+	pub func __str__(self) -> String {
+		return os.error.to_string(self.os_error);
+	}
+}
+
+struct Reader {
+	var stream: addr;
+	
+	pub func read(self, buffer: Slice[u8]) -> usize except Error {
+		var length_read = fread(buffer.data as addr, 1, buffer.length, self.stream);
+		if ferror(self.stream) == 0 {
+			return length_read;
+		} else {
+			return Error.last();
+		}
+	}
+
+	pub func read_u8(self) -> u8 {
+		return fgetc(self.stream) as u8;
+	}
+	
+	pub func read_line_into(self, string: *String) {	
+		var stream = self.stream;
+		var char = fgetc(stream) as u8;
+		while char != '\n' as u8 && char != 255 as u8 {
+			string.append(char);
+			char = fgetc(stream) as u8;
+		}
+	}
+    
+    pub func read_line(self) -> String {
+        var string: String = "";
+        self.read_line_into(&string);
+        return string;
+    }
+    
+    pub func read_line_i32(self) -> ?i32 {
+        return self.read_line().to_i32();
+    }
+    
+    pub func read_line_f32(self) -> ?f32 {
+        return self.read_line().to_f32();
+    }
+}
+
+struct Writer {
+	var stream: addr;
+	
+	pub func write_byte(self, byte: u8) {
+		fputc(byte as i32, self.stream);
+	}
+	
+	pub func write_bytes(self, bytes: *u8, length: usize) {
+		fwrite(bytes as addr, length, 1 as usize, self.stream);
+	}
+	
+	pub func write_cstr(self, cstr: *u8) {
+		var length = strlen(cstr);
+		fwrite(cstr as addr, length, 1 as usize, self.stream);
+	}
+	
+	pub func flush(self) {
+		fflush(self.stream);
+	}
+}
+
+pub func stdin() -> Reader {
+	var stream = os.io.get_stdin_stream();
+	return Reader { stream: stream };
+}
+
+pub func stdout() -> Writer {
+	var stream = os.io.get_stdout_stream();
+	return Writer { stream: stream };
+}
+
+pub func stderr() -> Writer {
+	var stream = os.io.get_stderr_stream();
+	return Writer { stream: stream };
+}

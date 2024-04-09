@@ -1,0 +1,36 @@
+#! output: 4 3 7 8 6 14
+
+struct Vec3 {
+	var x: f32;
+	var y: f32;
+	var z: f32;
+    
+    func print(self) {
+        print(self.x);
+        print(" ");
+        print(self.y);
+        print(" ");
+        print(self.z);
+    }
+}
+
+func scale(scalar: f32, vector: Vec3) -> Vec3 {
+	var result: Vec3;
+	result.x = scalar * vector.x;
+	result.y = scalar * vector.y;
+	result.z = scalar * vector.z;
+	return result;
+}
+
+func main() {
+	var vector: Vec3;
+	vector.x = 4.0;
+	vector.y = 3.0;
+	vector.z = 7.0;
+	
+	var scaled = scale(2.0, vector);
+	
+	vector.print();
+	print(" ");
+	scaled.print();
+}

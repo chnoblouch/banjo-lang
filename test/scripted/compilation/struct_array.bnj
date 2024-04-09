@@ -1,0 +1,23 @@
+#! output: 5 Apple 6 Cookies
+
+struct Article {
+	var id: u32;
+	var name: *u8;
+}
+
+func main() {
+	var articles = [
+		Article { id: 5, name: "Apple" },
+		Article { id: 6, name: "Cookies" }
+	];
+		
+	print_article(articles[0]);
+	print(" ");
+	print_article(articles[1]);
+}
+
+func print_article(article: Article) {
+	print(article.id);
+	print(" ");
+	print(article.name);
+}

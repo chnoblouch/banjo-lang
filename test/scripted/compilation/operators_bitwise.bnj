@@ -1,0 +1,32 @@
+#! output: 5 13 3 40 9
+
+func main() {
+	var and1 = 13;
+	var and2 = 7;
+	var and3 = and1 & and2;
+	print(and3);
+	print(" ");
+
+	var or1 = 4;
+	var or2 = 9;
+	var or3 = or1 | or2;
+	print(or3);
+	print(" ");
+	
+	var xor1 = 5;
+	var xor2 = 6;
+	var xor3 = xor1 ^ xor2;
+	print(xor3);
+	print(" ");
+
+	var shl1 = 5;
+	var shl2 = 3;
+	var shl3 = shl1 << shl2;
+	print(shl3);
+	print(" ");
+	
+	var shr1 = 38;
+	var shr2 = 2;
+	var shr3 = shr1 >> shr2;
+	print(shr3);
+}

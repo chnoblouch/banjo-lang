@@ -1,0 +1,18 @@
+#! output: 50;4.5
+
+func half(value: i32) -> i32 {
+    return value / 2;
+}
+
+func half(value: f32) -> f32 {
+    return value / 2.0;
+}
+
+func main() {
+    var val1 = 100;
+    var val2 = 9.0;
+    
+    print(half(val1));
+    print(";");
+    print(half(val2));
+}

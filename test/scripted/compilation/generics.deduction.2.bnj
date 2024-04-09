@@ -1,0 +1,11 @@
+#! output: 100;true
+
+func test[A, B](a: A, b: B) {
+	print(a);
+	print(";");
+	print(b);
+}
+
+func main() {
+	test(100, true);
+}

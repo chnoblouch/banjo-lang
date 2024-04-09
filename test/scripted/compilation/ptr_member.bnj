@@ -1,0 +1,17 @@
+#! output: 7 18
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+func main() {
+	var point: Point;
+	point.x = 7;
+	point.y = 18;
+	
+	var pointer = &point;
+	print(pointer.x);
+	print(" ");
+	print(pointer.y);
+}

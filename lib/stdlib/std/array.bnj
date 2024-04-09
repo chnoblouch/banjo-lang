@@ -1,0 +1,147 @@
+use std.{memory, system.panic, config, convert.repr};
+
+struct Array[T] {
+	var data: *T;
+	var length: u32;
+	var capacity: u32;
+    
+	pub func new() -> Array[T] {
+		return Array[T] {
+			data: null as *T,
+			length: 0,
+			capacity: 0,
+		};
+	}
+	
+	pub func sized(size: u32) -> Array[T] {
+		var data = memory.alloc(size as usize * meta.size(T)) as *T;
+	
+		return Array[T] {
+			data: data,
+			length: size,
+			capacity: size,
+		};
+	}
+    
+    pub func __deinit__(self) {
+        meta if type(T).is_struct && type(T).has_method("__deinit__") {
+            for i in 0..self.length as i32 {
+                self.data[i].__deinit__();
+            }
+        }
+    }
+	
+	pub func get(self, index: u32) -> T {
+		meta if config.BUILD_CONFIG == config.DEBUG {
+			self.check_bounds(index);
+		}
+		
+		return self.data[index];
+	}
+	
+	pub func ref(self, index: u32) -> *T {
+        meta if config.BUILD_CONFIG == config.DEBUG {
+			self.check_bounds(index);
+		}
+		
+		return &self.data[index];
+	}
+	
+	pub func set(self, index: u32, value: T) {
+		meta if config.BUILD_CONFIG == config.DEBUG {
+			self.check_bounds(index);
+		}
+		
+		self.data[index] = value;
+	}
+	
+	pub func slice(self) -> Slice[T] {
+		return Slice[T].new(self.data, self.length as usize);
+	}
+	
+	pub func append(self, value: T) {    
+		self.ensure_capacity(self.length + 1);
+		self.data[self.length] = value;
+		self.length += 1;
+	}
+	
+	pub func resize(self, length: u32) {
+		self.length = length;
+		self.ensure_capacity(length);
+	}
+	
+	pub func clear(self) {
+		self.length = 0;
+	}
+	
+	pub func __iter__(self) -> ArrayIter[T] {
+		return ArrayIter[T] {
+			pointer: self.data,
+			end: &self.data[self.length]
+		};
+	}
+    
+    pub func copy(self) -> Array[T] {
+        var size = self.length as usize * meta.size(T);
+        var data = memory.alloc(size) as *T;
+        memory.copy(self.data as addr, data as addr, size);
+        
+        return Array[T] {
+			data: data,
+			length: self.length,
+			capacity: self.length
+		};
+    }
+	    
+    pub func __str__(self) -> String {
+		var string: String = "";
+        string.append('[');
+        
+        for i in 0..self.length as i32 {
+            string.append_str(repr(self.data[i]));
+            
+            if i != self.length as i32 - 1 {
+                string.append_cstr(", ");
+            }
+        }
+        
+        string.append(']');
+		return string;
+    }
+	
+	func check_bounds(self, index: u32) {
+		if index < 0 || index >= self.length {
+			panic("index out of bounds");
+		}
+	}
+	
+	func ensure_capacity(self, capacity: u32) {
+		if self.capacity >= capacity {
+			return;
+		}
+		        
+		if self.capacity == 0 {
+			self.capacity = capacity;
+		} else {
+			self.capacity = 2 * self.capacity;
+		}
+
+		var size = self.capacity as usize * meta.size(T);
+		self.data = memory.realloc(self.data as addr, size) as *T;
+	}
+}
+
+struct ArrayIter[T] {
+	var pointer: *T;
+	var end: *T;
+	
+	pub func __next__(self) -> *T {
+		if self.pointer == self.end {
+			return null;
+		}
+	
+		var value = self.pointer;
+		self.pointer += 1 as *T;
+		return value;
+	}
+}

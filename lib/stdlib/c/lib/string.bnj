@@ -1,0 +1,34 @@
+# ok ->
+native func isalnum(ch: i32) -> i32;
+native func isalpha(ch: i32) -> i32;
+native func islower(ch: i32) -> i32;
+native func isupper(ch: i32) -> i32;
+native func isdigit(ch: i32) -> i32;
+native func isxdigit(ch: i32) -> i32;
+native func iscntrl(ch: i32) -> i32;
+native func isgraph(ch: i32) -> i32;
+native func isspace(ch: i32) -> i32;
+native func isblank(ch: i32) -> i32;
+native func isprint(ch: i32) -> i32;
+native func ispunct(ch: i32) -> i32;
+
+native func tolower(ch: i32) -> i32;
+native func toupper(ch: i32) -> i32;
+# <-
+
+# TODO: constness ->
+native func strlen(str: *u8) -> usize;
+native func strcmp(lhs: *u8, rhs: *u8) -> i32;
+native func strncmp(lhs: *u8, rhs: *u8, count: usize) -> i32;
+native func strcat(destination: *u8, source: *u8, num: usize) -> *u8;
+# <-
+
+native func strcpy(dst: *u8, src: *u8) -> *u8;
+
+# TODO: constness ->
+native func memchr(ptr: addr, ch: i32, count: usize) -> addr;
+native func memcmp(lhs: addr, rhs: addr, count: usize) -> i32;
+native func memset(dest: addr, ch: i32, count: usize) -> addr;
+native func memcpy(dest: addr, src: addr, count: usize) -> addr;
+native func memmove(dest: addr, src: addr, count: usize) -> addr;
+# <-

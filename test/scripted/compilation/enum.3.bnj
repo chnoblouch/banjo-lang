@@ -1,0 +1,26 @@
+#! output: false true true false
+
+enum Direction {
+	North,
+	East,
+	South,
+	West
+}
+
+func main() {
+	var north = Direction.North;
+	var east = Direction.East;
+	var south = Direction.South;
+	var west = Direction.West;
+
+	print(north == south);
+	print(" ");
+	
+	print(north == north);
+	print(" ");
+	
+	print(west == west);
+	print(" ");
+	
+	print(west == east);
+}

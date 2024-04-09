@@ -1,0 +1,21 @@
+#! output: Test Text: Hello, World
+
+struct Text {
+	var name: *u8;
+	var value: *u8;
+	
+	func print(self) {
+		print(self.value);
+	}
+	
+	func print_with_name(self) {
+		print(self.name);
+		print(": ");
+		self.print();
+	}
+}
+
+func main() {
+	var text = Text { name: "Test Text", value: "Hello, World" };
+	text.print_with_name();
+}

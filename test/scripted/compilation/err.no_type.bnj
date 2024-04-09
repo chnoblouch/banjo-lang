@@ -1,0 +1,11 @@
+#! error: cannot find type 'Test' in this scope
+
+func main() {
+	var a: Test = 100;
+}
+
+#! error: cannot find type 'Point' in this scope
+
+func main() {
+	var a = Point { x: 0, y: 0 };
+}

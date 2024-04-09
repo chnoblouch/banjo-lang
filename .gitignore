@@ -1,0 +1,10 @@
+.vscode/
+.cache/
+__pycache__
+
+build/
+out/
+
+*.exe
+*.obj
+tmp.bnj

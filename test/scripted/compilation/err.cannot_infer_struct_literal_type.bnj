@@ -1,0 +1,15 @@
+#! error: cannot infer struct literal type
+
+struct Vec3 {
+    var x: f32;
+    var y: f32;
+    var z: f32;
+}
+
+func main() {
+	var a = {
+        x: 5.0,
+        y: 2.0,
+        z: 10.0
+    };
+}

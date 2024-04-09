@@ -1,0 +1,4 @@
+#! error: file ends with unclosed block
+
+func main() {
+	var a = 100;

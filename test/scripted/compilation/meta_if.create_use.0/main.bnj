@@ -1,0 +1,9 @@
+#! output: 100
+
+meta if 0 == 0 {
+	use other;
+}
+
+func main() {
+	println(other.VALUE);
+}

@@ -1,0 +1,16 @@
+#! output: 0 1 2
+
+func main() {
+	var a = 0;
+	var c = 2;
+	
+	var closure = |b: i32| -> void {
+		print(a);
+		print(" ");
+		print(b);
+		print(" ");
+		print(c);
+	};
+	
+	closure(1);
+}

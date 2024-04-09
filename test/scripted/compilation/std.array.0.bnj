@@ -1,0 +1,32 @@
+#! output: 2 8 10 3 -3 4 10 10 20 0
+
+func main() {
+	var array = [2, 8, 10];
+	print(array[0]);
+	print(" ");
+	print(array[1]);
+	print(" ");
+	print(array[2]);
+	print(" ");
+	print(array.length);
+	
+	array.append(-3);
+	print(" ");
+	print(array[3]);
+	print(" ");
+	print(array.length);
+	
+	var ref = array.ref(2);
+	print(" ");
+	print(array[2]);
+	print(" ");
+	print(*ref);
+	
+	*ref = 20;
+	print(" ");
+	print(array[2]);
+	
+	array.clear();
+	print(" ");
+	print(array.length);
+}

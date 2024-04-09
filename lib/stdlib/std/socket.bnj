@@ -1,0 +1,96 @@
+use os;
+
+enum AddressFamily {
+    IPV4,
+    IPV6
+}
+
+enum SocketType {
+    STREAM,
+    DATAGRAM
+}
+
+struct Socket {
+    var handle: os.socket.SocketHandle;
+    
+    const AF_UNSPEC: i32 = 0;
+    const AF_INET: i32 = 2;
+    const AF_INET6: i32 = 23;
+    const SOCK_STREAM: i32 = 1;
+    const IPPROTO_TCP: i32 = 6;
+    const AI_PASSIVE: i32 = 0x01;
+
+    pub func new(address_family: AddressFamily, ty: SocketType) -> ?Socket {
+        var os_af = 0;
+        if address_family == AddressFamily.IPV4 { os_af = os.socket.AF_INET; }
+        else if address_family == AddressFamily.IPV6 { os_af = os.socket.AF_INET6; }
+        
+        var os_ty = 0;
+        if ty == SocketType.STREAM { os_ty = os.socket.SOCK_STREAM; }
+        else if ty == SocketType.DATAGRAM { os_ty = os.socket.SOCK_DGRAM; }
+    
+        var handle = os.socket.new(os_af, os_ty);
+        
+        if handle.has_value {
+            return Socket { handle: handle.value };
+        } else {
+            return none;
+        }
+    }
+    
+    pub func connect(self, host: *u8, port: i32) {
+        os.socket.connect(self.handle, host, port);
+    }
+    
+    pub func recv(self, buffer: *u8, length: u32) -> i32 {
+        return os.socket.recv(self.handle, buffer, length);
+    }
+    
+    pub func send(self, buffer: *u8, length: u32) {
+        os.socket.send(self.handle, buffer, length);
+    }
+    
+    pub func bind(self, host: *u8, port: i32) {
+        os.socket.bind(self.handle, host, port);
+    }
+    
+    pub func listen(self, port: i32) {
+        os.socket.listen(self.handle, port);
+    }
+    
+    pub func accept(self) -> Socket {
+        return Socket { handle: os.socket.accept(self.handle) };
+    }
+    
+    pub func set_blocking(self, blocking: bool) {
+        os.socket.set_blocking(self.handle, blocking);
+    }
+    
+    pub func close(self) {
+        os.socket.deinit(self.handle);
+    }
+}
+
+struct TcpSocket {
+    pub func connect(host: *u8, port: i32) -> ?Socket {
+        var socket = Socket.new(AddressFamily.IPV4, SocketType.STREAM);
+        if !socket.has_value {
+            return none;
+        }
+        
+        socket.value.connect(host, port);
+        return socket.value;
+    }
+    
+    pub func listen(host: *u8, port: i32) -> ?Socket {
+        var socket = Socket.new(AddressFamily.IPV4, SocketType.STREAM);
+        if !socket.has_value {
+            return none;
+        }
+        
+        socket.value.bind(host, port);
+        socket.value.listen(port);
+        
+        return socket.value;
+    }
+}

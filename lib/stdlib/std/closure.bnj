@@ -1,0 +1,10 @@
+use std.memory;
+
+struct Closure {
+	var function: addr;
+	var data: addr;
+
+	pub func drop(self) {
+		memory.free(self.data);
+	}
+}

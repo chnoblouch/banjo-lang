@@ -1,0 +1,24 @@
+#! output: 5 12 9 120
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+func main() {
+	var a: Point;
+	var b: Point;
+	
+	a.x = 5;
+	a.y = 12;
+	b.x = a.x + 4;
+	b.y = a.y * a.x * 2;
+	
+	print(a.x);
+	print(" ");
+	print(a.y);
+	print(" ");
+	print(b.x);
+	print(" ");
+	print(b.y);
+}

@@ -1,0 +1,24 @@
+#! output: 0 100 101 200 201 500
+
+enum Message {
+	Connect,
+	Upload = 100,
+	Download,
+	Rename = 200,
+	Move,
+	Disconnect = 500
+}
+
+func print_message(message: Message) {
+	print(message as u32);
+	print(" ");
+}
+
+func main() {
+	print_message(Message.Connect);
+	print_message(Message.Upload);
+	print_message(Message.Download);
+	print_message(Message.Rename);
+	print_message(Message.Move);
+	print_message(Message.Disconnect);
+}

@@ -1,0 +1,41 @@
+struct @Vec3
+    f32 @x
+    f32 @y
+    f32 @z
+
+struct @Sphere
+    @Vec3 @position
+    f32 @radius
+
+func ms_abi i32 @test()
+    %0 = alloca @Sphere
+
+    %1 = memberptr @Sphere* %0, void 0
+    %2 = memberptr @Vec3* %1, void 2
+    store f32 8.0, f32* %2
+
+    %3 = memberptr @Sphere* %0, void 0
+    %4 = memberptr @Vec3* %3, void 2
+    %5 = load f32, f32* %4
+
+    ret i32 %5
+
+===
+
+struct @Vec3
+    f32 @x
+    f32 @y
+    f32 @z
+
+struct @Sphere
+    @Vec3 @position
+    f32 @radius
+
+func ms_abi i32 @test()
+    %0 = alloca f32
+    %1 = alloca f32
+    %2 = alloca f32
+    %3 = alloca f32
+    store f32 8.0, f32* %2
+    %4 = load f32, f32* %2
+    ret i32 %4

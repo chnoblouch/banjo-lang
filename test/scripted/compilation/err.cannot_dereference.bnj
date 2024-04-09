@@ -1,0 +1,6 @@
+#! error: type 'i32' cannot be dereferenced
+
+func main() {
+    var value = 100;
+    var a = *value;
+}

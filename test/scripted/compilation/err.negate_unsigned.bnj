@@ -1,0 +1,27 @@
+#! error: cannot negate value having unsigned type 'u8'
+
+func main() {
+	var a: u8 = 100;
+	println(-a);
+}
+
+#! error: cannot negate value having unsigned type 'u16'
+
+func main() {
+	var a: u16 = 100;
+	println(-a);
+}
+
+#! error: cannot negate value having unsigned type 'u32'
+
+func main() {
+	var a: u32 = 100;
+	println(-a);
+}
+
+#! error: cannot negate value having unsigned type 'u64'
+
+func main() {
+	var a: u64 = 100;
+	println(-a);
+}

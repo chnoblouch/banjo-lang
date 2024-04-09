@@ -1,0 +1,9 @@
+#! output: 128
+
+func main() {
+	var closure = |x: i32| {
+		println(x);
+	};
+	
+	closure(128);
+}

@@ -1,0 +1,8 @@
+struct Slice[T] {
+	var data: *T;
+	var length: usize;
+	
+	pub func new(data: *T, length: usize) -> Slice[T] {
+		return Slice[T] { data, length };
+	}
+}

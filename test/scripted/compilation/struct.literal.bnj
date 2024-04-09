@@ -1,0 +1,32 @@
+#! output: 5;Apple;true;10;Banana;false;
+
+struct Article {
+	var id: i32;
+	var name: *u8;
+	var available: bool;
+}
+
+func print_article(article: *Article) {
+	print(article.id);
+	print(";");
+	print(article.name);
+	print(";");
+	print(article.available);
+	print(";");
+}
+
+func main() {
+	var article = Article {
+		id: 5,
+		name: "Apple",
+		available: true
+	};
+	print_article(&article);
+
+	article = Article {
+		id: 10,
+		name: "Banana",
+		available: false
+	};
+	print_article(&article);
+}

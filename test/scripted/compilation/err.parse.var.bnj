@@ -1,0 +1,35 @@
+#! error: expected identifier, got 'var'
+
+func main() {
+	var var: i32 = 1;
+}
+
+#! error: unexpected token 'err'
+
+func main() {
+	var a err: i32 = 1;
+}
+
+#! error: expected ';' after statement
+
+func main() {
+	var a: i32 = 1
+}
+
+#! error: expected identifier, got 'var'
+
+func main() {
+	var var = 1;
+}
+
+#! error: unexpected token 'err'
+
+func main() {
+	var a err = 1;
+}
+
+#! error: expected ';' after statement
+
+func main() {
+	var a = 1
+}

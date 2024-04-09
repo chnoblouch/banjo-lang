@@ -1,0 +1,284 @@
+use std.convert.str;
+
+type ObjectRepr = [String: Value];
+type ArrayRepr = [Value];
+type StringRepr = String;
+type NumberRepr = f64;
+type BoolRepr = bool;
+
+union Value {
+	case Object(members: ObjectRepr);
+	case Array(elements: ArrayRepr);
+	case String(value: StringRepr);
+	case Number(value: NumberRepr);
+	case Bool(value: BoolRepr);
+	case Null();
+}
+
+native func atof(str: *u8) -> f64;
+
+struct Parser {
+	var data: *u8;
+	var index: u32;
+	
+	pub func new(data: *u8) -> Parser {
+		return Parser {
+			data,
+			index: 0
+		};
+	}
+	
+	pub func parse(self) -> Value {
+		return self.parse_value();
+	}
+	
+	func parse_value(self) -> Value {
+		self.skip_whitespace();
+		
+		var c = self.get();
+		
+		if c == '{' {
+			return Value.Object(self.parse_object());
+		} else if c == '[' {
+			return Value.Array(self.parse_array());
+		} else if c == '\"' {
+			return Value.String(self.parse_string());
+		} else if self.is_numeric() {
+			return Value.Number(self.parse_number());
+		} else if c == 't' {
+			self.parse_true();
+			return Value.Bool(true);
+		} else if c == 'f' {
+			self.parse_false();
+			return Value.Bool(false);
+		} else if c == 'n' {
+			self.parse_null();
+			return Value.Null();
+		}
+	}
+	
+	func parse_object(self) -> Map[String, Value] {
+		self.consume();
+		self.skip_whitespace();
+		
+		var members: Map[String, Value] = Map[String, Value].new();
+		
+		while self.get() == '\"' {
+			var name = self.parse_string();
+			
+			self.skip_whitespace();
+			self.consume();
+			self.skip_whitespace();
+			
+			var value = self.parse_value();
+			members.insert(name, value);
+			
+			self.skip_whitespace();
+			
+			if self.get() == ',' {
+				self.consume();
+			}
+			self.skip_whitespace();
+		}
+		
+		if self.get() == '}' {
+			self.consume();
+			return members;
+		}
+	}
+	
+	func parse_array(self) -> Array[Value] {
+		self.consume();
+		self.skip_whitespace();
+		
+		var elements: Array[Value] = Array[Value].new();
+		
+		while self.get() != ']' {
+			var value = self.parse_value();
+			elements.append(value);
+			
+			if self.get() == ',' {
+				self.consume();
+			}
+			self.skip_whitespace();
+		}
+		
+		self.consume();
+		return elements;
+	}
+	
+	func parse_string(self) -> String {
+		self.consume();
+		
+		var string: String = "";
+		while self.get() != '\"' {
+			string.append(self.consume());
+		}
+		
+		self.consume();
+		return string;
+	}
+	
+	func parse_number(self) -> f64 {
+		var string: String = "";
+		while self.is_numeric() {
+			string.append(self.consume());
+		}
+		
+		return atof(string.cstr());
+	}
+	
+	func parse_true(self) {
+		for i in 0..4 {
+			self.consume();
+		}
+	}
+	
+	func parse_false(self) {
+		for i in 0..5 {
+			self.consume();
+		}
+	}
+	
+	func parse_null(self) -> bool {
+		for i in 0..4 {
+			self.consume();
+		}
+	}
+	
+	func skip_whitespace(self) {
+		var c = self.get();
+	
+		while c == ' ' || c == '\t' || c == '\r' || c == '\n' {
+			self.index += 1;
+			c = self.get();
+		}
+	}
+	
+	func is_numeric(self) -> bool {
+		var c = self.get();
+		return (c >= '0' && c <= '9') || c == '-' || c == '.';
+	}
+	
+	func get(self) -> u8 {
+		return self.data[self.index];
+	}
+	
+	func consume(self) -> u8 {
+		self.index += 1;
+		return self.data[self.index - 1];
+	}
+}
+
+struct Writer {
+	var string: String;
+	
+	pub func new() -> Writer {
+		return Writer {
+			string: String.new()
+		};
+	}
+	
+	pub func write(self, value: Value) -> String {
+		self.write_value(value, 0);
+		return self.string;
+	}
+	
+	func write_value(self, value: Value, indentation: u32) {
+		switch value {
+			case object: Value.Object { self.write_object(object, indentation); }
+			case array: Value.Array { self.write_array(array, indentation); }
+			case string: Value.String { self.write_string(string.value, indentation); }
+			case number: Value.Number { self.write_number(number.value, indentation); }
+			case bool_: Value.Bool { self.write_bool(bool_.value, indentation); }
+			case null_: Value.Null { self.write_null(indentation); }
+		}
+	}
+	
+	func write_object(self, object: Value.Object, indentation: u32) {
+		self.string.append('{');
+		
+		var member_indent = indentation + 1;
+		var first_member = true;
+		
+		for member in object.members {
+			if first_member {
+				first_member = false;
+			} else {
+				self.string.append(',');
+			}
+		
+			self.string.append('\n');
+			self.write_indentation(member_indent);
+			self.write_string(member.key, member_indent);
+			self.string.append(':');
+			self.string.append(' ');
+			self.write_value(member.value, member_indent);
+		}
+		
+		self.string.append('\n');
+		self.write_indentation(indentation);
+		self.string.append('}');
+	}
+	
+	func write_array(self, array: Value.Array, indentation: u32) {
+		self.string.append('[');
+		
+		var member_indent = indentation + 1;
+		var first_member = true;
+		
+		for element in array.elements {
+			if first_member {
+				first_member = false;
+			} else {
+				self.string.append(',');
+			}
+		
+			self.string.append('\n');
+			self.write_indentation(member_indent);
+			self.write_value(element, member_indent);
+		}
+		
+		self.string.append('\n');
+		self.write_indentation(indentation);
+		self.string.append(']');
+	}
+	
+	func write_string(self, string: String, indentation: u32) {
+		self.string.append('\"');
+		self.string.append_str(string);
+		self.string.append('\"');
+	}
+	
+	func write_number(self, number: f64, indentation: u32) {
+		self.string.append_str(str(number));
+	}
+	
+	func write_bool(self, bool_: bool, indentation: u32) {
+		if bool_ {
+			self.string.append_str("true");
+		} else {
+			self.string.append_str("false");
+		}
+	}
+	
+	func write_null(self, indentation: u32) {
+		self.string.append_str("null");
+	}
+	
+	func write_indentation(self, indentation: u32) {
+		for i in 0..4 * indentation {
+			self.string.append(' ');
+		}
+	}
+}
+
+pub func parse(string: *String) -> Value {
+	var parser = Parser.new(string.cstr());
+	return parser.parse();
+}
+
+pub func serialize(value: Value) -> String {
+	var writer = Writer.new();
+	return writer.write(value).copy();
+}

@@ -1,0 +1,28 @@
+#! output: 48 12
+
+func set_1(src: *i32, dest: *i32) {
+	*dest = *src;
+}
+
+func set_indirect(src: *i32, dest: *i32) {
+	set_2(&src, &dest);
+}
+
+func set_2(src: **i32, dest: **i32) {
+	**dest = **src;
+}
+
+func main() {
+	var src: i32;
+	var dest: i32;
+	
+	src = 48;
+	set_1(&src, &dest);
+	print(dest);
+	
+	print(" ");
+	
+	src = 12;
+	set_indirect(&src, &dest);
+	print(dest);
+}

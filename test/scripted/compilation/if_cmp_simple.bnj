@@ -1,0 +1,21 @@
+#! output: three two >=ten >=ten <ten
+
+func print_str(val: i32) {
+	if val == 0 { print("zero"); }
+	else if val == 1 { print("one"); }
+	else if val == 2 { print("two"); }
+	else if val == 3 { print("three"); }
+	else if val == 4 { print("four"); }
+	else if val < 10 { print("<ten"); }
+	else { print(">=ten"); }
+	
+	print(" ");
+}
+
+func main() {
+	print_str(3);
+	print_str(2);
+	print_str(11);
+	print_str(10);
+	print_str(6);
+}

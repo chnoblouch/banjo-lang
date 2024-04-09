@@ -1,0 +1,45 @@
+use std.convert.str;
+
+struct Optional[T] {
+	var has_value: bool;
+	@no_deinit var value: T;
+
+	pub func new_some(value: T) -> Optional[T] {
+		return Optional[T] {
+			has_value: true,
+			value
+		};
+	}
+	
+	pub func new_none() -> Optional[T] {
+		return Optional[T] {
+			has_value: false,
+			value: undefined
+		};
+	}
+    
+    pub func unwrap(self) -> T {
+        if !self.has_value {
+            panic("optional does not have a value");
+        }
+        
+        self.has_value = false;
+        return self.value;
+    }
+    
+    pub func __str__(self) -> String {
+        if self.has_value {
+            return str(self.value);
+        } else {
+            return "none";
+        }
+    }
+    
+	meta if type(T).has_method("__deinit__") {
+		pub func __deinit__(self) {
+			if self.has_value {
+				self.value.__deinit__();
+			}
+		}
+	}
+}
