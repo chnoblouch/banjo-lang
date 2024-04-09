@@ -1,0 +1,50 @@
+name: Publish Docs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Install Sphinx
+        run: sudo apt-get install python3-sphinx
+      
+      - name: Install MyST parser
+        run: pip3 install myst-parser
+      
+      - name: Install RTD theme
+        run: pip3 install sphinx_rtd_theme
+      
+      - name: Build HTML
+        run: make html
+        working-directory: ./docs/lang
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: './docs/lang/build/html'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
