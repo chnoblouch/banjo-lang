@@ -1,6 +1,6 @@
 # Getting Started
 
-## Prerequisities
+## Prerequisites
 
 ### Windows
 - Python 3 with pip
@@ -17,7 +17,7 @@
 
 ## Install Script
 
-You can use the install script to automatically download the latest release, extract it to ```$HOME/.banjo/```, and add it to the PATH environment variable.
+You can use the install script to automatically download the latest release, extract it to ```$HOME/.banjo/```, and add it to the ```PATH``` environment variable.
 
 ### Windows (Powershell)
 
