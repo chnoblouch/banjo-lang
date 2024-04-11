@@ -36,6 +36,7 @@ void PeepholeOptimizer::run(ir::BasicBlock &block, ir::Function &func) {
             case ir::Opcode::SUB:
             case ir::Opcode::FSUB: optimize_sub(iter, block, func); break;
             case ir::Opcode::MUL: optimize_mul(iter, block, func); break;
+            case ir::Opcode::UDIV: optimize_udiv(iter, block, func); break;
             case ir::Opcode::FMUL: optimize_fmul(iter, block, func); break;
             default: break;
         }
@@ -74,13 +75,26 @@ void PeepholeOptimizer::optimize_mul(ir::InstrIter &iter, ir::BasicBlock &block,
     }
 
     if (iter->get_operand(1).is_int_immediate()) {
-        std::int64_t value = std::stoll(iter->get_operand(1).get_int_immediate().to_string());
+        std::uint64_t value = iter->get_operand(1).get_int_immediate().to_bits();
 
         if (BitOperations::is_power_of_two(value)) {
             unsigned shift = BitOperations::get_first_bit_set(value);
             ir::Operand lhs = iter->get_operand(0);
             ir::Operand rhs = ir::Operand::from_int_immediate(shift);
             iter = block.replace(iter, ir::Instruction(ir::Opcode::SHL, *iter->get_dest(), {lhs, rhs}));
+        }
+    }
+}
+
+void PeepholeOptimizer::optimize_udiv(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func) {
+    if (iter->get_operand(1).is_int_immediate()) {
+        std::uint64_t value = iter->get_operand(1).get_int_immediate().to_bits();
+
+        if (BitOperations::is_power_of_two(value)) {
+            unsigned shift = BitOperations::get_first_bit_set(value);
+            ir::Operand lhs = iter->get_operand(0);
+            ir::Operand rhs = ir::Operand::from_int_immediate(shift);
+            iter = block.replace(iter, ir::Instruction(ir::Opcode::SHR, *iter->get_dest(), {lhs, rhs}));
         }
     }
 }

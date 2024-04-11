@@ -18,6 +18,7 @@ private:
     void optimize_add(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_sub(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_mul(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
+    void optimize_udiv(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_fmul(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
 
     void eliminate(ir::InstrIter &iter, ir::Value val, ir::BasicBlock &block, ir::Function &func);

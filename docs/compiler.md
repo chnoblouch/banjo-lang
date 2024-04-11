@@ -124,7 +124,8 @@ Performs simple optimizations such as transforming `b = a + 0` into `a = b`.
 Here's a list of optimization tricks the peephole optimizer currently knows:
 - Replacing `x + 0` and `x - 0` with `x`
 - Replacing `x * 1` with `x`
-- Replacing multiplications by powers of two with bitshifts: `x * 4` -> `x << 2`
+- Replacing multiplies by powers of two with bitshifts: `x * 4` -> `x << 2`
+- Replacing unsigned divides by powers of two with bitshifts: `x / 8` -> `x >> 3`
 - Replacing calls to `fsqrt` from libc with the IR instruction `sqrt` that gets lowered to a machine instruction during codegen
 
 If you want to know what other peephole optimizations are possible, look at the source code for the [LLVM InstCombine pass](https://llvm.org/doxygen/InstructionCombining_8cpp_source.html), which has over 5000 lines of code.
