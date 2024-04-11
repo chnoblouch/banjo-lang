@@ -1,6 +1,7 @@
 #include "stack_to_reg_pass.hpp"
 
 #include "ir/dead_code_elimination.hpp"
+#include "ir/virtual_register.hpp"
 #include "pass_utils.hpp"
 #include "passes/pass_utils.hpp"
 #include "passes/precomputing.hpp"
@@ -129,34 +130,33 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func
                     }
                 }
             } else {
-                for (ir::Operand &operand : instr.get_operands()) {
-                    if (!operand.is_register()) {
-                        continue;
-                    }
+                PassUtils::iter_regs(
+                    instr.get_operands(),
+                    [&instr, &stack_slots, &block_iter](ir::VirtualRegister reg) {
+                        auto iter = stack_slots.find(reg);
+                        if (iter == stack_slots.end()) {
+                            return;
+                        }
 
-                    auto iter = stack_slots.find(operand.get_register());
-                    if (iter == stack_slots.end()) {
-                        continue;
-                    }
+                        bool is_def = false;
 
-                    bool is_def = false;
+                        for (auto a : iter->second.def_blocks) {
+                            if (a == block_iter) {
+                                is_def = true;
+                                break;
+                            }
+                        }
 
-                    for (auto a : iter->second.def_blocks) {
-                        if (a == block_iter) {
-                            is_def = true;
-                            break;
+                        if (!is_def) {
+                            iter->second.use_blocks.insert(block_iter);
+                        }
+
+                        // Can't promote registers whose address is stored somewhere.
+                        if (instr.get_opcode() != ir::Opcode::LOAD) {
+                            iter->second.promotable = false;
                         }
                     }
-
-                    if (!is_def) {
-                        iter->second.use_blocks.insert(block_iter);
-                    }
-
-                    // Can't promote registers whose address is stored somewhere.
-                    if (instr.get_opcode() != ir::Opcode::LOAD) {
-                        iter->second.promotable = false;
-                    }
-                }
+                );
             }
         }
     }
