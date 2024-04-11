@@ -305,12 +305,12 @@ bool InliningPass::is_inlining_beneficial(ir::Function *caller, ir::Function *ca
         return callee->get_entry_block_iter()->get_size() <= 64;
     }
 
-    // unsigned num_instrs = 0;
-    // for (ir::BasicBlock &block : *callee) {
-    //     num_instrs += block.get_instrs().get_size();
-    // }
+    unsigned num_instrs = 0;
+    for (ir::BasicBlock &block : *callee) {
+        num_instrs += block.get_instrs().get_size();
+    }
 
-    return false;
+    return num_instrs <= 24;
 }
 
 bool InliningPass::is_inlining_legal(ir::Function *caller, ir::Function *callee) {
