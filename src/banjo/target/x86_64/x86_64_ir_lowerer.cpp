@@ -425,6 +425,16 @@ void X8664IRLowerer::lower_srem(ir::Instruction& instr) {
     }));
 }
 
+void X8664IRLowerer::lower_udiv(ir::Instruction &instr) {
+    // FIXME: yes, this is obviously wrong
+    lower_sdiv(instr);
+}
+
+void X8664IRLowerer::lower_urem(ir::Instruction &instr) {
+    // FIXME: yes, this is obviously wrong
+    lower_srem(instr);
+}
+
 void X8664IRLowerer::lower_fadd(ir::Instruction& instr) {
     ir::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ir::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
@@ -477,39 +487,11 @@ void X8664IRLowerer::lower_xor(ir::Instruction& instr) {
 }
 
 void X8664IRLowerer::lower_shl(ir::Instruction& instr) {
-    int size = get_size(instr.get_operand(0).get_type());
-
-    mcode::Register tmp_reg = lower_reg(get_func().next_virtual_reg());
-    mcode::Operand op0 = mcode::Operand::from_register(tmp_reg, size);
-    emit(mcode::Instruction(X8664Opcode::MOV, {op0, lower_value(instr.get_operand(0))}));
-
-    mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
-    mcode::Operand rcx4 = mcode::Operand::from_register(rcx, 8);
-    emit(mcode::Instruction(X8664Opcode::MOV, {rcx4, lower_value(instr.get_operand(1)).with_size(8)}));
-    
-    mcode::Operand rcx1 = mcode::Operand::from_register(rcx, 1);
-    emit(mcode::Instruction(X8664Opcode::SHL, {op0, rcx1}));
-
-    mcode::Operand dst = mcode::Operand::from_register(lower_reg(*instr.get_dest()), size);
-    emit(mcode::Instruction(X8664Opcode::MOV, {dst, op0}));
+    emit_shift(instr, X8664Opcode::SHL);
 }
 
 void X8664IRLowerer::lower_shr(ir::Instruction& instr) {
-    int size = get_size(instr.get_operand(0).get_type());
-
-    mcode::Register tmp_reg = lower_reg(get_func().next_virtual_reg());
-    mcode::Operand op0 = mcode::Operand::from_register(tmp_reg, size);
-    emit(mcode::Instruction(X8664Opcode::MOV, {op0, lower_value(instr.get_operand(0))}));
-
-    mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
-    mcode::Operand rcx4 = mcode::Operand::from_register(rcx, 4);
-    emit(mcode::Instruction(X8664Opcode::MOV, {rcx4, lower_value(instr.get_operand(1))}));
-    
-    mcode::Operand rcx1 = mcode::Operand::from_register(rcx, 1);
-    emit(mcode::Instruction(X8664Opcode::SHR, {op0, rcx1}));
-
-    mcode::Operand dst = mcode::Operand::from_register(lower_reg(*instr.get_dest()), size);
-    emit(mcode::Instruction(X8664Opcode::MOV, {dst, op0}));
+    emit_shift(instr, X8664Opcode::SHR);
 }
 
 void X8664IRLowerer::lower_jmp(ir::Instruction& instr) {
@@ -898,6 +880,30 @@ void X8664IRLowerer::move_branch_args(ir::BranchTarget &target) {
             }
         }
     }
+}
+
+void X8664IRLowerer::emit_shift(ir::Instruction &instr, mcode::Opcode opcode) {
+    int size = get_size(instr.get_operand(0).get_type());
+
+    mcode::Register tmp_reg = lower_reg(get_func().next_virtual_reg());
+    mcode::Operand op0 = mcode::Operand::from_register(tmp_reg, size);
+    emit(mcode::Instruction(X8664Opcode::MOV, {op0, lower_value(instr.get_operand(0))}));
+
+    mcode::Operand op1;
+
+    if (instr.get_operand(1).is_int_immediate()) {
+        op1 = mcode::Operand::from_immediate(instr.get_operand(1).get_int_immediate().to_string(), 1);
+    } else {
+        mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
+        mcode::Operand rcx8 = mcode::Operand::from_register(rcx, 8);
+        emit(mcode::Instruction(X8664Opcode::MOV, {rcx8, lower_value(instr.get_operand(1)).with_size(8)}));
+        op1 = mcode::Operand::from_register(rcx, 1);
+    }
+
+    emit(mcode::Instruction(opcode, {op0, op1}));
+
+    mcode::Operand dst = mcode::Operand::from_register(lower_reg(*instr.get_dest()), size);
+    emit(mcode::Instruction(X8664Opcode::MOV, {dst, op0}));
 }
 
 // clang-format on

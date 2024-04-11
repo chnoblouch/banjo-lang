@@ -326,9 +326,11 @@ StoredValue ExprIRBuilder::build_binary_operation(lang::ASTNode *node, StorageRe
         return build_overloaded_operator_call(node, reqs);
     }
 
-    lang::ASTNode *lhs = node->get_child(0);
-    lang::ASTNode *rhs = node->get_child(1);
+    lang::Expr *lhs = node->get_child(0)->as<lang::Expr>();
+    lang::Expr *rhs = node->get_child(1)->as<lang::Expr>();
     lang::ASTNodeType op = node->get_type();
+
+    bool is_signed = lhs->get_data_type()->is_signed_int();
 
     ir::Value lhs_val = build_into_value(lhs);
     ir::Value rhs_val = build_into_value(rhs);
@@ -354,8 +356,8 @@ StoredValue ExprIRBuilder::build_binary_operation(lang::ASTNode *node, StorageRe
                 opcode = ir::Opcode::MUL;
                 commutative = true;
                 break;
-            case lang::AST_OPERATOR_DIV: opcode = ir::Opcode::SDIV; break;
-            case lang::AST_OPERATOR_MOD: opcode = ir::Opcode::SREM; break;
+            case lang::AST_OPERATOR_DIV: opcode = is_signed ? ir::Opcode::SDIV : ir::Opcode::UDIV; break;
+            case lang::AST_OPERATOR_MOD: opcode = is_signed ? ir::Opcode::SREM : ir::Opcode::UREM; break;
             case lang::AST_OPERATOR_BIT_AND:
                 opcode = ir::Opcode::AND;
                 commutative = true;

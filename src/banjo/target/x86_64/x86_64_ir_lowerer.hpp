@@ -52,6 +52,8 @@ private:
     void lower_mul(ir::Instruction &instr) override;
     void lower_sdiv(ir::Instruction &instr) override;
     void lower_srem(ir::Instruction &instr) override;
+    void lower_udiv(ir::Instruction &instr) override;
+    void lower_urem(ir::Instruction &instr) override;
     void lower_fadd(ir::Instruction &instr) override;
     void lower_fsub(ir::Instruction &instr) override;
     void lower_fmul(ir::Instruction &instr) override;
@@ -89,6 +91,7 @@ private:
     unsigned get_condition_code(ir::Comparison comparison);
     mcode::Operand get_float_addr(double value, const ir::Type &type);
     void move_branch_args(ir::BranchTarget &target);
+    void emit_shift(ir::Instruction &instr, mcode::Opcode opcode);
 };
 
 } // namespace target

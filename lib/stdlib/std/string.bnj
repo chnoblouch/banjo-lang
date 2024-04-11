@@ -76,12 +76,15 @@ struct String {
 		var data = memory.alloc(capacity as u64) as *u8;
 		var length: u32 = 0;
 		
-		var negative = false;
+		var remainder: u64;
+		var negative: bool;
 		
-		var remainder = integer;
-		if remainder < 0 {
+		if integer >= 0 {
+			remainder = integer as u64;
+			negative = false;
+		} else {
+			remainder = -integer as u64;
 			negative = true;
-			remainder = -remainder;
 		}
 		
 		while true {
