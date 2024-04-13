@@ -3,6 +3,7 @@ from pathlib import Path
 import urllib.request
 from zipfile import ZipFile
 import os
+import sys
 
 
 ARCHITECTURES = {
@@ -25,12 +26,20 @@ def run():
     cur_os = OPERATING_SYSTEMS[platform.system().lower()]
     target = f"{cur_arch}-{cur_os}"
 
+    if cur_os == "windows":
+        sys.stdin = open("CON", "r")
+    else:
+        sys.stdin = open("/dev/tty", "r")
+
     print(f"\nPlatform: {target}")
 
     if cur_os != "windows":
         print("Shell: ", end="")
 
-        if os.environ.get("SHELL") == "/bin/zsh":
+        if os.environ.get("SHELL") == "/bin/bash":
+            shell = "bash"
+            print("Bash")
+        elif os.environ.get("SHELL") == "/bin/zsh":
             shell = "zsh"
             print("Zsh")
         else:
