@@ -1,6 +1,7 @@
 #ifndef CODEGEN_LATE_REG_ALLOC_H
 #define CODEGEN_LATE_REG_ALLOC_H
 
+#include "codegen/reg_alloc_func.hpp"
 #include "mcode/basic_block.hpp"
 #include "target/target_reg_analyzer.hpp"
 
@@ -12,21 +13,22 @@ class LateRegAlloc {
 
 public:
     struct Range {
+        mcode::BasicBlock &block;
         mcode::InstrIter start;
         mcode::InstrIter end;
     };
 
 private:
-    mcode::BasicBlock &basic_block;
     Range range;
+    RegClass reg_class;
     target::TargetRegAnalyzer &analyzer;
 
 public:
-    LateRegAlloc(mcode::BasicBlock &basic_block, Range range, target::TargetRegAnalyzer &analyzer);
-    std::optional<int> alloc();
+    LateRegAlloc(Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer);
+    std::optional<mcode::PhysicalReg> alloc();
 
 private:
-    bool check_alloc(int reg);
+    bool check_alloc(mcode::PhysicalReg reg);
 };
 
 } // namespace codegen

@@ -1,12 +1,12 @@
 #ifndef MCODE_STACK_REGIONS_H
 #define MCODE_STACK_REGIONS_H
 
+#include "mcode/stack_frame.hpp"
+
 #include <unordered_map>
 #include <vector>
 
 namespace mcode {
-
-typedef int StackSlotIndex;
 
 struct ImplicitStackRegion {
     int size;
@@ -15,7 +15,7 @@ struct ImplicitStackRegion {
 
 struct ArgStoreStackRegion {
     int size;
-    std::unordered_map<StackSlotIndex, int> offsets;
+    std::unordered_map<StackSlotID, int> offsets;
 };
 
 struct GenericStackRegion {

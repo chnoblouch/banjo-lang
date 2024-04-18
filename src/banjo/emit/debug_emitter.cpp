@@ -7,9 +7,7 @@
 #include "target/x86_64/x86_64_register.hpp"
 #include "utils/timing.hpp"
 
-#include <algorithm>
 #include <cassert>
-#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -23,12 +21,12 @@ void DebugEmitter::generate() {
     PROFILE_SCOPE("debug code emitter");
 
     for (const std::string &external_symbol : module.get_external_symbols()) {
-        stream << "import " << external_symbol << "\n";
+        stream << "extern " << external_symbol << "\n";
     }
     stream << "\n";
 
     for (const std::string &global_symbol : module.get_global_symbols()) {
-        stream << "export " << global_symbol << "\n";
+        stream << "global " << global_symbol << "\n";
     }
     stream << "\n";
 
@@ -38,7 +36,7 @@ void DebugEmitter::generate() {
     stream << "\n";
 
     for (mcode::Global &global : module.get_globals()) {
-        stream << "global " << global.get_name() << " = ";
+        stream << "data " << global.get_name() << " = ";
 
         if (global.get_value().is_immediate()) {
             stream << get_size_specifier(global.get_value().get_size()) << " " << global.get_value().get_immediate();
@@ -61,31 +59,33 @@ void DebugEmitter::generate(mcode::Function *func) {
     stream << "func " << func->get_name() << ":\n";
 
     mcode::StackFrame &frame = func->get_stack_frame();
-    for (unsigned i = 0; i < frame.get_stack_slots().size(); i++) {
-        mcode::StackSlot &slot = frame.get_stack_slot(i);
+    if (!frame.get_stack_slots().empty()) {
+        for (unsigned i = 0; i < frame.get_stack_slots().size(); i++) {
+            mcode::StackSlot &slot = frame.get_stack_slot(i);
 
-        stream << "    s" << i << ": ";
+            stream << "    s" << i << ": ";
 
-        if (!slot.is_defined()) {
-            stream << "?";
-        } else {
-            if (slot.get_offset() >= 0) {
-                stream << "+";
+            if (!slot.is_defined()) {
+                stream << "?";
+            } else {
+                if (slot.get_offset() >= 0) {
+                    stream << "+";
+                }
+                stream << slot.get_offset();
             }
-            stream << slot.get_offset();
-        }
-        stream << ", ";
+            stream << ", ";
 
-        stream << slot.get_size() << ", ";
+            stream << slot.get_size() << ", ";
 
-        switch (slot.get_type()) {
-            case mcode::StackSlot::Type::GENERIC: stream << "generic"; break;
-            case mcode::StackSlot::Type::ARG_STORE: stream << "arg_store"; break;
-            case mcode::StackSlot::Type::CALL_ARG: stream << "call_arg"; break;
+            switch (slot.get_type()) {
+                case mcode::StackSlot::Type::GENERIC: stream << "generic"; break;
+                case mcode::StackSlot::Type::ARG_STORE: stream << "arg_store"; break;
+                case mcode::StackSlot::Type::CALL_ARG: stream << "call_arg"; break;
+            }
+            stream << "\n";
         }
         stream << "\n";
     }
-    stream << "\n";
 
     for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
         gen_basic_block(basic_block);
@@ -144,7 +144,7 @@ void DebugEmitter::gen_basic_block(mcode::BasicBlock &basic_block) {
 }
 
 std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode::Instruction &instr) {
-    std::string string = "    ";
+    std::string string = "  ";
 
     string += get_opcode_name(instr.get_opcode());
 

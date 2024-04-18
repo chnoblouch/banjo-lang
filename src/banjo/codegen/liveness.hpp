@@ -2,6 +2,7 @@
 #define CODEGEN_LIVENESS_H
 
 #include "codegen/reg_alloc_func.hpp"
+#include "mcode/register.hpp"
 
 #include <ostream>
 #include <unordered_map>
@@ -17,28 +18,8 @@ struct BlockLiveness {
     std::unordered_set<mcode::Register> outs;
 };
 
-enum class InstrPhase { READ, WRITE };
-
-struct LiveRange {
-    unsigned block;
-    unsigned start;
-    unsigned end;
-
-    RegAllocRange to_ra_range(mcode::PhysicalReg reg) {
-        RegAllocPoint start_point{.instr = start, .stage = 1};
-        RegAllocPoint end_point{.instr = end, .stage = 0};
-        return {reg, start_point, end_point};
-    }
-};
-
-struct LiveRangeGroup {
-    mcode::Register reg = mcode::Register::from_virtual(-1);
-    std::vector<LiveRange> ranges;
-    std::vector<mcode::PhysicalReg> hints;
-};
-
 struct KillPoint {
-    long reg;
+    mcode::PhysicalReg reg;
     unsigned block;
     unsigned instr;
 };
@@ -48,7 +29,7 @@ class LivenessAnalysis {
 public:
     RegAllocFunc &func;
     std::vector<BlockLiveness> block_liveness;
-    std::unordered_map<mcode::Register, LiveRangeGroup> range_groups;
+    std::unordered_map<mcode::Register, std::vector<LiveRange>> reg_ranges;
     std::vector<KillPoint> kill_points;
 
 private:

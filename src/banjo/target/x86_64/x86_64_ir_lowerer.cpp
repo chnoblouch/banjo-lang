@@ -599,8 +599,10 @@ void X8664IRLowerer::lower_sextend(ir::Instruction& instr) {
 }
 
 void X8664IRLowerer::lower_truncate(ir::Instruction& instr) {
+    assert(get_size(instr.get_operand(1).get_type()) != 8);
+
     emit(mcode::Instruction(X8664Opcode::MOV, {
-        mcode::Operand::from_register(lower_reg(*instr.get_dest()), 8),
+        mcode::Operand::from_register(lower_reg(*instr.get_dest()), 4),
         lower_value(instr.get_operand(0))
     }));
 }

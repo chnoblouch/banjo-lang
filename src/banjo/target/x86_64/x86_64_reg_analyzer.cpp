@@ -1,37 +1,76 @@
 #include "x86_64_reg_analyzer.hpp"
 
+#include "ir/virtual_register.hpp"
+#include "mcode/instruction.hpp"
+#include "mcode/operand.hpp"
 #include "target/x86_64/x86_64_opcode.hpp"
+#include "utils/macros.hpp"
 
 namespace target {
 
 X8664RegAnalyzer::X8664RegAnalyzer() {
-    using namespace X8664Register;
-    general_purpose_regs = {RAX, RCX, RDX, R8, R9, R10, R11, RBX, RSI, RDI, R12, R13, /*R14, R15*/};
-    float_regs =
-        {XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, /*XMM14, XMM15*/};
+    general_purpose_regs = {
+        X8664Register::RAX,
+        X8664Register::RCX,
+        X8664Register::RDX,
+        X8664Register::R8,
+        X8664Register::R9,
+        X8664Register::R10,
+        X8664Register::R11,
+        X8664Register::RBX,
+        X8664Register::RSI,
+        X8664Register::RDI,
+        X8664Register::R12,
+        X8664Register::R13,
+        X8664Register::R14,
+        X8664Register::R15,
+    };
+
+    sse_regs = {
+        X8664Register::XMM0,
+        X8664Register::XMM1,
+        X8664Register::XMM2,
+        X8664Register::XMM3,
+        X8664Register::XMM4,
+        X8664Register::XMM5,
+        X8664Register::XMM6,
+        X8664Register::XMM7,
+        X8664Register::XMM8,
+        X8664Register::XMM9,
+        X8664Register::XMM10,
+        X8664Register::XMM11,
+        X8664Register::XMM12,
+        X8664Register::XMM13,
+        X8664Register::XMM14,
+        X8664Register::XMM15,
+    };
 }
 
-std::vector<int> X8664RegAnalyzer::get_all_registers() {
-    std::vector<int> regs;
-    for (int i = 0; i < NUM_REGS; i++) {
+std::vector<mcode::PhysicalReg> X8664RegAnalyzer::get_all_registers() {
+    std::vector<mcode::PhysicalReg> regs;
+    for (mcode::PhysicalReg i = 0; i < NUM_REGS; i++) {
         regs.push_back(i);
     }
     return regs;
 }
 
-const std::vector<int> &X8664RegAnalyzer::get_candidates(mcode::Instruction &instr) {
-    return is_float_operand(instr.get_opcode(), mcode::RegUsage::DEF) ? float_regs : general_purpose_regs;
+const std::vector<mcode::PhysicalReg> &X8664RegAnalyzer::get_candidates(codegen::RegClass reg_class) {
+    switch (reg_class) {
+        case X8664RegClass::GENERAL_PURPOSE: return general_purpose_regs;
+        case X8664RegClass::SSE: return sse_regs;
+        default: ASSERT_UNREACHABLE;
+    }
 }
 
 std::vector<mcode::PhysicalReg> X8664RegAnalyzer::suggest_regs(
     codegen::RegAllocFunc &func,
-    const codegen::LiveRangeGroup &group
+    const codegen::Bundle &bundle
 ) {
-    codegen::LiveRange first_range = group.ranges[0];
-    codegen::LiveRange last_range = group.ranges[0];
+    codegen::LiveRange first_range = bundle.segments[0].range;
+    codegen::LiveRange last_range = bundle.segments[0].range;
 
-    mcode::Instruction &first_def = *func.blocks[first_range.block].instrs[first_range.start].iter;
-    mcode::Instruction &last_use = *func.blocks[last_range.block].instrs[last_range.end].iter;
+    mcode::Instruction &first_def = *func.blocks[first_range.block].instrs[first_range.start.instr].iter;
+    mcode::Instruction &last_use = *func.blocks[last_range.block].instrs[last_range.end.instr].iter;
 
     std::vector<mcode::PhysicalReg> suggested_regs;
 
@@ -46,7 +85,11 @@ std::vector<mcode::PhysicalReg> X8664RegAnalyzer::suggest_regs(
     return suggested_regs;
 }
 
-bool X8664RegAnalyzer::is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, int reg) {
+bool X8664RegAnalyzer::is_reg_overridden(
+    mcode::Instruction &instr,
+    mcode::BasicBlock &basic_block,
+    mcode::PhysicalReg reg
+) {
     if (instr.get_opcode() == X8664Opcode::CALL) {
         // TODO: dest calling conv instead of origin calling conv
         return basic_block.get_func()->get_calling_conv()->is_volatile(reg);
@@ -186,31 +229,74 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
     return operands;
 }
 
-mcode::PhysicalReg X8664RegAnalyzer::insert_spill_reload(SpilledRegUse use) {
-    int dst_size = use.instr_iter->get_operand(0).get_size();
-    int src_size = use.instr_iter->get_operand(1).get_size();
-    bool is_float = is_float_operand(use.instr_iter->get_opcode(), use.usage);
-    int move_opcode = is_float ? (src_size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD) : target::X8664Opcode::MOV;
+void X8664RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) {
+    using namespace X8664Opcode;
 
-    mcode::PhysicalReg tmp_reg;
-    if (is_float) tmp_reg = target::X8664Register::XMM15 - use.spill_tmp_regs;
-    else tmp_reg = target::X8664Register::R15 - use.spill_tmp_regs;
-
-    mcode::Register stack_slot_reg = mcode::Register::from_stack_slot(use.stack_slot);
-    mcode::Operand src = mcode::Operand::from_register(stack_slot_reg, src_size);
-    mcode::Operand tmp_val = mcode::Operand::from_register(mcode::Register::from_physical(tmp_reg), src_size);
-    mcode::Operand dst = mcode::Operand::from_register(stack_slot_reg, dst_size);
-
-    if (use.usage == mcode::RegUsage::USE) {
-        use.block.insert_before(use.instr_iter, mcode::Instruction(move_opcode, {tmp_val, src}));
-    } else if (use.usage == mcode::RegUsage::DEF) {
-        use.block.insert_after(use.instr_iter, mcode::Instruction(move_opcode, {dst, tmp_val}));
-    } else if (use.usage == mcode::RegUsage::USE_DEF) {
-        use.block.insert_before(use.instr_iter, mcode::Instruction(move_opcode, {tmp_val, src}));
-        use.block.insert_after(use.instr_iter, mcode::Instruction(move_opcode, {dst, tmp_val}));
+    if (instr.get_operands().get_size() == 0 || !instr.get_operand(0).is_virtual_reg()) {
+        return;
     }
 
-    return tmp_reg;
+    mcode::Opcode opcode = instr.get_opcode();
+    ir::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
+
+    if ((opcode >= MOVSS && opcode <= MOVUPS) || (opcode >= ADDSS && opcode <= UCOMISD) || opcode == CVTSS2SD ||
+        opcode == CVTSD2SS || opcode == CVTSI2SS || opcode == CVTSI2SD) {
+        reg_classes.insert({reg, X8664RegClass::SSE});
+    } else {
+        reg_classes.insert({reg, X8664RegClass::GENERAL_PURPOSE});
+    }
+}
+
+bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ir::VirtualRegister src_reg) {
+    using namespace X8664Opcode;
+
+    mcode::Opcode opcode = instr.get_opcode();
+    if (opcode != MOV && opcode != MOVSS && opcode != MOVSD && opcode != MOVAPS && opcode != MOVUPS) {
+        return false;
+    }
+
+    const mcode::Operand &src = instr.get_operand(1);
+    return src.is_virtual_reg() && src.get_virtual_reg() == src_reg;
+}
+
+void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
+    unsigned size = use.instr_iter->get_operand(1).get_size();
+    mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_stack_slot(use.stack_slot), size);
+    mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
+
+    if (is_memory_operand_allowed(*use.instr_iter)) {
+        use.instr_iter->get_operand(1) = src;
+        return;
+    }
+
+    mcode::Opcode move_opcode;
+    if (is_float_operand(use.instr_iter->get_opcode(), mcode::RegUsage::DEF)) {
+        move_opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+    } else {
+        move_opcode = target::X8664Opcode::MOV;
+    }
+
+    use.block.insert_before(use.instr_iter, mcode::Instruction(move_opcode, {dst, src}));
+}
+
+void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
+    unsigned size = use.instr_iter->get_operand(0).get_size();
+    mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
+    mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_stack_slot(use.stack_slot), size);
+
+    if (is_memory_operand_allowed(*use.instr_iter)) {
+        use.instr_iter->get_operand(0) = dst;
+        return;
+    }
+
+    mcode::Opcode move_opcode;
+    if (is_float_operand(use.instr_iter->get_opcode(), mcode::RegUsage::USE)) {
+        move_opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+    } else {
+        move_opcode = target::X8664Opcode::MOV;
+    }
+
+    use.block.insert_after(use.instr_iter, mcode::Instruction(move_opcode, {dst, src}));
 }
 
 bool X8664RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
@@ -243,6 +329,22 @@ bool X8664RegAnalyzer::is_float_operand(mcode::Opcode opcode, mcode::RegUsage us
     }
 
     return false;
+}
+
+bool X8664RegAnalyzer::is_memory_operand_allowed(mcode::Instruction &instr) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+
+    if (!((dst.is_virtual_reg() || dst.is_physical_reg()) && (src.is_virtual_reg() || src.is_physical_reg()))) {
+        return false;
+    }
+
+    switch (instr.get_opcode()) {
+        case X8664Opcode::MOV:
+        case X8664Opcode::MOVSS:
+        case X8664Opcode::ADD: return true;
+        default: return false;
+    }
 }
 
 void X8664RegAnalyzer::add_du_ops(mcode::Instruction &instr, std::vector<mcode::RegOp> &dst) {

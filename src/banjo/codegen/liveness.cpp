@@ -1,7 +1,8 @@
 #include "liveness.hpp"
 
+#include "codegen/reg_alloc_func.hpp"
 #include "emit/debug_emitter.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
+#include "mcode/register.hpp"
 
 #include <iostream>
 
@@ -63,9 +64,7 @@ void LivenessAnalysis::compute_ins_and_outs(RegAllocFunc &func, LivenessAnalysis
 
             // Insert the uses into the ins.
             for (mcode::Register use : liveness.uses) {
-                if (use.is_virtual_reg()) {
-                    liveness.ins.insert(use);
-                }
+                liveness.ins.insert(use);
             }
 
             // Insert the outs that are not redefined into the ins.
@@ -110,41 +109,46 @@ void LivenessAnalysis::compute_precise_live_ranges(RegAllocFunc &func, LivenessA
 
         std::unordered_set<mcode::Register> live_regs;
 
-        for (mcode::Register out : analysis.block_liveness[block_index].outs) {
-            analysis.range_groups[out].ranges.push_back({block_index, 0, (unsigned)block.instrs.size() - 1});
+        const BlockLiveness &block_liveness = analysis.block_liveness[block_index];
+
+        for (mcode::Register out : block_liveness.outs) {
+            RegAllocPoint start{0, 0};
+            RegAllocPoint end{static_cast<unsigned>(block.instrs.size() - 1), 1};
+            analysis.reg_ranges[out].push_back({block_index, start, end});
             live_regs.insert(out);
         }
 
-        for (int instr_index = block.instrs.size() - 1; instr_index >= 0; instr_index--) {
-            RegAllocInstr &instr = block.instrs[instr_index];
+        for (int i = block.instrs.size() - 1; i >= 0; i--) {
+            RegAllocInstr &instr = block.instrs[i];
+            unsigned instr_index = static_cast<unsigned>(i);
 
             for (mcode::RegOp reg : instr.regs) {
                 if (reg.usage == mcode::RegUsage::USE) {
                     if (!live_regs.contains(reg.reg)) {
-                        std::vector<LiveRange> &ranges = analysis.range_groups[reg.reg].ranges;
-                        ranges.push_back({block_index, (unsigned)instr_index, (unsigned)instr_index});
+                        std::vector<LiveRange> &ranges = analysis.reg_ranges[reg.reg];
+                        ranges.push_back({block_index, {instr_index, 0}, {instr_index, 0}});
                         live_regs.insert(reg.reg);
                     }
                 } else if (reg.usage == mcode::RegUsage::DEF) {
                     if (live_regs.contains(reg.reg)) {
-                        std::vector<LiveRange> &ranges = analysis.range_groups[reg.reg].ranges;
-                        ranges.back().start = instr_index;
+                        std::vector<LiveRange> &ranges = analysis.reg_ranges[reg.reg];
+                        ranges.back().start = {instr_index, 1};
                         live_regs.erase(reg.reg);
                     } else {
                         // Insert a range with the length of one instruction if there is no use for this def.
-                        std::vector<LiveRange> &ranges = analysis.range_groups[reg.reg].ranges;
-                        ranges.push_back({block_index, (unsigned)instr_index, (unsigned)instr_index});
+                        std::vector<LiveRange> &ranges = analysis.reg_ranges[reg.reg];
+                        ranges.push_back({block_index, {instr_index, 1}, {instr_index, 1}});
                     }
                 } else if (reg.usage == mcode::RegUsage::USE_DEF) {
                     // Insert a range with the length of one instruction if there is no use for this use-def.
                     if (!live_regs.contains(reg.reg)) {
-                        std::vector<LiveRange> &ranges = analysis.range_groups[reg.reg].ranges;
-                        ranges.push_back({block_index, (unsigned)instr_index, (unsigned)instr_index});
+                        std::vector<LiveRange> &ranges = analysis.reg_ranges[reg.reg];
+                        ranges.push_back({block_index, {instr_index, 0}, {instr_index, 1}});
                         live_regs.insert(reg.reg);
                     }
                 } else if (reg.usage == mcode::RegUsage::KILL) {
                     analysis.kill_points.push_back({
-                        .reg = reg.reg.get_physical_reg(),
+                        .reg = static_cast<mcode::PhysicalReg>(reg.reg.get_physical_reg()),
                         .block = block_index,
                         .instr = (unsigned)instr_index,
                     });
@@ -154,34 +158,29 @@ void LivenessAnalysis::compute_precise_live_ranges(RegAllocFunc &func, LivenessA
             }
         }
 
-        for (mcode::Register in : analysis.block_liveness[block_index].ins) {
-            analysis.range_groups[in].ranges.back().start = 0;
+        for (mcode::Register in : block_liveness.ins) {
+            analysis.reg_ranges[in].back().start = {0, 0};
         }
-    }
-
-    for (auto &group : analysis.range_groups) {
-        group.second.reg = group.first;
     }
 }
 
 void LivenessAnalysis::dump(std::ostream &stream) {
     stream << "useless:";
 
-    for (const auto &group : range_groups) {
-        if (!group.first.is_virtual_reg()) continue;
+    for (const auto &[reg, ranges] : reg_ranges) {
+        if (!reg.is_virtual_reg()) continue;
 
         bool used = false;
 
-        for (const LiveRange &range : group.second.ranges) {
-            for (mcode::RegOp op : func.blocks[range.block].instrs[range.end].regs) {
-                if (op.reg == group.first &&
-                    (op.usage == mcode::RegUsage::USE || op.usage == mcode::RegUsage::USE_DEF)) {
+        for (const LiveRange &range : ranges) {
+            for (mcode::RegOp op : func.blocks[range.block].instrs[range.end.instr].regs) {
+                if (op.reg == reg && (op.usage == mcode::RegUsage::USE || op.usage == mcode::RegUsage::USE_DEF)) {
                     used = true;
                 }
             }
         }
 
-        if (!used) stream << " %" << group.first.get_virtual_reg();
+        if (!used) stream << " %" << reg.get_virtual_reg();
     }
 
     stream << std::endl;
@@ -192,13 +191,13 @@ void LivenessAnalysis::dump(std::ostream &stream) {
 
     std::vector<unsigned> line_widths;
 
-    for (const auto &group : range_groups) {
+    for (const auto &[reg, ranges] : reg_ranges) {
         std::string vreg_header;
 
-        if (group.first.is_virtual_reg()) {
-            vreg_header = '%' + std::to_string(group.first.get_virtual_reg());
+        if (reg.is_virtual_reg()) {
+            vreg_header = '%' + std::to_string(reg.get_virtual_reg());
         } else {
-            vreg_header = DebugEmitter::get_physical_reg_name(group.first.get_physical_reg(), 8);
+            vreg_header = DebugEmitter::get_physical_reg_name(reg.get_physical_reg(), 8);
         }
 
         header += vreg_header + ' ';
@@ -213,25 +212,29 @@ void LivenessAnalysis::dump(std::ostream &stream) {
         const std::string &name = block.m_block->get_label();
         stream << (name.empty() ? "<entry>" : name) << std::endl;
 
-        std::vector<std::vector<char>> lines(block.instrs.size(), std::vector<char>(range_groups.size(), '.'));
+        std::vector<std::vector<char>> lines(block.instrs.size(), std::vector<char>(reg_ranges.size(), '.'));
         unsigned vreg_index = 0;
 
         if (lines.empty()) {
             continue;
         }
 
-        for (const auto &group : range_groups) {
-            for (LiveRange live_range : group.second.ranges) {
+        for (const auto &[reg, ranges] : reg_ranges) {
+            for (LiveRange live_range : ranges) {
                 if (live_range.block != i) {
                     continue;
                 }
 
-                for (unsigned j = live_range.start; j <= live_range.end; j++) {
+                for (unsigned j = live_range.start.instr; j <= live_range.end.instr; j++) {
                     char c;
-                    if (live_range.start == live_range.end) {
+                    if (live_range.start.instr == live_range.end.instr) {
                         c = '#';
+                    } else if (j == live_range.start.instr) {
+                        c = "ud"[live_range.start.stage];
+                    } else if (j == live_range.end.instr) {
+                        c = "ud"[live_range.end.stage];
                     } else {
-                        c = (j == live_range.start || j == live_range.end) ? 'o' : '|';
+                        c = '|';
                     }
 
                     lines[j][vreg_index] = c;

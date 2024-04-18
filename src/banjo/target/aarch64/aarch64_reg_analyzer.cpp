@@ -1,6 +1,7 @@
 #include "aarch64_reg_analyzer.hpp"
 
 #include "target/aarch64/aarch64_opcode.hpp"
+#include "utils/macros.hpp"
 
 namespace target {
 
@@ -12,25 +13,29 @@ AArch64RegAnalyzer::AArch64RegAnalyzer() {
     }
 
     for (int i = V0; i <= V_LAST; i++) {
-        float_regs.push_back(i);
+        fp_and_vector_regs.push_back(i);
     }
 }
 
-std::vector<int> AArch64RegAnalyzer::get_all_registers() {
-    std::vector<int> regs;
-    for (int i = 0; i < NUM_REGS; i++) {
+std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::get_all_registers() {
+    std::vector<mcode::PhysicalReg> regs;
+    for (mcode::PhysicalReg i = 0; i < NUM_REGS; i++) {
         regs.push_back(i);
     }
     return regs;
 }
 
-const std::vector<int> &AArch64RegAnalyzer::get_candidates(mcode::Instruction &instr) {
-    return is_float_instr(instr) ? float_regs : general_purpose_regs;
+const std::vector<mcode::PhysicalReg> &AArch64RegAnalyzer::get_candidates(codegen::RegClass reg_class) {
+    switch (reg_class) {
+        case AArch64RegClass::GENERAL_PURPOSE: return general_purpose_regs;
+        case AArch64RegClass::FP_AND_VECTOR: return fp_and_vector_regs;
+        default: ASSERT_UNREACHABLE;
+    }
 }
 
 std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::suggest_regs(
     codegen::RegAllocFunc &func,
-    const codegen::LiveRangeGroup &group
+    const codegen::Bundle &bundle
 ) {
     // codegen::LiveRange first_range = group.ranges[0];
     // codegen::LiveRange last_range = group.ranges[0];
@@ -51,7 +56,11 @@ std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::suggest_regs(
     return suggested_regs;
 }
 
-bool AArch64RegAnalyzer::is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, int reg) {
+bool AArch64RegAnalyzer::is_reg_overridden(
+    mcode::Instruction &instr,
+    mcode::BasicBlock &basic_block,
+    mcode::PhysicalReg reg
+) {
     if (instr.get_opcode() == AArch64Opcode::BL || instr.get_opcode() == AArch64Opcode::BLR) {
         // TODO: dest calling conv instead of origin calling conv
         return basic_block.get_func()->get_calling_conv()->is_volatile(reg);
@@ -169,8 +178,18 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
     return operands;
 }
 
-mcode::PhysicalReg AArch64RegAnalyzer::insert_spill_reload(SpilledRegUse use) {
-    return mcode::PhysicalReg(0);
+void AArch64RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) {
+    if (instr.get_operands().get_size() == 0 || !instr.get_operand(0).is_virtual_reg()) {
+        return;
+    }
+
+    ir::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
+
+    if (is_float_instr(instr)) {
+        reg_classes.insert({reg, AArch64RegClass::FP_AND_VECTOR});
+    } else {
+        reg_classes.insert({reg, AArch64RegClass::GENERAL_PURPOSE});
+    }
 }
 
 bool AArch64RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {

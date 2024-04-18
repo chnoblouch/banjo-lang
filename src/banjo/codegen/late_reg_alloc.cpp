@@ -4,30 +4,28 @@
 
 namespace codegen {
 
-LateRegAlloc::LateRegAlloc(mcode::BasicBlock &basic_block, Range range, target::TargetRegAnalyzer &analyzer)
-  : basic_block(basic_block),
-    range(range),
+LateRegAlloc::LateRegAlloc(Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer)
+  : range(range),
+    reg_class(reg_class),
     analyzer(analyzer) {}
 
-std::optional<int> LateRegAlloc::alloc() {
-    mcode::Instruction &producer = *range.start;
-
-    for (int candidate : analyzer.get_candidates(producer)) {
+std::optional<mcode::PhysicalReg> LateRegAlloc::alloc() {
+    for (mcode::PhysicalReg candidate : analyzer.get_candidates(reg_class)) {
         if (check_alloc(candidate)) {
             return candidate;
         }
     }
 
     std::cerr << "register allocator is out of registers" << std::endl;
-    std::cerr << "in function " << basic_block.get_func()->get_name() << std::endl;
+    std::cerr << "in function " << range.block.get_func()->get_name() << std::endl;
     std::exit(1);
 
     return -1;
 }
 
-bool LateRegAlloc::check_alloc(int reg) {
+bool LateRegAlloc::check_alloc(mcode::PhysicalReg reg) {
     for (mcode::InstrIter iter = range.start; iter != range.end.get_next(); ++iter) {
-        if (analyzer.is_reg_overridden(*iter, basic_block, reg)) {
+        if (analyzer.is_reg_overridden(*iter, range.block, reg)) {
             return false;
         }
 

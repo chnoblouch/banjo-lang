@@ -1,29 +1,37 @@
 #ifndef AARCH64_REG_ANALYZER_H
 #define AARCH64_REG_ANALYZER_H
 
+#include "mcode/instruction.hpp"
 #include "target/aarch64/aarch64_register.hpp"
 #include "target/target_reg_analyzer.hpp"
 
 namespace target {
 
+namespace AArch64RegClass {
+enum AArch64RegClass {
+    GENERAL_PURPOSE,
+    FP_AND_VECTOR,
+};
+} // namespace AArch64RegClass
+
 class AArch64RegAnalyzer : public TargetRegAnalyzer {
 
-private:
-    static constexpr int NUM_REGS = AArch64Register::V_LAST + 1;
+    static constexpr unsigned NUM_REGS = AArch64Register::V_LAST + 1;
 
-    std::vector<int> general_purpose_regs;
-    std::vector<int> float_regs;
+    std::vector<mcode::PhysicalReg> general_purpose_regs;
+    std::vector<mcode::PhysicalReg> fp_and_vector_regs;
 
 public:
     AArch64RegAnalyzer();
 
-    std::vector<int> get_all_registers() override;
-    const std::vector<int> &get_candidates(mcode::Instruction &instr) override;
-    std::vector<mcode::PhysicalReg> suggest_regs(codegen::RegAllocFunc &func, const codegen::LiveRangeGroup &group)
-        override;
-    bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, int reg) override;
+    std::vector<mcode::PhysicalReg> get_all_registers() override;
+    const std::vector<mcode::PhysicalReg> &get_candidates(codegen::RegClass reg_class) override;
+    std::vector<mcode::PhysicalReg> suggest_regs(codegen::RegAllocFunc &func, const codegen::Bundle &bundle) override;
+    bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, mcode::PhysicalReg reg) override;
     std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) override;
-    mcode::PhysicalReg insert_spill_reload(SpilledRegUse use) override;
+    void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) override;
+    void insert_load(SpilledRegUse use) override {}
+    void insert_store(SpilledRegUse use) override {}
     bool is_instr_removable(mcode::Instruction &instr) override;
 
 private:

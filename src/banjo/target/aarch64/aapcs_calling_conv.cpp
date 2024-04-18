@@ -1,5 +1,6 @@
 #include "aapcs_calling_conv.hpp"
 
+#include "aarch64_reg_analyzer.hpp"
 #include "codegen/ir_lowerer.hpp"
 #include "codegen/late_reg_alloc.hpp"
 #include "codegen/machine_pass_utils.hpp"
@@ -7,6 +8,7 @@
 #include "mcode/register.hpp"
 #include "target/aarch64/aarch64_encoding_info.hpp"
 #include "target/aarch64/aarch64_opcode.hpp"
+#include "target/aarch64/aarch64_reg_analyzer.hpp"
 #include "target/aarch64/aarch64_register.hpp"
 #include "utils/bit_operations.hpp"
 #include "utils/macros.hpp"
@@ -21,8 +23,10 @@ std::vector<int> const AAPCSCallingConv::GENERAL_ARG_REGS = {R0, R1, R2, R3, R4,
 std::vector<int> const AAPCSCallingConv::FLOAT_ARG_REGS = {V0, V1, V2, V3, V4, V5, V6, V7};
 
 AAPCSCallingConv::AAPCSCallingConv() {
-    volatile_regs = {R0,  R1,  R2,  R3,  R4,  R5, R6, R7, R8, R9, R10, R11, R12, R13,
-                     R14, R15, R16, R17, R18, V0, V1, V2, V3, V4, V5,  V6,  V7,  SP};
+    volatile_regs = {
+        R0,  R1,  R2,  R3,  R4,  R5, R6, R7, R8, R9, R10, R11, R12, R13,
+        R14, R15, R16, R17, R18, V0, V1, V2, V3, V4, V5,  V6,  V7,  SP,
+    };
 }
 
 void AAPCSCallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr) {
@@ -363,8 +367,9 @@ mcode::InstrIter AAPCSCallingConv::fix_up_instr(
         )
     );
 
-    codegen::LateRegAlloc alloc(basic_block, {iter, iter.get_next()}, analyzer);
-    int new_reg = AArch64Register::R20;
+    codegen::LateRegAlloc::Range range{.block = basic_block, .start = iter, .end = iter.get_next()};
+    codegen::LateRegAlloc alloc(range, AArch64RegClass::GENERAL_PURPOSE, analyzer);
+    mcode::PhysicalReg new_reg = AArch64Register::R20;
 
     iter->get_operand(0).set_to_register(mcode::Register::from_physical(new_reg));
     iter.get_next()->get_operand(1).set_to_aarch64_addr(target::AArch64Address::new_base_offset(

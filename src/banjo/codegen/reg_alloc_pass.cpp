@@ -1,13 +1,17 @@
 #include "reg_alloc_pass.hpp"
 
-#include "emit/nasm_emitter.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "target/x86_64/x86_64_register.hpp"
-
+#include "codegen/liveness.hpp"
+#include "codegen/reg_alloc_func.hpp"
 #include "emit/debug_emitter.hpp"
+#include "mcode/instruction.hpp"
+#include "mcode/register.hpp"
+#include "mcode/stack_frame.hpp"
+#include "mcode/stack_slot.hpp"
 #include "utils/timing.hpp"
 
 #include <iostream>
+#include <queue>
+#include <vector>
 
 namespace codegen {
 
@@ -16,11 +20,13 @@ RegAllocPass::RegAllocPass(target::TargetRegAnalyzer &analyzer) : analyzer(analy
 void RegAllocPass::run(mcode::Module &module_) {
     PROFILE_SCOPE("register allocation");
 
-    // Some ideas on how to improve register allocation
-    // - Give the register analyzer information about the current assigned registers
-    //   so it can improve its suggestions.
-    // - If two live ranges intersect, they may still be assigned the same physical register
-    //   if the register is only read from during the intersection of the two ranges.
+    // Things to be done:
+    // - Bundle splitting
+    // - Evicting bundles with a lower weight for bundles that were not produced by spilling
+    // - If two live ranges intersect, the same physical register should be assigned
+    //   if the register is only read from during the intersection of the two ranges
+    // - Improving weight calculation (e.g. assign a higher score for bundles in loops)
+    // - Smarter load/store placement for spilled bundles
 
     for (mcode::Function *func : module_.get_functions()) {
         run(*func);
@@ -31,68 +37,27 @@ void RegAllocPass::run(mcode::Function &func) {
     RegAllocFunc ra_func = create_reg_alloc_func(func);
     LivenessAnalysis liveness = LivenessAnalysis::compute(ra_func);
 
-#if DEBUG_REG_ALLOC
-    stream << "--- LIVENESS FOR " << func.get_name() << " ---" << std::endl;
-    liveness.dump(stream);
-    stream << std::endl;
-#endif
+    Context ctx{.func = ra_func, .liveness = liveness};
 
-    Context ctx{
-        .func = ra_func,
-        .liveness = liveness,
-    };
+    assign_reg_classes(ctx);
+    reserve_fixed_ranges(ctx);
 
-    for (auto &iter : liveness.range_groups) {
-        if (iter.first.is_physical_reg()) {
-            reserve_range(ctx, iter.second, iter.first.get_physical_reg());
-        }
+    std::vector<Bundle> bundles = create_bundles(ctx);
+    bundles = coalesce_bundles(ctx, bundles);
+
+    BundleComparator comparator;
+    ctx.bundles = {comparator, bundles};
+
+    while (!ctx.bundles.empty()) {
+        Bundle bundle = ctx.bundles.top();
+        ctx.bundles.pop();
+        alloc_bundle(ctx, bundle);
     }
 
-    for (KillPoint &kill_point : liveness.kill_points) {
-        // Insert a range from the instruction's def to itself.
-        RegAllocPoint ra_point{.instr = kill_point.instr, .stage = 1};
-        RegAllocRange ra_range{(mcode::PhysicalReg)kill_point.reg, ra_point, ra_point};
-        ra_func.blocks[kill_point.block].allocated_ranges.push_back(ra_range);
-    }
+    write_debug_report(ctx);
 
-    // for (auto &iter : liveness.range_groups) {
-    //     iter.second.hints = analyzer.suggest_regs(ra_func, iter.second);
-    // }
-
-    Queue groups;
-    for (auto &group : liveness.range_groups) {
-        if (group.first.is_virtual_reg()) {
-            groups.push(group.second);
-        }
-    }
-
-    while (!groups.empty()) {
-        LiveRangeGroup group = groups.top();
-        groups.pop();
-
-        Alloc alloc = alloc_group(ctx, group);
-        ctx.reg_map.insert({group.reg.get_virtual_reg(), alloc});
-
-        if (alloc.is_physical_reg) {
-            reserve_range(ctx, group, alloc.physical_reg);
-        }
-    }
-
-#if DEBUG_REG_ALLOC
-    for (auto alloc : ctx.reg_map) {
-        if (alloc.second.is_physical_reg) {
-            std::string physical_reg_name = DebugEmitter::get_physical_reg_name(alloc.second.physical_reg, 8);
-            stream << "%" << alloc.first << " -> " << physical_reg_name << std::endl;
-        } else {
-            stream << "%" << alloc.first << " -> spilled" << std::endl;
-        }
-    }
-
-    stream << std::endl;
-#endif
-
-    for (auto alloc : ctx.reg_map) {
-        replace_with_physical_reg(ctx, alloc.second);
+    for (const Alloc &alloc : ctx.allocs) {
+        apply_alloc(ctx, alloc);
     }
 
     for (mcode::BasicBlock &block : func.get_basic_blocks()) {
@@ -147,51 +112,207 @@ std::vector<RegAllocInstr> RegAllocPass::collect_instrs(mcode::BasicBlock &basic
     return instrs;
 }
 
-void RegAllocPass::reserve_range(Context &ctx, LiveRangeGroup &group, mcode::PhysicalReg reg) {
-    for (LiveRange &range : group.ranges) {
-        RegAllocRange ra_range = range.to_ra_range(reg);
-        ctx.func.blocks[range.block].allocated_ranges.push_back(ra_range);
+void RegAllocPass::assign_reg_classes(Context &ctx) {
+    for (mcode::BasicBlock &block : ctx.func.m_func) {
+        for (mcode::Instruction &instr : block) {
+            analyzer.assign_reg_classes(instr, ctx.reg_classes);
+        }
     }
 }
 
-RegAllocPass::Alloc RegAllocPass::alloc_group(Context &ctx, LiveRangeGroup &group) {
-    for (mcode::PhysicalReg candidate : analyzer.suggest_regs(ctx.func, group)) {
-        if (is_alloc_possible(ctx, group, candidate)) {
-            return Alloc{
-                .is_physical_reg = true,
-                .physical_reg = (mcode::PhysicalReg)candidate,
-                .group = group,
-            };
+void RegAllocPass::reserve_fixed_ranges(Context &ctx) {
+    // Reserve ranges for fixed physical registers.
+    for (auto &[reg, ranges] : ctx.liveness.reg_ranges) {
+        if (!reg.is_physical_reg()) {
+            continue;
+        }
+
+        for (LiveRange &range : ranges) {
+            ctx.func.blocks[range.block].reserved_segments.push_back({
+                .reg = static_cast<mcode::PhysicalReg>(reg.get_physical_reg()),
+                .range = range,
+            });
         }
     }
 
-    LiveRange &first_range = group.ranges[0];
-    mcode::Instruction &first_instr = *ctx.func.blocks[first_range.block].instrs[first_range.start].iter;
+    // Reserve ranges for kill points.
+    for (KillPoint &kill_point : ctx.liveness.kill_points) {
+        // Insert a range from the instruction's def to itself.
 
-    for (int candidate : analyzer.get_candidates(first_instr)) {
-        if (is_alloc_possible(ctx, group, candidate)) {
-            return Alloc{
-                .is_physical_reg = true,
-                .physical_reg = (mcode::PhysicalReg)candidate,
-                .group = group,
-            };
-        }
+        RegAllocPoint ra_point{.instr = kill_point.instr, .stage = 1};
+
+        ctx.func.blocks[kill_point.block].reserved_segments.push_back({
+            .reg = kill_point.reg,
+            .range{
+                .block = kill_point.block,
+                .start = ra_point,
+                .end = ra_point,
+            },
+        });
     }
-
-    return Alloc{
-        .is_physical_reg = false,
-        .stack_slot = ctx.func.m_func.get_stack_frame().new_stack_slot({mcode::StackSlot::Type::GENERIC, 8, 1}),
-        .group = group,
-    };
 }
 
-bool RegAllocPass::is_alloc_possible(Context &ctx, LiveRangeGroup &group, mcode::PhysicalReg reg) {
-    for (LiveRange &range : group.ranges) {
-        RegAllocRange ra_range = range.to_ra_range(reg);
+std::vector<Bundle> RegAllocPass::create_bundles(Context &ctx) {
+    std::vector<Bundle> bundles;
 
-        for (RegAllocRange &allocated_range : ctx.func.blocks[range.block].allocated_ranges) {
-            if (allocated_range.intersects(ra_range)) {
+    for (auto &[reg, ranges] : ctx.liveness.reg_ranges) {
+        if (!reg.is_virtual_reg()) {
+            continue;
+        }
+
+        Bundle bundle{
+            .reg_class = ctx.reg_classes[reg.get_virtual_reg()],
+        };
+
+        for (const LiveRange &range : ranges) {
+            bundle.segments.push_back({
+                .reg = reg.get_virtual_reg(),
+                .range = range,
+            });
+        }
+
+        bundles.push_back(bundle);
+    }
+
+    return bundles;
+}
+
+std::vector<Bundle> RegAllocPass::coalesce_bundles(Context &ctx, std::vector<Bundle> bundles) {
+    std::vector<Bundle> new_bundles;
+
+    for (Bundle &bundle : bundles) {
+        if (bundle.deleted) {
+            continue;
+        }
+
+        for (Bundle &other : bundles) {
+            if (!other.deleted) {
+                try_coalesce(ctx, bundle, other);
+            }
+        }
+    }
+
+    for (Bundle &bundle : bundles) {
+        if (!bundle.deleted) {
+            new_bundles.push_back(bundle);
+        }
+    }
+
+    return new_bundles;
+}
+
+void RegAllocPass::try_coalesce(Context &ctx, Bundle &a, Bundle &b) {
+    if (a.reg_class != b.reg_class || b.segments.size() != 1) {
+        return;
+    }
+
+    const Segment &segment_b = b.segments[0];
+    const LiveRange &range_b = segment_b.range;
+
+    for (const Segment &segment_a : a.segments) {
+        const LiveRange &range_a = segment_a.range;
+
+        if (range_a.block != range_b.block) {
+            continue;
+        }
+
+        RegAllocPoint end = range_a.end;
+        RegAllocPoint start = range_b.start;
+        if (end.instr != start.instr || end.stage != 0 || start.stage != 1) {
+            continue;
+        }
+
+        mcode::Instruction &instr = *ctx.func.blocks[range_a.block].instrs[end.instr].iter;
+        if (!analyzer.is_move_from(instr, segment_a.reg) || intersect(a, b)) {
+            continue;
+        }
+
+        a.segments.push_back(segment_b);
+        b.deleted = true;
+        return;
+    }
+}
+
+bool RegAllocPass::intersect(const Bundle &a, const Bundle &b) {
+    for (const Segment &segment_a : a.segments) {
+        for (const Segment &segment_b : b.segments) {
+            if (segment_a.range.intersects(segment_b.range)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void RegAllocPass::alloc_bundle(Context &ctx, Bundle &bundle) {
+    // First, try to allocate one of the registers suggested by the target.
+    if (try_assign_suggested_regs(ctx, bundle)) {
+        return;
+    }
+
+    // Next, try to allocate any register allowed for this instruction.
+    if (try_assign_candidate_regs(ctx, bundle)) {
+        return;
+    }
+
+    // Next, try to evict an existing allocation.
+    if (try_evict(ctx, bundle)) {
+        return;
+    }
+
+    // Finally, we're defeated and spill to the stack.
+    spill(ctx, bundle);
+}
+
+bool RegAllocPass::try_assign_suggested_regs(Context &ctx, Bundle &bundle) {
+    for (mcode::PhysicalReg candidate : analyzer.suggest_regs(ctx.func, bundle)) {
+        if (try_alloc_physical_reg(ctx, bundle, candidate)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool RegAllocPass::try_assign_candidate_regs(Context &ctx, Bundle &bundle) {
+    for (mcode::PhysicalReg candidate : analyzer.get_candidates(bundle.reg_class)) {
+        if (try_alloc_physical_reg(ctx, bundle, candidate)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool RegAllocPass::try_alloc_physical_reg(Context &ctx, Bundle &bundle, mcode::PhysicalReg reg) {
+    if (!is_alloc_possible(ctx, bundle, reg)) {
+        return false;
+    }
+
+    Alloc alloc{.physical_reg = reg, .bundle = bundle};
+    ctx.allocs.push_back(alloc);
+
+    return true;
+}
+
+bool RegAllocPass::is_alloc_possible(Context &ctx, Bundle &bundle, mcode::PhysicalReg reg) {
+    for (Segment &segment : bundle.segments) {
+        for (ReservedSegment &reserved_segment : ctx.func.blocks[segment.range.block].reserved_segments) {
+            if (reg == reserved_segment.reg && segment.range.intersects(reserved_segment.range)) {
                 return false;
+            }
+        }
+
+        for (const Alloc &alloc : ctx.allocs) {
+            for (const Segment &alloc_range : alloc.bundle.segments) {
+                if (alloc_range.range.block != segment.range.block) {
+                    continue;
+                }
+
+                if (alloc.physical_reg == reg && alloc_range.range.intersects(segment.range)) {
+                    return false;
+                }
             }
         }
     }
@@ -199,24 +320,111 @@ bool RegAllocPass::is_alloc_possible(Context &ctx, LiveRangeGroup &group, mcode:
     return true;
 }
 
-void RegAllocPass::replace_with_physical_reg(Context &ctx, Alloc &alloc) {
-    for (LiveRange &range : alloc.group.ranges) {
-        RegAllocBlock &block = ctx.func.blocks[range.block];
-        ctx.block_iter = block.m_block;
+bool RegAllocPass::try_evict(Context &ctx, Bundle &bundle) {
+    if (bundle.evictable) {
+        return false;
+    }
 
-        for (unsigned index = range.start; index <= range.end; index++) {
-            mcode::VirtualReg vreg = alloc.group.reg.get_virtual_reg();
+    for (auto iter = ctx.allocs.begin(); iter != ctx.allocs.end(); ++iter) {
+        Alloc &alloc = *iter;
 
-            if (alloc.is_physical_reg) {
-                mcode::InstrIter iter = block.instrs[index].iter;
+        if (!alloc.bundle.evictable || alloc.bundle.reg_class != bundle.reg_class) {
+            continue;
+        }
 
-                for (mcode::Operand &operand : iter->get_operands()) {
-                    try_replace(operand, vreg, alloc.physical_reg);
+        ctx.bundles.push(alloc.bundle);
+        alloc.bundle = bundle;
+        return true;
+    }
+
+    return false;
+}
+
+void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
+    mcode::StackFrame &stack_frame = ctx.func.m_func.get_stack_frame();
+    mcode::StackSlotID stack_slot = stack_frame.new_stack_slot({mcode::StackSlot::Type::GENERIC, 8, 1});
+
+    for (Segment &range : bundle.segments) {
+        const RegAllocBlock &block = ctx.func.blocks[range.range.block];
+
+        for (unsigned instr = range.range.start.instr; instr <= range.range.end.instr; instr++) {
+            for (mcode::RegOp op : block.instrs[instr].regs) {
+                if (op.reg != mcode::Register::from_virtual(range.reg)) {
+                    continue;
                 }
-            } else {
-                insert_spilled_load_store(ctx, vreg, alloc, block.instrs[index]);
+
+                if (op.usage == mcode::RegUsage::DEF) {
+                    LiveRange instr_range{.block = range.range.block, .start{instr, 1}, .end{instr, 1}};
+                    Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
+
+                    ctx.bundles.push({
+                        .segments = {instr_segment},
+                        .evictable = false,
+                        .src_stack_slot = {},
+                        .dst_stack_slot = stack_slot,
+                    });
+                } else if (op.usage == mcode::RegUsage::USE) {
+                    LiveRange instr_range{.block = range.range.block, .start{instr, 0}, .end{instr, 0}};
+                    Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
+
+                    ctx.bundles.push({
+                        .segments = {instr_segment},
+                        .evictable = false,
+                        .src_stack_slot = stack_slot,
+                        .dst_stack_slot = {},
+                    });
+                } else if (op.usage == mcode::RegUsage::USE_DEF) {
+                    LiveRange instr_range{.block = range.range.block, .start{instr, 0}, .end{instr, 1}};
+                    Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
+
+                    ctx.bundles.push({
+                        .segments = {instr_segment},
+                        .evictable = false,
+                        .src_stack_slot = stack_slot,
+                        .dst_stack_slot = stack_slot,
+                    });
+                }
             }
         }
+    }
+}
+
+void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
+    if (alloc.bundle.src_stack_slot) {
+        const Segment &segment = alloc.bundle.segments[0];
+        RegAllocBlock &block = ctx.func.blocks[segment.range.block];
+
+        analyzer.insert_load({
+            .instr_iter = block.instrs[segment.range.start.instr].iter,
+            .block = *block.m_block,
+            .stack_slot = *alloc.bundle.src_stack_slot,
+            .reg = alloc.physical_reg,
+        });
+    }
+
+    for (const Segment &segment : alloc.bundle.segments) {
+        RegAllocBlock &block = ctx.func.blocks[segment.range.block];
+        ctx.block_iter = block.m_block;
+
+        for (unsigned index = segment.range.start.instr; index <= segment.range.end.instr; index++) {
+            mcode::InstrIter instr = block.instrs[index].iter;
+
+            for (mcode::Operand &operand : instr->get_operands()) {
+                try_replace(operand, segment.reg, alloc.physical_reg);
+            }
+        }
+    }
+
+    if (alloc.bundle.dst_stack_slot) {
+        const Segment &segment = alloc.bundle.segments[0];
+        RegAllocBlock &block = ctx.func.blocks[segment.range.block];
+
+        analyzer.insert_store({
+            .instr_iter = block.instrs[segment.range.end.instr].iter,
+            .block = *block.m_block,
+            .stack_slot = *alloc.bundle.dst_stack_slot,
+            .reg = alloc.physical_reg,
+        });
     }
 }
 
@@ -256,28 +464,6 @@ void RegAllocPass::try_replace(
     }
 }
 
-void RegAllocPass::insert_spilled_load_store(Context &ctx, mcode::VirtualReg vreg, Alloc &alloc, RegAllocInstr &instr) {
-    for (mcode::RegOp &operand : instr.regs) {
-        if (!operand.reg.is_virtual_reg(vreg)) {
-            continue;
-        }
-
-        mcode::PhysicalReg tmp_reg = analyzer.insert_spill_reload({
-            .instr_iter = instr.iter,
-            .block = *ctx.block_iter,
-            .stack_slot = alloc.stack_slot,
-            .spill_tmp_regs = instr.spill_tmp_regs,
-            .usage = operand.usage,
-        });
-
-        for (mcode::Operand &operand : instr.iter->get_operands()) {
-            try_replace(operand, vreg, tmp_reg);
-        }
-
-        instr.spill_tmp_regs += 1;
-    }
-}
-
 void RegAllocPass::remove_useless_instrs(mcode::BasicBlock &basic_block) {
     for (mcode::InstrIter iter = basic_block.begin(); iter != basic_block.end(); ++iter) {
         if (analyzer.is_instr_removable(*iter)) {
@@ -288,21 +474,40 @@ void RegAllocPass::remove_useless_instrs(mcode::BasicBlock &basic_block) {
     }
 }
 
-bool RegAllocPass::GroupComparator::operator()(const LiveRangeGroup &lhs, const LiveRangeGroup &rhs) {
+bool RegAllocPass::BundleComparator::operator()(const Bundle &lhs, const Bundle &rhs) {
     return get_weight(lhs) < get_weight(rhs);
 }
 
-unsigned RegAllocPass::GroupComparator::get_weight(const LiveRangeGroup &group) {
+unsigned RegAllocPass::BundleComparator::get_weight(const Bundle &bundle) {
     unsigned score = 0;
 
     // Longer ranges are allocated first as they tend to be more contrained.
     unsigned longest_range = 0;
-    for (const LiveRange &range : group.ranges) {
-        longest_range = std::max(longest_range, range.end - range.start);
+    for (const Segment &segment : bundle.segments) {
+        const LiveRange &range = segment.range;
+        longest_range = std::max(longest_range, range.end.instr - range.start.instr);
     }
     score += longest_range;
 
     return score;
+}
+
+void RegAllocPass::write_debug_report(Context &ctx) {
+#if DEBUG_REG_ALLOC
+    stream << "--- LIVENESS FOR " << ctx.func.m_func.get_name() << " ---" << std::endl;
+    ctx.liveness.dump(stream);
+    stream << std::endl;
+
+    for (const Alloc &alloc : ctx.allocs) {
+        for (const Segment &segment : alloc.bundle.segments) {
+            std::string physical_reg_name = DebugEmitter::get_physical_reg_name(alloc.physical_reg, 8);
+            stream << "%" << segment.reg << " -> " << physical_reg_name << " in ";
+            stream << segment.range.start.instr << ":" << segment.range.end.instr << "\n";
+        }
+    }
+
+    stream << std::endl;
+#endif
 }
 
 } // namespace codegen
