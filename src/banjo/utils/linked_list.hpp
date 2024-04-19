@@ -47,7 +47,10 @@ public:
     }
 
     T &operator*() { return node->value; }
+    const T &operator*() const { return node->value; }
+    
     T *operator->() { return &node->value; }
+    const T *operator->() const { return &node->value; }
 
     operator bool() const { return node; }
     bool operator!() const { return !node; }

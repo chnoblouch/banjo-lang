@@ -64,8 +64,6 @@ private:
         BlockMap &blocks,
         std::unordered_map<long, ir::Value> cur_replacements
     );
-
-    void remove_unused_params(ir::Function *func, ir::ControlFlowGraph &cfg);
 };
 
 } // namespace passes

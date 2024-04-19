@@ -102,12 +102,8 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
 
     rename(func->begin(), stack_slots, blocks, init_replacements, dt);
 
-    for (unsigned i = 0; i < 4; i++) {
-        remove_unused_params(func, cfg);
-    }
-
     Precomputing::precompute_instrs(*func);
-    ir::DeadCodeElimination::run(func);
+    ir::DeadCodeElimination().run(*func);
 }
 
 StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func, ir::Module &mod) {
@@ -289,45 +285,6 @@ void StackToRegPass::update_branch_target(
 
     for (ParamInfo &param : blocks[target.block].new_params) {
         target.args.push_back(cur_replacements[param.stack_slot]);
-    }
-}
-
-void StackToRegPass::remove_unused_params(ir::Function *func, ir::ControlFlowGraph &cfg) {
-    std::unordered_set<ir::VirtualRegister> used_regs;
-
-    for (ir::BasicBlock &block : *func) {
-        for (ir::Instruction &instr : block) {
-            PassUtils::iter_regs(instr.get_operands(), [&used_regs](ir::VirtualRegister reg) {
-                used_regs.insert(reg);
-            });
-        }
-    }
-
-    for (ir::BasicBlockIter iter = func->begin(); iter != func->end(); ++iter) {
-        if (iter == func->get_entry_block_iter()) {
-            continue;
-        }
-
-        for (unsigned i = 0; i < iter->get_param_regs().size(); i++) {
-            if (used_regs.contains(iter->get_param_regs()[i])) {
-                continue;
-            }
-
-            iter->get_param_regs().erase(iter->get_param_regs().begin() + i);
-
-            for (unsigned pred : cfg.get_node(iter).predecessors) {
-                ir::Instruction &branch_instr = cfg.get_node(pred).block->get_instrs().get_last();
-
-                for (ir::Operand &operand : branch_instr.get_operands()) {
-                    if (operand.is_branch_target() && operand.get_branch_target().block == iter) {
-                        std::vector<ir::Operand> &args = operand.get_branch_target().args;
-                        args.erase(args.begin() + i);
-                    }
-                }
-            }
-
-            i--;
-        }
     }
 }
 
