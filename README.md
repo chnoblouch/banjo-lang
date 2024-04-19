@@ -1,6 +1,6 @@
 # The Banjo Programming Language
 
-A small low-level programming language I use for personal projects. The language and toolchain are documented [here](https://chnoblouch.github.io/banjo-docs/). The name still needs some workshopping.
+A small low-level programming language I use for personal projects. The language and toolchain are documented [here](https://chnoblouch.github.io/banjo-lang/). The name still needs some workshopping.
 
 ## Features
 
@@ -25,7 +25,7 @@ A small low-level programming language I use for personal projects. The language
 
 - CMake
 - Python 3
-- A C++ compiler (I've tested MSVC, Clang on Windows and Linux, GCC, and AppleClang)
+- A C++ compiler (I've tested MSVC, Clang on Windows and Linux, GCC, and Apple Clang)
 
 ### Build Commands
 
@@ -65,6 +65,12 @@ The language server currently supports these LSP features:
 ### Hot Reloader
 
 The hot reloader is a tool that watches source files for changes, recompiles them, and injects them into a running process. For this to work, the code has to be compiled with support for hot reloading. The compiler generates an _address table_ that contains a list of all functions. Functions are no longer called directly, but indirectly by looking up their address in the address table. This allows the hot reloader to allocate some memory in the target process for functions that have changed, store the freshly compiled code there, and update the pointer in the address table. Future calls to the function will now run the updated code.
+
+## Annoyances
+
+- Some optimization passes are unstable and can produce broken code.
+- The AArch64 backend is very incomplete and often generates invalid assembly.
+- Values that fit into two registers are passed by reference on the System-V ABI even though they should be passed by splitting them into two registers.
 
 ## Directory Structure
 

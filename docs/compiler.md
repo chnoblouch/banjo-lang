@@ -162,9 +162,27 @@ Codegen is the target-specific phase of the compiler. This phase generates machi
 
 The IR is lowered into actual machine instructions. The registers and stack slots are not assigned yet to physical registers during this phase. The variables from the IR are converted to _virtual registers_ instead.
 
+The lowerer doesn't just mechanically translate from SSA instructions to machine instructions. It's also capable of detecting patterns and optimizing them. For example, the instruction `%2 = mul %1, 3` is lowered to `lea %2, [%1 + 2 * %1]` on x86-64, because `LEA` instructions have lower latency than `IMUL` instructions. The lowerer also tries to minimize memory accesses to float constants by storing the constant in a register if it used by multiple instructions that are close to each other. 
+
 #### Register Allocation
 
-Register allocation is the process of assigning virtual registers to physical registers. This is super hard because a typical instruction set has around 16-32 physical registers while there might be thousands of virtual registers. Also not helping is the fact that some machine instructions expect their arguments to be in specific registers and function calls have to follow a _calling convention_ that also specifies where the arguments to a function call should be stored. This problem is tackled using [liveness analysis](https://en.wikipedia.org/wiki/Live-variable_analysis), a process that tells us for each virtual register, during which intervals it is used. The register allocator uses this information to allocate physical registers while making sure that the same physical register is never used for multiple different virtual registers at the same time. When the register allocator runs out of physical registers, it _spills_ virtual registers to the stack.
+Register allocation is the process of mapping a virtual registers to a limited set of physical registers. This is super hard because a typical instruction set has 16 or 32 physical registers while there might be thousands of virtual registers. Even worse, some machine instructions expect their arguments to be in specific registers and function calls have to follow a _calling convention_ that specifies in which registers arguments are passed and values are returned.
+
+These problems are tackled using [liveness analysis](https://en.wikipedia.org/wiki/Live-variable_analysis), an analysis that tells us for each virtual register, during which intervals it is used. The register allocator uses this information to assign physical registers while making sure that the same physical register is never used for multiple different virtual registers at the same time. When the register allocator runs out of physical registers, it moves virtual registers to the stack.
+
+Register allocation is done in multiple steps:
+1. Compute the liveness of virtual and physical registers. Liveness analysis first computes which variables are alive at the start and end of a block (_ins_ and _outs_) and then computes precise _live ranges_ from there. A live range records the start and end _program point_ where a register is defined and/or used.
+2. Assign target-specific register classes to the virtual registers. This records which class of physical registers may be assigned to a virtual register. For example, on x86-64 there are two classes: general purpose registers (`rax`-`r15`) and SSE registers (`xmm0`-`xmm15`).
+3. Reserve fixed ranges for physical registers. This is used when functions are called that expect their arguments in specific registers or when instructions read/write predefined registers.
+4. For each virtual register, create a _bundle_ of live ranges that are allocated as one unit.
+5. _Coalesce_ bundles that are connected by a copy instruction and don't interfere. This reduces copying by assigning the same physical register to related bundles.
+6. Put the bundles into a queue and allocate them one by one. Bundles with longer live ranges are put at the front of the queue as they tend to be more constrained. The allocator puts each bundle in one of multiple places: 
+    1. First, try to assign one of the registers suggested by the backend for this particular instruction.
+    2. Next, try to assign any of the registers that are legal for the current register class.
+    3. Next, try to _evict_ an existing allocation (this is currently only done for live ranges that were created by spilling)
+    4. If nothing else works, _spill_ the virtual register to the stack. This splits the live range into smaller ranges that are put back into the queue. At the start of each sub-range, the value is loaded from the stack into a temporary register and stored back on the stack at the end of the range.
+7. Apply the allocations by replacing the virtual registers with physical registers and inserting spill code.
+8. Clean up the code by removing redundant instructions that may have resulted from register allocation. For example, `mov %1, %2` might have been transformed into `mov rdx, rdx` due to coalescing and can now be removed. 
 
 #### Stack Frame Building
 
