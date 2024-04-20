@@ -8,11 +8,11 @@ namespace target {
 class StandardDataLayout : public TargetDataLayout {
 
 public:
-    StandardDataLayout(int usize, ir::Type usize_type);
-    int get_size(const ir::Type &type, ir::Module &module_) const;
-    int get_alignment(const ir::Type &type, ir::Module &module_) const;
-    int get_member_offset(ir::Structure *struct_, int index, ir::Module &module_) const;
-    int get_member_offset(const std::vector<ir::Type> &types, int index, ir::Module &module_) const;
+    StandardDataLayout(unsigned usize, ir::Type usize_type);
+    unsigned get_size(const ir::Type &type) const override final;
+    unsigned get_alignment(const ir::Type &type) const override final;
+    unsigned get_member_offset(ir::Structure *struct_, unsigned index) const override final;
+    unsigned get_member_offset(const std::vector<ir::Type> &types, unsigned index) const override final;
 };
 
 } // namespace target

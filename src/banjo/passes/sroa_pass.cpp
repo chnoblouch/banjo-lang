@@ -248,7 +248,7 @@ void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ir::T
         ctx.block.insert_before(ctx.instr, ir::Instruction(ir::Opcode::COPY, {
             ir::Operand::from_register(dst.ptr, type.ref()),
             ir::Operand::from_register(src.ptr, type.ref()),
-            ir::Operand::from_int_immediate(get_target()->get_data_layout().get_size(type, ctx.mod))
+            ir::Operand::from_int_immediate(get_target()->get_data_layout().get_size(type))
         }));
         // clang-format on
 

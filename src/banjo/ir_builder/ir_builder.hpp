@@ -16,7 +16,7 @@ public:
     IRBuilder(IRBuilderContext &context, lang::ASTNode *node) : context(context), node(node) {}
 
 protected:
-    int get_size(const ir::Type &type);
+    unsigned get_size(const ir::Type &type);
     bool is_pass_by_ref(const ir::Type &type);
     bool is_return_by_ref(const ir::Type &type);
 };

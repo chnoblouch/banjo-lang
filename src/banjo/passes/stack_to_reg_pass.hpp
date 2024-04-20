@@ -40,7 +40,7 @@ public:
 
 private:
     void run(ir::Function *func, ir::Module &mod);
-    StackSlotMap find_stack_slots(ir::Function *func, ir::Module &mod);
+    StackSlotMap find_stack_slots(ir::Function *func);
 
     bool is_stack_slot_used(
         StackSlotInfo &stack_slot,

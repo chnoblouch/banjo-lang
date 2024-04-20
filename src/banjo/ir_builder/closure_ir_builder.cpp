@@ -15,7 +15,7 @@ StoredValue ClosureIRBuilder::build(StorageReqs reqs) {
     lang::ClosureExpr *closure_expr = node->as<lang::ClosureExpr>();
 
     lang::DataType *lang_type = closure_expr->get_data_type();
-    ir::Type type = IRBuilderUtils::build_type(lang_type, context, false);
+    ir::Type type = IRBuilderUtils::build_type(lang_type, false);
 
     StoredValue stored_val = StoredValue::alloc(type, reqs, context);
     ir::Value val_ptr = stored_val.value_or_ptr;
@@ -49,12 +49,12 @@ StoredValue ClosureIRBuilder::build(StorageReqs reqs) {
     context.set_current_arg_regs(enclosing_arg_regs);
 
     for (lang::Variable *var : closure.captured_vars) {
-        ir::Type type = IRBuilderUtils::build_type(var->get_data_type(), context);
+        ir::Type type = IRBuilderUtils::build_type(var->get_data_type());
         struct_->add(ir::StructureMember{var->get_name(), type});
     }
 
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    int size = data_layout.get_size(struct_type, *context.get_current_mod());
+    unsigned size = data_layout.get_size(struct_type);
 
     ir::VirtualRegister data_ptr_reg = context.get_current_func()->next_virtual_reg();
     ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, struct_type.ref());

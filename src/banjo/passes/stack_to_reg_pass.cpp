@@ -35,7 +35,7 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
         get_logging_stream() << std::endl;
     }
 
-    StackSlotMap stack_slots = find_stack_slots(func, mod);
+    StackSlotMap stack_slots = find_stack_slots(func);
     BlockMap blocks;
 
     std::unordered_map<long, ir::Value> init_replacements;
@@ -106,16 +106,16 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
     ir::DeadCodeElimination().run(*func);
 }
 
-StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func, ir::Module &mod) {
+StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func) {
     StackSlotMap stack_slots;
 
     for (ir::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
         for (ir::Instruction &instr : block_iter->get_instrs()) {
             if (instr.get_opcode() == ir::Opcode::ALLOCA) {
-                long dest = *instr.get_dest();
+                ir::VirtualRegister dest = *instr.get_dest();
                 ir::Type type = instr.get_operand(0).get_type();
 
-                if (get_target()->get_data_layout().fits_in_register(type, mod)) {
+                if (get_target()->get_data_layout().fits_in_register(type)) {
                     stack_slots.insert({dest, StackSlotInfo{.type = type, .def_blocks = {}, .promotable = true}});
                 }
             } else if (instr.get_opcode() == ir::Opcode::STORE) {

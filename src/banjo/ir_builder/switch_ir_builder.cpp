@@ -77,7 +77,7 @@ void SwitchIRBuilder::build() {
         lang::LocalVariable *lang_var = symbol_table->get_symbol(name_node->get_value())->get_local();
         ir::Operand var = lang_var->as_ir_operand(context);
         ir::Type type = var.get_type().deref();
-        unsigned size = context.get_target()->get_data_layout().get_size(type, *context.get_current_mod());
+        unsigned size = context.get_target()->get_data_layout().get_size(type);
         context.append_copy(var, data_ptr, size);
 
         block_builder.build();

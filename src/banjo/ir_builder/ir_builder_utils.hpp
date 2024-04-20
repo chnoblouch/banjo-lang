@@ -20,9 +20,9 @@ struct FuncCall {
     const std::vector<ir::Value> &args;
 };
 
-ir::Type build_type(lang::DataType *type, IRBuilderContext &context, bool array_to_ptr = true);
-ir::Type ptr_to(lang::Variable *var, IRBuilderContext &context);
-std::vector<ir::Type> build_params(std::vector<lang::DataType *> lang_params, IRBuilderContext &context);
+ir::Type build_type(lang::DataType *type, bool array_to_ptr = true);
+ir::Type ptr_to(lang::Variable *var);
+std::vector<ir::Type> build_params(const std::vector<lang::DataType *> &lang_params, IRBuilderContext &context);
 std::string get_func_link_name(lang::Function *func);
 std::string get_global_var_link_name(lang::GlobalVariable *global_var);
 void store_val(IRBuilderContext &context, ir::Value val, ir::Value dest);

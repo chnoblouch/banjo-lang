@@ -64,7 +64,7 @@ void FuncDefIRBuilder::build(lang::Function *lang_func, lang::ASTNode *block_nod
 
 void FuncDefIRBuilder::create_func(lang::Function *lang_func, std::string name) {
     std::vector<ir::Type> param_list = IRBuilderUtils::build_params(lang_func->get_type().param_types, context);
-    ir::Type return_type = IRBuilderUtils::build_type(lang_func->get_type().return_type, context);
+    ir::Type return_type = IRBuilderUtils::build_type(lang_func->get_type().return_type);
 
     if (lang_func->is_return_by_ref()) {
         param_list.insert(param_list.begin(), return_type.ref());
@@ -92,7 +92,7 @@ void FuncDefIRBuilder::init_lang_params(lang::Function *lang_func, std::vector<l
     for (unsigned int i = 0; i < lang_params.size(); i++) {
         lang::Parameter *lang_param = lang_params[i];
 
-        ir::Type type = IRBuilderUtils::build_type(lang_param->get_data_type(), context);
+        ir::Type type = IRBuilderUtils::build_type(lang_param->get_data_type());
         bool pass_by_ref = is_pass_by_ref(type);
         lang_param->set_pass_by_ref(pass_by_ref);
         lang_param->set_virtual_reg_id(context.get_current_arg_regs()[i + lang_arg_start_index]);

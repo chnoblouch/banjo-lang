@@ -125,7 +125,7 @@ void LocationIRBuilder::build_captured_var(lang::Variable *var) {
     ir::VirtualRegister context_ptr_reg = context.append_load(arg_ptr);
     ir::Operand context_ptr = ir::Operand::from_register(context_ptr_reg, context_type.ref());
     ir::VirtualRegister member_ptr_reg = context.append_memberptr(context_ptr, member_index);
-    ir::Type member_type = IRBuilderUtils::build_type(var->get_data_type(), context);
+    ir::Type member_type = IRBuilderUtils::build_type(var->get_data_type());
     operand = ir::Operand::from_register(member_ptr_reg, member_type.ref());
     operand_ref = true;
 }
@@ -153,7 +153,7 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
         }
     } else if (element.is_tuple_index()) {
         ir::VirtualRegister reg = context.append_memberptr(operand, element.get_tuple_index());
-        ir::Type type = IRBuilderUtils::build_type(element.get_type(), context).ref();
+        ir::Type type = IRBuilderUtils::build_type(element.get_type()).ref();
         operand = ir::Operand::from_register(reg, type);
         operand_ref = true;
     } else {
@@ -163,7 +163,7 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
 
 void LocationIRBuilder::build_struct_field_access(lang::StructField *field, lang::Structure *struct_) {
     int offset = struct_->get_field_index(field);
-    ir::Type type = IRBuilderUtils::build_type(field->get_type(), context).ref();
+    ir::Type type = IRBuilderUtils::build_type(field->get_type()).ref();
 
     context.append_memberptr(dest, operand, offset);
     operand = ir::Operand::from_register(dest, type);
@@ -172,7 +172,7 @@ void LocationIRBuilder::build_struct_field_access(lang::StructField *field, lang
 
 void LocationIRBuilder::build_union_case_field_access(lang::UnionCaseField *field, lang::UnionCase *case_) {
     unsigned index = case_->get_field_index(field);
-    ir::Type type = IRBuilderUtils::build_type(field->get_type(), context).ref();
+    ir::Type type = IRBuilderUtils::build_type(field->get_type()).ref();
 
     context.append_memberptr(dest, operand, index);
     operand = ir::Operand::from_register(dest, type);
@@ -187,7 +187,7 @@ void LocationIRBuilder::build_direct_method_call(lang::Function *method) {
 
 void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::Structure *struct_) {
     ir::Type base_type;
-    ir::Type type = IRBuilderUtils::build_type(field->get_type(), context).ref();
+    ir::Type type = IRBuilderUtils::build_type(field->get_type()).ref();
 
     if (operand_ref) {
         context.append_load(dest, operand);

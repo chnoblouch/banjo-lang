@@ -73,7 +73,7 @@ int IRBuilderContext::next_deinit_flag_id() {
 }
 
 unsigned IRBuilderContext::get_size(const ir::Type &type) {
-    return target->get_data_layout().get_size(type, *current_mod);
+    return target->get_data_layout().get_size(type);
 }
 
 ir::BasicBlockIter IRBuilderContext::create_block(std::string label) {

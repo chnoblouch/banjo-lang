@@ -10,7 +10,7 @@
 
 namespace ir_builder {
 
-ir::Type IRBuilderUtils::build_type(lang::DataType *type, IRBuilderContext &context, bool array_to_ptr /* = true */) {
+ir::Type IRBuilderUtils::build_type(lang::DataType *type, bool array_to_ptr /* = true */) {
     assert(type && "null type in type ir builder");
 
     if (type->get_kind() == lang::DataType::Kind::PRIMITIVE) {
@@ -46,13 +46,13 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type, IRBuilderContext &cont
             current_type = current_type->get_base_data_type();
         }
 
-        ir::Type ir_type = build_type(current_type, context);
+        ir::Type ir_type = build_type(current_type);
         ir_type.set_ptr_depth(depth);
         return ir_type;
     } else if (type->get_kind() == lang::DataType::Kind::FUNCTION) {
         return ir::Type(ir::Primitive::VOID, 1);
     } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
-        ir::Type ir_type = build_type(type->get_static_array_type().base_type, context);
+        ir::Type ir_type = build_type(type->get_static_array_type().base_type);
 
         if (array_to_ptr) {
             return ir_type.ref();
@@ -63,7 +63,7 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type, IRBuilderContext &cont
     } else if (type->get_kind() == lang::DataType::Kind::TUPLE) {
         std::vector<ir::Type> tuple_types;
         for (lang::DataType *lang_type : type->get_tuple().types) {
-            tuple_types.push_back(build_type(lang_type, context));
+            tuple_types.push_back(build_type(lang_type));
         }
         return ir::Type(tuple_types);
     } else if (type->get_kind() == lang::DataType::Kind::CLOSURE) {
@@ -73,18 +73,18 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type, IRBuilderContext &cont
     }
 }
 
-ir::Type IRBuilderUtils::ptr_to(lang::Variable *var, IRBuilderContext &context) {
-    return build_type(var->get_data_type(), context).ref();
+ir::Type IRBuilderUtils::ptr_to(lang::Variable *var) {
+    return build_type(var->get_data_type()).ref();
 }
 
 std::vector<ir::Type> IRBuilderUtils::build_params(
-    std::vector<lang::DataType *> lang_params,
+    const std::vector<lang::DataType *> &lang_params,
     IRBuilderContext &context
 ) {
     std::vector<ir::Type> params;
     for (lang::DataType *lang_type : lang_params) {
-        ir::Type type = build_type(lang_type, context);
-        if (context.get_target()->get_data_layout().is_pass_by_ref(type, *context.get_current_mod())) {
+        ir::Type type = build_type(lang_type);
+        if (context.get_target()->get_data_layout().is_pass_by_ref(type)) {
             type = type.ref();
         }
 
@@ -118,11 +118,11 @@ std::string IRBuilderUtils::get_global_var_link_name(lang::GlobalVariable *globa
 void IRBuilderUtils::store_val(IRBuilderContext &context, ir::Value val, ir::Value dest) {
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
 
-    if (data_layout.fits_in_register(val.get_type(), *context.get_current_mod())) {
+    if (data_layout.fits_in_register(val.get_type())) {
         context.append_store(val, dest);
     } else {
         val.set_type(val.get_type().ref());
-        int size = data_layout.get_size(val.get_type().deref(), *context.get_current_mod());
+        int size = data_layout.get_size(val.get_type().deref());
         ir::Operand symbol_operand = ir::Operand::from_extern_func("memcpy");
         ir::Operand size_operand = ir::Operand::from_int_immediate(size, ir::Type(ir::Primitive::I64));
         context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, {symbol_operand, dest, val, size_operand}));
@@ -133,11 +133,11 @@ void IRBuilderUtils::copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
     ir::Type type(src_ptr.get_type().deref());
 
-    if (data_layout.fits_in_register(type, *context.get_current_mod())) {
+    if (data_layout.fits_in_register(type)) {
         ir::VirtualRegister val_reg = context.append_load(src_ptr);
         context.append_store(ir::Operand::from_register(val_reg, type), dest_ptr);
     } else {
-        int size = data_layout.get_size(type, *context.get_current_mod());
+        int size = data_layout.get_size(type);
         ir::Operand symbol_operand = ir::Operand::from_extern_func("memcpy");
         ir::Operand size_operand = ir::Operand::from_int_immediate(size, ir::Type(ir::Primitive::I64));
         context.get_cur_block().append(
@@ -148,7 +148,7 @@ void IRBuilderUtils::copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::
 
 ir::Value IRBuilderUtils::build_arg(lang::ASTNode *node, IRBuilderContext &context) {
     lang::DataType *lang_type = node->as<lang::Expr>()->get_data_type();
-    ir::Type type = build_type(lang_type, context);
+    ir::Type type = build_type(lang_type);
 
     return ExprIRBuilder(context, node).build_into_value_if_possible();
 }
@@ -173,7 +173,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, const StorageReqs &reqs, I
         }
 
         if (call.func->is_return_by_ref()) {
-            ir::Type return_type = IRBuilderUtils::build_type(call.func->get_type().return_type, context);
+            ir::Type return_type = IRBuilderUtils::build_type(call.func->get_type().return_type);
             context.append_alloca(dst_reg, return_type);
         }
 
@@ -186,7 +186,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, const StorageReqs &reqs, I
 StoredValue IRBuilderUtils::build_call(FuncCall call, ir::Value dst, IRBuilderContext &context) {
     std::vector<ir::Value> operands;
 
-    ir::Type built_return_type = IRBuilderUtils::build_type(call.func->get_type().return_type, context);
+    ir::Type built_return_type = IRBuilderUtils::build_type(call.func->get_type().return_type);
     ir::Type return_type = call.func->is_return_by_ref() ? ir::Type(ir::Primitive::VOID) : built_return_type;
 
     if (call.func->get_ir_func()) {

@@ -53,7 +53,7 @@ ir::Module RootIRBuilder::build() {
     }
 
     for (lang::ASTModule *module_node : module_list) {
-        create_ir_funcs(ir_mod, module_node);
+        create_ir_funcs(module_node);
     }
 
     for (lang::ASTModule *module_node : module_list) {
@@ -100,17 +100,17 @@ void RootIRBuilder::create_ir_structs(ir::Module &ir_mod, lang::GenericStruct *l
     }
 }
 
-void RootIRBuilder::create_ir_funcs(ir::Module &ir_mod, lang::ASTNode *module_node) {
+void RootIRBuilder::create_ir_funcs(lang::ASTNode *module_node) {
     lang::ASTNode *block_node = module_node->get_child_of_type(lang::AST_BLOCK);
     lang::SymbolTable *symbol_table = block_node->as<lang::ASTBlock>()->get_symbol_table();
 
-    lang::ASTUtils::iterate_funcs(symbol_table, [this, &ir_mod](lang::Function *lang_func) {
+    lang::ASTUtils::iterate_funcs(symbol_table, [this](lang::Function *lang_func) {
         if (!lang_func->is_native()) {
             lang_func->set_ir_func(new ir::Function());
         }
 
-        ir::Type type = IRBuilderUtils::build_type(lang_func->get_type().return_type, context);
-        if (context.get_target()->get_data_layout().is_return_by_ref(type, ir_mod)) {
+        ir::Type type = IRBuilderUtils::build_type(lang_func->get_type().return_type);
+        if (context.get_target()->get_data_layout().is_return_by_ref(type)) {
             lang_func->set_return_by_ref(true);
         }
     });
@@ -119,11 +119,11 @@ void RootIRBuilder::create_ir_funcs(ir::Module &ir_mod, lang::ASTNode *module_no
 void RootIRBuilder::create_ir_struct_members(lang::ASTNode *module_node) {
     lang::SymbolTable *symbol_table = lang::ASTUtils::get_module_symbol_table(module_node);
 
-    lang::ASTUtils::iterate_structs(symbol_table, [this](lang::Structure *lang_struct) {
+    lang::ASTUtils::iterate_structs(symbol_table, [](lang::Structure *lang_struct) {
         ir::Structure *ir_struct = lang_struct->get_ir_struct();
 
         for (lang::StructField *lang_field : lang_struct->get_fields()) {
-            ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type(), context, false);
+            ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type(), false);
             ir_struct->add(ir::StructureMember{lang_field->get_name(), ir_type});
         }
     });
@@ -132,12 +132,12 @@ void RootIRBuilder::create_ir_struct_members(lang::ASTNode *module_node) {
 void RootIRBuilder::create_ir_union_case_members(lang::ASTNode *module_node) {
     lang::SymbolTable *symbol_table = lang::ASTUtils::get_module_symbol_table(module_node);
 
-    lang::ASTUtils::iterate_unions(symbol_table, [this](lang::Union *lang_union) {
+    lang::ASTUtils::iterate_unions(symbol_table, [](lang::Union *lang_union) {
         for (lang::UnionCase *lang_case : lang_union->get_cases()) {
             ir::Structure *ir_case = lang_case->get_ir_struct();
 
             for (lang::UnionCaseField *lang_field : lang_case->get_fields()) {
-                ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type(), context, false);
+                ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type(), false);
                 ir_case->add(ir::StructureMember{lang_field->get_name(), ir_type});
             }
         }
@@ -156,7 +156,7 @@ void RootIRBuilder::create_ir_union_members(lang::ASTNode *module_node) {
             ir::Structure *ir_case = lang_case->get_ir_struct();
 
             // FIXME: the size calculation breaks down if not all the types in the union cases are defined.
-            unsigned size = context.get_target()->get_data_layout().get_size(ir_case, *context.get_current_mod());
+            unsigned size = context.get_target()->get_data_layout().get_size(ir_case);
             largest_size = std::max(largest_size, size);
         }
 
@@ -196,9 +196,9 @@ void RootIRBuilder::build_native_func(ir::Module &ir_mod, lang::ASTNode *node) {
 
     std::string name = IRBuilderUtils::get_func_link_name(func);
     std::vector<ir::Type> param_list = IRBuilderUtils::build_params(func->get_type().param_types, context);
-    ir::Type return_type = IRBuilderUtils::build_type(func->get_type().return_type, context);
+    ir::Type return_type = IRBuilderUtils::build_type(func->get_type().return_type);
 
-    if (context.get_target()->get_data_layout().is_return_by_ref(return_type, *context.get_current_mod())) {
+    if (context.get_target()->get_data_layout().is_return_by_ref(return_type)) {
         param_list.insert(param_list.begin(), return_type.ref());
         return_type = ir::Type(ir::Primitive::VOID);
         func->set_return_by_ref(true);
@@ -224,7 +224,7 @@ void RootIRBuilder::build_global(ir::Module &ir_mod, lang::ASTNode *node, lang::
 
     ir::Global global(
         link_name,
-        IRBuilderUtils::build_type(var->get_data_type(), context),
+        IRBuilderUtils::build_type(var->get_data_type()),
         ExprIRBuilder(context, node->get_child(lang::VAR_VALUE)).build_into_value_if_possible()
     );
     global.set_external(var->is_exposed());
@@ -239,7 +239,7 @@ void RootIRBuilder::build_native_global(ir::Module &ir_mod, lang::ASTNode *node,
 
     ir_mod.add(ir::GlobalDecl(
         IRBuilderUtils::get_global_var_link_name(var),
-        IRBuilderUtils::build_type(var->get_data_type(), context)
+        IRBuilderUtils::build_type(var->get_data_type())
     ));
 }
 

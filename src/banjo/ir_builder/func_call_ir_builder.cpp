@@ -18,7 +18,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) 
     lang::DataType *location_type = location_node->get_location()->get_type();
 
     type = location_type->get_function_type();
-    ir::Type return_type = IRBuilderUtils::build_type(type.return_type, context);
+    ir::Type return_type = IRBuilderUtils::build_type(type.return_type);
     bool return_by_ref = false;
     bool is_method = false;
 
@@ -46,7 +46,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) 
         ir::VirtualRegister ptr_reg = context.append_load(location);
         call_instr_operands.push_back(ir::Operand::from_register(ptr_reg, ir::Type(ir::Primitive::VOID, 1)));
     } else if (location_type->get_kind() == lang::DataType::Kind::CLOSURE) {
-        ir::Type type = IRBuilderUtils::build_type(location_type, context);
+        ir::Type type = IRBuilderUtils::build_type(location_type);
 
         ir::VirtualRegister func_ptr_ptr_reg = context.append_memberptr(location, 0);
         ir::Operand func_ptr_ptr = ir::Operand::from_register(func_ptr_ptr_reg, ir::Type(ir::Primitive::VOID, 2));
@@ -72,7 +72,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) 
     if (is_method) {
         call_instr_operands.push_back(get_self_operand(location_builder));
     } else if (location_type->get_kind() == lang::DataType::Kind::CLOSURE) {
-        ir::Type type = IRBuilderUtils::build_type(location_type, context);
+        ir::Type type = IRBuilderUtils::build_type(location_type);
 
         ir::VirtualRegister context_ptr_ptr_reg = context.append_memberptr(location, 1);
         ir::Operand context_ptr_ptr = ir::Operand::from_register(context_ptr_ptr_reg, ir::Type(ir::Primitive::VOID, 2));
@@ -84,7 +84,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) 
     for (int i = 0; i < args_node->get_children().size(); i++) {
         lang::ASTNode *argument = args_node->get_child(i);
         int param_index = is_method ? i + 1 : i;
-        ir::Type param_type = IRBuilderUtils::build_type(type.param_types[param_index], context);
+        ir::Type param_type = IRBuilderUtils::build_type(type.param_types[param_index]);
         call_instr_operands.push_back(ExprIRBuilder(context, argument).build_into_value_if_possible());
     }
 

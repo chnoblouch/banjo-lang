@@ -5,12 +5,12 @@
 namespace ir_builder {
 
 ir::Value Conversion::build(IRBuilderContext &context, ir::Value &value, lang::DataType *from, lang::DataType *to) {
-    ir::Type ir_from = IRBuilderUtils::build_type(from, context);
-    ir::Type ir_to = IRBuilderUtils::build_type(to, context);
+    ir::Type ir_from = IRBuilderUtils::build_type(from);
+    ir::Type ir_to = IRBuilderUtils::build_type(to);
 
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    int size_from = data_layout.get_size(ir_from, *context.get_current_mod());
-    int size_to = data_layout.get_size(ir_to, *context.get_current_mod());
+    unsigned size_from = data_layout.get_size(ir_from);
+    unsigned size_to = data_layout.get_size(ir_to);
 
     bool is_from_signed = from->is_signed_int();
     bool is_to_signed = to->is_signed_int();

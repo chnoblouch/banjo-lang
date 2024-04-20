@@ -532,7 +532,7 @@ void X8664IRLowerer::lower_select(ir::Instruction &instr) {
     ir::Operand &val_false = instr.get_operand(4);
 
     const ir::Type &type = instr.get_operand(0).get_type();
-    unsigned size = std::max(get_size(type), 4);
+    unsigned size = std::max(get_size(type), 4u);
 
     mcode::Operand dst_op = mcode::Operand::from_register(lower_reg(dst), size);
 

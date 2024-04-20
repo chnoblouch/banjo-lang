@@ -249,20 +249,20 @@ mcode::Register IRLowerer::lower_reg(ir::VirtualRegister reg) {
     }
 }
 
-int IRLowerer::get_size(const ir::Type &type) {
-    return target->get_data_layout().get_size(type, *module_);
+unsigned IRLowerer::get_size(const ir::Type &type) {
+    return target->get_data_layout().get_size(type);
 }
 
-int IRLowerer::get_alignment(const ir::Type &type) {
-    return target->get_data_layout().get_alignment(type, *module_);
+unsigned IRLowerer::get_alignment(const ir::Type &type) {
+    return target->get_data_layout().get_alignment(type);
 }
 
-int IRLowerer::get_member_offset(ir::Structure *struct_, int index) {
-    return target->get_data_layout().get_member_offset(struct_, index, *module_);
+unsigned IRLowerer::get_member_offset(ir::Structure *struct_, unsigned index) {
+    return target->get_data_layout().get_member_offset(struct_, index);
 }
 
-int IRLowerer::get_member_offset(const std::vector<ir::Type> &types, int index) {
-    return target->get_data_layout().get_member_offset(types, index, *module_);
+unsigned IRLowerer::get_member_offset(const std::vector<ir::Type> &types, unsigned index) {
+    return target->get_data_layout().get_member_offset(types, index);
 }
 
 mcode::Register IRLowerer::create_tmp_reg() {
@@ -270,7 +270,7 @@ mcode::Register IRLowerer::create_tmp_reg() {
 }
 
 void IRLowerer::lower_alloca(ir::Instruction &instr) {
-    int size = std::max(get_size(instr.get_operand(0).get_type()), 8);
+    unsigned size = std::max(get_size(instr.get_operand(0).get_type()), 8u);
     bool is_arg_store = instr.is_flag(ir::Instruction::FLAG_ARG_STORE);
     mcode::StackSlot::Type type = is_arg_store ? mcode::StackSlot::Type::ARG_STORE : mcode::StackSlot::Type::GENERIC;
     mcode::StackSlot slot(type, size, 1);

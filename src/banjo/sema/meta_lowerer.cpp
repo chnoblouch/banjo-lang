@@ -143,8 +143,11 @@ bool MetaLowerer::lower_meta_field_access(ASTNode *node) {
     Expr *value;
 
     if (field == "size") {
-        unsigned size = 100;
-        value = new IntLiteral(std::to_string(size));
+        value = new IntLiteral(0);
+
+        // ir::Type ir_type = ir_builder::IRBuilderUtils::build_type(type);
+        // unsigned size = context.get_target()->get_data_layout().get_size(ir_type);
+        // value = new IntLiteral(size);
     } else if (field == "name") {
         value = new Expr(AST_STRING_LITERAL, {0, 0}, type->get_structure()->get_name());
     } else if (field == "fields") {

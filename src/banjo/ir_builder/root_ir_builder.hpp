@@ -25,7 +25,7 @@ private:
     void create_ir_struct(ir::Module &ir_mod, lang::Structure *lang_struct);
     void create_ir_union(ir::Module &ir_mod, lang::Union *lang_union);
     void create_ir_structs(ir::Module &ir_mod, lang::GenericStruct *lang_generic_struct);
-    void create_ir_funcs(ir::Module &ir_mod, lang::ASTNode *module_node);
+    void create_ir_funcs(lang::ASTNode *module_node);
 
     void create_ir_struct_members(lang::ASTNode *module_node);
     void create_ir_union_case_members(lang::ASTNode *module_node);

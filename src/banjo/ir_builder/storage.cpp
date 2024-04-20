@@ -15,7 +15,7 @@ StoredValue StoredValue::create_value(ir::Value value, IRBuilderContext &context
 
 StoredValue StoredValue::create_ptr(ir::Value value, IRBuilderContext &context) {
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    bool fits_in_reg = data_layout.fits_in_register(value.get_type().deref(), *context.get_current_mod());
+    bool fits_in_reg = data_layout.fits_in_register(value.get_type().deref());
     return {true, fits_in_reg, std::move(value)};
 }
 
@@ -24,7 +24,7 @@ StoredValue StoredValue::alloc(const ir::Type &type, StorageReqs reqs, IRBuilder
     val.set_type(type.ref());
 
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    bool fits_in_reg = data_layout.fits_in_register(type, *context.get_current_mod());
+    bool fits_in_reg = data_layout.fits_in_register(type);
 
     return {true, fits_in_reg, val};
 }

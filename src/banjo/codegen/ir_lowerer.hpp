@@ -69,10 +69,10 @@ public:
     mcode::InstrIter emit(mcode::Instruction instr);
     mcode::Register lower_reg(ir::VirtualRegister reg);
 
-    int get_size(const ir::Type &type);
-    int get_alignment(const ir::Type &type);
-    int get_member_offset(ir::Structure *struct_, int index);
-    int get_member_offset(const std::vector<ir::Type> &types, int index);
+    unsigned get_size(const ir::Type &type);
+    unsigned get_alignment(const ir::Type &type);
+    unsigned get_member_offset(ir::Structure *struct_, unsigned index);
+    unsigned get_member_offset(const std::vector<ir::Type> &types, unsigned index);
     mcode::Register create_tmp_reg();
 
     ir::InstrIter get_producer(ir::VirtualRegister reg);

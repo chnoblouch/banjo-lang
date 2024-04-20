@@ -4,6 +4,7 @@
 #include "config/config.hpp"
 #include "emit/binary_module.hpp"
 #include "ir/addr_table.hpp"
+#include "ir/module.hpp"
 #include "reports/report_manager.hpp"
 #include "source/file_module_loader.hpp"
 #include "source/module_manager.hpp"
