@@ -48,13 +48,13 @@ void BoolExprIRBuilder::build_not() {
 
 void BoolExprIRBuilder::build_comparison(ir::Comparison int_comparison, ir::Comparison fp_comparison) {
     if (node->get_child(0)->as<lang::Expr>()->get_data_type()->get_kind() == lang::DataType::Kind::STRUCT) {
-        ir::Value val = ExprIRBuilder(context, node).build_into_value();
+        ir::Value val = ExprIRBuilder(context, node).build_into_value().get_value();
         build_bool_eval(val);
         return;
     }
 
-    ir::Value lhs_val = ExprIRBuilder(context, node->get_child(0)).build_into_value();
-    ir::Value rhs_val = ExprIRBuilder(context, node->get_child(1)).build_into_value();
+    ir::Value lhs_val = ExprIRBuilder(context, node->get_child(0)).build_into_value().get_value();
+    ir::Value rhs_val = ExprIRBuilder(context, node->get_child(1)).build_into_value().get_value();
     bool is_fp = lhs_val.get_type().is_floating_point();
 
     ir::Opcode opcode = get_cmp_opcode(is_fp);
@@ -67,7 +67,7 @@ void BoolExprIRBuilder::build_comparison(ir::Comparison int_comparison, ir::Comp
 }
 
 void BoolExprIRBuilder::build_bool_eval() {
-    build_bool_eval(ExprIRBuilder(context, node).build_into_value());
+    build_bool_eval(ExprIRBuilder(context, node).build_into_value().get_value());
 }
 
 void BoolExprIRBuilder::build_bool_eval(ir::Value value) {

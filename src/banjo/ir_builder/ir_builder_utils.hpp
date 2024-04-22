@@ -3,6 +3,7 @@
 
 #include "ast/ast_node.hpp"
 #include "ir/type.hpp"
+#include "ir/virtual_register.hpp"
 #include "ir_builder/storage.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/global_variable.hpp"
@@ -20,7 +21,7 @@ struct FuncCall {
     const std::vector<ir::Value> &args;
 };
 
-ir::Type build_type(lang::DataType *type, bool array_to_ptr = true);
+ir::Type build_type(lang::DataType *type);
 ir::Type ptr_to(lang::Variable *var);
 std::vector<ir::Type> build_params(const std::vector<lang::DataType *> &lang_params, IRBuilderContext &context);
 std::string get_func_link_name(lang::Function *func);
@@ -29,7 +30,7 @@ void store_val(IRBuilderContext &context, ir::Value val, ir::Value dest);
 void copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::Value dest_ptr);
 ir::Value build_arg(lang::ASTNode *node, IRBuilderContext &context);
 StoredValue build_call(lang::Function *func, const std::vector<ir::Value> &args, IRBuilderContext &context);
-StoredValue build_call(FuncCall call, const StorageReqs &reqs, IRBuilderContext &context);
+StoredValue build_call(FuncCall call, IRBuilderContext &context);
 StoredValue build_call(FuncCall call, ir::Value dst, IRBuilderContext &context);
 ir::VirtualRegister get_cur_return_reg(IRBuilderContext &context);
 bool is_branch(ir::Instruction &instr);

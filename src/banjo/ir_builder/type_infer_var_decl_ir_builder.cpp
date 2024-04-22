@@ -11,8 +11,7 @@ void TypeInferVarDeclIRBuilder::build() {
     lang::ASTNode *val_node = node->get_child(lang::TYPE_INFERRED_VAR_VALUE);
 
     lang::LocalVariable *var = static_cast<lang::LocalVariable *>(node->as<lang::ASTVar>()->get_symbol());
-    ir::VirtualRegister dst_reg = ir::VirtualRegister(var->get_virtual_reg_id());
-    ExprIRBuilder(context, val_node).build_and_store(dst_reg);
+    ExprIRBuilder(context, val_node).build_and_store(var->get_virtual_reg());
 }
 
 } // namespace ir_builder

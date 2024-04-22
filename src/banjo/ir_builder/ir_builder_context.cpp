@@ -169,6 +169,14 @@ void IRBuilderContext::append_cjmp(
     ));
 }
 
+void IRBuilderContext::append_offsetptr(ir::VirtualRegister dest, ir::Operand base, unsigned offset) {
+    return append_offsetptr(dest, std::move(base), ir::Operand::from_int_immediate(offset));
+}
+
+ir::VirtualRegister IRBuilderContext::append_offsetptr(ir::Operand base, unsigned offset) {
+    return append_offsetptr(std::move(base), ir::Operand::from_int_immediate(offset));
+}
+
 void IRBuilderContext::append_offsetptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand offset) {
     // HACK: don't do this here
     offset.set_type(ir::Primitive::I64);
@@ -181,11 +189,11 @@ ir::VirtualRegister IRBuilderContext::append_offsetptr(ir::Operand base, ir::Ope
     return reg;
 }
 
-void IRBuilderContext::append_memberptr(ir::VirtualRegister dest, ir::Operand base, int member) {
+void IRBuilderContext::append_memberptr(ir::VirtualRegister dest, ir::Operand base, unsigned member) {
     return append_memberptr(dest, std::move(base), ir::Operand::from_int_immediate(member));
 }
 
-ir::VirtualRegister IRBuilderContext::append_memberptr(ir::Operand base, int member) {
+ir::VirtualRegister IRBuilderContext::append_memberptr(ir::Operand base, unsigned member) {
     return append_memberptr(std::move(base), ir::Operand::from_int_immediate(member));
 }
 

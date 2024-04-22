@@ -61,7 +61,7 @@ BasicBlockIter Function::find_basic_block(const std::string &label) {
 }
 
 VirtualRegister Function::next_virtual_reg() {
-    return VirtualRegister(last_virtual_reg_id++);
+    return VirtualRegister(last_virtual_reg++);
 }
 
 std::string Function::next_float_label() {

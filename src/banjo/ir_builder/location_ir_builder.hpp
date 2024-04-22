@@ -2,6 +2,7 @@
 #define IR_BUILDER_LOCATION_IR_BUILDER_H
 
 #include "ir_builder/ir_builder.hpp"
+#include "ir_builder/storage.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/function.hpp"
 #include "symbol/location.hpp"
@@ -23,13 +24,9 @@ private:
     lang::Variable *var = nullptr;
     lang::Function *func = nullptr;
 
-    ir::VirtualRegister dest{-1};
-    ir::Operand operand;
-    bool operand_ref;
-
-    ir::Operand self_operand;
-    bool self_ptr;
-    lang::DataType *self_type;
+    ir::VirtualRegister dst{-1};
+    StoredValue value;
+    StoredValue self;
 
 public:
     LocationIRBuilder(IRBuilderContext &context, lang::ASTNode *node) : IRBuilder(context, node) {}
@@ -38,15 +35,11 @@ public:
       : IRBuilder(context, node),
         params{params} {}
 
-    ir::Value build(bool return_value);
-    ir::Value build_location(const lang::Location &location, bool return_value);
+    StoredValue build(bool return_value);
+    StoredValue build_location(const lang::Location &location, bool return_value);
     lang::Function *get_lang_func() { return func; }
-    bool is_operand_ref() { return operand_ref; }
-    ir::VirtualRegister get_dest() { return dest; }
-
-    ir::Operand get_self_operand() { return self_operand; }
-    bool is_self_ptr() { return self_ptr; }
-    lang::DataType *get_self_type() { return self_type; }
+    ir::VirtualRegister get_dst() { return dst; }
+    const StoredValue &get_self() { return self; }
 
 private:
     void build(const lang::Location &location);

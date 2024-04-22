@@ -1,11 +1,11 @@
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
 
-#include "ir/global.hpp"
 #include "symbol/variable.hpp"
 
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace lang {
 
@@ -28,10 +28,9 @@ public:
 
     void set_native(bool native) { this->native = native; }
     void set_exposed(bool exposed) { this->exposed = exposed; }
-    void set_link_name(std::optional<std::string> link_name) { this->link_name = link_name; }
+    void set_link_name(std::optional<std::string> link_name) { this->link_name = std::move(link_name); }
 
-    ir::Operand as_ir_operand(ir_builder::IRBuilderContext &context);
-    bool is_ir_operand_reference() { return true; }
+    ir_builder::StoredValue as_ir_value(ir_builder::IRBuilderContext &context) override final;
 };
 
 } // namespace lang

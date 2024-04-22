@@ -1,15 +1,18 @@
 #include "constant.hpp"
 
 #include "ir_builder/expr_ir_builder.hpp"
+#include <utility>
 
 namespace lang {
 
 Constant::Constant() : Variable(nullptr, ""), module_(nullptr) {}
 
-Constant::Constant(ASTNode *node, std::string name, ASTModule *module_) : Variable(node, name), module_(module_) {}
+Constant::Constant(ASTNode *node, std::string name, ASTModule *module_)
+  : Variable(node, std::move(name)),
+    module_(module_) {}
 
-ir::Operand Constant::as_ir_operand(ir_builder::IRBuilderContext &context) {
-    return ir_builder::ExprIRBuilder(context, value).build_into_value_if_possible();
+ir_builder::StoredValue Constant::as_ir_value(ir_builder::IRBuilderContext &context) {
+    return ir_builder::ExprIRBuilder(context, value).build();
 }
 
 } // namespace lang

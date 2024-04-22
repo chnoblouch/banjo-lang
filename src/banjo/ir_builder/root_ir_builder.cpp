@@ -123,7 +123,7 @@ void RootIRBuilder::create_ir_struct_members(lang::ASTNode *module_node) {
         ir::Structure *ir_struct = lang_struct->get_ir_struct();
 
         for (lang::StructField *lang_field : lang_struct->get_fields()) {
-            ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type(), false);
+            ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type());
             ir_struct->add(ir::StructureMember{lang_field->get_name(), ir_type});
         }
     });
@@ -137,7 +137,7 @@ void RootIRBuilder::create_ir_union_case_members(lang::ASTNode *module_node) {
             ir::Structure *ir_case = lang_case->get_ir_struct();
 
             for (lang::UnionCaseField *lang_field : lang_case->get_fields()) {
-                ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type(), false);
+                ir::Type ir_type = IRBuilderUtils::build_type(lang_field->get_type());
                 ir_case->add(ir::StructureMember{lang_field->get_name(), ir_type});
             }
         }
@@ -217,16 +217,18 @@ void RootIRBuilder::build_generic_func(lang::ASTNode *node) {
 }
 
 void RootIRBuilder::build_global(ir::Module &ir_mod, lang::ASTNode *node, lang::SymbolTable *symbol_table) {
-    std::string name = node->get_child(lang::VAR_NAME)->get_value();
+    lang::ASTNode *name_node = node->get_child(lang::VAR_NAME);
+    lang::ASTNode *value_node = node->get_child(lang::VAR_VALUE);
+
+    std::string name = name_node->get_value();
     std::optional<lang::SymbolRef> symbol = symbol_table->get_symbol(name);
     lang::GlobalVariable *var = symbol->get_global();
-    std::string link_name = IRBuilderUtils::get_global_var_link_name(var);
 
-    ir::Global global(
-        link_name,
-        IRBuilderUtils::build_type(var->get_data_type()),
-        ExprIRBuilder(context, node->get_child(lang::VAR_VALUE)).build_into_value_if_possible()
-    );
+    std::string link_name = IRBuilderUtils::get_global_var_link_name(var);
+    ir::Type type = IRBuilderUtils::build_type(var->get_data_type());
+    ir::Value value = ExprIRBuilder(context, value_node).build_into_value_if_possible().value_or_ptr;
+
+    ir::Global global(link_name, type, value);
     global.set_external(var->is_exposed());
 
     ir_mod.add(global);
@@ -237,10 +239,9 @@ void RootIRBuilder::build_native_global(ir::Module &ir_mod, lang::ASTNode *node,
     std::optional<lang::SymbolRef> symbol = symbol_table->get_symbol(name);
     lang::GlobalVariable *var = symbol->get_global();
 
-    ir_mod.add(ir::GlobalDecl(
-        IRBuilderUtils::get_global_var_link_name(var),
-        IRBuilderUtils::build_type(var->get_data_type())
-    ));
+    ir_mod.add(
+        ir::GlobalDecl(IRBuilderUtils::get_global_var_link_name(var), IRBuilderUtils::build_type(var->get_data_type()))
+    );
 }
 
 void RootIRBuilder::build_struct(lang::ASTNode *node) {

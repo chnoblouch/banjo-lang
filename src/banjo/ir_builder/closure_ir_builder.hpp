@@ -13,7 +13,7 @@ private:
 
 public:
     ClosureIRBuilder(IRBuilderContext &context, lang::ASTNode *node) : IRBuilder(context, node) {}
-    StoredValue build(StorageReqs reqs);
+    StoredValue build(StorageHints hints);
 
 private:
     ir::VirtualRegister create_data();

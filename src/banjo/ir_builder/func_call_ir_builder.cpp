@@ -8,12 +8,12 @@
 
 namespace ir_builder {
 
-ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) {
+ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result) {
     lang::Expr *location_node = node->get_child(lang::CALL_LOCATION)->as<lang::Expr>();
     lang::ASTNode *args_node = node->get_child(lang::CALL_ARGS);
 
     LocationIRBuilder location_builder(context, location_node, infer_params());
-    ir::Value location = location_builder.build(false);
+    ir::Value location = location_builder.build(false).value_or_ptr;
 
     lang::DataType *location_type = location_node->get_location()->get_type();
 
@@ -57,12 +57,12 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) 
 
     // HACK: don't modify parameters!
     if (!return_type.is_primitive(ir::Primitive::VOID) && !return_by_ref && use_result) {
-        reqs.dst = ir::Value::from_register(context.get_current_func()->next_virtual_reg());
+        hints.dst = ir::Value::from_register(context.get_current_func()->next_virtual_reg());
     }
 
     ir::VirtualRegister dst_reg;
     if (return_by_ref) {
-        StoredValue dst = StoredValue::alloc(return_type, reqs, context);
+        StoredValue dst = StoredValue::alloc(return_type, hints, context);
         call_instr_operands.push_back(dst.value_or_ptr);
         dst_reg = dst.value_or_ptr.get_register();
     } else {
@@ -85,10 +85,10 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageReqs reqs, bool use_result) 
         lang::ASTNode *argument = args_node->get_child(i);
         int param_index = is_method ? i + 1 : i;
         ir::Type param_type = IRBuilderUtils::build_type(type.param_types[param_index]);
-        call_instr_operands.push_back(ExprIRBuilder(context, argument).build_into_value_if_possible());
+        call_instr_operands.push_back(ExprIRBuilder(context, argument).build_into_value_if_possible().value_or_ptr);
     }
 
-    if (return_by_ref || !reqs.dst) {
+    if (return_by_ref || !hints.dst) {
         context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, call_instr_operands));
     } else {
         context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, dst_reg, call_instr_operands));
@@ -110,12 +110,12 @@ std::vector<lang::DataType *> FuncCallIRBuilder::infer_params() {
 }
 
 ir::Operand FuncCallIRBuilder::get_self_operand(LocationIRBuilder &location_builder) {
-    if (location_builder.is_self_ptr()) {
-        ir::Type type = location_builder.get_self_operand().get_type().deref();
-        ir::VirtualRegister self_reg = context.append_load(location_builder.get_self_operand());
+    if (location_builder.get_self().reference) {
+        ir::VirtualRegister self_reg = context.append_load(location_builder.get_self().value_or_ptr);
+        ir::Type type = location_builder.get_self().value_type;
         return ir::Operand::from_register(self_reg, type);
     } else {
-        return location_builder.get_self_operand();
+        return location_builder.get_self().value_or_ptr;
     }
 }
 

@@ -1,6 +1,5 @@
 #include "closure_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
 #include "ast/expr.hpp"
 #include "ir/structure.hpp"
 #include "ir_builder/func_def_ir_builder.hpp"
@@ -11,13 +10,13 @@
 
 namespace ir_builder {
 
-StoredValue ClosureIRBuilder::build(StorageReqs reqs) {
+StoredValue ClosureIRBuilder::build(StorageHints hints) {
     lang::ClosureExpr *closure_expr = node->as<lang::ClosureExpr>();
 
     lang::DataType *lang_type = closure_expr->get_data_type();
-    ir::Type type = IRBuilderUtils::build_type(lang_type, false);
+    ir::Type type = IRBuilderUtils::build_type(lang_type);
 
-    StoredValue stored_val = StoredValue::alloc(type, reqs, context);
+    StoredValue stored_val = StoredValue::alloc(type, hints, context);
     ir::Value val_ptr = stored_val.value_or_ptr;
 
     lang::Function *enclosing_func = context.get_current_lang_func();
@@ -67,10 +66,10 @@ StoredValue ClosureIRBuilder::build(StorageReqs reqs) {
 
     int index = 0;
     for (lang::Variable *var : closure.captured_vars) {
-        ir::Operand src = var->as_ir_operand(context);
-        ir::VirtualRegister dest_reg = context.append_memberptr(data_ptr, index);
-        ir::Operand dest = ir::Operand::from_register(dest_reg, src.get_type().ref());
-        IRBuilderUtils::copy_val(context, src, dest);
+        ir::Operand src = var->as_ir_value(context).value_or_ptr;
+        ir::VirtualRegister dst_reg = context.append_memberptr(data_ptr, index);
+        ir::Operand dst = ir::Operand::from_register(dst_reg, src.get_type().ref());
+        IRBuilderUtils::copy_val(context, src, dst);
         index += 1;
     }
 

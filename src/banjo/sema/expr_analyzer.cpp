@@ -202,8 +202,13 @@ bool ExprAnalyzer::check_array_literal() {
     }
 
     DataType *expected_element_type = nullptr;
+
     if (expected_type) {
-        expected_element_type = StandardTypes::get_array_base_type(expected_type);
+        if (expected_type->get_kind() == DataType::Kind::STATIC_ARRAY) {
+            expected_element_type = expected_type->get_static_array_type().base_type;
+        } else {
+            expected_element_type = StandardTypes::get_array_base_type(expected_type);
+        }
     }
 
     DataType *first_type = nullptr;
@@ -227,7 +232,12 @@ bool ExprAnalyzer::check_array_literal() {
         }
     }
 
-    type = instantiate_std_generic_struct({"std", "array"}, "Array", {first_type});
+    if (expected_type) {
+        type = expected_type;
+    } else {
+        type = instantiate_std_generic_struct({"std", "array"}, "Array", {first_type});
+    }
+
     return true;
 }
 

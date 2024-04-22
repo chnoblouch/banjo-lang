@@ -53,7 +53,7 @@ void ForIRBuilder::build_range_for() {
     BlockIRBuilder block_builder(context, block_node);
     block_builder.alloc_local_vars();
 
-    ir::Operand counter_ptr = var->as_ir_operand(context);
+    ir::Operand counter_ptr = var->as_ir_value(context).value_or_ptr;
     ExprIRBuilder(context, start_node).build_and_store(counter_ptr.get_register());
 
     context.append_jmp(entry);
@@ -61,7 +61,7 @@ void ForIRBuilder::build_range_for() {
 
     ir::VirtualRegister counter_reg_cond = context.append_load(counter_ptr);
     ir::Operand counter_cond = ir::Operand::from_register(counter_reg_cond, counter_ptr.get_type().deref());
-    ir::Value end = ExprIRBuilder(context, end_node).build_into_value_if_possible();
+    ir::Value end = ExprIRBuilder(context, end_node).build_into_value_if_possible().value_or_ptr;
 
     context.append_cjmp(counter_cond, ir::Comparison::NE, end, block, exit);
     context.append_block(block);
@@ -91,11 +91,11 @@ void ForIRBuilder::build_iter_for() {
     BlockIRBuilder block_builder(context, block_node);
     block_builder.alloc_local_vars();
 
-    ir::Value iterable = ExprIRBuilder(context, expr_node).build_into_ptr();
+    ir::Value iterable = ExprIRBuilder(context, expr_node).build_into_ptr().get_ptr();
     lang::Structure *lang_struct = expr_node->as<lang::Expr>()->get_data_type()->get_structure();
     lang::Function *lang_iter_func = lang_struct->get_method_table().get_function(lang::MagicFunctions::ITER);
     IRBuilderUtils::FuncCall iter_call{lang_iter_func, {iterable}};
-    ir::Value iter_ptr = IRBuilderUtils::build_call(iter_call, StorageReqs::FORCE_REFERENCE, context).value_or_ptr;
+    ir::Value iter_ptr = IRBuilderUtils::build_call(iter_call, context).get_ptr();
 
     context.append_jmp(entry);
     context.append_block(entry);
@@ -104,16 +104,16 @@ void ForIRBuilder::build_iter_for() {
     lang::Structure *lang_iter_struct = lang_iter_type->get_structure();
     lang::Function *lang_next_func = lang_iter_struct->get_method_table().get_function(lang::MagicFunctions::NEXT);
     IRBuilderUtils::FuncCall next_call{lang_next_func, {iter_ptr}};
-    ir::Value next_ptr = IRBuilderUtils::build_call(next_call, StorageReqs::NONE, context).value_or_ptr;
+    ir::Value next_ptr = IRBuilderUtils::build_call(next_call, context).value_or_ptr;
     ir::Operand null_ = ir::Operand::from_int_immediate(0, ir::Type(ir::Primitive::VOID, 1));
 
     context.append_cjmp(next_ptr, ir::Comparison::NE, null_, block, exit);
     context.append_block(block);
 
     if (is_by_ref) {
-        context.append_store(next_ptr, var->as_ir_operand(context));
+        context.append_store(next_ptr, var->as_ir_value(context).value_or_ptr);
     } else {
-        IRBuilderUtils::copy_val(context, next_ptr, var->as_ir_operand(context));
+        IRBuilderUtils::copy_val(context, next_ptr, var->as_ir_value(context).value_or_ptr);
     }
 
     block_builder.build_children();

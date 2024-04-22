@@ -11,10 +11,12 @@ GlobalVariable::GlobalVariable(ASTNode *node, std::string name, ASTModule *modul
   : Variable(node, std::move(name)),
     module_(module_) {}
 
-ir::Operand GlobalVariable::as_ir_operand(ir_builder::IRBuilderContext &context) {
+ir_builder::StoredValue GlobalVariable::as_ir_value(ir_builder::IRBuilderContext &context) {
     std::string link_name = ir_builder::IRBuilderUtils::get_global_var_link_name(this);
-    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type()).ref();
-    return native ? ir::Operand::from_extern_global(link_name, type) : ir::Operand::from_global(link_name, type);
+    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type());
+    ir::Value value = native ? ir::Operand::from_extern_global(link_name, type.ref())
+                             : ir::Operand::from_global(link_name, type.ref());
+    return ir_builder::StoredValue::create_reference(value, type);
 }
 
 } // namespace lang

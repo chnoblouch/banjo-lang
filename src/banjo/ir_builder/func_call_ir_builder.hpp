@@ -20,7 +20,7 @@ private:
 public:
     FuncCallIRBuilder(IRBuilderContext &context, lang::ASTNode *node) : IRBuilder(context, node) {}
 
-    ir::VirtualRegister build(StorageReqs reqs, bool use_result);
+    ir::VirtualRegister build(StorageHints hints, bool use_result);
     lang::FunctionType get_type() { return type; }
 
 private:

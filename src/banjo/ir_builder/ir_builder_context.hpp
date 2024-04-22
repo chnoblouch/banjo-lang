@@ -2,16 +2,18 @@
 #define IR_BUILDER_IR_BUILDER_CONTEXT_H
 
 #include "ir/module.hpp"
-#include "symbol/data_type_manager.hpp"
 #include "symbol/function.hpp"
 #include "symbol/module_path.hpp"
-#include "symbol/variable.hpp"
 #include "target/target.hpp"
 
 #include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+namespace lang {
+class Variable;
+} // namespace lang
 
 namespace ir_builder {
 
@@ -131,7 +133,7 @@ public:
     ir::Instruction &append_loadarg(ir::VirtualRegister dest, ir::Operand src);
     ir::VirtualRegister append_loadarg(ir::Operand src);
     void append_jmp(ir::BasicBlockIter block_iter);
-    
+
     void append_cjmp(
         ir::Operand left,
         ir::Comparison comparison,
@@ -139,11 +141,13 @@ public:
         ir::BasicBlockIter true_block_iter,
         ir::BasicBlockIter false_block_iter
     );
-    
+
+    void append_offsetptr(ir::VirtualRegister dest, ir::Operand base, unsigned offset);
+    ir::VirtualRegister append_offsetptr(ir::Operand base, unsigned offset);
     void append_offsetptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand offset);
     ir::VirtualRegister append_offsetptr(ir::Operand base, ir::Operand offset);
-    void append_memberptr(ir::VirtualRegister dest, ir::Operand base, int member);
-    ir::VirtualRegister append_memberptr(ir::Operand base, int member);
+    void append_memberptr(ir::VirtualRegister dest, ir::Operand base, unsigned member);
+    ir::VirtualRegister append_memberptr(ir::Operand base, unsigned member);
     void append_memberptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand member);
     ir::VirtualRegister append_memberptr(ir::Operand base, ir::Operand member);
     void append_ret(ir::Operand val);

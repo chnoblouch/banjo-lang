@@ -9,8 +9,8 @@ void AssignIRBuilder::build() {
     lang::ASTNode *location_node = node->get_child(lang::ASSIGN_LOCATION);
     lang::ASTNode *value_node = node->get_child(lang::ASSIGN_VALUE);
 
-    StoredValue dst = ExprIRBuilder(context, location_node).build(StorageReqs::FORCE_REFERENCE);
-    ExprIRBuilder(context, value_node).build_and_store(dst.value_or_ptr);
+    ir::Value dst = ExprIRBuilder(context, location_node).build_into_ptr().get_ptr();
+    ExprIRBuilder(context, value_node).build_and_store(dst);
 }
 
 } // namespace ir_builder

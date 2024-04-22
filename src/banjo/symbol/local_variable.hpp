@@ -1,6 +1,7 @@
 #ifndef LOCAL_VARIABLE_H
 #define LOCAL_VARIABLE_H
 
+#include "ir/virtual_register.hpp"
 #include "symbol/variable.hpp"
 
 namespace lang {
@@ -8,16 +9,15 @@ namespace lang {
 class LocalVariable : public Variable {
 
 private:
-    long virtual_reg_id = -1;
+    ir::VirtualRegister virtual_reg = -1;
 
 public:
     LocalVariable(ASTNode *node, DataType *data_type, std::string name);
 
-    long get_virtual_reg_id() { return virtual_reg_id; }
-    void set_virtual_reg_id(long virtual_reg_id) { this->virtual_reg_id = virtual_reg_id; }
+    ir::VirtualRegister get_virtual_reg() { return virtual_reg; }
+    void set_virtual_reg(ir::VirtualRegister virtual_reg) { this->virtual_reg = virtual_reg; }
 
-    ir::Operand as_ir_operand(ir_builder::IRBuilderContext &context);
-    bool is_ir_operand_reference() { return true; }
+    ir_builder::StoredValue as_ir_value(ir_builder::IRBuilderContext &context) override final;
 };
 
 } // namespace lang

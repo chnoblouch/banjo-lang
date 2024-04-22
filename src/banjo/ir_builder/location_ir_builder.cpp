@@ -3,32 +3,33 @@
 #include "ast/expr.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
 #include "ir_builder/ir_builder_utils.hpp"
+#include "ir_builder/storage.hpp"
 #include "symbol/constant.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/enumeration.hpp"
-#include "symbol/global_variable.hpp"
-#include "symbol/local_variable.hpp"
 #include "symbol/location.hpp"
-#include "symbol/parameter.hpp"
+#include "utils/macros.hpp"
+#include <cassert>
 
 namespace ir_builder {
 
-ir::Value LocationIRBuilder::build(bool return_value) {
+StoredValue LocationIRBuilder::build(bool return_value) {
     const lang::Location &location = *node->as<lang::Expr>()->get_location();
     return build_location(location, return_value);
 }
 
-ir::Value LocationIRBuilder::build_location(const lang::Location &location, bool return_value) {
-    dest = context.get_current_func()->next_virtual_reg();
+StoredValue LocationIRBuilder::build_location(const lang::Location &location, bool return_value) {
+    dst = context.get_current_func()->next_virtual_reg();
     build(location);
 
     // TODO: replace this
     if (return_value && func && !func->is_native() &&
         location.get_type()->get_kind() == lang::DataType::Kind::FUNCTION) {
-        operand = ir::Operand::from_func(func->get_ir_func(), ir::Type(ir::Primitive::VOID, 1));
+        ir::Value value = ir::Operand::from_func(func->get_ir_func(), ir::Type(ir::Primitive::VOID, 1));
+        this->value = StoredValue::create_value(value);
     }
 
-    return operand;
+    return value;
 }
 
 void LocationIRBuilder::build(const lang::Location &location) {
@@ -55,34 +56,33 @@ void LocationIRBuilder::build_root(const lang::LocationElement &element) {
         build_var(element.get_const());
     } else if (element.is_func()) {
         func = element.get_func();
-        ir::Type ir_type = ir::Type(ir::Primitive::VOID, 1);
+        ir::Type type = ir::Type(ir::Primitive::VOID, 1);
+        ir::Value value;
 
         if (!element.get_func()->is_native()) {
-            operand = ir::Operand::from_func(element.get_func()->get_ir_func(), ir_type);
+            value = ir::Operand::from_func(element.get_func()->get_ir_func(), type);
         } else {
             std::string link_name = IRBuilderUtils::get_func_link_name(element.get_func());
-            operand = ir::Operand::from_extern_func(link_name, ir_type);
+            value = ir::Operand::from_extern_func(link_name, type);
         }
 
-        operand_ref = false;
+        this->value = StoredValue::create_value(value);
     } else if (element.is_self()) {
-        int self_param_index = context.get_current_lang_func()->is_return_by_ref() ? 1 : 0;
-
+        unsigned self_param_index = context.get_current_lang_func()->is_return_by_ref() ? 1 : 0;
         ir::VirtualRegister self_reg = context.get_current_arg_regs()[self_param_index];
-        ir::Type self_type = context.get_current_func()->get_params()[self_param_index].ref();
-
-        operand = ir::Operand::from_register(self_reg, self_type);
-        operand_ref = true;
+        ir::Type self_type = context.get_current_func()->get_params()[self_param_index];
+        value = StoredValue::create_reference(self_reg, self_type);
     } else if (element.is_enum_variant()) {
-        const LargeInt &value = element.get_enum_variant()->get_value();
-        operand = ir::Operand::from_int_immediate(value, ir::Type(ir::Primitive::I32));
-        operand_ref = false;
+        const LargeInt &int_value = element.get_enum_variant()->get_value();
+        ir::Type type = ir::Primitive::I32;
+        ir::Value value = ir::Operand::from_int_immediate(int_value, type);
+        this->value = StoredValue::create_value(value);
     } else if (element.is_expr()) {
         ExprIRBuilder expr_builder(context, element.get_expr());
-        operand = expr_builder.build_into_ptr();
-        operand_ref = true;
+        value = expr_builder.build_into_ptr();
+        assert(value.reference);
     } else {
-        assert(!"invalid root location element");
+        ASSERT_UNREACHABLE;
     }
 }
 
@@ -92,8 +92,7 @@ void LocationIRBuilder::build_var(lang::Variable *var) {
     if (is_captured_var(var)) {
         build_captured_var(var);
     } else {
-        operand = var->as_ir_operand(context);
-        operand_ref = var->is_ir_operand_reference();
+        value = var->as_ir_value(context);
     }
 }
 
@@ -111,7 +110,7 @@ void LocationIRBuilder::build_captured_var(lang::Variable *var) {
     std::vector<lang::Variable *> &captured_vars = context.get_current_closure()->captured_vars;
     ir::Type context_type = context.get_current_closure()->context_type;
 
-    int member_index = 0;
+    unsigned member_index = 0;
     auto it = std::find(captured_vars.begin(), captured_vars.end(), var);
     if (it == captured_vars.end()) {
         captured_vars.push_back(var);
@@ -126,8 +125,7 @@ void LocationIRBuilder::build_captured_var(lang::Variable *var) {
     ir::Operand context_ptr = ir::Operand::from_register(context_ptr_reg, context_type.ref());
     ir::VirtualRegister member_ptr_reg = context.append_memberptr(context_ptr, member_index);
     ir::Type member_type = IRBuilderUtils::build_type(var->get_data_type());
-    operand = ir::Operand::from_register(member_ptr_reg, member_type.ref());
-    operand_ref = true;
+    value = StoredValue::create_reference(member_ptr_reg, member_type);
 }
 
 void LocationIRBuilder::build_element(const lang::LocationElement &element, lang::DataType *previous_type) {
@@ -152,64 +150,59 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
             build_ptr_method_call(element.get_func());
         }
     } else if (element.is_tuple_index()) {
-        ir::VirtualRegister reg = context.append_memberptr(operand, element.get_tuple_index());
-        ir::Type type = IRBuilderUtils::build_type(element.get_type()).ref();
-        operand = ir::Operand::from_register(reg, type);
-        operand_ref = true;
+        ir::VirtualRegister reg = context.append_memberptr(value.value_or_ptr, element.get_tuple_index());
+        ir::Type type = IRBuilderUtils::build_type(element.get_type());
+        value = StoredValue::create_reference(reg, type);
     } else {
         assert(false && "invalid non-root location element");
     }
 }
 
 void LocationIRBuilder::build_struct_field_access(lang::StructField *field, lang::Structure *struct_) {
-    int offset = struct_->get_field_index(field);
-    ir::Type type = IRBuilderUtils::build_type(field->get_type()).ref();
+    unsigned offset = struct_->get_field_index(field);
+    context.append_memberptr(dst, value.get_ptr(), offset);
 
-    context.append_memberptr(dest, operand, offset);
-    operand = ir::Operand::from_register(dest, type);
-    dest = context.get_current_func()->next_virtual_reg();
+    ir::Type type = IRBuilderUtils::build_type(field->get_type());
+    value = StoredValue::create_reference(dst, type);
+
+    dst = context.get_current_func()->next_virtual_reg();
 }
 
 void LocationIRBuilder::build_union_case_field_access(lang::UnionCaseField *field, lang::UnionCase *case_) {
     unsigned index = case_->get_field_index(field);
-    ir::Type type = IRBuilderUtils::build_type(field->get_type()).ref();
+    context.append_memberptr(dst, value.get_ptr(), index);
 
-    context.append_memberptr(dest, operand, index);
-    operand = ir::Operand::from_register(dest, type);
-    dest = context.get_current_func()->next_virtual_reg();
+    ir::Type type = IRBuilderUtils::build_type(field->get_type());
+    value = StoredValue::create_reference(dst, type);
+
+    dst = context.get_current_func()->next_virtual_reg();
 }
 
 void LocationIRBuilder::build_direct_method_call(lang::Function *method) {
-    self_operand = operand;
-    self_ptr = false;
+    self = StoredValue::create_value(value.get_ptr());
     func = method;
 }
 
 void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::Structure *struct_) {
-    ir::Type base_type;
-    ir::Type type = IRBuilderUtils::build_type(field->get_type()).ref();
+    ir::Type base_type = value.value_type;
 
-    if (operand_ref) {
-        context.append_load(dest, operand);
-        base_type = operand.get_type().deref();
+    if (value.reference) {
+        context.append_load(dst, value.value_or_ptr);
     } else {
-        dest = operand.get_register();
-        base_type = operand.get_type();
+        dst = value.value_or_ptr.get_register();
     }
 
-    ir::Operand base = ir::Operand::from_register(dest, base_type);
-    int field_index = struct_->get_field_index(field);
+    ir::Operand base = ir::Operand::from_register(dst, base_type);
+    unsigned field_index = struct_->get_field_index(field);
     ir::VirtualRegister offset_ptr_reg = context.append_memberptr(base, field_index);
+    ir::Type type = IRBuilderUtils::build_type(field->get_type());
+    value = StoredValue::create_reference(offset_ptr_reg, type);
 
-    operand = ir::Operand::from_register(offset_ptr_reg, type);
-    operand_ref = true;
-
-    dest = context.get_current_func()->next_virtual_reg();
+    dst = context.get_current_func()->next_virtual_reg();
 }
 
 void LocationIRBuilder::build_ptr_method_call(lang::Function *method) {
-    self_operand = operand;
-    self_ptr = operand_ref;
+    self = value;
     func = method;
 }
 

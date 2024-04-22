@@ -10,7 +10,7 @@
 
 namespace ir_builder {
 
-ir::Type IRBuilderUtils::build_type(lang::DataType *type, bool array_to_ptr /* = true */) {
+ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
     assert(type && "null type in type ir builder");
 
     if (type->get_kind() == lang::DataType::Kind::PRIMITIVE) {
@@ -48,18 +48,14 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type, bool array_to_ptr /* =
 
         ir::Type ir_type = build_type(current_type);
         ir_type.set_ptr_depth(depth);
+        ir_type.set_array_length(1);
         return ir_type;
     } else if (type->get_kind() == lang::DataType::Kind::FUNCTION) {
         return ir::Type(ir::Primitive::VOID, 1);
     } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
         ir::Type ir_type = build_type(type->get_static_array_type().base_type);
-
-        if (array_to_ptr) {
-            return ir_type.ref();
-        } else {
-            ir_type.set_array_length(type->get_static_array_type().length);
-            return ir_type;
-        }
+        ir_type.set_array_length(type->get_static_array_type().length);
+        return ir_type;
     } else if (type->get_kind() == lang::DataType::Kind::TUPLE) {
         std::vector<ir::Type> tuple_types;
         for (lang::DataType *lang_type : type->get_tuple().types) {
@@ -150,7 +146,7 @@ ir::Value IRBuilderUtils::build_arg(lang::ASTNode *node, IRBuilderContext &conte
     lang::DataType *lang_type = node->as<lang::Expr>()->get_data_type();
     ir::Type type = build_type(lang_type);
 
-    return ExprIRBuilder(context, node).build_into_value_if_possible();
+    return ExprIRBuilder(context, node).build_into_value_if_possible().value_or_ptr;
 }
 
 StoredValue IRBuilderUtils::build_call(
@@ -158,28 +154,21 @@ StoredValue IRBuilderUtils::build_call(
     const std::vector<ir::Value> &args,
     IRBuilderContext &context
 ) {
-    return build_call({func, args}, StorageReqs(), context);
+    return build_call({func, args}, context);
 }
 
-StoredValue IRBuilderUtils::build_call(FuncCall call, const StorageReqs &reqs, IRBuilderContext &context) {
-    ir::Value dst;
-
-    if (reqs.dst) {
-        dst = *reqs.dst;
-    } else {
-        ir::VirtualRegister dst_reg = 0;
-        if (!call.func->get_type().return_type->is_primitive_of_type(lang::PrimitiveType::VOID)) {
-            dst_reg = context.get_current_func()->next_virtual_reg();
-        }
-
-        if (call.func->is_return_by_ref()) {
-            ir::Type return_type = IRBuilderUtils::build_type(call.func->get_type().return_type);
-            context.append_alloca(dst_reg, return_type);
-        }
-
-        dst = ir::Value::from_register(dst_reg, ir::Primitive::VOID);
+StoredValue IRBuilderUtils::build_call(FuncCall call, IRBuilderContext &context) {
+    ir::VirtualRegister dst_reg = 0;
+    if (!call.func->get_type().return_type->is_primitive_of_type(lang::PrimitiveType::VOID)) {
+        dst_reg = context.get_current_func()->next_virtual_reg();
     }
 
+    if (call.func->is_return_by_ref()) {
+        ir::Type return_type = IRBuilderUtils::build_type(call.func->get_type().return_type);
+        context.append_alloca(dst_reg, return_type);
+    }
+
+    ir::Value dst = ir::Value::from_register(dst_reg, ir::Primitive::VOID);
     return build_call(call, dst, context);
 }
 
@@ -206,7 +195,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, ir::Value dst, IRBuilderCo
     if (call.func->is_return_by_ref()) {
         context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, operands));
         dst.set_type(built_return_type.ref());
-        return StoredValue::create_ptr(dst, context);
+        return StoredValue::create_reference(dst, built_return_type);
     } else {
         if (call.func->get_type().return_type->is_primitive_of_type(lang::PrimitiveType::VOID)) {
             context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, operands));
@@ -215,7 +204,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, ir::Value dst, IRBuilderCo
         }
 
         dst.set_type(built_return_type);
-        return StoredValue::create_value(dst, context);
+        return StoredValue::create_value(dst);
     }
 }
 

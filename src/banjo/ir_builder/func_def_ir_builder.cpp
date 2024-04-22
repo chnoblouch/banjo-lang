@@ -95,7 +95,7 @@ void FuncDefIRBuilder::init_lang_params(lang::Function *lang_func, std::vector<l
         ir::Type type = IRBuilderUtils::build_type(lang_param->get_data_type());
         bool pass_by_ref = is_pass_by_ref(type);
         lang_param->set_pass_by_ref(pass_by_ref);
-        lang_param->set_virtual_reg_id(context.get_current_arg_regs()[i + lang_arg_start_index]);
+        lang_param->set_virtual_reg(context.get_current_arg_regs()[i + lang_arg_start_index]);
     }
 }
 

@@ -23,8 +23,7 @@ public:
 
     void set_value(ASTNode *value) { this->value = value; }
 
-    ir::Operand as_ir_operand(ir_builder::IRBuilderContext &context);
-    bool is_ir_operand_reference() { return false; }
+    ir_builder::StoredValue as_ir_value(ir_builder::IRBuilderContext &context) override final;
 };
 
 } // namespace lang

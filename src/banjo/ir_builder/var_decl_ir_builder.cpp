@@ -15,8 +15,7 @@ void VarDeclIRBuilder::build() {
     lang::ASTNode *val_node = node->get_child(lang::VAR_VALUE);
 
     lang::LocalVariable *var = static_cast<lang::LocalVariable *>(node->as<lang::ASTVar>()->get_symbol());
-    ir::VirtualRegister dest_reg = ir::VirtualRegister(var->get_virtual_reg_id());
-    ExprIRBuilder(context, val_node).build_and_store(dest_reg);
+    ExprIRBuilder(context, val_node).build_and_store(var->get_virtual_reg());
 }
 
 } // namespace ir_builder

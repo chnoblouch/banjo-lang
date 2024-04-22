@@ -1,31 +1,87 @@
 #include "storage.hpp"
+#include "ir_builder_context.hpp"
 
+#include <cassert>
 #include <utility>
 
 namespace ir_builder {
 
-const StorageReqs StorageReqs::NONE;
-const StorageReqs StorageReqs::FORCE_VALUE(false);
-const StorageReqs StorageReqs::FORCE_REFERENCE(true);
-const StorageReqs StorageReqs::LOCATION(true);
+const StorageHints StorageHints::NONE;
+const StorageHints StorageHints::PREFER_REFERENCE(true);
 
-StoredValue StoredValue::create_value(ir::Value value, IRBuilderContext &context) {
-    return {false, true, std::move(value)};
+StoredValue StoredValue::create_value(ir::Value value) {
+    return {false, value.get_type(), std::move(value)};
 }
 
-StoredValue StoredValue::create_ptr(ir::Value value, IRBuilderContext &context) {
-    target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    bool fits_in_reg = data_layout.fits_in_register(value.get_type().deref());
-    return {true, fits_in_reg, std::move(value)};
+StoredValue StoredValue::create_value(ir::VirtualRegister reg, ir::Type value_type) {
+    ir::Value value = ir::Value::from_register(reg, value_type);
+    return {false, std::move(value_type), value};
 }
 
-StoredValue StoredValue::alloc(const ir::Type &type, StorageReqs reqs, IRBuilderContext &context) {
-    ir::Value val = reqs.dst ? *reqs.dst : ir::Operand::from_register(context.append_alloca(type));
+StoredValue StoredValue::create_reference(ir::Value value, ir::Type value_type) {
+    return {true, std::move(value_type), std::move(value)};
+}
+
+StoredValue StoredValue::create_reference(ir::VirtualRegister reg, ir::Type value_type) {
+    ir::Value value = ir::Value::from_register(reg, value_type.ref());
+    return {true, std::move(value_type), std::move(value)};
+}
+
+StoredValue StoredValue::alloc(const ir::Type &type, const StorageHints &hints, IRBuilderContext &context) {
+    ir::Value val = hints.dst ? *hints.dst : ir::Operand::from_register(context.append_alloca(type));
     val.set_type(type.ref());
-
-    target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    bool fits_in_reg = data_layout.fits_in_register(type);
-
-    return {true, fits_in_reg, val};
+    return {true, type, val};
 }
+
+bool StoredValue::fits_in_reg(IRBuilderContext &context) {
+    return context.get_target()->get_data_layout().fits_in_register(value_type);
+}
+
+StoredValue StoredValue::turn_into_reference(IRBuilderContext &context) {
+    if (reference) {
+        return *this;
+    } else {
+        ir::VirtualRegister dst_reg = context.append_alloca(value_type);
+        ir::Value dst = ir::Value::from_register(dst_reg, value_type.ref());
+        context.append_store(value_or_ptr, dst);
+        return create_reference(dst, value_type);
+    }
+}
+
+StoredValue StoredValue::try_turn_into_value(IRBuilderContext &context) {
+    if (reference && fits_in_reg(context)) {
+        ir::VirtualRegister reg = context.append_load(value_or_ptr);
+        ir::Value val = ir::Value::from_register(reg, value_type);
+        return StoredValue::create_value(val);
+    } else {
+        return *this;
+    }
+}
+
+StoredValue StoredValue::turn_into_value(IRBuilderContext &context) {
+    if (reference) {
+        assert(fits_in_reg(context));
+        ir::VirtualRegister reg = context.append_load(value_or_ptr);
+        ir::Value val = ir::Value::from_register(reg, value_type);
+        return StoredValue::create_value(val);
+    } else {
+        return *this;
+    }
+}
+
+void StoredValue::copy_to(const ir::Value &dst, IRBuilderContext &context) {
+    if (value_or_ptr.is_register() && value_or_ptr == dst) {
+        return;
+    }
+
+    if (reference) {
+        const ir::Value &copy_src = value_or_ptr;
+        ir::Value copy_dst = dst.with_type(copy_src.get_type());
+        unsigned copy_size = context.get_size(value_type);
+        context.append_copy(copy_dst, copy_src, copy_size);
+    } else {
+        context.append_store(value_or_ptr, dst);
+    }
+}
+
 } // namespace ir_builder

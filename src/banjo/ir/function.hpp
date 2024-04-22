@@ -3,6 +3,7 @@
 
 #include "ir/basic_block.hpp"
 #include "ir/function_decl.hpp"
+#include "ir/virtual_register.hpp"
 
 #include <vector>
 
@@ -13,7 +14,7 @@ class Function : public FunctionDecl {
 private:
     LinkedList<BasicBlock> basic_blocks;
 
-    long last_virtual_reg_id = 0;
+    ir::VirtualRegister last_virtual_reg = 0;
     int last_float_label_id = 0;
 
 public:

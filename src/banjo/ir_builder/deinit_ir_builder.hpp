@@ -2,7 +2,7 @@
 #define DEINIT_IR_BUILDER_H
 
 #include "ir_builder/ir_builder.hpp"
-#include <unordered_map>
+#include "symbol/variable.hpp"
 
 namespace ir_builder {
 

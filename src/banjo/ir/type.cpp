@@ -49,11 +49,11 @@ bool Type::is_base_only() const {
 }
 
 Type Type::ref() const {
-    return {value, ptr_depth + 1, array_length};
+    return {value, ptr_depth + 1, 1};
 }
 
 Type Type::deref() const {
-    return {value, ptr_depth - 1, array_length};
+    return {value, ptr_depth - 1, 1};
 }
 
 Type Type::base() const {

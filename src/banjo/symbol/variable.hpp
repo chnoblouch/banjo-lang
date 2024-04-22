@@ -2,7 +2,7 @@
 #define VARIABLE_H
 
 #include "ast/ast_node.hpp"
-#include "ir/operand.hpp"
+#include "ir_builder/storage.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/location.hpp"
 #include "symbol/symbol.hpp"
@@ -44,8 +44,7 @@ public:
 
     void set_data_type(DataType *data_type) { this->data_type = data_type; }
 
-    virtual ir::Operand as_ir_operand(ir_builder::IRBuilderContext &context) = 0;
-    virtual bool is_ir_operand_reference() = 0;
+    virtual ir_builder::StoredValue as_ir_value(ir_builder::IRBuilderContext &context) = 0;
 };
 
 } // namespace lang

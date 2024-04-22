@@ -68,7 +68,7 @@ void DeinitIRBuilder::build_cond_deinit_call(lang::DeinitInfo *info) {
 
 void DeinitIRBuilder::build_deinit_call(lang::DeinitInfo *info) {
     LocationIRBuilder location_builder(context, nullptr);
-    ir::Value operand = location_builder.build_location(info->location, false);
+    ir::Value operand = location_builder.build_location(info->location, false).value_or_ptr;
     lang::Structure *struct_ = info->location.get_type()->get_structure();
     lang::Function *func = struct_->get_method_table().get_function(lang::MagicFunctions::DEINIT);
     IRBuilderUtils::build_call(func, {operand}, context);

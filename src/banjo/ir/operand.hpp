@@ -176,7 +176,7 @@ public:
     Type get_type() const { return type; }
     void set_type(Type type) { this->type = std::move(type); }
 
-    Operand with_type(Type type) {
+    Operand with_type(Type type) const {
         ir::Operand copy = *this;
         copy.set_type(std::move(type));
         return copy;
