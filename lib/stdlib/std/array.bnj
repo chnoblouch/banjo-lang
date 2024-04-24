@@ -29,6 +29,8 @@ struct Array[T] {
                 self.data[i].__deinit__();
             }
         }
+		
+		memory.free(self.data as addr);
     }
 	
 	pub func get(self, index: u32) -> T {

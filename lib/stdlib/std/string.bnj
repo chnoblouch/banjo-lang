@@ -9,9 +9,7 @@ struct String {
 	pub func new() -> String {
 		var data = memory.alloc(1 as usize) as *u8;
 		data[0] = 0;
-        
-        # println("init string");
-    
+            
 		return String {
 			data: data,
 			length: 0 as u32,
@@ -25,9 +23,7 @@ struct String {
 		var data = memory.alloc(capacity as usize) as *u8;
         
 		memory.copy(cstr as addr, data as addr, capacity);
-        
-        # println("init string");
-        
+                
 		return String {
 			data: data,
 			length: length as u32,
@@ -114,8 +110,6 @@ struct String {
     
     pub func __deinit__(self) {
         memory.free(self.data as addr);
-        # print("deinit string: ");
-        # println(self.data);
     }
 	
     pub func copy(self) -> String {
