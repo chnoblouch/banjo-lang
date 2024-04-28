@@ -61,7 +61,7 @@ meta if config.OS == config.WINDOWS {
     }
 
 	pub func current_dir() -> *u8 {
-		var size = GetCurrentDirectoryA(0 as u32, null as *u8);
+		var size = GetCurrentDirectoryA(0, null);
 		var buffer = memory.alloc(size as usize) as *u8;
 		GetCurrentDirectoryA(size, buffer);
 		return buffer;

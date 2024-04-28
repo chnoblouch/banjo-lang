@@ -139,7 +139,10 @@ bool ExprAnalyzer::check_int_literal() {
                 case PrimitiveType::U64: type = expected_type; return true;
                 default: break;
             }
-        } else if (StandardTypes::is_optional(expected_type)) {
+        } else if (expected_type->get_kind() == DataType::Kind::POINTER) {
+            type = expected_type;
+            return true;
+        }  else if (StandardTypes::is_optional(expected_type)) {
             type = StandardTypes::get_optional_value_type(expected_type);
             return true;
         } else if (StandardTypes::is_result(expected_type)) {

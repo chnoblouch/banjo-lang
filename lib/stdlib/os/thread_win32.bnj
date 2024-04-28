@@ -29,7 +29,7 @@ meta if config.OS == config.WINDOWS {
 	native func GetNativeSystemInfo(lpSystemInfo: *SYSTEMINFO);
 
 	pub func spawn(function: func(addr), argument: addr) -> usize {
-		var handle = CreateThread(null, 0 as usize, function, argument, 0 as u32, null as *u32);
+		var handle = CreateThread(null, 0, function, argument, 0, null);
 		return handle as usize;
 	}
 

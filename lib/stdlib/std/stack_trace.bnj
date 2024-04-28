@@ -40,7 +40,7 @@ pub func print_stack_trace() {
 }
 
 func print_symbol_demangled(symbol: *u8) {
-	symbol = symbol + 5 as *u8;
+	symbol = symbol + 5;
 	
 	var i = 0;
 	while true {

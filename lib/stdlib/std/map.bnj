@@ -112,7 +112,7 @@ struct MapIter[K, V] {
 	
 	pub func __next__(self) -> *Entry[K, V] {
 		while self.cur_item as addr == null {
-			self.cur_bucket += 1 as **Entry[K, V];			
+			self.cur_bucket += 1;			
 			if self.cur_bucket == self.end {
 				return null;
 			}

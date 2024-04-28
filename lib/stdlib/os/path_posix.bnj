@@ -10,7 +10,7 @@ meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == c
     }
 
 	pub func current_dir() -> *u8 {
-		return null as *u8;
+		return null;
 	}
 
 	pub func set_current_dir(dir: *u8) {

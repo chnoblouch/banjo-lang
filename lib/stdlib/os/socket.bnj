@@ -150,7 +150,7 @@ pub func listen(handle: SocketHandle, port: i32) {
 
 pub func accept(handle: SocketHandle) -> SocketHandle {
     meta if config.OS == config.WINDOWS {
-        return winsock.accept(handle, null, null as *i32);
+        return winsock.accept(handle, null, null);
     } else if config.OS == config.LINUX || config.OS == config.MACOS {
         panic("not implemented");
     }

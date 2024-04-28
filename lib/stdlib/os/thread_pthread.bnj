@@ -18,7 +18,7 @@ meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == c
 	}
 
 	pub func join(handle: usize) {
-		var result = pthread_join(handle, null as *addr);
+		var result = pthread_join(handle, null);
 	}
 
 	pub func close(handle: usize) {
@@ -31,7 +31,7 @@ meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == c
 			tv_nsec: (milliseconds % 1000) as u64 * 1000000
 		};
 		
-		nanosleep(&time, null as *timespec);
+		nanosleep(&time, null);
 	}
 
 	pub func hardware_concurrency() -> u32 {

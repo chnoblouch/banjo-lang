@@ -1,0 +1,22 @@
+#! output: 45;-312;84;191;-312;191
+
+func main() {
+    var a: [i32; 4] = [45, -312, 84, 191];
+    var ptr = &a as *i32;
+
+    print(*(ptr + 0));
+    print(";");
+    print(*(ptr + 1));
+    print(";");
+    print(*(ptr + 2));
+    print(";");
+    print(*(ptr + 3));
+    print(";");
+
+    ptr += 1;
+    print(*ptr);
+    print(";");
+
+    ptr += 2;
+    print(*ptr);
+}

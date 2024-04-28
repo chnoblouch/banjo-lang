@@ -7,7 +7,7 @@ struct Array[T] {
     
 	pub func new() -> Array[T] {
 		return Array[T] {
-			data: null as *T,
+			data: null,
 			length: 0,
 			capacity: 0,
 		};
@@ -143,7 +143,7 @@ struct ArrayIter[T] {
 		}
 	
 		var value = self.pointer;
-		self.pointer += 1 as *T;
+		self.pointer += 1;
 		return value;
 	}
 }

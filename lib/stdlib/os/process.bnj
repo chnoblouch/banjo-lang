@@ -91,14 +91,14 @@ meta if config.OS == config.WINDOWS {
         var process_info: PROCESS_INFORMATION;
         
         var result = CreateProcessA(
-            null as *u8,
+            null,
             command,
             null,
             null,
             true,
-            0 as u32,
+            0,
             null,
-            null as *u8,
+            null,
             &startup_info,
             &process_info
         );
