@@ -28,11 +28,11 @@ void SwitchIRBuilder::build() {
 
     StoredValue val = ExprIRBuilder(context, value_node).build_into_ptr();
     ir::VirtualRegister tag_ptr_reg = context.append_memberptr(val.value_type, val.get_ptr(), 0);
-    ir::Value tag_ptr = ir::Value::from_register(tag_ptr_reg, ir::Type(ir::Primitive::I32, 1));
+    ir::Value tag_ptr = ir::Value::from_register(tag_ptr_reg, ir::Primitive::ADDR);
     ir::Value tag = context.append_load(ir::Primitive::I32, tag_ptr);
 
     ir::VirtualRegister data_ptr_reg = context.append_memberptr(val.value_type, val.get_ptr(), 1);
-    ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, ir::Type(ir::Primitive::VOID, 1));
+    ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, ir::Primitive::ADDR);
 
     ir::BasicBlockIter exit_iter = context.create_block("switch.exit." + id_str);
 

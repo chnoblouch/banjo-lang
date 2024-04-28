@@ -20,7 +20,21 @@ class UnionCase;
 class DataTypeManager;
 class Function;
 
-enum PrimitiveType { I8, I16, I32, I64, U8, U16, U32, U64, F32, F64, BOOL, ADDR, VOID };
+enum PrimitiveType {
+    I8,
+    I16,
+    I32,
+    I64,
+    U8,
+    U16,
+    U32,
+    U64,
+    F32,
+    F64,
+    BOOL,
+    ADDR,
+    VOID,
+};
 
 struct FunctionType {
     std::vector<DataType *> param_types;

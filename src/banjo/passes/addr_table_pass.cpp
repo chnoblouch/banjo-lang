@@ -25,7 +25,7 @@ void AddrTablePass::run(ir::Module &mod) {
             add_symbol(external_global.get_name(), mod);
         }
     } else {
-        mod.add(ir::GlobalDecl("addr_table", ir::Type(ir::Primitive::I64)));
+        mod.add(ir::GlobalDecl("addr_table", ir::Primitive::I64));
     }
 
     for (ir::Function *func : mod.get_functions()) {
@@ -40,8 +40,8 @@ void AddrTablePass::add_symbol(const std::string &name, ir::Module &mod) {
 
     ir::Global global(
         index == 0 ? "addr_table" : "addr_table_" + std::to_string(index),
-        ir::Type(ir::Primitive::I64),
-        ir::Value::from_global(name, ir::Type(ir::Primitive::VOID, 1))
+        ir::Primitive::I64,
+        ir::Value::from_global(name, ir::Primitive::ADDR)
     );
     global.set_external(true);
     mod.add(global);
@@ -76,8 +76,8 @@ void AddrTablePass::replace_uses(ir::Function *func, ir::BasicBlock &basic_block
                 ir::Instruction(
                     ir::Opcode::ADD,
                     ptr_reg,
-                    {ir::Operand::from_global("addr_table", ir::Type(ir::Primitive::VOID, 1)),
-                     ir::Operand::from_int_immediate(8 * index, ir::Type(ir::Primitive::I64))}
+                    {ir::Operand::from_global("addr_table", ir::Primitive::ADDR),
+                     ir::Operand::from_int_immediate(8 * index, ir::Primitive::I64)}
                 )
             );
 
@@ -86,8 +86,8 @@ void AddrTablePass::replace_uses(ir::Function *func, ir::BasicBlock &basic_block
                 ir::Instruction(
                     ir::Opcode::LOAD,
                     reg,
-                    {ir::Operand::from_type(ir::Type(ir::Primitive::VOID, 1)),
-                     ir::Operand::from_register(ptr_reg, ir::Type(ir::Primitive::VOID, 2))}
+                    {ir::Operand::from_type(ir::Primitive::ADDR),
+                     ir::Operand::from_register(ptr_reg, ir::Primitive::ADDR)}
                 )
             );
 

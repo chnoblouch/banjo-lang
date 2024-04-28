@@ -12,18 +12,16 @@ Parameter::Parameter(ASTNode *node, DataType *data_type, std::string name)
   : Variable(node, data_type, std::move(name)) {}
 
 ir_builder::StoredValue Parameter::as_ir_value(ir_builder::IRBuilderContext &context) {
-    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type());
     ir::Value value;
 
     if (!pass_by_ref) {
-        value = ir::Operand::from_register(virtual_reg, type.ref());
+        value = ir::Operand::from_register(virtual_reg, ir::Primitive::ADDR);
     } else {
-        ir::VirtualRegister reg = context.get_current_func()->next_virtual_reg();
-        ir::Operand ptr = ir::Operand::from_register(virtual_reg, type.ref().ref());
-        context.append_load(reg, type.ref(), ptr);
-        value = ir::Operand::from_register(reg, type.ref());
+        ir::Operand ptr = ir::Operand::from_register(virtual_reg, ir::Primitive::ADDR);
+        value = context.append_load(ir::Primitive::ADDR, ptr);
     }
 
+    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type());
     return ir_builder::StoredValue::create_reference(value, type);
 }
 

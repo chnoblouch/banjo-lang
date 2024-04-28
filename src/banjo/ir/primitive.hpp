@@ -11,6 +11,7 @@ enum class Primitive {
     I64,
     F32,
     F64,
+    ADDR,
 };
 
 } // namespace ir

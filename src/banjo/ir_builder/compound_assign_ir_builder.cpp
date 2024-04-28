@@ -18,7 +18,7 @@ void CompoundAssignIRBuilder::build() {
 
     ir::Value right_value = ExprIRBuilder(context, value_node).build_into_value_if_possible().value_or_ptr;
 
-    if (left_ptr.value_type.get_ptr_depth() == 0) {
+    if (location_node->get_data_type()->get_kind() != lang::DataType::Kind::POINTER) {
         ir::VirtualRegister result_reg = context.get_current_func()->next_virtual_reg();
         ir::Value result_value = ir::Value::from_register(result_reg, left_ptr.value_type);
         ir::Opcode opcode = get_opcode(node->get_type(), result_value.get_type());

@@ -1,6 +1,7 @@
 #include "ir_builder_utils.hpp"
 
 #include "ast/expr.hpp"
+#include "ir/primitive.hpp"
 #include "ir/virtual_register.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
 #include "ir_builder/ir_builder_context.hpp"
@@ -17,26 +18,26 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
 
     if (type->get_kind() == lang::DataType::Kind::PRIMITIVE) {
         switch (type->get_primitive_type()) {
-            case lang::I8: return ir::Type(ir::Primitive::I8);
-            case lang::I16: return ir::Type(ir::Primitive::I16);
-            case lang::I32: return ir::Type(ir::Primitive::I32);
-            case lang::I64: return ir::Type(ir::Primitive::I64);
-            case lang::U8: return ir::Type(ir::Primitive::I8);
-            case lang::U16: return ir::Type(ir::Primitive::I16);
-            case lang::U32: return ir::Type(ir::Primitive::I32);
-            case lang::U64: return ir::Type(ir::Primitive::I64);
-            case lang::F32: return ir::Type(ir::Primitive::F32);
-            case lang::F64: return ir::Type(ir::Primitive::F64);
-            case lang::BOOL: return ir::Type(ir::Primitive::I8);
-            case lang::ADDR: return ir::Type(ir::Primitive::I64);
-            default: return ir::Type(ir::Primitive::VOID);
+            case lang::I8: return ir::Primitive::I8;
+            case lang::I16: return ir::Primitive::I16;
+            case lang::I32: return ir::Primitive::I32;
+            case lang::I64: return ir::Primitive::I64;
+            case lang::U8: return ir::Primitive::I8;
+            case lang::U16: return ir::Primitive::I16;
+            case lang::U32: return ir::Primitive::I32;
+            case lang::U64: return ir::Primitive::I64;
+            case lang::F32: return ir::Primitive::F32;
+            case lang::F64: return ir::Primitive::F64;
+            case lang::BOOL: return ir::Primitive::I8;
+            case lang::ADDR: return ir::Primitive::ADDR;
+            case lang::VOID: return ir::Primitive::VOID;
         }
     } else if (type->get_kind() == lang::DataType::Kind::STRUCT) {
         assert(type->get_structure()->get_ir_struct());
         return ir::Type(type->get_structure()->get_ir_struct());
     } else if (type->get_kind() == lang::DataType::Kind::ENUM) {
         // TODO: what if the value doesn't fit into 32 bits?
-        return ir::Type(ir::Primitive::I32);
+        return ir::Primitive::I32;
     } else if (type->get_kind() == lang::DataType::Kind::UNION) {
         assert(type->get_union()->get_ir_struct());
         return ir::Type(type->get_union()->get_ir_struct());
@@ -44,19 +45,9 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
         assert(type->get_union_case()->get_ir_struct());
         return ir::Type(type->get_union_case()->get_ir_struct());
     } else if (type->get_kind() == lang::DataType::Kind::POINTER) {
-        int depth = 0;
-        lang::DataType *current_type = type;
-        while (current_type->get_kind() == lang::DataType::Kind::POINTER) {
-            depth++;
-            current_type = current_type->get_base_data_type();
-        }
-
-        ir::Type ir_type = build_type(current_type);
-        ir_type.set_ptr_depth(depth);
-        ir_type.set_array_length(1);
-        return ir_type;
+        return ir::Primitive::ADDR;
     } else if (type->get_kind() == lang::DataType::Kind::FUNCTION) {
-        return ir::Type(ir::Primitive::VOID, 1);
+        return ir::Primitive::ADDR;
     } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
         ir::Type ir_type = build_type(type->get_static_array_type().base_type);
         ir_type.set_array_length(type->get_static_array_type().length);
@@ -68,14 +59,10 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
         }
         return ir::Type(tuple_types);
     } else if (type->get_kind() == lang::DataType::Kind::CLOSURE) {
-        return ir::Type({ir::Type(ir::Primitive::VOID, 1), ir::Type(ir::Primitive::VOID, 1)});
+        return ir::Type({ir::Primitive::ADDR, ir::Primitive::ADDR});
     } else {
-        return ir::Type(ir::Primitive::VOID);
+        return ir::Primitive::VOID;
     }
-}
-
-ir::Type IRBuilderUtils::ptr_to(lang::Variable *var) {
-    return build_type(var->get_data_type()).ref();
 }
 
 std::vector<ir::Type> IRBuilderUtils::build_params(
@@ -83,14 +70,17 @@ std::vector<ir::Type> IRBuilderUtils::build_params(
     IRBuilderContext &context
 ) {
     std::vector<ir::Type> params;
+
     for (lang::DataType *lang_type : lang_params) {
         ir::Type type = build_type(lang_type);
-        if (context.get_target()->get_data_layout().is_pass_by_ref(type)) {
-            type = type.ref();
-        }
 
-        params.push_back(type);
+        if (context.get_target()->get_data_layout().is_pass_by_ref(type)) {
+            params.push_back(ir::Primitive::ADDR);
+        } else {
+            params.push_back(type);
+        }
     }
+
     return params;
 }
 
@@ -125,7 +115,7 @@ void IRBuilderUtils::copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::
     } else {
         unsigned size = data_layout.get_size(type);
         ir::Operand symbol_operand = ir::Operand::from_extern_func("memcpy");
-        ir::Operand size_operand = ir::Operand::from_int_immediate(size, ir::Type(ir::Primitive::I64));
+        ir::Operand size_operand = ir::Operand::from_int_immediate(size, ir::Primitive::I64);
         context.get_cur_block().append(
             ir::Instruction(ir::Opcode::CALL, {symbol_operand, std::move(dst_ptr), std::move(src_ptr), size_operand})
         );
@@ -176,7 +166,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, ir::Value dst, IRBuilderCo
     }
 
     if (call.func->is_return_by_ref()) {
-        dst.set_type(built_return_type.ref());
+        dst.set_type(ir::Primitive::ADDR);
         operands.push_back(dst);
     }
 
@@ -184,7 +174,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, ir::Value dst, IRBuilderCo
 
     if (call.func->is_return_by_ref()) {
         context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, operands));
-        dst.set_type(built_return_type.ref());
+        dst.set_type(ir::Primitive::ADDR);
         return StoredValue::create_reference(dst, built_return_type);
     } else {
         if (call.func->get_type().return_type->is_primitive_of_type(lang::PrimitiveType::VOID)) {
@@ -202,9 +192,8 @@ ir::VirtualRegister IRBuilderUtils::get_cur_return_reg(IRBuilderContext &context
     if (!context.get_current_lang_func()->is_return_by_ref()) {
         return context.get_current_return_reg();
     } else {
-        ir::Type val_ptr_type = context.get_current_func()->get_params()[0].ref();
-        ir::Value val_ptr_ptr = ir::Operand::from_register(context.get_current_arg_regs()[0], val_ptr_type.ref());
-        return context.append_load(val_ptr_type, val_ptr_ptr).get_register();
+        ir::Value ptr = ir::Operand::from_register(context.get_current_arg_regs()[0], ir::Primitive::ADDR);
+        return context.append_load(ir::Primitive::ADDR, ptr).get_register();
     }
 }
 

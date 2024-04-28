@@ -67,8 +67,8 @@ void FuncDefIRBuilder::create_func(lang::Function *lang_func, std::string name) 
     ir::Type return_type = IRBuilderUtils::build_type(lang_func->get_type().return_type);
 
     if (lang_func->is_return_by_ref()) {
-        param_list.insert(param_list.begin(), return_type.ref());
-        return_type = ir::Type(ir::Primitive::VOID);
+        param_list.insert(param_list.begin(), ir::Primitive::ADDR);
+        return_type = ir::Primitive::VOID;
     }
 
     ir::Function *ir_func = lang_func->get_ir_func();
@@ -108,13 +108,13 @@ void FuncDefIRBuilder::build_arg_store(ir::Function *func) {
         ir::Instruction &alloca_instr = context.append_alloca(store_reg, param_type);
         alloca_instr.set_flag(ir::Instruction::FLAG_ARG_STORE);
 
-        ir::Operand param_operand = ir::Operand::from_int_immediate(i, param_type.ref());
+        ir::Operand param_operand = ir::Operand::from_int_immediate(i, ir::Primitive::ADDR);
         ir::Instruction &loadarg_instr = context.append_loadarg(value_reg, param_type, param_operand);
         loadarg_instr.set_flag(ir::Instruction::FLAG_SAVE_ARG);
 
         ir::Instruction &store_instr = context.append_store(
             ir::Operand::from_register(value_reg, param_type),
-            ir::Operand::from_register(store_reg, param_type.ref())
+            ir::Operand::from_register(store_reg, ir::Primitive::ADDR)
         );
         store_instr.set_flag(ir::Instruction::FLAG_SAVE_ARG);
     }
@@ -131,10 +131,10 @@ void FuncDefIRBuilder::build_return() {
         ir::VirtualRegister val_reg = context.get_current_func()->next_virtual_reg();
         ir::VirtualRegister return_reg = context.get_current_return_reg();
         ir::Type return_type = context.get_current_func()->get_return_type();
-        context.append_load(val_reg, return_type, ir::Operand::from_register(return_reg, return_type.ref()));
+        context.append_load(val_reg, return_type, ir::Operand::from_register(return_reg, ir::Primitive::ADDR));
         context.append_ret(ir::Operand::from_register(val_reg, return_type));
     } else if (context.get_current_lang_func()->get_name() == "main") {
-        context.append_ret(ir::Operand::from_int_immediate(0, ir::Type(ir::Primitive::I32)));
+        context.append_ret(ir::Operand::from_int_immediate(0, ir::Primitive::I32));
     } else {
         context.append_ret();
     }

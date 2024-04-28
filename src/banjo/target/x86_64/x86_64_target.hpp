@@ -10,7 +10,7 @@ namespace target {
 class X8664Target : public Target {
 
 private:
-    StandardDataLayout data_layout = StandardDataLayout(8, ir::Type(ir::Primitive::I64));
+    StandardDataLayout data_layout = StandardDataLayout(8, ir::Primitive::I64);
     X8664RegAnalyzer reg_analyzer;
 
 public:

@@ -22,7 +22,6 @@ struct FuncCall {
 };
 
 ir::Type build_type(lang::DataType *type);
-ir::Type ptr_to(lang::Variable *var);
 std::vector<ir::Type> build_params(const std::vector<lang::DataType *> &lang_params, IRBuilderContext &context);
 std::string get_func_link_name(lang::Function *func);
 std::string get_global_var_link_name(lang::GlobalVariable *global_var);

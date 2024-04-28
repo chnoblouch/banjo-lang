@@ -127,8 +127,7 @@ void SROAPass::collect_uses(ir::BasicBlock &block) {
         }
 
         // Copies can be replaced with loads and stores of the individual members
-        if (iter->get_opcode() == ir::Opcode::COPY &&
-            iter->get_operand(0).get_type() == iter->get_operand(1).get_type()) {
+        if (iter->get_opcode() == ir::Opcode::COPY) {
             continue;
         }
 
@@ -249,9 +248,9 @@ void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ir::T
     if (!is_splitting_possible(type)) {
         // clang-format off
         ctx.block.insert_before(ctx.instr, ir::Instruction(ir::Opcode::COPY, {
-            ir::Operand::from_register(dst.ptr, type.ref()),
-            ir::Operand::from_register(src.ptr, type.ref()),
-            ir::Operand::from_int_immediate(get_target()->get_data_layout().get_size(type))
+            ir::Operand::from_register(dst.ptr, ir::Primitive::ADDR),
+            ir::Operand::from_register(src.ptr, ir::Primitive::ADDR),
+            ir::Operand::from_type(type),
         }));
         // clang-format on
 
@@ -272,11 +271,11 @@ void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ir::T
         // clang-format off
         ctx.block.insert_before(ctx.instr, ir::Instruction(ir::Opcode::LOAD, tmp_reg, {
             ir::Operand::from_type(member_type),
-            ir::Operand::from_register(member_src.ptr, member_type.ref())
+            ir::Operand::from_register(member_src.ptr, ir::Primitive::ADDR)
         }));
         ctx.block.insert_before(ctx.instr, ir::Instruction(ir::Opcode::STORE, {
             ir::Operand::from_register(tmp_reg, member_type),
-            ir::Operand::from_register(member_dst.ptr, member_type.ref())
+            ir::Operand::from_register(member_dst.ptr, ir::Primitive::ADDR)
         }));
         // clang-format on
     });
@@ -302,7 +301,7 @@ SROAPass::Ref SROAPass::get_final_memberptr(
     // clang-format off
     ctx.block.insert_before(ctx.instr, ir::Instruction(ir::Opcode::MEMBERPTR, ptr, {
         ir::Operand::from_type(parent_type),
-        ir::Operand::from_register(ref.ptr, parent_type.ref()),
+        ir::Operand::from_register(ref.ptr, ir::Primitive::ADDR),
         ir::Operand::from_int_immediate(index)
     }));
     // clang-format on
@@ -347,7 +346,7 @@ void SROAPass::apply_splits(ir::BasicBlock &block) {
 }
 
 bool SROAPass::is_aggregate(const ir::Type &type) {
-    return (type.is_struct() || type.is_tuple()) && type.is_base_only();
+    return (type.is_struct() || type.is_tuple()) && type.get_array_length() == 1;
 }
 
 void SROAPass::for_each_member(const ir::Type &type, const MemberAccessFunc &func) {

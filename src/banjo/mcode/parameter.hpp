@@ -3,7 +3,6 @@
 
 #include "ir/type.hpp"
 #include "mcode/register.hpp"
-#include "mcode/stack_slot.hpp"
 
 namespace mcode {
 
@@ -18,7 +17,7 @@ public:
 
     Register get_src_reg() { return src_reg; }
     long get_stack_slot_index() { return stack_slot_index; }
-    ir::Type get_type() { return ir::Type(ir::Primitive::I32); }
+    ir::Type get_type() { return ir::Primitive::I32; }
 };
 
 } // namespace mcode

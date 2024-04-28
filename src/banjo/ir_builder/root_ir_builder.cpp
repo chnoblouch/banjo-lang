@@ -161,7 +161,7 @@ void RootIRBuilder::create_ir_union_members(lang::ASTNode *module_node) {
         }
 
         ir_union->add(ir::StructureMember{"tag", ir::Primitive::I32});
-        ir_union->add(ir::StructureMember{"data", ir::Type(ir::Primitive::I8, 0, largest_size)});
+        ir_union->add(ir::StructureMember{"data", ir::Type(ir::Primitive::I8, largest_size)});
     });
 }
 
@@ -199,8 +199,8 @@ void RootIRBuilder::build_native_func(ir::Module &ir_mod, lang::ASTNode *node) {
     ir::Type return_type = IRBuilderUtils::build_type(func->get_type().return_type);
 
     if (context.get_target()->get_data_layout().is_return_by_ref(return_type)) {
-        param_list.insert(param_list.begin(), return_type.ref());
-        return_type = ir::Type(ir::Primitive::VOID);
+        param_list.insert(param_list.begin(), ir::Primitive::ADDR);
+        return_type = ir::Primitive::VOID;
         func->set_return_by_ref(true);
     }
 

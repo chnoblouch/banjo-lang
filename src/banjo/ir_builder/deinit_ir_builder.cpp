@@ -18,7 +18,7 @@ void DeinitIRBuilder::build() {
 
         context.append_store(
             ir::Operand::from_int_immediate(1, FLAG_TYPE),
-            ir::Operand::from_register(flag_reg, FLAG_TYPE.ref())
+            ir::Operand::from_register(flag_reg, ir::Primitive::ADDR)
         );
 
         info->flag_reg = flag_reg;
@@ -29,7 +29,7 @@ void DeinitIRBuilder::build() {
 
         context.append_store(
             ir::Operand::from_int_immediate(0, FLAG_TYPE),
-            ir::Operand::from_register(move.deinit_info->flag_reg, FLAG_TYPE.ref())
+            ir::Operand::from_register(move.deinit_info->flag_reg, ir::Primitive::ADDR)
         );
     }
 }
@@ -50,7 +50,7 @@ void DeinitIRBuilder::build_cond_deinit_call(lang::DeinitInfo *info) {
     ir::BasicBlockIter skip_deinit = context.create_block("deinit.skip." + std::to_string(deinit_flag_id));
 
     ir::VirtualRegister loaded_flag_reg = context.get_current_func()->next_virtual_reg();
-    ir::Operand flag_ptr = ir::Operand::from_register(info->flag_reg, FLAG_TYPE.ref());
+    ir::Operand flag_ptr = ir::Operand::from_register(info->flag_reg, ir::Primitive::ADDR);
     context.append_load(loaded_flag_reg, FLAG_TYPE, flag_ptr);
 
     context.append_cjmp(

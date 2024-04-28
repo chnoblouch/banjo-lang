@@ -9,6 +9,7 @@
 #include "symbol/enumeration.hpp"
 #include "symbol/location.hpp"
 #include "utils/macros.hpp"
+
 #include <cassert>
 
 namespace ir_builder {
@@ -25,7 +26,7 @@ StoredValue LocationIRBuilder::build_location(const lang::Location &location, bo
     // TODO: replace this
     if (return_value && func && !func->is_native() &&
         location.get_type()->get_kind() == lang::DataType::Kind::FUNCTION) {
-        ir::Value value = ir::Operand::from_func(func->get_ir_func(), ir::Type(ir::Primitive::VOID, 1));
+        ir::Value value = ir::Operand::from_func(func->get_ir_func(), ir::Primitive::ADDR);
         this->value = StoredValue::create_value(value);
     }
 
@@ -56,7 +57,8 @@ void LocationIRBuilder::build_root(const lang::LocationElement &element) {
         build_var(element.get_const());
     } else if (element.is_func()) {
         func = element.get_func();
-        ir::Type type = ir::Type(ir::Primitive::VOID, 1);
+        
+        ir::Type type = ir::Primitive::ADDR;
         ir::Value value;
 
         if (!element.get_func()->is_native()) {
@@ -120,8 +122,8 @@ void LocationIRBuilder::build_captured_var(lang::Variable *var) {
     }
 
     ir::VirtualRegister arg_ptr_reg = context.get_current_arg_regs()[0];
-    ir::Operand arg_ptr = ir::Operand::from_register(arg_ptr_reg, context_type.ref().ref());
-    ir::Value context_ptr = context.append_load(context_type.ref(), arg_ptr);
+    ir::Operand arg_ptr = ir::Operand::from_register(arg_ptr_reg, ir::Primitive::ADDR);
+    ir::Value context_ptr = context.append_load(ir::Primitive::ADDR, arg_ptr);
     ir::VirtualRegister member_ptr_reg = context.append_memberptr(context_type, context_ptr, member_index);
     ir::Type member_type = IRBuilderUtils::build_type(var->get_data_type());
     value = StoredValue::create_reference(member_ptr_reg, member_type);

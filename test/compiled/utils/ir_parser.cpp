@@ -1,5 +1,6 @@
 #include "ir_parser.hpp"
 
+#include "ir/primitive.hpp"
 #include "utils/macros.hpp"
 
 #include <cctype>
@@ -175,10 +176,8 @@ ir::Operand IRParser::parse_operand() {
 }
 
 ir::Type IRParser::parse_type() {
-    ir::Type base;
-
     if (get() == '@') {
-        base = ir::Type(mod.get_structure(parse_ident()));
+        return ir::Type(mod.get_structure(parse_ident()));
     } else if (get() == '(') {
         std::vector<ir::Type> tuple_types;
         while (get() != ')') {
@@ -189,30 +188,23 @@ ir::Type IRParser::parse_type() {
         }
         consume(); // ')'
 
-        base = ir::Type(tuple_types);
+        return ir::Type(tuple_types);
     } else {
         std::string str;
         while (std::isalnum(get())) {
             str += consume();
         }
 
-        if (str == "void") base = ir::Primitive::VOID;
-        else if (str == "i8") base = ir::Primitive::I8;
-        else if (str == "i16") base = ir::Primitive::I16;
-        else if (str == "i32") base = ir::Primitive::I32;
-        else if (str == "i64") base = ir::Primitive::I64;
-        else if (str == "f32") base = ir::Primitive::F32;
-        else if (str == "f64") base = ir::Primitive::F64;
+        if (str == "void") return ir::Primitive::VOID;
+        else if (str == "i8") return ir::Primitive::I8;
+        else if (str == "i16") return ir::Primitive::I16;
+        else if (str == "i32") return ir::Primitive::I32;
+        else if (str == "i64") return ir::Primitive::I64;
+        else if (str == "f32") return ir::Primitive::F32;
+        else if (str == "f64") return ir::Primitive::F64;
+        else if (str == "addr") return ir::Primitive::ADDR;
+        else return ir::Primitive::VOID;
     }
-
-    ir::Type type = base;
-
-    while (get() == '*') {
-        type = type.ref();
-        consume();
-    }
-
-    return type;
 }
 
 std::string IRParser::parse_ident() {

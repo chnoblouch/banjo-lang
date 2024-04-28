@@ -223,6 +223,7 @@ std::string Writer::type_to_str(Type type) {
             case Primitive::I64: str = "i64"; break;
             case Primitive::F32: str = "f32"; break;
             case Primitive::F64: str = "f64"; break;
+            case Primitive::ADDR: str = "addr"; break;
         }
     } else if (type.is_struct()) {
         str = "@" + type.get_struct()->get_name();
@@ -239,7 +240,6 @@ std::string Writer::type_to_str(Type type) {
         str += ")";
     }
 
-    str += std::string(type.get_ptr_depth(), '*');
     if (type.get_array_length() != 1) {
         str += "[" + std::to_string(type.get_array_length()) + "]";
     }

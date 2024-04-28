@@ -44,13 +44,13 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
             call_instr_operands.push_back(ir::Operand::from_extern_func(name, func_return_type));
         }
     } else if (location_type->get_kind() == lang::DataType::Kind::FUNCTION) {
-        ir::Value func_ptr = context.append_load(ir::Type(ir::Primitive::VOID, 1), location.value_or_ptr);
+        ir::Value func_ptr = context.append_load(ir::Primitive::ADDR, location.value_or_ptr);
         call_instr_operands.push_back(func_ptr);
     } else if (location_type->get_kind() == lang::DataType::Kind::CLOSURE) {
         ir::Type closure_type = location.value_type;
         ir::VirtualRegister func_ptr_ptr_reg = context.append_memberptr(closure_type, location.value_or_ptr, 0);
-        ir::Operand func_ptr_ptr = ir::Operand::from_register(func_ptr_ptr_reg, ir::Type(ir::Primitive::VOID, 2));
-        ir::Value func_ptr = context.append_load(ir::Type(ir::Primitive::VOID, 1), func_ptr_ptr);
+        ir::Operand func_ptr_ptr = ir::Operand::from_register(func_ptr_ptr_reg, ir::Primitive::ADDR);
+        ir::Value func_ptr = context.append_load(ir::Primitive::ADDR, func_ptr_ptr);
 
         call_instr_operands.push_back(func_ptr);
     }
@@ -74,8 +74,8 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
     } else if (location_type->get_kind() == lang::DataType::Kind::CLOSURE) {
         ir::Type closure_type = location.value_type;
         ir::VirtualRegister context_ptr_ptr_reg = context.append_memberptr(closure_type, location.value_or_ptr, 1);
-        ir::Operand context_ptr_ptr = ir::Operand::from_register(context_ptr_ptr_reg, ir::Type(ir::Primitive::VOID, 2));
-        ir::Operand context_ptr = context.append_load(ir::Type(ir::Primitive::VOID, 1), context_ptr_ptr);
+        ir::Operand context_ptr_ptr = ir::Operand::from_register(context_ptr_ptr_reg, ir::Primitive::ADDR);
+        ir::Operand context_ptr = context.append_load(ir::Primitive::ADDR, context_ptr_ptr);
 
         call_instr_operands.push_back(context_ptr);
     }

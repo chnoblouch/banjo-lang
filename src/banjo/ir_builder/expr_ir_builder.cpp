@@ -73,9 +73,8 @@ StoredValue ExprIRBuilder::build_node(lang::ASTNode *node, const StorageHints &h
             ir::Value tag_ptr = ir::Value::from_register(tag_ptr_reg, ir::Primitive::I32);
             context.append_store(ir::Operand::from_int_immediate(tag, ir::Primitive::I32), tag_ptr);
 
-            const ir::Type &data_type = struct_->get_members()[1].type;
             ir::VirtualRegister data_ptr_reg = context.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 1);
-            ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, data_type.ref());
+            ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, ir::Primitive::ADDR);
 
             ExprIRBuilder data_builder(context, node);
             data_builder.set_coercion_level(coercion_level + 1);
@@ -96,7 +95,7 @@ StoredValue ExprIRBuilder::build_node(lang::ASTNode *node, const StorageHints &h
         case lang::AST_CLOSURE: return ClosureIRBuilder(context, node).build(hints);
         case lang::AST_FALSE: return create_immediate(0, ir::Primitive::I8);
         case lang::AST_TRUE: return create_immediate(1, ir::Primitive::I8);
-        case lang::AST_NULL: return create_immediate(0, ir::Type(ir::Primitive::VOID, 1));
+        case lang::AST_NULL: return create_immediate(0, ir::Primitive::ADDR);
         case lang::AST_OPERATOR_EQ:
         case lang::AST_OPERATOR_NE:
         case lang::AST_OPERATOR_GT:
@@ -153,7 +152,7 @@ StoredValue ExprIRBuilder::build_float_literal(lang::ASTNode *node) {
 StoredValue ExprIRBuilder::build_char_literal(lang::ASTNode *node) {
     unsigned index = 0;
     char encoded_val = encode_char(node->get_value(), index);
-    ir::Value immediate = ir::Value::from_int_immediate(encoded_val, ir::Type(ir::Primitive::I8));
+    ir::Value immediate = ir::Value::from_int_immediate(encoded_val, ir::Primitive::I8);
     return StoredValue::create_value(immediate);
 }
 
@@ -308,7 +307,7 @@ StoredValue ExprIRBuilder::build_binary_operation(lang::ASTNode *node, const Sto
     ir::Value lhs_val = ExprIRBuilder(context, lhs).build_into_value().get_value();
     ir::Value rhs_val = ExprIRBuilder(context, rhs).build_into_value().get_value();
 
-    if (lhs_val.get_type().get_ptr_depth() != 0) {
+    if (lhs->get_data_type()->get_kind() == lang::DataType::Kind::POINTER) {
         assert(op == lang::AST_OPERATOR_ADD);
         ir::Type base_type = IRBuilderUtils::build_type(lhs->get_data_type()->get_base_data_type());
         ir::VirtualRegister reg = context.append_offsetptr(lhs_val, rhs_val, base_type);
@@ -365,7 +364,7 @@ StoredValue ExprIRBuilder::build_binary_operation(lang::ASTNode *node, const Sto
     }
 
     if (opcode == ir::Opcode::SHL || opcode == ir::Opcode::SHR) {
-        rhs_val.set_type(ir::Type(ir::Primitive::I8));
+        rhs_val.set_type(ir::Primitive::I8);
     }
 
     context.get_cur_block().append(ir::Instruction(opcode, reg, {lhs_val, rhs_val}));
@@ -553,7 +552,7 @@ StoredValue ExprIRBuilder::build_meta_expr(lang::ASTNode *node) {
     ir::Type type = IRBuilderUtils::build_type(type_node->as<lang::Expr>()->get_data_type());
     int size = get_size(type);
 
-    ir::Value immediate = ir::Value::from_int_immediate(size, ir::Type(ir::Primitive::I64));
+    ir::Value immediate = ir::Value::from_int_immediate(size, ir::Primitive::I64);
     return StoredValue::create_value(immediate);
 }
 
@@ -569,16 +568,16 @@ StoredValue ExprIRBuilder::build_bool_expr(lang::ASTNode *node, const StorageHin
     ir::BasicBlockIter end_block = context.create_block("cmp." + std::to_string(label_id) + ".end");
 
     ir::VirtualRegister reg = context.get_current_func()->next_virtual_reg();
-    context.append_alloca(reg, ir::Type(ir::Primitive::I8));
+    context.append_alloca(reg, ir::Primitive::I8);
 
     BoolExprIRBuilder(context, node, true_block, false_block).build();
 
-    ir::Operand dst = ir::Operand::from_register(reg, ir::Type(ir::Primitive::I8, 1));
+    ir::Operand dst = ir::Operand::from_register(reg, ir::Primitive::ADDR);
     context.append_block(true_block);
-    context.append_store(ir::Operand::from_int_immediate(1, ir::Type(ir::Primitive::I8)), dst);
+    context.append_store(ir::Operand::from_int_immediate(1, ir::Primitive::I8), dst);
     context.append_jmp(end_block);
     context.append_block(false_block);
-    context.append_store(ir::Operand::from_int_immediate(0, ir::Type(ir::Primitive::I8)), dst);
+    context.append_store(ir::Operand::from_int_immediate(0, ir::Primitive::I8), dst);
     context.append_jmp(end_block);
     context.append_block(end_block);
 
@@ -650,7 +649,7 @@ StoredValue ExprIRBuilder::build_cstr_string_literal(const std::string &value) {
     encoded_val += '\0';
 
     std::string name = context.next_string_name();
-    ir::Type type = ir::Type(ir::Primitive::I8, 1);
+    ir::Type type = ir::Primitive::ADDR;
     context.get_current_mod()->add(ir::Global(name, type, ir::Operand::from_string(encoded_val)));
     ir::Value global_val = ir::Operand::from_global(name, type);
     return StoredValue::create_value(global_val);

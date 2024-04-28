@@ -23,13 +23,13 @@ StoredValue StoredValue::create_reference(ir::Value value, ir::Type value_type) 
 }
 
 StoredValue StoredValue::create_reference(ir::VirtualRegister reg, ir::Type value_type) {
-    ir::Value value = ir::Value::from_register(reg, value_type.ref());
+    ir::Value value = ir::Value::from_register(reg, ir::Primitive::ADDR);
     return {true, std::move(value_type), std::move(value)};
 }
 
 StoredValue StoredValue::alloc(const ir::Type &type, const StorageHints &hints, IRBuilderContext &context) {
     ir::Value val = hints.dst ? *hints.dst : ir::Operand::from_register(context.append_alloca(type));
-    return StoredValue::create_reference(val.with_type(type.ref()), type);
+    return StoredValue::create_reference(val.with_type(ir::Primitive::ADDR), type);
 }
 
 bool StoredValue::fits_in_reg(IRBuilderContext &context) {
@@ -41,7 +41,7 @@ StoredValue StoredValue::turn_into_reference(IRBuilderContext &context) {
         return *this;
     } else {
         ir::VirtualRegister dst_reg = context.append_alloca(value_type);
-        ir::Value dst = ir::Value::from_register(dst_reg, value_type.ref());
+        ir::Value dst = ir::Value::from_register(dst_reg, ir::Primitive::ADDR);
         context.append_store(value_or_ptr, dst);
         return create_reference(dst, value_type);
     }

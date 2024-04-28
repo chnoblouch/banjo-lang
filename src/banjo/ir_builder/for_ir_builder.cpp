@@ -103,7 +103,7 @@ void ForIRBuilder::build_iter_for() {
     lang::Function *lang_next_func = lang_iter_struct->get_method_table().get_function(lang::MagicFunctions::NEXT);
     IRBuilderUtils::FuncCall next_call{lang_next_func, {iter_ptr}};
     ir::Value next_ptr = IRBuilderUtils::build_call(next_call, context).value_or_ptr;
-    ir::Operand null = ir::Operand::from_int_immediate(0, ir::Type(ir::Primitive::VOID, 1));
+    ir::Operand null = ir::Operand::from_int_immediate(0, ir::Primitive::ADDR);
 
     context.append_cjmp(next_ptr, ir::Comparison::NE, null, block, exit);
     context.append_block(block);

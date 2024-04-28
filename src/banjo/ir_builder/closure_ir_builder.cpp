@@ -59,11 +59,11 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
     unsigned size = data_layout.get_size(struct_type);
 
     ir::VirtualRegister data_ptr_reg = context.get_current_func()->next_virtual_reg();
-    ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, struct_type.ref());
+    ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, ir::Primitive::ADDR);
     context.get_cur_block().append(ir::Instruction(
         ir::Opcode::CALL,
         data_ptr_reg,
-        {ir::Operand::from_extern_func("malloc", struct_type.ref()),
+        {ir::Operand::from_extern_func("malloc", ir::Primitive::ADDR),
          ir::Operand::from_int_immediate(size, data_layout.get_usize_type())}
     ));
 
@@ -71,19 +71,19 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
     for (lang::Variable *var : closure.captured_vars) {
         StoredValue src = var->as_ir_value(context);
         ir::VirtualRegister dst_reg = context.append_memberptr(struct_type, data_ptr, index);
-        ir::Operand dst = ir::Operand::from_register(dst_reg, src.value_type.ref());
+        ir::Operand dst = ir::Operand::from_register(dst_reg, ir::Primitive::ADDR);
         IRBuilderUtils::copy_val(context, src.value_or_ptr, dst, src.value_type);
         index += 1;
     }
 
     ir::VirtualRegister func_ptr_dest_reg = context.append_memberptr(val_type, val_ptr, 0);
     context.append_store(
-        ir::Operand::from_func(closure_expr->get_func()->get_ir_func(), ir::Type(ir::Primitive::VOID, 1)),
-        ir::Operand::from_register(func_ptr_dest_reg, ir::Type(ir::Primitive::VOID, 2))
+        ir::Operand::from_func(closure_expr->get_func()->get_ir_func(), ir::Primitive::ADDR),
+        ir::Operand::from_register(func_ptr_dest_reg, ir::Primitive::ADDR)
     );
 
     ir::VirtualRegister context_ptr_dest_reg = context.append_memberptr(val_type, val_ptr, 1);
-    context.append_store(data_ptr, ir::Operand::from_register(context_ptr_dest_reg, struct_type.ref()));
+    context.append_store(data_ptr, ir::Operand::from_register(context_ptr_dest_reg, ir::Primitive::ADDR));
 
     return stored_val;
 }
