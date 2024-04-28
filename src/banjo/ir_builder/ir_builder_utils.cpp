@@ -8,6 +8,8 @@
 #include "symbol/data_type.hpp"
 #include "symbol/union.hpp"
 
+#include <cassert>
+
 namespace ir_builder {
 
 ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
@@ -30,13 +32,16 @@ ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
             default: return ir::Type(ir::Primitive::VOID);
         }
     } else if (type->get_kind() == lang::DataType::Kind::STRUCT) {
+        assert(type->get_structure()->get_ir_struct());
         return ir::Type(type->get_structure()->get_ir_struct());
     } else if (type->get_kind() == lang::DataType::Kind::ENUM) {
         // TODO: what if the value doesn't fit into 32 bits?
         return ir::Type(ir::Primitive::I32);
     } else if (type->get_kind() == lang::DataType::Kind::UNION) {
+        assert(type->get_union()->get_ir_struct());
         return ir::Type(type->get_union()->get_ir_struct());
     } else if (type->get_kind() == lang::DataType::Kind::UNION_CASE) {
+        assert(type->get_union_case()->get_ir_struct());
         return ir::Type(type->get_union_case()->get_ir_struct());
     } else if (type->get_kind() == lang::DataType::Kind::POINTER) {
         int depth = 0;
@@ -111,33 +116,18 @@ std::string IRBuilderUtils::get_global_var_link_name(lang::GlobalVariable *globa
     }
 }
 
-void IRBuilderUtils::store_val(IRBuilderContext &context, ir::Value val, ir::Value dest) {
+void IRBuilderUtils::copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::Value dst_ptr, ir::Type type) {
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-
-    if (data_layout.fits_in_register(val.get_type())) {
-        context.append_store(val, dest);
-    } else {
-        val.set_type(val.get_type().ref());
-        int size = data_layout.get_size(val.get_type().deref());
-        ir::Operand symbol_operand = ir::Operand::from_extern_func("memcpy");
-        ir::Operand size_operand = ir::Operand::from_int_immediate(size, ir::Type(ir::Primitive::I64));
-        context.get_cur_block().append(ir::Instruction(ir::Opcode::CALL, {symbol_operand, dest, val, size_operand}));
-    }
-}
-
-void IRBuilderUtils::copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::Value dest_ptr) {
-    target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
-    ir::Type type(src_ptr.get_type().deref());
 
     if (data_layout.fits_in_register(type)) {
-        ir::VirtualRegister val_reg = context.append_load(src_ptr);
-        context.append_store(ir::Operand::from_register(val_reg, type), dest_ptr);
+        ir::Value val = context.append_load(type, std::move(src_ptr));
+        context.append_store(val, std::move(dst_ptr));
     } else {
-        int size = data_layout.get_size(type);
+        unsigned size = data_layout.get_size(type);
         ir::Operand symbol_operand = ir::Operand::from_extern_func("memcpy");
         ir::Operand size_operand = ir::Operand::from_int_immediate(size, ir::Type(ir::Primitive::I64));
         context.get_cur_block().append(
-            ir::Instruction(ir::Opcode::CALL, {symbol_operand, dest_ptr, src_ptr, size_operand})
+            ir::Instruction(ir::Opcode::CALL, {symbol_operand, std::move(dst_ptr), std::move(src_ptr), size_operand})
         );
     }
 }
@@ -214,7 +204,7 @@ ir::VirtualRegister IRBuilderUtils::get_cur_return_reg(IRBuilderContext &context
     } else {
         ir::Type val_ptr_type = context.get_current_func()->get_params()[0].ref();
         ir::Value val_ptr_ptr = ir::Operand::from_register(context.get_current_arg_regs()[0], val_ptr_type.ref());
-        return context.append_load(val_ptr_ptr);
+        return context.append_load(val_ptr_type, val_ptr_ptr).get_register();
     }
 }
 

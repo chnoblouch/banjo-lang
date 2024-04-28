@@ -16,6 +16,7 @@
 #include "symbol/enumeration.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/union.hpp"
+#include "utils/macros.hpp"
 
 #include <optional>
 
@@ -334,13 +335,19 @@ bool LocationAnalyzer::check_self(ASTNode *node) {
         return false;
     }
 
-    Structure *struct_ = context.get_ast_context().enclosing_symbol.get_struct();
+    const SymbolRef &self_symbol = context.get_ast_context().enclosing_symbol;
 
     DataType *base = context.get_type_manager().new_data_type();
-    base->set_to_structure(struct_);
+    
+    switch (self_symbol.get_kind()) {
+        case SymbolKind::STRUCT: base->set_to_structure(self_symbol.get_struct()); break;
+        case SymbolKind::UNION: base->set_to_union(self_symbol.get_union()); break;
+        default: ASSERT_UNREACHABLE;
+    }
+
     DataType *type = context.get_type_manager().new_data_type();
     type->set_to_pointer(base);
-    location.add_element(LocationElement(struct_, type));
+    location.add_element(LocationElement(self_symbol, type));
     node->as<Expr>()->set_data_type(type);
 
     return true;

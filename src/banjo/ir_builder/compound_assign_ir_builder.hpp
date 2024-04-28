@@ -15,7 +15,6 @@ private:
     ir::Opcode get_opcode(lang::ASTNodeType node_type, const ir::Type &type);
     ir::Opcode get_int_opcode(lang::ASTNodeType node_type);
     ir::Opcode get_fp_opcode(lang::ASTNodeType node_type);
-    ir::Opcode get_ptr_opcode(lang::ASTNodeType node_type);
 };
 
 } // namespace ir_builder

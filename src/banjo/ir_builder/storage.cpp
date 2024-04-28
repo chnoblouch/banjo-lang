@@ -29,8 +29,7 @@ StoredValue StoredValue::create_reference(ir::VirtualRegister reg, ir::Type valu
 
 StoredValue StoredValue::alloc(const ir::Type &type, const StorageHints &hints, IRBuilderContext &context) {
     ir::Value val = hints.dst ? *hints.dst : ir::Operand::from_register(context.append_alloca(type));
-    val.set_type(type.ref());
-    return {true, type, val};
+    return StoredValue::create_reference(val.with_type(type.ref()), type);
 }
 
 bool StoredValue::fits_in_reg(IRBuilderContext &context) {
@@ -50,8 +49,7 @@ StoredValue StoredValue::turn_into_reference(IRBuilderContext &context) {
 
 StoredValue StoredValue::try_turn_into_value(IRBuilderContext &context) {
     if (reference && fits_in_reg(context)) {
-        ir::VirtualRegister reg = context.append_load(value_or_ptr);
-        ir::Value val = ir::Value::from_register(reg, value_type);
+        ir::Value val = context.append_load(value_type, value_or_ptr);
         return StoredValue::create_value(val);
     } else {
         return *this;
@@ -61,8 +59,7 @@ StoredValue StoredValue::try_turn_into_value(IRBuilderContext &context) {
 StoredValue StoredValue::turn_into_value(IRBuilderContext &context) {
     if (reference) {
         assert(fits_in_reg(context));
-        ir::VirtualRegister reg = context.append_load(value_or_ptr);
-        ir::Value val = ir::Value::from_register(reg, value_type);
+        ir::Value val = context.append_load(value_type, value_or_ptr);
         return StoredValue::create_value(val);
     } else {
         return *this;
@@ -75,10 +72,14 @@ void StoredValue::copy_to(const ir::Value &dst, IRBuilderContext &context) {
     }
 
     if (reference) {
-        const ir::Value &copy_src = value_or_ptr;
-        ir::Value copy_dst = dst.with_type(copy_src.get_type());
-        unsigned copy_size = context.get_size(value_type);
-        context.append_copy(copy_dst, copy_src, copy_size);
+        if (fits_in_reg(context)) {
+            ir::Value val = context.append_load(value_type, value_or_ptr);
+            context.append_store(val, dst);
+        } else {
+            const ir::Value &copy_src = value_or_ptr;
+            ir::Value copy_dst = dst.with_type(copy_src.get_type());
+            context.append_copy(copy_dst, copy_src, value_type);
+        }
     } else {
         context.append_store(value_or_ptr, dst);
     }

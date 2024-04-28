@@ -49,7 +49,7 @@ bool Validator::validate(ir::Module &mod, ir::Function &func) {
             }
 
             switch (instr.get_opcode()) {
-                case ir::Opcode::MEMBERPTR: valid = valid && validate_memberptr(mod, instr); break;
+                case ir::Opcode::MEMBERPTR: valid = valid && validate_memberptr(instr); break;
                 default: break;
             }
         }
@@ -58,11 +58,11 @@ bool Validator::validate(ir::Module &mod, ir::Function &func) {
     return valid;
 }
 
-bool Validator::validate_memberptr(ir::Module &mod, ir::Instruction &instr) {
+bool Validator::validate_memberptr(ir::Instruction &instr) {
     const ir::Type &type = instr.get_operand(0).get_type();
-    unsigned index = instr.get_operand(1).get_int_immediate().to_u64();
+    unsigned index = instr.get_operand(2).get_int_immediate().to_u64();
 
-    if (type.is_base_only() && type.is_struct()) {
+    if (type.is_struct()) {
         ir::Structure &struct_ = *type.get_struct();
         if (index >= struct_.get_members().size()) {
             stream << "out of bounds memberptr";

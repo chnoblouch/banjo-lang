@@ -84,7 +84,7 @@ private:
     void lower_sqrt(ir::Instruction &instr) override;
 
     mcode::Opcode get_move_opcode(ir::Type type);
-    void copy_block_using_movs(ir::Instruction &instr);
+    void copy_block_using_movs(ir::Instruction &instr, unsigned size);
     void emit_jcc(ir::Instruction &instr, const std::function<void()> &comparison_emitter);
     mcode::Opcode get_jcc_opcode(ir::Comparison comparison);
     mcode::Opcode get_cmovcc_opcode(ir::Comparison comparison);

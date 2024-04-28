@@ -1,0 +1,23 @@
+#! output: 58
+
+func main() {
+	var a = (58,);
+	var b = a;
+	println(b.0);
+}
+
+#! output: false
+
+func main() {
+	var a = (58, false);
+	var b = a;
+	println(b.1);
+}
+
+#! output: string
+
+func main() {
+	var a = (58, false, -38.98, "string");
+	var b = a;
+	println(b.3);
+}

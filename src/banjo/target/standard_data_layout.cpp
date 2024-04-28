@@ -1,6 +1,8 @@
 #include "standard_data_layout.hpp"
 
 #include "utils/utils.hpp"
+#include "utils/macros.hpp"
+
 #include <utility>
 
 namespace target {
@@ -47,7 +49,7 @@ unsigned StandardDataLayout::get_size(const ir::Type &type) const {
 
             return offset * type.get_array_length();
         } else {
-            return 0;
+            ASSERT_UNREACHABLE;
         }
     } else {
         return usize * type.get_array_length();

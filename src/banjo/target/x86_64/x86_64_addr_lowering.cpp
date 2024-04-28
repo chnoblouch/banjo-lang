@@ -56,15 +56,15 @@ mcode::Operand X8664AddrLowering::lower_symbol_addr(const ir::Operand &operand) 
 mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ir::Instruction &instr) {
     mcode::Register base = lowerer.lower_reg(instr.get_operand(0).get_register());
     ir::Operand &operand = instr.get_operand(1);
-    ir::Type type = instr.get_operand(0).get_type();
+    const ir::Type &base_type = instr.get_operand(2).get_type();
 
     mcode::IndirectAddress addr(base, 0, 1);
     if (operand.is_int_immediate()) {
         unsigned int_offset = operand.get_int_immediate().to_u64();
-        addr.set_int_offset(int_offset * lowerer.get_size(type.deref()));
+        addr.set_int_offset(int_offset * lowerer.get_size(base_type));
     } else if (operand.is_register()) {
         addr.set_reg_offset(lowerer.lower_reg(operand.get_register()));
-        addr.set_scale(lowerer.get_size(type.deref()));
+        addr.set_scale(lowerer.get_size(base_type));
     }
 
     if (addr.has_reg_offset()) {
@@ -103,8 +103,9 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ir::Instruction &i
 }
 
 mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &instr) {
-    unsigned int_offset = instr.get_operand(1).get_int_immediate().to_u64();
-    ir::Type type = instr.get_operand(0).get_type();
+    const ir::Type &type = instr.get_operand(0).get_type();
+    const ir::Operand &base_operand = instr.get_operand(1);
+    unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
 
     int byte_offset = 0;
 
@@ -117,10 +118,10 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &i
     }
 
     // Try to merge the instruction with previous pointer operations.
-    ir::InstrIter base_producer_iter = lowerer.get_producer_globally(instr.get_operand(0).get_register());
+    ir::InstrIter base_producer_iter = lowerer.get_producer_globally(base_operand.get_register());
     if (base_producer_iter != lowerer.get_block().end() && base_producer_iter->get_opcode() == ir::Opcode::MEMBERPTR) {
         if (lowerer.get_num_uses(*instr.get_dest()) == 0) {
-            lowerer.discard_use(instr.get_operand(0).get_register());
+            lowerer.discard_use(base_operand.get_register());
         }
 
         mcode::IndirectAddress addr = calc_memberptr_addr(*base_producer_iter);
@@ -128,7 +129,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &i
         return addr;
     }
 
-    mcode::Register base = lowerer.lower_reg(instr.get_operand(0).get_register());
+    mcode::Register base = lowerer.lower_reg(base_operand.get_register());
     return mcode::IndirectAddress(base, byte_offset, 1);
 }
 

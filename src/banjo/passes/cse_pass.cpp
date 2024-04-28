@@ -32,8 +32,8 @@ void CSEPass::run(ir::BasicBlock &block, ir::Function *func) {
             continue;
         }
 
-        ir::Operand &ptr = iter->get_operand(0);
-        ir::Operand &index = iter->get_operand(1);
+        ir::Operand &ptr = iter->get_operand(1);
+        ir::Operand &index = iter->get_operand(2);
 
         if (!ptr.is_register() || !index.is_immediate()) {
             continue;

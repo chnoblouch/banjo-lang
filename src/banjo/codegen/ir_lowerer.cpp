@@ -427,7 +427,9 @@ void IRLowerer::lower_copy(ir::Instruction &instr) {
     ir::Operand func_operand = ir::Operand::from_extern_func("memcpy", ir::Primitive::VOID);
     ir::Operand dst_operand = instr.get_operand(0);
     ir::Operand src_operand = instr.get_operand(1);
-    ir::Operand size_operand = instr.get_operand(2);
+
+    unsigned size = target->get_data_layout().get_size(instr.get_operand(2).get_type());
+    ir::Operand size_operand = ir::Operand::from_int_immediate(size);
 
     ir::Instruction call_instr(ir::Opcode::CALL, {func_operand, dst_operand, src_operand, size_operand});
     lower_call(call_instr);

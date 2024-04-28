@@ -2,6 +2,7 @@
 #define IR_BUILDER_IR_BUILDER_CONTEXT_H
 
 #include "ir/module.hpp"
+#include "ir/virtual_register.hpp"
 #include "symbol/function.hpp"
 #include "symbol/module_path.hpp"
 #include "target/target.hpp"
@@ -128,10 +129,10 @@ public:
     ir::Instruction &append_alloca(ir::VirtualRegister dest, ir::Type type);
     ir::VirtualRegister append_alloca(ir::Type type);
     ir::Instruction &append_store(ir::Operand src, ir::Operand dest);
-    void append_load(ir::VirtualRegister dest, ir::Operand src);
-    ir::VirtualRegister append_load(ir::Operand src);
-    ir::Instruction &append_loadarg(ir::VirtualRegister dest, ir::Operand src);
-    ir::VirtualRegister append_loadarg(ir::Operand src);
+    void append_load(ir::VirtualRegister dest, ir::Type type, ir::Operand src);
+    ir::Value append_load(ir::Type type, ir::Operand src);
+    ir::Instruction &append_loadarg(ir::VirtualRegister dest, ir::Type type, ir::Operand src);
+    ir::VirtualRegister append_loadarg(ir::Type type, ir::Operand src);
     void append_jmp(ir::BasicBlockIter block_iter);
 
     void append_cjmp(
@@ -142,17 +143,15 @@ public:
         ir::BasicBlockIter false_block_iter
     );
 
-    void append_offsetptr(ir::VirtualRegister dest, ir::Operand base, unsigned offset);
-    ir::VirtualRegister append_offsetptr(ir::Operand base, unsigned offset);
-    void append_offsetptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand offset);
-    ir::VirtualRegister append_offsetptr(ir::Operand base, ir::Operand offset);
-    void append_memberptr(ir::VirtualRegister dest, ir::Operand base, unsigned member);
-    ir::VirtualRegister append_memberptr(ir::Operand base, unsigned member);
-    void append_memberptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand member);
-    ir::VirtualRegister append_memberptr(ir::Operand base, ir::Operand member);
+    ir::VirtualRegister append_offsetptr(ir::Operand base, unsigned offset, ir::Type type);
+    ir::VirtualRegister append_offsetptr(ir::Operand base, ir::Operand offset, ir::Type type);
+    void append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, unsigned member);
+    ir::VirtualRegister append_memberptr(ir::Type type, ir::Operand base, unsigned member);
+    void append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, ir::Operand member);
+    ir::VirtualRegister append_memberptr(ir::Type type, ir::Operand base, ir::Operand member);
     void append_ret(ir::Operand val);
     void append_ret();
-    void append_copy(ir::Operand dst, ir::Operand src, unsigned size);
+    void append_copy(ir::Operand dst, ir::Operand src, ir::Type type);
 };
 
 } // namespace ir_builder

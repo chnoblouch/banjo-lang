@@ -46,11 +46,11 @@ StoredValue ExprIRBuilder::build_into_ptr() {
 }
 
 void ExprIRBuilder::build_and_store(const ir::Value &dst) {
-    build_node(node, dst).try_turn_into_value(context).copy_to(dst, context);
+    build_node(node, dst).copy_to(dst, context);
 }
 
 void ExprIRBuilder::build_and_store(ir::VirtualRegister dst) {
-    build_node(node, dst).try_turn_into_value(context).copy_to(ir::Value::from_register(dst), context);
+    build_and_store(ir::Value::from_register(dst));
 }
 
 StoredValue ExprIRBuilder::build_node(lang::ASTNode *node, const StorageHints &hints) {
@@ -69,12 +69,12 @@ StoredValue ExprIRBuilder::build_node(lang::ASTNode *node, const StorageHints &h
             StoredValue stored_val = StoredValue::alloc(struct_, hints, context);
 
             unsigned tag = lang_type->get_union()->get_case_index(coercion_base->get_union_case());
-            ir::VirtualRegister tag_ptr_reg = context.append_memberptr(stored_val.value_or_ptr, 0);
+            ir::VirtualRegister tag_ptr_reg = context.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 0);
             ir::Value tag_ptr = ir::Value::from_register(tag_ptr_reg, ir::Primitive::I32);
             context.append_store(ir::Operand::from_int_immediate(tag, ir::Primitive::I32), tag_ptr);
 
             const ir::Type &data_type = struct_->get_members()[1].type;
-            ir::VirtualRegister data_ptr_reg = context.append_memberptr(stored_val.value_or_ptr, 1);
+            ir::VirtualRegister data_ptr_reg = context.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 1);
             ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, data_type.ref());
 
             ExprIRBuilder data_builder(context, node);
@@ -216,11 +216,13 @@ StoredValue ExprIRBuilder::build_dynamic_array_literal(lang::ASTNode *node, cons
 StoredValue ExprIRBuilder::build_static_array_literal(lang::ASTNode *node, const StorageHints &hints) {
     ir::Type type = IRBuilderUtils::build_type(lang_type);
     StoredValue stored_val = StoredValue::alloc(type, hints, context);
-    ir::Value val_ptr = stored_val.value_or_ptr;
+    ir::Value val_ptr = stored_val.get_ptr();
+
+    ir::Type base_type = IRBuilderUtils::build_type(lang_type->get_static_array_type().base_type);
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         lang::ASTNode *element_node = node->get_child(i);
-        ir::VirtualRegister element_ptr_reg = context.append_offsetptr(val_ptr, i);
+        ir::VirtualRegister element_ptr_reg = context.append_offsetptr(val_ptr, i, base_type);
         ExprIRBuilder(context, element_node).build_and_store(element_ptr_reg);
     }
 
@@ -254,7 +256,8 @@ StoredValue ExprIRBuilder::build_struct_literal(lang::ASTNode *node, unsigned va
 
     ir::Structure *struct_ = lang_type->get_structure()->get_ir_struct();
     StoredValue stored_val = StoredValue::alloc(ir::Type(struct_), hints, context);
-    ir::Value val_ptr = stored_val.value_or_ptr;
+    const ir::Value &val_ptr = stored_val.get_ptr();
+    const ir::Type &val_type = stored_val.value_type;
 
     for (lang::ASTNode *field_val_node : values_node->get_children()) {
         lang::ASTNode *field_name_node = field_val_node->get_child(0);
@@ -266,7 +269,7 @@ StoredValue ExprIRBuilder::build_struct_literal(lang::ASTNode *node, unsigned va
 
         const std::string &field_name = field_name_node->get_value();
         unsigned field_offset = struct_->get_member_index(field_name);
-        ir::VirtualRegister field_reg = context.append_memberptr(val_ptr, field_offset);
+        ir::VirtualRegister field_reg = context.append_memberptr(val_type, val_ptr, field_offset);
 
         ExprIRBuilder(context, field_value_node).build_and_store(field_reg);
     }
@@ -278,12 +281,13 @@ StoredValue ExprIRBuilder::build_tuple_literal(lang::ASTNode *node, const Storag
     ir::Type type = IRBuilderUtils::build_type(lang_type);
 
     StoredValue stored_val = StoredValue::alloc(type, hints, context);
-    ir::Value val_ptr = stored_val.value_or_ptr;
+    const ir::Value &val_ptr = stored_val.get_ptr();
+    const ir::Type &val_type = stored_val.value_type;
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         lang::ASTNode *child = node->get_child(i);
         ir::Type member_type = type.get_tuple_types()[i];
-        ir::VirtualRegister offset_ptr_reg = context.append_memberptr(val_ptr, i);
+        ir::VirtualRegister offset_ptr_reg = context.append_memberptr(val_type, val_ptr, i);
         ExprIRBuilder(context, child).build_and_store(offset_ptr_reg);
     }
 
@@ -304,17 +308,19 @@ StoredValue ExprIRBuilder::build_binary_operation(lang::ASTNode *node, const Sto
     ir::Value lhs_val = ExprIRBuilder(context, lhs).build_into_value().get_value();
     ir::Value rhs_val = ExprIRBuilder(context, rhs).build_into_value().get_value();
 
+    if (lhs_val.get_type().get_ptr_depth() != 0) {
+        assert(op == lang::AST_OPERATOR_ADD);
+        ir::Type base_type = IRBuilderUtils::build_type(lhs->get_data_type()->get_base_data_type());
+        ir::VirtualRegister reg = context.append_offsetptr(lhs_val, rhs_val, base_type);
+        return StoredValue::create_value(reg, lhs_val.get_type());
+    }
+
     ir::VirtualRegister reg = context.get_current_func()->next_virtual_reg();
 
     ir::Opcode opcode;
     bool commutative = false;
 
-    if (lhs_val.get_type().get_ptr_depth() != 0) {
-        switch (op) {
-            case lang::AST_OPERATOR_ADD: opcode = ir::Opcode::OFFSETPTR; break;
-            default: ASSERT_UNREACHABLE;
-        }
-    } else if (!lhs_val.get_type().is_floating_point()) {
+    if (!lhs_val.get_type().is_floating_point()) {
         switch (op) {
             case lang::AST_OPERATOR_ADD:
                 opcode = ir::Opcode::ADD;
@@ -468,7 +474,8 @@ StoredValue ExprIRBuilder::build_union_case_expr(lang::ASTNode *node, const Stor
     ir::Structure *struct_ = lang_case->get_ir_struct();
 
     StoredValue stored_val = StoredValue::alloc(struct_, hints, context);
-    ir::Value val_ptr = stored_val.value_or_ptr;
+    const ir::Value &val_ptr = stored_val.get_ptr();
+    const ir::Type &val_type = stored_val.value_type;
 
     for (unsigned i = 0; i < args_node->get_children().size(); i++) {
         lang::ASTNode *arg_node = args_node->get_child(i);
@@ -476,7 +483,7 @@ StoredValue ExprIRBuilder::build_union_case_expr(lang::ASTNode *node, const Stor
             continue;
         }
 
-        ir::VirtualRegister field_reg = context.append_memberptr(val_ptr, i);
+        ir::VirtualRegister field_reg = context.append_memberptr(val_type, val_ptr, i);
         ExprIRBuilder(context, arg_node).build_and_store(field_reg);
     }
 
@@ -499,39 +506,32 @@ StoredValue ExprIRBuilder::build_func_call(lang::ASTNode *node, const StorageHin
 StoredValue ExprIRBuilder::build_bracket_expr(lang::BracketExpr *node) {
     assert(node->get_kind() == lang::BracketExpr::Kind::INDEX);
 
-    lang::ASTNode *base_node = node->get_child(0);
-    lang::ASTNode *index_node = node->get_child(1)->get_child(0);
+    lang::Expr *base_node = node->get_child(0)->as<lang::Expr>();
+    lang::Expr *index_node = node->get_child(1)->get_child(0)->as<lang::Expr>();
 
-    lang::DataType *type = node->get_child(0)->as<lang::Expr>()->get_data_type();
+    lang::DataType *lang_type = base_node->get_data_type();
 
-    if (type->get_kind() == lang::DataType::Kind::POINTER) {
+    if (lang_type->get_kind() == lang::DataType::Kind::POINTER) {
         StoredValue built_pointer = ExprIRBuilder(context, base_node).build().try_turn_into_value(context);
+        ir::Type base_type = IRBuilderUtils::build_type(lang_type->get_base_data_type());
         StoredValue built_index = ExprIRBuilder(context, index_node).build().try_turn_into_value(context);
-        return build_offset_ptr(built_pointer, built_index);
-    } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
+        return build_offset_ptr(built_pointer, built_index, base_type);
+    } else if (lang_type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
         StoredValue built_array = build_node(base_node, StorageHints::PREFER_REFERENCE);
+        ir::Type base_type = IRBuilderUtils::build_type(lang_type->get_static_array_type().base_type);
         StoredValue built_index = ExprIRBuilder(context, index_node).build().try_turn_into_value(context);
-        return build_offset_ptr(built_array, built_index);
-    } else if (type->get_kind() == lang::DataType::Kind::STRUCT) {
-        StoredValue built_array = ExprIRBuilder(context, base_node).build().try_turn_into_value(context);
+        return build_offset_ptr(built_array, built_index, base_type);
+    } else if (lang_type->get_kind() == lang::DataType::Kind::STRUCT) {
+        StoredValue built_array = ExprIRBuilder(context, base_node).build().turn_into_reference(context);
         StoredValue built_index = ExprIRBuilder(context, index_node).build().try_turn_into_value(context);
 
         lang::Structure *struct_ = base_node->as<lang::Expr>()->get_data_type()->get_structure();
         lang::Function *ref_func = struct_->get_method_table().get_function("ref");
 
-        ir::VirtualRegister pointer_reg = context.get_current_func()->next_virtual_reg();
-        ir::Type type = IRBuilderUtils::build_type(lang_type);
-        ir::Value pointer = ir::Operand::from_register(pointer_reg, type.ref());
-
-        context.get_cur_block().append(ir::Instruction(
-            ir::Opcode::CALL,
-            pointer_reg,
-            {ir::Operand::from_func(ref_func->get_ir_func(), type.ref()),
-             built_array.value_or_ptr,
-             built_index.value_or_ptr}
-        ));
-
-        return StoredValue::create_reference(pointer, type);
+        std::vector<ir::Value> args{built_array.get_ptr(), built_index.value_or_ptr};
+        StoredValue pointer = IRBuilderUtils::build_call(ref_func, args, context);
+        ir::Type type = IRBuilderUtils::build_type(ref_func->get_type().return_type->get_base_data_type());
+        return StoredValue::create_reference(pointer.get_value(), type);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -656,20 +656,19 @@ StoredValue ExprIRBuilder::build_cstr_string_literal(const std::string &value) {
     return StoredValue::create_value(global_val);
 }
 
-StoredValue ExprIRBuilder::build_offset_ptr(const StoredValue &pointer, const StoredValue &index) {
+StoredValue ExprIRBuilder::build_offset_ptr(const StoredValue &pointer, const StoredValue &index, ir::Type base_type) {
     ir::Type offset_type = context.get_target()->get_data_layout().get_usize_type();
     ir::Operand offset;
 
     if (index.value_or_ptr.is_immediate()) {
-        offset = ir::Operand::from_int_immediate(index.value_or_ptr.get_int_immediate(), offset_type);
+        offset = ir::Operand::from_int_immediate(index.get_value().get_int_immediate(), offset_type);
     } else if (index.value_or_ptr.is_register()) {
         // FIXME: extend to usize if necessary
-        offset = ir::Operand::from_register(index.value_or_ptr.get_register(), offset_type);
+        offset = ir::Operand::from_register(index.get_value().get_register(), offset_type);
     }
 
-    ir::Type base_type = pointer.value_or_ptr.get_type().deref();
-    ir::VirtualRegister offset_ptr = context.append_offsetptr(pointer.value_or_ptr, offset);
-    return StoredValue::create_reference(offset_ptr, base_type);
+    ir::VirtualRegister offset_ptr = context.append_offsetptr(pointer.value_or_ptr, offset, base_type);
+    return StoredValue::create_reference(offset_ptr, std::move(base_type));
 }
 
 StoredValue ExprIRBuilder::create_immediate(LargeInt value, ir::Type type) {

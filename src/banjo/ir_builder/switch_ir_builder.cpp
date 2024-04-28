@@ -11,6 +11,7 @@
 #include "ir_builder/block_ir_builder.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
 #include "ir_builder/ir_builder_utils.hpp"
+#include "ir_builder/storage.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/symbol_table.hpp"
 
@@ -25,13 +26,12 @@ void SwitchIRBuilder::build() {
     int id = context.next_switch_id();
     std::string id_str = std::to_string(id);
 
-    ir::Value val = ExprIRBuilder(context, value_node).build_into_ptr().get_ptr();
-    ir::VirtualRegister tag_ptr_reg = context.append_memberptr(val, 0);
+    StoredValue val = ExprIRBuilder(context, value_node).build_into_ptr();
+    ir::VirtualRegister tag_ptr_reg = context.append_memberptr(val.value_type, val.get_ptr(), 0);
     ir::Value tag_ptr = ir::Value::from_register(tag_ptr_reg, ir::Type(ir::Primitive::I32, 1));
-    ir::VirtualRegister tag_reg = context.append_load(tag_ptr);
-    ir::Value tag = ir::Value::from_register(tag_reg, ir::Primitive::I32);
+    ir::Value tag = context.append_load(ir::Primitive::I32, tag_ptr);
 
-    ir::VirtualRegister data_ptr_reg = context.append_memberptr(val, 1);
+    ir::VirtualRegister data_ptr_reg = context.append_memberptr(val.value_type, val.get_ptr(), 1);
     ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, ir::Type(ir::Primitive::VOID, 1));
 
     ir::BasicBlockIter exit_iter = context.create_block("switch.exit." + id_str);
@@ -75,10 +75,8 @@ void SwitchIRBuilder::build() {
 
         lang::SymbolTable *symbol_table = block_node->as<lang::ASTBlock>()->get_symbol_table();
         lang::LocalVariable *lang_var = symbol_table->get_symbol(name_node->get_value())->get_local();
-        ir::Operand var = lang_var->as_ir_value(context).value_or_ptr;
-        ir::Type type = var.get_type().deref();
-        unsigned size = context.get_target()->get_data_layout().get_size(type);
-        context.append_copy(var, data_ptr, size);
+        StoredValue val = lang_var->as_ir_value(context);
+        context.append_copy(val.get_ptr(), data_ptr, val.value_type);
 
         block_builder.build();
         context.append_jmp(exit_iter);

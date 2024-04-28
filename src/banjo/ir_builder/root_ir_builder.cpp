@@ -259,11 +259,16 @@ void RootIRBuilder::build_generic_struct(lang::ASTNode *node) {
 void RootIRBuilder::build_union(lang::ASTNode *node) {
     lang::ASTNode *block_node = node->get_child(lang::UNION_BLOCK);
 
+    lang::Union *lang_union = node->as<lang::ASTUnion>()->get_symbol();
+    context.set_current_struct(lang_union->get_ir_struct());
+
     for (lang::ASTNode *child : block_node->get_children()) {
         if (child->get_type() == lang::AST_FUNCTION_DEFINITION) {
             FuncDefIRBuilder(context, child).build();
         }
     }
+
+    context.set_current_struct(nullptr);
 }
 
 } // namespace ir_builder

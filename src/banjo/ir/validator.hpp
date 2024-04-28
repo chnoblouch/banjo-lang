@@ -17,7 +17,7 @@ public:
     bool validate(ir::Module &mod, ir::Function &func);
 
 private:
-    bool validate_memberptr(ir::Module &mod, ir::Instruction &instr);
+    bool validate_memberptr(ir::Instruction &instr);
 };
 
 } // namespace ir

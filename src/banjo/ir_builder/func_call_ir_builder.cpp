@@ -5,6 +5,7 @@
 #include "ir_builder/expr_ir_builder.hpp"
 #include "ir_builder/ir_builder_utils.hpp"
 #include "ir_builder/location_ir_builder.hpp"
+#include "ir_builder/storage.hpp"
 
 namespace ir_builder {
 
@@ -13,7 +14,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
     lang::ASTNode *args_node = node->get_child(lang::CALL_ARGS);
 
     LocationIRBuilder location_builder(context, location_node, infer_params());
-    ir::Value location = location_builder.build(false).value_or_ptr;
+    StoredValue location = location_builder.build(false);
 
     lang::DataType *location_type = location_node->get_location()->get_type();
 
@@ -43,16 +44,15 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
             call_instr_operands.push_back(ir::Operand::from_extern_func(name, func_return_type));
         }
     } else if (location_type->get_kind() == lang::DataType::Kind::FUNCTION) {
-        ir::VirtualRegister ptr_reg = context.append_load(location);
-        call_instr_operands.push_back(ir::Operand::from_register(ptr_reg, ir::Type(ir::Primitive::VOID, 1)));
+        ir::Value func_ptr = context.append_load(ir::Type(ir::Primitive::VOID, 1), location.value_or_ptr);
+        call_instr_operands.push_back(func_ptr);
     } else if (location_type->get_kind() == lang::DataType::Kind::CLOSURE) {
-        ir::Type type = IRBuilderUtils::build_type(location_type);
-
-        ir::VirtualRegister func_ptr_ptr_reg = context.append_memberptr(location, 0);
+        ir::Type closure_type = location.value_type;
+        ir::VirtualRegister func_ptr_ptr_reg = context.append_memberptr(closure_type, location.value_or_ptr, 0);
         ir::Operand func_ptr_ptr = ir::Operand::from_register(func_ptr_ptr_reg, ir::Type(ir::Primitive::VOID, 2));
-        ir::VirtualRegister func_ptr_reg = context.append_load(func_ptr_ptr);
+        ir::Value func_ptr = context.append_load(ir::Type(ir::Primitive::VOID, 1), func_ptr_ptr);
 
-        call_instr_operands.push_back(ir::Operand::from_register(func_ptr_reg, ir::Type(ir::Primitive::VOID, 1)));
+        call_instr_operands.push_back(func_ptr);
     }
 
     // HACK: don't modify parameters!
@@ -72,13 +72,12 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
     if (is_method) {
         call_instr_operands.push_back(get_self_operand(location_builder));
     } else if (location_type->get_kind() == lang::DataType::Kind::CLOSURE) {
-        ir::Type type = IRBuilderUtils::build_type(location_type);
-
-        ir::VirtualRegister context_ptr_ptr_reg = context.append_memberptr(location, 1);
+        ir::Type closure_type = location.value_type;
+        ir::VirtualRegister context_ptr_ptr_reg = context.append_memberptr(closure_type, location.value_or_ptr, 1);
         ir::Operand context_ptr_ptr = ir::Operand::from_register(context_ptr_ptr_reg, ir::Type(ir::Primitive::VOID, 2));
-        ir::VirtualRegister context_ptr_reg = context.append_load(context_ptr_ptr);
+        ir::Operand context_ptr = context.append_load(ir::Type(ir::Primitive::VOID, 1), context_ptr_ptr);
 
-        call_instr_operands.push_back(ir::Operand::from_register(context_ptr_reg, ir::Type(ir::Primitive::VOID, 1)));
+        call_instr_operands.push_back(context_ptr);
     }
 
     for (int i = 0; i < args_node->get_children().size(); i++) {
@@ -110,12 +109,12 @@ std::vector<lang::DataType *> FuncCallIRBuilder::infer_params() {
 }
 
 ir::Operand FuncCallIRBuilder::get_self_operand(LocationIRBuilder &location_builder) {
+    const StoredValue &self = location_builder.get_self();
+
     if (location_builder.get_self().reference) {
-        ir::VirtualRegister self_reg = context.append_load(location_builder.get_self().value_or_ptr);
-        ir::Type type = location_builder.get_self().value_type;
-        return ir::Operand::from_register(self_reg, type);
+        return context.append_load(self.value_type, self.get_ptr());
     } else {
-        return location_builder.get_self().value_or_ptr;
+        return location_builder.get_self().get_value();
     }
 }
 

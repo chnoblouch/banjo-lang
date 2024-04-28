@@ -2,6 +2,7 @@
 
 #include "target/x86_64/x86_64_opcode.hpp"
 #include "target/x86_64/x86_64_register.hpp"
+#include "utils/macros.hpp"
 
 #include <iostream>
 #include <limits>
@@ -838,6 +839,7 @@ void X8664Encoder::emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size) {
         else if (size == 2) get_back_text_buffer().write_i16(imm.value);
         else if (size == 4) get_back_text_buffer().write_i32(imm.value);
         else if (size == 8) get_back_text_buffer().write_i64(imm.value);
+        else ASSERT_UNREACHABLE;
     } else {
         add_text_symbol_use(imm.symbol_index, BinSymbolUseKind::ABS64, 0);
         get_back_text_buffer().write_u64(0);

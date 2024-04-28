@@ -59,7 +59,7 @@ private:
     StoredValue build_implicit_result(lang::Expr *expr);
     char encode_char(const std::string &value, unsigned &index);
     StoredValue build_cstr_string_literal(const std::string &value);
-    StoredValue build_offset_ptr(const StoredValue &pointer, const StoredValue &index);
+    StoredValue build_offset_ptr(const StoredValue &pointer, const StoredValue &index, ir::Type base_type);
     StoredValue create_immediate(LargeInt value, ir::Type type);
 
     bool is_coerced();

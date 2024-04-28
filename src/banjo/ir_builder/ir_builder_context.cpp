@@ -1,5 +1,6 @@
 #include "ir_builder_context.hpp"
 
+#include <cassert>
 #include <utility>
 
 #include "ir_builder/ir_builder_utils.hpp"
@@ -102,37 +103,25 @@ ir::Instruction &IRBuilderContext::append_store(ir::Operand src, ir::Operand dst
     return *cur_block_iter->append(ir::Instruction(ir::Opcode::STORE, {std::move(src), std::move(dst)}));
 }
 
-void IRBuilderContext::append_load(ir::VirtualRegister dest, ir::Operand src) {
-    cur_block_iter->append(ir::Instruction(
-        ir::Opcode::LOAD,
-        dest,
-        {
-            ir::Operand::from_type(src.get_type().deref()),
-            std::move(src),
-        }
-    ));
+void IRBuilderContext::append_load(ir::VirtualRegister dest, ir::Type type, ir::Operand src) {
+    ir::Operand type_operand = ir::Operand::from_type(std::move(type));
+    cur_block_iter->append(ir::Instruction(ir::Opcode::LOAD, dest, {type_operand, std::move(src)}));
 }
 
-ir::VirtualRegister IRBuilderContext::append_load(ir::Operand src) {
+ir::Value IRBuilderContext::append_load(ir::Type type, ir::Operand src) {
     ir::VirtualRegister reg = current_func->next_virtual_reg();
-    append_load(reg, std::move(src));
-    return reg;
+    append_load(reg, type, std::move(src));
+    return ir::Value::from_register(reg, std::move(type));
 }
 
-ir::Instruction &IRBuilderContext::append_loadarg(ir::VirtualRegister dest, ir::Operand src) {
-    return *cur_block_iter->append(ir::Instruction(
-        ir::Opcode::LOADARG,
-        dest,
-        {
-            ir::Operand::from_type(src.get_type().deref()),
-            std::move(src),
-        }
-    ));
+ir::Instruction &IRBuilderContext::append_loadarg(ir::VirtualRegister dest, ir::Type type, ir::Operand src) {
+    ir::Operand type_operand = ir::Operand::from_type(std::move(type));
+    return *cur_block_iter->append(ir::Instruction(ir::Opcode::LOADARG, dest, {type_operand, std::move(src)}));
 }
 
-ir::VirtualRegister IRBuilderContext::append_loadarg(ir::Operand src) {
+ir::VirtualRegister IRBuilderContext::append_loadarg(ir::Type type, ir::Operand src) {
     ir::VirtualRegister reg = current_func->next_virtual_reg();
-    append_loadarg(reg, std::move(src));
+    append_loadarg(reg, std::move(type), std::move(src));
     return reg;
 }
 
@@ -169,41 +158,36 @@ void IRBuilderContext::append_cjmp(
     ));
 }
 
-void IRBuilderContext::append_offsetptr(ir::VirtualRegister dest, ir::Operand base, unsigned offset) {
-    return append_offsetptr(dest, std::move(base), ir::Operand::from_int_immediate(offset));
+ir::VirtualRegister IRBuilderContext::append_offsetptr(ir::Operand base, unsigned offset, ir::Type type) {
+    ir::Value offset_val = ir::Value::from_int_immediate(offset, ir::Primitive::I64);
+    return append_offsetptr(std::move(base), offset_val, std::move(type));
 }
 
-ir::VirtualRegister IRBuilderContext::append_offsetptr(ir::Operand base, unsigned offset) {
-    return append_offsetptr(std::move(base), ir::Operand::from_int_immediate(offset));
+ir::VirtualRegister IRBuilderContext::append_offsetptr(ir::Operand base, ir::Operand offset, ir::Type type) {
+    // FIXME: make sure offset is always an i64
+
+    ir::VirtualRegister dst = current_func->next_virtual_reg();
+    ir::Value type_val = ir::Value::from_type(std::move(type));
+    cur_block_iter->append(ir::Instruction(ir::Opcode::OFFSETPTR, dst, {std::move(base), std::move(offset), type_val}));
+    return dst;
 }
 
-void IRBuilderContext::append_offsetptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand offset) {
-    // HACK: don't do this here
-    offset.set_type(ir::Primitive::I64);
-    cur_block_iter->append(ir::Instruction(ir::Opcode::OFFSETPTR, dest, {std::move(base), std::move(offset)}));
+void IRBuilderContext::append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, unsigned member) {
+    return append_memberptr(dst, std::move(type), std::move(base), ir::Operand::from_int_immediate(member));
 }
 
-ir::VirtualRegister IRBuilderContext::append_offsetptr(ir::Operand base, ir::Operand offset) {
+ir::VirtualRegister IRBuilderContext::append_memberptr(ir::Type type, ir::Operand base, unsigned member) {
+    return append_memberptr(std::move(type), std::move(base), ir::Operand::from_int_immediate(member));
+}
+
+void IRBuilderContext::append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, ir::Operand member) {
+    ir::Value type_val = ir::Value::from_type(std::move(type));
+    cur_block_iter->append(ir::Instruction(ir::Opcode::MEMBERPTR, dst, {type_val, std::move(base), std::move(member)}));
+}
+
+ir::VirtualRegister IRBuilderContext::append_memberptr(ir::Type type, ir::Operand base, ir::Operand member) {
     ir::VirtualRegister reg = current_func->next_virtual_reg();
-    append_offsetptr(reg, std::move(base), std::move(offset));
-    return reg;
-}
-
-void IRBuilderContext::append_memberptr(ir::VirtualRegister dest, ir::Operand base, unsigned member) {
-    return append_memberptr(dest, std::move(base), ir::Operand::from_int_immediate(member));
-}
-
-ir::VirtualRegister IRBuilderContext::append_memberptr(ir::Operand base, unsigned member) {
-    return append_memberptr(std::move(base), ir::Operand::from_int_immediate(member));
-}
-
-void IRBuilderContext::append_memberptr(ir::VirtualRegister dest, ir::Operand base, ir::Operand member) {
-    cur_block_iter->append(ir::Instruction(ir::Opcode::MEMBERPTR, dest, {std::move(base), std::move(member)}));
-}
-
-ir::VirtualRegister IRBuilderContext::append_memberptr(ir::Operand base, ir::Operand member) {
-    ir::VirtualRegister reg = current_func->next_virtual_reg();
-    append_memberptr(reg, std::move(base), std::move(member));
+    append_memberptr(reg, std::move(type), std::move(base), std::move(member));
     return reg;
 }
 
@@ -215,9 +199,9 @@ void IRBuilderContext::append_ret() {
     cur_block_iter->append(ir::Instruction(ir::Opcode::RET));
 }
 
-void IRBuilderContext::append_copy(ir::Operand dst, ir::Operand src, unsigned size) {
-    ir::Value size_operand = ir::Operand::from_int_immediate(size, ir::Primitive::I64);
-    cur_block_iter->append(ir::Instruction(ir::Opcode::COPY, {std::move(dst), std::move(src), size_operand}));
+void IRBuilderContext::append_copy(ir::Operand dst, ir::Operand src, ir::Type type) {
+    ir::Value type_val = ir::Operand::from_type(std::move(type));
+    cur_block_iter->append(ir::Instruction(ir::Opcode::COPY, {std::move(dst), std::move(src), type_val}));
 }
 
 } // namespace ir_builder

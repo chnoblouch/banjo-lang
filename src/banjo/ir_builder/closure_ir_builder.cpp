@@ -17,7 +17,8 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
     ir::Type type = IRBuilderUtils::build_type(lang_type);
 
     StoredValue stored_val = StoredValue::alloc(type, hints, context);
-    ir::Value val_ptr = stored_val.value_or_ptr;
+    ir::Value val_ptr = stored_val.get_ptr();
+    const ir::Type &val_type = stored_val.value_type;
 
     lang::Function *enclosing_func = context.get_current_lang_func();
     std::string enclosing_func_name = NameMangling::mangle_func_name(enclosing_func);
@@ -37,6 +38,7 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
 
     ir::BasicBlockIter enclosing_block = context.get_cur_block_iter();
     std::vector<ir::VirtualRegister> enclosing_arg_regs = context.get_current_arg_regs();
+    ir::BasicBlockIter enclosing_func_exit = context.get_cur_func_exit();
 
     context.set_current_closure(&closure);
     FuncDefIRBuilder(context, node).build_closure(closure_expr->get_func());
@@ -46,6 +48,7 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
     context.set_current_func(enclosing_func->get_ir_func());
     context.set_cur_block_iter(enclosing_block);
     context.set_current_arg_regs(enclosing_arg_regs);
+    context.set_cur_func_exit(enclosing_func_exit);
 
     for (lang::Variable *var : closure.captured_vars) {
         ir::Type type = IRBuilderUtils::build_type(var->get_data_type());
@@ -66,20 +69,20 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
 
     int index = 0;
     for (lang::Variable *var : closure.captured_vars) {
-        ir::Operand src = var->as_ir_value(context).value_or_ptr;
-        ir::VirtualRegister dst_reg = context.append_memberptr(data_ptr, index);
-        ir::Operand dst = ir::Operand::from_register(dst_reg, src.get_type().ref());
-        IRBuilderUtils::copy_val(context, src, dst);
+        StoredValue src = var->as_ir_value(context);
+        ir::VirtualRegister dst_reg = context.append_memberptr(struct_type, data_ptr, index);
+        ir::Operand dst = ir::Operand::from_register(dst_reg, src.value_type.ref());
+        IRBuilderUtils::copy_val(context, src.value_or_ptr, dst, src.value_type);
         index += 1;
     }
 
-    ir::VirtualRegister func_ptr_dest_reg = context.append_memberptr(val_ptr, 0);
+    ir::VirtualRegister func_ptr_dest_reg = context.append_memberptr(val_type, val_ptr, 0);
     context.append_store(
         ir::Operand::from_func(closure_expr->get_func()->get_ir_func(), ir::Type(ir::Primitive::VOID, 1)),
         ir::Operand::from_register(func_ptr_dest_reg, ir::Type(ir::Primitive::VOID, 2))
     );
 
-    ir::VirtualRegister context_ptr_dest_reg = context.append_memberptr(val_ptr, 1);
+    ir::VirtualRegister context_ptr_dest_reg = context.append_memberptr(val_type, val_ptr, 1);
     context.append_store(data_ptr, ir::Operand::from_register(context_ptr_dest_reg, struct_type.ref()));
 
     return stored_val;

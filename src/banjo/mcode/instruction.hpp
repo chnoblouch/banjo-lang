@@ -44,7 +44,6 @@ private:
     Opcode opcode;
     OperandList operands;
     std::vector<RegOp> reg_ops;
-    unsigned number;
     unsigned flags = 0;
 
 public:
@@ -72,9 +71,6 @@ public:
     }
 
     std::vector<RegOp> &get_reg_ops() { return reg_ops; }
-
-    unsigned get_number() const { return number; }
-    void set_number(unsigned number) { this->number = number; }
 
     unsigned get_flags() { return flags; }
     bool is_flag(unsigned flag) { return flags & flag; }

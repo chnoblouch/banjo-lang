@@ -36,12 +36,12 @@ struct StoredValue {
 
     static StoredValue alloc(const ir::Type &type, const StorageHints &hints, IRBuilderContext &context);
 
-    ir::Value &get_value() {
+    const ir::Value &get_value() const {
         assert(!reference);
         return value_or_ptr;
     }
 
-    ir::Value &get_ptr() {
+    const ir::Value &get_ptr() const {
         assert(reference);
         return value_or_ptr;
     }

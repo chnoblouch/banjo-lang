@@ -108,8 +108,8 @@ void FuncDefIRBuilder::build_arg_store(ir::Function *func) {
         ir::Instruction &alloca_instr = context.append_alloca(store_reg, param_type);
         alloca_instr.set_flag(ir::Instruction::FLAG_ARG_STORE);
 
-        ir::Instruction &loadarg_instr =
-            context.append_loadarg(value_reg, ir::Operand::from_int_immediate(i, param_type.ref()));
+        ir::Operand param_operand = ir::Operand::from_int_immediate(i, param_type.ref());
+        ir::Instruction &loadarg_instr = context.append_loadarg(value_reg, param_type, param_operand);
         loadarg_instr.set_flag(ir::Instruction::FLAG_SAVE_ARG);
 
         ir::Instruction &store_instr = context.append_store(
@@ -130,9 +130,9 @@ void FuncDefIRBuilder::build_return() {
     if (has_return_value()) {
         ir::VirtualRegister val_reg = context.get_current_func()->next_virtual_reg();
         ir::VirtualRegister return_reg = context.get_current_return_reg();
-        ir::Type return_reg_type = context.get_current_func()->get_return_type().ref();
-        context.append_load(val_reg, ir::Operand::from_register(return_reg, return_reg_type));
-        context.append_ret(ir::Operand::from_register(val_reg, return_reg_type.deref()));
+        ir::Type return_type = context.get_current_func()->get_return_type();
+        context.append_load(val_reg, return_type, ir::Operand::from_register(return_reg, return_type.ref()));
+        context.append_ret(ir::Operand::from_register(val_reg, return_type));
     } else if (context.get_current_lang_func()->get_name() == "main") {
         context.append_ret(ir::Operand::from_int_immediate(0, ir::Type(ir::Primitive::I32)));
     } else {

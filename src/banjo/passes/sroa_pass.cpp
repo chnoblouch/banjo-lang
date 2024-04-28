@@ -109,8 +109,7 @@ void SROAPass::collect_members(unsigned val_index) {
 
 void SROAPass::collect_uses(ir::BasicBlock &block) {
     for (ir::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
-        if (iter->get_opcode() == ir::Opcode::MEMBERPTR && iter->get_operand(0).is_register() &&
-            iter->get_operand(1).is_immediate()) {
+        if (iter->get_opcode() == ir::Opcode::MEMBERPTR && iter->get_operand(1).is_register()) {
             analyze_memberptr(iter);
             continue;
         }
@@ -154,8 +153,9 @@ void SROAPass::disable_splitting(StackValue &value) {
 }
 
 void SROAPass::analyze_memberptr(ir::InstrIter iter) {
-    ir::VirtualRegister src = iter->get_operand(0).get_register();
-    unsigned member_index = iter->get_operand(1).get_int_immediate().to_u64();
+    const ir::Type &type = iter->get_operand(0).get_type();
+    ir::VirtualRegister src = iter->get_operand(1).get_register();
+    unsigned member_index = iter->get_operand(2).get_int_immediate().to_u64();
     ir::VirtualRegister dst = *iter->get_dest();
 
     StackValue *val = nullptr;
@@ -173,7 +173,7 @@ void SROAPass::analyze_memberptr(ir::InstrIter iter) {
     }
 
     // The type may not match if there was a pointer cast between the definition and the memberptr instruction.
-    if (iter->get_operand(0).get_type().deref() != val->type) {
+    if (type != val->type) {
         return;
     }
 
@@ -207,21 +207,24 @@ void SROAPass::split_member(StackValue &value, ir::Function *func) {
 
 void SROAPass::split_copies(ir::Function *func, ir::BasicBlock &block, ir::Module &mod) {
     for (ir::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
-        if (iter->get_opcode() != ir::Opcode::COPY || !is_aggregate(iter->get_operand(0).get_type().deref())) {
+        if (iter->get_opcode() != ir::Opcode::COPY) {
             continue;
         }
 
-        if (iter->get_operand(0).get_type() != iter->get_operand(1).get_type()) {
+        const ir::Operand &dst = iter->get_operand(0);
+        const ir::Operand &src = iter->get_operand(1);
+        const ir::Type &type = iter->get_operand(2).get_type();
+
+        if (!is_aggregate(type) || src.get_type() != dst.get_type()) {
             continue;
         }
 
-        ir::VirtualRegister dst = iter->get_operand(0).get_register();
-        ir::VirtualRegister src = iter->get_operand(1).get_register();
-        const ir::Type &type = iter->get_operand(0).get_type().deref();
+        ir::VirtualRegister dst_reg = dst.get_register();
+        ir::VirtualRegister src_reg = src.get_register();
 
         InsertionContext ctx{.mod = mod, .func = func, .block = block, .instr = iter};
-        Ref dst_ref{.ptr = dst, .stack_val = find_stack_val(dst)};
-        Ref src_ref{.ptr = src, .stack_val = find_stack_val(src)};
+        Ref dst_ref{.ptr = dst_reg, .stack_val = find_stack_val(dst_reg)};
+        Ref src_ref{.ptr = src_reg, .stack_val = find_stack_val(src_reg)};
 
         copy_members(ctx, dst_ref, src_ref, type);
 
@@ -298,6 +301,7 @@ SROAPass::Ref SROAPass::get_final_memberptr(
 
     // clang-format off
     ctx.block.insert_before(ctx.instr, ir::Instruction(ir::Opcode::MEMBERPTR, ptr, {
+        ir::Operand::from_type(parent_type),
         ir::Operand::from_register(ref.ptr, parent_type.ref()),
         ir::Operand::from_int_immediate(index)
     }));

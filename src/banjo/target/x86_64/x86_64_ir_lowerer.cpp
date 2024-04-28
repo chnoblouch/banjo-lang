@@ -11,10 +11,10 @@
 #include "target/x86_64/x86_64_opcode.hpp"
 #include "target/x86_64/x86_64_register.hpp"
 #include "utils/bit_operations.hpp"
+#include "utils/macros.hpp"
 
 #include <algorithm>
 #include <string>
-#include <tuple>
 
 #include <iostream>
 
@@ -43,7 +43,7 @@ mcode::Value X8664IRLowerer::lower_global_value(ir::Value &value) {
 }
 
 mcode::Operand X8664IRLowerer::lower_value(const ir::Operand& operand) {
-    int size = get_size(operand.get_type());
+    unsigned size = get_size(operand.get_type());
 
     if (operand.is_int_immediate()) {
         if (size != 8 || operand.get_int_immediate().to_bits() < (1ull << 32)) {
@@ -73,10 +73,10 @@ mcode::Operand X8664IRLowerer::lower_value(const ir::Operand& operand) {
         }));
 
         return mcode::Operand::from_register(mcode::Register::from_virtual(temp_reg), size);
-    } else if(operand.is_register()) {
+    } else if (operand.is_register()) {
         mcode::Register reg = lower_reg(operand.get_register());
         
-        if(reg.is_stack_slot()) {
+        if (reg.is_stack_slot()) {
             mcode::Register tmp_reg = mcode::Register::from_virtual(get_func().next_virtual_reg());
             emit(mcode::Instruction(X8664Opcode::LEA, {
                 mcode::Operand::from_register(tmp_reg, PTR_SIZE),
@@ -86,13 +86,14 @@ mcode::Operand X8664IRLowerer::lower_value(const ir::Operand& operand) {
         } else {
             return mcode::Operand::from_register(reg, size);
         }
-    } else if(operand.is_symbol()) {
+    } else if (operand.is_symbol()) {
         const std::string &symbol_name = operand.get_symbol_name();
 
         mcode::Relocation reloc = mcode::Relocation::NONE;
         if (lang::Config::instance().is_pic() && target->get_descr().is_unix()) {
             if (operand.is_extern_func()) reloc = mcode::Relocation::PLT;
             else if (operand.is_extern_global()) reloc = mcode::Relocation::GOT;
+            else ASSERT_UNREACHABLE;
         }
 
         mcode::Symbol symbol(symbol_name, reloc);
@@ -110,14 +111,15 @@ mcode::Operand X8664IRLowerer::lower_value(const ir::Operand& operand) {
             return mcode::Operand::from_register(temp_reg, PTR_SIZE);
         } else if (target->get_code_model() == CodeModel::LARGE) {
             return mcode::Operand::from_symbol(symbol, PTR_SIZE);
+        } else {
+            ASSERT_UNREACHABLE;
         }
     } else if(operand.is_string()) {
         std::string string = operand.get_string();
         return mcode::Operand::from_data(std::vector<char>(string.begin(), string.end()), size);
+    } else {
+        ASSERT_UNREACHABLE;
     }
-
-    assert(!"invalid value in ir lowerer");
-    return {};
 }
 
 mcode::Operand X8664IRLowerer::lower_address(const ir::Operand& operand) {
@@ -683,10 +685,10 @@ void X8664IRLowerer::lower_memberptr(ir::Instruction& instr) {
 }
 
 void X8664IRLowerer::lower_copy(ir::Instruction& instr) {
-    unsigned size = instr.get_operand(2).get_int_immediate().to_u64();
+    unsigned size = get_size(instr.get_operand(2).get_type());
     
     if(size <= 64) {
-        copy_block_using_movs(instr);
+        copy_block_using_movs(instr, size);
         return;
     }
 
@@ -694,7 +696,7 @@ void X8664IRLowerer::lower_copy(ir::Instruction& instr) {
         ir::Operand::from_extern_func("memcpy", ir::Primitive::VOID),
         instr.get_operand(0),
         instr.get_operand(1),
-        instr.get_operand(2)
+        ir::Operand::from_int_immediate(size, ir::Primitive::I64)
     });
 
     lower_call(call_instr);
@@ -764,12 +766,11 @@ mcode::CallingConvention* X8664IRLowerer::get_calling_convention(ir::CallingConv
     }
 }
 
-void X8664IRLowerer::copy_block_using_movs(ir::Instruction& instr) {
-    unsigned size = instr.get_operand(2).get_int_immediate().to_u64();
+void X8664IRLowerer::copy_block_using_movs(ir::Instruction& instr, unsigned size) {
     unsigned offset = 0;
 
-    for(unsigned mov_size = 8; mov_size != 0; mov_size /= 2) {
-        while(size >= mov_size) {
+    for (unsigned mov_size = 8; mov_size != 0; mov_size /= 2) {
+        while (size >= mov_size) {
             mcode::IndirectAddress dst_addr(lower_reg(instr.get_operand(0).get_register()), offset, 1);
             mcode::IndirectAddress src_addr(lower_reg(instr.get_operand(1).get_register()), offset, 1);
             mcode::Register tmp_reg = lower_reg(get_func().next_virtual_reg());

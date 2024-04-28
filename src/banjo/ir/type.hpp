@@ -48,7 +48,6 @@ public:
     bool is_base_only() const;
 
     Type ref() const;
-    Type deref() const;
     Type base() const;
 
     friend bool operator==(const Type &left, const Type &right) {

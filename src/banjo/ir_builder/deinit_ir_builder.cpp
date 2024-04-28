@@ -50,7 +50,8 @@ void DeinitIRBuilder::build_cond_deinit_call(lang::DeinitInfo *info) {
     ir::BasicBlockIter skip_deinit = context.create_block("deinit.skip." + std::to_string(deinit_flag_id));
 
     ir::VirtualRegister loaded_flag_reg = context.get_current_func()->next_virtual_reg();
-    context.append_load(loaded_flag_reg, ir::Operand::from_register(info->flag_reg, FLAG_TYPE.ref()));
+    ir::Operand flag_ptr = ir::Operand::from_register(info->flag_reg, FLAG_TYPE.ref());
+    context.append_load(loaded_flag_reg, FLAG_TYPE, flag_ptr);
 
     context.append_cjmp(
         ir::Operand::from_register(loaded_flag_reg, FLAG_TYPE),

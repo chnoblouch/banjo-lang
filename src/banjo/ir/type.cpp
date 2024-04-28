@@ -52,10 +52,6 @@ Type Type::ref() const {
     return {value, ptr_depth + 1, 1};
 }
 
-Type Type::deref() const {
-    return {value, ptr_depth - 1, 1};
-}
-
 Type Type::base() const {
     return {value, ptr_depth, 1};
 }

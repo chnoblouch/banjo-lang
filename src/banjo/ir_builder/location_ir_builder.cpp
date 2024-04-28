@@ -121,9 +121,8 @@ void LocationIRBuilder::build_captured_var(lang::Variable *var) {
 
     ir::VirtualRegister arg_ptr_reg = context.get_current_arg_regs()[0];
     ir::Operand arg_ptr = ir::Operand::from_register(arg_ptr_reg, context_type.ref().ref());
-    ir::VirtualRegister context_ptr_reg = context.append_load(arg_ptr);
-    ir::Operand context_ptr = ir::Operand::from_register(context_ptr_reg, context_type.ref());
-    ir::VirtualRegister member_ptr_reg = context.append_memberptr(context_ptr, member_index);
+    ir::Value context_ptr = context.append_load(context_type.ref(), arg_ptr);
+    ir::VirtualRegister member_ptr_reg = context.append_memberptr(context_type, context_ptr, member_index);
     ir::Type member_type = IRBuilderUtils::build_type(var->get_data_type());
     value = StoredValue::create_reference(member_ptr_reg, member_type);
 }
@@ -150,7 +149,8 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
             build_ptr_method_call(element.get_func());
         }
     } else if (element.is_tuple_index()) {
-        ir::VirtualRegister reg = context.append_memberptr(value.value_or_ptr, element.get_tuple_index());
+        unsigned index = element.get_tuple_index();
+        ir::VirtualRegister reg = context.append_memberptr(value.value_type, value.get_ptr(), index);
         ir::Type type = IRBuilderUtils::build_type(element.get_type());
         value = StoredValue::create_reference(reg, type);
     } else {
@@ -160,7 +160,7 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
 
 void LocationIRBuilder::build_struct_field_access(lang::StructField *field, lang::Structure *struct_) {
     unsigned offset = struct_->get_field_index(field);
-    context.append_memberptr(dst, value.get_ptr(), offset);
+    context.append_memberptr(dst, value.value_type, value.get_ptr(), offset);
 
     ir::Type type = IRBuilderUtils::build_type(field->get_type());
     value = StoredValue::create_reference(dst, type);
@@ -170,7 +170,7 @@ void LocationIRBuilder::build_struct_field_access(lang::StructField *field, lang
 
 void LocationIRBuilder::build_union_case_field_access(lang::UnionCaseField *field, lang::UnionCase *case_) {
     unsigned index = case_->get_field_index(field);
-    context.append_memberptr(dst, value.get_ptr(), index);
+    context.append_memberptr(dst, value.value_type, value.get_ptr(), index);
 
     ir::Type type = IRBuilderUtils::build_type(field->get_type());
     value = StoredValue::create_reference(dst, type);
@@ -184,17 +184,16 @@ void LocationIRBuilder::build_direct_method_call(lang::Function *method) {
 }
 
 void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::Structure *struct_) {
-    ir::Type base_type = value.value_type;
-
     if (value.reference) {
-        context.append_load(dst, value.value_or_ptr);
+        context.append_load(dst, value.value_type, value.get_ptr());
     } else {
         dst = value.value_or_ptr.get_register();
     }
 
+    ir::Type base_type(struct_->get_ir_struct());
     ir::Operand base = ir::Operand::from_register(dst, base_type);
     unsigned field_index = struct_->get_field_index(field);
-    ir::VirtualRegister offset_ptr_reg = context.append_memberptr(base, field_index);
+    ir::VirtualRegister offset_ptr_reg = context.append_memberptr(base_type, base, field_index);
     ir::Type type = IRBuilderUtils::build_type(field->get_type());
     value = StoredValue::create_reference(offset_ptr_reg, type);
 

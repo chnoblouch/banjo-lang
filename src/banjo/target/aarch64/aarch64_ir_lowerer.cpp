@@ -451,34 +451,34 @@ void AArch64IRLowerer::lower_ftos(ir::Instruction& instr) {
 }
 
 void AArch64IRLowerer::lower_offsetptr(ir::Instruction& instr) {
-    ir::Operand& operand = instr.get_operand(1);
-    ir::Type type = instr.get_operand(0).get_type();
+    ir::Operand &operand = instr.get_operand(1);
+    const ir::Type &base_type = instr.get_operand(2).get_type();
     
     Address addr;
     addr.base = lower_value(instr.get_operand(0));
 
     if(operand.is_immediate()) {
         unsigned int_offset = operand.get_int_immediate().to_u64();
-        addr.imm_offset = int_offset * get_size(type.deref());
+        addr.imm_offset = int_offset * get_size(base_type);
     } else if(operand.is_register()) {
         addr.reg_offset = lower_reg(operand.get_register());
-        addr.reg_scale = get_size(type.deref());
+        addr.reg_scale = get_size(base_type);
     }
 
     calculate_address(lower_reg(*instr.get_dest()), addr);
 }
 
 void AArch64IRLowerer::lower_memberptr(ir::Instruction& instr) {
-    unsigned int_offset = instr.get_operand(1).get_int_immediate().to_u64();
-    ir::Type type = instr.get_operand(0).get_type();
+    const ir::Type &type = instr.get_operand(0).get_type();
+    unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
 
     Address addr;
     addr.base = lower_value(instr.get_operand(0));
 
-    if(type.is_struct()) {
+    if (type.is_struct()) {
         ir::Structure* struct_ = type.get_struct();
         addr.imm_offset = get_member_offset(struct_, int_offset);
-    } else if(type.is_tuple()) {
+    } else if (type.is_tuple()) {
         const std::vector<ir::Type>& tuple_types = type.get_tuple_types();
         addr.imm_offset = get_member_offset(tuple_types, int_offset);
     }

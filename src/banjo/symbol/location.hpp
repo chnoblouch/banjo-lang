@@ -3,6 +3,7 @@
 
 #include "symbol/generics.hpp"
 #include "symbol/union.hpp"
+#include "symbol/symbol_ref.hpp"
 
 #include <variant>
 #include <vector>
@@ -34,7 +35,7 @@ public:
         Constant *,
         Function *,
         StructField *,
-        Structure *,
+        SymbolRef,
         EnumVariant *,
         UnionCase *,
         UnionCaseField *,
@@ -58,7 +59,7 @@ public:
     LocationElement(Constant *const_, DataType *type) : value(const_), type(type) {}
     LocationElement(Function *func, DataType *type) : value(func), type(type) {}
     LocationElement(StructField *field, DataType *type) : value(field), type(type) {}
-    LocationElement(Structure *self_struct, DataType *type) : value(self_struct), type(type) {}
+    LocationElement(SymbolRef self_symbol, DataType *type) : value(self_symbol), type(type) {}
     LocationElement(EnumVariant *enum_variant, DataType *type) : value(enum_variant), type(type) {}
     LocationElement(UnionCase *union_case, DataType *type) : value(union_case), type(type) {}
     LocationElement(UnionCaseField *union_case_field, DataType *type) : value(union_case_field), type(type) {}
@@ -75,7 +76,7 @@ public:
     Constant *get_const() const { return std::get<3>(value); }
     Function *get_func() const { return std::get<4>(value); }
     StructField *get_field() const { return std::get<5>(value); }
-    Structure *get_self_struct() const { return std::get<6>(value); }
+    const SymbolRef &get_self_symbol() const { return std::get<6>(value); }
     EnumVariant *get_enum_variant() const { return std::get<7>(value); }
     UnionCase *get_union_case() const { return std::get<8>(value); }
     UnionCaseField *get_union_case_field() const { return std::get<9>(value); }

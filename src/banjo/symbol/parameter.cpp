@@ -19,7 +19,8 @@ ir_builder::StoredValue Parameter::as_ir_value(ir_builder::IRBuilderContext &con
         value = ir::Operand::from_register(virtual_reg, type.ref());
     } else {
         ir::VirtualRegister reg = context.get_current_func()->next_virtual_reg();
-        context.append_load(reg, ir::Operand::from_register(virtual_reg, type.ref().ref()));
+        ir::Operand ptr = ir::Operand::from_register(virtual_reg, type.ref().ref());
+        context.append_load(reg, type.ref(), ptr);
         value = ir::Operand::from_register(reg, type.ref());
     }
 
