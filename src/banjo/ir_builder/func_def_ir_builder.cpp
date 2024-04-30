@@ -108,8 +108,7 @@ void FuncDefIRBuilder::build_arg_store(ir::Function *func) {
         ir::Instruction &alloca_instr = context.append_alloca(store_reg, param_type);
         alloca_instr.set_flag(ir::Instruction::FLAG_ARG_STORE);
 
-        ir::Operand param_operand = ir::Operand::from_int_immediate(i, ir::Primitive::ADDR);
-        ir::Instruction &loadarg_instr = context.append_loadarg(value_reg, param_type, param_operand);
+        ir::Instruction &loadarg_instr = context.append_loadarg(value_reg, param_type, i);
         loadarg_instr.set_flag(ir::Instruction::FLAG_SAVE_ARG);
 
         ir::Instruction &store_instr = context.append_store(

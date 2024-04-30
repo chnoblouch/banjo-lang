@@ -193,9 +193,10 @@ void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::S
     }
 
     ir::Type base_type(struct_->get_ir_struct());
-    ir::Operand base = ir::Operand::from_register(dst, base_type);
+    ir::Operand base = ir::Operand::from_register(dst, ir::Primitive::ADDR);
     unsigned field_index = struct_->get_field_index(field);
     ir::VirtualRegister offset_ptr_reg = context.append_memberptr(base_type, base, field_index);
+    
     ir::Type type = IRBuilderUtils::build_type(field->get_type());
     value = StoredValue::create_reference(offset_ptr_reg, type);
 

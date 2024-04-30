@@ -131,8 +131,8 @@ public:
     ir::Instruction &append_store(ir::Operand src, ir::Operand dest);
     void append_load(ir::VirtualRegister dest, ir::Type type, ir::Operand src);
     ir::Value append_load(ir::Type type, ir::Operand src);
-    ir::Instruction &append_loadarg(ir::VirtualRegister dest, ir::Type type, ir::Operand src);
-    ir::VirtualRegister append_loadarg(ir::Type type, ir::Operand src);
+    ir::Instruction &append_loadarg(ir::VirtualRegister dst, ir::Type type, unsigned index);
+    ir::VirtualRegister append_loadarg(ir::Type type, unsigned index);
     void append_jmp(ir::BasicBlockIter block_iter);
 
     void append_cjmp(

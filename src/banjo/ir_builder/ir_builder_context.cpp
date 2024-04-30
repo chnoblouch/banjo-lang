@@ -1,9 +1,10 @@
 #include "ir_builder_context.hpp"
 
+#include "ir/primitive.hpp"
+#include "ir_builder/ir_builder_utils.hpp"
+
 #include <cassert>
 #include <utility>
-
-#include "ir_builder/ir_builder_utils.hpp"
 
 namespace ir_builder {
 
@@ -114,14 +115,15 @@ ir::Value IRBuilderContext::append_load(ir::Type type, ir::Operand src) {
     return ir::Value::from_register(reg, std::move(type));
 }
 
-ir::Instruction &IRBuilderContext::append_loadarg(ir::VirtualRegister dest, ir::Type type, ir::Operand src) {
+ir::Instruction &IRBuilderContext::append_loadarg(ir::VirtualRegister dst, ir::Type type, unsigned index) {
     ir::Operand type_operand = ir::Operand::from_type(std::move(type));
-    return *cur_block_iter->append(ir::Instruction(ir::Opcode::LOADARG, dest, {type_operand, std::move(src)}));
+    ir::Operand index_operand = ir::Operand::from_int_immediate(index);
+    return *cur_block_iter->append(ir::Instruction(ir::Opcode::LOADARG, dst, {type_operand, index_operand}));
 }
 
-ir::VirtualRegister IRBuilderContext::append_loadarg(ir::Type type, ir::Operand src) {
+ir::VirtualRegister IRBuilderContext::append_loadarg(ir::Type type, unsigned index) {
     ir::VirtualRegister reg = current_func->next_virtual_reg();
-    append_loadarg(reg, std::move(type), std::move(src));
+    append_loadarg(reg, std::move(type), index);
     return reg;
 }
 
