@@ -369,12 +369,15 @@ void AArch64IRLowerer::lower_call(ir::Instruction& instr) {
 
 void AArch64IRLowerer::lower_ret(ir::Instruction& instr) {
     if(!instr.get_operands().empty()) {
-        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(AArch64Register::R0));
+        bool is_fp = instr.get_operand(0).get_type().is_floating_point();
+        mcode::Opcode opcode = is_fp ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+        
+        mcode::PhysicalReg reg = is_fp ? AArch64Register::V0 : AArch64Register::R0;
+        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(reg));
         mcode::Operand src = lower_value(instr.get_operand(0));
-
         dst.set_size(src.get_size());
-
-        emit(mcode::Instruction(AArch64Opcode::MOV, {dst, src}));
+        
+        emit(mcode::Instruction(opcode, {dst, src}));
     }
     
     emit(mcode::Instruction(AArch64Opcode::RET));
@@ -473,7 +476,7 @@ void AArch64IRLowerer::lower_memberptr(ir::Instruction& instr) {
     unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
 
     Address addr;
-    addr.base = lower_value(instr.get_operand(0));
+    addr.base = lower_value(instr.get_operand(1));
 
     if (type.is_struct()) {
         ir::Structure* struct_ = type.get_struct();
