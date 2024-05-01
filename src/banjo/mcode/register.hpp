@@ -13,7 +13,11 @@ typedef unsigned PhysicalReg;
 class Register {
 
 private:
-    enum class Type { VIRTUAL_REG, PHYSICAL_REG, STACK_SLOT };
+    enum class Type {
+        VIRTUAL_REG,
+        PHYSICAL_REG,
+        STACK_SLOT,
+    };
 
     Type type;
     long value;
@@ -30,8 +34,8 @@ public:
     bool is_physical_reg() const { return type == Type::PHYSICAL_REG; }
     bool is_stack_slot() const { return type == Type::STACK_SLOT; }
 
-    long get_virtual_reg() const { return value; }
-    long get_physical_reg() const { return value; }
+    VirtualReg get_virtual_reg() const { return static_cast<VirtualReg>(value); }
+    PhysicalReg get_physical_reg() const { return static_cast<PhysicalReg>(value); }
     long get_stack_slot() const { return value; }
 
     bool is_virtual_reg(long id) const { return is_virtual_reg() && value == id; }

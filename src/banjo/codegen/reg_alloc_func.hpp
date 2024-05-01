@@ -1,9 +1,9 @@
 #ifndef CODEGEN_REG_ALLOC_FUNC_H
 #define CODEGEN_REG_ALLOC_FUNC_H
 
-#include "ir/virtual_register.hpp"
 #include "mcode/function.hpp"
 #include "mcode/register.hpp"
+
 #include <unordered_map>
 #include <vector>
 
@@ -57,10 +57,10 @@ struct RegAllocFunc {
 };
 
 typedef unsigned RegClass;
-typedef std::unordered_map<ir::VirtualRegister, RegClass> RegClassMap;
+typedef std::unordered_map<mcode::VirtualReg, RegClass> RegClassMap;
 
 struct Segment {
-    ir::VirtualRegister reg;
+    mcode::VirtualReg reg;
     LiveRange range;
 };
 

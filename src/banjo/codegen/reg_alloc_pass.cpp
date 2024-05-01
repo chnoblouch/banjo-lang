@@ -46,7 +46,7 @@ void RegAllocPass::run(mcode::Function &func) {
     bundles = coalesce_bundles(ctx, bundles);
 
     BundleComparator comparator;
-    ctx.bundles = {comparator, bundles};
+    ctx.bundles = Queue{comparator, bundles};
 
     while (!ctx.bundles.empty()) {
         Bundle bundle = ctx.bundles.top();

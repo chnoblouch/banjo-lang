@@ -193,8 +193,8 @@ public:
     unsigned get_aarch64_left_shift() const { return std::get<10>(value); }
     target::AArch64Condition get_aarch64_condition() const { return std::get<11>(value); }
 
-    long get_virtual_reg() const { return get_register().get_virtual_reg(); }
-    long get_physical_reg() const { return get_register().get_physical_reg(); }
+    VirtualReg get_virtual_reg() const { return get_register().get_virtual_reg(); }
+    PhysicalReg get_physical_reg() const { return get_register().get_physical_reg(); }
     long get_stack_slot() const { return get_register().get_stack_slot(); }
 
     void set_to_immediate(std::string immediate) { value.emplace<0>(immediate); }
