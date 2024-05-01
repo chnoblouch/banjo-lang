@@ -11,27 +11,21 @@ namespace lang {
 
 StmtParser::StmtParser(Parser &parser) : parser(parser), stream(parser.stream) {}
 
-ASTNode *StmtParser::parse() {
-    Token *token = stream.get();
+ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
+    stream.consume(); // Consume operator
 
-    ParseResult result;
+    ASTNode *node = new ASTNode(type);
+    node->append_child(lhs_node);
 
-    switch (token->get_type()) {
-        case TKN_VAR: result = parse_var(); break;
-        case TKN_IF: result = parse_if_chain(); break;
-        case TKN_SWITCH: result = parse_switch(); break;
-        case TKN_WHILE: result = parse_while(); break;
-        case TKN_FOR: result = parse_for(); break;
-        case TKN_RETURN: result = parse_return(); break;
-        case TKN_META: result = parse_meta_stmt(); break;
-        default: break;
-    }
+    ParseResult result = ExprParser(parser, true).parse();
+    node->append_child(result.node);
+    node->set_range_from_children();
 
     if (!result.is_valid) {
-        parser.recover();
+        return {node, false};
     }
 
-    return result.node;
+    return parser.check_semi(node);
 }
 
 ParseResult StmtParser::parse_var() {
@@ -115,7 +109,7 @@ ParseResult StmtParser::parse_if_chain() {
         return {node.build_with_inferred_range(AST_IF_CHAIN), false};
     }
 
-    result = parser.parse_block(true);
+    result = parser.parse_block();
     first_if.append_child(result.node);
     if (!result.is_valid) {
         node.append_child(first_if.build_with_inferred_range(AST_IF));
@@ -137,12 +131,12 @@ ParseResult StmtParser::parse_if_chain() {
                 return {node.build_with_inferred_range(AST_IF), false};
             }
 
-            else_if_node.append_child(parser.parse_block(true).node);
+            else_if_node.append_child(parser.parse_block().node);
             node.append_child(else_if_node.build(AST_ELSE_IF));
         } else if (stream.peek(1)->is(TKN_LBRACE)) {
             NodeBuilder else_node = parser.new_node();
             stream.consume(); // Consume 'else'
-            else_node.append_child(parser.parse_block(true).node);
+            else_node.append_child(parser.parse_block().node);
             node.append_child(else_node.build(AST_ELSE));
         } else {
             stream.consume(); // Consume 'else'
@@ -173,7 +167,7 @@ ParseResult StmtParser::parse_switch() {
 
         Token *ident_token = stream.consume();
         if (ident_token->get_value() == "_") {
-            case_node.append_child(parser.parse_block(true).node);
+            case_node.append_child(parser.parse_block().node);
             cases_node.append_child(case_node.build(AST_SWITCH_DEFAULT_CASE));
             continue;
         }
@@ -188,7 +182,7 @@ ParseResult StmtParser::parse_switch() {
             return node.build_error();
         }
 
-        case_node.append_child(parser.parse_block(true).node);
+        case_node.append_child(parser.parse_block().node);
         cases_node.append_child(case_node.build(AST_SWITCH_CASE));
     }
 
@@ -208,7 +202,7 @@ ParseResult StmtParser::parse_while() {
     }
     node.append_child(result.node);
 
-    node.append_child(parser.parse_block(true).node);
+    node.append_child(parser.parse_block().node);
     return node.build(AST_WHILE);
 }
 
@@ -240,9 +234,19 @@ ParseResult StmtParser::parse_for() {
     }
     node.append_child(result.node);
 
-    node.append_child(parser.parse_block(true).node);
+    node.append_child(parser.parse_block().node);
 
     return node.build(AST_FOR);
+}
+
+ParseResult StmtParser::parse_break() {
+    TextRange range = stream.consume()->get_range();
+    return parser.check_semi(new ASTNode(AST_BREAK, range));
+}
+
+ParseResult StmtParser::parse_continue() {
+    TextRange range = stream.consume()->get_range();
+    return parser.check_semi(new ASTNode(AST_CONTINUE, range));
 }
 
 ParseResult StmtParser::parse_return() {
@@ -284,7 +288,7 @@ ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
         return node.build_error();
     }
     first_branch.append_child(result.node);
-    first_branch.append_child(parser.parse_block(true).node);
+    first_branch.append_child(parser.parse_block().node);
     node.append_child(first_branch.build(AST_META_IF_CONDITION));
 
     while (stream.get()->is(TKN_ELSE)) {
@@ -299,10 +303,10 @@ ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
                 return node.build_error();
             }
             branch.append_child(result.node);
-            branch.append_child(parser.parse_block(true, false).node);
+            branch.append_child(parser.parse_block(false).node);
             node.append_child(branch.build(AST_META_IF_CONDITION));
         } else if (stream.get()->is(TKN_LBRACE)) {
-            branch.append_child(parser.parse_block(true, false).node);
+            branch.append_child(parser.parse_block(false).node);
             node.append_child(branch.build(AST_META_ELSE));
         } else {
             parser.report_unexpected_token(ReportText::ERR_PARSE_UNEXPECTED);
@@ -334,7 +338,7 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
     }
     node.append_child(result.node);
 
-    node.append_child(parser.parse_block(true, false).node);
+    node.append_child(parser.parse_block(false).node);
 
     return node.build(AST_META_FOR);
 }

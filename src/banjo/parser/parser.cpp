@@ -33,6 +33,7 @@ const std::unordered_set<TokenType> PRIMITIVE_DATA_TYPES{
 };
 
 const std::unordered_set<TokenType> RECOVER_KEYWORDS{
+    TKN_EOF,
     TKN_IF,
     TKN_WHILE,
     TKN_FOR,
@@ -40,8 +41,13 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_CONTINUE,
     TKN_RETURN,
     TKN_VAR,
+    TKN_CONST,
     TKN_FUNC,
     TKN_STRUCT,
+    TKN_ENUM,
+    TKN_UNION,
+    TKN_PUB,
+    TKN_NATIVE,
 };
 
 Parser::Parser(std::vector<Token> &tokens, const ModulePath &module_path) : stream(tokens), module_path(module_path) {}
@@ -58,7 +64,7 @@ ParsedAST Parser::parse_module() {
     is_valid = true;
 
     ASTModule *module_ = new ASTModule(module_path);
-    module_->append_child(parse_block(false).node); // TODO
+    module_->append_child(parse_top_level_block());
     module_->set_range_from_children();
 
     return ParsedAST{
@@ -68,70 +74,43 @@ ParsedAST Parser::parse_module() {
     };
 }
 
-ParseResult Parser::parse_block(bool with_curly_brackets, bool with_symbol_table /* = true */) {
+ASTBlock *Parser::parse_top_level_block() {
+    ASTBlock *block = new ASTBlock({0, 0}, cur_symbol_table);
+    cur_symbol_table = block->get_symbol_table();
+
+    while (!stream.get()->is(TKN_EOF)) {
+        parse_block_child(block);
+    }
+
+    block->set_range_from_children();
+    cur_symbol_table = cur_symbol_table->get_parent();
+    return block;
+}
+
+ParseResult Parser::parse_block(bool with_symbol_table /* = true */) {
     ASTBlock *block = new ASTBlock({0, 0}, cur_symbol_table);
 
-    if (with_curly_brackets) {
-        if (stream.get()->is(TKN_LBRACE)) {
-            stream.consume(); // Consume '{'
-        } else {
-            report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, "'{'");
-            return {block, false};
-        }
+    if (stream.get()->is(TKN_LBRACE)) {
+        stream.consume(); // Consume '{'
+    } else {
+        report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, "'{'");
+        return {block, false};
     }
 
     if (with_symbol_table) {
         cur_symbol_table = block->get_symbol_table();
     }
 
-    while (stream.get()->get_type() != TKN_EOF) {
-        Token *current_token = stream.get();
-
-        if (with_curly_brackets && current_token->is(TKN_RBRACE)) {
-            break;
-        }
-
-        ASTNode *node = nullptr;
-
-        if (current_token->is(TKN_VAR)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_CONST)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_FUNC)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_IF)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_SWITCH)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_WHILE)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_FOR)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_BREAK)) node = parse_break();
-        else if (current_token->is(TKN_CONTINUE)) node = parse_continue();
-        else if (current_token->is(TKN_RETURN)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_PUB)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_STRUCT)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_ENUM)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_UNION)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_TYPE) && !stream.peek(1)->is(TKN_LPAREN)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_CASE)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_SELF)) node = parse_expr_or_assign();
-        else if (current_token->is(TKN_NATIVE)) node = DeclParser(*this).parse();
-        else if (current_token->is(TKN_USE)) node = parse_use();
-        else if (current_token->is(TKN_META)) node = StmtParser(*this).parse();
-        else if (current_token->is(TKN_AT)) parse_attribute_list();
-        else if (current_token->is(TKN_LBRACE) || current_token->is(TKN_LBRACE)) {
-            report_unexpected_token();
-            stream.consume();
-            continue;
-        } else node = parse_expr_or_assign();
-
-        if (node) {
-            block->append_child(node);
-        }
-    }
-
-    if (with_curly_brackets) {
+    while (true) {
         if (stream.get()->is(TKN_RBRACE)) {
             stream.consume(); // Consume '}'
+            break;
         } else if (stream.get()->is(TKN_EOF)) {
             register_error(stream.previous()->get_range())
                 .set_message(ReportText(ReportText::ID::ERR_PARSE_UNCLOSED_BLOCK).str());
             return {block, false};
+        } else {
+            parse_block_child(block);
         }
     }
 
@@ -144,227 +123,86 @@ ParseResult Parser::parse_block(bool with_curly_brackets, bool with_symbol_table
     return block;
 }
 
-ASTNode *Parser::parse_break() {
-    TextRange range = stream.consume()->get_range();
-    return check_semi(new ASTNode(AST_BREAK, range)).node;
-}
+void Parser::parse_block_child(ASTBlock *block) {
+    ParseResult result;
 
-ASTNode *Parser::parse_continue() {
-    TextRange range = stream.consume()->get_range();
-    return check_semi(new ASTNode(AST_CONTINUE, range)).node;
-}
-
-ParseResult Parser::parse_function_call(ASTNode *location, bool consume_semicolon) {
-    bool is_meta_method_call = location->get_type() == AST_META_FIELD_ACCESS;
-    Expr *node = is_meta_method_call ? new MetaExpr(AST_META_METHOD_CALL) : new Expr(AST_FUNCTION_CALL);
-    node->append_child(location);
-
-    ParseResult result = parse_function_call_arguments();
-    node->append_child(result.node);
-
-    if (!result.is_valid) {
-        return {node, false};
+    switch (stream.get()->get_type()) {
+        case TKN_VAR: result = StmtParser(*this).parse_var(); break;
+        case TKN_CONST: result = DeclParser(*this).parse_const(); break;
+        case TKN_FUNC: result = DeclParser(*this).parse_func(nullptr); break;
+        case TKN_IF: result = StmtParser(*this).parse_if_chain(); break;
+        case TKN_SWITCH: result = StmtParser(*this).parse_switch(); break;
+        case TKN_WHILE: result = StmtParser(*this).parse_while(); break;
+        case TKN_FOR: result = StmtParser(*this).parse_for(); break;
+        case TKN_BREAK: result = StmtParser(*this).parse_break(); break;
+        case TKN_CONTINUE: result = StmtParser(*this).parse_continue(); break;
+        case TKN_RETURN: result = StmtParser(*this).parse_return(); break;
+        case TKN_PUB: result = DeclParser(*this).parse_pub(); break;
+        case TKN_STRUCT: result = DeclParser(*this).parse_struct(); break;
+        case TKN_ENUM: result = DeclParser(*this).parse_enum(); break;
+        case TKN_UNION: result = DeclParser(*this).parse_union(); break;
+        case TKN_TYPE: result = parse_type_alias_or_explicit_type(); break;
+        case TKN_CASE: result = DeclParser(*this).parse_union_case(); break;
+        case TKN_SELF: result = parse_expr_or_assign(); break;
+        case TKN_NATIVE: result = DeclParser(*this).parse_native(); break;
+        case TKN_USE: result = DeclParser(*this).parse_use(); break;
+        case TKN_META: result = StmtParser(*this).parse_meta_stmt(); break;
+        case TKN_AT: current_attr_list = parse_attribute_list(); return;
+        default: result = parse_expr_or_assign();
     }
 
-    node->set_range_from_children();
-
-    if (consume_semicolon) {
-        stream.consume(); // Consume ';'
+    if (result.is_valid) {
+        block->append_child(result.node);
+    } else {
+        recover();
     }
-
-    return node;
-}
-
-ASTNode *Parser::parse_use() {
-    NodeBuilder node = new_node();
-    stream.consume(); // Consume 'use'
-    node.append_child(parse_use_tree().node);
-    return check_semi(node.build(AST_USE)).node;
 }
 
 ASTNode *Parser::parse_expression() {
     return ExprParser(*this).parse().node;
 }
 
-ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
-    return parse_list(AST_PARAM_LIST, terminator, [this](NodeBuilder &) -> ParseResult {
-        NodeBuilder param_node = new_node();
-
-        if (stream.get()->is(TKN_AT)) {
-            parse_attribute_list();
-            param_node.set_attribute_list(current_attr_list);
-            current_attr_list = nullptr;
-        }
-
-        if (stream.get()->is(TKN_SELF)) {
-            param_node.append_child(new ASTNode(AST_SELF, "", stream.consume()->get_range()));
-        } else {
-            if (stream.peek(1)->is(TKN_COLON)) {
-                param_node.append_child(new Identifier(stream.consume()));
-                stream.consume(); // Consume ':'
-            } else {
-                param_node.append_child(new Identifier("", {0, 0}));
-            }
-
-            ParseResult result = parse_type();
-            param_node.append_child(result.node);
-
-            if (!result.is_valid) {
-                if (stream.get()->is(TKN_RPAREN)) {
-                    stream.consume();
-                }
-
-                return {param_node.build(AST_PARAM), false};
-            }
-        }
-
-        return param_node.build(AST_PARAM);
-    });
-}
-
-ASTNode *Parser::parse_generic_param_list() {
-    return parse_list(
-               AST_GENERIC_PARAM_LIST,
-               TKN_RBRACKET,
-               [this](NodeBuilder &) {
-                   NodeBuilder parameter_node = new_node();
-                   parameter_node.append_child(new Identifier(stream.consume()));
-
-                   if (stream.get()->is(TKN_COLON)) {
-                       stream.consume(); // Consume ':'
-
-                       ParseResult result = parse_type();
-                       if (result.is_valid) {
-                           parameter_node.append_child(result.node);
-                       } else {
-                           parameter_node.append_child(new ASTNode(AST_ERROR));
-                       }
-                   }
-
-                   return parameter_node.build(AST_GENERIC_PARAMETER);
-               }
-    ).node;
-}
-
-ParseResult Parser::parse_function_call_arguments() {
-    return parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RPAREN, [this](NodeBuilder &) {
-        return ExprParser(*this, true).parse();
-    });
-}
-
 ASTNode *Parser::parse_identifier() {
     return new Identifier(stream.consume());
 }
 
-ParseResult Parser::parse_use_tree() {
-    ParseResult result = parse_use_tree_element();
-    if (!result.is_valid) {
-        return result;
-    }
-
-    ASTNode *current_node = result.node;
-
-    while (stream.get()->is(TKN_DOT)) {
-        ASTNode *dot_operator = new ASTNode(AST_DOT_OPERATOR);
-        dot_operator->append_child(current_node);
-        stream.consume(); // Consume dot operator
-
-        result = parse_use_tree_element();
-        dot_operator->append_child(result.node);
-        dot_operator->set_range_from_children();
-        current_node = dot_operator;
-
-        if (!result.is_valid) {
-            return {current_node, false};
-        }
-    }
-
-    return current_node;
-}
-
-ParseResult Parser::parse_use_tree_element() {
-    if (is_at_completion_point()) {
-        return parse_completion_point();
-    }
-
-    Token *token = stream.get();
-    if (token->get_type() == TKN_IDENTIFIER) {
-        Identifier *identifier = new Identifier(stream.consume());
-
-        if (!stream.get()->is(TKN_AS)) {
-            return identifier;
-        } else {
-            stream.consume(); // Consume 'as'
-
-            ASTNode *rebinding_node = new ASTNode(AST_USE_REBINDING);
-            rebinding_node->append_child(identifier);
-            rebinding_node->append_child(new Identifier(stream.consume()));
-            rebinding_node->set_range_from_children();
-            return rebinding_node;
-        }
-    } else if (token->is(TKN_LBRACE)) {
-        return parse_list(AST_USE_TREE_LIST, TKN_RBRACE, [this](NodeBuilder &) { return parse_use_tree(); });
-    } else {
-        register_error(token->get_range())
-            .set_message(ReportText(ReportText::ID::ERR_PARSE_UNEXPECTED).format(token->get_value()).str());
-        return {new ASTNode(AST_ERROR), false};
-    }
-}
-
-ParseResult Parser::parse_generic_instantiation(ASTNode *template_node) {
-    NodeBuilder node = new_node();
-    node.set_start_position(template_node->get_range().start);
-    node.append_child(template_node);
-
-    ParseResult result =
-        parse_list(AST_GENERIC_ARGUMENT_LIST, TKN_RBRACKET, [this](NodeBuilder &) { return parse_type(); });
-    node.append_child(result.node);
-
-    return {node.build(new BracketExpr()), result.is_valid};
-}
-
-ASTNode *Parser::parse_expr_or_assign() {
+ParseResult Parser::parse_expr_or_assign() {
     ParseResult result = ExprParser(*this, false).parse();
     if (!result.is_valid) {
-        recover();
-        return result.node;
+        return {result.node, false};
     }
-    ASTNode *node = result.node;
 
     switch (stream.get()->get_type()) {
-        case TKN_EQ: return parse_assign(node, AST_ASSIGNMENT);
-        case TKN_PLUS_EQ: return parse_assign(node, AST_ADD_ASSIGN);
-        case TKN_MINUS_EQ: return parse_assign(node, AST_SUB_ASSIGN);
-        case TKN_STAR_EQ: return parse_assign(node, AST_MUL_ASSIGN);
-        case TKN_SLASH_EQ: return parse_assign(node, AST_DIV_ASSIGN);
-        // case TKN_PERCENT_EQ: return parse_assign(node, AST_MOD_ASSIGN); // TODO
-        case TKN_AND_EQ: return parse_assign(node, AST_BIT_AND_ASSIGN);
-        case TKN_OR_EQ: return parse_assign(node, AST_BIT_OR_ASSIGN);
-        case TKN_SHL_EQ: return parse_assign(node, AST_SHL_ASSIGN);
-        case TKN_SHR_EQ: return parse_assign(node, AST_SHR_ASSIGN);
-        default: return check_semi(node).node;
+        case TKN_EQ: return StmtParser(*this).parse_assign(result.node, AST_ASSIGNMENT);
+        case TKN_PLUS_EQ: return StmtParser(*this).parse_assign(result.node, AST_ADD_ASSIGN);
+        case TKN_MINUS_EQ: return StmtParser(*this).parse_assign(result.node, AST_SUB_ASSIGN);
+        case TKN_STAR_EQ: return StmtParser(*this).parse_assign(result.node, AST_MUL_ASSIGN);
+        case TKN_SLASH_EQ: return StmtParser(*this).parse_assign(result.node, AST_DIV_ASSIGN);
+        // case TKN_PERCENT_EQ: return StmtParser(*this).parse_assign(node, AST_MOD_ASSIGN); // TODO
+        case TKN_AND_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_AND_ASSIGN);
+        case TKN_OR_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_OR_ASSIGN);
+        case TKN_SHL_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHL_ASSIGN);
+        case TKN_SHR_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHR_ASSIGN);
+        default: return check_semi(result.node);
     }
 }
 
-ASTNode *Parser::parse_assign(ASTNode *lhs, ASTNodeType type) {
-    stream.consume(); // Consume operator
-    ASTNode *assign = new ASTNode(type);
-    assign->append_child(lhs);
-    assign->append_child(ExprParser(*this, true).parse().node);
-    assign->set_range_from_children();
-    return check_semi(assign).node;
+ParseResult Parser::parse_type_alias_or_explicit_type() {
+    if (stream.peek(1)->is(TKN_LPAREN)) {
+        return ExprParser(*this).parse();
+    } else {
+        return DeclParser(*this).parse_type_alias();
+    }
 }
 
 ParseResult Parser::parse_type() {
     return ExprParser(*this).parse_type();
 }
 
-void Parser::parse_attribute_list() {
+AttributeList *Parser::parse_attribute_list() {
     stream.consume(); // Consume '@'
 
-    if (!current_attr_list) {
-        current_attr_list = new AttributeList();
-    }
+    AttributeList *attr_list = new AttributeList();
 
     if (stream.get()->is(TKN_LBRACKET)) {
         stream.consume(); // Consume '['
@@ -373,9 +211,9 @@ void Parser::parse_attribute_list() {
             std::string name = stream.consume()->get_value();
             if (stream.get()->is(TKN_EQ)) {
                 stream.consume(); // Consume '='
-                current_attr_list->add(Attribute(name, stream.consume()->get_value()));
+                attr_list->add(Attribute(name, stream.consume()->get_value()));
             } else {
-                current_attr_list->add(Attribute(name));
+                attr_list->add(Attribute(name));
             }
 
             if (stream.get()->is(TKN_COMMA)) {
@@ -386,8 +224,10 @@ void Parser::parse_attribute_list() {
         stream.consume(); // Consume ']'
     } else {
         std::string name = stream.consume()->get_value();
-        current_attr_list->add(Attribute(name));
+        attr_list->add(Attribute(name));
     }
+
+    return attr_list;
 }
 
 ParseResult Parser::parse_list(ASTNodeType type, TokenType terminator, ListElementParser element_parser) {
@@ -417,6 +257,42 @@ ParseResult Parser::parse_list(ASTNodeType type, TokenType terminator, ListEleme
             return {node.build(type), false};
         }
     }
+}
+
+ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
+    return parse_list(AST_PARAM_LIST, terminator, [this](NodeBuilder &) -> ParseResult {
+        NodeBuilder node = new_node();
+
+        if (stream.get()->is(TKN_AT)) {
+            parse_attribute_list();
+            node.set_attribute_list(current_attr_list);
+            current_attr_list = nullptr;
+        }
+
+        if (stream.get()->is(TKN_SELF)) {
+            node.append_child(new ASTNode(AST_SELF, "", stream.consume()->get_range()));
+        } else {
+            if (stream.peek(1)->is(TKN_COLON)) {
+                node.append_child(new Identifier(stream.consume()));
+                stream.consume(); // Consume ':'
+            } else {
+                node.append_child(new Identifier("", {0, 0}));
+            }
+
+            ParseResult result = parse_type();
+            node.append_child(result.node);
+
+            if (!result.is_valid) {
+                if (stream.get()->is(TKN_RPAREN)) {
+                    stream.consume();
+                }
+
+                return {node.build(AST_PARAM), false};
+            }
+        }
+
+        return node.build(AST_PARAM);
+    });
 }
 
 ParseResult Parser::check_semi(ASTNode *node) {

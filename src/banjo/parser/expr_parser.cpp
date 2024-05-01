@@ -3,6 +3,7 @@
 #include "ast/ast_node.hpp"
 #include "ast/expr.hpp"
 #include "lexer/token.hpp"
+#include "parser/node_builder.hpp"
 #include "reports/report_texts.hpp"
 #include "source/text_range.hpp"
 
@@ -130,12 +131,14 @@ ParseResult ExprParser::parse_unary_level() {
     Token *token = stream.get();
 
     ASTNodeType type;
-    if (token->is(TKN_MINUS)) type = AST_OPERATOR_NEG;
-    else if (token->is(TKN_AND)) type = AST_OPERATOR_REF;
-    else if (token->is(TKN_STAR)) type = AST_STAR_EXPR;
-    else if (token->is(TKN_NOT)) type = AST_OPERATOR_NOT;
-    else if (token->is(TKN_QUESTION)) type = AST_OPTIONAL_DATA_TYPE;
-    else return parse_post_operand();
+    switch (token->get_type()) {
+        case TKN_MINUS: type = AST_OPERATOR_NEG; break;
+        case TKN_AND: type = AST_OPERATOR_REF; break;
+        case TKN_STAR: type = AST_STAR_EXPR; break;
+        case TKN_NOT: type = AST_OPERATOR_NOT; break;
+        case TKN_QUESTION: type = AST_OPTIONAL_DATA_TYPE; break;
+        default: return parse_post_operand();
+    }
 
     NodeBuilder node = parser.new_node();
     stream.consume(); // Consume operator
@@ -153,71 +156,19 @@ ParseResult ExprParser::parse_post_operand() {
     }
 
     while (true) {
-        if (stream.get()->is(TKN_DOT)) {
-            bool is_meta_field_access = current_node->get_type() == AST_EXPLICIT_TYPE;
-            Expr *operator_node =
-                is_meta_field_access ? new MetaExpr(AST_META_FIELD_ACCESS) : new Expr(AST_DOT_OPERATOR);
+        ParseResult result;
 
-            stream.consume(); // Consume '.'
-            operator_node->append_child(current_node);
-            result = parse_operand();
-            operator_node->append_child(result.node);
-            operator_node->set_range_from_children();
-            current_node = operator_node;
+        if (stream.get()->is(TKN_DOT)) result = parse_dot_expr(current_node);
+        else if (stream.get()->is(TKN_LPAREN)) result = parse_call_expr(current_node);
+        else if (stream.get()->is(TKN_LBRACKET)) result = parse_bracket_expr(current_node);
+        else if (stream.get()->is(TKN_LBRACE) && allow_struct_literals) result = parse_struct_literal(current_node);
+        else if (stream.get()->is(TKN_EXCEPT)) result = parse_result_type(current_node);
+        else break;
 
-            if (!result.is_valid) {
-                return {current_node, false};
-            }
-        } else if (stream.get()->is(TKN_LPAREN)) {
-            ParseResult result = parser.parse_function_call(current_node, false);
-            current_node = result.node;
+        current_node = result.node;
 
-            if (!result.is_valid) {
-                return {current_node, false};
-            }
-        } else if (stream.get()->is(TKN_LBRACKET)) {
-            NodeBuilder array_access = parser.new_node();
-            array_access.set_start_position(current_node->get_range().start);
-            array_access.append_child(current_node);
-
-            ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this](NodeBuilder node) {
-                return ExprParser(parser).parse();
-            });
-            array_access.append_child(result.node);
-
-            current_node = array_access.build(new BracketExpr());
-        } else if (stream.get()->is(TKN_LBRACE) && allow_struct_literals) {
-            Expr *instantiation_node = new Expr(AST_STRUCT_INSTANTIATION);
-            instantiation_node->append_child(current_node);
-
-            ParseResult result = parse_struct_literal_body();
-
-            instantiation_node->append_child(result.node);
-            instantiation_node->set_range_from_children();
-            current_node = instantiation_node;
-
-            if (!result.is_valid) {
-                current_node->set_type(AST_ERROR);
-                return {current_node, false};
-            }
-        } else if (stream.get()->is(TKN_EXCEPT)) {
-            stream.consume();
-
-            ASTNode *result_type_node = new Expr(AST_RESULT_TYPE);
-            result_type_node->append_child(current_node);
-
-            ParseResult result = ExprParser(parser).parse();
-
-            result_type_node->append_child(result.node);
-            result_type_node->set_range_from_children();
-            current_node = result_type_node;
-
-            if (!result.is_valid) {
-                current_node->set_type(AST_ERROR);
-                return {current_node, false};
-            }
-        } else {
-            break;
+        if (!result.is_valid) {
+            return {current_node, false};
         }
     }
 
@@ -233,68 +184,44 @@ ParseResult ExprParser::parse_operand() {
         stream.split_current();
     }
 
-    if (stream.get()->is(TKN_LITERAL)) {
-        return parse_number_literal();
-    } else if (stream.get()->is(TKN_CHARACTER)) {
-        Token *token = stream.consume();
-        std::string value = token->get_value().substr(1, token->get_value().size() - 2);
-        return new Expr(AST_CHAR_LITERAL, token->get_range(), value);
-    } else if (stream.get()->is(TKN_IDENTIFIER)) {
-        return new Identifier(stream.consume());
-    } else if (stream.get()->is(TKN_FALSE)) {
-        return new Expr(AST_FALSE, stream.consume()->get_range());
-    } else if (stream.get()->is(TKN_TRUE)) {
-        return new Expr(AST_TRUE, stream.consume()->get_range());
-    } else if (stream.get()->is(TKN_NULL)) {
-        return new Expr(AST_NULL, stream.consume()->get_range());
-    } else if (stream.get()->is(TKN_NONE)) {
-        return new Expr(AST_NONE, stream.consume()->get_range());
-    } else if (stream.get()->is(TKN_UNDEFINED)) {
-        return new Expr(AST_UNDEFINED, stream.consume()->get_range());
-    } else if (stream.get()->is(TKN_SELF)) {
-        return new Expr(AST_SELF, stream.consume()->get_range());
-    } else if (stream.get()->is(TKN_STRING)) {
-        Token *token = stream.consume();
-        std::string value = token->get_value().substr(1, token->get_value().size() - 2);
-        return new Expr(AST_STRING_LITERAL, token->get_range(), value);
-    } else if (stream.get()->is(TKN_LBRACKET)) return parse_array_literal();
-    else if (stream.get()->is(TKN_LPAREN)) return parse_paren_expr();
-    else if (stream.get()->is(TKN_LBRACE)) return parse_anon_struct_literal();
-    else if (stream.get()->is(TKN_OR)) return parse_closure();
-    else if (stream.get()->is(TKN_I8)) return new Expr(AST_I8, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_I16)) return new Expr(AST_I16, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_I32)) return new Expr(AST_I32, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_I64)) return new Expr(AST_I64, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_U8)) return new Expr(AST_U8, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_U16)) return new Expr(AST_U16, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_U32)) return new Expr(AST_U32, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_U64)) return new Expr(AST_U64, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_F32)) return new Expr(AST_F32, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_F64)) return new Expr(AST_F64, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_USIZE)) return new Expr(AST_USIZE, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_BOOL)) return new Expr(AST_BOOL, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_ADDR)) return new Expr(AST_ADDR, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_VOID)) return new Expr(AST_VOID, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_DOT_DOT_DOT)) return new Expr(AST_PARAM_SEQUENCE_TYPE, stream.consume()->get_range());
-    else if (stream.get()->is(TKN_FUNC)) return parse_func_type();
-    else if (stream.get()->is(TKN_META)) {
-        NodeBuilder builder = parser.new_node();
-        stream.consume(); // Consume 'meta'
-        stream.consume(); // Consume '.'
-
-        builder.append_child(new Identifier(stream.consume()));
-
-        ParseResult result =
-            parser.parse_list(AST_META_EXPR, TKN_RPAREN, [this](NodeBuilder &) { return parser.parse_type(); });
-
-        builder.append_child(result.node);
-        return {builder.build(new Expr(AST_META_EXPR)), result.is_valid};
-    } else if (stream.get()->is(TKN_TYPE)) {
-        return parse_explicit_type();
-    } else {
-        parser.report_unexpected_token();
-        ASTNode *node = new ASTNode(AST_ERROR, stream.previous()->get_range());
-        return {node, false};
+    switch (stream.get()->get_type()) {
+        case TKN_LITERAL: return parse_number_literal();
+        case TKN_CHARACTER: return parse_char_literal();
+        case TKN_IDENTIFIER: return new Identifier(stream.consume());
+        case TKN_FALSE: return new Expr(AST_FALSE, stream.consume()->get_range());
+        case TKN_TRUE: return new Expr(AST_TRUE, stream.consume()->get_range());
+        case TKN_NULL: return new Expr(AST_NULL, stream.consume()->get_range());
+        case TKN_NONE: return new Expr(AST_NONE, stream.consume()->get_range());
+        case TKN_UNDEFINED: return new Expr(AST_UNDEFINED, stream.consume()->get_range());
+        case TKN_SELF: return new Expr(AST_SELF, stream.consume()->get_range());
+        case TKN_STRING: return parse_string_literal();
+        case TKN_LBRACKET: return parse_array_literal();
+        case TKN_LPAREN: return parse_paren_expr();
+        case TKN_LBRACE: return parse_anon_struct_literal();
+        case TKN_OR: return parse_closure();
+        case TKN_I8: return new Expr(AST_I8, stream.consume()->get_range());
+        case TKN_I16: return new Expr(AST_I16, stream.consume()->get_range());
+        case TKN_I32: return new Expr(AST_I32, stream.consume()->get_range());
+        case TKN_I64: return new Expr(AST_I64, stream.consume()->get_range());
+        case TKN_U8: return new Expr(AST_U8, stream.consume()->get_range());
+        case TKN_U16: return new Expr(AST_U16, stream.consume()->get_range());
+        case TKN_U32: return new Expr(AST_U32, stream.consume()->get_range());
+        case TKN_U64: return new Expr(AST_U64, stream.consume()->get_range());
+        case TKN_F32: return new Expr(AST_F32, stream.consume()->get_range());
+        case TKN_F64: return new Expr(AST_F64, stream.consume()->get_range());
+        case TKN_USIZE: return new Expr(AST_USIZE, stream.consume()->get_range());
+        case TKN_BOOL: return new Expr(AST_BOOL, stream.consume()->get_range());
+        case TKN_ADDR: return new Expr(AST_ADDR, stream.consume()->get_range());
+        case TKN_VOID: return new Expr(AST_VOID, stream.consume()->get_range());
+        case TKN_DOT_DOT_DOT: return new Expr(AST_PARAM_SEQUENCE_TYPE, stream.consume()->get_range());
+        case TKN_FUNC: return parse_func_type();
+        case TKN_META: return parse_meta_expr();
+        case TKN_TYPE: return parse_explicit_type();
+        default: {
+            parser.report_unexpected_token();
+            ASTNode *node = new ASTNode(AST_ERROR, stream.previous()->get_range());
+            return {node, false};
+        }
     }
 }
 
@@ -312,6 +239,18 @@ ParseResult ExprParser::parse_number_literal() {
 
     node->set_range(token->get_range());
     return node;
+}
+
+ParseResult ExprParser::parse_char_literal() {
+    Token *token = stream.consume();
+    std::string value = token->get_value().substr(1, token->get_value().size() - 2);
+    return new Expr(AST_CHAR_LITERAL, token->get_range(), value);
+}
+
+ParseResult ExprParser::parse_string_literal() {
+    Token *token = stream.consume();
+    std::string value = token->get_value().substr(1, token->get_value().size() - 2);
+    return new Expr(AST_STRING_LITERAL, token->get_range(), value);
 }
 
 ParseResult ExprParser::parse_array_literal() {
@@ -440,7 +379,7 @@ ParseResult ExprParser::parse_closure() {
         return node.build(new Expr(AST_CLOSURE_TYPE));
     }
 
-    result = parser.parse_block(true);
+    result = parser.parse_block();
     if (!result.is_valid) {
         return node.build_error();
     }
@@ -475,6 +414,117 @@ ParseResult ExprParser::parse_func_type() {
     return node.build(new Expr(AST_FUNCTION_DATA_TYPE));
 }
 
+ParseResult ExprParser::parse_meta_expr() {
+    NodeBuilder builder = parser.new_node();
+    stream.consume(); // Consume 'meta'
+    stream.consume(); // Consume '.'
+
+    builder.append_child(new Identifier(stream.consume()));
+
+    ParseResult result =
+        parser.parse_list(AST_META_EXPR, TKN_RPAREN, [this](NodeBuilder &) { return parser.parse_type(); });
+
+    builder.append_child(result.node);
+    return {builder.build(new Expr(AST_META_EXPR)), result.is_valid};
+}
+
+ParseResult ExprParser::parse_explicit_type() {
+    NodeBuilder node = parser.new_node();
+    stream.consume(); // Consume 'type'
+
+    if (!stream.get()->is(TKN_LPAREN)) {
+        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, "(");
+        return node.build_error();
+    }
+    stream.consume(); // Consume '('
+
+    ParseResult result = parser.parse_type();
+    if (!result.is_valid) {
+        return node.build_error();
+    }
+    node.append_child(result.node);
+
+    if (!stream.get()->is(TKN_RPAREN)) {
+        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, ")");
+        return node.build_error();
+    }
+    stream.consume(); // Consume ')'
+
+    return node.build(new Expr(AST_EXPLICIT_TYPE));
+}
+
+ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
+    bool is_meta_field_access = lhs_node->get_type() == AST_EXPLICIT_TYPE;
+    Expr *operator_node = is_meta_field_access ? new MetaExpr(AST_META_FIELD_ACCESS) : new Expr(AST_DOT_OPERATOR);
+
+    operator_node->append_child(lhs_node);
+    stream.consume(); // Consume '.'
+    ParseResult result = parse_operand();
+    operator_node->append_child(result.node);
+
+    operator_node->set_range_from_children();
+    return {operator_node, result.is_valid};
+}
+
+ParseResult ExprParser::parse_call_expr(ASTNode *lhs_node) {
+    bool is_meta_method_call = lhs_node->get_type() == AST_META_FIELD_ACCESS;
+    Expr *node = is_meta_method_call ? new MetaExpr(AST_META_METHOD_CALL) : new Expr(AST_FUNCTION_CALL);
+    node->append_child(lhs_node);
+
+    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RPAREN, [this](NodeBuilder &) {
+        return ExprParser(parser, true).parse();
+    });
+    node->append_child(result.node);
+
+    node->set_range_from_children();
+    return {node, result.is_valid};
+}
+
+ParseResult ExprParser::parse_bracket_expr(ASTNode *lhs_node) {
+    NodeBuilder node = parser.new_node();
+    node.set_start_position(lhs_node->get_range().start);
+    node.append_child(lhs_node);
+
+    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this](NodeBuilder node) {
+        return ExprParser(parser).parse();
+    });
+    node.append_child(result.node);
+
+    return {node.build(new BracketExpr()), result.is_valid};
+}
+
+ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
+    ASTNode *node = new Expr(AST_STRUCT_INSTANTIATION);
+    node->append_child(lhs_node);
+
+    ParseResult result = parse_struct_literal_body();
+    node->append_child(result.node);
+    node->set_range_from_children();
+
+    if (!result.is_valid) {
+        node->set_type(AST_ERROR);
+    }
+
+    return {node, result.is_valid};
+}
+
+ParseResult ExprParser::parse_result_type(ASTNode *lhs_node) {
+    stream.consume(); // Consume 'except'
+
+    ASTNode *node = new Expr(AST_RESULT_TYPE);
+    node->append_child(lhs_node);
+
+    ParseResult result = ExprParser(parser).parse();
+    node->append_child(result.node);
+    node->set_range_from_children();
+
+    if (!result.is_valid) {
+        node->set_type(AST_ERROR);
+    }
+
+    return {node, result.is_valid};
+}
+
 ParseResult ExprParser::parse_struct_literal_body() {
     return parser.parse_list(AST_STRUCT_FIELD_VALUE_LIST, TKN_RBRACE, [this](NodeBuilder &) -> ParseResult {
         if (parser.is_at_completion_point()) {
@@ -505,31 +555,6 @@ ParseResult ExprParser::parse_struct_literal_body() {
         value_node->set_range_from_children();
         return value_node;
     });
-}
-
-ParseResult ExprParser::parse_explicit_type() {
-    NodeBuilder node = parser.new_node();
-    stream.consume(); // Consume 'type'
-
-    if (!stream.get()->is(TKN_LPAREN)) {
-        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, "(");
-        return node.build_error();
-    }
-    stream.consume(); // Consume '('
-
-    ParseResult result = parser.parse_type();
-    if (!result.is_valid) {
-        return node.build_error();
-    }
-    node.append_child(result.node);
-
-    if (!stream.get()->is(TKN_RPAREN)) {
-        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, ")");
-        return node.build_error();
-    }
-    stream.consume(); // Consume ')'
-
-    return node.build(new Expr(AST_EXPLICIT_TYPE));
 }
 
 ParseResult ExprParser::parse_level(

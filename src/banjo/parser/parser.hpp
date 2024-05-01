@@ -51,31 +51,19 @@ public:
     ASTNode *get_completion_node() { return completion_node; }
 
 private:
-    ParseResult parse_block(bool with_curly_brackets, bool with_symbol_table = true);
-
-    ASTNode *parse_break();
-    ASTNode *parse_continue();
-    ParseResult parse_function_call(ASTNode *location, bool consume_semicolon);
-    ASTNode *parse_return();
-    ASTNode *parse_use();
+    ASTBlock *parse_top_level_block();
+    ParseResult parse_block(bool with_symbol_table = true);
+    void parse_block_child(ASTBlock *block);
 
     ASTNode *parse_expression();
-    ParseResult parse_param_list(TokenType terminator = TKN_RPAREN);
-    ASTNode *parse_generic_param_list();
-    ParseResult parse_function_call_arguments();
     ASTNode *parse_identifier();
-    ParseResult parse_use_tree();
-    ParseResult parse_use_tree_element();
-    ParseResult parse_generic_instantiation(ASTNode *template_node);
-
-    ASTNode *parse_expr_or_assign();
-    ASTNode *parse_assign(ASTNode *lhs, ASTNodeType type);
-
     ParseResult parse_type();
-
-    void parse_attribute_list();
+    ParseResult parse_expr_or_assign();
+    ParseResult parse_type_alias_or_explicit_type();
+    AttributeList *parse_attribute_list();
 
     ParseResult parse_list(ASTNodeType type, TokenType terminator, ListElementParser element_parser);
+    ParseResult parse_param_list(TokenType terminator = TKN_RPAREN);
     ParseResult check_semi(ASTNode *node);
 
     NodeBuilder new_node();

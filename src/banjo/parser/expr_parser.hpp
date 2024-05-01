@@ -41,14 +41,25 @@ private:
     ParseResult parse_operand();
 
     ParseResult parse_number_literal();
+    ParseResult parse_char_literal();
+    ParseResult parse_string_literal();
     ParseResult parse_array_literal();
     ParseResult parse_paren_expr();
     ParseResult parse_anon_struct_literal();
     ParseResult parse_closure();
     ParseResult parse_func_type();
-    ParseResult parse_struct_literal_body();
+    ParseResult parse_meta_expr();
     ParseResult parse_explicit_type();
+    
+    ParseResult parse_dot_expr(ASTNode *lhs_node);
+    ParseResult parse_call_expr(ASTNode *lhs_node);
+    ParseResult parse_bracket_expr(ASTNode *lhs_node);
+    ParseResult parse_struct_literal(ASTNode *lhs_node);
+    ParseResult parse_result_type(ASTNode *lhs_node);
+
+    ParseResult parse_struct_literal_body();
     ParseResult parse_level(ParseResult (ExprParser::*child_builder)(), ASTNodeType(token_checker)(TokenType type));
+
 };
 
 } // namespace lang
