@@ -42,6 +42,7 @@ const std::map<ReportText::ID, std::string> TEXTS = {
     {ReportText::ID::ERR_PRVATE, "cannot access private symbol '%'"},
     {ReportText::ID::ERR_INVALID_TYPE_FIELD, "invalid type field '%'"},
     {ReportText::ID::ERR_INVALID_TYPE_METHOD, "invalid type method '%'"},
+    {ReportText::ID::ERR_CANNOT_UNWRAP, "cannot unwrap value of type '%'"},
 
     {ReportText::ID::WARN_MISSING_FIELD, "missing field(s) in initializer of '%'"},
 

@@ -1,4 +1,4 @@
-#! output: success: 583; failure: ACCESS_DENIED; failure: NOT_FOUND; failure: NOT_FOUND
+#! output: success: 583; failure: ACCESS_DENIED; failure: NOT_FOUND; failure: NOT_FOUND;
 
 enum Error {
     NOT_FOUND,
@@ -11,7 +11,7 @@ func load_value(id: u32) -> i64 except Error {
     else { return Error.NOT_FOUND; }
 }
 
-func print_value(id: u32) {
+func load_and_print(id: u32) {
     try value in load_value(id) {
         print("success: ");
         print(value);
@@ -19,14 +19,13 @@ func print_value(id: u32) {
         print("failure: ");
         print(error);
     }
+
+    print("; ");
 }
 
 func main() {
-    print_value(0);
-    print("; ");
-    print_value(1);
-    print("; ");
-    print_value(2);
-    print("; ");
-    print_value(593);
+    load_and_print(0);
+    load_and_print(1);
+    load_and_print(2);
+    load_and_print(593);
 }

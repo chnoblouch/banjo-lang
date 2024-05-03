@@ -49,6 +49,7 @@ public:
         ERR_PRVATE,
         ERR_INVALID_TYPE_FIELD,
         ERR_INVALID_TYPE_METHOD,
+        ERR_CANNOT_UNWRAP,
 
         WARN_MISSING_FIELD,
 

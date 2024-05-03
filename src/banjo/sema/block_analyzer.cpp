@@ -236,7 +236,16 @@ bool BlockAnalyzer::analyze_try(ASTNode *node) {
                 return false;
             }
 
-            DataType *var_type = StandardTypes::get_result_value_type(expr_analyzer.get_type());
+            DataType *var_type;
+            if (StandardTypes::is_optional(expr_analyzer.get_type())) {
+                var_type = StandardTypes::get_optional_value_type(expr_analyzer.get_type());
+            } else if (StandardTypes::is_result(expr_analyzer.get_type())) {
+                var_type = StandardTypes::get_result_value_type(expr_analyzer.get_type());
+            } else {
+                context.register_error(expr_node, ReportText::ID::ERR_CANNOT_UNWRAP, expr_analyzer.get_type());
+                return false;
+            }
+
             const std::string &var_name = var_node->get_value();
             LocalVariable *local = new LocalVariable(var_node, var_type, var_name);
             var_node->set_symbol(local);
@@ -262,7 +271,7 @@ bool BlockAnalyzer::analyze_try(ASTNode *node) {
 
             DeinitAnalyzer(context).analyze_local(block_node->as<ASTBlock>(), local);
             BlockAnalyzer(block_node, context).check();
-        }  else if (child->get_type() == AST_TRY_ELSE_CASE) {
+        } else if (child->get_type() == AST_TRY_ELSE_CASE) {
             ASTBlock *block_node = child->get_child(0)->as<ASTBlock>();
             BlockAnalyzer(block_node, context).check();
         }
