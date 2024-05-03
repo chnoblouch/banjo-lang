@@ -14,9 +14,11 @@ class Target:
     def from_host() -> 'Target':
         target = Target()
 
-        machine = platform.machine()
-        if machine == "AMD64" or machine == "x86_64":
+        machine = platform.machine().lower()
+        if machine == "x86_64" or machine == "amd64":
             target.arch = "x86_64"
+        elif machine == "aarch64" or machine == "arm64":
+            target.arch = "aarch64"
 
         system = platform.system()
         if system == "Windows":
