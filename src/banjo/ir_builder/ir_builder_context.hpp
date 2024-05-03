@@ -56,6 +56,7 @@ private:
     int block_id = 0;
     int if_chain_id = 0;
     int switch_id = 0;
+    int try_id = 0;
     int while_id = 0;
     int for_id = 0;
     int or_id = 0;
@@ -114,6 +115,7 @@ public:
     int next_block_id();
     int next_if_chain_id();
     int next_switch_id();
+    int next_try_id() { return try_id++; }
     int next_while_id();
     int next_for_id();
     int next_or_id();

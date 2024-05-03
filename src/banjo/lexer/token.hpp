@@ -36,6 +36,7 @@ enum TokenType {
     TKN_IF,
     TKN_ELSE,
     TKN_SWITCH,
+    TKN_TRY,
     TKN_WHILE,
     TKN_FOR,
     TKN_IN,

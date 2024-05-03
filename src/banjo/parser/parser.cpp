@@ -15,23 +15,6 @@
 
 namespace lang {
 
-const std::unordered_set<TokenType> PRIMITIVE_DATA_TYPES{
-    TKN_I8,
-    TKN_I16,
-    TKN_I32,
-    TKN_I64,
-    TKN_U8,
-    TKN_U16,
-    TKN_U32,
-    TKN_U64,
-    TKN_F32,
-    TKN_F64,
-    TKN_USIZE,
-    TKN_BOOL,
-    TKN_ADDR,
-    TKN_VOID
-};
-
 const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_EOF,
     TKN_IF,
@@ -132,6 +115,7 @@ void Parser::parse_block_child(ASTBlock *block) {
         case TKN_FUNC: result = DeclParser(*this).parse_func(nullptr); break;
         case TKN_IF: result = StmtParser(*this).parse_if_chain(); break;
         case TKN_SWITCH: result = StmtParser(*this).parse_switch(); break;
+        case TKN_TRY: result = StmtParser(*this).parse_try(); break;
         case TKN_WHILE: result = StmtParser(*this).parse_while(); break;
         case TKN_FOR: result = StmtParser(*this).parse_for(); break;
         case TKN_BREAK: result = StmtParser(*this).parse_break(); break;

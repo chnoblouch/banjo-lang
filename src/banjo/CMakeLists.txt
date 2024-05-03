@@ -64,6 +64,7 @@ add_library(banjo STATIC
     ir_builder/storage.cpp
     ir_builder/struct_def_ir_builder.cpp
     ir_builder/switch_ir_builder.cpp
+    ir_builder/try_ir_builder.cpp
     ir_builder/type_infer_var_decl_ir_builder.cpp
     ir_builder/var_decl_ir_builder.cpp
     ir_builder/while_ir_builder.cpp

@@ -18,6 +18,7 @@ public:
     ParseResult parse_var();
     ParseResult parse_if_chain();
     ParseResult parse_switch();
+    ParseResult parse_try();
     ParseResult parse_while();
     ParseResult parse_for();
     ParseResult parse_break();

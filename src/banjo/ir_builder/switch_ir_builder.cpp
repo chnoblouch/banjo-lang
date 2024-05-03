@@ -10,7 +10,6 @@
 #include "ir/virtual_register.hpp"
 #include "ir_builder/block_ir_builder.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
 #include "ir_builder/storage.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/symbol_table.hpp"

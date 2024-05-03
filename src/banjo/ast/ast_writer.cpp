@@ -125,6 +125,10 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_SWITCH_CASE_LIST: return "SWITCH_CASE_LIST";
         case AST_SWITCH_CASE: return "SWITCH_CASE";
         case AST_SWITCH_DEFAULT_CASE: return "SWITCH_DEFAULT_CASE";
+        case AST_TRY: return "TRY";
+        case AST_TRY_SUCCESS_CASE: return "TRY_SUCCESS_CASE";
+        case AST_TRY_ERROR_CASE: return "TRY_ERROR_CASE";
+        case AST_TRY_ELSE_CASE: return "TRY_ELSE_CASE";
         case AST_WHILE: return "WHILE";
         case AST_FOR: return "FOR";
         case AST_FOR_ITER_TYPE: return "FOR_ITER_TYPE";

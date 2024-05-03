@@ -192,6 +192,50 @@ ParseResult StmtParser::parse_switch() {
     return node.build(AST_SWITCH);
 }
 
+ParseResult StmtParser::parse_try() {
+    NodeBuilder node = parser.new_node();
+    NodeBuilder success_case_node = parser.new_node();
+    stream.consume(); // Consume 'try'
+
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
+        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
+        return node.build_error();
+    }
+    success_case_node.append_child(new Identifier(stream.consume()));
+
+    if (!stream.get()->is(TKN_IN)) {
+        parser.report_unexpected_token();
+        return node.build_error();
+    }
+    stream.consume(); // Consume 'in'
+
+    ParseResult result = ExprParser(parser).parse();
+    if (!result.is_valid) {
+        return node.build_error();
+    }
+    success_case_node.append_child(result.node);
+
+    success_case_node.append_child(parser.parse_block().node);
+    node.append_child(success_case_node.build(AST_TRY_SUCCESS_CASE));
+
+    if (stream.get()->is(TKN_EXCEPT)) {
+        NodeBuilder error_case_node = parser.new_node();
+        stream.consume(); // Consume 'except'
+        error_case_node.append_child(new Identifier(stream.consume()));
+        stream.consume(); // Consume ':'
+        error_case_node.append_child(parser.parse_type().node);
+        error_case_node.append_child(parser.parse_block().node);
+        node.append_child(error_case_node.build(AST_TRY_ERROR_CASE));
+    } else if (stream.get()->is(TKN_ELSE)) {
+        NodeBuilder else_case_node = parser.new_node();
+        stream.consume(); // Consume 'else'
+        else_case_node.append_child(parser.parse_block().node);
+        node.append_child(else_case_node.build(AST_TRY_ELSE_CASE));
+    }
+
+    return node.build(AST_TRY);
+}
+
 ParseResult StmtParser::parse_while() {
     NodeBuilder node = parser.new_node();
     stream.consume(); // Consume 'while'

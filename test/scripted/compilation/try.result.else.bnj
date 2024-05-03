@@ -1,0 +1,31 @@
+#! output: 5;19;failed;failed
+
+enum MathError {
+    DIVISION_BY_ZERO,
+}
+
+func divide(a: i32, b: i32) -> i32 except MathError {
+    if b != 0 {
+        return a / b;
+    } else {
+        return MathError.DIVISION_BY_ZERO;
+    }
+}
+
+func run_division(a: i32, b: i32) {
+    try value in divide(a, b) {
+        print(value);
+    } else {
+        print("failed");
+    }
+}
+
+func main() {
+    run_division(10, 2);
+    print(";");
+    run_division(58, 3);
+    print(";");
+    run_division(3, 0);
+    print(";");
+    run_division(43, 0);
+}

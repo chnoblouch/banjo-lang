@@ -10,6 +10,7 @@
 #include "ir_builder/ir_builder_utils.hpp"
 #include "ir_builder/return_ir_builder.hpp"
 #include "ir_builder/switch_ir_builder.hpp"
+#include "ir_builder/try_ir_builder.hpp"
 #include "ir_builder/type_infer_var_decl_ir_builder.hpp"
 #include "ir_builder/var_decl_ir_builder.hpp"
 #include "ir_builder/while_ir_builder.hpp"
@@ -72,6 +73,7 @@ void BlockIRBuilder::build_children() {
             case lang::AST_SHR_ASSIGN: CompoundAssignIRBuilder(context, child).build(); break;
             case lang::AST_IF_CHAIN: IfChainIRBuilder(context, child).build(); break;
             case lang::AST_SWITCH: SwitchIRBuilder(context, child).build(); break;
+            case lang::AST_TRY: TryIRBuilder(context, child).build(); break;
             case lang::AST_WHILE: WhileIRBuilder(context, child).build(); break;
             case lang::AST_FOR: ForIRBuilder(context, child).build(); break;
             case lang::AST_FUNCTION_CALL: FuncCallIRBuilder(context, child).build({}, false); break;

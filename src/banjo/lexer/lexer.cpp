@@ -32,6 +32,7 @@ const std::unordered_map<std::string_view, TokenType> KEYWORDS{
     {"if", TKN_IF},
     {"else", TKN_ELSE},
     {"switch", TKN_SWITCH},
+    {"try", TKN_TRY},
     {"while", TKN_WHILE},
     {"for", TKN_FOR},
     {"in", TKN_IN},
