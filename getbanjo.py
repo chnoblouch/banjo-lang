@@ -75,6 +75,9 @@ def run():
         member.filename = member.filename[len(prefix):]
         zip_ref.extract(member, install_dir)
 
+        if cur_os != "windows":
+            os.chmod(install_dir / member.filename, member.external_attr >> 16)
+
     zip_ref.close()
     zip_path.unlink()
 
