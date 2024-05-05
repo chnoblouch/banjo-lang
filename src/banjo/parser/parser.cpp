@@ -135,9 +135,9 @@ void Parser::parse_block_child(ASTBlock *block) {
         default: result = parse_expr_or_assign();
     }
 
-    if (result.is_valid) {
-        block->append_child(result.node);
-    } else {
+    block->append_child(result.node);
+
+    if (!result.is_valid) {
         recover();
     }
 }
