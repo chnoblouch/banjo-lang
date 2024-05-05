@@ -197,17 +197,19 @@ ParseResult StmtParser::parse_try() {
     NodeBuilder success_case_node = parser.new_node();
     stream.consume(); // Consume 'try'
 
-    if (!stream.get()->is(TKN_IDENTIFIER)) {
+    if (stream.get()->is(TKN_IDENTIFIER)) {
+        success_case_node.append_child(new Identifier(stream.consume()));
+    } else {
         parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    success_case_node.append_child(new Identifier(stream.consume()));
 
-    if (!stream.get()->is(TKN_IN)) {
+    if (stream.get()->is(TKN_IN)) {
+        stream.consume(); // Consume 'in'
+    } else {
         parser.report_unexpected_token();
         return node.build_error();
     }
-    stream.consume(); // Consume 'in'
 
     ParseResult result = ExprParser(parser).parse();
     if (!result.is_valid) {
@@ -221,9 +223,23 @@ ParseResult StmtParser::parse_try() {
     if (stream.get()->is(TKN_EXCEPT)) {
         NodeBuilder error_case_node = parser.new_node();
         stream.consume(); // Consume 'except'
-        error_case_node.append_child(new Identifier(stream.consume()));
+
+        if (stream.get()->is(TKN_IDENTIFIER)) {
+            error_case_node.append_child(new Identifier(stream.consume()));
+        } else {
+            parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
+            return node.build_error();
+        }
+
         stream.consume(); // Consume ':'
-        error_case_node.append_child(parser.parse_type().node);
+
+        result = parser.parse_type();
+        if (result.is_valid) {
+            error_case_node.append_child(result.node);
+        } else {
+            return node.build_error();
+        }
+
         error_case_node.append_child(parser.parse_block().node);
         node.append_child(error_case_node.build(AST_TRY_ERROR_CASE));
     } else if (stream.get()->is(TKN_ELSE)) {
@@ -260,17 +276,19 @@ ParseResult StmtParser::parse_for() {
         node.append_child(new ASTNode(AST_FOR_ITER_TYPE, ""));
     }
 
-    if (!stream.get()->is(TKN_IDENTIFIER)) {
+    if (stream.get()->is(TKN_IDENTIFIER)) {
+        node.append_child(new Identifier(stream.consume()));
+    } else {
         parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(new Identifier(stream.consume()));
 
-    if (!stream.get()->is(TKN_IN)) {
+    if (stream.get()->is(TKN_IN)) {
+        stream.consume(); // Consume 'in'
+    } else {
         parser.report_unexpected_token();
         return node.build_error();
     }
-    stream.consume(); // Consume 'in'
 
     ParseResult result = ExprParser(parser).parse();
     if (!result.is_valid) {
