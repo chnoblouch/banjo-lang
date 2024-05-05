@@ -10,6 +10,8 @@ KEYWORDS = [
     "else",
     "switch",
     "case",
+    "try",
+    "except",
     "while",
     "for",
     "in",

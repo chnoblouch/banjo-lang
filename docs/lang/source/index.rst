@@ -13,6 +13,7 @@ The Banjo Programming Language
    statements
    data_types
    modules
+   error_handling
    magic_methods
    moving
    closures
