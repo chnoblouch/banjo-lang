@@ -173,7 +173,7 @@ ParseResult Parser::parse_expr_or_assign() {
 
 ParseResult Parser::parse_type_alias_or_explicit_type() {
     if (stream.peek(1)->is(TKN_LPAREN)) {
-        return ExprParser(*this).parse();
+        return parse_expr_or_assign();
     } else {
         return DeclParser(*this).parse_type_alias();
     }
