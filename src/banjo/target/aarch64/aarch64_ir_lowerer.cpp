@@ -518,6 +518,8 @@ mcode::Value AArch64IRLowerer::move_int_into_register(LargeInt value, int size) 
         std::uint16_t elements[4];
         AArch64Immediate::decompose_u64_u16(bits, elements);
         move_elements_into_register(result, elements, 4);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     return result;
