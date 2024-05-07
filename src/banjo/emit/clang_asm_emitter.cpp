@@ -107,6 +107,7 @@ void ClangAsmEmitter::emit_global(const mcode::Global &global) {
             else if (c == '\n') stream << "\\n";
             else if (c == '\r') stream << "\\r";
             else if (c == '\"') stream << "\\\"";
+            else if (c == '\\') stream << "\\\\";
             else stream << c;
         }
 
