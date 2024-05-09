@@ -25,7 +25,7 @@ void CompoundAssignIRBuilder::build() {
         context.get_cur_block().append(ir::Instruction(opcode, result_reg, {left_value, right_value}));
         context.append_store(result_value, left_ptr.get_ptr());
     } else {
-        ir::Type base_type = IRBuilderUtils::build_type(location_node->get_data_type()->get_base_data_type());
+        ir::Type base_type = context.build_type(location_node->get_data_type()->get_base_data_type());
         ir::VirtualRegister result_reg = context.append_offsetptr(left_value, right_value, base_type);
         ir::Value result_value = ir::Value::from_register(result_reg, left_ptr.value_type);
         context.append_store(result_value, left_ptr.get_ptr());

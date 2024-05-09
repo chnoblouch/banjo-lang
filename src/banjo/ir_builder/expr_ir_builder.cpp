@@ -135,7 +135,7 @@ StoredValue ExprIRBuilder::build_node(lang::ASTNode *node, const StorageHints &h
 
 StoredValue ExprIRBuilder::build_int_literal(lang::ASTNode *node) {
     const LargeInt &value = node->as<lang::IntLiteral>()->get_value();
-    ir::Type type = IRBuilderUtils::build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
     ir::Value immediate = ir::Value::from_int_immediate(value, type);
 
     return StoredValue::create_value(immediate);
@@ -143,7 +143,7 @@ StoredValue ExprIRBuilder::build_int_literal(lang::ASTNode *node) {
 
 StoredValue ExprIRBuilder::build_float_literal(lang::ASTNode *node) {
     double value = std::stod(node->get_value());
-    ir::Type type = IRBuilderUtils::build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
     ir::Value immediate = ir::Value::from_fp_immediate(value, type);
 
     return StoredValue::create_value(immediate);
@@ -213,11 +213,11 @@ StoredValue ExprIRBuilder::build_dynamic_array_literal(lang::ASTNode *node, cons
 }
 
 StoredValue ExprIRBuilder::build_static_array_literal(lang::ASTNode *node, const StorageHints &hints) {
-    ir::Type type = IRBuilderUtils::build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
     StoredValue stored_val = StoredValue::alloc(type, hints, context);
     ir::Value val_ptr = stored_val.get_ptr();
 
-    ir::Type base_type = IRBuilderUtils::build_type(lang_type->get_static_array_type().base_type);
+    ir::Type base_type = context.build_type(lang_type->get_static_array_type().base_type);
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         lang::ASTNode *element_node = node->get_child(i);
@@ -277,7 +277,7 @@ StoredValue ExprIRBuilder::build_struct_literal(lang::ASTNode *node, unsigned va
 }
 
 StoredValue ExprIRBuilder::build_tuple_literal(lang::ASTNode *node, const StorageHints &hints) {
-    ir::Type type = IRBuilderUtils::build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
 
     StoredValue stored_val = StoredValue::alloc(type, hints, context);
     const ir::Value &val_ptr = stored_val.get_ptr();
@@ -285,7 +285,7 @@ StoredValue ExprIRBuilder::build_tuple_literal(lang::ASTNode *node, const Storag
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         lang::ASTNode *child = node->get_child(i);
-        ir::Type member_type = type.get_tuple_types()[i];
+        ir::Type member_type = type.get_struct()->get_members()[i].type;
         ir::VirtualRegister offset_ptr_reg = context.append_memberptr(val_type, val_ptr, i);
         ExprIRBuilder(context, child).build_and_store(offset_ptr_reg);
     }
@@ -309,7 +309,7 @@ StoredValue ExprIRBuilder::build_binary_operation(lang::ASTNode *node, const Sto
 
     if (lhs->get_data_type()->get_kind() == lang::DataType::Kind::POINTER) {
         assert(op == lang::AST_OPERATOR_ADD);
-        ir::Type base_type = IRBuilderUtils::build_type(lhs->get_data_type()->get_base_data_type());
+        ir::Type base_type = context.build_type(lhs->get_data_type()->get_base_data_type());
         ir::VirtualRegister reg = context.append_offsetptr(lhs_val, rhs_val, base_type);
         return StoredValue::create_value(reg, lhs_val.get_type());
     }
@@ -394,7 +394,7 @@ StoredValue ExprIRBuilder::build_overloaded_operator_call(lang::ASTNode *node, c
     if (hints.dst) {
         dst = *hints.dst;
     } else if (func->is_return_by_ref()) {
-        ir::Type type = IRBuilderUtils::build_type(func->get_type().return_type);
+        ir::Type type = context.build_type(func->get_type().return_type);
         ir::VirtualRegister dst_reg = context.append_alloca(type);
         dst = ir::Value::from_register(dst_reg, ir::Primitive::VOID);
     } else {
@@ -435,7 +435,7 @@ StoredValue ExprIRBuilder::build_deref(lang::Expr *node) {
     lang::DataType *child_lang_type = child_node->get_data_type();
 
     if (child_lang_type->get_kind() == lang::DataType::Kind::POINTER) {
-        ir::Type type = IRBuilderUtils::build_type(node->get_data_type());
+        ir::Type type = context.build_type(node->get_data_type());
         return StoredValue::create_reference(stored_val.value_or_ptr, type);
     } else if (child_lang_type->get_kind() == lang::DataType::Kind::STRUCT) {
         lang::Structure *struct_ = child_lang_type->get_structure();
@@ -493,7 +493,7 @@ StoredValue ExprIRBuilder::build_func_call(lang::ASTNode *node, const StorageHin
     FuncCallIRBuilder func_call_builder(context, node);
     ir::VirtualRegister dst = func_call_builder.build(hints.dst ? *hints.dst : StorageHints::NONE, true);
 
-    ir::Type type = IRBuilderUtils::build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
 
     if (!is_return_by_ref(type)) {
         return StoredValue::create_value(dst, type);
@@ -512,12 +512,12 @@ StoredValue ExprIRBuilder::build_bracket_expr(lang::BracketExpr *node) {
 
     if (lang_type->get_kind() == lang::DataType::Kind::POINTER) {
         StoredValue built_pointer = ExprIRBuilder(context, base_node).build().try_turn_into_value(context);
-        ir::Type base_type = IRBuilderUtils::build_type(lang_type->get_base_data_type());
+        ir::Type base_type = context.build_type(lang_type->get_base_data_type());
         StoredValue built_index = ExprIRBuilder(context, index_node).build().try_turn_into_value(context);
         return build_offset_ptr(built_pointer, built_index, base_type);
     } else if (lang_type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
         StoredValue built_array = build_node(base_node, StorageHints::PREFER_REFERENCE);
-        ir::Type base_type = IRBuilderUtils::build_type(lang_type->get_static_array_type().base_type);
+        ir::Type base_type = context.build_type(lang_type->get_static_array_type().base_type);
         StoredValue built_index = ExprIRBuilder(context, index_node).build().try_turn_into_value(context);
         return build_offset_ptr(built_array, built_index, base_type);
     } else if (lang_type->get_kind() == lang::DataType::Kind::STRUCT) {
@@ -529,7 +529,7 @@ StoredValue ExprIRBuilder::build_bracket_expr(lang::BracketExpr *node) {
 
         std::vector<ir::Value> args{built_array.get_ptr(), built_index.value_or_ptr};
         StoredValue pointer = IRBuilderUtils::build_call(ref_func, args, context);
-        ir::Type type = IRBuilderUtils::build_type(ref_func->get_type().return_type->get_base_data_type());
+        ir::Type type = context.build_type(ref_func->get_type().return_type->get_base_data_type());
         return StoredValue::create_reference(pointer.get_value(), type);
     } else {
         ASSERT_UNREACHABLE;
@@ -549,7 +549,7 @@ StoredValue ExprIRBuilder::build_meta_expr(lang::ASTNode *node) {
     lang::ASTNode *args_node = node->get_child(lang::META_EXPR_ARGS);
     lang::ASTNode *type_node = args_node->get_child(0);
 
-    ir::Type type = IRBuilderUtils::build_type(type_node->as<lang::Expr>()->get_data_type());
+    ir::Type type = context.build_type(type_node->as<lang::Expr>()->get_data_type());
     int size = get_size(type);
 
     ir::Value immediate = ir::Value::from_int_immediate(size, ir::Primitive::I64);

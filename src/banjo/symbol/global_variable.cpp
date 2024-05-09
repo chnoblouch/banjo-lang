@@ -13,7 +13,7 @@ GlobalVariable::GlobalVariable(ASTNode *node, std::string name, ASTModule *modul
 
 ir_builder::StoredValue GlobalVariable::as_ir_value(ir_builder::IRBuilderContext &context) {
     std::string link_name = ir_builder::IRBuilderUtils::get_global_var_link_name(this);
-    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type());
+    ir::Type type = context.build_type(get_data_type());
     ir::Value value = native ? ir::Operand::from_extern_global(link_name, ir::Primitive::ADDR)
                              : ir::Operand::from_global(link_name, ir::Primitive::ADDR);
     return ir_builder::StoredValue::create_reference(value, type);

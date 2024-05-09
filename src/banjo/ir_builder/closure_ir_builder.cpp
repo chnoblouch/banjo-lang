@@ -14,7 +14,7 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
     lang::ClosureExpr *closure_expr = node->as<lang::ClosureExpr>();
 
     lang::DataType *lang_type = closure_expr->get_data_type();
-    ir::Type type = IRBuilderUtils::build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
 
     StoredValue stored_val = StoredValue::alloc(type, hints, context);
     ir::Value val_ptr = stored_val.get_ptr();
@@ -51,7 +51,7 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
     context.set_cur_func_exit(enclosing_func_exit);
 
     for (lang::Variable *var : closure.captured_vars) {
-        ir::Type type = IRBuilderUtils::build_type(var->get_data_type());
+        ir::Type type = context.build_type(var->get_data_type());
         struct_->add(ir::StructureMember{var->get_name(), type});
     }
 

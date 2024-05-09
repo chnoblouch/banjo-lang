@@ -36,18 +36,6 @@ unsigned StandardDataLayout::get_size(const ir::Type &type) const {
         offset = Utils::align(offset, struct_alignment);
 
         return offset * type.get_array_length();
-    } else if (type.is_tuple()) {
-        unsigned offset = 0;
-        for (const ir::Type &tuple_type : type.get_tuple_types()) {
-            unsigned size = get_size(tuple_type);
-            unsigned alignment = get_alignment(tuple_type);
-            offset = Utils::align(offset, alignment) + size;
-        }
-
-        unsigned tuple_alignment = get_alignment(type);
-        offset = Utils::align(offset, tuple_alignment);
-
-        return offset * type.get_array_length();
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -62,12 +50,6 @@ unsigned StandardDataLayout::get_alignment(const ir::Type &type) const {
         unsigned alignment = 0;
         for (const ir::StructureMember &member : struct_.get_members()) {
             alignment = std::max(alignment, get_alignment(member.type));
-        }
-        return alignment;
-    } else if (type.is_tuple()) {
-        unsigned alignment = 0;
-        for (const ir::Type &type : type.get_tuple_types()) {
-            alignment = std::max(alignment, get_alignment(type));
         }
         return alignment;
     } else {

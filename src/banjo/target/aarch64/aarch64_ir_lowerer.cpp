@@ -477,14 +477,7 @@ void AArch64IRLowerer::lower_memberptr(ir::Instruction& instr) {
 
     Address addr;
     addr.base = lower_value(instr.get_operand(1));
-
-    if (type.is_struct()) {
-        ir::Structure* struct_ = type.get_struct();
-        addr.imm_offset = get_member_offset(struct_, int_offset);
-    } else if (type.is_tuple()) {
-        const std::vector<ir::Type>& tuple_types = type.get_tuple_types();
-        addr.imm_offset = get_member_offset(tuple_types, int_offset);
-    }
+    addr.imm_offset = get_member_offset(type.get_struct(), int_offset);
 
     calculate_address(lower_reg(*instr.get_dest()), addr);
 }

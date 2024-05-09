@@ -19,7 +19,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
     lang::DataType *location_type = location_node->get_location()->get_type();
 
     type = location_type->get_function_type();
-    ir::Type return_type = IRBuilderUtils::build_type(type.return_type);
+    ir::Type return_type = context.build_type(type.return_type);
     bool return_by_ref = false;
     bool is_method = false;
 
@@ -83,7 +83,7 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
     for (int i = 0; i < args_node->get_children().size(); i++) {
         lang::ASTNode *argument = args_node->get_child(i);
         int param_index = is_method ? i + 1 : i;
-        ir::Type param_type = IRBuilderUtils::build_type(type.param_types[param_index]);
+        ir::Type param_type = context.build_type(type.param_types[param_index]);
         call_instr_operands.push_back(ExprIRBuilder(context, argument).build_into_value_if_possible().value_or_ptr);
     }
 

@@ -125,7 +125,7 @@ void LocationIRBuilder::build_captured_var(lang::Variable *var) {
     ir::Operand arg_ptr = ir::Operand::from_register(arg_ptr_reg, ir::Primitive::ADDR);
     ir::Value context_ptr = context.append_load(ir::Primitive::ADDR, arg_ptr);
     ir::VirtualRegister member_ptr_reg = context.append_memberptr(context_type, context_ptr, member_index);
-    ir::Type member_type = IRBuilderUtils::build_type(var->get_data_type());
+    ir::Type member_type = context.build_type(var->get_data_type());
     value = StoredValue::create_reference(member_ptr_reg, member_type);
 }
 
@@ -153,7 +153,7 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
     } else if (element.is_tuple_index()) {
         unsigned index = element.get_tuple_index();
         ir::VirtualRegister reg = context.append_memberptr(value.value_type, value.get_ptr(), index);
-        ir::Type type = IRBuilderUtils::build_type(element.get_type());
+        ir::Type type = context.build_type(element.get_type());
         value = StoredValue::create_reference(reg, type);
     } else {
         assert(false && "invalid non-root location element");
@@ -164,7 +164,7 @@ void LocationIRBuilder::build_struct_field_access(lang::StructField *field, lang
     unsigned offset = struct_->get_field_index(field);
     context.append_memberptr(dst, value.value_type, value.get_ptr(), offset);
 
-    ir::Type type = IRBuilderUtils::build_type(field->get_type());
+    ir::Type type = context.build_type(field->get_type());
     value = StoredValue::create_reference(dst, type);
 
     dst = context.get_current_func()->next_virtual_reg();
@@ -174,7 +174,7 @@ void LocationIRBuilder::build_union_case_field_access(lang::UnionCaseField *fiel
     unsigned index = case_->get_field_index(field);
     context.append_memberptr(dst, value.value_type, value.get_ptr(), index);
 
-    ir::Type type = IRBuilderUtils::build_type(field->get_type());
+    ir::Type type = context.build_type(field->get_type());
     value = StoredValue::create_reference(dst, type);
 
     dst = context.get_current_func()->next_virtual_reg();
@@ -197,7 +197,7 @@ void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::S
     unsigned field_index = struct_->get_field_index(field);
     ir::VirtualRegister offset_ptr_reg = context.append_memberptr(base_type, base, field_index);
     
-    ir::Type type = IRBuilderUtils::build_type(field->get_type());
+    ir::Type type = context.build_type(field->get_type());
     value = StoredValue::create_reference(offset_ptr_reg, type);
 
     dst = context.get_current_func()->next_virtual_reg();

@@ -178,17 +178,6 @@ ir::Operand IRParser::parse_operand() {
 ir::Type IRParser::parse_type() {
     if (get() == '@') {
         return ir::Type(mod.get_structure(parse_ident()));
-    } else if (get() == '(') {
-        std::vector<ir::Type> tuple_types;
-        while (get() != ')') {
-            consume(); // '(' or ','
-            skip_whitespace();
-            tuple_types.push_back(parse_type());
-            skip_whitespace();
-        }
-        consume(); // ')'
-
-        return ir::Type(tuple_types);
     } else {
         std::string str;
         while (std::isalnum(get())) {

@@ -5,8 +5,8 @@
 namespace ir_builder {
 
 ir::Value Conversion::build(IRBuilderContext &context, ir::Value &value, lang::DataType *from, lang::DataType *to) {
-    ir::Type ir_from = IRBuilderUtils::build_type(from);
-    ir::Type ir_to = IRBuilderUtils::build_type(to);
+    ir::Type ir_from = context.build_type(from);
+    ir::Type ir_to = context.build_type(to);
 
     target::TargetDataLayout &data_layout = context.get_target()->get_data_layout();
     unsigned size_from = data_layout.get_size(ir_from);

@@ -34,8 +34,6 @@ private:
         std::optional<unsigned> stack_val;
     };
 
-    typedef std::function<void(unsigned index, const ir::Type &type)> MemberAccessFunc;
-
     std::vector<StackValue> stack_values;
     std::unordered_map<ir::VirtualRegister, unsigned> roots;
     std::unordered_map<ir::VirtualRegister, unsigned> stack_ptr_defs;
@@ -60,7 +58,6 @@ private:
     Ref get_final_memberptr(InsertionContext &ctx, Ref ref, const ir::Type &parent_type, unsigned index);
     void apply_splits(ir::BasicBlock &block);
     bool is_aggregate(const ir::Type &type);
-    void for_each_member(const ir::Type &type, const MemberAccessFunc &func);
     void dump_stack_values();
     void dump_stack_value(StackValue &value, unsigned indent);
 };

@@ -13,7 +13,7 @@ LocalVariable::LocalVariable(ASTNode *node, DataType *data_type, std::string nam
   : Variable(node, data_type, std::move(name)) {}
 
 ir_builder::StoredValue LocalVariable::as_ir_value(ir_builder::IRBuilderContext &context) {
-    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type());
+    ir::Type type = context.build_type(get_data_type());
     return ir_builder::StoredValue::create_reference(virtual_reg, type);
 }
 

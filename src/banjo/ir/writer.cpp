@@ -227,17 +227,6 @@ std::string Writer::type_to_str(Type type) {
         }
     } else if (type.is_struct()) {
         str = "@" + type.get_struct()->get_name();
-    } else if (type.is_tuple()) {
-        str = "(";
-
-        for (unsigned i = 0; i < type.get_tuple_types().size(); i++) {
-            str += type_to_str(type.get_tuple_types()[i]);
-            if (i != type.get_tuple_types().size() - 1) {
-                str += ", ";
-            }
-        }
-
-        str += ")";
     }
 
     if (type.get_array_length() != 1) {

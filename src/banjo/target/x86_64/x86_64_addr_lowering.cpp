@@ -107,15 +107,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &i
     const ir::Operand &base_operand = instr.get_operand(1);
     unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
 
-    int byte_offset = 0;
-
-    if (type.is_struct()) {
-        ir::Structure *struct_ = type.get_struct();
-        byte_offset = lowerer.get_member_offset(struct_, int_offset);
-    } else if (type.is_tuple()) {
-        const std::vector<ir::Type> &tuple_types = type.get_tuple_types();
-        byte_offset = lowerer.get_member_offset(tuple_types, int_offset);
-    }
+    unsigned byte_offset = lowerer.get_member_offset(type.get_struct(), int_offset);
 
     // Try to merge the instruction with previous pointer operations.
     ir::InstrIter base_producer_iter = lowerer.get_producer_globally(base_operand.get_register());

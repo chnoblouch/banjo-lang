@@ -48,7 +48,7 @@ void BlockIRBuilder::alloc_local_vars() {
     for (lang::LocalVariable *local_var : symbol_table->get_local_variables()) {
         ir::VirtualRegister reg = func->next_virtual_reg();
         local_var->set_virtual_reg(reg);
-        ir::Type type = IRBuilderUtils::build_type(local_var->get_data_type());
+        ir::Type type = context.build_type(local_var->get_data_type());
         context.append_alloca(reg, type);
     }
 

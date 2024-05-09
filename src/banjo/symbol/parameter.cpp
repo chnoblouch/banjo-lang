@@ -21,7 +21,7 @@ ir_builder::StoredValue Parameter::as_ir_value(ir_builder::IRBuilderContext &con
         value = context.append_load(ir::Primitive::ADDR, ptr);
     }
 
-    ir::Type type = ir_builder::IRBuilderUtils::build_type(get_data_type());
+    ir::Type type = context.build_type(get_data_type());
     return ir_builder::StoredValue::create_reference(value, type);
 }
 

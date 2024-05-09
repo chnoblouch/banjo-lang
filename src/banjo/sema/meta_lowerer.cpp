@@ -145,7 +145,7 @@ bool MetaLowerer::lower_meta_field_access(ASTNode *node) {
     if (field == "size") {
         value = new IntLiteral(0);
 
-        // ir::Type ir_type = ir_builder::IRBuilderUtils::build_type(type);
+        // ir::Type ir_type = context.build_type(type);
         // unsigned size = context.get_target()->get_data_layout().get_size(ir_type);
         // value = new IntLiteral(size);
     } else if (field == "name") {

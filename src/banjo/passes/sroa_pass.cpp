@@ -1,5 +1,6 @@
 #include "sroa_pass.hpp"
 
+#include "ir/structure.hpp"
 #include "passes/pass_utils.hpp"
 
 #include <iostream>
@@ -70,41 +71,43 @@ void SROAPass::collect_stack_values(ir::BasicBlockIter block_iter) {
 }
 
 bool SROAPass::is_splitting_possible(const ir::Type &type) {
-    bool possible = true;
+    if (!type.is_struct()) {
+        return false;
+    }
 
-    for_each_member(type, [this, &possible](unsigned /*index*/, const ir::Type &type) {
-        if (type.get_array_length() != 1) {
-            possible = false;
+    for (const ir::StructureMember &member : type.get_struct()->get_members()) {
+        if (member.type.get_array_length() != 1) {
+            return false;
         }
 
-        if (is_aggregate(type)) {
-            possible = possible && is_splitting_possible(type);
+        if (is_aggregate(member.type) && !is_splitting_possible(member.type)) {
+            return false;
         }
-    });
+    }
 
-    return possible;
+    return true;
 }
 
 void SROAPass::collect_members(unsigned val_index) {
     ir::Type val_type = stack_values[val_index].type;
 
-    for_each_member(val_type, [this, &val_index](unsigned /*index*/, const ir::Type &type) {
+    for (const ir::StructureMember &member : val_type.get_struct()->get_members()) {
         StackValue member_val{
             .alloca_instr = stack_values[val_index].alloca_instr,
             .alloca_block = stack_values[val_index].alloca_block,
-            .type = type,
+            .type = member.type,
             .parent = val_index,
-            .splittable = is_splitting_possible(type),
+            .splittable = is_splitting_possible(member.type),
         };
 
         unsigned member_index = stack_values.size();
         stack_values.push_back(member_val);
         stack_values[val_index].members.push_back(member_index);
 
-        if (is_aggregate(type)) {
+        if (is_aggregate(member.type)) {
             collect_members(member_index);
         }
-    });
+    }
 }
 
 void SROAPass::collect_uses(ir::BasicBlock &block) {
@@ -257,9 +260,11 @@ void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ir::T
         return;
     }
 
-    for_each_member(type, [this, &ctx, &dst, &src, &type](unsigned index, const ir::Type &member_type) {
-        Ref member_dst = get_final_memberptr(ctx, dst, type, index);
-        Ref member_src = get_final_memberptr(ctx, src, type, index);
+    for (unsigned i = 0; i < type.get_struct()->get_members().size(); i++) {
+        const ir::Type &member_type = type.get_struct()->get_members()[i].type;
+
+        Ref member_dst = get_final_memberptr(ctx, dst, type, i);
+        Ref member_src = get_final_memberptr(ctx, src, type, i);
 
         if (is_aggregate(member_type)) {
             copy_members(ctx, member_dst, member_src, member_type);
@@ -278,7 +283,7 @@ void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ir::T
             ir::Operand::from_register(member_dst.ptr, ir::Primitive::ADDR)
         }));
         // clang-format on
-    });
+    }
 }
 
 SROAPass::Ref SROAPass::get_final_memberptr(
@@ -346,20 +351,7 @@ void SROAPass::apply_splits(ir::BasicBlock &block) {
 }
 
 bool SROAPass::is_aggregate(const ir::Type &type) {
-    return (type.is_struct() || type.is_tuple()) && type.get_array_length() == 1;
-}
-
-void SROAPass::for_each_member(const ir::Type &type, const MemberAccessFunc &func) {
-    if (type.is_struct()) {
-        const ir::Structure &struct_ = *type.get_struct();
-        for (unsigned i = 0; i < struct_.get_members().size(); i++) {
-            func(i, struct_.get_members()[i].type);
-        }
-    } else if (type.is_tuple()) {
-        for (unsigned i = 0; i < type.get_tuple_types().size(); i++) {
-            func(i, type.get_tuple_types()[i]);
-        }
-    }
+    return type.is_struct() && type.get_array_length() == 1;
 }
 
 void SROAPass::dump_stack_values() {
@@ -384,7 +376,6 @@ void SROAPass::dump_stack_value(StackValue &value, unsigned indent) {
     }
 
     if (value.type.is_struct()) std::cout << value.type.get_struct()->get_name();
-    else if (value.type.is_tuple()) std::cout << "<<tuple>>";
     std::cout << " {\n";
 
     for (unsigned member_index : value.members) {

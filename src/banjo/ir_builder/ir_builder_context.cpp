@@ -206,4 +206,88 @@ void IRBuilderContext::append_copy(ir::Operand dst, ir::Operand src, ir::Type ty
     cur_block_iter->append(ir::Instruction(ir::Opcode::COPY, {std::move(dst), std::move(src), type_val}));
 }
 
+ir::Type IRBuilderContext::build_type(lang::DataType *type) {
+    if (type->get_kind() == lang::DataType::Kind::PRIMITIVE) {
+        switch (type->get_primitive_type()) {
+            case lang::I8: return ir::Primitive::I8;
+            case lang::I16: return ir::Primitive::I16;
+            case lang::I32: return ir::Primitive::I32;
+            case lang::I64: return ir::Primitive::I64;
+            case lang::U8: return ir::Primitive::I8;
+            case lang::U16: return ir::Primitive::I16;
+            case lang::U32: return ir::Primitive::I32;
+            case lang::U64: return ir::Primitive::I64;
+            case lang::F32: return ir::Primitive::F32;
+            case lang::F64: return ir::Primitive::F64;
+            case lang::BOOL: return ir::Primitive::I8;
+            case lang::ADDR: return ir::Primitive::ADDR;
+            case lang::VOID: return ir::Primitive::VOID;
+        }
+    } else if (type->get_kind() == lang::DataType::Kind::STRUCT) {
+        assert(type->get_structure()->get_ir_struct());
+        return ir::Type(type->get_structure()->get_ir_struct());
+    } else if (type->get_kind() == lang::DataType::Kind::ENUM) {
+        // TODO: what if the value doesn't fit into 32 bits?
+        return ir::Primitive::I32;
+    } else if (type->get_kind() == lang::DataType::Kind::UNION) {
+        assert(type->get_union()->get_ir_struct());
+        return ir::Type(type->get_union()->get_ir_struct());
+    } else if (type->get_kind() == lang::DataType::Kind::UNION_CASE) {
+        assert(type->get_union_case()->get_ir_struct());
+        return ir::Type(type->get_union_case()->get_ir_struct());
+    } else if (type->get_kind() == lang::DataType::Kind::POINTER) {
+        return ir::Primitive::ADDR;
+    } else if (type->get_kind() == lang::DataType::Kind::FUNCTION) {
+        return ir::Primitive::ADDR;
+    } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
+        ir::Type ir_type = build_type(type->get_static_array_type().base_type);
+        ir_type.set_array_length(type->get_static_array_type().length);
+        return ir_type;
+    } else if (type->get_kind() == lang::DataType::Kind::TUPLE) {
+        std::vector<ir::Type> member_types;
+        member_types.reserve(type->get_tuple().types.size());
+
+        for (lang::DataType *lang_type : type->get_tuple().types) {
+            member_types.push_back(build_type(lang_type));
+        }
+
+        return get_tuple_struct(member_types);
+    } else if (type->get_kind() == lang::DataType::Kind::CLOSURE) {
+        return get_tuple_struct({ir::Primitive::ADDR, ir::Primitive::ADDR});
+    } else {
+        return ir::Primitive::VOID;
+    }
+}
+
+ir::Structure *IRBuilderContext::get_tuple_struct(const std::vector<ir::Type> &member_types) {
+    for (ir::Structure *struct_ : tuple_structs) {
+        if (struct_->get_members().size() != member_types.size()) {
+            continue;
+        }
+
+        bool compatible = true;
+
+        for (unsigned i = 0; i < member_types.size(); i++) {
+            if (struct_->get_members()[i].type != member_types[i]) {
+                compatible = false;
+                break;
+            }
+        }
+
+        if (compatible) {
+            return struct_;
+        }
+    }
+
+    ir::Structure *struct_ = new ir::Structure("tuple." + std::to_string(tuple_structs.size()));
+    for (unsigned i = 0; i < member_types.size(); i++) {
+        struct_->add({std::to_string(i), member_types[i]});
+    }
+
+    current_mod->add(struct_);
+    tuple_structs.push_back(struct_);
+
+    return struct_;
+}
+
 } // namespace ir_builder

@@ -2,9 +2,12 @@
 #define IR_BUILDER_IR_BUILDER_CONTEXT_H
 
 #include "ir/module.hpp"
+#include "ir/structure.hpp"
 #include "ir/virtual_register.hpp"
+#include "symbol/data_type.hpp"
 #include "symbol/function.hpp"
 #include "symbol/module_path.hpp"
+#include "symbol/structure.hpp"
 #include "target/target.hpp"
 
 #include <stack>
@@ -49,8 +52,8 @@ private:
     ir::InstrIter cur_last_alloca;
     std::stack<Scope> scopes;
 
-private:
     std::unordered_map<std::string, ir::Type> generic_types;
+    std::vector<ir::Structure*> tuple_structs;
 
     int string_name_id = 0;
     int block_id = 0;
@@ -84,7 +87,6 @@ public:
     std::vector<ir::VirtualRegister> &get_current_arg_regs() { return current_arg_regs; }
     ir::VirtualRegister get_current_return_reg() { return current_return_reg; }
     ir::BasicBlockIter get_cur_func_exit() { return cur_func_exit; }
-    std::unordered_map<std::string, ir::Type> &get_generic_types() { return generic_types; }
     Scope &get_scope() { return scopes.top(); }
 
     void set_current_mod(ir::Module *current_mod) { this->current_mod = current_mod; }
@@ -108,6 +110,7 @@ public:
         this->generic_types = generic_types;
     }
 
+    std::unordered_map<std::string, ir::Type> &get_generic_types() { return generic_types; }
     Scope &push_scope();
     void pop_scope();
 
@@ -154,6 +157,9 @@ public:
     void append_ret(ir::Operand val);
     void append_ret();
     void append_copy(ir::Operand dst, ir::Operand src, ir::Type type);
+
+    ir::Type build_type(lang::DataType *type);
+    ir::Structure *get_tuple_struct(const std::vector<ir::Type> &member_types);
 };
 
 } // namespace ir_builder

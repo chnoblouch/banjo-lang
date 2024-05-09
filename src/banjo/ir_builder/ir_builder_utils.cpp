@@ -13,58 +13,6 @@
 
 namespace ir_builder {
 
-ir::Type IRBuilderUtils::build_type(lang::DataType *type) {
-    assert(type && "null type in type ir builder");
-
-    if (type->get_kind() == lang::DataType::Kind::PRIMITIVE) {
-        switch (type->get_primitive_type()) {
-            case lang::I8: return ir::Primitive::I8;
-            case lang::I16: return ir::Primitive::I16;
-            case lang::I32: return ir::Primitive::I32;
-            case lang::I64: return ir::Primitive::I64;
-            case lang::U8: return ir::Primitive::I8;
-            case lang::U16: return ir::Primitive::I16;
-            case lang::U32: return ir::Primitive::I32;
-            case lang::U64: return ir::Primitive::I64;
-            case lang::F32: return ir::Primitive::F32;
-            case lang::F64: return ir::Primitive::F64;
-            case lang::BOOL: return ir::Primitive::I8;
-            case lang::ADDR: return ir::Primitive::ADDR;
-            case lang::VOID: return ir::Primitive::VOID;
-        }
-    } else if (type->get_kind() == lang::DataType::Kind::STRUCT) {
-        assert(type->get_structure()->get_ir_struct());
-        return ir::Type(type->get_structure()->get_ir_struct());
-    } else if (type->get_kind() == lang::DataType::Kind::ENUM) {
-        // TODO: what if the value doesn't fit into 32 bits?
-        return ir::Primitive::I32;
-    } else if (type->get_kind() == lang::DataType::Kind::UNION) {
-        assert(type->get_union()->get_ir_struct());
-        return ir::Type(type->get_union()->get_ir_struct());
-    } else if (type->get_kind() == lang::DataType::Kind::UNION_CASE) {
-        assert(type->get_union_case()->get_ir_struct());
-        return ir::Type(type->get_union_case()->get_ir_struct());
-    } else if (type->get_kind() == lang::DataType::Kind::POINTER) {
-        return ir::Primitive::ADDR;
-    } else if (type->get_kind() == lang::DataType::Kind::FUNCTION) {
-        return ir::Primitive::ADDR;
-    } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
-        ir::Type ir_type = build_type(type->get_static_array_type().base_type);
-        ir_type.set_array_length(type->get_static_array_type().length);
-        return ir_type;
-    } else if (type->get_kind() == lang::DataType::Kind::TUPLE) {
-        std::vector<ir::Type> tuple_types;
-        for (lang::DataType *lang_type : type->get_tuple().types) {
-            tuple_types.push_back(build_type(lang_type));
-        }
-        return ir::Type(tuple_types);
-    } else if (type->get_kind() == lang::DataType::Kind::CLOSURE) {
-        return ir::Type({ir::Primitive::ADDR, ir::Primitive::ADDR});
-    } else {
-        return ir::Primitive::VOID;
-    }
-}
-
 std::vector<ir::Type> IRBuilderUtils::build_params(
     const std::vector<lang::DataType *> &lang_params,
     IRBuilderContext &context
@@ -72,7 +20,7 @@ std::vector<ir::Type> IRBuilderUtils::build_params(
     std::vector<ir::Type> params;
 
     for (lang::DataType *lang_type : lang_params) {
-        ir::Type type = build_type(lang_type);
+        ir::Type type = context.build_type(lang_type);
 
         if (context.get_target()->get_data_layout().is_pass_by_ref(type)) {
             params.push_back(ir::Primitive::ADDR);
@@ -124,7 +72,7 @@ void IRBuilderUtils::copy_val(IRBuilderContext &context, ir::Value src_ptr, ir::
 
 ir::Value IRBuilderUtils::build_arg(lang::ASTNode *node, IRBuilderContext &context) {
     lang::DataType *lang_type = node->as<lang::Expr>()->get_data_type();
-    ir::Type type = build_type(lang_type);
+    ir::Type type = context.build_type(lang_type);
 
     return ExprIRBuilder(context, node).build_into_value_if_possible().value_or_ptr;
 }
@@ -144,7 +92,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, IRBuilderContext &context)
     }
 
     if (call.func->is_return_by_ref()) {
-        ir::Type return_type = IRBuilderUtils::build_type(call.func->get_type().return_type);
+        ir::Type return_type = context.build_type(call.func->get_type().return_type);
         context.append_alloca(dst_reg, return_type);
     }
 
@@ -155,7 +103,7 @@ StoredValue IRBuilderUtils::build_call(FuncCall call, IRBuilderContext &context)
 StoredValue IRBuilderUtils::build_call(FuncCall call, ir::Value dst, IRBuilderContext &context) {
     std::vector<ir::Value> operands;
 
-    ir::Type built_return_type = IRBuilderUtils::build_type(call.func->get_type().return_type);
+    ir::Type built_return_type = context.build_type(call.func->get_type().return_type);
     ir::Type return_type = call.func->is_return_by_ref() ? ir::Type(ir::Primitive::VOID) : built_return_type;
 
     if (call.func->get_ir_func()) {
