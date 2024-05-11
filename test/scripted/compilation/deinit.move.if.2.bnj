@@ -1,0 +1,27 @@
+#! output: deinit.0;end_main;deinit.1;
+
+struct Object {
+	var id: i32;
+
+    func __deinit__(self) {
+        print("deinit.");
+		print(self.id);
+		print(";");
+    }
+}
+
+func consume(object: Object) {}
+
+func main() {
+    var a = Object { id: 0 };
+    var b = Object { id: 1 };
+	
+    var deinit_a = true;
+    if deinit_a {
+        consume(a);
+    } else {
+		consume(b);
+	}
+    
+    print("end_main;");
+}

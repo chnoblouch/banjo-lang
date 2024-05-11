@@ -4,6 +4,8 @@
 #include "ast/ast_node.hpp"
 #include "symbol/symbol_table.hpp"
 
+#include <vector>
+
 namespace lang {
 
 class SymbolTable;
@@ -29,7 +31,7 @@ public:
 
     SymbolTable *get_symbol_table() { return &symbol_table; }
     const std::vector<DeinitInfo *> &get_deinit_values() { return deinit_values; }
-    const std::vector<ValueMove> &get_value_moves() { return value_moves; }
+    std::vector<ValueMove> &get_value_moves() { return value_moves; }
 
     void set_parent_symbol_table(SymbolTable *parent_symbol_table);
     void add_deinit_value(DeinitInfo *deinit_value) { deinit_values.push_back(deinit_value); }

@@ -356,7 +356,7 @@ bool ExprAnalyzer::check_closure() {
 
     ASTNode *params_node = node->get_child(CLOSURE_PARAMS);
     ASTNode *return_type_node = node->get_child(CLOSURE_RETURN_TYPE);
-    ASTNode *block_node = node->get_child(CLOSURE_BLOCK);
+    ASTBlock *block = node->get_child(CLOSURE_BLOCK)->as<ASTBlock>();
 
     std::vector<DataType *> param_types;
 
@@ -390,15 +390,10 @@ bool ExprAnalyzer::check_closure() {
 
     context.push_ast_context().cur_func = func;
 
-    ASTBlock *block = block_node->as<ASTBlock>();
-    if (!ParamsAnalyzer(context).analyze(params_node, block)) {
-        return false;
-    }
+    ParamsAnalyzer(context).analyze(params_node, block);
+    BlockAnalyzer(block, node, context).check();
 
-    if (!BlockAnalyzer(block_node, context).check()) {
-        return false;
-    }
-
+    context.merge_move_scopes_into_parent();
     context.pop_ast_context();
 
     type = context.get_type_manager().new_data_type();

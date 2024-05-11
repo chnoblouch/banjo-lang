@@ -46,7 +46,8 @@ const std::map<ReportText::ID, std::string> TEXTS = {
 
     {ReportText::ID::WARN_MISSING_FIELD, "missing field(s) in initializer of '%'"},
 
-    {ReportText::ID::NOTE_USE_AFTER_MOVE_PREVIOUS, "previously moved here"}
+    {ReportText::ID::NOTE_USE_AFTER_MOVE_PREVIOUS, "previously moved here"},
+    {ReportText::ID::NOTE_USE_AFTER_MOVE_IN_LOOP, "using this value inside a loop would move it in every iteration"},
 };
 
 ReportText::ReportText(ReportText::ID id) : text(TEXTS.at(id)) {}

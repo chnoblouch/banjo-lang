@@ -18,7 +18,11 @@ public:
 
 private:
     void analyze_var(ASTBlock *block, Variable *var, LocationElement location_element);
+
+    void create_struct_info(ASTBlock *block, Variable *var, LocationElement location_element);
     void create_member_info(DeinitInfo &info, StructField *field);
+    void create_union_info(ASTBlock *block, Variable* var, LocationElement location_element);
+
     void register_info_on_block(DeinitInfo &info, ASTBlock *block);
 };
 

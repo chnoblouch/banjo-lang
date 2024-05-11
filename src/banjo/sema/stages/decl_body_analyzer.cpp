@@ -30,14 +30,15 @@ void DeclBodyAnalyzer::run(Symbol *symbol) {
 
 void DeclBodyAnalyzer::analyze_func(ASTFunc *node) {
     ASTNode *params_node = node->get_child(FUNC_PARAMS);
-    ASTNode *block_node = node->get_child(FUNC_BLOCK);
+    ASTBlock *block = node->get_child(FUNC_BLOCK)->as<ASTBlock>();
 
     Function *func = node->as<lang::ASTFunc>()->get_symbol();
-    ASTBlock *block = block_node->as<ASTBlock>();
-
     context.push_ast_context().cur_func = func;
+
     ParamsAnalyzer(context).analyze(params_node, block);
-    BlockAnalyzer(block_node, context).check();
+    BlockAnalyzer(block, node, context).check();
+    
+    context.merge_move_scopes_into_parent();
     context.pop_ast_context();
 }
 

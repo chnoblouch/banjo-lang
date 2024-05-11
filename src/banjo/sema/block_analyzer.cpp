@@ -15,13 +15,18 @@
 #include "symbol/magic_functions.hpp"
 #include "symbol/standard_types.hpp"
 #include "symbol/symbol_table.hpp"
+#include <vector>
 
 namespace lang {
 
-BlockAnalyzer::BlockAnalyzer(ASTNode *node, SemanticAnalyzerContext &context) : node(node), context(context) {}
+BlockAnalyzer::BlockAnalyzer(ASTBlock *node, ASTNode *parent, SemanticAnalyzerContext &context)
+  : node(node),
+    context(context),
+    move_scope(parent, node, context) {}
 
 bool BlockAnalyzer::check() {
     context.push_ast_context().cur_block = node->as<ASTBlock>();
+    context.push_move_scope(&move_scope);
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         ASTNode *child = node->get_child(i);
@@ -55,7 +60,9 @@ bool BlockAnalyzer::check() {
         }
     }
 
+    context.pop_move_scope();
     context.pop_ast_context();
+    
     return true;
 }
 
@@ -163,21 +170,24 @@ bool BlockAnalyzer::analyze_compound_assign(ASTNode *node) {
 }
 
 bool BlockAnalyzer::analyze_if(ASTNode *node) {
-    for (ASTNode *element_node : node->get_children()) {
-        if (element_node->get_type() == AST_IF || element_node->get_type() == AST_ELSE_IF) {
-            ASTNode *condition_node = element_node->get_child(IF_CONDITION);
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        ASTNode *child = node->get_child(i);
+
+        if (child->get_type() == AST_IF || child->get_type() == AST_ELSE_IF) {
+            ASTNode *condition_node = child->get_child(IF_CONDITION);
             ExprAnalyzer(condition_node, context).check();
 
-            if (element_node->has_child(IF_BLOCK)) {
-                ASTNode *block_node = element_node->get_child(IF_BLOCK);
-                BlockAnalyzer(block_node, context).check();
+            if (child->has_child(IF_BLOCK)) {
+                ASTBlock *block = child->get_child(IF_BLOCK)->as<ASTBlock>();
+                BlockAnalyzer(block, child, context).check();
             }
-        } else if (element_node->get_type() == AST_ELSE) {
-            ASTNode *block_node = element_node->get_child();
-            BlockAnalyzer(block_node, context).check();
+        } else if (child->get_type() == AST_ELSE) {
+            ASTBlock *block = child->get_child()->as<ASTBlock>();
+            BlockAnalyzer(block, child, context).check();
         }
     }
 
+    context.merge_move_scopes_into_parent();
     return true;
 }
 
@@ -192,48 +202,58 @@ bool BlockAnalyzer::analyze_switch(ASTNode *node) {
         return false;
     }
 
+    bool ok = true;
+
     for (ASTNode *child : cases_node->get_children()) {
         if (child->get_type() == AST_SWITCH_CASE) {
             Identifier *var_name_node = child->get_child(0)->as<Identifier>();
             ASTNode *var_type_node = child->get_child(1);
-            ASTNode *block_node = child->get_child(2);
+            ASTBlock *block = child->get_child(2)->as<ASTBlock>();
 
             const std::string &var_name = var_name_node->get_value();
 
             TypeAnalyzer::Result type_result = TypeAnalyzer(context).analyze(var_type_node);
             if (type_result.result != SemaResult::OK) {
-                return false;
+                ok = false;
+                break;
             }
 
             DataType *type = type_result.type;
             LocalVariable *local = new LocalVariable(var_name_node, type, var_name);
             var_name_node->set_symbol(local);
-            block_node->as<ASTBlock>()->get_symbol_table()->add_local_variable(local);
+            block->get_symbol_table()->add_local_variable(local);
 
-            if (!BlockAnalyzer(block_node, context).check()) {
-                return false;
+            if (!BlockAnalyzer(block, child, context).check()) {
+                ok = false;
+                break;
             }
         } else if (child->get_type() == AST_SWITCH_DEFAULT_CASE) {
-            ASTNode *block_node = child->get_child(0);
-            if (!BlockAnalyzer(block_node, context).check()) {
-                return false;
+            ASTBlock *block = child->get_child(0)->as<ASTBlock>();
+
+            if (!BlockAnalyzer(block, child, context).check()) {
+                ok = false;
+                break;
             }
         }
     }
 
-    return true;
+    context.merge_move_scopes_into_parent();
+    return ok;
 }
 
 bool BlockAnalyzer::analyze_try(ASTNode *node) {
+    bool ok = true;
+
     for (ASTNode *child : node->get_children()) {
         if (child->get_type() == AST_TRY_SUCCESS_CASE) {
             Identifier *var_node = child->get_child(0)->as<Identifier>();
             ASTNode *expr_node = child->get_child(1);
-            ASTBlock *block_node = child->get_child(2)->as<ASTBlock>();
+            ASTBlock *block = child->get_child(2)->as<ASTBlock>();
 
             ExprAnalyzer expr_analyzer(expr_node, context);
             if (!expr_analyzer.check()) {
-                return false;
+                ok = false;
+                break;
             }
 
             DataType *var_type;
@@ -243,50 +263,54 @@ bool BlockAnalyzer::analyze_try(ASTNode *node) {
                 var_type = StandardTypes::get_result_value_type(expr_analyzer.get_type());
             } else {
                 context.register_error(expr_node, ReportText::ID::ERR_CANNOT_UNWRAP, expr_analyzer.get_type());
-                return false;
+                ok = false;
+                break;
             }
 
             const std::string &var_name = var_node->get_value();
             LocalVariable *local = new LocalVariable(var_node, var_type, var_name);
             var_node->set_symbol(local);
-            block_node->get_symbol_table()->add_local_variable(local);
+            block->get_symbol_table()->add_local_variable(local);
 
-            DeinitAnalyzer(context).analyze_local(block_node->as<ASTBlock>(), local);
-            BlockAnalyzer(block_node, context).check();
+            DeinitAnalyzer(context).analyze_local(block->as<ASTBlock>(), local);
+            BlockAnalyzer(block, child, context).check();
         } else if (child->get_type() == AST_TRY_ERROR_CASE) {
             Identifier *var_node = child->get_child(0)->as<Identifier>();
             ASTNode *type_node = child->get_child(1);
-            ASTBlock *block_node = child->get_child(2)->as<ASTBlock>();
+            ASTBlock *block = child->get_child(2)->as<ASTBlock>();
 
             TypeAnalyzer::Result type_result = TypeAnalyzer(context).analyze(type_node);
             if (type_result.result != SemaResult::OK) {
-                return false;
+                ok = false;
+                break;
             }
 
             DataType *var_type = type_result.type;
             const std::string &var_name = var_node->get_value();
             LocalVariable *local = new LocalVariable(var_node, var_type, var_name);
             var_node->set_symbol(local);
-            block_node->get_symbol_table()->add_local_variable(local);
+            block->get_symbol_table()->add_local_variable(local);
 
-            DeinitAnalyzer(context).analyze_local(block_node->as<ASTBlock>(), local);
-            BlockAnalyzer(block_node, context).check();
+            DeinitAnalyzer(context).analyze_local(block->as<ASTBlock>(), local);
+            BlockAnalyzer(block, child, context).check();
         } else if (child->get_type() == AST_TRY_ELSE_CASE) {
             ASTBlock *block_node = child->get_child(0)->as<ASTBlock>();
-            BlockAnalyzer(block_node, context).check();
+            BlockAnalyzer(block_node, child, context).check();
         }
     }
 
-    return true;
+    context.merge_move_scopes_into_parent();
+    return ok;
 }
 
 bool BlockAnalyzer::analyze_while(ASTNode *node) {
     ASTNode *condition_node = node->get_child(WHILE_CONDITION);
-    ASTNode *block_node = node->get_child(WHILE_BLOCK);
+    ASTBlock *block = node->get_child(WHILE_BLOCK)->as<ASTBlock>();
 
     bool condition_ok = ExprAnalyzer(condition_node, context).check();
-    bool block_ok = BlockAnalyzer(block_node, context).check();
+    bool block_ok = BlockAnalyzer(block, node, context).check();
 
+    context.merge_move_scopes_into_parent();
     return condition_ok && block_ok;
 }
 
@@ -294,7 +318,7 @@ bool BlockAnalyzer::analyze_for(ASTNode *node) {
     ASTNode *iter_type_node = node->get_child(FOR_ITER_TYPE);
     Identifier *var_node = node->get_child(FOR_VAR)->as<Identifier>();
     ASTNode *expr_node = node->get_child(FOR_EXPR);
-    ASTBlock *block_node = node->get_child(FOR_BLOCK)->as<ASTBlock>();
+    ASTBlock *block = node->get_child(FOR_BLOCK)->as<ASTBlock>();
 
     ExprAnalyzer expr_analyzer(expr_node, context);
     if (!expr_analyzer.check()) {
@@ -329,11 +353,12 @@ bool BlockAnalyzer::analyze_for(ASTNode *node) {
     const std::string &var_name = var_node->get_value();
     LocalVariable *local = new LocalVariable(var_node, var_type, var_name);
     var_node->set_symbol(local);
-    block_node->get_symbol_table()->add_local_variable(local);
+    block->get_symbol_table()->add_local_variable(local);
 
-    DeinitAnalyzer(context).analyze_local(block_node, local);
-    BlockAnalyzer(block_node, context).check();
+    DeinitAnalyzer(context).analyze_local(block, local);
+    BlockAnalyzer(block, node, context).check();
 
+    context.merge_move_scopes_into_parent();
     return true;
 }
 

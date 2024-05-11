@@ -1,6 +1,7 @@
 #ifndef BLOCK_ANALYZER_H
 #define BLOCK_ANALYZER_H
 
+#include "ast/ast_block.hpp"
 #include "ast/ast_node.hpp"
 #include "sema/semantic_analyzer_context.hpp"
 
@@ -11,9 +12,10 @@ class BlockAnalyzer {
 private:
     ASTNode *node;
     SemanticAnalyzerContext &context;
+    MoveScope move_scope;
 
 public:
-    BlockAnalyzer(ASTNode *node, SemanticAnalyzerContext &context);
+    BlockAnalyzer(ASTBlock *node, ASTNode *parent_node, SemanticAnalyzerContext &context);
     bool check();
 
 private:

@@ -24,12 +24,12 @@ void DeinitIRBuilder::build() {
         info->flag_reg = flag_reg;
     }
 
-    for (const lang::ValueMove &move : node->as<lang::ASTBlock>()->get_value_moves()) {
-        assert(move.deinit_info->flag_reg != -1);
+    for (const lang::ValueMove &use : node->as<lang::ASTBlock>()->get_value_moves()) {
+        assert(use.deinit_info->flag_reg != -1);
 
         context.append_store(
             ir::Operand::from_int_immediate(0, FLAG_TYPE),
-            ir::Operand::from_register(move.deinit_info->flag_reg, ir::Primitive::ADDR)
+            ir::Operand::from_register(use.deinit_info->flag_reg, ir::Primitive::ADDR)
         );
     }
 }

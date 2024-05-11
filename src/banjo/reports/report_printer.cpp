@@ -58,6 +58,7 @@ void ReportPrinter::print_report(const Report &report) {
     set_color("[97;22m");
     std::cerr << ": " << report.get_message().text << "\n";
     print_message_location(*report.get_message().location);
+    std::cerr << "\n";
 
     for (const ReportMessage &note : report.get_notes()) {
         set_color("[36;22m");
@@ -68,9 +69,10 @@ void ReportPrinter::print_report(const Report &report) {
         if (note.location) {
             print_message_location(*note.location);
         }
+
+        std::cerr << "\n";
     }
 
-    std::cerr << "\n";
     set_color("[0m");
 }
 

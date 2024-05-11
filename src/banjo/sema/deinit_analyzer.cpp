@@ -17,15 +17,22 @@ void DeinitAnalyzer::analyze_param(ASTBlock *block, Parameter *param) {
 
 void DeinitAnalyzer::analyze_var(ASTBlock *block, Variable *var, LocationElement location_element) {
     DataType *type = var->get_data_type();
-    if (type->get_kind() != DataType::Kind::STRUCT) {
-        return;
+
+    switch (type->get_kind()) {
+        case DataType::Kind::STRUCT: create_struct_info(block, var, location_element); break;
+        case DataType::Kind::UNION: create_union_info(block, var, location_element); break;
+        default: break;
     }
+}
+
+void DeinitAnalyzer::create_struct_info(ASTBlock *block, Variable *var, LocationElement location_element) {
+    Structure *struct_ = var->get_data_type()->get_structure();
 
     DeinitInfo &info = var->get_deinit_info();
-    info.has_deinit = type->get_structure()->get_method_table().get_function(MagicFunctions::DEINIT);
+    info.has_deinit = struct_->get_method_table().get_function(MagicFunctions::DEINIT);
     info.location.add_element(location_element);
 
-    for (StructField *field : type->get_structure()->get_fields()) {
+    for (StructField *field : struct_->get_fields()) {
         create_member_info(info, field);
     }
 
@@ -54,6 +61,10 @@ void DeinitAnalyzer::create_member_info(DeinitInfo &info, StructField *field) {
     if (field->is_no_deinit()) {
         info.member_info[index].set_unmanaged();
     }
+}
+
+void DeinitAnalyzer::create_union_info(ASTBlock *block, Variable* var, LocationElement location_element) {
+
 }
 
 void DeinitAnalyzer::register_info_on_block(DeinitInfo &info, ASTBlock *block) {

@@ -305,20 +305,6 @@ bool LocationAnalyzer::check_top_level(ASTNode *node, SymbolRef symbol) {
         } else if (symbol.get_kind() == SymbolKind::PARAM) {
             deinit_info = &symbol.get_param()->get_deinit_info();
         }
-
-        if (deinit_info && deinit_info->has_deinit && deinit_info->is_moved) {
-            context.register_error(node->get_range())
-                .set_message(ReportText(ReportText::ID::ERR_USE_AFTER_MOVE).str())
-                .add_note(ReportMessage{
-                    ReportText(ReportText::ID::NOTE_USE_AFTER_MOVE_PREVIOUS).str(),
-                    {
-                        context.get_ast_context().cur_module->get_path(),
-                        deinit_info->last_move->get_range(),
-                    },
-                });
-
-            return false;
-        }
     }
 
     return true;
@@ -338,7 +324,7 @@ bool LocationAnalyzer::check_self(ASTNode *node) {
     const SymbolRef &self_symbol = context.get_ast_context().enclosing_symbol;
 
     DataType *base = context.get_type_manager().new_data_type();
-    
+
     switch (self_symbol.get_kind()) {
         case SymbolKind::STRUCT: base->set_to_structure(self_symbol.get_struct()); break;
         case SymbolKind::UNION: base->set_to_union(self_symbol.get_union()); break;
@@ -506,12 +492,36 @@ bool LocationAnalyzer::is_moving_value() {
 }
 
 void LocationAnalyzer::add_move(DeinitInfo *deinit_info) {
-    deinit_info->is_moved = true;
-    deinit_info->last_move = node;
-
     if (deinit_info->has_deinit) {
-        ASTBlock *cur_block = context.get_ast_context().cur_block;
-        cur_block->add_value_move(ValueMove{node, deinit_info});
+        std::optional<ValueMove> prev_move = context.get_prev_move(deinit_info, context.get_cur_move_scope());
+        if (prev_move) {
+            ASTNode *note_node = prev_move->node;
+            SourceLocation note_location{ASTUtils::find_module(note_node)->get_path(), note_node->get_range()};
+            ReportMessage note{ReportText(ReportText::ID::NOTE_USE_AFTER_MOVE_PREVIOUS).str(), note_location};
+            context.register_error(node, ReportText::ID::ERR_USE_AFTER_MOVE).add_note(note);
+            return;
+        }
+
+        ASTNodeType cur_move_scope_type = context.get_cur_move_scope()->node->get_type();
+
+        if (cur_move_scope_type == AST_WHILE || cur_move_scope_type == AST_FOR) {
+            ASTNode *def_node = deinit_info->location.get_elements()[0].get_local()->get_node();
+
+            if (!context.get_cur_move_scope()->node->is_ancestor_of(def_node)) {
+                SourceLocation note_location{ASTUtils::find_module(def_node)->get_path(), def_node->get_range()};
+                ReportMessage note{ReportText(ReportText::ID::NOTE_USE_AFTER_MOVE_IN_LOOP).str(), note_location};
+                context.register_error(node, ReportText::ID::ERR_USE_AFTER_MOVE).add_note(note);
+                return;
+            }
+        }
+
+        ValueMove move{
+            .node = node,
+            .deinit_info = deinit_info,
+        };
+
+        context.get_ast_context().cur_block->add_value_move(move);
+        context.get_cur_move_scope()->moves.push_back(move);
     }
 
     for (DeinitInfo &member_info : deinit_info->member_info) {

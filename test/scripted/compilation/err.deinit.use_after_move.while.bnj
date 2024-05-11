@@ -1,0 +1,15 @@
+#! error: value used after move
+
+struct Object {
+    func __deinit__(self) {}
+}
+
+func consume(object: Object) {}
+
+func main() {
+    var object = Object {};
+	
+	while true {
+		consume(object);
+	}
+}

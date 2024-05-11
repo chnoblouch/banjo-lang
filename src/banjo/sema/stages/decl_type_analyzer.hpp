@@ -4,7 +4,6 @@
 #include "ast/ast_node.hpp"
 #include "ast/decl.hpp"
 #include "sema/semantic_analyzer.hpp"
-#include "symbol/union.hpp"
 
 #include <optional>
 #include <utility>

@@ -21,9 +21,7 @@ struct DeinitInfo {
     ir::VirtualRegister flag_reg = -1;
     std::vector<DeinitInfo> member_info;
     Location location;
-    bool is_moved = false;
-    ASTNode *last_move;
-
+    
     void set_unmanaged();
 };
 

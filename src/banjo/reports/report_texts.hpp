@@ -53,7 +53,8 @@ public:
 
         WARN_MISSING_FIELD,
 
-        NOTE_USE_AFTER_MOVE_PREVIOUS
+        NOTE_USE_AFTER_MOVE_PREVIOUS,
+        NOTE_USE_AFTER_MOVE_IN_LOOP,
     };
 
 private:

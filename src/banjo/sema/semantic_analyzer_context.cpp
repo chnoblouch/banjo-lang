@@ -18,6 +18,11 @@ SymbolTable *ASTContext::get_cur_symbol_table() const {
     }
 }
 
+MoveScope::MoveScope(ASTNode *node, ASTBlock *block, SemanticAnalyzerContext &context)
+  : parent(context.get_cur_move_scope()),
+    node(node),
+    block(block) {}
+
 SemanticAnalyzerContext::SemanticAnalyzerContext(
     SemanticAnalyzer &sema,
     ModuleManager &module_manager,
@@ -114,6 +119,42 @@ void SemanticAnalyzerContext::add_symbol_use(SymbolRef symbol_ref, Identifier *u
     if (symbol) {
         ASTModule *cur_module = get_ast_context().cur_module;
         symbol->add_use({cur_module, use});
+    }
+}
+
+void SemanticAnalyzerContext::push_move_scope(MoveScope *move_scope) {
+    cur_move_scope = move_scope;
+}
+
+void SemanticAnalyzerContext::pop_move_scope() {
+    for (ValueMove move : cur_move_scope->moves) {
+        cur_sub_scope_moves.push_back(move);
+    }
+
+    cur_move_scope = cur_move_scope->parent;
+}
+
+void SemanticAnalyzerContext::merge_move_scopes_into_parent() {
+    if (cur_move_scope) {
+        for (ValueMove move : cur_sub_scope_moves) {
+            cur_move_scope->moves.push_back(move);
+        }
+    }
+
+    cur_sub_scope_moves.clear();
+}
+
+std::optional<ValueMove> SemanticAnalyzerContext::get_prev_move(DeinitInfo *info, MoveScope *scope) {
+    for (const ValueMove &move : scope->moves) {
+        if (move.deinit_info == info) {
+            return move;
+        }
+    }
+
+    if (scope->parent) {
+        return get_prev_move(info, scope->parent);
+    } else {
+        return {};
     }
 }
 

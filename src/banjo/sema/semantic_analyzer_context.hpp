@@ -12,6 +12,7 @@
 #include "symbol/symbol_ref.hpp"
 #include "target/target.hpp"
 
+#include <optional>
 #include <stack>
 #include <string>
 #include <unordered_map>
@@ -19,6 +20,9 @@
 #include <vector>
 
 namespace lang {
+
+class SemanticAnalyzerContext;
+class SemanticAnalyzer;
 
 struct ASTContext {
     ASTModule *cur_module;
@@ -44,9 +48,14 @@ struct ASTContext {
     DataType *get_generic_type_value(const std::string &name) const { return generic_types.at(name); }
 };
 
-class SemanticAnalyzerContext;
+struct MoveScope {
+    MoveScope *parent;
+    ASTNode *node;
+    ASTBlock *block;
+    std::vector<ValueMove> moves;
 
-class SemanticAnalyzer;
+    MoveScope(ASTNode *node, ASTBlock *block, SemanticAnalyzerContext &context);
+};
 
 class SemanticAnalyzerContext {
 
@@ -69,6 +78,9 @@ private:
 
     SemanticAnalysis analysis{.is_valid = true, .reports = {}};
     std::vector<Report> new_reports;
+
+    MoveScope *cur_move_scope = nullptr;
+    std::vector<ValueMove> cur_sub_scope_moves;
 
 public:
     SemanticAnalyzerContext(
@@ -109,9 +121,10 @@ public:
     void set_track_symbol_uses(bool track_symbol_uses) { this->track_symbol_uses = track_symbol_uses; }
 
     template <typename... FormatArgs>
-    void register_error(ASTNode *node, ReportText::ID text_id, FormatArgs... format_args) {
+    Report &register_error(ASTNode *node, ReportText::ID text_id, FormatArgs... format_args) {
         SourceLocation location{get_ast_context().cur_module->get_path(), node->get_range()};
         new_reports.push_back({Report::Type::ERROR, {location, text_id, format_args...}});
+        return new_reports.back();
     }
 
     bool is_complete(SymbolTable *symbol_table);
@@ -120,9 +133,19 @@ public:
 
     void process_identifier(SymbolRef symbol, Identifier *use);
     void add_symbol_use(SymbolRef symbol_ref, Identifier *use);
+
+    MoveScope *get_cur_move_scope() { return cur_move_scope; }
+    void push_move_scope(MoveScope *move_scope);
+    void pop_move_scope();
+    void merge_move_scopes_into_parent();
+    std::optional<ValueMove> get_prev_move(DeinitInfo *info, MoveScope *scope);
 };
 
-enum class SemaResult { OK, ERROR, INCOMPLETE };
+enum class SemaResult {
+    OK,
+    ERROR,
+    INCOMPLETE,
+};
 
 } // namespace lang
 
