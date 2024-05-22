@@ -36,21 +36,21 @@ Structs support type parameters as well:
 
 ```banjo
 struct Pair[A, B] {
-	var a: A;
-	var b: B;
-	
-	pub func new(a: A, b: B) -> Pair[A, B] {
-		return Pair[A, B] { a, b };
-	}
+    var a: A;
+    var b: B;
+    
+    pub func new(a: A, b: B) -> Pair[A, B] {
+        return Pair[A, B] { a, b };
+    }
 }
 
 func main() {
-	var pair1 = Pair[f32, bool] {
-		a: 0.5,
-		b: true
-	};
-	
-	var pair2 = Pair[String, i32].new("text", 10);
+    var pair1 = Pair[f32, bool] {
+        a: 0.5,
+        b: true
+    };
+    
+    var pair2 = Pair[String, i32].new("text", 10);
 }
 
 ```
@@ -59,14 +59,14 @@ If you want a function to take an arbitrary number of parameters, you can use pa
 
 ```banjo
 func print_all[T: ...](values: T) {
-	print("values: ");
+    print("values: ");
 
     meta for value in values {
         print(value);
-		print(" ");
+        print(" ");
     }
-	
-	print("\n");
+    
+    print("\n");
 }
 
 func main() {
