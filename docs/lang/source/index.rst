@@ -17,7 +17,7 @@ The Banjo Programming Language
    magic_methods
    moving
    closures
-   iterators
+   generics
    meta
    attributes
    build_system

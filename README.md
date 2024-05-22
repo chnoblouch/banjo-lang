@@ -42,7 +42,7 @@ After building, add the `install/bin` directory to your `PATH` variable. Now you
 
 The compiler is written completely from scratch and emits either object files or assembly code depending on the target architecture and operating system. These targets are currently supported:
 
-- `x86_64-windows-msvc`: 64-bit Windows using MSVC (Microsoft Visual Studio) libraries
+- `x86_64-windows-msvc`: 64-bit Windows using MSVC (Microsoft Visual C++) libraries
 - `x86_64-windows-gnu`: 64-bit Windows using MinGW (GNU) libraries
 - `x86_64-linux-gnu`: x86-64/amd64 Linux using GNU libraries 
 - `x86_64-macos`: Intel macOS
@@ -82,23 +82,23 @@ The hot reloader is a tool that watches source files for changes, recompiles the
         - `emit`: Generating assembly and machine code
             - `elf`: Generating ELF binaries (the binary format of Linux)
             - `pe`: Generating PE binaries (the binary format of Windows)
-        - `ir`: the SSA intermediate representation
-        - `ir_builder`: Generating SSA from AST nodes
-        - `lexer`: Breaking source code up into tokens
-        - `mcode`: The intermediate representation for target-dependent machine instructions
+        - `ir`: SSA intermediate representation
+        - `ir_builder`: SSA IR generator
+        - `lexer`: Tokenizing source code
+        - `mcode`: Intermediate representation for target-dependent machine instructions
         - `parser`: Parsing tokens into an AST
         - `passes`: SSA analysis and optimization passes
-        - `reports`: Generating errors and warnings
-        - `sema`: Semantic analysis of the AST
-        - `source`: Data structures for storing source code
-        - `symbol`: Symbols attached to the AST
+        - `reports`: Printing errors and warnings
+        - `sema`: Semantic analyzer
+        - `source`: Data structures for loading and storing source files
+        - `symbol`: Representations of symbols and types
         - `target`: Target-specific backends
-            - `aarch64`: aarch64/arm64 backend
+            - `aarch64`: AArch64/arm64 backend
             - `x86_64`: x86-64/amd64 backend
         - `utils`: Utility functions and structures
-    - `banjo-compiler`: Compiler executable
-    - `banjo-lsp`: Language server executable
-    - `banjo-hot-reloader`: Hot reloader executable (Windows only)
+    - `banjo-compiler`: The compiler
+    - `banjo-lsp`: The language server
+    - `banjo-hot-reloader`: The hot reloader (Windows only)
     - `bindgen`: Tool for generating bindings for C libraries
     - `cli`: CLI tool that wraps all other tools
 - `lib`: Libraries used by the compiler and linker

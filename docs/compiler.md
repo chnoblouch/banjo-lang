@@ -197,7 +197,7 @@ If you want to know what other peephole optimizations are possible, look at the 
 
 #### Control Flow Optimization
 
-Simplies the [control flow graph (CFG)](https://en.wikipedia.org/wiki/Control-flow_graph). The CFG stores the predecessors and successors of each basic block of a function. The CFG optimization pass merges basic blocks into their predecessors if they only have one and removes unreachable basic blocks.
+Simplifies the [control flow graph (CFG)](https://en.wikipedia.org/wiki/Control-flow_graph). The CFG stores the predecessors and successors of each basic block of a function. The CFG optimization pass merges basic blocks into their predecessors if they only have one and removes unreachable basic blocks.
 
 #### Stack To Register Pass
 
