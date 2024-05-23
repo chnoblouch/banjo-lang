@@ -4,12 +4,12 @@
 #include "codegen/ir_lowerer.hpp"
 #include "codegen/machine_pass_runner.hpp"
 #include "config/config.hpp"
-#include "emit/x86_64_encoder.hpp"
 #include "ir/addr_table.hpp"
 #include "ir_builder/root_ir_builder.hpp"
 #include "passes/addr_table_pass.hpp"
 #include "reports/report_printer.hpp"
 #include "sema/semantic_analyzer.hpp"
+#include "target/x86_64/x86_64_encoder.hpp"
 
 JITCompiler::JITCompiler(lang::Config &config, AddrTable &addr_table)
   : config(config),
@@ -75,5 +75,5 @@ BinModule JITCompiler::compile_func(const std::string &name) {
     partial_ir_module.forget_pointers();
 
     codegen::MachinePassRunner(target_descr).create_and_run(machine_module);
-    return X8664Encoder().encode(machine_module);
+    return target::X8664Encoder().encode(machine_module);
 }

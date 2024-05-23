@@ -9,6 +9,8 @@
 #include <variant>
 #include <vector>
 
+namespace target {
+
 class X8664Encoder : public BinaryBuilder {
 
 private:
@@ -263,5 +265,7 @@ private:
     bool fits_in_i8(std::int64_t value);
     bool fits_in_32_bits(Immediate imm);
 };
+
+} // namespace target
 
 #endif

@@ -1,8 +1,7 @@
-#include "emit/x86_64_encoder.hpp"
-
+#include "target/x86_64/x86_64_encoder.hpp"
+#include "emit/nasm_emitter.hpp"
 #include "target/x86_64/x86_64_opcode.hpp"
 #include "target/x86_64/x86_64_register.hpp"
-#include "emit/nasm_emitter.hpp"
 
 #include <chrono>
 #include <cstdlib>
@@ -52,7 +51,7 @@ void test_instr(std::string source, Instruction instr, std::vector<std::uint8_t>
     basic_block.append(instr);
     func->get_basic_blocks().append(basic_block);
 
-    BinModule encoded_module = X8664Encoder().encode(module_);
+    BinModule encoded_module = target::X8664Encoder().encode(module_);
     std::vector<std::uint8_t> encoding = encoded_module.text.get_data();
 
     std::cout << source << std::string(40 - source.size(), ' ');

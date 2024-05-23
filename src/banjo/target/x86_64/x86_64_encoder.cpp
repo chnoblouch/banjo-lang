@@ -7,6 +7,8 @@
 #include <iostream>
 #include <limits>
 
+namespace target {
+
 constexpr unsigned MAX_RELAXATION_PASSES = 4;
 
 BinModule X8664Encoder::encode(mcode::Module &machine_module) {
@@ -1371,3 +1373,5 @@ bool X8664Encoder::fits_in_32_bits(Immediate imm) {
     std::int64_t value = imm.value;
     return value >= std::numeric_limits<std::int32_t>::min() && value <= std::numeric_limits<std::int32_t>::max();
 }
+
+} // namespace target

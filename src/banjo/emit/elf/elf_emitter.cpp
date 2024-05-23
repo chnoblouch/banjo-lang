@@ -1,14 +1,14 @@
 #include "elf_emitter.hpp"
 
 #include "emit/elf/elf_builder.hpp"
-#include "emit/x86_64_encoder.hpp"
+#include "target/x86_64/x86_64_encoder.hpp"
 #include "utils/timing.hpp"
 
 namespace codegen {
 
 void ELFEmitter::generate() {
     PROFILE_SCOPE_BEGIN("x86-64 encoder");
-    BinModule module_ = X8664Encoder().encode(module);
+    BinModule module_ = target::X8664Encoder().encode(module);
     PROFILE_SCOPE_END("x86-64 encoder");
 
     PROFILE_SCOPE_BEGIN("ELF builder");

@@ -21,7 +21,6 @@ add_library(banjo STATIC
     emit/clang_asm_emitter.cpp
     emit/debug_emitter.cpp
     emit/nasm_emitter.cpp
-    emit/x86_64_encoder.cpp
     emit/pe/pe_builder.cpp
     emit/pe/pe_emitter.cpp
     emit/pe/pe_format.cpp
@@ -156,6 +155,7 @@ add_library(banjo STATIC
     target/x86_64/sys_v_calling_conv.cpp
     target/x86_64/x86_64_addr_lowering.cpp
     target/x86_64/x86_64_const_lowering.cpp
+    target/x86_64/x86_64_encoder.cpp
     target/x86_64/x86_64_ir_lowerer.cpp
     target/x86_64/x86_64_peephole_opt_pass.cpp
     target/x86_64/x86_64_reg_analyzer.cpp

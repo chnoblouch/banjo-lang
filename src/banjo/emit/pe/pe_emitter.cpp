@@ -1,14 +1,14 @@
 #include "pe_emitter.hpp"
 
 #include "emit/pe/pe_builder.hpp"
-#include "emit/x86_64_encoder.hpp"
+#include "target/x86_64/x86_64_encoder.hpp"
 #include "utils/timing.hpp"
 
 namespace codegen {
 
 void PEEmitter::generate() {
     PROFILE_SCOPE_BEGIN("x86-64 encoder");
-    BinModule bin_module = X8664Encoder().encode(module);
+    BinModule bin_module = target::X8664Encoder().encode(module);
     PROFILE_SCOPE_END("x86-64 encoder");
 
     // TODO: move this elsewhere
