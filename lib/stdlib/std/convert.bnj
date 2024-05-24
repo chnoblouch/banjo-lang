@@ -12,9 +12,10 @@ pub func str[T](value: T) -> String {
 	} else if type(T) == type(u16) || type(T) == type(u32) {
 		return String.from(value as u64);
 	} else if type(T) == type(f32) || type(T) == type(f64) {
-		var string = ___banjo_f64_to_string(value as f64);
-		memory.free(string as addr);
-		return String.from(string);
+		var cstr = ___banjo_f64_to_string(value as f64);
+		var string = String.from(cstr);
+		memory.free(cstr as addr);
+		return string;
 	} else if type(T) == type(u8) {
 		var string = String.new();
 		string.append(value);
