@@ -2,7 +2,6 @@
 #define AARCH64_IR_LOWERER_H
 
 #include "codegen/ir_lowerer.hpp"
-#include "utils/bit_operations.hpp"
 
 namespace target {
 
@@ -58,6 +57,7 @@ public:
     void lower_truncate(ir::Instruction &instr);
     void lower_fpromote(ir::Instruction &instr);
     void lower_fdemote(ir::Instruction &instr);
+    void lower_utof(ir::Instruction &instr);
     void lower_stof(ir::Instruction &instr);
     void lower_ftou(ir::Instruction &instr);
     void lower_ftos(ir::Instruction &instr);

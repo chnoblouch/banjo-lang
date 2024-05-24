@@ -37,6 +37,7 @@ const std::unordered_map<mcode::Opcode, std::string> ClangAsmEmitter::OPCODE_NAM
     {target::AArch64Opcode::FDIV, "fdiv"},
     {target::AArch64Opcode::FCVT, "fcvt"},
     {target::AArch64Opcode::SCVTF, "scvtf"},
+    {target::AArch64Opcode::UCVTF, "ucvtf"},
     {target::AArch64Opcode::FCVTZS, "fcvtzs"},
     {target::AArch64Opcode::FCVTZU, "fcvtzu"},
     {target::AArch64Opcode::FCSEL, "fcsel"},

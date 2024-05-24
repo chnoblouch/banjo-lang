@@ -35,6 +35,7 @@ enum {
     FDIV,
     FCVT,
     SCVTF,
+    UCVTF,
     FCVTZS,
     FCVTZU,
     FCSEL,

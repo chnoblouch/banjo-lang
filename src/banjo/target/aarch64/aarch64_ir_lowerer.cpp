@@ -5,6 +5,7 @@
 #include "target/aarch64/aarch64_opcode.hpp"
 #include "target/aarch64/aarch64_register.hpp"
 #include "utils/macros.hpp"
+#include "utils/bit_operations.hpp"
 
 namespace target {
 
@@ -422,6 +423,15 @@ void AArch64IRLowerer::lower_fpromote(ir::Instruction& instr) {
 void AArch64IRLowerer::lower_fdemote(ir::Instruction& instr) {
     emit(mcode::Instruction(AArch64Opcode::FCVT, {
         mcode::Operand::from_register(lower_reg(*instr.get_dest()), 4),
+        lower_value(instr.get_operand(0))
+    }));
+}
+
+void AArch64IRLowerer::lower_utof(ir::Instruction &instr) {
+    int size = get_size(instr.get_operand(1).get_type());
+
+    emit(mcode::Instruction(AArch64Opcode::UCVTF, {
+        mcode::Operand::from_register(lower_reg(*instr.get_dest()), size),
         lower_value(instr.get_operand(0))
     }));
 }

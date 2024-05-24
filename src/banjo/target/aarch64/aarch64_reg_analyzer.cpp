@@ -108,6 +108,7 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
         case FMOV:
         case FCVT:
         case SCVTF:
+        case UCVTF:
         case FCVTZS:
         case FCVTZU:
         case ADRP:
@@ -218,6 +219,7 @@ bool AArch64RegAnalyzer::is_float_instr(mcode::Instruction &instr) {
         case FDIV:
         case FCVT:
         case SCVTF:
+        case UCVTF:
         case FCSEL:
         case FCMP: return true;
         default: return instr.is_flag(mcode::Instruction::FLAG_FLOAT);
