@@ -8,6 +8,7 @@
 #include "sema/expr_analyzer.hpp"
 #include "sema/params_analyzer.hpp"
 #include "symbol/symbol_ref.hpp"
+#include <cassert>
 
 namespace lang {
 
@@ -37,7 +38,7 @@ void DeclBodyAnalyzer::analyze_func(ASTFunc *node) {
 
     ParamsAnalyzer(context).analyze(params_node, block);
     BlockAnalyzer(block, node, context).check();
-    
+
     context.merge_move_scopes_into_parent();
     context.pop_ast_context();
 }
@@ -60,7 +61,16 @@ void DeclBodyAnalyzer::analyze_var(ASTVar *node) {
 }
 
 void DeclBodyAnalyzer::analyze_struct(ASTStruct *node) {
+    ASTNode *proto_impls = node->get_child(STRUCT_IMPL_LIST);
     ASTNode *block = node->get_child(STRUCT_BLOCK);
+
+    for (ASTNode *proto_impl : proto_impls->get_children()) {
+        const std::string &name = proto_impl->get_value();
+        std::optional<SymbolRef> proto_symbol = context.get_ast_context().get_cur_symbol_table()->get_symbol(name);
+        assert(proto_symbol->get_kind() == SymbolKind::PROTO);
+        Protocol* proto = proto_symbol->get_proto();
+        node->get_symbol()->add_proto_impl(proto);
+    }
 
     context.push_ast_context().enclosing_symbol = node->get_symbol();
     for (ASTNode *child : block->get_children()) {

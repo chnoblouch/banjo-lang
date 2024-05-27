@@ -133,6 +133,7 @@ add_library(banjo STATIC
     symbol/method_table.cpp
     symbol/module_path.cpp
     symbol/parameter.cpp
+    symbol/protocol.cpp
     symbol/standard_types.cpp
     symbol/structure.cpp
     symbol/symbol_ref.cpp

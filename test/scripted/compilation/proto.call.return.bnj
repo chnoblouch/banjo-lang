@@ -1,0 +1,34 @@
+#! output: socket,-4;file,27;socket,-4;
+
+proto Stream {
+    func read(self) -> i32;
+}
+
+struct File : Stream {
+    func read(self) -> i32 {
+        print("file,");
+        return 27;
+    }
+}
+
+struct Socket : Stream {
+    func read(self) -> i32 {
+        print("socket,");
+        return -4;
+    }
+}
+
+func read_from(stream: *Stream) {
+    var value = stream.read();
+    print(value);
+    print(";");
+}
+
+func main() {
+    var file = File {};
+    var socket = Socket {};
+
+    read_from(&socket);
+    read_from(&file);
+    read_from(&socket);
+}

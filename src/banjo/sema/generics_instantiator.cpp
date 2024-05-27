@@ -2,6 +2,7 @@
 
 #include "ast/ast_block.hpp"
 #include "ast/ast_child_indices.hpp"
+#include "ast/ast_node.hpp"
 #include "ast/ast_utils.hpp"
 #include "ast/decl.hpp"
 #include "ir_builder/name_mangling.hpp"
@@ -98,6 +99,7 @@ GenericStructInstance *GenericsInstantiator::instantiate_struct(
         struct_node->set_range(generic_struct_node->get_range());
         struct_node->set_parent(generic_struct_node->get_parent());
         struct_node->append_child(name_node->clone());
+        struct_node->append_child(new ASTNode(AST_IMPL_LIST));
 
         ASTBlock *block = block_node->as<ASTBlock>();
         ASTBlock *block_clone = block->clone_block(parent_symbol_table);

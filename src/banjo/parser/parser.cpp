@@ -125,6 +125,7 @@ void Parser::parse_block_child(ASTBlock *block) {
         case TKN_STRUCT: result = DeclParser(*this).parse_struct(); break;
         case TKN_ENUM: result = DeclParser(*this).parse_enum(); break;
         case TKN_UNION: result = DeclParser(*this).parse_union(); break;
+        case TKN_PROTO: result = DeclParser(*this).parse_proto(); break;
         case TKN_TYPE: result = parse_type_alias_or_explicit_type(); break;
         case TKN_CASE: result = DeclParser(*this).parse_union_case(); break;
         case TKN_SELF: result = parse_expr_or_assign(); break;
@@ -214,13 +215,21 @@ AttributeList *Parser::parse_attribute_list() {
     return attr_list;
 }
 
-ParseResult Parser::parse_list(ASTNodeType type, TokenType terminator, ListElementParser element_parser) {
+ParseResult Parser::parse_list(
+    ASTNodeType type,
+    TokenType terminator,
+    const ListElementParser &element_parser,
+    bool consume_terminator /* = true */
+) {
     NodeBuilder node = new_node();
     stream.consume(); // Consume starting token
 
     while (true) {
         if (stream.get()->is(terminator)) {
-            stream.consume();
+            if (consume_terminator) {
+                stream.consume();
+            }
+
             return node.build(type);
         } else {
             ParseResult result = element_parser(node);
@@ -232,7 +241,10 @@ ParseResult Parser::parse_list(ASTNodeType type, TokenType terminator, ListEleme
         }
 
         if (stream.get()->is(terminator)) {
-            stream.consume();
+            if (consume_terminator) {
+                stream.consume();
+            }
+
             return node.build(type);
         } else if (stream.get()->is(TKN_COMMA)) {
             stream.consume();

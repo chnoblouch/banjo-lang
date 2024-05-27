@@ -48,6 +48,7 @@ enum TokenType {
     TKN_ENUM,
     TKN_UNION,
     TKN_CASE,
+    TKN_PROTO,
     TKN_FALSE,
     TKN_TRUE,
     TKN_NULL,

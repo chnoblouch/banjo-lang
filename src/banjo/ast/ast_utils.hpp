@@ -26,6 +26,7 @@ GenericStruct *resolve_generic_struct(const ModulePath &path, SymbolTable *symbo
 void iterate_funcs(lang::SymbolTable *symbol_table, std::function<void(lang::Function *)> callback);
 void iterate_structs(lang::SymbolTable *symbol_table, std::function<void(lang::Structure *)> callback);
 void iterate_unions(lang::SymbolTable *symbol_table, std::function<void(lang::Union *)> callback);
+void iterate_protos(lang::SymbolTable *symbol_table, std::function<void(lang::Protocol *)> callback);
 
 } // namespace ASTUtils
 

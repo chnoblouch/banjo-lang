@@ -81,6 +81,8 @@ StoredValue ExprIRBuilder::build_node(lang::ASTNode *node, const StorageHints &h
             data_builder.build_and_store(data_ptr);
 
             return stored_val;
+        } else if (lang_type->is_ptr_to(lang::DataType::Kind::PROTO)) {
+            return build_implicit_proto_ptr(expr, hints);
         }
     }
 
@@ -491,7 +493,8 @@ StoredValue ExprIRBuilder::build_union_case_expr(lang::ASTNode *node, const Stor
 
 StoredValue ExprIRBuilder::build_func_call(lang::ASTNode *node, const StorageHints &hints) {
     FuncCallIRBuilder func_call_builder(context, node);
-    ir::VirtualRegister dst = func_call_builder.build(hints.dst ? *hints.dst : StorageHints::NONE, true);
+    StorageHints storage_hints = hints.dst ? *hints.dst : StorageHints::NONE;
+    ir::VirtualRegister dst = func_call_builder.build(storage_hints, true);
 
     ir::Type type = context.build_type(lang_type);
 
@@ -617,6 +620,29 @@ StoredValue ExprIRBuilder::build_implicit_result(lang::Expr *expr) {
     ir::Value val = val_builder.build_into_value_if_possible().value_or_ptr;
 
     return IRBuilderUtils::build_call(func, {val}, context);
+}
+
+StoredValue ExprIRBuilder::build_implicit_proto_ptr(lang::Expr *expr, const StorageHints &hints) {
+    lang::Structure *struct_ = get_coercion_base()->get_base_data_type()->get_structure();
+    lang::Protocol *proto = expr->get_data_type()->get_base_data_type()->get_protocol();
+    lang::ProtoImpl *proto_impl = struct_->get_matching_proto_impl(proto);
+
+    ir::Type type = context.get_tuple_struct({ir::Primitive::ADDR, ir::Primitive::ADDR});
+    StoredValue stored_val = StoredValue::alloc(type, hints, context);
+
+    ir::VirtualRegister data_ptr_reg = context.append_memberptr(stored_val.value_type, stored_val.value_or_ptr, 0);
+    ir::Value data_ptr = ir::Value::from_register(data_ptr_reg, ir::Primitive::ADDR);
+
+    ExprIRBuilder data_ptr_builder(context, expr);
+    data_ptr_builder.set_coercion_level(coercion_level + 1);
+    data_ptr_builder.build_into_value().copy_to(data_ptr, context);
+
+    ir::VirtualRegister vtable_ptr_reg = context.append_memberptr(stored_val.value_type, stored_val.value_or_ptr, 1);
+    ir::Value vtable_ptr = ir::Value::from_register(vtable_ptr_reg, ir::Primitive::ADDR);
+    ir::Value global = ir::Value::from_global(proto_impl->ir_vtable_name, ir::Primitive::ADDR);
+    context.append_store(global, vtable_ptr);
+
+    return stored_val;
 }
 
 char ExprIRBuilder::encode_char(const std::string &value, unsigned &index) {

@@ -57,6 +57,7 @@ private:
     StoredValue build_bool_expr(lang::ASTNode *node, const StorageHints &hints);
     StoredValue build_implicit_optional(lang::Expr *expr);
     StoredValue build_implicit_result(lang::Expr *expr);
+    StoredValue build_implicit_proto_ptr(lang::Expr *expr, const StorageHints &hints);
     char encode_char(const std::string &value, unsigned &index);
     StoredValue build_cstr_string_literal(const std::string &value);
     StoredValue build_offset_ptr(const StoredValue &pointer, const StoredValue &index, ir::Type base_type);

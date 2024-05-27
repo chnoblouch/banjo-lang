@@ -50,6 +50,7 @@ void DeclNameAnalyzer::analyze_symbol(ASTNode *node) {
         case AST_STRUCT_DEFINITION: analyze_struct(node->as<ASTStruct>()); break;
         case AST_ENUM_DEFINITION: analyze_enum(node->as<ASTEnum>()); break;
         case AST_UNION: analyze_union(node->as<ASTUnion>()); break;
+        case AST_PROTO: analyze_proto(node->as<ASTProto>()); break;
         case AST_TYPE_ALIAS: analyze_type_alias(node->as<ASTTypeAlias>()); break;
         case AST_GENERIC_FUNCTION_DEFINITION: analyze_generic_func(node->as<ASTGenericFunc>()); break;
         case AST_GENERIC_STRUCT_DEFINITION: analyze_generic_struct(node->as<ASTGenericStruct>()); break;
@@ -200,6 +201,16 @@ void DeclNameAnalyzer::analyze_union(ASTUnion *node) {
         sema.run_name_stage(child);
     }
     sema.get_context().pop_ast_context();
+}
+
+void DeclNameAnalyzer::analyze_proto(ASTProto *node) {
+    Identifier *name_node = node->get_child(PROTO_NAME)->as<Identifier>();
+
+    const std::string &name = name_node->get_value();
+    node->set_symbol(Protocol(node, name));
+    name_node->set_symbol(node->get_symbol());
+
+    sema.get_context().get_ast_context().get_cur_symbol_table()->add_protocol(node->get_symbol());
 }
 
 void DeclNameAnalyzer::analyze_type_alias(ASTTypeAlias *node) {

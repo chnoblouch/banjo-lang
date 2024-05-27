@@ -30,6 +30,7 @@ private:
     bool analyze_struct(ASTStruct *node);
     bool analyze_enum(ASTEnum *node);
     bool analyze_union(ASTUnion *node);
+    bool analyze_proto(ASTProto *node);
     bool analyze_type_alias(ASTTypeAlias *node);
     bool analyze_generic_func(ASTGenericFunc *node);
     bool analyze_generic_struct(ASTGenericStruct *node);

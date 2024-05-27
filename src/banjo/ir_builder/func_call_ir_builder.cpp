@@ -15,28 +15,19 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
 
     LocationIRBuilder location_builder(context, location_node, infer_params());
     StoredValue location = location_builder.build(false);
-
+    lang::Function *func = location_builder.get_lang_func();
     lang::DataType *location_type = location_node->get_location()->get_type();
 
     type = location_type->get_function_type();
     ir::Type return_type = context.build_type(type.return_type);
-    bool return_by_ref = false;
-    bool is_method = false;
-
-    lang::Function *func = location_builder.get_lang_func();
-    if (func) {
-        return_by_ref = func->is_return_by_ref();
-        is_method = func->is_method();
-    } else {
-        // TODO: return_by_ref
-        return_by_ref = false;
-        is_method = false;
-    }
+    bool return_by_ref = context.get_target()->get_data_layout().is_return_by_ref(return_type);
+    bool is_method = func ? func->is_method() : location_node->get_location()->get_last_element().is_proto_method();
 
     std::vector<ir::Operand> call_instr_operands;
-    ir::Type func_return_type = return_by_ref ? ir::Type(ir::Primitive::VOID) : return_type;
 
     if (func) {
+        ir::Type func_return_type = return_by_ref ? ir::Type(ir::Primitive::VOID) : return_type;
+
         if (func->get_ir_func()) {
             call_instr_operands.push_back(ir::Operand::from_func(func->get_ir_func(), func_return_type));
         } else {
@@ -82,8 +73,6 @@ ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result
 
     for (int i = 0; i < args_node->get_children().size(); i++) {
         lang::ASTNode *argument = args_node->get_child(i);
-        int param_index = is_method ? i + 1 : i;
-        ir::Type param_type = context.build_type(type.param_types[param_index]);
         call_instr_operands.push_back(ExprIRBuilder(context, argument).build_into_value_if_possible().value_or_ptr);
     }
 

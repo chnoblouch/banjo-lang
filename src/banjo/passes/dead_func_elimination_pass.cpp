@@ -10,9 +10,16 @@ void DeadFuncEliminationPass::run(ir::Module &mod) {
     this->mod = &mod;
 
     std::vector<ir::Function *> roots;
+    
     for (ir::Function *func : mod.get_functions()) {
         if (func->is_global()) {
             roots.push_back(func);
+        }
+    }
+
+    for (ir::Global &global : mod.get_globals()) {
+        if (global.get_initial_value().is_func()) {
+            roots.push_back(global.get_initial_value().get_func());
         }
     }
 

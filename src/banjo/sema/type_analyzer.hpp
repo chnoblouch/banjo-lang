@@ -44,7 +44,7 @@ private:
     Result analyze_generic_instance_type(ASTNode *node);
     Result analyze_explicit_type(ASTNode *node);
 
-    DataType *from_symbol(SymbolRef symbol, ASTNode *node);
+    DataType *from_symbol(SymbolRef symbol);
     void resolve_dot_operator_element(ASTNode *node, SymbolTable *&symbol_table);
 
     DataType *instantiate_generic_std_type(

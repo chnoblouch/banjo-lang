@@ -8,6 +8,7 @@
 #include "symbol/data_type.hpp"
 #include "symbol/enumeration.hpp"
 #include "symbol/location.hpp"
+#include "symbol/protocol.hpp"
 #include "utils/macros.hpp"
 
 #include <cassert>
@@ -57,7 +58,7 @@ void LocationIRBuilder::build_root(const lang::LocationElement &element) {
         build_var(element.get_const());
     } else if (element.is_func()) {
         func = element.get_func();
-        
+
         ir::Type type = ir::Primitive::ADDR;
         ir::Value value;
 
@@ -155,8 +156,10 @@ void LocationIRBuilder::build_element(const lang::LocationElement &element, lang
         ir::VirtualRegister reg = context.append_memberptr(value.value_type, value.get_ptr(), index);
         ir::Type type = context.build_type(element.get_type());
         value = StoredValue::create_reference(reg, type);
+    } else if (element.is_proto_method()) {
+        build_proto_method_access(element.get_proto_method(), previous_type->get_base_data_type()->get_protocol());
     } else {
-        assert(false && "invalid non-root location element");
+        ASSERT_UNREACHABLE;
     }
 }
 
@@ -195,10 +198,10 @@ void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::S
     ir::Type base_type(struct_->get_ir_struct());
     ir::Operand base = ir::Operand::from_register(dst, ir::Primitive::ADDR);
     unsigned field_index = struct_->get_field_index(field);
-    ir::VirtualRegister offset_ptr_reg = context.append_memberptr(base_type, base, field_index);
-    
+    ir::VirtualRegister member_ptr_reg = context.append_memberptr(base_type, base, field_index);
+
     ir::Type type = context.build_type(field->get_type());
-    value = StoredValue::create_reference(offset_ptr_reg, type);
+    value = StoredValue::create_reference(member_ptr_reg, type);
 
     dst = context.get_current_func()->next_virtual_reg();
 }
@@ -206,6 +209,25 @@ void LocationIRBuilder::build_ptr_field_access(lang::StructField *field, lang::S
 void LocationIRBuilder::build_ptr_method_call(lang::Function *method) {
     self = value;
     func = method;
+}
+
+void LocationIRBuilder::build_proto_method_access(lang::FunctionSignature *proto_method, lang::Protocol *proto) {
+    ir::Operand base = ir::Operand::from_register(value.get_ptr().get_register(), ir::Primitive::ADDR);
+    
+    ir::VirtualRegister self_ptr_reg = context.append_memberptr(value.value_type, base, 0);
+    ir::Value self_ptr = ir::Value::from_register(self_ptr_reg, ir::Primitive::ADDR);
+    ir::Value self_val = context.append_load(ir::Primitive::ADDR, self_ptr);
+    self = StoredValue::create_value(self_val);
+
+    ir::VirtualRegister vtable_ptr_ptr_reg = context.append_memberptr(value.value_type, base, 1);
+    ir::Value vtable_ptr_ptr = ir::Value::from_register(vtable_ptr_ptr_reg, ir::Primitive::ADDR);
+    ir::Value vtable_ptr = context.append_load(ir::Primitive::ADDR, vtable_ptr_ptr);
+    ir::Type vtable_type(proto->get_ir_vtable_struct());
+    ir::VirtualRegister method_ptr_ptr_reg = context.append_memberptr(vtable_type, vtable_ptr, proto_method->index);
+    ir::Value method_ptr_ptr = ir::Value::from_register(method_ptr_ptr_reg, ir::Primitive::ADDR);
+    value = StoredValue::create_reference(method_ptr_ptr, ir::Primitive::ADDR);
+
+    dst = context.get_current_func()->next_virtual_reg();
 }
 
 } // namespace ir_builder

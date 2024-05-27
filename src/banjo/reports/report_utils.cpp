@@ -3,6 +3,7 @@
 #include "symbol/enumeration.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/union.hpp"
+#include "symbol/protocol.hpp"
 
 namespace lang {
 
@@ -35,6 +36,8 @@ std::string ReportUtils::type_to_string(DataType *type) {
         return union_to_string(type->get_union());
     } else if (type->get_kind() == DataType::Kind::UNION_CASE) {
         return type->get_union_case()->get_name();
+    } else if (type->get_kind() == DataType::Kind::PROTO) {
+        return type->get_protocol()->get_name();
     } else if (type->get_kind() == DataType::Kind::FUNCTION) {
         const FunctionType &func_type = type->get_function_type();
 

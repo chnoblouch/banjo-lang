@@ -6,6 +6,7 @@
 #include "ast/ast_node.hpp"
 #include "ast/ast_utils.hpp"
 #include "ast/decl.hpp"
+#include "ir/global.hpp"
 #include "ir/primitive.hpp"
 #include "ir/structure.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
@@ -20,6 +21,7 @@
 #include "symbol/symbol_ref.hpp"
 #include "symbol/symbol_table.hpp"
 #include "symbol/union.hpp"
+#include <string>
 
 namespace ir_builder {
 
@@ -57,6 +59,10 @@ ir::Module RootIRBuilder::build() {
     }
 
     for (lang::ASTModule *module_node : module_list) {
+        build_ir_vtables(ir_mod, module_node);
+    }
+
+    for (lang::ASTModule *module_node : module_list) {
         context.set_current_mod_path(module_node->get_path());
         build_ir_entities(ir_mod, module_node);
     }
@@ -73,6 +79,18 @@ void RootIRBuilder::create_ir_types(ir::Module &ir_mod, lang::ASTModule *module_
 
     lang::ASTUtils::iterate_structs(symbol_table, [this, &ir_mod](lang::Structure *lang_struct) {
         create_ir_struct(ir_mod, lang_struct);
+    });
+
+    lang::ASTUtils::iterate_protos(symbol_table, [&ir_mod](lang::Protocol *lang_proto) {
+        std::string mangled_name = NameMangling::mangle_proto_name(lang_proto);
+        ir::Structure *ir_vtable_struct = new ir::Structure("vtable." + mangled_name);
+
+        for (unsigned i = 0; i < lang_proto->get_func_signatures().size(); i++) {
+            ir_vtable_struct->add({"ptr." + std::to_string(i), ir::Primitive::ADDR});
+        }
+
+        lang_proto->set_ir_vtable_struct(ir_vtable_struct);
+        ir_mod.add(ir_vtable_struct);
     });
 }
 
@@ -165,6 +183,31 @@ void RootIRBuilder::create_ir_union_members(lang::ASTNode *module_node) {
     });
 }
 
+void RootIRBuilder::build_ir_vtables(ir::Module &ir_mod, lang::ASTNode *module_node) {
+    lang::SymbolTable *symbol_table = lang::ASTUtils::get_module_symbol_table(module_node);
+
+    lang::ASTUtils::iterate_structs(symbol_table, [&ir_mod](lang::Structure *lang_struct) {
+        std::string mangled_struct_name = NameMangling::mangle_struct_name(lang_struct);
+
+        for (unsigned i = 0; i < lang_struct->get_proto_impls().size(); i++) {
+            lang::ProtoImpl &proto_impl = lang_struct->get_proto_impls()[i];
+            std::string name_prefix = "vtable." + mangled_struct_name + "." + std::to_string(i) + ".";
+
+            for (unsigned j = 0; j < proto_impl.proto->get_func_signatures().size(); j++) {
+                const std::string method_name = proto_impl.proto->get_func_signatures()[j].name;
+                lang::Function *method = lang_struct->get_method_table().get_function(method_name);
+
+                std::string name = name_prefix + std::to_string(j);
+                ir::Type type = ir::Primitive::ADDR;
+                ir::Value value = ir::Value::from_func(method->get_ir_func(), ir::Primitive::ADDR);
+                ir_mod.add(ir::Global(name, type, value));
+            }
+
+            proto_impl.ir_vtable_name = name_prefix + "0";
+        }
+    });
+}
+
 void RootIRBuilder::build_ir_entities(ir::Module &ir_mod, lang::ASTModule *ast_module) {
     lang::ASTBlock *block = ast_module->get_block();
     lang::SymbolTable *symbol_table = block->get_symbol_table();
@@ -239,9 +282,7 @@ void RootIRBuilder::build_native_global(ir::Module &ir_mod, lang::ASTNode *node,
     std::optional<lang::SymbolRef> symbol = symbol_table->get_symbol(name);
     lang::GlobalVariable *var = symbol->get_global();
 
-    ir_mod.add(
-        ir::GlobalDecl(IRBuilderUtils::get_global_var_link_name(var), context.build_type(var->get_data_type()))
-    );
+    ir_mod.add(ir::GlobalDecl(IRBuilderUtils::get_global_var_link_name(var), context.build_type(var->get_data_type())));
 }
 
 void RootIRBuilder::build_struct(lang::ASTNode *node) {

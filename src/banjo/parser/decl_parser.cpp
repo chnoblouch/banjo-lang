@@ -4,6 +4,7 @@
 #include "ast/ast_node.hpp"
 #include "ast/decl.hpp"
 #include "ast/expr.hpp"
+#include "lexer/token.hpp"
 #include "parser/expr_parser.hpp"
 #include "reports/report_texts.hpp"
 
@@ -35,9 +36,12 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
     node.append_child(new Identifier(stream.consume()));
 
     bool generic;
-    bool head_valid = parse_func_head(node, TKN_LBRACE, generic);
+    bool head_valid = parse_func_head(node, generic);
 
-    if (!stream.get()->is(TKN_LBRACE)) {
+    if (stream.get()->is(TKN_SEMI)) {
+        stream.consume(); // Consume ';'
+        return {node.build(AST_FUNC_DECL), head_valid};
+    } else if (!stream.get()->is(TKN_LBRACE)) {
         parser.report_unexpected_token(ReportText::ID::ERR_PARSE_EXPECTED, "'{'");
 
         node.append_child(parser.create_dummy_block());
@@ -103,15 +107,34 @@ ParseResult DeclParser::parse_struct() {
             return {node.build<ASTGenericStruct>(), false};
         }
         return node.build<ASTGenericStruct>();
-    } else {
-        ParseResult result = parser.parse_block();
-        node.append_child(result.node);
-
-        if (!result.is_valid) {
-            return {node.build<ASTStruct>(), false};
-        }
-        return node.build<ASTStruct>();
     }
+
+    if (stream.get()->is(TKN_COLON)) {
+        ParseResult result = parser.parse_list(AST_IMPL_LIST, TKN_LBRACE, [this](NodeBuilder &) -> ParseResult {
+            if (stream.get()->is(TKN_IDENTIFIER)) {
+                return new Identifier(stream.consume());
+            } else {
+                parser.report_unexpected_token(ReportText::ID::ERR_PARSE_EXPECTED_IDENTIFIER);
+                return {new ASTNode(AST_ERROR), false};
+            }
+        }, false);
+
+        if (result.is_valid) {
+            node.append_child(result.node);
+        } else {
+            return node.build_error();
+        }
+    } else {
+        node.append_child(new ASTNode(AST_IMPL_LIST));
+    }
+
+    ParseResult result = parser.parse_block();
+    node.append_child(result.node);
+
+    if (!result.is_valid) {
+        return {node.build<ASTStruct>(), false};
+    }
+    return node.build<ASTStruct>();
 }
 
 ParseResult DeclParser::parse_enum() {
@@ -188,6 +211,25 @@ ParseResult DeclParser::parse_union_case() {
     }
 
     return node.build<ASTUnionCase>();
+}
+
+ParseResult DeclParser::parse_proto() {
+    NodeBuilder node = parser.new_node();
+    stream.consume(); // Consume 'proto'
+
+    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+        parser.report_unexpected_token(ReportText::ID::ERR_PARSE_EXPECTED_IDENTIFIER);
+        return node.build_error();
+    }
+    node.append_child(new Identifier(stream.consume()));
+
+    ParseResult result = parser.parse_block();
+    if (!result.is_valid) {
+        return node.build_error();
+    }
+    node.append_child(result.node);
+
+    return node.build<ASTProto>();
 }
 
 ParseResult DeclParser::parse_type_alias() {
@@ -362,7 +404,7 @@ ParseResult DeclParser::parse_native_func() {
     node.append_child(new Identifier(stream.consume()));
 
     bool generic;
-    bool head_valid = parse_func_head(node, TKN_SEMI, generic);
+    bool head_valid = parse_func_head(node, generic);
     if (!head_valid) {
         return node.build_error();
     }
@@ -384,6 +426,7 @@ ParseResult DeclParser::parse_pub() {
         case TKN_ENUM: return parse_enum();
         case TKN_UNION: return parse_union();
         case TKN_CASE: return parse_union_case();
+        case TKN_PROTO: return parse_proto();
         case TKN_TYPE: return parse_type_alias();
         case TKN_NATIVE: return parse_native();
         case TKN_USE: return parse_use();
@@ -391,7 +434,7 @@ ParseResult DeclParser::parse_pub() {
     }
 }
 
-bool DeclParser::parse_func_head(NodeBuilder &node, TokenType terminator, bool &generic) {
+bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
     generic = false;
     bool valid = true;
 
@@ -429,7 +472,7 @@ bool DeclParser::parse_func_head(NodeBuilder &node, TokenType terminator, bool &
         if (!result.is_valid) {
             return false;
         }
-    } else if (stream.get()->is(terminator)) {
+    } else if (stream.get()->is(TKN_LBRACE) || stream.get()->is(TKN_SEMI)) {
         node.append_child(new Expr(AST_VOID));
     } else {
         parser.report_unexpected_token();

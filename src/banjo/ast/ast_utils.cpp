@@ -71,6 +71,7 @@ Symbol *ASTUtils::get_symbol(ASTNode *node) {
         case AST_STRUCT_DEFINITION: return node->as<ASTStruct>()->get_symbol();
         case AST_ENUM_DEFINITION: return node->as<ASTEnum>()->get_symbol();
         case AST_UNION: return node->as<ASTUnion>()->get_symbol();
+        case AST_PROTO: return node->as<ASTProto>()->get_symbol();
         case AST_TYPE_ALIAS: return node->as<ASTTypeAlias>()->get_symbol();
         case AST_GENERIC_FUNCTION_DEFINITION: return node->as<ASTGenericFunc>()->get_symbol();
         case AST_GENERIC_STRUCT_DEFINITION: return node->as<ASTGenericStruct>()->get_symbol();
@@ -162,6 +163,14 @@ void ASTUtils::iterate_unions(lang::SymbolTable *symbol_table, std::function<voi
     for (const auto &[name, symbol] : symbol_table->get_symbols()) {
         if (symbol.get_kind() == SymbolKind::UNION) {
             callback(symbol.get_union());
+        }
+    }
+}
+
+void ASTUtils::iterate_protos(lang::SymbolTable *symbol_table, std::function<void(lang::Protocol *)> callback) {
+    for (const auto &[name, symbol] : symbol_table->get_symbols()) {
+        if (symbol.get_kind() == SymbolKind::PROTO) {
+            callback(symbol.get_proto());
         }
     }
 }

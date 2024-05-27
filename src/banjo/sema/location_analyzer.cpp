@@ -14,6 +14,7 @@
 #include "sema/type_analyzer.hpp"
 #include "symbol/data_type.hpp"
 #include "symbol/enumeration.hpp"
+#include "symbol/protocol.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/union.hpp"
 #include "utils/macros.hpp"
@@ -73,22 +74,12 @@ bool LocationAnalyzer::check_identifier(ASTNode *node) {
         return false;
     }
 
-    if (type->get_kind() == DataType::Kind::ARRAY) {
-        // TODO: array members aren't always u64
-        DataType *type = context.get_type_manager().get_primitive_type(PrimitiveType::I64);
-        location.add_element(LocationElement(node->as<Expr>(), type));
-        return true;
-    } else if (type->get_kind() == DataType::Kind::STRUCT) {
-        return check_struct_member_access(node);
-    } else if (type->get_kind() == DataType::Kind::UNION) {
-        return check_union_member_access(node);
-    } else if (type->get_kind() == DataType::Kind::UNION_CASE) {
-        return check_union_case_member_access(node);
-    } else if (type->get_kind() == DataType::Kind::POINTER) {
-        return check_ptr_member_access(node);
-    } else {
-        context.register_error(node, ReportText::ERR_TYPE_NO_MEMBERS, type);
-        return false;
+    switch (type->get_kind()) {
+        case DataType::Kind::STRUCT: return check_struct_member_access(node);
+        case DataType::Kind::UNION: return check_union_member_access(node);
+        case DataType::Kind::UNION_CASE: return check_union_case_member_access(node);
+        case DataType::Kind::POINTER: return check_ptr_member_access(node);
+        default: context.register_error(node, ReportText::ERR_TYPE_NO_MEMBERS, type); return false;
     }
 }
 
@@ -174,6 +165,16 @@ bool LocationAnalyzer::check_union_case_member_access(ASTNode *node) {
 bool LocationAnalyzer::check_ptr_member_access(ASTNode *node) {
     const std::string &member_name = node->get_value();
     DataType *base_type = location.get_type()->get_base_data_type();
+
+    if (base_type->get_kind() == DataType::Kind::PROTO) {
+        FunctionSignature *func_signature = base_type->get_protocol()->get_func_signature(member_name);
+        DataType *type = context.get_type_manager().new_data_type();
+        type->set_to_function(func_signature->type);
+        location.add_element({func_signature, type});
+        
+        analyze_args_if_required({}, type);
+        return true;
+    }
 
     if (base_type->get_kind() != DataType::Kind::STRUCT && base_type->get_kind() != DataType::Kind::UNION) {
         context.register_error(node, ReportText::ERR_TYPE_NO_MEMBERS, base_type);

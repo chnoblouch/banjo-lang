@@ -62,7 +62,13 @@ private:
     ParseResult parse_type_alias_or_explicit_type();
     AttributeList *parse_attribute_list();
 
-    ParseResult parse_list(ASTNodeType type, TokenType terminator, ListElementParser element_parser);
+    ParseResult parse_list(
+        ASTNodeType type,
+        TokenType terminator,
+        const ListElementParser &element_parser,
+        bool consume_terminator = true
+    );
+
     ParseResult parse_param_list(TokenType terminator = TKN_RPAREN);
     ParseResult check_semi(ASTNode *node);
 

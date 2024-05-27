@@ -28,6 +28,7 @@ private:
     void analyze_struct(ASTStruct *node);
     void analyze_enum(ASTEnum *node);
     void analyze_union(ASTUnion *node);
+    void analyze_proto(ASTProto *node);
     void analyze_type_alias(ASTTypeAlias *node);
     void analyze_generic_func(ASTGenericFunc *node);
     void analyze_generic_struct(ASTGenericStruct *node);

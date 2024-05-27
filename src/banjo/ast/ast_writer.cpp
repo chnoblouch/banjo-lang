@@ -135,6 +135,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_BREAK: return "BREAK";
         case AST_CONTINUE: return "CONTINUE";
         case AST_FUNCTION_DEFINITION: return "FUNCTION_DEFINITION";
+        case AST_FUNC_DECL: return "FUNC_DECL";
         case AST_PARAM_LIST: return "PARAM_LIST";
         case AST_PARAM: return "PARAM";
         case AST_GENERIC_FUNCTION_DEFINITION: return "GENERIC_FUNCTION_DEFINITION";
@@ -157,6 +158,8 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_ENUM_VARIANT: return "ENUM_VARIANT";
         case AST_UNION: return "UNION";
         case AST_UNION_CASE: return "UNION_CASE";
+        case AST_PROTO: return "PROTO";
+        case AST_IMPL_LIST: return "IMPL_LIST";
         case AST_TYPE_ALIAS: return "TYPE_ALIAS";
         case AST_NATIVE_FUNCTION_DECLARATION: return "NATIVE_FUNCTION_DECLARATION";
         case AST_CALLING_CONVENTION: return "CALLING_CONVENTION";

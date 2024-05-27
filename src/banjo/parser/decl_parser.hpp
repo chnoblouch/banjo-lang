@@ -20,6 +20,7 @@ public:
     ParseResult parse_enum();
     ParseResult parse_union();
     ParseResult parse_union_case();
+    ParseResult parse_proto();
     ParseResult parse_type_alias();
     ParseResult parse_use();
     ParseResult parse_pub();
@@ -34,7 +35,7 @@ private:
     ParseResult parse_native_var();
     ParseResult parse_native_func();
 
-    bool parse_func_head(NodeBuilder &node, TokenType terminator, bool &generic);
+    bool parse_func_head(NodeBuilder &node, bool &generic);
     ParseResult parse_generic_param_list();
 };
 

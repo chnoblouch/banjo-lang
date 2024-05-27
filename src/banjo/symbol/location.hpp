@@ -2,8 +2,8 @@
 #define LOCATION_H
 
 #include "symbol/generics.hpp"
-#include "symbol/union.hpp"
 #include "symbol/symbol_ref.hpp"
+#include "symbol/union.hpp"
 
 #include <variant>
 #include <vector>
@@ -20,9 +20,10 @@ class Structure;
 class EnumVariant;
 class UnionCase;
 class UnionCaseField;
-struct SymbolGroup;
+struct FunctionSignature;
 class Expr;
 class DataType;
+struct SymbolGroup;
 
 struct LocationElement {
 
@@ -40,6 +41,7 @@ public:
         UnionCase *,
         UnionCaseField *,
         int,
+        FunctionSignature *,
         Expr *,
         GenericFunc *,
         GenericStruct *,
@@ -64,6 +66,7 @@ public:
     LocationElement(UnionCase *union_case, DataType *type) : value(union_case), type(type) {}
     LocationElement(UnionCaseField *union_case_field, DataType *type) : value(union_case_field), type(type) {}
     LocationElement(int tuple_index, DataType *type) : value(tuple_index), type(type) {}
+    LocationElement(FunctionSignature *proto_method, DataType *type) : value(proto_method), type(type) {}
     LocationElement(Expr *expr, DataType *type) : value(expr), type(type) {}
     LocationElement(GenericFunc *generic_func, DataType *type) : value(generic_func), type(type) {}
     LocationElement(GenericStruct *generic_struct, DataType *type) : value(generic_struct), type(type) {}
@@ -81,10 +84,11 @@ public:
     UnionCase *get_union_case() const { return std::get<8>(value); }
     UnionCaseField *get_union_case_field() const { return std::get<9>(value); }
     int get_tuple_index() const { return std::get<10>(value); }
-    Expr *get_expr() const { return std::get<11>(value); }
-    GenericFunc *get_generic_func() const { return std::get<12>(value); }
-    GenericStruct *get_generic_struct() const { return std::get<13>(value); }
-    SymbolGroup *get_symbol_group() const { return std::get<14>(value); }
+    FunctionSignature *get_proto_method() const { return std::get<11>(value); }
+    Expr *get_expr() const { return std::get<12>(value); }
+    GenericFunc *get_generic_func() const { return std::get<13>(value); }
+    GenericStruct *get_generic_struct() const { return std::get<14>(value); }
+    SymbolGroup *get_symbol_group() const { return std::get<15>(value); }
     DataType *get_type() const { return type; }
 
     bool is_local() const { return value.index() == 0; }
@@ -98,11 +102,12 @@ public:
     bool is_union_case() const { return value.index() == 8; }
     bool is_union_case_field() const { return value.index() == 9; }
     bool is_tuple_index() const { return value.index() == 10; }
-    bool is_expr() const { return value.index() == 11; }
-    bool is_generic_func() const { return value.index() == 12; }
-    bool is_generic_struct() const { return value.index() == 13; }
-    bool is_symbol_group() const { return value.index() == 14; }
-    bool is_type() const { return value.index() == 15; }
+    bool is_proto_method() const { return value.index() == 11; }
+    bool is_expr() const { return value.index() == 12; }
+    bool is_generic_func() const { return value.index() == 13; }
+    bool is_generic_struct() const { return value.index() == 14; }
+    bool is_symbol_group() const { return value.index() == 15; }
+    bool is_type() const { return value.index() == 16; }
 };
 
 class Location {

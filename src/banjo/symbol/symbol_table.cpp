@@ -8,6 +8,7 @@
 #include "symbol/parameter.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/union.hpp"
+#include "symbol/protocol.hpp"
 
 #include <cassert>
 
@@ -130,6 +131,10 @@ void SymbolTable::add_enum_variant(EnumVariant *enum_variant) {
 
 void SymbolTable::add_union(Union *union_) {
     symbols.insert({union_->get_name(), union_});
+}
+
+void SymbolTable::add_protocol(Protocol *protocol) {
+    symbols.insert({protocol->get_name(), protocol});
 }
 
 void SymbolTable::add_type_alias(TypeAlias *type_alias) {

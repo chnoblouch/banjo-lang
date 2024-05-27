@@ -1,0 +1,14 @@
+#! check_compiles
+
+proto OutStream {
+    func write(self, value: i32);
+}
+
+proto InStream {
+    func read(self) -> i32;
+}
+
+struct File : OutStream, InStream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}

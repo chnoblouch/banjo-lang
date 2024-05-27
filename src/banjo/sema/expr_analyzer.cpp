@@ -105,6 +105,8 @@ bool ExprAnalyzer::check() {
             coercion_chain.push_back(cur_expected);
         } else if (StandardTypes::is_string(cur_expected) && !StandardTypes::is_string(type)) {
             coercion_chain.push_back(cur_expected);
+        } else if (cur_expected->is_ptr_to(DataType::Kind::PROTO) && !type->is_ptr_to(DataType::Kind::PROTO)) {
+            coercion_chain.push_back(cur_expected);
         }
 
         coercion_chain.push_back(type);
@@ -142,7 +144,7 @@ bool ExprAnalyzer::check_int_literal() {
         } else if (expected_type->get_kind() == DataType::Kind::POINTER) {
             type = expected_type;
             return true;
-        }  else if (StandardTypes::is_optional(expected_type)) {
+        } else if (StandardTypes::is_optional(expected_type)) {
             type = StandardTypes::get_optional_value_type(expected_type);
             return true;
         } else if (StandardTypes::is_result(expected_type)) {
@@ -516,7 +518,8 @@ bool ExprAnalyzer::check_operator_neg() {
 bool ExprAnalyzer::check_operator_ref() {
     ExprAnalyzer child_checker(node->get_child(), context);
 
-    if (expected_type && expected_type->get_kind() == DataType::Kind::POINTER) {
+    if (expected_type && expected_type->get_kind() == DataType::Kind::POINTER &&
+        expected_type->get_base_data_type()->get_kind() != DataType::Kind::PROTO) {
         child_checker.set_expected_type(expected_type->get_base_data_type());
     }
 
@@ -797,6 +800,8 @@ bool ExprAnalyzer::is_implicit_cast() {
         return !StandardTypes::is_string(type);
     } else if (expected_type->get_kind() == DataType::Kind::UNION) {
         return type->get_kind() == DataType::Kind::UNION_CASE;
+    } else if (expected_type->is_ptr_to(DataType::Kind::PROTO)) {
+        return true;
     } else {
         return false;
     }

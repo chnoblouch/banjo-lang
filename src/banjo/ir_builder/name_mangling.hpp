@@ -21,6 +21,7 @@ std::string mangle_type_name(lang::DataType *type);
 std::string mangle_struct_name(lang::Structure *struct_);
 std::string mangle_union_name(lang::Union *union_);
 std::string mangle_union_case_name(lang::UnionCase *case_);
+std::string mangle_proto_name(lang::Protocol *proto);
 std::string mangle_generic_struct_name(lang::Structure *struct_, const lang::GenericInstanceArgs &instance);
 
 } // namespace NameMangling

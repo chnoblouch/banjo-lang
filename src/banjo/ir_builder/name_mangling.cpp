@@ -1,6 +1,7 @@
 #include "name_mangling.hpp"
 
 #include "ast/ast_module.hpp"
+#include "symbol/protocol.hpp"
 #include "symbol/symbol_ref.hpp"
 #include "symbol/union.hpp"
 
@@ -104,6 +105,13 @@ std::string NameMangling::mangle_union_name(lang::Union *union_) {
 
 std::string NameMangling::mangle_union_case_name(lang::UnionCase *case_) {
     return mangle_union_name(case_->get_union()) + "." + case_->get_name();
+}
+
+std::string NameMangling::mangle_proto_name(lang::Protocol *proto) {
+    // const lang::ModulePath &module_path = union_->get_module()->get_path();
+    // return mangle_mod_path(module_path) + "." + union_->get_name();
+
+    return proto->get_name();
 }
 
 std::string NameMangling::mangle_generic_struct_name(

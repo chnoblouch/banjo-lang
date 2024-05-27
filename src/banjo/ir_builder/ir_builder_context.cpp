@@ -2,6 +2,9 @@
 
 #include "ir/primitive.hpp"
 #include "ir_builder/ir_builder_utils.hpp"
+#include "symbol/data_type.hpp"
+#include "symbol/protocol.hpp"
+#include "utils/macros.hpp"
 
 #include <cassert>
 #include <utility>
@@ -236,7 +239,11 @@ ir::Type IRBuilderContext::build_type(lang::DataType *type) {
         assert(type->get_union_case()->get_ir_struct());
         return ir::Type(type->get_union_case()->get_ir_struct());
     } else if (type->get_kind() == lang::DataType::Kind::POINTER) {
-        return ir::Primitive::ADDR;
+        if (type->get_base_data_type()->get_kind() == lang::DataType::Kind::PROTO) {
+            return get_tuple_struct({ir::Primitive::ADDR, ir::Primitive::ADDR});
+        } else {
+            return ir::Primitive::ADDR;
+        }
     } else if (type->get_kind() == lang::DataType::Kind::FUNCTION) {
         return ir::Primitive::ADDR;
     } else if (type->get_kind() == lang::DataType::Kind::STATIC_ARRAY) {
@@ -255,7 +262,7 @@ ir::Type IRBuilderContext::build_type(lang::DataType *type) {
     } else if (type->get_kind() == lang::DataType::Kind::CLOSURE) {
         return get_tuple_struct({ir::Primitive::ADDR, ir::Primitive::ADDR});
     } else {
-        return ir::Primitive::VOID;
+        ASSERT_UNREACHABLE;
     }
 }
 

@@ -90,4 +90,14 @@ int Structure::get_field_index(StructField *field) {
     return -1;
 }
 
+ProtoImpl *Structure::get_matching_proto_impl(Protocol *proto) {
+    for (ProtoImpl &proto_impl : proto_impls) {
+        if (proto_impl.proto == proto) {
+            return &proto_impl;
+        }
+    }
+
+    return nullptr;
+}
+
 } // namespace lang

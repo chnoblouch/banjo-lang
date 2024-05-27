@@ -8,6 +8,7 @@
 #include "symbol/parameter.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/union.hpp"
+#include "symbol/protocol.hpp"
 #include "symbol/use.hpp"
 
 namespace lang {
@@ -46,6 +47,7 @@ void SymbolRef::destroy() {
         case SymbolKind::ENUM_VARIANT:
         case SymbolKind::UNION:
         case SymbolKind::UNION_CASE:
+        case SymbolKind::PROTO:
         case SymbolKind::TYPE_ALIAS:
         case SymbolKind::GENERIC_FUNC:
         case SymbolKind::GENERIC_STRUCT: break;
@@ -82,6 +84,7 @@ Symbol *SymbolRef::get_symbol() const {
         case SymbolKind::UNION: return get_union(); break;
         case SymbolKind::UNION_CASE: return get_union_case(); break;
         case SymbolKind::UNION_CASE_FIELD: return get_union_case_field(); break;
+        case SymbolKind::PROTO: return get_proto(); break;
         case SymbolKind::TYPE_ALIAS: return get_type_alias(); break;
         case SymbolKind::GENERIC_FUNC: return get_generic_func(); break;
         case SymbolKind::GENERIC_STRUCT: return get_generic_struct(); break;

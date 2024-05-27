@@ -71,16 +71,6 @@ public:
     void set_ir_func(ir::Function *ir_func) { this->ir_func = ir_func; }
 };
 
-class FuncOverloadList {
-
-private:
-    Function **functions;
-    int size;
-
-public:
-    FuncOverloadList(const std::vector<Function *> &functions);
-};
-
 } // namespace lang
 
 #endif

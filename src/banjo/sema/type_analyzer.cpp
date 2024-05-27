@@ -160,7 +160,7 @@ TypeAnalyzer::Result TypeAnalyzer::analyze_ident_type(ASTNode *node) {
 
     context.process_identifier(*symbol, node->as<Identifier>());
 
-    DataType *type = from_symbol(*symbol, node);
+    DataType *type = from_symbol(*symbol);
     if (!type) {
         return SemaResult::ERROR;
     }
@@ -193,7 +193,7 @@ TypeAnalyzer::Result TypeAnalyzer::analyze_dot_operator_type(ASTNode *node) {
         return SemaResult::ERROR;
     }
 
-    DataType *type = from_symbol(*symbol, node);
+    DataType *type = from_symbol(*symbol);
     if (!type) {
         return SemaResult::ERROR;
     }
@@ -336,7 +336,7 @@ TypeAnalyzer::Result TypeAnalyzer::analyze_explicit_type(ASTNode *node) {
     return result;
 }
 
-DataType *TypeAnalyzer::from_symbol(SymbolRef symbol, ASTNode *node) {
+DataType *TypeAnalyzer::from_symbol(SymbolRef symbol) {
     switch (symbol.get_kind()) {
         case SymbolKind::STRUCT: {
             DataType *type = context.get_type_manager().new_data_type();
@@ -356,6 +356,11 @@ DataType *TypeAnalyzer::from_symbol(SymbolRef symbol, ASTNode *node) {
         case SymbolKind::UNION_CASE: {
             DataType *type = context.get_type_manager().new_data_type();
             type->set_to_union_case(symbol.get_union_case());
+            return type;
+        }
+        case SymbolKind::PROTO: {
+            DataType *type = context.get_type_manager().new_data_type();
+            type->set_to_protocol(symbol.get_proto());
             return type;
         }
         case SymbolKind::TYPE_ALIAS: {

@@ -44,6 +44,7 @@ const std::unordered_map<std::string_view, TokenType> KEYWORDS{
     {"enum", TKN_ENUM},
     {"union", TKN_UNION},
     {"case", TKN_CASE},
+    {"proto", TKN_PROTO},
     {"false", TKN_FALSE},
     {"true", TKN_TRUE},
     {"null", TKN_NULL},

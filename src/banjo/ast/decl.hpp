@@ -7,6 +7,7 @@
 #include "symbol/structure.hpp"
 #include "symbol/type_alias.hpp"
 #include "symbol/union.hpp"
+#include "symbol/protocol.hpp"
 
 #include <utility>
 
@@ -74,6 +75,7 @@ typedef ASTOwningSymbol<Enumeration, AST_ENUM_DEFINITION> ASTEnum;
 typedef ASTOwningSymbol<EnumVariant, AST_ENUM_VARIANT> ASTEnumVariant;
 typedef ASTOwningSymbol<Union, AST_UNION> ASTUnion;
 typedef ASTOwningSymbol<UnionCase, AST_UNION_CASE> ASTUnionCase;
+typedef ASTOwningSymbol<Protocol, AST_PROTO> ASTProto;
 typedef ASTOwningSymbol<TypeAlias, AST_TYPE_ALIAS> ASTTypeAlias;
 typedef ASTOwningSymbol<GenericFunc, AST_GENERIC_FUNCTION_DEFINITION> ASTGenericFunc;
 typedef ASTOwningSymbol<GenericStruct, AST_GENERIC_STRUCT_DEFINITION> ASTGenericStruct;

@@ -40,7 +40,8 @@ constexpr unsigned GENERIC_INSTANTIATION_TEMPLATE = 0;
 constexpr unsigned GENERIC_INSTANTIATION_ARGS = 1;
 
 constexpr unsigned STRUCT_NAME = 0;
-constexpr unsigned STRUCT_BLOCK = 1;
+constexpr unsigned STRUCT_IMPL_LIST = 1;
+constexpr unsigned STRUCT_BLOCK = 2;
 
 constexpr unsigned GENERIC_STRUCT_NAME = 0;
 constexpr unsigned GENERIC_STRUCT_GENERIC_PARAMS = 1;
@@ -60,6 +61,9 @@ constexpr unsigned UNION_CASE_FIELDS = 1;
 
 constexpr unsigned UNION_CASE_FIELD_NAME = 0;
 constexpr unsigned UNION_CASE_FIELD_TYPE = 1;
+
+constexpr unsigned PROTO_NAME = 0;
+constexpr unsigned PROTO_BLOCK = 1;
 
 constexpr unsigned TYPE_ALIAS_NAME = 0;
 constexpr unsigned TYPE_ALIAS_UNDERLYING_TYPE = 1;

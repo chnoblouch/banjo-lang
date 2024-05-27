@@ -1,0 +1,24 @@
+#! check_compiles
+
+proto Stream {
+    func write(self, value: i32);
+    func read(self) -> i32;
+}
+
+struct File : Stream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+struct Socket : Stream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+func main() {
+    var file = File {};
+    var socket = Socket {};
+
+    var file_stream: *Stream = &file;
+    var socket_stream: *Stream = &socket;
+}

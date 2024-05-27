@@ -53,6 +53,7 @@ private:
     void build_direct_method_call(lang::Function *method);
     void build_ptr_field_access(lang::StructField *field, lang::Structure *struct_);
     void build_ptr_method_call(lang::Function *method);
+    void build_proto_method_access(lang::FunctionSignature *proto_method, lang::Protocol *proto);
 };
 
 } // namespace ir_builder

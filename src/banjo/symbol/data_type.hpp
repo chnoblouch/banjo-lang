@@ -4,7 +4,6 @@
 #include "symbol/generics.hpp"
 #include "symbol/method_table.hpp"
 #include "symbol/tuple.hpp"
-#include "symbol/union.hpp"
 
 #include <string>
 #include <variant>
@@ -17,6 +16,7 @@ class Structure;
 class Enumeration;
 class Union;
 class UnionCase;
+class Protocol;
 class DataTypeManager;
 class Function;
 
@@ -60,6 +60,7 @@ public:
         ENUM,
         UNION,
         UNION_CASE,
+        PROTO,
         POINTER,
         ARRAY,
         FUNCTION,
@@ -78,6 +79,7 @@ private:
         Enumeration *,
         UnionCase *,
         Union *,
+        Protocol *,
         DataType *,
         FunctionType,
         StaticArrayType,
@@ -94,6 +96,7 @@ public:
     Enumeration *get_enumeration() const;
     Union *get_union() const;
     UnionCase *get_union_case() const;
+    Protocol *get_protocol() const;
     DataType *get_base_data_type() const;
     const FunctionType &get_function_type() const;
     const StaticArrayType &get_static_array_type() const;
@@ -105,6 +108,7 @@ public:
     void set_to_enumeration(Enumeration *enumeration);
     void set_to_union(Union *union_);
     void set_to_union_case(UnionCase *union_case);
+    void set_to_protocol(Protocol *protocol);
     void set_to_pointer(DataType *base_data_type);
     void set_to_array(DataType *base_data_type);
     void set_to_function(FunctionType function_type);
@@ -118,6 +122,7 @@ public:
     bool is_unsigned_int();
     bool is_floating_point();
     bool is_struct(const std::string &name);
+    bool is_ptr_to(Kind base_kind);
     bool has_methods();
     MethodTable &get_method_table();
 

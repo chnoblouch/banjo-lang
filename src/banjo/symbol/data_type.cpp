@@ -35,6 +35,10 @@ UnionCase *DataType::get_union_case() const {
     return std::get<UnionCase *>(value);
 }
 
+Protocol *DataType::get_protocol() const {
+    return std::get<Protocol *>(value);
+}
+
 DataType *DataType::get_base_data_type() const {
     return std::get<DataType *>(value);
 }
@@ -80,6 +84,11 @@ void DataType::set_to_union(Union *union_) {
 void DataType::set_to_union_case(UnionCase *union_case) {
     kind = Kind::UNION_CASE;
     value = union_case;
+}
+
+void DataType::set_to_protocol(Protocol *protocol) {
+    kind = Kind::PROTO;
+    value = protocol;
 }
 
 void DataType::set_to_pointer(DataType *base_data_type) {
@@ -147,6 +156,10 @@ bool DataType::is_struct(const std::string &name) {
     return kind == Kind::STRUCT && get_structure()->get_name() == name;
 }
 
+bool DataType::is_ptr_to(Kind base_kind) {
+    return kind == Kind::POINTER && get_base_data_type()->kind == base_kind;
+}
+
 bool DataType::has_methods() {
     return kind == Kind::STRUCT || kind == Kind::UNION;
 }
@@ -172,12 +185,13 @@ bool DataType::equals(const DataType *other) const {
         return false;
     }
 
-    switch (kind) {
+    switch ( kind) {
         case Kind::PRIMITIVE: return get_primitive_type() == other->get_primitive_type();
         case Kind::STRUCT: return get_structure() == other->get_structure();
         case Kind::ENUM: return get_enumeration() == other->get_enumeration();
         case Kind::UNION: return get_union() == other->get_union();
         case Kind::UNION_CASE: return get_union_case() == other->get_union_case();
+        case Kind::PROTO: return get_protocol() == other->get_protocol();
         case Kind::POINTER:
         case Kind::ARRAY: return get_base_data_type()->equals(other->get_base_data_type());
         case Kind::FUNCTION:

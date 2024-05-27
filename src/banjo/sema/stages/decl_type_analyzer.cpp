@@ -5,6 +5,7 @@
 #include "ast/decl.hpp"
 #include "ast/expr.hpp"
 #include "sema/const_evaluator.hpp"
+#include "sema/semantic_analyzer_context.hpp"
 #include "sema/type_analyzer.hpp"
 #include "symbol/global_variable.hpp"
 #include "symbol/symbol_ref.hpp"
@@ -29,6 +30,7 @@ void DeclTypeAnalyzer::run(Symbol *symbol) {
         case AST_STRUCT_DEFINITION: analyze_struct(node->as<ASTStruct>()); break;
         case AST_ENUM_DEFINITION: analyze_enum(node->as<ASTEnum>()); break;
         case AST_UNION: analyze_union(node->as<ASTUnion>()); break;
+        case AST_PROTO: analyze_proto(node->as<ASTProto>()); break;
         case AST_TYPE_ALIAS: analyze_type_alias(node->as<ASTTypeAlias>()); break;
         case AST_GENERIC_FUNCTION_DEFINITION: analyze_generic_func(node->as<ASTGenericFunc>()); break;
         case AST_GENERIC_STRUCT_DEFINITION: analyze_generic_struct(node->as<ASTGenericStruct>()); break;
@@ -179,6 +181,13 @@ std::optional<std::vector<DataType *>> DeclTypeAnalyzer::analyze_params(ASTNode 
 
             DataType *param_type = type_manager.new_data_type();
             param_type->set_to_pointer(union_type);
+            types.push_back(param_type);
+        } else if (enclosing_symbol_kind == SymbolKind::PROTO) {
+            DataType *proto_type = type_manager.new_data_type();
+            proto_type->set_to_protocol(ast_context.enclosing_symbol.get_proto());
+
+            DataType *param_type = type_manager.new_data_type();
+            param_type->set_to_pointer(proto_type);
             types.push_back(param_type);
         } else {
             context.register_error(name_node->get_range()).set_message(ReportText::ID::ERR_INVALID_SELF_PARAM);
@@ -348,6 +357,33 @@ bool DeclTypeAnalyzer::analyze_union(ASTUnion *node) {
     context.pop_ast_context();
 
     return true;
+}
+
+bool DeclTypeAnalyzer::analyze_proto(ASTProto *node) {
+    ASTNode *block = node->get_child(PROTO_BLOCK);
+
+    context.push_ast_context().enclosing_symbol = node->get_symbol();
+    bool ok = true;
+
+    for (ASTNode *child : block->get_children()) {
+        if (child->get_type() != AST_FUNC_DECL) {
+            continue;
+        }
+
+        ASTNode *name_node = child->get_child(FUNC_NAME);
+        ASTNode *param_list = child->get_child(FUNC_PARAMS);
+        ASTNode *type_node = child->get_child(FUNC_TYPE);
+
+        auto [type, status] = analyze_func_type(param_list, type_node);
+        if (status != SemaResult::OK) {
+            ok = false;
+        }
+
+        node->get_symbol()->add_func_signature(name_node->get_value(), type);
+    }
+
+    context.pop_ast_context();
+    return ok;
 }
 
 bool DeclTypeAnalyzer::analyze_type_alias(ASTTypeAlias *node) {

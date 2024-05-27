@@ -72,6 +72,7 @@ public:
     void add_enum_variant(EnumVariant *enum_variant);
 
     void add_union(Union *union_);
+    void add_protocol(Protocol *protocol);
     void add_type_alias(TypeAlias *type_alias);
 
     std::vector<GenericFunc *> &get_generic_funcs() { return generic_funcs; }
