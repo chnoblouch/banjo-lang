@@ -8,7 +8,7 @@ enum ResourceError {
     ACCESS_DENIED,
 }
 
-func load(name: String) -> Result[*u8, ResourceError] {
+func load(name: String) -> *u8 except ResourceError {
     if name == String.from("recipe") {
         return "cookies";
     } else if name == String.from("topsecretfile") {

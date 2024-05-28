@@ -20,7 +20,7 @@ ParseResult ExprParser::parse() {
 
 ParseResult ExprParser::parse_type() {
     type_expected = true;
-    return parse_unary_level();
+    return parse_result_level();
 }
 
 ParseResult ExprParser::parse_range_level() {
@@ -105,7 +105,7 @@ ParseResult ExprParser::parse_mul_level() {
 }
 
 ParseResult ExprParser::parse_cast_level() {
-    ParseResult result = parse_unary_level();
+    ParseResult result = parse_result_level();
     if (!result.is_valid) {
         return result;
     }
@@ -122,6 +122,29 @@ ParseResult ExprParser::parse_cast_level() {
 
         cast_node.append_child(result.node);
         return cast_node.build_with_inferred_range(new Expr(AST_CAST));
+    } else {
+        return result;
+    }
+}
+
+ParseResult ExprParser::parse_result_level() {
+    ParseResult result = parse_unary_level();
+    if (!result.is_valid) {
+        return result;
+    }
+
+    if (stream.get()->is(TKN_EXCEPT)) {
+        NodeBuilder cast_node = parser.new_node();
+        cast_node.append_child(result.node);
+        stream.consume(); // Consume 'as'
+
+        result = parser.parse_type();
+        if (!result.is_valid) {
+            return cast_node.build_error();
+        }
+
+        cast_node.append_child(result.node);
+        return cast_node.build_with_inferred_range(new Expr(AST_RESULT_TYPE));
     } else {
         return result;
     }
@@ -162,7 +185,6 @@ ParseResult ExprParser::parse_post_operand() {
         else if (stream.get()->is(TKN_LPAREN)) result = parse_call_expr(current_node);
         else if (stream.get()->is(TKN_LBRACKET)) result = parse_bracket_expr(current_node);
         else if (stream.get()->is(TKN_LBRACE) && allow_struct_literals) result = parse_struct_literal(current_node);
-        else if (stream.get()->is(TKN_EXCEPT)) result = parse_result_type(current_node);
         else break;
 
         current_node = result.node;
@@ -498,23 +520,6 @@ ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
     node->append_child(lhs_node);
 
     ParseResult result = parse_struct_literal_body();
-    node->append_child(result.node);
-    node->set_range_from_children();
-
-    if (!result.is_valid) {
-        node->set_type(AST_ERROR);
-    }
-
-    return {node, result.is_valid};
-}
-
-ParseResult ExprParser::parse_result_type(ASTNode *lhs_node) {
-    stream.consume(); // Consume 'except'
-
-    ASTNode *node = new Expr(AST_RESULT_TYPE);
-    node->append_child(lhs_node);
-
-    ParseResult result = ExprParser(parser).parse();
     node->append_child(result.node);
     node->set_range_from_children();
 

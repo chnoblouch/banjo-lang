@@ -36,6 +36,7 @@ private:
     ParseResult parse_add_level();
     ParseResult parse_mul_level();
     ParseResult parse_cast_level();
+    ParseResult parse_result_level();
     ParseResult parse_unary_level();
     ParseResult parse_post_operand();
     ParseResult parse_operand();
@@ -55,7 +56,6 @@ private:
     ParseResult parse_call_expr(ASTNode *lhs_node);
     ParseResult parse_bracket_expr(ASTNode *lhs_node);
     ParseResult parse_struct_literal(ASTNode *lhs_node);
-    ParseResult parse_result_type(ASTNode *lhs_node);
 
     ParseResult parse_struct_literal_body();
     ParseResult parse_level(ParseResult (ExprParser::*child_builder)(), ASTNodeType(token_checker)(TokenType type));
