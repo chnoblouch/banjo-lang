@@ -109,6 +109,7 @@ void SemanticTokensHandler::build_tokens(std::vector<SemanticToken> &tokens, lan
                     case lang::SymbolKind::STRUCT:
                     case lang::SymbolKind::UNION:
                     case lang::SymbolKind::UNION_CASE:
+                    case lang::SymbolKind::PROTO:
                     case lang::SymbolKind::GENERIC_STRUCT:
                         tokens.push_back({range, SemanticTokenType::STRUCT, SemanticTokenModifiers::NONE});
                         break;

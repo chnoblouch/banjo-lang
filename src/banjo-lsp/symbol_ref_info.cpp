@@ -5,6 +5,7 @@
 #include "ast/ast_utils.hpp"
 #include "ast/expr.hpp"
 #include "symbol/enumeration.hpp"
+#include "symbol/protocol.hpp"
 #include "symbol/symbol.hpp"
 #include "symbol/symbol_ref.hpp"
 #include "utils/macros.hpp"
@@ -46,6 +47,7 @@ std::optional<SymbolRefInfo> SymbolRefInfo::look_up(lang::Identifier *identifier
         case lang::SymbolKind::UNION_CASE_FIELD:
             info.init_from_symbol(symbol_ref->get_union_case_field(), lang::UNION_CASE_FIELD_NAME);
             break;
+        case lang::SymbolKind::PROTO: info.init_from_symbol(symbol_ref->get_proto(), lang::PROTO_NAME); break;
         case lang::SymbolKind::TYPE_ALIAS:
             info.init_from_symbol(symbol_ref->get_type_alias(), lang::TYPE_ALIAS_NAME);
             break;
