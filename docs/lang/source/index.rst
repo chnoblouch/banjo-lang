@@ -14,6 +14,7 @@ The Banjo Programming Language
    data_types
    modules
    error_handling
+   protocols
    magic_methods
    moving
    closures

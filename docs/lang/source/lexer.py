@@ -21,6 +21,7 @@ KEYWORDS = [
     "struct",
     "enum",
     "union",
+    "proto",
     "false",
     "true",
     "null",
