@@ -2,12 +2,12 @@
 
 #include "ast/ast_module.hpp"
 #include "ast/ast_utils.hpp"
+#include "sema/decl_body_analyzer.hpp"
+#include "sema/decl_name_analyzer.hpp"
+#include "sema/decl_type_analyzer.hpp"
 #include "sema/meta_lowerer.hpp"
 #include "sema/semantic_analyzer_context.hpp"
-#include "sema/stages/decl_body_analyzer.hpp"
-#include "sema/stages/decl_name_analyzer.hpp"
-#include "sema/stages/decl_type_analyzer.hpp"
-#include "sema/stages/use_collector.hpp"
+#include "sema/use_resolver.hpp"
 #include "symbol/standard_types.hpp"
 #include "symbol/use.hpp"
 #include "utils/timing.hpp"
@@ -77,7 +77,7 @@ void SemanticAnalyzer::run_use_resolution_stage(ASTNode *node) {
     PROFILE_SCOPE("use resolution");
 
     if (node->get_type() == AST_USE) {
-        UseCollector(context).resolve_names(node);
+        UseResolver(context).run(node);
     }
 }
 

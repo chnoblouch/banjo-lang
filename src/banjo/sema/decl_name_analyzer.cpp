@@ -5,7 +5,7 @@
 #include "ast/ast_utils.hpp"
 #include "ast/decl.hpp"
 #include "ast/expr.hpp"
-#include "sema/stages/use_collector.hpp"
+#include "sema/use_collector.hpp"
 #include "symbol/symbol_ref.hpp"
 #include "symbol/symbol_table.hpp"
 #include "symbol/union.hpp"
@@ -54,7 +54,7 @@ void DeclNameAnalyzer::analyze_symbol(ASTNode *node) {
         case AST_TYPE_ALIAS: analyze_type_alias(node->as<ASTTypeAlias>()); break;
         case AST_GENERIC_FUNCTION_DEFINITION: analyze_generic_func(node->as<ASTGenericFunc>()); break;
         case AST_GENERIC_STRUCT_DEFINITION: analyze_generic_struct(node->as<ASTGenericStruct>()); break;
-        case AST_USE: UseCollector(sema.get_context()).analyze_names(node); break;
+        case AST_USE: UseCollector(sema.get_context()).run(node); break;
         default: break;
     }
 }

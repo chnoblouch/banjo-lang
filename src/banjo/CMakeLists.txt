@@ -101,6 +101,9 @@ add_library(banjo STATIC
     reports/report.cpp
     sema/block_analyzer.cpp
     sema/const_evaluator.cpp
+    sema/decl_body_analyzer.cpp
+    sema/decl_name_analyzer.cpp
+    sema/decl_type_analyzer.cpp
     sema/deinit_analyzer.cpp
     sema/expr_analyzer.cpp
     sema/function_resolution.cpp
@@ -113,10 +116,8 @@ add_library(banjo STATIC
     sema/semantic_analyzer_context.cpp
     sema/semantic_analyzer.cpp
     sema/type_analyzer.cpp
-    sema/stages/decl_body_analyzer.cpp
-    sema/stages/decl_name_analyzer.cpp
-    sema/stages/decl_type_analyzer.cpp
-    sema/stages/use_collector.cpp
+    sema/use_collector.cpp
+    sema/use_resolver.cpp
     source/file_module_loader.cpp
     source/module_discovery.cpp
     source/module_manager.cpp

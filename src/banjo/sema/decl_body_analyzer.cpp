@@ -4,10 +4,12 @@
 #include "ast/ast_child_indices.hpp"
 #include "ast/ast_node.hpp"
 #include "ast/decl.hpp"
+#include "ast/expr.hpp"
 #include "sema/block_analyzer.hpp"
 #include "sema/expr_analyzer.hpp"
 #include "sema/params_analyzer.hpp"
 #include "symbol/symbol_ref.hpp"
+
 #include <cassert>
 
 namespace lang {
@@ -68,8 +70,10 @@ void DeclBodyAnalyzer::analyze_struct(ASTStruct *node) {
         const std::string &name = proto_impl->get_value();
         std::optional<SymbolRef> proto_symbol = context.get_ast_context().get_cur_symbol_table()->get_symbol(name);
         assert(proto_symbol->get_kind() == SymbolKind::PROTO);
-        Protocol* proto = proto_symbol->get_proto();
+        Protocol *proto = proto_symbol->get_proto();
+
         node->get_symbol()->add_proto_impl(proto);
+        context.process_identifier(proto, proto_impl->as<Identifier>());
     }
 
     context.push_ast_context().enclosing_symbol = node->get_symbol();

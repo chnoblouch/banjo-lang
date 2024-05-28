@@ -32,7 +32,6 @@ private:
     std::vector<LocalVariable *> local_variables;
     std::vector<Parameter *> parameters;
     std::vector<Structure *> structures;
-    std::vector<Enumeration *> enumerations;
     std::vector<GenericFunc *> generic_funcs;
     std::vector<GenericStruct *> generic_structs;
 
@@ -66,11 +65,8 @@ public:
     Structure *get_structure(const std::string &name);
     void add_structure(Structure *structure);
 
-    std::vector<Enumeration *> &get_enumerations() { return enumerations; }
-    Enumeration *get_enumeration(const std::string &name);
     void add_enumeration(Enumeration *enumeration);
     void add_enum_variant(EnumVariant *enum_variant);
-
     void add_union(Union *union_);
     void add_protocol(Protocol *protocol);
     void add_type_alias(TypeAlias *type_alias);

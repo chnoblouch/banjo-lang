@@ -116,12 +116,7 @@ void SymbolTable::add_structure(Structure *structure) {
     symbols.insert({structure->get_name(), structure});
 }
 
-Enumeration *SymbolTable::get_enumeration(const std::string &name) {
-    return get_symbol<Enumeration, &SymbolTable::enumerations>(name);
-}
-
 void SymbolTable::add_enumeration(Enumeration *enumeration) {
-    enumerations.push_back(enumeration);
     symbols.insert({enumeration->get_name(), enumeration});
 }
 
