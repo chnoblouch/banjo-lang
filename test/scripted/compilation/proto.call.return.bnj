@@ -4,14 +4,14 @@ proto Stream {
     func read(self) -> i32;
 }
 
-struct File : Stream {
+struct File: Stream {
     func read(self) -> i32 {
         print("file,");
         return 27;
     }
 }
 
-struct Socket : Stream {
+struct Socket: Stream {
     func read(self) -> i32 {
         print("socket,");
         return -4;

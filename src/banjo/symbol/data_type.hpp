@@ -3,7 +3,6 @@
 
 #include "symbol/generics.hpp"
 #include "symbol/method_table.hpp"
-#include "symbol/tuple.hpp"
 
 #include <string>
 #include <variant>
@@ -39,11 +38,24 @@ enum PrimitiveType {
 struct FunctionType {
     std::vector<DataType *> param_types;
     DataType *return_type = nullptr;
+
+    friend bool operator==(const FunctionType &lhs, const FunctionType &rhs);
+    friend bool operator!=(const FunctionType &lhs, const FunctionType &rhs) { return !(lhs == rhs); }
 };
 
 struct StaticArrayType {
     DataType *base_type;
     unsigned length;
+
+    friend bool operator==(const StaticArrayType &lhs, const StaticArrayType &rhs);
+    friend bool operator!=(const StaticArrayType &lhs, const StaticArrayType &rhs) { return !(lhs == rhs); }
+};
+
+struct Tuple {
+    std::vector<DataType *> types;
+
+    friend bool operator==(const Tuple &lhs, const Tuple &rhs);
+    friend bool operator!=(const Tuple &lhs, const Tuple &rhs) { return !(lhs == rhs); }
 };
 
 struct GenericType {

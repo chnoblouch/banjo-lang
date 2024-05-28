@@ -9,6 +9,22 @@
 
 namespace lang {
 
+bool operator==(const FunctionType &lhs, const FunctionType &rhs) {
+    if (!DataType::equal(lhs.param_types, rhs.param_types)) {
+        return false;
+    }
+
+    return lhs.return_type->equals(rhs.return_type);
+}
+
+bool operator==(const StaticArrayType &lhs, const StaticArrayType &rhs) {
+    return lhs.base_type->equals(rhs.base_type) && lhs.length == rhs.length;
+}
+
+bool operator==(const Tuple &lhs, const Tuple &rhs) {
+    return DataType::equal(lhs.types, rhs.types);
+}
+
 DataType::DataType() {}
 
 DataType::DataType(PrimitiveType type) {
@@ -185,7 +201,7 @@ bool DataType::equals(const DataType *other) const {
         return false;
     }
 
-    switch ( kind) {
+    switch (kind) {
         case Kind::PRIMITIVE: return get_primitive_type() == other->get_primitive_type();
         case Kind::STRUCT: return get_structure() == other->get_structure();
         case Kind::ENUM: return get_enumeration() == other->get_enumeration();
@@ -195,24 +211,9 @@ bool DataType::equals(const DataType *other) const {
         case Kind::POINTER:
         case Kind::ARRAY: return get_base_data_type()->equals(other->get_base_data_type());
         case Kind::FUNCTION:
-        case Kind::CLOSURE: {
-            FunctionType func_type_a = get_function_type();
-            FunctionType func_type_b = other->get_function_type();
-
-            if (!equal(func_type_a.param_types, func_type_b.param_types)) {
-                return false;
-            }
-
-            return func_type_a.return_type->equals(func_type_b.return_type);
-        }
-        case Kind::STATIC_ARRAY: {
-            DataType *base_type_a = get_static_array_type().base_type;
-            DataType *base_type_b = other->get_static_array_type().base_type;
-            unsigned length_a = get_static_array_type().length;
-            unsigned length_b = other->get_static_array_type().length;
-            return base_type_a->equals(base_type_b) && length_a == length_b;
-        }
-        case Kind::TUPLE: return equal(get_tuple().types, other->get_tuple().types);
+        case Kind::CLOSURE: return get_function_type() == other->get_function_type();
+        case Kind::STATIC_ARRAY: return get_static_array_type() == other->get_static_array_type();
+        case Kind::TUPLE: return get_tuple() == other->get_tuple();
         case Kind::GENERIC: return false;
     }
 }

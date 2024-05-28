@@ -4,7 +4,7 @@ proto Stream {
     func read(self) -> (i32, i32);
 }
 
-struct File : Stream {
+struct File: Stream {
     var value: i32;
 
     func read(self) -> (i32, i32) {
@@ -12,7 +12,7 @@ struct File : Stream {
     }
 }
 
-struct Socket : Stream {
+struct Socket: Stream {
     var value: i32;
 
     func read(self) -> (i32, i32) {

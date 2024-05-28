@@ -1,0 +1,18 @@
+#! error: missing implementation of 'f' from protocol 'P'
+
+proto P {
+    func f(self);
+}
+
+struct S: P {}
+
+#! error: missing implementation of 'f1' from protocol 'P'
+
+proto P {
+    func f0(self);
+    func f1(self);
+}
+
+struct S: P {
+    func f0(self) {}
+}

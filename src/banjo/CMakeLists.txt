@@ -139,7 +139,6 @@ add_library(banjo STATIC
     symbol/structure.cpp
     symbol/symbol_ref.cpp
     symbol/symbol_table.cpp
-    symbol/tuple.cpp
     symbol/union.cpp
     symbol/variable.cpp
     target/standard_data_layout.cpp

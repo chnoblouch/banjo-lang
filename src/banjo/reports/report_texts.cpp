@@ -43,6 +43,9 @@ const std::map<ReportText::ID, std::string> TEXTS = {
     {ReportText::ID::ERR_INVALID_TYPE_FIELD, "invalid type field '%'"},
     {ReportText::ID::ERR_INVALID_TYPE_METHOD, "invalid type method '%'"},
     {ReportText::ID::ERR_CANNOT_UNWRAP, "cannot unwrap value of type '%'"},
+    {ReportText::ID::ERR_NOT_PROTOCOL, "'%' is not a protocol"},
+    {ReportText::ID::ERR_PROTO_IMPL_MISSING_FUNC, "missing implementation of '%' from protocol '%'"},
+    {ReportText::ID::ERR_SIGNATURE_MISMATCH, "signature of '%' does not match signature from protocol '%'"},
 
     {ReportText::ID::WARN_MISSING_FIELD, "missing field(s) in initializer of '%'"},
 

@@ -110,14 +110,12 @@ ParseResult DeclParser::parse_struct() {
     }
 
     if (stream.get()->is(TKN_COLON)) {
-        ParseResult result = parser.parse_list(AST_IMPL_LIST, TKN_LBRACE, [this](NodeBuilder &) -> ParseResult {
-            if (stream.get()->is(TKN_IDENTIFIER)) {
-                return new Identifier(stream.consume());
-            } else {
-                parser.report_unexpected_token(ReportText::ID::ERR_PARSE_EXPECTED_IDENTIFIER);
-                return {new ASTNode(AST_ERROR), false};
-            }
-        }, false);
+        ParseResult result = parser.parse_list(
+            AST_IMPL_LIST,
+            TKN_LBRACE,
+            [this](NodeBuilder &) { return ExprParser(parser).parse_type(); },
+            false
+        );
 
         if (result.is_valid) {
             node.append_child(result.node);

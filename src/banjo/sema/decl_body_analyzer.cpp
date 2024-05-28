@@ -8,6 +8,8 @@
 #include "sema/block_analyzer.hpp"
 #include "sema/expr_analyzer.hpp"
 #include "sema/params_analyzer.hpp"
+#include "sema/type_analyzer.hpp"
+#include "symbol/data_type.hpp"
 #include "symbol/symbol_ref.hpp"
 
 #include <cassert>
@@ -63,24 +65,67 @@ void DeclBodyAnalyzer::analyze_var(ASTVar *node) {
 }
 
 void DeclBodyAnalyzer::analyze_struct(ASTStruct *node) {
+    Structure *struct_ = node->get_symbol();
+
+    ASTNode *name_node = node->get_child(STRUCT_NAME);
     ASTNode *proto_impls = node->get_child(STRUCT_IMPL_LIST);
     ASTNode *block = node->get_child(STRUCT_BLOCK);
 
     for (ASTNode *proto_impl : proto_impls->get_children()) {
-        const std::string &name = proto_impl->get_value();
-        std::optional<SymbolRef> proto_symbol = context.get_ast_context().get_cur_symbol_table()->get_symbol(name);
-        assert(proto_symbol->get_kind() == SymbolKind::PROTO);
-        Protocol *proto = proto_symbol->get_proto();
+        TypeAnalyzer::Result result = TypeAnalyzer(context).analyze(proto_impl);
+        if (result.result != SemaResult::OK) {
+            continue;
+        }
 
-        node->get_symbol()->add_proto_impl(proto);
-        context.process_identifier(proto, proto_impl->as<Identifier>());
+        if (result.type->get_kind() != DataType::Kind::PROTO) {
+            context.register_error(proto_impl, ReportText::ID::ERR_NOT_PROTOCOL, result.type);
+            continue;
+        }
+
+        Protocol *proto = result.type->get_protocol();
+        struct_->add_proto_impl(proto);
     }
 
-    context.push_ast_context().enclosing_symbol = node->get_symbol();
+    context.push_ast_context().enclosing_symbol = struct_;
     for (ASTNode *child : block->get_children()) {
         sema.run_body_stage(child);
     }
     context.pop_ast_context();
+
+    for (ProtoImpl &proto_impl : struct_->get_proto_impls()) {
+        const std::string &proto_name = proto_impl.proto->get_name();
+
+        for (const FunctionSignature &func_signature : proto_impl.proto->get_func_signatures()) {
+            const std::string &func_name = func_signature.name;
+            Function *method = struct_->get_method_table().get_function(func_name);
+
+            if (!method) {
+                context.register_error(name_node, ReportText::ID::ERR_PROTO_IMPL_MISSING_FUNC, func_name, proto_name);
+                continue;
+            }
+
+            bool signature_matches = true;
+
+            if (method->get_type().param_types.size() == func_signature.type.param_types.size()) {
+                for (unsigned i = 1; i < method->get_type().param_types.size(); i++) {
+                    if (!method->get_type().param_types[i]->equals(func_signature.type.param_types[i])) {
+                        signature_matches = false;
+                        break;
+                    }
+                }
+
+                if (signature_matches && !method->get_type().return_type->equals(func_signature.type.return_type)) {
+                    signature_matches = false;
+                }
+            } else {
+                signature_matches = false;
+            }
+
+            if (!signature_matches) {
+                context.register_error(name_node, ReportText::ID::ERR_SIGNATURE_MISMATCH, func_name, proto_name);
+            }
+        }
+    }
 }
 
 void DeclBodyAnalyzer::analyze_union(ASTUnion *node) {

@@ -4,7 +4,7 @@ proto Stream {
     func write(self, value: i32);
 }
 
-struct File : Stream {
+struct File: Stream {
     func write(self, value: i32) {
         print("file,");
         print(value);
@@ -12,7 +12,7 @@ struct File : Stream {
     }
 }
 
-struct Socket : Stream {
+struct Socket: Stream {
     func write(self, value: i32) {
         print("socket,");
         print(value);
