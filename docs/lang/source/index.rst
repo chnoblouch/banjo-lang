@@ -9,9 +9,9 @@ The Banjo Programming Language
    :hidden:
 
    getting_started
-   basics
+   the_basics
    statements
-   data_types
+   types
    modules
    error_handling
    protocols

@@ -1,4 +1,4 @@
-# Data Types
+# Types
 
 ## Primitives
 

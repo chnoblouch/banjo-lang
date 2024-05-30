@@ -184,7 +184,7 @@ Removes functions that are never called or referenced.
 
 #### Peephole Optimizer
 
-Performs simple optimizations such as transforming `b = a + 0` into `a = b`.
+Performs simple optimizations such as transforming `b = a + 0` into `b = a`.
 
 Here's a list of optimization tricks the peephole optimizer currently knows:
 - Replacing `x + 0` and `x - 0` with `x`
@@ -227,7 +227,7 @@ Codegen is the target-specific phase of the compiler. This phase generates machi
 
 The IR is lowered into actual machine instructions. The registers and stack slots are not assigned yet to physical registers during this phase. The variables from the IR are converted to _virtual registers_ instead.
 
-The lowerer doesn't just mechanically translate from SSA instructions to machine instructions. It's also capable of detecting patterns and optimizing them. For example, the instruction `%2 = mul %1, 3` is lowered to `lea %2, [%1 + 2 * %1]` on x86-64, because `LEA` instructions have lower latency than `IMUL` instructions. The lowerer also tries to minimize memory accesses to float constants by storing the constant in a register if it used by multiple instructions that are close to each other.
+The lowerer doesn't just mechanically translate from SSA instructions to machine instructions. It's also capable of detecting patterns and optimizing them. For example, the instruction `%2 = mul %1, 3` is lowered to `lea %2, [%1 + 2 * %1]` on x86-64, because `LEA` instructions have lower latency than `IMUL` instructions. The lowerer also tries to minimize memory accesses to float constants by storing the constant in a register if it is used by multiple instructions that are close to each other.
 
 #### Register Allocation
 

@@ -1,5 +1,4 @@
-Basics
-======
+# The Basics
 
 Functions are defined using the `func` keyword.
 The following snippet declares the `main` function, which is the entry point to our programs:
@@ -37,6 +36,16 @@ The type of a variable can be inferred by the compiler:
 func main() {
     var x = 100;  # the type is inferred as 'i32'
     var flag = true;  # the type is inferred as 'bool'
+}
+```
+
+Constants are defined using the `const` keyword:
+
+```banjo
+const SECONDS_PER_HOUR: i32 = 60 * 60;
+
+func main() {
+    println(SECONDS_PER_HOUR);
 }
 ```
 
