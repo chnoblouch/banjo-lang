@@ -28,6 +28,7 @@ private:
     ASTNode *node;
     SemanticAnalyzerContext &context;
     SymbolUsage usage;
+    DataType *expected_type = nullptr;
 
     SymbolTable *cur_symbol_table;
     Location location;
@@ -37,7 +38,7 @@ private:
 
 public:
     LocationAnalyzer(ASTNode *node, SemanticAnalyzerContext &context, SymbolUsage usage = {});
-
+    void set_expected_type(DataType *expected_type) { this->expected_type = expected_type; }
     SemaResult check();
     const Location &get_location() const { return location; }
 

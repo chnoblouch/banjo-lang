@@ -5,7 +5,7 @@ func run_closure(closure: |i32| -> void) {
 }
 
 func get_closure() -> |i32| -> void {
-	var suffix = "!";
+	var suffix: *u8 = "!";
 
 	return |value: i32| -> void {
 		print(value);

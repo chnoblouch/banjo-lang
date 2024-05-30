@@ -19,10 +19,12 @@ class MetaLowerer {
 
 private:
     SemanticAnalyzerContext &context;
+    DataType *expected_type = nullptr;
     std::vector<MetaExpansion> expansions;
 
 public:
     MetaLowerer(SemanticAnalyzerContext &context);
+    void set_expected_type(DataType *expected_type) { this->expected_type = expected_type; }
     void lower(ASTNode *node);
     bool lower_meta_if(ASTNode *node, unsigned index_in_parent);
     bool lower_meta_for(ASTNode *node, unsigned index_in_parent);

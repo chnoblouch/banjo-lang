@@ -1,6 +1,6 @@
 #! output: Test;100;true;5,10;
 
-func display(value: *u8) {
+func display(value: String) {
 	print(value);
 	print(";");
 }

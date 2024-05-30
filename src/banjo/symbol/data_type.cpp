@@ -176,6 +176,10 @@ bool DataType::is_ptr_to(Kind base_kind) {
     return kind == Kind::POINTER && get_base_data_type()->kind == base_kind;
 }
 
+bool DataType::is_ptr_to(PrimitiveType base_primitive) {
+    return is_ptr_to(Kind::PRIMITIVE) && get_base_data_type()->get_primitive_type() == base_primitive;
+}
+
 bool DataType::has_methods() {
     return kind == Kind::STRUCT || kind == Kind::UNION;
 }

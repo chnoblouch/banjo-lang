@@ -22,29 +22,29 @@ pub func str[T](value: T) -> String {
 		return string;
 	} else if type(T) == type(bool) {
 		if value {
-			return String.from("true");
+			return "true";
 		} else {
-			return String.from("false");
+			return "false";
 		}
 	} else if type(T).is_enum {
 		meta for variant in type(T).variants {
 			if variant.1 as i64 == value as i64 {
-				return String.from(variant.0);
+				return variant.0;
 			}
 		}
 	} else if type(T).has_method("__str__") {
 		return value.__str__();
 	} else if type(T).is_struct {
-		var string: String = "";
+		var string = "";
 		stringify_struct[T](&string, value, 0);
 		return string;
 	} else {
-		return String.from("?");
+		return "?";
 	}
 }
 
 func stringify_struct[T](string: *String, value: T, indent: u32) {
-	string.append_cstr(type(T).name);
+	string.append_str(type(T).name);
 	string.append_cstr(" {\n");
 	
 	var field_indent = indent + 4;

@@ -184,6 +184,8 @@ bool MetaLowerer::lower_meta_field_access(ASTNode *node) {
     value->set_parent(node->get_parent());
 
     ExprAnalyzer analyzer(value, context);
+    analyzer.set_expected_type(expected_type);
+    
     if (!analyzer.check()) {
         return false;
     }

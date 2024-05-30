@@ -103,8 +103,6 @@ bool ExprAnalyzer::check() {
 
         if (cur_expected->get_kind() == DataType::Kind::UNION && type->get_kind() == DataType::Kind::UNION_CASE) {
             coercion_chain.push_back(cur_expected);
-        } else if (StandardTypes::is_string(cur_expected) && !StandardTypes::is_string(type)) {
-            coercion_chain.push_back(cur_expected);
         } else if (cur_expected->is_ptr_to(DataType::Kind::PROTO) && !type->is_ptr_to(DataType::Kind::PROTO)) {
             coercion_chain.push_back(cur_expected);
         }
@@ -195,8 +193,12 @@ bool ExprAnalyzer::check_char_literal() {
 }
 
 bool ExprAnalyzer::check_string_literal() {
-    type = context.get_type_manager().new_data_type();
-    type->set_to_pointer(context.get_type_manager().get_primitive_type(PrimitiveType::U8));
+    if (expected_type && expected_type->is_ptr_to(PrimitiveType::U8)) {
+        type = expected_type;
+        return true;
+    }
+
+    type = get_std_type({"std", "string"}, "String");
     return true;
 }
 
@@ -702,13 +704,23 @@ bool ExprAnalyzer::check_meta_expr() {
     return true;
 }
 
+DataType *ExprAnalyzer::get_std_type(const ModulePath &path, const std::string &name) {
+    ASTModule *mod = context.get_module_manager().get_module_list().get_by_path(path);
+    SymbolTable *symbol_table = mod->get_block()->get_symbol_table();
+    Structure *struct_ = symbol_table->get_structure(name);
+
+    DataType *type = context.get_type_manager().new_data_type();
+    type->set_to_structure(struct_);
+    return type;
+}
+
 DataType *ExprAnalyzer::instantiate_std_generic_struct(
     const ModulePath &path,
-    std::string name,
+    const std::string &name,
     GenericInstanceArgs args
 ) {
-    ASTNode *module_node = context.get_module_manager().get_module_list().get_by_path(path);
-    SymbolTable *module_symbol_table = ASTUtils::get_module_symbol_table(module_node);
+    ASTModule *mod = context.get_module_manager().get_module_list().get_by_path(path);
+    SymbolTable *module_symbol_table = mod->get_block()->get_symbol_table();
     GenericStruct *generic_struct = module_symbol_table->get_generic_struct(name);
     GenericStructInstance *instance = GenericsInstantiator(context).instantiate_struct(generic_struct, args);
 
@@ -796,8 +808,6 @@ bool ExprAnalyzer::is_implicit_cast() {
         return !StandardTypes::is_optional(type);
     } else if (StandardTypes::is_result(expected_type)) {
         return !StandardTypes::is_result(type);
-    } else if (StandardTypes::is_string(expected_type)) {
-        return !StandardTypes::is_string(type);
     } else if (expected_type->get_kind() == DataType::Kind::UNION) {
         return type->get_kind() == DataType::Kind::UNION_CASE;
     } else if (expected_type->is_ptr_to(DataType::Kind::PROTO)) {
@@ -818,16 +828,6 @@ bool ExprAnalyzer::compare_against_expected_type() {
 
 bool ExprAnalyzer::is_coercible_in_binary_operator(ASTNodeType type) {
     return type == AST_INT_LITERAL || type == AST_FLOAT_LITERAL || type == AST_NULL;
-}
-
-bool ExprAnalyzer::is_std_string_expected() {
-    if (!is_struct_expected()) {
-        return false;
-    }
-
-    Structure *struct_ = expected_type->get_structure();
-    const ModulePath &module_path = struct_->get_module()->get_path();
-    return struct_->get_name() == "String" && module_path == ModulePath{"std", "string"};
 }
 
 bool ExprAnalyzer::is_struct_expected() {

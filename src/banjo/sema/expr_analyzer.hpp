@@ -53,7 +53,8 @@ private:
     bool check_range();
     bool check_meta_expr();
 
-    DataType *instantiate_std_generic_struct(const ModulePath &path, std::string name, GenericInstanceArgs args);
+    DataType *get_std_type(const ModulePath &path, const std::string &name);
+    DataType *instantiate_std_generic_struct(const ModulePath &path, const std::string &name, GenericInstanceArgs args);
     bool check_any_struct_literal(Structure *struct_, ASTNode *values_node);
     Function *resolve_operator_overload(ASTNodeType op, Expr *lhs, Expr *rhs);
 
@@ -61,7 +62,6 @@ private:
     bool compare_against_expected_type();
     bool is_coercible_in_binary_operator(ASTNodeType type);
 
-    bool is_std_string_expected();
     bool is_struct_expected();
 };
 

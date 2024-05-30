@@ -161,7 +161,7 @@ StoredValue ExprIRBuilder::build_char_literal(lang::ASTNode *node) {
 StoredValue ExprIRBuilder::build_string_literal(lang::ASTNode *node) {
     StoredValue cstr = build_cstr_string_literal(node->get_value());
 
-    if (is_coerced() && lang::StandardTypes::is_string(lang_type)) {
+    if (lang::StandardTypes::is_string(lang_type)) {
         lang::Structure *lang_struct = lang_type->get_structure();
         ir::Type struct_type(lang_struct->get_ir_struct());
 

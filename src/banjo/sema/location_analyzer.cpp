@@ -425,9 +425,11 @@ bool LocationAnalyzer::check_bracket_expr(BracketExpr *node) {
 }
 
 bool LocationAnalyzer::check_expr(Expr *node) {
-    ExprAnalyzer checker(node, context);
-    if (checker.check()) {
-        location.add_element(LocationElement(node, checker.get_type()));
+    ExprAnalyzer analyzer(node, context);
+    analyzer.set_expected_type(expected_type);
+
+    if (analyzer.check()) {
+        location.add_element(LocationElement(node, analyzer.get_type()));
         return true;
     } else {
         return false;
@@ -457,6 +459,8 @@ void LocationAnalyzer::analyze_args_if_required(SymbolRef symbol, DataType *type
 
 bool LocationAnalyzer::check_meta_field_access(ASTNode *node) {
     MetaLowerer lowerer(context);
+    lowerer.set_expected_type(expected_type);
+
     if (lowerer.lower_meta_field_access(node)) {
         MetaExpr *expr = node->as<MetaExpr>();
         location.add_element(LocationElement(expr, expr->get_data_type()));
@@ -468,6 +472,8 @@ bool LocationAnalyzer::check_meta_field_access(ASTNode *node) {
 
 bool LocationAnalyzer::check_meta_method_call(ASTNode *node) {
     MetaLowerer lowerer(context);
+    lowerer.set_expected_type(expected_type);
+
     if (lowerer.lower_meta_method_call(node)) {
         MetaExpr *expr = node->as<MetaExpr>();
         location.add_element(LocationElement(expr, expr->get_data_type()));

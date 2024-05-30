@@ -135,6 +135,7 @@ public:
     bool is_floating_point();
     bool is_struct(const std::string &name);
     bool is_ptr_to(Kind base_kind);
+    bool is_ptr_to(PrimitiveType base_primitive);
     bool has_methods();
     MethodTable &get_method_table();
 
