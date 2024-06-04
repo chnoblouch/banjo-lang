@@ -38,16 +38,16 @@ struct Result[T, E] {
     }
     
     pub func __deinit__(self) {
-        meta if type(T).has_method("__deinit__") {
-            if self.successful {
-                self.value.__deinit__();
-            }
-        }
+        # meta if type(T).has_method("__deinit__") {
+            # if self.successful {
+                # self.value.__deinit__();
+            # }
+        # }
         
-        meta if type(E).has_method("__deinit__") {
-            if !self.successful {
-                self.error.__deinit__();
-            }
-        }
+        # meta if type(E).has_method("__deinit__") {
+            # if !self.successful {
+                # self.error.__deinit__();
+            # }
+        # }
     }
 }

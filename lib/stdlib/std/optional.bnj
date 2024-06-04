@@ -37,9 +37,9 @@ struct Optional[T] {
     
 	meta if type(T).has_method("__deinit__") {
 		pub func __deinit__(self) {
-			if self.has_value {
-				self.value.__deinit__();
-			}
+			# if self.has_value {
+				# self.value.__deinit__();
+			# }
 		}
 	}
 }
