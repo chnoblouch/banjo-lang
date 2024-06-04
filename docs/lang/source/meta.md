@@ -44,7 +44,7 @@ func main() {
 
 ## meta if
 
-Conditions can be evaluated at compile-time using ``meta if`` statements.
+Conditions can be evaluated at compile-time using `meta if` statements.
 
 ```banjo
 use std.config;
@@ -60,11 +60,9 @@ meta if config.OS == config.ANDROID {
 
 ## meta for
 
-Repeating code can be generated at compile-time using ``meta for`` statements.
+Repeating code can be generated at compile-time using `meta for` statements.
 
 ```banjo
-use std.convert.str;
-
 struct Point {
     var x: i32;
     var y: i32;
@@ -72,14 +70,14 @@ struct Point {
 
 func main() {
     var map = [
-        str("x"): 10,
-        str("y"): 20
+        "x": 10,
+        "y": 20
     ];
     
     var point: Point;
     
     meta for field_name in type(Point).fields {
-        type(Point).fieldof(point, field_name) = map[str(field_name)];
+        type(Point).fieldof(point, field_name) = map[field_name];
     }
     
     println(point.x);  # 10
