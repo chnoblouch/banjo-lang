@@ -19,7 +19,6 @@ class NodeBuilder {
 private:
     TextPosition start_position;
     std::vector<ASTNode *> children;
-    std::string value;
     AttributeList *attribute_list = nullptr;
     TokenStream &stream;
 
@@ -27,7 +26,6 @@ public:
     NodeBuilder(TokenStream &stream) : start_position(stream.get()->get_position()), stream(stream) {}
 
     void append_child(ASTNode *child) { children.push_back(child); }
-    void set_value(std::string value) { this->value = std::move(value); }
     void set_attribute_list(AttributeList *attribute_list) { this->attribute_list = attribute_list; }
     void set_start_position(TextPosition start_position) { this->start_position = start_position; }
 
