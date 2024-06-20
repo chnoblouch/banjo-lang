@@ -18,7 +18,7 @@ pub func println[T](value: T) {
 	meta if type(T) == type(String) {
 		___banjo_print_string("%s\n", value.cstr());
 	} else if type(T) == type(addr) {
-		___banjo_print_address("0x%p", value);
+		___banjo_print_address("0x%p\n", value);
 	} else {
 		var string = str(value);
 		___banjo_print_string("%s\n", string.cstr());
