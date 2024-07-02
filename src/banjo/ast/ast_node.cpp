@@ -1,6 +1,6 @@
 #include "ast_node.hpp"
 
-#include "source/text_range.hpp"
+#include "banjo/source/text_range.hpp"
 
 #include <algorithm>
 #include <utility>

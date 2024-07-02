@@ -1,8 +1,8 @@
 #ifndef MCODE_PARAMETER_H
 #define MCODE_PARAMETER_H
 
-#include "ir/type.hpp"
-#include "mcode/register.hpp"
+#include "banjo/ir/type.hpp"
+#include "banjo/mcode/register.hpp"
 
 namespace banjo {
 

@@ -1,11 +1,11 @@
 #include "debug_emitter.hpp"
 
-#include "config/config.hpp"
-#include "emit/clang_asm_emitter.hpp"
-#include "emit/nasm_emitter.hpp"
-#include "target/aarch64/aarch64_register.hpp"
-#include "target/x86_64/x86_64_register.hpp"
-#include "utils/timing.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/emit/clang_asm_emitter.hpp"
+#include "banjo/emit/nasm_emitter.hpp"
+#include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <cassert>
 #include <unordered_map>

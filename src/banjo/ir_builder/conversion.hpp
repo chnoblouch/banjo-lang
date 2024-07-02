@@ -1,8 +1,8 @@
 #ifndef CONVERT_IR_BUILDER_H
 #define CONVERT_IR_BUILDER_H
 
-#include "ir_builder/ir_builder_context.hpp"
-#include "symbol/data_type.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
+#include "banjo/symbol/data_type.hpp"
 
 namespace banjo {
 

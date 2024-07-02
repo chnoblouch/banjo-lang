@@ -1,13 +1,13 @@
 #include "parser.hpp"
 
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
-#include "lexer/token.hpp"
-#include "parser/decl_parser.hpp"
-#include "parser/expr_parser.hpp"
-#include "parser/stmt_parser.hpp"
-#include "symbol/symbol_table.hpp"
-#include "utils/timing.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/lexer/token.hpp"
+#include "banjo/parser/decl_parser.hpp"
+#include "banjo/parser/expr_parser.hpp"
+#include "banjo/parser/stmt_parser.hpp"
+#include "banjo/symbol/symbol_table.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <algorithm>
 #include <cstddef>

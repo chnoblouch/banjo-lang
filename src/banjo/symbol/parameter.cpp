@@ -1,8 +1,8 @@
 #include "parameter.hpp"
 
-#include "ir_builder/ir_builder_context.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "ir_builder/storage.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/storage.hpp"
 
 #include <utility>
 

@@ -1,9 +1,9 @@
 #include "loop_inversion_pass.hpp"
 
-#include "ir/comparison.hpp"
-#include "ir/operand.hpp"
-#include "ir/virtual_register.hpp"
-#include "passes/pass_utils.hpp"
+#include "banjo/ir/comparison.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/passes/pass_utils.hpp"
 
 #include <iostream>
 #include <utility>

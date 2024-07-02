@@ -1,13 +1,13 @@
 #ifndef IR_BUILDER_UTILS_H
 #define IR_BUILDER_UTILS_H
 
-#include "ast/ast_node.hpp"
-#include "ir/type.hpp"
-#include "ir/virtual_register.hpp"
-#include "ir_builder/storage.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/global_variable.hpp"
-#include "symbol/variable.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ir/type.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ir_builder/storage.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/global_variable.hpp"
+#include "banjo/symbol/variable.hpp"
 
 #include <string>
 #include <vector>

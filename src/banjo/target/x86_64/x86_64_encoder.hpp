@@ -1,7 +1,7 @@
 #ifndef X86_64_ENCODER_H
 #define X86_64_ENCODER_H
 
-#include "emit/binary_builder.hpp"
+#include "banjo/emit/binary_builder.hpp"
 
 #include <cstdint>
 #include <ostream>

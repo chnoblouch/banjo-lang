@@ -1,7 +1,7 @@
 #ifndef AARCH64_ADDRESS_H
 #define AARCH64_ADDRESS_H
 
-#include "mcode/register.hpp"
+#include "banjo/mcode/register.hpp"
 
 namespace banjo {
 

@@ -1,8 +1,8 @@
 #include "x86_64_peephole_opt_pass.hpp"
 
-#include "codegen/machine_pass_utils.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "utils/timing.hpp"
+#include "banjo/codegen/machine_pass_utils.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/utils/timing.hpp"
 #include <unordered_set>
 
 namespace banjo {

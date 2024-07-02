@@ -1,8 +1,8 @@
 #ifndef PASSES_CONTROL_FLOW_OPT_PASS_H
 #define PASSES_CONTROL_FLOW_OPT_PASS_H
 
-#include "ir/control_flow_graph.hpp"
-#include "passes/pass.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/passes/pass.hpp"
 
 namespace banjo {
 

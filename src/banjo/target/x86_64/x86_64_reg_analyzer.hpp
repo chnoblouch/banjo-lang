@@ -1,10 +1,10 @@
 #ifndef X86_64_REG_ANALYZER_H
 #define X86_64_REG_ANALYZER_H
 
-#include "codegen/reg_alloc_func.hpp"
-#include "mcode/instruction.hpp"
-#include "target/target_reg_analyzer.hpp"
-#include "target/x86_64/x86_64_register.hpp"
+#include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
 
 namespace banjo {
 

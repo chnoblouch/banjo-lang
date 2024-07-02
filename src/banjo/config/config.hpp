@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "target/target.hpp"
-#include "target/target_description.hpp"
+#include "banjo/target/target.hpp"
+#include "banjo/target/target_description.hpp"
 
 #include <filesystem>
 #include <optional>

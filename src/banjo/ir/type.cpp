@@ -1,7 +1,7 @@
 #include "type.hpp"
 
-#include "ir/primitive.hpp"
-#include "ir/structure.hpp"
+#include "banjo/ir/primitive.hpp"
+#include "banjo/ir/structure.hpp"
 
 #include <cassert>
 

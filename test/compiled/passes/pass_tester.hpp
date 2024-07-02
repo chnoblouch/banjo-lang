@@ -1,11 +1,11 @@
 #ifndef PASS_TESTER_H
 #define PASS_TESTER_H
 
-#include "ir/module.hpp"
-#include "mcode/module.hpp"
-#include "target/target.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/mcode/module.hpp"
+#include "banjo/target/target.hpp"
 
-#include "target/x86_64/x86_64_target.hpp"
+#include "banjo/target/x86_64/x86_64_target.hpp"
 
 #include <filesystem>
 #include <fstream>

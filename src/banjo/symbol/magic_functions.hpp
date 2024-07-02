@@ -1,7 +1,7 @@
 #ifndef MAGIC_FUNCTIONS_H
 #define MAGIC_FUNCTIONS_H
 
-#include "ast/ast_node.hpp"
+#include "banjo/ast/ast_node.hpp"
 #include <string>
 
 namespace banjo {

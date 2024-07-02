@@ -1,7 +1,7 @@
 #ifndef BINARY_MODULE
 #define BINARY_MODULE
 
-#include "utils/write_buffer.hpp"
+#include "banjo/utils/write_buffer.hpp"
 
 #include <optional>
 #include <string>

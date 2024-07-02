@@ -1,7 +1,7 @@
 #ifndef LOOP_ANALYSIS_H
 #define LOOP_ANALYSIS_H
 
-#include "ir/control_flow_graph.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
 
 #include <ostream>
 #include <unordered_set>

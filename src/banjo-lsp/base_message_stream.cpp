@@ -1,6 +1,6 @@
 #include "base_message_stream.hpp"
 
-#include "utils/platform.hpp"
+#include "banjo/utils/platform.hpp"
 
 #include <cstdio>
 #include <iostream>

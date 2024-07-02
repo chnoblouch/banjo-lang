@@ -1,8 +1,8 @@
 #ifndef CLANG_ASM_EMITTER_H
 #define CLANG_ASM_EMITTER_H
 
-#include "emit/emitter.hpp"
-#include "target/target_description.hpp"
+#include "banjo/emit/emitter.hpp"
+#include "banjo/target/target_description.hpp"
 
 namespace banjo {
 

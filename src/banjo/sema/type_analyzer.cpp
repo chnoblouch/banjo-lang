@@ -1,14 +1,14 @@
 #include "type_analyzer.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/ast_utils.hpp"
-#include "ast/expr.hpp"
-#include "sema/generics_instantiator.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/sema/generics_instantiator.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

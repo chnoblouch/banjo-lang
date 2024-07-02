@@ -1,6 +1,6 @@
 #include "paths.hpp"
 
-#include "utils/platform.hpp"
+#include "banjo/utils/platform.hpp"
 
 #if defined(OS_WINDOWS)
 #    include <windows.h>

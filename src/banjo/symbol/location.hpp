@@ -1,9 +1,9 @@
 #ifndef LOCATION_H
 #define LOCATION_H
 
-#include "symbol/generics.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/union.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/union.hpp"
 
 #include <variant>
 #include <vector>

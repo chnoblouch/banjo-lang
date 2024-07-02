@@ -1,9 +1,9 @@
 #ifndef CONFIG_PARSER_H
 #define CONFIG_PARSER_H
 
-#include "config/argument_parser.hpp"
-#include "config/config.hpp"
-#include "target/target_description.hpp"
+#include "banjo/config/argument_parser.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/target/target_description.hpp"
 
 namespace banjo {
 

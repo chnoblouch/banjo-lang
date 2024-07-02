@@ -1,7 +1,7 @@
 #ifndef PASSES_STACK_SLOT_MERGE_PASS_H
 #define PASSES_STACK_SLOT_MERGE_PASS_H
 
-#include "passes/pass.hpp"
+#include "banjo/passes/pass.hpp"
 
 namespace banjo {
 

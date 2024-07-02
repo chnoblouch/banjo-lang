@@ -1,9 +1,9 @@
 #include "struct_def_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/decl.hpp"
-#include "ir/structure.hpp"
-#include "ir_builder/func_def_ir_builder.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/ir_builder/func_def_ir_builder.hpp"
 
 namespace banjo {
 

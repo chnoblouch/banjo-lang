@@ -1,10 +1,10 @@
 #ifndef LSP_RENAME_HANDLER_H
 #define LSP_RENAME_HANDLER_H
 
-#include "ast/ast_node.hpp"
+#include "banjo/ast/ast_node.hpp"
 #include "connection.hpp"
 #include "source_manager.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 namespace banjo {
 

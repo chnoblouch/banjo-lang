@@ -1,9 +1,9 @@
 #ifndef IR_FUNCTION_H
 #define IR_FUNCTION_H
 
-#include "ir/basic_block.hpp"
-#include "ir/function_decl.hpp"
-#include "ir/virtual_register.hpp"
+#include "banjo/ir/basic_block.hpp"
+#include "banjo/ir/function_decl.hpp"
+#include "banjo/ir/virtual_register.hpp"
 
 #include <vector>
 

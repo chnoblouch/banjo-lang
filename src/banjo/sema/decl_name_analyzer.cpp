@@ -1,14 +1,14 @@
 #include "decl_name_analyzer.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/ast_utils.hpp"
-#include "ast/decl.hpp"
-#include "ast/expr.hpp"
-#include "sema/use_collector.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/symbol_table.hpp"
-#include "symbol/union.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/sema/use_collector.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/symbol_table.hpp"
+#include "banjo/symbol/union.hpp"
 
 namespace banjo {
 

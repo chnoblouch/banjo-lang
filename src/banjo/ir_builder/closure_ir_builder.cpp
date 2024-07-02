@@ -1,10 +1,10 @@
 #include "closure_ir_builder.hpp"
 
-#include "ast/expr.hpp"
-#include "ir/structure.hpp"
-#include "ir_builder/func_def_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "ir_builder/name_mangling.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/ir_builder/func_def_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/name_mangling.hpp"
 
 #include <utility>
 

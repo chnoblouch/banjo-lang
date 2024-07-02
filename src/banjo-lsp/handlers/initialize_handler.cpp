@@ -1,6 +1,6 @@
 #include "initialize_handler.hpp"
 
-#include "config/config.hpp"
+#include "banjo/config/config.hpp"
 #include "uri.hpp"
 
 namespace banjo {

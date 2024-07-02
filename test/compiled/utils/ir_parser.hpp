@@ -1,7 +1,7 @@
 #ifndef TEST_IR_PARSER_H
 #define TEST_IR_PARSER_H
 
-#include "ir/module.hpp"
+#include "banjo/ir/module.hpp"
 #include <istream>
 
 namespace banjo {

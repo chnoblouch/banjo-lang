@@ -1,12 +1,12 @@
 #ifndef STRUCT_H
 #define STRUCT_H
 
-#include "ir/structure.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/function.hpp"
-#include "symbol/generics.hpp"
-#include "symbol/method_table.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/method_table.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 #include <string_view>
 #include <vector>

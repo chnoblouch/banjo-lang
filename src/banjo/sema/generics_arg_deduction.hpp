@@ -1,9 +1,9 @@
 #ifndef GENERICS_ARG_DEDUCTION_H
 #define GENERICS_ARG_DEDUCTION_H
 
-#include "ast/ast_node.hpp"
-#include "symbol/data_type_manager.hpp"
-#include "symbol/generics.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/data_type_manager.hpp"
+#include "banjo/symbol/generics.hpp"
 
 #include <optional>
 

@@ -1,13 +1,13 @@
 #include "reg_alloc_pass.hpp"
 
-#include "codegen/liveness.hpp"
-#include "codegen/reg_alloc_func.hpp"
-#include "emit/debug_emitter.hpp"
-#include "mcode/instruction.hpp"
-#include "mcode/register.hpp"
-#include "mcode/stack_frame.hpp"
-#include "mcode/stack_slot.hpp"
-#include "utils/timing.hpp"
+#include "banjo/codegen/liveness.hpp"
+#include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/emit/debug_emitter.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_frame.hpp"
+#include "banjo/mcode/stack_slot.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <iostream>
 #include <queue>

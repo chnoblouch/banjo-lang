@@ -1,9 +1,9 @@
 #ifndef TEST_MODULE_H
 #define TEST_MODULE_H
 
-#include "ast/ast_module.hpp"
-#include "ast/module_list.hpp"
-#include "config/config.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/config/config.hpp"
 
 #include <sstream>
 

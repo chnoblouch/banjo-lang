@@ -1,7 +1,7 @@
 #include "assign_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
 
 namespace banjo {
 

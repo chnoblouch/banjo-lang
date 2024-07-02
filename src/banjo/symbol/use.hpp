@@ -1,8 +1,8 @@
 #ifndef USE_H
 #define USE_H
 
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 namespace banjo {
 

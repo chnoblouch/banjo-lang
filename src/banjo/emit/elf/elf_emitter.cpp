@@ -1,8 +1,8 @@
 #include "elf_emitter.hpp"
 
-#include "emit/elf/elf_builder.hpp"
-#include "target/x86_64/x86_64_encoder.hpp"
-#include "utils/timing.hpp"
+#include "banjo/emit/elf/elf_builder.hpp"
+#include "banjo/target/x86_64/x86_64_encoder.hpp"
+#include "banjo/utils/timing.hpp"
 
 namespace banjo {
 

@@ -1,6 +1,6 @@
 #include "magic_functions.hpp"
 
-#include "utils/macros.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

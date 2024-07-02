@@ -1,10 +1,10 @@
 #ifndef DECL_BODY_ANALYZER_H
 #define DECL_BODY_ANALYZER_H
 
-#include "ast/ast_node.hpp"
-#include "ast/decl.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 namespace banjo {
 

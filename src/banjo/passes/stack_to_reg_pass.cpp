@@ -1,10 +1,10 @@
 #include "stack_to_reg_pass.hpp"
 
-#include "ir/dead_code_elimination.hpp"
-#include "ir/virtual_register.hpp"
+#include "banjo/ir/dead_code_elimination.hpp"
+#include "banjo/ir/virtual_register.hpp"
 #include "pass_utils.hpp"
-#include "passes/pass_utils.hpp"
-#include "passes/precomputing.hpp"
+#include "banjo/passes/pass_utils.hpp"
+#include "banjo/passes/precomputing.hpp"
 
 #include <unordered_set>
 

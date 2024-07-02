@@ -1,9 +1,9 @@
 #ifndef REPORT_H
 #define REPORT_H
 
-#include "reports/report_texts.hpp"
-#include "source/text_range.hpp"
-#include "symbol/module_path.hpp"
+#include "banjo/reports/report_texts.hpp"
+#include "banjo/source/text_range.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 #include <string>
 #include <vector>

@@ -1,8 +1,8 @@
 #ifndef CODEGEN_STACK_FRAME_PASS_H
 #define CODEGEN_STACK_FRAME_PASS_H
 
-#include "codegen/machine_pass.hpp"
-#include "target/target_reg_analyzer.hpp"
+#include "banjo/codegen/machine_pass.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 
 #include <unordered_map>
 

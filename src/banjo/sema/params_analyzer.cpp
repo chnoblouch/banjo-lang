@@ -1,10 +1,10 @@
 #include "params_analyzer.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
-#include "sema/deinit_analyzer.hpp"
-#include "sema/type_analyzer.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/sema/deinit_analyzer.hpp"
+#include "banjo/sema/type_analyzer.hpp"
 
 namespace banjo {
 

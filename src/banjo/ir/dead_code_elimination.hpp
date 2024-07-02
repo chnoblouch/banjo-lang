@@ -1,9 +1,9 @@
 #ifndef IR_DEAD_CODE_ELIMINATION_H
 #define IR_DEAD_CODE_ELIMINATION_H
 
-#include "ir/basic_block.hpp"
-#include "ir/function.hpp"
-#include "ir/operand.hpp"
+#include "banjo/ir/basic_block.hpp"
+#include "banjo/ir/function.hpp"
+#include "banjo/ir/operand.hpp"
 
 #include <vector>
 

@@ -1,7 +1,7 @@
 #include "x86_64_addr_lowering.hpp"
 
-#include "config/config.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
 
 namespace banjo {
 

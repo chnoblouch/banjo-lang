@@ -1,9 +1,9 @@
 #ifndef AST_MODULE_H
 #define AST_MODULE_H
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_node.hpp"
-#include "symbol/module_path.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 #include <filesystem>
 #include <vector>

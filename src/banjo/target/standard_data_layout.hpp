@@ -1,7 +1,7 @@
 #ifndef STANDARD_DATA_LAYOUT_H
 #define STANDARD_DATA_LAYOUT_H
 
-#include "target/target_data_layout.hpp"
+#include "banjo/target/target_data_layout.hpp"
 
 namespace banjo {
 

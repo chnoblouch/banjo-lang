@@ -1,8 +1,8 @@
 #ifndef AST_WRITER_H
 #define AST_WRITER_H
 
-#include "ast/ast_node.hpp"
-#include "ast/module_list.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/module_list.hpp"
 #include <ostream>
 
 namespace banjo {

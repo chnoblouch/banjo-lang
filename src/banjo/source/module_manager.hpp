@@ -1,11 +1,11 @@
 #ifndef MODULE_MANAGER_H
 #define MODULE_MANAGER_H
 
-#include "ast/ast_module.hpp"
-#include "ast/module_list.hpp"
-#include "parser/parser.hpp"
-#include "source/module_discovery.hpp"
-#include "symbol/module_path.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/parser/parser.hpp"
+#include "banjo/source/module_discovery.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 #include <filesystem>
 #include <vector>

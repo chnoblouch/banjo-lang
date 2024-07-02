@@ -1,4 +1,4 @@
-#include "ast/ast_block.hpp"
+#include "banjo/ast/ast_block.hpp"
 
 namespace banjo {
 

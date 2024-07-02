@@ -1,9 +1,9 @@
 #ifndef X86_64_TARGET
 #define X86_64_TARGET
 
-#include "target/standard_data_layout.hpp"
-#include "target/target.hpp"
-#include "target/x86_64/x86_64_reg_analyzer.hpp"
+#include "banjo/target/standard_data_layout.hpp"
+#include "banjo/target/target.hpp"
+#include "banjo/target/x86_64/x86_64_reg_analyzer.hpp"
 
 namespace banjo {
 

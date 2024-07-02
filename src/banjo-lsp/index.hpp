@@ -1,8 +1,8 @@
 #ifndef LSP_INDEX_H
 #define LSP_INDEX_H
 
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 #include <unordered_map>
 

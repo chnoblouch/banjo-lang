@@ -1,8 +1,8 @@
 #include "while_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ir_builder/block_ir_builder.hpp"
-#include "ir_builder/bool_expr_ir_builder.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ir_builder/block_ir_builder.hpp"
+#include "banjo/ir_builder/bool_expr_ir_builder.hpp"
 
 namespace banjo {
 

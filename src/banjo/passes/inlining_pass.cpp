@@ -1,7 +1,7 @@
 #include "inlining_pass.hpp"
 
-#include "passes/pass_utils.hpp"
-#include "passes/precomputing.hpp"
+#include "banjo/passes/pass_utils.hpp"
+#include "banjo/passes/precomputing.hpp"
 
 #include <iostream>
 #include <string>

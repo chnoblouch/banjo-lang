@@ -1,8 +1,8 @@
 #ifndef PASSES_STACK_TO_REG_PASS_H
 #define PASSES_STACK_TO_REG_PASS_H
 
-#include "ir/control_flow_graph.hpp"
-#include "passes/pass.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/passes/pass.hpp"
 
 #include <list>
 #include <unordered_map>

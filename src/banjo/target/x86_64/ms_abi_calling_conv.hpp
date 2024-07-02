@@ -1,7 +1,7 @@
 #ifndef MS_ABI_CALLING_CONV_H
 #define MS_ABI_CALLING_CONV_H
 
-#include "mcode/calling_convention.hpp"
+#include "banjo/mcode/calling_convention.hpp"
 
 namespace ir {
 class Operand;

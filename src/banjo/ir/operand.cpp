@@ -1,7 +1,7 @@
 #include "operand.hpp"
 
-#include "ir/function.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ir/function.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

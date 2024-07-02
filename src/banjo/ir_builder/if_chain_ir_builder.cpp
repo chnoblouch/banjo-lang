@@ -1,11 +1,11 @@
 #include "if_chain_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "config/config.hpp"
-#include "ir_builder/block_ir_builder.hpp"
-#include "ir_builder/bool_expr_ir_builder.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/ir_builder/block_ir_builder.hpp"
+#include "banjo/ir_builder/bool_expr_ir_builder.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
 
 namespace banjo {
 

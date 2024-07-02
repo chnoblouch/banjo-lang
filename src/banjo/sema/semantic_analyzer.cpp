@@ -1,16 +1,16 @@
 #include "semantic_analyzer.hpp"
 
-#include "ast/ast_module.hpp"
-#include "ast/ast_utils.hpp"
-#include "sema/decl_body_analyzer.hpp"
-#include "sema/decl_name_analyzer.hpp"
-#include "sema/decl_type_analyzer.hpp"
-#include "sema/meta_lowerer.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "sema/use_resolver.hpp"
-#include "symbol/standard_types.hpp"
-#include "symbol/use.hpp"
-#include "utils/timing.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/sema/decl_body_analyzer.hpp"
+#include "banjo/sema/decl_name_analyzer.hpp"
+#include "banjo/sema/decl_type_analyzer.hpp"
+#include "banjo/sema/meta_lowerer.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/sema/use_resolver.hpp"
+#include "banjo/symbol/standard_types.hpp"
+#include "banjo/symbol/use.hpp"
+#include "banjo/utils/timing.hpp"
 
 namespace banjo {
 

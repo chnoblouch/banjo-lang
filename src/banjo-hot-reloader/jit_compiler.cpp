@@ -1,15 +1,15 @@
 #include "jit_compiler.hpp"
 
-#include "ast/module_list.hpp"
-#include "codegen/ir_lowerer.hpp"
-#include "codegen/machine_pass_runner.hpp"
-#include "config/config.hpp"
-#include "ir/addr_table.hpp"
-#include "ir_builder/root_ir_builder.hpp"
-#include "passes/addr_table_pass.hpp"
-#include "reports/report_printer.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "target/x86_64/x86_64_encoder.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/codegen/machine_pass_runner.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/ir/addr_table.hpp"
+#include "banjo/ir_builder/root_ir_builder.hpp"
+#include "banjo/passes/addr_table_pass.hpp"
+#include "banjo/reports/report_printer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/target/x86_64/x86_64_encoder.hpp"
 
 namespace banjo {
 

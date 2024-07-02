@@ -1,6 +1,6 @@
 #include "const_evaluator.hpp"
 
-#include "ast/expr.hpp"
+#include "banjo/ast/expr.hpp"
 #include <cassert>
 
 namespace banjo {

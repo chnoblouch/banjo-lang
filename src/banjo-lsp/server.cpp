@@ -1,8 +1,8 @@
 #include "server.hpp"
 
-#include "ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
 #include "ast_navigation.hpp"
-#include "config/config.hpp"
+#include "banjo/config/config.hpp"
 #include "connection.hpp"
 #include "source_manager.hpp"
 #include "uri.hpp"

@@ -1,8 +1,8 @@
 #ifndef IR_BUILDER_IR_BUILDER_H
 #define IR_BUILDER_IR_BUILDER_H
 
-#include "ast/ast_node.hpp"
-#include "ir_builder/ir_builder_context.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
 
 namespace banjo {
 

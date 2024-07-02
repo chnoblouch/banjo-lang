@@ -1,8 +1,8 @@
 #ifndef META_LOWERER_H
 #define META_LOWERER_H
 
-#include "sema/meta_evaluator.hpp"
-#include "sema/semantic_analyzer_context.hpp"
+#include "banjo/sema/meta_evaluator.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
 
 #include <optional>
 #include <variant>

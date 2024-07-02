@@ -1,7 +1,7 @@
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
 
-#include "symbol/variable.hpp"
+#include "banjo/symbol/variable.hpp"
 
 #include <optional>
 #include <string>

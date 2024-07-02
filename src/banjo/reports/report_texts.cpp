@@ -1,6 +1,6 @@
 #include "report_texts.hpp"
 
-#include "reports/report_utils.hpp"
+#include "banjo/reports/report_utils.hpp"
 #include <map>
 
 namespace banjo {

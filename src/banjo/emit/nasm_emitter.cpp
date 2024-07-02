@@ -1,9 +1,9 @@
 #include "nasm_emitter.hpp"
 
-#include "config/config.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "target/x86_64/x86_64_register.hpp"
-#include "utils/timing.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <algorithm>
 #include <sstream>

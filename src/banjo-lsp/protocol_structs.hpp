@@ -2,7 +2,7 @@
 #define LSP_PROTOCOL_STRUCTS
 
 #include "json.hpp"
-#include "source/text_range.hpp"
+#include "banjo/source/text_range.hpp"
 
 namespace banjo {
 

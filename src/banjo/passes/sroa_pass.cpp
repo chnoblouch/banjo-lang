@@ -1,7 +1,7 @@
 #include "sroa_pass.hpp"
 
-#include "ir/structure.hpp"
-#include "passes/pass_utils.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/passes/pass_utils.hpp"
 
 #include <iostream>
 

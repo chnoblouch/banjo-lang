@@ -1,11 +1,11 @@
 #ifndef IR_INSTRUCTION_H
 #define IR_INSTRUCTION_H
 
-#include "ir/opcode.hpp"
-#include "ir/operand.hpp"
-#include "ir/type.hpp"
-#include "ir/virtual_register.hpp"
-#include "utils/linked_list.hpp"
+#include "banjo/ir/opcode.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/ir/type.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/utils/linked_list.hpp"
 
 #include <optional>
 #include <utility>

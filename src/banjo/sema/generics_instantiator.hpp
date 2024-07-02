@@ -1,8 +1,8 @@
 #ifndef GENERICS_INSTANTIATOR_H
 #define GENERICS_INSTANTIATOR_H
 
-#include "sema/semantic_analyzer_context.hpp"
-#include "symbol/generics.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/symbol/generics.hpp"
 
 #include <optional>
 

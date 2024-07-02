@@ -1,7 +1,7 @@
 #ifndef PASSES_PRECOMPUTING_H
 #define PASSES_PRECOMPUTING_H
 
-#include "ir/module.hpp"
+#include "banjo/ir/module.hpp"
 
 #include <functional>
 #include <optional>

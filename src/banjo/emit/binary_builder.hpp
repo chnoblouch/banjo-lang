@@ -1,9 +1,9 @@
 #ifndef BINARY_BUILDER_H
 #define BINARY_BUILDER_H
 
-#include "emit/binary_module.hpp"
-#include "mcode/module.hpp"
-#include "utils/write_buffer.hpp"
+#include "banjo/emit/binary_module.hpp"
+#include "banjo/mcode/module.hpp"
+#include "banjo/utils/write_buffer.hpp"
 
 #include <unordered_map>
 

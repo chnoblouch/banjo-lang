@@ -1,13 +1,13 @@
 #include "ir_builder_utils.hpp"
 
-#include "ast/expr.hpp"
-#include "ir/primitive.hpp"
-#include "ir/virtual_register.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_context.hpp"
-#include "ir_builder/name_mangling.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/union.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/ir/primitive.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
+#include "banjo/ir_builder/name_mangling.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/union.hpp"
 
 #include <cassert>
 

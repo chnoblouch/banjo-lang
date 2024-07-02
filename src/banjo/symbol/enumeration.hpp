@@ -1,9 +1,9 @@
 #ifndef ENUMERATION_H
 #define ENUMERATION_H
 
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_table.hpp"
-#include "utils/large_int.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_table.hpp"
+#include "banjo/utils/large_int.hpp"
 
 #include <string>
 #include <utility>

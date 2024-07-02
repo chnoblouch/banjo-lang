@@ -1,8 +1,8 @@
 #ifndef AAPCS_CALLING_CONV_H
 #define AAPCS_CALLING_CONV_H
 
-#include "mcode/calling_convention.hpp"
-#include "mcode/register.hpp"
+#include "banjo/mcode/calling_convention.hpp"
+#include "banjo/mcode/register.hpp"
 
 namespace banjo {
 

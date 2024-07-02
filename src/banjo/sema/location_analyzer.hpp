@@ -1,14 +1,14 @@
 #ifndef LOCATION_ANALYZER_H
 #define LOCATION_ANALYZER_H
 
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/location.hpp"
-#include "symbol/method_table.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/location.hpp"
+#include "banjo/symbol/method_table.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 
 #include <optional>
 #include <vector>

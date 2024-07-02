@@ -1,11 +1,11 @@
 #include "func_call_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/expr.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "ir_builder/location_ir_builder.hpp"
-#include "ir_builder/storage.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/location_ir_builder.hpp"
+#include "banjo/ir_builder/storage.hpp"
 
 namespace banjo {
 

@@ -1,6 +1,6 @@
 #include "buffered_reader.hpp"
 
-#include "utils/timing.hpp"
+#include "banjo/utils/timing.hpp"
 
 namespace banjo {
 

@@ -1,7 +1,7 @@
 #include "target.hpp"
 
-#include "target/aarch64/aarch64_target.hpp"
-#include "target/x86_64/x86_64_target.hpp"
+#include "banjo/target/aarch64/aarch64_target.hpp"
+#include "banjo/target/x86_64/x86_64_target.hpp"
 
 namespace banjo {
 

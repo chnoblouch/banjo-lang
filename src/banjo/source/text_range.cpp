@@ -1,6 +1,6 @@
 #include "text_range.hpp"
 
-#include "lexer/token.hpp"
+#include "banjo/lexer/token.hpp"
 
 namespace banjo {
 

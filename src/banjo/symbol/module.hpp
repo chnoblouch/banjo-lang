@@ -1,7 +1,7 @@
 #ifndef MODULE_H
 #define MODULE_H
 
-#include "symbol/module_path.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 namespace banjo {
 

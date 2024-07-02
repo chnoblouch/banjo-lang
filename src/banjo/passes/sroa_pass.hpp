@@ -1,7 +1,7 @@
 #ifndef PASSES_SROA_PASS_H
 #define PASSES_SROA_PASS_H
 
-#include "passes/pass.hpp"
+#include "banjo/passes/pass.hpp"
 
 #include <functional>
 #include <optional>

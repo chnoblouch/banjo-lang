@@ -1,8 +1,8 @@
 #ifndef IR_BUILDER_FOR_IR_BUILDER_H
 #define IR_BUILDER_FOR_IR_BUILDER_H
 
-#include "ir_builder/ir_builder.hpp"
-#include "symbol/local_variable.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
+#include "banjo/symbol/local_variable.hpp"
 
 namespace banjo {
 

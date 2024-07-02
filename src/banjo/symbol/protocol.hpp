@@ -1,9 +1,9 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#include "ir/structure.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 #include <string>
 #include <utility>

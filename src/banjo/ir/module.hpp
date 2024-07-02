@@ -1,10 +1,10 @@
 #ifndef IR_MODULE_H
 #define IR_MODULE_H
 
-#include "ir/function.hpp"
-#include "ir/function_decl.hpp"
-#include "ir/global.hpp"
-#include "ir/structure.hpp"
+#include "banjo/ir/function.hpp"
+#include "banjo/ir/function_decl.hpp"
+#include "banjo/ir/global.hpp"
+#include "banjo/ir/structure.hpp"
 
 #include <vector>
 

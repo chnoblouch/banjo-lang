@@ -1,8 +1,8 @@
 #include "clang_asm_emitter.hpp"
 
-#include "target/aarch64/aarch64_opcode.hpp"
-#include "target/aarch64/aarch64_register.hpp"
-#include "utils/timing.hpp"
+#include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/utils/timing.hpp"
 
 namespace banjo {
 

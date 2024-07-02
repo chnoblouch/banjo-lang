@@ -1,10 +1,10 @@
 #include "dead_code_elimination.hpp"
 
-#include "ir/basic_block.hpp"
-#include "ir/instruction.hpp"
-#include "ir/operand.hpp"
-#include "ir/virtual_register.hpp"
-#include "passes/pass_utils.hpp"
+#include "banjo/ir/basic_block.hpp"
+#include "banjo/ir/instruction.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/passes/pass_utils.hpp"
 
 #include <unordered_map>
 #include <vector>

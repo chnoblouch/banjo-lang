@@ -1,7 +1,7 @@
 #ifndef AARCH64_INSTR_MERGE_PASS_H
 #define AARCH64_INSTR_MERGE_PASS_H
 
-#include "codegen/machine_pass.hpp"
+#include "banjo/codegen/machine_pass.hpp"
 
 #include <unordered_map>
 #include <vector>

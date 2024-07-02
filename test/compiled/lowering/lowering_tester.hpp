@@ -1,9 +1,9 @@
 #ifndef LOWERING_TESTER_H
 #define LOWERING_TESTER_H
 
-#include "ir/module.hpp"
-#include "target/target.hpp"
-#include "mcode/module.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/target/target.hpp"
+#include "banjo/mcode/module.hpp"
 
 #include <fstream>
 

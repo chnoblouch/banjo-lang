@@ -1,6 +1,6 @@
 #include "module.hpp"
 
-#include "mcode/function.hpp"
+#include "banjo/mcode/function.hpp"
 
 namespace banjo {
 

@@ -1,11 +1,11 @@
 #ifndef DEINIT_ANALYZER_H
 #define DEINIT_ANALYZER_H
 
-#include "ast/ast_block.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "symbol/local_variable.hpp"
-#include "symbol/location.hpp"
-#include "symbol/parameter.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/symbol/local_variable.hpp"
+#include "banjo/symbol/location.hpp"
+#include "banjo/symbol/parameter.hpp"
 
 namespace banjo {
 

@@ -1,8 +1,8 @@
 #ifndef PE_BUILDER_H
 #define PE_BUILDER_H
 
-#include "emit/binary_module.hpp"
-#include "emit/pe/pe_format.hpp"
+#include "banjo/emit/binary_module.hpp"
+#include "banjo/emit/pe/pe_format.hpp"
 
 namespace banjo {
 

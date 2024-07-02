@@ -1,10 +1,10 @@
 #ifndef MCODE_FUNCTION_H
 #define MCODE_FUNCTION_H
 
-#include "mcode/basic_block.hpp"
-#include "mcode/calling_convention.hpp"
-#include "mcode/parameter.hpp"
-#include "mcode/stack_frame.hpp"
+#include "banjo/mcode/basic_block.hpp"
+#include "banjo/mcode/calling_convention.hpp"
+#include "banjo/mcode/parameter.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 
 #include <string>
 #include <vector>

@@ -1,6 +1,6 @@
 #include "cse_pass.hpp"
 
-#include "passes/pass_utils.hpp"
+#include "banjo/passes/pass_utils.hpp"
 #include <map>
 
 #include <iostream>

@@ -1,10 +1,10 @@
 #include "semantic_tokens_handler.hpp"
 
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
 #include "ast_navigation.hpp"
 #include "protocol_structs.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 #include "uri.hpp"
 
 namespace banjo {

@@ -1,7 +1,7 @@
 #include "standard_data_layout.hpp"
 
-#include "utils/macros.hpp"
-#include "utils/utils.hpp"
+#include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <utility>
 

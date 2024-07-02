@@ -1,10 +1,10 @@
 #include "function_resolution.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "reports/report_utils.hpp"
-#include "sema/expr_analyzer.hpp"
-#include "sema/generics_arg_deduction.hpp"
-#include "sema/generics_instantiator.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/reports/report_utils.hpp"
+#include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/generics_arg_deduction.hpp"
+#include "banjo/sema/generics_instantiator.hpp"
 
 #include <cassert>
 

@@ -1,7 +1,7 @@
 #include "standard_types.hpp"
 
-#include "ast/ast_module.hpp"
-#include "symbol/structure.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/symbol/structure.hpp"
 
 #include <cassert>
 #include <tuple>

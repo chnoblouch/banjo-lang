@@ -1,8 +1,8 @@
 #ifndef MODULE_LOADER_H
 #define MODULE_LOADER_H
 
-#include "ast/ast_module.hpp"
-#include "source/module_manager.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/source/module_manager.hpp"
 
 namespace banjo {
 

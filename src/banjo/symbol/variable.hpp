@@ -1,11 +1,11 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
-#include "ast/ast_node.hpp"
-#include "ir_builder/storage.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/location.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ir_builder/storage.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/location.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 #include <string>
 

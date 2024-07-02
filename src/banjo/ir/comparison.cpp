@@ -1,4 +1,4 @@
-#include "ir/comparison.hpp"
+#include "banjo/ir/comparison.hpp"
 
 namespace banjo {
 

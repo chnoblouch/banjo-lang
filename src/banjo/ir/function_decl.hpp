@@ -1,8 +1,8 @@
 #ifndef IR_FUNCTION_DECL_H
 #define IR_FUNCTION_DECL_H
 
-#include "ir/calling_conv.hpp"
-#include "ir/type.hpp"
+#include "banjo/ir/calling_conv.hpp"
+#include "banjo/ir/type.hpp"
 
 #include <string>
 #include <utility>

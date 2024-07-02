@@ -1,10 +1,10 @@
 #include "deinit_ir_builder.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "ir_builder/location_ir_builder.hpp"
-#include "symbol/magic_functions.hpp"
-#include "symbol/structure.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/location_ir_builder.hpp"
+#include "banjo/symbol/magic_functions.hpp"
+#include "banjo/symbol/structure.hpp"
 
 #include <cassert>
 

@@ -1,7 +1,7 @@
 #ifndef IR_BUILDER_WHILE_IR_BUILDER_H
 #define IR_BUILDER_WHILE_IR_BUILDER_H
 
-#include "ir_builder/ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
 
 namespace banjo {
 

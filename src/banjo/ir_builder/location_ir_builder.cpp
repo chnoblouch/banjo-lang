@@ -1,15 +1,15 @@
 #include "location_ir_builder.hpp"
 
-#include "ast/expr.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "ir_builder/storage.hpp"
-#include "symbol/constant.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/enumeration.hpp"
-#include "symbol/location.hpp"
-#include "symbol/protocol.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/storage.hpp"
+#include "banjo/symbol/constant.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/enumeration.hpp"
+#include "banjo/symbol/location.hpp"
+#include "banjo/symbol/protocol.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cassert>
 

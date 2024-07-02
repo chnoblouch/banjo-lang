@@ -1,13 +1,13 @@
 #include "module_manager.hpp"
 
-#include "ast/ast_module.hpp"
-#include "ast/ast_utils.hpp"
-#include "ast/std_config_module.hpp"
-#include "lexer/lexer.hpp"
-#include "reports/report_manager.hpp"
-#include "source/module_discovery.hpp"
-#include "source/module_loader.hpp"
-#include "symbol/module_path.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/ast/std_config_module.hpp"
+#include "banjo/lexer/lexer.hpp"
+#include "banjo/reports/report_manager.hpp"
+#include "banjo/source/module_discovery.hpp"
+#include "banjo/source/module_loader.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 #include <optional>
 #include <vector>

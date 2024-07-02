@@ -1,8 +1,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include "lexer/buffered_reader.hpp"
-#include "lexer/token.hpp"
+#include "banjo/lexer/buffered_reader.hpp"
+#include "banjo/lexer/token.hpp"
 
 #include <istream>
 #include <vector>

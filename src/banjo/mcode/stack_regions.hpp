@@ -1,7 +1,7 @@
 #ifndef MCODE_STACK_REGIONS_H
 #define MCODE_STACK_REGIONS_H
 
-#include "mcode/stack_frame.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 
 #include <unordered_map>
 #include <vector>

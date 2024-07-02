@@ -1,7 +1,7 @@
 #include "aarch64_reg_analyzer.hpp"
 
-#include "target/aarch64/aarch64_opcode.hpp"
-#include "utils/macros.hpp"
+#include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

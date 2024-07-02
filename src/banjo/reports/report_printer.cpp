@@ -1,6 +1,6 @@
 #include "report_printer.hpp"
 
-#include "utils/utf8_encoding.hpp"
+#include "banjo/utils/utf8_encoding.hpp"
 
 namespace banjo {
 

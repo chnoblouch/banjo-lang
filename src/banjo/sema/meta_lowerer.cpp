@@ -1,14 +1,14 @@
 #include "meta_lowerer.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "sema/expr_analyzer.hpp"
-#include "sema/meta_evaluator.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "sema/type_analyzer.hpp"
-#include "symbol/enumeration.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/meta_evaluator.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/sema/type_analyzer.hpp"
+#include "banjo/symbol/enumeration.hpp"
 
 namespace banjo {
 

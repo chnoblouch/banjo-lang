@@ -1,8 +1,8 @@
 #ifndef PASSES_PASS_H
 #define PASSES_PASS_H
 
-#include "ir/module.hpp"
-#include "target/target.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/target/target.hpp"
 
 #include <ostream>
 #include <string>

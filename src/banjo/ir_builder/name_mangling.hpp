@@ -1,11 +1,11 @@
 #ifndef IR_BUILDER_NAME_MANGLING_H
 #define IR_BUILDER_NAME_MANGLING_H
 
-#include "symbol/function.hpp"
-#include "symbol/global_variable.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/structure.hpp"
-#include "symbol/union.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/global_variable.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/structure.hpp"
+#include "banjo/symbol/union.hpp"
 
 #include <string>
 

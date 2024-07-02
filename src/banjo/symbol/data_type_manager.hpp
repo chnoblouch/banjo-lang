@@ -1,8 +1,8 @@
 #ifndef DATA_TYPE_MANAGER
 #define DATA_TYPE_MANAGER
 
-#include "symbol/data_type.hpp"
-#include "utils/growable_arena.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/utils/growable_arena.hpp"
 
 namespace banjo {
 

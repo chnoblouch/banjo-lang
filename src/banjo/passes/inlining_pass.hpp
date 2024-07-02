@@ -1,8 +1,8 @@
 #ifndef PASSES_INLINING_PASS_H
 #define PASSES_INLINING_PASS_H
 
-#include "ir/call_graph.hpp"
-#include "passes/pass.hpp"
+#include "banjo/ir/call_graph.hpp"
+#include "banjo/passes/pass.hpp"
 
 #include <optional>
 #include <set>

@@ -1,12 +1,12 @@
 #ifndef CODEGEN_REG_ALLOC_PASS_H
 #define CODEGEN_REG_ALLOC_PASS_H
 
-#include "codegen/liveness.hpp"
-#include "codegen/machine_pass.hpp"
-#include "codegen/reg_alloc_func.hpp"
-#include "mcode/register.hpp"
-#include "mcode/stack_frame.hpp"
-#include "target/target_reg_analyzer.hpp"
+#include "banjo/codegen/liveness.hpp"
+#include "banjo/codegen/machine_pass.hpp"
+#include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_frame.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 
 #include <fstream>
 #include <queue>

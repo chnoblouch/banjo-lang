@@ -1,7 +1,7 @@
 #ifndef HOT_RELOADER_H
 #define HOT_RELOADER_H
 
-#include "ir/addr_table.hpp"
+#include "banjo/ir/addr_table.hpp"
 #include "target_process.hpp"
 
 #include <cstdlib>

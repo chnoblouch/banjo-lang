@@ -1,9 +1,9 @@
 #ifndef PASS_RUNNER_H
 #define PASS_RUNNER_H
 
-#include "ir/module.hpp"
-#include "passes/pass.hpp"
-#include "target/target.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/passes/pass.hpp"
+#include "banjo/target/target.hpp"
 
 #include <vector>
 

@@ -2,7 +2,7 @@
 #define LSP_SEMANTIC_TOKENS_HANDLER_H
 
 #include "connection.hpp"
-#include "source/text_range.hpp"
+#include "banjo/source/text_range.hpp"
 #include "source_manager.hpp"
 
 namespace banjo {

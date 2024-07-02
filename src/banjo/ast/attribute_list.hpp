@@ -1,7 +1,7 @@
 #ifndef ATTRIBUTE_LIST_H
 #define ATTRIBUTE_LIST_H
 
-#include "ast/attribute.hpp"
+#include "banjo/ast/attribute.hpp"
 #include <vector>
 
 namespace banjo {

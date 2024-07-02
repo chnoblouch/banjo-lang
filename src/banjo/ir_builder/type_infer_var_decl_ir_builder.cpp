@@ -1,9 +1,9 @@
 #include "type_infer_var_decl_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/decl.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
-#include "symbol/local_variable.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/symbol/local_variable.hpp"
 
 namespace banjo {
 

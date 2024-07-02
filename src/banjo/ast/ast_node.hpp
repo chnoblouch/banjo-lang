@@ -1,9 +1,9 @@
 #ifndef AST_NODE_H
 #define AST_NODE_H
 
-#include "ast/attribute_list.hpp"
-#include "lexer/token.hpp"
-#include "source/text_range.hpp"
+#include "banjo/ast/attribute_list.hpp"
+#include "banjo/lexer/token.hpp"
+#include "banjo/source/text_range.hpp"
 
 #include <cassert>
 #include <string>

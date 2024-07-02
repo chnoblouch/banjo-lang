@@ -1,6 +1,6 @@
 #include "report_manager.hpp"
 
-#include "reports/report_printer.hpp"
+#include "banjo/reports/report_printer.hpp"
 
 namespace banjo {
 

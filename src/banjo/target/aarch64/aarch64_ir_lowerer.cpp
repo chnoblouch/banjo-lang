@@ -1,11 +1,11 @@
 #include "aarch64_ir_lowerer.hpp"
 
-#include "target/aarch64/aapcs_calling_conv.hpp"
-#include "target/aarch64/aarch64_immediate.hpp"
-#include "target/aarch64/aarch64_opcode.hpp"
-#include "target/aarch64/aarch64_register.hpp"
-#include "utils/macros.hpp"
-#include "utils/bit_operations.hpp"
+#include "banjo/target/aarch64/aapcs_calling_conv.hpp"
+#include "banjo/target/aarch64/aarch64_immediate.hpp"
+#include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/utils/macros.hpp"
+#include "banjo/utils/bit_operations.hpp"
 
 namespace banjo {
 

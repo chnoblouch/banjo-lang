@@ -1,7 +1,7 @@
 #ifndef TARGET_PROCESS_H
 #define TARGET_PROCESS_H
 
-#include "emit/binary_module.hpp"
+#include "banjo/emit/binary_module.hpp"
 #include <string>
 
 typedef unsigned long DWORD;

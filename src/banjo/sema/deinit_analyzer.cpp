@@ -1,7 +1,7 @@
 #include "deinit_analyzer.hpp"
 
-#include "symbol/magic_functions.hpp"
-#include "symbol/structure.hpp"
+#include "banjo/symbol/magic_functions.hpp"
+#include "banjo/symbol/structure.hpp"
 
 namespace banjo {
 

@@ -1,12 +1,12 @@
 #ifndef EXPR_H
 #define EXPR_H
 
-#include "ast/ast_node.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/function.hpp"
-#include "symbol/location.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "utils/large_int.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/location.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/utils/large_int.hpp"
 
 #include <utility>
 #include <vector>

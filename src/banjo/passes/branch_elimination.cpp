@@ -1,6 +1,6 @@
 #include "branch_elimination.hpp"
 
-#include "ir/control_flow_graph.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
 
 #include <iostream>
 

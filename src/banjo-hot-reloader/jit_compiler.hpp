@@ -1,14 +1,14 @@
 #ifndef JIT_COMPILER_H
 #define JIT_COMPILER_H
 
-#include "config/config.hpp"
-#include "emit/binary_module.hpp"
-#include "ir/addr_table.hpp"
-#include "ir/module.hpp"
-#include "reports/report_manager.hpp"
-#include "source/file_module_loader.hpp"
-#include "source/module_manager.hpp"
-#include "symbol/data_type_manager.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/emit/binary_module.hpp"
+#include "banjo/ir/addr_table.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/reports/report_manager.hpp"
+#include "banjo/source/file_module_loader.hpp"
+#include "banjo/source/module_manager.hpp"
+#include "banjo/symbol/data_type_manager.hpp"
 
 namespace banjo {
 

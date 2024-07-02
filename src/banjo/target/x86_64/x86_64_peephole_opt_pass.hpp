@@ -1,7 +1,7 @@
 #ifndef X86_64_PEEPHOLE_OPT_PASS_H
 #define X86_64_PEEPHOLE_OPT_PASS_H
 
-#include "codegen/machine_pass.hpp"
+#include "banjo/codegen/machine_pass.hpp"
 
 namespace banjo {
 

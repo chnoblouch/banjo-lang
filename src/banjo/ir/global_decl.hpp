@@ -1,7 +1,7 @@
 #ifndef IR_GLOBAL_DECL_H
 #define IR_GLOBAL_DECL_H
 
-#include "ir/type.hpp"
+#include "banjo/ir/type.hpp"
 #include <string>
 
 namespace banjo {

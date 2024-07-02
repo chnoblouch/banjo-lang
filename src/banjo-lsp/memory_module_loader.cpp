@@ -1,6 +1,6 @@
 #include "memory_module_loader.hpp"
 
-#include "ast/ast_module.hpp"
+#include "banjo/ast/ast_module.hpp"
 #include "source_manager.hpp"
 #include <sstream>
 

@@ -1,11 +1,11 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
-#include "ir/function.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/generics.hpp"
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/ir/function.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 #include <optional>
 #include <string>

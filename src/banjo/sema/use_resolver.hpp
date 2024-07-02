@@ -1,8 +1,8 @@
 #ifndef USE_RESOLVER_H
 #define USE_RESOLVER_H
 
-#include "ast/ast_node.hpp"
-#include "sema/semantic_analyzer_context.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
 
 namespace banjo {
 

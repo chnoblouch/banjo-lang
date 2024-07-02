@@ -1,11 +1,11 @@
 #include "compound_assign_ir_builder.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ir/virtual_register.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

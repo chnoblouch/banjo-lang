@@ -1,14 +1,14 @@
 #ifndef IR_BUILDER_IR_BUILDER_CONTEXT_H
 #define IR_BUILDER_IR_BUILDER_CONTEXT_H
 
-#include "ir/module.hpp"
-#include "ir/structure.hpp"
-#include "ir/virtual_register.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/function.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/structure.hpp"
-#include "target/target.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/structure.hpp"
+#include "banjo/target/target.hpp"
 
 #include <stack>
 #include <string>

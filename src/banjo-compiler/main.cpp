@@ -1,10 +1,10 @@
 #include "compiler.hpp"
 
-#include "config/argument_parser.hpp"
-#include "config/config_parser.hpp"
-#include "config/standard_lib.hpp"
-#include "utils/platform.hpp"
-#include "utils/timing.hpp"
+#include "banjo/config/argument_parser.hpp"
+#include "banjo/config/config_parser.hpp"
+#include "banjo/config/standard_lib.hpp"
+#include "banjo/utils/platform.hpp"
+#include "banjo/utils/timing.hpp"
 
 #ifdef OS_WINDOWS
 #    define NOMINMAX

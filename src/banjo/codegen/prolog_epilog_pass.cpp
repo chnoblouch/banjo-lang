@@ -1,7 +1,7 @@
 #include "prolog_epilog_pass.hpp"
 
-#include "codegen/machine_pass_utils.hpp"
-#include "utils/timing.hpp"
+#include "banjo/codegen/machine_pass_utils.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <vector>
 

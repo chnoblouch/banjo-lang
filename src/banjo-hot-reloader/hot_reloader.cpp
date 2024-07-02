@@ -1,8 +1,8 @@
 #include "hot_reloader.hpp"
 
-#include "ast/ast_utils.hpp"
+#include "banjo/ast/ast_utils.hpp"
 #include "diagnostics.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "jit_compiler.hpp"
 
 #include <cstring>

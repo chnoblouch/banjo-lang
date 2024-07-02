@@ -1,8 +1,8 @@
 #ifndef IR_BASIC_BLOCK_H
 #define IR_BASIC_BLOCK_H
 
-#include "ir/instruction.hpp"
-#include "utils/linked_list.hpp"
+#include "banjo/ir/instruction.hpp"
+#include "banjo/utils/linked_list.hpp"
 
 #include <string>
 #include <vector>

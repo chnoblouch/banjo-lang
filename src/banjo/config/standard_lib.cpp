@@ -1,6 +1,6 @@
 #include "standard_lib.hpp"
 
-#include "utils/paths.hpp"
+#include "banjo/utils/paths.hpp"
 
 namespace banjo {
 

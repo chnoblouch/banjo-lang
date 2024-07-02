@@ -1,7 +1,7 @@
 #ifndef BINARY_EMITTER_H
 #define BINARY_EMITTER_H
 
-#include "emit/emitter.hpp"
+#include "banjo/emit/emitter.hpp"
 #include <cstdint>
 
 namespace banjo {

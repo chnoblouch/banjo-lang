@@ -1,7 +1,7 @@
 #ifndef IR_CALL_GRAPH_H
 #define IR_CALL_GRAPH_H
 
-#include "ir/module.hpp"
+#include "banjo/ir/module.hpp"
 #include <unordered_map>
 
 namespace banjo {

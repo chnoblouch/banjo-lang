@@ -1,12 +1,12 @@
 #include "x86_64_target.hpp"
 
-#include "config/config.hpp"
-#include "emit/elf/elf_emitter.hpp"
-#include "emit/nasm_emitter.hpp"
-#include "emit/pe/pe_emitter.hpp"
-#include "target/target_description.hpp"
-#include "target/x86_64/x86_64_ir_lowerer.hpp"
-#include "target/x86_64/x86_64_peephole_opt_pass.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/emit/elf/elf_emitter.hpp"
+#include "banjo/emit/nasm_emitter.hpp"
+#include "banjo/emit/pe/pe_emitter.hpp"
+#include "banjo/target/target_description.hpp"
+#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_peephole_opt_pass.hpp"
 
 namespace banjo {
 

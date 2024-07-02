@@ -1,7 +1,7 @@
 #include "structure.hpp"
 
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 #include <utility>
 
 namespace banjo {

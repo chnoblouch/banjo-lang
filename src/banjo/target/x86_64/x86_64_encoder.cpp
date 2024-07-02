@@ -1,8 +1,8 @@
 #include "x86_64_encoder.hpp"
 
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "target/x86_64/x86_64_register.hpp"
-#include "utils/macros.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <iostream>
 #include <limits>

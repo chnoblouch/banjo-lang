@@ -1,5 +1,5 @@
 #include "config_parser.hpp"
-#include "target/target_description.hpp"
+#include "banjo/target/target_description.hpp"
 
 namespace banjo {
 

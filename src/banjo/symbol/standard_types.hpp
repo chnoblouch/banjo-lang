@@ -1,10 +1,10 @@
 #ifndef STANDARD_TYPES_H
 #define STANDARD_TYPES_H
 
-#include "ast/module_list.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 
 namespace banjo {
 

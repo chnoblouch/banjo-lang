@@ -1,9 +1,9 @@
 #ifndef CODEGEN_IR_LOWERER_H
 #define CODEGEN_IR_LOWERER_H
 
-#include "ir/module.hpp"
-#include "mcode/module.hpp"
-#include "target/target.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/mcode/module.hpp"
+#include "banjo/target/target.hpp"
 
 #include <unordered_map>
 #include <vector>

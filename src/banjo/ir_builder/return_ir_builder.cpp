@@ -1,7 +1,7 @@
 #include "return_ir_builder.hpp"
 
-#include "ir_builder/expr_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
 
 namespace banjo {
 

@@ -1,8 +1,8 @@
 #ifndef MCODE_MODULE_H
 #define MCODE_MODULE_H
 
-#include "mcode/function.hpp"
-#include "mcode/global.hpp"
+#include "banjo/mcode/function.hpp"
+#include "banjo/mcode/global.hpp"
 
 #include <unordered_set>
 #include <vector>

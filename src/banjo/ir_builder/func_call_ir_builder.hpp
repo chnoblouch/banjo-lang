@@ -1,9 +1,9 @@
 #ifndef IR_BUILDER_FUNC_CALL_IR_BUILDER_H
 #define IR_BUILDER_FUNC_CALL_IR_BUILDER_H
 
-#include "ir_builder/ir_builder.hpp"
-#include "ir_builder/storage.hpp"
-#include "symbol/data_type.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
+#include "banjo/ir_builder/storage.hpp"
+#include "banjo/symbol/data_type.hpp"
 
 #include <optional>
 #include <vector>

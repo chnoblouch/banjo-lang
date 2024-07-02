@@ -1,17 +1,17 @@
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
 
-#include "symbol/constant.hpp"
-#include "symbol/function.hpp"
-#include "symbol/generics.hpp"
-#include "symbol/global_variable.hpp"
-#include "symbol/local_variable.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/parameter.hpp"
-#include "symbol/structure.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/type_alias.hpp"
-#include "symbol/union.hpp"
+#include "banjo/symbol/constant.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/global_variable.hpp"
+#include "banjo/symbol/local_variable.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/parameter.hpp"
+#include "banjo/symbol/structure.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/type_alias.hpp"
+#include "banjo/symbol/union.hpp"
 
 #include <optional>
 #include <string>

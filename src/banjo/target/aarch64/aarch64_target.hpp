@@ -1,9 +1,9 @@
 #ifndef AARCH64_TARGET_H
 #define AARCH64_TARGET_H
 
-#include "target/aarch64/aarch64_reg_analyzer.hpp"
-#include "target/standard_data_layout.hpp"
-#include "target/target.hpp"
+#include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
+#include "banjo/target/standard_data_layout.hpp"
+#include "banjo/target/target.hpp"
 
 namespace banjo {
 

@@ -1,7 +1,7 @@
 #ifndef PASSES_BRANCH_ELIMINATION_H
 #define PASSES_BRANCH_ELIMINATION_H
 
-#include "passes/pass.hpp"
+#include "banjo/passes/pass.hpp"
 
 namespace banjo {
 

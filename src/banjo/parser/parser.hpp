@@ -1,15 +1,15 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_module.hpp"
-#include "ast/ast_node.hpp"
-#include "lexer/token.hpp"
-#include "parser/node_builder.hpp"
-#include "parser/token_stream.hpp"
-#include "reports/report.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/lexer/token.hpp"
+#include "banjo/parser/node_builder.hpp"
+#include "banjo/parser/token_stream.hpp"
+#include "banjo/reports/report.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 
 #include <functional>
 #include <vector>

@@ -1,7 +1,7 @@
 #include "lowering_tester.hpp"
 
-#include "target/x86_64/x86_64_target.hpp"
-#include "target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_target.hpp"
+#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
 
 #include <filesystem>
 #include <iomanip>

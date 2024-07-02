@@ -1,12 +1,12 @@
 #ifndef TARGET_H
 #define TARGET_H
 
-#include "codegen/machine_pass.hpp"
-#include "emit/emitter.hpp"
-#include "ir/calling_conv.hpp"
-#include "target/target_data_layout.hpp"
-#include "target/target_description.hpp"
-#include "target/target_reg_analyzer.hpp"
+#include "banjo/codegen/machine_pass.hpp"
+#include "banjo/emit/emitter.hpp"
+#include "banjo/ir/calling_conv.hpp"
+#include "banjo/target/target_data_layout.hpp"
+#include "banjo/target/target_description.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 
 #include <vector>
 

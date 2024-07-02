@@ -1,6 +1,6 @@
 #include "constant.hpp"
 
-#include "ir_builder/expr_ir_builder.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
 #include <utility>
 
 namespace banjo {

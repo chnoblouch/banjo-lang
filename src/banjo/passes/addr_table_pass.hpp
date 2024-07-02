@@ -1,8 +1,8 @@
 #ifndef PASSES_ADDR_TABLE_PASS_H
 #define PASSES_ADDR_TABLE_PASS_H
 
-#include "ir/addr_table.hpp"
-#include "passes/pass.hpp"
+#include "banjo/ir/addr_table.hpp"
+#include "banjo/passes/pass.hpp"
 
 #include <fstream>
 #include <optional>

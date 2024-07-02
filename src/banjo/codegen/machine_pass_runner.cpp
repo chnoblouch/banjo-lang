@@ -1,10 +1,10 @@
 #include "machine_pass_runner.hpp"
 
-#include "codegen/prolog_epilog_pass.hpp"
-#include "codegen/reg_alloc_pass.hpp"
-#include "codegen/stack_frame_pass.hpp"
-#include "config/config.hpp"
-#include "emit/debug_emitter.hpp"
+#include "banjo/codegen/prolog_epilog_pass.hpp"
+#include "banjo/codegen/reg_alloc_pass.hpp"
+#include "banjo/codegen/stack_frame_pass.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/emit/debug_emitter.hpp"
 
 #include <fstream>
 

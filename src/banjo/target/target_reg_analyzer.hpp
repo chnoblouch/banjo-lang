@@ -1,11 +1,11 @@
 #ifndef TARGET_REG_ANALYZER_H
 #define TARGET_REG_ANALYZER_H
 
-#include "codegen/reg_alloc_func.hpp"
-#include "ir/virtual_register.hpp"
-#include "mcode/instruction.hpp"
-#include "mcode/register.hpp"
-#include "mcode/stack_frame.hpp"
+#include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 
 #include <vector>
 

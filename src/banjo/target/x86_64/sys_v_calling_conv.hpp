@@ -1,7 +1,7 @@
 #ifndef SYSV_CALLING_CONV_H
 #define SYSV_CALLING_CONV_H
 
-#include "mcode/calling_convention.hpp"
+#include "banjo/mcode/calling_convention.hpp"
 
 namespace ir {
 class Operand;

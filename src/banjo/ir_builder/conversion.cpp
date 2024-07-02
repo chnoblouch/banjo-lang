@@ -1,6 +1,6 @@
 #include "conversion.hpp"
 
-#include "ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
 
 namespace banjo {
 

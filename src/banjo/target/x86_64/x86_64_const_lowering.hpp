@@ -1,7 +1,7 @@
 #ifndef X86_64_CONST_LOWERING_H
 #define X86_64_CONST_LOWERING_H
 
-#include "codegen/ir_lowerer.hpp"
+#include "banjo/codegen/ir_lowerer.hpp"
 
 #include <map>
 #include <optional>

@@ -1,8 +1,8 @@
 #ifndef PASSES_LICM_PASS_H
 #define PASSES_LICM_PASS_H
 
-#include "passes/loop_analysis.hpp"
-#include "passes/pass.hpp"
+#include "banjo/passes/loop_analysis.hpp"
+#include "banjo/passes/pass.hpp"
 
 namespace banjo {
 

@@ -1,13 +1,13 @@
 #ifndef IR_BUILDER_EXPR_IR_BUILDER_H
 #define IR_BUILDER_EXPR_IR_BUILDER_H
 
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
-#include "ir/operand.hpp"
-#include "ir/virtual_register.hpp"
-#include "ir_builder/ir_builder.hpp"
-#include "ir_builder/storage.hpp"
-#include "symbol/data_type.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
+#include "banjo/ir_builder/storage.hpp"
+#include "banjo/symbol/data_type.hpp"
 
 namespace banjo {
 

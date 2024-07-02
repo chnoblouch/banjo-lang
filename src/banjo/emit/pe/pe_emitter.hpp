@@ -1,8 +1,8 @@
 #ifndef PE_EMITTER_H
 #define PE_EMITTER_H
 
-#include "emit/binary_emitter.hpp"
-#include "emit/pe/pe_format.hpp"
+#include "banjo/emit/binary_emitter.hpp"
+#include "banjo/emit/pe/pe_format.hpp"
 
 namespace banjo {
 

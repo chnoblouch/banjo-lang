@@ -1,16 +1,16 @@
 #include "meta_evaluator.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
-#include "reports/report_utils.hpp"
-#include "sema/expr_analyzer.hpp"
-#include "sema/location_analyzer.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "sema/type_analyzer.hpp"
-#include "symbol/data_type.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/reports/report_utils.hpp"
+#include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/location_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/sema/type_analyzer.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

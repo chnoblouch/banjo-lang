@@ -1,8 +1,8 @@
 #ifndef TARGET_DATA_LAYOUT_H
 #define TARGET_DATA_LAYOUT_H
 
-#include "ir/structure.hpp"
-#include "ir/type.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/ir/type.hpp"
 
 #include <vector>
 

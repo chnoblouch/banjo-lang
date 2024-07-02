@@ -1,10 +1,10 @@
 #include "use_collector.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
-#include "symbol/symbol_table.hpp"
-#include "symbol/use.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/symbol/symbol_table.hpp"
+#include "banjo/symbol/use.hpp"
 
 namespace banjo {
 

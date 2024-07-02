@@ -1,7 +1,7 @@
 #ifndef LSP_JSON_H
 #define LSP_JSON_H
 
-#include "utils/box.hpp"
+#include "banjo/utils/box.hpp"
 
 #include <initializer_list>
 #include <string>

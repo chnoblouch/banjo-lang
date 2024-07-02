@@ -1,7 +1,7 @@
 #include "bool_expr_ir_builder.hpp"
 
-#include "ast/ast_node.hpp"
-#include "ir_builder/expr_ir_builder.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ir_builder/expr_ir_builder.hpp"
 
 namespace banjo {
 

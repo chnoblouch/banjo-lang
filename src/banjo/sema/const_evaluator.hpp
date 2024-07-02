@@ -1,8 +1,8 @@
 #ifndef CONST_EVALUATOR_H
 #define CONST_EVALUATOR_H
 
-#include "ast/ast_node.hpp"
-#include "utils/large_int.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/utils/large_int.hpp"
 
 namespace banjo {
 

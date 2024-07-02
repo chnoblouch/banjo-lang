@@ -1,9 +1,9 @@
 #ifndef AST_UTILS_H
 #define AST_UTILS_H
 
-#include "ast/ast_node.hpp"
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 
 #include <functional>
 

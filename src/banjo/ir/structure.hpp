@@ -1,7 +1,7 @@
 #ifndef IR_STRUCTURE_H
 #define IR_STRUCTURE_H
 
-#include "ir/type.hpp"
+#include "banjo/ir/type.hpp"
 
 #include <string>
 #include <utility>

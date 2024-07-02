@@ -1,8 +1,8 @@
 #include "hot_reloader.hpp"
 
-#include "config/config_parser.hpp"
-#include "config/standard_lib.hpp"
-#include "utils/platform.hpp"
+#include "banjo/config/config_parser.hpp"
+#include "banjo/config/standard_lib.hpp"
+#include "banjo/utils/platform.hpp"
 
 #ifdef OS_WINDOWS
 #    define NOMINMAX

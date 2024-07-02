@@ -1,7 +1,7 @@
 #include "x86_64_const_lowering.hpp"
 
-#include "passes/pass_utils.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
+#include "banjo/passes/pass_utils.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
 
 #include <cassert>
 

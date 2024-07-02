@@ -1,8 +1,8 @@
 #ifndef LOCAL_VARIABLE_H
 #define LOCAL_VARIABLE_H
 
-#include "ir/virtual_register.hpp"
-#include "symbol/variable.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/symbol/variable.hpp"
 
 namespace banjo {
 

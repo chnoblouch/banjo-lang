@@ -1,9 +1,9 @@
 #include "data_type.hpp"
 
-#include "symbol/data_type_manager.hpp"
-#include "symbol/structure.hpp"
-#include "symbol/union.hpp"
-#include "utils/macros.hpp"
+#include "banjo/symbol/data_type_manager.hpp"
+#include "banjo/symbol/structure.hpp"
+#include "banjo/symbol/union.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cassert>
 

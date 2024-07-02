@@ -1,7 +1,7 @@
 #ifndef CODEGEN_PROLOG_EPILOG_PASS_H
 #define CODEGEN_PROLOG_EPILOG_PASS_H
 
-#include "codegen/machine_pass.hpp"
+#include "banjo/codegen/machine_pass.hpp"
 
 namespace banjo {
 

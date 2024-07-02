@@ -1,10 +1,10 @@
 #ifndef MCODE_INSTRUCTION_H
 #define MCODE_INSTRUCTION_H
 
-#include "mcode/operand.hpp"
-#include "mcode/register.hpp"
-#include "utils/fixed_vector.hpp"
-#include "utils/linked_list.hpp"
+#include "banjo/mcode/operand.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/utils/fixed_vector.hpp"
+#include "banjo/utils/linked_list.hpp"
 
 #include <utility>
 #include <vector>

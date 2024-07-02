@@ -1,7 +1,7 @@
 #ifndef GENERICS_H
 #define GENERICS_H
 
-#include "symbol/symbol.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 #include <string>
 #include <variant>

@@ -1,14 +1,14 @@
 #ifndef IR_BUILDER_LOCATION_IR_BUILDER_H
 #define IR_BUILDER_LOCATION_IR_BUILDER_H
 
-#include "ir_builder/ir_builder.hpp"
-#include "ir_builder/storage.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/function.hpp"
-#include "symbol/location.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/union.hpp"
-#include "symbol/variable.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
+#include "banjo/ir_builder/storage.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/location.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/union.hpp"
+#include "banjo/symbol/variable.hpp"
 
 #include <optional>
 #include <vector>

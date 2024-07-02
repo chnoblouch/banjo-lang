@@ -1,9 +1,9 @@
 #ifndef META_EVALUATOR_H
 #define META_EVALUATOR_H
 
-#include "ast/expr.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "utils/large_int.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/utils/large_int.hpp"
 #include <vector>
 
 namespace banjo {

@@ -1,10 +1,10 @@
 #ifndef MCODE_OPERAND_H
 #define MCODE_OPERAND_H
 
-#include "mcode/indirect_address.hpp"
-#include "mcode/register.hpp"
-#include "target/aarch64/aarch64_address.hpp"
-#include "target/aarch64/aarch64_condition.hpp"
+#include "banjo/mcode/indirect_address.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
+#include "banjo/target/aarch64/aarch64_condition.hpp"
 
 #include <string>
 #include <variant>

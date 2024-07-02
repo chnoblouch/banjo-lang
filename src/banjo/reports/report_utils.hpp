@@ -1,7 +1,7 @@
 #ifndef REPORT_UTILS_H
 #define REPORT_UTILS_H
 
-#include "symbol/data_type.hpp"
+#include "banjo/symbol/data_type.hpp"
 
 #include <string>
 #include <vector>

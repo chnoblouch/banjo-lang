@@ -1,7 +1,7 @@
 #ifndef AARCH64_IR_LOWERER_H
 #define AARCH64_IR_LOWERER_H
 
-#include "codegen/ir_lowerer.hpp"
+#include "banjo/codegen/ir_lowerer.hpp"
 
 namespace banjo {
 

@@ -1,8 +1,8 @@
 #include "liveness.hpp"
 
-#include "codegen/reg_alloc_func.hpp"
-#include "emit/debug_emitter.hpp"
-#include "mcode/register.hpp"
+#include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/emit/debug_emitter.hpp"
+#include "banjo/mcode/register.hpp"
 
 #include <iostream>
 

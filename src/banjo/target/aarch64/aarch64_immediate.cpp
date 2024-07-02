@@ -1,6 +1,6 @@
 #include "aarch64_immediate.hpp"
 
-#include "utils/bit_operations.hpp"
+#include "banjo/utils/bit_operations.hpp"
 
 #include <cmath>
 

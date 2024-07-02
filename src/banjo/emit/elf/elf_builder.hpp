@@ -1,8 +1,8 @@
 #ifndef ELF_BUILDER_H
 #define ELF_BUILDER_H
 
-#include "emit/binary_module.hpp"
-#include "emit/elf/elf_format.hpp"
+#include "banjo/emit/binary_module.hpp"
+#include "banjo/emit/elf/elf_format.hpp"
 
 namespace banjo {
 

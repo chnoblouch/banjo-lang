@@ -1,7 +1,7 @@
-#include "target/x86_64/x86_64_encoder.hpp"
-#include "emit/nasm_emitter.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "target/x86_64/x86_64_register.hpp"
+#include "banjo/target/x86_64/x86_64_encoder.hpp"
+#include "banjo/emit/nasm_emitter.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
 
 #include <chrono>
 #include <cstdlib>

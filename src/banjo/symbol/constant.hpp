@@ -1,7 +1,7 @@
 #ifndef CONSTANT_VARIABLE_H
 #define CONSTANT_VARIABLE_H
 
-#include "symbol/variable.hpp"
+#include "banjo/symbol/variable.hpp"
 
 namespace banjo {
 

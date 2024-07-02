@@ -1,8 +1,8 @@
 #ifndef CODEGEN_LIVENESS_H
 #define CODEGEN_LIVENESS_H
 
-#include "codegen/reg_alloc_func.hpp"
-#include "mcode/register.hpp"
+#include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/mcode/register.hpp"
 
 #include <ostream>
 #include <unordered_map>

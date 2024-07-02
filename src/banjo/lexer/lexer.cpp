@@ -1,7 +1,7 @@
 #include "lexer.hpp"
 
-#include "source/text_range.hpp"
-#include "utils/timing.hpp"
+#include "banjo/source/text_range.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <iostream>
 #include <string_view>

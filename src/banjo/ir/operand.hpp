@@ -1,11 +1,11 @@
 #ifndef IR_OPERAND_H
 #define IR_OPERAND_H
 
-#include "ir/comparison.hpp"
-#include "ir/type.hpp"
-#include "ir/virtual_register.hpp"
-#include "utils/large_int.hpp"
-#include "utils/linked_list.hpp"
+#include "banjo/ir/comparison.hpp"
+#include "banjo/ir/type.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/utils/large_int.hpp"
+#include "banjo/utils/linked_list.hpp"
 
 #include <string>
 #include <utility>

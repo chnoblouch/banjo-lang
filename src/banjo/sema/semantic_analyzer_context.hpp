@@ -1,16 +1,16 @@
 #ifndef SEMANTIC_ANALYZER_CONTEXT_H
 #define SEMANTIC_ANALYZER_CONTEXT_H
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_module.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/module_list.hpp"
-#include "sema/semantic_analysis.hpp"
-#include "source/module_manager.hpp"
-#include "symbol/data_type_manager.hpp"
-#include "symbol/module_path.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "target/target.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/sema/semantic_analysis.hpp"
+#include "banjo/source/module_manager.hpp"
+#include "banjo/symbol/data_type_manager.hpp"
+#include "banjo/symbol/module_path.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/target/target.hpp"
 
 #include <optional>
 #include <stack>

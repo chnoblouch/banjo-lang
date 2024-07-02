@@ -1,9 +1,9 @@
 #ifndef VALUE_STORAGE_H
 #define VALUE_STORAGE_H
 
-#include "ir/operand.hpp"
-#include "ir/virtual_register.hpp"
-#include "ir_builder/ir_builder_context.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
 
 #include <cassert>
 #include <optional>

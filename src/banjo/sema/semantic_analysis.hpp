@@ -1,7 +1,7 @@
 #ifndef SEMANTIC_ANALYSIS_H
 #define SEMANTIC_ANALYSIS_H
 
-#include "reports/report.hpp"
+#include "banjo/reports/report.hpp"
 #include <vector>
 
 namespace banjo {

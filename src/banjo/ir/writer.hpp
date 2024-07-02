@@ -1,7 +1,7 @@
 #ifndef IR_WRITER_H
 #define IR_WRITER_H
 
-#include "ir/module.hpp"
+#include "banjo/ir/module.hpp"
 
 #include <ostream>
 #include <string>

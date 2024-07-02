@@ -1,7 +1,7 @@
 #ifndef TYPE_ALIAS_H
 #define TYPE_ALIAS_H
 
-#include "symbol/symbol.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 namespace banjo {
 

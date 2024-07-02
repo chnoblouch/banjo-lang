@@ -1,7 +1,7 @@
 #ifndef CONTROL_FLOW_GRAPH_H
 #define CONTROL_FLOW_GRAPH_H
 
-#include "ir/function.hpp"
+#include "banjo/ir/function.hpp"
 
 #include <optional>
 #include <ostream>

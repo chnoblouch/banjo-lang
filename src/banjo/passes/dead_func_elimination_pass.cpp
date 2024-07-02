@@ -1,5 +1,5 @@
 #include "dead_func_elimination_pass.hpp"
-#include "ir/function.hpp"
+#include "banjo/ir/function.hpp"
 #include <vector>
 
 namespace banjo {

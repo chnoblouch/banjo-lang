@@ -1,10 +1,10 @@
 #ifndef DECL_NAME_ANALYZER_H
 #define DECL_NAME_ANALYZER_H
 
-#include "ast/ast_node.hpp"
-#include "ast/decl.hpp"
-#include "ast/module_list.hpp"
-#include "sema/semantic_analyzer.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 
 namespace banjo {
 

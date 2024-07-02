@@ -1,7 +1,7 @@
 #ifndef MCODE_INDIRECT_ADDRESS_H
 #define MCODE_INDIRECT_ADDRESS_H
 
-#include "mcode/register.hpp"
+#include "banjo/mcode/register.hpp"
 #include <variant>
 
 namespace banjo {

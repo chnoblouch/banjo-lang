@@ -1,8 +1,8 @@
 #ifndef IR_TYPE_H
 #define IR_TYPE_H
 
-#include "ir/primitive.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ir/primitive.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cassert>
 

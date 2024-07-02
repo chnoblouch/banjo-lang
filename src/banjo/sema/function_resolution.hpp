@@ -1,9 +1,9 @@
 #ifndef FUNCTION_RESOLUTION
 #define FUNCTION_RESOLUTION
 
-#include "sema/location_analyzer.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/sema/location_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 #include <optional>
 

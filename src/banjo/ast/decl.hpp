@@ -1,13 +1,13 @@
 #ifndef DECL_H
 #define DECL_H
 
-#include "ast/ast_node.hpp"
-#include "symbol/enumeration.hpp"
-#include "symbol/generics.hpp"
-#include "symbol/protocol.hpp"
-#include "symbol/structure.hpp"
-#include "symbol/type_alias.hpp"
-#include "symbol/union.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/enumeration.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/protocol.hpp"
+#include "banjo/symbol/structure.hpp"
+#include "banjo/symbol/type_alias.hpp"
+#include "banjo/symbol/union.hpp"
 
 
 #include <utility>

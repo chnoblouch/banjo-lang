@@ -1,8 +1,8 @@
 #ifndef MODULE_LIST_H
 #define MODULE_LIST_H
 
-#include "ast/ast_module.hpp"
-#include "utils/timing.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <list>
 

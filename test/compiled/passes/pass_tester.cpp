@@ -1,12 +1,12 @@
 #include "pass_tester.hpp"
 
-#include "ir/writer.hpp"
+#include "banjo/ir/writer.hpp"
 #include "ir_parser.hpp"
 
-#include "passes/inlining_pass.hpp"
-#include "passes/peephole_optimizer.hpp"
-#include "passes/sroa_pass.hpp"
-#include "passes/stack_to_reg_pass.hpp"
+#include "banjo/passes/inlining_pass.hpp"
+#include "banjo/passes/peephole_optimizer.hpp"
+#include "banjo/passes/sroa_pass.hpp"
+#include "banjo/passes/stack_to_reg_pass.hpp"
 
 #include <filesystem>
 #include <iomanip>

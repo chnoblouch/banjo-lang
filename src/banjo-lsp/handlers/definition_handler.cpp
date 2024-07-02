@@ -1,12 +1,12 @@
 #include "definition_handler.hpp"
 
-#include "ast/ast_module.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/expr.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/expr.hpp"
 #include "ast_navigation.hpp"
 #include "protocol_structs.hpp"
-#include "source/text_range.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/source/text_range.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 #include "symbol_ref_info.hpp"
 #include "uri.hpp"
 

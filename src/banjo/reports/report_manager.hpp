@@ -1,7 +1,7 @@
 #ifndef REPORT_MANAGER_H
 #define REPORT_MANAGER_H
 
-#include "reports/report.hpp"
+#include "banjo/reports/report.hpp"
 
 namespace banjo {
 

@@ -1,9 +1,9 @@
 #ifndef DECL_TYPE_ANALYZER_H
 #define DECL_TYPE_ANALYZER_H
 
-#include "ast/ast_node.hpp"
-#include "ast/decl.hpp"
-#include "sema/semantic_analyzer.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 
 #include <optional>
 #include <utility>

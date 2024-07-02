@@ -1,7 +1,7 @@
 #ifndef ARGUMENT_PARSER_H
 #define ARGUMENT_PARSER_H
 
-#include "config/config.hpp"
+#include "banjo/config/config.hpp"
 
 #include <string>
 #include <tuple>

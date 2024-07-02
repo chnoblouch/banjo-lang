@@ -1,10 +1,10 @@
 #include "source_manager.hpp"
 
-#include "ast/ast_utils.hpp"
-#include "config/config.hpp"
-#include "lexer/lexer.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "source/module_discovery.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/lexer/lexer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/source/module_discovery.hpp"
 
 #include <fstream>
 #include <sstream>

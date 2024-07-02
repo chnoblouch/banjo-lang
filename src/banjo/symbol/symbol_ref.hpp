@@ -1,9 +1,9 @@
 #ifndef SYMBOL_REF_H
 #define SYMBOL_REF_H
 
-#include "symbol/generics.hpp"
-#include "symbol/symbol.hpp"
-#include "symbol/union.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/union.hpp"
 
 #include <cassert>
 #include <optional>

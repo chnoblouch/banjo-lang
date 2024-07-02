@@ -1,10 +1,10 @@
 #ifndef EXPR_ANALYZER_H
 #define EXPR_ANALYZER_H
 
-#include "ast/ast_node.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/location.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/location.hpp"
 
 namespace banjo {
 

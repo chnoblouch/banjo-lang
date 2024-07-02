@@ -1,10 +1,10 @@
 #ifndef SYMBOL_REF_INFO_H
 #define SYMBOL_REF_INFO_H
 
-#include "ast/ast_module.hpp"
-#include "ast/expr.hpp"
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 #include <optional>
 

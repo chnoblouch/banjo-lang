@@ -1,9 +1,9 @@
 #ifndef AARCH64_REG_ANALYZER_H
 #define AARCH64_REG_ANALYZER_H
 
-#include "mcode/instruction.hpp"
-#include "target/aarch64/aarch64_register.hpp"
-#include "target/target_reg_analyzer.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 
 namespace banjo {
 

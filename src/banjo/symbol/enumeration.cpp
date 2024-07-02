@@ -1,6 +1,6 @@
 #include "enumeration.hpp"
 
-#include "symbol/symbol_table.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 #include <utility>
 
 namespace banjo {

@@ -170,4 +170,4 @@ add_library(banjo STATIC
     utils/write_buffer.cpp
 )
 
-target_include_directories(banjo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(banjo PUBLIC "${BANJO_SOURCE_DIR}")

@@ -1,8 +1,8 @@
 #ifndef CODEGEN_REG_ALLOC_FUNC_H
 #define CODEGEN_REG_ALLOC_FUNC_H
 
-#include "mcode/function.hpp"
-#include "mcode/register.hpp"
+#include "banjo/mcode/function.hpp"
+#include "banjo/mcode/register.hpp"
 
 #include <unordered_map>
 #include <vector>

@@ -1,11 +1,11 @@
 #ifndef SEMANTIC_ANALYZER_H
 #define SEMANTIC_ANALYZER_H
 
-#include "ast/ast_node.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "source/module_manager.hpp"
-#include "symbol/data_type_manager.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/source/module_manager.hpp"
+#include "banjo/symbol/data_type_manager.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 #include <functional>
 #include <optional>

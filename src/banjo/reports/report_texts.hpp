@@ -1,9 +1,9 @@
 #ifndef REPORT_TEXTS_H
 #define REPORT_TEXTS_H
 
-#include "ast/ast_node.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/module_path.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 #include <string>
 

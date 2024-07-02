@@ -1,13 +1,13 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include "config/config.hpp"
-#include "ir/module.hpp"
-#include "reports/report_manager.hpp"
-#include "reports/report_printer.hpp"
-#include "source/file_module_loader.hpp"
-#include "source/module_manager.hpp"
-#include "target/target.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/reports/report_manager.hpp"
+#include "banjo/reports/report_printer.hpp"
+#include "banjo/source/file_module_loader.hpp"
+#include "banjo/source/module_manager.hpp"
+#include "banjo/target/target.hpp"
 
 namespace banjo {
 

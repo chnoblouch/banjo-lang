@@ -1,7 +1,7 @@
 #ifndef MCODE_STACK_FRAME_H
 #define MCODE_STACK_FRAME_H
 
-#include "mcode/stack_slot.hpp"
+#include "banjo/mcode/stack_slot.hpp"
 #include <vector>
 
 namespace banjo {

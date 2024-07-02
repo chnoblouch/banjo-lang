@@ -1,7 +1,7 @@
 #ifndef PASSES_CSE_PASS_H
 #define PASSES_CSE_PASS_H
 
-#include "passes/pass.hpp"
+#include "banjo/passes/pass.hpp"
 
 namespace banjo {
 

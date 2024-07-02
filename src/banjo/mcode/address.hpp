@@ -1,7 +1,7 @@
 #ifndef MCODE_ADDRESS_H
 #define MCODE_ADDRESS_H
 
-#include "mcode/register.hpp"
+#include "banjo/mcode/register.hpp"
 
 namespace banjo {
 

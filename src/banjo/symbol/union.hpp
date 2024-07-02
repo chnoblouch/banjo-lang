@@ -1,10 +1,10 @@
 #ifndef UNION_H
 #define UNION_H
 
-#include "ir/structure.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/method_table.hpp"
-#include "symbol/symbol.hpp"
+#include "banjo/ir/structure.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/method_table.hpp"
+#include "banjo/symbol/symbol.hpp"
 
 #include <optional>
 #include <string>

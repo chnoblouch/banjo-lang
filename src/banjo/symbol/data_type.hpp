@@ -1,8 +1,8 @@
 #ifndef DATA_TYPE_H
 #define DATA_TYPE_H
 
-#include "symbol/generics.hpp"
-#include "symbol/method_table.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/method_table.hpp"
 
 #include <string>
 #include <variant>

@@ -1,12 +1,12 @@
 #ifndef MCODE_CALLING_CONVENTION_H
 #define MCODE_CALLING_CONVENTION_H
 
-#include "ir/function.hpp"
-#include "ir/type.hpp"
-#include "mcode/instruction.hpp"
-#include "mcode/parameter.hpp"
-#include "mcode/register.hpp"
-#include "mcode/stack_regions.hpp"
+#include "banjo/ir/function.hpp"
+#include "banjo/ir/type.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/parameter.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_regions.hpp"
 
 #include <algorithm>
 #include <vector>

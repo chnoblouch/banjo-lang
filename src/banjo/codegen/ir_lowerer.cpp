@@ -1,7 +1,7 @@
 #include "ir_lowerer.hpp"
 
-#include "ir/control_flow_graph.hpp"
-#include "utils/timing.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <iostream>
 #include <unordered_map>

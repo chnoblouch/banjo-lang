@@ -1,7 +1,7 @@
 #ifndef TOKEN_STREAM_H
 #define TOKEN_STREAM_H
 
-#include "lexer/token.hpp"
+#include "banjo/lexer/token.hpp"
 #include <vector>
 
 namespace banjo {

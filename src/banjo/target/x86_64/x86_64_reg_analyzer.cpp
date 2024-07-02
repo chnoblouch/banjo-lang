@@ -1,10 +1,10 @@
 #include "x86_64_reg_analyzer.hpp"
 
-#include "ir/virtual_register.hpp"
-#include "mcode/instruction.hpp"
-#include "mcode/operand.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ir/virtual_register.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/operand.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 

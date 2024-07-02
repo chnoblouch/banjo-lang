@@ -1,8 +1,8 @@
 #include "aarch64_target.hpp"
 
-#include "emit/clang_asm_emitter.hpp"
-#include "target/aarch64/aarch64_instr_merge_pass.hpp"
-#include "target/aarch64/aarch64_ir_lowerer.hpp"
+#include "banjo/emit/clang_asm_emitter.hpp"
+#include "banjo/target/aarch64/aarch64_instr_merge_pass.hpp"
+#include "banjo/target/aarch64/aarch64_ir_lowerer.hpp"
 
 namespace banjo {
 

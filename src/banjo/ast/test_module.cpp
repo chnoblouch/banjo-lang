@@ -1,8 +1,8 @@
 #include "test_module.hpp"
 
-#include "ast/ast_utils.hpp"
-#include "lexer/lexer.hpp"
-#include "parser/parser.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/lexer/lexer.hpp"
+#include "banjo/parser/parser.hpp"
 
 #include <iostream>
 #include <set>

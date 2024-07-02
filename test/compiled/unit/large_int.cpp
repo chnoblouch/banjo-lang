@@ -1,4 +1,4 @@
-#include "utils/large_int.hpp"
+#include "banjo/utils/large_int.hpp"
 
 #include <cstdlib>
 #include <iostream>

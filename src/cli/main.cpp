@@ -1,5 +1,5 @@
-#include "utils/paths.hpp"
-#include "utils/platform.hpp"
+#include "banjo/utils/paths.hpp"
+#include "banjo/utils/platform.hpp"
 
 #include <cstdlib>
 

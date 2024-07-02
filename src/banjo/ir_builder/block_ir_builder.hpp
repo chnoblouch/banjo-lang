@@ -1,9 +1,9 @@
 #ifndef IR_BUILDER_BLOCK_IR_BUILDER_H
 #define IR_BUILDER_BLOCK_IR_BUILDER_H
 
-#include "ir_builder/deinit_ir_builder.hpp"
-#include "ir_builder/ir_builder.hpp"
-#include "symbol/variable.hpp"
+#include "banjo/ir_builder/deinit_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
+#include "banjo/symbol/variable.hpp"
 
 namespace banjo {
 

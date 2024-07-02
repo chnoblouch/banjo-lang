@@ -1,15 +1,15 @@
 #include "symbol_ref.hpp"
 
-#include "symbol/constant.hpp"
-#include "symbol/enumeration.hpp"
-#include "symbol/function.hpp"
-#include "symbol/global_variable.hpp"
-#include "symbol/local_variable.hpp"
-#include "symbol/parameter.hpp"
-#include "symbol/structure.hpp"
-#include "symbol/union.hpp"
-#include "symbol/protocol.hpp"
-#include "symbol/use.hpp"
+#include "banjo/symbol/constant.hpp"
+#include "banjo/symbol/enumeration.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/global_variable.hpp"
+#include "banjo/symbol/local_variable.hpp"
+#include "banjo/symbol/parameter.hpp"
+#include "banjo/symbol/structure.hpp"
+#include "banjo/symbol/union.hpp"
+#include "banjo/symbol/protocol.hpp"
+#include "banjo/symbol/use.hpp"
 
 namespace banjo {
 

@@ -1,7 +1,7 @@
 #ifndef DECL_PARSER_H
 #define DECL_PARSER_H
 
-#include "parser/parser.hpp"
+#include "banjo/parser/parser.hpp"
 
 namespace banjo {
 

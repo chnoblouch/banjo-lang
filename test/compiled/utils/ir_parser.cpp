@@ -1,7 +1,7 @@
 #include "ir_parser.hpp"
 
-#include "ir/primitive.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ir/primitive.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cctype>
 #include <iostream>

@@ -1,11 +1,11 @@
 #ifndef X86_64_IR_LOWERER_H
 #define X86_64_IR_LOWERER_H
 
-#include "codegen/ir_lowerer.hpp"
-#include "ir/instruction.hpp"
-#include "mcode/instruction.hpp"
-#include "target/x86_64/x86_64_addr_lowering.hpp"
-#include "target/x86_64/x86_64_const_lowering.hpp"
+#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/ir/instruction.hpp"
+#include "banjo/mcode/instruction.hpp"
+#include "banjo/target/x86_64/x86_64_addr_lowering.hpp"
+#include "banjo/target/x86_64/x86_64_const_lowering.hpp"
 
 #include <functional>
 #include <optional>

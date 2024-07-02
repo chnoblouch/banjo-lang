@@ -1,7 +1,7 @@
 #ifndef PASSES_PEEPHOLE_OPTIMIZER_H
 #define PASSES_PEEPHOLE_OPTIMIZER_H
 
-#include "passes/pass.hpp"
+#include "banjo/passes/pass.hpp"
 
 namespace banjo {
 

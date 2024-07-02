@@ -1,7 +1,7 @@
 #ifndef MCODE_GLOBAL_H
 #define MCODE_GLOBAL_H
 
-#include "mcode/operand.hpp"
+#include "banjo/mcode/operand.hpp"
 
 namespace banjo {
 

@@ -1,8 +1,8 @@
 #ifndef IR_BUILDER_BOOL_EXPR_BUILDER_H
 #define IR_BUILDER_BOOL_EXPR_BUILDER_H
 
-#include "ir/comparison.hpp"
-#include "ir_builder/ir_builder.hpp"
+#include "banjo/ir/comparison.hpp"
+#include "banjo/ir_builder/ir_builder.hpp"
 #include <string>
 
 namespace banjo {

@@ -1,9 +1,9 @@
 #include "name_mangling.hpp"
 
-#include "ast/ast_module.hpp"
-#include "symbol/protocol.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/union.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/symbol/protocol.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/union.hpp"
 
 #include <string>
 

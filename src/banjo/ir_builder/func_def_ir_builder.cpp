@@ -1,12 +1,12 @@
 #include "func_def_ir_builder.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_child_indices.hpp"
-#include "ast/decl.hpp"
-#include "ir_builder/block_ir_builder.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "ir_builder/name_mangling.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ir_builder/block_ir_builder.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/ir_builder/name_mangling.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 
 #include <utility>
 

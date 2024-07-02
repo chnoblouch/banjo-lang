@@ -1,13 +1,13 @@
 #include "ast_utils.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_module.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/decl.hpp"
-#include "symbol/function.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/union.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/symbol/function.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/union.hpp"
 
 namespace banjo {
 

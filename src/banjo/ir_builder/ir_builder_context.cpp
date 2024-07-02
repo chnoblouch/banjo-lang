@@ -1,10 +1,10 @@
 #include "ir_builder_context.hpp"
 
-#include "ir/primitive.hpp"
-#include "ir_builder/ir_builder_utils.hpp"
-#include "symbol/data_type.hpp"
-#include "symbol/protocol.hpp"
-#include "utils/macros.hpp"
+#include "banjo/ir/primitive.hpp"
+#include "banjo/ir_builder/ir_builder_utils.hpp"
+#include "banjo/symbol/data_type.hpp"
+#include "banjo/symbol/protocol.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cassert>
 #include <utility>

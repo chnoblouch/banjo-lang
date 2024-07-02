@@ -1,13 +1,13 @@
 #include "generics_instantiator.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/ast_utils.hpp"
-#include "ast/decl.hpp"
-#include "ir_builder/name_mangling.hpp"
-#include "sema/semantic_analyzer.hpp"
-#include "sema/type_analyzer.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ir_builder/name_mangling.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/type_analyzer.hpp"
 
 namespace banjo {
 

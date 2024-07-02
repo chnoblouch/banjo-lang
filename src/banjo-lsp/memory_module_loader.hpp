@@ -1,7 +1,7 @@
 #ifndef LSP_MEMORY_MODULE_LOADER_H
 #define LSP_MEMORY_MODULE_LOADER_H
 
-#include "source/module_loader.hpp"
+#include "banjo/source/module_loader.hpp"
 
 namespace banjo {
 

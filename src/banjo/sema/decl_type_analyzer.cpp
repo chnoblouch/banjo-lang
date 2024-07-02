@@ -1,15 +1,15 @@
 #include "decl_type_analyzer.hpp"
 
-#include "ast/ast_child_indices.hpp"
-#include "ast/ast_utils.hpp"
-#include "ast/decl.hpp"
-#include "ast/expr.hpp"
-#include "sema/const_evaluator.hpp"
-#include "sema/semantic_analyzer_context.hpp"
-#include "sema/type_analyzer.hpp"
-#include "symbol/global_variable.hpp"
-#include "symbol/symbol_ref.hpp"
-#include "symbol/union.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/sema/const_evaluator.hpp"
+#include "banjo/sema/semantic_analyzer_context.hpp"
+#include "banjo/sema/type_analyzer.hpp"
+#include "banjo/symbol/global_variable.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/symbol/union.hpp"
 
 namespace banjo {
 

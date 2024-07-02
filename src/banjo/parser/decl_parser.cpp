@@ -1,12 +1,12 @@
 #include "decl_parser.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/decl.hpp"
-#include "ast/expr.hpp"
-#include "lexer/token.hpp"
-#include "parser/expr_parser.hpp"
-#include "reports/report_texts.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/lexer/token.hpp"
+#include "banjo/parser/expr_parser.hpp"
+#include "banjo/reports/report_texts.hpp"
 
 namespace banjo {
 

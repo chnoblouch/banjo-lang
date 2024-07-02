@@ -1,7 +1,7 @@
 #ifndef EMITTER_H
 #define EMITTER_H
 
-#include "mcode/module.hpp"
+#include "banjo/mcode/module.hpp"
 #include <ostream>
 
 namespace banjo {

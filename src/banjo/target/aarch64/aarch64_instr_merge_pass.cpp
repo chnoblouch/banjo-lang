@@ -1,7 +1,7 @@
 #include "aarch64_instr_merge_pass.hpp"
 
-#include "target/aarch64/aarch64_opcode.hpp"
-#include "utils/timing.hpp"
+#include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <unordered_set>
 

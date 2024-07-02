@@ -1,8 +1,8 @@
 #ifndef IR_GLOBAL_H
 #define IR_GLOBAL_H
 
-#include "ir/global_decl.hpp"
-#include "ir/operand.hpp"
+#include "banjo/ir/global_decl.hpp"
+#include "banjo/ir/operand.hpp"
 
 namespace banjo {
 

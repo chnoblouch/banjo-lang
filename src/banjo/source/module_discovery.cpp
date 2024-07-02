@@ -1,7 +1,7 @@
 #include "module_discovery.hpp"
 
-#include "config/config.hpp"
-#include "config/standard_lib.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/config/standard_lib.hpp"
 
 #include <filesystem>
 

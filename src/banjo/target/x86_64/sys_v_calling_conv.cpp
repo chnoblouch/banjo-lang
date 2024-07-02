@@ -1,12 +1,12 @@
 #include "sys_v_calling_conv.hpp"
 
-#include "codegen/ir_lowerer.hpp"
-#include "codegen/machine_pass_utils.hpp"
-#include "mcode/function.hpp"
-#include "target/x86_64/x86_64_opcode.hpp"
-#include "target/x86_64/x86_64_register.hpp"
-#include "utils/macros.hpp"
-#include "utils/utils.hpp"
+#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/codegen/machine_pass_utils.hpp"
+#include "banjo/mcode/function.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 namespace banjo {
 

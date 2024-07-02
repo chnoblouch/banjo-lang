@@ -1,10 +1,10 @@
 #ifndef PASSES_PASS_UTILS_H
 #define PASSES_PASS_UTILS_H
 
-#include "ir/control_flow_graph.hpp"
-#include "ir/function.hpp"
-#include "ir/operand.hpp"
-#include "ir/virtual_register.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/ir/function.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/ir/virtual_register.hpp"
 
 #include <functional>
 

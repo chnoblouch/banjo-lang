@@ -1,7 +1,7 @@
 #ifndef CODEGEN_MACHINE_PASS_H
 #define CODEGEN_MACHINE_PASS_H
 
-#include "mcode/module.hpp"
+#include "banjo/mcode/module.hpp"
 
 namespace banjo {
 

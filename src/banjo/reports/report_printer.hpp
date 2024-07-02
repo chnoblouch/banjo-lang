@@ -1,9 +1,9 @@
 #ifndef REPORT_PRINTER_H
 #define REPORT_PRINTER_H
 
-#include "reports/report.hpp"
-#include "source/module_manager.hpp"
-#include "source/text_range.hpp"
+#include "banjo/reports/report.hpp"
+#include "banjo/source/module_manager.hpp"
+#include "banjo/source/text_range.hpp"
 
 #include <fstream>
 #include <iostream>

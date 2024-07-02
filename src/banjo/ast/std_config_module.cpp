@@ -1,10 +1,10 @@
 #include "std_config_module.hpp"
 
-#include "ast/ast_block.hpp"
-#include "ast/decl.hpp"
-#include "ast/expr.hpp"
-#include "config/config.hpp"
-#include "symbol/symbol_table.hpp"
+#include "banjo/ast/ast_block.hpp"
+#include "banjo/ast/decl.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/config/config.hpp"
+#include "banjo/symbol/symbol_table.hpp"
 
 namespace banjo {
 

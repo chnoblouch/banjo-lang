@@ -1,7 +1,7 @@
 #ifndef IR_VALIDATOR_H
 #define IR_VALIDATOR_H
 
-#include "ir/module.hpp"
+#include "banjo/ir/module.hpp"
 #include <ostream>
 
 namespace banjo {

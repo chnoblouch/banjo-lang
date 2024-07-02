@@ -3,8 +3,8 @@
 
 #include "connection.hpp"
 #include "source_manager.hpp"
-#include "symbol/generics.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/symbol/generics.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 namespace banjo {
 

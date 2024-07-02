@@ -1,7 +1,7 @@
 #ifndef IR_BUILDER_RUNTIME_IR_H
 #define IR_BUILDER_RUNTIME_IR_H
 
-#include "ir_builder/ir_builder_context.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
 
 namespace banjo {
 

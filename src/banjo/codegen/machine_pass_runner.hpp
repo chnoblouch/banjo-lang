@@ -1,9 +1,9 @@
 #ifndef CODEGEN_MACHINE_PASS_RUNNER_H
 #define CODEGEN_MACHINE_PASS_RUNNER_H
 
-#include "codegen/machine_pass.hpp"
-#include "mcode/module.hpp"
-#include "target/target.hpp"
+#include "banjo/codegen/machine_pass.hpp"
+#include "banjo/mcode/module.hpp"
+#include "banjo/target/target.hpp"
 
 #include <string>
 #include <vector>

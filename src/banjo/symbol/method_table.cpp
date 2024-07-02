@@ -1,6 +1,6 @@
 #include "method_table.hpp"
 
-#include "symbol/function.hpp"
+#include "banjo/symbol/function.hpp"
 
 namespace banjo {
 

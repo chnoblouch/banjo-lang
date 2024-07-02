@@ -1,12 +1,12 @@
 #ifndef IR_BUILDER_ROOT_IR_BUILDER_H
 #define IR_BUILDER_ROOT_IR_BUILDER_H
 
-#include "ast/ast_module.hpp"
-#include "ast/ast_node.hpp"
-#include "ast/module_list.hpp"
-#include "ir/module.hpp"
-#include "ir_builder/ir_builder_context.hpp"
-#include "target/target.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
+#include "banjo/ast/module_list.hpp"
+#include "banjo/ir/module.hpp"
+#include "banjo/ir_builder/ir_builder_context.hpp"
+#include "banjo/target/target.hpp"
 
 namespace banjo {
 

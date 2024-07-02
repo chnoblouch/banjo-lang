@@ -1,13 +1,13 @@
 #ifndef LSP_SOURCE_MANAGER_H
 #define LSP_SOURCE_MANAGER_H
 
-#include "ast/ast_module.hpp"
-#include "ast/ast_node.hpp"
+#include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
 #include "memory_module_loader.hpp"
-#include "reports/report_manager.hpp"
-#include "sema/semantic_analysis.hpp"
-#include "source/module_manager.hpp"
-#include "symbol/data_type_manager.hpp"
+#include "banjo/reports/report_manager.hpp"
+#include "banjo/sema/semantic_analysis.hpp"
+#include "banjo/source/module_manager.hpp"
+#include "banjo/symbol/data_type_manager.hpp"
 
 #include <filesystem>
 #include <unordered_map>

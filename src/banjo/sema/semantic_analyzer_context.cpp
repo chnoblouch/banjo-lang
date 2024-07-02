@@ -1,10 +1,10 @@
 #include "semantic_analyzer_context.hpp"
 
-#include "ast/ast_utils.hpp"
-#include "ast/expr.hpp"
-#include "symbol/enumeration.hpp"
-#include "symbol/symbol.hpp"
-#include "symbol/symbol_ref.hpp"
+#include "banjo/ast/ast_utils.hpp"
+#include "banjo/ast/expr.hpp"
+#include "banjo/symbol/enumeration.hpp"
+#include "banjo/symbol/symbol.hpp"
+#include "banjo/symbol/symbol_ref.hpp"
 
 namespace banjo {
 

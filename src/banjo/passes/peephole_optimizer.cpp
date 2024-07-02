@@ -1,9 +1,9 @@
 #include "peephole_optimizer.hpp"
 
-#include "ir/control_flow_graph.hpp"
-#include "passes/pass_utils.hpp"
-#include "passes/precomputing.hpp"
-#include "utils/bit_operations.hpp"
+#include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/passes/pass_utils.hpp"
+#include "banjo/passes/precomputing.hpp"
+#include "banjo/utils/bit_operations.hpp"
 
 namespace banjo {
 
