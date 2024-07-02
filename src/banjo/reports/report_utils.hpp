@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 namespace ReportUtils {
@@ -19,5 +21,7 @@ std::string params_to_string(std::vector<DataType *> &params);
 } // namespace ReportUtils
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

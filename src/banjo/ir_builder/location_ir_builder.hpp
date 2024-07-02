@@ -13,6 +13,8 @@
 #include <optional>
 #include <vector>
 
+namespace banjo {
+
 namespace ir_builder {
 
 class LocationIRBuilder : public IRBuilder {
@@ -57,5 +59,7 @@ private:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

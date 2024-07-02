@@ -6,6 +6,8 @@
 #include <initializer_list>
 #include <utility>
 
+namespace banjo {
+
 template <typename T, unsigned Capacity>
 class FixedVector {
 
@@ -59,5 +61,7 @@ public:
 
     void clear() { size = 0; }
 };
+
+} // namespace banjo
 
 #endif

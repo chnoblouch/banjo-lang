@@ -7,6 +7,8 @@
 
 #include <optional>
 
+namespace banjo {
+
 namespace lang {
 
 class GenericsArgDeduction {
@@ -35,5 +37,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

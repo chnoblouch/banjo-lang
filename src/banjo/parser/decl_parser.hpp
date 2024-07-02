@@ -3,6 +3,8 @@
 
 #include "parser/parser.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class DeclParser {
@@ -40,5 +42,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

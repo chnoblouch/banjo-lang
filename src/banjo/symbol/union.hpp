@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class SymbolTable;
@@ -79,5 +81,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

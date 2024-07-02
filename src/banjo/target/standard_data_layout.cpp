@@ -5,6 +5,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace target {
 
 StandardDataLayout::StandardDataLayout(unsigned usize, ir::Type usize_type)
@@ -88,3 +90,5 @@ unsigned StandardDataLayout::get_member_offset(const std::vector<ir::Type> &type
 }
 
 } // namespace target
+
+} // namespace banjo

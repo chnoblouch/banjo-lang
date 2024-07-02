@@ -6,6 +6,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 Parameter::Parameter(ASTNode *node, DataType *data_type, std::string name)
@@ -26,3 +28,5 @@ ir_builder::StoredValue Parameter::as_ir_value(ir_builder::IRBuilderContext &con
 }
 
 } // namespace lang
+
+} // namespace banjo

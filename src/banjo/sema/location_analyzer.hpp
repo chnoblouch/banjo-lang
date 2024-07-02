@@ -13,6 +13,8 @@
 #include <optional>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct SymbolUsage {
@@ -75,5 +77,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

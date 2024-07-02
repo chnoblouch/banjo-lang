@@ -6,6 +6,8 @@
 #include "source_manager.hpp"
 #include "symbol/enumeration.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class DefinitionHandler : public RequestHandler {
@@ -24,5 +26,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

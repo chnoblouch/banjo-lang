@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+namespace banjo {
+
 namespace codegen {
 
 void MachinePassUtils::replace_virtual_reg(mcode::BasicBlock &basic_block, long old_register, long new_register) {
@@ -73,3 +75,5 @@ std::vector<long> MachinePassUtils::get_modified_volatile_regs(mcode::Function *
 }
 
 } // namespace codegen
+
+} // namespace banjo

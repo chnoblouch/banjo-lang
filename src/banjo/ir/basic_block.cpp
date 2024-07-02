@@ -2,6 +2,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace ir {
 
 BasicBlock::BasicBlock(std::string label) : label(std::move(label)) {}
@@ -33,3 +35,5 @@ InstrIter BasicBlock::replace(InstrIter iter, Instruction instr) {
 }
 
 } // namespace ir
+
+} // namespace banjo

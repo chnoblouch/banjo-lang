@@ -1,5 +1,7 @@
 #include "config.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 Config &Config::instance() {
@@ -8,3 +10,5 @@ Config &Config::instance() {
 }
 
 } // namespace lang
+
+} // namespace banjo

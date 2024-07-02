@@ -6,6 +6,8 @@
 #include "target/x86_64/x86_64_opcode.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace target {
 
 X8664RegAnalyzer::X8664RegAnalyzer() {
@@ -378,3 +380,5 @@ void X8664RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<mc
 }
 
 } // namespace target
+
+} // namespace banjo

@@ -1,6 +1,8 @@
 #ifndef IR_CALLING_CONV_H
 #define IR_CALLING_CONV_H
 
+namespace banjo {
+
 namespace ir {
 
 enum class CallingConv {
@@ -11,5 +13,7 @@ enum class CallingConv {
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 
+using namespace banjo;
 using namespace target;
 using namespace mcode;
 using namespace codegen;

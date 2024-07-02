@@ -2,6 +2,8 @@
 
 #include "mcode/function.hpp"
 
+namespace banjo {
+
 namespace mcode {
 
 Module::~Module() {
@@ -15,3 +17,5 @@ std::string Module::next_float_label() {
 }
 
 } // namespace mcode
+
+} // namespace banjo

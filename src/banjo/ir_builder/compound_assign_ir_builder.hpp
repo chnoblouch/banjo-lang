@@ -3,6 +3,8 @@
 
 #include "ir_builder/ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 class CompoundAssignIRBuilder : public IRBuilder {
@@ -18,5 +20,7 @@ private:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

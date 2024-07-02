@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 void DeadCodeElimination::run(Function &func) {
@@ -179,3 +181,5 @@ void DeadCodeElimination::remove_unused_instrs(Function &func) {
 }
 
 } // namespace ir
+
+} // namespace banjo

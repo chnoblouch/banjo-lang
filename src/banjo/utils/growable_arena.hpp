@@ -3,6 +3,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace utils {
 
 template <typename T, unsigned BLOCK_LENGTH = 64>
@@ -66,5 +68,7 @@ public:
 };
 
 } // namespace utils
+
+} // namespace banjo
 
 #endif

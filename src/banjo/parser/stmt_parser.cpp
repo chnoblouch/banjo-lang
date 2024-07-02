@@ -7,6 +7,8 @@
 #include "parser/node_builder.hpp"
 #include "reports/report_texts.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 StmtParser::StmtParser(Parser &parser) : parser(parser), stream(parser.stream) {}
@@ -406,3 +408,5 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
 }
 
 } // namespace lang
+
+} // namespace banjo

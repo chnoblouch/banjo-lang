@@ -4,6 +4,8 @@
 #include "passes/loop_analysis.hpp"
 #include "passes/pass.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 class LoopInversionPass : public Pass {
@@ -20,5 +22,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

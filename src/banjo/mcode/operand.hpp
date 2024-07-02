@@ -10,6 +10,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace mcode {
 
 enum class Relocation {
@@ -161,7 +163,7 @@ public:
         return operand;
     }
 
-    Operand() : value{std::in_place_index<0>, "???"}, size(0){};
+    Operand() : value{std::in_place_index<0>, "???"}, size(0) {};
 
     bool is_immediate() const { return value.index() == 0; }
     bool is_fp() const { return value.index() == 1; }
@@ -230,5 +232,7 @@ public:
 typedef Operand Value;
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

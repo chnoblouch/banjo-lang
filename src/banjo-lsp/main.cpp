@@ -5,6 +5,8 @@
 #include <filesystem>
 
 int main(int argc, char *argv[]) {
+    using namespace banjo;
+
     lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
 
     lang::Config::instance().paths.push_back("src");

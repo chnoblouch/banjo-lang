@@ -11,6 +11,8 @@
 #include "symbol/symbol_ref.hpp"
 #include "symbol/union.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 DeclTypeAnalyzer::DeclTypeAnalyzer(SemanticAnalyzer &sema)
@@ -433,3 +435,5 @@ void DeclTypeAnalyzer::collect_generic_params(ASTNode *generic_param_list, std::
 }
 
 } // namespace lang
+
+} // namespace banjo

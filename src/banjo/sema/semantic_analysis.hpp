@@ -4,6 +4,8 @@
 #include "reports/report.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct SemanticAnalysis {
@@ -12,5 +14,7 @@ struct SemanticAnalysis {
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

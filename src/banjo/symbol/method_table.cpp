@@ -2,6 +2,8 @@
 
 #include "symbol/function.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 Function *MethodTable::get_function(const std::string &name) {
@@ -27,3 +29,5 @@ std::vector<Function *> MethodTable::get_functions(const std::string &name) {
 }
 
 } // namespace lang
+
+} // namespace banjo

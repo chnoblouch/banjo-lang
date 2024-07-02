@@ -1,5 +1,7 @@
 #include "variable.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 void DeinitInfo::set_unmanaged() {
@@ -17,3 +19,5 @@ Variable::Variable(ASTNode *node, std::string name) : Symbol(node, name), data_t
 Variable::~Variable() {}
 
 } // namespace lang
+
+} // namespace banjo

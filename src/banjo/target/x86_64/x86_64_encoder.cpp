@@ -7,6 +7,8 @@
 #include <iostream>
 #include <limits>
 
+namespace banjo {
+
 namespace target {
 
 constexpr unsigned MAX_RELAXATION_PASSES = 4;
@@ -1375,3 +1377,5 @@ bool X8664Encoder::fits_in_32_bits(Immediate imm) {
 }
 
 } // namespace target
+
+} // namespace banjo

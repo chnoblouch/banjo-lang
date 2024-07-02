@@ -10,6 +10,8 @@
 #include "symbol_ref_info.hpp"
 #include "uri.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 DefinitionHandler::DefinitionHandler(SourceManager &source_manager) : source_manager(source_manager) {}
@@ -69,3 +71,5 @@ JSONObject DefinitionHandler::build_def(
 }
 
 } // namespace lsp
+
+} // namespace banjo

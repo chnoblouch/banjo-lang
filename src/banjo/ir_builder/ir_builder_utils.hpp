@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace ir_builder {
 
 namespace IRBuilderUtils {
@@ -36,5 +38,7 @@ bool is_branching(ir::BasicBlock &block);
 } // namespace IRBuilderUtils
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

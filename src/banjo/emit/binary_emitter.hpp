@@ -4,6 +4,8 @@
 #include "emit/emitter.hpp"
 #include <cstdint>
 
+namespace banjo {
+
 namespace codegen {
 
 class BinaryEmitter : public Emitter {
@@ -26,5 +28,7 @@ protected:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

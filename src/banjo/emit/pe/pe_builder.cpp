@@ -1,5 +1,7 @@
 #include "pe_builder.hpp"
 
+namespace banjo {
+
 PEFile PEBuilder::build(BinModule module_) {
     create_sections();
     create_extra_symbols();
@@ -217,3 +219,5 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
 void PEBuilder::create_debug_info() {
     // structure taken from: https://lists.llvm.org/pipermail/llvm-dev/2015-October/091847.html
 }
+
+} // namespace banjo

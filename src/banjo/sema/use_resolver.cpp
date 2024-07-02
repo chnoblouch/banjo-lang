@@ -7,6 +7,8 @@
 #include "symbol/symbol_table.hpp"
 #include "symbol/use.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 UseResolver::UseResolver(SemanticAnalyzerContext &context) : context(context) {}
@@ -129,3 +131,5 @@ void UseResolver::resolve_rebinding(ASTNode *node, PathContext ctx, SymbolTable 
 }
 
 } // namespace lang
+
+} // namespace banjo

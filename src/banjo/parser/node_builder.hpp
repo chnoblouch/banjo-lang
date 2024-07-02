@@ -6,6 +6,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 struct ParseResult {
@@ -86,5 +88,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

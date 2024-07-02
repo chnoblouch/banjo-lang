@@ -20,6 +20,8 @@
 #include <string_view>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace lang {
 
 ExprAnalyzer::ExprAnalyzer(ASTNode *node, SemanticAnalyzerContext &context) : node(node), context(context) {}
@@ -835,3 +837,5 @@ bool ExprAnalyzer::is_struct_expected() {
 }
 
 } // namespace lang
+
+} // namespace banjo

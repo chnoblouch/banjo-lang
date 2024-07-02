@@ -4,6 +4,8 @@
 #include "emit/emitter.hpp"
 #include "target/target_description.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 class DebugEmitter : public Emitter {
@@ -37,5 +39,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

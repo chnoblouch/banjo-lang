@@ -3,6 +3,8 @@
 
 #include "symbol/module_path.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ASTNode;
@@ -20,5 +22,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

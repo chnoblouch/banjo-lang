@@ -4,6 +4,8 @@
 #include "symbol/symbol.hpp"
 #include "symbol/symbol_ref.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class Use : public Symbol {
@@ -20,5 +22,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

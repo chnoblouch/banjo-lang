@@ -14,6 +14,8 @@
 #include "utils/macros.hpp"
 #include "utils/utils.hpp"
 
+namespace banjo {
+
 namespace target {
 
 using namespace AArch64Register;
@@ -420,3 +422,5 @@ int AAPCSCallingConv::get_implicit_stack_bytes(mcode::Function *func) {
 }
 
 } // namespace target
+
+} // namespace banjo

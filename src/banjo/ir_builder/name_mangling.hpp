@@ -9,6 +9,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 
 namespace NameMangling {
@@ -27,5 +29,7 @@ std::string mangle_generic_struct_name(lang::Structure *struct_, const lang::Gen
 } // namespace NameMangling
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

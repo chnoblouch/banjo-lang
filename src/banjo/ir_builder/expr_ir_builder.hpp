@@ -9,6 +9,8 @@
 #include "ir_builder/storage.hpp"
 #include "symbol/data_type.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 class ExprIRBuilder : public IRBuilder {
@@ -69,5 +71,7 @@ private:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

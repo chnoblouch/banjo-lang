@@ -6,6 +6,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class SymbolTable;
@@ -42,5 +44,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

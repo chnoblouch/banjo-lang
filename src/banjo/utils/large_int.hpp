@@ -7,6 +7,8 @@
 #include <string>
 #include <string_view>
 
+namespace banjo {
+
 class LargeInt {
 
 private:
@@ -55,5 +57,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &stream, const LargeInt &large_int);
 };
+
+} // namespace banjo
 
 #endif

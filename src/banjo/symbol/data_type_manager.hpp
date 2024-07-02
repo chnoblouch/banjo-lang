@@ -4,6 +4,8 @@
 #include "symbol/data_type.hpp"
 #include "utils/growable_arena.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class DataTypeManager {
@@ -21,5 +23,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

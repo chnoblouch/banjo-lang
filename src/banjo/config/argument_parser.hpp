@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct ValueArgParser {
@@ -39,5 +41,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

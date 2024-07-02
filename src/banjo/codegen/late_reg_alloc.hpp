@@ -7,6 +7,8 @@
 
 #include <optional>
 
+namespace banjo {
+
 namespace codegen {
 
 class LateRegAlloc {
@@ -32,5 +34,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

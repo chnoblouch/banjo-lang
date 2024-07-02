@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace ir {
 
 ControlFlowGraph::ControlFlowGraph(ir::Function *func) {
@@ -245,3 +247,5 @@ std::string DominatorTree::get_debug_label(ir::BasicBlockIter block) {
 }
 
 } // namespace ir
+
+} // namespace banjo

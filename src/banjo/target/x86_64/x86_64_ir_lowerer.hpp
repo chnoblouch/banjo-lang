@@ -10,6 +10,8 @@
 #include <functional>
 #include <optional>
 
+namespace banjo {
+
 namespace target {
 
 class X8664IRLowerer : public codegen::IRLowerer {
@@ -95,5 +97,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

@@ -2,6 +2,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace mcode {
 
 Function::Function(std::string name, CallingConvention *calling_conv)
@@ -9,3 +11,5 @@ Function::Function(std::string name, CallingConvention *calling_conv)
     calling_conv(calling_conv) {}
 
 } // namespace mcode
+
+} // namespace banjo

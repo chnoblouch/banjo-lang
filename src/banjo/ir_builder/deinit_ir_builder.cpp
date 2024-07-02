@@ -8,6 +8,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace ir_builder {
 
 const ir::Type FLAG_TYPE(ir::Primitive::I8);
@@ -76,3 +78,5 @@ void DeinitIRBuilder::build_deinit_call(lang::DeinitInfo *info) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

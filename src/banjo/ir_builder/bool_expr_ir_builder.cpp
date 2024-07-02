@@ -3,6 +3,8 @@
 #include "ast/ast_node.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void BoolExprIRBuilder::build() {
@@ -88,3 +90,5 @@ ir::Opcode BoolExprIRBuilder::get_cmp_opcode(bool is_fp) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

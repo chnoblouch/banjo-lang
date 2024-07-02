@@ -12,6 +12,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class Operand;
@@ -216,5 +218,7 @@ public:
 typedef Operand Value;
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct SourceLocation {
@@ -67,5 +69,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

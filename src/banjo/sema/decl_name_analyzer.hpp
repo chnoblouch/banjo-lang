@@ -6,6 +6,8 @@
 #include "ast/module_list.hpp"
 #include "sema/semantic_analyzer.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class DeclNameAnalyzer {
@@ -35,5 +37,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -8,6 +8,8 @@
 #include <set>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 ASTModule *TestModuleGenerator::generate(ModuleList &module_list, const Config &config) {
@@ -55,3 +57,5 @@ ASTModule *TestModuleGenerator::generate(ModuleList &module_list, const Config &
 }
 
 } // namespace lang
+
+} // namespace banjo

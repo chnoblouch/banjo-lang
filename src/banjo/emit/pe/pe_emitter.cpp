@@ -4,6 +4,8 @@
 #include "target/x86_64/x86_64_encoder.hpp"
 #include "utils/timing.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 void PEEmitter::generate() {
@@ -139,3 +141,5 @@ void PEEmitter::emit_string_table(const PEStringTable &string_table) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

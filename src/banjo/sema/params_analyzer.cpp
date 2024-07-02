@@ -6,6 +6,8 @@
 #include "sema/deinit_analyzer.hpp"
 #include "sema/type_analyzer.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 ParamsAnalyzer::ParamsAnalyzer(SemanticAnalyzerContext &context) : context(context) {}
@@ -75,3 +77,5 @@ bool ParamsAnalyzer::check_redefinition(SymbolTable *symbol_table, ASTNode *name
 }
 
 } // namespace lang
+
+} // namespace banjo

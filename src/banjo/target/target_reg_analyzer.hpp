@@ -9,6 +9,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace target {
 
 struct SpilledRegUse {
@@ -45,5 +47,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

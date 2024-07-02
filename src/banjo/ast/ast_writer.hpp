@@ -5,6 +5,8 @@
 #include "ast/module_list.hpp"
 #include <ostream>
 
+namespace banjo {
+
 namespace lang {
 
 class ASTWriter {
@@ -23,5 +25,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

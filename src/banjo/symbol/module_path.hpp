@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class ModulePath {
@@ -36,9 +38,11 @@ public:
 
 } // namespace lang
 
+} // namespace banjo
+
 template <>
-struct std::hash<lang::ModulePath> {
-    std::size_t operator()(const lang::ModulePath &path) const noexcept {
+struct std::hash<banjo::lang::ModulePath> {
+    std::size_t operator()(const banjo::lang::ModulePath &path) const noexcept {
         std::size_t hash = 0;
         for (const std::string &element : path.get_path()) {
             hash ^= std::hash<std::string>()(element);

@@ -4,6 +4,8 @@
 #include "ir/module.hpp"
 #include <ostream>
 
+namespace banjo {
+
 namespace ir {
 
 class Validator {
@@ -21,5 +23,7 @@ private:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

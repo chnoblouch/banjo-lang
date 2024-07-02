@@ -6,6 +6,8 @@
 #include "target/target_reg_analyzer.hpp"
 #include "target/x86_64/x86_64_register.hpp"
 
+namespace banjo {
+
 namespace target {
 
 namespace X8664RegClass {
@@ -48,5 +50,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

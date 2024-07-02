@@ -4,6 +4,8 @@
 #include "ast/ast_node.hpp"
 #include "ir_builder/ir_builder_context.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 class IRBuilder {
@@ -22,5 +24,7 @@ protected:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

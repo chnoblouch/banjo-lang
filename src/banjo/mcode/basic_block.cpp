@@ -2,6 +2,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace mcode {
 
 BasicBlock::BasicBlock() {}
@@ -31,3 +33,5 @@ InstrIter BasicBlock::replace(InstrIter iter, Instruction instr) {
 }
 
 } // namespace mcode
+
+} // namespace banjo

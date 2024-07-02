@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace passes {
 
 BranchElimination::BranchElimination(target::Target *target) : Pass("branch-elimination", target) {}
@@ -110,3 +112,5 @@ void BranchElimination::run(ir::Function *func) {
 }
 
 } // namespace passes
+
+} // namespace banjo

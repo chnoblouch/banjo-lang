@@ -18,6 +18,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace target {
 
 // clang-format off
@@ -912,3 +914,5 @@ void X8664IRLowerer::emit_shift(ir::Instruction &instr, mcode::Opcode opcode) {
 // clang-format on
 
 } // namespace target
+
+} // namespace banjo

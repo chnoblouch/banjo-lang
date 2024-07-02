@@ -10,6 +10,8 @@
 #include "symbol/symbol_table.hpp"
 #include "symbol/union.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 DeclNameAnalyzer::DeclNameAnalyzer(SemanticAnalyzer &sema, bool modify_symbol_table /* = true */)
@@ -248,3 +250,5 @@ void DeclNameAnalyzer::analyze_generic_struct(ASTGenericStruct *node) {
 }
 
 } // namespace lang
+
+} // namespace banjo

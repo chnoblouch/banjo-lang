@@ -5,6 +5,8 @@
 
 #include <algorithm>
 
+namespace banjo {
+
 namespace codegen {
 
 StackFramePass::StackFramePass(target::TargetRegAnalyzer &analyzer) : analyzer(analyzer) {}
@@ -102,3 +104,5 @@ void StackFramePass::create_generic_region(
 }
 
 } // namespace codegen
+
+} // namespace banjo

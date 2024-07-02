@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace ir {
 
 bool Type::is_primitive(Primitive primitive) const {
@@ -24,3 +26,5 @@ bool Type::is_integer() const {
 }
 
 } // namespace ir
+
+} // namespace banjo

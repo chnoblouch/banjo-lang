@@ -7,6 +7,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 LocalVariable::LocalVariable(ASTNode *node, DataType *data_type, std::string name)
@@ -18,3 +20,5 @@ ir_builder::StoredValue LocalVariable::as_ir_value(ir_builder::IRBuilderContext 
 }
 
 } // namespace lang
+
+} // namespace banjo

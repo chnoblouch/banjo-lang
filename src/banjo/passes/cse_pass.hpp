@@ -3,6 +3,8 @@
 
 #include "passes/pass.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 class CSEPass : public Pass {
@@ -17,5 +19,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

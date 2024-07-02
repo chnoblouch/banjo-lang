@@ -1,8 +1,8 @@
 #ifndef PASS_TESTER_H
 #define PASS_TESTER_H
 
-#include "mcode/module.hpp"
 #include "ir/module.hpp"
+#include "mcode/module.hpp"
 #include "target/target.hpp"
 
 #include "target/x86_64/x86_64_target.hpp"
@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <fstream>
 #include <unordered_map>
+
+namespace banjo {
 
 class PassTester {
 
@@ -38,5 +40,7 @@ private:
     bool compare_operands(ir::Operand &operand_a, ir::Operand &operand_b, const VRegMap &vreg_map);
     bool fail(const std::string &message);
 };
+
+} // namespace banjo
 
 #endif

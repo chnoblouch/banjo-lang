@@ -4,6 +4,8 @@
 #include "emit/binary_emitter.hpp"
 #include "emit/elf/elf_format.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 class ELFEmitter : public BinaryEmitter {
@@ -26,5 +28,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

@@ -7,6 +7,8 @@
 #include "symbol/location.hpp"
 #include "symbol/parameter.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class DeinitAnalyzer {
@@ -27,5 +29,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -4,6 +4,8 @@
 #include "target/aarch64/aarch64_register.hpp"
 #include "utils/timing.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 // clang-format off
@@ -260,3 +262,5 @@ void ClangAsmEmitter::emit_condition(target::AArch64Condition condition) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

@@ -1,5 +1,7 @@
 #include "addr_table_pass.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 AddrTablePass::AddrTablePass(target::Target *target, std::optional<AddrTable> addr_table /* = {} */)
@@ -97,3 +99,5 @@ void AddrTablePass::replace_uses(ir::Function *func, ir::BasicBlock &basic_block
 }
 
 } // namespace passes
+
+} // namespace banjo

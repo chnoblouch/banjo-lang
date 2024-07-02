@@ -3,6 +3,8 @@
 
 #include "codegen/ir_lowerer.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class X8664AddrLowering {
@@ -25,5 +27,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

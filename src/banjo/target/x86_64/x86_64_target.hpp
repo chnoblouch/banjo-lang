@@ -5,6 +5,8 @@
 #include "target/target.hpp"
 #include "target/x86_64/x86_64_reg_analyzer.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class X8664Target : public Target {
@@ -27,5 +29,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

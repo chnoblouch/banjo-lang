@@ -11,6 +11,10 @@
 #include "sema/semantic_analyzer.hpp"
 #include "target/x86_64/x86_64_encoder.hpp"
 
+namespace banjo {
+
+namespace hot_reloader {
+
 JITCompiler::JITCompiler(lang::Config &config, AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
@@ -77,3 +81,7 @@ BinModule JITCompiler::compile_func(const std::string &name) {
     codegen::MachinePassRunner(target_descr).create_and_run(machine_module);
     return target::X8664Encoder().encode(machine_module);
 }
+
+} // namespace hot_reloader
+
+} // namespace banjo

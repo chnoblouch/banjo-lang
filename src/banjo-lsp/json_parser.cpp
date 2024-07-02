@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace lsp {
 
 JSONParser::JSONParser(std::string string) : stream(string) {}
@@ -130,3 +132,5 @@ void JSONParser::skip_whitespace() {
 }
 
 } // namespace lsp
+
+} // namespace banjo

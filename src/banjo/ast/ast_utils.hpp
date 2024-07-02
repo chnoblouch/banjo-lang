@@ -7,6 +7,8 @@
 
 #include <functional>
 
+namespace banjo {
+
 namespace lang {
 
 namespace ASTUtils {
@@ -31,5 +33,7 @@ void iterate_protos(lang::SymbolTable *symbol_table, std::function<void(lang::Pr
 } // namespace ASTUtils
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -4,6 +4,8 @@
 #include "emit/binary_module.hpp"
 #include "emit/pe/pe_format.hpp"
 
+namespace banjo {
+
 class PEBuilder {
 
 private:
@@ -38,5 +40,7 @@ private:
     void create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info);
     void create_debug_info();
 };
+
+} // namespace banjo
 
 #endif

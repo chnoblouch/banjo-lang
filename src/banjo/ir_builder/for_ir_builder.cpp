@@ -13,6 +13,8 @@
 #include "symbol/magic_functions.hpp"
 #include "symbol/symbol_table.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void ForIRBuilder::build() {
@@ -122,3 +124,5 @@ void ForIRBuilder::build_iter_for() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

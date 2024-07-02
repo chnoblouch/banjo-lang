@@ -4,6 +4,8 @@
 #include "ast/ast_node.hpp"
 #include "sema/semantic_analyzer_context.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class UseCollector {
@@ -31,5 +33,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

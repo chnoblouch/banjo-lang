@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 struct BlockLiveness {
@@ -54,5 +56,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

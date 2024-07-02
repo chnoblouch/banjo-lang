@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class Instruction {
@@ -60,5 +62,7 @@ typedef LinkedListNode<Instruction> InstrNode;
 typedef LinkedListIter<Instruction> InstrIter;
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

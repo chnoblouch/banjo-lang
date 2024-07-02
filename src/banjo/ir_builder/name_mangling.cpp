@@ -7,6 +7,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 
 std::string NameMangling::mangle_mod_path(const lang::ModulePath &mod_path) {
@@ -133,3 +135,5 @@ std::string NameMangling::mangle_generic_struct_name(
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

@@ -5,6 +5,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 GlobalVariable::GlobalVariable(ASTNode *node, std::string name, ASTModule *module_)
@@ -20,3 +22,5 @@ ir_builder::StoredValue GlobalVariable::as_ir_value(ir_builder::IRBuilderContext
 }
 
 } // namespace lang
+
+} // namespace banjo

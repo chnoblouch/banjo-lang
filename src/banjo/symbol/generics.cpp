@@ -3,6 +3,8 @@
 #include "ast/ast_child_indices.hpp"
 #include "ast/ast_node.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 bool GenericsUtils::has_sequence(GenericFunc *func) {
@@ -34,3 +36,5 @@ bool GenericsUtils::has_sequence(GenericFunc *func) {
 }
 
 } // namespace lang
+
+} // namespace banjo

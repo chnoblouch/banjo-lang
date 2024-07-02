@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 struct IRLoweringContext {
@@ -139,5 +141,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

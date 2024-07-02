@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace passes {
 
 SROAPass::SROAPass(target::Target *target) : Pass("sroa", target) {}
@@ -386,3 +388,5 @@ void SROAPass::dump_stack_value(StackValue &value, unsigned indent) {
 }
 
 } // namespace passes
+
+} // namespace banjo

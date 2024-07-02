@@ -5,6 +5,8 @@
 #include "config/config.hpp"
 #include "target/target_description.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ConfigParser {
@@ -22,5 +24,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

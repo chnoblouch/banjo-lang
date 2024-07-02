@@ -5,6 +5,10 @@
 
 #include "diagnostics.hpp"
 
+namespace banjo {
+
+namespace hot_reloader {
+
 constexpr unsigned MIN_TIME_BETEWEEN_CHANGES_MS = 500;
 
 FileWatcher::FileWatcher(std::filesystem::path path, std::function<void(std::filesystem::path file_path)> on_changed)
@@ -111,3 +115,7 @@ void FileWatcher::stop() {
     running = false;
     thread.join();
 }
+
+} // namespace hot_reloader
+
+} // namespace banjo

@@ -6,6 +6,8 @@
 
 #include <list>
 
+namespace banjo {
+
 namespace lang {
 
 class ModuleList {
@@ -65,5 +67,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

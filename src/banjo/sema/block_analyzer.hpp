@@ -5,6 +5,8 @@
 #include "ast/ast_node.hpp"
 #include "sema/semantic_analyzer_context.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class BlockAnalyzer {
@@ -35,5 +37,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

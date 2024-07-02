@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+namespace banjo {
+
 namespace lang {
 
 ArgumentParser &ArgumentParser::add_value(std::string name, std::string default_value) {
@@ -63,3 +65,5 @@ ParsedArgs ArgumentParser::create_default_args() {
 }
 
 } // namespace lang
+
+} // namespace banjo

@@ -10,6 +10,8 @@
 #endif
 
 int main(int argc, char *argv[]) {
+    using namespace banjo;
+
 #ifdef OS_WINDOWS
     SetConsoleOutputCP(CP_UTF8);
 #endif

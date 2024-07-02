@@ -6,6 +6,8 @@
 
 #include <optional>
 
+namespace banjo {
+
 namespace lang {
 
 class GenericsInstantiator {
@@ -36,5 +38,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

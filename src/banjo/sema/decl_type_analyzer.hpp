@@ -8,6 +8,8 @@
 #include <optional>
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 class DeclTypeAnalyzer {
@@ -45,5 +47,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

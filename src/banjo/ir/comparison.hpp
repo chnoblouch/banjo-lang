@@ -1,6 +1,8 @@
 #ifndef IR_COMPARISON_H
 #define IR_COMPARISON_H
 
+namespace banjo {
+
 namespace ir {
 
 enum class Comparison {
@@ -25,5 +27,7 @@ enum class Comparison {
 Comparison invert_comparison(Comparison comparison);
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

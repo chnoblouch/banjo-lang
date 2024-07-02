@@ -4,6 +4,8 @@
 #include <istream>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class BufferedReader {
@@ -32,5 +34,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

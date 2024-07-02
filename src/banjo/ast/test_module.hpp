@@ -7,6 +7,8 @@
 
 #include <sstream>
 
+namespace banjo {
+
 namespace lang {
 
 class TestModuleGenerator {
@@ -19,5 +21,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

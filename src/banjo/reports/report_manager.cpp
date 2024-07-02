@@ -2,6 +2,8 @@
 
 #include "reports/report_printer.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 void ReportManager::merge_result(std::vector<Report> reports, bool is_valid) {
@@ -15,3 +17,5 @@ void ReportManager::reset() {
 }
 
 } // namespace lang
+
+} // namespace banjo

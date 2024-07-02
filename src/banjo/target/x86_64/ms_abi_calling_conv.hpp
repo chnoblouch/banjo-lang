@@ -12,6 +12,8 @@ namespace mcode {
 class Operand;
 } // namespace mcode
 
+namespace banjo {
+
 namespace target {
 
 class MSABICallingConv : public mcode::CallingConvention {
@@ -43,5 +45,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

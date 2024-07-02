@@ -4,6 +4,8 @@
 
 #include <set>
 
+namespace banjo {
+
 namespace ir {
 
 Validator::Validator(std::ostream &stream) : stream(stream) {}
@@ -74,3 +76,5 @@ bool Validator::validate_memberptr(ir::Instruction &instr) {
 }
 
 } // namespace ir
+
+} // namespace banjo

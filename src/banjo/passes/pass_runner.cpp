@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace passes {
 
 void PassRunner::run(ir::Module &mod, target::Target *target) {
@@ -92,3 +94,5 @@ void PassRunner::run_pass(Pass *pass, unsigned index, ir::Module &mod) {
 }
 
 } // namespace passes
+
+} // namespace banjo

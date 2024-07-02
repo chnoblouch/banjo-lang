@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct MetaExpansion {
@@ -39,5 +41,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

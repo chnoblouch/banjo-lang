@@ -9,6 +9,8 @@
 #include "sema/semantic_analyzer.hpp"
 #include "sema/type_analyzer.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 GenericsInstantiator::GenericsInstantiator(SemanticAnalyzerContext &context) : context(context) {}
@@ -156,3 +158,5 @@ std::optional<GenericInstanceArgs> GenericsInstantiator::get_arg_list(ASTNode *n
 }
 
 } // namespace lang
+
+} // namespace banjo

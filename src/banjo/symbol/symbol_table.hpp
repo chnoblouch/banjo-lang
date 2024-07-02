@@ -18,6 +18,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 typedef std::unordered_map<std::string, SymbolRef> SymbolMap;
@@ -108,5 +110,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

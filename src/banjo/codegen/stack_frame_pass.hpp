@@ -6,6 +6,8 @@
 
 #include <unordered_map>
 
+namespace banjo {
+
 namespace codegen {
 
 class StackFramePass : public MachinePass {
@@ -24,5 +26,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

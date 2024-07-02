@@ -10,6 +10,8 @@
 #include "symbol/symbol_ref.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 TypeAnalyzer::TypeAnalyzer(SemanticAnalyzerContext &context) : context(context) {}
@@ -430,3 +432,5 @@ DataType *TypeAnalyzer::instantiate_generic_std_type(
 }
 
 } // namespace lang
+
+} // namespace banjo

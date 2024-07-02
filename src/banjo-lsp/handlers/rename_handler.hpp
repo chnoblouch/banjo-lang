@@ -6,6 +6,8 @@
 #include "source_manager.hpp"
 #include "symbol/symbol.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 struct SymbolDefinition {
@@ -26,5 +28,7 @@ public:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

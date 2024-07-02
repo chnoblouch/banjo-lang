@@ -6,6 +6,8 @@
 #include <cctype>
 #include <iostream>
 
+namespace banjo {
+
 IRParser::IRParser(std::istream &stream) : stream(stream) {}
 
 ir::Module IRParser::parse() {
@@ -37,7 +39,7 @@ void IRParser::enter_func() {
     cur_func = new ir::Function("none", {}, ir::Primitive::VOID, ir::CallingConv::X86_64_MS_ABI);
     cur_block = cur_func->get_entry_block_iter();
     mod.add(cur_func);
-    
+
     for (unsigned i = 0; i < 10000; i++) {
         cur_func->next_virtual_reg();
     }
@@ -74,7 +76,7 @@ void IRParser::enter_struct() {
     cur_func = nullptr;
 
     // 'struct'
-    while(std::isalnum(get())) {
+    while (std::isalnum(get())) {
         consume();
     }
     skip_whitespace();
@@ -158,7 +160,7 @@ ir::Operand IRParser::parse_operand() {
     if (get() == '%') {
         return ir::Operand::from_register(parse_reg(), type);
     } else if (get() == '@') {
-        return ir::Operand::from_extern_func(parse_ident(), type);  
+        return ir::Operand::from_extern_func(parse_ident(), type);
     } else if (get() == '-' || isdigit(get())) {
         std::string str;
         while (get() == '-' || get() == '.' || isdigit(get())) {
@@ -225,3 +227,5 @@ void IRParser::skip_whitespace() {
 bool IRParser::end_of_line() {
     return pos == line.size();
 }
+
+} // namespace banjo

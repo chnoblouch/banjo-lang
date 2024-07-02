@@ -4,6 +4,8 @@
 #include "json.hpp"
 #include "source/text_range.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 enum SemanticTokenType {
@@ -53,5 +55,7 @@ JSONObject range_to_lsp(const std::string &source, lang::TextRange range);
 } // namespace ProtocolStructs
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

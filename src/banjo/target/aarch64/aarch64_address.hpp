@@ -3,6 +3,8 @@
 
 #include "mcode/register.hpp"
 
+namespace banjo {
+
 namespace target {
 
 struct AArch64Address {
@@ -82,5 +84,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

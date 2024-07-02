@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace target {
 
 bool AArch64EncodingInfo::is_addr_offset_encodable(int offset, int size) {
@@ -58,3 +60,5 @@ bool AArch64EncodingInfo::is_addr_64_offset_encodable(int offset) {
 }
 
 } // namespace target
+
+} // namespace banjo

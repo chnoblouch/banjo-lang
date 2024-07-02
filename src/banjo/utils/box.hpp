@@ -3,6 +3,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 template <typename T>
 class Box {
 
@@ -27,5 +29,7 @@ public:
 
     T &operator*() const { return get_value(); }
 };
+
+} // namespace banjo
 
 #endif

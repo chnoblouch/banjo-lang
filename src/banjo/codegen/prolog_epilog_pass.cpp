@@ -5,6 +5,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 void PrologEpilogPass::run(mcode::Module &module_) {
@@ -51,3 +53,5 @@ void PrologEpilogPass::insert_epilog(mcode::Function *func, std::vector<long> &m
 }
 
 } // namespace codegen
+
+} // namespace banjo

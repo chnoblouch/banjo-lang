@@ -11,6 +11,8 @@
 #include "symbol/protocol.hpp"
 #include "symbol/use.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 SymbolRef::SymbolRef(Function *func) : kind(SymbolKind::FUNCTION), target(func), visibility(func->get_visibility()) {}
@@ -106,3 +108,5 @@ std::optional<SymbolRef> SymbolRef::resolve() const {
 }
 
 } // namespace lang
+
+} // namespace banjo

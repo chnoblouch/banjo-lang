@@ -18,6 +18,8 @@
 #include <fstream>
 #include <iostream>
 
+namespace banjo {
+
 namespace lang {
 
 Compiler::Compiler(const Config &config)
@@ -127,3 +129,5 @@ void Compiler::run_backend(ir::Module &ir_module) {
 }
 
 } // namespace lang
+
+} // namespace banjo

@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 class MachinePassRunner {
@@ -25,5 +27,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

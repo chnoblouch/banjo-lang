@@ -7,6 +7,8 @@
 
 #include <optional>
 
+namespace banjo {
+
 namespace lang {
 
 class FunctionResolution {
@@ -31,5 +33,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

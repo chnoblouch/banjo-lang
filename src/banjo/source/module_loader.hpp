@@ -4,6 +4,8 @@
 #include "ast/ast_module.hpp"
 #include "source/module_manager.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ModuleLoader {
@@ -15,5 +17,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

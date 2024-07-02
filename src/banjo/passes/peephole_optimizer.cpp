@@ -5,6 +5,8 @@
 #include "passes/precomputing.hpp"
 #include "utils/bit_operations.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 PeepholeOptimizer::PeepholeOptimizer(target::Target *target) : Pass("peephole-opt", target) {}
@@ -138,3 +140,5 @@ bool PeepholeOptimizer::is_float_one(ir::Operand &operand) {
 }
 
 } // namespace passes
+
+} // namespace banjo

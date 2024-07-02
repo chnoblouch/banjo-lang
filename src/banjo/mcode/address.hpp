@@ -3,6 +3,8 @@
 
 #include "mcode/register.hpp"
 
+namespace banjo {
+
 namespace mcode {
 
 struct Address {
@@ -86,5 +88,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

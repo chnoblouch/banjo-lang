@@ -3,15 +3,17 @@
 #include "ir/writer.hpp"
 #include "ir_parser.hpp"
 
+#include "passes/inlining_pass.hpp"
 #include "passes/peephole_optimizer.hpp"
 #include "passes/sroa_pass.hpp"
 #include "passes/stack_to_reg_pass.hpp"
-#include "passes/inlining_pass.hpp"
 
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+
+namespace banjo {
 
 PassTester::PassTester(const std::string &pass_name, const std::string &file_name)
   : pass_name(pass_name),
@@ -211,3 +213,5 @@ bool PassTester::fail(const std::string &message) {
     std::cout << "FAILED: " << message;
     return false;
 }
+
+} // namespace banjo

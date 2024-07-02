@@ -5,6 +5,8 @@
 #include "target/aarch64/aarch64_register.hpp"
 #include "target/target_reg_analyzer.hpp"
 
+namespace banjo {
+
 namespace target {
 
 namespace AArch64RegClass {
@@ -42,5 +44,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

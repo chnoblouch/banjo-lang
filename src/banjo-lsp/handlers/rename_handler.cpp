@@ -16,6 +16,8 @@
 
 #include <unordered_map>
 
+namespace banjo {
+
 namespace lsp {
 
 RenameHandler::RenameHandler(SourceManager &source_manager) : source_manager(source_manager) {}
@@ -79,3 +81,5 @@ JSONValue RenameHandler::handle(const JSONObject &params, Connection &connection
 }
 
 } // namespace lsp
+
+} // namespace banjo

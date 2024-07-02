@@ -7,6 +7,8 @@
 #include "ir_builder/location_ir_builder.hpp"
 #include "ir_builder/storage.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 ir::VirtualRegister FuncCallIRBuilder::build(StorageHints hints, bool use_result) {
@@ -108,3 +110,5 @@ ir::Operand FuncCallIRBuilder::get_self_operand(LocationIRBuilder &location_buil
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

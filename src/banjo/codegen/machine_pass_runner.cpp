@@ -8,6 +8,8 @@
 
 #include <fstream>
 
+namespace banjo {
+
 namespace codegen {
 
 MachinePassRunner::MachinePassRunner(target::Target *target) : target(target) {}
@@ -49,3 +51,5 @@ void MachinePassRunner::emit(mcode::Module &module, std::string file_name) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

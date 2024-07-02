@@ -6,6 +6,8 @@
 #include "sema/semantic_analyzer.hpp"
 #include "symbol/symbol.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class DeclBodyAnalyzer {
@@ -27,5 +29,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

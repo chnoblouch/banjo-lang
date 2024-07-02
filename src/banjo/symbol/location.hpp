@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class LocalVariable;
@@ -128,5 +130,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

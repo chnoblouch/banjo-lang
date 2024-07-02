@@ -6,6 +6,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace ir {
 
 class Structure;
@@ -68,5 +70,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

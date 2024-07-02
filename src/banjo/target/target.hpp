@@ -10,6 +10,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 class IRLowerer;
 } // namespace codegen
@@ -47,5 +49,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

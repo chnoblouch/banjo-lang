@@ -1,6 +1,8 @@
 #ifndef AARCH64_OPCODE_H
 #define AARCH64_OPCODE_H
 
+namespace banjo {
+
 namespace target {
 
 namespace AArch64Opcode {
@@ -63,5 +65,7 @@ enum {
 } // namespace AArch64Opcode
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

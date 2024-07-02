@@ -7,6 +7,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 class TypeAnalyzer {
@@ -56,5 +58,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

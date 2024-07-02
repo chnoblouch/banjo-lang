@@ -4,6 +4,8 @@
 #include "ir_builder/block_ir_builder.hpp"
 #include "ir_builder/bool_expr_ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void WhileIRBuilder::build() {
@@ -33,3 +35,5 @@ void WhileIRBuilder::build() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

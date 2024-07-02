@@ -3,6 +3,8 @@
 
 #include "source/module_loader.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class SourceManager;
@@ -23,5 +25,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

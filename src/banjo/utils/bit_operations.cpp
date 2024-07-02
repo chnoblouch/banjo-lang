@@ -1,5 +1,7 @@
 #include "bit_operations.hpp"
 
+namespace banjo {
+
 std::uint32_t BitOperations::transmute_s32_to_u32(std::int32_t value) {
     union {
         std::int32_t s32;
@@ -29,3 +31,5 @@ unsigned BitOperations::get_first_bit_set(std::int64_t value) {
 
     return shift;
 }
+
+} // namespace banjo

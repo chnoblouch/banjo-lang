@@ -15,6 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 class Variable;
 } // namespace lang
@@ -163,5 +165,7 @@ public:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

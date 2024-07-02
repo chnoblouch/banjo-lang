@@ -2,6 +2,8 @@
 
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 int Structure::get_member_index(const std::string &name) {
@@ -15,3 +17,5 @@ int Structure::get_member_index(const std::string &name) {
 }
 
 } // namespace ir
+
+} // namespace banjo

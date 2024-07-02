@@ -8,6 +8,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace ir_builder {
 
 StoredValue ClosureIRBuilder::build(StorageHints hints) {
@@ -89,3 +91,5 @@ StoredValue ClosureIRBuilder::build(StorageHints hints) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

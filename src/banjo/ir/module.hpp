@@ -8,6 +8,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class Module {
@@ -54,5 +56,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

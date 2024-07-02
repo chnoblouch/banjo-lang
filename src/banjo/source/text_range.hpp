@@ -1,6 +1,8 @@
 #ifndef TEXR_RANGE_H
 #define TEXR_RANGE_H
 
+namespace banjo {
+
 namespace lang {
 
 class Token;
@@ -21,5 +23,7 @@ struct TextRange {
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

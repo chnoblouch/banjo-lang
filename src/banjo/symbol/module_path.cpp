@@ -2,6 +2,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 ModulePath::ModulePath() {}
@@ -73,3 +75,5 @@ std::string ModulePath::to_string(const std::string &delimiter /* = '.' */) cons
 }
 
 } // namespace lang
+
+} // namespace banjo

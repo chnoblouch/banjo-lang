@@ -6,6 +6,8 @@
 #include "symbol/symbol.hpp"
 #include "symbol/symbol_ref.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 SymbolTable *ASTContext::get_cur_symbol_table() const {
@@ -159,3 +161,5 @@ std::optional<ValueMove> SemanticAnalyzerContext::get_prev_move(DeinitInfo *info
 }
 
 } // namespace lang
+
+} // namespace banjo

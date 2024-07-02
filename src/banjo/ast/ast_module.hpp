@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class ASTModule : public ASTNode {
@@ -33,5 +35,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

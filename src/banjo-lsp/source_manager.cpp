@@ -10,6 +10,8 @@
 #include <sstream>
 #include <utility>
 
+namespace banjo {
+
 namespace lsp {
 
 SourceManager::SourceManager() : module_loader(*this), module_manager(module_loader, report_manager) {}
@@ -142,3 +144,5 @@ SourceFile &SourceManager::get_file(const lang::ModulePath &path) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

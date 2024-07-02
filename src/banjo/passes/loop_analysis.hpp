@@ -6,6 +6,8 @@
 #include <ostream>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace ir {
 
 struct LoopAnalysis {
@@ -37,5 +39,7 @@ private:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef IR_PRIMITIVE_H
 #define IR_PRIMITIVE_H
 
+namespace banjo {
+
 namespace ir {
 
 enum class Primitive {
@@ -15,5 +17,7 @@ enum class Primitive {
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

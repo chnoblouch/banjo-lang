@@ -3,6 +3,8 @@
 
 #include "codegen/ir_lowerer.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class AArch64IRLowerer : public codegen::IRLowerer {
@@ -80,5 +82,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

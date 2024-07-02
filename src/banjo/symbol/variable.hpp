@@ -9,6 +9,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 class IRBuilderContext;
 } // namespace ir_builder
@@ -21,7 +23,7 @@ struct DeinitInfo {
     ir::VirtualRegister flag_reg = -1;
     std::vector<DeinitInfo> member_info;
     Location location;
-    
+
     void set_unmanaged();
 };
 
@@ -46,5 +48,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

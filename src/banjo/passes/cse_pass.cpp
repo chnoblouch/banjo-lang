@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace passes {
 
 CSEPass::CSEPass(target::Target *target) : Pass("cse", target) {}
@@ -73,3 +75,5 @@ void CSEPass::run(ir::BasicBlock &block, ir::Function *func) {
 }
 
 } // namespace passes
+
+} // namespace banjo

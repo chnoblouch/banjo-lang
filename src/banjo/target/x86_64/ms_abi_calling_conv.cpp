@@ -32,6 +32,8 @@ Volatile general-purpose registers are pushed to the stack before allocating the
 
 */
 
+namespace banjo {
+
 namespace target {
 
 using namespace X8664Register;
@@ -356,3 +358,5 @@ int MSABICallingConv::get_implicit_stack_bytes(mcode::Function *func) {
 }
 
 } // namespace target
+
+} // namespace banjo

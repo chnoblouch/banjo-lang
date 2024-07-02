@@ -4,6 +4,8 @@
 #include "mcode/module.hpp"
 #include <ostream>
 
+namespace banjo {
+
 namespace codegen {
 
 class Emitter {
@@ -20,5 +22,7 @@ public:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

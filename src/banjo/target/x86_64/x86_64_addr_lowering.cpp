@@ -3,6 +3,8 @@
 #include "config/config.hpp"
 #include "target/x86_64/x86_64_opcode.hpp"
 
+namespace banjo {
+
 namespace target {
 
 X8664AddrLowering::X8664AddrLowering(codegen::IRLowerer &lowerer) : lowerer(lowerer) {}
@@ -126,3 +128,5 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &i
 }
 
 } // namespace target
+
+} // namespace banjo

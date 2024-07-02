@@ -1,5 +1,7 @@
 #include "loop_analysis.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 LoopAnalyzer::LoopAnalyzer(ControlFlowGraph &cfg, DominatorTree &domtree) : cfg(cfg), domtree(domtree) {}
@@ -108,3 +110,5 @@ void LoopAnalyzer::dump(std::ostream &stream) {
 }
 
 } // namespace ir
+
+} // namespace banjo

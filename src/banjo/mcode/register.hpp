@@ -3,6 +3,8 @@
 
 #include <unordered_set>
 
+namespace banjo {
+
 namespace mcode {
 
 class BasicBlock;
@@ -51,9 +53,11 @@ public:
 
 } // namespace mcode
 
+} // namespace banjo
+
 template <>
-struct std::hash<mcode::Register> {
-    std::size_t operator()(const mcode::Register &reg) const noexcept {
+struct std::hash<banjo::mcode::Register> {
+    std::size_t operator()(const banjo::mcode::Register &reg) const noexcept {
         return (std::size_t)(reg.get_type()) << 32 | (std::size_t)reg.get_type();
     }
 };

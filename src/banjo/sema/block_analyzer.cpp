@@ -17,6 +17,8 @@
 #include "symbol/symbol_table.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 BlockAnalyzer::BlockAnalyzer(ASTBlock *node, ASTNode *parent, SemanticAnalyzerContext &context)
@@ -412,3 +414,5 @@ bool BlockAnalyzer::check_redefinition(SymbolTable *symbol_table, ASTNode *name_
 }
 
 } // namespace lang
+
+} // namespace banjo

@@ -5,6 +5,8 @@
 
 #include <unordered_set>
 
+namespace banjo {
+
 namespace passes {
 
 ControlFlowOptPass::ControlFlowOptPass(target::Target *target) : Pass("control-flow-opt", target) {}
@@ -91,3 +93,5 @@ void ControlFlowOptPass::optimize_blocks(ir::Function &func) {
 }
 
 } // namespace passes
+
+} // namespace banjo

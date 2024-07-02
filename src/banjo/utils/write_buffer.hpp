@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+namespace banjo {
+
 class WriteBuffer {
 
 private:
@@ -32,5 +34,7 @@ public:
 private:
     void ensure_size(std::uint32_t size);
 };
+
+} // namespace banjo
 
 #endif

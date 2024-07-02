@@ -15,6 +15,8 @@
 #include "handlers/semantic_tokens_handler.hpp"
 #include "handlers/shutdown_handler.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 void Server::start() {
@@ -80,3 +82,5 @@ void Server::start() {
 }
 
 } // namespace lsp
+
+} // namespace banjo

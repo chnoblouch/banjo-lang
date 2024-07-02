@@ -1,5 +1,7 @@
 #include "token_stream.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 TokenStream::TokenStream(std::vector<Token> &tokens) : tokens(tokens) {}
@@ -51,3 +53,5 @@ void TokenStream::split_current() {
 }
 
 } // namespace lang
+
+} // namespace banjo

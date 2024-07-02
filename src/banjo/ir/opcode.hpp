@@ -1,6 +1,8 @@
 #ifndef IR_OPCODE_H
 #define IR_OPCODE_H
 
+namespace banjo {
+
 namespace ir {
 
 enum class Opcode {
@@ -49,5 +51,7 @@ enum class Opcode {
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

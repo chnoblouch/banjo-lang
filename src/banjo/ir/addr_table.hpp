@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+namespace banjo {
+
 class AddrTable {
 
 private:
@@ -22,5 +24,7 @@ public:
     Map::iterator begin() { return items.begin(); }
     Map::iterator end() { return items.end(); }
 };
+
+} // namespace banjo
 
 #endif

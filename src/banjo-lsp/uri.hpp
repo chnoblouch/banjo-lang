@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <string>
 
+namespace banjo {
+
 namespace lsp {
 
 namespace URI {
@@ -17,5 +19,7 @@ std::string encode_from_path(std::filesystem::path path);
 } // namespace URI
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

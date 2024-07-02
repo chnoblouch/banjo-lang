@@ -3,6 +3,8 @@
 
 #include "connection.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class InitializeHandler : public RequestHandler {
@@ -18,5 +20,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

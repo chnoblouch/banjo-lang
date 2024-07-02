@@ -4,6 +4,8 @@
 #include "passes/loop_analysis.hpp"
 #include "passes/pass.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 class LICMPass : public Pass {
@@ -19,5 +21,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

@@ -6,6 +6,8 @@
 #include "symbol/module_path.hpp"
 #include "symbol/symbol_table.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 namespace StandardTypes {
@@ -27,5 +29,7 @@ void link_symbols(SymbolTable *symbol_table, const ModuleList &module_list);
 } // namespace StandardTypes
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

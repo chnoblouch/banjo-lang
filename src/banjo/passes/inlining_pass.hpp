@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace passes {
 
 class InliningPass : public Pass {
@@ -55,5 +57,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

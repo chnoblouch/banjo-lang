@@ -6,6 +6,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace ELFSectionType {
 enum : std::uint32_t { PROGBITS = 1, SYMTAB = 2, STRTAB = 3, RELA = 4 };
 }
@@ -66,5 +68,7 @@ struct ELFFile {
     std::uint16_t machine;
     std::vector<ELFSection> sections;
 };
+
+} // namespace banjo
 
 #endif

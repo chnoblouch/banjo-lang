@@ -4,6 +4,8 @@
 #include <cassert>
 #include <utility>
 
+namespace banjo {
+
 template <typename T>
 struct LinkedListNode {
     T value;
@@ -48,17 +50,12 @@ public:
 
     T &operator*() { return node->value; }
     const T &operator*() const { return node->value; }
-    
+
     T *operator->() { return &node->value; }
     const T *operator->() const { return &node->value; }
 
     operator bool() const { return node; }
     bool operator!() const { return !node; }
-};
-
-template <typename T>
-struct std::hash<LinkedListIter<T>> {
-    std::size_t operator()(const LinkedListIter<T> &iter) const noexcept { return (std::size_t)iter.get_node(); }
 };
 
 template <typename T>
@@ -175,6 +172,13 @@ public:
 
     LinkedListIter<T> begin() const { return header->next; }
     LinkedListIter<T> end() const { return trailer; }
+};
+
+} // namespace banjo
+
+template <typename T>
+struct std::hash<banjo::LinkedListIter<T>> {
+    std::size_t operator()(const banjo::LinkedListIter<T> &iter) const noexcept { return (std::size_t)iter.get_node(); }
 };
 
 #endif

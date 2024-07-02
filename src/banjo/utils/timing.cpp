@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <iostream>
 
+namespace banjo {
+
 std::unordered_map<std::string, std::chrono::time_point<TimingClock>> ScopeTimer::timers;
 std::vector<TimingResult> ScopeTimer::results;
 
@@ -64,3 +66,5 @@ void ScopeTimer::dump_results() {
 
     std::cout << std::string(64, '-') << std::endl;
 }
+
+} // namespace banjo

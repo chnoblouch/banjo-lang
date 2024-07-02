@@ -14,6 +14,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &sema) : sema(sema), context(sema.get_context()) {}
@@ -139,3 +141,5 @@ void DeclBodyAnalyzer::analyze_union(ASTUnion *node) {
 }
 
 } // namespace lang
+
+} // namespace banjo

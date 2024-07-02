@@ -4,6 +4,8 @@
 #include "lexer/token.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class TokenStream {
@@ -25,5 +27,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

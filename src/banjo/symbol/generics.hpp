@@ -7,6 +7,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class ASTNode;
@@ -94,5 +96,7 @@ bool has_sequence(GenericFunc *func);
 } // namespace GenericsUtils
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

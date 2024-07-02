@@ -16,6 +16,8 @@
 #include "ir_builder/while_ir_builder.hpp"
 #include "symbol/symbol_table.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 BlockIRBuilder::BlockIRBuilder(IRBuilderContext &context, lang::ASTNode *node)
@@ -95,3 +97,5 @@ void BlockIRBuilder::build_exit() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

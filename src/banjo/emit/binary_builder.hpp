@@ -7,6 +7,8 @@
 
 #include <unordered_map>
 
+namespace banjo {
+
 class BinaryBuilder {
 
 protected:
@@ -79,5 +81,7 @@ protected:
     void assert_condition(bool condition, std::string message);
     [[noreturn]] void abort(std::string message);
 };
+
+} // namespace banjo
 
 #endif

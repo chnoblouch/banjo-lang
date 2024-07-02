@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace target {
 
 class AArch64InstrMergePass : public codegen::MachinePass {
@@ -33,5 +35,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

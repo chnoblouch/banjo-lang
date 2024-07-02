@@ -5,6 +5,8 @@
 #include "ir_builder/expr_ir_builder.hpp"
 #include "symbol/local_variable.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void TypeInferVarDeclIRBuilder::build() {
@@ -15,3 +17,5 @@ void TypeInferVarDeclIRBuilder::build() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

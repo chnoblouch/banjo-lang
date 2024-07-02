@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 ASTNode::ASTNode() : type(AST_INVALID), value(""), range(0, 0) {}
@@ -122,3 +124,5 @@ ASTNode *ASTNode::create_clone() {
 }
 
 } // namespace lang
+
+} // namespace banjo

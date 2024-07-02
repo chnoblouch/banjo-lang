@@ -1,5 +1,7 @@
 #include "json_serializer.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 JSONSerializer::JSONSerializer(std::ostream &stream) : stream(stream) {}
@@ -69,3 +71,5 @@ void JSONSerializer::serialize(const JSONValue &value, int indent) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

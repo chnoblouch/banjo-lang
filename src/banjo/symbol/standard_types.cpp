@@ -7,6 +7,8 @@
 #include <tuple>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 bool StandardTypes::is_optional(DataType *type) {
@@ -87,3 +89,5 @@ void StandardTypes::link_symbols(SymbolTable *symbol_table, const ModuleList &mo
 }
 
 } // namespace lang
+
+} // namespace banjo

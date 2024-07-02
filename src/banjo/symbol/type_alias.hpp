@@ -3,6 +3,8 @@
 
 #include "symbol/symbol.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class DataType;
@@ -21,5 +23,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

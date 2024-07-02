@@ -2,6 +2,8 @@
 
 #include "ast_navigation.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 JSONObject ProtocolStructs::range_to_lsp(const std::string &source, lang::TextRange range) {
@@ -15,3 +17,5 @@ JSONObject ProtocolStructs::range_to_lsp(const std::string &source, lang::TextRa
 }
 
 } // namespace lsp
+
+} // namespace banjo

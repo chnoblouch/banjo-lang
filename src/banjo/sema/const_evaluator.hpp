@@ -4,6 +4,8 @@
 #include "ast/ast_node.hpp"
 #include "utils/large_int.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ConstEvaluator {
@@ -13,5 +15,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

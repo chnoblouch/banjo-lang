@@ -3,6 +3,8 @@
 #include "config/config.hpp"
 #include "uri.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 InitializeHandler::InitializeHandler() {}
@@ -79,3 +81,5 @@ void InitializeHandler::init_config(const JSONValue &workspace_folders) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

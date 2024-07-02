@@ -4,6 +4,8 @@
 #include <cassert>
 #include <limits>
 
+namespace banjo {
+
 LargeInt::LargeInt(std::uint64_t magnitude, bool negative) : magnitude(magnitude), negative(negative) {
     if (magnitude == 0 && negative) {
         negative = false;
@@ -239,3 +241,5 @@ std::strong_ordering operator<=>(const LargeInt &lhs, const LargeInt &rhs) {
 std::ostream &operator<<(std::ostream &stream, const LargeInt &large_int) {
     return stream << large_int.to_string();
 }
+
+} // namespace banjo

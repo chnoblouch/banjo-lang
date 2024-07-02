@@ -3,6 +3,8 @@
 
 #include "ir_builder/ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 class TypeInferVarDeclIRBuilder : public IRBuilder {
@@ -13,5 +15,7 @@ public:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

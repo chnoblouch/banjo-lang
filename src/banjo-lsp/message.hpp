@@ -4,6 +4,8 @@
 #include "json.hpp"
 #include <string>
 
+namespace banjo {
+
 namespace lsp {
 
 struct Request {
@@ -18,5 +20,7 @@ struct Notification {
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

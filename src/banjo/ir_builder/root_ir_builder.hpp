@@ -8,6 +8,8 @@
 #include "ir_builder/ir_builder_context.hpp"
 #include "target/target.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 class RootIRBuilder {
@@ -47,5 +49,7 @@ private:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

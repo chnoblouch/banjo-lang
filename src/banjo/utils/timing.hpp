@@ -24,6 +24,8 @@
 #    define PROFILE_SECTION(name)
 #endif
 
+namespace banjo {
+
 using TimingClock = std::chrono::high_resolution_clock;
 
 struct TimingResult {
@@ -48,5 +50,7 @@ public:
     static void stop_timer(const std::string &task);
     static void dump_results();
 };
+
+} // namespace banjo
 
 #endif

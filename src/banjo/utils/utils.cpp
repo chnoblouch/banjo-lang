@@ -1,5 +1,7 @@
 #include "utils.hpp"
 
+namespace banjo {
+
 namespace Utils {
 
 int align(int value, int boundary) {
@@ -12,3 +14,5 @@ int align(int value, int boundary) {
 }
 
 } // namespace Utils
+
+} // namespace banjo

@@ -10,6 +10,8 @@
 #include "sema/type_analyzer.hpp"
 #include "symbol/enumeration.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 MetaLowerer::MetaLowerer(SemanticAnalyzerContext &context) : context(context) {}
@@ -261,3 +263,5 @@ void MetaLowerer::replace_identifier_rec(ASTNode *node, const std::string &ident
 }
 
 } // namespace lang
+
+} // namespace banjo

@@ -4,6 +4,8 @@
 #include "symbol/symbol_table.hpp"
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 StructField::StructField() : Symbol(nullptr, "") {}
@@ -101,3 +103,5 @@ ProtoImpl *Structure::get_matching_proto_impl(Protocol *proto) {
 }
 
 } // namespace lang
+
+} // namespace banjo

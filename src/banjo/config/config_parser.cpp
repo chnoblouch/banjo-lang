@@ -1,6 +1,8 @@
 #include "config_parser.hpp"
 #include "target/target_description.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 static const std::string ARG_ARCH = "arch";
@@ -92,3 +94,5 @@ target::TargetDescription ConfigParser::create_target(const ParsedArgs &args) {
 }
 
 } // namespace lang
+
+} // namespace banjo

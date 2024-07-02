@@ -5,6 +5,8 @@
 #include "ast/ast_module.hpp"
 #include "config/config.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class StdConfigModule : public ASTModule {
@@ -21,5 +23,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

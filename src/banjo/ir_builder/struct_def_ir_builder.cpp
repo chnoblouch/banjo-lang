@@ -5,6 +5,8 @@
 #include "ir/structure.hpp"
 #include "ir_builder/func_def_ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void StructDefIRBuilder::build() {
@@ -27,3 +29,5 @@ void StructDefIRBuilder::build() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

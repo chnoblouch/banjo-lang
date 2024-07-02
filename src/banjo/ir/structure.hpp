@@ -7,6 +7,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 struct StructureMember {
@@ -32,5 +34,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

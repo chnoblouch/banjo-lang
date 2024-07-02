@@ -16,6 +16,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 
 void TryIRBuilder::build() {
@@ -113,3 +115,5 @@ void TryIRBuilder::build_else_case(lang::ASTNode *node) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

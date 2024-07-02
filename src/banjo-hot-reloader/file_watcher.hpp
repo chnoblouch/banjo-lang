@@ -8,6 +8,10 @@
 
 #include <windows.h>
 
+namespace banjo {
+
+namespace hot_reloader {
+
 class FileWatcher {
 
 private:
@@ -33,5 +37,9 @@ private:
     void run();
     void handle_file_change(std::string name, std::vector<std::filesystem::path> &changed_files);
 };
+
+} // namespace hot_reloader
+
+} // namespace banjo
 
 #endif

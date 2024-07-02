@@ -4,6 +4,8 @@
 #include "emit/binary_module.hpp"
 #include "emit/elf/elf_format.hpp"
 
+namespace banjo {
+
 class ELFBuilder {
 
 private:
@@ -28,5 +30,7 @@ private:
     void add_section(ELFSection &section);
     std::uint32_t add_string(ELFSection &section, std::string string);
 };
+
+} // namespace banjo
 
 #endif

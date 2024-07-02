@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <iostream>
 
+using namespace banjo;
+
 template <typename R, typename E>
 void check_assertion(std::string description, R result, E expected) {
     if (result != expected) {

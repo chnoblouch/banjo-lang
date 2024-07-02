@@ -4,6 +4,8 @@
 #include <cassert>
 #include <utility>
 
+namespace banjo {
+
 namespace ir_builder {
 
 const StorageHints StorageHints::NONE;
@@ -86,3 +88,5 @@ void StoredValue::copy_to(const ir::Value &dst, IRBuilderContext &context) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

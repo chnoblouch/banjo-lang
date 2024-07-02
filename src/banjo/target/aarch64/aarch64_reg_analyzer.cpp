@@ -3,6 +3,8 @@
 #include "target/aarch64/aarch64_opcode.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace target {
 
 AArch64RegAnalyzer::AArch64RegAnalyzer() {
@@ -244,3 +246,5 @@ void AArch64RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<
 }
 
 } // namespace target
+
+} // namespace banjo

@@ -3,6 +3,8 @@
 #include "ast/expr.hpp"
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 LargeInt ConstEvaluator::eval_int(ASTNode *node) {
@@ -17,3 +19,5 @@ LargeInt ConstEvaluator::eval_int(ASTNode *node) {
 }
 
 } // namespace lang
+
+} // namespace banjo

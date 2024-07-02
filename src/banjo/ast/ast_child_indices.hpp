@@ -1,6 +1,8 @@
 #ifndef AST_CHILD_INDICES_H
 #define AST_CHILD_INDICES_H
 
+namespace banjo {
+
 namespace lang {
 
 constexpr unsigned VAR_QUALIFIERS = 0;
@@ -113,5 +115,7 @@ constexpr unsigned META_EXPR_KIND = 0;
 constexpr unsigned META_EXPR_ARGS = 1;
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

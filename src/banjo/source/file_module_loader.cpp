@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+namespace banjo {
+
 namespace lang {
 
 std::istream *FileModuleLoader::open(const ModuleFile &module_file) {
@@ -9,3 +11,5 @@ std::istream *FileModuleLoader::open(const ModuleFile &module_file) {
 }
 
 } // namespace lang
+
+} // namespace banjo

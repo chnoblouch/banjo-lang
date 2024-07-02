@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+namespace banjo {
+
 namespace target {
 
 static std::unordered_set<std::uint64_t> encodable_pos_floats;
@@ -42,3 +44,5 @@ const std::unordered_set<std::uint64_t> &AArch64Immediate::get_encodable_pos_flo
 }
 
 } // namespace target
+
+} // namespace banjo

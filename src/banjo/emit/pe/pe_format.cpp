@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+namespace banjo {
+
 void PEFile::add_symbol(PESymbolBlueprint blueprint) {
     if (blueprint.name.size() <= 8) {
         PESymbol symbol = {
@@ -43,3 +45,5 @@ void PEFile::add_symbol(PESymbolBlueprint blueprint) {
         string_table.size += blueprint.name.size() + 1;
     }
 }
+
+} // namespace banjo

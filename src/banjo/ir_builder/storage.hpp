@@ -8,6 +8,8 @@
 #include <cassert>
 #include <optional>
 
+namespace banjo {
+
 namespace ir_builder {
 
 struct StorageHints {
@@ -54,5 +56,7 @@ struct StoredValue {
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

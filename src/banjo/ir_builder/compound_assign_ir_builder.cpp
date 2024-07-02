@@ -7,6 +7,8 @@
 #include "ir_builder/ir_builder_utils.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void CompoundAssignIRBuilder::build() {
@@ -63,3 +65,5 @@ ir::Opcode CompoundAssignIRBuilder::get_fp_opcode(lang::ASTNodeType node_type) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

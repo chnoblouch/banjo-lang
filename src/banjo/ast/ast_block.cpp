@@ -1,5 +1,7 @@
 #include "ast/ast_block.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 ASTBlock::ASTBlock() : ASTNode(AST_BLOCK), symbol_table(nullptr) {}
@@ -46,3 +48,5 @@ ASTNode *ASTBlock::clone_block_child(ASTNode *child, SymbolTable *parent_symbol_
 }
 
 } // namespace lang
+
+} // namespace banjo

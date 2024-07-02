@@ -3,6 +3,8 @@
 
 #include "codegen/machine_pass.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 class PrologEpilogPass : public MachinePass {
@@ -17,5 +19,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

@@ -7,6 +7,10 @@
 typedef unsigned long DWORD;
 typedef void *HANDLE;
 
+namespace banjo {
+
+namespace hot_reloader {
+
 class TargetProcess {
 
 public:
@@ -38,5 +42,9 @@ private:
     void resolve_symbol_use(BinModule &module_, const LoadedFunc &loaded_func, const BinSymbolUse &use);
     void write_section(void *address, const WriteBuffer &buffer);
 };
+
+} // namespace hot_reloader
+
+} // namespace banjo
 
 #endif

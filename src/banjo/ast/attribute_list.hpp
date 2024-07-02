@@ -4,6 +4,8 @@
 #include "ast/attribute.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class AttributeList {
@@ -17,5 +19,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

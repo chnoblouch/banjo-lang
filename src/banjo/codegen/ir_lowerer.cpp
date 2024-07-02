@@ -8,6 +8,8 @@
 
 #define WARN_UNIMPLEMENTED(instruction) std::cerr << "warning: cannot lower instruction " << (instruction) << '\n';
 
+namespace banjo {
+
 namespace codegen {
 
 IRLowerer::IRLowerer(target::Target *target) : target(target) {}
@@ -488,3 +490,5 @@ void IRLowerer::discard_use(ir::VirtualRegister reg) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

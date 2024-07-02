@@ -6,6 +6,8 @@
 #include <functional>
 #include <optional>
 
+namespace banjo {
+
 namespace passes {
 
 namespace Precomputing {
@@ -37,5 +39,7 @@ bool precompute_cmp(const ir::Value &lhs, const ir::Value &rhs, ir::Comparison c
 } // namespace Precomputing
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

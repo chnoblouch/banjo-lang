@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace passes {
 
 StackSlotMergePass::StackSlotMergePass(target::Target *target) : Pass("stack-slot-merge", target) {}
@@ -43,3 +45,5 @@ void StackSlotMergePass::run(ir::Function *func) {
 }
 
 } // namespace passes
+
+} // namespace banjo

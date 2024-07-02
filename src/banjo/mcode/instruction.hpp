@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace mcode {
 
 typedef int Opcode;
@@ -81,5 +83,7 @@ typedef LinkedListNode<Instruction> MachineInstrNode;
 typedef LinkedListIter<Instruction> InstrIter;
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

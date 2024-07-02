@@ -10,6 +10,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace lsp {
 
 class JSONValue;
@@ -95,5 +97,7 @@ public:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

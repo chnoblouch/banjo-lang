@@ -1,5 +1,7 @@
 #include "ast_navigation.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 lang::TextPosition ASTNavigation::pos_from_lsp(const std::string &source, int line, int column) {
@@ -45,3 +47,5 @@ lang::ASTNode *ASTNavigation::get_node_at(lang::ASTNode *node, lang::TextPositio
 }
 
 } // namespace lsp
+
+} // namespace banjo

@@ -4,6 +4,8 @@
 #include "ir/module.hpp"
 #include <istream>
 
+namespace banjo {
+
 class IRParser {
 
 private:
@@ -38,5 +40,7 @@ private:
     void skip_whitespace();
     bool end_of_line();
 };
+
+} // namespace banjo
 
 #endif

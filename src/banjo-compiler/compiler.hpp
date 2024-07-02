@@ -9,6 +9,8 @@
 #include "source/module_manager.hpp"
 #include "target/target.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 struct ModuleParseResult {
@@ -38,5 +40,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

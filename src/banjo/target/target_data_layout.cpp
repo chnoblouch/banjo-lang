@@ -2,6 +2,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace target {
 
 TargetDataLayout::TargetDataLayout(unsigned usize, ir::Type usize_type)
@@ -21,3 +23,5 @@ bool TargetDataLayout::fits_in_register(const ir::Type &type) const {
 }
 
 } // namespace target
+
+} // namespace banjo

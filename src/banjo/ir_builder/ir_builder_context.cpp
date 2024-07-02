@@ -9,6 +9,8 @@
 #include <cassert>
 #include <utility>
 
+namespace banjo {
+
 namespace ir_builder {
 
 IRBuilderContext::IRBuilderContext(target::Target *target) : target(target) {
@@ -298,3 +300,5 @@ ir::Structure *IRBuilderContext::get_tuple_struct(const std::vector<ir::Type> &m
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

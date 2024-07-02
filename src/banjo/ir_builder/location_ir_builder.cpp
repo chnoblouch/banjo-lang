@@ -13,6 +13,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace ir_builder {
 
 StoredValue LocationIRBuilder::build(bool return_value) {
@@ -231,3 +233,5 @@ void LocationIRBuilder::build_proto_method_access(lang::FunctionSignature *proto
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

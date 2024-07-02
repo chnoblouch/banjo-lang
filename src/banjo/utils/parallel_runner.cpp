@@ -5,6 +5,8 @@
 #include <string>
 #include <thread>
 
+namespace banjo {
+
 namespace utils {
 
 void ParallelRunner::Worker::launch(ParallelRunner &runner) {
@@ -108,3 +110,5 @@ void ParallelRunner::run_blocking(std::deque<Task> tasks) {
 }
 
 } // namespace utils
+
+} // namespace banjo

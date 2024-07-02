@@ -4,6 +4,8 @@
 #include "mcode/calling_convention.hpp"
 #include "mcode/register.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class AAPCSCallingConv : public mcode::CallingConvention {
@@ -35,5 +37,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

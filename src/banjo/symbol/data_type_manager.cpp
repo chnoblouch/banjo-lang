@@ -1,5 +1,7 @@
 #include "data_type_manager.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 DataTypeManager::DataTypeManager() {
@@ -17,3 +19,5 @@ DataType *DataTypeManager::get_primitive_type(PrimitiveType primitive_type) {
 }
 
 } // namespace lang
+
+} // namespace banjo

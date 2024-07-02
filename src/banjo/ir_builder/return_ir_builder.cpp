@@ -3,6 +3,8 @@
 #include "ir_builder/expr_ir_builder.hpp"
 #include "ir_builder/ir_builder_utils.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void ReturnIRBuilder::build() {
@@ -19,3 +21,5 @@ void ReturnIRBuilder::build_return_value() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

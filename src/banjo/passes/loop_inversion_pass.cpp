@@ -8,6 +8,8 @@
 #include <iostream>
 #include <utility>
 
+namespace banjo {
+
 namespace passes {
 
 LoopInversionPass::LoopInversionPass(target::Target *target) : Pass("loop-inversion", target) {
@@ -132,3 +134,5 @@ void LoopInversionPass::canonicalize(const ir::LoopAnalysis &loop, ir::ControlFl
 }
 
 } // namespace passes
+
+} // namespace banjo

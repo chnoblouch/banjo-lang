@@ -1,5 +1,7 @@
 #include "json.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class Server {
@@ -9,3 +11,5 @@ public:
 };
 
 } // namespace lsp
+
+} // namespace banjo

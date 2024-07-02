@@ -7,6 +7,8 @@
 #include <functional>
 #include <unordered_map>
 
+namespace banjo {
+
 namespace lsp {
 
 class Connection;
@@ -40,5 +42,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

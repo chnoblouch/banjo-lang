@@ -3,6 +3,8 @@
 #include "symbol/magic_functions.hpp"
 #include "symbol/structure.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 DeinitAnalyzer::DeinitAnalyzer(SemanticAnalyzerContext &context) {}
@@ -78,3 +80,5 @@ void DeinitAnalyzer::register_info_on_block(DeinitInfo &info, ASTBlock *block) {
 }
 
 } // namespace lang
+
+} // namespace banjo

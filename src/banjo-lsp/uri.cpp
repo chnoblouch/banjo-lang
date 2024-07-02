@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+namespace banjo {
+
 namespace lsp {
 
 std::string URI::decode(std::string uri) {
@@ -67,3 +69,5 @@ std::string URI::encode_from_path(std::filesystem::path path) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

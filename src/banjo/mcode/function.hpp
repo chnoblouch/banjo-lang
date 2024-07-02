@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace mcode {
 
 struct UnwindInfo {
@@ -40,5 +42,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

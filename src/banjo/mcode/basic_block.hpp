@@ -6,6 +6,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace mcode {
 
 class Function;
@@ -53,5 +55,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

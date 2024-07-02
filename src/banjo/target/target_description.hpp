@@ -3,6 +3,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace target {
 
 enum class Architecture {
@@ -54,5 +56,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

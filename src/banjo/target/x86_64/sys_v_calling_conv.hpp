@@ -12,6 +12,8 @@ namespace codegen {
 class Operand;
 } // namespace codegen
 
+namespace banjo {
+
 namespace target {
 
 class SysVCallingConv : public mcode::CallingConvention {
@@ -43,5 +45,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

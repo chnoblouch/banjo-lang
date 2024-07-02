@@ -4,6 +4,8 @@
 #include <optional>
 #include <string>
 
+namespace banjo {
+
 namespace lang {
 
 class Attribute {
@@ -22,5 +24,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

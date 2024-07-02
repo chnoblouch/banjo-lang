@@ -9,6 +9,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace target {
 
 class X8664Encoder : public BinaryBuilder {
@@ -267,5 +269,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

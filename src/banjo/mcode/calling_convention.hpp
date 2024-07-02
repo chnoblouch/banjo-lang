@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <vector>
 
+namespace banjo {
+
 namespace target {
 class TargetRegAnalyzer;
 };
@@ -67,5 +69,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

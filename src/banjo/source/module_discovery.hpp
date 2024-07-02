@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct ModuleFile {
@@ -46,5 +48,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

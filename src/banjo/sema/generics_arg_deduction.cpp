@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 GenericsArgDeduction::GenericsArgDeduction(
@@ -68,3 +70,5 @@ void GenericsArgDeduction::store_deduced_type(const std::string &param_name, Dat
 }
 
 } // namespace lang
+
+} // namespace banjo

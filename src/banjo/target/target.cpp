@@ -3,6 +3,8 @@
 #include "target/aarch64/aarch64_target.hpp"
 #include "target/x86_64/x86_64_target.hpp"
 
+namespace banjo {
+
 namespace target {
 
 Target::Target(TargetDescription descr, CodeModel code_model) : descr(descr), code_model(code_model) {}
@@ -36,3 +38,5 @@ Target *Target::create(TargetDescription descr, CodeModel code_model) {
 }
 
 } // namespace target
+
+} // namespace banjo

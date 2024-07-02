@@ -4,6 +4,8 @@
 #include "ir/global_decl.hpp"
 #include "ir/operand.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 class Global : public GlobalDecl {
@@ -17,5 +19,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <vector>
 
+namespace banjo {
+
 namespace mcode {
 
 class Module {
@@ -45,5 +47,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

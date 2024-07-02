@@ -14,6 +14,8 @@
 
 #define DEBUG_REG_ALLOC 0
 
+namespace banjo {
+
 namespace codegen {
 
 class RegAllocPass : public MachinePass {
@@ -78,5 +80,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

@@ -11,6 +11,8 @@
 #include <optional>
 #include <string>
 
+namespace banjo {
+
 namespace lang {
 
 class SemanticAnalyzer {
@@ -53,5 +55,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -2,7 +2,8 @@
 #define MCODE_GLOBAL_H
 
 #include "mcode/operand.hpp"
-#include <vector>
+
+namespace banjo {
 
 namespace mcode {
 
@@ -27,5 +28,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

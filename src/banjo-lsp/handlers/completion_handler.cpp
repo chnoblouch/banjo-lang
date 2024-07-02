@@ -18,6 +18,8 @@
 #include <set>
 #include <string_view>
 
+namespace banjo {
+
 namespace lsp {
 
 CompletionHandler::CompletionHandler(SourceManager &source_manager) : source_manager(source_manager) {}
@@ -404,3 +406,5 @@ JSONObject CompletionHandler::build_generic_func_item(lang::GenericFunc *generic
 }
 
 } // namespace lsp
+
+} // namespace banjo

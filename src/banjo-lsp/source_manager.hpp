@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace lsp {
 
 struct SourceFile {
@@ -70,5 +72,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

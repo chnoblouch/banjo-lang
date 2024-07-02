@@ -7,6 +7,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace passes {
 
 class PassRunner {
@@ -28,5 +30,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

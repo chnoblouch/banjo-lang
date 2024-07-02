@@ -5,6 +5,8 @@
 #include <iostream>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace passes {
 
 LICMPass::LICMPass(target::Target *target) : Pass("licm", target) {}
@@ -113,3 +115,5 @@ void LICMPass::run(const ir::LoopAnalysis &loop, ir::ControlFlowGraph &cfg, ir::
 }
 
 } // namespace passes
+
+} // namespace banjo

@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace codegen {
 
 LateRegAlloc::LateRegAlloc(Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer)
@@ -55,3 +57,5 @@ bool LateRegAlloc::check_alloc(mcode::PhysicalReg reg) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

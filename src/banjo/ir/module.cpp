@@ -1,5 +1,7 @@
 #include "module.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 Module::~Module() {
@@ -30,3 +32,5 @@ void Module::forget_pointers() {
 }
 
 } // namespace ir
+
+} // namespace banjo

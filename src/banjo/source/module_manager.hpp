@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class ModuleLoader;
@@ -46,5 +48,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -5,6 +5,8 @@
 #include "source/text_range.hpp"
 #include "source_manager.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 struct SemanticToken {
@@ -38,5 +40,7 @@ public:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

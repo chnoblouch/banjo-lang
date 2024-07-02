@@ -7,6 +7,8 @@
 #include <string>
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 class ASTModule;
@@ -34,5 +36,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -10,6 +10,8 @@
 #include "symbol/symbol_ref.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 std::optional<SymbolRefInfo> SymbolRefInfo::look_up(lang::Identifier *identifier) {
@@ -89,3 +91,5 @@ lang::ASTModule *SymbolRefInfo::find_definition_mod() {
 }
 
 } // namespace lsp
+
+} // namespace banjo

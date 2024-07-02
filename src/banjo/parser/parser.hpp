@@ -14,6 +14,8 @@
 #include <functional>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct ParsedAST {
@@ -91,5 +93,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -7,6 +7,8 @@
 #include "symbol/symbol_ref.hpp"
 #include "uri.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 SemanticTokensHandler::SemanticTokensHandler(SourceManager &source_manager) : source_manager(source_manager) {}
@@ -179,3 +181,5 @@ JSONArray SemanticTokensHandler::serialize(const std::vector<LSPSemanticToken> &
 }
 
 } // namespace lsp
+
+} // namespace banjo

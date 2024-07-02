@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace target {
 
 X8664ConstLowering::X8664ConstLowering(codegen::IRLowerer &lowerer) : lowerer(lowerer) {}
@@ -120,3 +122,5 @@ bool X8664ConstLowering::is_discarding_instr(ir::Opcode opcode) {
 }
 
 } // namespace target
+
+} // namespace banjo

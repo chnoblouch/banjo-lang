@@ -4,6 +4,8 @@
 #include "json.hpp"
 #include <ostream>
 
+namespace banjo {
+
 namespace lsp {
 
 class JSONSerializer {
@@ -23,5 +25,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

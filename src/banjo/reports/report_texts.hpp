@@ -7,6 +7,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace lang {
 
 class ReportText {
@@ -76,5 +78,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

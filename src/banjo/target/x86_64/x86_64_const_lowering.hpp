@@ -7,6 +7,8 @@
 #include <optional>
 #include <unordered_map>
 
+namespace banjo {
+
 namespace target {
 
 class X8664ConstLowering {
@@ -40,5 +42,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

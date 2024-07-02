@@ -3,6 +3,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace ir {
 
 class Label {
@@ -18,5 +20,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

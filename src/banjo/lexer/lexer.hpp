@@ -7,6 +7,8 @@
 #include <istream>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class Lexer {
@@ -48,5 +50,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

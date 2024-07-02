@@ -2,6 +2,8 @@
 
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 const std::string &MagicFunctions::get_operator_func(ASTNodeType type) {
@@ -17,3 +19,5 @@ const std::string &MagicFunctions::get_operator_func(ASTNodeType type) {
 }
 
 } // namespace lang
+
+} // namespace banjo

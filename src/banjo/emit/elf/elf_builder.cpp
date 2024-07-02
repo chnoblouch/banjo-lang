@@ -1,5 +1,7 @@
 #include "elf_builder.hpp"
 
+namespace banjo {
+
 ELFFile ELFBuilder::build(BinModule module_) {
     file.machine = ELFMachine::X86_64;
 
@@ -184,3 +186,5 @@ std::uint32_t ELFBuilder::add_string(ELFSection &section, std::string string) {
 
     return offset;
 }
+
+} // namespace banjo

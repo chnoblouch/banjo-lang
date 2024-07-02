@@ -6,6 +6,8 @@
 #include "symbol/data_type.hpp"
 #include "symbol/location.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ExprAnalyzer {
@@ -66,5 +68,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

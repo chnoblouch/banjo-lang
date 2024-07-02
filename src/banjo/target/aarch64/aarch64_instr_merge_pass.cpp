@@ -5,6 +5,8 @@
 
 #include <unordered_set>
 
+namespace banjo {
+
 namespace target {
 
 const std::unordered_set<mcode::Opcode> REMOVABLE_INSTRS = {
@@ -134,3 +136,5 @@ void AArch64InstrMergePass::remove_useless_instrs(mcode::BasicBlock &basic_block
 }
 
 } // namespace target
+
+} // namespace banjo

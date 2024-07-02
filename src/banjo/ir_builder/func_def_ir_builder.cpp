@@ -10,6 +10,8 @@
 
 #include <utility>
 
+namespace banjo {
+
 namespace ir_builder {
 
 void FuncDefIRBuilder::build() {
@@ -151,3 +153,5 @@ bool FuncDefIRBuilder::is_external(lang::Function *func) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

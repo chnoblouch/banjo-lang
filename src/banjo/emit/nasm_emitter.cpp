@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace codegen {
 
 const std::unordered_map<mcode::Opcode, std::string> NASMEmitter::OPCODE_NAMES = {
@@ -414,3 +416,5 @@ std::string NASMEmitter::get_size_declaration(int size) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

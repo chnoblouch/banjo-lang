@@ -3,6 +3,8 @@
 
 #include "mcode/module.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 class MachinePass {
@@ -13,5 +15,7 @@ public:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

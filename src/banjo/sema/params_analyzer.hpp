@@ -6,6 +6,8 @@
 #include "sema/semantic_analyzer_context.hpp"
 #include "symbol/symbol_table.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ParamsAnalyzer {
@@ -20,5 +22,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

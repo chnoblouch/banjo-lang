@@ -2,6 +2,8 @@
 #include "ir/function.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace passes {
 
 DeadFuncEliminationPass::DeadFuncEliminationPass(target::Target *target) : Pass("dead-func-elimination", target) {}
@@ -66,3 +68,5 @@ void DeadFuncEliminationPass::analyze_value(ir::Value &value) {
 }
 
 } // namespace passes
+
+} // namespace banjo

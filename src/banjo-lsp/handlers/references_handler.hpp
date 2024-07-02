@@ -4,6 +4,8 @@
 #include "connection.hpp"
 #include "source_manager.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class ReferencesHandler : public RequestHandler {
@@ -19,5 +21,7 @@ public:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

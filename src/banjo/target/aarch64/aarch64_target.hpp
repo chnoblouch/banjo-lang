@@ -5,6 +5,8 @@
 #include "target/standard_data_layout.hpp"
 #include "target/target.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class AArch64Target : public Target {
@@ -27,5 +29,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

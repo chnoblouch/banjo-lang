@@ -9,6 +9,8 @@
 #include <optional>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 enum class SymbolKind {
@@ -123,5 +125,7 @@ struct SymbolGroup {
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

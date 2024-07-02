@@ -3,6 +3,8 @@
 
 #include "target/target_data_layout.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class StandardDataLayout : public TargetDataLayout {
@@ -16,5 +18,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

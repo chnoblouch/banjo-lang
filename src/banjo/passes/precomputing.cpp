@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+namespace banjo {
+
 namespace passes {
 
 std::optional<ir::Value> precompute_binary_int_operation(
@@ -236,3 +238,5 @@ bool Precomputing::precompute_cmp(const ir::Value &lhs, const ir::Value &rhs, ir
 }
 
 } // namespace passes
+
+} // namespace banjo

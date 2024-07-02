@@ -1,5 +1,7 @@
 #include "location.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 void Location::add_element(LocationElement element) {
@@ -39,3 +41,5 @@ const LocationElement &Location::get_last_element() const {
 }
 
 } // namespace lang
+
+} // namespace banjo

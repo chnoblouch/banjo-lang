@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <iostream>
 
+namespace banjo {
+
 BinModule BinaryBuilder::create_module() {
     BinModule module_;
 
@@ -184,3 +186,5 @@ void BinaryBuilder::abort(std::string message) {
     std::cerr << "error: " << message << std::endl;
     std::exit(1);
 }
+
+} // namespace banjo

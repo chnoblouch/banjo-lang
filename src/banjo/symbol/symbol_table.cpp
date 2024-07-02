@@ -12,6 +12,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 SymbolTable::SymbolTable(SymbolTable *parent) : parent(parent) {}
@@ -214,3 +216,5 @@ bool SymbolTable::does_param_list_match(const std::vector<DataType *> &a, const 
 }
 
 } // namespace lang
+
+} // namespace banjo

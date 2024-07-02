@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace mcode {
 
 struct ImplicitStackRegion {
@@ -34,5 +36,7 @@ struct StackRegions {
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

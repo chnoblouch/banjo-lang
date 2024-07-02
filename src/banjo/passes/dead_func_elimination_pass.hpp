@@ -6,6 +6,8 @@
 #include <string>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace passes {
 
 class DeadFuncEliminationPass : public Pass {
@@ -25,5 +27,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

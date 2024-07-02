@@ -3,6 +3,8 @@
 #include "ast/ast_child_indices.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void AssignIRBuilder::build() {
@@ -14,3 +16,5 @@ void AssignIRBuilder::build() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

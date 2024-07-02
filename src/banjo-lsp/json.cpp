@@ -1,5 +1,7 @@
 #include "json.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 JSONValue::JSONValue(JSONObject value) : value(value) {}
@@ -87,3 +89,5 @@ void JSONArray::add(JSONValue value) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

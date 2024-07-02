@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace PESectionFlags {
 enum : std::uint32_t {
     CODE = 0x00000020,
@@ -68,5 +70,7 @@ struct PEFile {
 
     void add_symbol(PESymbolBlueprint blueprint);
 };
+
+} // namespace banjo
 
 #endif

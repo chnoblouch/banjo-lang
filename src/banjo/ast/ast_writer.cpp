@@ -1,5 +1,7 @@
 #include "ast_writer.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 ASTWriter::ASTWriter(std::ostream &stream) : stream(stream) {}
@@ -186,3 +188,5 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
 }
 
 } // namespace lang
+
+} // namespace banjo

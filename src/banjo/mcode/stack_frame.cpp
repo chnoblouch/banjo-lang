@@ -1,5 +1,7 @@
 #include "stack_frame.hpp"
 
+namespace banjo {
+
 namespace mcode {
 
 StackSlotID StackFrame::new_stack_slot(StackSlot slot) {
@@ -14,3 +16,5 @@ StackSlotID StackFrame::new_stack_slot(StackSlot slot) {
 }
 
 } // namespace mcode
+
+} // namespace banjo

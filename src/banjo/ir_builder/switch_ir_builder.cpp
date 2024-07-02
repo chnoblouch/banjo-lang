@@ -16,6 +16,8 @@
 
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 
 void SwitchIRBuilder::build() {
@@ -84,3 +86,5 @@ void SwitchIRBuilder::build() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

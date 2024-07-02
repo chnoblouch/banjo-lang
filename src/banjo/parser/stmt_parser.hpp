@@ -3,6 +3,8 @@
 
 #include "parser/parser.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class StmtParser {
@@ -34,5 +36,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -3,6 +3,8 @@
 #include "reports/report_utils.hpp"
 #include <map>
 
+namespace banjo {
+
 namespace lang {
 
 const std::map<ReportText::ID, std::string> TEXTS = {
@@ -83,3 +85,5 @@ ReportText &ReportText::format(const ModulePath &path) {
 }
 
 } // namespace lang
+
+} // namespace banjo

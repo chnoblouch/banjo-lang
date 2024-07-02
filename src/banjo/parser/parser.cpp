@@ -13,6 +13,8 @@
 #include <cstddef>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace lang {
 
 const std::unordered_set<TokenType> RECOVER_KEYWORDS{
@@ -379,3 +381,5 @@ ASTBlock *Parser::create_dummy_block() {
 }
 
 } // namespace lang
+
+} // namespace banjo

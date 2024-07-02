@@ -8,6 +8,10 @@
 #include <filesystem>
 #include <string>
 
+namespace banjo {
+
+namespace hot_reloader {
+
 class HotReloader {
 
 private:
@@ -31,5 +35,9 @@ private:
     void free_func();
     void terminate();
 };
+
+} // namespace hot_reloader
+
+} // namespace banjo
 
 #endif

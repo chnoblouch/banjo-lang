@@ -3,6 +3,8 @@
 #include "json_parser.hpp"
 #include "json_serializer.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 void Connection::start() {
@@ -82,3 +84,5 @@ BaseMessage Connection::json_object_to_message(const JSONObject &object) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

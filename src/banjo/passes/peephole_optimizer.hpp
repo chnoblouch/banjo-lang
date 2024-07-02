@@ -3,6 +3,8 @@
 
 #include "passes/pass.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 class PeepholeOptimizer : public Pass {
@@ -28,5 +30,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

@@ -3,6 +3,8 @@
 
 #include "source/module_loader.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class FileModuleLoader : public ModuleLoader {
@@ -12,5 +14,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

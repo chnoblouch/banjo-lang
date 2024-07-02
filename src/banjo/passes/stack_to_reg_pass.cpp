@@ -8,6 +8,8 @@
 
 #include <unordered_set>
 
+namespace banjo {
+
 namespace passes {
 
 StackToRegPass::StackToRegPass(target::Target *target) : Pass("stack-to-reg", target) {}
@@ -289,3 +291,5 @@ void StackToRegPass::update_branch_target(
 }
 
 } // namespace passes
+
+} // namespace banjo

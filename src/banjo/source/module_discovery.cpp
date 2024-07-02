@@ -5,6 +5,8 @@
 
 #include <filesystem>
 
+namespace banjo {
+
 namespace lang {
 
 ModuleDiscovery::ModuleDiscovery() {
@@ -135,3 +137,5 @@ std::vector<ModulePath> ModuleDiscovery::find_sub_modules(const ModuleFile &modu
 }
 
 } // namespace lang
+
+} // namespace banjo

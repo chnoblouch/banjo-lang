@@ -7,6 +7,8 @@
 #include "utils/macros.hpp"
 #include "utils/bit_operations.hpp"
 
+namespace banjo {
+
 namespace target {
 
 // clang-format off
@@ -709,3 +711,5 @@ void AArch64IRLowerer::move_branch_args(ir::BranchTarget &target) {
 // clang-format on
 
 } // namespace target
+
+} // namespace banjo

@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class FunctionDecl {
@@ -42,5 +44,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

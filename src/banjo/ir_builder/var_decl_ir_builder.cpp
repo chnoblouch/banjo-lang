@@ -4,6 +4,8 @@
 #include "ast/decl.hpp"
 #include "ir_builder/expr_ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void VarDeclIRBuilder::build() {
@@ -19,3 +21,5 @@ void VarDeclIRBuilder::build() {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

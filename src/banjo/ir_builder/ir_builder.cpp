@@ -1,5 +1,7 @@
 #include "ir_builder.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 unsigned IRBuilder::get_size(const ir::Type &type) {
@@ -15,3 +17,5 @@ bool IRBuilder::is_return_by_ref(const ir::Type &type) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

@@ -11,6 +11,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace ir_builder {
 
 std::vector<ir::Type> IRBuilderUtils::build_params(
@@ -155,3 +157,5 @@ bool IRBuilderUtils::is_branching(ir::BasicBlock &block) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

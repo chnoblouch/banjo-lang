@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+namespace banjo {
+
 void WriteBuffer::write_u8(std::uint8_t u8) {
     ensure_size(position + 1);
     data[position] = u8;
@@ -103,3 +105,5 @@ void WriteBuffer::ensure_size(std::uint32_t size) {
         data.resize(size);
     }
 }
+
+} // namespace banjo

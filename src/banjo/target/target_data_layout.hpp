@@ -6,6 +6,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace target {
 
 class TargetDataLayout {
@@ -30,5 +32,7 @@ public:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

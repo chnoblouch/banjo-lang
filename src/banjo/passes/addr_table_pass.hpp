@@ -7,6 +7,8 @@
 #include <fstream>
 #include <optional>
 
+namespace banjo {
+
 namespace passes {
 
 class AddrTablePass : public Pass {
@@ -27,5 +29,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

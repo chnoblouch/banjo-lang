@@ -2,10 +2,16 @@
 
 #include "diagnostics.hpp"
 
-#include <windows.h>
-
 #include <cstdint>
+
+// clang-format off
+#include <windows.h>
 #include <dbghelp.h>
+// clang-format on
+
+namespace banjo {
+
+namespace hot_reloader {
 
 TargetProcess::TargetProcess(HANDLE process, HANDLE thread) : process(process), thread(thread) {}
 
@@ -125,3 +131,7 @@ void TargetProcess::close() {
     CloseHandle(process);
     CloseHandle(thread);
 }
+
+} // namespace hot_reloader
+
+} // namespace banjo

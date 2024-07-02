@@ -10,6 +10,8 @@
 #    include <io.h>
 #endif
 
+namespace banjo {
+
 namespace lsp {
 
 void BaseMessageStream::start_reading(MessageHandler handler) {
@@ -84,3 +86,5 @@ void BaseMessageStream::write_message(BaseMessage &message) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

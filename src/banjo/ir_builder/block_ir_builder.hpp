@@ -5,6 +5,8 @@
 #include "ir_builder/ir_builder.hpp"
 #include "symbol/variable.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 class BlockIRBuilder : public IRBuilder {
@@ -24,5 +26,7 @@ public:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

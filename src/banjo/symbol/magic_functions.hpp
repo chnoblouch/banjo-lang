@@ -4,6 +4,8 @@
 #include "ast/ast_node.hpp"
 #include <string>
 
+namespace banjo {
+
 namespace lang {
 
 namespace MagicFunctions {
@@ -23,5 +25,7 @@ const std::string &get_operator_func(ASTNodeType type);
 } // namespace MagicFunctions
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

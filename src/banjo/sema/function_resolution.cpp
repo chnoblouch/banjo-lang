@@ -8,6 +8,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 FunctionResolution::FunctionResolution(
@@ -165,3 +167,5 @@ void FunctionResolution::report_unresolved_overload(std::vector<DataType *> &arg
 }
 
 } // namespace lang
+
+} // namespace banjo

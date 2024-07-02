@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct FunctionSignature {
@@ -36,5 +38,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

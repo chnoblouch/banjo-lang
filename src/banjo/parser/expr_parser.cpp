@@ -7,6 +7,8 @@
 #include "reports/report_texts.hpp"
 #include "source/text_range.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 ExprParser::ExprParser(Parser &parser, bool allow_struct_literals /* = false */)
@@ -595,3 +597,5 @@ ParseResult ExprParser::parse_level(
 }
 
 } // namespace lang
+
+} // namespace banjo

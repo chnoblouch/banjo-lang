@@ -9,6 +9,8 @@
 #include <thread>
 #include <vector>
 
+namespace banjo {
+
 namespace utils {
 
 class ParallelRunner {
@@ -49,5 +51,7 @@ public:
 };
 
 } // namespace utils
+
+} // namespace banjo
 
 #endif

@@ -8,6 +8,8 @@
 
 #include <functional>
 
+namespace banjo {
+
 namespace passes {
 
 namespace PassUtils {
@@ -28,5 +30,7 @@ void replace_block(ir::Function *func, ir::ControlFlowGraph &cfg, unsigned node,
 } // namespace PassUtils
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

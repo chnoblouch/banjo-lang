@@ -21,6 +21,8 @@
 
 #include <optional>
 
+namespace banjo {
+
 namespace lang {
 
 LocationAnalyzer::LocationAnalyzer(ASTNode *node, SemanticAnalyzerContext &context, SymbolUsage usage /* = {} */)
@@ -555,3 +557,5 @@ SymbolRef LocationAnalyzer::resolve_method(MethodTable &method_table, const std:
 }
 
 } // namespace lang
+
+} // namespace banjo

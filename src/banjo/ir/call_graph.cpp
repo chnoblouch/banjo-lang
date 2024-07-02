@@ -1,5 +1,7 @@
 #include "call_graph.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 CallGraph::CallGraph(Module &mod) {
@@ -32,3 +34,5 @@ void CallGraph::create_edge(Function *from, Function *to) {
 }
 
 } // namespace ir
+
+} // namespace banjo

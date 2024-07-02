@@ -1,6 +1,9 @@
 #include "pass_utils.hpp"
 
-using namespace passes;
+namespace banjo {
+
+namespace passes {
+
 using namespace ir;
 
 void PassUtils::replace_in_func(
@@ -118,3 +121,7 @@ void PassUtils::replace_block(ir::Function *func, ir::ControlFlowGraph &cfg, uns
         }
     }
 }
+
+} // namespace passes
+
+} // namespace banjo

@@ -3,6 +3,8 @@
 #include "ir/function.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 const std::string &Operand::get_symbol_name() const {
@@ -14,3 +16,5 @@ const std::string &Operand::get_symbol_name() const {
 }
 
 } // namespace ir
+
+} // namespace banjo

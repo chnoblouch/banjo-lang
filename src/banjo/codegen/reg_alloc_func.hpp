@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 struct RegAllocInstr {
@@ -74,5 +76,7 @@ struct Bundle {
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

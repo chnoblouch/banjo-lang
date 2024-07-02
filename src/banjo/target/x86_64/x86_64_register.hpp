@@ -1,6 +1,8 @@
 #ifndef X86_64_REGISTER
 #define X86_64_REGISTER
 
+namespace banjo {
+
 namespace target {
 
 namespace X8664Register {
@@ -44,5 +46,7 @@ enum {
 } // namespace X8664Register
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

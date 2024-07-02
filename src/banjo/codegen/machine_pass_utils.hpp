@@ -4,6 +4,8 @@
 #include "mcode/module.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 namespace MachinePassUtils {
@@ -16,5 +18,7 @@ std::vector<long> get_modified_volatile_regs(mcode::Function *func);
 } // namespace MachinePassUtils
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

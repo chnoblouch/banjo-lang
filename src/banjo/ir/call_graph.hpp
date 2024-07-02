@@ -4,6 +4,8 @@
 #include "ir/module.hpp"
 #include <unordered_map>
 
+namespace banjo {
+
 namespace ir {
 
 class CallGraph {
@@ -32,5 +34,7 @@ private:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

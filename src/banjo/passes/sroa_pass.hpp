@@ -6,6 +6,8 @@
 #include <functional>
 #include <optional>
 
+namespace banjo {
+
 namespace passes {
 
 class SROAPass : public Pass {
@@ -63,5 +65,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

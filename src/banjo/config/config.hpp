@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class Config {
@@ -46,5 +48,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -5,12 +5,18 @@
 #include "ir_builder/ir_builder_utils.hpp"
 #include "jit_compiler.hpp"
 
-#include "file_watcher.hpp"
-#include <windows.h>
-
 #include <cstring>
-#include <dbghelp.h>
 #include <fstream>
+
+// clang-format off
+#include <windows.h>
+#include <dbghelp.h>
+#include "file_watcher.hpp"
+// clang-format on
+
+namespace banjo {
+
+namespace hot_reloader {
 
 HotReloader::HotReloader() {
     Diagnostics::log("platform: x86_64-windows");
@@ -154,3 +160,7 @@ void HotReloader::terminate() {
     process.close();
     Diagnostics::log("process exited");
 }
+
+} // namespace hot_reloader
+
+} // namespace banjo

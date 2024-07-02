@@ -6,6 +6,8 @@
 #include "symbol/generics.hpp"
 #include "symbol/symbol_ref.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class CompletionHandler : public RequestHandler {
@@ -62,5 +64,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

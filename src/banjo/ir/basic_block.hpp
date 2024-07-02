@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class BasicBlock {
@@ -46,5 +48,7 @@ typedef LinkedListNode<BasicBlock> BasicBlockNode;
 typedef LinkedListIter<BasicBlock> BasicBlockIter;
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

@@ -7,6 +7,8 @@
 #include "parser/node_builder.hpp"
 #include "parser/parser.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ExprParser {
@@ -51,7 +53,7 @@ private:
     ParseResult parse_func_type();
     ParseResult parse_meta_expr();
     ParseResult parse_explicit_type();
-    
+
     ParseResult parse_dot_expr(ASTNode *lhs_node);
     ParseResult parse_call_expr(ASTNode *lhs_node);
     ParseResult parse_bracket_expr(ASTNode *lhs_node);
@@ -59,9 +61,10 @@ private:
 
     ParseResult parse_struct_literal_body();
     ParseResult parse_level(ParseResult (ExprParser::*child_builder)(), ASTNodeType(token_checker)(TokenType type));
-
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

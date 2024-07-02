@@ -12,6 +12,8 @@
 #include "symbol/data_type.hpp"
 #include "utils/macros.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 MetaValue::MetaValue(MetaValue &&other) noexcept
@@ -249,3 +251,5 @@ MetaValue MetaEvaluator::eval_range(Expr *node) {
 }
 
 } // namespace lang
+
+} // namespace banjo

@@ -12,6 +12,8 @@
 #include <optional>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 ModuleManager::ModuleManager(ModuleLoader &module_loader, ReportManager &report_manager)
@@ -140,3 +142,5 @@ ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
 }
 
 } // namespace lang
+
+} // namespace banjo

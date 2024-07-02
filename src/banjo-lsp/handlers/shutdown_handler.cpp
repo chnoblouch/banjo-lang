@@ -1,5 +1,7 @@
 #include "shutdown_handler.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 JSONValue ShutdownHandler::handle(const JSONObject &, Connection &) {
@@ -9,3 +11,5 @@ JSONValue ShutdownHandler::handle(const JSONObject &, Connection &) {
 }
 
 } // namespace lsp
+
+} // namespace banjo

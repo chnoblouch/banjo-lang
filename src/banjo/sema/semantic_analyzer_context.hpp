@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class SemanticAnalyzerContext;
@@ -148,5 +150,7 @@ enum class SemaResult {
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

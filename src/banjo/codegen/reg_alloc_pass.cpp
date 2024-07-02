@@ -13,6 +13,8 @@
 #include <queue>
 #include <vector>
 
+namespace banjo {
+
 namespace codegen {
 
 RegAllocPass::RegAllocPass(target::TargetRegAnalyzer &analyzer) : analyzer(analyzer) {}
@@ -511,3 +513,5 @@ void RegAllocPass::write_debug_report(Context &ctx) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

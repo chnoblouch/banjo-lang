@@ -3,6 +3,8 @@
 
 #include "codegen/machine_pass.hpp"
 
+namespace banjo {
+
 namespace target {
 
 class X8664PeepholeOptPass : public codegen::MachinePass {
@@ -16,5 +18,7 @@ private:
 };
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

@@ -4,6 +4,8 @@
 #include "ir_builder/ir_builder.hpp"
 #include <optional>
 
+namespace banjo {
+
 namespace ir_builder {
 
 class ReturnIRBuilder : public IRBuilder {
@@ -18,5 +20,7 @@ private:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

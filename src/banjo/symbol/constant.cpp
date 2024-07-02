@@ -3,6 +3,8 @@
 #include "ir_builder/expr_ir_builder.hpp"
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 Constant::Constant() : Variable(nullptr, ""), module_(nullptr) {}
@@ -16,3 +18,5 @@ ir_builder::StoredValue Constant::as_ir_value(ir_builder::IRBuilderContext &cont
 }
 
 } // namespace lang
+
+} // namespace banjo

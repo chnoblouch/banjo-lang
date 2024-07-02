@@ -6,6 +6,8 @@
 
 #include <unordered_map>
 
+namespace banjo {
+
 namespace codegen {
 
 class NASMEmitter : public Emitter {
@@ -36,5 +38,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

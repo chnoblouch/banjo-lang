@@ -3,6 +3,8 @@
 
 #include <filesystem>
 
+namespace banjo {
+
 namespace lang {
 
 class StandardLib {
@@ -18,5 +20,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

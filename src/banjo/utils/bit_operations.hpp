@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstring>
 
+namespace banjo {
+
 typedef std::uint64_t Bits;
 
 namespace BitOperations {
@@ -35,5 +37,7 @@ std::uint64_t get_bits_64(T value) {
 }
 
 } // namespace BitOperations
+
+} // namespace banjo
 
 #endif

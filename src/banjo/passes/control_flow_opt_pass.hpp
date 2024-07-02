@@ -4,6 +4,8 @@
 #include "ir/control_flow_graph.hpp"
 #include "passes/pass.hpp"
 
+namespace banjo {
+
 namespace passes {
 
 class ControlFlowOptPass : public Pass {
@@ -18,5 +20,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

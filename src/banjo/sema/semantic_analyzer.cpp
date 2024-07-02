@@ -12,6 +12,8 @@
 #include "symbol/use.hpp"
 #include "utils/timing.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 SemanticAnalyzer::SemanticAnalyzer(ModuleManager &module_manager, DataTypeManager &type_manager, target::Target *target)
@@ -301,3 +303,5 @@ void SemanticAnalyzer::for_each_module(
 }
 
 } // namespace lang
+
+} // namespace banjo

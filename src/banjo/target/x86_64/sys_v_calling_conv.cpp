@@ -8,6 +8,8 @@
 #include "utils/macros.hpp"
 #include "utils/utils.hpp"
 
+namespace banjo {
+
 namespace target {
 
 using namespace X8664Register;
@@ -323,3 +325,5 @@ int SysVCallingConv::get_implicit_stack_bytes(mcode::Function *func) {
 }
 
 } // namespace target
+
+} // namespace banjo

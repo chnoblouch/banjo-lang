@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace passes {
 
 constexpr int GAIN_BIAS = 3;
@@ -328,3 +330,5 @@ bool InliningPass::is_inlining_legal(ir::Function *caller, ir::Function *callee)
 }
 
 } // namespace passes
+
+} // namespace banjo

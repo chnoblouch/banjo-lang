@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class ReportPrinter {
@@ -45,5 +47,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

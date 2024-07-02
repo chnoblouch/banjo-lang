@@ -7,6 +7,8 @@
 #include <ostream>
 #include <string>
 
+namespace banjo {
+
 namespace passes {
 
 class Pass {
@@ -32,5 +34,7 @@ protected:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

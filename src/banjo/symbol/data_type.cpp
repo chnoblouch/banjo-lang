@@ -7,6 +7,8 @@
 
 #include <cassert>
 
+namespace banjo {
+
 namespace lang {
 
 bool operator==(const FunctionType &lhs, const FunctionType &rhs) {
@@ -242,3 +244,5 @@ bool DataType::equal(
 }
 
 } // namespace lang
+
+} // namespace banjo

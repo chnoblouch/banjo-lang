@@ -4,12 +4,15 @@
 #include "ast/ast_node.hpp"
 #include "symbol/enumeration.hpp"
 #include "symbol/generics.hpp"
+#include "symbol/protocol.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/type_alias.hpp"
 #include "symbol/union.hpp"
-#include "symbol/protocol.hpp"
+
 
 #include <utility>
+
+namespace banjo {
 
 namespace lang {
 
@@ -81,5 +84,7 @@ typedef ASTOwningSymbol<GenericFunc, AST_GENERIC_FUNCTION_DEFINITION> ASTGeneric
 typedef ASTOwningSymbol<GenericStruct, AST_GENERIC_STRUCT_DEFINITION> ASTGenericStruct;
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

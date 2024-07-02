@@ -2,6 +2,8 @@
 
 #include "utils/paths.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 StandardLib &StandardLib::instance() {
@@ -14,3 +16,5 @@ void StandardLib::discover() {
 }
 
 } // namespace lang
+
+} // namespace banjo

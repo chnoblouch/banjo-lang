@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace passes {
 
 class StackToRegPass : public Pass {
@@ -67,5 +69,7 @@ private:
 };
 
 } // namespace passes
+
+} // namespace banjo
 
 #endif

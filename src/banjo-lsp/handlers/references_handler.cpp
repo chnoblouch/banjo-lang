@@ -10,6 +10,8 @@
 #include "symbol_ref_info.hpp"
 #include "uri.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 ReferencesHandler::ReferencesHandler(SourceManager &source_manager) : source_manager(source_manager) {}
@@ -55,3 +57,5 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection &connec
 }
 
 } // namespace lsp
+
+} // namespace banjo

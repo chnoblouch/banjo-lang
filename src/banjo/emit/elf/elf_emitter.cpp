@@ -4,6 +4,8 @@
 #include "target/x86_64/x86_64_encoder.hpp"
 #include "utils/timing.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 void ELFEmitter::generate() {
@@ -129,3 +131,5 @@ void ELFEmitter::emit_section_data(const ELFSection::Data &data, std::size_t poi
 }
 
 } // namespace codegen
+
+} // namespace banjo

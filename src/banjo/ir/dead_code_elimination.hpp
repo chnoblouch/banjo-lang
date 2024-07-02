@@ -7,6 +7,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class DeadCodeElimination {
@@ -19,7 +21,7 @@ private:
 
     struct BlockInfo {
         std::vector<ParamInfo> params;
-        std::vector<BranchTarget*> preds;
+        std::vector<BranchTarget *> preds;
     };
 
 public:
@@ -32,5 +34,7 @@ private:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <vector>
 
+namespace banjo {
+
 namespace ir {
 
 class ControlFlowGraph {
@@ -90,9 +92,11 @@ private:
 
 } // namespace ir
 
+} // namespace banjo
+
 template <>
-struct std::hash<ir::ControlFlowGraph::Edge> {
-    std::size_t operator()(const ir::ControlFlowGraph::Edge &edge) const noexcept {
+struct std::hash<banjo::ir::ControlFlowGraph::Edge> {
+    std::size_t operator()(const banjo::ir::ControlFlowGraph::Edge &edge) const noexcept {
         return (std::size_t)(edge.from) << 32 | (std::size_t)edge.to;
     }
 };

@@ -1,6 +1,8 @@
 #ifndef MCODE_STACK_SLOT_H
 #define MCODE_STACK_SLOT_H
 
+namespace banjo {
+
 namespace mcode {
 
 class StackSlot {
@@ -33,5 +35,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

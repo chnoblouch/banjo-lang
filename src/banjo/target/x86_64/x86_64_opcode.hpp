@@ -1,6 +1,8 @@
 #ifndef X86_64_OPCODE_H
 #define X86_64_OPCODE_H
 
+namespace banjo {
+
 namespace target {
 
 namespace X8664ConditionCode {
@@ -101,5 +103,7 @@ enum {
 } // namespace X8664Opcode
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

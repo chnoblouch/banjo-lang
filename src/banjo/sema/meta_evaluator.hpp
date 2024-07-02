@@ -6,6 +6,8 @@
 #include "utils/large_int.hpp"
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 struct MetaValue {
@@ -58,5 +60,7 @@ private:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

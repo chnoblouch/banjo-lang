@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class DataType;
@@ -152,5 +154,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

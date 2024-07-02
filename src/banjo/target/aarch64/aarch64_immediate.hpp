@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace target {
 
 namespace AArch64Immediate {
@@ -18,5 +20,7 @@ const std::unordered_set<std::uint64_t> &get_encodable_pos_floats();
 } // namespace AArch64Immediate
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

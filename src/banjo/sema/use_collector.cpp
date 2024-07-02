@@ -6,6 +6,8 @@
 #include "symbol/symbol_table.hpp"
 #include "symbol/use.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 UseCollector::UseCollector(SemanticAnalyzerContext &context) : context(context) {}
@@ -65,3 +67,5 @@ void UseCollector::analyze_rebinding(ASTNode *node, bool final_comp, SymbolTable
 }
 
 } // namespace lang
+
+} // namespace banjo

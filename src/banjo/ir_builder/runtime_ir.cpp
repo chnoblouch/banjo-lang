@@ -1,5 +1,7 @@
 #include "runtime_ir.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void RuntimeIR::insert(IRBuilderContext &context) {
@@ -23,3 +25,5 @@ void RuntimeIR::insert(IRBuilderContext &context) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

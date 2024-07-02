@@ -4,6 +4,8 @@
 #include "ir/type.hpp"
 #include <string>
 
+namespace banjo {
+
 namespace ir {
 
 class GlobalDecl {
@@ -24,5 +26,7 @@ public:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

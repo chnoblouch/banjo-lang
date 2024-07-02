@@ -5,6 +5,8 @@
 #include "utils/timing.hpp"
 #include <unordered_set>
 
+namespace banjo {
+
 namespace target {
 
 const std::unordered_set<mcode::Opcode> STACK_LOADING_OPS = {
@@ -46,3 +48,5 @@ bool X8664PeepholeOptPass::is_reg(mcode::Operand &operand) {
 }
 
 } // namespace target
+
+} // namespace banjo

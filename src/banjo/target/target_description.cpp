@@ -1,5 +1,7 @@
 #include "target_description.hpp"
 
+namespace banjo {
+
 namespace target {
 
 TargetDescription::TargetDescription()
@@ -60,3 +62,5 @@ bool TargetDescription::is_darwin() const {
 }
 
 } // namespace target
+
+} // namespace banjo

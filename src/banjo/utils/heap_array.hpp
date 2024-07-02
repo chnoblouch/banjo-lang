@@ -3,6 +3,8 @@
 
 #include <vector>
 
+namespace banjo {
+
 template <typename T>
 class HeapArray {
 
@@ -13,5 +15,7 @@ private:
 public:
     ~HeapArray() { delete[] data; }
 };
+
+} // namespace banjo
 
 #endif

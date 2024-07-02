@@ -2,6 +2,8 @@
 
 #include "ir_builder/ir_builder_utils.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 ir::Value Conversion::build(IRBuilderContext &context, ir::Value &value, lang::DataType *from, lang::DataType *to) {
@@ -49,3 +51,5 @@ ir::Value Conversion::build(IRBuilderContext &context, ir::Value &value, lang::D
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

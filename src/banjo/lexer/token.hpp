@@ -4,6 +4,8 @@
 #include "source/text_range.hpp"
 #include <string>
 
+namespace banjo {
+
 namespace lang {
 
 enum TokenType {
@@ -132,5 +134,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

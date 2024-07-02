@@ -4,6 +4,8 @@
 #include "source_manager.hpp"
 #include <sstream>
 
+namespace banjo {
+
 namespace lsp {
 
 MemoryModuleLoader::MemoryModuleLoader(SourceManager &source_manager) : source_manager(source_manager) {}
@@ -36,3 +38,5 @@ SourceFile *MemoryModuleLoader::find_lsp_source_file(
 }
 
 } // namespace lsp
+
+} // namespace banjo

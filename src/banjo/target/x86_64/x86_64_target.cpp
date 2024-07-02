@@ -8,6 +8,8 @@
 #include "target/x86_64/x86_64_ir_lowerer.hpp"
 #include "target/x86_64/x86_64_peephole_opt_pass.hpp"
 
+namespace banjo {
+
 namespace target {
 
 X8664Target::X8664Target(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
@@ -51,3 +53,5 @@ codegen::Emitter *X8664Target::create_emitter(mcode::Module &module, std::ostrea
 }
 
 } // namespace target
+
+} // namespace banjo

@@ -1,7 +1,8 @@
 #include "buffered_reader.hpp"
 
 #include "utils/timing.hpp"
-#include <iostream>
+
+namespace banjo {
 
 namespace lang {
 
@@ -20,3 +21,5 @@ void BufferedReader::read_all() {
 }
 
 } // namespace lang
+
+} // namespace banjo

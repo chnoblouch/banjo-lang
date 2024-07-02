@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+namespace banjo {
+
 namespace codegen {
 
 LivenessAnalysis::LivenessAnalysis(RegAllocFunc &func) : func(func) {}
@@ -276,3 +278,5 @@ void LivenessAnalysis::dump(std::ostream &stream) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

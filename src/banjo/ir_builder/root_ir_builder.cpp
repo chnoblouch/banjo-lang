@@ -23,6 +23,8 @@
 #include "symbol/union.hpp"
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 
 ir::Module RootIRBuilder::build() {
@@ -313,3 +315,5 @@ void RootIRBuilder::build_union(lang::ASTNode *node) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

@@ -10,6 +10,10 @@
 #include "source/module_manager.hpp"
 #include "symbol/data_type_manager.hpp"
 
+namespace banjo {
+
+namespace hot_reloader {
+
 class JITCompiler {
 
 private:
@@ -31,5 +35,9 @@ public:
     BinModule compile_func(const std::string &name);
     lang::ModuleManager &get_module_manager() { return module_manager; }
 };
+
+} // namespace hot_reloader
+
+} // namespace banjo
 
 #endif

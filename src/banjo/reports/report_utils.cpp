@@ -1,9 +1,11 @@
 #include "report_utils.hpp"
 
 #include "symbol/enumeration.hpp"
+#include "symbol/protocol.hpp"
 #include "symbol/structure.hpp"
 #include "symbol/union.hpp"
-#include "symbol/protocol.hpp"
+
+namespace banjo {
 
 namespace lang {
 
@@ -118,3 +120,5 @@ std::string ReportUtils::params_to_string(std::vector<DataType *> &params) {
 }
 
 } // namespace lang
+
+} // namespace banjo

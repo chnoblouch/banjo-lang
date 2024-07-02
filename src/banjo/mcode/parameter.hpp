@@ -4,6 +4,8 @@
 #include "ir/type.hpp"
 #include "mcode/register.hpp"
 
+namespace banjo {
+
 namespace mcode {
 
 class Parameter {
@@ -21,5 +23,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

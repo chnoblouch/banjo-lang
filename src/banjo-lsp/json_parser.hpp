@@ -4,6 +4,8 @@
 #include "json.hpp"
 #include <sstream>
 
+namespace banjo {
+
 namespace lsp {
 
 class JSONParser {
@@ -26,5 +28,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

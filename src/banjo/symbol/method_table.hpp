@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class Function;
@@ -22,5 +24,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

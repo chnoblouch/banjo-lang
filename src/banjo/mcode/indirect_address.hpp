@@ -4,6 +4,8 @@
 #include "mcode/register.hpp"
 #include <variant>
 
+namespace banjo {
+
 namespace mcode {
 
 class IndirectAddress {
@@ -40,5 +42,7 @@ public:
 };
 
 } // namespace mcode
+
+} // namespace banjo
 
 #endif

@@ -3,10 +3,14 @@
 
 #include <filesystem>
 
+namespace banjo {
+
 namespace Paths {
 
 std::filesystem::path executable();
 
 } // namespace Paths
+
+} // namespace banjo
 
 #endif

@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <initializer_list>
 
+namespace banjo {
+
 template <typename T, unsigned Capacity>
 class StaticVector {
 
@@ -36,5 +38,7 @@ public:
         elements[size++] = element;
     }
 };
+
+} // namespace banjo
 
 #endif

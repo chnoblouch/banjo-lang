@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+namespace banjo {
+
 namespace lang {
 
 class Expr : public ASTNode {
@@ -144,5 +146,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

@@ -3,6 +3,8 @@
 
 #include "connection.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 class ShutdownHandler : public RequestHandler {
@@ -12,5 +14,7 @@ public:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

@@ -4,6 +4,8 @@
 #include "ir/virtual_register.hpp"
 #include "symbol/variable.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class Parameter : public Variable {
@@ -25,5 +27,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

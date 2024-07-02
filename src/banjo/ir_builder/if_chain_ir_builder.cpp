@@ -7,6 +7,8 @@
 #include "ir_builder/expr_ir_builder.hpp"
 #include "ir_builder/ir_builder_utils.hpp"
 
+namespace banjo {
+
 namespace ir_builder {
 
 void IfChainIRBuilder::build() {
@@ -74,3 +76,5 @@ std::string IfChainIRBuilder::get_then_label(unsigned index) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

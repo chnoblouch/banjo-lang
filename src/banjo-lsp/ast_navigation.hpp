@@ -4,6 +4,8 @@
 #include "ast/ast_node.hpp"
 #include "source_manager.hpp"
 
+namespace banjo {
+
 namespace lsp {
 
 namespace ASTNavigation {
@@ -16,5 +18,7 @@ lang::ASTNode *get_node_at(lang::ASTNode *node, lang::TextPosition position);
 } // namespace ASTNavigation
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

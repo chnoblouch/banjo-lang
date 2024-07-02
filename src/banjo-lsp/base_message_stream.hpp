@@ -6,6 +6,8 @@
 #include <functional>
 #include <string>
 
+namespace banjo {
+
 namespace lsp {
 
 struct BaseMessage {
@@ -37,5 +39,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

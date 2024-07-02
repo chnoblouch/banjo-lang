@@ -18,6 +18,8 @@
 #include <optional>
 #include <utility>
 
+namespace banjo {
+
 namespace ir_builder {
 
 ExprIRBuilder::ExprIRBuilder(IRBuilderContext &context, lang::ASTNode *node)
@@ -721,3 +723,5 @@ bool ExprIRBuilder::is_overloaded_operator_call(lang::ASTNode *node) {
 }
 
 } // namespace ir_builder
+
+} // namespace banjo

@@ -3,10 +3,14 @@
 
 #include <cstdint>
 
+namespace banjo {
+
 namespace UTF8Encoding {
 
 bool is_first_byte_of_char(std::uint8_t byte);
 
 } // namespace UTF8Encoding
+
+} // namespace banjo
 
 #endif

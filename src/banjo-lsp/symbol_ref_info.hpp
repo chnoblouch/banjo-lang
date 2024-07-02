@@ -8,6 +8,8 @@
 
 #include <optional>
 
+namespace banjo {
+
 namespace lsp {
 
 // TODO: replace this with an index
@@ -29,5 +31,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

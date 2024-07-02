@@ -6,6 +6,8 @@
 #include <ostream>
 #include <string>
 
+namespace banjo {
+
 namespace ir {
 
 class Writer {
@@ -29,5 +31,7 @@ private:
 };
 
 } // namespace ir
+
+} // namespace banjo
 
 #endif

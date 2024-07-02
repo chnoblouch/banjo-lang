@@ -3,6 +3,8 @@
 
 #include "reports/report.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 class ReportPrinter;
@@ -23,5 +25,7 @@ public:
 };
 
 } // namespace lang
+
+} // namespace banjo
 
 #endif

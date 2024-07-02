@@ -1,5 +1,7 @@
 #include "writer.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 Writer::Writer(std::ostream &stream) : stream(stream) {}
@@ -304,3 +306,5 @@ std::string Writer::calling_conv_to_str(CallingConv calling_conv) {
 }
 
 } // namespace ir
+
+} // namespace banjo

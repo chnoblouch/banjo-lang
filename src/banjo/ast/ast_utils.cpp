@@ -9,6 +9,8 @@
 #include "symbol/symbol_ref.hpp"
 #include "symbol/union.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 ModulePath ASTUtils::get_path_from_node(ASTNode *node) {
@@ -176,3 +178,5 @@ void ASTUtils::iterate_protos(lang::SymbolTable *symbol_table, std::function<voi
 }
 
 } // namespace lang
+
+} // namespace banjo

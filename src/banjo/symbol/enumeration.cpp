@@ -3,6 +3,8 @@
 #include "symbol/symbol_table.hpp"
 #include <utility>
 
+namespace banjo {
+
 namespace lang {
 
 EnumVariant::EnumVariant() : Symbol(nullptr, ""), value(0) {}
@@ -20,3 +22,5 @@ Enumeration::Enumeration(ASTNode *node, std::string name, ASTModule *module_, Sy
     symbol_table(SymbolTable(parent_symbol_table)) {}
 
 } // namespace lang
+
+} // namespace banjo

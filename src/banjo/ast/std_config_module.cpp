@@ -6,6 +6,8 @@
 #include "config/config.hpp"
 #include "symbol/symbol_table.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 enum ConfigArch { X86_64 = 0, AARCH64 = 1 };
@@ -59,3 +61,5 @@ void StdConfigModule::add_const_u32(const std::string &name, unsigned value) {
 }
 
 } // namespace lang
+
+} // namespace banjo

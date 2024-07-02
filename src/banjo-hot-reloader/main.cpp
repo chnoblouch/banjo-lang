@@ -10,6 +10,8 @@
 #endif
 
 int main(int argc, char *argv[]) {
+    using namespace banjo;
+
 #ifdef OS_WINDOWS
     SetConsoleOutputCP(CP_UTF8);
 #endif
@@ -23,7 +25,7 @@ int main(int argc, char *argv[]) {
     arg_parser.add_value("dir", "");
     lang::ParsedArgs args = arg_parser.parse(argc, argv);
 
-    HotReloader hot_reloader;
+    hot_reloader::HotReloader hot_reloader;
     hot_reloader.load(args.values["executable"]);
     hot_reloader.run(args.values["dir"]);
     return 0;

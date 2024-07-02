@@ -6,6 +6,8 @@
 
 #include <unordered_map>
 
+namespace banjo {
+
 namespace lsp {
 
 struct IndexedSymbolRef;
@@ -29,5 +31,7 @@ private:
 };
 
 } // namespace lsp
+
+} // namespace banjo
 
 #endif

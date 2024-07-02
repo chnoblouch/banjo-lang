@@ -4,6 +4,8 @@
 #include "target/aarch64/aarch64_instr_merge_pass.hpp"
 #include "target/aarch64/aarch64_ir_lowerer.hpp"
 
+namespace banjo {
+
 namespace target {
 
 AArch64Target::AArch64Target(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
@@ -29,3 +31,5 @@ codegen::Emitter *AArch64Target::create_emitter(mcode::Module &module, std::ostr
 }
 
 } // namespace target
+
+} // namespace banjo

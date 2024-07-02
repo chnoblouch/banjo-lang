@@ -6,6 +6,8 @@
 #include <limits>
 #include <string>
 
+namespace banjo {
+
 template <int Bits, typename Word = std::uint64_t>
 class SoftInt {
 
@@ -273,5 +275,7 @@ std::string SoftInt<Bits, Word>::str() {
     std::reverse(result.begin(), result.end());
     return result;
 }
+
+} // namespace banjo
 
 #endif

@@ -5,6 +5,8 @@
 #include "ir_builder/ir_builder.hpp"
 #include <string>
 
+namespace banjo {
+
 namespace ir_builder {
 
 class BoolExprIRBuilder : public IRBuilder {
@@ -38,5 +40,7 @@ private:
 };
 
 } // namespace ir_builder
+
+} // namespace banjo
 
 #endif

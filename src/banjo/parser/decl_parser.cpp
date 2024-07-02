@@ -8,6 +8,8 @@
 #include "parser/expr_parser.hpp"
 #include "reports/report_texts.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 DeclParser::DeclParser(Parser &parser) : parser(parser), stream(parser.stream) {}
@@ -502,3 +504,5 @@ ParseResult DeclParser::parse_generic_param_list() {
 }
 
 } // namespace lang
+
+} // namespace banjo

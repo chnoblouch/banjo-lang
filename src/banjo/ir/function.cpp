@@ -4,6 +4,8 @@
 
 static int block_index = 0;
 
+namespace banjo {
+
 namespace ir {
 
 Function::Function() {
@@ -69,3 +71,5 @@ std::string Function::next_float_label() {
 }
 
 } // namespace ir
+
+} // namespace banjo

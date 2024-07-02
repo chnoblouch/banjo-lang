@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace banjo {
+
 namespace codegen {
 
 DebugEmitter::DebugEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
@@ -385,3 +387,5 @@ std::string DebugEmitter::get_size_specifier(int size) {
 }
 
 } // namespace codegen
+
+} // namespace banjo

@@ -1,6 +1,8 @@
 #ifndef AARCH64_REGISTER
 #define AARCH64_REGISTER
 
+namespace banjo {
+
 namespace target {
 
 namespace AArch64Register {
@@ -80,5 +82,7 @@ enum {
 } // namespace AArch64Register
 
 } // namespace target
+
+} // namespace banjo
 
 #endif

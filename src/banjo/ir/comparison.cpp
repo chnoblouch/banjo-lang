@@ -1,5 +1,7 @@
 #include "ir/comparison.hpp"
 
+namespace banjo {
+
 namespace ir {
 
 Comparison invert_comparison(Comparison comparison) {
@@ -24,3 +26,5 @@ Comparison invert_comparison(Comparison comparison) {
 }
 
 } // namespace ir
+
+} // namespace banjo

@@ -4,6 +4,8 @@
 #include "emit/binary_emitter.hpp"
 #include "emit/pe/pe_format.hpp"
 
+namespace banjo {
+
 namespace codegen {
 
 class PEEmitter : public BinaryEmitter {
@@ -31,5 +33,7 @@ private:
 };
 
 } // namespace codegen
+
+} // namespace banjo
 
 #endif

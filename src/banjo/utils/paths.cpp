@@ -14,6 +14,8 @@
 #    error finding paths to toolchain files is not implemented on this OS
 #endif
 
+namespace banjo {
+
 namespace Paths {
 
 std::filesystem::path executable() {
@@ -37,3 +39,5 @@ std::filesystem::path executable() {
 }
 
 } // namespace Paths
+
+} // namespace banjo

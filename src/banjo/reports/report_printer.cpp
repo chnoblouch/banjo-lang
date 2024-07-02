@@ -2,6 +2,8 @@
 
 #include "utils/utf8_encoding.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 constexpr unsigned MAX_PRINTED_REPORTS = 32;
@@ -150,3 +152,5 @@ void ReportPrinter::set_color(std::string color) {
 }
 
 } // namespace lang
+
+} // namespace banjo

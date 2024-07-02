@@ -1,5 +1,7 @@
 #include "protocol.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 void Protocol::add_func_signature(std::string name, FunctionType type) {
@@ -21,3 +23,5 @@ FunctionSignature *Protocol::get_func_signature(const std::string &name) {
 }
 
 } // namespace lang
+
+} // namespace banjo

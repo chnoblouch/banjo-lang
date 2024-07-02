@@ -1,5 +1,7 @@
 #include "union.hpp"
 
+namespace banjo {
+
 namespace lang {
 
 UnionCaseField::UnionCaseField(ASTNode *node, std::string name, DataType *type) : Symbol(node, name), type(type) {}
@@ -62,3 +64,5 @@ UnionCase *Union::get_case(const std::string &name) {
 }
 
 } // namespace lang
+
+} // namespace banjo
