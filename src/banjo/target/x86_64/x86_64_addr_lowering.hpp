@@ -1,19 +1,23 @@
 #ifndef X86_64_ADDR_LOWERING_H
 #define X86_64_ADDR_LOWERING_H
 
-#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/ir/instruction.hpp"
+#include "banjo/ir/operand.hpp"
+#include "banjo/mcode/operand.hpp"
 
 namespace banjo {
 
 namespace target {
 
+class X8664IRLowerer;
+
 class X8664AddrLowering {
 
 private:
-    codegen::IRLowerer &lowerer;
+    X8664IRLowerer &lowerer;
 
 public:
-    X8664AddrLowering(codegen::IRLowerer &lowerer);
+    X8664AddrLowering(X8664IRLowerer &lowerer);
 
     mcode::Operand lower_address(const ir::Operand &operand);
     mcode::Operand lower_reg_addr(ir::VirtualRegister vreg);

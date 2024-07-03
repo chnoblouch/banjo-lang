@@ -1,6 +1,7 @@
 #include "x86_64_const_lowering.hpp"
 
 #include "banjo/passes/pass_utils.hpp"
+#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 
 #include <cassert>
@@ -9,7 +10,7 @@ namespace banjo {
 
 namespace target {
 
-X8664ConstLowering::X8664ConstLowering(codegen::IRLowerer &lowerer) : lowerer(lowerer) {}
+X8664ConstLowering::X8664ConstLowering(X8664IRLowerer &lowerer) : lowerer(lowerer) {}
 
 mcode::Value X8664ConstLowering::load_f32(float value) {
     assert(value != 0.0);
@@ -23,10 +24,10 @@ mcode::Value X8664ConstLowering::load_f32(float value) {
     ConstStorage storage = f32_storage.at(lowerer.get_instr_iter()).at(value);
 
     if (storage.access == ConstStorageAccess::LOAD) {
-        return mcode::Operand::from_symbol_deref(storage.const_label);
+        return lowerer.deref_symbol_addr(storage.const_label, 4);
     } else if (storage.access == ConstStorageAccess::LOAD_INTO_REG) {
         mcode::Operand dst = mcode::Operand::from_register(storage.reg, 4);
-        mcode::Operand src = mcode::Operand::from_symbol_deref(storage.const_label);
+        mcode::Operand src = lowerer.deref_symbol_addr(storage.const_label, 4);
         lowerer.emit(mcode::Instruction(X8664Opcode::MOVSS, {dst, src}));
         return dst;
     } else if (storage.access == ConstStorageAccess::READ_REG) {
@@ -42,7 +43,7 @@ mcode::Value X8664ConstLowering::load_f64(double value) {
     mcode::Value float_val = mcode::Value::from_immediate(float_imm, 8);
     lowerer.get_machine_module().add(mcode::Global(float_label, float_val));
 
-    return mcode::Operand::from_symbol_deref(float_label);
+    return lowerer.deref_symbol_addr(float_label, 8);
 }
 
 void X8664ConstLowering::process_block() {

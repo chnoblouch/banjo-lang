@@ -29,6 +29,8 @@ public:
     mcode::Operand into_reg_or_addr(ir::Operand &operand);
     mcode::InstrIter move_int_into_reg(mcode::Register reg, mcode::Value &value);
     mcode::InstrIter move_float_into_reg(mcode::Register reg, mcode::Value &value);
+    mcode::Operand read_symbol_addr(const mcode::Symbol &symbol);
+    mcode::Operand deref_symbol_addr(const mcode::Symbol &symbol, unsigned size);
 
 private:
     mcode::Operand lower_value(const ir::Operand &operand) override;

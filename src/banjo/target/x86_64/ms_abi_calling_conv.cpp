@@ -99,11 +99,13 @@ void MSABICallingConv::append_arg_move(
 }
 
 void MSABICallingConv::append_call(ir::Operand func_operand, codegen::IRLowerer &lowerer) {
+    X8664IRLowerer &x86_64_lowerer = static_cast<X8664IRLowerer &>(lowerer);
+
     int ptr_size = X8664IRLowerer::PTR_SIZE;
 
     mcode::Operand operand;
     if (func_operand.is_symbol()) {
-        operand = mcode::Operand::from_symbol(func_operand.get_symbol_name(), ptr_size);
+        operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
     } else if (func_operand.is_register()) {
         ir::InstrIter producer = lowerer.get_producer(func_operand.get_register());
         if (producer->get_opcode() == ir::Opcode::LOAD) {

@@ -1,13 +1,14 @@
 #include "x86_64_addr_lowering.hpp"
 
 #include "banjo/config/config.hpp"
+#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 
 namespace banjo {
 
 namespace target {
 
-X8664AddrLowering::X8664AddrLowering(codegen::IRLowerer &lowerer) : lowerer(lowerer) {}
+X8664AddrLowering::X8664AddrLowering(X8664IRLowerer &lowerer) : lowerer(lowerer) {}
 
 mcode::Operand X8664AddrLowering::lower_address(const ir::Operand &operand) {
     if (operand.is_register()) {
@@ -52,7 +53,7 @@ mcode::Operand X8664AddrLowering::lower_symbol_addr(const ir::Operand &operand) 
 
     mcode::Symbol symbol(operand.get_symbol_name(), reloc);
     unsigned size = lowerer.get_size(operand.get_type());
-    return mcode::Operand::from_symbol_deref(symbol, size);
+    return lowerer.deref_symbol_addr(symbol, size);
 }
 
 mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ir::Instruction &instr) {

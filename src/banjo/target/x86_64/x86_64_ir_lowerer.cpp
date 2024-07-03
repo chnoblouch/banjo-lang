@@ -112,7 +112,7 @@ mcode::Operand X8664IRLowerer::lower_value(const ir::Operand& operand) {
             }));
             return mcode::Operand::from_register(temp_reg, PTR_SIZE);
         } else if (target->get_code_model() == CodeModel::LARGE) {
-            return mcode::Operand::from_symbol(symbol, PTR_SIZE);
+            return read_symbol_addr(symbol);
         } else {
             ASSERT_UNREACHABLE;
         }
@@ -454,7 +454,7 @@ void X8664IRLowerer::lower_fsub(ir::Instruction& instr) {
         }
 
         mcode::Operand dst = mcode::Operand::from_register(lower_reg(*instr.get_dest()), 4);
-        mcode::Operand addr = mcode::Operand::from_symbol_deref(*const_neg_zero, 16);
+        mcode::Operand addr = deref_symbol_addr(*const_neg_zero, 16);
 
         emit(mcode::Instruction(get_move_opcode(type), {dst, lower_value(instr.get_operand(1))}));
         emit(mcode::Instruction(X8664Opcode::XORPS, {dst.with_size(16), addr}));
@@ -752,6 +752,34 @@ mcode::InstrIter X8664IRLowerer::move_float_into_reg(mcode::Register reg, mcode:
     mcode::Operand dst = mcode::Operand::from_register(reg, size);
     mcode::Opcode opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
     return emit(mcode::Instruction(opcode, {dst, value}));
+}
+
+mcode::Operand X8664IRLowerer::read_symbol_addr(const mcode::Symbol &symbol) {
+    if (target->get_code_model() == CodeModel::SMALL) {
+        return mcode::Operand::from_symbol(symbol, 8);
+    } else if (target->get_code_model() == CodeModel::LARGE) {
+        mcode::Register addr_reg = lower_reg(get_func().next_virtual_reg());
+        mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
+        mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
+        emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
+        return dst;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+mcode::Operand X8664IRLowerer::deref_symbol_addr(const mcode::Symbol &symbol, unsigned size) {
+if (target->get_code_model() == CodeModel::SMALL) {
+        return mcode::Operand::from_symbol_deref(symbol, 8);
+    } else if (target->get_code_model() == CodeModel::LARGE) {
+        mcode::Register addr_reg = lower_reg(get_func().next_virtual_reg());
+        mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
+        mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
+        emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
+        return mcode::Operand::from_addr(mcode::IndirectAddress(addr_reg), size);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 mcode::Opcode X8664IRLowerer::get_move_opcode(ir::Type type) {

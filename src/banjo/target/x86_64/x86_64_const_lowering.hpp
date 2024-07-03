@@ -1,15 +1,20 @@
 #ifndef X86_64_CONST_LOWERING_H
 #define X86_64_CONST_LOWERING_H
 
-#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/ir/basic_block.hpp"
+#include "banjo/ir/instruction.hpp"
+#include "banjo/mcode/operand.hpp"
+#include "banjo/mcode/register.hpp"
 
 #include <map>
-#include <optional>
+#include <string>
 #include <unordered_map>
 
 namespace banjo {
 
 namespace target {
+
+class X8664IRLowerer;
 
 class X8664ConstLowering {
 
@@ -22,7 +27,7 @@ private:
         mcode::Register reg = mcode::Register::from_virtual(-1);
     };
 
-    codegen::IRLowerer &lowerer;
+    X8664IRLowerer &lowerer;
 
     unsigned cur_id = 0;
     std::map<float, std::string> const_f32s;
@@ -31,7 +36,7 @@ private:
     ir::BasicBlockIter last_block = nullptr;
 
 public:
-    X8664ConstLowering(codegen::IRLowerer &lowerer);
+    X8664ConstLowering(X8664IRLowerer &lowerer);
     mcode::Value load_f32(float value);
     mcode::Value load_f64(double value);
 
