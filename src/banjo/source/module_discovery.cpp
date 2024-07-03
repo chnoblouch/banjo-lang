@@ -1,25 +1,10 @@
 #include "module_discovery.hpp"
 
-#include "banjo/config/config.hpp"
-#include "banjo/config/standard_lib.hpp"
-
 #include <filesystem>
 
 namespace banjo {
 
 namespace lang {
-
-ModuleDiscovery::ModuleDiscovery() {
-    register_search_paths();
-}
-
-void ModuleDiscovery::register_search_paths() {
-    std::filesystem::path stdlib_dir = StandardLib::instance().get_path();
-    search_paths.push_back(stdlib_dir);
-
-    std::vector<std::filesystem::path> config_paths = Config::instance().paths;
-    search_paths.insert(search_paths.end(), config_paths.begin(), config_paths.end());
-}
 
 std::vector<ModuleTreeNode> ModuleDiscovery::find_all_modules() {
     std::vector<ModuleTreeNode> modules;

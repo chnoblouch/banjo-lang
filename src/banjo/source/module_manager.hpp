@@ -3,6 +3,7 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/module_list.hpp"
+#include "banjo/config/config.hpp"
 #include "banjo/parser/parser.hpp"
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/symbol/module_path.hpp"
@@ -31,6 +32,10 @@ public:
 
     ModuleList &get_module_list() { return module_list; }
     ReportManager &get_report_manager() { return report_manager; }
+
+    void add_search_path(std::filesystem::path path);
+    void add_standard_stdlib_search_path();
+    void add_config_search_paths(const Config &config);
 
     void load_all();
     ASTModule *load(const ModuleTreeNode &module_tree_node);

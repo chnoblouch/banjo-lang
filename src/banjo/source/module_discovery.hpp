@@ -5,7 +5,7 @@
 
 #include <filesystem>
 #include <optional>
-#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -28,15 +28,13 @@ private:
     std::vector<std::filesystem::path> search_paths;
 
 public:
-    ModuleDiscovery();
+    void add_search_path(std::filesystem::path path) { search_paths.push_back(std::move(path)); }
 
     std::vector<ModuleTreeNode> find_all_modules();
     std::optional<ModuleFile> find_module(const ModulePath &path);
     std::vector<ModulePath> find_sub_modules(const ModuleFile &module_file);
 
 private:
-    void register_search_paths();
-
     void find_modules(
         const std::filesystem::path &directory,
         const ModulePath &prefix,

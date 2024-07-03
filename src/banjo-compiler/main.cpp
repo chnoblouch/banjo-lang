@@ -2,7 +2,6 @@
 
 #include "banjo/config/argument_parser.hpp"
 #include "banjo/config/config_parser.hpp"
-#include "banjo/config/standard_lib.hpp"
 #include "banjo/utils/platform.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -32,7 +31,6 @@ int main(int argc, char *argv[]) {
 
     PROFILE_SECTION_BEGIN("TOTAL");
     lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
-    lang::StandardLib::instance().discover();
     lang::Compiler(lang::Config::instance()).compile();
     PROFILE_SECTION_END("CLEANUP");
     PROFILE_SECTION_END("TOTAL");

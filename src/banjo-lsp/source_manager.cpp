@@ -1,6 +1,5 @@
 #include "source_manager.hpp"
 
-#include "banjo/ast/ast_utils.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/lexer/lexer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
@@ -14,7 +13,10 @@ namespace banjo {
 
 namespace lsp {
 
-SourceManager::SourceManager() : module_loader(*this), module_manager(module_loader, report_manager) {}
+SourceManager::SourceManager() : module_loader(*this), module_manager(module_loader, report_manager) {
+    module_manager.add_standard_stdlib_search_path();
+    module_manager.add_config_search_paths(lang::Config::instance());
+}
 
 void SourceManager::parse_full_source() {
     report_manager.reset();

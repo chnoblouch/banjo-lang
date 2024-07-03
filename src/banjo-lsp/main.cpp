@@ -1,5 +1,4 @@
 #include "banjo/config/config_parser.hpp"
-#include "banjo/config/standard_lib.hpp"
 #include "server.hpp"
 
 #include <filesystem>
@@ -17,7 +16,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    lang::StandardLib::instance().discover();
     lsp::Server().start();
     return 0;
 }

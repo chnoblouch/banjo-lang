@@ -19,7 +19,10 @@ JITCompiler::JITCompiler(lang::Config &config, AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
     target_descr(target::Target::create(config.target, target::CodeModel::LARGE)),
-    module_manager(module_loader, report_manager) {}
+    module_manager(module_loader, report_manager) {
+    module_manager.add_standard_stdlib_search_path();
+    module_manager.add_config_search_paths(config);
+}
 
 JITCompiler::~JITCompiler() {
     delete target_descr;

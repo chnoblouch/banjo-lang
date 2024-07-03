@@ -8,8 +8,10 @@
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/source/module_loader.hpp"
 #include "banjo/symbol/module_path.hpp"
+#include "banjo/utils/paths.hpp"
 
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -19,6 +21,21 @@ namespace lang {
 ModuleManager::ModuleManager(ModuleLoader &module_loader, ReportManager &report_manager)
   : module_loader(module_loader),
     report_manager(report_manager) {}
+
+void ModuleManager::add_search_path(std::filesystem::path path) {
+    module_discovery.add_search_path(std::move(path));
+}
+
+void ModuleManager::add_standard_stdlib_search_path() {
+    std::filesystem::path stdlib_path = Paths::executable().parent_path().parent_path() / "lib" / "stdlib";
+    add_search_path(stdlib_path);
+}
+
+void ModuleManager::add_config_search_paths(const Config &config) {
+    for (std::filesystem::path path : config.paths) {
+        add_search_path(std::move(path));
+    }
+}
 
 void ModuleManager::load_all() {
     std::vector<ModuleTreeNode> root_nodes = module_discovery.find_all_modules();

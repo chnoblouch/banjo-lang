@@ -16,7 +16,6 @@ add_library(banjo STATIC
     config/argument_parser.cpp
     config/config_parser.cpp
     config/config.cpp
-    config/standard_lib.cpp
     emit/binary_builder.cpp
     emit/clang_asm_emitter.cpp
     emit/debug_emitter.cpp

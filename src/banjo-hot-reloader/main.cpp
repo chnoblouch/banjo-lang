@@ -1,7 +1,6 @@
 #include "hot_reloader.hpp"
 
 #include "banjo/config/config_parser.hpp"
-#include "banjo/config/standard_lib.hpp"
 #include "banjo/utils/platform.hpp"
 
 #ifdef OS_WINDOWS
@@ -18,7 +17,6 @@ int main(int argc, char *argv[]) {
 
     lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
     lang::Config::instance().set_hot_reload(true);
-    lang::StandardLib::instance().discover();
 
     lang::ArgumentParser arg_parser;
     arg_parser.add_value("executable", "");
