@@ -55,7 +55,7 @@ private:
     std::stack<Scope> scopes;
 
     std::unordered_map<std::string, ir::Type> generic_types;
-    std::vector<ir::Structure*> tuple_structs;
+    std::vector<ir::Structure *> tuple_structs;
 
     int string_name_id = 0;
     int block_id = 0;

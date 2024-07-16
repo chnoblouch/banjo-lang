@@ -78,10 +78,6 @@ void FuncDefIRBuilder::create_func(lang::Function *lang_func, std::string name) 
     ir_func->set_params(param_list);
     ir_func->set_return_type(return_type);
     ir_func->set_calling_conv(context.get_target()->get_default_calling_conv());
-
-    for (unsigned int i = 0; i < param_list.size(); i++) {
-        ir_func->get_param_regs().push_back(ir_func->next_virtual_reg());
-    }
 }
 
 void FuncDefIRBuilder::init_lang_params(lang::Function *lang_func, std::vector<lang::Parameter *> &lang_params) {

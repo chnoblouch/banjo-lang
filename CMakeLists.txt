@@ -43,6 +43,12 @@ endif ()
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")
 
+if (BANJO_ENABLE_SIR)
+    add_compile_definitions(BANJO_ENABLE_SIR=1)
+else ()
+    add_compile_definitions(BANJO_ENABLE_SIR=0)
+endif ()
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
     message(STATUS "Hot reloader enabled")
     set(BUILD_HOT_RELOADER ON)

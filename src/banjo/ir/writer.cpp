@@ -86,7 +86,7 @@ void Writer::write_func_def(Function *func_def) {
 
     for (int i = 0; i < func_def->get_params().size(); i++) {
         Type param = func_def->get_params()[i];
-        stream << type_to_str(param) << " " << reg_to_str(func_def->get_param_regs()[i]);
+        stream << type_to_str(param);
 
         if (i != func_def->get_params().size() - 1) {
             stream << ", ";

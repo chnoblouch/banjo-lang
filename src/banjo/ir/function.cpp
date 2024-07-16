@@ -17,10 +17,6 @@ Function::Function(std::string name, std::vector<Type> params, Type return_type,
     basic_blocks.append(BasicBlock());
 }
 
-std::vector<ir::VirtualRegister> &Function::get_param_regs() {
-    return get_entry_block().get_param_regs();
-}
-
 BasicBlockIter Function::create_block(std::string label) {
     return basic_blocks.create_iter(std::move(label));
 }

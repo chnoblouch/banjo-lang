@@ -1,19 +1,27 @@
 #include "compiler.hpp"
 
 #include "banjo/ast/ast_writer.hpp"
-#include "banjo/ast/test_module.hpp"
 #include "banjo/codegen/ir_lowerer.hpp"
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/ir/module.hpp"
-#include "banjo/ir/validator.hpp"
 #include "banjo/ir/writer.hpp"
-#include "banjo/ir_builder/root_ir_builder.hpp"
 #include "banjo/passes/pass_runner.hpp"
-#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <cstdlib>
+#if BANJO_ENABLE_SIR
+#    include "banjo/sema2/semantic_analyzer.hpp"
+#    include "banjo/sir/sir.hpp"
+#    include "banjo/sir/sir_generator.hpp"
+#    include "banjo/sir/sir_printer.hpp"
+#    include "banjo/ssa_gen/ssa_generator.hpp"
+#else
+#    include "banjo/ast/test_module.hpp"
+#    include "banjo/ir_builder/root_ir_builder.hpp"
+#    include "banjo/sema/semantic_analyzer.hpp"
+#    include "banjo/symbol/data_type_manager.hpp"
+#endif
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -60,6 +68,17 @@ ir::Module Compiler::run_frontend() {
         ASTWriter(stream).write_all(module_manager.get_module_list());
     }
 
+#if BANJO_ENABLE_SIR
+    sir::Unit sir_unit = SIRGenerator().generate(module_manager.get_module_list().get_by_path({"main"}));
+    std::ofstream sir_file_generated("logs/sir.generated.txt");
+    sir::Printer(sir_file_generated).print(sir_unit);
+    sir_file_generated.close();
+
+    sema::SemanticAnalyzer(sir_unit, target).analyze();
+    std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
+    sir::Printer(sir_file_analyzed).print(sir_unit);
+    sir_file_analyzed.close();
+#else
     DataTypeManager type_manager;
     SemanticAnalyzer analyzer(module_manager, type_manager, target);
 
@@ -85,24 +104,34 @@ ir::Module Compiler::run_frontend() {
         module_manager.get_module_list().add(test_module);
         SemanticAnalyzer(module_manager, type_manager, target).analyze_module(test_module);
     }
+#endif
 
     PROFILE_SECTION_END("FRONTEND");
     PROFILE_SECTION_BEGIN("LOWERING");
 
-    PROFILE_SCOPE_BEGIN("ir building");
-
-    ir_builder::RootIRBuilder ir_builder(module_manager.get_module_list(), target);
-    ir::Module ir_module = ir_builder.build();
+#if BANJO_ENABLE_SIR
+    ssa::Module ssa_module = SSAGenerator(sir_unit, target).generate();
 
     if (config.is_debug()) {
-        std::ofstream stream("logs/ssa_input.cryoir");
-        ir::Writer(stream).write(ir_module);
+        std::ofstream stream("logs/ssa.input.cryoir");
+        ir::Writer(stream).write(ssa_module);
+    }
+#else
+    PROFILE_SCOPE_BEGIN("ir building");
+    ir_builder::RootIRBuilder ir_builder(module_manager.get_module_list(), target);
+    ssa::Module ssa_module = ir_builder.build();
+
+    if (config.is_debug()) {
+        std::ofstream stream("logs/ssa.input.cryoir");
+        ir::Writer(stream).write(ssa_module);
     }
 
     PROFILE_SCOPE_END("ir building");
+#endif
+
     PROFILE_SECTION_END("LOWERING");
 
-    return ir_module;
+    return ssa_module;
 }
 
 void Compiler::run_middleend(ir::Module &ir_module) {

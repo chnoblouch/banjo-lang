@@ -27,7 +27,6 @@ public:
 
     BasicBlock &get_entry_block() { return *basic_blocks.begin(); }
     BasicBlockIter get_entry_block_iter() { return basic_blocks.begin(); }
-    std::vector<ir::VirtualRegister> &get_param_regs();
 
     BasicBlockIter create_block(std::string label);
     void append_block(BasicBlockIter block);

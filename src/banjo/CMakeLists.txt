@@ -117,10 +117,20 @@ add_library(banjo STATIC
     sema/type_analyzer.cpp
     sema/use_collector.cpp
     sema/use_resolver.cpp
+    sema2/semantic_analyzer.cpp
+    sir/sir_generator.cpp
+    sir/sir_printer.cpp
+    sir/sir.cpp
     source/file_module_loader.cpp
     source/module_discovery.cpp
     source/module_manager.cpp
     source/text_range.cpp
+    ssa_gen/expr_ssa_generator.cpp
+    ssa_gen/ssa_generator_context.cpp
+    ssa_gen/ssa_generator_utils.cpp
+    ssa_gen/ssa_generator.cpp
+    ssa_gen/stored_value.cpp
+    ssa_gen/type_ssa_generator.cpp
     symbol/constant.cpp
     symbol/data_type_manager.cpp
     symbol/data_type.cpp

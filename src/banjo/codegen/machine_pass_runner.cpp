@@ -32,7 +32,7 @@ void MachinePassRunner::create_and_run(mcode::Module &module) {
 
 void MachinePassRunner::run_all(std::vector<MachinePass *> passes, mcode::Module &module) {
     if (lang::Config::instance().is_debug()) {
-        emit(module, "lir_input");
+        emit(module, "mcode.input");
     }
 
     for (unsigned i = 0; i < passes.size(); i++) {
@@ -40,7 +40,7 @@ void MachinePassRunner::run_all(std::vector<MachinePass *> passes, mcode::Module
         delete passes[i];
 
         if (lang::Config::instance().is_debug()) {
-            emit(module, "lir_pass" + std::to_string(i));
+            emit(module, "mcode.pass" + std::to_string(i));
         }
     }
 }

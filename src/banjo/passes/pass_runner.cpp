@@ -79,7 +79,7 @@ void PassRunner::run_pass(Pass *pass, unsigned index, ir::Module &mod) {
     if (is_debug) {
         std::string number = std::to_string(index);
         std::string prefix = std::string(2 - number.size(), '0') + number;
-        std::string file_name = "ssa_pass" + prefix + "_" + pass->get_name() + ".cryoir";
+        std::string file_name = "ssa.pass" + prefix + "_" + pass->get_name() + ".cryoir";
         std::string path = "logs/" + file_name;
         std::ofstream stream(path);
         ir::Writer(stream).write(mod);

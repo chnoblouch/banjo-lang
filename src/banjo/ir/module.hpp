@@ -57,6 +57,8 @@ public:
 
 } // namespace ir
 
+namespace ssa = ir;
+
 } // namespace banjo
 
 #endif

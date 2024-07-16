@@ -43,10 +43,6 @@ void IRLowerer::lower_funcs() {
 
         for (unsigned int i = 0; i < func->get_params().size(); i++) {
             mcode::Parameter param = lower_param(storage[i], machine_func);
-            if (param.stack_slot_index != -1) {
-                context.stack_regs[func->get_param_regs()[i]] = param.stack_slot_index;
-            }
-
             machine_func->get_parameters().push_back(param);
         }
 
