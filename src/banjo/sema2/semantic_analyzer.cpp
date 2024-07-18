@@ -136,6 +136,8 @@ void SemanticAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
 
 void SemanticAnalyzer::analyze_expr(sir::Expr &expr) {
     if (auto int_literal = expr.match<sir::IntLiteral>()) analyze_int_literal(*int_literal);
+    else if (auto fp_literal = expr.match<sir::FPLiteral>()) analyze_fp_literal(*fp_literal);
+    else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) analyze_char_literal(*char_literal);
     else if (auto string_literal = expr.match<sir::StringLiteral>()) analyze_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>()) analyze_struct_literal(*struct_literal);
@@ -143,6 +145,7 @@ void SemanticAnalyzer::analyze_expr(sir::Expr &expr) {
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) analyze_binary_expr(*binary_expr);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) analyze_unary_expr(*unary_expr);
     else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr);
+    else if (auto cast_expr = expr.match<sir::CastExpr>()) analyze_cast_expr(*cast_expr);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
 }
@@ -151,6 +154,20 @@ void SemanticAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
     int_literal.type = sir_unit.create_expr(sir::PrimitiveType{
         .ast_node = nullptr,
         .primitive = sir::Primitive::I32,
+    });
+}
+
+void SemanticAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
+    fp_literal.type = sir_unit.create_expr(sir::PrimitiveType{
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::F32,
+    });
+}
+
+void SemanticAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
+    bool_literal.type = sir_unit.create_expr(sir::PrimitiveType{
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::BOOL,
     });
 }
 
@@ -224,6 +241,11 @@ void SemanticAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr) {
             .primitive = sir::Primitive::BOOL,
         });
     }
+}
+
+void SemanticAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
+    analyze_expr(cast_expr.type);
+    analyze_expr(cast_expr.value);
 }
 
 void SemanticAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {

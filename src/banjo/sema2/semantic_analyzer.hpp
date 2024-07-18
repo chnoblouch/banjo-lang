@@ -54,12 +54,15 @@ private:
 
     void analyze_expr(sir::Expr &expr);
     void analyze_int_literal(sir::IntLiteral &int_literal);
+    void analyze_fp_literal(sir::FPLiteral &fp_literal);
+    void analyze_bool_literal(sir::BoolLiteral &bool_literal);
     void analyze_char_literal(sir::CharLiteral &char_literal);
     void analyze_string_literal(sir::StringLiteral &string_literal);
     void analyze_struct_literal(sir::StructLiteral &struct_literal);
     void analyze_ident_expr(sir::IdentExpr &ident_expr);
     void analyze_binary_expr(sir::BinaryExpr &binary_expr);
     void analyze_unary_expr(sir::UnaryExpr &unary_expr);
+    void analyze_cast_expr(sir::CastExpr &cast_expr);
     void analyze_call_expr(sir::CallExpr &call_expr);
     void analyze_dot_expr(sir::DotExpr &dot_expr);
     void analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);

@@ -22,12 +22,14 @@ namespace sir {
 
 struct IntLiteral;
 struct FPLiteral;
+struct BoolLiteral;
 struct CharLiteral;
 struct StringLiteral;
 struct StructLiteral;
 struct IdentExpr;
 struct BinaryExpr;
 struct UnaryExpr;
+struct CastExpr;
 struct CallExpr;
 struct DotExpr;
 struct FuncType;
@@ -53,12 +55,15 @@ class Symbol;
 class Expr {
     std::variant<
         IntLiteral *,
+        FPLiteral *,
+        BoolLiteral *,
         CharLiteral *,
         StringLiteral *,
         StructLiteral *,
         IdentExpr *,
         BinaryExpr *,
         UnaryExpr *,
+        CastExpr *,
         CallExpr *,
         DotExpr *,
         PrimitiveType *,
@@ -104,7 +109,12 @@ public:
     operator bool() const { return !std::holds_alternative<nullptr_t>(kind); }
 
     Expr get_type() const;
+    
     bool is_type() const;
+    bool is_int_type() const;
+    bool is_signed_type() const;
+    bool is_unsigned_type() const;
+    bool is_fp_type() const;
 };
 
 class Stmt {
@@ -248,6 +258,18 @@ struct IntLiteral {
     LargeInt value;
 };
 
+struct FPLiteral {
+    ASTNode *ast_node;
+    Expr type;
+    double value;
+};
+
+struct BoolLiteral {
+    ASTNode *ast_node;
+    Expr type;
+    bool value;
+};
+
 struct CharLiteral {
     ASTNode *ast_node;
     Expr type;
@@ -279,7 +301,26 @@ struct IdentExpr {
     Symbol symbol;
 };
 
-enum class BinaryOp { ADD, SUB, MUL, DIV, MOD, BIT_AND, BIT_OR, BIT_XOR, SHL, SHR, EQ, NE, GT, LT, GE, LE, AND, OR };
+enum class BinaryOp {
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    MOD,
+    BIT_AND,
+    BIT_OR,
+    BIT_XOR,
+    SHL,
+    SHR,
+    EQ,
+    NE,
+    GT,
+    LT,
+    GE,
+    LE,
+    AND,
+    OR,
+};
 
 struct BinaryExpr {
     ASTNode *ast_node;
@@ -289,12 +330,23 @@ struct BinaryExpr {
     Expr rhs;
 };
 
-enum class UnaryOp { NEG, REF, DEREF, NOT };
+enum class UnaryOp {
+    NEG,
+    REF,
+    DEREF,
+    NOT,
+};
 
 struct UnaryExpr {
     ASTNode *ast_node;
     Expr type;
     UnaryOp op;
+    Expr value;
+};
+
+struct CastExpr {
+    ASTNode *ast_node;
+    Expr type;
     Expr value;
 };
 
@@ -313,7 +365,21 @@ struct DotExpr {
     Symbol symbol;
 };
 
-enum class Primitive { I8, I16, I32, I64, U8, U16, U32, U64, F32, F64, BOOL, ADDR, VOID };
+enum class Primitive {
+    I8,
+    I16,
+    I32,
+    I64,
+    U8,
+    U16,
+    U32,
+    U64,
+    F32,
+    F64,
+    BOOL,
+    ADDR,
+    VOID,
+};
 
 struct PrimitiveType {
     ASTNode *ast_node;
@@ -409,12 +475,15 @@ struct VarDecl {
 
 typedef std::variant<
     IntLiteral,
+    FPLiteral,
+    BoolLiteral,
     CharLiteral,
     StringLiteral,
     StructLiteral,
     IdentExpr,
     BinaryExpr,
     UnaryExpr,
+    CastExpr,
     CallExpr,
     DotExpr,
     PrimitiveType,

@@ -6,6 +6,7 @@
 #include "banjo/utils/macros.hpp"
 #include "sir.hpp"
 
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -216,6 +217,9 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
     switch (node->get_type()) {
         case AST_INT_LITERAL: return generate_int_literal(node);
+        case AST_FLOAT_LITERAL: return generate_fp_literal(node);
+        case AST_FALSE: return generate_bool_literal(node, false);
+        case AST_TRUE: return generate_bool_literal(node, true);
         case AST_CHAR_LITERAL: return generate_char_literal(node);
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
@@ -242,6 +246,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_OPERATOR_REF: return generate_unary_expr(node, sir::UnaryOp::REF);
         case AST_STAR_EXPR: return generate_star_expr(node);
         case AST_OPERATOR_NOT: return generate_unary_expr(node, sir::UnaryOp::NOT);
+        case AST_CAST: return generate_cast_expr(node);
         case AST_FUNCTION_CALL: return generate_call_expr(node);
         case AST_DOT_OPERATOR: return generate_dot_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
@@ -267,6 +272,22 @@ sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
         .ast_node = node,
         .type = nullptr,
         .value = node->as<IntLiteral>()->get_value(),
+    });
+}
+
+sir::Expr SIRGenerator::generate_fp_literal(ASTNode *node) {
+    return sir_unit.create_expr(sir::FPLiteral{
+        .ast_node = node,
+        .type = nullptr,
+        .value = std::stod(node->get_value()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_bool_literal(ASTNode *node, bool value) {
+    return sir_unit.create_expr(sir::BoolLiteral{
+        .ast_node = node,
+        .type = nullptr,
+        .value = value,
     });
 }
 
@@ -339,6 +360,14 @@ sir::Expr SIRGenerator::generate_unary_expr(ASTNode *node, sir::UnaryOp op) {
         .type = nullptr,
         .op = op,
         .value = generate_expr(node->get_child()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_cast_expr(ASTNode *node) {
+    return sir_unit.create_expr(sir::CastExpr{
+        .ast_node = node,
+        .type = generate_expr(node->get_child(1)),
+        .value = generate_expr(node->get_child(0)),
     });
 }
 

@@ -11,7 +11,7 @@
 
 #define PRINT_FIELD(name, value)                                                                                       \
     PRINT_FIELD_NAME(name);                                                                                            \
-    stream << value << "\n";
+    stream << (value) << "\n";
 
 #define PRINT_EXPR_FIELD(name, value)                                                                                  \
     PRINT_FIELD_NAME(name);                                                                                            \
@@ -184,12 +184,16 @@ void Printer::print_expr_stmt(const Expr &expr) {
 void Printer::print_expr(const Expr &expr) {
     if (!expr) stream << "none\n";
     else if (auto int_literal = expr.match<IntLiteral>()) print_int_literal(*int_literal);
+    else if (auto fp_literal = expr.match<FPLiteral>()) print_fp_literal(*fp_literal);
+    else if (auto bool_literal = expr.match<BoolLiteral>()) print_bool_literal(*bool_literal);
+    else if (auto char_literal = expr.match<CharLiteral>()) print_char_literal(*char_literal);
     else if (auto string_literal = expr.match<StringLiteral>()) print_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<StructLiteral>()) print_struct_literal(*struct_literal);
     else if (auto ident_expr = expr.match<IdentExpr>()) print_ident_expr(*ident_expr);
     else if (auto binary_expr = expr.match<BinaryExpr>()) print_binary_expr(*binary_expr);
     else if (auto unary_expr = expr.match<UnaryExpr>()) print_unary_expr(*unary_expr);
     else if (auto call_expr = expr.match<CallExpr>()) print_call_expr(*call_expr);
+    else if (auto cast_expr = expr.match<CastExpr>()) print_cast_expr(*cast_expr);
     else if (auto dot_expr = expr.match<DotExpr>()) print_dot_expr(*dot_expr);
     else if (auto primitive_type = expr.match<PrimitiveType>()) print_primitive_type(*primitive_type);
     else if (auto pointer_type = expr.match<PointerType>()) print_pointer_type(*pointer_type);
@@ -202,6 +206,27 @@ void Printer::print_int_literal(const IntLiteral &int_literal) {
     BEGIN_OBJECT("IntLiteral");
     PRINT_EXPR_FIELD("type", int_literal.type);
     PRINT_FIELD("value", int_literal.value);
+    END_OBJECT();
+}
+
+void Printer::print_fp_literal(const FPLiteral &fp_literal) {
+    BEGIN_OBJECT("FPLiteral");
+    PRINT_EXPR_FIELD("type", fp_literal.type);
+    PRINT_FIELD("value", fp_literal.value);
+    END_OBJECT();
+}
+
+void Printer::print_bool_literal(const BoolLiteral &bool_literal) {
+    BEGIN_OBJECT("BoolLiteral");
+    PRINT_EXPR_FIELD("type", bool_literal.type);
+    PRINT_FIELD("value", bool_literal.value ? "true" : "false");
+    END_OBJECT();
+}
+
+void Printer::print_char_literal(const CharLiteral &char_literal) {
+    BEGIN_OBJECT("CharLiteral");
+    PRINT_EXPR_FIELD("type", char_literal.type);
+    PRINT_FIELD("value", char_literal.value);
     END_OBJECT();
 }
 
@@ -279,6 +304,13 @@ void Printer::print_unary_expr(const UnaryExpr &unary_expr) {
 
     PRINT_EXPR_FIELD("type", unary_expr.type);
     PRINT_EXPR_FIELD("value", unary_expr.value);
+    END_OBJECT();
+}
+
+void Printer::print_cast_expr(const CastExpr &cast_expr) {
+    BEGIN_OBJECT("CastExpr");
+    PRINT_EXPR_FIELD("type", cast_expr.type);
+    PRINT_EXPR_FIELD("value", cast_expr.value);
     END_OBJECT();
 }
 

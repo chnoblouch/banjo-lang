@@ -223,7 +223,7 @@ void SSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
         ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
         ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
 
-        ExprSSAGenerator(ctx).generate_bool_expr(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
+        ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
 
         ctx.append_block(ssa_target_if_true);
         generate_block(sir_branch.block);

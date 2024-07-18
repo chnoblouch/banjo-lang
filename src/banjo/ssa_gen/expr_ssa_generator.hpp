@@ -1,6 +1,7 @@
 #ifndef EXPR_SSA_GENERATOR_H
 #define EXPR_SSA_GENERATOR_H
 
+#include "banjo/ir/comparison.hpp"
 #include "banjo/ir/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
@@ -30,22 +31,37 @@ public:
     void generate_into_dst(const sir::Expr &expr, const ssa::Value &dst);
     void generate_into_dst(const sir::Expr &expr, ssa::VirtualRegister dst);
     StoredValue generate(const sir::Expr &expr, const StorageHints &hints);
-    void generate_bool_expr(const sir::Expr &expr, CondBranchTargets branch_targets);
+    void generate_branch(const sir::Expr &expr, CondBranchTargets branch_targets);
 
 private:
     StoredValue generate_int_literal(const sir::IntLiteral &int_literal);
+    StoredValue generate_fp_literal(const sir::FPLiteral &fp_literal);
+    StoredValue generate_bool_literal(const sir::BoolLiteral &bool_literal);
     StoredValue generate_char_literal(const sir::CharLiteral &char_literal);
     StoredValue generate_string_literal(const sir::StringLiteral &string_literal);
     StoredValue generate_struct_literal(const sir::StructLiteral &struct_literal, const StorageHints &hints);
     StoredValue generate_ident_expr(const sir::IdentExpr &ident_expr);
-    StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr);
-    StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr);
+    StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr);
+    StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr);
+    StoredValue generate_neg(const sir::UnaryExpr &unary_expr);
     StoredValue generate_ref(const sir::UnaryExpr &unary_expr);
     StoredValue generate_deref(const sir::UnaryExpr &unary_expr);
+    StoredValue generate_cast_expr(const sir::CastExpr &cast_expr);
     StoredValue generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints);
     StoredValue generate_dot_expr(const sir::DotExpr &dot_expr);
 
-    void generate_comparison(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets);
+    StoredValue generate_bool_expr(const sir::Expr &expr);
+    void generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets branch_targets);
+
+    void generate_cmp_branch(
+        const sir::BinaryExpr &binary_expr,
+        ssa::Comparison ssa_cmp,
+        CondBranchTargets branch_targets
+    );
+
+    void generate_and_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets);
+    void generate_or_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets);
+    void generate_not_branch(const sir::UnaryExpr &unary_expr, CondBranchTargets branch_targets);
 };
 
 } // namespace lang

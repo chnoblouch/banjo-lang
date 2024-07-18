@@ -53,12 +53,15 @@ private:
 
     sir::Expr generate_expr(ASTNode *node);
     sir::Expr generate_int_literal(ASTNode *node);
+    sir::Expr generate_fp_literal(ASTNode *node);
+    sir::Expr generate_bool_literal(ASTNode *node, bool value);
     sir::Expr generate_char_literal(ASTNode *node);
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
     sir::Expr generate_binary_expr(ASTNode *node, sir::BinaryOp op);
     sir::Expr generate_unary_expr(ASTNode *node, sir::UnaryOp op);
+    sir::Expr generate_cast_expr(ASTNode *node);
     sir::Expr generate_call_expr(ASTNode *node);
     sir::Expr generate_dot_expr(ASTNode *node);
     std::vector<sir::Expr> generate_arg_list(ASTNode *node);

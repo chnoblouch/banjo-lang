@@ -40,11 +40,15 @@ private:
 
     void print_expr(const Expr &expr);
     void print_int_literal(const IntLiteral &int_literal);
+    void print_fp_literal(const FPLiteral &fp_literal);
+    void print_bool_literal(const BoolLiteral &bool_literal);
+    void print_char_literal(const CharLiteral &char_literal);
     void print_string_literal(const StringLiteral &string_literal);
     void print_struct_literal(const StructLiteral &struct_literal);
     void print_ident_expr(const IdentExpr &ident_expr);
     void print_binary_expr(const BinaryExpr &binary_expr);
     void print_unary_expr(const UnaryExpr &unary_expr);
+    void print_cast_expr(const CastExpr &cast_expr);
     void print_call_expr(const CallExpr &call_expr);
     void print_dot_expr(const DotExpr &dot_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
