@@ -51,6 +51,11 @@ private:
     void analyze_assign_stmt(sir::AssignStmt &assign_stmt);
     void analyze_return_stmt(sir::ReturnStmt &return_stmt);
     void analyze_if_stmt(sir::IfStmt &if_stmt);
+    void analyze_while_stmt(sir::WhileStmt &while_stmt, sir::Stmt &out_stmt);
+    void analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt);
+    void analyze_loop_stmt(sir::LoopStmt &loop_stmt);
+    void analyze_continue_stmt(sir::ContinueStmt &continue_stmt);
+    void analyze_break_stmt(sir::BreakStmt &break_stmt);
 
     void analyze_expr(sir::Expr &expr);
     void analyze_int_literal(sir::IntLiteral &int_literal);

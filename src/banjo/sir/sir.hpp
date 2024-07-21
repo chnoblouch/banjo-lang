@@ -32,6 +32,7 @@ struct UnaryExpr;
 struct CastExpr;
 struct CallExpr;
 struct DotExpr;
+struct RangeExpr;
 struct FuncType;
 struct PrimitiveType;
 struct PointerType;
@@ -40,12 +41,19 @@ struct VarStmt;
 struct AssignStmt;
 struct ReturnStmt;
 struct IfStmt;
+struct WhileStmt;
+struct ForStmt;
+struct LoopStmt;
+struct ContinueStmt;
+struct BreakStmt;
 struct FuncDef;
 struct NativeFuncDecl;
 struct StructDef;
 struct StructField;
 struct VarDecl;
 struct Param;
+
+struct Block;
 
 class Expr;
 class Stmt;
@@ -66,6 +74,7 @@ class Expr {
         CastExpr *,
         CallExpr *,
         DotExpr *,
+        RangeExpr *,
         PrimitiveType *,
         PointerType *,
         FuncType *,
@@ -109,7 +118,7 @@ public:
     operator bool() const { return !std::holds_alternative<nullptr_t>(kind); }
 
     Expr get_type() const;
-    
+
     bool is_type() const;
     bool is_int_type() const;
     bool is_signed_type() const;
@@ -120,7 +129,19 @@ public:
 class Stmt {
 
 private:
-    std::variant<VarStmt *, AssignStmt *, ReturnStmt *, IfStmt *, Expr *> kind;
+    std::variant<
+        VarStmt *,
+        AssignStmt *,
+        ReturnStmt *,
+        IfStmt *,
+        WhileStmt *,
+        ForStmt *,
+        LoopStmt *,
+        ContinueStmt *,
+        BreakStmt *,
+        Expr *,
+        Block *>
+        kind;
 
 public:
     template <typename T>
@@ -365,6 +386,12 @@ struct DotExpr {
     Symbol symbol;
 };
 
+struct RangeExpr {
+    ASTNode *ast_node;
+    Expr lhs;
+    Expr rhs;
+};
+
 enum class Primitive {
     I8,
     I16,
@@ -438,6 +465,34 @@ struct IfStmt {
     std::optional<IfElseBranch> else_branch;
 };
 
+struct WhileStmt {
+    ASTNode *ast_node;
+    Expr condition;
+    Block block;
+};
+
+struct ForStmt {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr range;
+    Block block;
+};
+
+struct LoopStmt {
+    ASTNode *ast_node;
+    Expr condition;
+    Block block;
+    std::optional<Block> latch;
+};
+
+struct ContinueStmt {
+    ASTNode *ast_node;
+};
+
+struct BreakStmt {
+    ASTNode *ast_node;
+};
+
 struct FuncDef {
     ASTNode *ast_node;
     Ident ident;
@@ -486,13 +541,17 @@ typedef std::variant<
     CastExpr,
     CallExpr,
     DotExpr,
+    RangeExpr,
     PrimitiveType,
     PointerType,
     FuncType,
     StarExpr>
     ExprStorage;
 
-typedef std::variant<VarStmt, AssignStmt, ReturnStmt, IfStmt, Expr> StmtStorage;
+typedef std::
+    variant<VarStmt, AssignStmt, ReturnStmt, IfStmt, WhileStmt, ForStmt, LoopStmt, ContinueStmt, BreakStmt, Expr, Block>
+        StmtStorage;
+
 typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl> DeclStorage;
 
 struct Unit {
@@ -504,17 +563,17 @@ struct Unit {
     DeclBlock block;
 
     template <typename T>
-    Expr create_expr(T value) {
+    T *create_expr(T value) {
         return &std::get<T>(*expr_arena.create(value));
     }
 
     template <typename T>
-    Stmt create_stmt(T value) {
+    T *create_stmt(T value) {
         return &std::get<T>(*stmt_arena.create(std::move(value)));
     }
 
     template <typename T>
-    Decl create_decl(T value) {
+    T *create_decl(T value) {
         return &std::get<T>(*decl_arena.create(std::move(value)));
     }
 

@@ -36,7 +36,13 @@ private:
     void print_assign_stmt(const AssignStmt &assign_stmt);
     void print_return_stmt(const ReturnStmt &return_stmt);
     void print_if_stmt(const IfStmt &if_stmt);
+    void print_while_stmt(const WhileStmt &while_stmt);
+    void print_for_stmt(const ForStmt &for_stmt);
+    void print_loop_stmt(const LoopStmt &loop_stmt);
+    void print_continue_stmt(const ContinueStmt &continue_stmt);
+    void print_break_stmt(const BreakStmt &break_stmt);
     void print_expr_stmt(const Expr &expr);
+    void print_block_stmt(const Block &block);
 
     void print_expr(const Expr &expr);
     void print_int_literal(const IntLiteral &int_literal);
@@ -51,6 +57,7 @@ private:
     void print_cast_expr(const CastExpr &cast_expr);
     void print_call_expr(const CallExpr &call_expr);
     void print_dot_expr(const DotExpr &dot_expr);
+    void print_range_expr(const RangeExpr &range_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
     void print_pointer_type(const PointerType &pointer_type);
     void print_func_type(const FuncType &func_type);

@@ -188,8 +188,14 @@ void SSAGenerator::generate_block(const sir::Block &sir_block) {
         else if (auto assign_stmt = sir_stmt.match<sir::AssignStmt>()) generate_assign_stmt(*assign_stmt);
         else if (auto return_stmt = sir_stmt.match<sir::ReturnStmt>()) generate_return_stmt(*return_stmt);
         else if (auto if_stmt = sir_stmt.match<sir::IfStmt>()) generate_if_stmt(*if_stmt);
+        else if (auto while_stmt = sir_stmt.match<sir::WhileStmt>()) ASSERT_UNREACHABLE
+        else if (auto for_stmt = sir_stmt.match<sir::ForStmt>()) ASSERT_UNREACHABLE
+        else if (auto loop_stmt = sir_stmt.match<sir::LoopStmt>()) generate_loop_stmt(*loop_stmt);
+        else if (auto continue_stmt = sir_stmt.match<sir::ContinueStmt>()) generate_continue_stmt(*continue_stmt);
+        else if (auto break_stmt = sir_stmt.match<sir::BreakStmt>()) generate_break_stmt(*break_stmt);
         else if (auto expr = sir_stmt.match<sir::Expr>()) ExprSSAGenerator(ctx).generate(*expr, StorageHints::unused());
-        else ASSERT_UNREACHABLE;
+        else if (auto block = sir_stmt.match<sir::Block>()) generate_block(*block);
+        else ASSERT_UNREACHABLE
     }
 }
 
@@ -240,6 +246,45 @@ void SSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
     }
 
     ctx.append_block(ssa_end_block);
+}
+
+void SSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
+    ssa::BasicBlockIter ssa_cond_block = ctx.create_block();
+    ssa::BasicBlockIter ssa_body_entry_block = ctx.create_block();
+    ssa::BasicBlockIter ssa_latch_block = loop_stmt.latch ? ctx.create_block() : nullptr;
+    ssa::BasicBlockIter ssa_end_block = ctx.create_block();
+
+    ctx.append_jmp(ssa_cond_block);
+    ctx.append_block(ssa_cond_block);
+    
+    ExprSSAGenerator(ctx).generate_branch(loop_stmt.condition, {ssa_body_entry_block, ssa_end_block});
+
+    ctx.push_loop_context({
+        .ssa_continue_target = loop_stmt.latch ? ssa_latch_block : ssa_cond_block,
+        .ssa_break_target = ssa_end_block,
+    });
+
+    ctx.append_block(ssa_body_entry_block);
+    generate_block(loop_stmt.block);
+
+    ctx.pop_loop_context();
+
+    if (loop_stmt.latch) {
+        ctx.append_jmp(ssa_latch_block);
+        ctx.append_block(ssa_latch_block);
+        generate_block(*loop_stmt.latch);
+    }
+
+    ctx.append_jmp(ssa_cond_block);
+    ctx.append_block(ssa_end_block);
+}
+
+void SSAGenerator::generate_continue_stmt(const sir::ContinueStmt & /*continue_stmt*/) {
+    ctx.append_jmp(ctx.get_loop_context().ssa_continue_target);
+}
+
+void SSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*/) {
+    ctx.append_jmp(ctx.get_loop_context().ssa_break_target);
 }
 
 } // namespace lang

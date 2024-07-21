@@ -50,6 +50,10 @@ private:
     sir::Stmt generate_assign_stmt(ASTNode *node);
     sir::Stmt generate_return_stmt(ASTNode *node);
     sir::Stmt generate_if_stmt(ASTNode *node);
+    sir::Stmt generate_while_stmt(ASTNode *node);
+    sir::Stmt generate_for_stmt(ASTNode *node);
+    sir::Stmt generate_continue_stmt(ASTNode *node);
+    sir::Stmt generate_break_stmt(ASTNode *node);
 
     sir::Expr generate_expr(ASTNode *node);
     sir::Expr generate_int_literal(ASTNode *node);
@@ -64,6 +68,7 @@ private:
     sir::Expr generate_cast_expr(ASTNode *node);
     sir::Expr generate_call_expr(ASTNode *node);
     sir::Expr generate_dot_expr(ASTNode *node);
+    sir::Expr generate_range_expr(ASTNode *node);
     std::vector<sir::Expr> generate_arg_list(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);

@@ -134,6 +134,7 @@ void Parser::parse_block_child(ASTBlock *block) {
         case TKN_NATIVE: result = DeclParser(*this).parse_native(); break;
         case TKN_USE: result = DeclParser(*this).parse_use(); break;
         case TKN_META: result = StmtParser(*this).parse_meta_stmt(); break;
+        case TKN_LBRACE: result = parse_block(); break;
         case TKN_AT: current_attr_list = parse_attribute_list(); return;
         default: result = parse_expr_or_assign();
     }

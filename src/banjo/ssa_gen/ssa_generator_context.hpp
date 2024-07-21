@@ -33,10 +33,16 @@ public:
         std::vector<ir::VirtualRegister> arg_regs;
     };
 
+    struct LoopContext {
+        ssa::BasicBlockIter ssa_continue_target;
+        ssa::BasicBlockIter ssa_break_target;
+    };
+
     target::Target *target;
 
     ssa::Module *ssa_mod;
     std::stack<FuncContext> func_contexts;
+    std::stack<LoopContext> loop_contexts;
 
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
     std::unordered_map<const lang::sir::VarStmt *, ir::VirtualRegister> ssa_var_regs;
@@ -52,6 +58,10 @@ public:
     FuncContext &get_func_context() { return func_contexts.top(); }
     void push_func_context(ssa::Function *ssa_func);
     void pop_func_context() { func_contexts.pop(); }
+
+    LoopContext &get_loop_context() { return loop_contexts.top(); }
+    void push_loop_context(LoopContext ctx) { loop_contexts.push(ctx); }
+    void pop_loop_context() { loop_contexts.pop(); }
 
     ssa::Function *get_ssa_func() { return get_func_context().ssa_func; }
     ssa::BasicBlockIter get_ssa_block() { return get_func_context().ssa_block; }

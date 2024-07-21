@@ -149,7 +149,12 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_IMPLICIT_TYPE_VAR: return generate_typeless_var_stmt(node);
         case AST_FUNCTION_RETURN: return generate_return_stmt(node);
         case AST_IF_CHAIN: return generate_if_stmt(node);
+        case AST_WHILE: return generate_while_stmt(node);
+        case AST_FOR: return generate_for_stmt(node);
+        case AST_CONTINUE: return generate_continue_stmt(node);
+        case AST_BREAK: return generate_break_stmt(node);
         case AST_FUNCTION_CALL: return sir_unit.create_stmt(generate_expr(node));
+        case AST_BLOCK: return sir_unit.create_stmt(generate_block(node));
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -188,7 +193,7 @@ sir::Stmt SIRGenerator::generate_return_stmt(ASTNode *node) {
 }
 
 sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
-    sir::IfStmt sir_stmt{
+    sir::IfStmt sir_if_stmt{
         .ast_node = node,
         .cond_branches = {},
         .else_branch = {},
@@ -196,13 +201,13 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
 
     for (ASTNode *child : node->get_children()) {
         if (child->get_type() == AST_IF || child->get_type() == AST_ELSE_IF) {
-            sir_stmt.cond_branches.push_back({
+            sir_if_stmt.cond_branches.push_back({
                 .ast_node = child,
                 .condition = generate_expr(child->get_child(IF_CONDITION)),
                 .block = generate_block(child->get_child(IF_BLOCK)),
             });
         } else if (child->get_type() == AST_ELSE) {
-            sir_stmt.else_branch = {
+            sir_if_stmt.else_branch = {
                 .ast_node = child,
                 .block = generate_block(child->get_child()),
             };
@@ -211,7 +216,36 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
         }
     }
 
-    return sir_unit.create_stmt(sir_stmt);
+    return sir_unit.create_stmt(sir_if_stmt);
+}
+
+sir::Stmt SIRGenerator::generate_while_stmt(ASTNode *node) {
+    return sir_unit.create_stmt(sir::WhileStmt{
+        .ast_node = node,
+        .condition = generate_expr(node->get_child(WHILE_CONDITION)),
+        .block = generate_block(node->get_child(WHILE_BLOCK)),
+    });
+}
+
+sir::Stmt SIRGenerator::generate_for_stmt(ASTNode *node) {
+    return sir_unit.create_stmt(sir::ForStmt{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(FOR_VAR)),
+        .range = generate_expr(node->get_child(FOR_EXPR)),
+        .block = generate_block(node->get_child(FOR_BLOCK)),
+    });
+}
+
+sir::Stmt SIRGenerator::generate_continue_stmt(ASTNode *node) {
+    return sir_unit.create_stmt(sir::ContinueStmt{
+        .ast_node = node,
+    });
+}
+
+sir::Stmt SIRGenerator::generate_break_stmt(ASTNode *node) {
+    return sir_unit.create_stmt(sir::BreakStmt{
+        .ast_node = node,
+    });
 }
 
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
@@ -249,6 +283,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_CAST: return generate_cast_expr(node);
         case AST_FUNCTION_CALL: return generate_call_expr(node);
         case AST_DOT_OPERATOR: return generate_dot_expr(node);
+        case AST_RANGE: return generate_range_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
         case AST_I16: return generate_primitive_type(node, sir::Primitive::I16);
         case AST_I32: return generate_primitive_type(node, sir::Primitive::I32);
@@ -398,6 +433,14 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
         .lhs = generate_expr(node->get_child(0)),
         .rhs = generate_ident(node->get_child(1)),
         .symbol = nullptr,
+    });
+}
+
+sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
+    return sir_unit.create_expr(sir::RangeExpr{
+        .ast_node = node,
+        .lhs = generate_expr(node->get_child(0)),
+        .rhs = generate_expr(node->get_child(1)),
     });
 }
 

@@ -125,7 +125,13 @@ void Printer::print_stmt(const Stmt &stmt) {
     else if (auto assign_stmt = stmt.match<AssignStmt>()) print_assign_stmt(*assign_stmt);
     else if (auto return_stmt = stmt.match<ReturnStmt>()) print_return_stmt(*return_stmt);
     else if (auto if_stmt = stmt.match<IfStmt>()) print_if_stmt(*if_stmt);
+    else if (auto while_stmt = stmt.match<WhileStmt>()) print_while_stmt(*while_stmt);
+    else if (auto for_stmt = stmt.match<ForStmt>()) print_for_stmt(*for_stmt);
+    else if (auto loop_stmt = stmt.match<LoopStmt>()) print_loop_stmt(*loop_stmt);
+    else if (auto continue_stmt = stmt.match<ContinueStmt>()) print_continue_stmt(*continue_stmt);
+    else if (auto break_stmt = stmt.match<BreakStmt>()) print_break_stmt(*break_stmt);
     else if (auto expr = stmt.match<Expr>()) print_expr_stmt(*expr);
+    else if (auto block = stmt.match<Block>()) print_block_stmt(*block);
     else ASSERT_UNREACHABLE;
 }
 
@@ -169,15 +175,60 @@ void Printer::print_if_stmt(const IfStmt &if_stmt) {
         PRINT_BLOCK_FIELD("block", if_stmt.else_branch->block);
         END_OBJECT();
     } else {
-        stream << "none";
+        stream << "none\n";
     }
 
     END_OBJECT();
 }
 
+void Printer::print_while_stmt(const WhileStmt &while_stmt) {
+    BEGIN_OBJECT("WhileStmt");
+    PRINT_EXPR_FIELD("condition", while_stmt.condition);
+    PRINT_BLOCK_FIELD("block", while_stmt.block);
+    END_OBJECT();
+}
+
+void Printer::print_for_stmt(const ForStmt &for_stmt) {
+    BEGIN_OBJECT("ForStmt");
+    PRINT_FIELD("ident", for_stmt.ident.value);
+    PRINT_EXPR_FIELD("range", for_stmt.range);
+    PRINT_BLOCK_FIELD("block", for_stmt.block);
+    END_OBJECT();
+}
+
+void Printer::print_loop_stmt(const LoopStmt &loop_stmt) {
+    BEGIN_OBJECT("LoopStmt");
+    PRINT_EXPR_FIELD("condition", loop_stmt.condition);
+    PRINT_BLOCK_FIELD("block", loop_stmt.block);
+
+    if (loop_stmt.latch) {
+        PRINT_BLOCK_FIELD("latch", *loop_stmt.latch);
+    } else {
+        PRINT_FIELD("latch", "none");
+    }
+
+    END_OBJECT();
+}
+
+void Printer::print_continue_stmt(const ContinueStmt & /*continue_stmt*/) {
+    BEGIN_OBJECT("ContinueStmt");
+    END_OBJECT();
+}
+
+void Printer::print_break_stmt(const BreakStmt & /*break_stmt*/) {
+    BEGIN_OBJECT("BreakStmt");
+    END_OBJECT();
+}
+
 void Printer::print_expr_stmt(const Expr &expr) {
-    BEGIN_OBJECT("ExprStmt");
+    BEGIN_OBJECT("Expr");
     PRINT_EXPR_FIELD("value", expr);
+    END_OBJECT();
+}
+
+void Printer::print_block_stmt(const Block &block) {
+    BEGIN_OBJECT("Block");
+    PRINT_BLOCK_FIELD("block", block);
     END_OBJECT();
 }
 
@@ -195,6 +246,7 @@ void Printer::print_expr(const Expr &expr) {
     else if (auto call_expr = expr.match<CallExpr>()) print_call_expr(*call_expr);
     else if (auto cast_expr = expr.match<CastExpr>()) print_cast_expr(*cast_expr);
     else if (auto dot_expr = expr.match<DotExpr>()) print_dot_expr(*dot_expr);
+    else if (auto range_expr = expr.match<RangeExpr>()) print_range_expr(*range_expr);
     else if (auto primitive_type = expr.match<PrimitiveType>()) print_primitive_type(*primitive_type);
     else if (auto pointer_type = expr.match<PointerType>()) print_pointer_type(*pointer_type);
     else if (auto func_type = expr.match<FuncType>()) print_func_type(*func_type);
@@ -266,24 +318,24 @@ void Printer::print_binary_expr(const BinaryExpr &binary_expr) {
     BEGIN_OBJECT("BinaryExpr");
 
     switch (binary_expr.op) {
-        case BinaryOp::ADD: PRINT_FIELD("op", "add"); break;
-        case BinaryOp::SUB: PRINT_FIELD("op", "sub"); break;
-        case BinaryOp::MUL: PRINT_FIELD("op", "mul"); break;
-        case BinaryOp::DIV: PRINT_FIELD("op", "div"); break;
-        case BinaryOp::MOD: PRINT_FIELD("op", "mod"); break;
-        case BinaryOp::BIT_AND: PRINT_FIELD("op", "bitand"); break;
-        case BinaryOp::BIT_OR: PRINT_FIELD("op", "bitor"); break;
-        case BinaryOp::BIT_XOR: PRINT_FIELD("op", "bitxor"); break;
-        case BinaryOp::SHL: PRINT_FIELD("op", "shl"); break;
-        case BinaryOp::SHR: PRINT_FIELD("op", "shr"); break;
-        case BinaryOp::EQ: PRINT_FIELD("op", "eq"); break;
-        case BinaryOp::NE: PRINT_FIELD("op", "ne"); break;
-        case BinaryOp::GT: PRINT_FIELD("op", "gt"); break;
-        case BinaryOp::LT: PRINT_FIELD("op", "lt"); break;
-        case BinaryOp::GE: PRINT_FIELD("op", "ge"); break;
-        case BinaryOp::LE: PRINT_FIELD("op", "le"); break;
-        case BinaryOp::AND: PRINT_FIELD("op", "and"); break;
-        case BinaryOp::OR: PRINT_FIELD("op", "or"); break;
+        case BinaryOp::ADD: PRINT_FIELD("op", "ADD"); break;
+        case BinaryOp::SUB: PRINT_FIELD("op", "SUB"); break;
+        case BinaryOp::MUL: PRINT_FIELD("op", "MUL"); break;
+        case BinaryOp::DIV: PRINT_FIELD("op", "DIV"); break;
+        case BinaryOp::MOD: PRINT_FIELD("op", "MOD"); break;
+        case BinaryOp::BIT_AND: PRINT_FIELD("op", "BIT_AND"); break;
+        case BinaryOp::BIT_OR: PRINT_FIELD("op", "BIT_OR"); break;
+        case BinaryOp::BIT_XOR: PRINT_FIELD("op", "BIT_XOR"); break;
+        case BinaryOp::SHL: PRINT_FIELD("op", "SHL"); break;
+        case BinaryOp::SHR: PRINT_FIELD("op", "SHR"); break;
+        case BinaryOp::EQ: PRINT_FIELD("op", "EQ"); break;
+        case BinaryOp::NE: PRINT_FIELD("op", "NE"); break;
+        case BinaryOp::GT: PRINT_FIELD("op", "GT"); break;
+        case BinaryOp::LT: PRINT_FIELD("op", "LT"); break;
+        case BinaryOp::GE: PRINT_FIELD("op", "GE"); break;
+        case BinaryOp::LE: PRINT_FIELD("op", "LE"); break;
+        case BinaryOp::AND: PRINT_FIELD("op", "AND"); break;
+        case BinaryOp::OR: PRINT_FIELD("op", "OR"); break;
     }
 
     PRINT_EXPR_FIELD("type", binary_expr.type);
@@ -337,23 +389,30 @@ void Printer::print_dot_expr(const DotExpr &dot_expr) {
     END_OBJECT();
 }
 
+void Printer::print_range_expr(const RangeExpr &range_expr) {
+    BEGIN_OBJECT("DotExpr");
+    PRINT_EXPR_FIELD("lhs", range_expr.lhs);
+    PRINT_EXPR_FIELD("rhs", range_expr.rhs);
+    END_OBJECT();
+}
+
 void Printer::print_primitive_type(const PrimitiveType &primitive_type) {
     BEGIN_OBJECT("PrimitiveType");
 
     switch (primitive_type.primitive) {
-        case Primitive::I8: PRINT_FIELD("primitive", "i8"); break;
-        case Primitive::I16: PRINT_FIELD("primitive", "i16"); break;
-        case Primitive::I32: PRINT_FIELD("primitive", "i32"); break;
-        case Primitive::I64: PRINT_FIELD("primitive", "i64"); break;
-        case Primitive::U8: PRINT_FIELD("primitive", "u8"); break;
-        case Primitive::U16: PRINT_FIELD("primitive", "u16"); break;
-        case Primitive::U32: PRINT_FIELD("primitive", "u32"); break;
-        case Primitive::U64: PRINT_FIELD("primitive", "u64"); break;
-        case Primitive::F32: PRINT_FIELD("primitive", "f32"); break;
-        case Primitive::F64: PRINT_FIELD("primitive", "f64"); break;
-        case Primitive::BOOL: PRINT_FIELD("primitive", "bool"); break;
-        case Primitive::ADDR: PRINT_FIELD("primitive", "addr"); break;
-        case Primitive::VOID: PRINT_FIELD("primitive", "void"); break;
+        case Primitive::I8: PRINT_FIELD("primitive", "I8"); break;
+        case Primitive::I16: PRINT_FIELD("primitive", "I16"); break;
+        case Primitive::I32: PRINT_FIELD("primitive", "I32"); break;
+        case Primitive::I64: PRINT_FIELD("primitive", "I64"); break;
+        case Primitive::U8: PRINT_FIELD("primitive", "U8"); break;
+        case Primitive::U16: PRINT_FIELD("primitive", "U16"); break;
+        case Primitive::U32: PRINT_FIELD("primitive", "U32"); break;
+        case Primitive::U64: PRINT_FIELD("primitive", "U64"); break;
+        case Primitive::F32: PRINT_FIELD("primitive", "F32"); break;
+        case Primitive::F64: PRINT_FIELD("primitive", "F64"); break;
+        case Primitive::BOOL: PRINT_FIELD("primitive", "BOOL"); break;
+        case Primitive::ADDR: PRINT_FIELD("primitive", "ADDR"); break;
+        case Primitive::VOID: PRINT_FIELD("primitive", "VOID"); break;
     }
 
     END_OBJECT();

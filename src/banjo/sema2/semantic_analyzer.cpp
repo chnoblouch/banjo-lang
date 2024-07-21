@@ -98,7 +98,13 @@ void SemanticAnalyzer::analyze_stmt(sir::Stmt &stmt) {
     else if (auto assign_stmt = stmt.match<sir::AssignStmt>()) analyze_assign_stmt(*assign_stmt);
     else if (auto return_stmt = stmt.match<sir::ReturnStmt>()) analyze_return_stmt(*return_stmt);
     else if (auto if_stmt = stmt.match<sir::IfStmt>()) analyze_if_stmt(*if_stmt);
+    else if (auto while_stmt = stmt.match<sir::WhileStmt>()) analyze_while_stmt(*while_stmt, stmt);
+    else if (auto for_stmt = stmt.match<sir::ForStmt>()) analyze_for_stmt(*for_stmt, stmt);
+    else if (auto loop_stmt = stmt.match<sir::LoopStmt>()) analyze_loop_stmt(*loop_stmt);
+    else if (auto continue_stmt = stmt.match<sir::ContinueStmt>()) analyze_continue_stmt(*continue_stmt);
+    else if (auto break_stmt = stmt.match<sir::BreakStmt>()) analyze_break_stmt(*break_stmt);
     else if (auto expr = stmt.match<sir::Expr>()) analyze_expr(*expr);
+    else if (auto block = stmt.match<sir::Block>()) analyze_block(*block);
     else ASSERT_UNREACHABLE;
 }
 
@@ -133,6 +139,112 @@ void SemanticAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
         analyze_block(if_stmt.else_branch->block);
     }
 }
+
+void SemanticAnalyzer::analyze_while_stmt(sir::WhileStmt &while_stmt, sir::Stmt &out_stmt) {
+    sir::LoopStmt *loop_stmt = sir_unit.create_stmt(sir::LoopStmt{
+        .ast_node = nullptr,
+        .condition = while_stmt.condition,
+        .block = std::move(while_stmt.block),
+        .latch = {},
+    });
+
+    analyze_loop_stmt(*loop_stmt);
+    out_stmt = loop_stmt;
+}
+
+void SemanticAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
+    sir::RangeExpr &range = for_stmt.range.as<sir::RangeExpr>();
+
+    sir::Block *block = sir_unit.create_stmt(sir::Block{
+        .ast_node = nullptr,
+        .stmts = {},
+        .symbol_table = sir_unit.create_symbol_table({
+            .parent = get_scope().symbol_table,
+            .symbols = {},
+        }),
+    });
+
+    sir::Stmt var_stmt = sir_unit.create_stmt(sir::VarStmt{
+        .ast_node = nullptr,
+        .name = for_stmt.ident,
+        .type = nullptr,
+        .value = range.lhs,
+    });
+
+    sir::Expr var_ref_expr = sir_unit.create_expr(sir::IdentExpr{
+        .ast_node = nullptr,
+        .type = nullptr,
+        .value = for_stmt.ident.value,
+        .symbol = nullptr,
+    });
+
+    sir::Expr loop_condition = sir_unit.create_expr(sir::BinaryExpr{
+        .ast_node = nullptr,
+        .type = nullptr,
+        .op = sir::BinaryOp::LT,
+        .lhs = var_ref_expr,
+        .rhs = range.rhs,
+    });
+
+    sir::Block loop_block{
+        .ast_node = for_stmt.block.ast_node,
+        .stmts = std::move(for_stmt.block.stmts),
+        .symbol_table = sir_unit.create_symbol_table({
+            .parent = block->symbol_table,
+            .symbols = {},
+        }),
+    };
+
+    sir::Stmt inc_stmt = sir_unit.create_stmt(sir::AssignStmt{
+        .ast_node = nullptr,
+        .lhs = var_ref_expr,
+        .rhs = sir_unit.create_expr(sir::BinaryExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .op = sir::BinaryOp::ADD,
+            .lhs = var_ref_expr,
+            .rhs = sir_unit.create_expr(sir::IntLiteral{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .value = 1,
+            }),
+        }),
+    });
+
+    sir::Block loop_latch{
+        .ast_node = nullptr,
+        .stmts = {inc_stmt},
+        .symbol_table = sir_unit.create_symbol_table({
+            .parent = block->symbol_table,
+            .symbols = {},
+        }),
+    };
+
+    sir::LoopStmt *loop_stmt = sir_unit.create_stmt(sir::LoopStmt{
+        .ast_node = nullptr,
+        .condition = loop_condition,
+        .block = loop_block,
+        .latch = loop_latch,
+    });
+
+    block->stmts = {var_stmt, loop_stmt};
+
+    analyze_block(*block);
+    out_stmt = block;
+}
+
+void SemanticAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
+    analyze_expr(loop_stmt.condition);
+    analyze_block(loop_stmt.block);
+
+    if (loop_stmt.latch) {
+        analyze_block(*loop_stmt.latch);
+    }
+}
+
+void SemanticAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt*/) {}
+
+void SemanticAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {}
 
 void SemanticAnalyzer::analyze_expr(sir::Expr &expr) {
     if (auto int_literal = expr.match<sir::IntLiteral>()) analyze_int_literal(*int_literal);

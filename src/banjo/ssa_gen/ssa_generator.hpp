@@ -36,6 +36,9 @@ private:
     void generate_assign_stmt(const sir::AssignStmt &assign_stmt);
     void generate_return_stmt(const sir::ReturnStmt &return_stmt);
     void generate_if_stmt(const sir::IfStmt &if_stmt);
+    void generate_loop_stmt(const sir::LoopStmt &loop_stmt);
+    void generate_continue_stmt(const sir::ContinueStmt &continue_stmt);
+    void generate_break_stmt(const sir::BreakStmt &break_stmt);
 };
 
 } // namespace lang
