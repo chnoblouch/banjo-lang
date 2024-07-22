@@ -171,10 +171,9 @@ void SemanticAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_s
         .value = range.lhs,
     });
 
-    sir::SymbolExpr *var_ref_expr = sir_unit.create_expr(sir::SymbolExpr{
+    sir::IdentExpr *var_ref_expr = sir_unit.create_expr(sir::IdentExpr{
         .ast_node = nullptr,
-        .type = nullptr,
-        .symbol = var_stmt,
+        .value = for_stmt.ident.value,
     });
 
     sir::BinaryExpr *loop_condition = sir_unit.create_expr(sir::BinaryExpr{

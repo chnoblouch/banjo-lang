@@ -137,6 +137,7 @@ void Printer::print_stmt(const Stmt &stmt) {
 
 void Printer::print_var_stmt(const VarStmt &var_stmt) {
     BEGIN_OBJECT("VarStmt");
+    PRINT_FIELD("name", var_stmt.name.value);
     PRINT_EXPR_FIELD("type", var_stmt.type);
     PRINT_EXPR_FIELD("value", var_stmt.value);
     END_OBJECT();

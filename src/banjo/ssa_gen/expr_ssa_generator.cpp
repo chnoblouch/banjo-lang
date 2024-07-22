@@ -282,11 +282,9 @@ StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr)
 
 StoredValue ExprSSAGenerator::generate_index_expr(const sir::IndexExpr &index_expr) {
     ssa::Value ssa_base = generate(index_expr.base).turn_into_value(ctx).get_value();
-    ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(index_expr.base.get_type());
-    ssa::Value ssa_offset = generate(index_expr.index).turn_into_value(ctx).get_value();
-
-    ssa::VirtualRegister ssa_reg = ctx.append_offsetptr(ssa_base, ssa_offset, ssa_base_type);
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(index_expr.type);
+    ssa::Value ssa_offset = generate(index_expr.index).turn_into_value(ctx).get_value();
+    ssa::VirtualRegister ssa_reg = ctx.append_offsetptr(ssa_base, ssa_offset, ssa_type);
     return StoredValue::create_reference(ssa::Value::from_register(ssa_reg, ssa::Primitive::ADDR), ssa_type);
 }
 
