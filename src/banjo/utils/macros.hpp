@@ -13,9 +13,9 @@
         }
 #else
 #    ifdef _MSC_VER
-#        define ASSERT_UNREACHABLE __assume(false)
+#        define ASSERT_UNREACHABLE __assume(false);
 #    else
-#        define ASSERT_UNREACHABLE __builtin_unreachable()
+#        define ASSERT_UNREACHABLE __builtin_unreachable();
 #    endif
 #endif
 

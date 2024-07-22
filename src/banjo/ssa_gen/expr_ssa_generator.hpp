@@ -47,6 +47,7 @@ private:
     StoredValue generate_ref(const sir::UnaryExpr &unary_expr);
     StoredValue generate_deref(const sir::UnaryExpr &unary_expr);
     StoredValue generate_cast_expr(const sir::CastExpr &cast_expr);
+    StoredValue generate_index_expr(const sir::IndexExpr &index_expr);
     StoredValue generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints);
     StoredValue generate_dot_expr(const sir::DotExpr &dot_expr);
 

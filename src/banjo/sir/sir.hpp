@@ -30,6 +30,7 @@ struct IdentExpr;
 struct BinaryExpr;
 struct UnaryExpr;
 struct CastExpr;
+struct IndexExpr;
 struct CallExpr;
 struct DotExpr;
 struct RangeExpr;
@@ -37,6 +38,7 @@ struct FuncType;
 struct PrimitiveType;
 struct PointerType;
 struct StarExpr;
+struct BracketExpr;
 struct VarStmt;
 struct AssignStmt;
 struct ReturnStmt;
@@ -72,6 +74,7 @@ class Expr {
         BinaryExpr *,
         UnaryExpr *,
         CastExpr *,
+        IndexExpr *,
         CallExpr *,
         DotExpr *,
         RangeExpr *,
@@ -79,6 +82,7 @@ class Expr {
         PointerType *,
         FuncType *,
         StarExpr *,
+        BracketExpr *,
         std::nullptr_t>
         kind;
 
@@ -115,7 +119,7 @@ public:
         return result ? *result : nullptr;
     }
 
-    operator bool() const { return !std::holds_alternative<nullptr_t>(kind); }
+    operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 
     Expr get_type() const;
 
@@ -238,7 +242,7 @@ public:
         return result ? *result : nullptr;
     }
 
-    operator bool() const { return !std::holds_alternative<nullptr_t>(kind); }
+    operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 
     Expr get_type();
 };
@@ -371,6 +375,13 @@ struct CastExpr {
     Expr value;
 };
 
+struct IndexExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr base;
+    Expr index;
+};
+
 struct CallExpr {
     ASTNode *ast_node;
     Expr type;
@@ -426,8 +437,13 @@ struct FuncType {
 
 struct StarExpr {
     ASTNode *ast_node;
-    Expr type;
     Expr value;
+};
+
+struct BracketExpr {
+    ASTNode *ast_node;
+    Expr lhs;
+    std::vector<Expr> rhs;
 };
 
 struct VarStmt {
@@ -539,13 +555,15 @@ typedef std::variant<
     BinaryExpr,
     UnaryExpr,
     CastExpr,
+    IndexExpr,
     CallExpr,
     DotExpr,
     RangeExpr,
     PrimitiveType,
     PointerType,
     FuncType,
-    StarExpr>
+    StarExpr,
+    BracketExpr>
     ExprStorage;
 
 typedef std::

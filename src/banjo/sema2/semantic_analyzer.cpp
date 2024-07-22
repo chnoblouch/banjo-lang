@@ -260,6 +260,7 @@ void SemanticAnalyzer::analyze_expr(sir::Expr &expr) {
     else if (auto cast_expr = expr.match<sir::CastExpr>()) analyze_cast_expr(*cast_expr);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
+    else if (auto bracket_expr = expr.match<sir::BracketExpr>()) analyze_bracket_expr(*bracket_expr, expr);
 }
 
 void SemanticAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
@@ -402,6 +403,25 @@ void SemanticAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &ou
             .type = star_expr.value.get_type().as<sir::PointerType>().base_type,
             .op = sir::UnaryOp::DEREF,
             .value = star_expr.value,
+        });
+    }
+}
+
+void SemanticAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
+    analyze_expr(bracket_expr.lhs);
+
+    for (sir::Expr &expr : bracket_expr.rhs) {
+        analyze_expr(expr);
+    }
+
+    if (bracket_expr.lhs.is_type()) {
+        ASSERT_UNREACHABLE;
+    } else {
+        out_expr = sir_unit.create_expr(sir::IndexExpr{
+            .ast_node = bracket_expr.ast_node,
+            .type = bracket_expr.lhs.get_type().as<sir::PointerType>().base_type,
+            .base = bracket_expr.lhs,
+            .index = bracket_expr.rhs[0],
         });
     }
 }

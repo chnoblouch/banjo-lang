@@ -71,6 +71,7 @@ private:
     sir::Expr generate_range_expr(ASTNode *node);
     std::vector<sir::Expr> generate_arg_list(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);
+    sir::Expr generate_bracket_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
 
     char decode_char(const std::string &value, unsigned &index);

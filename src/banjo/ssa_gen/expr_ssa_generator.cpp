@@ -49,6 +49,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) return generate_binary_expr(*binary_expr, expr);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) return generate_unary_expr(*unary_expr, expr);
     else if (auto cast_expr = expr.match<sir::CastExpr>()) return generate_cast_expr(*cast_expr);
+    else if (auto index_expr = expr.match<sir::IndexExpr>()) return generate_index_expr(*index_expr);
     else if (auto call_expr = expr.match<sir::CallExpr>()) return generate_call_expr(*call_expr, hints);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) return generate_dot_expr(*dot_expr);
     else ASSERT_UNREACHABLE;
@@ -277,6 +278,16 @@ StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr)
 
     ssa::Value ssa_val_out = ssa::Value::from_register(ssa_reg_out, ssa_type_to);
     return StoredValue::create_value(ssa_val_out);
+}
+
+StoredValue ExprSSAGenerator::generate_index_expr(const sir::IndexExpr &index_expr) {
+    ssa::Value ssa_base = generate(index_expr.base).turn_into_value(ctx).get_value();
+    ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(index_expr.base.get_type());
+    ssa::Value ssa_offset = generate(index_expr.index).turn_into_value(ctx).get_value();
+
+    ssa::VirtualRegister ssa_reg = ctx.append_offsetptr(ssa_base, ssa_offset, ssa_base_type);
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(index_expr.type);
+    return StoredValue::create_reference(ssa::Value::from_register(ssa_reg, ssa::Primitive::ADDR), ssa_type);
 }
 
 StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints) {

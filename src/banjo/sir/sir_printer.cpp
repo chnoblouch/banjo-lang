@@ -243,14 +243,16 @@ void Printer::print_expr(const Expr &expr) {
     else if (auto ident_expr = expr.match<IdentExpr>()) print_ident_expr(*ident_expr);
     else if (auto binary_expr = expr.match<BinaryExpr>()) print_binary_expr(*binary_expr);
     else if (auto unary_expr = expr.match<UnaryExpr>()) print_unary_expr(*unary_expr);
-    else if (auto call_expr = expr.match<CallExpr>()) print_call_expr(*call_expr);
     else if (auto cast_expr = expr.match<CastExpr>()) print_cast_expr(*cast_expr);
+    else if (auto index_expr = expr.match<IndexExpr>()) print_index_expr(*index_expr);
+    else if (auto call_expr = expr.match<CallExpr>()) print_call_expr(*call_expr);
     else if (auto dot_expr = expr.match<DotExpr>()) print_dot_expr(*dot_expr);
     else if (auto range_expr = expr.match<RangeExpr>()) print_range_expr(*range_expr);
     else if (auto primitive_type = expr.match<PrimitiveType>()) print_primitive_type(*primitive_type);
     else if (auto pointer_type = expr.match<PointerType>()) print_pointer_type(*pointer_type);
     else if (auto func_type = expr.match<FuncType>()) print_func_type(*func_type);
     else if (auto star_expr = expr.match<StarExpr>()) print_star_expr(*star_expr);
+    else if (auto bracket_expr = expr.match<BracketExpr>()) print_bracket_expr(*bracket_expr);
     else ASSERT_UNREACHABLE;
 }
 
@@ -366,6 +368,14 @@ void Printer::print_cast_expr(const CastExpr &cast_expr) {
     END_OBJECT();
 }
 
+void Printer::print_index_expr(const IndexExpr &index_expr) {
+    BEGIN_OBJECT("IndexExpr");
+    PRINT_EXPR_FIELD("type", index_expr.type);
+    PRINT_EXPR_FIELD("base", index_expr.base);
+    PRINT_EXPR_FIELD("index", index_expr.index);
+    END_OBJECT();
+}
+
 void Printer::print_call_expr(const CallExpr &call_expr) {
     BEGIN_OBJECT("CallExpr");
     PRINT_EXPR_FIELD("type", call_expr.type);
@@ -443,8 +453,21 @@ void Printer::print_func_type(const FuncType &func_type) {
 
 void Printer::print_star_expr(const StarExpr &star_expr) {
     BEGIN_OBJECT("StarExpr");
-    PRINT_EXPR_FIELD("type", star_expr.type);
     PRINT_EXPR_FIELD("value", star_expr.value);
+    END_OBJECT();
+}
+
+void Printer::print_bracket_expr(const BracketExpr &bracket_expr) {
+    BEGIN_OBJECT("BracketExpr");
+    PRINT_EXPR_FIELD("lhs", bracket_expr.lhs);
+    BEGIN_LIST_FIELD("rhs");
+
+    for (const sir::Expr &expr : bracket_expr.rhs) {
+        INDENT_LIST_ELEMENT();
+        print_expr(expr);
+    }
+
+    END_LIST_FIELD();
     END_OBJECT();
 }
 

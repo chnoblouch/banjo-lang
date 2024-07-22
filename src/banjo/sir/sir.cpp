@@ -19,7 +19,7 @@ Expr Expr::get_type() const {
     else if (auto cast_expr = match<CastExpr>()) return cast_expr->type;
     else if (auto call_expr = match<CallExpr>()) return call_expr->type;
     else if (auto dot_expr = match<DotExpr>()) return dot_expr->type;
-    else if (auto star_expr = match<StarExpr>()) return star_expr->type;
+    else if (auto index_expr = match<IndexExpr>()) return index_expr->type;
     else return nullptr;
 }
 

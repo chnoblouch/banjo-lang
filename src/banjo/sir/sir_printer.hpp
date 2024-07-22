@@ -55,6 +55,7 @@ private:
     void print_binary_expr(const BinaryExpr &binary_expr);
     void print_unary_expr(const UnaryExpr &unary_expr);
     void print_cast_expr(const CastExpr &cast_expr);
+    void print_index_expr(const IndexExpr &index_expr);
     void print_call_expr(const CallExpr &call_expr);
     void print_dot_expr(const DotExpr &dot_expr);
     void print_range_expr(const RangeExpr &range_expr);
@@ -62,6 +63,7 @@ private:
     void print_pointer_type(const PointerType &pointer_type);
     void print_func_type(const FuncType &func_type);
     void print_star_expr(const StarExpr &star_expr);
+    void print_bracket_expr(const BracketExpr &bracket_expr);
 
     std::string get_indent();
     void new_line();

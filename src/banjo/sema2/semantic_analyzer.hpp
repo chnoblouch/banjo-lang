@@ -71,6 +71,7 @@ private:
     void analyze_call_expr(sir::CallExpr &call_expr);
     void analyze_dot_expr(sir::DotExpr &dot_expr);
     void analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
+    void analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 };
 
 } // namespace sema

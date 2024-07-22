@@ -283,6 +283,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_CAST: return generate_cast_expr(node);
         case AST_FUNCTION_CALL: return generate_call_expr(node);
         case AST_DOT_OPERATOR: return generate_dot_expr(node);
+        case AST_ARRAY_ACCESS: return generate_bracket_expr(node);
         case AST_RANGE: return generate_range_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
         case AST_I16: return generate_primitive_type(node, sir::Primitive::I16);
@@ -436,6 +437,14 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
     });
 }
 
+sir::Expr SIRGenerator::generate_bracket_expr(ASTNode *node) {
+    return sir_unit.create_expr(sir::BracketExpr{
+        .ast_node = node,
+        .lhs = generate_expr(node->get_child(0)),
+        .rhs = generate_arg_list(node->get_child(1)),
+    });
+}
+
 sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
     return sir_unit.create_expr(sir::RangeExpr{
         .ast_node = node,
@@ -447,7 +456,6 @@ sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
 sir::Expr SIRGenerator::generate_star_expr(ASTNode *node) {
     return sir_unit.create_expr(sir::StarExpr{
         .ast_node = node,
-        .type = nullptr,
         .value = generate_expr(node->get_child()),
     });
 }
