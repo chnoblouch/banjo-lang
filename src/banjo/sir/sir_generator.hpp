@@ -15,6 +15,7 @@ class SIRGenerator {
 private:
     struct Scope {
         sir::SymbolTable *symbol_table = nullptr;
+        sir::StructDef *struct_def = nullptr;
     };
 
     sir::Unit sir_unit;
@@ -63,6 +64,7 @@ private:
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
+    sir::Expr generate_self(ASTNode *node);
     sir::Expr generate_binary_expr(ASTNode *node, sir::BinaryOp op);
     sir::Expr generate_unary_expr(ASTNode *node, sir::UnaryOp op);
     sir::Expr generate_cast_expr(ASTNode *node);

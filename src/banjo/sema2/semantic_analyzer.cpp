@@ -164,21 +164,20 @@ void SemanticAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_s
         }),
     });
 
-    sir::Stmt var_stmt = sir_unit.create_stmt(sir::VarStmt{
+    sir::VarStmt *var_stmt = sir_unit.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
         .name = for_stmt.ident,
         .type = nullptr,
         .value = range.lhs,
     });
 
-    sir::Expr var_ref_expr = sir_unit.create_expr(sir::IdentExpr{
+    sir::SymbolExpr *var_ref_expr = sir_unit.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
         .type = nullptr,
-        .value = for_stmt.ident.value,
-        .symbol = nullptr,
+        .symbol = var_stmt,
     });
 
-    sir::Expr loop_condition = sir_unit.create_expr(sir::BinaryExpr{
+    sir::BinaryExpr *loop_condition = sir_unit.create_expr(sir::BinaryExpr{
         .ast_node = nullptr,
         .type = nullptr,
         .op = sir::BinaryOp::LT,
@@ -195,7 +194,7 @@ void SemanticAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_s
         }),
     };
 
-    sir::Stmt inc_stmt = sir_unit.create_stmt(sir::AssignStmt{
+    sir::AssignStmt *inc_stmt = sir_unit.create_stmt(sir::AssignStmt{
         .ast_node = nullptr,
         .lhs = var_ref_expr,
         .rhs = sir_unit.create_expr(sir::BinaryExpr{
@@ -247,18 +246,22 @@ void SemanticAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt
 void SemanticAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {}
 
 void SemanticAnalyzer::analyze_expr(sir::Expr &expr) {
+    analyze_expr(expr, *get_scope().symbol_table);
+}
+
+void SemanticAnalyzer::analyze_expr(sir::Expr &expr, sir::SymbolTable &symbol_table) {
     if (auto int_literal = expr.match<sir::IntLiteral>()) analyze_int_literal(*int_literal);
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) analyze_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) analyze_char_literal(*char_literal);
     else if (auto string_literal = expr.match<sir::StringLiteral>()) analyze_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>()) analyze_struct_literal(*struct_literal);
-    else if (auto ident_expr = expr.match<sir::IdentExpr>()) analyze_ident_expr(*ident_expr);
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) analyze_binary_expr(*binary_expr);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) analyze_unary_expr(*unary_expr);
-    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr);
+    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr, symbol_table);
     else if (auto cast_expr = expr.match<sir::CastExpr>()) analyze_cast_expr(*cast_expr);
-    else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr);
+    else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, symbol_table, expr);
+    else if (auto ident_expr = expr.match<sir::IdentExpr>()) analyze_ident_expr(*ident_expr, symbol_table, expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
     else if (auto bracket_expr = expr.match<sir::BracketExpr>()) analyze_bracket_expr(*bracket_expr, expr);
 }
@@ -306,7 +309,7 @@ void SemanticAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal
 void SemanticAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
     analyze_expr(struct_literal.type);
 
-    sir::StructDef &struct_def = struct_literal.type.as<sir::IdentExpr>().symbol.as<sir::StructDef>();
+    sir::StructDef &struct_def = struct_literal.type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
         for (sir::StructField *field : struct_def.fields) {
@@ -318,14 +321,6 @@ void SemanticAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal
         assert(entry.field);
         analyze_expr(entry.value);
     }
-}
-
-void SemanticAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr) {
-    sir::Symbol symbol = get_scope().symbol_table->look_up(ident_expr.value);
-    assert(symbol);
-
-    ident_expr.symbol = symbol;
-    ident_expr.type = symbol.get_type();
 }
 
 void SemanticAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr) {
@@ -361,8 +356,12 @@ void SemanticAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
     analyze_expr(cast_expr.value);
 }
 
-void SemanticAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
-    analyze_expr(call_expr.callee);
+void SemanticAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::SymbolTable &symbol_table) {
+    if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
+        analyze_dot_expr_callee(*dot_expr, symbol_table, call_expr);
+    } else {
+        analyze_expr(call_expr.callee);
+    }
 
     for (sir::Expr &arg : call_expr.args) {
         analyze_expr(arg);
@@ -371,22 +370,70 @@ void SemanticAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
     call_expr.type = call_expr.callee.get_type().as<sir::FuncType>().return_type;
 }
 
-void SemanticAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr) {
-    analyze_expr(dot_expr.lhs);
+void SemanticAnalyzer::analyze_dot_expr_callee(
+    sir::DotExpr &dot_expr,
+    sir::SymbolTable &symbol_table,
+    sir::CallExpr &out_call_expr
+) {
+    analyze_expr(dot_expr.lhs, symbol_table);
 
-    sir::StructDef &struct_def = dot_expr.lhs.get_type().as<sir::IdentExpr>().symbol.as<sir::StructDef>();
+    if (auto struct_def = dot_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
+        sir::FuncDef &method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value).as<sir::FuncDef>();
 
-    for (unsigned i = 0; i < struct_def.fields.size(); i++) {
-        sir::StructField &field = *struct_def.fields[i];
+        out_call_expr.callee = sir_unit.create_expr(sir::SymbolExpr{
+            .ast_node = dot_expr.rhs.ast_node,
+            .type = &method.type,
+            .symbol = &method,
+        });
 
-        if (field.ident.value == dot_expr.rhs.value) {
-            dot_expr.type = field.type;
-            dot_expr.symbol = &field;
-            return;
+        sir::Expr self_arg = sir_unit.create_expr(sir::UnaryExpr{
+            .ast_node = nullptr,
+            .type = sir_unit.create_expr(sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = dot_expr.lhs.get_type(),
+            }),
+            .op = sir::UnaryOp::REF,
+            .value = dot_expr.lhs,
+        });
+
+        out_call_expr.args.insert(out_call_expr.args.begin(), self_arg);
+    } else if (auto pointer_type = dot_expr.lhs.get_type().match<sir::PointerType>()) {
+        if (auto struct_def = pointer_type->base_type.match_symbol<sir::StructDef>()) {
+            sir::FuncDef &method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value).as<sir::FuncDef>();
+
+            out_call_expr.callee = sir_unit.create_expr(sir::SymbolExpr{
+                .ast_node = dot_expr.rhs.ast_node,
+                .type = &method.type,
+                .symbol = &method,
+            });
+
+            out_call_expr.args.insert(out_call_expr.args.begin(), dot_expr.lhs);
+        } else {
+            analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
         }
+    } else {
+        analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
     }
+}
 
-    ASSERT_UNREACHABLE;
+void SemanticAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr) {
+    analyze_expr(dot_expr.lhs, symbol_table);
+    analyze_dot_expr_rhs(dot_expr, out_expr);
+}
+
+void SemanticAnalyzer::analyze_ident_expr(
+    sir::IdentExpr &ident_expr,
+    sir::SymbolTable &symbol_table,
+    sir::Expr &out_expr
+) {
+    sir::Symbol symbol = symbol_table.look_up(ident_expr.value);
+    assert(symbol);
+
+    out_expr = sir_unit.create_expr(sir::SymbolExpr{
+        .ast_node = ident_expr.ast_node,
+        .type = symbol.get_type(),
+        .symbol = symbol,
+    });
 }
 
 void SemanticAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
@@ -423,6 +470,51 @@ void SemanticAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir:
             .base = bracket_expr.lhs,
             .index = bracket_expr.rhs[0],
         });
+    }
+}
+
+void SemanticAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
+    if (dot_expr.lhs.is_value()) {
+        sir::Expr lhs_type = dot_expr.lhs.get_type();
+
+        if (auto symbol_expr = lhs_type.match<sir::SymbolExpr>()) {
+            sir::StructDef &struct_def = lhs_type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
+            sir::StructField *field = struct_def.find_field(dot_expr.rhs.value);
+
+            out_expr = sir_unit.create_expr(sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = field->type,
+                .base = dot_expr.lhs,
+                .field = field,
+            });
+        } else if (auto pointer_expr = lhs_type.match<sir::PointerType>()) {
+            sir::StructDef &struct_def = pointer_expr->base_type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
+            sir::StructField *field = struct_def.find_field(dot_expr.rhs.value);
+
+            out_expr = sir_unit.create_expr(sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = field->type,
+                .base = sir_unit.create_expr(sir::UnaryExpr{
+                    .ast_node = nullptr,
+                    .type = pointer_expr->base_type,
+                    .op = sir::UnaryOp::DEREF,
+                    .value = dot_expr.lhs,
+                }),
+                .field = field,
+            });
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else if (auto struct_def = dot_expr.lhs.as<sir::SymbolExpr>().symbol.match<sir::StructDef>()) {
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
+
+        out_expr = sir_unit.create_expr(sir::SymbolExpr{
+            .ast_node = dot_expr.ast_node,
+            .type = symbol.get_type(),
+            .symbol = symbol,
+        });
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 

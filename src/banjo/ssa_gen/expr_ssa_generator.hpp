@@ -40,7 +40,7 @@ private:
     StoredValue generate_char_literal(const sir::CharLiteral &char_literal);
     StoredValue generate_string_literal(const sir::StringLiteral &string_literal);
     StoredValue generate_struct_literal(const sir::StructLiteral &struct_literal, const StorageHints &hints);
-    StoredValue generate_ident_expr(const sir::IdentExpr &ident_expr);
+    StoredValue generate_symbol_expr(const sir::SymbolExpr &symbol_expr);
     StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr);
     StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr);
     StoredValue generate_neg(const sir::UnaryExpr &unary_expr);
@@ -49,7 +49,7 @@ private:
     StoredValue generate_cast_expr(const sir::CastExpr &cast_expr);
     StoredValue generate_index_expr(const sir::IndexExpr &index_expr);
     StoredValue generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints);
-    StoredValue generate_dot_expr(const sir::DotExpr &dot_expr);
+    StoredValue generate_field_expr(const sir::FieldExpr &field_expr);
 
     StoredValue generate_bool_expr(const sir::Expr &expr);
     void generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets branch_targets);

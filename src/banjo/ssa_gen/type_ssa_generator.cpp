@@ -13,7 +13,7 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &expr) {
     if (auto primitive_type = expr.match<sir::PrimitiveType>()) return generate_primitive_type(*primitive_type);
     else if (auto pointer_type = expr.match<sir::PointerType>()) return ir::Primitive::ADDR;
     else if (auto func_type = expr.match<sir::FuncType>()) return ir::Primitive::ADDR;
-    else if (auto ident_expr = expr.match<sir::IdentExpr>()) return generate_symbol_type(ident_expr->symbol);
+    else if (auto symbol_expr = expr.match<sir::SymbolExpr>()) return generate_symbol_type(symbol_expr->symbol);
     else ASSERT_UNREACHABLE;
 }
 

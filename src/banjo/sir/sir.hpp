@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -26,19 +27,21 @@ struct BoolLiteral;
 struct CharLiteral;
 struct StringLiteral;
 struct StructLiteral;
-struct IdentExpr;
+struct SymbolExpr;
 struct BinaryExpr;
 struct UnaryExpr;
 struct CastExpr;
 struct IndexExpr;
 struct CallExpr;
-struct DotExpr;
+struct FieldExpr;
 struct RangeExpr;
 struct FuncType;
 struct PrimitiveType;
 struct PointerType;
+struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
+struct DotExpr;
 struct VarStmt;
 struct AssignStmt;
 struct ReturnStmt;
@@ -70,19 +73,21 @@ class Expr {
         CharLiteral *,
         StringLiteral *,
         StructLiteral *,
-        IdentExpr *,
+        SymbolExpr *,
         BinaryExpr *,
         UnaryExpr *,
         CastExpr *,
         IndexExpr *,
         CallExpr *,
-        DotExpr *,
+        FieldExpr *,
         RangeExpr *,
         PrimitiveType *,
         PointerType *,
         FuncType *,
+        IdentExpr *,
         StarExpr *,
         BracketExpr *,
+        DotExpr *,
         std::nullptr_t>
         kind;
 
@@ -119,8 +124,12 @@ public:
         return result ? *result : nullptr;
     }
 
+    template <typename T>
+    T *match_symbol();
+
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 
+    bool is_value() const;
     Expr get_type() const;
 
     bool is_type() const;
@@ -244,6 +253,7 @@ public:
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 
+    const std::string &get_name() const;
     Expr get_type();
 };
 
@@ -319,10 +329,9 @@ struct StructLiteral {
     std::vector<StructLiteralEntry> entries;
 };
 
-struct IdentExpr {
+struct SymbolExpr {
     ASTNode *ast_node;
     Expr type;
-    std::string value;
     Symbol symbol;
 };
 
@@ -389,12 +398,11 @@ struct CallExpr {
     std::vector<Expr> args;
 };
 
-struct DotExpr {
+struct FieldExpr {
     ASTNode *ast_node;
     Expr type;
-    Expr lhs;
-    Ident rhs;
-    Symbol symbol;
+    Expr base;
+    StructField *field;
 };
 
 struct RangeExpr {
@@ -435,6 +443,11 @@ struct FuncType {
     Expr return_type;
 };
 
+struct IdentExpr {
+    ASTNode *ast_node;
+    std::string value;
+};
+
 struct StarExpr {
     ASTNode *ast_node;
     Expr value;
@@ -444,6 +457,12 @@ struct BracketExpr {
     ASTNode *ast_node;
     Expr lhs;
     std::vector<Expr> rhs;
+};
+
+struct DotExpr {
+    ASTNode *ast_node;
+    Expr lhs;
+    Ident rhs;
 };
 
 struct VarStmt {
@@ -529,6 +548,8 @@ struct StructDef {
     Ident ident;
     DeclBlock block;
     std::vector<StructField *> fields;
+
+    StructField *find_field(std::string_view name) const;
 };
 
 struct StructField {
@@ -551,19 +572,21 @@ typedef std::variant<
     CharLiteral,
     StringLiteral,
     StructLiteral,
-    IdentExpr,
+    SymbolExpr,
     BinaryExpr,
     UnaryExpr,
     CastExpr,
     IndexExpr,
     CallExpr,
-    DotExpr,
+    FieldExpr,
     RangeExpr,
     PrimitiveType,
     PointerType,
     FuncType,
+    IdentExpr,
     StarExpr,
-    BracketExpr>
+    BracketExpr,
+    DotExpr>
     ExprStorage;
 
 typedef std::
@@ -597,6 +620,15 @@ struct Unit {
 
     SymbolTable *create_symbol_table(SymbolTable value) { return symbol_table_arena.create(std::move(value)); }
 };
+
+template <typename T>
+T *Expr::match_symbol() {
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        return symbol_expr->symbol.match<T>();
+    } else {
+        return nullptr;
+    }
+}
 
 } // namespace sir
 

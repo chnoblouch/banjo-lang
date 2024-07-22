@@ -24,18 +24,18 @@ SSAGenerator::SSAGenerator(const sir::Unit &sir_unit, target::Target *target) : 
 ssa::Module SSAGenerator::generate() {
     ctx.ssa_mod = &ssa_mod;
 
-    for (const sir::Decl &decl : sir_unit.block.decls) {
+    create_decls(sir_unit.block);
+    generate_decls(sir_unit.block);
+
+    return std::move(ssa_mod);
+}
+
+void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
+    for (const sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) create_func_def(*func_def);
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) create_native_func_decl(*native_func_decl);
         else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_def(*struct_def);
     }
-
-    for (const sir::Decl &decl : sir_unit.block.decls) {
-        if (auto func_def = decl.match<sir::FuncDef>()) generate_func_def(*func_def);
-        else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def(*struct_def);
-    }
-
-    return std::move(ssa_mod);
 }
 
 void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
@@ -69,7 +69,7 @@ std::vector<ssa::Type> SSAGenerator::generate_params(const sir::FuncType &sir_fu
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func_type.return_type);
     ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
-    bool has_return_pointer_arg = return_method != ReturnMethod::VIA_POINTER_ARG;
+    bool has_return_pointer_arg = return_method == ReturnMethod::VIA_POINTER_ARG;
 
     std::vector<ssa::Type> ssa_params;
     ssa_params.reserve(has_return_pointer_arg ? (sir_num_params + 1) : sir_num_params);
@@ -96,10 +96,26 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
     return ssa_return_type;
 }
 
-void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct) {
-    ssa::Structure *ssa_struct = new ssa::Structure(sir_struct.ident.value);
+void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
+    ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
     ssa_mod.add(ssa_struct);
-    ctx.ssa_structs.insert({&sir_struct, ssa_struct});
+    ctx.ssa_structs.insert({&sir_struct_def, ssa_struct});
+
+    for (sir::StructField *sir_field : sir_struct_def.fields) {
+        ssa_struct->add({
+            .name = sir_field->ident.value,
+            .type = TypeSSAGenerator(ctx).generate(sir_field->type),
+        });
+    }
+
+    create_decls(sir_struct_def.block);
+}
+
+void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
+    for (const sir::Decl &decl : decl_block.decls) {
+        if (auto func_def = decl.match<sir::FuncDef>()) generate_func_def(*func_def);
+        else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def(*struct_def);
+    }
 }
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
@@ -172,14 +188,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
 }
 
 void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
-    ssa::Structure *ssa_struct = ctx.ssa_structs[&sir_struct_def];
-
-    for (sir::StructField *sir_field : sir_struct_def.fields) {
-        ssa_struct->add({
-            .name = sir_field->ident.value,
-            .type = TypeSSAGenerator(ctx).generate(sir_field->type),
-        });
-    }
+    generate_decls(sir_struct_def.block);
 }
 
 void SSAGenerator::generate_block(const sir::Block &sir_block) {
@@ -256,7 +265,7 @@ void SSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
 
     ctx.append_jmp(ssa_cond_block);
     ctx.append_block(ssa_cond_block);
-    
+
     ExprSSAGenerator(ctx).generate_branch(loop_stmt.condition, {ssa_body_entry_block, ssa_end_block});
 
     ctx.push_loop_context({

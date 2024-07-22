@@ -1,10 +1,16 @@
 #include "sir.hpp"
 
+#include "banjo/utils/macros.hpp"
+
 namespace banjo {
 
 namespace lang {
 
 namespace sir {
+
+bool Expr::is_value() const {
+    return get_type();
+}
 
 Expr Expr::get_type() const {
     if (auto int_literal = match<IntLiteral>()) return int_literal->type;
@@ -13,12 +19,12 @@ Expr Expr::get_type() const {
     else if (auto char_literal = match<CharLiteral>()) return char_literal->type;
     else if (auto string_literal = match<StringLiteral>()) return string_literal->type;
     else if (auto struct_literal = match<StructLiteral>()) return struct_literal->type;
-    else if (auto ident_expr = match<IdentExpr>()) return ident_expr->type;
+    else if (auto symbol_expr = match<SymbolExpr>()) return symbol_expr->type;
     else if (auto binary_expr = match<BinaryExpr>()) return binary_expr->type;
     else if (auto unary_expr = match<UnaryExpr>()) return unary_expr->type;
     else if (auto cast_expr = match<CastExpr>()) return cast_expr->type;
     else if (auto call_expr = match<CallExpr>()) return call_expr->type;
-    else if (auto dot_expr = match<DotExpr>()) return dot_expr->type;
+    else if (auto field_expr = match<FieldExpr>()) return field_expr->type;
     else if (auto index_expr = match<IndexExpr>()) return index_expr->type;
     else return nullptr;
 }
@@ -85,11 +91,22 @@ bool Expr::is_fp_type() const {
     }
 }
 
+const std::string &Symbol::get_name() const {
+    if (auto func_def = match<FuncDef>()) return func_def->ident.value;
+    else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->ident.value;
+    else if (auto struct_def = match<StructDef>()) return struct_def->ident.value;
+    else if (auto var_stmt = match<VarStmt>()) return var_stmt->name.value;
+    else if (auto param = match<Param>()) return param->name.value;
+    else if (auto struct_field = match<StructField>()) return struct_field->ident.value;
+    else ASSERT_UNREACHABLE;
+}
+
 Expr Symbol::get_type() {
     if (auto func_def = match<FuncDef>()) return &func_def->type;
     else if (auto native_func_decl = match<NativeFuncDecl>()) return &native_func_decl->type;
     else if (auto var_stmt = match<VarStmt>()) return var_stmt->type;
     else if (auto param = match<Param>()) return param->type;
+    else if (auto struct_field = match<StructField>()) return struct_field->type;
     else return nullptr;
 }
 
@@ -104,6 +121,16 @@ Symbol SymbolTable::look_up(std::string_view name) {
 
 bool FuncDef::is_main() const {
     return ident.value == "main";
+}
+
+StructField *StructDef::find_field(std::string_view name) const {
+    for (StructField *field : fields) {
+        if (field->ident.value == name) {
+            return field;
+        }
+    }
+
+    return nullptr;
 }
 
 } // namespace sir

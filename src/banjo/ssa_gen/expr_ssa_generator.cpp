@@ -45,13 +45,13 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
     else if (auto string_literal = expr.match<sir::StringLiteral>()) return generate_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>())
         return generate_struct_literal(*struct_literal, hints);
-    else if (auto ident_expr = expr.match<sir::IdentExpr>()) return generate_ident_expr(*ident_expr);
+    else if (auto symbol_expr = expr.match<sir::SymbolExpr>()) return generate_symbol_expr(*symbol_expr);
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) return generate_binary_expr(*binary_expr, expr);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) return generate_unary_expr(*unary_expr, expr);
     else if (auto cast_expr = expr.match<sir::CastExpr>()) return generate_cast_expr(*cast_expr);
     else if (auto index_expr = expr.match<sir::IndexExpr>()) return generate_index_expr(*index_expr);
     else if (auto call_expr = expr.match<sir::CallExpr>()) return generate_call_expr(*call_expr, hints);
-    else if (auto dot_expr = expr.match<sir::DotExpr>()) return generate_dot_expr(*dot_expr);
+    else if (auto field_expr = expr.match<sir::FieldExpr>()) return generate_field_expr(*field_expr);
     else ASSERT_UNREACHABLE;
 }
 
@@ -130,20 +130,20 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
     return stored_val;
 }
 
-StoredValue ExprSSAGenerator::generate_ident_expr(const sir::IdentExpr &ident_expr) {
-    if (auto func_def = ident_expr.symbol.match<sir::FuncDef>()) {
+StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol_expr) {
+    if (auto func_def = symbol_expr.symbol.match<sir::FuncDef>()) {
         ssa::Function *ssa_func = ctx.ssa_funcs[func_def];
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
-    } else if (auto native_func_decl = ident_expr.symbol.match<sir::NativeFuncDecl>()) {
+    } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
         ssa::Value ssa_value = ssa::Value::from_extern_func(native_func_decl->ident.value, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
-    } else if (auto var_stmt = ident_expr.symbol.match<sir::VarStmt>()) {
+    } else if (auto var_stmt = symbol_expr.symbol.match<sir::VarStmt>()) {
         ssa::VirtualRegister reg = ctx.ssa_var_regs[var_stmt];
         ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(var_stmt->type);
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         return StoredValue::create_reference(ssa_ptr, ssa_type);
-    } else if (auto param = ident_expr.symbol.match<sir::Param>()) {
+    } else if (auto param = symbol_expr.symbol.match<sir::Param>()) {
         ssa::VirtualRegister slot = ctx.ssa_param_slots[param];
         ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
         ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param->type);
@@ -236,7 +236,7 @@ StoredValue ExprSSAGenerator::generate_ref(const sir::UnaryExpr &unary_expr) {
 
 StoredValue ExprSSAGenerator::generate_deref(const sir::UnaryExpr &unary_expr) {
     StoredValue ssa_val = generate(unary_expr.value).try_turn_into_value(ctx);
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(unary_expr.value.get_type());
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(unary_expr.type);
     return StoredValue::create_reference(ssa_val.value_or_ptr, ssa_type);
 }
 
@@ -326,10 +326,10 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     }
 }
 
-StoredValue ExprSSAGenerator::generate_dot_expr(const sir::DotExpr &dot_expr) {
-    const sir::StructField &field = dot_expr.symbol.as<sir::StructField>();
+StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_expr) {
+    const sir::StructField &field = *field_expr.field;
 
-    StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate(dot_expr.lhs, StorageHints::prefer_reference());
+    StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate(field_expr.base, StorageHints::prefer_reference());
     ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(ssa_lhs.value_type, ssa_lhs.get_ptr(), field.index);
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field.type);
 

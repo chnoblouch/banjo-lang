@@ -51,19 +51,21 @@ private:
     void print_char_literal(const CharLiteral &char_literal);
     void print_string_literal(const StringLiteral &string_literal);
     void print_struct_literal(const StructLiteral &struct_literal);
-    void print_ident_expr(const IdentExpr &ident_expr);
+    void print_symbol_expr(const SymbolExpr &symbol_expr);
     void print_binary_expr(const BinaryExpr &binary_expr);
     void print_unary_expr(const UnaryExpr &unary_expr);
     void print_cast_expr(const CastExpr &cast_expr);
     void print_index_expr(const IndexExpr &index_expr);
     void print_call_expr(const CallExpr &call_expr);
-    void print_dot_expr(const DotExpr &dot_expr);
+    void print_field_expr(const FieldExpr &field_expr);
     void print_range_expr(const RangeExpr &range_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
     void print_pointer_type(const PointerType &pointer_type);
     void print_func_type(const FuncType &func_type);
+    void print_ident_expr(const IdentExpr &ident_expr);
     void print_star_expr(const StarExpr &star_expr);
     void print_bracket_expr(const BracketExpr &bracket_expr);
+    void print_dot_expr(const DotExpr &dot_expr);
 
     std::string get_indent();
     void new_line();
