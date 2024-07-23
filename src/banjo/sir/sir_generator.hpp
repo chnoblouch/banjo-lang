@@ -56,6 +56,7 @@ private:
     sir::Stmt generate_var_stmt(ASTNode *node);
     sir::Stmt generate_typeless_var_stmt(ASTNode *node);
     sir::Stmt generate_assign_stmt(ASTNode *node);
+    sir::Stmt generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op);
     sir::Stmt generate_return_stmt(ASTNode *node);
     sir::Stmt generate_if_stmt(ASTNode *node);
     sir::Stmt generate_while_stmt(ASTNode *node);

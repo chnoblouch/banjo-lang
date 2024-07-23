@@ -14,6 +14,8 @@ StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 void StmtAnalyzer::analyze(sir::Stmt &stmt) {
     if (auto var_stmt = stmt.match<sir::VarStmt>()) analyze_var_stmt(*var_stmt);
     else if (auto assign_stmt = stmt.match<sir::AssignStmt>()) analyze_assign_stmt(*assign_stmt);
+    else if (auto comp_assign_stmt = stmt.match<sir::CompAssignStmt>())
+        analyze_comp_assign_stmt(*comp_assign_stmt, stmt);
     else if (auto return_stmt = stmt.match<sir::ReturnStmt>()) analyze_return_stmt(*return_stmt);
     else if (auto if_stmt = stmt.match<sir::IfStmt>()) analyze_if_stmt(*if_stmt);
     else if (auto while_stmt = stmt.match<sir::WhileStmt>()) analyze_while_stmt(*while_stmt, stmt);
@@ -53,6 +55,23 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
     ExprAnalyzer(analyzer).analyze(assign_stmt.lhs);
     ExprAnalyzer(analyzer).analyze(assign_stmt.rhs);
+}
+
+void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
+    sir::AssignStmt *assign_stmt = analyzer.create_stmt(sir::AssignStmt{
+        .ast_node = comp_assign_stmt.ast_node,
+        .lhs = comp_assign_stmt.lhs,
+        .rhs = analyzer.create_expr(sir::BinaryExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .op = comp_assign_stmt.op,
+            .lhs = comp_assign_stmt.lhs,
+            .rhs = comp_assign_stmt.rhs,
+        }),
+    });
+
+    analyze_assign_stmt(*assign_stmt);
+    out_stmt = assign_stmt;
 }
 
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {

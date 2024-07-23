@@ -45,6 +45,7 @@ struct BracketExpr;
 struct DotExpr;
 struct VarStmt;
 struct AssignStmt;
+struct CompAssignStmt;
 struct ReturnStmt;
 struct IfStmt;
 struct WhileStmt;
@@ -155,6 +156,7 @@ private:
     std::variant<
         VarStmt *,
         AssignStmt *,
+        CompAssignStmt *,
         ReturnStmt *,
         IfStmt *,
         WhileStmt *,
@@ -522,6 +524,13 @@ struct AssignStmt {
     Expr rhs;
 };
 
+struct CompAssignStmt {
+    ASTNode *ast_node;
+    BinaryOp op;
+    Expr lhs;
+    Expr rhs;
+};
+
 struct ReturnStmt {
     ASTNode *ast_node;
     Expr value;
@@ -662,9 +671,20 @@ typedef std::variant<
     DotExpr>
     ExprStorage;
 
-typedef std::
-    variant<VarStmt, AssignStmt, ReturnStmt, IfStmt, WhileStmt, ForStmt, LoopStmt, ContinueStmt, BreakStmt, Expr, Block>
-        StmtStorage;
+typedef std::variant<
+    VarStmt,
+    AssignStmt,
+    CompAssignStmt,
+    ReturnStmt,
+    IfStmt,
+    WhileStmt,
+    ForStmt,
+    LoopStmt,
+    ContinueStmt,
+    BreakStmt,
+    Expr,
+    Block>
+    StmtStorage;
 
 typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl, UseDecl> DeclStorage;
 

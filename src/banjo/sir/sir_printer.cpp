@@ -186,6 +186,7 @@ void Printer::print_block(const Block &block) {
 void Printer::print_stmt(const Stmt &stmt) {
     if (auto var_stmt = stmt.match<VarStmt>()) print_var_stmt(*var_stmt);
     else if (auto assign_stmt = stmt.match<AssignStmt>()) print_assign_stmt(*assign_stmt);
+    else if (auto comp_assign_stmt = stmt.match<CompAssignStmt>()) print_comp_assign_stmt(*comp_assign_stmt);
     else if (auto return_stmt = stmt.match<ReturnStmt>()) print_return_stmt(*return_stmt);
     else if (auto if_stmt = stmt.match<IfStmt>()) print_if_stmt(*if_stmt);
     else if (auto while_stmt = stmt.match<WhileStmt>()) print_while_stmt(*while_stmt);
@@ -210,6 +211,14 @@ void Printer::print_assign_stmt(const AssignStmt &assign_stmt) {
     BEGIN_OBJECT("AssignStmt");
     PRINT_EXPR_FIELD("lhs", assign_stmt.lhs);
     PRINT_EXPR_FIELD("rhs", assign_stmt.rhs);
+    END_OBJECT();
+}
+
+void Printer::print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt) {
+    BEGIN_OBJECT("CompAssignStmt");
+    print_binary_op("op", comp_assign_stmt.op);
+    PRINT_EXPR_FIELD("lhs", comp_assign_stmt.lhs);
+    PRINT_EXPR_FIELD("rhs", comp_assign_stmt.rhs);
     END_OBJECT();
 }
 
@@ -384,29 +393,8 @@ void Printer::print_symbol_expr(const SymbolExpr &symbol_expr) {
 
 void Printer::print_binary_expr(const BinaryExpr &binary_expr) {
     BEGIN_OBJECT("BinaryExpr");
-
-    switch (binary_expr.op) {
-        case BinaryOp::ADD: PRINT_FIELD("op", "ADD"); break;
-        case BinaryOp::SUB: PRINT_FIELD("op", "SUB"); break;
-        case BinaryOp::MUL: PRINT_FIELD("op", "MUL"); break;
-        case BinaryOp::DIV: PRINT_FIELD("op", "DIV"); break;
-        case BinaryOp::MOD: PRINT_FIELD("op", "MOD"); break;
-        case BinaryOp::BIT_AND: PRINT_FIELD("op", "BIT_AND"); break;
-        case BinaryOp::BIT_OR: PRINT_FIELD("op", "BIT_OR"); break;
-        case BinaryOp::BIT_XOR: PRINT_FIELD("op", "BIT_XOR"); break;
-        case BinaryOp::SHL: PRINT_FIELD("op", "SHL"); break;
-        case BinaryOp::SHR: PRINT_FIELD("op", "SHR"); break;
-        case BinaryOp::EQ: PRINT_FIELD("op", "EQ"); break;
-        case BinaryOp::NE: PRINT_FIELD("op", "NE"); break;
-        case BinaryOp::GT: PRINT_FIELD("op", "GT"); break;
-        case BinaryOp::LT: PRINT_FIELD("op", "LT"); break;
-        case BinaryOp::GE: PRINT_FIELD("op", "GE"); break;
-        case BinaryOp::LE: PRINT_FIELD("op", "LE"); break;
-        case BinaryOp::AND: PRINT_FIELD("op", "AND"); break;
-        case BinaryOp::OR: PRINT_FIELD("op", "OR"); break;
-    }
-
     PRINT_EXPR_FIELD("type", binary_expr.type);
+    print_binary_op("op", binary_expr.op);
     PRINT_EXPR_FIELD("lhs", binary_expr.lhs);
     PRINT_EXPR_FIELD("rhs", binary_expr.rhs);
     END_OBJECT();
@@ -548,6 +536,29 @@ void Printer::print_dot_expr(const DotExpr &dot_expr) {
     PRINT_EXPR_FIELD("lhs", dot_expr.lhs);
     PRINT_FIELD("rhs", dot_expr.rhs.value);
     END_OBJECT();
+}
+
+void Printer::print_binary_op(const char *field_name, BinaryOp op) {
+    switch (op) {
+        case BinaryOp::ADD: PRINT_FIELD(field_name, "ADD"); break;
+        case BinaryOp::SUB: PRINT_FIELD(field_name, "SUB"); break;
+        case BinaryOp::MUL: PRINT_FIELD(field_name, "MUL"); break;
+        case BinaryOp::DIV: PRINT_FIELD(field_name, "DIV"); break;
+        case BinaryOp::MOD: PRINT_FIELD(field_name, "MOD"); break;
+        case BinaryOp::BIT_AND: PRINT_FIELD(field_name, "BIT_AND"); break;
+        case BinaryOp::BIT_OR: PRINT_FIELD(field_name, "BIT_OR"); break;
+        case BinaryOp::BIT_XOR: PRINT_FIELD(field_name, "BIT_XOR"); break;
+        case BinaryOp::SHL: PRINT_FIELD(field_name, "SHL"); break;
+        case BinaryOp::SHR: PRINT_FIELD(field_name, "SHR"); break;
+        case BinaryOp::EQ: PRINT_FIELD(field_name, "EQ"); break;
+        case BinaryOp::NE: PRINT_FIELD(field_name, "NE"); break;
+        case BinaryOp::GT: PRINT_FIELD(field_name, "GT"); break;
+        case BinaryOp::LT: PRINT_FIELD(field_name, "LT"); break;
+        case BinaryOp::GE: PRINT_FIELD(field_name, "GE"); break;
+        case BinaryOp::LE: PRINT_FIELD(field_name, "LE"); break;
+        case BinaryOp::AND: PRINT_FIELD(field_name, "AND"); break;
+        case BinaryOp::OR: PRINT_FIELD(field_name, "OR"); break;
+    }
 }
 
 std::string Printer::get_indent() {

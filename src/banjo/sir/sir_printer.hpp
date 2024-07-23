@@ -43,6 +43,7 @@ private:
     void print_stmt(const Stmt &stmt);
     void print_var_stmt(const VarStmt &var_stmt);
     void print_assign_stmt(const AssignStmt &assign_stmt);
+    void print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     void print_return_stmt(const ReturnStmt &return_stmt);
     void print_if_stmt(const IfStmt &if_stmt);
     void print_while_stmt(const WhileStmt &while_stmt);
@@ -75,6 +76,8 @@ private:
     void print_star_expr(const StarExpr &star_expr);
     void print_bracket_expr(const BracketExpr &bracket_expr);
     void print_dot_expr(const DotExpr &dot_expr);
+
+    void print_binary_op(const char *field_name, BinaryOp op);
 
     std::string get_indent();
     void new_line();

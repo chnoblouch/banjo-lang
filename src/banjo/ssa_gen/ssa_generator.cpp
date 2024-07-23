@@ -239,8 +239,10 @@ void SSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {
     ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
     ctx.ssa_var_regs.insert({&var_stmt, reg});
 
-    ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
-    ExprSSAGenerator(ctx).generate_into_dst(var_stmt.value, ssa_ptr);
+    if (var_stmt.value) {
+        ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
+        ExprSSAGenerator(ctx).generate_into_dst(var_stmt.value, ssa_ptr);
+    }
 }
 
 void SSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt) {

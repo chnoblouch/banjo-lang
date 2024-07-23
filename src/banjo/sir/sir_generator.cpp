@@ -212,6 +212,16 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
     switch (node->get_type()) {
         case AST_VAR: return generate_var_stmt(node);
         case AST_ASSIGNMENT: return generate_assign_stmt(node);
+        case AST_ADD_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::ADD);
+        case AST_SUB_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SUB);
+        case AST_MUL_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::MUL);
+        case AST_DIV_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::DIV);
+        case AST_MOD_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::MOD);
+        case AST_BIT_AND_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_AND);
+        case AST_BIT_OR_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_OR);
+        case AST_BIT_XOR_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_XOR);
+        case AST_SHL_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SHL);
+        case AST_SHR_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SHR);
         case AST_IMPLICIT_TYPE_VAR: return generate_typeless_var_stmt(node);
         case AST_FUNCTION_RETURN: return generate_return_stmt(node);
         case AST_IF_CHAIN: return generate_if_stmt(node);
@@ -246,6 +256,15 @@ sir::Stmt SIRGenerator::generate_typeless_var_stmt(ASTNode *node) {
 sir::Stmt SIRGenerator::generate_assign_stmt(ASTNode *node) {
     return create_stmt(sir::AssignStmt{
         .ast_node = node,
+        .lhs = generate_expr(node->get_child(ASSIGN_LOCATION)),
+        .rhs = generate_expr(node->get_child(ASSIGN_VALUE)),
+    });
+}
+
+sir::Stmt SIRGenerator::generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op) {
+    return create_stmt(sir::CompAssignStmt{
+        .ast_node = node,
+        .op = op,
         .lhs = generate_expr(node->get_child(ASSIGN_LOCATION)),
         .rhs = generate_expr(node->get_child(ASSIGN_VALUE)),
     });
