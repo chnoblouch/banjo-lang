@@ -9,6 +9,7 @@
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
+#include "name_mangling.hpp"
 
 #include <utility>
 
@@ -29,7 +30,9 @@ ssa::Module SSAGenerator::generate() {
     }
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
+        ctx.push_decl_context().sir_mod = sir_mod;
         create_decls(sir_mod->block);
+        ctx.pop_decl_context();
     }
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
@@ -62,7 +65,7 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
-    std::string ssa_name = sir_func.ident.value;
+    std::string ssa_name = NameMangling::mangle_func_name(ctx, sir_func);
     std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
     ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
 
@@ -129,7 +132,9 @@ void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
         });
     }
 
+    ctx.push_decl_context().sir_struct_def = &sir_struct_def;
     create_decls(sir_struct_def.block);
+    ctx.pop_decl_context();
 }
 
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {

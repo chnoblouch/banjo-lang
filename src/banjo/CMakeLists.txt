@@ -132,6 +132,7 @@ add_library(banjo STATIC
     source/module_manager.cpp
     source/text_range.cpp
     ssa_gen/expr_ssa_generator.cpp
+    ssa_gen/name_mangling.cpp
     ssa_gen/ssa_generator_context.cpp
     ssa_gen/ssa_generator_utils.cpp
     ssa_gen/ssa_generator.cpp

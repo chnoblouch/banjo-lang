@@ -12,6 +12,11 @@ namespace lang {
 
 SSAGeneratorContext::SSAGeneratorContext(target::Target *target) : target(target) {}
 
+SSAGeneratorContext::DeclContext &SSAGeneratorContext::push_decl_context() {
+    decl_contexts.push_front({});
+    return decl_contexts.front();
+}
+
 void SSAGeneratorContext::push_func_context(ssa::Function *ssa_func) {
     func_contexts.push({
         .ssa_func = ssa_func,

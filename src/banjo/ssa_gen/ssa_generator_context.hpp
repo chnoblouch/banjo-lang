@@ -9,7 +9,9 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 
+#include <deque>
 #include <stack>
+
 
 namespace banjo {
 
@@ -24,6 +26,11 @@ enum class ReturnMethod {
 class SSAGeneratorContext {
 
 public:
+    struct DeclContext {
+        const sir::Module *sir_mod = nullptr;
+        const sir::StructDef *sir_struct_def = nullptr;
+    };
+
     struct FuncContext {
         ssa::Function *ssa_func;
         ssa::BasicBlockIter ssa_block;
@@ -41,6 +48,7 @@ public:
     target::Target *target;
 
     ssa::Module *ssa_mod;
+    std::deque<DeclContext> decl_contexts;
     std::stack<FuncContext> func_contexts;
     std::stack<LoopContext> loop_contexts;
 
@@ -54,6 +62,10 @@ public:
     int block_id = 0;
 
     SSAGeneratorContext(target::Target *target);
+
+    const std::deque<DeclContext> &get_decl_contexts() { return decl_contexts; }
+    DeclContext &push_decl_context();
+    void pop_decl_context() { decl_contexts.pop_front(); }
 
     FuncContext &get_func_context() { return func_contexts.top(); }
     void push_func_context(ssa::Function *ssa_func);
