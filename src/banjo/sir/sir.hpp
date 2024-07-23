@@ -1,6 +1,7 @@
 #ifndef SIR_H
 #define SIR_H
 
+#include "banjo/symbol/module_path.hpp"
 #include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
 
@@ -57,13 +58,22 @@ struct StructDef;
 struct StructField;
 struct VarDecl;
 struct Param;
+struct UseDecl;
+struct UseIdent;
+struct UseDotExpr;
+struct UseRebind;
+struct UseList;
 
 struct Block;
+struct SymbolTable;
+struct Ident;
+struct Module;
 
 class Expr;
 class Stmt;
 class Decl;
 class Symbol;
+class UseItem;
 
 class Expr {
     std::variant<
@@ -181,7 +191,7 @@ public:
 class Decl {
 
 private:
-    std::variant<FuncDef *, NativeFuncDecl *, StructDef *, StructField *, VarDecl *, std::nullptr_t> kind;
+    std::variant<FuncDef *, NativeFuncDecl *, StructDef *, StructField *, VarDecl *, UseDecl *, std::nullptr_t> kind;
 
 public:
     Decl() : kind(nullptr) {}
@@ -218,7 +228,19 @@ public:
 };
 
 class Symbol {
-    std::variant<FuncDef *, NativeFuncDecl *, StructDef *, VarStmt *, Param *, StructField *, std::nullptr_t> kind;
+    std::variant<
+        Module *,
+        FuncDef *,
+        NativeFuncDecl *,
+        StructDef *,
+        StructField *,
+        VarDecl *,
+        UseIdent *,
+        UseRebind *,
+        VarStmt *,
+        Param *,
+        std::nullptr_t>
+        kind;
 
 public:
     template <typename T>
@@ -255,13 +277,28 @@ public:
 
     const std::string &get_name() const;
     Expr get_type();
+    Symbol resolve();
+    SymbolTable *get_symbol_table();
 };
 
-struct SymbolTable {
-    SymbolTable *parent;
-    std::unordered_map<std::string_view, Symbol> symbols;
+class UseItem {
+    std::variant<UseIdent *, UseRebind *, UseDotExpr *, UseList *> kind;
 
-    Symbol look_up(std::string_view name);
+public:
+    template <typename T>
+    UseItem(T value) : kind(std::move(value)) {}
+
+    template <typename T>
+    T *match() {
+        auto result = std::get_if<T *>(&kind);
+        return result ? *result : nullptr;
+    }
+
+    template <typename T>
+    const T *match() const {
+        auto result = std::get_if<T *>(&kind);
+        return result ? *result : nullptr;
+    }
 };
 
 struct DeclBlock {
@@ -274,6 +311,13 @@ struct Block {
     ASTNode *ast_node;
     std::vector<Stmt> stmts;
     SymbolTable *symbol_table;
+};
+
+struct SymbolTable {
+    SymbolTable *parent;
+    std::unordered_map<std::string_view, Symbol> symbols;
+
+    Symbol look_up(std::string_view name);
 };
 
 struct Ident {
@@ -565,6 +609,35 @@ struct VarDecl {
     Expr type;
 };
 
+struct UseDecl {
+    ASTNode *ast_node;
+    UseItem root_item;
+};
+
+struct UseIdent {
+    ASTNode *ast_node;
+    std::string value;
+    Symbol symbol;
+};
+
+struct UseRebind {
+    ASTNode *ast_node;
+    Ident target_ident;
+    Ident local_ident;
+    Symbol symbol;
+};
+
+struct UseDotExpr {
+    ASTNode *ast_node;
+    UseItem lhs;
+    UseItem rhs;
+};
+
+struct UseList {
+    ASTNode *ast_node;
+    std::vector<UseItem> items;
+};
+
 typedef std::variant<
     IntLiteral,
     FPLiteral,
@@ -593,15 +666,20 @@ typedef std::
     variant<VarStmt, AssignStmt, ReturnStmt, IfStmt, WhileStmt, ForStmt, LoopStmt, ContinueStmt, BreakStmt, Expr, Block>
         StmtStorage;
 
-typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl> DeclStorage;
+typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl, UseDecl> DeclStorage;
 
-struct Unit {
+typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;
+
+struct Module {
     utils::GrowableArena<ExprStorage> expr_arena;
     utils::GrowableArena<StmtStorage> stmt_arena;
     utils::GrowableArena<DeclStorage> decl_arena;
+    utils::GrowableArena<UseItemStorage> use_item_arena;
     utils::GrowableArena<SymbolTable> symbol_table_arena;
 
+    ModulePath path;
     DeclBlock block;
+    std::vector<sir::Module *> sub_mods;
 
     template <typename T>
     T *create_expr(T value) {
@@ -618,7 +696,20 @@ struct Unit {
         return &std::get<T>(*decl_arena.create(std::move(value)));
     }
 
+    template <typename T>
+    T *create_use_item(T value) {
+        return &std::get<T>(*use_item_arena.create(std::move(value)));
+    }
+
     SymbolTable *create_symbol_table(SymbolTable value) { return symbol_table_arena.create(std::move(value)); }
+};
+
+struct Unit {
+    utils::GrowableArena<Module> mod_arena;
+    std::vector<Module *> mods;
+    std::unordered_map<ModulePath, Module *> mods_by_path;
+
+    Module *create_mod() { return mod_arena.create(); }
 };
 
 template <typename T>

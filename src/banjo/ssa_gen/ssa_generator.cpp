@@ -24,10 +24,33 @@ SSAGenerator::SSAGenerator(const sir::Unit &sir_unit, target::Target *target) : 
 ssa::Module SSAGenerator::generate() {
     ctx.ssa_mod = &ssa_mod;
 
-    create_decls(sir_unit.block);
-    generate_decls(sir_unit.block);
+    for (const sir::Module *sir_mod : sir_unit.mods) {
+        create_types(sir_mod->block);
+    }
+
+    for (const sir::Module *sir_mod : sir_unit.mods) {
+        create_decls(sir_mod->block);
+    }
+
+    for (const sir::Module *sir_mod : sir_unit.mods) {
+        generate_decls(sir_mod->block);
+    }
 
     return std::move(ssa_mod);
+}
+
+void SSAGenerator::create_types(const sir::DeclBlock &decl_block) {
+    for (const sir::Decl &decl : decl_block.decls) {
+        if (auto struct_def = decl.match<sir::StructDef>()) create_struct_type(*struct_def);
+    }
+}
+
+void SSAGenerator::create_struct_type(const sir::StructDef &sir_struct_def) {
+    ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
+    ssa_mod.add(ssa_struct);
+    ctx.ssa_structs.insert({&sir_struct_def, ssa_struct});
+
+    create_types(sir_struct_def.block);
 }
 
 void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
@@ -97,9 +120,7 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
 }
 
 void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
-    ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
-    ssa_mod.add(ssa_struct);
-    ctx.ssa_structs.insert({&sir_struct_def, ssa_struct});
+    ssa::Structure *ssa_struct = ctx.ssa_structs[&sir_struct_def];
 
     for (sir::StructField *sir_field : sir_struct_def.fields) {
         ssa_struct->add({

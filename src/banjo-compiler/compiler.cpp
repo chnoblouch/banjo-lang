@@ -59,7 +59,10 @@ void Compiler::compile() {
 ir::Module Compiler::run_frontend() {
     PROFILE_SECTION_BEGIN("FRONTEND");
 
+#ifndef BANJO_ENABLE_SIR
     module_manager.add_standard_stdlib_search_path();
+#endif
+
     module_manager.add_config_search_paths(config);
     module_manager.load_all();
 
@@ -69,7 +72,7 @@ ir::Module Compiler::run_frontend() {
     }
 
 #if BANJO_ENABLE_SIR
-    sir::Unit sir_unit = SIRGenerator().generate(module_manager.get_module_list().get_by_path({"main"}));
+    sir::Unit sir_unit = SIRGenerator().generate(module_manager.get_module_list());
     std::ofstream sir_file_generated("logs/sir.generated.txt");
     sir::Printer(sir_file_generated).print(sir_unit);
     sir_file_generated.close();

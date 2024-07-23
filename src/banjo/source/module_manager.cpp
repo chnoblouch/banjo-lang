@@ -140,6 +140,8 @@ void ModuleManager::link_sub_module(ASTModule *mod, ASTModule *sub_mod) {
     std::string name = sub_mod->get_path().get_path().back();
     SymbolRef symbol = SymbolRef(sub_mod).as_sub_module();
     symbol_table->add_symbol(name, symbol);
+
+    mod->add_sub_mod(sub_mod);
 }
 
 ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {

@@ -9,11 +9,11 @@ namespace lang {
 
 TypeSSAGenerator::TypeSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
-ssa::Type TypeSSAGenerator::generate(const sir::Expr &expr) {
-    if (auto primitive_type = expr.match<sir::PrimitiveType>()) return generate_primitive_type(*primitive_type);
-    else if (auto pointer_type = expr.match<sir::PointerType>()) return ir::Primitive::ADDR;
-    else if (auto func_type = expr.match<sir::FuncType>()) return ir::Primitive::ADDR;
-    else if (auto symbol_expr = expr.match<sir::SymbolExpr>()) return generate_symbol_type(symbol_expr->symbol);
+ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
+    if (auto primitive_type = type.match<sir::PrimitiveType>()) return generate_primitive_type(*primitive_type);
+    else if (auto pointer_type = type.match<sir::PointerType>()) return ir::Primitive::ADDR;
+    else if (auto func_type = type.match<sir::FuncType>()) return ir::Primitive::ADDR;
+    else if (auto symbol_expr = type.match<sir::SymbolExpr>()) return generate_symbol_type(symbol_expr->symbol);
     else ASSERT_UNREACHABLE;
 }
 

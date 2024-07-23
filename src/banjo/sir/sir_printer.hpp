@@ -22,6 +22,8 @@ public:
     void print(const Unit &unit);
 
 private:
+    void print_mod(const Module &mod);
+
     void print_decl_block(const DeclBlock &decl_block);
     void print_decl(const Decl &decl);
     void print_func_def(const FuncDef &func_def);
@@ -29,6 +31,13 @@ private:
     void print_struct_def(const StructDef &struct_def);
     void print_struct_field(const StructField &struct_field);
     void print_var_decl(const VarDecl &var_decl);
+    void print_use_decl(const UseDecl &use_decl);
+
+    void print_use_item(const UseItem &use_item);
+    void print_use_ident(const UseIdent &use_ident);
+    void print_use_rebind(const UseRebind &use_rebind);
+    void print_use_dot_expr(const UseDotExpr &use_dot_expr);
+    void print_use_list(const UseList &use_list);
 
     void print_block(const Block &block);
     void print_stmt(const Stmt &stmt);

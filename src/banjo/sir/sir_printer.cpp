@@ -41,9 +41,21 @@ namespace sir {
 Printer::Printer(std::ostream &stream) : stream(stream) {}
 
 void Printer::print(const Unit &unit) {
+    BEGIN_OBJECT("Unit");
+    BEGIN_LIST_FIELD("mods");
+
+    for (const Module *mod : unit.mods) {
+        INDENT_LIST_ELEMENT();
+        print_mod(*mod);
+    }
+
+    END_LIST_FIELD();
+}
+
+void Printer::print_mod(const Module &mod) {
     BEGIN_OBJECT("Module");
     PRINT_FIELD_NAME("block");
-    print_decl_block(unit.block);
+    print_decl_block(mod.block);
     END_OBJECT();
 }
 
@@ -65,6 +77,7 @@ void Printer::print_decl(const Decl &decl) {
     else if (auto struct_def = decl.match<StructDef>()) print_struct_def(*struct_def);
     else if (auto struct_field = decl.match<StructField>()) print_struct_field(*struct_field);
     else if (auto var_decl = decl.match<VarDecl>()) print_var_decl(*var_decl);
+    else if (auto use_decl = decl.match<UseDecl>()) print_use_decl(*use_decl);
     else ASSERT_UNREACHABLE;
 }
 
@@ -105,6 +118,56 @@ void Printer::print_var_decl(const VarDecl &var_decl) {
     BEGIN_OBJECT("VarDecl");
     PRINT_FIELD("ident", var_decl.ident.value);
     PRINT_EXPR_FIELD("type", var_decl.type);
+    END_OBJECT();
+}
+
+void Printer::print_use_decl(const UseDecl &use_decl) {
+    BEGIN_OBJECT("UseDecl");
+    PRINT_FIELD_NAME("root_item");
+    print_use_item(use_decl.root_item);
+    END_OBJECT();
+}
+
+void Printer::print_use_item(const UseItem &use_item) {
+    if (auto use_ident = use_item.match<sir::UseIdent>()) print_use_ident(*use_ident);
+    else if (auto use_rebind = use_item.match<sir::UseRebind>()) print_use_rebind(*use_rebind);
+    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) print_use_dot_expr(*use_dot_expr);
+    else if (auto use_list = use_item.match<sir::UseList>()) print_use_list(*use_list);
+    else ASSERT_UNREACHABLE;
+}
+
+void Printer::print_use_ident(const UseIdent &use_ident) {
+    BEGIN_OBJECT("UseIdent");
+    PRINT_FIELD("value", use_ident.value);
+    END_OBJECT();
+}
+
+void Printer::print_use_rebind(const UseRebind &use_rebind) {
+    BEGIN_OBJECT("UseRebind");
+    PRINT_FIELD("target", use_rebind.target_ident.value);
+    PRINT_FIELD("local", use_rebind.local_ident.value);
+    END_OBJECT();
+}
+
+void Printer::print_use_dot_expr(const UseDotExpr &use_dot_expr) {
+    BEGIN_OBJECT("UseDotExpr");
+    PRINT_FIELD_NAME("lhs");
+    print_use_item(use_dot_expr.lhs);
+    PRINT_FIELD_NAME("rhs");
+    print_use_item(use_dot_expr.rhs);
+    END_OBJECT();
+}
+
+void Printer::print_use_list(const UseList &use_list) {
+    BEGIN_OBJECT("UseList");
+    BEGIN_LIST_FIELD("items");
+
+    for (const UseItem &item : use_list.items) {
+        INDENT_LIST_ELEMENT();
+        print_use_item(item);
+    }
+
+    END_LIST_FIELD();
     END_OBJECT();
 }
 

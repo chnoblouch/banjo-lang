@@ -95,18 +95,32 @@ const std::string &Symbol::get_name() const {
     if (auto func_def = match<FuncDef>()) return func_def->ident.value;
     else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->ident.value;
     else if (auto struct_def = match<StructDef>()) return struct_def->ident.value;
+    else if (auto struct_field = match<StructField>()) return struct_field->ident.value;
+    else if (auto var_decl = match<VarDecl>()) return var_decl->ident.value;
     else if (auto var_stmt = match<VarStmt>()) return var_stmt->name.value;
     else if (auto param = match<Param>()) return param->name.value;
-    else if (auto struct_field = match<StructField>()) return struct_field->ident.value;
     else ASSERT_UNREACHABLE;
 }
 
 Expr Symbol::get_type() {
     if (auto func_def = match<FuncDef>()) return &func_def->type;
     else if (auto native_func_decl = match<NativeFuncDecl>()) return &native_func_decl->type;
+    else if (auto struct_field = match<StructField>()) return struct_field->type;
+    else if (auto var_decl = match<VarDecl>()) return var_decl->type;
     else if (auto var_stmt = match<VarStmt>()) return var_stmt->type;
     else if (auto param = match<Param>()) return param->type;
-    else if (auto struct_field = match<StructField>()) return struct_field->type;
+    else return nullptr;
+}
+
+Symbol Symbol::resolve() {
+    if (auto use_ident = match<UseIdent>()) return use_ident->symbol;
+    else if (auto use_rebind = match<UseRebind>()) return use_rebind->symbol;
+    else return *this;
+}
+
+SymbolTable *Symbol::get_symbol_table() {
+    if (auto mod = match<Module>()) return mod->block.symbol_table;
+    else if (auto struct_def = match<StructDef>()) return struct_def->block.symbol_table;
     else return nullptr;
 }
 
@@ -115,7 +129,7 @@ Symbol SymbolTable::look_up(std::string_view name) {
     if (iter == symbols.end()) {
         return parent ? parent->look_up(name) : nullptr;
     } else {
-        return iter->second;
+        return iter->second.resolve();
     }
 }
 

@@ -2,8 +2,10 @@
 #define SIR_GENERATOR_H
 
 #include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/module_list.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <unordered_map>
 #include <vector>
 
 namespace banjo {
@@ -19,10 +21,12 @@ private:
     };
 
     sir::Unit sir_unit;
+    sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
+    std::unordered_map<ASTModule *, sir::Module *> mod_map;
 
 public:
-    sir::Unit generate(ASTModule *mod);
+    sir::Unit generate(ModuleList &mod_list);
 
 private:
     Scope &get_scope() { return scopes.top(); }
@@ -34,12 +38,15 @@ private:
 
     void pop_scope() { scopes.pop(); }
 
+    sir::Module *generate_mod(ASTModule *node);
+
     sir::DeclBlock generate_decl_block(ASTNode *node);
     sir::Decl generate_decl(ASTNode *node);
     sir::Decl generate_func(ASTNode *node);
     sir::Decl generate_native_func(ASTNode *node);
     sir::Decl generate_struct(ASTNode *node);
     sir::Decl generate_var_decl(ASTNode *node);
+    sir::Decl generate_use_decl(ASTNode *node);
 
     sir::Ident generate_ident(ASTNode *node);
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
@@ -77,6 +84,36 @@ private:
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
 
     char decode_char(const std::string &value, unsigned &index);
+
+    sir::UseItem generate_use_item(ASTNode *node);
+    sir::UseItem generate_use_ident(ASTNode *node);
+    sir::UseItem generate_use_rebind(ASTNode *node);
+    sir::UseItem generate_use_dot_expr(ASTNode *node);
+    sir::UseItem generate_use_list(ASTNode *node);
+
+    template <typename T>
+    T *create_expr(T value) {
+        return cur_sir_mod->create_expr(value);
+    }
+
+    template <typename T>
+    T *create_stmt(T value) {
+        return cur_sir_mod->create_stmt(value);
+    }
+
+    template <typename T>
+    T *create_decl(T value) {
+        return cur_sir_mod->create_decl(value);
+    }
+
+    template <typename T>
+    T *create_use_item(T value) {
+        return cur_sir_mod->create_use_item(value);
+    }
+
+    sir::SymbolTable *create_symbol_table(sir::SymbolTable value) {
+        return cur_sir_mod->create_symbol_table(std::move(value));
+    }
 };
 
 } // namespace lang
