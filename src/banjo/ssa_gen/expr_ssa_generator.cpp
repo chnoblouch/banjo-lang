@@ -55,26 +55,40 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
     else ASSERT_UNREACHABLE;
 }
 
-void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets branch_targets) {
+void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets targets) {
     if (auto binary_expr = expr.match<sir::BinaryExpr>()) {
-        switch (binary_expr->op) {
-            case sir::BinaryOp::EQ: return generate_cmp_branch(*binary_expr, ssa::Comparison::EQ, branch_targets);
-            case sir::BinaryOp::NE: return generate_cmp_branch(*binary_expr, ssa::Comparison::NE, branch_targets);
-            case sir::BinaryOp::GT: return generate_cmp_branch(*binary_expr, ssa::Comparison::SGT, branch_targets);
-            case sir::BinaryOp::LT: return generate_cmp_branch(*binary_expr, ssa::Comparison::SLT, branch_targets);
-            case sir::BinaryOp::GE: return generate_cmp_branch(*binary_expr, ssa::Comparison::SGE, branch_targets);
-            case sir::BinaryOp::LE: return generate_cmp_branch(*binary_expr, ssa::Comparison::SLE, branch_targets);
-            case sir::BinaryOp::AND: return generate_and_branch(*binary_expr, branch_targets);
-            case sir::BinaryOp::OR: return generate_or_branch(*binary_expr, branch_targets);
-            default: break;
+        if (binary_expr->lhs.get_type().is_int_type()) {
+            switch (binary_expr->op) {
+                case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);
+                case sir::BinaryOp::NE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets);
+                case sir::BinaryOp::GT: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SGT, targets);
+                case sir::BinaryOp::LT: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SLT, targets);
+                case sir::BinaryOp::GE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SGE, targets);
+                case sir::BinaryOp::LE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SLE, targets);
+                case sir::BinaryOp::AND: return generate_and_branch(*binary_expr, targets);
+                case sir::BinaryOp::OR: return generate_or_branch(*binary_expr, targets);
+                default: ASSERT_UNREACHABLE;
+            }
+        } else if (binary_expr->lhs.get_type().is_fp_type()) {
+            switch (binary_expr->op) {
+                case sir::BinaryOp::EQ: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FEQ, targets);
+                case sir::BinaryOp::NE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FNE, targets);
+                case sir::BinaryOp::GT: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FGT, targets);
+                case sir::BinaryOp::LT: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLT, targets);
+                case sir::BinaryOp::GE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FGE, targets);
+                case sir::BinaryOp::LE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLE, targets);
+                default: ASSERT_UNREACHABLE;
+            }
+        } else {
+            ASSERT_UNREACHABLE;
         }
     } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         if (unary_expr->op == sir::UnaryOp::NOT) {
-            return generate_not_branch(*unary_expr, branch_targets);
+            return generate_not_branch(*unary_expr, targets);
         }
     }
 
-    return generate_zero_check_branch(expr, branch_targets);
+    return generate_zero_check_branch(expr, targets);
 }
 
 StoredValue ExprSSAGenerator::generate_int_literal(const sir::IntLiteral &int_literal) {
@@ -355,39 +369,49 @@ StoredValue ExprSSAGenerator::generate_bool_expr(const sir::Expr &expr) {
     return StoredValue::create_reference(ssa_slot, ssa::Primitive::I8);
 }
 
-void ExprSSAGenerator::generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets branch_targets) {
-    ssa::Value ssa_value = generate(expr).turn_into_value(ctx).get_value();
-    ssa::Comparison ssa_cmp = ssa::Comparison::NE;
-    ssa::Value ssa_zero = ssa::Value::from_int_immediate(0, ssa_value.get_type());
-    ctx.append_cjmp(ssa_value, ssa_cmp, ssa_zero, branch_targets.target_if_true, branch_targets.target_if_false);
-}
-
-void ExprSSAGenerator::generate_cmp_branch(
+void ExprSSAGenerator::generate_int_cmp_branch(
     const sir::BinaryExpr &binary_expr,
     ssa::Comparison ssa_cmp,
-    CondBranchTargets branch_targets
+    CondBranchTargets targets
 ) {
     ssa::Value ssa_lhs = generate(binary_expr.lhs).turn_into_value(ctx).get_value();
     ssa::Value ssa_rhs = generate(binary_expr.rhs).turn_into_value(ctx).get_value();
-    ctx.append_cjmp(ssa_lhs, ssa_cmp, ssa_rhs, branch_targets.target_if_true, branch_targets.target_if_false);
+    ctx.append_cjmp(ssa_lhs, ssa_cmp, ssa_rhs, targets.target_if_true, targets.target_if_false);
 }
 
-void ExprSSAGenerator::generate_and_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets) {
+void ExprSSAGenerator::generate_fp_cmp_branch(
+    const sir::BinaryExpr &binary_expr,
+    ssa::Comparison ssa_cmp,
+    CondBranchTargets targets
+) {
+    ssa::Value ssa_lhs = generate(binary_expr.lhs).turn_into_value(ctx).get_value();
+    ssa::Value ssa_rhs = generate(binary_expr.rhs).turn_into_value(ctx).get_value();
+    ctx.append_fcjmp(ssa_lhs, ssa_cmp, ssa_rhs, targets.target_if_true, targets.target_if_false);
+}
+
+void ExprSSAGenerator::generate_and_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets targets) {
     ssa::BasicBlockIter ssa_rhs_block = ctx.create_block();
-    generate_branch(binary_expr.lhs, {ssa_rhs_block, branch_targets.target_if_false});
+    generate_branch(binary_expr.lhs, {ssa_rhs_block, targets.target_if_false});
     ctx.append_block(ssa_rhs_block);
-    generate_branch(binary_expr.rhs, {branch_targets.target_if_true, branch_targets.target_if_false});
+    generate_branch(binary_expr.rhs, {targets.target_if_true, targets.target_if_false});
 }
 
-void ExprSSAGenerator::generate_or_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets) {
+void ExprSSAGenerator::generate_or_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets targets) {
     ssa::BasicBlockIter ssa_rhs_block = ctx.create_block();
-    generate_branch(binary_expr.lhs, {branch_targets.target_if_true, ssa_rhs_block});
+    generate_branch(binary_expr.lhs, {targets.target_if_true, ssa_rhs_block});
     ctx.append_block(ssa_rhs_block);
-    generate_branch(binary_expr.rhs, {branch_targets.target_if_true, branch_targets.target_if_false});
+    generate_branch(binary_expr.rhs, {targets.target_if_true, targets.target_if_false});
 }
 
-void ExprSSAGenerator::generate_not_branch(const sir::UnaryExpr &unary_expr, CondBranchTargets branch_targets) {
-    generate_branch(unary_expr.value, {branch_targets.target_if_false, branch_targets.target_if_true});
+void ExprSSAGenerator::generate_not_branch(const sir::UnaryExpr &unary_expr, CondBranchTargets targets) {
+    generate_branch(unary_expr.value, {targets.target_if_false, targets.target_if_true});
+}
+
+void ExprSSAGenerator::generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets targets) {
+    ssa::Value ssa_value = generate(expr).turn_into_value(ctx).get_value();
+    ssa::Comparison ssa_cmp = ssa::Comparison::NE;
+    ssa::Value ssa_zero = ssa::Value::from_int_immediate(0, ssa_value.get_type());
+    ctx.append_cjmp(ssa_value, ssa_cmp, ssa_zero, targets.target_if_true, targets.target_if_false);
 }
 
 } // namespace lang

@@ -96,9 +96,17 @@ public:
     void append_jmp(ir::BasicBlockIter block_iter);
 
     void append_cjmp(
-        ir::Operand left,
+        ir::Operand lhs,
         ir::Comparison comparison,
-        ir::Operand right,
+        ir::Operand rhs,
+        ir::BasicBlockIter true_block_iter,
+        ir::BasicBlockIter false_block_iter
+    );
+
+    void append_fcjmp(
+        ir::Operand lhs,
+        ir::Comparison comparison,
+        ir::Operand rhs,
         ir::BasicBlockIter true_block_iter,
         ir::BasicBlockIter false_block_iter
     );

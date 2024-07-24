@@ -31,7 +31,7 @@ public:
     void generate_into_dst(const sir::Expr &expr, const ssa::Value &dst);
     void generate_into_dst(const sir::Expr &expr, ssa::VirtualRegister dst);
     StoredValue generate(const sir::Expr &expr, const StorageHints &hints);
-    void generate_branch(const sir::Expr &expr, CondBranchTargets branch_targets);
+    void generate_branch(const sir::Expr &expr, CondBranchTargets targets);
 
 private:
     StoredValue generate_int_literal(const sir::IntLiteral &int_literal);
@@ -52,17 +52,18 @@ private:
     StoredValue generate_field_expr(const sir::FieldExpr &field_expr);
 
     StoredValue generate_bool_expr(const sir::Expr &expr);
-    void generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets branch_targets);
 
-    void generate_cmp_branch(
+    void generate_int_cmp_branch(
         const sir::BinaryExpr &binary_expr,
         ssa::Comparison ssa_cmp,
-        CondBranchTargets branch_targets
+        CondBranchTargets targets
     );
 
-    void generate_and_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets);
-    void generate_or_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets branch_targets);
-    void generate_not_branch(const sir::UnaryExpr &unary_expr, CondBranchTargets branch_targets);
+    void generate_fp_cmp_branch(const sir::BinaryExpr &binary_expr, ssa::Comparison ssa_cmp, CondBranchTargets targets);
+    void generate_and_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets targets);
+    void generate_or_branch(const sir::BinaryExpr &binary_expr, CondBranchTargets targets);
+    void generate_not_branch(const sir::UnaryExpr &unary_expr, CondBranchTargets targets);
+    void generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets targets);
 };
 
 } // namespace lang

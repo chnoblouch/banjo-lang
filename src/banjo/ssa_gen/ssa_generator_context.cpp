@@ -89,9 +89,9 @@ void SSAGeneratorContext::append_jmp(ir::BasicBlockIter block_iter) {
 }
 
 void SSAGeneratorContext::append_cjmp(
-    ir::Operand left,
+    ir::Operand lhs,
     ir::Comparison comparison,
-    ir::Operand right,
+    ir::Operand rhs,
     ir::BasicBlockIter true_block_iter,
     ir::BasicBlockIter false_block_iter
 ) {
@@ -100,16 +100,38 @@ void SSAGeneratorContext::append_cjmp(
         return;
     }
 
-    get_ssa_block()->append(ir::Instruction(
-        ir::Opcode::CJMP,
-        {
-            std::move(left),
-            ir::Operand::from_comparison(comparison),
-            std::move(right),
-            ir::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
-            ir::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
-        }
-    ));
+    std::vector<ir::Operand> operands{
+        std::move(lhs),
+        ir::Operand::from_comparison(comparison),
+        std::move(rhs),
+        ir::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
+        ir::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
+    };
+
+    get_ssa_block()->append(ir::Instruction(ir::Opcode::CJMP, operands));
+}
+
+void SSAGeneratorContext::append_fcjmp(
+    ir::Operand lhs,
+    ir::Comparison comparison,
+    ir::Operand rhs,
+    ir::BasicBlockIter true_block_iter,
+    ir::BasicBlockIter false_block_iter
+) {
+    if (get_ssa_block()->get_instrs().get_size() != 0 &&
+        IRBuilderUtils::is_branch(get_ssa_block()->get_instrs().get_last())) {
+        return;
+    }
+
+    std::vector<ir::Operand> operands{
+        std::move(lhs),
+        ir::Operand::from_comparison(comparison),
+        std::move(rhs),
+        ir::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
+        ir::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
+    };
+
+    get_ssa_block()->append(ir::Instruction(ir::Opcode::FCJMP, operands));
 }
 
 ir::VirtualRegister SSAGeneratorContext::append_offsetptr(ir::Operand base, unsigned offset, ir::Type type) {
