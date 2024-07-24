@@ -26,7 +26,7 @@ private:
     std::unordered_map<ASTModule *, sir::Module *> mod_map;
 
 public:
-    sir::Unit generate(ModuleList &mod_list);
+    sir::Unit generate(ModuleList &mods);
 
 private:
     Scope &get_scope() { return scopes.top(); }
@@ -43,6 +43,7 @@ private:
     sir::DeclBlock generate_decl_block(ASTNode *node);
     sir::Decl generate_decl(ASTNode *node);
     sir::Decl generate_func(ASTNode *node);
+    sir::Decl generate_generic_func(ASTNode *node);
     sir::Decl generate_native_func(ASTNode *node);
     sir::Decl generate_struct(ASTNode *node);
     sir::Decl generate_var_decl(ASTNode *node);
@@ -84,6 +85,7 @@ private:
     sir::Expr generate_bracket_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
 
+    std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
     char decode_char(const std::string &value, unsigned &index);
 
     sir::UseItem generate_use_item(ASTNode *node);

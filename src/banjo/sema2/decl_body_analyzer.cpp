@@ -26,6 +26,10 @@ void DeclBodyAnalyzer::analyze_decl_block(sir::DeclBlock &decl_block) {
 }
 
 void DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    if (func_def.is_generic()) {
+        return;
+    }
+
     analyzer.push_scope().func_def = &func_def;
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
     analyzer.pop_scope();

@@ -4,8 +4,10 @@
 #include "banjo/symbol/module_path.hpp"
 #include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -65,6 +67,7 @@ struct UseDotExpr;
 struct UseRebind;
 struct UseList;
 
+struct Unit;
 struct Block;
 struct SymbolTable;
 struct Ident;
@@ -165,10 +168,13 @@ private:
         ContinueStmt *,
         BreakStmt *,
         Expr *,
-        Block *>
+        Block *,
+        std::nullptr_t>
         kind;
 
 public:
+    Stmt() : kind(nullptr) {}
+
     template <typename T>
     Stmt(T kind) : kind(kind) {}
 
@@ -188,6 +194,8 @@ public:
         auto result = std::get_if<T *>(&kind);
         return result ? *result : nullptr;
     }
+
+    operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 };
 
 class Decl {
@@ -227,6 +235,8 @@ public:
         auto result = std::get_if<T *>(&kind);
         return result ? *result : nullptr;
     }
+
+    operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 };
 
 class Symbol {
@@ -328,9 +338,14 @@ struct Ident {
 };
 
 struct Param {
-    ASTNode *node;
+    ASTNode *ast_node;
     Ident name;
     Expr type;
+};
+
+struct GenericParam {
+    ASTNode *ast_node;
+    Ident ident;
 };
 
 struct IntLiteral {
@@ -586,8 +601,11 @@ struct FuncDef {
     Ident ident;
     FuncType type;
     Block block;
+    std::vector<GenericParam> generic_params;
+    std::vector<FuncDef *> specializations;
 
-    bool is_main() const;
+    bool is_generic() const { return !generic_params.empty(); }
+    bool is_main() const { return ident.value == "main"; }
 };
 
 struct NativeFuncDecl {

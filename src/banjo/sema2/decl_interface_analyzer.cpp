@@ -28,6 +28,10 @@ void DeclInterfaceAnalyzer::analyze_decl_block(sir::DeclBlock &decl_block) {
 }
 
 void DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    if (func_def.is_generic()) {
+        return;
+    }
+
     for (sir::Param &param : func_def.type.params) {
         func_def.block.symbol_table->symbols.insert({param.name.value, &param});
         ExprAnalyzer(analyzer).analyze(param.type);

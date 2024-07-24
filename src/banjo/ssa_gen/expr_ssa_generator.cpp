@@ -313,7 +313,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
         ctx.get_ssa_block()->append({ssa::Opcode::CALL, ssa_operands});
         return StoredValue::create_value({});
     } else if (return_method == ReturnMethod::IN_REGISTER) {
-        ssa::VirtualRegister dst = hints.dst ? hints.dst->get_register() : ctx.next_vreg();
+        ssa::VirtualRegister dst = ctx.next_vreg();
         ctx.get_ssa_block()->append({ssa::Opcode::CALL, dst, ssa_operands});
         return StoredValue::create_value(dst, ssa_type);
     } else if (return_method == ReturnMethod::VIA_POINTER_ARG) {

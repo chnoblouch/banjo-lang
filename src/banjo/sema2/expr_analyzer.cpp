@@ -1,6 +1,7 @@
 #include "expr_analyzer.hpp"
 
 #include "banjo/utils/macros.hpp"
+#include "generics_specializer.hpp"
 
 namespace banjo {
 
@@ -187,6 +188,16 @@ void ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &sy
 }
 
 void ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr) {
+    const std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
+
+    if (!generic_args.empty()) {
+        auto iter = generic_args.find(ident_expr.value);
+        if (iter != generic_args.end()) {
+            out_expr = iter->second;
+            return;
+        }
+    }
+
     sir::Symbol symbol = symbol_table.look_up(ident_expr.value);
     assert(symbol);
 
@@ -222,16 +233,26 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
         analyze(expr);
     }
 
-    if (bracket_expr.lhs.is_type()) {
-        ASSERT_UNREACHABLE;
-    } else {
-        out_expr = analyzer.create_expr(sir::IndexExpr{
-            .ast_node = bracket_expr.ast_node,
-            .type = bracket_expr.lhs.get_type().as<sir::PointerType>().base_type,
-            .base = bracket_expr.lhs,
-            .index = bracket_expr.rhs[0],
-        });
+    if (auto func_def = bracket_expr.lhs.match_symbol<sir::FuncDef>()) {
+        if (func_def->is_generic()) {
+            sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(*func_def, bracket_expr.rhs);
+
+            out_expr = analyzer.create_expr(sir::SymbolExpr{
+                .ast_node = bracket_expr.ast_node,
+                .type = &specialization->type,
+                .symbol = specialization,
+            });
+
+            return;
+        }
     }
+
+    out_expr = analyzer.create_expr(sir::IndexExpr{
+        .ast_node = bracket_expr.ast_node,
+        .type = bracket_expr.lhs.get_type().as<sir::PointerType>().base_type,
+        .base = bracket_expr.lhs,
+        .index = bracket_expr.rhs[0],
+    });
 }
 
 void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {

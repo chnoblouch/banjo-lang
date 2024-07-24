@@ -88,6 +88,28 @@ void Printer::print_func_def(const FuncDef &func_def) {
     print_func_type(func_def.type);
     PRINT_FIELD_NAME("block");
     print_block(func_def.block);
+
+    if (func_def.is_generic()) {
+        BEGIN_LIST_FIELD("generic_params")
+
+        for (const sir::GenericParam &generic_param : func_def.generic_params) {
+            INDENT_LIST_ELEMENT();
+            BEGIN_OBJECT("GenericParam")
+            PRINT_FIELD("ident", generic_param.ident.value)
+            END_OBJECT()
+        }
+
+        END_LIST_FIELD()
+        BEGIN_LIST_FIELD("specializations")
+
+        for (const sir::FuncDef *specialization : func_def.specializations) {
+            INDENT_LIST_ELEMENT()
+            print_func_def(*specialization);
+        }
+
+        END_LIST_FIELD()
+    }
+
     END_OBJECT();
 }
 

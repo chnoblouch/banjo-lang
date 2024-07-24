@@ -65,6 +65,14 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
+    if (sir_func.is_generic()) {
+        for (const sir::FuncDef *sir_specialization : sir_func.specializations) {
+            create_func_def(*sir_specialization);
+        }
+
+        return;
+    }
+
     std::string ssa_name = NameMangling::mangle_func_name(ctx, sir_func);
     std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
     ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
@@ -145,6 +153,14 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
+    if (sir_func.is_generic()) {
+        for (const sir::FuncDef *sir_specialization : sir_func.specializations) {
+            generate_func_def(*sir_specialization);
+        }
+
+        return;
+    }
+
     ssa::Function *ssa_func = ctx.ssa_funcs[&sir_func];
     ctx.push_func_context(ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();

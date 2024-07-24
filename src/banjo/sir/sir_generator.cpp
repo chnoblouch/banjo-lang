@@ -14,8 +14,8 @@ namespace banjo {
 
 namespace lang {
 
-sir::Unit SIRGenerator::generate(ModuleList &mod_list) {
-    for (ASTModule *mod : mod_list) {
+sir::Unit SIRGenerator::generate(ModuleList &mods) {
+    for (ASTModule *mod : mods) {
         sir::Module *sir_mod = sir_unit.create_mod();
         sir_mod->path = mod->get_path();
 
@@ -24,7 +24,7 @@ sir::Unit SIRGenerator::generate(ModuleList &mod_list) {
         mod_map.insert({mod, sir_mod});
     }
 
-    for (ASTModule *mod : mod_list) {
+    for (ASTModule *mod : mods) {
         sir::Module *sir_mod = mod_map[mod];
 
         for (ASTModule *sub_mod : mod->get_sub_mods()) {
@@ -32,7 +32,7 @@ sir::Unit SIRGenerator::generate(ModuleList &mod_list) {
         }
     }
 
-    for (ASTModule *mod : mod_list) {
+    for (ASTModule *mod : mods) {
         generate_mod(mod);
     }
 
@@ -78,6 +78,7 @@ sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
 sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
     switch (node->get_type()) {
         case AST_FUNCTION_DEFINITION: return generate_func(node);
+        case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
         case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node);
         case AST_STRUCT_DEFINITION: return generate_struct(node);
         case AST_VAR: return generate_var_decl(node);
@@ -92,6 +93,17 @@ sir::Decl SIRGenerator::generate_func(ASTNode *node) {
         .ident = generate_ident(node->get_child(FUNC_NAME)),
         .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
         .block = generate_block(node->get_child(FUNC_BLOCK)),
+        .generic_params = {},
+    });
+}
+
+sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
+    return create_decl(sir::FuncDef{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(GENERIC_FUNC_NAME)),
+        .type = generate_func_type(node->get_child(GENERIC_FUNC_PARAMS), node->get_child(GENERIC_FUNC_TYPE)),
+        .block = generate_block(node->get_child(GENERIC_FUNC_BLOCK)),
+        .generic_params = generate_generic_param_list(node->get_child(GENERIC_FUNC_GENERIC_PARAMS)),
     });
 }
 
@@ -150,7 +162,7 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
 
         if (ident_type == AST_IDENTIFIER) {
             params[i] = {
-                .node = param_node,
+                .ast_node = param_node,
                 .name = generate_ident(param_node->get_child(PARAM_NAME)),
                 .type = generate_expr(param_node->get_child(PARAM_TYPE)),
             };
@@ -170,7 +182,7 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
             });
 
             params[i] = {
-                .node = param_node,
+                .ast_node = param_node,
                 .name = sir_ident,
                 .type = sir_type,
             };
@@ -508,14 +520,14 @@ sir::Expr SIRGenerator::generate_call_expr(ASTNode *node) {
 }
 
 std::vector<sir::Expr> SIRGenerator::generate_arg_list(ASTNode *node) {
-    std::vector<sir::Expr> arg_list;
-    arg_list.resize(node->get_children().size());
+    std::vector<sir::Expr> args;
+    args.resize(node->get_children().size());
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
-        arg_list[i] = generate_expr(node->get_child(i));
+        args[i] = generate_expr(node->get_child(i));
     }
 
-    return arg_list;
+    return args;
 }
 
 sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
@@ -554,6 +566,22 @@ sir::Expr SIRGenerator::generate_primitive_type(ASTNode *node, sir::Primitive pr
         .ast_node = node,
         .primitive = primitive,
     });
+}
+
+std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode *node) {
+    std::vector<sir::GenericParam> generic_params;
+    generic_params.resize(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        ASTNode *child = node->get_child(i);
+
+        generic_params[i] = sir::GenericParam{
+            .ast_node = child,
+            .ident = generate_ident(child->get_child(GENERIC_PARAM_NAME)),
+        };
+    }
+
+    return generic_params;
 }
 
 char SIRGenerator::decode_char(const std::string &value, unsigned &index) {

@@ -17,9 +17,8 @@ private:
 
 public:
     DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer);
+    
     void analyze();
-
-private:
     void analyze_decl_block(sir::DeclBlock &decl_block);
     void analyze_func_def(sir::FuncDef &func_def);
     void analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl);

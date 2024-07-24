@@ -133,10 +133,6 @@ Symbol SymbolTable::look_up(std::string_view name) {
     }
 }
 
-bool FuncDef::is_main() const {
-    return ident.value == "main";
-}
-
 StructField *StructDef::find_field(std::string_view name) const {
     for (StructField *field : fields) {
         if (field->ident.value == name) {

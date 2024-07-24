@@ -5,6 +5,8 @@
 #include "banjo/target/target.hpp"
 
 #include <stack>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace banjo {
@@ -18,6 +20,7 @@ struct Scope {
     sir::Block *block = nullptr;
     sir::SymbolTable *symbol_table = nullptr;
     sir::StructDef *struct_def = nullptr;
+    std::unordered_map<std::string_view, sir::Expr> generic_args;
 };
 
 class SemanticAnalyzer {
@@ -28,6 +31,7 @@ class SemanticAnalyzer {
     friend class DeclBodyAnalyzer;
     friend class ExprAnalyzer;
     friend class StmtAnalyzer;
+    friend class GenericsSpecializer;
 
 private:
     sir::Unit &sir_unit;

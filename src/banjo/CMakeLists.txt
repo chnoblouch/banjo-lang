@@ -120,10 +120,12 @@ add_library(banjo STATIC
     sema2/decl_body_analyzer.cpp
     sema2/decl_interface_analyzer.cpp
     sema2/expr_analyzer.cpp
+    sema2/generics_specializer.cpp
     sema2/semantic_analyzer.cpp
     sema2/stmt_analyzer.cpp
     sema2/symbol_collector.cpp
     sema2/use_resolver.cpp
+    sir/sir_cloner.cpp
     sir/sir_generator.cpp
     sir/sir_printer.cpp
     sir/sir.cpp
