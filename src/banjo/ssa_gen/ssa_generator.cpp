@@ -66,8 +66,8 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
 
 void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
     if (sir_func.is_generic()) {
-        for (const sir::FuncDef *sir_specialization : sir_func.specializations) {
-            create_func_def(*sir_specialization);
+        for (const sir::GenericFuncSpecialization &sir_specialization : sir_func.specializations) {
+            create_func_def(*sir_specialization.def);
         }
 
         return;
@@ -154,8 +154,8 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     if (sir_func.is_generic()) {
-        for (const sir::FuncDef *sir_specialization : sir_func.specializations) {
-            generate_func_def(*sir_specialization);
+        for (const sir::GenericFuncSpecialization &sir_specialization : sir_func.specializations) {
+            generate_func_def(*sir_specialization.def);
         }
 
         return;

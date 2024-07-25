@@ -17,6 +17,30 @@ GenericsSpecializer::GenericsSpecializer(SemanticAnalyzer &analyzer) : analyzer(
 sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args) {
     assert(args.size() == generic_func_def.generic_params.size());
 
+    if (sir::FuncDef *existing_specialization = find_existing_specialization(generic_func_def, args)) {
+        return existing_specialization;
+    } else {
+        return create_specialized_clone(generic_func_def, args);
+    }
+}
+
+sir::FuncDef *GenericsSpecializer::find_existing_specialization(
+    sir::FuncDef &generic_func_def,
+    const std::vector<sir::Expr> &args
+) {
+    for (sir::GenericFuncSpecialization &specialization : generic_func_def.specializations) {
+        if (specialization.args == args) {
+            return specialization.def;
+        }
+    }
+
+    return nullptr;
+}
+
+sir::FuncDef *GenericsSpecializer::create_specialized_clone(
+    sir::FuncDef &generic_func_def,
+    const std::vector<sir::Expr> &args
+) {
     analyzer.push_scope();
 
     for (unsigned i = 0; i < args.size(); i++) {
@@ -26,7 +50,7 @@ sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, co
 
     sir::SIRCloner cloner(*analyzer.cur_sir_mod);
 
-    sir::FuncDef *specialization = analyzer.cur_sir_mod->create_decl(sir::FuncDef{
+    sir::FuncDef *clone = analyzer.cur_sir_mod->create_decl(sir::FuncDef{
         .ast_node = generic_func_def.ast_node,
         .ident = generic_func_def.ident,
         .type = *cloner.clone_func_type(generic_func_def.type),
@@ -35,13 +59,17 @@ sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, co
         .specializations = {},
     });
 
-    DeclInterfaceAnalyzer(analyzer).analyze_func_def(*specialization);
-    DeclBodyAnalyzer(analyzer).analyze_func_def(*specialization);
-    generic_func_def.specializations.push_back(specialization);
+    DeclInterfaceAnalyzer(analyzer).analyze_func_def(*clone);
+    DeclBodyAnalyzer(analyzer).analyze_func_def(*clone);
+
+    generic_func_def.specializations.push_back(sir::GenericFuncSpecialization{
+        .args = args,
+        .def = clone,
+    });
 
     analyzer.pop_scope();
 
-    return specialization;
+    return clone;
 }
 
 } // namespace sema

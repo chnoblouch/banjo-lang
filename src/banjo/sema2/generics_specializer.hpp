@@ -18,6 +18,10 @@ private:
 public:
     GenericsSpecializer(SemanticAnalyzer &analyzer);
     sir::FuncDef *specialize(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args);
+
+private:
+    sir::FuncDef *find_existing_specialization(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args);
+    sir::FuncDef *create_specialized_clone(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args);
 };
 
 } // namespace sema

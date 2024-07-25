@@ -8,6 +8,19 @@ namespace lang {
 
 namespace sir {
 
+// This currently only supports comparing types.
+bool Expr::operator==(const Expr &other) const {
+    if (kind.index() != other.kind.index()) {
+        return false;
+    }
+
+    if (is<PrimitiveType>()) return as<PrimitiveType>() == other.as<PrimitiveType>();
+    else if (is<PointerType>()) return as<PointerType>() == other.as<PointerType>();
+    else if (is<FuncType>()) return as<FuncType>() == other.as<FuncType>();
+    else if (is<SymbolExpr>()) return as<SymbolExpr>() == other.as<SymbolExpr>();
+    else ASSERT_UNREACHABLE;
+}
+
 bool Expr::is_value() const {
     return get_type();
 }
@@ -89,6 +102,24 @@ bool Expr::is_fp_type() const {
     } else {
         return false;
     }
+}
+
+bool Symbol::operator==(const Symbol &other) const {
+    if (kind.index() != other.kind.index()) {
+        return false;
+    }
+
+    if (is<Module>()) return &as<Module>() == &other.as<Module>();
+    else if (is<FuncDef>()) return &as<FuncDef>() == &other.as<FuncDef>();
+    else if (is<NativeFuncDecl>()) return &as<NativeFuncDecl>() == &other.as<NativeFuncDecl>();
+    else if (is<StructDef>()) return &as<StructDef>() == &other.as<StructDef>();
+    else if (is<StructField>()) return &as<StructField>() == &other.as<StructField>();
+    else if (is<VarDecl>()) return &as<VarDecl>() == &other.as<VarDecl>();
+    else if (is<UseIdent>()) return &as<UseIdent>() == &other.as<UseIdent>();
+    else if (is<UseRebind>()) return &as<UseRebind>() == &other.as<UseRebind>();
+    else if (is<VarStmt>()) return &as<VarStmt>() == &other.as<VarStmt>();
+    else if (is<Param>()) return &as<Param>() == &other.as<Param>();
+    else ASSERT_UNREACHABLE;
 }
 
 const std::string &Symbol::get_name() const {

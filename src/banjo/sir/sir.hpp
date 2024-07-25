@@ -142,6 +142,8 @@ public:
     T *match_symbol();
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
+    bool operator==(const Expr &other) const;
+    bool operator!=(const Expr &other) const { return !(*this == other); }
 
     bool is_value() const;
     Expr get_type() const;
@@ -286,6 +288,8 @@ public:
     }
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
+    bool operator==(const Symbol &other) const;
+    bool operator!=(const Symbol &other) const { return !(*this == other); }
 
     const std::string &get_name() const;
     Expr get_type();
@@ -341,6 +345,9 @@ struct Param {
     ASTNode *ast_node;
     Ident name;
     Expr type;
+
+    bool operator==(const Param &other) const { return type == other.type; }
+    bool operator!=(const Param &other) const { return !(*this == other); }
 };
 
 struct GenericParam {
@@ -394,6 +401,9 @@ struct SymbolExpr {
     ASTNode *ast_node;
     Expr type;
     Symbol symbol;
+
+    bool operator==(const SymbolExpr &other) const { return symbol == other.symbol; }
+    bool operator!=(const SymbolExpr &other) const { return !(*this == other); }
 };
 
 enum class BinaryOp {
@@ -491,17 +501,26 @@ enum class Primitive {
 struct PrimitiveType {
     ASTNode *ast_node;
     Primitive primitive;
+
+    bool operator==(const PrimitiveType &other) const { return primitive == other.primitive; }
+    bool operator!=(const PrimitiveType &other) const { return !(*this == other); }
 };
 
 struct PointerType {
     ASTNode *ast_node;
     Expr base_type;
+
+    bool operator==(const PointerType &other) const { return base_type == other.base_type; }
+    bool operator!=(const PointerType &other) const { return !(*this == other); }
 };
 
 struct FuncType {
     ASTNode *ast_node;
     std::vector<Param> params;
     Expr return_type;
+
+    bool operator==(const FuncType &other) const { return params == other.params && return_type == other.return_type; }
+    bool operator!=(const FuncType &other) const { return !(*this == other); }
 };
 
 struct IdentExpr {
@@ -596,13 +615,18 @@ struct BreakStmt {
     ASTNode *ast_node;
 };
 
+struct GenericFuncSpecialization {
+    std::vector<Expr> args;
+    FuncDef *def;
+};
+
 struct FuncDef {
     ASTNode *ast_node;
     Ident ident;
     FuncType type;
     Block block;
     std::vector<GenericParam> generic_params;
-    std::vector<FuncDef *> specializations;
+    std::vector<GenericFuncSpecialization> specializations;
 
     bool is_generic() const { return !generic_params.empty(); }
     bool is_main() const { return ident.value == "main"; }
@@ -717,7 +741,7 @@ struct Module {
 
     ModulePath path;
     DeclBlock block;
-    std::vector<sir::Module *> sub_mods;
+    std::vector<Module *> sub_mods;
 
     template <typename T>
     T *create_expr(T value) {

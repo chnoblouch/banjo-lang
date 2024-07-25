@@ -102,9 +102,9 @@ void Printer::print_func_def(const FuncDef &func_def) {
         END_LIST_FIELD()
         BEGIN_LIST_FIELD("specializations")
 
-        for (const sir::FuncDef *specialization : func_def.specializations) {
+        for (const sir::GenericFuncSpecialization &specialization : func_def.specializations) {
             INDENT_LIST_ELEMENT()
-            print_func_def(*specialization);
+            print_func_def(*specialization.def);
         }
 
         END_LIST_FIELD()
