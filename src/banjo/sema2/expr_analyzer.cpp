@@ -2,6 +2,7 @@
 
 #include "banjo/utils/macros.hpp"
 #include "generics_specializer.hpp"
+#include <cassert>
 
 namespace banjo {
 
@@ -256,23 +257,21 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
 }
 
 void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
-    if (auto mod = dot_expr.lhs.match_symbol<sir::Module>()) {
-        sir::Symbol symbol = mod->block.symbol_table->look_up(dot_expr.rhs.value);
+    sir::SymbolTable *symbol_table = dot_expr.lhs.get_symbol_table();
+    if (symbol_table) {
+        sir::Symbol symbol = symbol_table->look_up(dot_expr.rhs.value);
+        assert(symbol);
 
         out_expr = analyzer.create_expr(sir::SymbolExpr{
             .ast_node = dot_expr.ast_node,
             .type = symbol.get_type(),
             .symbol = symbol,
         });
-    } else if (auto struct_def = dot_expr.lhs.match_symbol<sir::StructDef>()) {
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
-        out_expr = analyzer.create_expr(sir::SymbolExpr{
-            .ast_node = dot_expr.ast_node,
-            .type = symbol.get_type(),
-            .symbol = symbol,
-        });
-    } else if (dot_expr.lhs.is_value()) {
+        return;
+    }
+
+    if (dot_expr.lhs.is_value()) {
         sir::Expr lhs_type = dot_expr.lhs.get_type();
 
         if (auto symbol_expr = lhs_type.match<sir::SymbolExpr>()) {

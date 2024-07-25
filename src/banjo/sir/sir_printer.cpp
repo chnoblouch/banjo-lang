@@ -77,6 +77,8 @@ void Printer::print_decl(const Decl &decl) {
     else if (auto struct_def = decl.match<StructDef>()) print_struct_def(*struct_def);
     else if (auto struct_field = decl.match<StructField>()) print_struct_field(*struct_field);
     else if (auto var_decl = decl.match<VarDecl>()) print_var_decl(*var_decl);
+    else if (auto enum_def = decl.match<EnumDef>()) print_enum_def(*enum_def);
+    else if (auto enum_variant = decl.match<EnumVariant>()) print_enum_variant(*enum_variant);
     else if (auto use_decl = decl.match<UseDecl>()) print_use_decl(*use_decl);
     else ASSERT_UNREACHABLE;
 }
@@ -140,6 +142,21 @@ void Printer::print_var_decl(const VarDecl &var_decl) {
     BEGIN_OBJECT("VarDecl");
     PRINT_FIELD("ident", var_decl.ident.value);
     PRINT_EXPR_FIELD("type", var_decl.type);
+    END_OBJECT();
+}
+
+void Printer::print_enum_def(const EnumDef &enum_def) {
+    BEGIN_OBJECT("EnumDef");
+    PRINT_FIELD("ident", enum_def.ident.value);
+    PRINT_FIELD_NAME("block");
+    print_decl_block(enum_def.block);
+    END_OBJECT();
+}
+
+void Printer::print_enum_variant(const EnumVariant &enum_variant) {
+    BEGIN_OBJECT("EnumVariant");
+    PRINT_FIELD("ident", enum_variant.ident.value);
+    PRINT_EXPR_FIELD("value", enum_variant.value);
     END_OBJECT();
 }
 

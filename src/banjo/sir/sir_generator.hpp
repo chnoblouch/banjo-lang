@@ -46,6 +46,7 @@ private:
     sir::Decl generate_generic_func(ASTNode *node);
     sir::Decl generate_native_func(ASTNode *node);
     sir::Decl generate_struct(ASTNode *node);
+    sir::Decl generate_enum(ASTNode *node);
     sir::Decl generate_var_decl(ASTNode *node);
     sir::Decl generate_use_decl(ASTNode *node);
 

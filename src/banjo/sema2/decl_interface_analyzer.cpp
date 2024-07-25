@@ -24,6 +24,8 @@ void DeclInterfaceAnalyzer::analyze_decl_block(sir::DeclBlock &decl_block) {
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) analyze_native_func_decl(*native_func_decl);
         else if (auto struct_def = decl.match<sir::StructDef>()) analyze_struct_def(*struct_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) analyze_var_decl(*var_decl, decl);
+        else if (auto enum_def = decl.match<sir::EnumDef>()) analyze_enum_def(*enum_def);
+        else if (auto enum_variant = decl.match<sir::EnumVariant>()) analyze_enum_variant(*enum_variant);
     }
 }
 
@@ -69,6 +71,26 @@ void DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &
 
         struct_def.fields.push_back(&out_decl.as<sir::StructField>());
     }
+}
+
+void DeclInterfaceAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
+    analyzer.push_scope().enum_def = &enum_def;
+    analyze_decl_block(enum_def.block);
+    analyzer.pop_scope();
+}
+
+void DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant) {
+    if (enum_variant.value) {
+        ExprAnalyzer(analyzer).analyze(enum_variant.value);
+    }
+
+    analyzer.get_scope().enum_def->variants.push_back(&enum_variant);
+    
+    enum_variant.type = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = nullptr,
+        .symbol = analyzer.get_scope().enum_def,
+    });
 }
 
 } // namespace sema

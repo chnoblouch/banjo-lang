@@ -81,6 +81,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
         case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node);
         case AST_STRUCT_DEFINITION: return generate_struct(node);
+        case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_VAR: return generate_var_decl(node);
         case AST_USE: return generate_use_decl(node);
         default: ASSERT_UNREACHABLE;
@@ -128,6 +129,28 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node) {
     pop_scope();
 
     return struct_def;
+}
+
+sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
+    // TODO: The parser should create a block node instead of a variant list node so this hack can be removed.
+    ASTNode dummy_block_node;
+    sir::DeclBlock block = generate_decl_block(&dummy_block_node);
+
+    for (ASTNode *variant : node->get_child(ENUM_VARIANTS)->get_children()) {
+        bool has_value = variant->has_child(ENUM_VARIANT_VALUE);
+
+        block.decls.push_back(create_decl(sir::EnumVariant{
+            .ast_node = variant,
+            .ident = generate_ident(variant->get_child(ENUM_VARIANT_NAME)),
+            .value = has_value ? generate_expr(variant->get_child(ENUM_VARIANT_VALUE)) : nullptr,
+        }));
+    }
+
+    return create_decl(sir::EnumDef{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(ENUM_NAME)),
+        .block = block,
+    });
 }
 
 sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {

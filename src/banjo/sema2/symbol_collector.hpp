@@ -25,6 +25,8 @@ private:
     void collect_native_func_decl(sir::NativeFuncDecl &native_func_decl);
     void collect_struct_def(sir::StructDef &struct_def);
     void collect_var_decl(sir::VarDecl &var_decl);
+    void collect_enum_def(sir::EnumDef &enum_def);
+    void collect_enum_variant(sir::EnumVariant &enum_variant);
     void collect_use_decl(sir::UseDecl &use_decl);
 
     void collect_use_item(sir::UseItem &use_item);

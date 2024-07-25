@@ -60,6 +60,8 @@ struct NativeFuncDecl;
 struct StructDef;
 struct StructField;
 struct VarDecl;
+struct EnumDef;
+struct EnumVariant;
 struct Param;
 struct UseDecl;
 struct UseIdent;
@@ -153,6 +155,8 @@ public:
     bool is_signed_type() const;
     bool is_unsigned_type() const;
     bool is_fp_type() const;
+
+    SymbolTable *get_symbol_table();
 };
 
 class Stmt {
@@ -203,7 +207,17 @@ public:
 class Decl {
 
 private:
-    std::variant<FuncDef *, NativeFuncDecl *, StructDef *, StructField *, VarDecl *, UseDecl *, std::nullptr_t> kind;
+    std::variant<
+        FuncDef *,
+        NativeFuncDecl *,
+        StructDef *,
+        StructField *,
+        VarDecl *,
+        EnumDef *,
+        EnumVariant *,
+        UseDecl *,
+        std::nullptr_t>
+        kind;
 
 public:
     Decl() : kind(nullptr) {}
@@ -249,6 +263,8 @@ class Symbol {
         StructDef *,
         StructField *,
         VarDecl *,
+        EnumDef *,
+        EnumVariant *,
         UseIdent *,
         UseRebind *,
         VarStmt *,
@@ -660,6 +676,20 @@ struct VarDecl {
     Expr type;
 };
 
+struct EnumDef {
+    ASTNode *ast_node;
+    Ident ident;
+    DeclBlock block;
+    std::vector<EnumVariant *> variants;
+};
+
+struct EnumVariant {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr type;
+    Expr value;
+};
+
 struct UseDecl {
     ASTNode *ast_node;
     UseItem root_item;
@@ -728,7 +758,8 @@ typedef std::variant<
     Block>
     StmtStorage;
 
-typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl, UseDecl> DeclStorage;
+typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl, EnumDef, EnumVariant, UseDecl>
+    DeclStorage;
 
 typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;
 

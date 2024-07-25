@@ -31,6 +31,8 @@ private:
     void print_struct_def(const StructDef &struct_def);
     void print_struct_field(const StructField &struct_field);
     void print_var_decl(const VarDecl &var_decl);
+    void print_enum_def(const EnumDef &enum_def);
+    void print_enum_variant(const EnumVariant &enum_variant);
     void print_use_decl(const UseDecl &use_decl);
 
     void print_use_item(const UseItem &use_item);

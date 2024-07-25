@@ -1,5 +1,6 @@
 #include "type_ssa_generator.hpp"
 
+#include "banjo/ir/primitive.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -36,7 +37,8 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
 }
 
 ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::Symbol &symbol) {
-    if (auto struct_ = symbol.match<sir::StructDef>()) return ctx.ssa_structs[struct_];
+    if (auto struct_def = symbol.match<sir::StructDef>()) return ctx.ssa_structs[struct_def];
+    else if (auto enum_def = symbol.match<sir::EnumDef>()) return ssa::Primitive::I32;
     else ASSERT_UNREACHABLE;
 }
 

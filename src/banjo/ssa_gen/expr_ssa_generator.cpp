@@ -152,6 +152,8 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
         ssa::Value ssa_value = ssa::Value::from_extern_func(native_func_decl->ident.value, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
+    } else if (auto enum_variant = symbol_expr.symbol.match<sir::EnumVariant>()) {
+        return generate(enum_variant->value).turn_into_value(ctx);
     } else if (auto var_stmt = symbol_expr.symbol.match<sir::VarStmt>()) {
         ssa::VirtualRegister reg = ctx.ssa_var_regs[var_stmt];
         ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(var_stmt->type);

@@ -104,6 +104,17 @@ bool Expr::is_fp_type() const {
     }
 }
 
+SymbolTable *Expr::get_symbol_table() {
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        if (auto mod = symbol_expr->symbol.match<Module>()) return mod->block.symbol_table;
+        else if (auto struct_def = symbol_expr->symbol.match<StructDef>()) return struct_def->block.symbol_table;
+        else if (auto enum_def = symbol_expr->symbol.match<EnumDef>()) return enum_def->block.symbol_table;
+        else return nullptr;
+    } else {
+        return nullptr;
+    }
+}
+
 bool Symbol::operator==(const Symbol &other) const {
     if (kind.index() != other.kind.index()) {
         return false;
@@ -115,6 +126,8 @@ bool Symbol::operator==(const Symbol &other) const {
     else if (is<StructDef>()) return &as<StructDef>() == &other.as<StructDef>();
     else if (is<StructField>()) return &as<StructField>() == &other.as<StructField>();
     else if (is<VarDecl>()) return &as<VarDecl>() == &other.as<VarDecl>();
+    else if (is<EnumDef>()) return &as<EnumDef>() == &other.as<EnumDef>();
+    else if (is<EnumVariant>()) return &as<EnumVariant>() == &other.as<EnumVariant>();
     else if (is<UseIdent>()) return &as<UseIdent>() == &other.as<UseIdent>();
     else if (is<UseRebind>()) return &as<UseRebind>() == &other.as<UseRebind>();
     else if (is<VarStmt>()) return &as<VarStmt>() == &other.as<VarStmt>();
@@ -128,6 +141,8 @@ const std::string &Symbol::get_name() const {
     else if (auto struct_def = match<StructDef>()) return struct_def->ident.value;
     else if (auto struct_field = match<StructField>()) return struct_field->ident.value;
     else if (auto var_decl = match<VarDecl>()) return var_decl->ident.value;
+    else if (auto enum_def = match<EnumDef>()) return enum_def->ident.value;
+    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->ident.value;
     else if (auto var_stmt = match<VarStmt>()) return var_stmt->name.value;
     else if (auto param = match<Param>()) return param->name.value;
     else ASSERT_UNREACHABLE;
@@ -138,6 +153,7 @@ Expr Symbol::get_type() {
     else if (auto native_func_decl = match<NativeFuncDecl>()) return &native_func_decl->type;
     else if (auto struct_field = match<StructField>()) return struct_field->type;
     else if (auto var_decl = match<VarDecl>()) return var_decl->type;
+    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->type;
     else if (auto var_stmt = match<VarStmt>()) return var_stmt->type;
     else if (auto param = match<Param>()) return param->type;
     else return nullptr;

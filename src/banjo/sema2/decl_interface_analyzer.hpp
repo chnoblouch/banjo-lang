@@ -24,6 +24,8 @@ public:
     void analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl);
     void analyze_struct_def(sir::StructDef &struct_def);
     void analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl);
+    void analyze_enum_def(sir::EnumDef &enum_def);
+    void analyze_enum_variant(sir::EnumVariant &enum_variant);
 };
 
 } // namespace sema

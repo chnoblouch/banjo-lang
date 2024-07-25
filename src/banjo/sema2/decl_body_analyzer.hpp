@@ -22,6 +22,7 @@ public:
     void analyze_decl_block(sir::DeclBlock &decl_block);
     void analyze_func_def(sir::FuncDef &func_def);
     void analyze_struct_def(sir::StructDef &struct_def);
+    void analyze_enum_def(sir::EnumDef &enum_def);
 };
 
 } // namespace sema

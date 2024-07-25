@@ -20,6 +20,7 @@ struct Scope {
     sir::Block *block = nullptr;
     sir::SymbolTable *symbol_table = nullptr;
     sir::StructDef *struct_def = nullptr;
+    sir::EnumDef *enum_def = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
 };
 
