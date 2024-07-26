@@ -38,9 +38,10 @@ struct IndexExpr;
 struct CallExpr;
 struct FieldExpr;
 struct RangeExpr;
-struct FuncType;
+struct TupleExpr;
 struct PrimitiveType;
 struct PointerType;
+struct FuncType;
 struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
@@ -98,6 +99,7 @@ class Expr {
         CallExpr *,
         FieldExpr *,
         RangeExpr *,
+        TupleExpr *,
         PrimitiveType *,
         PointerType *,
         FuncType *,
@@ -357,7 +359,7 @@ struct SymbolTable {
 };
 
 struct OverloadSet {
-    std::vector<FuncDef*> func_defs;
+    std::vector<FuncDef *> func_defs;
 };
 
 struct Ident {
@@ -497,13 +499,22 @@ struct FieldExpr {
     ASTNode *ast_node;
     Expr type;
     Expr base;
-    StructField *field;
+    unsigned field_index;
 };
 
 struct RangeExpr {
     ASTNode *ast_node;
     Expr lhs;
     Expr rhs;
+};
+
+struct TupleExpr {
+    ASTNode *ast_node;
+    Expr type;
+    std::vector<Expr> exprs;
+
+    bool operator==(const TupleExpr &other) const { return exprs == other.exprs; }
+    bool operator!=(const TupleExpr &other) const { return !(*this == other); }
 };
 
 enum class Primitive {
@@ -742,6 +753,7 @@ typedef std::variant<
     CallExpr,
     FieldExpr,
     RangeExpr,
+    TupleExpr,
     PrimitiveType,
     PointerType,
     FuncType,

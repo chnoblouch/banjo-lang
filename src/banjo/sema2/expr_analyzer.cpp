@@ -26,8 +26,10 @@ void ExprAnalyzer::analyze(sir::Expr &expr, sir::SymbolTable &symbol_table) {
     else if (auto struct_literal = expr.match<sir::StructLiteral>()) analyze_struct_literal(*struct_literal);
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) analyze_binary_expr(*binary_expr);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) analyze_unary_expr(*unary_expr);
-    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr, symbol_table);
     else if (auto cast_expr = expr.match<sir::CastExpr>()) analyze_cast_expr(*cast_expr);
+    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr, symbol_table);
+    else if (auto range_expr = expr.match<sir::RangeExpr>()) analyze_range_expr(*range_expr);
+    else if (auto tuple_expr = expr.match<sir::TupleExpr>()) analyze_tuple_expr(*tuple_expr);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, symbol_table, expr);
     else if (auto ident_expr = expr.match<sir::IdentExpr>()) analyze_ident_expr(*ident_expr, symbol_table, expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
@@ -193,6 +195,36 @@ void ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &sy
     analyze_dot_expr_rhs(dot_expr, out_expr);
 }
 
+void ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
+    analyze(range_expr.lhs);
+    analyze(range_expr.rhs);
+}
+
+void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
+    assert(!tuple_expr.exprs.empty());
+
+    for (sir::Expr &expr : tuple_expr.exprs) {
+        analyze(expr);
+    }
+
+    if (tuple_expr.exprs[0].is_type()) {
+        return;
+    }
+
+    std::vector<sir::Expr> types;
+    types.resize(tuple_expr.exprs.size());
+
+    for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
+        types[i] = tuple_expr.exprs[i].get_type();
+    }
+
+    tuple_expr.type = analyzer.create_expr(sir::TupleExpr{
+        .ast_node = nullptr,
+        .type = nullptr,
+        .exprs = types,
+    });
+}
+
 void ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr) {
     const std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
 
@@ -287,7 +319,7 @@ void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_e
                 .ast_node = dot_expr.ast_node,
                 .type = field->type,
                 .base = dot_expr.lhs,
-                .field = field,
+                .field_index = field->index,
             });
         } else if (auto pointer_expr = lhs_type.match<sir::PointerType>()) {
             sir::StructDef &struct_def = pointer_expr->base_type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
@@ -302,7 +334,16 @@ void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_e
                     .op = sir::UnaryOp::DEREF,
                     .value = dot_expr.lhs,
                 }),
-                .field = field,
+                .field_index = field->index,
+            });
+        } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
+            unsigned field_index = std::stoul(dot_expr.rhs.value);
+
+            out_expr = analyzer.create_expr(sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = tuple_expr->exprs[field_index],
+                .base = dot_expr.lhs,
+                .field_index = field_index,
             });
         } else {
             ASSERT_UNREACHABLE;

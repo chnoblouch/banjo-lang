@@ -39,6 +39,7 @@ Expr Expr::get_type() const {
     else if (auto call_expr = match<CallExpr>()) return call_expr->type;
     else if (auto field_expr = match<FieldExpr>()) return field_expr->type;
     else if (auto index_expr = match<IndexExpr>()) return index_expr->type;
+    else if (auto tuple_expr = match<TupleExpr>()) return tuple_expr->type;
     else return nullptr;
 }
 

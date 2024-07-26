@@ -32,6 +32,8 @@ private:
     void analyze_cast_expr(sir::CastExpr &cast_expr);
     void analyze_call_expr(sir::CallExpr &call_expr, sir::SymbolTable &symbol_table);
     void analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::CallExpr &out_call_expr);
+    void analyze_range_expr(sir::RangeExpr &range_expr);
+    void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     void analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr);
     void analyze_ident_expr(sir::IdentExpr &ident_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr);
     void analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);

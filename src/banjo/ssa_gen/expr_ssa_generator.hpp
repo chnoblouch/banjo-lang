@@ -50,6 +50,7 @@ private:
     StoredValue generate_index_expr(const sir::IndexExpr &index_expr);
     StoredValue generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints);
     StoredValue generate_field_expr(const sir::FieldExpr &field_expr);
+    StoredValue generate_tuple_expr(const sir::TupleExpr &tuple_expr, const StorageHints &hints);
 
     StoredValue generate_bool_expr(const sir::Expr &expr);
 

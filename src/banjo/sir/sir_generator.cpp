@@ -406,6 +406,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_DOT_OPERATOR: return generate_dot_expr(node);
         case AST_ARRAY_ACCESS: return generate_bracket_expr(node);
         case AST_RANGE: return generate_range_expr(node);
+        case AST_TUPLE_EXPR: return generate_tuple_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
         case AST_I16: return generate_primitive_type(node, sir::Primitive::I16);
         case AST_I32: return generate_primitive_type(node, sir::Primitive::I32);
@@ -554,10 +555,22 @@ std::vector<sir::Expr> SIRGenerator::generate_arg_list(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
+    ASTNode *rhs_node = node->get_child(1);
+    sir::Ident rhs;
+
+    if (rhs_node->get_type() == AST_IDENTIFIER) {
+        rhs = generate_ident(rhs_node);
+    } else if (rhs_node->get_type() == AST_INT_LITERAL) {
+        rhs = {
+            .ast_node = rhs_node,
+            .value = rhs_node->as<IntLiteral>()->get_value().to_string(),
+        };
+    }
+
     return create_expr(sir::DotExpr{
         .ast_node = node,
         .lhs = generate_expr(node->get_child(0)),
-        .rhs = generate_ident(node->get_child(1)),
+        .rhs = rhs,
     });
 }
 
@@ -574,6 +587,21 @@ sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
         .ast_node = node,
         .lhs = generate_expr(node->get_child(0)),
         .rhs = generate_expr(node->get_child(1)),
+    });
+}
+
+sir::Expr SIRGenerator::generate_tuple_expr(ASTNode *node) {
+    std::vector<sir::Expr> exprs;
+    exprs.resize(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        exprs[i] = generate_expr(node->get_child(i));
+    }
+
+    return create_expr(sir::TupleExpr{
+        .ast_node = node,
+        .type = nullptr,
+        .exprs = exprs,
     });
 }
 

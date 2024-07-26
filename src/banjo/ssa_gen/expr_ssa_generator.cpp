@@ -52,6 +52,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
     else if (auto index_expr = expr.match<sir::IndexExpr>()) return generate_index_expr(*index_expr);
     else if (auto call_expr = expr.match<sir::CallExpr>()) return generate_call_expr(*call_expr, hints);
     else if (auto field_expr = expr.match<sir::FieldExpr>()) return generate_field_expr(*field_expr);
+    else if (auto tuple_expr = expr.match<sir::TupleExpr>()) return generate_tuple_expr(*tuple_expr, hints);
     else ASSERT_UNREACHABLE;
 }
 
@@ -136,9 +137,10 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
 
     for (const sir::StructLiteralEntry &entry : struct_literal.entries) {
         unsigned index = entry.field->index;
-        ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), index);
-        ssa::Type ssa_field_type = TypeSSAGenerator(ctx).generate(entry.field->type);
-        ExprSSAGenerator(ctx).generate_into_dst(entry.value, ssa::Value::from_register(ssa_field_ptr, ssa_field_type));
+        ssa::VirtualRegister ssa_field_ptr_reg =
+            ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), index);
+        ssa::Value ssa_field_ptr = ssa::Value::from_register(ssa_field_ptr_reg, ssa::Primitive::ADDR);
+        ExprSSAGenerator(ctx).generate_into_dst(entry.value, ssa_field_ptr);
     }
 
     return stored_val;
@@ -341,13 +343,34 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 }
 
 StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_expr) {
-    const sir::StructField &field = *field_expr.field;
+    unsigned field_index = field_expr.field_index;
+    sir::Expr field_type;
+
+    if (auto struct_def = field_expr.base.get_type().match_symbol<sir::StructDef>()) {
+        field_type = struct_def->fields[field_index]->type;
+    } else if (auto tuple_expr = field_expr.base.get_type().match<sir::TupleExpr>()) {
+        field_type = tuple_expr->exprs[field_index];
+    }
 
     StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate(field_expr.base, StorageHints::prefer_reference());
-    ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(ssa_lhs.value_type, ssa_lhs.get_ptr(), field.index);
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field.type);
+    ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(ssa_lhs.value_type, ssa_lhs.get_ptr(), field_index);
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_type);
 
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
+}
+
+StoredValue ExprSSAGenerator::generate_tuple_expr(const sir::TupleExpr &tuple_expr, const StorageHints &hints) {
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(tuple_expr.type);
+    StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);
+
+    for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
+        const sir::Expr &expr = tuple_expr.exprs[i];
+        ssa::VirtualRegister ssa_field_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), i);
+        ssa::Value ssa_field_ptr = ssa::Value::from_register(ssa_field_ptr_reg, ssa::Primitive::ADDR);
+        ExprSSAGenerator(ctx).generate_into_dst(expr, ssa_field_ptr);
+    }
+
+    return stored_val;
 }
 
 StoredValue ExprSSAGenerator::generate_bool_expr(const sir::Expr &expr) {

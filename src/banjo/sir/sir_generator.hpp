@@ -81,6 +81,7 @@ private:
     sir::Expr generate_call_expr(ASTNode *node);
     sir::Expr generate_dot_expr(ASTNode *node);
     sir::Expr generate_range_expr(ASTNode *node);
+    sir::Expr generate_tuple_expr(ASTNode *node);
     std::vector<sir::Expr> generate_arg_list(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);
     sir::Expr generate_bracket_expr(ASTNode *node);

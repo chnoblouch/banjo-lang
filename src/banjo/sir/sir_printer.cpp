@@ -17,6 +17,16 @@
     PRINT_FIELD_NAME(name);                                                                                            \
     print_expr(value);
 
+#define PRINT_EXPR_LIST_FIELD(name, value)                                                                             \
+    BEGIN_LIST_FIELD(name);                                                                                            \
+                                                                                                                       \
+    for (const Expr &expr : value) {                                                                                   \
+        INDENT_LIST_ELEMENT();                                                                                         \
+        print_expr(expr);                                                                                              \
+    }                                                                                                                  \
+                                                                                                                       \
+    END_LIST_FIELD();
+
 #define PRINT_BLOCK_FIELD(name, value)                                                                                 \
     PRINT_FIELD_NAME(name);                                                                                            \
     print_block(value);
@@ -94,7 +104,7 @@ void Printer::print_func_def(const FuncDef &func_def) {
     if (func_def.is_generic()) {
         BEGIN_LIST_FIELD("generic_params")
 
-        for (const sir::GenericParam &generic_param : func_def.generic_params) {
+        for (const GenericParam &generic_param : func_def.generic_params) {
             INDENT_LIST_ELEMENT();
             BEGIN_OBJECT("GenericParam")
             PRINT_FIELD("ident", generic_param.ident.value)
@@ -104,7 +114,7 @@ void Printer::print_func_def(const FuncDef &func_def) {
         END_LIST_FIELD()
         BEGIN_LIST_FIELD("specializations")
 
-        for (const sir::GenericFuncSpecialization &specialization : func_def.specializations) {
+        for (const GenericFuncSpecialization &specialization : func_def.specializations) {
             INDENT_LIST_ELEMENT()
             print_func_def(*specialization.def);
         }
@@ -168,10 +178,10 @@ void Printer::print_use_decl(const UseDecl &use_decl) {
 }
 
 void Printer::print_use_item(const UseItem &use_item) {
-    if (auto use_ident = use_item.match<sir::UseIdent>()) print_use_ident(*use_ident);
-    else if (auto use_rebind = use_item.match<sir::UseRebind>()) print_use_rebind(*use_rebind);
-    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) print_use_dot_expr(*use_dot_expr);
-    else if (auto use_list = use_item.match<sir::UseList>()) print_use_list(*use_list);
+    if (auto use_ident = use_item.match<UseIdent>()) print_use_ident(*use_ident);
+    else if (auto use_rebind = use_item.match<UseRebind>()) print_use_rebind(*use_rebind);
+    else if (auto use_dot_expr = use_item.match<UseDotExpr>()) print_use_dot_expr(*use_dot_expr);
+    else if (auto use_list = use_item.match<UseList>()) print_use_list(*use_list);
     else ASSERT_UNREACHABLE;
 }
 
@@ -360,6 +370,7 @@ void Printer::print_expr(const Expr &expr) {
     else if (auto call_expr = expr.match<CallExpr>()) print_call_expr(*call_expr);
     else if (auto field_expr = expr.match<FieldExpr>()) print_field_expr(*field_expr);
     else if (auto range_expr = expr.match<RangeExpr>()) print_range_expr(*range_expr);
+    else if (auto tuple_expr = expr.match<TupleExpr>()) print_tuple_expr(*tuple_expr);
     else if (auto primitive_type = expr.match<PrimitiveType>()) print_primitive_type(*primitive_type);
     else if (auto pointer_type = expr.match<PointerType>()) print_pointer_type(*pointer_type);
     else if (auto func_type = expr.match<FuncType>()) print_func_type(*func_type);
@@ -410,7 +421,7 @@ void Printer::print_struct_literal(const StructLiteral &struct_literal) {
     PRINT_EXPR_FIELD("type", struct_literal.type);
     BEGIN_LIST_FIELD("entries");
 
-    for (const sir::StructLiteralEntry &entry : struct_literal.entries) {
+    for (const StructLiteralEntry &entry : struct_literal.entries) {
         INDENT_LIST_ELEMENT();
         BEGIN_OBJECT("StructLiteralEntry");
         PRINT_FIELD("field", entry.ident.value);
@@ -473,14 +484,7 @@ void Printer::print_call_expr(const CallExpr &call_expr) {
     BEGIN_OBJECT("CallExpr");
     PRINT_EXPR_FIELD("type", call_expr.type);
     PRINT_EXPR_FIELD("callee", call_expr.callee);
-    BEGIN_LIST_FIELD("args");
-
-    for (const sir::Expr &arg : call_expr.args) {
-        INDENT_LIST_ELEMENT();
-        print_expr(arg);
-    }
-
-    END_LIST_FIELD();
+    PRINT_EXPR_LIST_FIELD("args", call_expr.args);
     END_OBJECT();
 }
 
@@ -488,7 +492,7 @@ void Printer::print_field_expr(const FieldExpr &field_expr) {
     BEGIN_OBJECT("DotExpr");
     PRINT_EXPR_FIELD("type", field_expr.type);
     PRINT_EXPR_FIELD("base", field_expr.base);
-    PRINT_FIELD("field", field_expr.field->ident.value);
+    PRINT_FIELD("field", field_expr.field_index);
     END_OBJECT();
 }
 
@@ -496,6 +500,13 @@ void Printer::print_range_expr(const RangeExpr &range_expr) {
     BEGIN_OBJECT("DotExpr");
     PRINT_EXPR_FIELD("lhs", range_expr.lhs);
     PRINT_EXPR_FIELD("rhs", range_expr.rhs);
+    END_OBJECT();
+}
+
+void Printer::print_tuple_expr(const TupleExpr &tuple_expr) {
+    BEGIN_OBJECT("TupleExpr");
+    PRINT_EXPR_FIELD("type", tuple_expr.type);
+    PRINT_EXPR_LIST_FIELD("exprs", tuple_expr.exprs);
     END_OBJECT();
 }
 
@@ -559,14 +570,7 @@ void Printer::print_star_expr(const StarExpr &star_expr) {
 void Printer::print_bracket_expr(const BracketExpr &bracket_expr) {
     BEGIN_OBJECT("BracketExpr");
     PRINT_EXPR_FIELD("lhs", bracket_expr.lhs);
-    BEGIN_LIST_FIELD("rhs");
-
-    for (const sir::Expr &expr : bracket_expr.rhs) {
-        INDENT_LIST_ELEMENT();
-        print_expr(expr);
-    }
-
-    END_LIST_FIELD();
+    PRINT_EXPR_LIST_FIELD("rhs", bracket_expr.rhs);
     END_OBJECT();
 }
 

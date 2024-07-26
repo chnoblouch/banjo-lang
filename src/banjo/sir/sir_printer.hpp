@@ -71,6 +71,7 @@ private:
     void print_call_expr(const CallExpr &call_expr);
     void print_field_expr(const FieldExpr &field_expr);
     void print_range_expr(const RangeExpr &range_expr);
+    void print_tuple_expr(const TupleExpr &tuple_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
     void print_pointer_type(const PointerType &pointer_type);
     void print_func_type(const FuncType &func_type);

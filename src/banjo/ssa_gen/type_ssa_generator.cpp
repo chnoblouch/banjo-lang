@@ -15,6 +15,7 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
     else if (auto pointer_type = type.match<sir::PointerType>()) return ir::Primitive::ADDR;
     else if (auto func_type = type.match<sir::FuncType>()) return ir::Primitive::ADDR;
     else if (auto symbol_expr = type.match<sir::SymbolExpr>()) return generate_symbol_type(symbol_expr->symbol);
+    else if (auto tuple_expr = type.match<sir::TupleExpr>()) return generate_tuple_type(*tuple_expr);
     else ASSERT_UNREACHABLE;
 }
 
@@ -40,6 +41,17 @@ ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::Symbol &symbol) {
     if (auto struct_def = symbol.match<sir::StructDef>()) return ctx.ssa_structs[struct_def];
     else if (auto enum_def = symbol.match<sir::EnumDef>()) return ssa::Primitive::I32;
     else ASSERT_UNREACHABLE;
+}
+
+ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr) {
+    std::vector<ssa::Type> member_types;
+    member_types.resize(tuple_expr.exprs.size());
+
+    for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
+        member_types[i] = generate(tuple_expr.exprs[i]);
+    }
+
+    return ctx.get_tuple_struct(member_types);
 }
 
 } // namespace lang
