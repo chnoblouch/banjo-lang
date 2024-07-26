@@ -2,6 +2,7 @@
 
 #include "banjo/utils/macros.hpp"
 #include "generics_specializer.hpp"
+
 #include <cassert>
 
 namespace banjo {
@@ -134,6 +135,10 @@ void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::SymbolTable 
         analyze(arg);
     }
 
+    if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
+        resolve_overload(*overload_set, call_expr);
+    }
+
     call_expr.type = call_expr.callee.get_type().as<sir::FuncType>().return_type;
 }
 
@@ -145,12 +150,12 @@ void ExprAnalyzer::analyze_dot_expr_callee(
     analyze(dot_expr.lhs, symbol_table);
 
     if (auto struct_def = dot_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
-        sir::FuncDef &method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value).as<sir::FuncDef>();
+        sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
         out_call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
             .ast_node = dot_expr.rhs.ast_node,
-            .type = &method.type,
-            .symbol = &method,
+            .type = method.get_type(),
+            .symbol = method,
         });
 
         sir::Expr self_arg = analyzer.create_expr(sir::UnaryExpr{
@@ -166,12 +171,12 @@ void ExprAnalyzer::analyze_dot_expr_callee(
         out_call_expr.args.insert(out_call_expr.args.begin(), self_arg);
     } else if (auto pointer_type = dot_expr.lhs.get_type().match<sir::PointerType>()) {
         if (auto struct_def = pointer_type->base_type.match_symbol<sir::StructDef>()) {
-            sir::FuncDef &method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value).as<sir::FuncDef>();
+            sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
             out_call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
                 .ast_node = dot_expr.rhs.ast_node,
-                .type = &method.type,
-                .symbol = &method,
+                .type = method.get_type(),
+                .symbol = method,
             });
 
             out_call_expr.args.insert(out_call_expr.args.begin(), dot_expr.lhs);
@@ -305,6 +310,36 @@ void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_e
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void ExprAnalyzer::resolve_overload(sir::OverloadSet &overload_set, sir::CallExpr &inout_call_expr) {
+    for (sir::FuncDef *func_def : overload_set.func_defs) {
+        if (is_matching_overload(*func_def, inout_call_expr.args)) {
+            inout_call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
+                .ast_node = nullptr,
+                .type = &func_def->type,
+                .symbol = func_def,
+            });
+
+            return;
+        }
+    }
+
+    ASSERT_UNREACHABLE;
+}
+
+bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, std::vector<sir::Expr> &args) {
+    if (func_def.type.params.size() != args.size()) {
+        return false;
+    }
+
+    for (unsigned i = 0; i < args.size(); i++) {
+        if (args[i].get_type() != func_def.type.params[i].type) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace sema

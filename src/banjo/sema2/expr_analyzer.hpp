@@ -38,7 +38,8 @@ private:
     void analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 
     void analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
-
+    void resolve_overload(sir::OverloadSet &overload_set, sir::CallExpr &inout_call_expr);
+    bool is_matching_overload(sir::FuncDef &func_def, std::vector<sir::Expr> &args);
 };
 
 } // namespace sema

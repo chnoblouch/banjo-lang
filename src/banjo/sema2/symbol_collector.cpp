@@ -32,7 +32,17 @@ void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
 }
 
 void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
-    analyzer.get_scope().symbol_table->symbols.insert({func_def.ident.value, &func_def});
+    sir::Symbol &cur_entry = analyzer.get_scope().symbol_table->symbols[func_def.ident.value];
+
+    if (!cur_entry) {
+        cur_entry = &func_def;
+    } else if (auto cur_func_def = cur_entry.match<sir::FuncDef>()) {
+        cur_entry = analyzer.cur_sir_mod->create_overload_set({
+            .func_defs = {cur_func_def, &func_def},
+        });
+    } else if (auto cur_overload_set = cur_entry.match<sir::OverloadSet>()) {
+        cur_overload_set->func_defs.push_back(&func_def);
+    }
 }
 
 void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_decl) {

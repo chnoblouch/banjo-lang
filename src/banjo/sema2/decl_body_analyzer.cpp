@@ -1,7 +1,7 @@
 #include "decl_body_analyzer.hpp"
 
+#include "banjo/sema2/expr_analyzer.hpp"
 #include "banjo/sema2/stmt_analyzer.hpp"
-#include "expr_analyzer.hpp"
 
 namespace banjo {
 

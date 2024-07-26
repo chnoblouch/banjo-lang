@@ -72,6 +72,7 @@ struct UseList;
 struct Unit;
 struct Block;
 struct SymbolTable;
+struct OverloadSet;
 struct Ident;
 struct Module;
 
@@ -269,10 +270,13 @@ class Symbol {
         UseRebind *,
         VarStmt *,
         Param *,
+        OverloadSet *,
         std::nullptr_t>
         kind;
 
 public:
+    Symbol() : kind(nullptr) {}
+
     template <typename T>
     Symbol(T value) : kind(std::move(value)) {}
 
@@ -350,6 +354,10 @@ struct SymbolTable {
     std::unordered_map<std::string_view, Symbol> symbols;
 
     Symbol look_up(std::string_view name);
+};
+
+struct OverloadSet {
+    std::vector<FuncDef*> func_defs;
 };
 
 struct Ident {
@@ -769,6 +777,7 @@ struct Module {
     utils::GrowableArena<DeclStorage> decl_arena;
     utils::GrowableArena<UseItemStorage> use_item_arena;
     utils::GrowableArena<SymbolTable> symbol_table_arena;
+    utils::GrowableArena<OverloadSet> overload_set_arena;
 
     ModulePath path;
     DeclBlock block;
@@ -795,6 +804,7 @@ struct Module {
     }
 
     SymbolTable *create_symbol_table(SymbolTable value) { return symbol_table_arena.create(std::move(value)); }
+    OverloadSet *create_overload_set(OverloadSet value) { return overload_set_arena.create(std::move(value)); }
 };
 
 struct Unit {
