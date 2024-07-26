@@ -375,6 +375,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_FALSE: return generate_bool_literal(node, false);
         case AST_TRUE: return generate_bool_literal(node, true);
         case AST_CHAR_LITERAL: return generate_char_literal(node);
+        case AST_ARRAY_EXPR: return generate_array_literal(node);
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
         case AST_IDENTIFIER: return generate_ident_expr(node);
@@ -421,6 +422,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_BOOL: return generate_primitive_type(node, sir::Primitive::BOOL);
         case AST_ADDR: return generate_primitive_type(node, sir::Primitive::ADDR);
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);
+        case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -457,6 +459,21 @@ sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
         .ast_node = node,
         .type = nullptr,
         .value = value,
+    });
+}
+
+sir::Expr SIRGenerator::generate_array_literal(ASTNode *node) {
+    std::vector<sir::Expr> values;
+    values.resize(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        values[i] = generate_expr(node->get_child(i));
+    }
+
+    return create_expr(sir::ArrayLiteral{
+        .ast_node = node,
+        .type = nullptr,
+        .values = values,
     });
 }
 
@@ -616,6 +633,14 @@ sir::Expr SIRGenerator::generate_primitive_type(ASTNode *node, sir::Primitive pr
     return create_expr(sir::PrimitiveType{
         .ast_node = node,
         .primitive = primitive,
+    });
+}
+
+sir::Expr SIRGenerator::generate_static_array_type(ASTNode *node) {
+    return create_expr(sir::StaticArrayType{
+        .ast_node = node,
+        .base_type = generate_expr(node->get_child(0)),
+        .length = generate_expr(node->get_child(1)),
     });
 }
 

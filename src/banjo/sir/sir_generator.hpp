@@ -71,6 +71,7 @@ private:
     sir::Expr generate_fp_literal(ASTNode *node);
     sir::Expr generate_bool_literal(ASTNode *node, bool value);
     sir::Expr generate_char_literal(ASTNode *node);
+    sir::Expr generate_array_literal(ASTNode *node);
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
@@ -86,6 +87,7 @@ private:
     sir::Expr generate_star_expr(ASTNode *node);
     sir::Expr generate_bracket_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
+    sir::Expr generate_static_array_type(ASTNode *node);
 
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
     char decode_char(const std::string &value, unsigned &index);

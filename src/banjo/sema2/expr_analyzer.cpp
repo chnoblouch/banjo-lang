@@ -1,5 +1,6 @@
 #include "expr_analyzer.hpp"
 
+#include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 #include "generics_specializer.hpp"
 
@@ -22,6 +23,7 @@ void ExprAnalyzer::analyze(sir::Expr &expr, sir::SymbolTable &symbol_table) {
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) analyze_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) analyze_char_literal(*char_literal);
+    else if (auto array_literal = expr.match<sir::ArrayLiteral>()) analyze_array_literal(*array_literal);
     else if (auto string_literal = expr.match<sir::StringLiteral>()) analyze_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>()) analyze_struct_literal(*struct_literal);
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) analyze_binary_expr(*binary_expr);
@@ -30,6 +32,7 @@ void ExprAnalyzer::analyze(sir::Expr &expr, sir::SymbolTable &symbol_table) {
     else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr, symbol_table);
     else if (auto range_expr = expr.match<sir::RangeExpr>()) analyze_range_expr(*range_expr);
     else if (auto tuple_expr = expr.match<sir::TupleExpr>()) analyze_tuple_expr(*tuple_expr);
+    else if (auto static_array_type = expr.match<sir::StaticArrayType>()) analyze_static_array_type(*static_array_type);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, symbol_table, expr);
     else if (auto ident_expr = expr.match<sir::IdentExpr>()) analyze_ident_expr(*ident_expr, symbol_table, expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
@@ -62,6 +65,16 @@ void ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
         .ast_node = nullptr,
         .primitive = sir::Primitive::U8,
     });
+}
+
+void ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal) {
+    assert(array_literal.values.size() != 0);
+
+    for (sir::Expr &value : array_literal.values) {
+        analyze(value);
+    }
+
+    array_literal.type = array_literal.values[0].get_type();
 }
 
 void ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
@@ -190,6 +203,11 @@ void ExprAnalyzer::analyze_dot_expr_callee(
     }
 }
 
+void ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_type) {
+    analyze(static_array_type.base_type);
+    analyze(static_array_type.length);
+}
+
 void ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr) {
     analyze(dot_expr.lhs, symbol_table);
     analyze_dot_expr_rhs(dot_expr, out_expr);
@@ -285,12 +303,25 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
         }
     }
 
-    out_expr = analyzer.create_expr(sir::IndexExpr{
-        .ast_node = bracket_expr.ast_node,
-        .type = bracket_expr.lhs.get_type().as<sir::PointerType>().base_type,
-        .base = bracket_expr.lhs,
-        .index = bracket_expr.rhs[0],
-    });
+    const sir::Expr &lhs_type = bracket_expr.lhs.get_type();
+
+    if (auto pointer_type = lhs_type.match<sir::PointerType>()) {
+        out_expr = analyzer.create_expr(sir::IndexExpr{
+            .ast_node = bracket_expr.ast_node,
+            .type = pointer_type->base_type,
+            .base = bracket_expr.lhs,
+            .index = bracket_expr.rhs[0],
+        });
+    } else if (auto static_array_type = lhs_type.match<sir::StaticArrayType>()) {
+        out_expr = analyzer.create_expr(sir::IndexExpr{
+            .ast_node = bracket_expr.ast_node,
+            .type = static_array_type->base_type,
+            .base = bracket_expr.lhs,
+            .index = bracket_expr.rhs[0],
+        });
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {

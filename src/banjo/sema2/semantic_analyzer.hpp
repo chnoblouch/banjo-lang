@@ -32,6 +32,7 @@ class SemanticAnalyzer {
     friend class DeclBodyAnalyzer;
     friend class ExprAnalyzer;
     friend class StmtAnalyzer;
+    friend class ConstEvaluator;
     friend class GenericsSpecializer;
 
 private:

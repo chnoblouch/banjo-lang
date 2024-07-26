@@ -22,6 +22,7 @@ private:
     ssa::Type generate_primitive_type(const sir::PrimitiveType &primitive_type);
     ssa::Type generate_symbol_type(const sir::Symbol &symbol);
     ssa::Type generate_tuple_type(const sir::TupleExpr &tuple_expr);
+    ssa::Type generate_static_array_type(const sir::StaticArrayType &static_array_type);
 };
 
 } // namespace lang

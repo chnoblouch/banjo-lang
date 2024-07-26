@@ -360,6 +360,7 @@ void Printer::print_expr(const Expr &expr) {
     else if (auto fp_literal = expr.match<FPLiteral>()) print_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<BoolLiteral>()) print_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<CharLiteral>()) print_char_literal(*char_literal);
+    else if (auto array_literal = expr.match<ArrayLiteral>()) print_array_literal(*array_literal);
     else if (auto string_literal = expr.match<StringLiteral>()) print_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<StructLiteral>()) print_struct_literal(*struct_literal);
     else if (auto symbol_expr = expr.match<SymbolExpr>()) print_symbol_expr(*symbol_expr);
@@ -373,6 +374,7 @@ void Printer::print_expr(const Expr &expr) {
     else if (auto tuple_expr = expr.match<TupleExpr>()) print_tuple_expr(*tuple_expr);
     else if (auto primitive_type = expr.match<PrimitiveType>()) print_primitive_type(*primitive_type);
     else if (auto pointer_type = expr.match<PointerType>()) print_pointer_type(*pointer_type);
+    else if (auto static_array_type = expr.match<StaticArrayType>()) print_static_array_type(*static_array_type);
     else if (auto func_type = expr.match<FuncType>()) print_func_type(*func_type);
     else if (auto ident_expr = expr.match<IdentExpr>()) print_ident_expr(*ident_expr);
     else if (auto star_expr = expr.match<StarExpr>()) print_star_expr(*star_expr);
@@ -406,6 +408,13 @@ void Printer::print_char_literal(const CharLiteral &char_literal) {
     BEGIN_OBJECT("CharLiteral");
     PRINT_EXPR_FIELD("type", char_literal.type);
     PRINT_FIELD("value", char_literal.value);
+    END_OBJECT();
+}
+
+void Printer::print_array_literal(const ArrayLiteral &array_literal) {
+    BEGIN_OBJECT("ArrayLiteral");
+    PRINT_EXPR_FIELD("type", array_literal.type);
+    PRINT_EXPR_LIST_FIELD("values", array_literal.values);
     END_OBJECT();
 }
 
@@ -535,6 +544,13 @@ void Printer::print_primitive_type(const PrimitiveType &primitive_type) {
 void Printer::print_pointer_type(const PointerType &pointer_type) {
     BEGIN_OBJECT("PointerType");
     PRINT_EXPR_FIELD("base_type", pointer_type.base_type);
+    END_OBJECT();
+}
+
+void Printer::print_static_array_type(const StaticArrayType &static_array_type) {
+    BEGIN_OBJECT("StaticArrayType");
+    PRINT_EXPR_FIELD("base_type", static_array_type.base_type);
+    PRINT_EXPR_FIELD("length", static_array_type.length);
     END_OBJECT();
 }
 

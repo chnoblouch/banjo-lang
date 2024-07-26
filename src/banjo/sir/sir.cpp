@@ -30,6 +30,7 @@ Expr Expr::get_type() const {
     else if (auto fp_literal = match<FPLiteral>()) return fp_literal->type;
     else if (auto bool_literal = match<BoolLiteral>()) return bool_literal->type;
     else if (auto char_literal = match<CharLiteral>()) return char_literal->type;
+    else if (auto array_literal = match<ArrayLiteral>()) return array_literal->type;
     else if (auto string_literal = match<StringLiteral>()) return string_literal->type;
     else if (auto struct_literal = match<StructLiteral>()) return struct_literal->type;
     else if (auto symbol_expr = match<SymbolExpr>()) return symbol_expr->type;
@@ -44,7 +45,12 @@ Expr Expr::get_type() const {
 }
 
 bool Expr::is_type() const {
-    return is<PrimitiveType>() || is<PointerType>() || is<FuncType>();
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        const Symbol &symbol = symbol_expr->symbol;
+        return symbol.is<StructDef>() || symbol.is<EnumDef>();
+    } else {
+        return is<PrimitiveType>() || is<PointerType>() || is<FuncType>();
+    }
 }
 
 bool Expr::is_int_type() const {

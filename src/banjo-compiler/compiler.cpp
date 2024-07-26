@@ -73,14 +73,16 @@ ir::Module Compiler::run_frontend() {
 
 #if BANJO_ENABLE_SIR
     sir::Unit sir_unit = SIRGenerator().generate(module_manager.get_module_list());
-    std::ofstream sir_file_generated("logs/sir.generated.txt");
-    sir::Printer(sir_file_generated).print(sir_unit);
-    sir_file_generated.close();
+    if (config.is_debug()) {
+        std::ofstream sir_file_generated("logs/sir.generated.txt");
+        sir::Printer(sir_file_generated).print(sir_unit);
+    }
 
     sema::SemanticAnalyzer(sir_unit, target).analyze();
-    std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
-    sir::Printer(sir_file_analyzed).print(sir_unit);
-    sir_file_analyzed.close();
+    if (config.is_debug()) {
+        std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
+        sir::Printer(sir_file_analyzed).print(sir_unit);
+    }
 #else
     DataTypeManager type_manager;
     SemanticAnalyzer analyzer(module_manager, type_manager, target);

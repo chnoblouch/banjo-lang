@@ -42,6 +42,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) return generate_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) return generate_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) return generate_char_literal(*char_literal);
+    else if (auto array_literal = expr.match<sir::ArrayLiteral>()) return generate_array_literal(*array_literal, hints);
     else if (auto string_literal = expr.match<sir::StringLiteral>()) return generate_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>())
         return generate_struct_literal(*struct_literal, hints);
@@ -116,6 +117,23 @@ StoredValue ExprSSAGenerator::generate_char_literal(const sir::CharLiteral &char
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(char_literal.type);
     ssa::Value ssa_immediate = ssa::Value::from_int_immediate(value, ssa_type);
     return StoredValue::create_value(ssa_immediate);
+}
+
+StoredValue ExprSSAGenerator::generate_array_literal(
+    const sir::ArrayLiteral &array_literal,
+    const StorageHints &hints
+) {
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(array_literal.type);
+    StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);
+
+    for (unsigned i = 0; i < array_literal.values.size(); i++) {
+        const sir::Expr &value = array_literal.values[i];
+        ssa::VirtualRegister ssa_element_ptr_reg = ctx.append_offsetptr(stored_val.get_ptr(), i, stored_val.value_type);
+        ssa::Value ssa_element_ptr = ssa::Value::from_register(ssa_element_ptr_reg, ssa::Primitive::ADDR);
+        ExprSSAGenerator(ctx).generate_into_dst(value, ssa_element_ptr);
+    }
+
+    return stored_val;
 }
 
 StoredValue ExprSSAGenerator::generate_string_literal(const sir::StringLiteral &string_literal) {
@@ -299,11 +317,21 @@ StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr)
 }
 
 StoredValue ExprSSAGenerator::generate_index_expr(const sir::IndexExpr &index_expr) {
-    ssa::Value ssa_base = generate(index_expr.base).turn_into_value(ctx).get_value();
+    const sir::Expr &base_type = index_expr.base.get_type();
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(index_expr.type);
     ssa::Value ssa_offset = generate(index_expr.index).turn_into_value(ctx).get_value();
-    ssa::VirtualRegister ssa_reg = ctx.append_offsetptr(ssa_base, ssa_offset, ssa_type);
-    return StoredValue::create_reference(ssa::Value::from_register(ssa_reg, ssa::Primitive::ADDR), ssa_type);
+
+    if (base_type.is<sir::PointerType>()) {
+        ssa::Value ssa_base = generate(index_expr.base).turn_into_value(ctx).get_value();
+        ssa::VirtualRegister ssa_reg = ctx.append_offsetptr(ssa_base, ssa_offset, ssa_type);
+        return StoredValue::create_reference(ssa::Value::from_register(ssa_reg, ssa::Primitive::ADDR), ssa_type);
+    } else if (base_type.is<sir::StaticArrayType>()) {
+        ssa::Value ssa_base = generate(index_expr.base).get_ptr();
+        ssa::VirtualRegister ssa_reg = ctx.append_offsetptr(ssa_base, ssa_offset, ssa_type);
+        return StoredValue::create_reference(ssa::Value::from_register(ssa_reg, ssa::Primitive::ADDR), ssa_type);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints) {

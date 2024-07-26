@@ -117,6 +117,7 @@ add_library(banjo STATIC
     sema/type_analyzer.cpp
     sema/use_collector.cpp
     sema/use_resolver.cpp
+    sema2/const_evaluator.cpp
     sema2/decl_body_analyzer.cpp
     sema2/decl_interface_analyzer.cpp
     sema2/expr_analyzer.cpp

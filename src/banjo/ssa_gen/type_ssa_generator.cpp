@@ -16,6 +16,8 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
     else if (auto func_type = type.match<sir::FuncType>()) return ir::Primitive::ADDR;
     else if (auto symbol_expr = type.match<sir::SymbolExpr>()) return generate_symbol_type(symbol_expr->symbol);
     else if (auto tuple_expr = type.match<sir::TupleExpr>()) return generate_tuple_type(*tuple_expr);
+    else if (auto static_array_type = type.match<sir::StaticArrayType>())
+        return generate_static_array_type(*static_array_type);
     else ASSERT_UNREACHABLE;
 }
 
@@ -52,6 +54,12 @@ ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr
     }
 
     return ctx.get_tuple_struct(member_types);
+}
+
+ssa::Type TypeSSAGenerator::generate_static_array_type(const sir::StaticArrayType &static_array_type) {
+    ssa::Type type = generate(static_array_type.base_type);
+    type.set_array_length(static_array_type.length.as<sir::IntLiteral>().value.to_u64());
+    return type;
 }
 
 } // namespace lang

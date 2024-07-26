@@ -61,6 +61,7 @@ private:
     void print_fp_literal(const FPLiteral &fp_literal);
     void print_bool_literal(const BoolLiteral &bool_literal);
     void print_char_literal(const CharLiteral &char_literal);
+    void print_array_literal(const ArrayLiteral &array_literal);
     void print_string_literal(const StringLiteral &string_literal);
     void print_struct_literal(const StructLiteral &struct_literal);
     void print_symbol_expr(const SymbolExpr &symbol_expr);
@@ -74,6 +75,7 @@ private:
     void print_tuple_expr(const TupleExpr &tuple_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
     void print_pointer_type(const PointerType &pointer_type);
+    void print_static_array_type(const StaticArrayType &static_array_type);
     void print_func_type(const FuncType &func_type);
     void print_ident_expr(const IdentExpr &ident_expr);
     void print_star_expr(const StarExpr &star_expr);

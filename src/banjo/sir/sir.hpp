@@ -28,6 +28,7 @@ struct IntLiteral;
 struct FPLiteral;
 struct BoolLiteral;
 struct CharLiteral;
+struct ArrayLiteral;
 struct StringLiteral;
 struct StructLiteral;
 struct SymbolExpr;
@@ -41,6 +42,7 @@ struct RangeExpr;
 struct TupleExpr;
 struct PrimitiveType;
 struct PointerType;
+struct StaticArrayType;
 struct FuncType;
 struct IdentExpr;
 struct StarExpr;
@@ -89,6 +91,7 @@ class Expr {
         FPLiteral *,
         BoolLiteral *,
         CharLiteral *,
+        ArrayLiteral *,
         StringLiteral *,
         StructLiteral *,
         SymbolExpr *,
@@ -102,6 +105,7 @@ class Expr {
         TupleExpr *,
         PrimitiveType *,
         PointerType *,
+        StaticArrayType *,
         FuncType *,
         IdentExpr *,
         StarExpr *,
@@ -405,6 +409,12 @@ struct CharLiteral {
     char value;
 };
 
+struct ArrayLiteral {
+    ASTNode *ast_node;
+    Expr type;
+    std::vector<Expr> values;
+};
+
 struct StringLiteral {
     ASTNode *ast_node;
     Expr type;
@@ -547,6 +557,18 @@ struct PointerType {
 
     bool operator==(const PointerType &other) const { return base_type == other.base_type; }
     bool operator!=(const PointerType &other) const { return !(*this == other); }
+};
+
+struct StaticArrayType {
+    ASTNode *ast_node;
+    Expr base_type;
+    Expr length;
+
+    bool operator==(const StaticArrayType &other) const {
+        return base_type == other.base_type && length == other.length;
+    }
+
+    bool operator!=(const StaticArrayType &other) const { return !(*this == other); }
 };
 
 struct FuncType {
@@ -743,6 +765,7 @@ typedef std::variant<
     FPLiteral,
     BoolLiteral,
     CharLiteral,
+    ArrayLiteral,
     StringLiteral,
     StructLiteral,
     SymbolExpr,
@@ -756,6 +779,7 @@ typedef std::variant<
     TupleExpr,
     PrimitiveType,
     PointerType,
+    StaticArrayType,
     FuncType,
     IdentExpr,
     StarExpr,

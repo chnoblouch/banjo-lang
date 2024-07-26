@@ -1,5 +1,6 @@
 #include "decl_body_analyzer.hpp"
 
+#include "banjo/sema2/const_evaluator.hpp"
 #include "banjo/sema2/expr_analyzer.hpp"
 #include "banjo/sema2/stmt_analyzer.hpp"
 
@@ -49,7 +50,7 @@ void DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
     for (sir::EnumVariant *variant : enum_def.variants) {
         if (variant->value) {
             ExprAnalyzer(analyzer).analyze(variant->value);
-            next_value = variant->value.as<sir::IntLiteral>().value + 1;
+            next_value = ConstEvaluator(analyzer).evaluate_to_int(variant->value) + 1;
         } else {
             variant->value = analyzer.create_expr(sir::IntLiteral{
                 .ast_node = nullptr,

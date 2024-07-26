@@ -38,6 +38,7 @@ private:
     StoredValue generate_fp_literal(const sir::FPLiteral &fp_literal);
     StoredValue generate_bool_literal(const sir::BoolLiteral &bool_literal);
     StoredValue generate_char_literal(const sir::CharLiteral &char_literal);
+    StoredValue generate_array_literal(const sir::ArrayLiteral &array_literal, const StorageHints &hints);
     StoredValue generate_string_literal(const sir::StringLiteral &string_literal);
     StoredValue generate_struct_literal(const sir::StructLiteral &struct_literal, const StorageHints &hints);
     StoredValue generate_symbol_expr(const sir::SymbolExpr &symbol_expr);
