@@ -51,7 +51,6 @@ private:
     sir::Decl generate_use_decl(ASTNode *node);
 
     sir::Ident generate_ident(ASTNode *node);
-    sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     sir::Block generate_block(ASTNode *node);
 
     sir::Stmt generate_stmt(ASTNode *node);
@@ -88,7 +87,9 @@ private:
     sir::Expr generate_bracket_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
     sir::Expr generate_static_array_type(ASTNode *node);
+    sir::Expr generate_func_type(ASTNode *node);
 
+    sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
     char decode_char(const std::string &value, unsigned &index);
 

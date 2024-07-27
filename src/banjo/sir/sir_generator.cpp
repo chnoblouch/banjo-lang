@@ -175,51 +175,6 @@ sir::Ident SIRGenerator::generate_ident(ASTNode *node) {
     };
 }
 
-sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *return_node) {
-    std::vector<sir::Param> params;
-    params.resize(params_node->get_children().size());
-
-    for (unsigned i = 0; i < params_node->get_children().size(); i++) {
-        ASTNode *param_node = params_node->get_child(i);
-        ASTNodeType ident_type = param_node->get_child(PARAM_NAME)->get_type();
-
-        if (ident_type == AST_IDENTIFIER) {
-            params[i] = {
-                .ast_node = param_node,
-                .name = generate_ident(param_node->get_child(PARAM_NAME)),
-                .type = generate_expr(param_node->get_child(PARAM_TYPE)),
-            };
-        } else if (ident_type == AST_SELF) {
-            sir::Ident sir_ident{
-                .ast_node = nullptr,
-                .value = "self",
-            };
-
-            sir::Expr sir_type = create_expr(sir::PointerType{
-                .ast_node = nullptr,
-                .base_type = create_expr(sir::SymbolExpr{
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .symbol = get_scope().struct_def,
-                }),
-            });
-
-            params[i] = {
-                .ast_node = param_node,
-                .name = sir_ident,
-                .type = sir_type,
-            };
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    }
-
-    return {
-        .params = params,
-        .return_type = generate_expr(return_node),
-    };
-}
-
 sir::Block SIRGenerator::generate_block(ASTNode *node) {
     sir::SymbolTable *symbol_table = create_symbol_table({
         .parent = get_scope().symbol_table,
@@ -423,6 +378,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_ADDR: return generate_primitive_type(node, sir::Primitive::ADDR);
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
+        case AST_FUNCTION_DATA_TYPE: return generate_func_type(node);
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -642,6 +598,55 @@ sir::Expr SIRGenerator::generate_static_array_type(ASTNode *node) {
         .base_type = generate_expr(node->get_child(0)),
         .length = generate_expr(node->get_child(1)),
     });
+}
+
+sir::Expr SIRGenerator::generate_func_type(ASTNode *node) {
+    return create_expr(generate_func_type(node->get_child(FUNC_TYPE_PARAMS), node->get_child(FUNC_TYPE_RETURN_TYPE)));
+}
+
+sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *return_node) {
+    std::vector<sir::Param> params;
+    params.resize(params_node->get_children().size());
+
+    for (unsigned i = 0; i < params_node->get_children().size(); i++) {
+        ASTNode *param_node = params_node->get_child(i);
+        ASTNodeType ident_type = param_node->get_child(PARAM_NAME)->get_type();
+
+        if (ident_type == AST_IDENTIFIER) {
+            params[i] = {
+                .ast_node = param_node,
+                .name = generate_ident(param_node->get_child(PARAM_NAME)),
+                .type = generate_expr(param_node->get_child(PARAM_TYPE)),
+            };
+        } else if (ident_type == AST_SELF) {
+            sir::Ident sir_ident{
+                .ast_node = nullptr,
+                .value = "self",
+            };
+
+            sir::Expr sir_type = create_expr(sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = create_expr(sir::SymbolExpr{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .symbol = get_scope().struct_def,
+                }),
+            });
+
+            params[i] = {
+                .ast_node = param_node,
+                .name = sir_ident,
+                .type = sir_type,
+            };
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+
+    return {
+        .params = params,
+        .return_type = generate_expr(return_node),
+    };
 }
 
 std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode *node) {
