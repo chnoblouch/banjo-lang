@@ -172,6 +172,8 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
         ssa::Value ssa_value = ssa::Value::from_extern_func(native_func_decl->ident.value, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
+    } else if (auto const_def = symbol_expr.symbol.match<sir::ConstDef>()) {
+        return generate(const_def->value);
     } else if (auto enum_variant = symbol_expr.symbol.match<sir::EnumVariant>()) {
         return generate(enum_variant->value).turn_into_value(ctx);
     } else if (auto var_stmt = symbol_expr.symbol.match<sir::VarStmt>()) {

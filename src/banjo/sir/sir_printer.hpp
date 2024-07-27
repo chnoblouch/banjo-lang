@@ -28,6 +28,7 @@ private:
     void print_decl(const Decl &decl);
     void print_func_def(const FuncDef &func_def);
     void print_native_func_decl(const NativeFuncDecl &native_func_decl);
+    void print_const_def(const ConstDef &const_def);
     void print_struct_def(const StructDef &struct_def);
     void print_struct_field(const StructField &struct_field);
     void print_var_decl(const VarDecl &var_decl);

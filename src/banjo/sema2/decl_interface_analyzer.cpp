@@ -22,6 +22,7 @@ void DeclInterfaceAnalyzer::analyze_decl_block(sir::DeclBlock &decl_block) {
     for (sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) analyze_func_def(*func_def);
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) analyze_native_func_decl(*native_func_decl);
+        else if (auto const_def = decl.match<sir::ConstDef>()) analyze_const_def(*const_def);
         else if (auto struct_def = decl.match<sir::StructDef>()) analyze_struct_def(*struct_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) analyze_var_decl(*var_decl, decl);
         else if (auto enum_def = decl.match<sir::EnumDef>()) analyze_enum_def(*enum_def);
@@ -48,6 +49,10 @@ void DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &native
     }
 
     ExprAnalyzer(analyzer).analyze(native_func_decl.type.return_type);
+}
+
+void DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
+    ExprAnalyzer(analyzer).analyze(const_def.type);
 }
 
 void DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
@@ -85,7 +90,7 @@ void DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant)
     }
 
     analyzer.get_scope().enum_def->variants.push_back(&enum_variant);
-    
+
     enum_variant.type = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
         .type = nullptr,

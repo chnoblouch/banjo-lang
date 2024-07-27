@@ -145,6 +145,7 @@ bool Symbol::operator==(const Symbol &other) const {
 const std::string &Symbol::get_name() const {
     if (auto func_def = match<FuncDef>()) return func_def->ident.value;
     else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->ident.value;
+    else if (auto const_def = match<ConstDef>()) return const_def->ident.value;
     else if (auto struct_def = match<StructDef>()) return struct_def->ident.value;
     else if (auto struct_field = match<StructField>()) return struct_field->ident.value;
     else if (auto var_decl = match<VarDecl>()) return var_decl->ident.value;
@@ -158,6 +159,7 @@ const std::string &Symbol::get_name() const {
 Expr Symbol::get_type() {
     if (auto func_def = match<FuncDef>()) return &func_def->type;
     else if (auto native_func_decl = match<NativeFuncDecl>()) return &native_func_decl->type;
+    else if (auto const_def = match<ConstDef>()) return const_def->type;
     else if (auto struct_field = match<StructField>()) return struct_field->type;
     else if (auto var_decl = match<VarDecl>()) return var_decl->type;
     else if (auto enum_variant = match<EnumVariant>()) return enum_variant->type;

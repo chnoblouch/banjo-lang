@@ -80,6 +80,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_FUNCTION_DEFINITION: return generate_func(node);
         case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
         case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node);
+        case AST_CONSTANT: return generate_const(node);
         case AST_STRUCT_DEFINITION: return generate_struct(node);
         case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_VAR: return generate_var_decl(node);
@@ -113,6 +114,15 @@ sir::Decl SIRGenerator::generate_native_func(ASTNode *node) {
         .ast_node = node,
         .ident = generate_ident(node->get_child(FUNC_NAME)),
         .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
+    });
+}
+
+sir::Decl SIRGenerator::generate_const(ASTNode *node) {
+    return create_decl(sir::ConstDef{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(CONST_NAME)),
+        .type = generate_expr(node->get_child(CONST_TYPE)),
+        .value = generate_expr(node->get_child(CONST_VALUE)),
     });
 }
 

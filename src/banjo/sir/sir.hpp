@@ -60,6 +60,7 @@ struct ContinueStmt;
 struct BreakStmt;
 struct FuncDef;
 struct NativeFuncDecl;
+struct ConstDef;
 struct StructDef;
 struct StructField;
 struct VarDecl;
@@ -217,6 +218,7 @@ private:
     std::variant<
         FuncDef *,
         NativeFuncDecl *,
+        ConstDef *,
         StructDef *,
         StructField *,
         VarDecl *,
@@ -267,6 +269,7 @@ class Symbol {
         Module *,
         FuncDef *,
         NativeFuncDecl *,
+        ConstDef *,
         StructDef *,
         StructField *,
         VarDecl *,
@@ -695,6 +698,13 @@ struct NativeFuncDecl {
     FuncType type;
 };
 
+struct ConstDef {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr type;
+    Expr value;
+};
+
 struct StructDef {
     ASTNode *ast_node;
     Ident ident;
@@ -802,7 +812,7 @@ typedef std::variant<
     Block>
     StmtStorage;
 
-typedef std::variant<FuncDef, NativeFuncDecl, StructDef, StructField, VarDecl, EnumDef, EnumVariant, UseDecl>
+typedef std::variant<FuncDef, NativeFuncDecl, ConstDef, StructDef, StructField, VarDecl, EnumDef, EnumVariant, UseDecl>
     DeclStorage;
 
 typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;

@@ -23,6 +23,7 @@ void DeclBodyAnalyzer::analyze() {
 void DeclBodyAnalyzer::analyze_decl_block(sir::DeclBlock &decl_block) {
     for (sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) analyze_func_def(*func_def);
+        else if (auto const_def = decl.match<sir::ConstDef>()) analyze_const_def(*const_def);
         else if (auto struct_def = decl.match<sir::StructDef>()) analyze_struct_def(*struct_def);
         else if (auto enum_def = decl.match<sir::EnumDef>()) analyze_enum_def(*enum_def);
     }
@@ -36,6 +37,10 @@ void DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     analyzer.push_scope().func_def = &func_def;
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
     analyzer.pop_scope();
+}
+
+void DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
+    ExprAnalyzer(analyzer).analyze(const_def.value);
 }
 
 void DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {

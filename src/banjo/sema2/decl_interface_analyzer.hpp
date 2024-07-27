@@ -22,6 +22,7 @@ public:
     void analyze_decl_block(sir::DeclBlock &decl_block);
     void analyze_func_def(sir::FuncDef &func_def);
     void analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl);
+    void analyze_const_def(sir::ConstDef &const_def);
     void analyze_struct_def(sir::StructDef &struct_def);
     void analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl);
     void analyze_enum_def(sir::EnumDef &enum_def);

@@ -22,6 +22,7 @@ void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
     for (sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) collect_func_def(*func_def);
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) collect_native_func_decl(*native_func_decl);
+        else if (auto const_def = decl.match<sir::ConstDef>()) collect_const_def(*const_def);
         else if (auto struct_def = decl.match<sir::StructDef>()) collect_struct_def(*struct_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) collect_var_decl(*var_decl);
         else if (auto enum_def = decl.match<sir::EnumDef>()) collect_enum_def(*enum_def);
@@ -47,6 +48,10 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
 
 void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
     analyzer.get_scope().symbol_table->symbols.insert({native_func_decl.ident.value, &native_func_decl});
+}
+
+void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
+    analyzer.get_scope().symbol_table->symbols.insert({const_def.ident.value, &const_def});
 }
 
 void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {

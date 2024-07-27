@@ -84,6 +84,7 @@ void Printer::print_decl_block(const DeclBlock &decl_block) {
 void Printer::print_decl(const Decl &decl) {
     if (auto func_def = decl.match<FuncDef>()) print_func_def(*func_def);
     else if (auto native_func_decl = decl.match<NativeFuncDecl>()) print_native_func_decl(*native_func_decl);
+    else if (auto const_def = decl.match<ConstDef>()) print_const_def(*const_def);
     else if (auto struct_def = decl.match<StructDef>()) print_struct_def(*struct_def);
     else if (auto struct_field = decl.match<StructField>()) print_struct_field(*struct_field);
     else if (auto var_decl = decl.match<VarDecl>()) print_var_decl(*var_decl);
@@ -130,6 +131,14 @@ void Printer::print_native_func_decl(const NativeFuncDecl &native_func_decl) {
     PRINT_FIELD("ident", native_func_decl.ident.value);
     PRINT_FIELD_NAME("type");
     print_func_type(native_func_decl.type);
+    END_OBJECT();
+}
+
+void Printer::print_const_def(const ConstDef &const_def) {
+    BEGIN_OBJECT("ConstDef");
+    PRINT_FIELD("ident", const_def.ident.value);
+    PRINT_EXPR_FIELD("type", const_def.type);
+    PRINT_EXPR_FIELD("value", const_def.value);
     END_OBJECT();
 }
 
