@@ -3,7 +3,7 @@
 
 #include "banjo/passes/pass.hpp"
 
-#include <string>
+#include <string_view>
 #include <unordered_set>
 
 namespace banjo {
@@ -15,6 +15,7 @@ class DeadFuncEliminationPass : public Pass {
 private:
     ir::Module *mod;
     std::unordered_set<ir::Function *> used_funcs;
+    std::unordered_set<std::string_view> used_extern_funcs;
 
 public:
     DeadFuncEliminationPass(target::Target *target);

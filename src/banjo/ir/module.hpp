@@ -45,6 +45,10 @@ public:
 
     void set_functions(std::vector<Function *> functions) { this->functions = std::move(functions); }
 
+    void set_external_functions(std::vector<FunctionDecl> external_functions) {
+        this->external_functions = std::move(external_functions);
+    }
+
     void add(Function *function) { functions.push_back(function); }
     void add(Global global) { globals.push_back(std::move(global)); }
     void add(Structure *structure) { structures.push_back(structure); }
