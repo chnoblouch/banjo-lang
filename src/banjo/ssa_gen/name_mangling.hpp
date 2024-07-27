@@ -10,6 +10,9 @@ namespace lang {
 
 namespace NameMangling {
 
+std::string get_link_name(SSAGeneratorContext &ctx, const sir::FuncDef &func);
+const std::string &get_link_name(const sir::NativeFuncDecl &func);
+
 std::string mangle_func_name(SSAGeneratorContext &ctx, const sir::FuncDef &func);
 
 };

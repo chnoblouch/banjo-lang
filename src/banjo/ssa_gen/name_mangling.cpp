@@ -8,6 +8,24 @@ namespace lang {
 
 namespace NameMangling {
 
+std::string get_link_name(SSAGeneratorContext &ctx, const sir::FuncDef &func) {
+    if (func.attrs && func.attrs->link_name) {
+        return *func.attrs->link_name;
+    } else if (func.is_main() || (func.attrs && (func.attrs->exposed || func.attrs->dllexport))) {
+        return func.ident.value;
+    } else {
+        return mangle_func_name(ctx, func);
+    }
+}
+
+const std::string &get_link_name(const sir::NativeFuncDecl &func) {
+    if (func.attrs && func.attrs->link_name) {
+        return *func.attrs->link_name;
+    } else {
+        return func.ident.value;
+    }
+}
+
 static void mangle_type(std::string &string, const sir::Expr &type) {
     if (auto primitive_type = type.match<sir::PrimitiveType>()) {
         string += 'p';
@@ -31,10 +49,6 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
 }
 
 std::string mangle_func_name(SSAGeneratorContext &ctx, const sir::FuncDef &func) {
-    if (func.is_main()) {
-        return func.ident.value;
-    }
-
     std::string string = "bnj_";
 
     for (const SSAGeneratorContext::DeclContext &decl_ctx : std::ranges::views::reverse(ctx.get_decl_contexts())) {

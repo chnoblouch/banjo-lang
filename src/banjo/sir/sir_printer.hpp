@@ -84,6 +84,7 @@ private:
     void print_dot_expr(const DotExpr &dot_expr);
 
     void print_binary_op(const char *field_name, BinaryOp op);
+    void print_attrs(const Attributes &attrs);
 
     std::string get_indent();
     void new_line();

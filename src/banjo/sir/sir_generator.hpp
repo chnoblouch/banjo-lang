@@ -92,6 +92,7 @@ private:
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
+    sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
     char decode_char(const std::string &value, unsigned &index);
 
     sir::UseItem generate_use_item(ASTNode *node);
@@ -123,6 +124,8 @@ private:
     sir::SymbolTable *create_symbol_table(sir::SymbolTable value) {
         return cur_sir_mod->create_symbol_table(std::move(value));
     }
+
+    sir::Attributes *create_attrs(sir::Attributes value) { return cur_sir_mod->create_attrs(std::move(value)); }
 };
 
 } // namespace lang

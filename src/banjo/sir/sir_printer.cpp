@@ -102,6 +102,11 @@ void Printer::print_func_def(const FuncDef &func_def) {
     PRINT_FIELD_NAME("block");
     print_block(func_def.block);
 
+    if (func_def.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*func_def.attrs);
+    }
+
     if (func_def.is_generic()) {
         BEGIN_LIST_FIELD("generic_params")
 
@@ -131,6 +136,12 @@ void Printer::print_native_func_decl(const NativeFuncDecl &native_func_decl) {
     PRINT_FIELD("ident", native_func_decl.ident.value);
     PRINT_FIELD_NAME("type");
     print_func_type(native_func_decl.type);
+
+    if (native_func_decl.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*native_func_decl.attrs);
+    }
+
     END_OBJECT();
 }
 
@@ -627,6 +638,14 @@ void Printer::print_binary_op(const char *field_name, BinaryOp op) {
         case BinaryOp::AND: PRINT_FIELD(field_name, "AND"); break;
         case BinaryOp::OR: PRINT_FIELD(field_name, "OR"); break;
     }
+}
+
+void Printer::print_attrs(const Attributes &attrs) {
+    BEGIN_OBJECT("Attributes");
+    PRINT_FIELD("exposed", attrs.exposed ? "true" : "false");
+    PRINT_FIELD("dllexport", attrs.dllexport ? "true" : "false");
+    PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
+    END_OBJECT();
 }
 
 std::string Printer::get_indent() {

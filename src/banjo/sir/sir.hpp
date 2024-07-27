@@ -1,6 +1,7 @@
 #ifndef SIR_H
 #define SIR_H
 
+#include "banjo/ast/attribute.hpp"
 #include "banjo/symbol/module_path.hpp"
 #include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
@@ -369,6 +370,12 @@ struct OverloadSet {
     std::vector<FuncDef *> func_defs;
 };
 
+struct Attributes {
+    bool exposed = false;
+    bool dllexport = false;
+    std::optional<std::string> link_name = {};
+};
+
 struct Ident {
     ASTNode *ast_node;
     std::string value;
@@ -685,6 +692,7 @@ struct FuncDef {
     Ident ident;
     FuncType type;
     Block block;
+    Attributes *attrs = nullptr;
     std::vector<GenericParam> generic_params;
     std::vector<GenericFuncSpecialization> specializations;
 
@@ -696,6 +704,7 @@ struct NativeFuncDecl {
     ASTNode *ast_node;
     Ident ident;
     FuncType type;
+    Attributes *attrs = nullptr;
 };
 
 struct ConstDef {
@@ -824,6 +833,7 @@ struct Module {
     utils::GrowableArena<UseItemStorage> use_item_arena;
     utils::GrowableArena<SymbolTable> symbol_table_arena;
     utils::GrowableArena<OverloadSet> overload_set_arena;
+    utils::GrowableArena<Attributes> attributes_arena;
 
     ModulePath path;
     DeclBlock block;
@@ -851,6 +861,7 @@ struct Module {
 
     SymbolTable *create_symbol_table(SymbolTable value) { return symbol_table_arena.create(std::move(value)); }
     OverloadSet *create_overload_set(OverloadSet value) { return overload_set_arena.create(std::move(value)); }
+    Attributes *create_attrs(Attributes value) { return attributes_arena.create(std::move(value)); }
 };
 
 struct Unit {

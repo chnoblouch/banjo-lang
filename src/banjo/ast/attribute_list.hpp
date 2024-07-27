@@ -14,7 +14,7 @@ private:
     std::vector<Attribute> attributes;
 
 public:
-    const std::vector<Attribute> &get_attributes() { return attributes; }
+    const std::vector<Attribute> &get_attributes() const { return attributes; }
     void add(Attribute attribute) { this->attributes.push_back(attribute); }
 };
 

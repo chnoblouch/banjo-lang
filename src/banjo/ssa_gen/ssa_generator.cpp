@@ -73,7 +73,9 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
         return;
     }
 
-    std::string ssa_name = NameMangling::mangle_func_name(ctx, sir_func);
+    sir::Attributes *attrs = sir_func.attrs;
+
+    std::string ssa_name = NameMangling::get_link_name(ctx, sir_func);
     std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
     ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
 
@@ -83,19 +85,22 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
     }
 
     ssa::Function *ssa_func = new ssa::Function(ssa_name, ssa_params, ssa_return_type, ssa_calling_conv);
-    ssa_func->set_global(true);
+    ssa_func->set_global(sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport)));
 
     ssa_mod.add(ssa_func);
     ctx.ssa_funcs.insert({&sir_func, ssa_func});
+
+    if (attrs && attrs->dllexport && ctx.target->get_descr().is_windows()) {
+        ssa_mod.add_dll_export(ssa_name);
+    }
 }
 
 void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) {
-    std::string ssa_name = sir_func.ident.value;
+    std::string ssa_name = NameMangling::get_link_name(sir_func);
     std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
     ssa::Type ssa_return_type = generate_return_type(sir_func.type.return_type);
     ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
-
-    ssa_mod.add(ssa::FunctionDecl(sir_func.ident.value, ssa_params, ssa_return_type, ssa_calling_conv));
+    ssa_mod.add(ssa::FunctionDecl(ssa_name, ssa_params, ssa_return_type, ssa_calling_conv));
 }
 
 std::vector<ssa::Type> SSAGenerator::generate_params(const sir::FuncType &sir_func_type) {

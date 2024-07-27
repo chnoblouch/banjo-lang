@@ -6,6 +6,7 @@
 #include "banjo/ir/primitive.hpp"
 #include "banjo/ir/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
@@ -170,7 +171,8 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
-        ssa::Value ssa_value = ssa::Value::from_extern_func(native_func_decl->ident.value, ssa::Primitive::ADDR);
+        std::string ssa_name = NameMangling::get_link_name(*native_func_decl);
+        ssa::Value ssa_value = ssa::Value::from_extern_func(ssa_name, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto const_def = symbol_expr.symbol.match<sir::ConstDef>()) {
         return generate(const_def->value);
