@@ -18,9 +18,9 @@ private:
 public:
     SymbolCollector(SemanticAnalyzer &analyzer);
     void collect();
+    void collect_in_block(sir::DeclBlock &decl_block);
 
 private:
-    void collect_in_block(sir::DeclBlock &decl_block);
     void collect_func_def(sir::FuncDef &func_def);
     void collect_native_func_decl(sir::NativeFuncDecl &native_func_decl);
     void collect_const_def(sir::ConstDef &const_def);

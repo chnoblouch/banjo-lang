@@ -37,7 +37,19 @@ void DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 
     for (sir::Param &param : func_def.type.params) {
         func_def.block.symbol_table->symbols.insert({param.name.value, &param});
-        ExprAnalyzer(analyzer).analyze(param.type);
+
+        if (param.name.value == "self") {
+            param.type = analyzer.create_expr(sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = analyzer.create_expr(sir::SymbolExpr{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .symbol = analyzer.get_scope().struct_def,
+                }),
+            });
+        } else {
+            ExprAnalyzer(analyzer).analyze(param.type);
+        }
     }
 
     ExprAnalyzer(analyzer).analyze(func_def.type.return_type);
@@ -56,9 +68,13 @@ void DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
 }
 
 void DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
-    analyzer.push_scope().struct_def = &struct_def;
+    if (struct_def.is_generic()) {
+        return;
+    }
+
+    analyzer.enter_struct_def(&struct_def);
     analyze_decl_block(struct_def.block);
-    analyzer.pop_scope();
+    analyzer.exit_struct_def();
 }
 
 void DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
@@ -79,9 +95,9 @@ void DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &
 }
 
 void DeclInterfaceAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
-    analyzer.push_scope().enum_def = &enum_def;
+    analyzer.enter_enum_def(&enum_def);
     analyze_decl_block(enum_def.block);
-    analyzer.pop_scope();
+    analyzer.exit_enum_def();
 }
 
 void DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant) {

@@ -25,7 +25,7 @@
         print_expr(expr);                                                                                              \
     }                                                                                                                  \
                                                                                                                        \
-    END_LIST_FIELD();
+    END_LIST();
 
 #define PRINT_BLOCK_FIELD(name, value)                                                                                 \
     PRINT_FIELD_NAME(name);                                                                                            \
@@ -33,12 +33,15 @@
 
 #define BEGIN_LIST_FIELD(name)                                                                                         \
     PRINT_FIELD_NAME(name);                                                                                            \
+    BEGIN_LIST();
+
+#define BEGIN_LIST()                                                                                                   \
     stream << "\n";                                                                                                    \
-    indent++;
+    indent++
 
 #define INDENT_LIST_ELEMENT() stream << get_indent();
 
-#define END_LIST_FIELD() indent--;
+#define END_LIST() indent--;
 
 #define END_OBJECT() indent--;
 
@@ -55,11 +58,15 @@ void Printer::print(const Unit &unit) {
     BEGIN_LIST_FIELD("mods");
 
     for (const Module *mod : unit.mods) {
+        if (mod->path != ModulePath({"main"})) {
+            continue;
+        }
+
         INDENT_LIST_ELEMENT();
         print_mod(*mod);
     }
 
-    END_LIST_FIELD();
+    END_LIST();
 }
 
 void Printer::print_mod(const Module &mod) {
@@ -108,24 +115,16 @@ void Printer::print_func_def(const FuncDef &func_def) {
     }
 
     if (func_def.is_generic()) {
-        BEGIN_LIST_FIELD("generic_params")
-
-        for (const GenericParam &generic_param : func_def.generic_params) {
-            INDENT_LIST_ELEMENT();
-            BEGIN_OBJECT("GenericParam")
-            PRINT_FIELD("ident", generic_param.ident.value)
-            END_OBJECT()
-        }
-
-        END_LIST_FIELD()
+        PRINT_FIELD_NAME("generic_params")
+        print_generic_params(func_def.generic_params);
         BEGIN_LIST_FIELD("specializations")
 
-        for (const GenericFuncSpecialization &specialization : func_def.specializations) {
+        for (const Specialization<FuncDef> &specialization : func_def.specializations) {
             INDENT_LIST_ELEMENT()
             print_func_def(*specialization.def);
         }
 
-        END_LIST_FIELD()
+        END_LIST()
     }
 
     END_OBJECT();
@@ -158,6 +157,20 @@ void Printer::print_struct_def(const StructDef &struct_def) {
     PRINT_FIELD("ident", struct_def.ident.value);
     PRINT_FIELD_NAME("block");
     print_decl_block(struct_def.block);
+    
+    if (struct_def.is_generic()) {
+        PRINT_FIELD_NAME("generic_params")
+        print_generic_params(struct_def.generic_params);
+        BEGIN_LIST_FIELD("specializations")
+
+        for (const Specialization<StructDef> &specialization : struct_def.specializations) {
+            INDENT_LIST_ELEMENT()
+            print_struct_def(*specialization.def);
+        }
+
+        END_LIST()
+    }
+    
     END_OBJECT();
 }
 
@@ -236,7 +249,7 @@ void Printer::print_use_list(const UseList &use_list) {
         print_use_item(item);
     }
 
-    END_LIST_FIELD();
+    END_LIST();
     END_OBJECT();
 }
 
@@ -309,7 +322,7 @@ void Printer::print_if_stmt(const IfStmt &if_stmt) {
         END_OBJECT();
     }
 
-    END_LIST_FIELD();
+    END_LIST();
     PRINT_FIELD_NAME("else_branch");
 
     if (if_stmt.else_branch) {
@@ -458,7 +471,7 @@ void Printer::print_struct_literal(const StructLiteral &struct_literal) {
         END_OBJECT();
     }
 
-    END_LIST_FIELD();
+    END_LIST();
     END_OBJECT();
     END_OBJECT();
 }
@@ -586,7 +599,7 @@ void Printer::print_func_type(const FuncType &func_type) {
         END_OBJECT();
     }
 
-    END_LIST_FIELD();
+    END_LIST();
     PRINT_EXPR_FIELD("return_type", func_type.return_type);
     END_OBJECT();
 }
@@ -617,6 +630,27 @@ void Printer::print_dot_expr(const DotExpr &dot_expr) {
     END_OBJECT();
 }
 
+void Printer::print_generic_params(const std::vector<GenericParam> &generic_params) {
+    BEGIN_LIST();
+
+    for (const GenericParam &generic_param : generic_params) {
+        INDENT_LIST_ELEMENT();
+        BEGIN_OBJECT("GenericParam")
+        PRINT_FIELD("ident", generic_param.ident.value)
+        END_OBJECT()
+    }
+
+    END_LIST()
+}
+
+void Printer::print_attrs(const Attributes &attrs) {
+    BEGIN_OBJECT("Attributes");
+    PRINT_FIELD("exposed", attrs.exposed ? "true" : "false");
+    PRINT_FIELD("dllexport", attrs.dllexport ? "true" : "false");
+    PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
+    END_OBJECT();
+}
+
 void Printer::print_binary_op(const char *field_name, BinaryOp op) {
     switch (op) {
         case BinaryOp::ADD: PRINT_FIELD(field_name, "ADD"); break;
@@ -638,14 +672,6 @@ void Printer::print_binary_op(const char *field_name, BinaryOp op) {
         case BinaryOp::AND: PRINT_FIELD(field_name, "AND"); break;
         case BinaryOp::OR: PRINT_FIELD(field_name, "OR"); break;
     }
-}
-
-void Printer::print_attrs(const Attributes &attrs) {
-    BEGIN_OBJECT("Attributes");
-    PRINT_FIELD("exposed", attrs.exposed ? "true" : "false");
-    PRINT_FIELD("dllexport", attrs.dllexport ? "true" : "false");
-    PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
-    END_OBJECT();
 }
 
 std::string Printer::get_indent() {

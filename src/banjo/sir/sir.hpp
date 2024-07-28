@@ -8,7 +8,6 @@
 #include "banjo/utils/macros.hpp"
 
 #include <cstddef>
-#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -16,6 +15,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <list>
 
 namespace banjo {
 
@@ -395,6 +395,12 @@ struct GenericParam {
     Ident ident;
 };
 
+template <typename T>
+struct Specialization {
+    std::vector<Expr> args;
+    T *def;
+};
+
 struct IntLiteral {
     ASTNode *ast_node;
     Expr type;
@@ -682,11 +688,6 @@ struct BreakStmt {
     ASTNode *ast_node;
 };
 
-struct GenericFuncSpecialization {
-    std::vector<Expr> args;
-    FuncDef *def;
-};
-
 struct FuncDef {
     ASTNode *ast_node;
     Ident ident;
@@ -694,7 +695,7 @@ struct FuncDef {
     Block block;
     Attributes *attrs = nullptr;
     std::vector<GenericParam> generic_params;
-    std::vector<GenericFuncSpecialization> specializations;
+    std::list<Specialization<FuncDef>> specializations;
 
     bool is_generic() const { return !generic_params.empty(); }
     bool is_main() const { return ident.value == "main"; }
@@ -714,13 +715,21 @@ struct ConstDef {
     Expr value;
 };
 
+struct GenericStructSpecialization {
+    std::vector<Expr> args;
+    FuncDef *def;
+};
+
 struct StructDef {
     ASTNode *ast_node;
     Ident ident;
     DeclBlock block;
     std::vector<StructField *> fields;
+    std::vector<GenericParam> generic_params;
+    std::list<Specialization<StructDef>> specializations;
 
     StructField *find_field(std::string_view name) const;
+    bool is_generic() const { return !generic_params.empty(); }
 };
 
 struct StructField {

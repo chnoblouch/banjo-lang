@@ -82,6 +82,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node);
         case AST_CONSTANT: return generate_const(node);
         case AST_STRUCT_DEFINITION: return generate_struct(node);
+        case AST_GENERIC_STRUCT_DEFINITION: return generate_generic_struct(node);
         case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_VAR: return generate_var_decl(node);
         case AST_USE: return generate_use_decl(node);
@@ -134,10 +135,27 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node) {
         .ident = generate_ident(node->get_child(STRUCT_NAME)),
         .block = {},
         .fields = {},
+        .generic_params = {},
     });
 
     push_scope().struct_def = struct_def;
     struct_def->block = generate_decl_block(node->get_child(STRUCT_BLOCK));
+    pop_scope();
+
+    return struct_def;
+}
+
+sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
+    sir::StructDef *struct_def = create_decl(sir::StructDef{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(GENERIC_STRUCT_NAME)),
+        .block = {},
+        .fields = {},
+        .generic_params = generate_generic_param_list(node->get_child(GENERIC_STRUCT_GENERIC_PARAMS)),
+    });
+
+    push_scope().struct_def = struct_def;
+    struct_def->block = generate_decl_block(node->get_child(GENERIC_STRUCT_BLOCK));
     pop_scope();
 
     return struct_def;
@@ -636,19 +654,10 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
                 .value = "self",
             };
 
-            sir::Expr sir_type = create_expr(sir::PointerType{
-                .ast_node = nullptr,
-                .base_type = create_expr(sir::SymbolExpr{
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .symbol = get_scope().struct_def,
-                }),
-            });
-
             sir_params[i] = {
                 .ast_node = param_node,
                 .name = sir_ident,
-                .type = sir_type,
+                .type = nullptr,
             };
         } else {
             ASSERT_UNREACHABLE;

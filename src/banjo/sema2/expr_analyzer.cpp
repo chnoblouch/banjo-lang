@@ -301,6 +301,18 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
 
             return;
         }
+    } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
+        if (struct_def->is_generic()) {
+            sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(*struct_def, bracket_expr.rhs);
+
+            out_expr = analyzer.create_expr(sir::SymbolExpr{
+                .ast_node = bracket_expr.ast_node,
+                .type = nullptr,
+                .symbol = specialization,
+            });
+
+            return;
+        }
     }
 
     const sir::Expr &lhs_type = bracket_expr.lhs.get_type();

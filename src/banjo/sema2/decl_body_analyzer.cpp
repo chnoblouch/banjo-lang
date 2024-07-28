@@ -44,9 +44,13 @@ void DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
 }
 
 void DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
-    analyzer.push_scope().struct_def = &struct_def;
+    if (struct_def.is_generic()) {
+        return;
+    }
+
+    analyzer.enter_struct_def(&struct_def);
     analyze_decl_block(struct_def.block);
-    analyzer.pop_scope();
+    analyzer.exit_struct_def();
 }
 
 void DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
@@ -68,9 +72,9 @@ void DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
         }
     }
 
-    analyzer.push_scope().enum_def = &enum_def;
+    analyzer.enter_enum_def(&enum_def);
     analyze_decl_block(enum_def.block);
-    analyzer.pop_scope();
+    analyzer.exit_enum_def();
 }
 
 } // namespace sema

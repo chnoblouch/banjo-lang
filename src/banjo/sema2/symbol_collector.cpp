@@ -57,9 +57,11 @@ void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
 void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
     analyzer.get_scope().symbol_table->symbols.insert({struct_def.ident.value, &struct_def});
 
-    analyzer.push_scope().struct_def = &struct_def;
-    collect_in_block(struct_def.block);
-    analyzer.pop_scope();
+    if (!struct_def.is_generic()) {
+        analyzer.enter_struct_def(&struct_def);
+        collect_in_block(struct_def.block);
+        analyzer.exit_struct_def();
+    }
 }
 
 void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
@@ -71,9 +73,9 @@ void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
 void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
     analyzer.get_scope().symbol_table->symbols.insert({enum_def.ident.value, &enum_def});
 
-    analyzer.push_scope().enum_def = &enum_def;
+    analyzer.enter_enum_def(&enum_def);
     collect_in_block(enum_def.block);
-    analyzer.pop_scope();
+    analyzer.exit_enum_def();
 }
 
 void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {

@@ -31,6 +31,18 @@ void SemanticAnalyzer::enter_mod(sir::Module *mod) {
     });
 }
 
+void SemanticAnalyzer::enter_struct_def(sir::StructDef *struct_def) {
+    Scope &scope = push_scope();
+    scope.struct_def = struct_def;
+    scope.symbol_table = struct_def->block.symbol_table;
+}
+
+void SemanticAnalyzer::enter_enum_def(sir::EnumDef *enum_def) {
+    Scope &scope = push_scope();
+    scope.enum_def = enum_def;
+    scope.symbol_table = enum_def->block.symbol_table;
+}
+
 } // namespace sema
 
 } // namespace lang

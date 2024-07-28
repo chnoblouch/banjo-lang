@@ -57,6 +57,10 @@ private:
 
     void enter_mod(sir::Module *mod);
     void exit_mod() { scopes.pop(); }
+    void enter_struct_def(sir::StructDef *struct_def);
+    void exit_struct_def() { scopes.pop(); }
+    void enter_enum_def(sir::EnumDef *enum_def);
+    void exit_enum_def() { scopes.pop(); }
 
     template <typename T>
     T *create_expr(T value) {

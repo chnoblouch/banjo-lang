@@ -6,10 +6,10 @@
 #include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
+#include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
-#include "name_mangling.hpp"
 
 #include <utility>
 
@@ -49,6 +49,14 @@ void SSAGenerator::create_types(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::create_struct_type(const sir::StructDef &sir_struct_def) {
+    if (sir_struct_def.is_generic()) {
+        for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
+            create_struct_type(*sir_specialization.def);
+        }
+
+        return;
+    }
+
     ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
     ssa_mod.add(ssa_struct);
     ctx.ssa_structs.insert({&sir_struct_def, ssa_struct});
@@ -66,7 +74,7 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
 
 void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
     if (sir_func.is_generic()) {
-        for (const sir::GenericFuncSpecialization &sir_specialization : sir_func.specializations) {
+        for (const sir::Specialization<sir::FuncDef> &sir_specialization : sir_func.specializations) {
             create_func_def(*sir_specialization.def);
         }
 
@@ -135,7 +143,18 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
     return ssa_return_type;
 }
 
-void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
+void SSAGenerator::create_struct_def(
+    const sir::StructDef &sir_struct_def,
+    const std::vector<sir::Expr> *generic_args /* = nullptr */
+) {
+    if (sir_struct_def.is_generic()) {
+        for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
+            create_struct_def(*sir_specialization.def, &sir_specialization.args);
+        }
+
+        return;
+    }
+
     ssa::Structure *ssa_struct = ctx.ssa_structs[&sir_struct_def];
 
     for (sir::StructField *sir_field : sir_struct_def.fields) {
@@ -145,8 +164,12 @@ void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
         });
     }
 
-    ctx.push_decl_context().sir_struct_def = &sir_struct_def;
+    SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
+    decl_context.sir_struct_def = &sir_struct_def;
+    decl_context.sir_generic_args = generic_args;
+
     create_decls(sir_struct_def.block);
+
     ctx.pop_decl_context();
 }
 
@@ -159,7 +182,7 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     if (sir_func.is_generic()) {
-        for (const sir::GenericFuncSpecialization &sir_specialization : sir_func.specializations) {
+        for (const sir::Specialization<sir::FuncDef> &sir_specialization : sir_func.specializations) {
             generate_func_def(*sir_specialization.def);
         }
 
@@ -235,6 +258,14 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
 }
 
 void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
+    if (sir_struct_def.is_generic()) {
+        for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
+            generate_struct_def(*sir_specialization.def);
+        }
+
+        return;
+    }
+
     generate_decls(sir_struct_def.block);
 }
 

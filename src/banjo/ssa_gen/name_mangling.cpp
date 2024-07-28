@@ -62,6 +62,14 @@ std::string mangle_func_name(SSAGeneratorContext &ctx, const sir::FuncDef &func)
             string += 's';
             string += std::to_string(decl_ctx.sir_struct_def->ident.value.size());
             string += decl_ctx.sir_struct_def->ident.value;
+
+            if (decl_ctx.sir_generic_args) {
+                string += 'g';
+
+                for (const sir::Expr &generic_arg : *decl_ctx.sir_generic_args) {
+                    mangle_type(string, generic_arg);
+                }
+            }
         }
     }
 
@@ -72,8 +80,6 @@ std::string mangle_func_name(SSAGeneratorContext &ctx, const sir::FuncDef &func)
 
     for (const sir::Param &param : func.type.params) {
         mangle_type(string, param.type);
-        string += std::to_string(param.name.value.size());
-        string += param.name.value;
     }
 
     return string;

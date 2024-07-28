@@ -83,8 +83,9 @@ private:
     void print_bracket_expr(const BracketExpr &bracket_expr);
     void print_dot_expr(const DotExpr &dot_expr);
 
-    void print_binary_op(const char *field_name, BinaryOp op);
+    void print_generic_params(const std::vector<GenericParam> &generic_params);
     void print_attrs(const Attributes &attrs);
+    void print_binary_op(const char *field_name, BinaryOp op);
 
     std::string get_indent();
     void new_line();

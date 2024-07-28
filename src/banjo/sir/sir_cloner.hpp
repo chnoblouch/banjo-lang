@@ -11,14 +11,25 @@ namespace lang {
 
 namespace sir {
 
-class SIRCloner {
+class Cloner {
 
 private:
     Module &mod;
-    std::stack<SymbolTable*> symbol_tables;
+    std::stack<SymbolTable *> symbol_tables;
 
 public:
-    SIRCloner(Module &mod);
+    Cloner(Module &mod);
+
+    DeclBlock clone_decl_block(const DeclBlock &decl_block);
+    Decl clone_decl(const Decl &decl);
+    FuncDef *clone_func_def(const FuncDef &func_def);
+    NativeFuncDecl *clone_native_func_decl(const NativeFuncDecl &native_func_decl);
+    ConstDef *clone_const_def(const ConstDef &const_def);
+    StructDef *clone_struct_def(const StructDef &struct_def);
+    StructField *clone_struct_field(const StructField &struct_field);
+    VarDecl *clone_var_decl(const VarDecl &var_decl);
+    EnumDef *clone_enum_def(const EnumDef &enum_def);
+    EnumVariant *clone_enum_variant(const EnumVariant &enum_variant);
 
     Block clone_block(const Block &block);
     Stmt clone_stmt(const Stmt &stmt);
@@ -40,6 +51,7 @@ public:
     FPLiteral *clone_fp_literal(const FPLiteral &fp_literal);
     BoolLiteral *clone_bool_literal(const BoolLiteral &bool_literal);
     CharLiteral *clone_char_literal(const CharLiteral &char_literal);
+    ArrayLiteral *clone_array_literal(const ArrayLiteral &array_literal);
     StringLiteral *clone_string_literal(const StringLiteral &string_literal);
     StructLiteral *clone_struct_literal(const StructLiteral &struct_literal);
     SymbolExpr *clone_symbol_expr(const SymbolExpr &symbol_expr);
@@ -50,13 +62,22 @@ public:
     CallExpr *clone_call_expr(const CallExpr &call_expr);
     FieldExpr *clone_field_expr(const FieldExpr &field_expr);
     RangeExpr *clone_range_expr(const RangeExpr &range_expr);
+    TupleExpr *clone_tuple_expr(const TupleExpr &tuple_expr);
     PrimitiveType *clone_primitive_type(const PrimitiveType &primitive_type);
     PointerType *clone_pointer_type(const PointerType &pointer_type);
+    StaticArrayType *clone_static_array_type(const StaticArrayType &static_array_type);
     FuncType *clone_func_type(const FuncType &func_type);
     IdentExpr *clone_ident_expr(const IdentExpr &ident_expr);
     StarExpr *clone_star_expr(const StarExpr &star_expr);
     BracketExpr *clone_bracket_expr(const BracketExpr &bracket_expr);
     DotExpr *clone_dot_expr(const DotExpr &dot_expr);
+
+private:
+    SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
+    void pop_symbol_table() { symbol_tables.pop(); }
+
+    std::vector<Expr> clone_expr_list(const std::vector<Expr> &exprs);
+    Attributes *clone_attrs(const Attributes *attrs);
 };
 
 } // namespace sir
