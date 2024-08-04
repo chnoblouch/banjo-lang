@@ -31,7 +31,6 @@ void StmtAnalyzer::analyze(sir::Stmt &stmt) {
 void StmtAnalyzer::analyze_block(sir::Block &block) {
     Scope &scope = analyzer.push_scope();
     scope.block = &block;
-    scope.symbol_table = block.symbol_table;
 
     for (sir::Stmt &stmt : block.stmts) {
         analyze(stmt);
@@ -41,7 +40,7 @@ void StmtAnalyzer::analyze_block(sir::Block &block) {
 }
 
 void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
-    analyzer.get_scope().symbol_table->symbols.insert({var_stmt.name.value, &var_stmt});
+    analyzer.get_scope().block->symbol_table->symbols.insert({var_stmt.name.value, &var_stmt});
 
     if (var_stmt.type) {
         ExprAnalyzer(analyzer).analyze(var_stmt.type);
@@ -108,7 +107,7 @@ void StmtAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt)
         .ast_node = nullptr,
         .stmts = {},
         .symbol_table = analyzer.create_symbol_table({
-            .parent = analyzer.get_scope().symbol_table,
+            .parent = &analyzer.get_symbol_table(),
             .symbols = {},
         }),
     });

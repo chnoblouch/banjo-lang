@@ -44,6 +44,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
     else if (auto var_decl = decl.match<VarDecl>()) return clone_var_decl(*var_decl);
     else if (auto enum_def = decl.match<EnumDef>()) return clone_enum_def(*enum_def);
     else if (auto enum_variant = decl.match<EnumVariant>()) return clone_enum_variant(*enum_variant);
+    else if (auto meta_if_stmt = decl.match<MetaIfStmt>()) return clone_meta_if_stmt(*meta_if_stmt);
     else ASSERT_UNREACHABLE;
 }
 
@@ -122,6 +123,36 @@ EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
         .ident = enum_variant.ident,
         .type = clone_expr(enum_variant.type),
         .value = clone_expr(enum_variant.value),
+    });
+}
+
+MetaIfStmt *Cloner::clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
+    std::vector<MetaIfCondBranch> cond_branches;
+    cond_branches.resize(meta_if_stmt.cond_branches.size());
+
+    for (unsigned i = 0; i < meta_if_stmt.cond_branches.size(); i++) {
+        const MetaIfCondBranch &if_cond_branch = meta_if_stmt.cond_branches[i];
+
+        cond_branches[i] = MetaIfCondBranch{
+            .ast_node = if_cond_branch.ast_node,
+            .condition = clone_expr(if_cond_branch.condition),
+            .block = clone_meta_block(if_cond_branch.block),
+        };
+    }
+
+    std::optional<MetaIfElseBranch> else_branch;
+
+    if (meta_if_stmt.else_branch) {
+        else_branch = MetaIfElseBranch{
+            .ast_node = meta_if_stmt.else_branch->ast_node,
+            .block = clone_meta_block(meta_if_stmt.else_branch->block),
+        };
+    }
+
+    return mod.create_stmt(MetaIfStmt{
+        .ast_node = meta_if_stmt.ast_node,
+        .cond_branches = cond_branches,
+        .else_branch = else_branch,
     });
 }
 
@@ -530,6 +561,25 @@ std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
 
 Attributes *Cloner::clone_attrs(const Attributes *attrs) {
     return attrs ? mod.create_attrs(*attrs) : nullptr;
+}
+
+MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
+    std::vector<Node> nodes;
+    nodes.resize(meta_block.nodes.size());
+
+    for (unsigned i = 0; i < meta_block.nodes.size(); i++) {
+        const Node &node = meta_block.nodes[i];
+
+        if (auto expr = node.match<sir::Expr>()) nodes[i] = clone_expr(*expr);
+        else if (auto stmt = node.match<sir::Stmt>()) nodes[i] = clone_stmt(*stmt);
+        else if (auto decl = node.match<sir::Decl>()) nodes[i] = clone_decl(*decl);
+        else ASSERT_UNREACHABLE;
+    }
+
+    return MetaBlock{
+        .ast_node = meta_block.ast_node,
+        .nodes = nodes,
+    };
 }
 
 } // namespace sir

@@ -13,7 +13,7 @@ namespace sema {
 class StmtAnalyzer {
 
 private:
-    SemanticAnalyzer analyzer;
+    SemanticAnalyzer &analyzer;
 
 public:
     StmtAnalyzer(SemanticAnalyzer &analyzer);

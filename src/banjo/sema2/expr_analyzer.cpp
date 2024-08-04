@@ -1,10 +1,16 @@
 #include "expr_analyzer.hpp"
 
+#include "banjo/sema2/generics_specializer.hpp"
+#include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
-#include "generics_specializer.hpp"
 
 #include <cassert>
+
+#define HANDLE_RESULT(result)                                                                                          \
+    if ((result) != Result::SUCCESS) {                                                                                 \
+        return result;                                                                                                 \
+    }
 
 namespace banjo {
 
@@ -14,11 +20,7 @@ namespace sema {
 
 ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void ExprAnalyzer::analyze(sir::Expr &expr) {
-    analyze(expr, *analyzer.get_scope().symbol_table);
-}
-
-void ExprAnalyzer::analyze(sir::Expr &expr, sir::SymbolTable &symbol_table) {
+Result ExprAnalyzer::analyze(sir::Expr &expr) {
     if (auto int_literal = expr.match<sir::IntLiteral>()) analyze_int_literal(*int_literal);
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) analyze_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
@@ -29,14 +31,16 @@ void ExprAnalyzer::analyze(sir::Expr &expr, sir::SymbolTable &symbol_table) {
     else if (auto binary_expr = expr.match<sir::BinaryExpr>()) analyze_binary_expr(*binary_expr);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) analyze_unary_expr(*unary_expr);
     else if (auto cast_expr = expr.match<sir::CastExpr>()) analyze_cast_expr(*cast_expr);
-    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr, symbol_table);
+    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr);
     else if (auto range_expr = expr.match<sir::RangeExpr>()) analyze_range_expr(*range_expr);
     else if (auto tuple_expr = expr.match<sir::TupleExpr>()) analyze_tuple_expr(*tuple_expr);
     else if (auto static_array_type = expr.match<sir::StaticArrayType>()) analyze_static_array_type(*static_array_type);
-    else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, symbol_table, expr);
-    else if (auto ident_expr = expr.match<sir::IdentExpr>()) analyze_ident_expr(*ident_expr, symbol_table, expr);
+    else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, expr);
+    else if (auto ident_expr = expr.match<sir::IdentExpr>()) return analyze_ident_expr(*ident_expr, expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
     else if (auto bracket_expr = expr.match<sir::BracketExpr>()) analyze_bracket_expr(*bracket_expr, expr);
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
@@ -89,8 +93,8 @@ void ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
     });
 }
 
-void ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
-    analyze(struct_literal.type);
+Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
+    HANDLE_RESULT(analyze(struct_literal.type));
 
     sir::StructDef &struct_def = struct_literal.type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
 
@@ -104,6 +108,8 @@ void ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
         assert(entry.field);
         analyze(entry.value);
     }
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr) {
@@ -139,9 +145,9 @@ void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
     analyze(cast_expr.value);
 }
 
-void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::SymbolTable &symbol_table) {
+void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
-        analyze_dot_expr_callee(*dot_expr, symbol_table, call_expr);
+        analyze_dot_expr_callee(*dot_expr, call_expr);
     } else {
         analyze(call_expr.callee);
     }
@@ -157,12 +163,8 @@ void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::SymbolTable 
     call_expr.type = call_expr.callee.get_type().as<sir::FuncType>().return_type;
 }
 
-void ExprAnalyzer::analyze_dot_expr_callee(
-    sir::DotExpr &dot_expr,
-    sir::SymbolTable &symbol_table,
-    sir::CallExpr &out_call_expr
-) {
-    analyze(dot_expr.lhs, symbol_table);
+void ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr) {
+    analyze(dot_expr.lhs);
 
     if (auto struct_def = dot_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
         sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
@@ -208,8 +210,8 @@ void ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_
     analyze(static_array_type.length);
 }
 
-void ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr) {
-    analyze(dot_expr.lhs, symbol_table);
+void ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
+    analyze(dot_expr.lhs);
     analyze_dot_expr_rhs(dot_expr, out_expr);
 }
 
@@ -243,18 +245,25 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
     });
 }
 
-void ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr) {
+Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr) {
+    sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
     const std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
 
     if (!generic_args.empty()) {
         auto iter = generic_args.find(ident_expr.value);
         if (iter != generic_args.end()) {
             out_expr = iter->second;
-            return;
+            return Result::SUCCESS;
         }
     }
 
     sir::Symbol symbol = symbol_table.look_up(ident_expr.value);
+
+    if (!symbol && !symbol_table.complete && !analyzer.is_in_stmt_block()) {
+        MetaExpansion(analyzer).run_on_decl_block(*analyzer.get_scope().decl_block);
+        symbol = symbol_table.look_up(ident_expr.value);
+    }
+
     assert(symbol);
 
     out_expr = analyzer.create_expr(sir::SymbolExpr{
@@ -262,6 +271,8 @@ void ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::SymbolTab
         .type = symbol.get_type(),
         .symbol = symbol,
     });
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
@@ -337,9 +348,15 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
 }
 
 void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
-    sir::SymbolTable *symbol_table = dot_expr.lhs.get_symbol_table();
-    if (symbol_table) {
-        sir::Symbol symbol = symbol_table->look_up(dot_expr.rhs.value);
+    sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
+    if (decl_block) {
+        sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
+
+        if (!symbol && !decl_block->symbol_table->complete) {
+            MetaExpansion(analyzer).run_on_decl_block(*analyzer.get_scope().decl_block);
+            symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
+        }
+
         assert(symbol);
 
         out_expr = analyzer.create_expr(sir::SymbolExpr{

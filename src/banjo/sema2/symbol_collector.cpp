@@ -1,5 +1,6 @@
 #include "symbol_collector.hpp"
 
+#include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -19,21 +20,34 @@ void SymbolCollector::collect() {
 }
 
 void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
+    analyzer.check_for_completeness(decl_block);
+
     for (sir::Decl &decl : decl_block.decls) {
-        if (auto func_def = decl.match<sir::FuncDef>()) collect_func_def(*func_def);
-        else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) collect_native_func_decl(*native_func_decl);
-        else if (auto const_def = decl.match<sir::ConstDef>()) collect_const_def(*const_def);
-        else if (auto struct_def = decl.match<sir::StructDef>()) collect_struct_def(*struct_def);
-        else if (auto var_decl = decl.match<sir::VarDecl>()) collect_var_decl(*var_decl);
-        else if (auto enum_def = decl.match<sir::EnumDef>()) collect_enum_def(*enum_def);
-        else if (auto enum_variant = decl.match<sir::EnumVariant>()) collect_enum_variant(*enum_variant);
-        else if (auto use_decl = decl.match<sir::UseDecl>()) collect_use_decl(*use_decl);
-        else ASSERT_UNREACHABLE;
+        collect_decl(decl);
     }
 }
 
+void SymbolCollector::collect_in_meta_block(sir::MetaBlock &meta_block) {
+    for (sir::Node &node : meta_block.nodes) {
+        collect_decl(node.as<sir::Decl>());
+    }
+}
+
+void SymbolCollector::collect_decl(sir::Decl &decl) {
+    if (auto func_def = decl.match<sir::FuncDef>()) collect_func_def(*func_def);
+    else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) collect_native_func_decl(*native_func_decl);
+    else if (auto const_def = decl.match<sir::ConstDef>()) collect_const_def(*const_def);
+    else if (auto struct_def = decl.match<sir::StructDef>()) collect_struct_def(*struct_def);
+    else if (auto var_decl = decl.match<sir::VarDecl>()) collect_var_decl(*var_decl);
+    else if (auto enum_def = decl.match<sir::EnumDef>()) collect_enum_def(*enum_def);
+    else if (auto enum_variant = decl.match<sir::EnumVariant>()) collect_enum_variant(*enum_variant);
+    else if (auto use_decl = decl.match<sir::UseDecl>()) collect_use_decl(*use_decl);
+    else if (auto meta_if_stmt = decl.match<sir::MetaIfStmt>()) EMPTY_BRANCH
+    else ASSERT_UNREACHABLE;
+}
+
 void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
-    sir::Symbol &cur_entry = analyzer.get_scope().symbol_table->symbols[func_def.ident.value];
+    sir::Symbol &cur_entry = get_symbol_table().symbols[func_def.ident.value];
 
     if (!cur_entry) {
         cur_entry = &func_def;
@@ -47,15 +61,15 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
 }
 
 void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
-    analyzer.get_scope().symbol_table->symbols.insert({native_func_decl.ident.value, &native_func_decl});
+    get_symbol_table().symbols.insert({native_func_decl.ident.value, &native_func_decl});
 }
 
 void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
-    analyzer.get_scope().symbol_table->symbols.insert({const_def.ident.value, &const_def});
+    get_symbol_table().symbols.insert({const_def.ident.value, &const_def});
 }
 
 void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
-    analyzer.get_scope().symbol_table->symbols.insert({struct_def.ident.value, &struct_def});
+    get_symbol_table().symbols.insert({struct_def.ident.value, &struct_def});
 
     if (!struct_def.is_generic()) {
         analyzer.enter_struct_def(&struct_def);
@@ -66,12 +80,12 @@ void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
 
 void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
     if (!analyzer.get_scope().struct_def) {
-        analyzer.get_scope().symbol_table->symbols.insert({var_decl.ident.value, &var_decl});
+        get_symbol_table().symbols.insert({var_decl.ident.value, &var_decl});
     }
 }
 
 void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
-    analyzer.get_scope().symbol_table->symbols.insert({enum_def.ident.value, &enum_def});
+    get_symbol_table().symbols.insert({enum_def.ident.value, &enum_def});
 
     analyzer.enter_enum_def(&enum_def);
     collect_in_block(enum_def.block);
@@ -79,7 +93,7 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
 }
 
 void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
-    analyzer.get_scope().symbol_table->symbols.insert({enum_variant.ident.value, &enum_variant});
+    get_symbol_table().symbols.insert({enum_variant.ident.value, &enum_variant});
 }
 
 void SymbolCollector::collect_use_decl(sir::UseDecl &use_decl) {
@@ -95,11 +109,11 @@ void SymbolCollector::collect_use_item(sir::UseItem &use_item) {
 }
 
 void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident) {
-    analyzer.get_scope().symbol_table->symbols.insert({use_ident.value, &use_ident});
+    get_symbol_table().symbols.insert({use_ident.value, &use_ident});
 }
 
 void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind) {
-    analyzer.get_scope().symbol_table->symbols.insert({use_rebind.local_ident.value, &use_rebind});
+    get_symbol_table().symbols.insert({use_rebind.local_ident.value, &use_rebind});
 }
 
 void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
@@ -113,6 +127,10 @@ void SymbolCollector::collect_use_list(sir::UseList &use_list) {
     for (sir::UseItem &use_item : use_list.items) {
         collect_use_item(use_item);
     }
+}
+
+sir::SymbolTable &SymbolCollector::get_symbol_table() {
+    return *analyzer.get_scope().decl_block->symbol_table;
 }
 
 } // namespace sema

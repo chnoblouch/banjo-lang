@@ -18,7 +18,7 @@ private:
         sir::SymbolTable *symbol_table;
     };
 
-    SemanticAnalyzer analyzer;
+    SemanticAnalyzer &analyzer;
 
 public:
     UseResolver(SemanticAnalyzer &analyzer);

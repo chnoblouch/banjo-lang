@@ -13,12 +13,11 @@ namespace sema {
 class ExprAnalyzer {
 
 private:
-    SemanticAnalyzer analyzer;
+    SemanticAnalyzer &analyzer;
 
 public:
     ExprAnalyzer(SemanticAnalyzer &analyzer);
-    void analyze(sir::Expr &expr);
-    void analyze(sir::Expr &expr, sir::SymbolTable &symbol_table);
+    Result analyze(sir::Expr &expr);
 
 private:
     void analyze_int_literal(sir::IntLiteral &int_literal);
@@ -27,17 +26,17 @@ private:
     void analyze_char_literal(sir::CharLiteral &char_literal);
     void analyze_array_literal(sir::ArrayLiteral &array_literal);
     void analyze_string_literal(sir::StringLiteral &string_literal);
-    void analyze_struct_literal(sir::StructLiteral &struct_literal);
+    Result analyze_struct_literal(sir::StructLiteral &struct_literal);
     void analyze_binary_expr(sir::BinaryExpr &binary_expr);
     void analyze_unary_expr(sir::UnaryExpr &unary_expr);
     void analyze_cast_expr(sir::CastExpr &cast_expr);
-    void analyze_call_expr(sir::CallExpr &call_expr, sir::SymbolTable &symbol_table);
-    void analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::CallExpr &out_call_expr);
+    void analyze_call_expr(sir::CallExpr &call_expr);
+    void analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
     void analyze_range_expr(sir::RangeExpr &range_expr);
     void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     void analyze_static_array_type(sir::StaticArrayType &static_array_type);
-    void analyze_dot_expr(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr);
-    void analyze_ident_expr(sir::IdentExpr &ident_expr, sir::SymbolTable &symbol_table, sir::Expr &out_expr);
+    void analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
+    Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
     void analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
     void analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 

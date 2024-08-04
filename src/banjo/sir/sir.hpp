@@ -8,6 +8,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <cstddef>
+#include <list>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -15,7 +16,6 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <list>
 
 namespace banjo {
 
@@ -59,6 +59,8 @@ struct ForStmt;
 struct LoopStmt;
 struct ContinueStmt;
 struct BreakStmt;
+struct MetaIfStmt;
+struct ExpandedMetaStmt;
 struct FuncDef;
 struct NativeFuncDecl;
 struct ConstDef;
@@ -75,6 +77,7 @@ struct UseRebind;
 struct UseList;
 
 struct Unit;
+struct DeclBlock;
 struct Block;
 struct SymbolTable;
 struct OverloadSet;
@@ -165,7 +168,7 @@ public:
     bool is_unsigned_type() const;
     bool is_fp_type() const;
 
-    SymbolTable *get_symbol_table();
+    DeclBlock *get_decl_block();
 };
 
 class Stmt {
@@ -182,6 +185,8 @@ private:
         LoopStmt *,
         ContinueStmt *,
         BreakStmt *,
+        MetaIfStmt *,
+        ExpandedMetaStmt *,
         Expr *,
         Block *,
         std::nullptr_t>
@@ -226,6 +231,8 @@ private:
         EnumDef *,
         EnumVariant *,
         UseDecl *,
+        MetaIfStmt *,
+        ExpandedMetaStmt *,
         std::nullptr_t>
         kind;
 
@@ -347,6 +354,38 @@ public:
     }
 };
 
+class Node {
+
+private:
+    std::variant<Expr, Stmt, Decl> kind;
+
+public:
+    Node() {}
+
+    template <typename T>
+    Node(T kind) : kind(kind) {}
+
+    template <typename T>
+    T &as() {
+        return std::get<T>(kind);
+    }
+
+    template <typename T>
+    const T &as() const {
+        return std::get<T>(kind);
+    }
+
+    template <typename T>
+    T *match() {
+        return std::get_if<T>(&kind);
+    }
+
+    template <typename T>
+    const T *match() const {
+        return std::get_if<T>(&kind);
+    }
+};
+
 struct DeclBlock {
     ASTNode *ast_node;
     std::vector<Decl> decls;
@@ -362,6 +401,7 @@ struct Block {
 struct SymbolTable {
     SymbolTable *parent;
     std::unordered_map<std::string_view, Symbol> symbols;
+    bool complete = false;
 
     Symbol look_up(std::string_view name);
 };
@@ -688,6 +728,32 @@ struct BreakStmt {
     ASTNode *ast_node;
 };
 
+struct MetaBlock {
+    ASTNode *ast_node;
+    std::vector<Node> nodes;
+};
+
+struct MetaIfCondBranch {
+    ASTNode *ast_node;
+    Expr condition;
+    MetaBlock block;
+};
+
+struct MetaIfElseBranch {
+    ASTNode *ast_node;
+    MetaBlock block;
+};
+
+struct MetaIfStmt {
+    ASTNode *ast_node;
+    std::vector<MetaIfCondBranch> cond_branches;
+    std::optional<MetaIfElseBranch> else_branch;
+};
+
+struct ExpandedMetaStmt {
+    ASTNode *ast_node;
+};
+
 struct FuncDef {
     ASTNode *ast_node;
     Ident ident;
@@ -713,11 +779,6 @@ struct ConstDef {
     Ident ident;
     Expr type;
     Expr value;
-};
-
-struct GenericStructSpecialization {
-    std::vector<Expr> args;
-    FuncDef *def;
 };
 
 struct StructDef {
@@ -826,6 +887,8 @@ typedef std::variant<
     LoopStmt,
     ContinueStmt,
     BreakStmt,
+    MetaIfStmt,
+    ExpandedMetaStmt,
     Expr,
     Block>
     StmtStorage;

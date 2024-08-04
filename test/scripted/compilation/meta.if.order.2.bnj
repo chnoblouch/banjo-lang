@@ -1,0 +1,17 @@
+#! output: 2
+
+meta if B == 2 {
+	const C: i32 = B;
+}
+
+meta if A == 1 {
+	const B: i32 = 2;
+}
+
+meta if true {
+	const A: i32 = 1;
+}
+
+func main() {
+	println(C);
+}

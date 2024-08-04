@@ -54,6 +54,8 @@ private:
     void print_loop_stmt(const LoopStmt &loop_stmt);
     void print_continue_stmt(const ContinueStmt &continue_stmt);
     void print_break_stmt(const BreakStmt &break_stmt);
+    void print_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
+    void print_expanded_meta_stmt(const ExpandedMetaStmt &expanded_meta_stmt);
     void print_expr_stmt(const Expr &expr);
     void print_block_stmt(const Block &block);
 
@@ -86,6 +88,7 @@ private:
     void print_generic_params(const std::vector<GenericParam> &generic_params);
     void print_attrs(const Attributes &attrs);
     void print_binary_op(const char *field_name, BinaryOp op);
+    void print_meta_block(const MetaBlock &meta_block);
 
     std::string get_indent();
     void new_line();

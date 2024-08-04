@@ -1,6 +1,7 @@
 #ifndef DECL_INTERFACE_ANALYZER_H
 #define DECL_INTERFACE_ANALYZER_H
 
+#include "banjo/sema2/decl_visitor.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
@@ -10,23 +11,16 @@ namespace lang {
 
 namespace sema {
 
-class DeclInterfaceAnalyzer {
-
-private:
-    SemanticAnalyzer analyzer;
+class DeclInterfaceAnalyzer final : public DeclVisitor {
 
 public:
     DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer);
-    
-    void analyze();
-    void analyze_decl_block(sir::DeclBlock &decl_block);
-    void analyze_func_def(sir::FuncDef &func_def);
-    void analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl);
-    void analyze_const_def(sir::ConstDef &const_def);
-    void analyze_struct_def(sir::StructDef &struct_def);
-    void analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl);
-    void analyze_enum_def(sir::EnumDef &enum_def);
-    void analyze_enum_variant(sir::EnumVariant &enum_variant);
+
+    Result analyze_func_def(sir::FuncDef &func_def) override;
+    Result analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) override;
+    Result analyze_const_def(sir::ConstDef &const_def) override;
+    Result analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) override;
+    Result analyze_enum_variant(sir::EnumVariant &enum_variant) override;
 };
 
 } // namespace sema

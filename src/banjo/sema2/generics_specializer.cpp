@@ -2,6 +2,8 @@
 
 #include "banjo/sema2/decl_body_analyzer.hpp"
 #include "banjo/sema2/decl_interface_analyzer.hpp"
+#include "banjo/sema2/decl_value_analyzer.hpp"
+#include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 
@@ -65,8 +67,8 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
         analyzer.get_scope().generic_args.insert({param_name, args[i]});
     }
 
-    DeclInterfaceAnalyzer(analyzer).analyze_func_def(*clone);
-    DeclBodyAnalyzer(analyzer).analyze_func_def(*clone);
+    DeclInterfaceAnalyzer(analyzer).process_func_def(*clone);
+    DeclBodyAnalyzer(analyzer).process_func_def(*clone);
 
     analyzer.pop_scope();
     return clone;
@@ -99,8 +101,10 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     }
 
     SymbolCollector(analyzer).collect_in_block(clone->block);
-    DeclInterfaceAnalyzer(analyzer).analyze_struct_def(*clone);
-    DeclBodyAnalyzer(analyzer).analyze_struct_def(*clone);
+    DeclInterfaceAnalyzer(analyzer).process_struct_def(*clone);
+    DeclValueAnalyzer(analyzer).process_struct_def(*clone);
+    MetaExpansion(analyzer).run_on_decl_block(clone->block);
+    DeclBodyAnalyzer(analyzer).process_struct_def(*clone);
 
     analyzer.exit_struct_def();
     return clone;

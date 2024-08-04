@@ -13,12 +13,14 @@ namespace sema {
 class SymbolCollector {
 
 private:
-    SemanticAnalyzer analyzer;
+    SemanticAnalyzer &analyzer;
 
 public:
     SymbolCollector(SemanticAnalyzer &analyzer);
     void collect();
     void collect_in_block(sir::DeclBlock &decl_block);
+    void collect_in_meta_block(sir::MetaBlock &meta_block);
+    void collect_decl(sir::Decl &decl);
 
 private:
     void collect_func_def(sir::FuncDef &func_def);
@@ -35,6 +37,8 @@ private:
     void collect_use_rebind(sir::UseRebind &use_rebind);
     void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr);
     void collect_use_list(sir::UseList &use_list);
+
+    sir::SymbolTable &get_symbol_table();
 };
 
 } // namespace sema

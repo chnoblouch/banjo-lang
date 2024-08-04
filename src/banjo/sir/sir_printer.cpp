@@ -31,6 +31,10 @@
     PRINT_FIELD_NAME(name);                                                                                            \
     print_block(value);
 
+#define PRINT_META_BLOCK_FIELD(name, value)                                                                            \
+    PRINT_FIELD_NAME(name);                                                                                            \
+    print_meta_block(value);
+
 #define BEGIN_LIST_FIELD(name)                                                                                         \
     PRINT_FIELD_NAME(name);                                                                                            \
     BEGIN_LIST();
@@ -98,6 +102,8 @@ void Printer::print_decl(const Decl &decl) {
     else if (auto enum_def = decl.match<EnumDef>()) print_enum_def(*enum_def);
     else if (auto enum_variant = decl.match<EnumVariant>()) print_enum_variant(*enum_variant);
     else if (auto use_decl = decl.match<UseDecl>()) print_use_decl(*use_decl);
+    else if (auto meta_if_stmt = decl.match<MetaIfStmt>()) print_meta_if_stmt(*meta_if_stmt);
+    else if (auto expanded_meta_stmt = decl.match<ExpandedMetaStmt>()) print_expanded_meta_stmt(*expanded_meta_stmt);
     else ASSERT_UNREACHABLE;
 }
 
@@ -157,7 +163,7 @@ void Printer::print_struct_def(const StructDef &struct_def) {
     PRINT_FIELD("ident", struct_def.ident.value);
     PRINT_FIELD_NAME("block");
     print_decl_block(struct_def.block);
-    
+
     if (struct_def.is_generic()) {
         PRINT_FIELD_NAME("generic_params")
         print_generic_params(struct_def.generic_params);
@@ -170,7 +176,7 @@ void Printer::print_struct_def(const StructDef &struct_def) {
 
         END_LIST()
     }
-    
+
     END_OBJECT();
 }
 
@@ -276,6 +282,8 @@ void Printer::print_stmt(const Stmt &stmt) {
     else if (auto loop_stmt = stmt.match<LoopStmt>()) print_loop_stmt(*loop_stmt);
     else if (auto continue_stmt = stmt.match<ContinueStmt>()) print_continue_stmt(*continue_stmt);
     else if (auto break_stmt = stmt.match<BreakStmt>()) print_break_stmt(*break_stmt);
+    else if (auto meta_if_stmt = stmt.match<MetaIfStmt>()) print_meta_if_stmt(*meta_if_stmt);
+    else if (auto expanded_meta_stmt = stmt.match<ExpandedMetaStmt>()) print_expanded_meta_stmt(*expanded_meta_stmt);
     else if (auto expr = stmt.match<Expr>()) print_expr_stmt(*expr);
     else if (auto block = stmt.match<Block>()) print_block_stmt(*block);
     else ASSERT_UNREACHABLE;
@@ -372,6 +380,37 @@ void Printer::print_continue_stmt(const ContinueStmt & /*continue_stmt*/) {
 
 void Printer::print_break_stmt(const BreakStmt & /*break_stmt*/) {
     BEGIN_OBJECT("BreakStmt");
+    END_OBJECT();
+}
+
+void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
+    BEGIN_OBJECT("MetaIfStmt");
+    BEGIN_LIST_FIELD("cond_branches");
+
+    for (const MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
+        INDENT_LIST_ELEMENT();
+        BEGIN_OBJECT("MetaIfCondBranch");
+        PRINT_EXPR_FIELD("condition", cond_branch.condition);
+        PRINT_META_BLOCK_FIELD("block", cond_branch.block);
+        END_OBJECT();
+    }
+
+    END_LIST();
+    PRINT_FIELD_NAME("else_branch");
+
+    if (meta_if_stmt.else_branch) {
+        BEGIN_OBJECT("MetaIfElseBranch");
+        PRINT_META_BLOCK_FIELD("block", meta_if_stmt.else_branch->block);
+        END_OBJECT();
+    } else {
+        stream << "none\n";
+    }
+
+    END_OBJECT();
+}
+
+void Printer::print_expanded_meta_stmt(const ExpandedMetaStmt & /*expanded_meta_stmt*/) {
+    BEGIN_OBJECT("ExpandedMetaStmt");
     END_OBJECT();
 }
 
@@ -672,6 +711,22 @@ void Printer::print_binary_op(const char *field_name, BinaryOp op) {
         case BinaryOp::AND: PRINT_FIELD(field_name, "AND"); break;
         case BinaryOp::OR: PRINT_FIELD(field_name, "OR"); break;
     }
+}
+
+void Printer::print_meta_block(const MetaBlock &meta_block) {
+    stream << "\n";
+    indent++;
+
+    for (const Node &node : meta_block.nodes) {
+        stream << get_indent();
+
+        if (auto expr = node.match<sir::Expr>()) print_expr(*expr);
+        else if (auto stmt = node.match<sir::Stmt>()) print_stmt(*stmt);
+        else if (auto decl = node.match<sir::Decl>()) print_decl(*decl);
+        else ASSERT_UNREACHABLE;
+    }
+
+    indent--;
 }
 
 std::string Printer::get_indent() {

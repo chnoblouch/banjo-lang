@@ -30,6 +30,7 @@ public:
     VarDecl *clone_var_decl(const VarDecl &var_decl);
     EnumDef *clone_enum_def(const EnumDef &enum_def);
     EnumVariant *clone_enum_variant(const EnumVariant &enum_variant);
+    MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
 
     Block clone_block(const Block &block);
     Stmt clone_stmt(const Stmt &stmt);
@@ -78,6 +79,7 @@ private:
 
     std::vector<Expr> clone_expr_list(const std::vector<Expr> &exprs);
     Attributes *clone_attrs(const Attributes *attrs);
+    MetaBlock clone_meta_block(const MetaBlock &meta_block);
 };
 
 } // namespace sir

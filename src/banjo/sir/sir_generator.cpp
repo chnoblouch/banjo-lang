@@ -86,6 +86,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_VAR: return generate_var_decl(node);
         case AST_USE: return generate_use_decl(node);
+        case AST_META_IF: return generate_meta_if_stmt(node);
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -228,6 +229,19 @@ sir::Block SIRGenerator::generate_block(ASTNode *node) {
     return sir_block;
 }
 
+sir::MetaBlock SIRGenerator::generate_meta_block(ASTNode *node) {
+    sir::MetaBlock sir_meta_block{
+        .ast_node = node,
+        .nodes = {},
+    };
+
+    for (ASTNode *child : node->get_children()) {
+        sir_meta_block.nodes.push_back(generate_decl(child));
+    }
+
+    return sir_meta_block;
+}
+
 sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
     switch (node->get_type()) {
         case AST_VAR: return generate_var_stmt(node);
@@ -249,6 +263,7 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_FOR: return generate_for_stmt(node);
         case AST_CONTINUE: return generate_continue_stmt(node);
         case AST_BREAK: return generate_break_stmt(node);
+        case AST_META_IF: return generate_meta_if_stmt(node);
         case AST_FUNCTION_CALL: return create_stmt(generate_expr(node));
         case AST_BLOCK: return create_stmt(generate_block(node));
         default: ASSERT_UNREACHABLE;
@@ -351,6 +366,33 @@ sir::Stmt SIRGenerator::generate_break_stmt(ASTNode *node) {
     return create_stmt(sir::BreakStmt{
         .ast_node = node,
     });
+}
+
+sir::MetaIfStmt *SIRGenerator::generate_meta_if_stmt(ASTNode *node) {
+    sir::MetaIfStmt sir_meta_if_stmt{
+        .ast_node = node,
+        .cond_branches = {},
+        .else_branch = {},
+    };
+
+    for (ASTNode *child : node->get_children()) {
+        if (child->get_type() == AST_META_IF_CONDITION) {
+            sir_meta_if_stmt.cond_branches.push_back({
+                .ast_node = child,
+                .condition = generate_expr(child->get_child(IF_CONDITION)),
+                .block = generate_meta_block(child->get_child(IF_BLOCK)),
+            });
+        } else if (child->get_type() == AST_META_ELSE) {
+            sir_meta_if_stmt.else_branch = {
+                .ast_node = child,
+                .block = generate_meta_block(child->get_child()),
+            };
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+
+    return create_stmt(sir_meta_if_stmt);
 }
 
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {

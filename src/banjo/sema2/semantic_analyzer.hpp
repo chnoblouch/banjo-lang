@@ -4,6 +4,8 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 
+#include <functional>
+#include <set>
 #include <stack>
 #include <string_view>
 #include <unordered_map>
@@ -18,10 +20,21 @@ namespace sema {
 struct Scope {
     sir::FuncDef *func_def = nullptr;
     sir::Block *block = nullptr;
-    sir::SymbolTable *symbol_table = nullptr;
+    sir::DeclBlock *decl_block = nullptr;
     sir::StructDef *struct_def = nullptr;
     sir::EnumDef *enum_def = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
+};
+
+enum class Result {
+    SUCCESS,
+    ERROR,
+    AWAITING_DEPENDENCY,
+};
+
+struct PostponedAnalysis {
+    std::function<void()> callback;
+    Scope context;
 };
 
 class SemanticAnalyzer {
@@ -29,17 +42,22 @@ class SemanticAnalyzer {
     friend class SymbolCollector;
     friend class UseResolver;
     friend class DeclInterfaceAnalyzer;
+    friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;
     friend class ExprAnalyzer;
     friend class StmtAnalyzer;
     friend class ConstEvaluator;
     friend class GenericsSpecializer;
+    friend class MetaExpansion;
+    friend class DeclVisitor;
 
 private:
     sir::Unit &sir_unit;
     target::Target *target;
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
+    std::vector<PostponedAnalysis> postponed_analyses;
+    std::set<const sir::Decl *> blocked_decls;
 
 public:
     SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target);
@@ -61,6 +79,13 @@ private:
     void exit_struct_def() { scopes.pop(); }
     void enter_enum_def(sir::EnumDef *enum_def);
     void exit_enum_def() { scopes.pop(); }
+
+    bool is_in_stmt_block() { return get_scope().block; }
+    sir::SymbolTable &get_symbol_table();
+
+    void check_for_completeness(sir::DeclBlock &block);
+    void postpone_analysis(std::function<void()> function);
+    void run_postponed_analyses();
 
     template <typename T>
     T *create_expr(T value) {

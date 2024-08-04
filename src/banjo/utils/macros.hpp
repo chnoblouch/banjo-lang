@@ -19,4 +19,6 @@
 #    endif
 #endif
 
+#define EMPTY_BRANCH ;
+
 #endif

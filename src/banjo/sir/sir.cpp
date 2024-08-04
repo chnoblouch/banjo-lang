@@ -111,11 +111,11 @@ bool Expr::is_fp_type() const {
     }
 }
 
-SymbolTable *Expr::get_symbol_table() {
+DeclBlock *Expr::get_decl_block() {
     if (auto symbol_expr = match<SymbolExpr>()) {
-        if (auto mod = symbol_expr->symbol.match<Module>()) return mod->block.symbol_table;
-        else if (auto struct_def = symbol_expr->symbol.match<StructDef>()) return struct_def->block.symbol_table;
-        else if (auto enum_def = symbol_expr->symbol.match<EnumDef>()) return enum_def->block.symbol_table;
+        if (auto mod = symbol_expr->symbol.match<Module>()) return &mod->block;
+        else if (auto struct_def = symbol_expr->symbol.match<StructDef>()) return &struct_def->block;
+        else if (auto enum_def = symbol_expr->symbol.match<EnumDef>()) return &enum_def->block;
         else return nullptr;
     } else {
         return nullptr;
