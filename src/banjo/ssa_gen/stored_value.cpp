@@ -63,6 +63,22 @@ StoredValue StoredValue::turn_into_value(SSAGeneratorContext &ctx) {
     }
 }
 
+StoredValue StoredValue::turn_into_value_or_copy(SSAGeneratorContext &ctx) {
+    if (reference) {
+        if (fits_in_reg(ctx)) {
+            ir::Value val = ctx.append_load(value_type, value_or_ptr);
+            return StoredValue::create_value(val);
+        } else {
+            const ir::Value &copy_src = value_or_ptr;
+            ir::Value copy_dst = ir::Operand::from_register(ctx.append_alloca(value_type));
+            ctx.append_copy(copy_dst, copy_src, value_type);
+            return StoredValue::create_reference(copy_dst, value_type);
+        }
+    } else {
+        return *this;
+    }
+}
+
 void StoredValue::copy_to(const ir::Value &dst, SSAGeneratorContext &ctx) {
     if (value_or_ptr.is_register() && value_or_ptr == dst) {
         return;

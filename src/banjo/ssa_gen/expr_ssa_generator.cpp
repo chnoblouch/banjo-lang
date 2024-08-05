@@ -184,12 +184,22 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto param = symbol_expr.symbol.match<sir::Param>()) {
-        ssa::VirtualRegister slot = ctx.ssa_param_slots[param];
-        ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
-        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param->type);
-        return StoredValue::create_reference(ssa_ptr, ssa_type);
+        return generate_param_expr(*param);
     } else {
         ASSERT_UNREACHABLE;
+    }
+}
+
+StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
+    ssa::VirtualRegister slot = ctx.ssa_param_slots[&param];
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param.type);
+    ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
+    
+    if (ctx.target->get_data_layout().fits_in_register(ssa_type)) {
+        return StoredValue::create_reference(ssa_ptr, ssa_type);
+    } else {
+        ssa::Value ssa_loaded_ptr = ctx.append_load(ssa::Primitive::ADDR, ssa_ptr);
+        return StoredValue::create_reference(ssa_loaded_ptr, ssa_type);
     }
 }
 
@@ -204,9 +214,13 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
         default: break;
     }
 
-    ssa::Opcode ssa_op;
+    ssa::Value ssa_lhs = generate(binary_expr.lhs).turn_into_value(ctx).get_value();
+    ssa::Value ssa_rhs = generate(binary_expr.rhs).turn_into_value(ctx).get_value();
+    ssa::VirtualRegister reg;
 
     if (binary_expr.lhs.get_type().is_int_type()) {
+        ssa::Opcode ssa_op;
+
         switch (binary_expr.op) {
             case sir::BinaryOp::ADD: ssa_op = ssa::Opcode::ADD; break;
             case sir::BinaryOp::SUB: ssa_op = ssa::Opcode::SUB; break;
@@ -220,7 +234,12 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
             case sir::BinaryOp::SHR: ssa_op = ssa::Opcode::SHR; break;
             default: ASSERT_UNREACHABLE;
         }
+
+        reg = ctx.next_vreg();
+        ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
     } else if (binary_expr.lhs.get_type().is_fp_type()) {
+        ssa::Opcode ssa_op;
+
         switch (binary_expr.op) {
             case sir::BinaryOp::ADD: ssa_op = ssa::Opcode::FADD; break;
             case sir::BinaryOp::SUB: ssa_op = ssa::Opcode::FSUB; break;
@@ -228,15 +247,14 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
             case sir::BinaryOp::DIV: ssa_op = ssa::Opcode::FDIV; break;
             default: ASSERT_UNREACHABLE;
         }
+
+        reg = ctx.next_vreg();
+        ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
+    } else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
+        reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa::Primitive::I8);
     } else {
         ASSERT_UNREACHABLE;
     }
-
-    ssa::VirtualRegister reg = ctx.next_vreg();
-    ssa::Value ssa_lhs = generate(binary_expr.lhs).turn_into_value(ctx).get_value();
-    ssa::Value ssa_rhs = generate(binary_expr.rhs).turn_into_value(ctx).get_value();
-
-    ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
 
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(binary_expr.type);
     return StoredValue::create_value(reg, ssa_type);
@@ -355,7 +373,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     }
 
     for (const sir::Expr &arg : call_expr.args) {
-        ssa_operands.push_back(generate(arg).turn_into_value(ctx).get_value());
+        ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
     }
 
     if (return_method == ReturnMethod::NO_RETURN_VALUE || hints.is_unused) {

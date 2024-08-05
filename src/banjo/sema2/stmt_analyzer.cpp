@@ -132,13 +132,12 @@ void StmtAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt)
         .rhs = range.rhs,
     });
 
+    for_stmt.block.symbol_table->parent = block->symbol_table;
+
     sir::Block loop_block{
         .ast_node = for_stmt.block.ast_node,
         .stmts = std::move(for_stmt.block.stmts),
-        .symbol_table = analyzer.create_symbol_table({
-            .parent = block->symbol_table,
-            .symbols = {},
-        }),
+        .symbol_table = for_stmt.block.symbol_table,
     };
 
     sir::AssignStmt *inc_stmt = analyzer.create_stmt(sir::AssignStmt{

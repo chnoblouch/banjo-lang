@@ -42,6 +42,7 @@ private:
     StoredValue generate_string_literal(const sir::StringLiteral &string_literal);
     StoredValue generate_struct_literal(const sir::StructLiteral &struct_literal, const StorageHints &hints);
     StoredValue generate_symbol_expr(const sir::SymbolExpr &symbol_expr);
+    StoredValue generate_param_expr(const sir::Param &param);
     StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr);
     StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr);
     StoredValue generate_neg(const sir::UnaryExpr &unary_expr);

@@ -39,6 +39,7 @@ struct StoredValue {
     StoredValue turn_into_reference(SSAGeneratorContext &ctx);
     StoredValue try_turn_into_value(SSAGeneratorContext &ctx);
     StoredValue turn_into_value(SSAGeneratorContext &ctx);
+    StoredValue turn_into_value_or_copy(SSAGeneratorContext &ctx);
     void copy_to(const ir::Value &dst, SSAGeneratorContext &ctx);
 };
 

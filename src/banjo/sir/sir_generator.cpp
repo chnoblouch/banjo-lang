@@ -308,7 +308,7 @@ sir::Stmt SIRGenerator::generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp o
 sir::Stmt SIRGenerator::generate_return_stmt(ASTNode *node) {
     return create_stmt(sir::ReturnStmt{
         .ast_node = node,
-        .value = generate_expr(node->get_child()),
+        .value = node->has_child(0) ? generate_expr(node->get_child()) : nullptr,
     });
 }
 

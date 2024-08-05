@@ -53,6 +53,14 @@ bool Expr::is_type() const {
     }
 }
 
+bool Expr::is_primitive_type(Primitive primitive) const {
+    if (auto primitive_type = match<PrimitiveType>()) {
+        return primitive_type->primitive == primitive;
+    } else {
+        return false;
+    }
+}
+
 bool Expr::is_int_type() const {
     if (auto primitive_type = match<PrimitiveType>()) {
         switch (primitive_type->primitive) {

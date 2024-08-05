@@ -126,7 +126,13 @@ std::vector<ssa::Type> SSAGenerator::generate_params(const sir::FuncType &sir_fu
     }
 
     for (const sir::Param &sir_param : sir_func_type.params) {
-        ssa_params.push_back(TypeSSAGenerator(ctx).generate(sir_param.type));
+        ssa::Type ssa_param_type = TypeSSAGenerator(ctx).generate(sir_param.type);
+
+        if (ctx.target->get_data_layout().fits_in_register(ssa_param_type)) {
+            ssa_params.push_back(ssa_param_type);
+        } else {
+            ssa_params.push_back(ssa::Primitive::ADDR);
+        }
     }
 
     return ssa_params;
@@ -303,7 +309,10 @@ void SSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt) {
 }
 
 void SSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
-    ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
+    if (return_stmt.value) {
+        ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
+    }
+
     ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
 }
 

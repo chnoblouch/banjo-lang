@@ -41,6 +41,7 @@ struct CallExpr;
 struct FieldExpr;
 struct RangeExpr;
 struct TupleExpr;
+enum class Primitive;
 struct PrimitiveType;
 struct PointerType;
 struct StaticArrayType;
@@ -163,6 +164,7 @@ public:
     Expr get_type() const;
 
     bool is_type() const;
+    bool is_primitive_type(Primitive primitive) const;
     bool is_int_type() const;
     bool is_signed_type() const;
     bool is_unsigned_type() const;
