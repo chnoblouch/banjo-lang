@@ -340,6 +340,8 @@ class UseItem {
     std::variant<UseIdent *, UseRebind *, UseDotExpr *, UseList *> kind;
 
 public:
+    UseItem() {}
+
     template <typename T>
     UseItem(T value) : kind(std::move(value)) {}
 

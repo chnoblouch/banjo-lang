@@ -50,6 +50,7 @@ class SemanticAnalyzer {
     friend class GenericsSpecializer;
     friend class MetaExpansion;
     friend class DeclVisitor;
+    friend class Preamble;
 
 private:
     sir::Unit &sir_unit;
@@ -100,6 +101,11 @@ private:
     template <typename T>
     T *create_decl(T value) {
         return cur_sir_mod->create_decl(value);
+    }
+
+    template <typename T>
+    T *create_use_item(T value) {
+        return cur_sir_mod->create_use_item(value);
     }
 
     sir::SymbolTable *create_symbol_table(sir::SymbolTable value) {

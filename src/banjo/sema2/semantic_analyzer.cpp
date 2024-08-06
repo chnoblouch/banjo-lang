@@ -4,6 +4,7 @@
 #include "banjo/sema2/decl_interface_analyzer.hpp"
 #include "banjo/sema2/decl_value_analyzer.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
+#include "banjo/sema2/preamble.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
@@ -20,6 +21,7 @@ namespace sema {
 SemanticAnalyzer::SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target) : sir_unit(sir_unit), target(target) {}
 
 void SemanticAnalyzer::analyze() {
+    Preamble(*this).insert();
     SymbolCollector(*this).collect();
     UseResolver(*this).resolve();
     DeclInterfaceAnalyzer(*this).analyze();
