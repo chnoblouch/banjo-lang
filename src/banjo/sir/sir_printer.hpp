@@ -64,6 +64,7 @@ private:
     void print_fp_literal(const FPLiteral &fp_literal);
     void print_bool_literal(const BoolLiteral &bool_literal);
     void print_char_literal(const CharLiteral &char_literal);
+    void print_null_literal(const NullLiteral &null_literal);
     void print_array_literal(const ArrayLiteral &array_literal);
     void print_string_literal(const StringLiteral &string_literal);
     void print_struct_literal(const StructLiteral &struct_literal);

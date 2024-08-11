@@ -25,6 +25,7 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) analyze_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) analyze_char_literal(*char_literal);
+    else if (auto null_literal = expr.match<sir::NullLiteral>()) analyze_null_literal(*null_literal);
     else if (auto array_literal = expr.match<sir::ArrayLiteral>()) analyze_array_literal(*array_literal);
     else if (auto string_literal = expr.match<sir::StringLiteral>()) analyze_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>()) analyze_struct_literal(*struct_literal);
@@ -68,6 +69,13 @@ void ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
     char_literal.type = analyzer.create_expr(sir::PrimitiveType{
         .ast_node = nullptr,
         .primitive = sir::Primitive::U8,
+    });
+}
+
+void ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
+    null_literal.type = analyzer.create_expr(sir::PrimitiveType{
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::ADDR,
     });
 }
 

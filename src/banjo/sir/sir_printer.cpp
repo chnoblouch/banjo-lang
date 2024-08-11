@@ -432,6 +432,7 @@ void Printer::print_expr(const Expr &expr) {
     else if (auto fp_literal = expr.match<FPLiteral>()) print_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<BoolLiteral>()) print_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<CharLiteral>()) print_char_literal(*char_literal);
+    else if (auto null_literal = expr.match<NullLiteral>()) print_null_literal(*null_literal);
     else if (auto array_literal = expr.match<ArrayLiteral>()) print_array_literal(*array_literal);
     else if (auto string_literal = expr.match<StringLiteral>()) print_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<StructLiteral>()) print_struct_literal(*struct_literal);
@@ -480,6 +481,12 @@ void Printer::print_char_literal(const CharLiteral &char_literal) {
     BEGIN_OBJECT("CharLiteral");
     PRINT_EXPR_FIELD("type", char_literal.type);
     PRINT_FIELD("value", char_literal.value);
+    END_OBJECT();
+}
+
+void Printer::print_null_literal(const NullLiteral &null_literal) {
+    BEGIN_OBJECT("NullLiteral");
+    PRINT_EXPR_FIELD("type", null_literal.type);
     END_OBJECT();
 }
 

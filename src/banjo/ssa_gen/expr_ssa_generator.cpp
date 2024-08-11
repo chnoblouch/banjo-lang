@@ -43,6 +43,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) return generate_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) return generate_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) return generate_char_literal(*char_literal);
+    else if (auto null_literal = expr.match<sir::NullLiteral>()) return generate_null_literal(*null_literal);
     else if (auto array_literal = expr.match<sir::ArrayLiteral>()) return generate_array_literal(*array_literal, hints);
     else if (auto string_literal = expr.match<sir::StringLiteral>()) return generate_string_literal(*string_literal);
     else if (auto struct_literal = expr.match<sir::StructLiteral>())
@@ -120,6 +121,12 @@ StoredValue ExprSSAGenerator::generate_char_literal(const sir::CharLiteral &char
     return StoredValue::create_value(ssa_immediate);
 }
 
+StoredValue ExprSSAGenerator::generate_null_literal(const sir::NullLiteral &null_literal) {
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(null_literal.type);
+    ssa::Value ssa_immediate = ssa::Value::from_int_immediate(0, ssa_type);
+    return StoredValue::create_value(ssa_immediate);
+}
+
 StoredValue ExprSSAGenerator::generate_array_literal(
     const sir::ArrayLiteral &array_literal,
     const StorageHints &hints
@@ -194,7 +201,7 @@ StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
     ssa::VirtualRegister slot = ctx.ssa_param_slots[&param];
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param.type);
     ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
-    
+
     if (ctx.target->get_data_layout().fits_in_register(ssa_type)) {
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else {

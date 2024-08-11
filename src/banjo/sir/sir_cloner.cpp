@@ -359,6 +359,13 @@ CharLiteral *Cloner::clone_char_literal(const CharLiteral &char_literal) {
     });
 }
 
+NullLiteral *Cloner::clone_null_literal(const NullLiteral &null_literal) {
+    return mod.create_expr(NullLiteral{
+        .ast_node = null_literal.ast_node,
+        .type = clone_expr(null_literal.type),
+    });
+}
+
 ArrayLiteral *Cloner::clone_array_literal(const ArrayLiteral &array_literal) {
     return mod.create_expr(ArrayLiteral{
         .ast_node = array_literal.ast_node,

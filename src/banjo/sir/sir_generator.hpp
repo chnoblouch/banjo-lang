@@ -74,6 +74,7 @@ private:
     sir::Expr generate_fp_literal(ASTNode *node);
     sir::Expr generate_bool_literal(ASTNode *node, bool value);
     sir::Expr generate_char_literal(ASTNode *node);
+    sir::Expr generate_null_literal(ASTNode *node);
     sir::Expr generate_array_literal(ASTNode *node);
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);

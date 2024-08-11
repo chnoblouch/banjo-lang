@@ -24,6 +24,7 @@ private:
     void analyze_fp_literal(sir::FPLiteral &fp_literal);
     void analyze_bool_literal(sir::BoolLiteral &bool_literal);
     void analyze_char_literal(sir::CharLiteral &char_literal);
+    void analyze_null_literal(sir::NullLiteral &null_literal);
     void analyze_array_literal(sir::ArrayLiteral &array_literal);
     void analyze_string_literal(sir::StringLiteral &string_literal);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);

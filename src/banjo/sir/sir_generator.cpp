@@ -402,6 +402,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_FALSE: return generate_bool_literal(node, false);
         case AST_TRUE: return generate_bool_literal(node, true);
         case AST_CHAR_LITERAL: return generate_char_literal(node);
+        case AST_NULL: return generate_null_literal(node);
         case AST_ARRAY_EXPR: return generate_array_literal(node);
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
@@ -487,6 +488,13 @@ sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
         .ast_node = node,
         .type = nullptr,
         .value = value,
+    });
+}
+
+sir::Expr SIRGenerator::generate_null_literal(ASTNode *node) {
+    return create_expr(sir::NullLiteral{
+        .ast_node = node,
+        .type = nullptr,
     });
 }
 

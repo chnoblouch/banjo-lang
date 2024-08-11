@@ -29,6 +29,7 @@ struct IntLiteral;
 struct FPLiteral;
 struct BoolLiteral;
 struct CharLiteral;
+struct NullLiteral;
 struct ArrayLiteral;
 struct StringLiteral;
 struct StructLiteral;
@@ -97,6 +98,7 @@ class Expr {
         FPLiteral *,
         BoolLiteral *,
         CharLiteral *,
+        NullLiteral *,
         ArrayLiteral *,
         StringLiteral *,
         StructLiteral *,
@@ -469,6 +471,11 @@ struct CharLiteral {
     ASTNode *ast_node;
     Expr type;
     char value;
+};
+
+struct NullLiteral {
+    ASTNode *ast_node;
+    Expr type;
 };
 
 struct ArrayLiteral {
@@ -859,6 +866,7 @@ typedef std::variant<
     FPLiteral,
     BoolLiteral,
     CharLiteral,
+    NullLiteral,
     ArrayLiteral,
     StringLiteral,
     StructLiteral,

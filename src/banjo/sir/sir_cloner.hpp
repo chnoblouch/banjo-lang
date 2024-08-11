@@ -52,6 +52,7 @@ public:
     FPLiteral *clone_fp_literal(const FPLiteral &fp_literal);
     BoolLiteral *clone_bool_literal(const BoolLiteral &bool_literal);
     CharLiteral *clone_char_literal(const CharLiteral &char_literal);
+    NullLiteral *clone_null_literal(const NullLiteral &null_literal);
     ArrayLiteral *clone_array_literal(const ArrayLiteral &array_literal);
     StringLiteral *clone_string_literal(const StringLiteral &string_literal);
     StructLiteral *clone_struct_literal(const StructLiteral &struct_literal);

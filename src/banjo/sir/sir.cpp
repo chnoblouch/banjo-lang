@@ -31,6 +31,7 @@ Expr Expr::get_type() const {
     else if (auto fp_literal = match<FPLiteral>()) return fp_literal->type;
     else if (auto bool_literal = match<BoolLiteral>()) return bool_literal->type;
     else if (auto char_literal = match<CharLiteral>()) return char_literal->type;
+    else if (auto null_literal = match<NullLiteral>()) return null_literal->type;
     else if (auto array_literal = match<ArrayLiteral>()) return array_literal->type;
     else if (auto string_literal = match<StringLiteral>()) return string_literal->type;
     else if (auto struct_literal = match<StructLiteral>()) return struct_literal->type;
