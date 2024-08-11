@@ -57,7 +57,7 @@ const std::map<ReportText::ID, std::string> TEXTS = {
 
 ReportText::ReportText(ReportText::ID id) : text(TEXTS.at(id)) {}
 
-ReportText::ReportText(const char *format_str) : text(format_str) {}
+ReportText::ReportText(std::string_view format_str) : text(format_str) {}
 
 ReportText &ReportText::format(std::string string) {
     std::string::size_type position = text.find('%');

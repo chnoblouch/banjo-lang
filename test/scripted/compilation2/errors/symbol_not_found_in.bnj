@@ -1,0 +1,14 @@
+# test:subtest
+# test:error 4:9 "cannot find 'some_member' in 'std'"
+
+use std.some_member;
+
+# test:subtest
+# test:error 9:16 "cannot find 'SomeType' in 'std.string'"
+
+use std.string.SomeType;
+
+# test:subtest
+# test:error 14:23 "cannot find 'some_function' in 'String'"
+
+use std.string.String.some_function;

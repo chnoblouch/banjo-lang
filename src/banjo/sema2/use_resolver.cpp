@@ -21,73 +21,76 @@ void UseResolver::resolve() {
 void UseResolver::resolve_in_block(sir::DeclBlock &decl_block) {
     for (sir::Decl &decl : decl_block.decls) {
         if (auto use_decl = decl.match<sir::UseDecl>()) {
-            PathContext ctx{
-                .mod = nullptr,
-                .symbol_table = nullptr,
-            };
-
-            resolve_use_item(use_decl->root_item, ctx);
+            sir::Symbol symbol = nullptr;
+            resolve_use_item(use_decl->root_item, symbol);
         }
     }
 }
 
-void UseResolver::resolve_use_item(sir::UseItem &use_item, PathContext &inout_ctx) {
-    if (auto use_ident = use_item.match<sir::UseIdent>()) resolve_use_ident(*use_ident, inout_ctx);
-    else if (auto use_rebind = use_item.match<sir::UseRebind>()) resolve_use_rebind(*use_rebind, inout_ctx);
-    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) resolve_use_dot_expr(*use_dot_expr, inout_ctx);
-    else if (auto use_list = use_item.match<sir::UseList>()) resolve_use_list(*use_list, inout_ctx);
+void UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol) {
+    if (auto use_ident = use_item.match<sir::UseIdent>()) resolve_use_ident(*use_ident, symbol);
+    else if (auto use_rebind = use_item.match<sir::UseRebind>()) resolve_use_rebind(*use_rebind, symbol);
+    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) resolve_use_dot_expr(*use_dot_expr, symbol);
+    else if (auto use_list = use_item.match<sir::UseList>()) resolve_use_list(*use_list, symbol);
     else ASSERT_UNREACHABLE;
 }
 
-void UseResolver::resolve_use_ident(sir::UseIdent &use_ident, PathContext &inout_ctx) {
-    use_ident.symbol = resolve_symbol(use_ident.value, inout_ctx);
+void UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol) {
+    use_ident.symbol = resolve_symbol(use_ident.ident, symbol);
 }
 
-void UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, PathContext &inout_ctx) {
-    use_rebind.symbol = resolve_symbol(use_rebind.target_ident.value, inout_ctx);
+void UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol) {
+    use_rebind.symbol = resolve_symbol(use_rebind.target_ident, symbol);
 }
 
-void UseResolver::resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, PathContext &inout_ctx) {
-    resolve_use_item(use_dot_expr.lhs, inout_ctx);
-    resolve_use_item(use_dot_expr.rhs, inout_ctx);
+void UseResolver::resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol) {
+    resolve_use_item(use_dot_expr.lhs, symbol);
+    resolve_use_item(use_dot_expr.rhs, symbol);
 }
 
-void UseResolver::resolve_use_list(sir::UseList &use_list, PathContext &inout_ctx) {
+void UseResolver::resolve_use_list(sir::UseList &use_list, sir::Symbol &symbol) {
     for (sir::UseItem &use_item : use_list.items) {
-        PathContext ctx_copy = inout_ctx;
-        resolve_use_item(use_item, ctx_copy);
+        sir::Symbol symbol_copy = symbol;
+        resolve_use_item(use_item, symbol_copy);
     }
 }
 
-sir::Symbol UseResolver::resolve_symbol(const std::string &name, PathContext &inout_ctx) {
-    if (!inout_ctx.mod) {
-        sir::Module *mod = analyzer.sir_unit.mods_by_path[{name}];
-        inout_ctx.mod = mod;
-        inout_ctx.symbol_table = mod->block.symbol_table;
-        return mod;
+sir::Symbol UseResolver::resolve_symbol(sir::Ident &ident, sir::Symbol &symbol) {
+    if (!symbol) {
+        return resolve_module(ident, symbol);
     }
 
-    sir::Symbol symbol = inout_ctx.symbol_table->look_up(name);
-    if (symbol) {
-        sir::SymbolTable *new_symbol_table = symbol.get_symbol_table();
-        if (new_symbol_table) {
-            inout_ctx.symbol_table = new_symbol_table;
+    sir::Symbol new_symbol = symbol.get_symbol_table()->look_up(ident.value);
+    if (new_symbol) {
+        symbol = new_symbol;
+        return new_symbol;
+    }
+
+    if (auto mod = symbol.match<sir::Module>()) {
+        ModulePath sub_mod_path = mod->path;
+        sub_mod_path.append(ident.value);
+        sir::Module *sub_mod = analyzer.sir_unit.mods_by_path[sub_mod_path];
+
+        if (sub_mod) {
+            symbol = sub_mod;
+            return sub_mod;
         }
-
-        return symbol;
     }
 
-    ModulePath sub_mod_path = inout_ctx.mod->path;
-    sub_mod_path.append(name);
-    sir::Module *sub_mod = analyzer.sir_unit.mods_by_path[sub_mod_path];
+    analyzer.report_generator.report_err_symbol_not_found_in(ident, symbol.get_name());
+    return nullptr;
+}
 
-    if (sub_mod) {
-        inout_ctx.mod = sub_mod;
-        inout_ctx.symbol_table = sub_mod->block.symbol_table;
-        return sub_mod;
+sir::Symbol UseResolver::resolve_module(sir::Ident &ident, sir::Symbol &symbol) {
+    auto iter = analyzer.sir_unit.mods_by_path.find({ident.value});
+    if (iter == analyzer.sir_unit.mods_by_path.end()) {
+        analyzer.report_generator.report_err_module_not_found(ident);
+        return nullptr;
     }
 
-    ASSERT_UNREACHABLE;
+    sir::Module *mod = iter->second;
+    symbol = mod;
+    return mod;
 }
 
 } // namespace sema

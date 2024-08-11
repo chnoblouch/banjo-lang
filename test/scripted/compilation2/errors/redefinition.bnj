@@ -1,0 +1,16 @@
+# test:subtest
+# test:error 7:9 "redefinition of 'a'"
+# test:note 6:9 "previously defined here"
+
+func main() {
+    var a = 0;
+    var a = 1;
+}
+
+# test:subtest
+# test:error 15:9 "redefinition of 'a'"
+# test:note 14:11 "previously defined here"
+
+func test(a: i32) {
+    var a = 0;
+}

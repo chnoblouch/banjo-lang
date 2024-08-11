@@ -226,7 +226,7 @@ void Printer::print_use_item(const UseItem &use_item) {
 
 void Printer::print_use_ident(const UseIdent &use_ident) {
     BEGIN_OBJECT("UseIdent");
-    PRINT_FIELD("value", use_ident.value);
+    PRINT_FIELD("value", use_ident.ident.value);
     END_OBJECT();
 }
 

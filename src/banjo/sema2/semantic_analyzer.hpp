@@ -1,8 +1,10 @@
 #ifndef SEMA2_SEMANTIC_ANALYZER_H
 #define SEMA2_SEMANTIC_ANALYZER_H
 
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
+#include "banjo/sema2/report_generator.hpp"
 
 #include <functional>
 #include <set>
@@ -51,17 +53,22 @@ class SemanticAnalyzer {
     friend class MetaExpansion;
     friend class DeclVisitor;
     friend class Preamble;
+    friend class ReportGenerator;
+    friend class ReportBuilder;
 
 private:
     sir::Unit &sir_unit;
     target::Target *target;
+    ReportManager &report_manager;
+    ReportGenerator report_generator;
+
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
     std::vector<PostponedAnalysis> postponed_analyses;
     std::set<const sir::Decl *> blocked_decls;
 
 public:
-    SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target);
+    SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, ReportManager &report_manager);
     void analyze();
 
 private:

@@ -1,0 +1,3 @@
+# test:error 3:5 "cannot find module 'some_module'"
+
+use some_module;

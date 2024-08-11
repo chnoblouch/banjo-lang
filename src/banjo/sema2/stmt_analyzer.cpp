@@ -40,7 +40,7 @@ void StmtAnalyzer::analyze_block(sir::Block &block) {
 }
 
 void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
-    analyzer.get_scope().block->symbol_table->symbols.insert({var_stmt.name.value, &var_stmt});
+    insert_symbol(var_stmt.name, &var_stmt);
 
     if (var_stmt.type) {
         ExprAnalyzer(analyzer).analyze(var_stmt.type);
@@ -190,6 +190,18 @@ void StmtAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
 void StmtAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt*/) {}
 
 void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {}
+
+void StmtAnalyzer::insert_symbol(sir::Ident &ident, sir::Symbol symbol) {
+    auto &symbols = analyzer.get_scope().block->symbol_table->symbols;
+
+    auto iter = symbols.find(ident.value);
+    if (iter != symbols.end()) {
+        analyzer.report_generator.report_err_redefinition(ident, iter->second);
+        return;
+    }
+
+    symbols.insert({ident.value, symbol});
+}
 
 } // namespace sema
 

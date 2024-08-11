@@ -109,7 +109,7 @@ void SymbolCollector::collect_use_item(sir::UseItem &use_item) {
 }
 
 void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident) {
-    get_symbol_table().symbols.insert({use_ident.value, &use_ident});
+    get_symbol_table().symbols.insert({use_ident.ident.value, &use_ident});
 }
 
 void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind) {

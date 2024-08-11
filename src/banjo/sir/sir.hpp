@@ -330,7 +330,9 @@ public:
     bool operator==(const Symbol &other) const;
     bool operator!=(const Symbol &other) const { return !(*this == other); }
 
-    const std::string &get_name() const;
+    const Ident &get_ident() const;
+    Ident &get_ident();
+    std::string get_name() const;
     Expr get_type();
     Symbol resolve();
     SymbolTable *get_symbol_table();
@@ -830,8 +832,7 @@ struct UseDecl {
 };
 
 struct UseIdent {
-    ASTNode *ast_node;
-    std::string value;
+    Ident ident;
     Symbol symbol;
 };
 

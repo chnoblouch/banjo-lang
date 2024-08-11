@@ -6,6 +6,8 @@ namespace banjo {
 
 namespace lang {
 
+Report::Report(Type type) : type(type) {}
+
 Report::Report(Type type, ReportMessage message) : type(type), message(std::move(message)) {}
 
 Report::Report(Type type, std::string message, TextRange range)
@@ -23,6 +25,11 @@ Report &Report::set_message(std::string message) {
 
 Report &Report::set_message(ReportText::ID text_id) {
     return set_message(ReportText(text_id).str());
+}
+
+Report &Report::set_message(ReportMessage message) {
+    this->message = std::move(message);
+    return *this;
 }
 
 Report &Report::add_note(ReportMessage note) {

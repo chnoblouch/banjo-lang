@@ -1,6 +1,7 @@
 #include "sir.hpp"
 
 #include "banjo/utils/macros.hpp"
+#include <utility>
 
 namespace banjo {
 
@@ -150,18 +151,30 @@ bool Symbol::operator==(const Symbol &other) const {
     else ASSERT_UNREACHABLE;
 }
 
-const std::string &Symbol::get_name() const {
-    if (auto func_def = match<FuncDef>()) return func_def->ident.value;
-    else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->ident.value;
-    else if (auto const_def = match<ConstDef>()) return const_def->ident.value;
-    else if (auto struct_def = match<StructDef>()) return struct_def->ident.value;
-    else if (auto struct_field = match<StructField>()) return struct_field->ident.value;
-    else if (auto var_decl = match<VarDecl>()) return var_decl->ident.value;
-    else if (auto enum_def = match<EnumDef>()) return enum_def->ident.value;
-    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->ident.value;
-    else if (auto var_stmt = match<VarStmt>()) return var_stmt->name.value;
-    else if (auto param = match<Param>()) return param->name.value;
+const Ident &Symbol::get_ident() const {
+    if (auto func_def = match<FuncDef>()) return func_def->ident;
+    else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->ident;
+    else if (auto const_def = match<ConstDef>()) return const_def->ident;
+    else if (auto struct_def = match<StructDef>()) return struct_def->ident;
+    else if (auto struct_field = match<StructField>()) return struct_field->ident;
+    else if (auto var_decl = match<VarDecl>()) return var_decl->ident;
+    else if (auto enum_def = match<EnumDef>()) return enum_def->ident;
+    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->ident;
+    else if (auto var_stmt = match<VarStmt>()) return var_stmt->name;
+    else if (auto param = match<Param>()) return param->name;
     else ASSERT_UNREACHABLE;
+}
+
+Ident &Symbol::get_ident() {
+    return const_cast<Ident &>(std::as_const(*this).get_ident());
+}
+
+std::string Symbol::get_name() const {
+    if (auto mod = match<Module>()) {
+        return mod->path.to_string();
+    } else {
+        return get_ident().value;
+    }
 }
 
 Expr Symbol::get_type() {

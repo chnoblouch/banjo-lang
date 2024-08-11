@@ -1,0 +1,11 @@
+# test:subtest
+# test:error 5:13 "cannot find 'b'"
+
+func main() {
+    var a = b;
+}
+
+# test:subtest
+# test:error 11:16 "cannot find 'B'"
+
+const A: i32 = B;

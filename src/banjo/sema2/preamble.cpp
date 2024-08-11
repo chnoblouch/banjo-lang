@@ -74,9 +74,13 @@ void Preamble::insert_into(sir::Module &mod) {
 }
 
 sir::UseIdent *Preamble::create_use_ident(const std::string &value) {
-    return analyzer.create_use_item(sir::UseIdent{
+    sir::Ident ident{
         .ast_node = nullptr,
         .value = value,
+    };
+
+    return analyzer.create_use_item(sir::UseIdent{
+        .ident = ident,
         .symbol = nullptr,
     });
 }

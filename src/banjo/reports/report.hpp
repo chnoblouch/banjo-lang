@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <string_view>
 
 namespace banjo {
 
@@ -21,6 +22,7 @@ struct ReportMessage {
     std::string text;
     std::optional<SourceLocation> location;
 
+    ReportMessage() {}
     ReportMessage(std::string text) : text(text) {}
     ReportMessage(std::string text, SourceLocation location) : text(text), location(location) {}
 
@@ -34,6 +36,13 @@ struct ReportMessage {
     template <typename... FormatArgs>
     ReportMessage(SourceLocation location, ReportText::ID text_id, FormatArgs... format_args) : location(location) {
         ReportText message(text_id);
+        ([&]() { message = message.format(format_args); }(), ...);
+        text = message.str();
+    }
+
+    template <typename... FormatArgs>
+    ReportMessage(SourceLocation location, std::string_view format_str, FormatArgs... format_args) : location(location) {
+        ReportText message(format_str);
         ([&]() { message = message.format(format_args); }(), ...);
         text = message.str();
     }
@@ -54,6 +63,7 @@ private:
     std::vector<ReportMessage> notes;
 
 public:
+    Report(Type type);
     Report(Type type, ReportMessage message);
     Report(Type type, std::string message, TextRange range);
     Report(Type type, std::string message);
@@ -65,6 +75,7 @@ public:
 
     Report &set_message(std::string message);
     Report &set_message(ReportText::ID text_id);
+    Report &set_message(ReportMessage message);
     Report &add_note(ReportMessage note);
 };
 

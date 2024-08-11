@@ -773,8 +773,7 @@ sir::UseItem SIRGenerator::generate_use_item(ASTNode *node) {
 
 sir::UseItem SIRGenerator::generate_use_ident(ASTNode *node) {
     return create_use_item(sir::UseIdent{
-        .ast_node = node,
-        .value = node->get_value(),
+        .ident = generate_ident(node),
         .symbol = nullptr,
     });
 }

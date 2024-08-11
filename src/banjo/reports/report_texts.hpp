@@ -6,6 +6,7 @@
 #include "banjo/symbol/module_path.hpp"
 
 #include <string>
+#include <string_view>
 
 namespace banjo {
 
@@ -67,7 +68,7 @@ private:
 
 public:
     ReportText(ID id);
-    ReportText(const char *format_str);
+    ReportText(std::string_view format_str);
     std::string str() { return text; }
 
     ReportText &format(std::string string);

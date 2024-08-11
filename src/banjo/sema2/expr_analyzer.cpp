@@ -264,7 +264,10 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         symbol = symbol_table.look_up(ident_expr.value);
     }
 
-    assert(symbol);
+    if (!symbol) {
+        analyzer.report_generator.report_err_symbol_not_found(ident_expr);
+        return Result::ERROR;
+    }
 
     out_expr = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = ident_expr.ast_node,

@@ -18,7 +18,11 @@ namespace lang {
 
 namespace sema {
 
-SemanticAnalyzer::SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target) : sir_unit(sir_unit), target(target) {}
+SemanticAnalyzer::SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, ReportManager &report_manager)
+  : sir_unit(sir_unit),
+    target(target),
+    report_manager(report_manager),
+    report_generator(*this) {}
 
 void SemanticAnalyzer::analyze() {
     Preamble(*this).insert();

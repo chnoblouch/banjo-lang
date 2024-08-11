@@ -1,10 +1,19 @@
 #include "report_manager.hpp"
 
-#include "banjo/reports/report_printer.hpp"
+#include <utility>
 
 namespace banjo {
 
 namespace lang {
+
+Report &ReportManager::insert(Report report) {
+    if (report.get_type() == Report::Type::ERROR) {
+        valid = false;
+    }
+
+    reports.push_back(std::move(report));
+    return reports.back();
+}
 
 void ReportManager::merge_result(std::vector<Report> reports, bool is_valid) {
     this->reports.insert(this->reports.end(), reports.begin(), reports.end());
