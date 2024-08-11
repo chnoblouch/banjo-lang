@@ -277,6 +277,10 @@ void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
 
 void SSAGenerator::generate_block(const sir::Block &sir_block) {
     for (const sir::Stmt &sir_stmt : sir_block.stmts) {
+        if (ir_builder::IRBuilderUtils::is_branching(*ctx.get_ssa_block())) {
+            continue;
+        }
+
         if (auto var_stmt = sir_stmt.match<sir::VarStmt>()) generate_var_stmt(*var_stmt);
         else if (auto assign_stmt = sir_stmt.match<sir::AssignStmt>()) generate_assign_stmt(*assign_stmt);
         else if (auto return_stmt = sir_stmt.match<sir::ReturnStmt>()) generate_return_stmt(*return_stmt);
