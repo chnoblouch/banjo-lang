@@ -1,0 +1,21 @@
+use c.lib.{
+	stdlib.{malloc as cmalloc, realloc as crealloc, free as cfree},
+	string.{memcpy as cmemcpy, memset as cmemset}
+};
+
+pub func alloc(size: usize) -> addr {
+	var pointer = cmalloc(size);
+	return pointer;
+}
+
+pub func realloc(pointer: addr, size: usize) -> addr {
+	return crealloc(pointer, size);
+}
+
+pub func free(pointer: addr) {
+	cfree(pointer);
+}
+
+pub func copy(src: addr, dst: addr, size: usize) {
+	cmemcpy(dst, src, size);
+}

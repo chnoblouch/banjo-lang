@@ -1,0 +1,30 @@
+native func sqrt(arg: f64) -> f64;
+native func sqrtf(arg: f32) -> f32;
+
+native func sin(arg: f64) -> f64;
+native func sinf(arg: f32) -> f32;
+# sinl
+
+native func cos(arg: f64) -> f64;
+native func cosf(arg: f32) -> f32;
+# cosl
+
+native func tan(arg: f64) -> f64;
+native func tanf(arg: f32) -> f32;
+# tanl
+
+native func asin(arg: f64) -> f64;
+native func asinf(arg: f32) -> f32;
+# asinl
+
+native func acos(arg: f64) -> f64;
+native func acosf(arg: f32) -> f32;
+# acosl
+
+native func atan(arg: f64) -> f64;
+native func atanf(arg: f32) -> f32;
+# atanl
+
+native func atan2(y: f64, x: f64) -> f64;
+native func atan2f(y: f32, x: f32) -> f32;
+# atan2l

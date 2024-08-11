@@ -1,0 +1,57 @@
+use std.memory;
+
+native func ___banjo_print_string(format: *u8, string: *u8);
+native func ___banjo_f64_to_string(value: f64) -> *u8;
+
+func print(value: *u8) {
+	___banjo_print_string("%s", value);
+}
+
+func print(value: i32) {
+	print(String.from(value as i64).cstr());
+}
+
+func print(value: u32) {
+	print(String.from(value as u64).cstr());
+}
+
+func print(value: f32) {
+	var cstr = ___banjo_f64_to_string(value as f64);
+	print(cstr);
+	memory.free(cstr as addr);
+}
+
+func print(value: bool) {
+	if value {
+		print("true");
+	} else {
+		print("false");
+	}
+}
+
+
+func println(value: *u8) {
+	___banjo_print_string("%s\n", value);
+}
+
+func println(value: i32) {
+	println(String.from(value as i64).cstr());
+}
+
+func println(value: u32) {
+	println(String.from(value as u64).cstr());
+}
+
+func println(value: f32) {
+	var cstr = ___banjo_f64_to_string(value as f64);
+	println(cstr);
+	memory.free(cstr as addr);
+}
+
+func println(value: bool) {
+	if value {
+		println("true");
+	} else {
+		println("false");
+	}
+}

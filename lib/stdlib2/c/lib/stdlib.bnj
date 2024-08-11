@@ -1,0 +1,12 @@
+native func malloc(size: usize) -> addr;
+native func calloc(num_members: usize, size: usize) -> addr;
+native func realloc(pointer: addr, size: usize) -> addr;
+native func free(ptr: addr);
+
+native func exit(status: i32);
+
+native func atoi(str: *u8) -> i32;
+native func atof(str: *u8) -> f64;
+
+native func strtol(str: *u8, str_end: **u8, base: i32) -> i32;
+native func strtof(str: *u8, str_end: **u8) -> f32;

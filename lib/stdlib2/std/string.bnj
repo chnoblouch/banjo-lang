@@ -31,20 +31,6 @@ struct String {
 		};
 	}
 	
-	pub func copy(slice: StringSlice) -> String {
-		var capacity = slice.length as u32 + 1;
-		var data = memory.alloc(capacity as usize) as *u8;
-		
-		memory.copy(slice.data as addr, data as addr, slice.length);
-		data[slice.length] = 0;
-		
-		return String {
-			data: data,
-			length: slice.length as u32,
-			capacity: capacity
-		};
-	}
-	
     pub func from(integer: u64) -> String {
         var capacity: u32 = 32;
 		var data = memory.alloc(capacity as u64) as *u8;
@@ -139,7 +125,7 @@ struct String {
 		
 		var copy_dst = self.data as addr + self.length as addr;
 		var copy_src = other.data as addr;
-		memory.copy(copy_src, copy_dst , other.length as usize + 1);
+		memory.copy(copy_src, copy_dst, other.length as usize + 1);
 		
 		self.length = new_length;
 	}
@@ -217,28 +203,6 @@ struct String {
 	pub func cstr(self) -> *u8 {
 		return self.data;
 	}
-	
-    pub func to_i32(self) -> ?i32 {
-        var last_char: *u8;
-        var result = strtol(self.data, &last_char, 10);
-        
-        if last_char != self.data + self.length as *u8 {
-            return none;
-        } else {
-            return result;
-        }
-    }
-    
-    pub func to_f32(self) -> ?f32 {
-        var last_char: *u8;
-        var result = strtof(self.data, &last_char);
-        
-        if last_char != self.data + self.length as *u8 {
-            return none;
-        } else {
-            return result;
-        }
-    }
     
 	pub func to_i64(self) -> i64 {	
 		var sign: i64 = 1;
@@ -281,7 +245,7 @@ struct String {
     }
     
     pub func __repr__(self) -> String {
-        var result = str("\"");
+        var result = String.from("\"");
         
         for i in 0..self.length {
             var char = self.data[i];
@@ -344,8 +308,4 @@ struct String {
 			self.data[i2] = c1;
 		}
 	}
-}
-
-func str(cstr: *u8) -> String {
-    return String.from(cstr);
 }

@@ -80,5 +80,5 @@ endif()
 install(DIRECTORY src/cli/python/ DESTINATION scripts/cli)
 install(DIRECTORY src/bindgen DESTINATION scripts)
 
-install(DIRECTORY lib/stdlib DESTINATION lib)
+install(DIRECTORY lib/stdlib2 DESTINATION lib)
 install(DIRECTORY lib/runtime/bin/ DESTINATION lib/runtime)

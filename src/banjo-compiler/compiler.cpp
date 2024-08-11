@@ -59,10 +59,7 @@ void Compiler::compile() {
 ir::Module Compiler::run_frontend() {
     PROFILE_SECTION_BEGIN("FRONTEND");
 
-#ifndef BANJO_ENABLE_SIR
     module_manager.add_standard_stdlib_search_path();
-#endif
-
     module_manager.add_config_search_paths(config);
     module_manager.load_all();
 
@@ -78,10 +75,15 @@ ir::Module Compiler::run_frontend() {
         sir::Printer(sir_file_generated).print(sir_unit);
     }
 
-    sema::SemanticAnalyzer(sir_unit, target).analyze();
+    sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
     if (config.is_debug()) {
         std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
         sir::Printer(sir_file_analyzed).print(sir_unit);
+    }
+
+    report_printer.print_reports(report_manager.get_reports());
+    if (!report_manager.is_valid()) {
+        std::exit(EXIT_FAILURE);
     }
 #else
     DataTypeManager type_manager;
