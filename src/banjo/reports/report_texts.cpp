@@ -1,6 +1,8 @@
 #include "report_texts.hpp"
 
 #include "banjo/reports/report_utils.hpp"
+#include "banjo/utils/macros.hpp"
+
 #include <map>
 
 namespace banjo {
@@ -82,6 +84,30 @@ ReportText &ReportText::format(Structure *struct_) {
 
 ReportText &ReportText::format(const ModulePath &path) {
     return format(path.to_string("."));
+}
+
+ReportText &ReportText::format(sir::Expr &expr) {
+    if (auto primitive_type = expr.match<sir::PrimitiveType>()) {
+        switch (primitive_type->primitive) {
+            case sir::Primitive::I8: return format("i8");
+            case sir::Primitive::I16: return format("i16");
+            case sir::Primitive::I32: return format("i32");
+            case sir::Primitive::I64: return format("i64");
+            case sir::Primitive::U8: return format("u8");
+            case sir::Primitive::U16: return format("u16");
+            case sir::Primitive::U32: return format("u32");
+            case sir::Primitive::U64: return format("u64");
+            case sir::Primitive::F32: return format("f32");
+            case sir::Primitive::F64: return format("f64");
+            case sir::Primitive::BOOL: return format("bool");
+            case sir::Primitive::ADDR: return format("addr");
+            case sir::Primitive::VOID: return format("void");
+        }
+    } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
+        return format(symbol->symbol.get_name());
+    }  else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 } // namespace lang

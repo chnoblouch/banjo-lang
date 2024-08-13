@@ -61,7 +61,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
 
 void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets targets) {
     if (auto binary_expr = expr.match<sir::BinaryExpr>()) {
-        if (binary_expr->lhs.get_type().is_int_type()) {
+        if (binary_expr->lhs.get_type().is_int_type() || binary_expr->lhs.get_type().is_symbol<sir::EnumDef>()) {
             switch (binary_expr->op) {
                 case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);
                 case sir::BinaryOp::NE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets);

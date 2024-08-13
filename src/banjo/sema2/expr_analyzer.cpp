@@ -7,22 +7,29 @@
 
 #include <cassert>
 
-#define HANDLE_RESULT(result)                                                                                          \
-    if ((result) != Result::SUCCESS) {                                                                                 \
-        return result;                                                                                                 \
-    }
-
 namespace banjo {
 
 namespace lang {
 
 namespace sema {
 
+ExprConstraints ExprConstraints::expect_type(sir::Expr type) {
+    return {
+        .expected_type = type,
+    };
+}
+
 ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
+ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, ExprConstraints constraints)
+  : analyzer(analyzer),
+    constraints(constraints) {}
+
 Result ExprAnalyzer::analyze(sir::Expr &expr) {
-    if (auto int_literal = expr.match<sir::IntLiteral>()) analyze_int_literal(*int_literal);
-    else if (auto fp_literal = expr.match<sir::FPLiteral>()) analyze_fp_literal(*fp_literal);
+    Result result = Result::SUCCESS;
+
+    if (auto int_literal = expr.match<sir::IntLiteral>()) result = analyze_int_literal(*int_literal);
+    else if (auto fp_literal = expr.match<sir::FPLiteral>()) result = analyze_fp_literal(*fp_literal);
     else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
     else if (auto char_literal = expr.match<sir::CharLiteral>()) analyze_char_literal(*char_literal);
     else if (auto null_literal = expr.match<sir::NullLiteral>()) analyze_null_literal(*null_literal);
@@ -37,25 +44,57 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
     else if (auto tuple_expr = expr.match<sir::TupleExpr>()) analyze_tuple_expr(*tuple_expr);
     else if (auto static_array_type = expr.match<sir::StaticArrayType>()) analyze_static_array_type(*static_array_type);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, expr);
-    else if (auto ident_expr = expr.match<sir::IdentExpr>()) return analyze_ident_expr(*ident_expr, expr);
+    else if (auto ident_expr = expr.match<sir::IdentExpr>()) result = analyze_ident_expr(*ident_expr, expr);
     else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
     else if (auto bracket_expr = expr.match<sir::BracketExpr>()) analyze_bracket_expr(*bracket_expr, expr);
 
-    return Result::SUCCESS;
+    if (result != Result::SUCCESS) {
+        return result;
+    }
+
+    if (constraints.expected_type && expr.get_type() != constraints.expected_type) {
+        analyzer.report_generator.report_err_type_mismatch(expr, constraints.expected_type, expr.get_type());
+    }
+
+    return result;
 }
 
-void ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
-    int_literal.type = analyzer.create_expr(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::I32,
-    });
+Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
+    if (constraints.expected_type) {
+        if (constraints.expected_type.is_int_type()) {
+            int_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        } else {
+            analyzer.report_generator.report_err_cant_coerce_int_literal(int_literal, constraints.expected_type);
+            return Result::ERROR;
+        }
+    } else {
+        int_literal.type = analyzer.create_expr(sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::I32,
+        });
+
+        return Result::SUCCESS;
+    }
 }
 
-void ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
-    fp_literal.type = analyzer.create_expr(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::F32,
-    });
+Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
+    if (constraints.expected_type) {
+        if (constraints.expected_type.is_fp_type()) {
+            fp_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        } else {
+            analyzer.report_generator.report_err_cant_coerce_fp_literal(fp_literal, constraints.expected_type);
+            return Result::ERROR;
+        }
+    } else {
+        fp_literal.type = analyzer.create_expr(sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::F32,
+        });
+
+        return Result::SUCCESS;
+    }
 }
 
 void ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
@@ -83,7 +122,7 @@ void ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal) {
     assert(array_literal.values.size() != 0);
 
     for (sir::Expr &value : array_literal.values) {
-        analyze(value);
+        ExprAnalyzer(analyzer).analyze(value);
     }
 
     array_literal.type = array_literal.values[0].get_type();
@@ -101,8 +140,14 @@ void ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
     });
 }
 
-Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
-    HANDLE_RESULT(analyze(struct_literal.type));
+void ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
+    if (struct_literal.type) {
+        ExprAnalyzer(analyzer).analyze(struct_literal.type);
+    } else if (constraints.expected_type) {
+        struct_literal.type = constraints.expected_type;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 
     sir::StructDef &struct_def = struct_literal.type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
 
@@ -114,21 +159,43 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
         }
 
         assert(entry.field);
-        analyze(entry.value);
+        ExprAnalyzer(analyzer, ExprConstraints::expect_type(entry.field->type)).analyze(entry.value);
     }
-
-    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr) {
-    analyze(binary_expr.lhs);
-    analyze(binary_expr.rhs);
+    ExprAnalyzer(analyzer).analyze(binary_expr.lhs);
+    ExprAnalyzer(analyzer).analyze(binary_expr.rhs);
 
-    binary_expr.type = binary_expr.lhs.get_type();
+    switch (binary_expr.op) {
+        case sir::BinaryOp::ADD:
+        case sir::BinaryOp::SUB:
+        case sir::BinaryOp::MUL:
+        case sir::BinaryOp::DIV:
+        case sir::BinaryOp::MOD:
+        case sir::BinaryOp::BIT_AND:
+        case sir::BinaryOp::BIT_OR:
+        case sir::BinaryOp::BIT_XOR:
+        case sir::BinaryOp::SHL:
+        case sir::BinaryOp::SHR: binary_expr.type = binary_expr.lhs.get_type(); break;
+        case sir::BinaryOp::EQ:
+        case sir::BinaryOp::NE:
+        case sir::BinaryOp::GT:
+        case sir::BinaryOp::LT:
+        case sir::BinaryOp::GE:
+        case sir::BinaryOp::LE:
+        case sir::BinaryOp::AND:
+        case sir::BinaryOp::OR:
+            binary_expr.type = analyzer.create_expr(sir::PrimitiveType{
+                .ast_node = nullptr,
+                .primitive = sir::Primitive::BOOL,
+            });
+            break;
+    }
 }
 
 void ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr) {
-    analyze(unary_expr.value);
+    ExprAnalyzer(analyzer).analyze(unary_expr.value);
 
     if (unary_expr.op == sir::UnaryOp::NEG) {
         unary_expr.type = unary_expr.value.get_type();
@@ -149,19 +216,19 @@ void ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr) {
 }
 
 void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
-    analyze(cast_expr.type);
-    analyze(cast_expr.value);
+    ExprAnalyzer(analyzer).analyze(cast_expr.type);
+    ExprAnalyzer(analyzer).analyze(cast_expr.value);
 }
 
 void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
         analyze_dot_expr_callee(*dot_expr, call_expr);
     } else {
-        analyze(call_expr.callee);
+        ExprAnalyzer(analyzer).analyze(call_expr.callee);
     }
 
     for (sir::Expr &arg : call_expr.args) {
-        analyze(arg);
+        ExprAnalyzer(analyzer).analyze(arg);
     }
 
     if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
@@ -172,7 +239,7 @@ void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
 }
 
 void ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr) {
-    analyze(dot_expr.lhs);
+    ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
 
     if (auto struct_def = dot_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
         sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
@@ -214,25 +281,30 @@ void ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr
 }
 
 void ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_type) {
-    analyze(static_array_type.base_type);
-    analyze(static_array_type.length);
+    ExprAnalyzer(analyzer).analyze(static_array_type.base_type);
+    ExprAnalyzer(analyzer).analyze(static_array_type.length);
 }
 
-void ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
-    analyze(dot_expr.lhs);
-    analyze_dot_expr_rhs(dot_expr, out_expr);
+Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
+    Result result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
+    if (result == Result::ERROR) {
+        return result;
+    }
+
+    result = analyze_dot_expr_rhs(dot_expr, out_expr);
+    return result;
 }
 
 void ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
-    analyze(range_expr.lhs);
-    analyze(range_expr.rhs);
+    ExprAnalyzer(analyzer).analyze(range_expr.lhs);
+    ExprAnalyzer(analyzer).analyze(range_expr.rhs);
 }
 
 void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
     assert(!tuple_expr.exprs.empty());
 
     for (sir::Expr &expr : tuple_expr.exprs) {
-        analyze(expr);
+        ExprAnalyzer(analyzer).analyze(expr);
     }
 
     if (tuple_expr.exprs[0].is_type()) {
@@ -287,7 +359,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 }
 
 void ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
-    analyze(star_expr.value);
+    ExprAnalyzer(analyzer).analyze(star_expr.value);
 
     if (star_expr.value.is_type()) {
         out_expr = analyzer.create_expr(sir::PointerType{
@@ -305,10 +377,10 @@ void ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_ex
 }
 
 void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
-    analyze(bracket_expr.lhs);
+    ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
 
     for (sir::Expr &expr : bracket_expr.rhs) {
-        analyze(expr);
+        ExprAnalyzer(analyzer).analyze(expr);
     }
 
     if (auto func_def = bracket_expr.lhs.match_symbol<sir::FuncDef>()) {
@@ -358,7 +430,7 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
     }
 }
 
-void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
+Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
         sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
@@ -376,7 +448,7 @@ void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_e
             .symbol = symbol,
         });
 
-        return;
+        return Result::SUCCESS;
     }
 
     if (dot_expr.lhs.is_value()) {
@@ -422,6 +494,8 @@ void ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_e
     } else {
         ASSERT_UNREACHABLE;
     }
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::resolve_overload(sir::OverloadSet &overload_set, sir::CallExpr &inout_call_expr) {

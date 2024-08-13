@@ -121,6 +121,35 @@ bool Expr::is_fp_type() const {
     }
 }
 
+ASTNode *Expr::get_ast_node() const {
+    if (auto int_literal = match<IntLiteral>()) return int_literal->ast_node;
+    else if (auto fp_literal = match<FPLiteral>()) return fp_literal->ast_node;
+    else if (auto bool_literal = match<BoolLiteral>()) return bool_literal->ast_node;
+    else if (auto char_literal = match<CharLiteral>()) return char_literal->ast_node;
+    else if (auto null_literal = match<NullLiteral>()) return null_literal->ast_node;
+    else if (auto array_literal = match<ArrayLiteral>()) return array_literal->ast_node;
+    else if (auto string_literal = match<StringLiteral>()) return string_literal->ast_node;
+    else if (auto struct_literal = match<StructLiteral>()) return struct_literal->ast_node;
+    else if (auto symbol_expr = match<SymbolExpr>()) return symbol_expr->ast_node;
+    else if (auto binary_expr = match<BinaryExpr>()) return binary_expr->ast_node;
+    else if (auto unary_expr = match<UnaryExpr>()) return unary_expr->ast_node;
+    else if (auto cast_expr = match<CastExpr>()) return cast_expr->ast_node;
+    else if (auto index_expr = match<IndexExpr>()) return index_expr->ast_node;
+    else if (auto call_expr = match<CallExpr>()) return call_expr->ast_node;
+    else if (auto field_expr = match<FieldExpr>()) return field_expr->ast_node;
+    else if (auto range_expr = match<RangeExpr>()) return range_expr->ast_node;
+    else if (auto tuple_expr = match<TupleExpr>()) return tuple_expr->ast_node;
+    else if (auto primitive_type = match<PrimitiveType>()) return primitive_type->ast_node;
+    else if (auto pointer_type = match<PointerType>()) return pointer_type->ast_node;
+    else if (auto static_array_type = match<StaticArrayType>()) return static_array_type->ast_node;
+    else if (auto func_type = match<FuncType>()) return func_type->ast_node;
+    else if (auto ident_expr = match<IdentExpr>()) return ident_expr->ast_node;
+    else if (auto star_expr = match<StarExpr>()) return star_expr->ast_node;
+    else if (auto bracket_expr = match<BracketExpr>()) return bracket_expr->ast_node;
+    else if (auto dot_expr = match<DotExpr>()) return dot_expr->ast_node;
+    else ASSERT_UNREACHABLE;
+}
+
 DeclBlock *Expr::get_decl_block() {
     if (auto symbol_expr = match<SymbolExpr>()) {
         if (auto mod = symbol_expr->symbol.match<Module>()) return &mod->block;

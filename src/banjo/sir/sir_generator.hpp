@@ -78,6 +78,7 @@ private:
     sir::Expr generate_array_literal(ASTNode *node);
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
+    sir::Expr generate_typeless_struct_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
     sir::Expr generate_self(ASTNode *node);
     sir::Expr generate_binary_expr(ASTNode *node, sir::BinaryOp op);
@@ -96,6 +97,7 @@ private:
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
+    std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
     sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
     char decode_char(const std::string &value, unsigned &index);
 

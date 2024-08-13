@@ -1,0 +1,32 @@
+# test:subtest
+# test:error 6:18 "type mismatch (expected 'i32', got 'f32')"
+
+func main() {
+    var a = 0.5;
+    var b: i32 = a;
+}
+
+# test:subtest
+# test:error 12:16 "type mismatch (expected 'i32', got 'bool')"
+
+const A: i32 = false;
+
+# test:subtest
+# test:error 18:12 "type mismatch (expected 'f32', got 'bool')" 
+
+func get() -> f32 {
+    return true;
+}
+
+# test:subtest
+# test:error 30:16 "type mismatch (expected 'f32', got 'bool')"
+
+struct Object {
+    var value: f32;
+}
+
+func main() {
+    var object = Object {
+        value: true,
+    };
+}

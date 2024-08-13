@@ -1,0 +1,14 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var float = 0.5;
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var float_f32: f32 = 0.5;
+    var float_f64: f64 = 0.5;
+}

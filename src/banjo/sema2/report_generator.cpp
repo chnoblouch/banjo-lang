@@ -60,6 +60,28 @@ void ReportGenerator::report_err_redefinition(const sir::Ident &ident, const sir
         .report();
 }
 
+void ReportGenerator::report_err_type_mismatch(
+    const sir::Expr &value,
+    const sir::Expr &expected,
+    const sir::Expr &actual
+) {
+    report_error("type mismatch (expected '%', got '%')", value.get_ast_node(), expected, actual);
+}
+
+void ReportGenerator::report_err_cant_coerce_int_literal(
+    const sir::IntLiteral &int_literal,
+    const sir::Expr &expected_type
+) {
+    report_error("cannot coerce int literal to type '%'", int_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cant_coerce_fp_literal(
+    const sir::FPLiteral &fp_literal,
+    const sir::Expr &expected_type
+) {
+    report_error("cannot coerce float literal to type '%'", fp_literal.ast_node, expected_type);
+}
+
 } // namespace sema
 
 } // namespace lang

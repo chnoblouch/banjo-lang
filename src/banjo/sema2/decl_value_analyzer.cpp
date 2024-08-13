@@ -12,7 +12,11 @@ namespace sema {
 DeclValueAnalyzer::DeclValueAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclValueAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
-    return ExprAnalyzer(analyzer).analyze(const_def.value);
+    if (!const_def.type) {
+        return Result::ERROR;
+    }
+
+    return ExprAnalyzer(analyzer, ExprConstraints::expect_type(const_def.type)).analyze(const_def.value);
 }
 
 Result DeclValueAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {

@@ -134,6 +134,9 @@ public:
     }
 
     template <typename T>
+    bool is_symbol() const;
+
+    template <typename T>
     T &as() {
         return *std::get<T *>(kind);
     }
@@ -172,6 +175,7 @@ public:
     bool is_unsigned_type() const;
     bool is_fp_type() const;
 
+    ASTNode *get_ast_node() const;
     DeclBlock *get_decl_block();
 };
 
@@ -956,6 +960,15 @@ struct Unit {
 
     Module *create_mod() { return mod_arena.create(); }
 };
+
+template <typename T>
+bool Expr::is_symbol() const {
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        return symbol_expr->symbol.match<T>();
+    } else {
+        return false;
+    }
+}
 
 template <typename T>
 T *Expr::match_symbol() {

@@ -406,6 +406,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_ARRAY_EXPR: return generate_array_literal(node);
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
+        case AST_ANON_STRUCT_LITERAL: return generate_typeless_struct_literal(node);
         case AST_IDENTIFIER: return generate_ident_expr(node);
         case AST_SELF: return generate_self(node);
         case AST_OPERATOR_ADD: return generate_binary_expr(node, sir::BinaryOp::ADD);
@@ -529,21 +530,19 @@ sir::Expr SIRGenerator::generate_string_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_struct_literal(ASTNode *node) {
-    sir::StructLiteral sir_struct_literal{
+    return create_expr(sir::StructLiteral{
         .ast_node = node,
         .type = generate_expr(node->get_child(STRUCT_LITERAL_NAME)),
-        .entries = {},
-    };
+        .entries = generate_struct_literal_entries(node->get_child(STRUCT_LITERAL_VALUES)),
+    });
+}
 
-    for (ASTNode *child : node->get_child(STRUCT_LITERAL_VALUES)->get_children()) {
-        sir_struct_literal.entries.push_back({
-            .ident = generate_ident(child->get_child(STRUCT_FIELD_VALUE_NAME)),
-            .value = generate_expr(child->get_child(STRUCT_FIELD_VALUE_VALUE)),
-            .field = nullptr,
-        });
-    }
-
-    return create_expr(sir_struct_literal);
+sir::Expr SIRGenerator::generate_typeless_struct_literal(ASTNode *node) {
+    return create_expr(sir::StructLiteral{
+        .ast_node = node,
+        .type = nullptr,
+        .entries = generate_struct_literal_entries(node->get_child()),
+    });
 }
 
 sir::Expr SIRGenerator::generate_ident_expr(ASTNode *node) {
@@ -734,6 +733,23 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
     }
 
     return sir_generic_params;
+}
+
+std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries(ASTNode *node) {
+    std::vector<sir::StructLiteralEntry> entries;
+    entries.resize(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        ASTNode *child = node->get_child(i);
+
+        entries[i] = sir::StructLiteralEntry{
+            .ident = generate_ident(child->get_child(STRUCT_FIELD_VALUE_NAME)),
+            .value = generate_expr(child->get_child(STRUCT_FIELD_VALUE_VALUE)),
+            .field = nullptr,
+        };
+    }
+
+    return entries;
 }
 
 sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {

@@ -44,7 +44,10 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 
     if (var_stmt.type) {
         ExprAnalyzer(analyzer).analyze(var_stmt.type);
-        ExprAnalyzer(analyzer).analyze(var_stmt.value);
+
+        if (var_stmt.value) {
+            ExprAnalyzer(analyzer, ExprConstraints::expect_type(var_stmt.type)).analyze(var_stmt.value);
+        }
     } else {
         ExprAnalyzer(analyzer).analyze(var_stmt.value);
         var_stmt.type = var_stmt.value.get_type();
@@ -74,7 +77,10 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 }
 
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
-    ExprAnalyzer(analyzer).analyze(return_stmt.value);
+    if (return_stmt.value) {
+        sir::Expr return_type = analyzer.get_scope().func_def->type.return_type;
+        ExprAnalyzer(analyzer, ExprConstraints::expect_type(return_type)).analyze(return_stmt.value);
+    }
 }
 
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {

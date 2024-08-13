@@ -48,18 +48,46 @@ class Test:
         self.source = source
 
     def run(self):
-        return self.check(self.build())
+        conditions = []
+        
+        for line in self.source.splitlines():
+            if line.startswith(CONDITION_PREFIX):
+                conditions.append(parse_condition(line))
 
-    def check(self, result):
+        for condition, _ in conditions:
+            if condition == "output":
+                return self.check_output(conditions)
+            elif condition == "compiles":
+                return self.check_compiles(conditions)
+            elif condition == "error":
+                return self.check_error(conditions)
+
+    def check_output(self, conditions):
+        _, args = conditions[0]
+        expected_output = args[0]
+
+        result = self.run_executable()
+
+        if result.stdout == expected_output:
+            return TestResult(True)
+        else:
+            return TestResult(False, "unexpected output", expected_output, result.stdout)
+
+    def check_compiles(self, conditions):
+        result = self.build()
+
+        if result.exit_code == 0:
+            return TestResult(True)
+        else:
+            return TestResult(False, "unexpected exit code", 0, result.exit_code)
+
+    def check_error(self, conditions):
+        result = self.build()
         stderr_lines = result.stderr.splitlines()
 
         expected_reports = []
-        for line in self.source.splitlines():
-            if not line.startswith(CONDITION_PREFIX):
-                continue
-            
-            condition, args = parse_condition(line)
-            
+        
+        for condition, args in conditions:
             if condition == "error":
                 expected_reports.append(("error", args[1], args[0]))
             elif condition == "note":
@@ -112,8 +140,29 @@ class Test:
         os.remove("tmp.bnj")
         return result
 
+    def run_executable(self):
+        self.build()
 
-def load_tests(directory, pattern):
+        if not os.path.exists("main.obj"):
+            return ProcessResult("", "", 1)
+
+        subprocess.run([
+            "lld-link.exe",
+            "main.obj",
+            "../../lib/runtime/bin/x86_64-windows-msvc.lib",
+            "msvcrt.lib", "ws2_32.lib", "shlwapi.lib", "dbghelp.lib", "kernel32.lib", "user32.lib",
+            "/SUBSYSTEM:CONSOLE",
+            "/OUT:test.exe"
+        ])
+
+        os.remove("main.obj")
+        result = run_process(["./test.exe"])
+        os.remove("test.exe")
+
+        return result
+
+
+def load_tests(directory, prefix):
     tests = []
 
     for file_name in os.listdir(directory):
@@ -122,10 +171,8 @@ def load_tests(directory, pattern):
             continue
         
         name = file_name[:-4] if is_file else file_name
-        
-        if fnmatch.fnmatch(name, pattern):
-            file_path = Path(directory, file_name)
-            tests.extend(load_test_file(name, file_path))
+        file_path = Path(directory, file_name)
+        tests.extend(load_test_file(f"{prefix}.{name}", file_path))
             
     return tests
 
@@ -198,10 +245,16 @@ def parse_condition(line):
 
 if __name__ == "__main__":
     pattern = sys.argv[1] if len(sys.argv) >= 2 else "*"
-    tests = load_tests("compilation2/errors", pattern)
+    
+    tests = []
+
+    for dir in os.listdir("compilation2"):
+        tests += load_tests("compilation2/" + dir, dir)
+
+    tests = [test for test in tests if fnmatch.fnmatch(test.name, pattern)]
 
     if not tests:
-        print("No match found.")
+        print("no match found")
         exit(1)
 
     print("\ntests:")
@@ -234,6 +287,6 @@ if __name__ == "__main__":
         for test, result in failures:
             print(f"  {test.name}: {result.failure_reason}")
             print(f"    expected: {result.expected}")
-            print(f"    actual: {result.actual}\n")    
+            print(f"      actual: {result.actual}\n")    
 
     

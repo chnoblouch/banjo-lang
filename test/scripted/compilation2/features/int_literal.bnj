@@ -1,0 +1,20 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var int = 1;
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var int_i8: i8 = 10;
+    var int_i16: i16 = 10;
+    var int_i32: i32 = 10;
+    var int_i64: i64 = 10;
+    var int_u8: u8 = 10;
+    var int_u16: u16 = 10;
+    var int_u32: u32 = 10;
+    var int_u64: u64 = 10;
+}

@@ -2,6 +2,7 @@
 #define REPORT_TEXTS_H
 
 #include "banjo/ast/ast_node.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/symbol/data_type.hpp"
 #include "banjo/symbol/module_path.hpp"
 
@@ -76,6 +77,7 @@ public:
     ReportText &format(DataType *type);
     ReportText &format(Structure *struct_);
     ReportText &format(const ModulePath &path);
+    ReportText &format(sir::Expr &expr);
 };
 
 } // namespace lang
