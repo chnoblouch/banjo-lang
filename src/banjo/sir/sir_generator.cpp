@@ -447,7 +447,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_U64: return generate_primitive_type(node, sir::Primitive::U64);
         case AST_F32: return generate_primitive_type(node, sir::Primitive::F32);
         case AST_F64: return generate_primitive_type(node, sir::Primitive::F64);
-        case AST_USIZE: return generate_primitive_type(node, sir::Primitive::I64); // FIXME: usize in sir?
+        case AST_USIZE: return generate_primitive_type(node, sir::Primitive::U64); // FIXME: usize in sir?
         case AST_BOOL: return generate_primitive_type(node, sir::Primitive::BOOL);
         case AST_ADDR: return generate_primitive_type(node, sir::Primitive::ADDR);
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);

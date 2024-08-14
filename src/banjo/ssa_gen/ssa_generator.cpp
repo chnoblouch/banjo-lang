@@ -5,6 +5,7 @@
 #include "banjo/ir/virtual_register.hpp"
 #include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
@@ -281,18 +282,24 @@ void SSAGenerator::generate_block(const sir::Block &sir_block) {
             continue;
         }
 
-        if (auto var_stmt = sir_stmt.match<sir::VarStmt>()) generate_var_stmt(*var_stmt);
-        else if (auto assign_stmt = sir_stmt.match<sir::AssignStmt>()) generate_assign_stmt(*assign_stmt);
-        else if (auto return_stmt = sir_stmt.match<sir::ReturnStmt>()) generate_return_stmt(*return_stmt);
-        else if (auto if_stmt = sir_stmt.match<sir::IfStmt>()) generate_if_stmt(*if_stmt);
-        else if (auto while_stmt = sir_stmt.match<sir::WhileStmt>()) ASSERT_UNREACHABLE
-        else if (auto for_stmt = sir_stmt.match<sir::ForStmt>()) ASSERT_UNREACHABLE
-        else if (auto loop_stmt = sir_stmt.match<sir::LoopStmt>()) generate_loop_stmt(*loop_stmt);
-        else if (auto continue_stmt = sir_stmt.match<sir::ContinueStmt>()) generate_continue_stmt(*continue_stmt);
-        else if (auto break_stmt = sir_stmt.match<sir::BreakStmt>()) generate_break_stmt(*break_stmt);
-        else if (auto expr = sir_stmt.match<sir::Expr>()) ExprSSAGenerator(ctx).generate(*expr, StorageHints::unused());
-        else if (auto block = sir_stmt.match<sir::Block>()) generate_block(*block);
-        else ASSERT_UNREACHABLE
+        SIR_VISIT_STMT(
+            sir_stmt,
+            SIR_VISIT_IMPOSSIBLE,
+            generate_var_stmt(*inner),
+            generate_assign_stmt(*inner),
+            SIR_VISIT_IMPOSSIBLE,
+            generate_return_stmt(*inner),
+            generate_if_stmt(*inner),
+            SIR_VISIT_IMPOSSIBLE,
+            SIR_VISIT_IMPOSSIBLE,
+            generate_loop_stmt(*inner),
+            generate_continue_stmt(*inner),
+            generate_break_stmt(*inner),
+            SIR_VISIT_IMPOSSIBLE,
+            SIR_VISIT_IMPOSSIBLE,
+            ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()),
+            generate_block(*inner)
+        );
     }
 }
 

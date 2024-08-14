@@ -47,6 +47,12 @@ public:
     void report_err_type_mismatch(const sir::Expr &value, const sir::Expr &expected, const sir::Expr &actual);
     void report_err_cant_coerce_int_literal(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
     void report_err_cant_coerce_fp_literal(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
+    void report_err_cant_coerce_null_literal(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
+   
+    void report_err_cant_coerce_string_literal(
+        const sir::StringLiteral &string_literal,
+        const sir::Expr &expected_type
+    );
 
 private:
     template <typename... FormatArgs>

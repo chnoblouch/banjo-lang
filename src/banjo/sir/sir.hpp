@@ -7,6 +7,7 @@
 #include "banjo/utils/large_int.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <concepts>
 #include <cstddef>
 #include <list>
 #include <optional>
@@ -24,6 +25,11 @@ namespace lang {
 class ASTNode;
 
 namespace sir {
+
+template <class... Ts>
+struct Visitor : Ts... {
+    using Ts::operator()...;
+};
 
 struct IntLiteral;
 struct FPLiteral;
@@ -174,6 +180,8 @@ public:
     bool is_signed_type() const;
     bool is_unsigned_type() const;
     bool is_fp_type() const;
+    bool is_addr_like_type() const;
+    bool is_u8_ptr() const;
 
     ASTNode *get_ast_node() const;
     DeclBlock *get_decl_block();

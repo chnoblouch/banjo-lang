@@ -1,0 +1,27 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var address = null;
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var address: addr = null;
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var address: *i32 = null;
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var address: func(i32) -> i32 = null;
+}

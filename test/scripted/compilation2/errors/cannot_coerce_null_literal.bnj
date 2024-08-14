@@ -1,0 +1,15 @@
+# test:subtest
+# test:error 5:18 "cannot coerce null to type 'i32'"
+
+func main() {
+    var a: i32 = null;
+}
+
+# test:subtest
+# test:error 14:16 "cannot coerce null to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = null;
+}

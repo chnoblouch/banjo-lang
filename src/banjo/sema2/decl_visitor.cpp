@@ -1,5 +1,7 @@
 #include "decl_visitor.hpp"
 
+#include "banjo/sir/sir_visitor.hpp"
+
 namespace banjo {
 
 namespace lang {
@@ -34,13 +36,21 @@ void DeclVisitor::analyze_meta_block(sir::MetaBlock &meta_block) {
 }
 
 Result DeclVisitor::analyze_decl(sir::Decl &decl) {
-    if (auto func_def = decl.match<sir::FuncDef>()) return process_func_def(*func_def);
-    else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) analyze_native_func_decl(*native_func_decl);
-    else if (auto const_def = decl.match<sir::ConstDef>()) analyze_const_def(*const_def);
-    else if (auto struct_def = decl.match<sir::StructDef>()) process_struct_def(*struct_def);
-    else if (auto var_decl = decl.match<sir::VarDecl>()) analyze_var_decl(*var_decl, decl);
-    else if (auto enum_def = decl.match<sir::EnumDef>()) process_enum_def(*enum_def);
-    else if (auto enum_variant = decl.match<sir::EnumVariant>()) analyze_enum_variant(*enum_variant);
+    SIR_VISIT_DECL(
+        decl,
+        SIR_VISIT_IMPOSSIBLE,
+        return process_func_def(*inner),
+        analyze_native_func_decl(*inner),
+        analyze_const_def(*inner),
+        process_struct_def(*inner),
+        SIR_VISIT_IGNORE,
+        analyze_var_decl(*inner, decl),
+        process_enum_def(*inner),
+        analyze_enum_variant(*inner),
+        SIR_VISIT_IGNORE,
+        SIR_VISIT_IGNORE,
+        SIR_VISIT_IGNORE
+    );
 
     return Result::SUCCESS;
 }

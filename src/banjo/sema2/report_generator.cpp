@@ -82,6 +82,20 @@ void ReportGenerator::report_err_cant_coerce_fp_literal(
     report_error("cannot coerce float literal to type '%'", fp_literal.ast_node, expected_type);
 }
 
+void ReportGenerator::report_err_cant_coerce_null_literal(
+    const sir::NullLiteral &null_literal,
+    const sir::Expr &expected_type
+) {
+    report_error("cannot coerce null to type '%'", null_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cant_coerce_string_literal(
+    const sir::StringLiteral &string_literal,
+    const sir::Expr &expected_type
+) {
+    report_error("cannot coerce string literal to type '%'", string_literal.ast_node, expected_type);
+}
+
 } // namespace sema
 
 } // namespace lang

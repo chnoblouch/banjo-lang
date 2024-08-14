@@ -3,6 +3,7 @@
 #include "banjo/sema2/generics_specializer.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
@@ -28,25 +29,35 @@ ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, ExprConstraints constrain
 Result ExprAnalyzer::analyze(sir::Expr &expr) {
     Result result = Result::SUCCESS;
 
-    if (auto int_literal = expr.match<sir::IntLiteral>()) result = analyze_int_literal(*int_literal);
-    else if (auto fp_literal = expr.match<sir::FPLiteral>()) result = analyze_fp_literal(*fp_literal);
-    else if (auto bool_literal = expr.match<sir::BoolLiteral>()) analyze_bool_literal(*bool_literal);
-    else if (auto char_literal = expr.match<sir::CharLiteral>()) analyze_char_literal(*char_literal);
-    else if (auto null_literal = expr.match<sir::NullLiteral>()) analyze_null_literal(*null_literal);
-    else if (auto array_literal = expr.match<sir::ArrayLiteral>()) analyze_array_literal(*array_literal);
-    else if (auto string_literal = expr.match<sir::StringLiteral>()) analyze_string_literal(*string_literal);
-    else if (auto struct_literal = expr.match<sir::StructLiteral>()) analyze_struct_literal(*struct_literal);
-    else if (auto binary_expr = expr.match<sir::BinaryExpr>()) analyze_binary_expr(*binary_expr);
-    else if (auto unary_expr = expr.match<sir::UnaryExpr>()) analyze_unary_expr(*unary_expr);
-    else if (auto cast_expr = expr.match<sir::CastExpr>()) analyze_cast_expr(*cast_expr);
-    else if (auto call_expr = expr.match<sir::CallExpr>()) analyze_call_expr(*call_expr);
-    else if (auto range_expr = expr.match<sir::RangeExpr>()) analyze_range_expr(*range_expr);
-    else if (auto tuple_expr = expr.match<sir::TupleExpr>()) analyze_tuple_expr(*tuple_expr);
-    else if (auto static_array_type = expr.match<sir::StaticArrayType>()) analyze_static_array_type(*static_array_type);
-    else if (auto dot_expr = expr.match<sir::DotExpr>()) analyze_dot_expr(*dot_expr, expr);
-    else if (auto ident_expr = expr.match<sir::IdentExpr>()) result = analyze_ident_expr(*ident_expr, expr);
-    else if (auto star_expr = expr.match<sir::StarExpr>()) analyze_star_expr(*star_expr, expr);
-    else if (auto bracket_expr = expr.match<sir::BracketExpr>()) analyze_bracket_expr(*bracket_expr, expr);
+    SIR_VISIT_EXPR(
+        expr,
+        SIR_VISIT_IMPOSSIBLE,
+        result = analyze_int_literal(*inner),
+        result = analyze_fp_literal(*inner),
+        analyze_bool_literal(*inner),
+        analyze_char_literal(*inner),
+        result = analyze_null_literal(*inner),
+        analyze_array_literal(*inner),
+        result = analyze_string_literal(*inner, expr),
+        analyze_struct_literal(*inner),
+        SIR_VISIT_IGNORE,
+        analyze_binary_expr(*inner),
+        analyze_unary_expr(*inner),
+        analyze_cast_expr(*inner),
+        SIR_VISIT_IGNORE,
+        analyze_call_expr(*inner),
+        SIR_VISIT_IGNORE,
+        analyze_range_expr(*inner),
+        analyze_tuple_expr(*inner),
+        SIR_VISIT_IGNORE,
+        SIR_VISIT_IGNORE,
+        analyze_static_array_type(*inner),
+        analyze_func_type(*inner),
+        result = analyze_ident_expr(*inner, expr),
+        analyze_star_expr(*inner, expr),
+        analyze_bracket_expr(*inner, expr),
+        analyze_dot_expr(*inner, expr)
+    );
 
     if (result != Result::SUCCESS) {
         return result;
@@ -111,11 +122,23 @@ void ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
     });
 }
 
-void ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
-    null_literal.type = analyzer.create_expr(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::ADDR,
-    });
+Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
+    if (constraints.expected_type) {
+        if (constraints.expected_type.is_addr_like_type()) {
+            null_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        } else {
+            analyzer.report_generator.report_err_cant_coerce_null_literal(null_literal, constraints.expected_type);
+            return Result::ERROR;
+        }
+    } else {
+        null_literal.type = analyzer.create_expr(sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::ADDR,
+        });
+
+        return Result::SUCCESS;
+    }
 }
 
 void ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal) {
@@ -128,16 +151,26 @@ void ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal) {
     array_literal.type = array_literal.values[0].get_type();
 }
 
-void ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
-    sir::Expr base_type = analyzer.create_expr(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::U8,
-    });
+Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
+    if (constraints.expected_type) {
+        if (constraints.expected_type.is_u8_ptr()) {
+            string_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        }
 
-    string_literal.type = analyzer.create_expr(sir::PointerType{
-        .ast_node = nullptr,
-        .base_type = base_type,
-    });
+        if (auto symbol_expr = constraints.expected_type.match<sir::SymbolExpr>()) {
+            if (symbol_expr->symbol == analyzer.find_std_string()) {
+                create_std_string(string_literal, out_expr);
+                return Result::SUCCESS;
+            }
+        }
+
+        analyzer.report_generator.report_err_cant_coerce_string_literal(string_literal, constraints.expected_type);
+        return Result::ERROR;
+    } else {
+        create_std_string(string_literal, out_expr);
+        return Result::SUCCESS;
+    }
 }
 
 void ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
@@ -227,8 +260,18 @@ void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
         ExprAnalyzer(analyzer).analyze(call_expr.callee);
     }
 
-    for (sir::Expr &arg : call_expr.args) {
-        ExprAnalyzer(analyzer).analyze(arg);
+    for (unsigned i = 0; i < call_expr.args.size(); i++) {
+        sir::Expr &arg = call_expr.args[i];
+
+        ExprConstraints constraints;
+
+        if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
+            constraints.expected_type = func_def->type.params[i].type;
+        } else if (auto native_func_decl = call_expr.callee.match_symbol<sir::NativeFuncDecl>()) {
+            constraints.expected_type = native_func_decl->type.params[i].type;
+        }
+
+        ExprAnalyzer(analyzer, constraints).analyze(arg);
     }
 
     if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
@@ -283,6 +326,14 @@ void ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr
 void ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_type) {
     ExprAnalyzer(analyzer).analyze(static_array_type.base_type);
     ExprAnalyzer(analyzer).analyze(static_array_type.length);
+}
+
+void ExprAnalyzer::analyze_func_type(sir::FuncType &func_type) {
+    for (sir::Param &param : func_type.params) {
+        ExprAnalyzer(analyzer).analyze(param.type);
+    }
+
+    ExprAnalyzer(analyzer).analyze(func_type.return_type);
 }
 
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
@@ -428,6 +479,30 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void ExprAnalyzer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
+    sir::StructDef &struct_def = analyzer.find_std_string().as<sir::StructDef>();
+    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up("from_cstr").as<sir::FuncDef>();
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &func_def.type,
+        .symbol = &func_def,
+    });
+
+    sir::Expr arg = analyzer.create_expr(sir::StringLiteral{
+        .ast_node = string_literal.ast_node,
+        .type = func_def.type.params[0].type,
+        .value = std::move(string_literal.value),
+    });
+
+    out_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = func_def.type.return_type,
+        .callee = callee,
+        .args = {arg},
+    });
 }
 
 Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {

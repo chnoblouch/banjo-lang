@@ -6,6 +6,7 @@
 #include "banjo/ir/primitive.hpp"
 #include "banjo/ir/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
@@ -39,24 +40,35 @@ void ExprSSAGenerator::generate_into_dst(const sir::Expr &expr, ssa::VirtualRegi
 }
 
 StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints &hints) {
-    if (auto int_literal = expr.match<sir::IntLiteral>()) return generate_int_literal(*int_literal);
-    else if (auto fp_literal = expr.match<sir::FPLiteral>()) return generate_fp_literal(*fp_literal);
-    else if (auto bool_literal = expr.match<sir::BoolLiteral>()) return generate_bool_literal(*bool_literal);
-    else if (auto char_literal = expr.match<sir::CharLiteral>()) return generate_char_literal(*char_literal);
-    else if (auto null_literal = expr.match<sir::NullLiteral>()) return generate_null_literal(*null_literal);
-    else if (auto array_literal = expr.match<sir::ArrayLiteral>()) return generate_array_literal(*array_literal, hints);
-    else if (auto string_literal = expr.match<sir::StringLiteral>()) return generate_string_literal(*string_literal);
-    else if (auto struct_literal = expr.match<sir::StructLiteral>())
-        return generate_struct_literal(*struct_literal, hints);
-    else if (auto symbol_expr = expr.match<sir::SymbolExpr>()) return generate_symbol_expr(*symbol_expr);
-    else if (auto binary_expr = expr.match<sir::BinaryExpr>()) return generate_binary_expr(*binary_expr, expr);
-    else if (auto unary_expr = expr.match<sir::UnaryExpr>()) return generate_unary_expr(*unary_expr, expr);
-    else if (auto cast_expr = expr.match<sir::CastExpr>()) return generate_cast_expr(*cast_expr);
-    else if (auto index_expr = expr.match<sir::IndexExpr>()) return generate_index_expr(*index_expr);
-    else if (auto call_expr = expr.match<sir::CallExpr>()) return generate_call_expr(*call_expr, hints);
-    else if (auto field_expr = expr.match<sir::FieldExpr>()) return generate_field_expr(*field_expr);
-    else if (auto tuple_expr = expr.match<sir::TupleExpr>()) return generate_tuple_expr(*tuple_expr, hints);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_EXPR(
+        expr,
+        SIR_VISIT_IMPOSSIBLE,
+        return generate_int_literal(*inner),
+        return generate_fp_literal(*inner),
+        return generate_bool_literal(*inner),
+        return generate_char_literal(*inner),
+        return generate_null_literal(*inner),
+        return generate_array_literal(*inner, hints),
+        return generate_string_literal(*inner),
+        return generate_struct_literal(*inner, hints),
+        return generate_symbol_expr(*inner),
+        return generate_binary_expr(*inner, expr),
+        return generate_unary_expr(*inner, expr),
+        return generate_cast_expr(*inner),
+        return generate_index_expr(*inner),
+        return generate_call_expr(*inner, hints),
+        return generate_field_expr(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        return generate_tuple_expr(*inner, hints),
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE
+    );
 }
 
 void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets targets) {

@@ -1,7 +1,8 @@
 #include "sir_cloner.hpp"
 
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
-#include "sir.hpp"
+
 #include <cassert>
 #include <vector>
 
@@ -35,17 +36,21 @@ DeclBlock Cloner::clone_decl_block(const DeclBlock &decl_block) {
 }
 
 Decl Cloner::clone_decl(const Decl &decl) {
-    if (!decl) return nullptr;
-    else if (auto func_def = decl.match<FuncDef>()) return clone_func_def(*func_def);
-    else if (auto native_func_decl = decl.match<NativeFuncDecl>()) return clone_native_func_decl(*native_func_decl);
-    else if (auto const_def = decl.match<ConstDef>()) return clone_const_def(*const_def);
-    else if (auto struct_def = decl.match<StructDef>()) return clone_struct_def(*struct_def);
-    else if (auto struct_field = decl.match<StructField>()) return clone_struct_field(*struct_field);
-    else if (auto var_decl = decl.match<VarDecl>()) return clone_var_decl(*var_decl);
-    else if (auto enum_def = decl.match<EnumDef>()) return clone_enum_def(*enum_def);
-    else if (auto enum_variant = decl.match<EnumVariant>()) return clone_enum_variant(*enum_variant);
-    else if (auto meta_if_stmt = decl.match<MetaIfStmt>()) return clone_meta_if_stmt(*meta_if_stmt);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_DECL(
+        decl,
+        return nullptr,
+        return clone_func_def(*inner),
+        return clone_native_func_decl(*inner),
+        return clone_const_def(*inner),
+        return clone_struct_def(*inner),
+        return clone_struct_field(*inner),
+        return clone_var_decl(*inner),
+        return clone_enum_def(*inner),
+        return clone_enum_variant(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        return clone_meta_if_stmt(*inner),
+        SIR_VISIT_IMPOSSIBLE
+    );
 }
 
 FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
@@ -178,20 +183,24 @@ Block Cloner::clone_block(const Block &block) {
 }
 
 Stmt Cloner::clone_stmt(const Stmt &stmt) {
-    if (!stmt) return nullptr;
-    else if (auto var_stmt = stmt.match<VarStmt>()) return clone_var_stmt(*var_stmt);
-    else if (auto assign_stmt = stmt.match<AssignStmt>()) return clone_assign_stmt(*assign_stmt);
-    else if (auto comp_assign_stmt = stmt.match<CompAssignStmt>()) return clone_comp_assign_stmt(*comp_assign_stmt);
-    else if (auto return_stmt = stmt.match<ReturnStmt>()) return clone_return_stmt(*return_stmt);
-    else if (auto if_stmt = stmt.match<IfStmt>()) return clone_if_stmt(*if_stmt);
-    else if (auto while_stmt = stmt.match<WhileStmt>()) return clone_while_stmt(*while_stmt);
-    else if (auto for_stmt = stmt.match<ForStmt>()) return clone_for_stmt(*for_stmt);
-    else if (auto loop_stmt = stmt.match<LoopStmt>()) return clone_loop_stmt(*loop_stmt);
-    else if (auto continue_stmt = stmt.match<ContinueStmt>()) return clone_continue_stmt(*continue_stmt);
-    else if (auto break_stmt = stmt.match<BreakStmt>()) return clone_break_stmt(*break_stmt);
-    else if (auto expr = stmt.match<Expr>()) return clone_expr_stmt(*expr);
-    else if (auto block = stmt.match<Block>()) return clone_block_stmt(*block);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_STMT(
+        stmt,
+        SIR_VISIT_IMPOSSIBLE,
+        return clone_var_stmt(*inner),
+        return clone_assign_stmt(*inner),
+        return clone_comp_assign_stmt(*inner),
+        return clone_return_stmt(*inner),
+        return clone_if_stmt(*inner),
+        return clone_while_stmt(*inner),
+        return clone_for_stmt(*inner),
+        return clone_loop_stmt(*inner),
+        return clone_continue_stmt(*inner),
+        return clone_break_stmt(*inner),
+        return clone_meta_if_stmt(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        return clone_expr_stmt(*inner),
+        return clone_block_stmt(*inner)
+    );
 }
 
 VarStmt *Cloner::clone_var_stmt(const VarStmt &var_stmt) {
@@ -299,32 +308,35 @@ Block *Cloner::clone_block_stmt(const Block &block) {
 }
 
 Expr Cloner::clone_expr(const Expr &expr) {
-    if (!expr) return nullptr;
-    else if (auto int_literal = expr.match<IntLiteral>()) return clone_int_literal(*int_literal);
-    else if (auto fp_literal = expr.match<FPLiteral>()) return clone_fp_literal(*fp_literal);
-    else if (auto bool_literal = expr.match<BoolLiteral>()) return clone_bool_literal(*bool_literal);
-    else if (auto char_literal = expr.match<CharLiteral>()) return clone_char_literal(*char_literal);
-    else if (auto array_literal = expr.match<ArrayLiteral>()) return clone_array_literal(*array_literal);
-    else if (auto string_literal = expr.match<StringLiteral>()) return clone_string_literal(*string_literal);
-    else if (auto struct_literal = expr.match<StructLiteral>()) return clone_struct_literal(*struct_literal);
-    else if (auto symbol_expr = expr.match<SymbolExpr>()) return clone_symbol_expr(*symbol_expr);
-    else if (auto binary_expr = expr.match<BinaryExpr>()) return clone_binary_expr(*binary_expr);
-    else if (auto unary_expr = expr.match<UnaryExpr>()) return clone_unary_expr(*unary_expr);
-    else if (auto cast_expr = expr.match<CastExpr>()) return clone_cast_expr(*cast_expr);
-    else if (auto index_expr = expr.match<IndexExpr>()) return clone_index_expr(*index_expr);
-    else if (auto call_expr = expr.match<CallExpr>()) return clone_call_expr(*call_expr);
-    else if (auto field_expr = expr.match<FieldExpr>()) return clone_field_expr(*field_expr);
-    else if (auto range_expr = expr.match<RangeExpr>()) return clone_range_expr(*range_expr);
-    else if (auto tuple_expr = expr.match<TupleExpr>()) return clone_tuple_expr(*tuple_expr);
-    else if (auto primitive_type = expr.match<PrimitiveType>()) return clone_primitive_type(*primitive_type);
-    else if (auto pointer_type = expr.match<PointerType>()) return clone_pointer_type(*pointer_type);
-    else if (auto static_array_type = expr.match<StaticArrayType>()) return clone_static_array_type(*static_array_type);
-    else if (auto func_type = expr.match<FuncType>()) return clone_func_type(*func_type);
-    else if (auto ident_expr = expr.match<IdentExpr>()) return clone_ident_expr(*ident_expr);
-    else if (auto star_expr = expr.match<StarExpr>()) return clone_star_expr(*star_expr);
-    else if (auto bracket_expr = expr.match<BracketExpr>()) return clone_bracket_expr(*bracket_expr);
-    else if (auto dot_expr = expr.match<DotExpr>()) return clone_dot_expr(*dot_expr);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_EXPR(
+        expr,
+        return nullptr,
+        return clone_int_literal(*inner),
+        return clone_fp_literal(*inner),
+        return clone_bool_literal(*inner),
+        return clone_char_literal(*inner),
+        return clone_null_literal(*inner),
+        return clone_array_literal(*inner),
+        return clone_string_literal(*inner),
+        return clone_struct_literal(*inner),
+        return clone_symbol_expr(*inner),
+        return clone_binary_expr(*inner),
+        return clone_unary_expr(*inner),
+        return clone_cast_expr(*inner),
+        return clone_index_expr(*inner),
+        return clone_call_expr(*inner),
+        return clone_field_expr(*inner),
+        return clone_range_expr(*inner),
+        return clone_tuple_expr(*inner),
+        return clone_primitive_type(*inner),
+        return clone_pointer_type(*inner),
+        return clone_static_array_type(*inner),
+        return clone_func_type(*inner),
+        return clone_ident_expr(*inner),
+        return clone_star_expr(*inner),
+        return clone_bracket_expr(*inner),
+        return clone_dot_expr(*inner)
+    );
 }
 
 IntLiteral *Cloner::clone_int_literal(const IntLiteral &int_literal) {

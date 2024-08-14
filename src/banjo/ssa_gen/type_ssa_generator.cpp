@@ -2,6 +2,7 @@
 
 #include "banjo/ir/primitive.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -11,14 +12,16 @@ namespace lang {
 TypeSSAGenerator::TypeSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
 ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
-    if (auto primitive_type = type.match<sir::PrimitiveType>()) return generate_primitive_type(*primitive_type);
-    else if (type.is<sir::PointerType>()) return ir::Primitive::ADDR;
-    else if (type.is<sir::FuncType>()) return ir::Primitive::ADDR;
-    else if (auto symbol_expr = type.match<sir::SymbolExpr>()) return generate_symbol_type(symbol_expr->symbol);
-    else if (auto tuple_expr = type.match<sir::TupleExpr>()) return generate_tuple_type(*tuple_expr);
-    else if (auto static_array_type = type.match<sir::StaticArrayType>())
-        return generate_static_array_type(*static_array_type);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_TYPE(
+        type,
+        SIR_VISIT_IMPOSSIBLE,
+        return generate_symbol_type(*inner),
+        return generate_tuple_type(*inner),
+        return generate_primitive_type(*inner),
+        return generate_pointer_type(),
+        return generate_static_array_type(*inner),
+        return generate_func_type()
+    );
 }
 
 ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &primitive_type) {
@@ -39,10 +42,20 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
     }
 }
 
-ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::Symbol &symbol) {
+ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::SymbolExpr &symbol_type) {
+    const sir::Symbol &symbol = symbol_type.symbol;
+
     if (auto struct_def = symbol.match<sir::StructDef>()) return ctx.ssa_structs[struct_def];
     else if (auto enum_def = symbol.match<sir::EnumDef>()) return ssa::Primitive::I32;
     else ASSERT_UNREACHABLE;
+}
+
+ssa::Type TypeSSAGenerator::generate_pointer_type() {
+    return ssa::Primitive::ADDR;
+}
+
+ssa::Type TypeSSAGenerator::generate_func_type() {
+    return ssa::Primitive::ADDR;
 }
 
 ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr) {

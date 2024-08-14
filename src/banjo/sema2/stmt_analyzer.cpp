@@ -1,6 +1,7 @@
 #include "stmt_analyzer.hpp"
 
 #include "banjo/sema2/expr_analyzer.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -12,20 +13,24 @@ namespace sema {
 StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void StmtAnalyzer::analyze(sir::Stmt &stmt) {
-    if (auto var_stmt = stmt.match<sir::VarStmt>()) analyze_var_stmt(*var_stmt);
-    else if (auto assign_stmt = stmt.match<sir::AssignStmt>()) analyze_assign_stmt(*assign_stmt);
-    else if (auto comp_assign_stmt = stmt.match<sir::CompAssignStmt>())
-        analyze_comp_assign_stmt(*comp_assign_stmt, stmt);
-    else if (auto return_stmt = stmt.match<sir::ReturnStmt>()) analyze_return_stmt(*return_stmt);
-    else if (auto if_stmt = stmt.match<sir::IfStmt>()) analyze_if_stmt(*if_stmt);
-    else if (auto while_stmt = stmt.match<sir::WhileStmt>()) analyze_while_stmt(*while_stmt, stmt);
-    else if (auto for_stmt = stmt.match<sir::ForStmt>()) analyze_for_stmt(*for_stmt, stmt);
-    else if (auto loop_stmt = stmt.match<sir::LoopStmt>()) analyze_loop_stmt(*loop_stmt);
-    else if (auto continue_stmt = stmt.match<sir::ContinueStmt>()) analyze_continue_stmt(*continue_stmt);
-    else if (auto break_stmt = stmt.match<sir::BreakStmt>()) analyze_break_stmt(*break_stmt);
-    else if (auto expr = stmt.match<sir::Expr>()) ExprAnalyzer(analyzer).analyze(*expr);
-    else if (auto block = stmt.match<sir::Block>()) analyze_block(*block);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_STMT(
+        stmt,
+        SIR_VISIT_IMPOSSIBLE,
+        analyze_var_stmt(*inner),
+        analyze_assign_stmt(*inner),
+        analyze_comp_assign_stmt(*inner, stmt),
+        analyze_return_stmt(*inner),
+        analyze_if_stmt(*inner),
+        analyze_while_stmt(*inner, stmt),
+        analyze_for_stmt(*inner, stmt),
+        analyze_loop_stmt(*inner),
+        analyze_continue_stmt(*inner),
+        analyze_break_stmt(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IGNORE,
+        ExprAnalyzer(analyzer).analyze(*inner),
+        analyze_block(*inner)
+    )
 }
 
 void StmtAnalyzer::analyze_block(sir::Block &block) {

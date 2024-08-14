@@ -106,7 +106,7 @@ ReportText &ReportText::format(sir::Expr &expr) {
     } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
         return format(symbol->symbol.get_name());
     }  else {
-        ASSERT_UNREACHABLE;
+        return format("<unknown>");
     }
 }
 

@@ -2,92 +2,96 @@ use std.memory;
 use c.lib.{string.{strlen, strcmp}, stdlib.{strtol, strtof}};
 
 struct String {
-	var data: *u8;
-	var length: u32;
-	var capacity: u32;
-	
-	pub func new() -> String {
-		var data = memory.alloc(1 as usize) as *u8;
-		data[0] = 0;
+    var data: *u8;
+    var length: u32;
+    var capacity: u32;
+    
+    pub func new() -> String {
+        var data = memory.alloc(1 as usize) as *u8;
+        data[0] = 0;
             
-		return String {
-			data: data,
-			length: 0 as u32,
-			capacity: 1 as u32
-		};
-	}
-	
-	pub func from(cstr: *u8) -> String {
-		var length = strlen(cstr);
-		var capacity = length + 1;
-		var data = memory.alloc(capacity as usize) as *u8;
-        
-		memory.copy(cstr as addr, data as addr, capacity);
-                
-		return String {
-			data: data,
-			length: length as u32,
-			capacity: capacity as u32
-		};
-	}
-	
-    pub func from(integer: u64) -> String {
-        var capacity: u32 = 32;
-		var data = memory.alloc(capacity as u64) as *u8;
-		var length: u32 = 0;
-				
-		var remainder = integer;
-        
-		while true {
-			data[length] = (remainder % 10) as u8 + '0';
-			length += 1;
-			remainder /= 10;
-            
-            if remainder == 0 { break; }
-		}
-		
-		data[length] = 0;
-		        
-		var string = String { data, capacity, length };
-		string.reverse_in_place();
-		return string;
+        return String {
+            data: data,
+            length: 0 as u32,
+            capacity: 1 as u32
+        };
     }
     
-	pub func from(integer: i64) -> String {
+    pub func from(cstr: *u8) -> String {
+        return from_cstr(cstr);
+    }
+    
+    pub func from(integer: u64) -> String {
         var capacity: u32 = 32;
-		var data = memory.alloc(capacity as u64) as *u8;
-		var length: u32 = 0;
-		
-		var remainder: u64;
-		var negative: bool;
-		
-		if integer >= 0 {
-			remainder = integer as u64;
-			negative = false;
-		} else {
-			remainder = -integer as u64;
-			negative = true;
-		}
-		
-		while true {
-			data[length] = (remainder % 10) as u8 + '0';
-			length += 1;
-			remainder /= 10;
+        var data = memory.alloc(capacity as u64) as *u8;
+        var length: u32 = 0;
+                
+        var remainder = integer;
+        
+        while true {
+            data[length] = (remainder % 10) as u8 + '0';
+            length += 1;
+            remainder /= 10;
             
             if remainder == 0 { break; }
-		}
-		
-		if negative {
-			data[length] = '-';
-			length += 1;
-		}
-		
-		data[length] = 0;
-		
-		var string = String { data, capacity, length };
-		string.reverse_in_place();
-		return string;
-	}
+        }
+        
+        data[length] = 0;
+                
+        var string = String { data, capacity, length };
+        string.reverse_in_place();
+        return string;
+    }
+    
+    pub func from(integer: i64) -> String {
+        var capacity: u32 = 32;
+        var data = memory.alloc(capacity as u64) as *u8;
+        var length: u32 = 0;
+        
+        var remainder: u64;
+        var negative: bool;
+        
+        if integer >= 0 {
+            remainder = integer as u64;
+            negative = false;
+        } else {
+            remainder = -integer as u64;
+            negative = true;
+        }
+        
+        while true {
+            data[length] = (remainder % 10) as u8 + '0';
+            length += 1;
+            remainder /= 10;
+            
+            if remainder == 0 { break; }
+        }
+        
+        if negative {
+            data[length] = '-';
+            length += 1;
+        }
+        
+        data[length] = 0;
+        
+        var string = String { data, capacity, length };
+        string.reverse_in_place();
+        return string;
+    }
+
+    pub func from_cstr(cstr: *u8) -> String {
+        var length = strlen(cstr);
+        var capacity = length + 1;
+        var data = memory.alloc(capacity as usize) as *u8;
+        
+        memory.copy(cstr as addr, data as addr, capacity);
+                
+        return String {
+            data: data,
+            length: length as u32,
+            capacity: capacity as u32
+        };
+    }
     
     pub func concat(a: String, b: String) -> String {
         a.append_str(b);
@@ -97,68 +101,68 @@ struct String {
     pub func __deinit__(self) {
         memory.free(self.data as addr);
     }
-	
+    
     pub func copy(self) -> String {
         var size = self.length as usize + 1;
         var data = memory.alloc(size) as *u8;
         memory.copy(self.data as addr, data as addr, size);
         
         return String {
-			data: data,
-			length: self.length,
-			capacity: self.length + 1
-		};
+            data: data,
+            length: self.length,
+            capacity: self.length + 1
+        };
     }
     
-	pub func append(self, char: u8) {
-		self.length = self.length + 1;
-		self.ensure_capacity(self.length + 1);
+    pub func append(self, char: u8) {
+        self.length = self.length + 1;
+        self.ensure_capacity(self.length + 1);
         
         var index = self.length - 1;
-		self.data[index] = char;
-		self.data[self.length] = 0;
-	}
-	
-	pub func append_str(self, other: String) {
-		var new_length = self.length + other.length;
-		self.ensure_capacity(new_length + 1);
-		
-		var copy_dst = self.data as addr + self.length as addr;
-		var copy_src = other.data as addr;
-		memory.copy(copy_src, copy_dst, other.length as usize + 1);
-		
-		self.length = new_length;
-	}
+        self.data[index] = char;
+        self.data[self.length] = 0;
+    }
+    
+    pub func append_str(self, other: String) {
+        var new_length = self.length + other.length;
+        self.ensure_capacity(new_length + 1);
+        
+        var copy_dst = self.data as addr + self.length as addr;
+        var copy_src = other.data as addr;
+        memory.copy(copy_src, copy_dst, other.length as usize + 1);
+        
+        self.length = new_length;
+    }
 
-	pub func append_cstr(self, other: *u8) {
-		var other_length = strlen(other) as u32;
-	
-		var new_length = self.length + other_length;
-		self.ensure_capacity(new_length + 1);
-		
-		var copy_dst = self.data as addr + self.length as addr;
-		var copy_src = other as addr;
-		memory.copy(copy_src, copy_dst, other_length as usize + 1);
-		
-		self.length = new_length;
-	}
-	
-	pub func substr(self, start: u32, end: u32) -> String {			
-		var substr_length = end - start;
-		var substr_data = memory.alloc(substr_length as usize + 1) as *u8;
-								
-		var copy_dest = substr_data as addr;
-		var copy_src = self.data as addr + start as addr;
-		memory.copy(copy_src, copy_dest, substr_length as usize);
-		
-		substr_data[substr_length] = 0;
-	
-		return String {
-			data: substr_data,
-			length: substr_length,
-			capacity: substr_length
-		};
-	}
+    pub func append_cstr(self, other: *u8) {
+        var other_length = strlen(other) as u32;
+    
+        var new_length = self.length + other_length;
+        self.ensure_capacity(new_length + 1);
+        
+        var copy_dst = self.data as addr + self.length as addr;
+        var copy_src = other as addr;
+        memory.copy(copy_src, copy_dst, other_length as usize + 1);
+        
+        self.length = new_length;
+    }
+    
+    pub func substr(self, start: u32, end: u32) -> String {            
+        var substr_length = end - start;
+        var substr_data = memory.alloc(substr_length as usize + 1) as *u8;
+                                
+        var copy_dest = substr_data as addr;
+        var copy_src = self.data as addr + start as addr;
+        memory.copy(copy_src, copy_dest, substr_length as usize);
+        
+        substr_data[substr_length] = 0;
+    
+        return String {
+            data: substr_data,
+            length: substr_length,
+            capacity: substr_length
+        };
+    }
     
     pub func find(self, char: u8) -> i32 {
         for i in 0..self.length as i32 {
@@ -180,53 +184,53 @@ struct String {
             i -= 1;
         }
     }
-	
-	pub func find(self, substr: String) -> i32 {	
-		var i = 0 as u32;
-		while i < self.length - substr.length {
-			if self.data[i] == substr.data[0] {
-				var j = 1 as u32;
-				var matching = true;
-				while j < substr.length {
-					if self.data[i + j] != substr.data[j] { matching = false; }
-					j = j + 1;
-				}
-				if matching { return i as i32; }
-			}
-			
-			i = i + 1;
-		}
-		
-		return -1;
-	}
-	
-	pub func cstr(self) -> *u8 {
-		return self.data;
-	}
     
-	pub func to_i64(self) -> i64 {	
-		var sign: i64 = 1;
-		var last_index = 0;
-		
-		if self.data[0] == '-' {
-			sign = -1 as i64;
-			last_index = 1;
-		}
-		
-		var result: i64 = 0;
-		var index = self.length as i32 - 1;
-		var place_value: i64 = 1;
-		
-		while index >= last_index {		
-			var digit = (self.data[index] - '0') as i64;
-			result += digit * place_value;
+    pub func find(self, substr: String) -> i32 {    
+        var i = 0 as u32;
+        while i < self.length - substr.length {
+            if self.data[i] == substr.data[0] {
+                var j = 1 as u32;
+                var matching = true;
+                while j < substr.length {
+                    if self.data[i + j] != substr.data[j] { matching = false; }
+                    j = j + 1;
+                }
+                if matching { return i as i32; }
+            }
+            
+            i = i + 1;
+        }
+        
+        return -1;
+    }
+    
+    pub func cstr(self) -> *u8 {
+        return self.data;
+    }
+    
+    pub func to_i64(self) -> i64 {    
+        var sign: i64 = 1;
+        var last_index = 0;
+        
+        if self.data[0] == '-' {
+            sign = -1 as i64;
+            last_index = 1;
+        }
+        
+        var result: i64 = 0;
+        var index = self.length as i32 - 1;
+        var place_value: i64 = 1;
+        
+        while index >= last_index {        
+            var digit = (self.data[index] - '0') as i64;
+            result += digit * place_value;
 
-			index -= 1;
-			place_value *= 10;
-		}
-		
-		return sign * result;
-	}
+            index -= 1;
+            place_value *= 10;
+        }
+        
+        return sign * result;
+    }
     
     pub func __add__(self, rhs: String) -> String {
         return concat(*self, rhs);
@@ -245,7 +249,7 @@ struct String {
     }
     
     pub func __repr__(self) -> String {
-        var result = String.from("\"");
+        var result = "\"";
         
         for i in 0..self.length {
             var char = self.data[i];
@@ -280,8 +284,8 @@ struct String {
         
         return hash;
     }
-	
-	func ensure_capacity(self, required: u32) {
+    
+    func ensure_capacity(self, required: u32) {
         if self.capacity >= required {
             return;
         }
@@ -295,17 +299,17 @@ struct String {
         }
 
         self.data = memory.realloc(self.data as addr, self.capacity as usize) as *u8;
-	}
-	
-	func reverse_in_place(self) {
-		for i1 in 0..self.length / 2 {
-			var i2 = self.length - 1 - i1 as u32;
-		
-			var c1 = self.data[i1];
-			var c2 = self.data[i2];
-			
-			self.data[i1] = c2;
-			self.data[i2] = c1;
-		}
-	}
+    }
+    
+    func reverse_in_place(self) {
+        for i1 in 0..self.length / 2 {
+            var i2 = self.length - 1 - i1 as u32;
+        
+            var c1 = self.data[i1];
+            var c2 = self.data[i2];
+            
+            self.data[i1] = c2;
+            self.data[i2] = c1;
+        }
+    }
 }

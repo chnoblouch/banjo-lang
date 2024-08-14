@@ -1,6 +1,7 @@
 #include "symbol_collector.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -34,16 +35,21 @@ void SymbolCollector::collect_in_meta_block(sir::MetaBlock &meta_block) {
 }
 
 void SymbolCollector::collect_decl(sir::Decl &decl) {
-    if (auto func_def = decl.match<sir::FuncDef>()) collect_func_def(*func_def);
-    else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) collect_native_func_decl(*native_func_decl);
-    else if (auto const_def = decl.match<sir::ConstDef>()) collect_const_def(*const_def);
-    else if (auto struct_def = decl.match<sir::StructDef>()) collect_struct_def(*struct_def);
-    else if (auto var_decl = decl.match<sir::VarDecl>()) collect_var_decl(*var_decl);
-    else if (auto enum_def = decl.match<sir::EnumDef>()) collect_enum_def(*enum_def);
-    else if (auto enum_variant = decl.match<sir::EnumVariant>()) collect_enum_variant(*enum_variant);
-    else if (auto use_decl = decl.match<sir::UseDecl>()) collect_use_decl(*use_decl);
-    else if (auto meta_if_stmt = decl.match<sir::MetaIfStmt>()) EMPTY_BRANCH
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_DECL(
+        decl,
+        SIR_VISIT_IMPOSSIBLE,
+        collect_func_def(*inner),
+        collect_native_func_decl(*inner),
+        collect_const_def(*inner),
+        collect_struct_def(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        collect_var_decl(*inner),
+        collect_enum_def(*inner),
+        collect_enum_variant(*inner),
+        collect_use_decl(*inner),
+        SIR_VISIT_IGNORE,
+        SIR_VISIT_IGNORE
+    );
 }
 
 void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {

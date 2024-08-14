@@ -1,6 +1,8 @@
 #include "sir.hpp"
 
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+
 #include <utility>
 
 namespace banjo {
@@ -15,11 +17,35 @@ bool Expr::operator==(const Expr &other) const {
         return false;
     }
 
-    if (is<PrimitiveType>()) return as<PrimitiveType>() == other.as<PrimitiveType>();
-    else if (is<PointerType>()) return as<PointerType>() == other.as<PointerType>();
-    else if (is<FuncType>()) return as<FuncType>() == other.as<FuncType>();
-    else if (is<SymbolExpr>()) return as<SymbolExpr>() == other.as<SymbolExpr>();
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_EXPR(
+        *this,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner->symbol == other.as<SymbolExpr>().symbol,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        return *inner == other.as<TupleExpr>(),
+        return *inner == other.as<PrimitiveType>(),
+        return *inner == other.as<PointerType>(),
+        return *inner == other.as<StaticArrayType>(),
+        return *inner == other.as<FuncType>(),
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE
+    );
 }
 
 bool Expr::is_value() const {
@@ -27,23 +53,35 @@ bool Expr::is_value() const {
 }
 
 Expr Expr::get_type() const {
-    if (auto int_literal = match<IntLiteral>()) return int_literal->type;
-    else if (auto fp_literal = match<FPLiteral>()) return fp_literal->type;
-    else if (auto bool_literal = match<BoolLiteral>()) return bool_literal->type;
-    else if (auto char_literal = match<CharLiteral>()) return char_literal->type;
-    else if (auto null_literal = match<NullLiteral>()) return null_literal->type;
-    else if (auto array_literal = match<ArrayLiteral>()) return array_literal->type;
-    else if (auto string_literal = match<StringLiteral>()) return string_literal->type;
-    else if (auto struct_literal = match<StructLiteral>()) return struct_literal->type;
-    else if (auto symbol_expr = match<SymbolExpr>()) return symbol_expr->type;
-    else if (auto binary_expr = match<BinaryExpr>()) return binary_expr->type;
-    else if (auto unary_expr = match<UnaryExpr>()) return unary_expr->type;
-    else if (auto cast_expr = match<CastExpr>()) return cast_expr->type;
-    else if (auto call_expr = match<CallExpr>()) return call_expr->type;
-    else if (auto field_expr = match<FieldExpr>()) return field_expr->type;
-    else if (auto index_expr = match<IndexExpr>()) return index_expr->type;
-    else if (auto tuple_expr = match<TupleExpr>()) return tuple_expr->type;
-    else return nullptr;
+    SIR_VISIT_EXPR(
+        *this,
+        return nullptr,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return nullptr,
+        return inner->type,
+        return nullptr,
+        return nullptr,
+        return nullptr,
+        return nullptr,
+        return nullptr,
+        return nullptr,
+        return nullptr,
+        return nullptr
+    );
 }
 
 bool Expr::is_type() const {
@@ -121,33 +159,48 @@ bool Expr::is_fp_type() const {
     }
 }
 
+bool Expr::is_addr_like_type() const {
+    return is_primitive_type(sir::Primitive::ADDR) || is<sir::PointerType>() || is<sir::FuncType>();
+}
+
+bool Expr::is_u8_ptr() const {
+    if (auto pointer_type = match<PointerType>()) {
+        return pointer_type->base_type.is_primitive_type(sir::Primitive::U8);
+    } else {
+        return false;
+    }
+}
+
 ASTNode *Expr::get_ast_node() const {
-    if (auto int_literal = match<IntLiteral>()) return int_literal->ast_node;
-    else if (auto fp_literal = match<FPLiteral>()) return fp_literal->ast_node;
-    else if (auto bool_literal = match<BoolLiteral>()) return bool_literal->ast_node;
-    else if (auto char_literal = match<CharLiteral>()) return char_literal->ast_node;
-    else if (auto null_literal = match<NullLiteral>()) return null_literal->ast_node;
-    else if (auto array_literal = match<ArrayLiteral>()) return array_literal->ast_node;
-    else if (auto string_literal = match<StringLiteral>()) return string_literal->ast_node;
-    else if (auto struct_literal = match<StructLiteral>()) return struct_literal->ast_node;
-    else if (auto symbol_expr = match<SymbolExpr>()) return symbol_expr->ast_node;
-    else if (auto binary_expr = match<BinaryExpr>()) return binary_expr->ast_node;
-    else if (auto unary_expr = match<UnaryExpr>()) return unary_expr->ast_node;
-    else if (auto cast_expr = match<CastExpr>()) return cast_expr->ast_node;
-    else if (auto index_expr = match<IndexExpr>()) return index_expr->ast_node;
-    else if (auto call_expr = match<CallExpr>()) return call_expr->ast_node;
-    else if (auto field_expr = match<FieldExpr>()) return field_expr->ast_node;
-    else if (auto range_expr = match<RangeExpr>()) return range_expr->ast_node;
-    else if (auto tuple_expr = match<TupleExpr>()) return tuple_expr->ast_node;
-    else if (auto primitive_type = match<PrimitiveType>()) return primitive_type->ast_node;
-    else if (auto pointer_type = match<PointerType>()) return pointer_type->ast_node;
-    else if (auto static_array_type = match<StaticArrayType>()) return static_array_type->ast_node;
-    else if (auto func_type = match<FuncType>()) return func_type->ast_node;
-    else if (auto ident_expr = match<IdentExpr>()) return ident_expr->ast_node;
-    else if (auto star_expr = match<StarExpr>()) return star_expr->ast_node;
-    else if (auto bracket_expr = match<BracketExpr>()) return bracket_expr->ast_node;
-    else if (auto dot_expr = match<DotExpr>()) return dot_expr->ast_node;
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_EXPR(
+        *this,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node
+    );
 }
 
 DeclBlock *Expr::get_decl_block() {
@@ -166,33 +219,45 @@ bool Symbol::operator==(const Symbol &other) const {
         return false;
     }
 
-    if (is<Module>()) return &as<Module>() == &other.as<Module>();
-    else if (is<FuncDef>()) return &as<FuncDef>() == &other.as<FuncDef>();
-    else if (is<NativeFuncDecl>()) return &as<NativeFuncDecl>() == &other.as<NativeFuncDecl>();
-    else if (is<StructDef>()) return &as<StructDef>() == &other.as<StructDef>();
-    else if (is<StructField>()) return &as<StructField>() == &other.as<StructField>();
-    else if (is<VarDecl>()) return &as<VarDecl>() == &other.as<VarDecl>();
-    else if (is<EnumDef>()) return &as<EnumDef>() == &other.as<EnumDef>();
-    else if (is<EnumVariant>()) return &as<EnumVariant>() == &other.as<EnumVariant>();
-    else if (is<UseIdent>()) return &as<UseIdent>() == &other.as<UseIdent>();
-    else if (is<UseRebind>()) return &as<UseRebind>() == &other.as<UseRebind>();
-    else if (is<VarStmt>()) return &as<VarStmt>() == &other.as<VarStmt>();
-    else if (is<Param>()) return &as<Param>() == &other.as<Param>();
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_SYMBOL(
+        *this,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner == &other.as<Module>(),
+        return inner == &other.as<FuncDef>(),
+        return inner == &other.as<NativeFuncDecl>(),
+        return inner == &other.as<ConstDef>(),
+        return inner == &other.as<StructDef>(),
+        return inner == &other.as<StructField>(),
+        return inner == &other.as<VarDecl>(),
+        return inner == &other.as<EnumDef>(),
+        return inner == &other.as<EnumVariant>(),
+        return inner == &other.as<UseIdent>(),
+        return inner == &other.as<UseRebind>(),
+        return inner == &other.as<VarStmt>(),
+        return inner == &other.as<Param>(),
+        return inner == &other.as<OverloadSet>()
+    );
 }
 
 const Ident &Symbol::get_ident() const {
-    if (auto func_def = match<FuncDef>()) return func_def->ident;
-    else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->ident;
-    else if (auto const_def = match<ConstDef>()) return const_def->ident;
-    else if (auto struct_def = match<StructDef>()) return struct_def->ident;
-    else if (auto struct_field = match<StructField>()) return struct_field->ident;
-    else if (auto var_decl = match<VarDecl>()) return var_decl->ident;
-    else if (auto enum_def = match<EnumDef>()) return enum_def->ident;
-    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->ident;
-    else if (auto var_stmt = match<VarStmt>()) return var_stmt->name;
-    else if (auto param = match<Param>()) return param->name;
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_SYMBOL(
+        *this,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        return inner->ident,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner->name,
+        return inner->name,
+        SIR_VISIT_IMPOSSIBLE
+    );
 }
 
 Ident &Symbol::get_ident() {

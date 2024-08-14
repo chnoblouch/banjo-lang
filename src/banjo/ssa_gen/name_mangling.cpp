@@ -45,6 +45,8 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
             case sir::Primitive::ADDR: string += "a0"; break;
             case sir::Primitive::VOID: string += "v0"; break;
         }
+    } else if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
+        string += 's';
     }
 }
 

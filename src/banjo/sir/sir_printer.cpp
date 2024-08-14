@@ -1,6 +1,7 @@
 #include "sir_printer.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
 #define BEGIN_OBJECT(name)                                                                                             \
@@ -93,18 +94,21 @@ void Printer::print_decl_block(const DeclBlock &decl_block) {
 }
 
 void Printer::print_decl(const Decl &decl) {
-    if (auto func_def = decl.match<FuncDef>()) print_func_def(*func_def);
-    else if (auto native_func_decl = decl.match<NativeFuncDecl>()) print_native_func_decl(*native_func_decl);
-    else if (auto const_def = decl.match<ConstDef>()) print_const_def(*const_def);
-    else if (auto struct_def = decl.match<StructDef>()) print_struct_def(*struct_def);
-    else if (auto struct_field = decl.match<StructField>()) print_struct_field(*struct_field);
-    else if (auto var_decl = decl.match<VarDecl>()) print_var_decl(*var_decl);
-    else if (auto enum_def = decl.match<EnumDef>()) print_enum_def(*enum_def);
-    else if (auto enum_variant = decl.match<EnumVariant>()) print_enum_variant(*enum_variant);
-    else if (auto use_decl = decl.match<UseDecl>()) print_use_decl(*use_decl);
-    else if (auto meta_if_stmt = decl.match<MetaIfStmt>()) print_meta_if_stmt(*meta_if_stmt);
-    else if (auto expanded_meta_stmt = decl.match<ExpandedMetaStmt>()) print_expanded_meta_stmt(*expanded_meta_stmt);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_DECL(
+        decl,
+        SIR_VISIT_IMPOSSIBLE,
+        print_func_def(*inner),
+        print_native_func_decl(*inner),
+        print_const_def(*inner),
+        print_struct_def(*inner),
+        print_struct_field(*inner),
+        print_var_decl(*inner),
+        print_enum_def(*inner),
+        print_enum_variant(*inner),
+        print_use_decl(*inner),
+        print_meta_if_stmt(*inner),
+        print_expanded_meta_stmt(*inner)
+    );
 }
 
 void Printer::print_func_def(const FuncDef &func_def) {
@@ -272,21 +276,24 @@ void Printer::print_block(const Block &block) {
 }
 
 void Printer::print_stmt(const Stmt &stmt) {
-    if (auto var_stmt = stmt.match<VarStmt>()) print_var_stmt(*var_stmt);
-    else if (auto assign_stmt = stmt.match<AssignStmt>()) print_assign_stmt(*assign_stmt);
-    else if (auto comp_assign_stmt = stmt.match<CompAssignStmt>()) print_comp_assign_stmt(*comp_assign_stmt);
-    else if (auto return_stmt = stmt.match<ReturnStmt>()) print_return_stmt(*return_stmt);
-    else if (auto if_stmt = stmt.match<IfStmt>()) print_if_stmt(*if_stmt);
-    else if (auto while_stmt = stmt.match<WhileStmt>()) print_while_stmt(*while_stmt);
-    else if (auto for_stmt = stmt.match<ForStmt>()) print_for_stmt(*for_stmt);
-    else if (auto loop_stmt = stmt.match<LoopStmt>()) print_loop_stmt(*loop_stmt);
-    else if (auto continue_stmt = stmt.match<ContinueStmt>()) print_continue_stmt(*continue_stmt);
-    else if (auto break_stmt = stmt.match<BreakStmt>()) print_break_stmt(*break_stmt);
-    else if (auto meta_if_stmt = stmt.match<MetaIfStmt>()) print_meta_if_stmt(*meta_if_stmt);
-    else if (auto expanded_meta_stmt = stmt.match<ExpandedMetaStmt>()) print_expanded_meta_stmt(*expanded_meta_stmt);
-    else if (auto expr = stmt.match<Expr>()) print_expr_stmt(*expr);
-    else if (auto block = stmt.match<Block>()) print_block_stmt(*block);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_STMT(
+        stmt,
+        SIR_VISIT_IMPOSSIBLE,
+        print_var_stmt(*inner),
+        print_assign_stmt(*inner),
+        print_comp_assign_stmt(*inner),
+        print_return_stmt(*inner),
+        print_if_stmt(*inner),
+        print_while_stmt(*inner),
+        print_for_stmt(*inner),
+        print_loop_stmt(*inner),
+        print_continue_stmt(*inner),
+        print_break_stmt(*inner),
+        print_meta_if_stmt(*inner),
+        print_expanded_meta_stmt(*inner),
+        print_expr_stmt(*inner),
+        print_block_stmt(*inner)
+    );
 }
 
 void Printer::print_var_stmt(const VarStmt &var_stmt) {
@@ -427,33 +434,35 @@ void Printer::print_block_stmt(const Block &block) {
 }
 
 void Printer::print_expr(const Expr &expr) {
-    if (!expr) stream << "none\n";
-    else if (auto int_literal = expr.match<IntLiteral>()) print_int_literal(*int_literal);
-    else if (auto fp_literal = expr.match<FPLiteral>()) print_fp_literal(*fp_literal);
-    else if (auto bool_literal = expr.match<BoolLiteral>()) print_bool_literal(*bool_literal);
-    else if (auto char_literal = expr.match<CharLiteral>()) print_char_literal(*char_literal);
-    else if (auto null_literal = expr.match<NullLiteral>()) print_null_literal(*null_literal);
-    else if (auto array_literal = expr.match<ArrayLiteral>()) print_array_literal(*array_literal);
-    else if (auto string_literal = expr.match<StringLiteral>()) print_string_literal(*string_literal);
-    else if (auto struct_literal = expr.match<StructLiteral>()) print_struct_literal(*struct_literal);
-    else if (auto symbol_expr = expr.match<SymbolExpr>()) print_symbol_expr(*symbol_expr);
-    else if (auto binary_expr = expr.match<BinaryExpr>()) print_binary_expr(*binary_expr);
-    else if (auto unary_expr = expr.match<UnaryExpr>()) print_unary_expr(*unary_expr);
-    else if (auto cast_expr = expr.match<CastExpr>()) print_cast_expr(*cast_expr);
-    else if (auto index_expr = expr.match<IndexExpr>()) print_index_expr(*index_expr);
-    else if (auto call_expr = expr.match<CallExpr>()) print_call_expr(*call_expr);
-    else if (auto field_expr = expr.match<FieldExpr>()) print_field_expr(*field_expr);
-    else if (auto range_expr = expr.match<RangeExpr>()) print_range_expr(*range_expr);
-    else if (auto tuple_expr = expr.match<TupleExpr>()) print_tuple_expr(*tuple_expr);
-    else if (auto primitive_type = expr.match<PrimitiveType>()) print_primitive_type(*primitive_type);
-    else if (auto pointer_type = expr.match<PointerType>()) print_pointer_type(*pointer_type);
-    else if (auto static_array_type = expr.match<StaticArrayType>()) print_static_array_type(*static_array_type);
-    else if (auto func_type = expr.match<FuncType>()) print_func_type(*func_type);
-    else if (auto ident_expr = expr.match<IdentExpr>()) print_ident_expr(*ident_expr);
-    else if (auto star_expr = expr.match<StarExpr>()) print_star_expr(*star_expr);
-    else if (auto bracket_expr = expr.match<BracketExpr>()) print_bracket_expr(*bracket_expr);
-    else if (auto dot_expr = expr.match<DotExpr>()) print_dot_expr(*dot_expr);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_EXPR(
+        expr,
+        stream << "none\n",
+        print_int_literal(*inner),
+        print_fp_literal(*inner),
+        print_bool_literal(*inner),
+        print_char_literal(*inner),
+        print_null_literal(*inner),
+        print_array_literal(*inner),
+        print_string_literal(*inner),
+        print_struct_literal(*inner),
+        print_symbol_expr(*inner),
+        print_binary_expr(*inner),
+        print_unary_expr(*inner),
+        print_cast_expr(*inner),
+        print_index_expr(*inner),
+        print_call_expr(*inner),
+        print_field_expr(*inner),
+        print_range_expr(*inner),
+        print_tuple_expr(*inner),
+        print_primitive_type(*inner),
+        print_pointer_type(*inner),
+        print_static_array_type(*inner),
+        print_func_type(*inner),
+        print_ident_expr(*inner),
+        print_star_expr(*inner),
+        print_bracket_expr(*inner),
+        print_dot_expr(*inner)
+    );
 }
 
 void Printer::print_int_literal(const IntLiteral &int_literal) {

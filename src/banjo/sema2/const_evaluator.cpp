@@ -2,6 +2,7 @@
 
 #include "banjo/sema2/expr_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -23,12 +24,35 @@ bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
 sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
     ExprAnalyzer(analyzer).analyze(expr);
 
-    if (auto int_literal = expr.match<sir::IntLiteral>()) return expr;
-    else if (auto symbol_expr = expr.match<sir::SymbolExpr>()) return evaluate_symbol_expr(*symbol_expr);
-    else if (auto bool_literal = expr.match<sir::BoolLiteral>()) return expr;
-    else if (auto binary_expr = expr.match<sir::BinaryExpr>()) return evaluate_binary_expr(*binary_expr);
-    else if (auto unary_expr = expr.match<sir::UnaryExpr>()) return evaluate_unary_expr(*unary_expr);
-    else ASSERT_UNREACHABLE;
+    SIR_VISIT_EXPR(
+        expr,
+        SIR_VISIT_IMPOSSIBLE,
+        return expr,
+        SIR_VISIT_IMPOSSIBLE,
+        return expr,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        return evaluate_symbol_expr(*inner),
+        return evaluate_binary_expr(*inner),
+        return evaluate_unary_expr(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE
+    );
 }
 
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {

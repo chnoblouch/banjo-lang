@@ -29,6 +29,9 @@ func print(value: bool) {
 	}
 }
 
+func print(value: String) {
+    print(value.cstr());
+}
 
 func println(value: *u8) {
 	___banjo_print_string("%s\n", value);
@@ -54,4 +57,8 @@ func println(value: bool) {
 	} else {
 		println("false");
 	}
+}
+
+func println(value: String) {
+    println(value.cstr());
 }

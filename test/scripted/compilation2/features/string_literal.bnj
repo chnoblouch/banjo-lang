@@ -1,0 +1,40 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var string = "Hi!";
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var string: String = "Hi!";
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var string: *u8 = "Hi!";
+}
+
+# test:subtest
+# test:output "Hi!"
+
+native func puts(*u8);
+
+func main() {
+    var string = "Hi!";
+    puts(string.cstr());
+}
+
+# test:subtest
+# test:output "Hi!"
+
+native func puts(*u8);
+
+func main() {
+    var string: *u8 = "Hi!";
+    puts(string);
+}

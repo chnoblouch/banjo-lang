@@ -62,6 +62,14 @@ sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
     return scope.block ? *scope.block->symbol_table : *scope.decl_block->symbol_table;
 }
 
+sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const std::string &name) {
+    return sir_unit.mods_by_path[mod_path]->block.symbol_table->look_up(name);
+}
+
+sir::Symbol SemanticAnalyzer::find_std_string() {
+    return find_std_symbol({"std", "string"}, "String");
+}
+
 void SemanticAnalyzer::check_for_completeness(sir::DeclBlock &block) {
     block.symbol_table->complete = true;
 

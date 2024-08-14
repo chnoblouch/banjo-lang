@@ -63,8 +63,10 @@ class Test:
                 return self.check_error(conditions)
 
     def check_output(self, conditions):
-        _, args = conditions[0]
-        expected_output = args[0]
+        for condition, args in conditions:
+            if condition == "output":
+                expected_output = args[0]
+                break
 
         result = self.run_executable()
 
