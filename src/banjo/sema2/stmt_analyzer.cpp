@@ -65,11 +65,13 @@ void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
 }
 
 void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
+    // FIXME: error handling for overloaded operators with a bad return type
+
     sir::AssignStmt *assign_stmt = analyzer.create_stmt(sir::AssignStmt{
         .ast_node = comp_assign_stmt.ast_node,
         .lhs = comp_assign_stmt.lhs,
         .rhs = analyzer.create_expr(sir::BinaryExpr{
-            .ast_node = nullptr,
+            .ast_node = comp_assign_stmt.ast_node,
             .type = nullptr,
             .op = comp_assign_stmt.op,
             .lhs = comp_assign_stmt.lhs,

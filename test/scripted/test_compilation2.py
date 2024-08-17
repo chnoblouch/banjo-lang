@@ -57,6 +57,8 @@ class Test:
         for condition, _ in conditions:
             if condition == "output":
                 return self.check_output(conditions)
+            elif condition == "exitcode":
+                return self.check_exit_code(conditions)
             elif condition == "compiles":
                 return self.check_compiles(conditions)
             elif condition == "error":
@@ -74,6 +76,19 @@ class Test:
             return TestResult(True)
         else:
             return TestResult(False, "unexpected output", expected_output, result.stdout)
+
+    def check_exit_code(self, conditions):
+        for condition, args in conditions:
+            if condition == "exitcode":
+                expected_exit_code = args[0]
+                break
+
+        result = self.run_executable()
+
+        if result.exit_code == expected_exit_code:
+            return TestResult(True)
+        else:
+            return TestResult(False, "unexpected exit code", expected_exit_code, result.exit_code)
 
     def check_compiles(self, conditions):
         result = self.build()

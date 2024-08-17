@@ -1,6 +1,7 @@
 #include "expr_analyzer.hpp"
 
 #include "banjo/sema2/generics_specializer.hpp"
+#include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
@@ -41,8 +42,8 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
         result = analyze_string_literal(*inner, expr),
         analyze_struct_literal(*inner),
         SIR_VISIT_IGNORE,
-        analyze_binary_expr(*inner),
-        analyze_unary_expr(*inner),
+        result = analyze_binary_expr(*inner, expr),
+        result = analyze_unary_expr(*inner, expr),
         analyze_cast_expr(*inner),
         SIR_VISIT_IGNORE,
         analyze_call_expr(*inner),
@@ -55,7 +56,7 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
         analyze_func_type(*inner),
         result = analyze_ident_expr(*inner, expr),
         analyze_star_expr(*inner, expr),
-        analyze_bracket_expr(*inner, expr),
+        result = analyze_bracket_expr(*inner, expr),
         analyze_dot_expr(*inner, expr)
     );
 
@@ -196,9 +197,21 @@ void ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
     }
 }
 
-void ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr) {
+Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
     ExprAnalyzer(analyzer).analyze(binary_expr.lhs);
     ExprAnalyzer(analyzer).analyze(binary_expr.rhs);
+
+    if (auto struct_def = binary_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
+        std::string_view impl_name = MagicMethods::look_up(binary_expr.op);
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
+
+        if (!symbol) {
+            analyzer.report_generator.report_err_operator_overload_not_found(binary_expr);
+            return Result::ERROR;
+        }
+
+        return analyze_operator_overload_call(symbol, binary_expr.lhs, binary_expr.rhs, out_expr);
+    }
 
     switch (binary_expr.op) {
         case sir::BinaryOp::ADD:
@@ -225,27 +238,49 @@ void ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr) {
             });
             break;
     }
+
+    return Result::SUCCESS;
 }
 
-void ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr) {
+Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr) {
+    // Deref unary operations are handled by `analyze_star_expr`.
+    ASSUME(unary_expr.op != sir::UnaryOp::DEREF);
+
     ExprAnalyzer(analyzer).analyze(unary_expr.value);
 
-    if (unary_expr.op == sir::UnaryOp::NEG) {
-        unary_expr.type = unary_expr.value.get_type();
-    } else if (unary_expr.op == sir::UnaryOp::REF) {
+    if (unary_expr.op == sir::UnaryOp::REF) {
         unary_expr.type = analyzer.create_expr(sir::PointerType{
             .ast_node = nullptr,
             .base_type = unary_expr.value.get_type(),
         });
-    } else if (unary_expr.op == sir::UnaryOp::DEREF) {
-        // Deref unary operations are handled by `analyze_star_expr`.
-        ASSERT_UNREACHABLE;
+
+        return Result::SUCCESS;
+    }
+
+    if (auto struct_def = unary_expr.value.get_type().match_symbol<sir::StructDef>()) {
+        std::string_view impl_name = MagicMethods::look_up(unary_expr.op);
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
+
+        if (!symbol) {
+            analyzer.report_generator.report_err_operator_overload_not_found(unary_expr);
+            return Result::ERROR;
+        }
+
+        return analyze_operator_overload_call(symbol, unary_expr.value, nullptr, out_expr);
+    }
+
+    if (unary_expr.op == sir::UnaryOp::NEG) {
+        unary_expr.type = unary_expr.value.get_type();
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
         unary_expr.type = analyzer.create_expr(sir::PrimitiveType{
             .ast_node = nullptr,
             .primitive = sir::Primitive::BOOL,
         });
+    } else {
+        ASSERT_UNREACHABLE;
     }
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
@@ -275,7 +310,13 @@ void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
     }
 
     if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
-        resolve_overload(*overload_set, call_expr);
+        sir::FuncDef *func_def = resolve_overload(*overload_set, call_expr.args);
+
+        call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = &func_def->type,
+            .symbol = func_def,
+        });
     }
 
     call_expr.type = call_expr.callee.get_type().as<sir::FuncType>().return_type;
@@ -409,7 +450,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     return Result::SUCCESS;
 }
 
-void ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
+Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
     ExprAnalyzer(analyzer).analyze(star_expr.value);
 
     if (star_expr.value.is_type()) {
@@ -418,6 +459,18 @@ void ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_ex
             .base_type = star_expr.value,
         });
     } else {
+        if (auto struct_def = star_expr.value.get_type().match_symbol<sir::StructDef>()) {
+            std::string_view impl_name = MagicMethods::look_up(sir::UnaryOp::DEREF);
+            sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
+
+            if (!symbol) {
+                analyzer.report_generator.report_err_operator_overload_not_found(star_expr);
+                return Result::ERROR;
+            }
+
+            return analyze_operator_overload_call(symbol, star_expr.value, nullptr, out_expr);
+        }
+
         out_expr = analyzer.create_expr(sir::UnaryExpr{
             .ast_node = star_expr.ast_node,
             .type = star_expr.value.get_type().as<sir::PointerType>().base_type,
@@ -425,9 +478,11 @@ void ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_ex
             .value = star_expr.value,
         });
     }
+
+    return Result::SUCCESS;
 }
 
-void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
+Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
     ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
 
     for (sir::Expr &expr : bracket_expr.rhs) {
@@ -444,7 +499,7 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
                 .symbol = specialization,
             });
 
-            return;
+            return Result::SUCCESS;
         }
     } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
         if (struct_def->is_generic()) {
@@ -456,7 +511,7 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
                 .symbol = specialization,
             });
 
-            return;
+            return Result::SUCCESS;
         }
     }
 
@@ -476,9 +531,24 @@ void ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Exp
             .base = bracket_expr.lhs,
             .index = bracket_expr.rhs[0],
         });
+    } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
+        // FIXME: error handling
+        ASSUME(bracket_expr.rhs.size() == 1);
+
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up(MagicMethods::OP_INDEX);
+
+        if (!symbol) {
+            analyzer.report_generator.report_err_operator_overload_not_found(bracket_expr);
+            return Result::ERROR;
+        }
+
+        return analyze_operator_overload_call(symbol, bracket_expr.lhs, bracket_expr.rhs[0], out_expr);
     } else {
+        // FIXME: error handling
         ASSERT_UNREACHABLE;
     }
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
@@ -573,23 +643,17 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     return Result::SUCCESS;
 }
 
-void ExprAnalyzer::resolve_overload(sir::OverloadSet &overload_set, sir::CallExpr &inout_call_expr) {
+sir::FuncDef *ExprAnalyzer::resolve_overload(sir::OverloadSet &overload_set, const std::vector<sir::Expr> &args) {
     for (sir::FuncDef *func_def : overload_set.func_defs) {
-        if (is_matching_overload(*func_def, inout_call_expr.args)) {
-            inout_call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
-                .ast_node = nullptr,
-                .type = &func_def->type,
-                .symbol = func_def,
-            });
-
-            return;
+        if (is_matching_overload(*func_def, args)) {
+            return func_def;
         }
     }
 
     ASSERT_UNREACHABLE;
 }
 
-bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, std::vector<sir::Expr> &args) {
+bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args) {
     if (func_def.type.params.size() != args.size()) {
         return false;
     }
@@ -601,6 +665,55 @@ bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, std::vector<sir:
     }
 
     return true;
+}
+
+Result ExprAnalyzer::analyze_operator_overload_call(
+    sir::Symbol symbol,
+    sir::Expr self,
+    sir::Expr arg,
+    sir::Expr &out_expr
+) {
+    sir::Expr self_ref = analyzer.create_expr(sir::UnaryExpr{
+        .ast_node = nullptr,
+        .type = analyzer.create_expr(sir::PointerType{
+            .ast_node = nullptr,
+            .base_type = self.get_type(),
+        }),
+        .op = sir::UnaryOp::REF,
+        .value = self,
+    });
+
+    std::vector<sir::Expr> args;
+    if (arg) {
+        args = {self_ref, arg};
+    } else {
+        args = {self_ref};
+    }
+
+    sir::FuncDef *impl;
+
+    if (auto func_def = symbol.match<sir::FuncDef>()) {
+        impl = func_def;
+    } else if (auto overload_set = symbol.match<sir::OverloadSet>()) {
+        impl = resolve_overload(*overload_set, args);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &impl->type,
+        .symbol = impl,
+    });
+
+    out_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = impl->type.return_type,
+        .callee = callee,
+        .args = args,
+    });
+
+    return Result::SUCCESS;
 }
 
 } // namespace sema

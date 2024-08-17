@@ -153,6 +153,9 @@ public:
     }
 
     template <typename T>
+    T &as_symbol();
+
+    template <typename T>
     T *match() {
         auto result = std::get_if<T *>(&kind);
         return result ? *result : nullptr;
@@ -166,6 +169,9 @@ public:
 
     template <typename T>
     T *match_symbol();
+
+    template <typename T>
+    const T *match_symbol() const;
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
     bool operator==(const Expr &other) const;
@@ -979,7 +985,21 @@ bool Expr::is_symbol() const {
 }
 
 template <typename T>
+T &Expr::as_symbol() {
+    return as<SymbolExpr>().symbol.as<T>();
+}
+
+template <typename T>
 T *Expr::match_symbol() {
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        return symbol_expr->symbol.match<T>();
+    } else {
+        return nullptr;
+    }
+}
+
+template <typename T>
+const T *Expr::match_symbol() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
         return symbol_expr->symbol.match<T>();
     } else {

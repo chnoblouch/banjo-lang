@@ -1,0 +1,62 @@
+# test:error 43:13 "no implementation of operator '+' for type 'S'"
+# test:note 40:8 "implement '__add__' for this type to support this operator"
+# test:error 44:13 "no implementation of operator '-' for type 'S'"
+# test:note 40:8 "implement '__sub__' for this type to support this operator"
+# test:error 45:13 "no implementation of operator '*' for type 'S'"
+# test:note 40:8 "implement '__mul__' for this type to support this operator"
+# test:error 46:13 "no implementation of operator '/' for type 'S'"
+# test:note 40:8 "implement '__div__' for this type to support this operator"
+# test:error 47:13 "no implementation of operator '%' for type 'S'"
+# test:note 40:8 "implement '__mod__' for this type to support this operator"
+# test:error 48:13 "no implementation of operator '&' for type 'S'"
+# test:note 40:8 "implement '__bitand__' for this type to support this operator"
+# test:error 49:13 "no implementation of operator '|' for type 'S'"
+# test:note 40:8 "implement '__bitor__' for this type to support this operator"
+# test:error 50:13 "no implementation of operator '^' for type 'S'"
+# test:note 40:8 "implement '__bitxor__' for this type to support this operator"
+# test:error 51:13 "no implementation of operator '<<' for type 'S'"
+# test:note 40:8 "implement '__shl__' for this type to support this operator"
+# test:error 52:13 "no implementation of operator '>>' for type 'S'"
+# test:note 40:8 "implement '__shr__' for this type to support this operator"
+# test:error 53:13 "no implementation of operator '==' for type 'S'"
+# test:note 40:8 "implement '__eq__' for this type to support this operator"
+# test:error 54:13 "no implementation of operator '!=' for type 'S'"
+# test:note 40:8 "implement '__ne__' for this type to support this operator"
+# test:error 55:13 "no implementation of operator '>' for type 'S'"
+# test:note 40:8 "implement '__gt__' for this type to support this operator"
+# test:error 56:13 "no implementation of operator '<' for type 'S'"
+# test:note 40:8 "implement '__lt__' for this type to support this operator"
+# test:error 57:13 "no implementation of operator '>=' for type 'S'"
+# test:note 40:8 "implement '__ge__' for this type to support this operator"
+# test:error 58:13 "no implementation of operator '<=' for type 'S'"
+# test:note 40:8 "implement '__le__' for this type to support this operator"
+# test:error 59:13 "no implementation of operator '-' for type 'S'"
+# test:note 40:8 "implement '__neg__' for this type to support this operator"
+# test:error 60:13 "no implementation of operator '*' for type 'S'"
+# test:note 40:8 "implement '__deref__' for this type to support this operator"
+# test:error 61:13 "no implementation of operator '[]' for type 'S'"
+# test:note 40:8 "implement '__index__' for this type to support this operator"
+
+struct S {}
+
+func main() {
+    var a = S {} + 1;
+    var b = S {} - 1;
+    var c = S {} * 1;
+    var d = S {} / 1;
+    var e = S {} % 1;
+    var f = S {} & 1;
+    var g = S {} | 1;
+    var h = S {} ^ 1;
+    var i = S {} << 1;
+    var j = S {} >> 1;
+    var k = S {} == 1;
+    var l = S {} != 1;
+    var m = S {} > 1;
+    var n = S {} < 1;
+    var o = S {} >= 1;
+    var p = S {} <= 1;
+    var q = -(S {});
+    var r = *(S {});
+    var s = (S {})[1];
+}

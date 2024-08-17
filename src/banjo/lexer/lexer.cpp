@@ -148,7 +148,7 @@ void Lexer::read_punctuation() {
             break;
         case '*': type = read_if('=') ? TKN_STAR_EQ : TKN_STAR; break;
         case '/': type = read_if('=') ? TKN_SLASH_EQ : TKN_SLASH; break;
-        case '%': type = TKN_PERCENT; break;
+        case '%': type = read_if('=') ? TKN_PERCENT_EQ : TKN_PERCENT; break;
         case '&':
             if (read_if('&')) type = TKN_AND_AND;
             else if (read_if('=')) type = TKN_AND_EQ;
@@ -160,7 +160,7 @@ void Lexer::read_punctuation() {
             else type = TKN_OR;
             break;
         case '!': type = read_if('=') ? TKN_NE : TKN_NOT; break;
-        case '^': type = TKN_CARET; break;
+        case '^': type = read_if('=') ? TKN_CARET_EQ : TKN_CARET; break;
         case '~': type = TKN_TILDE; break;
         case '>':
             if (read_if('>')) type = read_if('=') ? TKN_SHR_EQ : TKN_SHR;

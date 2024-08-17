@@ -90,10 +90,10 @@ enum TokenType {
     TKN_MINUS_EQ,
     TKN_STAR_EQ,
     TKN_SLASH_EQ,
-    // TODO: TKN_PERCENT_EQ,
+    TKN_PERCENT_EQ,
     TKN_AND_EQ,
     TKN_OR_EQ,
-    // TODO: TKN_CARET_EQ
+    TKN_CARET_EQ,
     TKN_SHL_EQ,
     TKN_SHR_EQ,
     TKN_SEMI,

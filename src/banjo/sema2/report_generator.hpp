@@ -30,6 +30,9 @@ public:
     ReportBuilder &add_note(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     void report();
+
+private:
+    const ModulePath &find_mod_path(ASTNode *node);
 };
 
 class ReportGenerator {
@@ -48,7 +51,11 @@ public:
     void report_err_cant_coerce_int_literal(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
     void report_err_cant_coerce_fp_literal(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
     void report_err_cant_coerce_null_literal(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
-   
+    void report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr);
+    void report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr);
+    void report_err_operator_overload_not_found(const sir::StarExpr &star_expr);
+    void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr);
+
     void report_err_cant_coerce_string_literal(
         const sir::StringLiteral &string_literal,
         const sir::Expr &expected_type
@@ -60,6 +67,13 @@ private:
 
     template <typename... FormatArgs>
     void report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+
+    void report_err_operator_overload_not_found(
+        ASTNode *ast_node,
+        sir::Expr type,
+        std::string_view operator_name,
+        std::string_view impl_name
+    );
 };
 
 } // namespace sema

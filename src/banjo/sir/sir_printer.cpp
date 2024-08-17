@@ -528,7 +528,6 @@ void Printer::print_struct_literal(const StructLiteral &struct_literal) {
 
     END_LIST();
     END_OBJECT();
-    END_OBJECT();
 }
 
 void Printer::print_symbol_expr(const SymbolExpr &symbol_expr) {

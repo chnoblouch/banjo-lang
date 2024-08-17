@@ -166,9 +166,10 @@ ParseResult Parser::parse_expr_or_assign() {
         case TKN_MINUS_EQ: return StmtParser(*this).parse_assign(result.node, AST_SUB_ASSIGN);
         case TKN_STAR_EQ: return StmtParser(*this).parse_assign(result.node, AST_MUL_ASSIGN);
         case TKN_SLASH_EQ: return StmtParser(*this).parse_assign(result.node, AST_DIV_ASSIGN);
-        // case TKN_PERCENT_EQ: return StmtParser(*this).parse_assign(node, AST_MOD_ASSIGN); // TODO
+        case TKN_PERCENT_EQ: return StmtParser(*this).parse_assign(result.node, AST_MOD_ASSIGN);
         case TKN_AND_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_AND_ASSIGN);
         case TKN_OR_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_OR_ASSIGN);
+        case TKN_CARET_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_XOR_ASSIGN);
         case TKN_SHL_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHL_ASSIGN);
         case TKN_SHR_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHR_ASSIGN);
         default: return check_semi(result.node);

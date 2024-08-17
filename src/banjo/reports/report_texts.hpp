@@ -72,7 +72,9 @@ public:
     ReportText(std::string_view format_str);
     std::string str() { return text; }
 
-    ReportText &format(std::string string);
+    ReportText &format(std::string_view string);
+    ReportText &format(const char *string);
+    ReportText &format(const std::string &string);
     ReportText &format(ASTNode *node);
     ReportText &format(DataType *type);
     ReportText &format(Structure *struct_);

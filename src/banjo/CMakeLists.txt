@@ -124,6 +124,7 @@ add_library(banjo STATIC
     sema2/decl_visitor.cpp
     sema2/expr_analyzer.cpp
     sema2/generics_specializer.cpp
+    sema2/magic_methods.cpp
     sema2/meta_expansion.cpp
     sema2/preamble.cpp
     sema2/report_generator.cpp

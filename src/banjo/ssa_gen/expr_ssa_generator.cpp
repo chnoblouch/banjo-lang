@@ -73,7 +73,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
 
 void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets targets) {
     if (auto binary_expr = expr.match<sir::BinaryExpr>()) {
-        if (binary_expr->lhs.get_type().is_int_type() || binary_expr->lhs.get_type().is_symbol<sir::EnumDef>()) {
+        if (!binary_expr->lhs.get_type().is_fp_type()) {
             switch (binary_expr->op) {
                 case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);
                 case sir::BinaryOp::NE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets);
@@ -85,7 +85,7 @@ void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets 
                 case sir::BinaryOp::OR: return generate_or_branch(*binary_expr, targets);
                 default: ASSERT_UNREACHABLE;
             }
-        } else if (binary_expr->lhs.get_type().is_fp_type()) {
+        } else {
             switch (binary_expr->op) {
                 case sir::BinaryOp::EQ: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FEQ, targets);
                 case sir::BinaryOp::NE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FNE, targets);
@@ -95,8 +95,6 @@ void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets 
                 case sir::BinaryOp::LE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLE, targets);
                 default: ASSERT_UNREACHABLE;
             }
-        } else {
-            ASSERT_UNREACHABLE;
         }
     } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         if (unary_expr->op == sir::UnaryOp::NOT) {

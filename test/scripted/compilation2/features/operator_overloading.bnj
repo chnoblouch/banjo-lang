@@ -1,0 +1,182 @@
+# test:subtest
+# test:output 5,-2
+
+struct Point {
+    var x: i32;
+    var y: i32;
+    
+    func __add__(self, rhs: Point) -> Point {
+        return Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        };
+    }
+}
+
+func main() {
+    var a = Point {
+        x: 3,
+        y: 10,
+    };
+    
+    var b = Point {
+        x: 2,
+        y: -12,
+    };
+    
+    var c = a + b;
+    
+    print(c.x);
+    print(",");
+    print(c.y);
+}
+
+# test:subtest
+# test:output 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+
+struct S {
+    func __add__(self, rhs: i32) -> i32 { return 0; }
+    func __sub__(self, rhs: i32) -> i32 { return 1; }
+    func __mul__(self, rhs: i32) -> i32 { return 2; }
+    func __div__(self, rhs: i32) -> i32 { return 3; }
+    func __mod__(self, rhs: i32) -> i32 { return 4; }
+    func __bitand__(self, rhs: i32) -> i32 { return 5; }
+    func __bitor__(self, rhs: i32) -> i32 { return 6; }
+    func __bitxor__(self, rhs: i32) -> i32 { return 7; }
+    func __shl__(self, rhs: i32) -> i32 { return 8; }
+    func __shr__(self, rhs: i32) -> i32 { return 9; }
+    func __eq__(self, rhs: i32) -> i32 { return 10; }
+    func __ne__(self, rhs: i32) -> i32 { return 11; }
+    func __gt__(self, rhs: i32) -> i32 { return 12; }
+    func __lt__(self, rhs: i32) -> i32 { return 13; }
+    func __ge__(self, rhs: i32) -> i32 { return 14; }
+    func __le__(self, rhs: i32) -> i32 { return 15; }
+    func __neg__(self, rhs: i32) -> i32 { return 16; }
+    func __deref__(self, rhs: i32) -> i32 { return 17; }
+    func __index__(self, rhs: i32) -> i32 { return 18; }
+}
+
+func main() {
+    var s = S {};
+    
+    print(s + 1);
+    print(",");
+    print(s - 1);
+    print(",");
+    print(s * 1);
+    print(",");
+    print(s / 1);
+    print(",");
+    print(s % 1);
+    print(",");
+    print(s & 1);
+    print(",");
+    print(s | 1);
+    print(",");
+    print(s ^ 1);
+    print(",");
+    print(s << 1);
+    print(",");
+    print(s >> 1);
+    print(",");
+    print(s == 1);
+    print(",");
+    print(s != 1);
+    print(",");
+    print(s > 1);
+    print(",");
+    print(s < 1);
+    print(",");
+    print(s >= 1);
+    print(",");
+    print(s <= 1);
+    print(",");
+    print(-s);
+    print(",");
+    print(*s);
+    print(",");
+    print(s[1]);
+}
+
+# test:subtest
+# test:output 0,1,2,3
+
+struct S {
+    func __add__(self, rhs: i32) -> i32 { return 0; }
+    func __add__(self, rhs: f32) -> i32 { return 1; }
+    func __add__(self, rhs: bool) -> i32 { return 2; }
+    func __add__(self, rhs: S) -> i32 { return 3; }
+}
+
+func main() {
+    var s = S {};
+    
+    print(s + 1);
+    print(",");
+    print(s + 1.0);
+    print(",");
+    print(s + true);
+    print(",");
+    print(s + S {});
+}
+
+# test:subtest
+# test:output 0,1,2,3,4,5,6,7,8,9
+
+struct S {
+    var value: i32;
+
+    func __add__(self, rhs: i32) -> S { return S { value: 0 }; }
+    func __sub__(self, rhs: i32) -> S { return S { value: 1 }; }
+    func __mul__(self, rhs: i32) -> S { return S { value: 2 }; }
+    func __div__(self, rhs: i32) -> S { return S { value: 3 }; }
+    func __mod__(self, rhs: i32) -> S { return S { value: 4 }; }
+    func __bitand__(self, rhs: i32) -> S { return S { value: 5 }; }
+    func __bitor__(self, rhs: i32) -> S { return S { value: 6 }; }
+    func __bitxor__(self, rhs: i32) -> S { return S { value: 7 }; }
+    func __shl__(self, rhs: i32) -> S { return S { value: 8 }; }
+    func __shr__(self, rhs: i32) -> S { return S { value: 9 }; }
+}
+
+func main() {
+    var s = S { value: 0 };
+
+    s += 1;
+    print(s.value);
+    print(",");
+    
+    s -= 1;
+    print(s.value);
+    print(",");
+    
+    s *= 1;
+    print(s.value);
+    print(",");
+    
+    s /= 1;
+    print(s.value);
+    print(",");
+    
+    s %= 1;
+    print(s.value);
+    print(",");
+    
+    s &= 1;
+    print(s.value);
+    print(",");
+    
+    s |= 1;
+    print(s.value);
+    print(",");
+    
+    s ^= 1;
+    print(s.value);
+    print(",");
+
+    s <<= 1;
+    print(s.value);
+    print(",");
+
+    s >>= 1;
+    print(s.value);
+}

@@ -36,8 +36,8 @@ private:
     void analyze_array_literal(sir::ArrayLiteral &array_literal);
     Result analyze_string_literal(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void analyze_struct_literal(sir::StructLiteral &struct_literal);
-    void analyze_binary_expr(sir::BinaryExpr &binary_expr);
-    void analyze_unary_expr(sir::UnaryExpr &unary_expr);
+    Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+    Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
     void analyze_cast_expr(sir::CastExpr &cast_expr);
     void analyze_call_expr(sir::CallExpr &call_expr);
     void analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
@@ -47,13 +47,14 @@ private:
     void analyze_func_type(sir::FuncType &func_type);
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
-    void analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
-    void analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
+    Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
+    Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
-    void resolve_overload(sir::OverloadSet &overload_set, sir::CallExpr &inout_call_expr);
-    bool is_matching_overload(sir::FuncDef &func_def, std::vector<sir::Expr> &args);
+    sir::FuncDef *resolve_overload(sir::OverloadSet &overload_set, const std::vector<sir::Expr> &args);
+    bool is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args);
+    Result analyze_operator_overload_call(sir::Symbol symbol, sir::Expr self, sir::Expr arg, sir::Expr &out_expr);
 };
 
 } // namespace sema

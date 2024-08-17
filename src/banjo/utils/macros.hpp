@@ -2,8 +2,8 @@
 #define MACROS_H
 
 #if DEBUG
-#    include <cstdlib>
-#    include <iostream>
+#    include <cstdlib>  // IWYU pragma: export
+#    include <iostream> // IWYU pragma: export
 
 #    define ASSERT_UNREACHABLE                                                                                         \
         {                                                                                                              \
@@ -11,11 +11,20 @@
                       << std::flush;                                                                                   \
             std::abort();                                                                                              \
         }
+
+#    define ASSUME(condition)                                                                                          \
+        if (!(condition)) {                                                                                            \
+            std::cerr << "assumption violated, aborting!\nat " << __FILE__ << ":" << __LINE__ << "\n" << std::flush;   \
+            std::abort();                                                                                              \
+        }
 #else
 #    ifdef _MSC_VER
 #        define ASSERT_UNREACHABLE __assume(false);
+#        define ASSUME(condition) __assume(condition);
 #    else
 #        define ASSERT_UNREACHABLE __builtin_unreachable();
+#        define ASSUME(condition)                                                                                      \
+            if (!(condition)) __builtin_unreachable();
 #    endif
 #endif
 

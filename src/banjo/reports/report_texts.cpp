@@ -61,13 +61,26 @@ ReportText::ReportText(ReportText::ID id) : text(TEXTS.at(id)) {}
 
 ReportText::ReportText(std::string_view format_str) : text(format_str) {}
 
-ReportText &ReportText::format(std::string string) {
+ReportText &ReportText::format(std::string_view string) {
+#if BANJO_ENABLE_SIR
+    std::string::size_type position = text.find('$');
+#else
     std::string::size_type position = text.find('%');
+#endif
+
     if (position != std::string::npos) {
         text.replace(position, 1, string);
     }
 
     return *this;
+}
+
+ReportText &ReportText::format(const char *string) {
+    return format(std::string_view(string));
+}
+
+ReportText &ReportText::format(const std::string &string) {
+    return format(std::string_view(string));
 }
 
 ReportText &ReportText::format(ASTNode *node) {
@@ -105,7 +118,7 @@ ReportText &ReportText::format(sir::Expr &expr) {
         }
     } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
         return format(symbol->symbol.get_name());
-    }  else {
+    } else {
         return format("<unknown>");
     }
 }
