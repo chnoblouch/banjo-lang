@@ -226,6 +226,11 @@ public:
     }
 
     template <typename T>
+    T &as() {
+        return *std::get<T *>(kind);
+    }
+
+    template <typename T>
     T *match() {
         auto result = std::get_if<T *>(&kind);
         return result ? *result : nullptr;
@@ -781,9 +786,7 @@ struct MetaIfStmt {
     std::optional<MetaIfElseBranch> else_branch;
 };
 
-struct ExpandedMetaStmt {
-    ASTNode *ast_node;
-};
+struct ExpandedMetaStmt {};
 
 struct FuncDef {
     ASTNode *ast_node;

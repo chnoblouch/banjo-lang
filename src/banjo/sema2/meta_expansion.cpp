@@ -61,9 +61,7 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
 void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::MetaBlock &meta_block) {
     analyzer.blocked_decls.clear();
 
-    decl_block.decls[index] = analyzer.create_stmt(sir::ExpandedMetaStmt{
-        .ast_node = decl_block.ast_node,
-    });
+    decl_block.decls[index] = analyzer.create_stmt(sir::ExpandedMetaStmt{});
 
     SymbolCollector(analyzer).collect_in_meta_block(meta_block);
     DeclInterfaceAnalyzer(analyzer).analyze_meta_block(meta_block);
@@ -77,6 +75,30 @@ void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::Met
     }
 
     index--;
+}
+
+void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned index) {
+    sir::MetaIfStmt &meta_if_stmt = block.stmts[index].as<sir::MetaIfStmt>();
+
+    for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
+        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition)) {
+            expand(block, index, cond_branch.block);
+            return;
+        }
+    }
+
+    if (meta_if_stmt.else_branch) {
+        expand(block, index, meta_if_stmt.else_branch->block);
+    }
+}
+
+void MetaExpansion::expand(sir::Block &block, unsigned index, sir::MetaBlock &meta_block) {
+    block.stmts[index] = analyzer.create_stmt(sir::ExpandedMetaStmt{});
+
+    for (sir::Node &node : meta_block.nodes) {
+        index += 1;
+        block.stmts.insert(block.stmts.begin() + index, node.as<sir::Stmt>());
+    }
 }
 
 } // namespace sema

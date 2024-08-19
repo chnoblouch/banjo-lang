@@ -17,7 +17,6 @@ private:
 
 public:
     StmtAnalyzer(SemanticAnalyzer &analyzer);
-    void analyze(sir::Stmt &stmt);
     void analyze_block(sir::Block &block);
 
 private:

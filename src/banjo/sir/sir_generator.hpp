@@ -20,6 +20,11 @@ private:
         sir::StructDef *struct_def = nullptr;
     };
 
+    enum class MetaBlockKind {
+        DECL,
+        STMT,
+    };
+
     sir::Unit sir_unit;
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
@@ -54,7 +59,7 @@ private:
 
     sir::Ident generate_ident(ASTNode *node);
     sir::Block generate_block(ASTNode *node);
-    sir::MetaBlock generate_meta_block(ASTNode *node);
+    sir::MetaBlock generate_meta_block(ASTNode *node, MetaBlockKind kind);
 
     sir::Stmt generate_stmt(ASTNode *node);
     sir::Stmt generate_var_stmt(ASTNode *node);
@@ -67,7 +72,7 @@ private:
     sir::Stmt generate_for_stmt(ASTNode *node);
     sir::Stmt generate_continue_stmt(ASTNode *node);
     sir::Stmt generate_break_stmt(ASTNode *node);
-    sir::MetaIfStmt *generate_meta_if_stmt(ASTNode *node);
+    sir::MetaIfStmt *generate_meta_if_stmt(ASTNode *node, MetaBlockKind kind);
 
     sir::Expr generate_expr(ASTNode *node);
     sir::Expr generate_int_literal(ASTNode *node);

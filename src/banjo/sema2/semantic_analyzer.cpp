@@ -31,7 +31,6 @@ void SemanticAnalyzer::analyze() {
     DeclInterfaceAnalyzer(*this).analyze();
     DeclValueAnalyzer(*this).analyze();
     MetaExpansion(*this).run();
-    run_postponed_analyses();
     DeclBodyAnalyzer(*this).analyze();
 }
 
@@ -77,26 +76,6 @@ void SemanticAnalyzer::check_for_completeness(sir::DeclBlock &block) {
         if (decl.is<sir::MetaIfStmt>()) {
             block.symbol_table->complete = false;
             break;
-        }
-    }
-}
-
-void SemanticAnalyzer::postpone_analysis(std::function<void()> function) {
-    postponed_analyses.push_back({
-        .callback = std::move(function),
-        .context = scopes.top(),
-    });
-}
-
-void SemanticAnalyzer::run_postponed_analyses() {
-    while (!postponed_analyses.empty()) {
-        std::vector<PostponedAnalysis> postponed_analyses_copy = std::move(postponed_analyses);
-        postponed_analyses.clear();
-
-        for (const PostponedAnalysis &postponed_analysis : postponed_analyses_copy) {
-            scopes.push(postponed_analysis.context);
-            postponed_analysis.callback();
-            scopes.pop();
         }
     }
 }

@@ -43,11 +43,11 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
+        return expr,
+        return expr,
+        return expr,
+        return expr,
+        return expr,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
@@ -60,12 +60,23 @@ sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
 }
 
 sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
-    LargeInt lhs = evaluate_to_int(binary_expr.lhs);
-    LargeInt rhs = evaluate_to_int(binary_expr.rhs);
+    sir::Expr lhs = evaluate(binary_expr.lhs);
+    sir::Expr rhs = evaluate(binary_expr.rhs);
 
-    if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs == rhs);
-    else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs != rhs);
-    else ASSERT_UNREACHABLE;
+    if (lhs.is<sir::IntLiteral>() && rhs.is<sir::IntLiteral>()) {
+        LargeInt lhs_int = lhs.as<sir::IntLiteral>().value;
+        LargeInt rhs_int = rhs.as<sir::IntLiteral>().value;
+
+        if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs_int == rhs_int);
+        else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs_int != rhs_int);
+        else ASSERT_UNREACHABLE;
+    } else if (lhs.is_type() && rhs.is_type()) {
+        if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs == rhs);
+        else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs != rhs);
+        else ASSERT_UNREACHABLE;
+    } else {
+        return create_bool_literal(false);
+    }
 }
 
 sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {

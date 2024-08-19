@@ -1,0 +1,154 @@
+# test:subtest
+# test:output "7"
+
+const A: i32 = 1;
+
+meta if A == 1 {
+    func calc(a: i32, b: i32) -> i32 {
+        return a + b;
+    }
+}
+
+func main() {
+    print(calc(5, 2));
+}
+
+# test:subtest
+# test:output "3"
+
+const A: i32 = 2;
+
+meta if A == 1 {
+    func calc(a: i32, b: i32) -> i32 {
+        return a + b;
+    }
+} else if A == 2 {
+    func calc(a: i32, b: i32) -> i32 {
+        return a - b;
+    }
+}
+
+func main() {
+    print(calc(5, 2));
+}
+
+# test:subtest
+# test:output "10"
+
+const A: i32 = 3;
+
+meta if A == 1 {
+    func calc(a: i32, b: i32) -> i32 {
+        return a + b;
+    }
+} else if A == 2 {
+    func calc(a: i32, b: i32) -> i32 {
+        return a - b;
+    }
+} else {
+    func calc(a: i32, b: i32) -> i32 {
+        return a * b;
+    }
+}
+
+func main() {
+    print(calc(5, 2));
+}
+
+# test:subtest
+# test:output "a"
+
+const A: i32 = 1;
+
+func main() {
+    meta if A == 1 {
+        print("a");
+    } else {
+        print("b");
+    }
+}
+
+# test:subtest
+# test:output "1"
+
+const A: i32 = 1;
+
+func main() {
+    meta if A == 1 {
+        var b = 1;
+    }
+    
+    print(b);
+}
+
+# test:subtest
+# test:output "2"
+
+meta if A == 1 {
+	const C: i32 = B;
+}
+
+meta if true {
+	const A: i32 = 1;
+	const B: i32 = 2;
+}
+
+func main() {
+	println(C);
+}
+
+# test:subtest
+# test:output "2"
+
+meta if A == 1 {
+	const C: i32 = 2;
+}
+
+meta if true {
+	const A: i32 = 1;
+	const B: i32 = C;
+}
+
+func main() {
+	println(B);
+}
+
+# test:subtest
+# test:output "2"
+
+meta if B == 2 {
+	const C: i32 = B;
+}
+
+meta if A == 1 {
+	const B: i32 = 2;
+}
+
+meta if true {
+	const A: i32 = 1;
+}
+
+func main() {
+	println(C);
+}
+
+# test:subtest
+# test:output "3"
+
+struct A[T] {
+	meta if B[T].X == 2 {
+		const X: T = 3;
+	}
+	
+	const Y: T = 1;
+}
+
+struct B[T] {
+	meta if A[T].Y == 1 {
+		const X: T = 2;
+	}
+}
+
+func main() {
+	println(A[i32].X);
+}

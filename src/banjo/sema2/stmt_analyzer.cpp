@@ -3,6 +3,7 @@
 #include "banjo/sema2/expr_analyzer.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+#include "meta_expansion.hpp"
 
 namespace banjo {
 
@@ -12,33 +13,31 @@ namespace sema {
 
 StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void StmtAnalyzer::analyze(sir::Stmt &stmt) {
-    SIR_VISIT_STMT(
-        stmt,
-        SIR_VISIT_IMPOSSIBLE,
-        analyze_var_stmt(*inner),
-        analyze_assign_stmt(*inner),
-        analyze_comp_assign_stmt(*inner, stmt),
-        analyze_return_stmt(*inner),
-        analyze_if_stmt(*inner),
-        analyze_while_stmt(*inner, stmt),
-        analyze_for_stmt(*inner, stmt),
-        analyze_loop_stmt(*inner),
-        analyze_continue_stmt(*inner),
-        analyze_break_stmt(*inner),
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IGNORE,
-        ExprAnalyzer(analyzer).analyze(*inner),
-        analyze_block(*inner)
-    )
-}
-
 void StmtAnalyzer::analyze_block(sir::Block &block) {
     Scope &scope = analyzer.push_scope();
     scope.block = &block;
 
-    for (sir::Stmt &stmt : block.stmts) {
-        analyze(stmt);
+    for (unsigned i = 0; i < block.stmts.size(); i++) {
+        sir::Stmt &stmt = block.stmts[i];
+
+        SIR_VISIT_STMT(
+            stmt,
+            SIR_VISIT_IMPOSSIBLE,
+            analyze_var_stmt(*inner),
+            analyze_assign_stmt(*inner),
+            analyze_comp_assign_stmt(*inner, stmt),
+            analyze_return_stmt(*inner),
+            analyze_if_stmt(*inner),
+            analyze_while_stmt(*inner, stmt),
+            analyze_for_stmt(*inner, stmt),
+            analyze_loop_stmt(*inner),
+            analyze_continue_stmt(*inner),
+            analyze_break_stmt(*inner),
+            MetaExpansion(analyzer).evaluate_meta_if_stmt(block, i),
+            SIR_VISIT_IGNORE,
+            ExprAnalyzer(analyzer).analyze(*inner),
+            analyze_block(*inner)
+        )
     }
 
     analyzer.pop_scope();

@@ -295,8 +295,8 @@ void SSAGenerator::generate_block(const sir::Block &sir_block) {
             generate_loop_stmt(*inner),
             generate_continue_stmt(*inner),
             generate_break_stmt(*inner),
-            SIR_VISIT_IMPOSSIBLE,
-            SIR_VISIT_IMPOSSIBLE,
+            SIR_VISIT_IGNORE,
+            SIR_VISIT_IGNORE,
             ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()),
             generate_block(*inner)
         );

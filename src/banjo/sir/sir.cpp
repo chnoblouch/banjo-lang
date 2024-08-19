@@ -88,6 +88,8 @@ bool Expr::is_type() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
         const Symbol &symbol = symbol_expr->symbol;
         return symbol.is<StructDef>() || symbol.is<EnumDef>();
+    } else if (auto tuple_expr = match<TupleExpr>()) {
+        return tuple_expr->exprs.size() > 0 && tuple_expr->exprs[0].is_type();
     } else {
         return is<PrimitiveType>() || is<PointerType>() || is<FuncType>();
     }

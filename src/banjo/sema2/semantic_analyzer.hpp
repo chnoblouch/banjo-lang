@@ -34,11 +34,6 @@ enum class Result {
     AWAITING_DEPENDENCY,
 };
 
-struct PostponedAnalysis {
-    std::function<void()> callback;
-    Scope context;
-};
-
 class SemanticAnalyzer {
 
     friend class SymbolCollector;
@@ -64,7 +59,6 @@ private:
 
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
-    std::vector<PostponedAnalysis> postponed_analyses;
     std::set<const sir::Decl *> blocked_decls;
 
 public:
@@ -95,8 +89,6 @@ private:
     sir::Symbol find_std_string();
 
     void check_for_completeness(sir::DeclBlock &block);
-    void postpone_analysis(std::function<void()> function);
-    void run_postponed_analyses();
 
     template <typename T>
     T *create_expr(T value) {
