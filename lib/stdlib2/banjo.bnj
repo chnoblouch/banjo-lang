@@ -3,6 +3,11 @@ use std.memory;
 native func ___banjo_print_string(format: *u8, string: *u8);
 native func ___banjo_f64_to_string(value: f64) -> *u8;
 
+func print(value: u8) {
+    var string = (value, '\0');
+    ___banjo_print_string("%s", &string as *u8);
+}
+
 func print(value: *u8) {
 	___banjo_print_string("%s", value);
 }
@@ -31,6 +36,11 @@ func print(value: bool) {
 
 func print(value: String) {
     print(value.cstr());
+}
+
+func println(value: u8) {
+    var string = (value, '\0');
+    ___banjo_print_string("%s\n", &string as *u8);
 }
 
 func println(value: *u8) {

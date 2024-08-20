@@ -85,6 +85,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_GENERIC_STRUCT_DEFINITION: return generate_generic_struct(node);
         case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_VAR: return generate_var_decl(node);
+        case AST_NATIVE_VAR: return generate_native_var_decl(node);
         case AST_USE: return generate_use_decl(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
         default: ASSERT_UNREACHABLE;
@@ -186,6 +187,14 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
 
 sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {
     return create_decl(sir::VarDecl{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(VAR_NAME)),
+        .type = generate_expr(node->get_child(VAR_TYPE)),
+    });
+}
+
+sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node) {
+    return create_decl(sir::NativeVarDecl{
         .ast_node = node,
         .ident = generate_ident(node->get_child(VAR_NAME)),
         .type = generate_expr(node->get_child(VAR_TYPE)),

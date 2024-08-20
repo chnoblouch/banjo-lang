@@ -75,6 +75,7 @@ struct ConstDef;
 struct StructDef;
 struct StructField;
 struct VarDecl;
+struct NativeVarDecl;
 struct EnumDef;
 struct EnumVariant;
 struct Param;
@@ -255,6 +256,7 @@ private:
         StructDef *,
         StructField *,
         VarDecl *,
+        NativeVarDecl *,
         EnumDef *,
         EnumVariant *,
         UseDecl *,
@@ -308,6 +310,7 @@ class Symbol {
         StructDef *,
         StructField *,
         VarDecl *,
+        NativeVarDecl *,
         EnumDef *,
         EnumVariant *,
         UseIdent *,
@@ -840,6 +843,12 @@ struct VarDecl {
     Expr type;
 };
 
+struct NativeVarDecl {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr type;
+};
+
 struct EnumDef {
     ASTNode *ast_node;
     Ident ident;
@@ -927,7 +936,17 @@ typedef std::variant<
     Block>
     StmtStorage;
 
-typedef std::variant<FuncDef, NativeFuncDecl, ConstDef, StructDef, StructField, VarDecl, EnumDef, EnumVariant, UseDecl>
+typedef std::variant<
+    FuncDef,
+    NativeFuncDecl,
+    ConstDef,
+    StructDef,
+    StructField,
+    VarDecl,
+    NativeVarDecl,
+    EnumDef,
+    EnumVariant,
+    UseDecl>
     DeclStorage;
 
 typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;

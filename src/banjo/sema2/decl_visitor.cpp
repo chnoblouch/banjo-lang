@@ -45,6 +45,7 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
         process_struct_def(*inner),
         SIR_VISIT_IGNORE,
         analyze_var_decl(*inner, decl),
+        analyze_native_var_decl(*inner),
         process_enum_def(*inner),
         analyze_enum_variant(*inner),
         SIR_VISIT_IGNORE,

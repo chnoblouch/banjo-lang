@@ -28,6 +28,7 @@ public:
     virtual Result analyze_const_def(sir::ConstDef & /*const_def*/) { return Result::SUCCESS; }
     virtual Result analyze_struct_def(sir::StructDef & /*struct_def*/) { return Result::SUCCESS; }
     virtual Result analyze_var_decl(sir::VarDecl & /*var_decl*/, sir::Decl & /*out_decl*/) { return Result::SUCCESS; }
+    virtual Result analyze_native_var_decl(sir::NativeVarDecl & /*native_var_decl*/) { return Result::SUCCESS; }
     virtual Result analyze_enum_def(sir::EnumDef & /*enum_def*/) { return Result::SUCCESS; }
     virtual Result analyze_enum_variant(sir::EnumVariant & /*enum_variant*/) { return Result::SUCCESS; }
     virtual Result analyze_use_decl(sir::UseDecl & /*use_decl*/) { return Result::SUCCESS; }

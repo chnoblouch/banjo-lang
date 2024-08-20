@@ -22,6 +22,7 @@ public:
     Type get_type() const { return type; }
     bool is_external() const { return external; }
 
+    void set_type(Type type) { this->type = type; }
     void set_external(bool external) { this->external = external; }
 };
 

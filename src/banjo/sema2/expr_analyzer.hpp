@@ -39,8 +39,8 @@ private:
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
     void analyze_cast_expr(sir::CastExpr &cast_expr);
-    void analyze_call_expr(sir::CallExpr &call_expr);
-    void analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
+    Result analyze_call_expr(sir::CallExpr &call_expr);
+    Result analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
     void analyze_range_expr(sir::RangeExpr &range_expr);
     void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     void analyze_static_array_type(sir::StaticArrayType &static_array_type);

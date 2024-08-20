@@ -80,6 +80,9 @@ public:
     ReportText &format(Structure *struct_);
     ReportText &format(const ModulePath &path);
     ReportText &format(sir::Expr &expr);
+
+private:
+    std::string to_string(sir::Expr &expr);
 };
 
 } // namespace lang

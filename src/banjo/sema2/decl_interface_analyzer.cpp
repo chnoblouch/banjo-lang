@@ -64,6 +64,10 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
     return Result::SUCCESS;
 }
 
+Result DeclInterfaceAnalyzer::analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) {
+    return ExprAnalyzer(analyzer).analyze(native_var_decl.type);
+}
+
 Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant) {
     if (enum_variant.value) {
         ExprAnalyzer(analyzer).analyze(enum_variant.value);

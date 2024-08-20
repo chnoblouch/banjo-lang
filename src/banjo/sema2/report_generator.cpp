@@ -59,6 +59,10 @@ void ReportGenerator::report_err_symbol_not_found(const sir::IdentExpr &ident_ex
     report_error("cannot find '$'", ident_expr.ast_node, ident_expr.value);
 }
 
+void ReportGenerator::report_err_symbol_not_found(const sir::Ident &ident) {
+    report_error("cannot find '$'", ident.ast_node, ident.value);
+}
+
 void ReportGenerator::report_err_symbol_not_found_in(const sir::Ident &member_ident, const std::string &base_name) {
     report_error("cannot find '$' in '$'", member_ident.ast_node, member_ident.value, base_name);
 }
@@ -154,6 +158,10 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::BracketE
         "[]",
         MagicMethods::OP_INDEX
     );
+}
+
+void ReportGenerator::report_cannot_call(const sir::Expr &expr) {
+    report_error("cannot call value with type '$'", expr.get_ast_node(), expr.get_type());
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(

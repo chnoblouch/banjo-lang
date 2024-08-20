@@ -193,6 +193,12 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         return StoredValue::create_value(ssa_value);
     } else if (auto const_def = symbol_expr.symbol.match<sir::ConstDef>()) {
         return generate(const_def->value);
+    } else if (auto native_var_decl = symbol_expr.symbol.match<sir::NativeVarDecl>()) {
+        unsigned index = ctx.ssa_extern_globals[native_var_decl];
+        ssa::GlobalDecl &ssa_extern_global = ctx.ssa_mod->get_external_globals()[index];
+        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(native_var_decl->type);
+        ssa::Value ssa_ptr = ssa::Value::from_extern_global(ssa_extern_global.get_name(), ssa::Primitive::ADDR);
+        return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto enum_variant = symbol_expr.symbol.match<sir::EnumVariant>()) {
         return generate(enum_variant->value).turn_into_value(ctx);
     } else if (auto var_stmt = symbol_expr.symbol.match<sir::VarStmt>()) {
@@ -267,7 +273,10 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
 
         reg = ctx.next_vreg();
         ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
-    } else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
+    } else if (auto pointer_type = binary_expr.lhs.get_type().match<sir::PointerType>()) {
+        ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(pointer_type->base_type);
+        reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa_base_type);
+    }  else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
         reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa::Primitive::I8);
     } else {
         ASSERT_UNREACHABLE;

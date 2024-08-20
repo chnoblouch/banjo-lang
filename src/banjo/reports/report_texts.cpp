@@ -1,6 +1,7 @@
 #include "report_texts.hpp"
 
 #include "banjo/reports/report_utils.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <map>
@@ -100,26 +101,55 @@ ReportText &ReportText::format(const ModulePath &path) {
 }
 
 ReportText &ReportText::format(sir::Expr &expr) {
+    return format(to_string(expr));
+}
+
+std::string ReportText::to_string(sir::Expr &expr) {
     if (auto primitive_type = expr.match<sir::PrimitiveType>()) {
         switch (primitive_type->primitive) {
-            case sir::Primitive::I8: return format("i8");
-            case sir::Primitive::I16: return format("i16");
-            case sir::Primitive::I32: return format("i32");
-            case sir::Primitive::I64: return format("i64");
-            case sir::Primitive::U8: return format("u8");
-            case sir::Primitive::U16: return format("u16");
-            case sir::Primitive::U32: return format("u32");
-            case sir::Primitive::U64: return format("u64");
-            case sir::Primitive::F32: return format("f32");
-            case sir::Primitive::F64: return format("f64");
-            case sir::Primitive::BOOL: return format("bool");
-            case sir::Primitive::ADDR: return format("addr");
-            case sir::Primitive::VOID: return format("void");
+            case sir::Primitive::I8: return "i8";
+            case sir::Primitive::I16: return "i16";
+            case sir::Primitive::I32: return "i32";
+            case sir::Primitive::I64: return "i64";
+            case sir::Primitive::U8: return "u8";
+            case sir::Primitive::U16: return "u16";
+            case sir::Primitive::U32: return "u32";
+            case sir::Primitive::U64: return "u64";
+            case sir::Primitive::F32: return "f32";
+            case sir::Primitive::F64: return "f64";
+            case sir::Primitive::BOOL: return "bool";
+            case sir::Primitive::ADDR: return "addr";
+            case sir::Primitive::VOID: return "void";
         }
+    } else if (auto pointer_type = expr.match<sir::PointerType>()) {
+        return "*" + to_string(pointer_type->base_type);
+    } else if (auto func_type = expr.match<sir::FuncType>()) {
+        std::string params_str = "";
+
+        for (unsigned i = 0; i < func_type->params.size(); i++) {
+            params_str += to_string(func_type->params[i].type);
+            if (i != func_type->params.size() - 1) {
+                params_str += ", ";
+            }
+        }
+
+        return "func(" + params_str + ") -> " + to_string(func_type->return_type);
     } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
-        return format(symbol->symbol.get_name());
+        return symbol->symbol.get_name();
+    } else if (auto tuple_expr = expr.match<sir::TupleExpr>()) {
+        std::string str = "(";
+
+        for (unsigned i = 0; i < tuple_expr->exprs.size(); i++) {
+            str += to_string(tuple_expr->exprs[i]);
+            if (i != tuple_expr->exprs.size() - 1) {
+                str += ", ";
+            }
+        }
+
+        str += ")";
+        return str;
     } else {
-        return format("<unknown>");
+        return "<unknown>";
     }
 }
 

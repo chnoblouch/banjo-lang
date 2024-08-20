@@ -28,6 +28,7 @@ private:
     void collect_const_def(sir::ConstDef &const_def);
     void collect_struct_def(sir::StructDef &struct_def);
     void collect_var_decl(sir::VarDecl &var_decl);
+    void collect_native_var_decl(sir::NativeVarDecl &native_var_decl);
     void collect_enum_def(sir::EnumDef &enum_def);
     void collect_enum_variant(sir::EnumVariant &enum_variant);
     void collect_use_decl(sir::UseDecl &use_decl);

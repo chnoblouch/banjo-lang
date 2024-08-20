@@ -181,6 +181,7 @@
     struct_def_visitor,                                                                                                \
     struct_field_visitor,                                                                                              \
     var_decl_visitor,                                                                                                  \
+    native_var_decl_visitor,                                                                                           \
     enum_def_visitor,                                                                                                  \
     enum_variant_visitor,                                                                                              \
     use_decl_visitor,                                                                                                  \
@@ -201,6 +202,8 @@
         struct_field_visitor;                                                                                          \
     } else if (auto inner = (decl).match<banjo::lang::sir::VarDecl>()) {                                               \
         var_decl_visitor;                                                                                              \
+    } else if (auto inner = (decl).match<banjo::lang::sir::NativeVarDecl>()) {                                         \
+        native_var_decl_visitor;                                                                                       \
     } else if (auto inner = (decl).match<banjo::lang::sir::EnumDef>()) {                                               \
         enum_def_visitor;                                                                                              \
     } else if (auto inner = (decl).match<banjo::lang::sir::EnumVariant>()) {                                           \
@@ -225,6 +228,7 @@
     struct_def_visitor,                                                                                                \
     struct_field_visitor,                                                                                              \
     var_decl_visitor,                                                                                                  \
+    native_var_decl_visitor,                                                                                           \
     enum_def_visitor,                                                                                                  \
     enum_variant_visitor,                                                                                              \
     use_ident_visitor,                                                                                                 \
@@ -249,6 +253,8 @@
         struct_field_visitor;                                                                                          \
     } else if (auto inner = (symbol).match<banjo::lang::sir::VarDecl>()) {                                             \
         var_decl_visitor;                                                                                              \
+    } else if (auto inner = (symbol).match<banjo::lang::sir::NativeVarDecl>()) {                                       \
+        native_var_decl_visitor;                                                                                       \
     } else if (auto inner = (symbol).match<banjo::lang::sir::EnumDef>()) {                                             \
         enum_def_visitor;                                                                                              \
     } else if (auto inner = (symbol).match<banjo::lang::sir::EnumVariant>()) {                                         \

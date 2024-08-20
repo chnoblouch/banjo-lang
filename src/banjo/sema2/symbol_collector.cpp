@@ -44,6 +44,7 @@ void SymbolCollector::collect_decl(sir::Decl &decl) {
         collect_struct_def(*inner),
         SIR_VISIT_IMPOSSIBLE,
         collect_var_decl(*inner),
+        collect_native_var_decl(*inner),
         collect_enum_def(*inner),
         collect_enum_variant(*inner),
         collect_use_decl(*inner),
@@ -88,6 +89,10 @@ void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
     if (!analyzer.get_scope().struct_def) {
         get_symbol_table().symbols.insert({var_decl.ident.value, &var_decl});
     }
+}
+
+void SymbolCollector::collect_native_var_decl(sir::NativeVarDecl &native_var_decl) {
+    get_symbol_table().symbols.insert({native_var_decl.ident.value, &native_var_decl});
 }
 
 void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {

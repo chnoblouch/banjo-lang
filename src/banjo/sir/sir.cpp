@@ -231,6 +231,7 @@ bool Symbol::operator==(const Symbol &other) const {
         return inner == &other.as<StructDef>(),
         return inner == &other.as<StructField>(),
         return inner == &other.as<VarDecl>(),
+        return inner == &other.as<NativeVarDecl>(),
         return inner == &other.as<EnumDef>(),
         return inner == &other.as<EnumVariant>(),
         return inner == &other.as<UseIdent>(),
@@ -246,6 +247,7 @@ const Ident &Symbol::get_ident() const {
         *this,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ident,
         return inner->ident,
         return inner->ident,
         return inner->ident,
@@ -275,15 +277,25 @@ std::string Symbol::get_name() const {
 }
 
 Expr Symbol::get_type() {
-    if (auto func_def = match<FuncDef>()) return &func_def->type;
-    else if (auto native_func_decl = match<NativeFuncDecl>()) return &native_func_decl->type;
-    else if (auto const_def = match<ConstDef>()) return const_def->type;
-    else if (auto struct_field = match<StructField>()) return struct_field->type;
-    else if (auto var_decl = match<VarDecl>()) return var_decl->type;
-    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->type;
-    else if (auto var_stmt = match<VarStmt>()) return var_stmt->type;
-    else if (auto param = match<Param>()) return param->type;
-    else return nullptr;
+    SIR_VISIT_SYMBOL(
+        *this,
+        return nullptr,
+        return nullptr,
+        return &inner->type,
+        return &inner->type,
+        return inner->type,
+        return nullptr,
+        return inner->type,
+        return inner->type,
+        return inner->type,
+        return nullptr,
+        return inner->type,
+        return nullptr,
+        return nullptr,
+        return inner->type,
+        return inner->type,
+        return nullptr
+    );
 }
 
 Symbol Symbol::resolve() {

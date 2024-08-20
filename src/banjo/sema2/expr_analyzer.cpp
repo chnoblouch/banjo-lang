@@ -46,7 +46,7 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
         result = analyze_unary_expr(*inner, expr),
         analyze_cast_expr(*inner),
         SIR_VISIT_IGNORE,
-        analyze_call_expr(*inner),
+        result = analyze_call_expr(*inner),
         SIR_VISIT_IGNORE,
         analyze_range_expr(*inner),
         analyze_tuple_expr(*inner),
@@ -288,11 +288,17 @@ void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
     ExprAnalyzer(analyzer).analyze(cast_expr.value);
 }
 
-void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
+Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
+    Result result;
+
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
-        analyze_dot_expr_callee(*dot_expr, call_expr);
+        result = analyze_dot_expr_callee(*dot_expr, call_expr);
     } else {
-        ExprAnalyzer(analyzer).analyze(call_expr.callee);
+        result = ExprAnalyzer(analyzer).analyze(call_expr.callee);
+    }
+
+    if (result != Result::SUCCESS) {
+        return result;
     }
 
     for (unsigned i = 0; i < call_expr.args.size(); i++) {
@@ -319,11 +325,25 @@ void ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
         });
     }
 
-    call_expr.type = call_expr.callee.get_type().as<sir::FuncType>().return_type;
+    sir::Expr callee_type = call_expr.callee.get_type();
+
+    if (auto func_type = callee_type.match<sir::FuncType>()) {
+        call_expr.type = callee_type.as<sir::FuncType>().return_type;
+    } else {
+        analyzer.report_generator.report_cannot_call(call_expr.callee);
+        return Result::ERROR;
+    }
+
+    return Result::SUCCESS;
 }
 
-void ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr) {
-    ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
+Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr) {
+    Result result;
+
+    result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
+    if (result != Result::SUCCESS) {
+        return result;
+    }
 
     if (auto struct_def = dot_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
         sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
@@ -357,11 +377,15 @@ void ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr
 
             out_call_expr.args.insert(out_call_expr.args.begin(), dot_expr.lhs);
         } else {
-            analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
+            result = analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
+            return result;
         }
     } else {
-        analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
+        result = analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
+        return result;
     }
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_type) {
@@ -585,7 +609,10 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
         }
 
-        assert(symbol);
+        if (!symbol) {
+            analyzer.report_generator.report_err_symbol_not_found(dot_expr.rhs);
+            return Result::ERROR;
+        }
 
         out_expr = analyzer.create_expr(sir::SymbolExpr{
             .ast_node = dot_expr.ast_node,
@@ -637,7 +664,8 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             ASSERT_UNREACHABLE;
         }
     } else {
-        ASSERT_UNREACHABLE;
+        std::cout << "maybe broken?" << std::endl;
+        return Result::ERROR;
     }
 
     return Result::SUCCESS;

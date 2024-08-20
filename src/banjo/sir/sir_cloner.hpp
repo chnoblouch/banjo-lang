@@ -28,6 +28,7 @@ public:
     StructDef *clone_struct_def(const StructDef &struct_def);
     StructField *clone_struct_field(const StructField &struct_field);
     VarDecl *clone_var_decl(const VarDecl &var_decl);
+    NativeVarDecl *clone_native_var_decl(const NativeVarDecl &native_var_decl);
     EnumDef *clone_enum_def(const EnumDef &enum_def);
     EnumVariant *clone_enum_variant(const EnumVariant &enum_variant);
     MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);

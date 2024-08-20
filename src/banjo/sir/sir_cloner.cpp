@@ -45,6 +45,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_struct_def(*inner),
         return clone_struct_field(*inner),
         return clone_var_decl(*inner),
+        return clone_native_var_decl(*inner),
         return clone_enum_def(*inner),
         return clone_enum_variant(*inner),
         SIR_VISIT_IMPOSSIBLE,
@@ -108,6 +109,14 @@ VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
         .ast_node = var_decl.ast_node,
         .ident = var_decl.ident,
         .type = clone_expr(var_decl.type),
+    });
+}
+
+NativeVarDecl *Cloner::clone_native_var_decl(const NativeVarDecl &native_var_decl) {
+    return mod.create_decl(NativeVarDecl{
+        .ast_node = native_var_decl.ast_node,
+        .ident = native_var_decl.ident,
+        .type = clone_expr(native_var_decl.type),
     });
 }
 

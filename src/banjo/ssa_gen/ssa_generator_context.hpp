@@ -11,6 +11,7 @@
 
 #include <deque>
 #include <stack>
+#include <unordered_map>
 
 namespace banjo {
 
@@ -56,6 +57,7 @@ public:
     std::unordered_map<const lang::sir::VarStmt *, ir::VirtualRegister> ssa_var_regs;
     std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
+    std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
     std::vector<ir::Structure *> tuple_structs;
 
     int string_name_id = 0;

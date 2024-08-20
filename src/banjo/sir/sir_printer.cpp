@@ -103,6 +103,7 @@ void Printer::print_decl(const Decl &decl) {
         print_struct_def(*inner),
         print_struct_field(*inner),
         print_var_decl(*inner),
+        print_native_var_decl(*inner),
         print_enum_def(*inner),
         print_enum_variant(*inner),
         print_use_decl(*inner),
@@ -195,6 +196,13 @@ void Printer::print_var_decl(const VarDecl &var_decl) {
     BEGIN_OBJECT("VarDecl");
     PRINT_FIELD("ident", var_decl.ident.value);
     PRINT_EXPR_FIELD("type", var_decl.type);
+    END_OBJECT();
+}
+
+void Printer::print_native_var_decl(const NativeVarDecl &native_var_decl) {
+    BEGIN_OBJECT("NativeVarDecl");
+    PRINT_FIELD("ident", native_var_decl.ident.value);
+    PRINT_EXPR_FIELD("type", native_var_decl.type);
     END_OBJECT();
 }
 

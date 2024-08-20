@@ -20,6 +20,7 @@ public:
     Result analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) override;
     Result analyze_const_def(sir::ConstDef &const_def) override;
     Result analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) override;
+    Result analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) override;
     Result analyze_enum_variant(sir::EnumVariant &enum_variant) override;
 };
 

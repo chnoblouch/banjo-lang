@@ -1,0 +1,25 @@
+# test:subtest
+# test:error 6:5 "cannot call value with type 'i32'"
+
+func main() {
+    var a: i32 = 50;
+    a();
+}
+
+# test:subtest
+# test:error 14:5 "cannot call value with type 'i32'"
+
+func main() {
+    var a: i32 = 50;
+    a(5, true);
+}
+
+# test:subtest
+# test:error 24:5 "cannot call value with type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = {};
+    a();
+}
