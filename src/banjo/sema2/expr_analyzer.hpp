@@ -55,6 +55,7 @@ private:
     sir::FuncDef *resolve_overload(sir::OverloadSet &overload_set, const std::vector<sir::Expr> &args);
     bool is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args);
     Result analyze_operator_overload_call(sir::Symbol symbol, sir::Expr self, sir::Expr arg, sir::Expr &out_expr);
+    Result specialize(sir::FuncDef &func_def, const std::vector<sir::Expr> &generic_args, sir::Expr &out_expr);
 };
 
 } // namespace sema

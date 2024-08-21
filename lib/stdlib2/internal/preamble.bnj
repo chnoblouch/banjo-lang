@@ -1,0 +1,17 @@
+use std.{convert, system.{panic, exit}};
+use internal.runtime;
+
+func print[T](value: T) {
+    runtime.print_string("%s", convert.to_string(value).cstr());
+}
+
+func println[T](value: T) {
+    runtime.print_string("%s\n", convert.to_string(value).cstr());
+}
+
+func assert(condition: bool, message: String) {
+    if !condition {
+        panic("assertion failed: " + message);
+        exit(1);
+    }
+}

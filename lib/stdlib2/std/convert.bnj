@@ -1,0 +1,102 @@
+use std.memory;
+use internal.runtime;
+
+pub func to_string[T](value: T) -> String {
+    meta if T == String {
+        return value;
+    } else if T == *u8 {
+        return String.from(value);
+    } else if T == i8 || T == i16 || T == i32 || T == i64 {
+        return i64_to_string(value as i64);
+    } else if T == u16 || T == u32 || T == u64 || T == usize {
+        return u64_to_string(value as u64);
+    } else if T == f32 || T == f64 {
+        return f64_to_string(value as f64);
+    } else if T == u8 {
+        return char_to_string(value);
+    } else if T == bool {
+        return bool_to_string(value);
+    } else {
+        return "<?>";
+    }
+}
+
+func i64_to_string(value: i64) -> String {
+    var capacity: u32 = 32;
+    var data = memory.alloc(capacity as u64) as *u8;
+    var length: u32 = 0;
+    
+    var remainder: u64;
+    var negative: bool;
+    
+    if value >= 0 {
+        remainder = value as u64;
+        negative = false;
+    } else {
+        remainder = -value as u64;
+        negative = true;
+    }
+    
+    while true {
+        data[length] = (remainder % 10) as u8 + '0';
+        length += 1;
+        remainder /= 10;
+        
+        if remainder == 0 { break; }
+    }
+    
+    if negative {
+        data[length] = '-';
+        length += 1;
+    }
+    
+    data[length] = 0;
+    
+    var string = String { data, capacity, length };
+    string.reverse_in_place();
+    return string;
+}
+
+func u64_to_string(value: u64) -> String {
+    var capacity: u32 = 32;
+    var data = memory.alloc(capacity as u64) as *u8;
+    var length: u32 = 0;
+    
+    var remainder = value;
+    
+    while true {
+        data[length] = (remainder % 10) as u8 + '0';
+        length += 1;
+        remainder /= 10;
+        
+        if remainder == 0 { break; }
+    }
+    
+    data[length] = 0;
+    
+    var string = String { data, capacity, length };
+    string.reverse_in_place();
+    return string;
+}
+
+func f64_to_string(value: f64) -> String {
+    var cstr = runtime.f64_to_string(value as f64);
+    var string = String.from(cstr);
+    memory.free(cstr as addr);
+    return string;
+}
+
+func char_to_string(value: u8) -> String {
+    var string = String.new();
+    string.append(value);
+    return string;
+}
+
+func bool_to_string(value: bool) -> String {
+    if value {
+        return "true";
+    } else {
+        return "false";
+    }
+}
+

@@ -6,8 +6,10 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+#include "generic_arg_deduction.hpp"
 
 #include <cassert>
+#include <vector>
 
 namespace banjo {
 
@@ -307,15 +309,29 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
         ExprConstraints constraints;
 
         if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
-            constraints.expected_type = func_def->type.params[i].type;
+            if (!func_def->is_generic()) {
+                constraints = ExprConstraints::expect_type(func_def->type.params[i].type);
+            }
         } else if (auto native_func_decl = call_expr.callee.match_symbol<sir::NativeFuncDecl>()) {
-            constraints.expected_type = native_func_decl->type.params[i].type;
+            constraints = ExprConstraints::expect_type(native_func_decl->type.params[i].type);
         }
 
         ExprAnalyzer(analyzer, constraints).analyze(arg);
     }
 
-    if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
+    if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
+        if (func_def->is_generic()) {
+            auto generic_args = GenericArgDeduction(analyzer).deduce(func_def->generic_params, call_expr.args);
+            if (!generic_args) {
+                return result;
+            }
+
+            result = specialize(*func_def, *generic_args, call_expr.callee);
+            if (result != Result::SUCCESS) {
+                return result;
+            }
+        }
+    } else if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
         sir::FuncDef *func_def = resolve_overload(*overload_set, call_expr.args);
 
         call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
@@ -515,15 +531,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
 
     if (auto func_def = bracket_expr.lhs.match_symbol<sir::FuncDef>()) {
         if (func_def->is_generic()) {
-            sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(*func_def, bracket_expr.rhs);
-
-            out_expr = analyzer.create_expr(sir::SymbolExpr{
-                .ast_node = bracket_expr.ast_node,
-                .type = &specialization->type,
-                .symbol = specialization,
-            });
-
-            return Result::SUCCESS;
+            return specialize(*func_def, bracket_expr.rhs, out_expr);
         }
     } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
         if (struct_def->is_generic()) {
@@ -664,8 +672,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             ASSERT_UNREACHABLE;
         }
     } else {
-        std::cout << "maybe broken?" << std::endl;
-        return Result::ERROR;
+        ASSERT_UNREACHABLE;
     }
 
     return Result::SUCCESS;
@@ -739,6 +746,22 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         .type = impl->type.return_type,
         .callee = callee,
         .args = args,
+    });
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::specialize(
+    sir::FuncDef &func_def,
+    const std::vector<sir::Expr> &generic_args,
+    sir::Expr &out_expr
+) {
+    sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(func_def, generic_args);
+
+    out_expr = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = out_expr.get_ast_node(),
+        .type = &specialization->type,
+        .symbol = specialization,
     });
 
     return Result::SUCCESS;

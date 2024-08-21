@@ -36,6 +36,7 @@ enum class Result {
 
 class SemanticAnalyzer {
 
+    // This is getting slightly out of hand...
     friend class SymbolCollector;
     friend class UseResolver;
     friend class DeclInterfaceAnalyzer;
@@ -45,6 +46,7 @@ class SemanticAnalyzer {
     friend class StmtAnalyzer;
     friend class ConstEvaluator;
     friend class GenericsSpecializer;
+    friend class GenericArgDeduction;
     friend class MetaExpansion;
     friend class DeclVisitor;
     friend class Preamble;
@@ -84,7 +86,7 @@ private:
 
     bool is_in_stmt_block() { return get_scope().block; }
     sir::SymbolTable &get_symbol_table();
-    
+
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
     sir::Symbol find_std_string();
 

@@ -7,7 +7,7 @@ struct String {
     var capacity: u32;
     
     pub func new() -> String {
-        var data = memory.alloc(1 as usize) as *u8;
+        var data = memory.alloc(1) as *u8;
         data[0] = 0;
             
         return String {
@@ -19,64 +19,6 @@ struct String {
     
     pub func from(cstr: *u8) -> String {
         return from_cstr(cstr);
-    }
-    
-    pub func from(integer: u64) -> String {
-        var capacity: u32 = 32;
-        var data = memory.alloc(capacity as u64) as *u8;
-        var length: u32 = 0;
-                
-        var remainder = integer;
-        
-        while true {
-            data[length] = (remainder % 10) as u8 + '0';
-            length += 1;
-            remainder /= 10;
-            
-            if remainder == 0 { break; }
-        }
-        
-        data[length] = 0;
-                
-        var string = String { data, capacity, length };
-        string.reverse_in_place();
-        return string;
-    }
-    
-    pub func from(integer: i64) -> String {
-        var capacity: u32 = 32;
-        var data = memory.alloc(capacity as u64) as *u8;
-        var length: u32 = 0;
-        
-        var remainder: u64;
-        var negative: bool;
-        
-        if integer >= 0 {
-            remainder = integer as u64;
-            negative = false;
-        } else {
-            remainder = -integer as u64;
-            negative = true;
-        }
-        
-        while true {
-            data[length] = (remainder % 10) as u8 + '0';
-            length += 1;
-            remainder /= 10;
-            
-            if remainder == 0 { break; }
-        }
-        
-        if negative {
-            data[length] = '-';
-            length += 1;
-        }
-        
-        data[length] = 0;
-        
-        var string = String { data, capacity, length };
-        string.reverse_in_place();
-        return string;
     }
 
     pub func from_cstr(cstr: *u8) -> String {

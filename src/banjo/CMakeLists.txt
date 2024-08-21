@@ -123,6 +123,7 @@ add_library(banjo STATIC
     sema2/decl_value_analyzer.cpp
     sema2/decl_visitor.cpp
     sema2/expr_analyzer.cpp
+    sema2/generic_arg_deduction.cpp
     sema2/generics_specializer.cpp
     sema2/magic_methods.cpp
     sema2/meta_expansion.cpp

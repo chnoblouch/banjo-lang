@@ -31,6 +31,10 @@ ssa::Module SSAGenerator::generate() {
     }
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
+        generate_type_members(sir_mod->block);
+    }
+
+    for (const sir::Module *sir_mod : sir_unit.mods) {
         ctx.push_decl_context().sir_mod = sir_mod;
         create_decls(sir_mod->block);
         ctx.pop_decl_context();
@@ -63,6 +67,31 @@ void SSAGenerator::create_struct_type(const sir::StructDef &sir_struct_def) {
     ctx.ssa_structs.insert({&sir_struct_def, ssa_struct});
 
     create_types(sir_struct_def.block);
+}
+
+void SSAGenerator::generate_type_members(const sir::DeclBlock &decl_block) {
+    for (const sir::Decl &decl : decl_block.decls) {
+        if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_fields(*struct_def);
+    }
+}
+
+void SSAGenerator::generate_struct_fields(const sir::StructDef &sir_struct_def) {
+    if (sir_struct_def.is_generic()) {
+        for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
+            generate_struct_fields(*sir_specialization.def);
+        }
+
+        return;
+    }
+
+    ssa::Structure *ssa_struct = ctx.ssa_structs[&sir_struct_def];
+
+    for (sir::StructField *sir_field : sir_struct_def.fields) {
+        ssa_struct->add({
+            .name = sir_field->ident.value,
+            .type = TypeSSAGenerator(ctx).generate(sir_field->type),
+        });
+    }
 }
 
 void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
@@ -161,15 +190,6 @@ void SSAGenerator::create_struct_def(
         }
 
         return;
-    }
-
-    ssa::Structure *ssa_struct = ctx.ssa_structs[&sir_struct_def];
-
-    for (sir::StructField *sir_field : sir_struct_def.fields) {
-        ssa_struct->add({
-            .name = sir_field->ident.value,
-            .type = TypeSSAGenerator(ctx).generate(sir_field->type),
-        });
     }
 
     SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();

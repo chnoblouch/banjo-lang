@@ -25,6 +25,9 @@ private:
     void create_types(const sir::DeclBlock &decl_block);
     void create_struct_type(const sir::StructDef &sir_struct_def);
 
+    void generate_type_members(const sir::DeclBlock &decl_block);
+    void generate_struct_fields(const sir::StructDef &sir_struct_def);
+
     void create_decls(const sir::DeclBlock &decl_block);
     void create_func_def(const sir::FuncDef &sir_func);
     void create_native_func_decl(const sir::NativeFuncDecl &sir_func);

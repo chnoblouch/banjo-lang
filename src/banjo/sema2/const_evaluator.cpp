@@ -56,7 +56,25 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
 }
 
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
-    return evaluate(symbol_expr.symbol.as<sir::ConstDef>().value);
+    SIR_VISIT_SYMBOL(
+        symbol_expr.symbol,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        return evaluate(inner->value),
+        return &symbol_expr,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        return &symbol_expr,
+        return evaluate(inner->value),
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE
+    );
 }
 
 sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
@@ -69,6 +87,13 @@ sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
 
         if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs_int == rhs_int);
         else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs_int != rhs_int);
+        else ASSERT_UNREACHABLE;
+    } else if (lhs.is<sir::BoolLiteral>() && rhs.is<sir::BoolLiteral>()) {
+        bool lhs_bool = lhs.as<sir::BoolLiteral>().value;
+        bool rhs_bool = rhs.as<sir::BoolLiteral>().value;
+
+        if (binary_expr.op == sir::BinaryOp::AND) return create_bool_literal(lhs_bool && rhs_bool);
+        else if (binary_expr.op == sir::BinaryOp::OR) return create_bool_literal(lhs_bool || rhs_bool);
         else ASSERT_UNREACHABLE;
     } else if (lhs.is_type() && rhs.is_type()) {
         if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs == rhs);
