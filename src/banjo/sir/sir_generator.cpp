@@ -465,6 +465,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
         case AST_FUNCTION_DATA_TYPE: return generate_func_type(node);
+        case AST_META_EXPR: return generate_meta_access(node);
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -599,27 +600,29 @@ sir::Expr SIRGenerator::generate_cast_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_call_expr(ASTNode *node) {
-    return create_expr(sir::CallExpr{
-        .ast_node = node,
-        .type = nullptr,
-        .callee = generate_expr(node->get_child(0)),
-        .args = generate_arg_list(node->get_child(1)),
-    });
-}
+    sir::Expr callee = generate_expr(node->get_child(0));
+    std::vector<sir::Expr> args = generate_expr_list(node->get_child(1));
 
-std::vector<sir::Expr> SIRGenerator::generate_arg_list(ASTNode *node) {
-    std::vector<sir::Expr> args;
-    args.resize(node->get_children().size());
-
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        args[i] = generate_expr(node->get_child(i));
+    if (callee.is<sir::MetaFieldExpr>()) {
+        return create_expr(sir::MetaCallExpr{
+            .ast_node = node,
+            .callee = callee,
+            .args = args,
+        });
+    } else {
+        return create_expr(sir::CallExpr{
+            .ast_node = node,
+            .callee = callee,
+            .args = args,
+        });
     }
-
-    return args;
 }
 
 sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
+    ASTNode *lhs_node = node->get_child(0);
     ASTNode *rhs_node = node->get_child(1);
+
+    sir::Expr lhs = generate_expr(lhs_node);
     sir::Ident rhs;
 
     if (rhs_node->get_type() == AST_IDENTIFIER) {
@@ -631,18 +634,26 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
         };
     }
 
-    return create_expr(sir::DotExpr{
-        .ast_node = node,
-        .lhs = generate_expr(node->get_child(0)),
-        .rhs = rhs,
-    });
+    if (lhs.is<sir::MetaAccess>()) {
+        return create_expr(sir::MetaFieldExpr{
+            .ast_node = node,
+            .base = lhs,
+            .field = rhs,
+        });
+    } else {
+        return create_expr(sir::DotExpr{
+            .ast_node = node,
+            .lhs = lhs,
+            .rhs = rhs,
+        });
+    }
 }
 
 sir::Expr SIRGenerator::generate_bracket_expr(ASTNode *node) {
     return create_expr(sir::BracketExpr{
         .ast_node = node,
         .lhs = generate_expr(node->get_child(0)),
-        .rhs = generate_arg_list(node->get_child(1)),
+        .rhs = generate_expr_list(node->get_child(1)),
     });
 }
 
@@ -655,17 +666,10 @@ sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_tuple_expr(ASTNode *node) {
-    std::vector<sir::Expr> exprs;
-    exprs.resize(node->get_children().size());
-
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        exprs[i] = generate_expr(node->get_child(i));
-    }
-
     return create_expr(sir::TupleExpr{
         .ast_node = node,
         .type = nullptr,
-        .exprs = exprs,
+        .exprs = generate_expr_list(node),
     });
 }
 
@@ -693,6 +697,13 @@ sir::Expr SIRGenerator::generate_static_array_type(ASTNode *node) {
 
 sir::Expr SIRGenerator::generate_func_type(ASTNode *node) {
     return create_expr(generate_func_type(node->get_child(FUNC_TYPE_PARAMS), node->get_child(FUNC_TYPE_RETURN_TYPE)));
+}
+
+sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {
+    return create_expr(sir::MetaAccess{
+        .ast_node = node,
+        .expr = generate_expr(node->get_child()),
+    });
 }
 
 sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *return_node) {
@@ -745,6 +756,17 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
     }
 
     return sir_generic_params;
+}
+
+std::vector<sir::Expr> SIRGenerator::generate_expr_list(ASTNode *node) {
+    std::vector<sir::Expr> exprs;
+    exprs.resize(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        exprs[i] = generate_expr(node->get_child(i));
+    }
+
+    return exprs;
 }
 
 std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries(ASTNode *node) {

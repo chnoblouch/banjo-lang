@@ -74,6 +74,9 @@ public:
     StarExpr *clone_star_expr(const StarExpr &star_expr);
     BracketExpr *clone_bracket_expr(const BracketExpr &bracket_expr);
     DotExpr *clone_dot_expr(const DotExpr &dot_expr);
+    MetaAccess *clone_meta_access(const MetaAccess &meta_access);
+    MetaFieldExpr *clone_meta_field_expr(const MetaFieldExpr &meta_field_expr);
+    MetaCallExpr *clone_meta_call_expr(const MetaCallExpr &meta_call_expr);
 
 private:
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);

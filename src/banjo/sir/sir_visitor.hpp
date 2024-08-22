@@ -34,7 +34,10 @@
     ident_expr_visitor,                                                                                                \
     star_expr_visitor,                                                                                                 \
     bracket_expr_visitor,                                                                                              \
-    dot_expr_visitor                                                                                                   \
+    dot_expr_visitor,                                                                                                  \
+    meta_access_visitor,                                                                                               \
+    meta_field_expr_visitor,                                                                                           \
+    meta_call_expr_visitor                                                                                             \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -88,6 +91,12 @@
         bracket_expr_visitor;                                                                                          \
     } else if (auto inner = (expr).match<banjo::lang::sir::DotExpr>()) {                                               \
         dot_expr_visitor;                                                                                              \
+    } else if (auto inner = (expr).match<banjo::lang::sir::MetaAccess>()) {                                            \
+        meta_access_visitor;                                                                                           \
+    } else if (auto inner = (expr).match<banjo::lang::sir::MetaFieldExpr>()) {                                         \
+        meta_field_expr_visitor;                                                                                       \
+    } else if (auto inner = (expr).match<banjo::lang::sir::MetaCallExpr>()) {                                          \
+        meta_call_expr_visitor;                                                                                        \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }

@@ -1,0 +1,29 @@
+# test:output "true,false,false,false,false"
+
+struct A {
+    func f(self) {}
+}
+
+struct B {
+    func g(self) {}
+}
+
+struct C {
+    var f: i32;
+}
+
+struct D {
+    func f() {}
+}
+
+func main() {
+    print(meta(A).has_method("f"));
+    print(",");
+    print(meta(B).has_method("f"));
+    print(",");
+    print(meta(C).has_method("f"));
+    print(",");
+    print(meta(D).has_method("f"));
+    print(",");
+    print(meta(i32).has_method("f"));
+}

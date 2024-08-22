@@ -441,6 +441,15 @@ ParseResult ExprParser::parse_func_type() {
 ParseResult ExprParser::parse_meta_expr() {
     NodeBuilder builder = parser.new_node();
     stream.consume(); // Consume 'meta'
+
+#if BANJO_ENABLE_SIR
+    stream.consume(); // Consume '('
+    ParseResult result = parse();
+    stream.consume(); // Consume ')'
+
+    builder.append_child(result.node);
+    return {builder.build(new ASTNode(AST_META_EXPR)), result.is_valid};
+#else
     stream.consume(); // Consume '.'
 
     builder.append_child(new Identifier(stream.consume()));
@@ -450,6 +459,7 @@ ParseResult ExprParser::parse_meta_expr() {
 
     builder.append_child(result.node);
     return {builder.build(new Expr(AST_META_EXPR)), result.is_valid};
+#endif
 }
 
 ParseResult ExprParser::parse_explicit_type() {

@@ -344,7 +344,10 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_ident_expr(*inner),
         return clone_star_expr(*inner),
         return clone_bracket_expr(*inner),
-        return clone_dot_expr(*inner)
+        return clone_dot_expr(*inner),
+        return clone_meta_access(*inner),
+        return clone_meta_field_expr(*inner),
+        return clone_meta_call_expr(*inner)
     );
 }
 
@@ -563,6 +566,29 @@ DotExpr *Cloner::clone_dot_expr(const DotExpr &dot_expr) {
         .ast_node = dot_expr.ast_node,
         .lhs = clone_expr(dot_expr.lhs),
         .rhs = dot_expr.rhs,
+    });
+}
+
+MetaAccess *Cloner::clone_meta_access(const MetaAccess &meta_access) {
+    return mod.create_expr(MetaAccess{
+        .ast_node = meta_access.ast_node,
+        .expr = clone_expr(meta_access.expr),
+    });
+}
+
+MetaFieldExpr *Cloner::clone_meta_field_expr(const MetaFieldExpr &meta_field_expr) {
+    return mod.create_expr(MetaFieldExpr{
+        .ast_node = meta_field_expr.ast_node,
+        .base = clone_expr(meta_field_expr.base),
+        .field = meta_field_expr.field,
+    });
+}
+
+MetaCallExpr *Cloner::clone_meta_call_expr(const MetaCallExpr &meta_call_expr) {
+    return mod.create_expr(MetaCallExpr{
+        .ast_node = meta_call_expr.ast_node,
+        .callee = clone_expr(meta_call_expr.callee),
+        .args = clone_expr_list(meta_call_expr.args),
     });
 }
 

@@ -3,6 +3,7 @@
 #include "banjo/sema2/generics_specializer.hpp"
 #include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
+#include "banjo/sema2/meta_expr_evaluator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
@@ -59,7 +60,10 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
         result = analyze_ident_expr(*inner, expr),
         analyze_star_expr(*inner, expr),
         result = analyze_bracket_expr(*inner, expr),
-        analyze_dot_expr(*inner, expr)
+        analyze_dot_expr(*inner, expr),
+        result = Result::SUCCESS,
+        result = MetaExprEvaluator(analyzer).evaluate(*inner, expr),
+        result = MetaExprEvaluator(analyzer).evaluate(*inner, expr)
     );
 
     if (result != Result::SUCCESS) {

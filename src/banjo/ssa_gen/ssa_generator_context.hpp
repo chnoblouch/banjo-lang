@@ -48,7 +48,7 @@ public:
 
     target::Target *target;
 
-    ssa::Module *ssa_mod;
+    ssa::Module *ssa_mod = nullptr;
     std::deque<DeclContext> decl_contexts;
     std::stack<FuncContext> func_contexts;
     std::stack<LoopContext> loop_contexts;
@@ -124,6 +124,7 @@ public:
     void append_copy(ir::Operand dst, ir::Operand src, ir::Type type);
 
     ReturnMethod get_return_method(const ssa::Type return_type);
+    ssa::Structure *create_struct(const sir::StructDef &sir_struct_def);
     ir::Structure *get_tuple_struct(const std::vector<ir::Type> &member_types);
 };
 

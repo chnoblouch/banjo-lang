@@ -2,6 +2,7 @@
 
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+#include "sir_visitor.hpp"
 
 #include <utility>
 
@@ -44,6 +45,9 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE
     );
 }
@@ -80,7 +84,10 @@ Expr Expr::get_type() const {
         return nullptr,
         return nullptr,
         return nullptr,
-        return nullptr
+        return nullptr,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE
     );
 }
 
@@ -177,6 +184,9 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

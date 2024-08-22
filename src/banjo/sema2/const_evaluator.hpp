@@ -29,6 +29,8 @@ private:
     sir::Expr evaluate_symbol_expr(sir::SymbolExpr &symbol_expr);
     sir::Expr evaluate_binary_expr(sir::BinaryExpr &unary_expr);
     sir::Expr evaluate_unary_expr(sir::UnaryExpr &unary_expr);
+    sir::Expr evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr);
+    sir::Expr evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_expr);
 
     sir::Expr create_int_literal(LargeInt value);
     sir::Expr create_bool_literal(bool value);

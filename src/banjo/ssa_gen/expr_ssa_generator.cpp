@@ -67,6 +67,9 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE
     );
 }

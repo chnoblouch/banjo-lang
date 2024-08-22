@@ -45,9 +45,17 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
 ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::SymbolExpr &symbol_type) {
     const sir::Symbol &symbol = symbol_type.symbol;
 
-    if (auto struct_def = symbol.match<sir::StructDef>()) return ctx.ssa_structs[struct_def];
-    else if (auto enum_def = symbol.match<sir::EnumDef>()) return ssa::Primitive::I32;
+    if (auto struct_def = symbol.match<sir::StructDef>()) return generate_struct_type(*struct_def);
+    else if (auto enum_def = symbol.match<sir::EnumDef>()) return generate_enum_type(*enum_def);
     else ASSERT_UNREACHABLE;
+}
+
+ssa::Type TypeSSAGenerator::generate_struct_type(const sir::StructDef &struct_def) {
+    return ctx.create_struct(struct_def);
+}
+
+ssa::Type TypeSSAGenerator::generate_enum_type(const sir::EnumDef & /*enum_def*/) {
+    return ssa::Primitive::I32;
 }
 
 ssa::Type TypeSSAGenerator::generate_pointer_type() {

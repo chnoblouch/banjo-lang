@@ -57,6 +57,9 @@ struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
 struct DotExpr;
+struct MetaAccess;
+struct MetaFieldExpr;
+struct MetaCallExpr;
 struct VarStmt;
 struct AssignStmt;
 struct CompAssignStmt;
@@ -126,6 +129,9 @@ class Expr {
         StarExpr *,
         BracketExpr *,
         DotExpr *,
+        MetaAccess *,
+        MetaFieldExpr *,
+        MetaCallExpr *,
         std::nullptr_t>
         kind;
 
@@ -697,6 +703,23 @@ struct DotExpr {
     Ident rhs;
 };
 
+struct MetaAccess {
+    ASTNode *ast_node;
+    Expr expr;
+};
+
+struct MetaFieldExpr {
+    ASTNode *ast_node;
+    Expr base;
+    Ident field;
+};
+
+struct MetaCallExpr {
+    ASTNode *ast_node;
+    Expr callee;
+    std::vector<Expr> args;
+};
+
 struct VarStmt {
     ASTNode *ast_node;
     Ident name;
@@ -802,6 +825,7 @@ struct FuncDef {
 
     bool is_generic() const { return !generic_params.empty(); }
     bool is_main() const { return ident.value == "main"; }
+    bool is_method() const { return type.params.size() > 0 && type.params[0].name.value == "self"; }
 };
 
 struct NativeFuncDecl {
@@ -916,7 +940,10 @@ typedef std::variant<
     IdentExpr,
     StarExpr,
     BracketExpr,
-    DotExpr>
+    DotExpr,
+    MetaAccess,
+    MetaFieldExpr,
+    MetaCallExpr>
     ExprStorage;
 
 typedef std::variant<

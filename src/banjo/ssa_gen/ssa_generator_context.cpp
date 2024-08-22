@@ -197,6 +197,29 @@ ReturnMethod SSAGeneratorContext::get_return_method(const ssa::Type return_type)
     return fits_in_reg ? ReturnMethod::IN_REGISTER : ReturnMethod::VIA_POINTER_ARG;
 }
 
+ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_struct_def) {
+    auto iter = ssa_structs.find(&sir_struct_def);
+
+    if (iter != ssa_structs.end()) {
+        return iter->second;
+    } else {
+        ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
+        if (ssa_mod) {
+            ssa_mod->add(ssa_struct);
+        }
+
+        for (sir::StructField *sir_field : sir_struct_def.fields) {
+            ssa_struct->add({
+                .name = sir_field->ident.value,
+                .type = TypeSSAGenerator(*this).generate(sir_field->type),
+            });
+        }
+
+        ssa_structs.insert({&sir_struct_def, ssa_struct});
+        return ssa_struct;
+    }
+}
+
 ir::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ir::Type> &member_types) {
     for (ir::Structure *struct_ : tuple_structs) {
         if (struct_->get_members().size() != member_types.size()) {
@@ -222,9 +245,11 @@ ir::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ir::Type>
         struct_->add({std::to_string(i), member_types[i]});
     }
 
-    ssa_mod->add(struct_);
-    tuple_structs.push_back(struct_);
+    if (ssa_mod) {
+        ssa_mod->add(struct_);
+    }
 
+    tuple_structs.push_back(struct_);
     return struct_;
 }
 

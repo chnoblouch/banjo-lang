@@ -469,7 +469,10 @@ void Printer::print_expr(const Expr &expr) {
         print_ident_expr(*inner),
         print_star_expr(*inner),
         print_bracket_expr(*inner),
-        print_dot_expr(*inner)
+        print_dot_expr(*inner),
+        print_meta_access(*inner),
+        print_meta_field_expr(*inner),
+        print_meta_call_expr(*inner)
     );
 }
 
@@ -689,6 +692,26 @@ void Printer::print_dot_expr(const DotExpr &dot_expr) {
     BEGIN_OBJECT("DotExpr");
     PRINT_EXPR_FIELD("lhs", dot_expr.lhs);
     PRINT_FIELD("rhs", dot_expr.rhs.value);
+    END_OBJECT();
+}
+
+void Printer::print_meta_access(const MetaAccess &meta_access) {
+    BEGIN_OBJECT("MetaAccess");
+    PRINT_EXPR_FIELD("expr", meta_access.expr);
+    END_OBJECT();
+}
+
+void Printer::print_meta_field_expr(const MetaFieldExpr &meta_field_expr) {
+    BEGIN_OBJECT("MetaFieldExpr");
+    PRINT_EXPR_FIELD("base", meta_field_expr.base);
+    PRINT_FIELD("field", meta_field_expr.field.value);
+    END_OBJECT();
+}
+
+void Printer::print_meta_call_expr(const MetaCallExpr &meta_call_expr) {
+    BEGIN_OBJECT("MetaCallExpr");
+    PRINT_EXPR_FIELD("callee", meta_call_expr.callee);
+    PRINT_EXPR_LIST_FIELD("args", meta_call_expr.args);
     END_OBJECT();
 }
 

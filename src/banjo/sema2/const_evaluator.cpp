@@ -1,6 +1,7 @@
 #include "const_evaluator.hpp"
 
 #include "banjo/sema2/expr_analyzer.hpp"
+#include "banjo/sema2/meta_expr_evaluator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
@@ -22,6 +23,12 @@ bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
 }
 
 sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
+    if (auto meta_field_expr = expr.match<sir::MetaFieldExpr>()) {
+        return evaluate_meta_field_expr(*meta_field_expr);
+    } else if (auto meta_call_expr = expr.match<sir::MetaCallExpr>()) {
+        return evaluate_meta_call_expr(*meta_call_expr);
+    }
+
     ExprAnalyzer(analyzer).analyze(expr);
 
     SIR_VISIT_EXPR(
@@ -48,6 +55,9 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,
         return expr,
         return expr,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
@@ -109,6 +119,18 @@ sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
 
     if (unary_expr.op == sir::UnaryOp::NEG) return create_int_literal(-value);
     else ASSERT_UNREACHABLE;
+}
+
+sir::Expr ConstEvaluator::evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
+    sir::Expr dummy_expr = &meta_field_expr;
+    MetaExprEvaluator(analyzer).evaluate(meta_field_expr, dummy_expr);
+    return dummy_expr;
+}
+
+sir::Expr ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_expr) {
+    sir::Expr dummy_expr = &meta_call_expr;
+    MetaExprEvaluator(analyzer).evaluate(meta_call_expr, dummy_expr);
+    return dummy_expr;
 }
 
 sir::Expr ConstEvaluator::create_int_literal(LargeInt value) {

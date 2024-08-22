@@ -94,19 +94,20 @@ private:
     sir::Expr generate_dot_expr(ASTNode *node);
     sir::Expr generate_range_expr(ASTNode *node);
     sir::Expr generate_tuple_expr(ASTNode *node);
-    std::vector<sir::Expr> generate_arg_list(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);
     sir::Expr generate_bracket_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
     sir::Expr generate_static_array_type(ASTNode *node);
     sir::Expr generate_func_type(ASTNode *node);
+    sir::Expr generate_meta_access(ASTNode *node);
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
+    std::vector<sir::Expr> generate_expr_list(ASTNode *node);
     std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
     sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
     char decode_char(const std::string &value, unsigned &index);
-
+    
     sir::UseItem generate_use_item(ASTNode *node);
     sir::UseItem generate_use_ident(ASTNode *node);
     sir::UseItem generate_use_rebind(ASTNode *node);
