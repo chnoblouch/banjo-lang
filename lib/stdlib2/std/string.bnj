@@ -36,8 +36,9 @@ struct String {
     }
     
     pub func concat(a: String, b: String) -> String {
-        a.append_str(b);
-        return a;
+        var copy = a.copy();
+        copy.append(b);
+        return copy;
     }
     
     pub func __deinit__(self) {
@@ -65,7 +66,7 @@ struct String {
         self.data[self.length] = 0;
     }
     
-    pub func append_str(self, other: String) {
+    pub func append(self, other: String) {
         var new_length = self.length + other.length;
         self.ensure_capacity(new_length + 1);
         
@@ -76,7 +77,7 @@ struct String {
         self.length = new_length;
     }
 
-    pub func append_cstr(self, other: *u8) {
+    pub func append(self, other: *u8) {
         var other_length = strlen(other) as u32;
     
         var new_length = self.length + other_length;
@@ -176,6 +177,12 @@ struct String {
     
     pub func __add__(self, rhs: String) -> String {
         return concat(*self, rhs);
+    }
+    
+    pub func __add__(self, rhs: u8) -> String {
+        var copy = self.copy();
+        copy.append(rhs);
+        return copy;
     }
     
     pub func __eq__(self, rhs: *String) -> bool {

@@ -33,7 +33,7 @@ private:
     void analyze_bool_literal(sir::BoolLiteral &bool_literal);
     void analyze_char_literal(sir::CharLiteral &char_literal);
     Result analyze_null_literal(sir::NullLiteral &null_literal);
-    void analyze_array_literal(sir::ArrayLiteral &array_literal);
+    Result analyze_array_literal(sir::ArrayLiteral &array_literal, sir::Expr &out_expr);
     Result analyze_string_literal(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void analyze_struct_literal(sir::StructLiteral &struct_literal);
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
@@ -51,6 +51,7 @@ private:
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
+    void create_std_array(sir::ArrayLiteral &array_literal, sir::Expr &out_expr);
     Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     sir::FuncDef *resolve_overload(sir::OverloadSet &overload_set, const std::vector<sir::Expr> &args);
     bool is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args);

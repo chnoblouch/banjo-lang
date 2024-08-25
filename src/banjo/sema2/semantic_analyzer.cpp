@@ -69,6 +69,10 @@ sir::Symbol SemanticAnalyzer::find_std_string() {
     return find_std_symbol({"std", "string"}, "String");
 }
 
+sir::Symbol SemanticAnalyzer::find_std_array() {
+    return find_std_symbol({"std", "array"}, "Array");
+}
+
 void SemanticAnalyzer::check_for_completeness(sir::DeclBlock &block) {
     block.symbol_table->complete = true;
 

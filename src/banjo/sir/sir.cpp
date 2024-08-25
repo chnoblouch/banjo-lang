@@ -21,7 +21,7 @@ bool Expr::operator==(const Expr &other) const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
+        return inner->value == other.as<sir::IntLiteral>().value,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,

@@ -16,8 +16,18 @@ pub func to_string[T](value: T) -> String {
         return char_to_string(value);
     } else if T == bool {
         return bool_to_string(value);
+    } else if meta(T).has_method("__str__") {
+        return value.__str__();
     } else {
         return "<?>";
+    }
+}
+
+pub func to_repr[T](value: T) -> String {
+    meta if T == String {
+        return "\"" + value + "\"";
+    } else {
+        return to_string(value);
     }
 }
 

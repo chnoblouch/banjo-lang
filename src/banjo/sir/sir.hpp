@@ -637,6 +637,7 @@ enum class Primitive {
     U16,
     U32,
     U64,
+    USIZE = U64,
     F32,
     F64,
     BOOL,
