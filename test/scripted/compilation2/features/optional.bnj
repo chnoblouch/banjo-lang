@@ -1,0 +1,84 @@
+# test:subtest
+# test:output "true,12,false"
+
+func main() {
+    var a: ?i32 = 12;
+    var b: ?i32 = none;
+
+    print(a.has_value);
+    print(",");
+    print(a.value);
+    print(",");    
+    print(b.has_value);
+}
+
+# test:subtest
+# test:output "-0.5,none"
+
+func main() {
+    var a: ?f32 = -0.5;
+    var b: ?f32 = none;
+    
+    print(a);
+    print(",");
+    print(b);
+}
+
+# test:subtest
+# test:output "1,2,3"
+
+struct Vec3 {
+    var x: i64;
+    var y: i64;
+    var z: i64;
+}
+
+func main() {
+    var a: ?Vec3 = Vec3 {
+        x: 1,
+        y: 2,
+        z: 3,
+    };
+    
+    print(a.value.x);
+    print(",");
+    print(a.value.y);
+    print(",");
+    print(a.value.z);
+}
+
+# test:subtest
+# test:output "string1,string2"
+
+func main() {
+    var a: ?String = "string1";
+    var b: ?*u8 = "string2";
+    
+    print(a);
+    print(",");
+    print(b);
+}
+
+# test:subtest
+# test:output "test,none"
+
+func main() {
+    var a: Optional[String] = "test";
+    var b: Optional[String] = none;
+    
+    print(a);
+    print(",");
+    print(b);
+}
+
+# test:subtest
+# test:output "false,none"
+
+func main() {
+    var a = (?bool).new_some(false);
+    var b = (?bool).new_none();
+    
+    print(a);
+    print(",");
+    print(b);
+}

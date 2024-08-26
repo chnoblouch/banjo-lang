@@ -81,6 +81,8 @@ private:
     sir::Expr generate_bool_literal(ASTNode *node, bool value);
     sir::Expr generate_char_literal(ASTNode *node);
     sir::Expr generate_null_literal(ASTNode *node);
+    sir::Expr generate_none_literal(ASTNode *node);
+    sir::Expr generate_undefined_literal(ASTNode *node);
     sir::Expr generate_array_literal(ASTNode *node);
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
@@ -99,6 +101,7 @@ private:
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
     sir::Expr generate_static_array_type(ASTNode *node);
     sir::Expr generate_func_type(ASTNode *node);
+    sir::Expr generate_optional_type(ASTNode *node);
     sir::Expr generate_meta_access(ASTNode *node);
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);

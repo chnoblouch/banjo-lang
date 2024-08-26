@@ -54,6 +54,8 @@ public:
     BoolLiteral *clone_bool_literal(const BoolLiteral &bool_literal);
     CharLiteral *clone_char_literal(const CharLiteral &char_literal);
     NullLiteral *clone_null_literal(const NullLiteral &null_literal);
+    NoneLiteral *clone_none_literal(const NoneLiteral &none_literal);
+    UndefinedLiteral *clone_undefined_literal(const UndefinedLiteral &undefined_literal);
     ArrayLiteral *clone_array_literal(const ArrayLiteral &array_literal);
     StringLiteral *clone_string_literal(const StringLiteral &string_literal);
     StructLiteral *clone_struct_literal(const StructLiteral &struct_literal);
@@ -70,6 +72,7 @@ public:
     PointerType *clone_pointer_type(const PointerType &pointer_type);
     StaticArrayType *clone_static_array_type(const StaticArrayType &static_array_type);
     FuncType *clone_func_type(const FuncType &func_type);
+    OptionalType *clone_optional_type(const OptionalType &optional_type);
     IdentExpr *clone_ident_expr(const IdentExpr &ident_expr);
     StarExpr *clone_star_expr(const StarExpr &star_expr);
     BracketExpr *clone_bracket_expr(const BracketExpr &bracket_expr);

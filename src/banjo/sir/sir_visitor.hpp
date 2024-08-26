@@ -1,7 +1,7 @@
 #ifndef SIR_VISITOR_H
 #define SIR_VISITOR_H
 
-#include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir.hpp" // IWYU pragma: export
 #include "banjo/utils/macros.hpp"
 
 #define SIR_VISIT_IMPOSSIBLE ASSERT_UNREACHABLE
@@ -15,6 +15,8 @@
     bool_literal_visitor,                                                                                              \
     char_literal_visitor,                                                                                              \
     null_literal_visitor,                                                                                              \
+    none_literal_visitor,                                                                                              \
+    undefined_literal_visitor,                                                                                         \
     array_literal_visitor,                                                                                             \
     string_literal_visitor,                                                                                            \
     struct_literal_visitor,                                                                                            \
@@ -31,6 +33,7 @@
     pointer_type_visitor,                                                                                              \
     static_array_type_visitor,                                                                                         \
     func_type_visitor,                                                                                                 \
+    optional_type_visitor,                                                                                             \
     ident_expr_visitor,                                                                                                \
     star_expr_visitor,                                                                                                 \
     bracket_expr_visitor,                                                                                              \
@@ -51,6 +54,10 @@
         char_literal_visitor;                                                                                          \
     } else if (auto inner = (expr).match<banjo::lang::sir::NullLiteral>()) {                                           \
         null_literal_visitor;                                                                                          \
+    } else if (auto inner = (expr).match<banjo::lang::sir::NoneLiteral>()) {                                           \
+        none_literal_visitor;                                                                                          \
+    } else if (auto inner = (expr).match<banjo::lang::sir::UndefinedLiteral>()) {                                      \
+        undefined_literal_visitor;                                                                                     \
     } else if (auto inner = (expr).match<banjo::lang::sir::ArrayLiteral>()) {                                          \
         array_literal_visitor;                                                                                         \
     } else if (auto inner = (expr).match<banjo::lang::sir::StringLiteral>()) {                                         \
@@ -83,6 +90,8 @@
         static_array_type_visitor;                                                                                     \
     } else if (auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                                              \
         func_type_visitor;                                                                                             \
+    } else if (auto inner = (expr).match<banjo::lang::sir::OptionalType>()) {                                          \
+        optional_type_visitor;                                                                                         \
     } else if (auto inner = (expr).match<banjo::lang::sir::IdentExpr>()) {                                             \
         ident_expr_visitor;                                                                                            \
     } else if (auto inner = (expr).match<banjo::lang::sir::StarExpr>()) {                                              \

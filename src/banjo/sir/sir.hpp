@@ -36,6 +36,8 @@ struct FPLiteral;
 struct BoolLiteral;
 struct CharLiteral;
 struct NullLiteral;
+struct NoneLiteral;
+struct UndefinedLiteral;
 struct ArrayLiteral;
 struct StringLiteral;
 struct StructLiteral;
@@ -53,6 +55,7 @@ struct PrimitiveType;
 struct PointerType;
 struct StaticArrayType;
 struct FuncType;
+struct OptionalType;
 struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
@@ -109,6 +112,8 @@ class Expr {
         BoolLiteral *,
         CharLiteral *,
         NullLiteral *,
+        NoneLiteral *,
+        UndefinedLiteral *,
         ArrayLiteral *,
         StringLiteral *,
         StructLiteral *,
@@ -125,6 +130,7 @@ class Expr {
         PointerType *,
         StaticArrayType *,
         FuncType *,
+        OptionalType *,
         IdentExpr *,
         StarExpr *,
         BracketExpr *,
@@ -510,6 +516,16 @@ struct NullLiteral {
     Expr type;
 };
 
+struct NoneLiteral {
+    ASTNode *ast_node;
+    Expr type;
+};
+
+struct UndefinedLiteral {
+    ASTNode *ast_node;
+    Expr type;
+};
+
 struct ArrayLiteral {
     ASTNode *ast_node;
     Expr type;
@@ -680,6 +696,14 @@ struct FuncType {
 
     bool operator==(const FuncType &other) const { return params == other.params && return_type == other.return_type; }
     bool operator!=(const FuncType &other) const { return !(*this == other); }
+};
+
+struct OptionalType {
+    ASTNode *ast_node;
+    Expr base_type;
+
+    bool operator==(const OptionalType &other) const { return base_type == other.base_type; }
+    bool operator!=(const OptionalType &other) const { return !(*this == other); }
 };
 
 struct IdentExpr {
@@ -922,6 +946,8 @@ typedef std::variant<
     BoolLiteral,
     CharLiteral,
     NullLiteral,
+    NoneLiteral,
+    UndefinedLiteral,
     ArrayLiteral,
     StringLiteral,
     StructLiteral,
@@ -938,6 +964,7 @@ typedef std::variant<
     PointerType,
     StaticArrayType,
     FuncType,
+    OptionalType,
     IdentExpr,
     StarExpr,
     BracketExpr,

@@ -325,6 +325,8 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_bool_literal(*inner),
         return clone_char_literal(*inner),
         return clone_null_literal(*inner),
+        return clone_none_literal(*inner),
+        return clone_undefined_literal(*inner),
         return clone_array_literal(*inner),
         return clone_string_literal(*inner),
         return clone_struct_literal(*inner),
@@ -341,6 +343,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_pointer_type(*inner),
         return clone_static_array_type(*inner),
         return clone_func_type(*inner),
+        return clone_optional_type(*inner),
         return clone_ident_expr(*inner),
         return clone_star_expr(*inner),
         return clone_bracket_expr(*inner),
@@ -387,6 +390,20 @@ NullLiteral *Cloner::clone_null_literal(const NullLiteral &null_literal) {
     return mod.create_expr(NullLiteral{
         .ast_node = null_literal.ast_node,
         .type = clone_expr(null_literal.type),
+    });
+}
+
+NoneLiteral *Cloner::clone_none_literal(const NoneLiteral &none_literal) {
+    return mod.create_expr(NoneLiteral{
+        .ast_node = none_literal.ast_node,
+        .type = clone_expr(none_literal.type),
+    });
+}
+
+UndefinedLiteral *Cloner::clone_undefined_literal(const UndefinedLiteral &undefined_literal) {
+    return mod.create_expr(UndefinedLiteral{
+        .ast_node = undefined_literal.ast_node,
+        .type = clone_expr(undefined_literal.type),
     });
 }
 
@@ -536,6 +553,13 @@ FuncType *Cloner::clone_func_type(const FuncType &func_type) {
         .ast_node = func_type.ast_node,
         .params = params,
         .return_type = clone_expr(func_type.return_type),
+    });
+}
+
+OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
+    return mod.create_expr(OptionalType{
+        .ast_node = optional_type.ast_node,
+        .base_type = clone_expr(optional_type.base_type),
     });
 }
 

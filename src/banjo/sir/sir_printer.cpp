@@ -450,6 +450,8 @@ void Printer::print_expr(const Expr &expr) {
         print_bool_literal(*inner),
         print_char_literal(*inner),
         print_null_literal(*inner),
+        print_none_literal(*inner),
+        print_undefined_literal(*inner),
         print_array_literal(*inner),
         print_string_literal(*inner),
         print_struct_literal(*inner),
@@ -466,6 +468,7 @@ void Printer::print_expr(const Expr &expr) {
         print_pointer_type(*inner),
         print_static_array_type(*inner),
         print_func_type(*inner),
+        print_optional_type(*inner),
         print_ident_expr(*inner),
         print_star_expr(*inner),
         print_bracket_expr(*inner),
@@ -507,6 +510,18 @@ void Printer::print_char_literal(const CharLiteral &char_literal) {
 void Printer::print_null_literal(const NullLiteral &null_literal) {
     BEGIN_OBJECT("NullLiteral");
     PRINT_EXPR_FIELD("type", null_literal.type);
+    END_OBJECT();
+}
+
+void Printer::print_none_literal(const NoneLiteral &none_literal) {
+    BEGIN_OBJECT("NoneLiteral");
+    PRINT_EXPR_FIELD("type", none_literal.type);
+    END_OBJECT();
+}
+
+void Printer::print_undefined_literal(const UndefinedLiteral &undefined_literal) {
+    BEGIN_OBJECT("UndefinedLiteral");
+    PRINT_EXPR_FIELD("type", undefined_literal.type);
     END_OBJECT();
 }
 
@@ -666,6 +681,12 @@ void Printer::print_func_type(const FuncType &func_type) {
 
     END_LIST();
     PRINT_EXPR_FIELD("return_type", func_type.return_type);
+    END_OBJECT();
+}
+
+void Printer::print_optional_type(const OptionalType &optional_type) {
+    BEGIN_OBJECT("OptionalType");
+    PRINT_EXPR_FIELD("base_type", optional_type.base_type);
     END_OBJECT();
 }
 

@@ -415,6 +415,8 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_TRUE: return generate_bool_literal(node, true);
         case AST_CHAR_LITERAL: return generate_char_literal(node);
         case AST_NULL: return generate_null_literal(node);
+        case AST_NONE: return generate_none_literal(node);
+        case AST_UNDEFINED: return generate_undefined_literal(node);
         case AST_ARRAY_EXPR: return generate_array_literal(node);
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
@@ -465,6 +467,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
         case AST_FUNCTION_DATA_TYPE: return generate_func_type(node);
+        case AST_OPTIONAL_DATA_TYPE: return generate_optional_type(node);
         case AST_META_EXPR: return generate_meta_access(node);
         default: ASSERT_UNREACHABLE;
     }
@@ -507,6 +510,20 @@ sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
 
 sir::Expr SIRGenerator::generate_null_literal(ASTNode *node) {
     return create_expr(sir::NullLiteral{
+        .ast_node = node,
+        .type = nullptr,
+    });
+}
+
+sir::Expr SIRGenerator::generate_none_literal(ASTNode *node) {
+    return create_expr(sir::NoneLiteral{
+        .ast_node = node,
+        .type = nullptr,
+    });
+}
+
+sir::Expr SIRGenerator::generate_undefined_literal(ASTNode *node) {
+    return create_expr(sir::UndefinedLiteral{
         .ast_node = node,
         .type = nullptr,
     });
@@ -697,6 +714,13 @@ sir::Expr SIRGenerator::generate_static_array_type(ASTNode *node) {
 
 sir::Expr SIRGenerator::generate_func_type(ASTNode *node) {
     return create_expr(generate_func_type(node->get_child(FUNC_TYPE_PARAMS), node->get_child(FUNC_TYPE_RETURN_TYPE)));
+}
+
+sir::Expr SIRGenerator::generate_optional_type(ASTNode *node) {
+    return create_expr(sir::OptionalType{
+        .ast_node = node,
+        .base_type = generate_expr(node->get_child()),
+    });
 }
 
 sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {

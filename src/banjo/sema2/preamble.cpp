@@ -19,6 +19,7 @@ struct PreambleDecl {
 
 static const std::vector<PreambleDecl> PREAMBLE_DECLS = {
     {ModulePath{"internal", "preamble"}, {"print", "println", "assert"}},
+    {ModulePath{"std", "optional"}, {"Optional"}},
     {ModulePath{"std", "array"}, {"Array"}},
     {ModulePath{"std", "string"}, {"String"}},
 };

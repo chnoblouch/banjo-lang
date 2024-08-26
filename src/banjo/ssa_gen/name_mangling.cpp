@@ -1,6 +1,8 @@
 #include "name_mangling.hpp"
 
 #include <ranges>
+#include <cstdlib>
+#include <string>
 
 namespace banjo {
 
@@ -83,6 +85,9 @@ std::string mangle_func_name(SSAGeneratorContext &ctx, const sir::FuncDef &func)
     for (const sir::Param &param : func.type.params) {
         mangle_type(string, param.type);
     }
+
+    // FIXME: temporary solution until I've got name mangling figured out.
+    string += std::to_string(std::rand());
 
     return string;
 }

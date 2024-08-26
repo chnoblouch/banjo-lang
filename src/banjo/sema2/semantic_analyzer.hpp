@@ -89,8 +89,9 @@ private:
     sir::SymbolTable &get_symbol_table();
 
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
-    sir::Symbol find_std_string();
+    sir::Symbol find_std_optional();
     sir::Symbol find_std_array();
+    sir::Symbol find_std_string();
 
     void check_for_completeness(sir::DeclBlock &block);
 

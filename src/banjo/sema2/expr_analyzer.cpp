@@ -36,11 +36,13 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
     SIR_VISIT_EXPR(
         expr,
         SIR_VISIT_IMPOSSIBLE,
-        result = analyze_int_literal(*inner),
-        result = analyze_fp_literal(*inner),
+        result = analyze_int_literal(*inner, expr),
+        result = analyze_fp_literal(*inner, expr),
         analyze_bool_literal(*inner),
         analyze_char_literal(*inner),
-        result = analyze_null_literal(*inner),
+        result = analyze_null_literal(*inner, expr),
+        result = analyze_none_literal(*inner, expr),
+        result = analyze_undefined_literal(*inner),
         analyze_array_literal(*inner, expr),
         result = analyze_string_literal(*inner, expr),
         analyze_struct_literal(*inner),
@@ -57,6 +59,7 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
         SIR_VISIT_IGNORE,
         analyze_static_array_type(*inner),
         analyze_func_type(*inner),
+        analyze_optional_type(*inner, expr),
         result = analyze_ident_expr(*inner, expr),
         analyze_star_expr(*inner, expr),
         result = analyze_bracket_expr(*inner, expr),
@@ -71,16 +74,25 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
     }
 
     if (constraints.expected_type && expr.get_type() != constraints.expected_type) {
+        if (auto specialization = as_std_optional_specialization(constraints.expected_type)) {
+            create_std_optional_some(*specialization, expr);
+            return Result::SUCCESS;
+        }
+
         analyzer.report_generator.report_err_type_mismatch(expr, constraints.expected_type, expr.get_type());
     }
 
     return result;
 }
 
-Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
+Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal, sir::Expr &out_expr) {
     if (constraints.expected_type) {
         if (constraints.expected_type.is_int_type()) {
             int_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        } else if (auto specialization = as_std_optional_specialization(constraints.expected_type)) {
+            int_literal.type = specialization->args[0];
+            create_std_optional_some(*specialization, out_expr);
             return Result::SUCCESS;
         } else {
             analyzer.report_generator.report_err_cant_coerce_int_literal(int_literal, constraints.expected_type);
@@ -96,10 +108,14 @@ Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
     }
 }
 
-Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
+Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal, sir::Expr &out_expr) {
     if (constraints.expected_type) {
         if (constraints.expected_type.is_fp_type()) {
             fp_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        } else if (auto specialization = as_std_optional_specialization(constraints.expected_type)) {
+            fp_literal.type = specialization->args[0];
+            create_std_optional_some(*specialization, out_expr);
             return Result::SUCCESS;
         } else {
             analyzer.report_generator.report_err_cant_coerce_fp_literal(fp_literal, constraints.expected_type);
@@ -129,10 +145,14 @@ void ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
     });
 }
 
-Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
+Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal, sir::Expr &out_expr) {
     if (constraints.expected_type) {
         if (constraints.expected_type.is_addr_like_type()) {
             null_literal.type = constraints.expected_type;
+            return Result::SUCCESS;
+        } else if (auto specialization = as_std_optional_specialization(constraints.expected_type)) {
+            null_literal.type = specialization->args[0];
+            create_std_optional_some(*specialization, out_expr);
             return Result::SUCCESS;
         } else {
             analyzer.report_generator.report_err_cant_coerce_null_literal(null_literal, constraints.expected_type);
@@ -146,6 +166,24 @@ Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
 
         return Result::SUCCESS;
     }
+}
+
+Result ExprAnalyzer::analyze_none_literal(sir::NoneLiteral & /*none_literal*/, sir::Expr &out_expr) {
+    assert(constraints.expected_type);
+
+    if (auto specialization = as_std_optional_specialization(constraints.expected_type)) {
+        create_std_optional_none(*specialization, out_expr);
+        return Result::SUCCESS;
+    }
+
+    ASSERT_UNREACHABLE;
+}
+
+Result ExprAnalyzer::analyze_undefined_literal(sir::UndefinedLiteral &undefined_literal) {
+    assert(constraints.expected_type);
+
+    undefined_literal.type = constraints.expected_type;
+    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir::Expr &out_expr) {
@@ -183,9 +221,19 @@ Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal, 
         if (constraints.expected_type.is_u8_ptr()) {
             string_literal.type = constraints.expected_type;
             return Result::SUCCESS;
-        }
-
-        if (auto symbol_expr = constraints.expected_type.match<sir::SymbolExpr>()) {
+        } else if (auto specialization = as_std_optional_specialization(constraints.expected_type)) {
+            if (specialization->args[0].is_u8_ptr()) {
+                string_literal.type = constraints.expected_type;
+                create_std_optional_some(*specialization, out_expr);
+                return Result::SUCCESS;
+            } else if (auto symbol_expr = specialization->args[0].match<sir::SymbolExpr>()) {
+                if (symbol_expr->symbol == analyzer.find_std_string()) {
+                    create_std_string(string_literal, out_expr);
+                    create_std_optional_some(*specialization, out_expr);
+                    return Result::SUCCESS;
+                }
+            }
+        } else if (auto symbol_expr = constraints.expected_type.match<sir::SymbolExpr>()) {
             if (symbol_expr->symbol == analyzer.find_std_string()) {
                 create_std_string(string_literal, out_expr);
                 return Result::SUCCESS;
@@ -441,6 +489,11 @@ void ExprAnalyzer::analyze_func_type(sir::FuncType &func_type) {
     ExprAnalyzer(analyzer).analyze(func_type.return_type);
 }
 
+void ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr) {
+    ExprAnalyzer(analyzer).analyze(optional_type.base_type);
+    specialize(analyzer.find_std_optional().as<sir::StructDef>(), {optional_type.base_type}, out_expr);
+}
+
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
     Result result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
     if (result == Result::ERROR) {
@@ -561,15 +614,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         }
     } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
         if (struct_def->is_generic()) {
-            sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(*struct_def, bracket_expr.rhs);
-
-            out_expr = analyzer.create_expr(sir::SymbolExpr{
-                .ast_node = bracket_expr.ast_node,
-                .type = nullptr,
-                .symbol = specialization,
-            });
-
-            return Result::SUCCESS;
+            return specialize(*struct_def, bracket_expr.rhs, out_expr);
         }
     }
 
@@ -690,6 +735,57 @@ void ExprAnalyzer::create_std_array(sir::ArrayLiteral &array_literal, sir::Expr 
         .type = func_def.type.return_type,
         .callee = callee,
         .args = {data_pointer, length},
+    });
+}
+
+sir::Specialization<sir::StructDef> *ExprAnalyzer::as_std_optional_specialization(sir::Expr &type) {
+    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
+        sir::StructDef &optional_def = analyzer.find_std_optional().as<sir::StructDef>();
+
+        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
+            if (specialization.def == struct_def) {
+                return &specialization;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+void ExprAnalyzer::create_std_optional_some(
+    sir::Specialization<sir::StructDef> &specialization,
+    sir::Expr &inout_expr
+) {
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_some").as<sir::FuncDef>();
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &func_def.type,
+        .symbol = &func_def,
+    });
+
+    inout_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = func_def.type.return_type,
+        .callee = callee,
+        .args = {inout_expr},
+    });
+}
+
+void ExprAnalyzer::create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr) {
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_none").as<sir::FuncDef>();
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &func_def.type,
+        .symbol = &func_def,
+    });
+
+    out_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = func_def.type.return_type,
+        .callee = callee,
+        .args = {},
     });
 }
 
@@ -840,13 +936,29 @@ Result ExprAnalyzer::analyze_operator_overload_call(
 Result ExprAnalyzer::specialize(
     sir::FuncDef &func_def,
     const std::vector<sir::Expr> &generic_args,
-    sir::Expr &out_expr
+    sir::Expr &inout_expr
 ) {
     sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(func_def, generic_args);
 
-    out_expr = analyzer.create_expr(sir::SymbolExpr{
-        .ast_node = out_expr.get_ast_node(),
+    inout_expr = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = inout_expr.get_ast_node(),
         .type = &specialization->type,
+        .symbol = specialization,
+    });
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::specialize(
+    sir::StructDef &struct_def,
+    const std::vector<sir::Expr> &generic_args,
+    sir::Expr &inout_expr
+) {
+    sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
+
+    inout_expr = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = inout_expr.get_ast_node(),
+        .type = nullptr,
         .symbol = specialization,
     });
 

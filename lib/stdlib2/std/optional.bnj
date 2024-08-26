@@ -1,0 +1,37 @@
+use std.{system.panic, convert.to_string};
+
+struct Optional[T] {
+    var has_value: bool;
+    var value: T;
+
+    pub func new_some(value: T) -> Optional[T] {
+        return Optional[T] {
+            has_value: true,
+            value
+        };
+    }
+    
+    pub func new_none() -> Optional[T] {
+        return Optional[T] {
+            has_value: false,
+            value: undefined
+        };
+    }
+    
+    pub func unwrap(self) -> T {
+        if !self.has_value {
+            panic("optional does not have a value");
+        }
+        
+        self.has_value = false;
+        return self.value;
+    }
+    
+    pub func __str__(self) -> String {
+        if self.has_value {
+            return to_string(self.value);
+        } else {
+            return "none";
+        }
+    }
+}

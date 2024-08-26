@@ -65,12 +65,16 @@ sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const 
     return sir_unit.mods_by_path[mod_path]->block.symbol_table->look_up(name);
 }
 
-sir::Symbol SemanticAnalyzer::find_std_string() {
-    return find_std_symbol({"std", "string"}, "String");
+sir::Symbol SemanticAnalyzer::find_std_optional() {
+    return find_std_symbol({"std", "optional"}, "Optional");
 }
 
 sir::Symbol SemanticAnalyzer::find_std_array() {
     return find_std_symbol({"std", "array"}, "Array");
+}
+
+sir::Symbol SemanticAnalyzer::find_std_string() {
+    return find_std_symbol({"std", "string"}, "String");
 }
 
 void SemanticAnalyzer::check_for_completeness(sir::DeclBlock &block) {

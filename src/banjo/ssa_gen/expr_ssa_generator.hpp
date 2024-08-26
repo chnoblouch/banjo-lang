@@ -27,7 +27,6 @@ public:
     ExprSSAGenerator(SSAGeneratorContext &ctx);
 
     StoredValue generate(const sir::Expr &expr);
-    StoredValue generate_into_value(const sir::Expr &expr);
     void generate_into_dst(const sir::Expr &expr, const ssa::Value &dst);
     void generate_into_dst(const sir::Expr &expr, ssa::VirtualRegister dst);
     StoredValue generate(const sir::Expr &expr, const StorageHints &hints);
@@ -39,6 +38,7 @@ private:
     StoredValue generate_bool_literal(const sir::BoolLiteral &bool_literal);
     StoredValue generate_char_literal(const sir::CharLiteral &char_literal);
     StoredValue generate_null_literal(const sir::NullLiteral &null_literal);
+    StoredValue generate_undefined_literal(const sir::UndefinedLiteral &undefined_literal);
     StoredValue generate_array_literal(const sir::ArrayLiteral &array_literal, const StorageHints &hints);
     StoredValue generate_string_literal(const sir::StringLiteral &string_literal);
     StoredValue generate_struct_literal(const sir::StructLiteral &struct_literal, const StorageHints &hints);

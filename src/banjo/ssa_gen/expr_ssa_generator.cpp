@@ -27,10 +27,6 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr) {
     return generate(expr, StorageHints::none());
 }
 
-StoredValue ExprSSAGenerator::generate_into_value(const sir::Expr &expr) {
-    return generate(expr, StorageHints::none()).turn_into_value(ctx);
-}
-
 void ExprSSAGenerator::generate_into_dst(const sir::Expr &expr, const ssa::Value &dst) {
     generate(expr, StorageHints::into(dst)).copy_to(dst, ctx);
 }
@@ -48,6 +44,8 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_bool_literal(*inner),
         return generate_char_literal(*inner),
         return generate_null_literal(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        return generate_undefined_literal(*inner),
         return generate_array_literal(*inner, hints),
         return generate_string_literal(*inner),
         return generate_struct_literal(*inner, hints),
@@ -60,6 +58,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_field_expr(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return generate_tuple_expr(*inner, hints),
+        SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
@@ -138,6 +137,11 @@ StoredValue ExprSSAGenerator::generate_null_literal(const sir::NullLiteral &null
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(null_literal.type);
     ssa::Value ssa_immediate = ssa::Value::from_int_immediate(0, ssa_type);
     return StoredValue::create_value(ssa_immediate);
+}
+
+StoredValue ExprSSAGenerator::generate_undefined_literal(const sir::UndefinedLiteral &undefined_literal) {
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(undefined_literal.type);
+    return StoredValue::create_undefined(ssa_type);
 }
 
 StoredValue ExprSSAGenerator::generate_array_literal(
@@ -280,7 +284,7 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
     } else if (auto pointer_type = binary_expr.lhs.get_type().match<sir::PointerType>()) {
         ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(pointer_type->base_type);
         reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa_base_type);
-    }  else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
+    } else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
         reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa::Primitive::I8);
     } else {
         ASSERT_UNREACHABLE;

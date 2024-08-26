@@ -13,25 +13,30 @@ namespace banjo {
 namespace lang {
 
 struct StoredValue {
-    bool reference;
+    enum class Kind {
+        VALUE,
+        REFERENCE,
+        UNDEFINED,
+    };
+
+    Kind kind;
     ir::Type value_type;
     ir::Value value_or_ptr;
 
     static StoredValue create_value(ir::Value value);
     static StoredValue create_value(ir::VirtualRegister reg, ir::Type value_type);
-
     static StoredValue create_reference(ir::Value value, ir::Type value_type);
     static StoredValue create_reference(ir::VirtualRegister reg, ir::Type value_type);
-
+    static StoredValue create_undefined(ir::Type value_type);
     static StoredValue alloc(const ir::Type &type, const StorageHints &hints, SSAGeneratorContext &ctx);
 
     const ir::Value &get_value() const {
-        assert(!reference);
+        assert(kind == Kind::VALUE);
         return value_or_ptr;
     }
 
     const ir::Value &get_ptr() const {
-        assert(reference);
+        assert(kind == Kind::REFERENCE);
         return value_or_ptr;
     }
 
