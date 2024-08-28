@@ -1,21 +1,40 @@
 use c.lib.{
-	stdlib.{malloc as cmalloc, realloc as crealloc, free as cfree},
-	string.{memcpy as cmemcpy, memset as cmemset}
+    stdlib.{malloc as cmalloc, realloc as crealloc, free as cfree},
+    string.{memcpy as cmemcpy, memset as cmemset}
 };
 
 pub func alloc(size: usize) -> addr {
-	var pointer = cmalloc(size);
-	return pointer;
+    var pointer = cmalloc(size);
+    return pointer;
 }
 
 pub func realloc(pointer: addr, size: usize) -> addr {
-	return crealloc(pointer, size);
+    return crealloc(pointer, size);
 }
 
 pub func free(pointer: addr) {
-	cfree(pointer);
+    cfree(pointer);
 }
 
 pub func copy(src: addr, dst: addr, size: usize) {
-	cmemcpy(dst, src, size);
+    cmemcpy(dst, src, size);
+}
+
+struct PointerIter[T] {
+    var pointer: *T;
+    var end: *T;
+    
+    pub func new(pointer: *T, end: *T) -> PointerIter[T] {
+        return PointerIter[T] { pointer, end };
+    }
+    
+    func __next__(self) -> ?T {
+        if self.pointer == self.end {
+            return none;
+        }
+        
+        var value = *self.pointer;
+        self.pointer += 1;
+        return value;
+    }
 }

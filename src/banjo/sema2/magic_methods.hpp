@@ -33,6 +33,9 @@ const std::string_view OP_NEG = "__neg__";
 const std::string_view OP_DEREF = "__deref__";
 const std::string_view OP_INDEX = "__index__";
 
+const std::string_view ITER = "__iter__";
+const std::string_view NEXT = "__next__";
+
 std::string_view look_up(sir::BinaryOp op);
 std::string_view look_up(sir::UnaryOp op);
 

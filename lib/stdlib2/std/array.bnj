@@ -1,4 +1,4 @@
-use std.{memory, system.panic, config, convert.to_repr};
+use std.{memory, memory.PointerIter, system.panic, config, convert.to_repr};
 
 struct Array[T] {
     var data: *T;
@@ -66,6 +66,10 @@ struct Array[T] {
         }
     
         return &self.data[index];
+    }
+    
+    pub func __iter__(self) -> PointerIter[T] {
+        return PointerIter[T].new(self.data, self.data + self.length);
     }
     
     pub func __str__(self) -> String {

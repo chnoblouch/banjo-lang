@@ -602,7 +602,10 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
 Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
     Result result;
 
-    ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
+    result = ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
+    if (result != Result::SUCCESS) {
+        return result;
+    }
 
     for (sir::Expr &expr : bracket_expr.rhs) {
         ExprAnalyzer(analyzer).analyze(expr);

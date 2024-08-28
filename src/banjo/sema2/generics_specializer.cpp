@@ -94,8 +94,8 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
         .def = clone,
     });
 
+    analyzer.push_empty_scope();
     analyzer.enter_struct_def(clone);
-    analyzer.get_scope().generic_args.clear();
 
     for (unsigned i = 0; i < args.size(); i++) {
         std::string_view param_name = generic_struct_def.generic_params[i].ident.value;
@@ -109,6 +109,7 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     DeclBodyAnalyzer(analyzer).process_struct_def(*clone);
 
     analyzer.exit_struct_def();
+    analyzer.pop_scope();
     return clone;
 }
 

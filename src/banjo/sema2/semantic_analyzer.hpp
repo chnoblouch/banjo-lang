@@ -76,6 +76,11 @@ private:
         return get_scope();
     }
 
+    Scope &push_empty_scope() {
+        scopes.push({});
+        return get_scope();
+    }
+
     void pop_scope() { scopes.pop(); }
 
     void enter_mod(sir::Module *mod);
