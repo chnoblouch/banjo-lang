@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+cmake_policy(SET CMP0091 NEW)
 
 project(banjo VERSION 0.1)
 
@@ -32,13 +33,10 @@ else ()
     endif ()
 endif ()
 
-# add_compile_definitions(_DISABLE_STRING_ANNOTATION)
-# add_compile_definitions(_DISABLE_VECTOR_ANNOTATION)
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 # add_compile_options(/fsanitize=address -fsanitize=undefined)
-
-# link_directories("C:\\Program Files\\LLVM\\lib\\clang\\16\\lib\\windows")
-# link_libraries(clang_rt.asan_dynamic-x86_64.lib)
-# link_libraries(clang_rt.asan_dynamic_runtime_thunk-x86_64.lib)
+# link_libraries(clang_rt.asan-x86_64.lib)
+# add_link_options(/fsanitize=address)
 
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")

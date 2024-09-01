@@ -48,6 +48,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_native_var_decl(*inner),
         return clone_enum_def(*inner),
         return clone_enum_variant(*inner),
+        return clone_type_alias(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_meta_if_stmt(*inner),
         SIR_VISIT_IMPOSSIBLE
@@ -137,6 +138,14 @@ EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
         .ident = enum_variant.ident,
         .type = clone_expr(enum_variant.type),
         .value = clone_expr(enum_variant.value),
+    });
+}
+
+TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
+    return mod.create_decl(TypeAlias{
+        .ast_node = type_alias.ast_node,
+        .ident = type_alias.ident,
+        .type = clone_expr(type_alias.type),
     });
 }
 

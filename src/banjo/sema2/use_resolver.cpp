@@ -27,6 +27,15 @@ void UseResolver::resolve_in_block(sir::DeclBlock &decl_block) {
     }
 }
 
+void UseResolver::resolve_in_meta_block(sir::MetaBlock &meta_block) {
+    for (sir::Node &node : meta_block.nodes) {
+        if (auto use_decl = node.as<sir::Decl>().match<sir::UseDecl>()) {
+            sir::Symbol symbol = nullptr;
+            resolve_use_item(use_decl->root_item, symbol);
+        }
+    }
+}
+
 void UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol) {
     if (auto use_ident = use_item.match<sir::UseIdent>()) resolve_use_ident(*use_ident, symbol);
     else if (auto use_rebind = use_item.match<sir::UseRebind>()) resolve_use_rebind(*use_rebind, symbol);

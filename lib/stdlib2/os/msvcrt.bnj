@@ -1,0 +1,6 @@
+use os;
+
+meta if os.IS_WINDOWS {
+    @[link_name=__acrt_iob_func]
+    native func acrt_iob_func(i32) -> addr;
+}

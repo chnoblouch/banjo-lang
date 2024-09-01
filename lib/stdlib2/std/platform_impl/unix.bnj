@@ -1,0 +1,42 @@
+use os.{IS_UNIX, posix};
+
+meta if IS_UNIX {
+    pub func io_get_stdin_stream() -> addr {
+        return posix.stdin;
+    }
+
+    pub func io_get_stdout_stream() -> addr {
+        return posix.stdout;
+    }
+
+    pub func io_get_stderr_stream() -> addr {
+        return posix.stderr;
+    }
+
+    pub func thread_spawn(function: func(addr), argument: addr) -> usize {
+        var handle: usize;
+        var result = posix.pthread_create(&handle, null, function, argument);
+        return handle;
+    }
+
+    pub func thread_join(handle: usize) {
+        var result = posix.pthread_join(handle, null);
+    }
+
+    pub func thread_close(handle: usize) {
+        # `join` already destroys the handle.
+    }
+
+    pub func thread_sleep(milliseconds: u32) {
+        var time = posix.Timespec {
+            tv_sec: (milliseconds / 1000) as u64,
+            tv_nsec: (milliseconds % 1000) as u64 * 1000000
+        };
+        
+        posix.nanosleep(&time, null);
+    }
+
+    pub func thread_hardware_concurrency() -> u32 {
+        return posix.get_nprocs() as u32;
+    }
+}

@@ -1,0 +1,9 @@
+use std.platform;
+
+pub func sleep(milliseconds: u32) {
+    platform.thread_sleep(milliseconds);
+}
+
+pub func hardware_concurrency() -> u32 {
+    return platform.thread_hardware_concurrency();
+}

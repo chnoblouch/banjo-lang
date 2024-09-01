@@ -202,6 +202,7 @@
     native_var_decl_visitor,                                                                                           \
     enum_def_visitor,                                                                                                  \
     enum_variant_visitor,                                                                                              \
+    type_alias_visitor,                                                                                                \
     use_decl_visitor,                                                                                                  \
     meta_if_stmt_visitor,                                                                                              \
     expanded_meta_stmt_visitor                                                                                         \
@@ -226,6 +227,8 @@
         enum_def_visitor;                                                                                              \
     } else if (auto inner = (decl).match<banjo::lang::sir::EnumVariant>()) {                                           \
         enum_variant_visitor;                                                                                          \
+    } else if (auto inner = (decl).match<banjo::lang::sir::TypeAlias>()) {                                             \
+        type_alias_visitor;                                                                                            \
     } else if (auto inner = (decl).match<banjo::lang::sir::UseDecl>()) {                                               \
         use_decl_visitor;                                                                                              \
     } else if (auto inner = (decl).match<banjo::lang::sir::MetaIfStmt>()) {                                            \
@@ -249,6 +252,7 @@
     native_var_decl_visitor,                                                                                           \
     enum_def_visitor,                                                                                                  \
     enum_variant_visitor,                                                                                              \
+    type_alias_visitor,                                                                                                \
     use_ident_visitor,                                                                                                 \
     use_rebind_visitor,                                                                                                \
     var_stmt_visitor,                                                                                                  \
@@ -277,6 +281,8 @@
         enum_def_visitor;                                                                                              \
     } else if (auto inner = (symbol).match<banjo::lang::sir::EnumVariant>()) {                                         \
         enum_variant_visitor;                                                                                          \
+    } else if (auto inner = (symbol).match<banjo::lang::sir::TypeAlias>()) {                                           \
+        type_alias_visitor;                                                                                            \
     } else if (auto inner = (symbol).match<banjo::lang::sir::UseIdent>()) {                                            \
         use_ident_visitor;                                                                                             \
     } else if (auto inner = (symbol).match<banjo::lang::sir::UseRebind>()) {                                           \

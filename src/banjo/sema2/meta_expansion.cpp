@@ -3,9 +3,9 @@
 #include "banjo/sema2/const_evaluator.hpp"
 #include "banjo/sema2/decl_body_analyzer.hpp"
 #include "banjo/sema2/decl_interface_analyzer.hpp"
-#include "banjo/sema2/decl_value_analyzer.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sir/sir.hpp"
+#include "use_resolver.hpp"
 
 namespace banjo {
 
@@ -24,6 +24,9 @@ void MetaExpansion::run() {
 }
 
 void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
+    bool prev_in_meta_expansion = analyzer.in_meta_expansion;
+    analyzer.in_meta_expansion = true;
+
     for (unsigned i = 0; i < decl_block.decls.size(); i++) {
         const sir::Decl &decl = decl_block.decls[i];
 
@@ -41,6 +44,7 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
     }
 
     analyzer.check_for_completeness(decl_block);
+    analyzer.in_meta_expansion = prev_in_meta_expansion;
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index) {
@@ -64,11 +68,6 @@ void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::Met
     decl_block.decls[index] = analyzer.create_stmt(sir::ExpandedMetaStmt{});
 
     SymbolCollector(analyzer).collect_in_meta_block(meta_block);
-    DeclInterfaceAnalyzer(analyzer).analyze_meta_block(meta_block);
-    DeclValueAnalyzer(analyzer).analyze_meta_block(meta_block);
-    DeclBodyAnalyzer(analyzer).analyze_meta_block(meta_block);
-
-    // TODO: nested meta expansion
 
     for (sir::Node &node : meta_block.nodes) {
         decl_block.decls.push_back(node.as<sir::Decl>());

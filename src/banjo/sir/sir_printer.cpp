@@ -106,6 +106,7 @@ void Printer::print_decl(const Decl &decl) {
         print_native_var_decl(*inner),
         print_enum_def(*inner),
         print_enum_variant(*inner),
+        print_type_alias(*inner),
         print_use_decl(*inner),
         print_meta_if_stmt(*inner),
         print_expanded_meta_stmt(*inner)
@@ -218,6 +219,13 @@ void Printer::print_enum_variant(const EnumVariant &enum_variant) {
     BEGIN_OBJECT("EnumVariant");
     PRINT_FIELD("ident", enum_variant.ident.value);
     PRINT_EXPR_FIELD("value", enum_variant.value);
+    END_OBJECT();
+}
+
+void Printer::print_type_alias(const TypeAlias &type_alias) {
+    BEGIN_OBJECT("TypeAlias");
+    PRINT_FIELD("ident", type_alias.ident.value);
+    PRINT_EXPR_FIELD("type", type_alias.type);
     END_OBJECT();
 }
 

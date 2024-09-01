@@ -105,7 +105,9 @@ ReportText &ReportText::format(sir::Expr &expr) {
 }
 
 std::string ReportText::to_string(sir::Expr &expr) {
-    if (auto primitive_type = expr.match<sir::PrimitiveType>()) {
+    if (!expr) {
+        return "<null>";
+    } else if (auto primitive_type = expr.match<sir::PrimitiveType>()) {
         switch (primitive_type->primitive) {
             case sir::Primitive::I8: return "i8";
             case sir::Primitive::I16: return "i16";

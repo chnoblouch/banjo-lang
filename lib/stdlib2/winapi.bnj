@@ -1,0 +1,3 @@
+type Bool = u32;
+type Handle = addr;
+type Dword = u32;

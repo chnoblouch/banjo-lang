@@ -226,10 +226,7 @@ ASTNode *Expr::get_ast_node() const {
 
 DeclBlock *Expr::get_decl_block() {
     if (auto symbol_expr = match<SymbolExpr>()) {
-        if (auto mod = symbol_expr->symbol.match<Module>()) return &mod->block;
-        else if (auto struct_def = symbol_expr->symbol.match<StructDef>()) return &struct_def->block;
-        else if (auto enum_def = symbol_expr->symbol.match<EnumDef>()) return &enum_def->block;
-        else return nullptr;
+        return symbol_expr->symbol.get_decl_block();
     } else {
         return nullptr;
     }
@@ -253,6 +250,7 @@ bool Symbol::operator==(const Symbol &other) const {
         return inner == &other.as<NativeVarDecl>(),
         return inner == &other.as<EnumDef>(),
         return inner == &other.as<EnumVariant>(),
+        return inner == &other.as<TypeAlias>(),
         return inner == &other.as<UseIdent>(),
         return inner == &other.as<UseRebind>(),
         return inner == &other.as<VarStmt>(),
@@ -264,22 +262,23 @@ bool Symbol::operator==(const Symbol &other) const {
 const Ident &Symbol::get_ident() const {
     SIR_VISIT_SYMBOL(
         *this,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        return inner->ident,
-        SIR_VISIT_IMPOSSIBLE,
-        return inner->name,
-        return inner->name,
-        SIR_VISIT_IMPOSSIBLE
+        SIR_VISIT_IMPOSSIBLE, // empty
+        SIR_VISIT_IMPOSSIBLE, // module
+        return inner->ident,  // func_def
+        return inner->ident,  // native_func_decl
+        return inner->ident,  // const_def
+        return inner->ident,  // struct_def
+        return inner->ident,  // struct_field
+        return inner->ident,  // var_decl
+        return inner->ident,  // native_var_decl
+        return inner->ident,  // enum_def
+        return inner->ident,  // enum_variant
+        return inner->ident,  // type_alias
+        return inner->ident,  // use_ident
+        SIR_VISIT_IMPOSSIBLE, // use_rebind
+        return inner->name,   // var_stmt
+        return inner->name,   // param
+        SIR_VISIT_IMPOSSIBLE  // overload_set
     );
 }
 
@@ -298,22 +297,23 @@ std::string Symbol::get_name() const {
 Expr Symbol::get_type() {
     SIR_VISIT_SYMBOL(
         *this,
-        return nullptr,
-        return nullptr,
-        return &inner->type,
-        return &inner->type,
-        return inner->type,
-        return nullptr,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return nullptr,
-        return inner->type,
-        return nullptr,
-        return nullptr,
-        return inner->type,
-        return inner->type,
-        return nullptr
+        return nullptr,      // empty
+        return nullptr,      // module
+        return &inner->type, // func_def
+        return &inner->type, // native_func_decl
+        return inner->type,  // const_def
+        return nullptr,      // struct_def
+        return inner->type,  // struct_field
+        return inner->type,  // var_decl
+        return inner->type,  // native_var_decl
+        return nullptr,      // enum_def
+        return inner->type,  // enum_variant
+        return nullptr,      // type_alias
+        return nullptr,      // use_ident
+        return nullptr,      // use_rebind
+        return inner->type,  // var_stmt
+        return inner->type,  // param
+        return nullptr       // overload_set
     );
 }
 
@@ -326,6 +326,14 @@ Symbol Symbol::resolve() {
 SymbolTable *Symbol::get_symbol_table() {
     if (auto mod = match<Module>()) return mod->block.symbol_table;
     else if (auto struct_def = match<StructDef>()) return struct_def->block.symbol_table;
+    else if (auto enum_def = match<EnumDef>()) return struct_def->block.symbol_table;
+    else return nullptr;
+}
+
+DeclBlock *Symbol::get_decl_block() {
+    if (auto mod = match<Module>()) return &mod->block;
+    else if (auto struct_def = match<StructDef>()) return &struct_def->block;
+    else if (auto enum_def = match<EnumDef>()) return &enum_def->block;
     else return nullptr;
 }
 

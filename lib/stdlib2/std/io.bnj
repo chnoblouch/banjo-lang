@@ -1,0 +1,57 @@
+use std.platform;
+use c.lib.stdio.fread;
+
+struct CFileReader {
+    var stream: addr;
+
+    pub func new(stream: addr) -> CFileReader {
+        return CFileReader { stream };
+    }
+
+    pub func read(self, buffer: *u8, size: usize) -> usize {
+        return fread(buffer as addr, 1, size, self.stream);
+    }
+}
+
+struct Reader[T] {
+    var impl: T;
+
+    pub func new(impl: T) -> Reader[T] {
+        return Reader[T] { impl };
+    }
+
+    pub func read_u8(self) -> ?u8 {
+        var value: u8;
+        if self.impl.read(&value as *u8, 1) != 0 {
+            return value;
+        } else {
+            return none;
+        }
+    }
+
+    pub func read_line(self) -> ?String {
+        var string = "";
+        var char = self.read_u8();
+        
+        if !char.has_value {
+            return none;
+        }
+        
+        while char.value != '\n' && char.value != '\r' {
+            string.append(char.value);
+            char = self.read_u8();
+            
+            if !char.has_value {
+                return none;
+            }
+        }
+        
+        return string;
+    }
+}
+
+pub func stdin() -> Reader[CFileReader] {
+    var stream = platform.io_get_stdin_stream();
+    var c_file_reader = CFileReader.new(stream);
+    return Reader[CFileReader].new(c_file_reader);
+}

@@ -2,14 +2,12 @@
 
 #include "banjo/sema2/decl_body_analyzer.hpp"
 #include "banjo/sema2/decl_interface_analyzer.hpp"
-#include "banjo/sema2/decl_value_analyzer.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/preamble.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 
-#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -27,11 +25,21 @@ SemanticAnalyzer::SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, 
 void SemanticAnalyzer::analyze() {
     Preamble(*this).insert();
     SymbolCollector(*this).collect();
+    MetaExpansion(*this).run();
     UseResolver(*this).resolve();
     DeclInterfaceAnalyzer(*this).analyze();
-    DeclValueAnalyzer(*this).analyze();
-    MetaExpansion(*this).run();
     DeclBodyAnalyzer(*this).analyze();
+
+    while (!decls_awaiting_body_analysis.empty()) {
+        auto clone = decls_awaiting_body_analysis;
+        decls_awaiting_body_analysis.clear();
+
+        for (auto &[decl, scope] : clone) {
+            scopes.push(scope);
+            DeclBodyAnalyzer(*this).analyze_decl(decl);
+            scopes.pop();
+        }
+    }
 }
 
 void SemanticAnalyzer::enter_mod(sir::Module *mod) {

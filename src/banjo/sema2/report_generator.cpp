@@ -2,10 +2,13 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"
+#include "banjo/reports/report.hpp"
+#include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
-#include "magic_methods.hpp"
+
+#include <cassert>
 
 namespace banjo {
 
@@ -19,16 +22,22 @@ ReportBuilder::ReportBuilder(SemanticAnalyzer &analyzer, Report::Type type)
 
 template <typename... FormatArgs>
 ReportBuilder &ReportBuilder::set_message(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
-    SourceLocation location{find_mod_path(node), node->get_range()};
-    partial_report.set_message({location, format_str, format_args...});
+    partial_report.set_message({find_location(node), format_str, format_args...});
     return *this;
 }
 
 template <typename... FormatArgs>
 ReportBuilder &ReportBuilder::add_note(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
-    SourceLocation location{find_mod_path(node), node->get_range()};
-    partial_report.add_note({location, format_str, format_args...});
+    partial_report.add_note({find_location(node), format_str, format_args...});
     return *this;
+}
+
+SourceLocation ReportBuilder::find_location(ASTNode *node) {
+    if (node) {
+        return SourceLocation{find_mod_path(node), node->get_range()};
+    } else {
+        return SourceLocation{analyzer.cur_sir_mod->path, {0, 1}};
+    }
 }
 
 void ReportBuilder::report() {

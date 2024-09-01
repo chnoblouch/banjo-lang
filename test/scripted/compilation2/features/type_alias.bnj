@@ -1,0 +1,23 @@
+# test:subtest
+# test:compiles
+
+type T = bool;
+
+func main() {
+    var a: T = true;
+}
+
+# test:subtest
+# test:compiles
+
+struct S {
+    var f: i32;
+}
+
+type T = S;
+
+func main() {
+    var a: T = S {
+        f: 10,
+    };
+}

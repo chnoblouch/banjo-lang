@@ -1,0 +1,7 @@
+use os;
+
+meta if os.IS_WINDOWS {
+    use std.platform_impl.windows as platform;
+} else if os.IS_UNIX {
+    use std.platform_impl.unix as platform;
+}

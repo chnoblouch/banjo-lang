@@ -15,11 +15,21 @@ namespace sema {
 ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
-    return evaluate(expr).as<sir::IntLiteral>().value;
+    sir::Expr result = evaluate(expr);
+    if (result) {
+        return result.as<sir::IntLiteral>().value;
+    } else {
+        return 0;
+    }
 }
 
 bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
-    return evaluate(expr).as<sir::BoolLiteral>().value;
+    sir::Expr result = evaluate(expr);
+    if (result) {
+        return result.as<sir::BoolLiteral>().value;
+    } else {
+        return false;
+    };
 }
 
 sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
@@ -29,7 +39,10 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return evaluate_meta_call_expr(*meta_call_expr);
     }
 
-    ExprAnalyzer(analyzer).analyze(expr);
+    Result result = ExprAnalyzer(analyzer).analyze(expr);
+    if (result != Result::SUCCESS) {
+        return nullptr;
+    }
 
     SIR_VISIT_EXPR(
         expr,
@@ -86,6 +99,7 @@ sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE,
+        SIR_VISIT_IMPOSSIBLE,
         SIR_VISIT_IMPOSSIBLE
     );
 }
@@ -93,6 +107,10 @@ sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
 sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
     sir::Expr lhs = evaluate(binary_expr.lhs);
     sir::Expr rhs = evaluate(binary_expr.rhs);
+
+    if (!lhs || !rhs) {
+        return nullptr;
+    }
 
     if (lhs.is<sir::IntLiteral>() && rhs.is<sir::IntLiteral>()) {
         LargeInt lhs_int = lhs.as<sir::IntLiteral>().value;

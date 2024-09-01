@@ -1,7 +1,7 @@
 #ifndef REPORT_GENERATOR_H
 #define REPORT_GENERATOR_H
 
-#include "banjo/reports/report_manager.hpp"
+#include "banjo/reports/report.hpp"
 #include "banjo/sir/sir.hpp"
 
 #include <string_view>
@@ -28,6 +28,8 @@ public:
 
     template <typename... FormatArgs>
     ReportBuilder &add_note(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+
+    SourceLocation find_location(ASTNode *node);
 
     void report();
 

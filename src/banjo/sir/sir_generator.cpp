@@ -84,6 +84,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_STRUCT_DEFINITION: return generate_struct(node);
         case AST_GENERIC_STRUCT_DEFINITION: return generate_generic_struct(node);
         case AST_ENUM_DEFINITION: return generate_enum(node);
+        case AST_TYPE_ALIAS: return generate_type_alias(node);
         case AST_VAR: return generate_var_decl(node);
         case AST_NATIVE_VAR: return generate_native_var_decl(node);
         case AST_USE: return generate_use_decl(node);
@@ -163,6 +164,22 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
     return struct_def;
 }
 
+sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {
+    return create_decl(sir::VarDecl{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(VAR_NAME)),
+        .type = generate_expr(node->get_child(VAR_TYPE)),
+    });
+}
+
+sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node) {
+    return create_decl(sir::NativeVarDecl{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(VAR_NAME)),
+        .type = generate_expr(node->get_child(VAR_TYPE)),
+    });
+}
+
 sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
     // TODO: The parser should create a block node instead of a variant list node so this hack can be removed.
     ASTNode dummy_block_node;
@@ -185,19 +202,11 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
     });
 }
 
-sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {
-    return create_decl(sir::VarDecl{
+sir::Decl SIRGenerator::generate_type_alias(ASTNode *node) {
+    return create_decl(sir::TypeAlias{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(VAR_NAME)),
-        .type = generate_expr(node->get_child(VAR_TYPE)),
-    });
-}
-
-sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node) {
-    return create_decl(sir::NativeVarDecl{
-        .ast_node = node,
-        .ident = generate_ident(node->get_child(VAR_NAME)),
-        .type = generate_expr(node->get_child(VAR_TYPE)),
+        .ident = generate_ident(node->get_child(TYPE_ALIAS_NAME)),
+        .type = generate_expr(node->get_child(TYPE_ALIAS_UNDERLYING_TYPE)),
     });
 }
 

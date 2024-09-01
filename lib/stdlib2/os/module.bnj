@@ -1,0 +1,13 @@
+use std.config;
+
+meta if config.OS == config.WINDOWS {
+    const IS_WINDOWS: bool = true;
+} else {
+    const IS_WINDOWS: bool = false;
+}
+
+meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == config.ANDROID {
+    const IS_UNIX: bool = true;
+} else {
+    const IS_UNIX: bool = false;
+}

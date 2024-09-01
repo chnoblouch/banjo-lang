@@ -1,0 +1,17 @@
+use os;
+
+meta if os.IS_UNIX {
+    struct Timespec {
+        var tv_sec: u64;
+        var tv_nsec: u64;
+    }
+
+    native var stdin: addr;
+    native var stdout: addr;
+    native var stderr: addr;
+
+    native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
+    native func pthread_join(thread: usize, retval: *addr) -> i32;
+    native func nanosleep(req: *Timespec, rem: *Timespec);
+    native func get_nprocs() -> i32;
+}

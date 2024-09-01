@@ -1,0 +1,38 @@
+use os.{IS_WINDOWS, winapi, msvcrt};
+
+meta if IS_WINDOWS {
+    pub func io_get_stdin_stream() -> addr {
+        return msvcrt.acrt_iob_func(0);
+    }
+
+    pub func io_get_stdout_stream() -> addr {
+        return msvcrt.acrt_iob_func(1);
+    }
+
+    pub func io_get_stderr_stream() -> addr {
+        return msvcrt.acrt_iob_func(2);
+    }
+
+    pub func thread_spawn(function: func(addr), argument: addr) -> usize {
+		var handle = winapi.create_thread(null, 0, function, argument, 0, null);
+		return handle as usize;
+	}
+
+	pub func thread_join(handle: usize) {
+		winapi.wait_for_single_object(handle as addr, 0xFFFFFFFF);
+	}
+
+	pub func thread_close(handle: usize) {
+		winapi.close_handle(handle as addr);
+	}
+
+	pub func thread_sleep(milliseconds: u32) {
+		winapi.sleep(milliseconds);
+	}
+
+	pub func thread_hardware_concurrency() -> u32 {
+		var system_info: winapi.SystemInfo;
+		winapi.get_native_system_info(&system_info);
+		return system_info.number_of_processors;
+	}
+}

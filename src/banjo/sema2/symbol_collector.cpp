@@ -47,6 +47,7 @@ void SymbolCollector::collect_decl(sir::Decl &decl) {
         collect_native_var_decl(*inner),
         collect_enum_def(*inner),
         collect_enum_variant(*inner),
+        collect_type_alias(*inner),
         collect_use_decl(*inner),
         SIR_VISIT_IGNORE,
         SIR_VISIT_IGNORE
@@ -105,6 +106,10 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
 
 void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
     get_symbol_table().symbols.insert({enum_variant.ident.value, &enum_variant});
+}
+
+void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
+    get_symbol_table().symbols.insert({type_alias.ident.value, &type_alias});
 }
 
 void SymbolCollector::collect_use_decl(sir::UseDecl &use_decl) {

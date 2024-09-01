@@ -16,6 +16,8 @@ class DeclBodyAnalyzer final : public DeclVisitor {
 public:
     DeclBodyAnalyzer(SemanticAnalyzer &analyzer);
     Result analyze_func_def(sir::FuncDef &func_def) override;
+    Result analyze_const_def(sir::ConstDef &const_def) override;
+    Result analyze_enum_def(sir::EnumDef &enum_def) override;
 };
 
 } // namespace sema

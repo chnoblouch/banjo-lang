@@ -12,6 +12,8 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <vector>
+#include <tuple>
 
 namespace banjo {
 
@@ -63,6 +65,8 @@ private:
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
     std::set<const sir::Decl *> blocked_decls;
+    std::vector<std::tuple<sir::Decl, Scope>> decls_awaiting_body_analysis;
+    bool in_meta_expansion = false;
 
 public:
     SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, ReportManager &report_manager);

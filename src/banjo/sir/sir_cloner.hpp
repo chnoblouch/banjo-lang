@@ -31,6 +31,7 @@ public:
     NativeVarDecl *clone_native_var_decl(const NativeVarDecl &native_var_decl);
     EnumDef *clone_enum_def(const EnumDef &enum_def);
     EnumVariant *clone_enum_variant(const EnumVariant &enum_variant);
+    TypeAlias *clone_type_alias(const TypeAlias &type_alias);
     MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
 
     Block clone_block(const Block &block);

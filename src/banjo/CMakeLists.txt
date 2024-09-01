@@ -120,7 +120,6 @@ add_library(banjo STATIC
     sema2/const_evaluator.cpp
     sema2/decl_body_analyzer.cpp
     sema2/decl_interface_analyzer.cpp
-    sema2/decl_value_analyzer.cpp
     sema2/decl_visitor.cpp
     sema2/expr_analyzer.cpp
     sema2/generic_arg_deduction.cpp

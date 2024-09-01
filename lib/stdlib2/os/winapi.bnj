@@ -1,0 +1,49 @@
+type Bool = u32;
+type Handle = addr;
+type Dword = u32;
+
+# --- handleapi.h ---
+
+@[link_name=CloseHandle]
+native func close_handle(object: addr) -> bool;
+
+# --- synchapi.h ---
+
+@[link_name=WaitForSingleObject]
+native func wait_for_single_object(
+    handle: addr,
+    milliseconds: u32
+) -> u32;
+
+@[link_name=Sleep]
+native func sleep(milliseconds: u32);
+
+# --- processthreadsapi.h ---
+
+@[link_name=CreateThread]
+native func create_thread(
+    thread_attributes: addr,
+    stack_size: usize,
+    start_address: func(addr),
+    parameter: addr,
+    creation_flags: u32,
+    thread_id: *u32
+) -> addr;
+
+# --- sysinfoapi.h ---
+
+struct SystemInfo {
+    var union_0: u32;
+    var page_size: u32;
+    var minimum_application_dddress: addr;
+    var maximum_application_dddress: addr;
+    var active_processor_mask: *u32;
+    var number_of_processors: u32;
+    var processor_type: u32;
+    var allocation_granularity: u32;
+    var processor_level: u16;
+    var processor_revision: u16;
+}
+
+@[link_name=GetNativeSystemInfo]
+native func get_native_system_info(system_info: *SystemInfo);

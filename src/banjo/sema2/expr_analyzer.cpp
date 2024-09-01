@@ -8,6 +8,7 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 #include "generic_arg_deduction.hpp"
+#include "use_resolver.hpp"
 
 #include <cassert>
 #include <vector>
@@ -63,7 +64,7 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
         result = analyze_ident_expr(*inner, expr),
         analyze_star_expr(*inner, expr),
         result = analyze_bracket_expr(*inner, expr),
-        analyze_dot_expr(*inner, expr),
+        result = analyze_dot_expr(*inner, expr),
         result = Result::SUCCESS,
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr),
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr)
@@ -71,6 +72,10 @@ Result ExprAnalyzer::analyze(sir::Expr &expr) {
 
     if (result != Result::SUCCESS) {
         return result;
+    }
+
+    if (auto type_alias = expr.match_symbol<sir::TypeAlias>()) {
+        expr = type_alias->type;
     }
 
     if (constraints.expected_type && expr.get_type() != constraints.expected_type) {
@@ -388,7 +393,10 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
             constraints = ExprConstraints::expect_type(native_func_decl->type.params[i].type);
         }
 
-        ExprAnalyzer(analyzer, constraints).analyze(arg);
+        result = ExprAnalyzer(analyzer, constraints).analyze(arg);
+        if (result != Result::SUCCESS) {
+            return result;
+        }
     }
 
     if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
@@ -496,7 +504,7 @@ void ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir::
 
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
     Result result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
-    if (result == Result::ERROR) {
+    if (result != Result::SUCCESS) {
         return result;
     }
 
@@ -546,13 +554,11 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         }
     }
 
-    sir::Symbol symbol = symbol_table.look_up(ident_expr.value);
-
-    if (!symbol && !symbol_table.complete && !analyzer.is_in_stmt_block()) {
-        MetaExpansion(analyzer).run_on_decl_block(*analyzer.get_scope().decl_block);
-        symbol = symbol_table.look_up(ident_expr.value);
+    if (analyzer.in_meta_expansion) {
+        UseResolver(analyzer).resolve_in_block(*analyzer.get_scope().decl_block);
     }
 
+    sir::Symbol symbol = symbol_table.look_up(ident_expr.value);
     if (!symbol) {
         analyzer.report_generator.report_err_symbol_not_found(ident_expr);
         return Result::ERROR;
@@ -568,7 +574,12 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 }
 
 Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
-    ExprAnalyzer(analyzer).analyze(star_expr.value);
+    Result result;
+
+    result = ExprAnalyzer(analyzer).analyze(star_expr.value);
+    if (result != Result::SUCCESS) {
+        return result;
+    }
 
     if (star_expr.value.is_type()) {
         out_expr = analyzer.create_expr(sir::PointerType{
@@ -796,12 +807,6 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
         sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
-
-        if (!symbol && !decl_block->symbol_table->complete) {
-            MetaExpansion(analyzer).run_on_decl_block(*analyzer.get_scope().decl_block);
-            symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
-        }
-
         if (!symbol) {
             analyzer.report_generator.report_err_symbol_not_found(dot_expr.rhs);
             return Result::ERROR;
@@ -857,7 +862,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             ASSERT_UNREACHABLE;
         }
     } else {
-        ASSERT_UNREACHABLE;
+        return Result::ERROR;
     }
 
     return Result::SUCCESS;

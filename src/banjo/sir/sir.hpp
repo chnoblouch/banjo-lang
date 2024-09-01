@@ -84,6 +84,7 @@ struct VarDecl;
 struct NativeVarDecl;
 struct EnumDef;
 struct EnumVariant;
+struct TypeAlias;
 struct Param;
 struct UseDecl;
 struct UseIdent;
@@ -271,6 +272,7 @@ private:
         NativeVarDecl *,
         EnumDef *,
         EnumVariant *,
+        TypeAlias *,
         UseDecl *,
         MetaIfStmt *,
         ExpandedMetaStmt *,
@@ -325,6 +327,7 @@ class Symbol {
         NativeVarDecl *,
         EnumDef *,
         EnumVariant *,
+        TypeAlias *,
         UseIdent *,
         UseRebind *,
         VarStmt *,
@@ -376,6 +379,7 @@ public:
     Expr get_type();
     Symbol resolve();
     SymbolTable *get_symbol_table();
+    DeclBlock *get_decl_block();
 };
 
 class UseItem {
@@ -912,6 +916,12 @@ struct EnumVariant {
     Expr value;
 };
 
+struct TypeAlias {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr type;
+};
+
 struct UseDecl {
     ASTNode *ast_node;
     UseItem root_item;
@@ -1001,6 +1011,7 @@ typedef std::variant<
     NativeVarDecl,
     EnumDef,
     EnumVariant,
+    TypeAlias,
     UseDecl>
     DeclStorage;
 

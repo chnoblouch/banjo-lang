@@ -6,7 +6,7 @@ native func perror(s: *u8) -> void;
 native func fopen(filename: *u8, mode: *u8) -> addr;
 native func fclose(stream: addr) -> addr;
 native func fflush(stream: addr) -> i32;
-native func fread(ptr: addr, size: usize, nmemb: usize, stream: addr) -> addr;
+native func fread(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
 native func fwrite(ptr: addr, size: usize, nmemb: usize, stream: addr) -> addr;
 native func fgetc(stream: addr) -> i32;
 native func fputc(ch: i32, stream: addr) -> i32;

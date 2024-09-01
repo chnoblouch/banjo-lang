@@ -84,6 +84,10 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
     return Result::SUCCESS;
 }
 
+Result DeclInterfaceAnalyzer::analyze_type_alias(sir::TypeAlias &type_alias) {
+    return ExprAnalyzer(analyzer).analyze(type_alias.type);
+}
+
 } // namespace sema
 
 } // namespace lang

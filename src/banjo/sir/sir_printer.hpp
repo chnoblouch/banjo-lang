@@ -35,6 +35,7 @@ private:
     void print_native_var_decl(const NativeVarDecl &native_var_decl);
     void print_enum_def(const EnumDef &enum_def);
     void print_enum_variant(const EnumVariant &enum_variant);
+    void print_type_alias(const TypeAlias &type_alias);
     void print_use_decl(const UseDecl &use_decl);
 
     void print_use_item(const UseItem &use_item);

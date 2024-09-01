@@ -38,19 +38,20 @@ void DeclVisitor::analyze_meta_block(sir::MetaBlock &meta_block) {
 Result DeclVisitor::analyze_decl(sir::Decl &decl) {
     SIR_VISIT_DECL(
         decl,
-        SIR_VISIT_IMPOSSIBLE,
-        return process_func_def(*inner),
-        analyze_native_func_decl(*inner),
-        analyze_const_def(*inner),
-        process_struct_def(*inner),
-        SIR_VISIT_IGNORE,
-        analyze_var_decl(*inner, decl),
-        analyze_native_var_decl(*inner),
-        process_enum_def(*inner),
-        analyze_enum_variant(*inner),
-        SIR_VISIT_IGNORE,
-        SIR_VISIT_IGNORE,
-        SIR_VISIT_IGNORE
+        SIR_VISIT_IMPOSSIBLE,             // empty
+        return process_func_def(*inner),  // func_def
+        analyze_native_func_decl(*inner), // native_func_decl
+        analyze_const_def(*inner),        // const_def
+        process_struct_def(*inner),       // struct_def
+        SIR_VISIT_IGNORE,                 // struct_field
+        analyze_var_decl(*inner, decl),   // var_decl
+        analyze_native_var_decl(*inner),  // native_var_decl
+        process_enum_def(*inner),         // enum_def
+        analyze_enum_variant(*inner),     // enum_variant
+        analyze_type_alias(*inner),       // type_alias
+        SIR_VISIT_IGNORE,                 // use_decl
+        SIR_VISIT_IGNORE,                 // meta_if_stmt
+        SIR_VISIT_IGNORE                  // expanded_meta_stmt
     );
 
     return Result::SUCCESS;
