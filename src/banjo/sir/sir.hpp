@@ -60,6 +60,7 @@ struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
 struct DotExpr;
+struct PseudoType;
 struct MetaAccess;
 struct MetaFieldExpr;
 struct MetaCallExpr;
@@ -136,6 +137,7 @@ class Expr {
         StarExpr *,
         BracketExpr *,
         DotExpr *,
+        PseudoType *,
         MetaAccess *,
         MetaFieldExpr *,
         MetaCallExpr *,
@@ -202,6 +204,7 @@ public:
     bool is_fp_type() const;
     bool is_addr_like_type() const;
     bool is_u8_ptr() const;
+    bool is_symbol(sir::Symbol symbol) const;
 
     ASTNode *get_ast_node() const;
     DeclBlock *get_decl_block();
@@ -732,6 +735,16 @@ struct DotExpr {
     Ident rhs;
 };
 
+enum class PseudoTypeKind {
+    INT_LITERAL,
+    FP_LITERAL,
+    STRING_LITERAL,
+};
+
+struct PseudoType {
+    PseudoTypeKind kind;
+};
+
 struct MetaAccess {
     ASTNode *ast_node;
     Expr expr;
@@ -900,6 +913,7 @@ struct NativeVarDecl {
     ASTNode *ast_node;
     Ident ident;
     Expr type;
+    Attributes *attrs = nullptr;
 };
 
 struct EnumDef {
@@ -979,6 +993,7 @@ typedef std::variant<
     StarExpr,
     BracketExpr,
     DotExpr,
+    PseudoType,
     MetaAccess,
     MetaFieldExpr,
     MetaCallExpr>

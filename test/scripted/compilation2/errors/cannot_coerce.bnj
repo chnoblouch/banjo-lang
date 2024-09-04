@@ -1,0 +1,105 @@
+# test:subtest
+# test:error 5:18 "cannot coerce int literal to type 'f32'"
+
+func main() {
+    var a: f32 = 1;
+}
+
+# test:subtest
+# test:error 14:16 "cannot coerce int literal to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = 1;
+}
+
+# test:subtest
+# test:error 21:18 "cannot coerce float literal to type 'i32'"
+
+func main() {
+    var a: i32 = 0.5;
+}
+
+# test:subtest
+# test:error 30:16 "cannot coerce float literal to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = 0.5;
+}
+
+# test:subtest
+# test:error 37:18 "cannot coerce `null` to type 'i32'"
+
+func main() {
+    var a: i32 = null;
+}
+
+# test:subtest
+# test:error 46:16 "cannot coerce `null` to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = null;
+}
+
+# test:subtest
+# test:error 53:18 "cannot coerce `none` to type 'i32'"
+
+func main() {
+    var a: i32 = none;
+}
+
+# test:subtest
+# test:error 62:16 "cannot coerce `none` to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = none;
+}
+
+# test:subtest
+# test:error 69:18 "cannot coerce array literal to type 'i32'"
+
+func main() {
+    var a: i32 = [1, 2];
+}
+
+# test:subtest
+# test:error 78:16 "cannot coerce array literal to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = [1, 2];
+}
+
+# test:subtest
+# test:error 85:18 "cannot coerce string literal to type 'i32'"
+
+func main() {
+    var a: i32 = "Hi!";
+}
+
+# test:94
+# test:error 94:16 "cannot coerce string literal to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = "Hi!";
+}
+
+# test:subtest
+# test:error 101:18 "cannot coerce struct literal to type 'i32'"
+
+func main() {
+    var a: i32 = {
+        x: 10,
+        y: 20,
+    };
+}

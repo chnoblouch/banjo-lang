@@ -1,0 +1,13 @@
+# test:subtest
+# test:error 5:23 "too few elements in array literal (expected 3, got 2)"
+
+func main() {
+    var a: [i32; 3] = [1, 2];
+}
+
+# test:subtest
+# test:error 12:23 "too many elements in array literal (expected 3, got 4)"
+
+func main() {
+    var a: [i32; 3] = [1, 2, 3, 4];
+}

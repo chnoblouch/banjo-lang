@@ -148,8 +148,10 @@ StoredValue ExprSSAGenerator::generate_array_literal(
     const sir::ArrayLiteral &array_literal,
     const StorageHints &hints
 ) {
+    const sir::Expr &element_type = array_literal.type.as<sir::StaticArrayType>().base_type;
+
     ssa::Type ssa_array_type = TypeSSAGenerator(ctx).generate(array_literal.type);
-    ssa::Type ssa_element_type = TypeSSAGenerator(ctx).generate(array_literal.values[0].get_type());
+    ssa::Type ssa_element_type = TypeSSAGenerator(ctx).generate(element_type);
     StoredValue stored_val = StoredValue::alloc(ssa_array_type, hints, ctx);
 
     for (unsigned i = 0; i < array_literal.values.size(); i++) {

@@ -75,6 +75,10 @@ public:
     ReportText &format(std::string_view string);
     ReportText &format(const char *string);
     ReportText &format(const std::string &string);
+    ReportText &format(int integer);
+    ReportText &format(unsigned integer);
+    ReportText &format(long long integer);
+    ReportText &format(unsigned long long integer);
     ReportText &format(ASTNode *node);
     ReportText &format(DataType *type);
     ReportText &format(Structure *struct_);

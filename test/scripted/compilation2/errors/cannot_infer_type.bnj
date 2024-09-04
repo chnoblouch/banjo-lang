@@ -1,0 +1,30 @@
+# test:subtest
+# test:error 5:13 "cannot infer type of `none`"
+
+func main() {
+    var a = none;
+}
+
+# test:subtest
+# test:error 12:13 "cannot infer type of `undefined`" 
+
+func main() {
+    var a = undefined;
+}
+
+# test:subtest
+# test:error 19:13 "cannot infer type of empty array literal" 
+
+func main() {
+    var a = [];
+}
+
+# test:subtest
+# test:error 26:13 "cannot infer type of struct literal"
+
+func main() {
+    var a = {
+        x: 10,
+        y: 15,
+    };
+}

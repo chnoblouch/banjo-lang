@@ -1,0 +1,52 @@
+struct Path {
+    var path: String;
+    
+    pub func new() -> Path {
+        return Path {
+            path: ""
+        };
+    }
+    
+    pub func from(str: String) -> Path {
+        var path = Path {
+            path: str
+        };
+
+        path.normalize();
+        return path;
+    }
+    
+    pub func append(self, component: String) {
+        self.path.append('/');
+        self.path.append(component);
+    }
+    
+    # pub func exists(self) -> bool {
+    #     return os.path.exists(self.path.cstr());
+    # }
+    
+    pub func parent(self) -> Path {
+        var index = self.path.rfind('/');
+        return from(self.path.substr(0, index as u32));
+    }
+    
+    # pub func list_dir(self) -> Array[Path] {
+    #     return os.path.list_dir(self);
+    # }
+    
+    pub func str(self) -> String {    
+        return self.path.copy();
+    }
+    
+    pub func __str__(self) -> String {
+        return self.path.copy();
+    }
+    
+    func normalize(self) {
+        for i in 0..self.path.length {
+            if self.path.data[i] == '\\' {
+                self.path.data[i] = '/';
+            }
+        }
+    }
+}

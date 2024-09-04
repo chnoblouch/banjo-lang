@@ -148,7 +148,13 @@ void SSAGenerator::create_struct_def(
 
 void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
     ctx.ssa_extern_globals.insert({&sir_native_var_decl, ssa_mod.get_external_globals().size()});
-    ssa_mod.add(ssa::GlobalDecl(sir_native_var_decl.ident.value, {}));
+
+    std::string name = sir_native_var_decl.ident.value;
+    if (sir_native_var_decl.attrs && sir_native_var_decl.attrs->link_name) {
+        name = *sir_native_var_decl.attrs->link_name;
+    }
+
+    ssa_mod.add(ssa::GlobalDecl(name, {}));
 }
 
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {

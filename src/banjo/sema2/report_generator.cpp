@@ -94,32 +94,54 @@ void ReportGenerator::report_err_type_mismatch(
     report_error("type mismatch (expected '$', got '$')", value.get_ast_node(), expected, actual);
 }
 
-void ReportGenerator::report_err_cant_coerce_int_literal(
-    const sir::IntLiteral &int_literal,
-    const sir::Expr &expected_type
-) {
+void ReportGenerator::report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type) {
     report_error("cannot coerce int literal to type '$'", int_literal.ast_node, expected_type);
 }
 
-void ReportGenerator::report_err_cant_coerce_fp_literal(
-    const sir::FPLiteral &fp_literal,
-    const sir::Expr &expected_type
-) {
+void ReportGenerator::report_err_cannot_coerce(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type) {
     report_error("cannot coerce float literal to type '$'", fp_literal.ast_node, expected_type);
 }
 
-void ReportGenerator::report_err_cant_coerce_null_literal(
-    const sir::NullLiteral &null_literal,
-    const sir::Expr &expected_type
-) {
-    report_error("cannot coerce null to type '$'", null_literal.ast_node, expected_type);
+void ReportGenerator::report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type) {
+    report_error("cannot coerce `null` to type '$'", null_literal.ast_node, expected_type);
 }
 
-void ReportGenerator::report_err_cant_coerce_string_literal(
+void ReportGenerator::report_err_cannot_coerce(const sir::NoneLiteral &none_literal, const sir::Expr &expected_type) {
+    report_error("cannot coerce `none` to type '$'", none_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cannot_coerce(const sir::ArrayLiteral &array_literal, const sir::Expr &expected_type) {
+    report_error("cannot coerce array literal to type '$'", array_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cannot_coerce(
     const sir::StringLiteral &string_literal,
     const sir::Expr &expected_type
 ) {
     report_error("cannot coerce string literal to type '$'", string_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cannot_coerce(
+    const sir::StructLiteral &struct_literal,
+    const sir::Expr &expected_type
+) {
+    report_error("cannot coerce struct literal to type '$'", struct_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cannot_infer_type(const sir::NoneLiteral &none_literal) {
+    report_error("cannot infer type of `none`", none_literal.ast_node);
+}
+
+void ReportGenerator::report_err_cannot_infer_type(const sir::UndefinedLiteral &undefined_literal) {
+    report_error("cannot infer type of `undefined`", undefined_literal.ast_node);
+}
+
+void ReportGenerator::report_err_cannot_infer_type(const sir::ArrayLiteral &array_literal) {
+    report_error("cannot infer type of empty array literal", array_literal.ast_node);
+}
+
+void ReportGenerator::report_err_cannot_infer_type(const sir::StructLiteral &struct_literal) {
+    report_error("cannot infer type of struct literal", struct_literal.ast_node);
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr) {
@@ -169,8 +191,32 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::BracketE
     );
 }
 
-void ReportGenerator::report_cannot_call(const sir::Expr &expr) {
+void ReportGenerator::report_err_cannot_call(const sir::Expr &expr) {
     report_error("cannot call value with type '$'", expr.get_ast_node(), expr.get_type());
+}
+
+void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def) {
+    report_error(
+        "struct '$' has no field named '$'",
+        field_ident.ast_node,
+        struct_def.ident.ast_node,
+        field_ident.value
+    );
+}
+
+void ReportGenerator::report_err_unexpected_array_length(
+    const sir::ArrayLiteral &array_literal,
+    unsigned expected_count
+) {
+    std::string format_str;
+
+    if (array_literal.values.size() < expected_count) {
+        format_str = "too few elements in array literal (expected $, got $)";
+    } else if (array_literal.values.size() > expected_count) {
+        format_str = "too many elements in array literal (expected $, got $)";
+    }
+
+    report_error(format_str, array_literal.ast_node, expected_count, array_literal.values.size());
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(

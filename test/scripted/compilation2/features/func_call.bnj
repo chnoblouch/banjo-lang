@@ -1,0 +1,25 @@
+# test:subtest
+# test:output "a"
+
+native func putchar(u8);
+
+func f() {
+    putchar('a');
+}
+
+func main() {
+    f();
+}
+
+# test:subtest
+# test:output "a"
+
+native func putchar(u8);
+
+func f(arg: u8) {
+    putchar(arg);
+}
+
+func main() {
+    f('a');
+}

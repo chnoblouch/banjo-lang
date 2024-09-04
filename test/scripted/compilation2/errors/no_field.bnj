@@ -1,0 +1,43 @@
+# test:subtest
+# test:error 11:9 "struct 'Point' has no field named 'a'"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        a: 2,
+    };
+}
+
+# test:subtest
+# test:error 25:9 "struct 'Point' has no field named 'a'"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point: Point = {
+        a: 2,
+    };
+}
+
+# test:subtest
+# test:error 40:9 "struct 'Point' has no field named 'a'"
+# test:error 41:9 "struct 'Point' has no field named 'b'"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        a: 2,
+        b: 3
+    };
+}

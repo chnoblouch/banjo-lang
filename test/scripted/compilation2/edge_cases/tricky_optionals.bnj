@@ -1,0 +1,94 @@
+# test:subtest
+# test:output "true,3,7"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point: ?Point = Point {
+        x: 3,
+        y: 7,
+    };
+    
+    print(point.has_value);
+    print(",");
+    print(point.value.x);
+    print(",");
+    print(point.value.y);
+}
+
+# test:subtest
+# test:output "true,3,7"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point: ?Point = {
+        x: 3,
+        y: 7,
+    };
+    
+    print(point.has_value);
+    print(",");
+    print(point.value.x);
+    print(",");
+    print(point.value.y);
+}
+
+# test:subtest
+# test:error 52:23 "cannot coerce struct literal to type 'i32'"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point: ?i32 = {
+        x: 3,
+        y: 7,
+    };
+}
+
+# test:subtest
+# test:output "true,3,7"
+
+func main() {
+    var point: ?Array[i32] = [3, 7];
+    
+    print(point.has_value);
+    print(",");
+    print(point.value[0]);
+    print(",");
+    print(point.value[1]);
+}
+
+# test:subtest
+# test:output "true,3,7"
+
+func main() {
+    var point: ?[i32; 2] = [3, 7];
+    
+    print(point.has_value);
+    print(",");
+    print(point.value[0]);
+    print(",");
+    print(point.value[1]);
+}
+
+# test:subtest
+# test:error 93:23 "cannot coerce array literal to type 'i32'"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point: ?i32 = [3, 7];
+}

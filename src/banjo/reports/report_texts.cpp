@@ -84,6 +84,22 @@ ReportText &ReportText::format(const std::string &string) {
     return format(std::string_view(string));
 }
 
+ReportText &ReportText::format(int integer) {
+    return format(std::to_string(integer));
+}
+
+ReportText &ReportText::format(unsigned integer) {
+    return format(std::to_string(integer));
+}
+
+ReportText &ReportText::format(long long integer) {
+    return format(std::to_string(integer));
+}
+
+ReportText &ReportText::format(unsigned long long integer) {
+    return format(std::to_string(integer));
+}
+
 ReportText &ReportText::format(ASTNode *node) {
     return format(node->get_value());
 }

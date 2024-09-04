@@ -51,19 +51,24 @@ public:
     void report_err_module_not_found(const sir::Ident &ident);
     void report_err_redefinition(const sir::Ident &ident, const sir::Symbol &prev_def);
     void report_err_type_mismatch(const sir::Expr &value, const sir::Expr &expected, const sir::Expr &actual);
-    void report_err_cant_coerce_int_literal(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
-    void report_err_cant_coerce_fp_literal(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
-    void report_err_cant_coerce_null_literal(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::NoneLiteral &none_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::ArrayLiteral &array_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::StringLiteral &string_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::StructLiteral &struct_literal, const sir::Expr &expected_type);
+    void report_err_cannot_infer_type(const sir::NoneLiteral &none_literal);
+    void report_err_cannot_infer_type(const sir::UndefinedLiteral &undefined_literal);
+    void report_err_cannot_infer_type(const sir::ArrayLiteral &array_literal);
+    void report_err_cannot_infer_type(const sir::StructLiteral &struct_literal);
     void report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr);
     void report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr);
     void report_err_operator_overload_not_found(const sir::StarExpr &star_expr);
     void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr);
-    void report_cannot_call(const sir::Expr &expr);
-
-    void report_err_cant_coerce_string_literal(
-        const sir::StringLiteral &string_literal,
-        const sir::Expr &expected_type
-    );
+    void report_err_cannot_call(const sir::Expr &expr);
+    void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
+    void report_err_unexpected_array_length(const sir::ArrayLiteral &array_literal, unsigned expected_count);
 
 private:
     template <typename... FormatArgs>

@@ -204,6 +204,12 @@ void Printer::print_native_var_decl(const NativeVarDecl &native_var_decl) {
     BEGIN_OBJECT("NativeVarDecl");
     PRINT_FIELD("ident", native_var_decl.ident.value);
     PRINT_EXPR_FIELD("type", native_var_decl.type);
+
+    if (native_var_decl.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*native_var_decl.attrs);
+    }
+
     END_OBJECT();
 }
 

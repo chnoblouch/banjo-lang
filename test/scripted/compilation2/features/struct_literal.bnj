@@ -1,0 +1,65 @@
+# test:subtest
+# test:output "10,20"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        x: 10,
+        y: 20,
+    };
+    
+    print(point.x);
+    print(",");
+    print(point.y);
+}
+
+# test:subtest
+# test:output "10,20"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point: Point = {
+        x: 10,
+        y: 20,
+    };
+    
+    print(point.x);
+    print(",");
+    print(point.y);
+}
+
+# test:subtest
+# test:output "10,20"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var x = 10;
+    var y = 20;
+
+    var point = Point { x, y };
+    
+    print(point.x);
+    print(",");
+    print(point.y);
+}
+
+# test:subtest
+# test:compiles
+
+struct Void {}
+
+func main() {
+    var v = Void {};
+}

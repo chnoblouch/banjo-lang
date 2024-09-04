@@ -1,0 +1,52 @@
+# test:subtest
+# test:output "2,1,4"
+
+func main() {
+    var array = [1, 4];
+    
+    print(array.length);
+    print(",");
+    print(array[0]);
+    print(",");
+    print(array[1]);
+}
+
+# test:subtest
+# test:output "2,1,4"
+
+func main() {
+    var array: Array[i32] = [1, 4];
+    
+    print(array.length);
+    print(",");
+    print(array[0]);
+    print(",");
+    print(array[1]);
+}
+
+# test:subtest
+# test:output "8,16,24"
+
+func main() {
+    var array: [i32; 3] = [8, 16, 24];
+    
+    print(array[0]);
+    print(",");
+    print(array[1]);
+    print(",");
+    print(array[2]);
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var array: Array[i32] = [];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var array: [i32; 0] = [];
+}

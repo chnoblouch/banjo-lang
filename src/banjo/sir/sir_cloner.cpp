@@ -118,6 +118,7 @@ NativeVarDecl *Cloner::clone_native_var_decl(const NativeVarDecl &native_var_dec
         .ast_node = native_var_decl.ast_node,
         .ident = native_var_decl.ident,
         .type = clone_expr(native_var_decl.type),
+        .attrs = clone_attrs(native_var_decl.attrs),
     });
 }
 

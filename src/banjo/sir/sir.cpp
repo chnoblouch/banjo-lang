@@ -1,8 +1,6 @@
 #include "sir.hpp"
 
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/utils/macros.hpp"
-#include "sir_visitor.hpp"
 
 #include <utility>
 
@@ -181,6 +179,14 @@ bool Expr::is_addr_like_type() const {
 bool Expr::is_u8_ptr() const {
     if (auto pointer_type = match<PointerType>()) {
         return pointer_type->base_type.is_primitive_type(sir::Primitive::U8);
+    } else {
+        return false;
+    }
+}
+
+bool Expr::is_symbol(sir::Symbol symbol) const {
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        return symbol_expr->symbol == symbol;
     } else {
         return false;
     }

@@ -21,6 +21,18 @@ struct String {
         return from_cstr(cstr);
     }
 
+    pub func from(slice: (*u8, usize)) -> String {
+        var data = memory.alloc(slice.1 + 1) as *u8;
+        memory.copy(slice.0 as addr, data as addr, slice.1);
+        data[slice.1] = '\0';
+
+        return String {
+            data,
+            length: slice.1 as u32,
+            capacity: slice.1 as u32 + 1,
+        };
+    }
+
     pub func from_cstr(cstr: *u8) -> String {
         var length = strlen(cstr);
         var capacity = length + 1;
