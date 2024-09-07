@@ -1,0 +1,69 @@
+# test:subtest
+# test:output "fg"
+
+native func putchar(u8);
+
+struct Char {
+    var field: u8;
+
+    func out(self, arg: u8) {
+        putchar(self.field);
+        putchar(arg);
+    }
+}
+
+func main() {
+    var char = Char {
+        field: 'f',
+    };
+    
+    char.out('g');
+}
+
+# test:subtest
+# test:output "fg"
+
+native func putchar(u8);
+
+struct Char {
+    var field: u8;
+
+    func out(self, arg: u8) {
+        putchar(self.field);
+        putchar(arg);
+    }
+}
+
+func main() {
+    var char = Char {
+        field: 'f',
+    };
+    
+    var a = &char;
+    a.out('g');
+}
+
+# test:subtest
+# test:output "fg"
+
+native func putchar(u8);
+
+struct Char {
+    var field: u8;
+
+    func out(self, arg: u8) {
+        putchar(self.field);
+        putchar(arg);
+    }
+}
+
+func main() {
+    var char = Char {
+        field: 'f',
+    };
+    
+    var a = &char;
+    var b = &a;
+    
+    b.out('g');
+}

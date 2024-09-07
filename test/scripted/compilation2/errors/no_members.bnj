@@ -1,0 +1,18 @@
+# test:subtest
+# test:error 6:13 "type 'i32' doesn't have members"
+
+func main() {
+    var a = 10;
+    var b = a.b;
+}
+
+# test:subtest
+# test:error 17:13 "type 'func(addr) -> i32' doesn't have members"
+
+func f(a: addr) -> i32 {
+    return 0;
+}
+
+func main() {
+    var a = f.b;
+}

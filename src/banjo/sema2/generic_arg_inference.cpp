@@ -76,7 +76,7 @@ Result GenericArgInference::infer_on_ident(const sir::IdentExpr &ident_expr, con
             continue;
         }
 
-        if (generic_args[i]) {
+        if (generic_args[i] && generic_args[i] != arg_type) {
             analyzer.report_generator
                 .report_err_generic_arg_inference_conflict(expr, generic_param, inference_sources[i], *cur_arg);
             return Result::ERROR;

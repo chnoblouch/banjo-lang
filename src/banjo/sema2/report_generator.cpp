@@ -195,12 +195,25 @@ void ReportGenerator::report_err_cannot_call(const sir::Expr &expr) {
     report_error("cannot call value with type '$'", expr.get_ast_node(), expr.get_type());
 }
 
+void ReportGenerator::report_err_no_members(const sir::DotExpr &dot_expr) {
+    report_error("type '$' doesn't have members", dot_expr.ast_node, dot_expr.lhs.get_type());
+}
+
 void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def) {
     report_error(
         "struct '$' has no field named '$'",
         field_ident.ast_node,
         struct_def.ident.ast_node,
         field_ident.value
+    );
+}
+
+void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def) {
+    report_error(
+        "struct '$' has no method named '$'",
+        method_ident.ast_node,
+        struct_def.ident.ast_node,
+        method_ident.value
     );
 }
 

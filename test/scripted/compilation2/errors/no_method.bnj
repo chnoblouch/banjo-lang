@@ -1,0 +1,20 @@
+# test:subtest
+# test:error 8:7 "struct 'S' has no method named 'test'"
+
+struct S {}
+
+func main() {
+    var s = S {};
+    s.test();
+}
+
+# test:subtest
+# test:error 19:13 "struct 'S' has no method named 'test'"
+
+struct S {}
+
+func main() {
+    var s = S {};
+    var pointer = &s;
+    pointer.test();
+}

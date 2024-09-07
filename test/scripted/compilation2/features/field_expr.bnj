@@ -1,0 +1,83 @@
+# test:subtest
+# test:output "5,-2"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        x: 5,
+        y: -2,
+    };
+    
+    print(point.x);
+    print(",");
+    print(point.y);
+}
+
+# test:subtest
+# test:output "5,-2"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        x: 0,
+        y: 0,
+    };
+
+    point.x = 5;
+    point.y = -2;
+    
+    print(point.x);
+    print(",");
+    print(point.y);
+}
+
+# test:subtest
+# test:output "5,-2"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        x: 5,
+        y: -2,
+    };
+
+    var a = &point;
+    
+    print(a.x);
+    print(",");
+    print(a.y);
+}
+
+# test:subtest
+# test:output "5,-2"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+func main() {
+    var point = Point {
+        x: 5,
+        y: -2,
+    };
+
+    var a = &point;
+    var b = &a;
+    
+    print(b.x);
+    print(",");
+    print(b.y);
+}

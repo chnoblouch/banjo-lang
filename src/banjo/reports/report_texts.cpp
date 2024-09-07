@@ -151,7 +151,13 @@ std::string ReportText::to_string(sir::Expr &expr) {
             }
         }
 
-        return "func(" + params_str + ") -> " + to_string(func_type->return_type);
+        std::string str = "func(" + params_str + ")";
+
+        if (!func_type->return_type.is_primitive_type(sir::Primitive::VOID)) {
+            str += " -> " + to_string(func_type->return_type);
+        }
+
+        return str;
     } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
         return symbol->symbol.get_name();
     } else if (auto tuple_expr = expr.match<sir::TupleExpr>()) {

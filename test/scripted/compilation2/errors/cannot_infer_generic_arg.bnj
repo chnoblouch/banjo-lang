@@ -1,0 +1,27 @@
+# test:subtest
+# test:error 7:5 "cannot infer value for generic parameter 'T'"
+
+func f[T](a: i32) {}
+
+func main() {
+    f(0);
+}
+
+# test:subtest
+# test:error 16:5 "cannot infer value for generic parameter 'B'"
+
+func f[A, B](a: A) {}
+
+func main() {
+    f(10);
+}
+
+# test:subtest
+# test:error 26:5 "cannot infer value for generic parameter 'A'"
+# test:error 26:5 "cannot infer value for generic parameter 'B'"
+
+func f[A, B]() {}
+
+func main() {
+    f();
+}
