@@ -2,8 +2,6 @@
 
 #include "banjo/sema2/expr_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/ssa_gen/ssa_generator_context.hpp"
-#include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {

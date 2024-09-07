@@ -219,6 +219,25 @@ void ReportGenerator::report_err_unexpected_array_length(
     report_error(format_str, array_literal.ast_node, expected_count, array_literal.values.size());
 }
 
+void ReportGenerator::report_err_cannot_infer_generic_arg(
+    const sir::Expr &expr,
+    const sir::GenericParam &generic_param
+) {
+    report_error("cannot infer value for generic parameter '$'", expr.get_ast_node(), generic_param.ident.value);
+}
+
+void ReportGenerator::report_err_generic_arg_inference_conflict(
+    const sir::Expr &expr,
+    const sir::GenericParam &generic_param,
+    const sir::Expr &first_source,
+    const sir::Expr &second_source
+) {
+    build_error("conflicting values inferred for generic parameter '$'", expr.get_ast_node(), generic_param.ident.value)
+        .add_note("first inferred as '$' here", first_source.get_ast_node(), first_source.get_type())
+        .add_note("then inferred as '$' here", second_source.get_ast_node(), second_source.get_type())
+        .report();
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,

@@ -12,7 +12,9 @@ namespace lang {
 
 namespace sema {
 
-ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
+ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer, bool use_owned_arena /* = true */)
+  : analyzer(analyzer),
+    use_owned_arena(use_owned_arena) {}
 
 LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
     sir::Expr result = evaluate(expr);
@@ -33,55 +35,58 @@ bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
 }
 
 sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
-    if (auto meta_field_expr = expr.match<sir::MetaFieldExpr>()) {
-        return evaluate_meta_field_expr(*meta_field_expr);
-    } else if (auto meta_call_expr = expr.match<sir::MetaCallExpr>()) {
-        return evaluate_meta_call_expr(*meta_call_expr);
-    }
+    SIR_VISIT_EXPR(
+        expr,
+        SIR_VISIT_IMPOSSIBLE,                    // empty
+        return analyze(expr),                    // int_literal
+        return analyze(expr),                    // fp_literal
+        return analyze(expr),                    // bool_literal
+        return analyze(expr),                    // char_literal
+        return analyze(expr),                    // null_literal
+        SIR_VISIT_IMPOSSIBLE,                    // none_literal
+        SIR_VISIT_IMPOSSIBLE,                    // undefined_literal
+        return analyze(expr),                    // array_literal
+        return analyze(expr),                    // string_literal
+        SIR_VISIT_IMPOSSIBLE,                    // struct_literal
+        SIR_VISIT_IMPOSSIBLE,                    // closure_literal
+        return evaluate_symbol_expr(*inner),     // symbol_expr
+        return evaluate_binary_expr(*inner),     // binary_expr
+        return evaluate_unary_expr(*inner),      // unary_expr
+        SIR_VISIT_IMPOSSIBLE,                    // cast_expr
+        SIR_VISIT_IMPOSSIBLE,                    // index_expr
+        SIR_VISIT_IMPOSSIBLE,                    // call_expr
+        SIR_VISIT_IMPOSSIBLE,                    // field_expr
+        SIR_VISIT_IMPOSSIBLE,                    // range_expr
+        return analyze(expr),                    // tuple_expr
+        return analyze(expr),                    // primitive_type
+        return analyze(expr),                    // pointer_type
+        return analyze(expr),                    // static_array_type
+        return analyze(expr),                    // func_type
+        return analyze(expr),                    // optional_type
+        return analyze(expr),                    // array_type
+        return analyze(expr),                    // closure_type
+        return analyze_and_evaluate(expr),       // ident_expr
+        return analyze_and_evaluate(expr),       // star_expr
+        return analyze_and_evaluate(expr),       // bracket_expr
+        return analyze_and_evaluate(expr),       // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                    // meta_access
+        return evaluate_meta_field_expr(*inner), // meta_field_expr
+        return evaluate_meta_call_expr(*inner)   // meta_call_expr
+    );
+}
 
+sir::Expr ConstEvaluator::analyze(sir::Expr &expr) {
     Result result = ExprAnalyzer(analyzer).analyze(expr);
     if (result != Result::SUCCESS) {
         return nullptr;
     }
 
-    SIR_VISIT_EXPR(
-        expr,
-        SIR_VISIT_IMPOSSIBLE,                // empty
-        return expr,                         // int_literal
-        SIR_VISIT_IMPOSSIBLE,                // fp_literal
-        return expr,                         // bool_literal
-        SIR_VISIT_IMPOSSIBLE,                // char_literal
-        SIR_VISIT_IMPOSSIBLE,                // null_literal
-        SIR_VISIT_IMPOSSIBLE,                // none_literal
-        SIR_VISIT_IMPOSSIBLE,                // undefined_literal
-        SIR_VISIT_IMPOSSIBLE,                // array_literal
-        SIR_VISIT_IMPOSSIBLE,                // string_literal
-        SIR_VISIT_IMPOSSIBLE,                // struct_literal
-        SIR_VISIT_IMPOSSIBLE,                // closure_literal
-        return evaluate_symbol_expr(*inner), // symbol_expr
-        return evaluate_binary_expr(*inner), // binary_expr
-        return evaluate_unary_expr(*inner),  // unary_expr
-        SIR_VISIT_IMPOSSIBLE,                // cast_expr
-        SIR_VISIT_IMPOSSIBLE,                // index_expr
-        SIR_VISIT_IMPOSSIBLE,                // call_expr
-        SIR_VISIT_IMPOSSIBLE,                // field_expr
-        SIR_VISIT_IMPOSSIBLE,                // range_expr
-        return expr,                         // tuple_expr
-        return expr,                         // primitive_type
-        return expr,                         // pointer_type
-        return expr,                         // static_array_type
-        return expr,                         // func_type
-        return expr,                         // optional_type
-        return expr,                         // array_type
-        return expr,                         // closure_type
-        SIR_VISIT_IMPOSSIBLE,                // ident_expr
-        SIR_VISIT_IMPOSSIBLE,                // star_expr
-        SIR_VISIT_IMPOSSIBLE,                // bracket_expr
-        SIR_VISIT_IMPOSSIBLE,                // dot_expr
-        SIR_VISIT_IMPOSSIBLE,                // meta_access
-        SIR_VISIT_IMPOSSIBLE,                // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE                 // meta_call_expr
-    );
+    return expr;
+}
+
+sir::Expr ConstEvaluator::analyze_and_evaluate(sir::Expr &expr) {
+    analyze(expr);
+    return evaluate(expr);
 }
 
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
@@ -158,19 +163,23 @@ sir::Expr ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_e
 }
 
 sir::Expr ConstEvaluator::create_int_literal(LargeInt value) {
-    return int_arena.create(sir::IntLiteral{
+    sir::IntLiteral int_literal{
         .ast_node = nullptr,
         .type = nullptr,
         .value = value,
-    });
+    };
+
+    return use_owned_arena ? int_arena.create(int_literal) : analyzer.create_expr(int_literal);
 }
 
 sir::Expr ConstEvaluator::create_bool_literal(bool value) {
-    return bool_arena.create(sir::BoolLiteral{
+    sir::BoolLiteral bool_literal{
         .ast_node = nullptr,
         .type = nullptr,
         .value = value,
-    });
+    };
+
+    return use_owned_arena ? bool_arena.create(bool_literal) : analyzer.create_expr(bool_literal);
 }
 
 } // namespace sema

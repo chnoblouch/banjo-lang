@@ -54,7 +54,7 @@ class SemanticAnalyzer {
     friend class StmtAnalyzer;
     friend class ConstEvaluator;
     friend class GenericsSpecializer;
-    friend class GenericArgDeduction;
+    friend class GenericArgInference;
     friend class MetaExpansion;
     friend class MetaExprEvaluator;
     friend class DeclVisitor;

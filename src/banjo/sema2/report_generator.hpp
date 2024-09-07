@@ -69,6 +69,14 @@ public:
     void report_err_cannot_call(const sir::Expr &expr);
     void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
     void report_err_unexpected_array_length(const sir::ArrayLiteral &array_literal, unsigned expected_count);
+    void report_err_cannot_infer_generic_arg(const sir::Expr &expr, const sir::GenericParam &generic_param);
+
+    void report_err_generic_arg_inference_conflict(
+        const sir::Expr &expr,
+        const sir::GenericParam &generic_param,
+        const sir::Expr &first_source,
+        const sir::Expr &second_source
+    );
 
 private:
     template <typename... FormatArgs>

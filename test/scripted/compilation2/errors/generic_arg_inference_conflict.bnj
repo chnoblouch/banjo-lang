@@ -1,0 +1,24 @@
+# test:subtest
+# test:error 9:5 "conflicting values inferred for generic parameter 'T'"
+# test:note 9:7 "first inferred as 'i32' here"
+# test:note 9:11 "then inferred as 'bool' here"
+
+func f[T](a: T, b: T) {}
+
+func main() {
+    f(10, true);
+}
+
+# test:subtest
+# test:error 23:5 "conflicting values inferred for generic parameter 'T'"
+# test:note 23:7 "first inferred as 'i32' here"
+# test:note 23:11 "then inferred as 'bool' here"
+# test:error 23:5 "conflicting values inferred for generic parameter 'T'"
+# test:note 23:7 "first inferred as 'i32' here"
+# test:note 23:17 "then inferred as 'addr' here"
+
+func f[T](a: T, b: T, c: T) {}
+
+func main() {
+    f(10, true, null);
+}

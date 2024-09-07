@@ -3,15 +3,15 @@
 #include "banjo/sema2/const_evaluator.hpp"
 #include "banjo/sema2/decl_body_analyzer.hpp"
 #include "banjo/sema2/decl_interface_analyzer.hpp"
+#include "banjo/sema2/generic_arg_inference.hpp"
 #include "banjo/sema2/generics_specializer.hpp"
 #include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/meta_expr_evaluator.hpp"
+#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
-#include "generic_arg_deduction.hpp"
-#include "semantic_analyzer.hpp"
-#include "use_resolver.hpp"
 
 #include <cassert>
 #include <vector>
@@ -427,6 +427,12 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     ExprAnalyzer(analyzer).analyze(binary_expr.lhs);
     ExprAnalyzer(analyzer).analyze(binary_expr.rhs);
 
+    if (binary_expr.lhs.is_type() ||
+        (binary_expr.lhs.is<sir::BoolLiteral>() && binary_expr.rhs.is<sir::BoolLiteral>())) {
+        out_expr = ConstEvaluator(analyzer, false).evaluate_binary_expr(binary_expr);
+        return analyze_uncoerced(out_expr);
+    }
+
     if (auto struct_def = binary_expr.lhs.get_type().match_symbol<sir::StructDef>()) {
         std::string_view impl_name = MagicMethods::look_up(binary_expr.op);
         sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
@@ -553,12 +559,14 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
 
     if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
         if (func_def->is_generic()) {
-            auto generic_args = GenericArgDeduction(analyzer).deduce(func_def->generic_params, call_expr.args);
-            if (!generic_args) {
-                return result;
+            std::vector<sir::Expr> generic_args;
+
+            result = GenericArgInference(analyzer, &call_expr, *func_def).infer(call_expr.args, generic_args);
+            if (result != Result::SUCCESS) {
+                return Result::ERROR;
             }
 
-            result = specialize(*func_def, *generic_args, call_expr.callee);
+            result = specialize(*func_def, generic_args, call_expr.callee);
             if (result != Result::SUCCESS) {
                 return result;
             }

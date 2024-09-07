@@ -36,7 +36,6 @@ endif ()
 # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 # add_compile_options(/fsanitize=address -fsanitize=undefined)
 # link_libraries(clang_rt.asan-x86_64.lib)
-# add_link_options(/fsanitize=address)
 
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")

@@ -1,0 +1,46 @@
+# test:subtest
+# test:output "true"
+
+func f[T](a: T) {
+    print(T == i32);
+}
+
+func main() {
+    f(100);
+}
+
+# test:subtest
+# test:output "true"
+
+struct S {}
+
+func f[A, B](a: A, b: B) {
+    print(A == bool && B == S);
+}
+
+func main() {
+    f(true, S {});
+}
+
+# test:subtest
+# test:output "true"
+
+func f[T](a: *T) {
+    print(T == f32);
+}
+
+func main() {
+    var a: f32 = 0.5;
+    f(&a);
+}
+
+# test:subtest
+# test:output "true"
+
+func f[T](a: i32, b: T) {
+    print(T == f32);
+}
+
+func main() {
+    f(10, 0.5);
+}
