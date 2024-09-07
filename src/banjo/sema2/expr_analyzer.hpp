@@ -34,8 +34,9 @@ private:
 
     void analyze_bool_literal(sir::BoolLiteral &bool_literal);
     void analyze_char_literal(sir::CharLiteral &char_literal);
-    Result analyze_array_literal(sir::ArrayLiteral &array_literal);
+    Result analyze_array_literal(sir::ArrayLiteral &array_literal, sir::Expr &out_expr);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);
+    Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
     void analyze_cast_expr(sir::CastExpr &cast_expr);
@@ -45,7 +46,9 @@ private:
     void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     Result analyze_static_array_type(sir::StaticArrayType &static_array_type);
     void analyze_func_type(sir::FuncType &func_type);
-    void analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr);
+    Result analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr);
+    Result analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr);
+    Result analyze_closure_type(sir::ClosureType &closure_type);
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
     Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);

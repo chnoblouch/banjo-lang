@@ -2,6 +2,7 @@
 
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+#include "sir.hpp"
 
 #include <cassert>
 #include <vector>
@@ -340,6 +341,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_array_literal(*inner),
         return clone_string_literal(*inner),
         return clone_struct_literal(*inner),
+        return clone_closure_literal(*inner),
         return clone_symbol_expr(*inner),
         return clone_binary_expr(*inner),
         return clone_unary_expr(*inner),
@@ -354,6 +356,8 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_static_array_type(*inner),
         return clone_func_type(*inner),
         return clone_optional_type(*inner),
+        return clone_array_type(*inner),
+        return clone_closure_type(*inner),
         return clone_ident_expr(*inner),
         return clone_star_expr(*inner),
         return clone_bracket_expr(*inner),
@@ -451,6 +455,15 @@ StructLiteral *Cloner::clone_struct_literal(const StructLiteral &struct_literal)
         .ast_node = struct_literal.ast_node,
         .type = clone_expr(struct_literal.type),
         .entries = entries,
+    });
+}
+
+ClosureLiteral *Cloner::clone_closure_literal(const ClosureLiteral &closure_literal) {
+    return mod.create_expr(ClosureLiteral{
+        .ast_node = closure_literal.ast_node,
+        .type = clone_expr(closure_literal.type),
+        .func_type = *clone_func_type(closure_literal.func_type),
+        .block = clone_block(closure_literal.block),
     });
 }
 
@@ -573,6 +586,20 @@ OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
     });
 }
 
+ArrayType *Cloner::clone_array_type(const ArrayType &array_type) {
+    return mod.create_expr(ArrayType{
+        .ast_node = array_type.ast_node,
+        .base_type = clone_expr(array_type.base_type),
+    });
+}
+
+ClosureType *Cloner::clone_closure_type(const ClosureType &closure_type) {
+    return mod.create_expr(ClosureType{
+        .ast_node = closure_type.ast_node,
+        .func_type = *clone_func_type(closure_type.func_type),
+    });
+}
+
 IdentExpr *Cloner::clone_ident_expr(const IdentExpr &ident_expr) {
     return mod.create_expr(IdentExpr{
         .ast_node = ident_expr.ast_node,
@@ -658,9 +685,9 @@ MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
     for (unsigned i = 0; i < meta_block.nodes.size(); i++) {
         const Node &node = meta_block.nodes[i];
 
-        if (auto expr = node.match<sir::Expr>()) nodes[i] = clone_expr(*expr);
-        else if (auto stmt = node.match<sir::Stmt>()) nodes[i] = clone_stmt(*stmt);
-        else if (auto decl = node.match<sir::Decl>()) nodes[i] = clone_decl(*decl);
+        if (auto expr = node.match<Expr>()) nodes[i] = clone_expr(*expr);
+        else if (auto stmt = node.match<Stmt>()) nodes[i] = clone_stmt(*stmt);
+        else if (auto decl = node.match<Decl>()) nodes[i] = clone_decl(*decl);
         else ASSERT_UNREACHABLE;
     }
 

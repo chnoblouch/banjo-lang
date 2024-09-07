@@ -1,0 +1,96 @@
+# test:subtest
+# test:output "a"
+
+func main() {
+    var closure = || {
+        print("a");
+    };
+    
+    closure();
+}
+
+# test:subtest
+# test:output "42,3"
+
+func main() {
+    var closure = |a: i32| {
+        print(a);
+    };
+    
+    closure(42);
+    print(",");
+    closure(3);
+}
+
+# test:subtest
+# test:output "23"
+
+func main() {
+    var closure = |a: i32, b: i32| -> i32 {
+        return a + b;
+    };
+    
+    print(closure(6, 17));
+}
+
+# test:subtest
+# test:output "23"
+
+func main() {
+    var closure: |a: i32, b: i32| -> i32 = |a: i32, b: i32| -> i32 {
+        return a + b;
+    };
+    
+    print(closure(6, 17));
+}
+
+# test:subtest
+# test:output "9"
+
+func main() {
+    var a: i32 = 9;
+
+    var closure = || -> i32 {
+        return a;
+    };
+    
+    print(closure());
+}
+
+# test:subtest
+# test:output "0,1,2"
+
+func main() {
+	var a = 0;
+	var c = 2;
+	
+	var closure = |b: i32| {
+		print(a);
+		print(",");
+		print(b);
+		print(",");
+		print(c);
+	};
+	
+	closure(1);
+}
+
+# test:subtest
+# test:output "100!"
+
+func run_closure(closure: |i32|) {
+	closure(100);
+}
+
+func get_closure() -> |i32| {
+	var suffix: *u8 = "!";
+
+	return |value: i32| {
+		print(value);
+		print(suffix);
+	};
+}
+
+func main() {
+	run_closure(get_closure());
+}

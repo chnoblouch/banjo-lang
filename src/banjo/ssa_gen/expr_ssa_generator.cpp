@@ -38,38 +38,41 @@ void ExprSSAGenerator::generate_into_dst(const sir::Expr &expr, ssa::VirtualRegi
 StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints &hints) {
     SIR_VISIT_EXPR(
         expr,
-        SIR_VISIT_IMPOSSIBLE,
-        return generate_int_literal(*inner),
-        return generate_fp_literal(*inner),
-        return generate_bool_literal(*inner),
-        return generate_char_literal(*inner),
-        return generate_null_literal(*inner),
-        SIR_VISIT_IMPOSSIBLE,
-        return generate_undefined_literal(*inner),
-        return generate_array_literal(*inner, hints),
-        return generate_string_literal(*inner),
-        return generate_struct_literal(*inner, hints),
-        return generate_symbol_expr(*inner),
-        return generate_binary_expr(*inner, expr),
-        return generate_unary_expr(*inner, expr),
-        return generate_cast_expr(*inner),
-        return generate_index_expr(*inner),
-        return generate_call_expr(*inner, hints),
-        return generate_field_expr(*inner),
-        SIR_VISIT_IMPOSSIBLE,
-        return generate_tuple_expr(*inner, hints),
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE
+        SIR_VISIT_IMPOSSIBLE,                          // empty
+        return generate_int_literal(*inner),           // int_literal
+        return generate_fp_literal(*inner),            // fp_literal
+        return generate_bool_literal(*inner),          // bool_literal
+        return generate_char_literal(*inner),          // char_literal
+        return generate_null_literal(*inner),          // null_literal
+        SIR_VISIT_IMPOSSIBLE,                          // none_literal
+        return generate_undefined_literal(*inner),     // undefined_literal
+        return generate_array_literal(*inner, hints),  // array_literal
+        return generate_string_literal(*inner),        // string_literal
+        return generate_struct_literal(*inner, hints), // struct_literal
+        SIR_VISIT_IMPOSSIBLE,                          // closure_literal
+        return generate_symbol_expr(*inner),           // symbol_expr
+        return generate_binary_expr(*inner, expr),     // binary_expr
+        return generate_unary_expr(*inner, expr),      // unary_expr
+        return generate_cast_expr(*inner),             // cast_expr
+        return generate_index_expr(*inner),            // index_expr
+        return generate_call_expr(*inner, hints),      // call_expr
+        return generate_field_expr(*inner),            // field_expr
+        SIR_VISIT_IMPOSSIBLE,                          // range_expr
+        return generate_tuple_expr(*inner, hints),     // tuple_expr
+        SIR_VISIT_IMPOSSIBLE,                          // primitive_type
+        SIR_VISIT_IMPOSSIBLE,                          // pointer_type
+        SIR_VISIT_IMPOSSIBLE,                          // static_array_type
+        SIR_VISIT_IMPOSSIBLE,                          // func_type
+        SIR_VISIT_IMPOSSIBLE,                          // optional_type
+        SIR_VISIT_IMPOSSIBLE,                          // array_type
+        SIR_VISIT_IMPOSSIBLE,                          // closure_type
+        SIR_VISIT_IMPOSSIBLE,                          // ident_expr
+        SIR_VISIT_IMPOSSIBLE,                          // star_expr
+        SIR_VISIT_IMPOSSIBLE,                          // bracket_expr
+        SIR_VISIT_IMPOSSIBLE,                          // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                          // meta_access
+        SIR_VISIT_IMPOSSIBLE,                          // meta_field_expr
+        SIR_VISIT_IMPOSSIBLE                           // meta_call_expr
     );
 }
 
@@ -429,13 +432,19 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 }
 
 StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_expr) {
+    sir::Expr base_type = field_expr.base.get_type();
+
     unsigned field_index = field_expr.field_index;
     sir::Expr field_type;
 
-    if (auto struct_def = field_expr.base.get_type().match_symbol<sir::StructDef>()) {
+    if (auto struct_def = base_type.match_symbol<sir::StructDef>()) {
         field_type = struct_def->fields[field_index]->type;
-    } else if (auto tuple_expr = field_expr.base.get_type().match<sir::TupleExpr>()) {
+    } else if (auto tuple_expr = base_type.match<sir::TupleExpr>()) {
         field_type = tuple_expr->exprs[field_index];
+    } else if (auto closure_type = base_type.match<sir::ClosureType>()) {
+        field_type = closure_type->underlying_struct->fields[field_index]->type;
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate(field_expr.base, StorageHints::prefer_reference());

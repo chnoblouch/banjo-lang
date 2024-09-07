@@ -20,6 +20,7 @@
     array_literal_visitor,                                                                                             \
     string_literal_visitor,                                                                                            \
     struct_literal_visitor,                                                                                            \
+    closure_literal_visitor,                                                                                           \
     symbol_expr_visitor,                                                                                               \
     binary_expr_visitor,                                                                                               \
     unary_expr_visitor,                                                                                                \
@@ -34,6 +35,8 @@
     static_array_type_visitor,                                                                                         \
     func_type_visitor,                                                                                                 \
     optional_type_visitor,                                                                                             \
+    array_type_visitor,                                                                                                \
+    closure_type_visitor,                                                                                              \
     ident_expr_visitor,                                                                                                \
     star_expr_visitor,                                                                                                 \
     bracket_expr_visitor,                                                                                              \
@@ -64,6 +67,8 @@
         string_literal_visitor;                                                                                        \
     } else if (auto inner = (expr).match<banjo::lang::sir::StructLiteral>()) {                                         \
         struct_literal_visitor;                                                                                        \
+    } else if (auto inner = (expr).match<banjo::lang::sir::ClosureLiteral>()) {                                        \
+        closure_literal_visitor;                                                                                       \
     } else if (auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                                            \
         symbol_expr_visitor;                                                                                           \
     } else if (auto inner = (expr).match<banjo::lang::sir::BinaryExpr>()) {                                            \
@@ -92,6 +97,10 @@
         func_type_visitor;                                                                                             \
     } else if (auto inner = (expr).match<banjo::lang::sir::OptionalType>()) {                                          \
         optional_type_visitor;                                                                                         \
+    } else if (auto inner = (expr).match<banjo::lang::sir::ArrayType>()) {                                             \
+        array_type_visitor;                                                                                            \
+    } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
+        closure_type_visitor;                                                                                          \
     } else if (auto inner = (expr).match<banjo::lang::sir::IdentExpr>()) {                                             \
         ident_expr_visitor;                                                                                            \
     } else if (auto inner = (expr).match<banjo::lang::sir::StarExpr>()) {                                              \
@@ -118,7 +127,8 @@
     primitive_type_visitor,                                                                                            \
     pointer_type_visitor,                                                                                              \
     static_array_type_visitor,                                                                                         \
-    func_type_visitor                                                                                                  \
+    func_type_visitor,                                                                                                 \
+    closure_type_visitor                                                                                               \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -134,6 +144,8 @@
         static_array_type_visitor;                                                                                     \
     } else if (auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                                              \
         func_type_visitor;                                                                                             \
+    } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
+        closure_type_visitor;                                                                                          \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }

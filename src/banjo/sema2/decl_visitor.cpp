@@ -21,6 +21,7 @@ void DeclVisitor::analyze() {
 void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
     // Declarations created by meta statement expansion are appended at the end of the declaration list
     // and not analyzed here becuse they get analyzed directly during expansion.
+    // This also skips generated closure functions that we don't want to analyze.
 
     unsigned num_decls = decl_block.decls.size();
 

@@ -46,38 +46,41 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
 
     SIR_VISIT_EXPR(
         expr,
-        SIR_VISIT_IMPOSSIBLE,
-        return expr,
-        SIR_VISIT_IMPOSSIBLE,
-        return expr,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return evaluate_symbol_expr(*inner),
-        return evaluate_binary_expr(*inner),
-        return evaluate_unary_expr(*inner),
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return expr,
-        return expr,
-        return expr,
-        return expr,
-        return expr,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE
+        SIR_VISIT_IMPOSSIBLE,                // empty
+        return expr,                         // int_literal
+        SIR_VISIT_IMPOSSIBLE,                // fp_literal
+        return expr,                         // bool_literal
+        SIR_VISIT_IMPOSSIBLE,                // char_literal
+        SIR_VISIT_IMPOSSIBLE,                // null_literal
+        SIR_VISIT_IMPOSSIBLE,                // none_literal
+        SIR_VISIT_IMPOSSIBLE,                // undefined_literal
+        SIR_VISIT_IMPOSSIBLE,                // array_literal
+        SIR_VISIT_IMPOSSIBLE,                // string_literal
+        SIR_VISIT_IMPOSSIBLE,                // struct_literal
+        SIR_VISIT_IMPOSSIBLE,                // closure_literal
+        return evaluate_symbol_expr(*inner), // symbol_expr
+        return evaluate_binary_expr(*inner), // binary_expr
+        return evaluate_unary_expr(*inner),  // unary_expr
+        SIR_VISIT_IMPOSSIBLE,                // cast_expr
+        SIR_VISIT_IMPOSSIBLE,                // index_expr
+        SIR_VISIT_IMPOSSIBLE,                // call_expr
+        SIR_VISIT_IMPOSSIBLE,                // field_expr
+        SIR_VISIT_IMPOSSIBLE,                // range_expr
+        return expr,                         // tuple_expr
+        return expr,                         // primitive_type
+        return expr,                         // pointer_type
+        return expr,                         // static_array_type
+        return expr,                         // func_type
+        return expr,                         // optional_type
+        return expr,                         // array_type
+        return expr,                         // closure_type
+        SIR_VISIT_IMPOSSIBLE,                // ident_expr
+        SIR_VISIT_IMPOSSIBLE,                // star_expr
+        SIR_VISIT_IMPOSSIBLE,                // bracket_expr
+        SIR_VISIT_IMPOSSIBLE,                // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                // meta_access
+        SIR_VISIT_IMPOSSIBLE,                // meta_field_expr
+        SIR_VISIT_IMPOSSIBLE                 // meta_call_expr
     );
 }
 

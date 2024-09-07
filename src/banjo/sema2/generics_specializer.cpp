@@ -60,6 +60,7 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     });
 
     analyzer.push_scope().func_def = clone;
+    analyzer.get_scope().closure_ctx = nullptr;
     analyzer.get_scope().generic_args.clear();
 
     for (unsigned i = 0; i < args.size(); i++) {

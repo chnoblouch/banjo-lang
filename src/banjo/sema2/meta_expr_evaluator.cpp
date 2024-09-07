@@ -21,14 +21,10 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     ExprAnalyzer(analyzer).analyze(base_expr);
 
     if (field_name == "size") {
-        SSAGeneratorContext dummy_ssa_gen_ctx(analyzer.target);
-        ssa::Type ssa_type = TypeSSAGenerator(dummy_ssa_gen_ctx).generate(base_expr);
-        unsigned size = analyzer.target->get_data_layout().get_size(ssa_type);
-
         out_expr = analyzer.create_expr(sir::IntLiteral{
             .ast_node = nullptr,
             .type = nullptr,
-            .value = size,
+            .value = analyzer.compute_size(base_expr),
         });
     } else {
         ASSERT_UNREACHABLE;

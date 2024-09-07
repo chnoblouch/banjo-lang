@@ -11,8 +11,14 @@ namespace sema {
 DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    for (sir::Param &param : func_def.type.params) {
+    for (unsigned i = 0; i < func_def.type.params.size(); i++) {
+        sir::Param &param = func_def.type.params[i];
+
         func_def.block.symbol_table->symbols.insert({param.name.value, &param});
+
+        if (analyzer.get_scope().closure_ctx && i == 0) {
+            continue;
+        }
 
         if (param.name.value == "self") {
             param.type = analyzer.create_expr(sir::PointerType{

@@ -41,6 +41,7 @@ struct UndefinedLiteral;
 struct ArrayLiteral;
 struct StringLiteral;
 struct StructLiteral;
+struct ClosureLiteral;
 struct SymbolExpr;
 struct BinaryExpr;
 struct UnaryExpr;
@@ -56,6 +57,8 @@ struct PointerType;
 struct StaticArrayType;
 struct FuncType;
 struct OptionalType;
+struct ArrayType;
+struct ClosureType;
 struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
@@ -119,6 +122,7 @@ class Expr {
         ArrayLiteral *,
         StringLiteral *,
         StructLiteral *,
+        ClosureLiteral *,
         SymbolExpr *,
         BinaryExpr *,
         UnaryExpr *,
@@ -133,6 +137,8 @@ class Expr {
         StaticArrayType *,
         FuncType *,
         OptionalType *,
+        ArrayType *,
+        ClosureType *,
         IdentExpr *,
         StarExpr *,
         BracketExpr *,
@@ -494,6 +500,15 @@ struct Specialization {
     T *def;
 };
 
+struct FuncType {
+    ASTNode *ast_node;
+    std::vector<Param> params;
+    Expr return_type;
+
+    bool operator==(const FuncType &other) const { return params == other.params && return_type == other.return_type; }
+    bool operator!=(const FuncType &other) const { return !(*this == other); }
+};
+
 struct IntLiteral {
     ASTNode *ast_node;
     Expr type;
@@ -555,6 +570,13 @@ struct StructLiteral {
     ASTNode *ast_node;
     Expr type;
     std::vector<StructLiteralEntry> entries;
+};
+
+struct ClosureLiteral {
+    ASTNode *ast_node;
+    Expr type;
+    FuncType func_type;
+    Block block;
 };
 
 struct SymbolExpr {
@@ -696,21 +718,29 @@ struct StaticArrayType {
     bool operator!=(const StaticArrayType &other) const { return !(*this == other); }
 };
 
-struct FuncType {
-    ASTNode *ast_node;
-    std::vector<Param> params;
-    Expr return_type;
-
-    bool operator==(const FuncType &other) const { return params == other.params && return_type == other.return_type; }
-    bool operator!=(const FuncType &other) const { return !(*this == other); }
-};
-
 struct OptionalType {
     ASTNode *ast_node;
     Expr base_type;
 
     bool operator==(const OptionalType &other) const { return base_type == other.base_type; }
     bool operator!=(const OptionalType &other) const { return !(*this == other); }
+};
+
+struct ArrayType {
+    ASTNode *ast_node;
+    Expr base_type;
+
+    bool operator==(const ArrayType &other) const { return base_type == other.base_type; }
+    bool operator!=(const ArrayType &other) const { return !(*this == other); }
+};
+
+struct ClosureType {
+    ASTNode *ast_node;
+    FuncType func_type;
+    StructDef *underlying_struct;
+
+    bool operator==(const ClosureType &other) const { return func_type == other.func_type; }
+    bool operator!=(const ClosureType &other) const { return !(*this == other); }
 };
 
 struct IdentExpr {
@@ -975,6 +1005,7 @@ typedef std::variant<
     ArrayLiteral,
     StringLiteral,
     StructLiteral,
+    ClosureLiteral,
     SymbolExpr,
     BinaryExpr,
     UnaryExpr,
@@ -989,6 +1020,8 @@ typedef std::variant<
     StaticArrayType,
     FuncType,
     OptionalType,
+    ArrayType,
+    ClosureType,
     IdentExpr,
     StarExpr,
     BracketExpr,

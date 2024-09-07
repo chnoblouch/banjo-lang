@@ -18,38 +18,41 @@ bool Expr::operator==(const Expr &other) const {
 
     SIR_VISIT_EXPR(
         *this,
-        SIR_VISIT_IMPOSSIBLE,
-        return inner->value == other.as<sir::IntLiteral>().value,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return inner->symbol == other.as<SymbolExpr>().symbol,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return *inner == other.as<TupleExpr>(),
-        return *inner == other.as<PrimitiveType>(),
-        return *inner == other.as<PointerType>(),
-        return *inner == other.as<StaticArrayType>(),
-        return *inner == other.as<FuncType>(),
-        return *inner == other.as<OptionalType>(),
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE
+        SIR_VISIT_IMPOSSIBLE,                                     // empty
+        return inner->value == other.as<sir::IntLiteral>().value, // int_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // fp_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // bool_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // char_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // null_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // none_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // undefined_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // array_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // string_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // struct_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // closure_literal
+        return inner->symbol == other.as<SymbolExpr>().symbol,    // symbol_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // binary_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // unary_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // cast_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // index_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // call_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // field_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // range_expr
+        return *inner == other.as<TupleExpr>(),                   // tuple_expr
+        return *inner == other.as<PrimitiveType>(),               // primitive_type
+        return *inner == other.as<PointerType>(),                 // pointer_type
+        return *inner == other.as<StaticArrayType>(),             // static_array_type
+        return *inner == other.as<FuncType>(),                    // func_type
+        return *inner == other.as<OptionalType>(),                // optional_type
+        return *inner == other.as<ArrayType>(),                   // array_type
+        return *inner == other.as<ClosureType>(),                 // closure_type
+        SIR_VISIT_IMPOSSIBLE,                                     // ident_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // star_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // bracket_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // meta_access
+        SIR_VISIT_IMPOSSIBLE,                                     // meta_field_expr
+        SIR_VISIT_IMPOSSIBLE                                      // meta_call_expr
     );
 }
 
@@ -60,38 +63,41 @@ bool Expr::is_value() const {
 Expr Expr::get_type() const {
     SIR_VISIT_EXPR(
         *this,
-        return nullptr,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return inner->type,
-        return nullptr,
-        return inner->type,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        return nullptr,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE
+        return nullptr,       // empty
+        return inner->type,   // int_literal
+        return inner->type,   // fp_literal
+        return inner->type,   // bool_literal
+        return inner->type,   // char_literal
+        return inner->type,   // null_literal
+        return inner->type,   // none_literal
+        return inner->type,   // undefined_literal
+        return inner->type,   // array_literal
+        return inner->type,   // string_literal
+        return inner->type,   // struct_literal
+        return inner->type,   // closure_literal
+        return inner->type,   // symbol_expr
+        return inner->type,   // binary_expr
+        return inner->type,   // unary_expr
+        return inner->type,   // cast_expr
+        return inner->type,   // index_expr
+        return inner->type,   // call_expr
+        return inner->type,   // field_expr
+        return nullptr,       // range_expr
+        return inner->type,   // tuple_expr
+        return nullptr,       // primitive_type
+        return nullptr,       // pointer_type
+        return nullptr,       // static_array_type
+        return nullptr,       // func_type
+        return nullptr,       // optional_type
+        return nullptr,       // array_type
+        return nullptr,       // closure_type
+        return nullptr,       // ident_expr
+        return nullptr,       // star_expr
+        return nullptr,       // bracket_expr
+        return nullptr,       // dot_expr
+        SIR_VISIT_IMPOSSIBLE, // meta_access
+        SIR_VISIT_IMPOSSIBLE, // meta_field_expr
+        SIR_VISIT_IMPOSSIBLE  // meta_call_expr
     );
 }
 
@@ -196,6 +202,9 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

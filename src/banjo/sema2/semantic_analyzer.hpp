@@ -6,20 +6,25 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 
-#include <functional>
 #include <set>
 #include <stack>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <tuple>
 
 namespace banjo {
 
 namespace lang {
 
 namespace sema {
+
+struct ClosureContext {
+    std::vector<sir::Symbol> captured_vars;
+    sir::TupleExpr *data_type;
+    sir::Block *parent_block;
+};
 
 struct Scope {
     sir::FuncDef *func_def = nullptr;
@@ -28,6 +33,7 @@ struct Scope {
     sir::StructDef *struct_def = nullptr;
     sir::EnumDef *enum_def = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
+    ClosureContext *closure_ctx = nullptr;
 };
 
 enum class Result {
@@ -101,6 +107,8 @@ private:
     sir::Symbol find_std_optional();
     sir::Symbol find_std_array();
     sir::Symbol find_std_string();
+    sir::Symbol find_std_closure();
+    unsigned compute_size(sir::Expr type);
 
     void check_for_completeness(sir::DeclBlock &block);
 

@@ -7,6 +7,8 @@
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa_gen/ssa_generator_context.hpp"
+#include "banjo/ssa_gen/type_ssa_generator.hpp"
 
 #include <vector>
 
@@ -83,6 +85,16 @@ sir::Symbol SemanticAnalyzer::find_std_array() {
 
 sir::Symbol SemanticAnalyzer::find_std_string() {
     return find_std_symbol({"std", "string"}, "String");
+}
+
+sir::Symbol SemanticAnalyzer::find_std_closure() {
+    return find_std_symbol({"std", "closure"}, "Closure");
+}
+
+unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
+    SSAGeneratorContext dummy_ssa_gen_ctx(target);
+    ssa::Type ssa_type = TypeSSAGenerator(dummy_ssa_gen_ctx).generate(type);
+    return target->get_data_layout().get_size(ssa_type);
 }
 
 void SemanticAnalyzer::check_for_completeness(sir::DeclBlock &block) {

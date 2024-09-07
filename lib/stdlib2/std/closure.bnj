@@ -1,0 +1,16 @@
+use std.memory;
+
+struct Closure {
+    var func_ptr: addr;
+    var data_ptr: addr;
+
+    pub func new[T](func_ptr: addr, data: T) -> Closure {
+        var data_ptr = memory.alloc(meta(T).size);
+        *(data_ptr as *i32) = data;
+        return Closure { func_ptr, data_ptr };
+    }
+
+    pub func __deinit__(self) {
+        memory.free(self.data_ptr);
+    }
+}

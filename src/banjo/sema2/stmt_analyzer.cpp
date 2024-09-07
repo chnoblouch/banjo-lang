@@ -228,7 +228,16 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 }
 
 void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
-    ExprAnalyzer(analyzer).analyze(for_stmt.range);
+    Result partial_result;
+    
+    partial_result = ExprAnalyzer(analyzer).analyze(for_stmt.range);
+    if (partial_result != Result::SUCCESS) {
+        return;
+    }
+
+    if (!for_stmt.range.get_type()) {
+        return;
+    }
 
     sir::SymbolTable *iterable_symbol_table = for_stmt.range.get_type().as_symbol<sir::StructDef>().block.symbol_table;
     sir::FuncDef &iter_func_def = iterable_symbol_table->look_up(MagicMethods::ITER).as<sir::FuncDef>();

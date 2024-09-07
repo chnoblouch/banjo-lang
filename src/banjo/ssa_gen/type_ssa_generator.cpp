@@ -20,7 +20,8 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
         return generate_primitive_type(*inner),
         return generate_pointer_type(),
         return generate_static_array_type(*inner),
-        return generate_func_type()
+        return generate_func_type(),
+        return generate_closure_type(*inner)
     );
 }
 
@@ -62,10 +63,6 @@ ssa::Type TypeSSAGenerator::generate_pointer_type() {
     return ssa::Primitive::ADDR;
 }
 
-ssa::Type TypeSSAGenerator::generate_func_type() {
-    return ssa::Primitive::ADDR;
-}
-
 ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr) {
     std::vector<ssa::Type> member_types;
     member_types.resize(tuple_expr.exprs.size());
@@ -81,6 +78,14 @@ ssa::Type TypeSSAGenerator::generate_static_array_type(const sir::StaticArrayTyp
     ssa::Type type = generate(static_array_type.base_type);
     type.set_array_length(static_array_type.length.as<sir::IntLiteral>().value.to_u64());
     return type;
+}
+
+ssa::Type TypeSSAGenerator::generate_func_type() {
+    return ssa::Primitive::ADDR;
+}
+
+ssa::Type TypeSSAGenerator::generate_closure_type(const sir::ClosureType &closure_type) {
+    return generate_struct_type(*closure_type.underlying_struct);
 }
 
 } // namespace lang

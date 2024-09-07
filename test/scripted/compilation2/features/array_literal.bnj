@@ -15,7 +15,7 @@ func main() {
 # test:output "2,1,4"
 
 func main() {
-    var array: Array[i32] = [1, 4];
+    var array: [i32] = [1, 4];
     
     print(array.length);
     print(",");
@@ -41,7 +41,7 @@ func main() {
 # test:compiles
 
 func main() {
-    var array: Array[i32] = [];
+    var array: [i32] = [];
 }
 
 # test:subtest

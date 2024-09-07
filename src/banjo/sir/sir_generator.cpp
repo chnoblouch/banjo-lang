@@ -431,6 +431,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
         case AST_ANON_STRUCT_LITERAL: return generate_typeless_struct_literal(node);
+        case AST_CLOSURE: return generate_closure_literal(node);
         case AST_IDENTIFIER: return generate_ident_expr(node);
         case AST_SELF: return generate_self(node);
         case AST_OPERATOR_ADD: return generate_binary_expr(node, sir::BinaryOp::ADD);
@@ -478,6 +479,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
         case AST_FUNCTION_DATA_TYPE: return generate_func_type(node);
         case AST_OPTIONAL_DATA_TYPE: return generate_optional_type(node);
+        case AST_CLOSURE_TYPE: return generate_closure_type(node);
         case AST_META_EXPR: return generate_meta_access(node);
         default: ASSERT_UNREACHABLE;
     }
@@ -582,6 +584,15 @@ sir::Expr SIRGenerator::generate_typeless_struct_literal(ASTNode *node) {
         .ast_node = node,
         .type = nullptr,
         .entries = generate_struct_literal_entries(node->get_child()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_closure_literal(ASTNode *node) {
+    return create_expr(sir::ClosureLiteral{
+        .ast_node = node,
+        .type = nullptr,
+        .func_type = generate_func_type(node->get_child(CLOSURE_PARAMS), node->get_child(CLOSURE_RETURN_TYPE)),
+        .block = generate_block(node->get_child(CLOSURE_BLOCK)),
     });
 }
 
@@ -730,6 +741,15 @@ sir::Expr SIRGenerator::generate_optional_type(ASTNode *node) {
     return create_expr(sir::OptionalType{
         .ast_node = node,
         .base_type = generate_expr(node->get_child()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_closure_type(ASTNode *node) {
+    return create_expr(sir::ClosureType{
+        .ast_node = nullptr,
+        .func_type =
+            generate_func_type(node->get_child(CLOSURE_TYPE_PARAMS), node->get_child(CLOSURE_TYPE_RETURN_TYPE)),
+        .underlying_struct = nullptr,
     });
 }
 

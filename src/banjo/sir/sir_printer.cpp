@@ -469,6 +469,7 @@ void Printer::print_expr(const Expr &expr) {
         print_array_literal(*inner),
         print_string_literal(*inner),
         print_struct_literal(*inner),
+        print_closure_literal(*inner),
         print_symbol_expr(*inner),
         print_binary_expr(*inner),
         print_unary_expr(*inner),
@@ -483,6 +484,8 @@ void Printer::print_expr(const Expr &expr) {
         print_static_array_type(*inner),
         print_func_type(*inner),
         print_optional_type(*inner),
+        print_array_type(*inner),
+        print_closure_type(*inner),
         print_ident_expr(*inner),
         print_star_expr(*inner),
         print_bracket_expr(*inner),
@@ -570,6 +573,15 @@ void Printer::print_struct_literal(const StructLiteral &struct_literal) {
     END_OBJECT();
 }
 
+void Printer::print_closure_literal(const ClosureLiteral &closure_literal) {
+    BEGIN_OBJECT("ClosureLiteral");
+    PRINT_EXPR_FIELD("type", closure_literal.type);
+    PRINT_FIELD_NAME("func_type");
+    print_func_type(closure_literal.func_type);
+    PRINT_BLOCK_FIELD("block", closure_literal.block);
+    END_OBJECT();
+}
+
 void Printer::print_symbol_expr(const SymbolExpr &symbol_expr) {
     BEGIN_OBJECT("SymbolExpr");
     PRINT_EXPR_FIELD("type", symbol_expr.type);
@@ -625,7 +637,7 @@ void Printer::print_call_expr(const CallExpr &call_expr) {
 }
 
 void Printer::print_field_expr(const FieldExpr &field_expr) {
-    BEGIN_OBJECT("DotExpr");
+    BEGIN_OBJECT("FieldExpr");
     PRINT_EXPR_FIELD("type", field_expr.type);
     PRINT_EXPR_FIELD("base", field_expr.base);
     PRINT_FIELD("field", field_expr.field_index);
@@ -701,6 +713,19 @@ void Printer::print_func_type(const FuncType &func_type) {
 void Printer::print_optional_type(const OptionalType &optional_type) {
     BEGIN_OBJECT("OptionalType");
     PRINT_EXPR_FIELD("base_type", optional_type.base_type);
+    END_OBJECT();
+}
+
+void Printer::print_array_type(const ArrayType &array_type) {
+    BEGIN_OBJECT("ArrayType");
+    PRINT_EXPR_FIELD("base_type", array_type.base_type);
+    END_OBJECT();
+}
+
+void Printer::print_closure_type(const ClosureType &closure_type) {
+    BEGIN_OBJECT("ClosureType");
+    PRINT_FIELD_NAME("type");
+    print_func_type(closure_type.func_type);
     END_OBJECT();
 }
 

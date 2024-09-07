@@ -88,6 +88,7 @@ private:
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
     sir::Expr generate_typeless_struct_literal(ASTNode *node);
+    sir::Expr generate_closure_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
     sir::Expr generate_self(ASTNode *node);
     sir::Expr generate_binary_expr(ASTNode *node, sir::BinaryOp op);
@@ -103,6 +104,7 @@ private:
     sir::Expr generate_static_array_type(ASTNode *node);
     sir::Expr generate_func_type(ASTNode *node);
     sir::Expr generate_optional_type(ASTNode *node);
+    sir::Expr generate_closure_type(ASTNode *node);
     sir::Expr generate_meta_access(ASTNode *node);
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
