@@ -1,0 +1,29 @@
+struct Set[T] {
+    var elements: [T];
+    
+    pub func new() -> Set[T] {
+        return Set[T] {
+            elements: []
+        };
+    }
+    
+    pub func of(elements: [T]) -> Set[T] {
+        var set = new();
+        
+        for i in 0..elements.length {
+            set.insert(elements[i]);
+        }
+        
+        return set;
+    }
+    
+    pub func insert(self, element: T) {
+        for i in 0..self.elements.length {
+            if self.elements[i] == element {
+                return;
+            }
+        }
+        
+        self.elements.append(element);
+    }
+}

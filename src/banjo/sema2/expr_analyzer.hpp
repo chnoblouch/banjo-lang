@@ -29,12 +29,15 @@ public:
 
 private:
     Result analyze_uncoerced(sir::Expr &expr);
-    Result finalize_type_by_coercion(sir::Expr &expr, sir::Expr &expected_type);
+    Result finalize_type_by_coercion(sir::Expr &expr, sir::Expr expected_type);
     Result finalize_type(sir::Expr &expr);
 
-    void analyze_bool_literal(sir::BoolLiteral &bool_literal);
-    void analyze_char_literal(sir::CharLiteral &char_literal);
+    Result analyze_int_literal(sir::IntLiteral &int_literal);
+    Result analyze_fp_literal(sir::FPLiteral &fp_literal);
+    Result analyze_bool_literal(sir::BoolLiteral &bool_literal);
+    Result analyze_char_literal(sir::CharLiteral &char_literal);
     Result analyze_array_literal(sir::ArrayLiteral &array_literal, sir::Expr &out_expr);
+    Result analyze_string_literal(sir::StringLiteral &string_literal);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);
     Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);

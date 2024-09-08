@@ -246,7 +246,9 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
         case sir::BinaryOp::GT:
         case sir::BinaryOp::LT:
         case sir::BinaryOp::GE:
-        case sir::BinaryOp::LE: return generate_bool_expr(expr);
+        case sir::BinaryOp::LE:
+        case sir::BinaryOp::AND:
+        case sir::BinaryOp::OR: return generate_bool_expr(expr);
         default: break;
     }
 

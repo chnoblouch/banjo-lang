@@ -769,10 +769,13 @@ enum class PseudoTypeKind {
     INT_LITERAL,
     FP_LITERAL,
     STRING_LITERAL,
+    ARRAY_LITERAL,
 };
 
 struct PseudoType {
     PseudoTypeKind kind;
+
+    bool is_struct_by_default() const;
 };
 
 struct MetaAccess {

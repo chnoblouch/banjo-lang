@@ -67,6 +67,7 @@ public:
     void report_err_operator_overload_not_found(const sir::StarExpr &star_expr);
     void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr);
     void report_err_cannot_call(const sir::Expr &expr);
+    void report_err_cannot_deref(const sir::Expr &expr);
     void report_err_no_members(const sir::DotExpr &dot_expr);
     void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
     void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);

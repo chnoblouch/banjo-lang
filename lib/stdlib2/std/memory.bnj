@@ -20,6 +20,16 @@ pub func copy(src: addr, dst: addr, size: usize) {
     cmemcpy(dst, src, size);
 }
 
+pub func alloc_box[T]() -> *T {
+	return alloc(meta(T).size) as *T;
+}
+
+pub func zero[T]() -> T {
+	var value: T;
+	cmemset(&value as addr, 0, meta(T).size);
+	return value;
+}
+
 struct PointerIter[T] {
     var pointer: *T;
     var end: *T;

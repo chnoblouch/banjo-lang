@@ -1,0 +1,25 @@
+# test:subtest
+# test:output "Apple,Banana,Pear"
+
+func main() {
+    var array: [*u8] = ["Apple", "Banana", "Pear"];
+    
+    print(array[0]);
+    print(",");
+    print(array[1]);
+    print(",");
+    print(array[2]);
+}
+
+# test:subtest
+# test:output "0,none,42"
+
+func main() {
+    var array: [?i64] = [0, none, 42];
+    
+    print(array[0]);
+    print(",");
+    print(array[1]);
+    print(",");
+    print(array[2]);
+}

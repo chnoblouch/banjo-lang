@@ -1,0 +1,7 @@
+# test:subtest
+# test:error 6:14 "cannot dereference value with type 'i32'"
+
+func main() {
+    var a: i32 = 50;
+    var b = *a;
+}

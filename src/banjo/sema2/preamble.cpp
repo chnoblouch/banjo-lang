@@ -22,6 +22,7 @@ static const std::vector<PreambleDecl> PREAMBLE_DECLS = {
     {ModulePath{"std", "optional"}, {"Optional"}},
     {ModulePath{"std", "array"}, {"Array"}},
     {ModulePath{"std", "string"}, {"String"}},
+    {ModulePath{"std", "set"}, {"Set"}},
     {ModulePath{"std", "closure"}, {"Closure"}},
 };
 

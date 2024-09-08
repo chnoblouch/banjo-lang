@@ -6,7 +6,7 @@ struct Closure {
 
     pub func new[T](func_ptr: addr, data: T) -> Closure {
         var data_ptr = memory.alloc(meta(T).size);
-        *(data_ptr as *i32) = data;
+        *(data_ptr as *T) = data;
         return Closure { func_ptr, data_ptr };
     }
 

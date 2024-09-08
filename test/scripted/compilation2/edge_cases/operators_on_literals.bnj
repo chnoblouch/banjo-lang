@@ -1,0 +1,23 @@
+# test:subtest
+# test:output "[1, 2, 3, 4]"
+
+func main() {
+    var a = [1, 2, 3] + 4;
+    println(a);
+}
+
+# test:subtest
+# test:output "[1, 2, 3, 4, 5, 6, 7]"
+
+func main() {
+    var a = [1, 2, 3, 4] + [5, 6, 7];
+    println(a);
+}
+
+# test:subtest
+# test:output "Hello, World!"
+
+func main() {
+    var a = "Hello, " + "World!";
+    println(a);
+}

@@ -59,6 +59,18 @@ struct Array[T] {
     pub func clear(self) {
         self.length = 0;
     }
+
+    pub func copy(self) -> Array[T] {
+        var size = self.length * meta(T).size;
+        var data = memory.alloc(size) as *T;
+        memory.copy(self.data as addr, data as addr, size);
+        
+        return Array[T] {
+			data,
+			length: self.length,
+			capacity: self.length,
+		};
+    }
     
     pub func __index__(self, index: usize) -> *T {
         meta if config.BUILD_CONFIG == config.DEBUG {
@@ -72,6 +84,34 @@ struct Array[T] {
         return PointerIter[T].new(self.data, self.data + self.length);
     }
     
+    pub func __add__(self, value: T) -> Array[T] {
+        var length = self.length + 1;
+        var data = memory.alloc(length * meta(T).size) as *T;
+        
+        memory.copy(self.data as addr, data as addr, self.length * meta(T).size);
+        data[self.length] = value;
+
+        return Array[T] {
+            data,
+            length,
+            capacity: length,
+        };
+    }
+
+    pub func __add__(self, other: Array[T]) -> Array[T] {
+        var length = self.length + other.length;
+        var data = memory.alloc(length * meta(T).size) as *T;
+        
+        memory.copy(self.data as addr, &data[0] as addr, self.length * meta(T).size);
+        memory.copy(other.data as addr, &data[self.length] as addr, other.length * meta(T).size);
+
+        return Array[T] {
+            data,
+            length,
+            capacity: length,
+        };
+    }
+
     pub func __str__(self) -> String {
         var string = "[";
         

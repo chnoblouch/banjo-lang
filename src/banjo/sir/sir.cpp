@@ -106,7 +106,7 @@ bool Expr::is_type() const {
         const Symbol &symbol = symbol_expr->symbol;
         return symbol.is<StructDef>() || symbol.is<EnumDef>();
     } else if (auto tuple_expr = match<TupleExpr>()) {
-        return tuple_expr->exprs.size() > 0 && tuple_expr->exprs[0].is_type();
+        return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else {
         return is<PrimitiveType>() || is<PointerType>() || is<FuncType>();
     }
@@ -358,6 +358,14 @@ Symbol SymbolTable::look_up(std::string_view name) {
         return parent ? parent->look_up(name) : nullptr;
     } else {
         return iter->second.resolve();
+    }
+}
+
+bool PseudoType::is_struct_by_default() const {
+    switch (kind) {
+        case PseudoTypeKind::ARRAY_LITERAL:
+        case PseudoTypeKind::STRING_LITERAL: return true;
+        default: return false;
     }
 }
 

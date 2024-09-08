@@ -69,6 +69,7 @@ StoredValue StoredValue::turn_into_value(SSAGeneratorContext &ctx) {
         ir::Value val = ctx.append_load(value_type, value_or_ptr);
         return StoredValue::create_value(val);
     } else if (kind == Kind::UNDEFINED) {
+        assert(fits_in_reg(ctx));
         ir::Value val = ir::Value::from_int_immediate(0, value_type);
         return StoredValue::create_value(val);
     } else {
@@ -88,6 +89,14 @@ StoredValue StoredValue::turn_into_value_or_copy(SSAGeneratorContext &ctx) {
             ir::Value copy_dst = ir::Operand::from_register(ctx.append_alloca(value_type));
             ctx.append_copy(copy_dst, copy_src, value_type);
             return StoredValue::create_reference(copy_dst, value_type);
+        }
+    } else if (kind == Kind::UNDEFINED) {
+        if (fits_in_reg(ctx)) {
+            ir::Value val = ir::Value::from_int_immediate(0, value_type);
+            return StoredValue::create_value(val);
+        } else {
+            ir::Value stack_slot = ir::Operand::from_register(ctx.append_alloca(value_type));
+            return StoredValue::create_reference(stack_slot, value_type);
         }
     } else {
         ASSERT_UNREACHABLE;

@@ -64,7 +64,7 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 
 void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
     ExprAnalyzer(analyzer).analyze(assign_stmt.lhs);
-    ExprAnalyzer(analyzer).analyze(assign_stmt.rhs);
+    ExprAnalyzer(analyzer, ExprConstraints::expect_type(assign_stmt.lhs.get_type())).analyze(assign_stmt.rhs);
 }
 
 void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
@@ -229,7 +229,7 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 
 void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
     Result partial_result;
-    
+
     partial_result = ExprAnalyzer(analyzer).analyze(for_stmt.range);
     if (partial_result != Result::SUCCESS) {
         return;
