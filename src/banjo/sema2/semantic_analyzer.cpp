@@ -79,6 +79,10 @@ sir::Symbol SemanticAnalyzer::find_std_optional() {
     return find_std_symbol({"std", "optional"}, "Optional");
 }
 
+sir::Symbol SemanticAnalyzer::find_std_result() {
+    return find_std_symbol({"std", "result"}, "Result");
+}
+
 sir::Symbol SemanticAnalyzer::find_std_array() {
     return find_std_symbol({"std", "array"}, "Array");
 }

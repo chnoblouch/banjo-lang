@@ -35,6 +35,7 @@
     static_array_type_visitor,                                                                                         \
     func_type_visitor,                                                                                                 \
     optional_type_visitor,                                                                                             \
+    result_type_visitor,                                                                                               \
     array_type_visitor,                                                                                                \
     closure_type_visitor,                                                                                              \
     ident_expr_visitor,                                                                                                \
@@ -97,6 +98,8 @@
         func_type_visitor;                                                                                             \
     } else if (auto inner = (expr).match<banjo::lang::sir::OptionalType>()) {                                          \
         optional_type_visitor;                                                                                         \
+    } else if (auto inner = (expr).match<banjo::lang::sir::ResultType>()) {                                            \
+        result_type_visitor;                                                                                           \
     } else if (auto inner = (expr).match<banjo::lang::sir::ArrayType>()) {                                             \
         array_type_visitor;                                                                                            \
     } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
@@ -158,6 +161,7 @@
     comp_assign_stmt_visitor,                                                                                          \
     return_stmt_visitor,                                                                                               \
     if_stmt_visitor,                                                                                                   \
+    try_stmt_visitor,                                                                                                  \
     while_stmt_visitor,                                                                                                \
     for_stmt_visitor,                                                                                                  \
     loop_stmt_visitor,                                                                                                 \
@@ -180,6 +184,8 @@
         return_stmt_visitor;                                                                                           \
     } else if (auto inner = (stmt).match<banjo::lang::sir::IfStmt>()) {                                                \
         if_stmt_visitor;                                                                                               \
+    } else if (auto inner = (stmt).match<banjo::lang::sir::TryStmt>()) {                                               \
+        try_stmt_visitor;                                                                                              \
     } else if (auto inner = (stmt).match<banjo::lang::sir::WhileStmt>()) {                                             \
         while_stmt_visitor;                                                                                            \
     } else if (auto inner = (stmt).match<banjo::lang::sir::ForStmt>()) {                                               \

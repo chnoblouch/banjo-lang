@@ -92,3 +92,32 @@ struct Point {
 func main() {
     var point: ?i32 = [3, 7];
 }
+
+# test:subtest
+# test:output "true,test"
+
+func main() {
+    var string: ?String = "test";
+    
+    print(string.has_value);
+    print(",");
+    print(string.value);
+}
+
+# test:subtest
+# test:output "true,test"
+
+func main() {
+    var string: ?*u8 = "test";
+    
+    print(string.has_value);
+    print(",");
+    print(string.value);
+}
+
+# test:subtest
+# test:error 122:24 "cannot coerce string literal to type 'i32'"
+
+func main() {
+    var string: ?i32 = "test";
+}

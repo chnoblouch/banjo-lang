@@ -23,21 +23,22 @@ void StmtAnalyzer::analyze_block(sir::Block &block) {
 
         SIR_VISIT_STMT(
             stmt,
-            SIR_VISIT_IMPOSSIBLE,
-            analyze_var_stmt(*inner),
-            analyze_assign_stmt(*inner),
-            analyze_comp_assign_stmt(*inner, stmt),
-            analyze_return_stmt(*inner),
-            analyze_if_stmt(*inner),
-            analyze_while_stmt(*inner, stmt),
-            analyze_for_stmt(*inner, stmt),
-            analyze_loop_stmt(*inner),
-            analyze_continue_stmt(*inner),
-            analyze_break_stmt(*inner),
-            MetaExpansion(analyzer).evaluate_meta_if_stmt(block, i),
-            SIR_VISIT_IGNORE,
-            ExprAnalyzer(analyzer).analyze(*inner),
-            analyze_block(*inner)
+            SIR_VISIT_IMPOSSIBLE,                                    // empty
+            analyze_var_stmt(*inner),                                // var_stmt
+            analyze_assign_stmt(*inner),                             // assign_stmt
+            analyze_comp_assign_stmt(*inner, stmt),                  // comp_assign_stmt
+            analyze_return_stmt(*inner),                             // return_stmt
+            analyze_if_stmt(*inner),                                 // if_stmt
+            analyze_try_stmt(*inner, stmt),                          // try_stmt
+            analyze_while_stmt(*inner, stmt),                        // while_stmt
+            analyze_for_stmt(*inner, stmt),                          // for_stmt
+            analyze_loop_stmt(*inner),                               // loop_stmt
+            analyze_continue_stmt(*inner),                           // continue_stmt
+            analyze_break_stmt(*inner),                              // break_stmt
+            MetaExpansion(analyzer).evaluate_meta_if_stmt(block, i), // meta_if_stmt
+            SIR_VISIT_IGNORE,                                        // expanded_meta_stmt
+            ExprAnalyzer(analyzer).analyze(*inner),                  // expr_stmt
+            analyze_block(*inner)                                    // block_stmt
         )
     }
 
@@ -102,6 +103,116 @@ void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     if (if_stmt.else_branch) {
         analyze_block(if_stmt.else_branch->block);
     }
+}
+
+void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt) {
+    Result partial_result;
+
+    partial_result = ExprAnalyzer(analyzer).analyze(try_stmt.success_branch.expr);
+    if (partial_result != Result::SUCCESS) {
+        return;
+    }
+
+    sir::StructDef &struct_def = try_stmt.success_branch.expr.get_type().as_symbol<sir::StructDef>();
+    sir::StructField *successful_field = struct_def.find_field("successful");
+    sir::StructField *value_field = struct_def.find_field("value");
+    sir::StructField *error_field = struct_def.find_field("error");
+
+    sir::IfStmt if_stmt{
+        .ast_node = nullptr,
+        .cond_branches = {},
+    };
+
+    sir::Block success_block{
+        .ast_node = nullptr,
+        .stmts{
+            analyzer.create_stmt(sir::VarStmt{
+                .ast_node = nullptr,
+                .name = try_stmt.success_branch.ident,
+                .type = nullptr,
+                .value = analyzer.create_expr(sir::FieldExpr{
+                    .ast_node = nullptr,
+                    .type = value_field->type,
+                    .base = try_stmt.success_branch.expr,
+                    .field_index = value_field->index,
+                }),
+            }),
+            analyzer.create_stmt(try_stmt.success_branch.block),
+        },
+        .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
+            .parent = &analyzer.get_symbol_table(),
+            .symbols = {},
+        }),
+    };
+
+    try_stmt.success_branch.block.symbol_table->parent = success_block.symbol_table;
+    analyze_block(success_block);
+
+    if_stmt.cond_branches = {
+        sir::IfCondBranch{
+            .ast_node = nullptr,
+            .condition = analyzer.create_expr(sir::FieldExpr{
+                .ast_node = nullptr,
+                .type = successful_field->type,
+                .base = try_stmt.success_branch.expr,
+                .field_index = successful_field->index,
+            }),
+            .block = success_block,
+        },
+    };
+
+    if (try_stmt.except_branch) {
+        ExprAnalyzer(analyzer).analyze(try_stmt.except_branch->type);
+
+        sir::Block except_block{
+            .ast_node = nullptr,
+            .stmts{
+                analyzer.create_stmt(sir::VarStmt{
+                    .ast_node = nullptr,
+                    .name = try_stmt.except_branch->ident,
+                    .type = nullptr,
+                    .value = analyzer.create_expr(sir::FieldExpr{
+                        .ast_node = nullptr,
+                        .type = error_field->type,
+                        .base = try_stmt.success_branch.expr,
+                        .field_index = error_field->index,
+                    }),
+                }),
+                analyzer.create_stmt(try_stmt.except_branch->block),
+            },
+            .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
+                .parent = &analyzer.get_symbol_table(),
+                .symbols = {},
+            }),
+        };
+
+        try_stmt.except_branch->block.symbol_table->parent = except_block.symbol_table;
+        analyze_block(except_block);
+
+        if_stmt.else_branch = sir::IfElseBranch{
+            .ast_node = nullptr,
+            .block = except_block,
+        };
+    } else if (try_stmt.else_branch) {
+        sir::Block else_block = try_stmt.else_branch->block;
+        analyze_block(else_block);
+
+        if_stmt.else_branch = sir::IfElseBranch{
+            .ast_node = nullptr,
+            .block = else_block,
+        };
+    }
+
+    out_stmt = analyzer.create_stmt(if_stmt);
+
+    // sir::Block *block = analyzer.create_stmt(sir::Block{
+    //     .ast_node = nullptr,
+    //     .stmts = {},
+    //     .symbol_table = analyzer.create_symbol_table({
+    //         .parent = &analyzer.get_symbol_table(),
+    //         .symbols = {},
+    //     }),
+    // });
 }
 
 void StmtAnalyzer::analyze_while_stmt(sir::WhileStmt &while_stmt, sir::Stmt &out_stmt) {

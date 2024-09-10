@@ -64,6 +64,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                          // static_array_type
         SIR_VISIT_IMPOSSIBLE,                          // func_type
         SIR_VISIT_IMPOSSIBLE,                          // optional_type
+        SIR_VISIT_IMPOSSIBLE,                          // result_type
         SIR_VISIT_IMPOSSIBLE,                          // array_type
         SIR_VISIT_IMPOSSIBLE,                          // closure_type
         SIR_VISIT_IMPOSSIBLE,                          // ident_expr

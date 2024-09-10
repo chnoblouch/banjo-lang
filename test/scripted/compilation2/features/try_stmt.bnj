@@ -1,0 +1,47 @@
+# test:subtest
+# test:output "12"
+
+func main() {
+    var result: i32 except bool = 12;
+
+    try value in result {
+        print(value);
+    }
+}
+
+# test:subtest
+# test:output ""
+
+func main() {
+    var result: i32 except bool = false;
+
+    try value in result {
+        print(value);
+    }
+}
+
+# test:subtest
+# test:output "error"
+
+func main() {
+    var result: i32 except bool = true;
+
+    try value in result {
+        print("success");
+    } else {
+        print("error");
+    }
+}
+
+# test:subtest
+# test:output "true"
+
+func main() {
+    var result: i32 except bool = true;
+
+    try value in result {
+        print(value);
+    } except error: bool {
+        print(error);
+    }
+}

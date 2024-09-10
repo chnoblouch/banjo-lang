@@ -44,6 +44,7 @@ bool Expr::operator==(const Expr &other) const {
         return *inner == other.as<StaticArrayType>(),             // static_array_type
         return *inner == other.as<FuncType>(),                    // func_type
         return *inner == other.as<OptionalType>(),                // optional_type
+        return *inner == other.as<ResultType>(),                  // result_type
         return *inner == other.as<ArrayType>(),                   // array_type
         return *inner == other.as<ClosureType>(),                 // closure_type
         SIR_VISIT_IMPOSSIBLE,                                     // ident_expr
@@ -89,6 +90,7 @@ Expr Expr::get_type() const {
         return nullptr,       // static_array_type
         return nullptr,       // func_type
         return nullptr,       // optional_type
+        return nullptr,       // result_type
         return nullptr,       // array_type
         return nullptr,       // closure_type
         return nullptr,       // ident_expr
@@ -202,6 +204,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

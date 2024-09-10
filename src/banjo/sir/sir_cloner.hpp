@@ -41,6 +41,7 @@ public:
     CompAssignStmt *clone_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     ReturnStmt *clone_return_stmt(const ReturnStmt &return_stmt);
     IfStmt *clone_if_stmt(const IfStmt &if_stmt);
+    TryStmt *clone_try_stmt(const TryStmt &try_stmt);
     WhileStmt *clone_while_stmt(const WhileStmt &while_stmt);
     ForStmt *clone_for_stmt(const ForStmt &for_stmt);
     LoopStmt *clone_loop_stmt(const LoopStmt &loop_stmt);
@@ -75,6 +76,7 @@ public:
     StaticArrayType *clone_static_array_type(const StaticArrayType &static_array_type);
     FuncType *clone_func_type(const FuncType &func_type);
     OptionalType *clone_optional_type(const OptionalType &optional_type);
+    ResultType *clone_result_type(const ResultType &result_type);
     ArrayType *clone_array_type(const ArrayType &array_type);
     ClosureType *clone_closure_type(const ClosureType &closure_type);
     IdentExpr *clone_ident_expr(const IdentExpr &ident_expr);

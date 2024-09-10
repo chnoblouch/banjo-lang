@@ -281,6 +281,7 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_IMPLICIT_TYPE_VAR: return generate_typeless_var_stmt(node);
         case AST_FUNCTION_RETURN: return generate_return_stmt(node);
         case AST_IF_CHAIN: return generate_if_stmt(node);
+        case AST_TRY: return generate_try_stmt(node);
         case AST_WHILE: return generate_while_stmt(node);
         case AST_FOR: return generate_for_stmt(node);
         case AST_CONTINUE: return generate_continue_stmt(node);
@@ -359,6 +360,39 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
     }
 
     return create_stmt(sir_if_stmt);
+}
+
+sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
+    sir::TryStmt sir_try_stmt{
+        .ast_node = node,
+    };
+
+    for (ASTNode *child : node->get_children()) {
+        if (child->get_type() == AST_TRY_SUCCESS_CASE) {
+            sir_try_stmt.success_branch = sir::TrySuccessBranch{
+                .ast_node = child,
+                .ident = generate_ident(child->get_child(0)),
+                .expr = generate_expr(child->get_child(1)),
+                .block = generate_block(child->get_child(2)),
+            };
+        } else if (child->get_type() == AST_TRY_ERROR_CASE) {
+            sir_try_stmt.except_branch = sir::TryExceptBranch{
+                .ast_node = child,
+                .ident = generate_ident(child->get_child(0)),
+                .type = generate_expr(child->get_child(1)),
+                .block = generate_block(child->get_child(2)),
+            };
+        } else if (child->get_type() == AST_TRY_ELSE_CASE) {
+            sir_try_stmt.else_branch = sir::TryElseBranch{
+                .ast_node = child,
+                .block = generate_block(child->get_child(0)),
+            };
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+
+    return create_stmt(sir_try_stmt);
 }
 
 sir::Stmt SIRGenerator::generate_while_stmt(ASTNode *node) {
@@ -479,6 +513,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
         case AST_FUNCTION_DATA_TYPE: return generate_func_type(node);
         case AST_OPTIONAL_DATA_TYPE: return generate_optional_type(node);
+        case AST_RESULT_TYPE: return generate_result_type(node);
         case AST_CLOSURE_TYPE: return generate_closure_type(node);
         case AST_META_EXPR: return generate_meta_access(node);
         default: ASSERT_UNREACHABLE;
@@ -741,6 +776,14 @@ sir::Expr SIRGenerator::generate_optional_type(ASTNode *node) {
     return create_expr(sir::OptionalType{
         .ast_node = node,
         .base_type = generate_expr(node->get_child()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_result_type(ASTNode *node) {
+    return create_expr(sir::ResultType{
+        .ast_node = node,
+        .value_type = generate_expr(node->get_child(0)),
+        .error_type = generate_expr(node->get_child(1)),
     });
 }
 

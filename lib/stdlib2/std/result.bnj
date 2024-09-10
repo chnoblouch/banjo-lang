@@ -5,7 +5,7 @@ struct Result[T, E] {
     var value: T;
     var error: E;
     
-    pub func success(value: T) -> Result[T, E] {
+    pub func new_success(value: T) -> Result[T, E] {
         return Result[T, E] {
             successful: true,
             value,
@@ -13,7 +13,7 @@ struct Result[T, E] {
         };
     }
     
-    pub func failure(error: E) -> Result[T, E] {
+    pub func new_failure(error: E) -> Result[T, E] {
         return Result[T, E] {
             successful: false,
             value: undefined,

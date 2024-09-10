@@ -105,6 +105,7 @@ private:
 
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
     sir::Symbol find_std_optional();
+    sir::Symbol find_std_result();
     sir::Symbol find_std_array();
     sir::Symbol find_std_string();
     sir::Symbol find_std_closure();

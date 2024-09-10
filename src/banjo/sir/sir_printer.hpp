@@ -51,6 +51,7 @@ private:
     void print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     void print_return_stmt(const ReturnStmt &return_stmt);
     void print_if_stmt(const IfStmt &if_stmt);
+    void print_try_stmt(const TryStmt &try_stmt);
     void print_while_stmt(const WhileStmt &while_stmt);
     void print_for_stmt(const ForStmt &for_stmt);
     void print_loop_stmt(const LoopStmt &loop_stmt);
@@ -87,6 +88,7 @@ private:
     void print_static_array_type(const StaticArrayType &static_array_type);
     void print_func_type(const FuncType &func_type);
     void print_optional_type(const OptionalType &optional_type);
+    void print_result_type(const ResultType &result_type);
     void print_array_type(const ArrayType &array_type);
     void print_closure_type(const ClosureType &closure_type);
     void print_ident_expr(const IdentExpr &ident_expr);

@@ -63,6 +63,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return analyze(expr),                    // static_array_type
         return analyze(expr),                    // func_type
         return analyze(expr),                    // optional_type
+        return analyze(expr),                    // result_type
         return analyze(expr),                    // array_type
         return analyze(expr),                    // closure_type
         return analyze_and_evaluate(expr),       // ident_expr

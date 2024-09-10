@@ -80,6 +80,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_static_array_type(*inner),                  // static_array_type
         analyze_func_type(*inner),                                   // func_type
         result = analyze_optional_type(*inner, expr),                // optional_type
+        result = analyze_result_type(*inner, expr),                  // result_type
         result = analyze_array_type(*inner, expr),                   // array_type
         result = analyze_closure_type(*inner),                       // closure_type
         result = analyze_ident_expr(*inner, expr),                   // ident_expr
@@ -119,6 +120,21 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
 
             create_std_optional_some(*specialization, expr);
             return Result::SUCCESS;
+        } else if (auto specialization = as_std_result_specialization(expected_type)) {
+            result = finalize_type(expr);
+            if (result != Result::SUCCESS) {
+                return result;
+            }
+
+            sir::Expr type = expr.get_type();
+
+            if (type == specialization->args[0]) {
+                create_std_result_success(*specialization, expr);
+                return Result::SUCCESS;
+            } else if (type == specialization->args[1]) {
+                create_std_result_failure(*specialization, expr);
+                return Result::SUCCESS;
+            }
         }
     }
 
@@ -801,6 +817,30 @@ Result ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir
     return Result::SUCCESS;
 }
 
+Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr &out_expr) {
+    Result result = Result::SUCCESS;
+    Result partial_result;
+
+    partial_result = ExprAnalyzer(analyzer).analyze(result_type.value_type);
+    if (partial_result != Result::SUCCESS) {
+        result = Result::ERROR;
+    }
+
+    partial_result = ExprAnalyzer(analyzer).analyze(result_type.error_type);
+    if (partial_result != Result::SUCCESS) {
+        result = Result::ERROR;
+    }
+
+    if (result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    sir::StructDef &struct_def = analyzer.find_std_result().as<sir::StructDef>();
+    specialize(struct_def, {result_type.value_type, result_type.error_type}, out_expr);
+
+    return Result::SUCCESS;
+}
+
 Result ExprAnalyzer::analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr) {
     Result partial_result;
 
@@ -1206,6 +1246,60 @@ void ExprAnalyzer::create_std_optional_none(sir::Specialization<sir::StructDef> 
         .type = func_def.type.return_type,
         .callee = callee,
         .args = {},
+    });
+}
+
+sir::Specialization<sir::StructDef> *ExprAnalyzer::as_std_result_specialization(sir::Expr &type) {
+    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
+        sir::StructDef &optional_def = analyzer.find_std_result().as<sir::StructDef>();
+
+        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
+            if (specialization.def == struct_def) {
+                return &specialization;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+void ExprAnalyzer::create_std_result_success(
+    sir::Specialization<sir::StructDef> &specialization,
+    sir::Expr &inout_expr
+) {
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_success").as<sir::FuncDef>();
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &func_def.type,
+        .symbol = &func_def,
+    });
+
+    inout_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = func_def.type.return_type,
+        .callee = callee,
+        .args = {inout_expr},
+    });
+}
+
+void ExprAnalyzer::create_std_result_failure(
+    sir::Specialization<sir::StructDef> &specialization,
+    sir::Expr &inout_expr
+) {
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_failure").as<sir::FuncDef>();
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &func_def.type,
+        .symbol = &func_def,
+    });
+
+    inout_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = func_def.type.return_type,
+        .callee = callee,
+        .args = {inout_expr},
     });
 }
 

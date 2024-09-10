@@ -70,6 +70,7 @@ private:
     sir::Stmt generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op);
     sir::Stmt generate_return_stmt(ASTNode *node);
     sir::Stmt generate_if_stmt(ASTNode *node);
+    sir::Stmt generate_try_stmt(ASTNode *node);
     sir::Stmt generate_while_stmt(ASTNode *node);
     sir::Stmt generate_for_stmt(ASTNode *node);
     sir::Stmt generate_continue_stmt(ASTNode *node);
@@ -104,6 +105,7 @@ private:
     sir::Expr generate_static_array_type(ASTNode *node);
     sir::Expr generate_func_type(ASTNode *node);
     sir::Expr generate_optional_type(ASTNode *node);
+    sir::Expr generate_result_type(ASTNode *node);
     sir::Expr generate_closure_type(ASTNode *node);
     sir::Expr generate_meta_access(ASTNode *node);
 
@@ -113,7 +115,7 @@ private:
     std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
     sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
     char decode_char(const std::string &value, unsigned &index);
-    
+
     sir::UseItem generate_use_item(ASTNode *node);
     sir::UseItem generate_use_ident(ASTNode *node);
     sir::UseItem generate_use_rebind(ASTNode *node);

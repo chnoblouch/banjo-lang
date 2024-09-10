@@ -306,6 +306,7 @@ void Printer::print_stmt(const Stmt &stmt) {
         print_comp_assign_stmt(*inner),
         print_return_stmt(*inner),
         print_if_stmt(*inner),
+        print_try_stmt(*inner),
         print_while_stmt(*inner),
         print_for_stmt(*inner),
         print_loop_stmt(*inner),
@@ -365,6 +366,41 @@ void Printer::print_if_stmt(const IfStmt &if_stmt) {
     if (if_stmt.else_branch) {
         BEGIN_OBJECT("IfElseBranch");
         PRINT_BLOCK_FIELD("block", if_stmt.else_branch->block);
+        END_OBJECT();
+    } else {
+        stream << "none\n";
+    }
+
+    END_OBJECT();
+}
+
+void Printer::print_try_stmt(const TryStmt &try_stmt) {
+    BEGIN_OBJECT("TryStmt");
+    PRINT_FIELD_NAME("success_branch");
+
+    BEGIN_OBJECT("TrySuccessBranch");
+    PRINT_FIELD("ident", try_stmt.success_branch.ident.value);
+    PRINT_EXPR_FIELD("expr", try_stmt.success_branch.expr);
+    PRINT_BLOCK_FIELD("block", try_stmt.success_branch.block);
+    END_OBJECT();
+
+    PRINT_FIELD_NAME("except_branch");
+
+    if (try_stmt.except_branch) {
+        BEGIN_OBJECT("TryExceptBranch");
+        PRINT_FIELD("ident", try_stmt.except_branch->ident.value);
+        PRINT_EXPR_FIELD("type", try_stmt.except_branch->type);
+        PRINT_BLOCK_FIELD("block", try_stmt.except_branch->block);
+        END_OBJECT();
+    } else {
+        stream << "none\n";
+    }
+
+    PRINT_FIELD_NAME("else_branch");
+
+    if (try_stmt.else_branch) {
+        BEGIN_OBJECT("TryElseBranch");
+        PRINT_BLOCK_FIELD("block", try_stmt.else_branch->block);
         END_OBJECT();
     } else {
         stream << "none\n";
@@ -484,6 +520,7 @@ void Printer::print_expr(const Expr &expr) {
         print_static_array_type(*inner),
         print_func_type(*inner),
         print_optional_type(*inner),
+        print_result_type(*inner),
         print_array_type(*inner),
         print_closure_type(*inner),
         print_ident_expr(*inner),
@@ -713,6 +750,13 @@ void Printer::print_func_type(const FuncType &func_type) {
 void Printer::print_optional_type(const OptionalType &optional_type) {
     BEGIN_OBJECT("OptionalType");
     PRINT_EXPR_FIELD("base_type", optional_type.base_type);
+    END_OBJECT();
+}
+
+void Printer::print_result_type(const ResultType &result_type) {
+    BEGIN_OBJECT("ResultType");
+    PRINT_EXPR_FIELD("value_type", result_type.value_type);
+    PRINT_EXPR_FIELD("error_type", result_type.error_type);
     END_OBJECT();
 }
 

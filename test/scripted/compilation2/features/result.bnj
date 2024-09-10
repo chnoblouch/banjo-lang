@@ -1,23 +1,25 @@
 # test:subtest
-# test:output "true,12,false"
+# test:output "true,95,false,true"
 
 func main() {
-    var a: ?i32 = 12;
-    var b: ?i32 = none;
+    var a: i32 except bool = 95;
+    var b: i32 except bool = true;
 
-    print(a.has_value);
+    print(a.successful);
     print(",");
     print(a.value);
     print(",");    
-    print(b.has_value);
+    print(b.successful);
+    print(",");
+    print(b.error);
 }
 
 # test:subtest
-# test:output "-0.5,none"
+# test:output "28.2,45"
 
 func main() {
-    var a: ?f32 = -0.5;
-    var b: ?f32 = none;
+    var a: f32 except i32 = 28.2;
+    var b: f32 except i32 = 45;
     
     print(a);
     print(",");
@@ -34,7 +36,7 @@ struct Vec3 {
 }
 
 func main() {
-    var a: ?Vec3 = Vec3 {
+    var a: Vec3 except i32 = Vec3 {
         x: 1,
         y: 2,
         z: 3,
@@ -48,11 +50,11 @@ func main() {
 }
 
 # test:subtest
-# test:output "test,none"
+# test:output "test,1"
 
 func main() {
-    var a: Optional[String] = "test";
-    var b: Optional[String] = none;
+    var a: Result[String, i32] = "test";
+    var b: Result[String, i32] = 1;
     
     print(a);
     print(",");
@@ -60,11 +62,11 @@ func main() {
 }
 
 # test:subtest
-# test:output "false,none"
+# test:output "true,test"
 
 func main() {
-    var a = (?bool).new_some(false);
-    var b = (?bool).new_none();
+    var a = (bool except String).new_success(true);
+    var b = (bool except String).new_failure("test");
     
     print(a);
     print(",");

@@ -211,6 +211,7 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
         return clone_comp_assign_stmt(*inner),
         return clone_return_stmt(*inner),
         return clone_if_stmt(*inner),
+        return clone_try_stmt(*inner),
         return clone_while_stmt(*inner),
         return clone_for_stmt(*inner),
         return clone_loop_stmt(*inner),
@@ -286,6 +287,42 @@ IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
     });
 }
 
+TryStmt *Cloner::clone_try_stmt(const TryStmt &try_stmt) {
+    TrySuccessBranch success_branch{
+        .ast_node = try_stmt.success_branch.ast_node,
+        .ident = try_stmt.success_branch.ident,
+        .expr = clone_expr(try_stmt.success_branch.expr),
+        .block = clone_block(try_stmt.success_branch.block),
+    };
+
+    std::optional<TryExceptBranch> except_branch;
+
+    if (try_stmt.except_branch) {
+        except_branch = TryExceptBranch{
+            .ast_node = try_stmt.except_branch->ast_node,
+            .ident = try_stmt.except_branch->ident,
+            .type = clone_expr(try_stmt.except_branch->type),
+            .block = clone_block(try_stmt.except_branch->block),
+        };
+    }
+
+    std::optional<TryElseBranch> else_branch;
+
+    if (try_stmt.else_branch) {
+        else_branch = TryElseBranch{
+            .ast_node = try_stmt.else_branch->ast_node,
+            .block = clone_block(try_stmt.else_branch->block),
+        };
+    }
+
+    return mod.create_stmt(TryStmt{
+        .ast_node = try_stmt.ast_node,
+        .success_branch = success_branch,
+        .except_branch = except_branch,
+        .else_branch = else_branch,
+    });
+}
+
 WhileStmt *Cloner::clone_while_stmt(const WhileStmt &while_stmt) {
     return mod.create_stmt(WhileStmt{
         .ast_node = while_stmt.ast_node,
@@ -356,6 +393,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_static_array_type(*inner),
         return clone_func_type(*inner),
         return clone_optional_type(*inner),
+        return clone_result_type(*inner),
         return clone_array_type(*inner),
         return clone_closure_type(*inner),
         return clone_ident_expr(*inner),
@@ -583,6 +621,14 @@ OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
     return mod.create_expr(OptionalType{
         .ast_node = optional_type.ast_node,
         .base_type = clone_expr(optional_type.base_type),
+    });
+}
+
+ResultType *Cloner::clone_result_type(const ResultType &result_type) {
+    return mod.create_expr(ResultType{
+        .ast_node = result_type.ast_node,
+        .value_type = clone_expr(result_type.value_type),
+        .error_type = clone_expr(result_type.error_type),
     });
 }
 

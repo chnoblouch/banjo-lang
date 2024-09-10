@@ -50,6 +50,7 @@ private:
     Result analyze_static_array_type(sir::StaticArrayType &static_array_type);
     void analyze_func_type(sir::FuncType &func_type);
     Result analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr);
+    Result analyze_result_type(sir::ResultType &result_type, sir::Expr &out_expr);
     Result analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr);
     Result analyze_closure_type(sir::ClosureType &closure_type);
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
@@ -63,6 +64,9 @@ private:
     sir::Specialization<sir::StructDef> *as_std_optional_specialization(sir::Expr &type);
     void create_std_optional_some(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
     void create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr);
+    sir::Specialization<sir::StructDef> *as_std_result_specialization(sir::Expr &type);
+    void create_std_result_success(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
+    void create_std_result_failure(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
     Result finalize_array_literal_elements(sir::ArrayLiteral &array_literal, sir::Expr element_type);
     Result finalize_struct_literal_fields(sir::StructLiteral &struct_literal);
     Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);

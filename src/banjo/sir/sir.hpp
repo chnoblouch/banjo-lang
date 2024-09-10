@@ -57,6 +57,7 @@ struct PointerType;
 struct StaticArrayType;
 struct FuncType;
 struct OptionalType;
+struct ResultType;
 struct ArrayType;
 struct ClosureType;
 struct IdentExpr;
@@ -72,6 +73,7 @@ struct AssignStmt;
 struct CompAssignStmt;
 struct ReturnStmt;
 struct IfStmt;
+struct TryStmt;
 struct WhileStmt;
 struct ForStmt;
 struct LoopStmt;
@@ -137,6 +139,7 @@ class Expr {
         StaticArrayType *,
         FuncType *,
         OptionalType *,
+        ResultType *,
         ArrayType *,
         ClosureType *,
         IdentExpr *,
@@ -225,6 +228,7 @@ private:
         CompAssignStmt *,
         ReturnStmt *,
         IfStmt *,
+        TryStmt *,
         WhileStmt *,
         ForStmt *,
         LoopStmt *,
@@ -726,6 +730,18 @@ struct OptionalType {
     bool operator!=(const OptionalType &other) const { return !(*this == other); }
 };
 
+struct ResultType {
+    ASTNode *ast_node;
+    Expr value_type;
+    Expr error_type;
+
+    bool operator==(const ResultType &other) const {
+        return value_type == other.value_type && error_type == other.error_type;
+    }
+
+    bool operator!=(const ResultType &other) const { return !(*this == other); }
+};
+
 struct ArrayType {
     ASTNode *ast_node;
     Expr base_type;
@@ -835,6 +851,32 @@ struct IfStmt {
     ASTNode *ast_node;
     std::vector<IfCondBranch> cond_branches;
     std::optional<IfElseBranch> else_branch;
+};
+
+struct TrySuccessBranch {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr expr;
+    Block block;
+};
+
+struct TryExceptBranch {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr type;
+    Block block;
+};
+
+struct TryElseBranch {
+    ASTNode *ast_node;
+    Block block;
+};
+
+struct TryStmt {
+    ASTNode *ast_node;
+    TrySuccessBranch success_branch;
+    std::optional<TryExceptBranch> except_branch;
+    std::optional<TryElseBranch> else_branch;
 };
 
 struct WhileStmt {
@@ -1023,6 +1065,7 @@ typedef std::variant<
     StaticArrayType,
     FuncType,
     OptionalType,
+    ResultType,
     ArrayType,
     ClosureType,
     IdentExpr,
@@ -1041,6 +1084,7 @@ typedef std::variant<
     CompAssignStmt,
     ReturnStmt,
     IfStmt,
+    TryStmt,
     WhileStmt,
     ForStmt,
     LoopStmt,

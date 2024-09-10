@@ -267,21 +267,22 @@ void SSAGenerator::generate_block(const sir::Block &sir_block) {
 
         SIR_VISIT_STMT(
             sir_stmt,
-            SIR_VISIT_IMPOSSIBLE,
-            generate_var_stmt(*inner),
-            generate_assign_stmt(*inner),
-            SIR_VISIT_IMPOSSIBLE,
-            generate_return_stmt(*inner),
-            generate_if_stmt(*inner),
-            SIR_VISIT_IMPOSSIBLE,
-            SIR_VISIT_IMPOSSIBLE,
-            generate_loop_stmt(*inner),
-            generate_continue_stmt(*inner),
-            generate_break_stmt(*inner),
-            SIR_VISIT_IGNORE,
-            SIR_VISIT_IGNORE,
-            ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()),
-            generate_block(*inner)
+            SIR_VISIT_IMPOSSIBLE,                                           // empty
+            generate_var_stmt(*inner),                                      // var_stmt
+            generate_assign_stmt(*inner),                                   // assign_stmt
+            SIR_VISIT_IMPOSSIBLE,                                           // comp_assign_stmt
+            generate_return_stmt(*inner),                                   // return_stmt
+            generate_if_stmt(*inner),                                       // if_stmt
+            SIR_VISIT_IMPOSSIBLE,                                           // try_stmt
+            SIR_VISIT_IMPOSSIBLE,                                           // while_stmt
+            SIR_VISIT_IMPOSSIBLE,                                           // for_stmt
+            generate_loop_stmt(*inner),                                     // loop_stmt
+            generate_continue_stmt(*inner),                                 // continue_stmt
+            generate_break_stmt(*inner),                                    // break_stmt
+            SIR_VISIT_IGNORE,                                               // meta_if_stmt
+            SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
+            ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
+            generate_block(*inner)                                          // block_stmt
         );
     }
 }
