@@ -2,6 +2,7 @@
 #define SIR_CLONER_H
 
 #include "banjo/sir/sir.hpp"
+#include "sir.hpp"
 
 #include <stack>
 
@@ -31,6 +32,8 @@ public:
     NativeVarDecl *clone_native_var_decl(const NativeVarDecl &native_var_decl);
     EnumDef *clone_enum_def(const EnumDef &enum_def);
     EnumVariant *clone_enum_variant(const EnumVariant &enum_variant);
+    UnionDef *clone_union_def(const UnionDef &union_def);
+    UnionCase *clone_union_case(const UnionCase &union_case);
     TypeAlias *clone_type_alias(const TypeAlias &type_alias);
     MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
 
@@ -41,6 +44,7 @@ public:
     CompAssignStmt *clone_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     ReturnStmt *clone_return_stmt(const ReturnStmt &return_stmt);
     IfStmt *clone_if_stmt(const IfStmt &if_stmt);
+    SwitchStmt *clone_switch_stmt(const SwitchStmt &switch_stmt);
     TryStmt *clone_try_stmt(const TryStmt &try_stmt);
     WhileStmt *clone_while_stmt(const WhileStmt &while_stmt);
     ForStmt *clone_for_stmt(const ForStmt &for_stmt);
@@ -61,6 +65,7 @@ public:
     ArrayLiteral *clone_array_literal(const ArrayLiteral &array_literal);
     StringLiteral *clone_string_literal(const StringLiteral &string_literal);
     StructLiteral *clone_struct_literal(const StructLiteral &struct_literal);
+    UnionCaseLiteral *clone_union_case_literal(const UnionCaseLiteral &union_case_literal);
     ClosureLiteral *clone_closure_literal(const ClosureLiteral &closure_literal);
     SymbolExpr *clone_symbol_expr(const SymbolExpr &symbol_expr);
     BinaryExpr *clone_binary_expr(const BinaryExpr &binary_expr);
@@ -71,6 +76,7 @@ public:
     FieldExpr *clone_field_expr(const FieldExpr &field_expr);
     RangeExpr *clone_range_expr(const RangeExpr &range_expr);
     TupleExpr *clone_tuple_expr(const TupleExpr &tuple_expr);
+    CoercionExpr *clone_coercion_expr(const CoercionExpr &coercion_expr);
     PrimitiveType *clone_primitive_type(const PrimitiveType &primitive_type);
     PointerType *clone_pointer_type(const PointerType &pointer_type);
     StaticArrayType *clone_static_array_type(const StaticArrayType &static_array_type);
@@ -91,6 +97,7 @@ private:
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
     void pop_symbol_table() { symbol_tables.pop(); }
 
+    Local clone_local(const Local &local);
     std::vector<Expr> clone_expr_list(const std::vector<Expr> &exprs);
     Attributes *clone_attrs(const Attributes *attrs);
     MetaBlock clone_meta_block(const MetaBlock &meta_block);

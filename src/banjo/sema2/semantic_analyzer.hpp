@@ -32,6 +32,7 @@ struct Scope {
     sir::DeclBlock *decl_block = nullptr;
     sir::StructDef *struct_def = nullptr;
     sir::EnumDef *enum_def = nullptr;
+    sir::UnionDef *union_def = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
     ClosureContext *closure_ctx = nullptr;
 };
@@ -99,6 +100,8 @@ private:
     void exit_struct_def() { scopes.pop(); }
     void enter_enum_def(sir::EnumDef *enum_def);
     void exit_enum_def() { scopes.pop(); }
+    void enter_union_def(sir::UnionDef *union_def);
+    void exit_union_def() { scopes.pop(); }
 
     bool is_in_stmt_block() { return get_scope().block; }
     sir::SymbolTable &get_symbol_table();

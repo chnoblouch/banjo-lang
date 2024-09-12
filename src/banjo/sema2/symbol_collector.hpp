@@ -31,6 +31,8 @@ private:
     void collect_native_var_decl(sir::NativeVarDecl &native_var_decl);
     void collect_enum_def(sir::EnumDef &enum_def);
     void collect_enum_variant(sir::EnumVariant &enum_variant);
+    void collect_union_def(sir::UnionDef &union_def);
+    void collect_union_case(sir::UnionCase &union_case);
     void collect_type_alias(sir::TypeAlias &type_alias);
     void collect_use_decl(sir::UseDecl &use_decl);
 

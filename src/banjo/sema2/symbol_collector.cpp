@@ -47,6 +47,8 @@ void SymbolCollector::collect_decl(sir::Decl &decl) {
         collect_native_var_decl(*inner),
         collect_enum_def(*inner),
         collect_enum_variant(*inner),
+        collect_union_def(*inner),
+        collect_union_case(*inner),
         collect_type_alias(*inner),
         collect_use_decl(*inner),
         SIR_VISIT_IGNORE,
@@ -106,6 +108,18 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
 
 void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
     get_symbol_table().symbols.insert({enum_variant.ident.value, &enum_variant});
+}
+
+void SymbolCollector::collect_union_def(sir::UnionDef &union_def) {
+    get_symbol_table().symbols.insert({union_def.ident.value, &union_def});
+
+    analyzer.enter_union_def(&union_def);
+    collect_in_block(union_def.block);
+    analyzer.exit_union_def();
+}
+
+void SymbolCollector::collect_union_case(sir::UnionCase &union_case) {
+    get_symbol_table().symbols.insert({union_case.ident.value, &union_case});
 }
 
 void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {

@@ -35,6 +35,8 @@ private:
     void print_native_var_decl(const NativeVarDecl &native_var_decl);
     void print_enum_def(const EnumDef &enum_def);
     void print_enum_variant(const EnumVariant &enum_variant);
+    void print_union_def(const UnionDef &union_def);
+    void print_union_case(const UnionCase &union_case);
     void print_type_alias(const TypeAlias &type_alias);
     void print_use_decl(const UseDecl &use_decl);
 
@@ -51,6 +53,7 @@ private:
     void print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     void print_return_stmt(const ReturnStmt &return_stmt);
     void print_if_stmt(const IfStmt &if_stmt);
+    void print_switch_stmt(const SwitchStmt &switch_stmt);
     void print_try_stmt(const TryStmt &try_stmt);
     void print_while_stmt(const WhileStmt &while_stmt);
     void print_for_stmt(const ForStmt &for_stmt);
@@ -73,6 +76,7 @@ private:
     void print_array_literal(const ArrayLiteral &array_literal);
     void print_string_literal(const StringLiteral &string_literal);
     void print_struct_literal(const StructLiteral &struct_literal);
+    void print_union_case_literal(const UnionCaseLiteral &union_case_literal);
     void print_closure_literal(const ClosureLiteral &closure_literal);
     void print_symbol_expr(const SymbolExpr &symbol_expr);
     void print_binary_expr(const BinaryExpr &binary_expr);
@@ -83,6 +87,7 @@ private:
     void print_field_expr(const FieldExpr &field_expr);
     void print_range_expr(const RangeExpr &range_expr);
     void print_tuple_expr(const TupleExpr &tuple_expr);
+    void print_coercion_expr(const CoercionExpr &coercion_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
     void print_pointer_type(const PointerType &pointer_type);
     void print_static_array_type(const StaticArrayType &static_array_type);
@@ -101,6 +106,7 @@ private:
 
     void print_generic_params(const std::vector<GenericParam> &generic_params);
     void print_attrs(const Attributes &attrs);
+    void print_local(const Local &local);
     void print_binary_op(const char *field_name, BinaryOp op);
     void print_meta_block(const MetaBlock &meta_block);
 

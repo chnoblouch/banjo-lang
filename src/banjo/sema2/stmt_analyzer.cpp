@@ -29,6 +29,7 @@ void StmtAnalyzer::analyze_block(sir::Block &block) {
             analyze_comp_assign_stmt(*inner, stmt),                  // comp_assign_stmt
             analyze_return_stmt(*inner),                             // return_stmt
             analyze_if_stmt(*inner),                                 // if_stmt
+            analyze_switch_stmt(*inner),                             // switch_stmt
             analyze_try_stmt(*inner, stmt),                          // try_stmt
             analyze_while_stmt(*inner, stmt),                        // while_stmt
             analyze_for_stmt(*inner, stmt),                          // for_stmt
@@ -47,19 +48,19 @@ void StmtAnalyzer::analyze_block(sir::Block &block) {
 
 void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
     // Variables with empty names can be generated during semantic analysis.
-    if (!var_stmt.name.value.empty()) {
-        insert_symbol(var_stmt.name, &var_stmt);
+    if (!var_stmt.local.name.value.empty()) {
+        insert_symbol(var_stmt.local.name, &var_stmt.local);
     }
 
-    if (var_stmt.type) {
-        ExprAnalyzer(analyzer).analyze(var_stmt.type);
+    if (var_stmt.local.type) {
+        ExprAnalyzer(analyzer).analyze(var_stmt.local.type);
 
         if (var_stmt.value) {
-            ExprAnalyzer(analyzer, ExprConstraints::expect_type(var_stmt.type)).analyze(var_stmt.value);
+            ExprAnalyzer(analyzer, ExprConstraints::expect_type(var_stmt.local.type)).analyze(var_stmt.value);
         }
     } else {
         ExprAnalyzer(analyzer).analyze(var_stmt.value);
-        var_stmt.type = var_stmt.value.get_type();
+        var_stmt.local.type = var_stmt.value.get_type();
     }
 }
 
@@ -105,6 +106,21 @@ void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     }
 }
 
+void StmtAnalyzer::analyze_switch_stmt(sir::SwitchStmt &switch_stmt) {
+    Result partial_result;
+
+    partial_result = ExprAnalyzer(analyzer).analyze(switch_stmt.value);
+    if (partial_result != Result::SUCCESS) {
+        return;
+    }
+
+    for (sir::SwitchCaseBranch &case_branch : switch_stmt.case_branches) {
+        insert_symbol(*case_branch.block.symbol_table, case_branch.local.name, &case_branch.local);
+        ExprAnalyzer(analyzer).analyze(case_branch.local.type);
+        analyze_block(case_branch.block);
+    }
+}
+
 void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt) {
     Result partial_result;
 
@@ -128,8 +144,10 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
         .stmts{
             analyzer.create_stmt(sir::VarStmt{
                 .ast_node = nullptr,
-                .name = try_stmt.success_branch.ident,
-                .type = nullptr,
+                .local{
+                    .name = try_stmt.success_branch.ident,
+                    .type = nullptr,
+                },
                 .value = analyzer.create_expr(sir::FieldExpr{
                     .ast_node = nullptr,
                     .type = value_field->type,
@@ -169,8 +187,10 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
             .stmts{
                 analyzer.create_stmt(sir::VarStmt{
                     .ast_node = nullptr,
-                    .name = try_stmt.except_branch->ident,
-                    .type = nullptr,
+                    .local{
+                        .name = try_stmt.except_branch->ident,
+                        .type = nullptr,
+                    },
                     .value = analyzer.create_expr(sir::FieldExpr{
                         .ast_node = nullptr,
                         .type = error_field->type,
@@ -249,7 +269,11 @@ void StmtAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt*/) 
 void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {}
 
 void StmtAnalyzer::insert_symbol(sir::Ident &ident, sir::Symbol symbol) {
-    auto &symbols = analyzer.get_scope().block->symbol_table->symbols;
+    insert_symbol(*analyzer.get_scope().block->symbol_table, ident, symbol);
+}
+
+void StmtAnalyzer::insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ident, sir::Symbol symbol) {
+    auto &symbols = symbol_table.symbols;
 
     auto iter = symbols.find(ident.value);
     if (iter != symbols.end()) {
@@ -274,8 +298,10 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 
     sir::VarStmt *var_stmt = analyzer.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
-        .name = for_stmt.ident,
-        .type = nullptr,
+        .local{
+            .name = for_stmt.ident,
+            .type = nullptr,
+        },
         .value = range.lhs,
     });
 
@@ -366,28 +392,32 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
 
     sir::VarStmt *iter_var_stmt = analyzer.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
-        .name = create_ident(""),
-        .type = nullptr,
+        .local{
+            .name = create_ident(""),
+            .type = nullptr,
+        },
         .value = create_method_call(for_stmt.range, iter_func_def),
     });
 
     sir::SymbolExpr *iter_ref_expr = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
         .type = iter_func_def.type.return_type,
-        .symbol = iter_var_stmt,
+        .symbol = &iter_var_stmt->local,
     });
 
     sir::VarStmt *next_var_stmt = analyzer.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
-        .name = create_ident(""),
-        .type = nullptr,
+        .local{
+            .name = create_ident(""),
+            .type = nullptr,
+        },
         .value = create_method_call(iter_ref_expr, next_func_def),
     });
 
     sir::SymbolExpr *next_ref_expr = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
         .type = next_func_def.type.return_type,
-        .symbol = next_var_stmt,
+        .symbol = &next_var_stmt->local,
     });
 
     sir::DotExpr *loop_condition = analyzer.create_expr(sir::DotExpr{
@@ -404,7 +434,10 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
 
     sir::VarStmt *value_var_stmt = analyzer.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
-        .name = for_stmt.ident,
+        .local{
+            .name = for_stmt.ident,
+            .type = nullptr,
+        },
         .value = analyzer.create_expr(sir::DotExpr{
             .ast_node = nullptr,
             .lhs = next_ref_expr,

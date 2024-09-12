@@ -106,6 +106,8 @@ void Printer::print_decl(const Decl &decl) {
         print_native_var_decl(*inner),
         print_enum_def(*inner),
         print_enum_variant(*inner),
+        print_union_def(*inner),
+        print_union_case(*inner),
         print_type_alias(*inner),
         print_use_decl(*inner),
         print_meta_if_stmt(*inner),
@@ -228,6 +230,31 @@ void Printer::print_enum_variant(const EnumVariant &enum_variant) {
     END_OBJECT();
 }
 
+void Printer::print_union_def(const UnionDef &union_def) {
+    BEGIN_OBJECT("UnionDef");
+    PRINT_FIELD("ident", union_def.ident.value);
+    PRINT_FIELD_NAME("block");
+    print_decl_block(union_def.block);
+    END_OBJECT();
+}
+
+void Printer::print_union_case(const UnionCase &union_case) {
+    BEGIN_OBJECT("UnionCase");
+    PRINT_FIELD("ident", union_case.ident.value);
+    BEGIN_LIST_FIELD("fields");
+
+    for (const UnionCaseField &field : union_case.fields) {
+        INDENT_LIST_ELEMENT();
+        BEGIN_OBJECT("UnionCaseField");
+        PRINT_FIELD("ident", field.ident.value);
+        PRINT_EXPR_FIELD("type", field.type);
+        END_OBJECT();
+    }
+
+    END_LIST();
+    END_OBJECT();
+}
+
 void Printer::print_type_alias(const TypeAlias &type_alias) {
     BEGIN_OBJECT("TypeAlias");
     PRINT_FIELD("ident", type_alias.ident.value);
@@ -306,6 +333,7 @@ void Printer::print_stmt(const Stmt &stmt) {
         print_comp_assign_stmt(*inner),
         print_return_stmt(*inner),
         print_if_stmt(*inner),
+        print_switch_stmt(*inner),
         print_try_stmt(*inner),
         print_while_stmt(*inner),
         print_for_stmt(*inner),
@@ -321,8 +349,8 @@ void Printer::print_stmt(const Stmt &stmt) {
 
 void Printer::print_var_stmt(const VarStmt &var_stmt) {
     BEGIN_OBJECT("VarStmt");
-    PRINT_FIELD("name", var_stmt.name.value);
-    PRINT_EXPR_FIELD("type", var_stmt.type);
+    PRINT_FIELD_NAME("local");
+    print_local(var_stmt.local);
     PRINT_EXPR_FIELD("value", var_stmt.value);
     END_OBJECT();
 }
@@ -371,6 +399,24 @@ void Printer::print_if_stmt(const IfStmt &if_stmt) {
         stream << "none\n";
     }
 
+    END_OBJECT();
+}
+
+void Printer::print_switch_stmt(const SwitchStmt &switch_stmt) {
+    BEGIN_OBJECT("SwitchStmt");
+    PRINT_EXPR_FIELD("value", switch_stmt.value);
+    BEGIN_LIST_FIELD("cond_branches");
+
+    for (const SwitchCaseBranch &case_branch : switch_stmt.case_branches) {
+        INDENT_LIST_ELEMENT();
+        BEGIN_OBJECT("SwitchCaseBranch");
+        PRINT_FIELD_NAME("local");
+        print_local(case_branch.local);
+        PRINT_BLOCK_FIELD("block", case_branch.block);
+        END_OBJECT();
+    }
+
+    END_LIST();
     END_OBJECT();
 }
 
@@ -505,6 +551,7 @@ void Printer::print_expr(const Expr &expr) {
         print_array_literal(*inner),
         print_string_literal(*inner),
         print_struct_literal(*inner),
+        print_union_case_literal(*inner),
         print_closure_literal(*inner),
         print_symbol_expr(*inner),
         print_binary_expr(*inner),
@@ -515,6 +562,7 @@ void Printer::print_expr(const Expr &expr) {
         print_field_expr(*inner),
         print_range_expr(*inner),
         print_tuple_expr(*inner),
+        print_coercion_expr(*inner),
         print_primitive_type(*inner),
         print_pointer_type(*inner),
         print_static_array_type(*inner),
@@ -610,6 +658,13 @@ void Printer::print_struct_literal(const StructLiteral &struct_literal) {
     END_OBJECT();
 }
 
+void Printer::print_union_case_literal(const UnionCaseLiteral &union_case_literal) {
+    BEGIN_OBJECT("UnionCaseLiteral");
+    PRINT_EXPR_FIELD("type", union_case_literal.type);
+    PRINT_EXPR_LIST_FIELD("args", union_case_literal.args);
+    END_OBJECT();
+}
+
 void Printer::print_closure_literal(const ClosureLiteral &closure_literal) {
     BEGIN_OBJECT("ClosureLiteral");
     PRINT_EXPR_FIELD("type", closure_literal.type);
@@ -692,6 +747,13 @@ void Printer::print_tuple_expr(const TupleExpr &tuple_expr) {
     BEGIN_OBJECT("TupleExpr");
     PRINT_EXPR_FIELD("type", tuple_expr.type);
     PRINT_EXPR_LIST_FIELD("exprs", tuple_expr.exprs);
+    END_OBJECT();
+}
+
+void Printer::print_coercion_expr(const CoercionExpr &coercion_expr) {
+    BEGIN_OBJECT("CoercionExpr");
+    PRINT_EXPR_FIELD("type", coercion_expr.type);
+    PRINT_EXPR_FIELD("value", coercion_expr.value);
     END_OBJECT();
 }
 
@@ -830,6 +892,13 @@ void Printer::print_generic_params(const std::vector<GenericParam> &generic_para
     }
 
     END_LIST()
+}
+
+void Printer::print_local(const Local &local) {
+    BEGIN_OBJECT("Local");
+    PRINT_FIELD("name", local.name.value);
+    PRINT_EXPR_FIELD("type", local.type);
+    END_OBJECT();
 }
 
 void Printer::print_attrs(const Attributes &attrs) {

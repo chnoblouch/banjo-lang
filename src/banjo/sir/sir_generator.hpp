@@ -56,6 +56,8 @@ private:
     sir::Decl generate_var_decl(ASTNode *node);
     sir::Decl generate_native_var_decl(ASTNode *node);
     sir::Decl generate_enum(ASTNode *node);
+    sir::Decl generate_union(ASTNode *node);
+    sir::Decl generate_union_case(ASTNode *node);
     sir::Decl generate_type_alias(ASTNode *node);
     sir::Decl generate_use_decl(ASTNode *node);
 
@@ -70,6 +72,7 @@ private:
     sir::Stmt generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op);
     sir::Stmt generate_return_stmt(ASTNode *node);
     sir::Stmt generate_if_stmt(ASTNode *node);
+    sir::Stmt generate_switch_stmt(ASTNode *node);
     sir::Stmt generate_try_stmt(ASTNode *node);
     sir::Stmt generate_while_stmt(ASTNode *node);
     sir::Stmt generate_for_stmt(ASTNode *node);
@@ -111,8 +114,10 @@ private:
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
+    sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node);
     std::vector<sir::Expr> generate_expr_list(ASTNode *node);
     std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
+    std::vector<sir::UnionCaseField> generate_union_case_fields(ASTNode *node);
     sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
     char decode_char(const std::string &value, unsigned &index);
 

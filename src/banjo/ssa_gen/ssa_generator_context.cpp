@@ -56,6 +56,10 @@ ir::Instruction &SSAGeneratorContext::append_store(ir::Operand src, ir::Operand 
     return *get_ssa_block()->append(ir::Instruction(ir::Opcode::STORE, {std::move(src), std::move(dst)}));
 }
 
+ir::Instruction &SSAGeneratorContext::append_store(ir::Operand src, ir::VirtualRegister dst) {
+    return append_store(std::move(src), ir::Operand::from_register(dst, ssa::Primitive::ADDR));
+}
+
 ir::Value SSAGeneratorContext::append_load(ir::Type type, ir::Operand src) {
     ir::VirtualRegister reg = next_vreg();
     ir::Operand type_operand = ir::Operand::from_type(type);
@@ -199,58 +203,116 @@ ReturnMethod SSAGeneratorContext::get_return_method(const ssa::Type return_type)
 
 ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_struct_def) {
     auto iter = ssa_structs.find(&sir_struct_def);
-
     if (iter != ssa_structs.end()) {
         return iter->second;
-    } else {
-        ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
-        if (ssa_mod) {
-            ssa_mod->add(ssa_struct);
-        }
-
-        for (sir::StructField *sir_field : sir_struct_def.fields) {
-            ssa_struct->add({
-                .name = sir_field->ident.value,
-                .type = TypeSSAGenerator(*this).generate(sir_field->type),
-            });
-        }
-
-        ssa_structs.insert({&sir_struct_def, ssa_struct});
-        return ssa_struct;
     }
+
+    ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
+    if (ssa_mod) {
+        ssa_mod->add(ssa_struct);
+    }
+
+    for (sir::StructField *sir_field : sir_struct_def.fields) {
+        ssa_struct->add({
+            .name = sir_field->ident.value,
+            .type = TypeSSAGenerator(*this).generate(sir_field->type),
+        });
+    }
+
+    ssa_structs.insert({&sir_struct_def, ssa_struct});
+    return ssa_struct;
 }
 
-ir::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ir::Type> &member_types) {
-    for (ir::Structure *struct_ : tuple_structs) {
-        if (struct_->get_members().size() != member_types.size()) {
+ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union_def) {
+    auto iter = ssa_structs.find(&sir_union_def);
+    if (iter != ssa_structs.end()) {
+        return iter->second;
+    }
+
+    ssa::Structure *ssa_struct = new ssa::Structure(sir_union_def.ident.value);
+    if (ssa_mod) {
+        ssa_mod->add(ssa_struct);
+    }
+
+    ssa_struct->add({
+        .name = "tag",
+        .type = ssa::Primitive::I32,
+    });
+
+    unsigned largest_case_size = 0;
+
+    for (sir::UnionCase *sir_union_case : sir_union_def.cases) {
+        ssa::Structure *case_ssa_struct = create_union_case(*sir_union_case);
+        unsigned case_size = target->get_data_layout().get_size(case_ssa_struct);
+        largest_case_size = std::max(largest_case_size, case_size);
+    }
+
+    ssa_struct->add({
+        .name = "data",
+        .type = ssa::Type(ssa::Primitive::I8, largest_case_size),
+    });
+
+    ssa_structs.insert({&sir_union_def, ssa_struct});
+    return ssa_struct;
+}
+
+ssa::Structure *SSAGeneratorContext::create_union_case(const sir::UnionCase &sir_union_case) {
+    auto iter = ssa_structs.find(&sir_union_case);
+    if (iter != ssa_structs.end()) {
+        return iter->second;
+    }
+
+    ssa::Structure *ssa_struct = new ssa::Structure(sir_union_case.ident.value);
+    if (ssa_mod) {
+        ssa_mod->add(ssa_struct);
+    }
+
+    for (unsigned i = 0; i < sir_union_case.fields.size(); i++) {
+        ssa_struct->add({
+            .name = std::to_string(i),
+            .type = TypeSSAGenerator(*this).generate(sir_union_case.fields[i].type),
+        });
+    }
+
+    ssa_structs.insert({&sir_union_case, ssa_struct});
+    return ssa_struct;
+}
+
+ssa::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ssa::Type> &member_types) {
+    for (ssa::Structure *ssa_struct : tuple_structs) {
+        if (ssa_struct->get_members().size() != member_types.size()) {
             continue;
         }
 
         bool compatible = true;
 
         for (unsigned i = 0; i < member_types.size(); i++) {
-            if (struct_->get_members()[i].type != member_types[i]) {
+            if (ssa_struct->get_members()[i].type != member_types[i]) {
                 compatible = false;
                 break;
             }
         }
 
         if (compatible) {
-            return struct_;
+            return ssa_struct;
         }
     }
 
-    ir::Structure *struct_ = new ir::Structure("tuple." + std::to_string(tuple_structs.size()));
+    ssa::Structure *ssa_struct = new ssa::Structure("tuple." + std::to_string(tuple_structs.size()));
+
     for (unsigned i = 0; i < member_types.size(); i++) {
-        struct_->add({std::to_string(i), member_types[i]});
+        ssa_struct->add({
+            .name = std::to_string(i),
+            .type = member_types[i],
+        });
     }
 
     if (ssa_mod) {
-        ssa_mod->add(struct_);
+        ssa_mod->add(ssa_struct);
     }
 
-    tuple_structs.push_back(struct_);
-    return struct_;
+    tuple_structs.push_back(ssa_struct);
+    return ssa_struct;
 }
 
 } // namespace lang

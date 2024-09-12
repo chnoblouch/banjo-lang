@@ -1,6 +1,8 @@
 #include "sir.hpp"
 
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/utils/macros.hpp"
+#include "sir_visitor.hpp"
 
 #include <utility>
 
@@ -29,6 +31,7 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // array_literal
         SIR_VISIT_IMPOSSIBLE,                                     // string_literal
         SIR_VISIT_IMPOSSIBLE,                                     // struct_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // union_case_literal
         SIR_VISIT_IMPOSSIBLE,                                     // closure_literal
         return inner->symbol == other.as<SymbolExpr>().symbol,    // symbol_expr
         SIR_VISIT_IMPOSSIBLE,                                     // binary_expr
@@ -39,6 +42,7 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // field_expr
         SIR_VISIT_IMPOSSIBLE,                                     // range_expr
         return *inner == other.as<TupleExpr>(),                   // tuple_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // coercion_expr
         return *inner == other.as<PrimitiveType>(),               // primitive_type
         return *inner == other.as<PointerType>(),                 // pointer_type
         return *inner == other.as<StaticArrayType>(),             // static_array_type
@@ -75,6 +79,7 @@ Expr Expr::get_type() const {
         return inner->type,   // array_literal
         return inner->type,   // string_literal
         return inner->type,   // struct_literal
+        return inner->type,   // union_case_literal
         return inner->type,   // closure_literal
         return inner->type,   // symbol_expr
         return inner->type,   // binary_expr
@@ -85,6 +90,7 @@ Expr Expr::get_type() const {
         return inner->type,   // field_expr
         return nullptr,       // range_expr
         return inner->type,   // tuple_expr
+        return inner->type,   // coercion_type
         return nullptr,       // primitive_type
         return nullptr,       // pointer_type
         return nullptr,       // static_array_type
@@ -238,6 +244,8 @@ ASTNode *Expr::get_ast_node() const {
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node
     );
 }
@@ -268,10 +276,12 @@ bool Symbol::operator==(const Symbol &other) const {
         return inner == &other.as<NativeVarDecl>(),
         return inner == &other.as<EnumDef>(),
         return inner == &other.as<EnumVariant>(),
+        return inner == &other.as<UnionDef>(),
+        return inner == &other.as<UnionCase>(),
         return inner == &other.as<TypeAlias>(),
         return inner == &other.as<UseIdent>(),
         return inner == &other.as<UseRebind>(),
-        return inner == &other.as<VarStmt>(),
+        return inner == &other.as<Local>(),
         return inner == &other.as<Param>(),
         return inner == &other.as<OverloadSet>()
     );
@@ -291,6 +301,8 @@ const Ident &Symbol::get_ident() const {
         return inner->ident,  // native_var_decl
         return inner->ident,  // enum_def
         return inner->ident,  // enum_variant
+        return inner->ident,  // union_def
+        return inner->ident,  // union_case
         return inner->ident,  // type_alias
         return inner->ident,  // use_ident
         SIR_VISIT_IMPOSSIBLE, // use_rebind
@@ -326,6 +338,8 @@ Expr Symbol::get_type() {
         return inner->type,  // native_var_decl
         return nullptr,      // enum_def
         return inner->type,  // enum_variant
+        return nullptr,      // union_def
+        return nullptr,      // union_case
         return nullptr,      // type_alias
         return nullptr,      // use_ident
         return nullptr,      // use_rebind
@@ -342,16 +356,15 @@ Symbol Symbol::resolve() {
 }
 
 SymbolTable *Symbol::get_symbol_table() {
-    if (auto mod = match<Module>()) return mod->block.symbol_table;
-    else if (auto struct_def = match<StructDef>()) return struct_def->block.symbol_table;
-    else if (auto enum_def = match<EnumDef>()) return struct_def->block.symbol_table;
-    else return nullptr;
+    DeclBlock *block = get_decl_block();
+    return block ? block->symbol_table : nullptr;
 }
 
 DeclBlock *Symbol::get_decl_block() {
     if (auto mod = match<Module>()) return &mod->block;
     else if (auto struct_def = match<StructDef>()) return &struct_def->block;
     else if (auto enum_def = match<EnumDef>()) return &enum_def->block;
+    else if (auto union_def = match<UnionDef>()) return &union_def->block;
     else return nullptr;
 }
 
@@ -380,6 +393,26 @@ StructField *StructDef::find_field(std::string_view name) const {
     }
 
     return nullptr;
+}
+
+unsigned UnionDef::get_index(const UnionCase &case_) const {
+    for (unsigned i = 0; i < cases.size(); i++) {
+        if (cases[i] == &case_) {
+            return i;
+        }
+    }
+
+    ASSERT_UNREACHABLE;
+}
+
+std::optional<unsigned> UnionCase::find_field(std::string_view name) const {
+    for (unsigned i = 0; i < fields.size(); i++) {
+        if (fields[i].ident.value == name) {
+            return i;
+        }
+    }
+
+    return {};
 }
 
 } // namespace sir

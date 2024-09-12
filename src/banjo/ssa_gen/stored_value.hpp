@@ -46,6 +46,7 @@ struct StoredValue {
     StoredValue turn_into_value(SSAGeneratorContext &ctx);
     StoredValue turn_into_value_or_copy(SSAGeneratorContext &ctx);
     void copy_to(const ir::Value &dst, SSAGeneratorContext &ctx);
+    void copy_to(const ir::VirtualRegister &dst, SSAGeneratorContext &ctx);
 };
 
 } // namespace lang

@@ -90,6 +90,16 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
     return Result::SUCCESS;
 }
 
+Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
+    for (sir::UnionCaseField &field : union_case.fields) {
+        ExprAnalyzer(analyzer).analyze(field.type);
+    }
+
+    analyzer.get_scope().union_def->cases.push_back(&union_case);
+
+    return Result::SUCCESS;
+}
+
 Result DeclInterfaceAnalyzer::analyze_type_alias(sir::TypeAlias &type_alias) {
     return ExprAnalyzer(analyzer).analyze(type_alias.type);
 }

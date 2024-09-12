@@ -54,7 +54,7 @@ public:
     std::stack<LoopContext> loop_contexts;
 
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
-    std::unordered_map<const lang::sir::VarStmt *, ir::VirtualRegister> ssa_var_regs;
+    std::unordered_map<const lang::sir::Local *, ir::VirtualRegister> ssa_local_regs;
     std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
     std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
@@ -88,9 +88,10 @@ public:
     ir::BasicBlockIter create_block();
     void append_block(ir::BasicBlockIter block);
 
-    ir::Instruction &append_alloca(ir::VirtualRegister dest, ir::Type type);
+    ir::Instruction &append_alloca(ir::VirtualRegister dst, ir::Type type);
     ir::VirtualRegister append_alloca(ir::Type type);
-    ir::Instruction &append_store(ir::Operand src, ir::Operand dest);
+    ir::Instruction &append_store(ir::Operand src, ir::Operand dst);
+    ir::Instruction &append_store(ir::Operand src, ir::VirtualRegister dst);
     ir::Value append_load(ir::Type type, ir::Operand src);
     ir::Value append_load(ir::Type type, ir::VirtualRegister src);
     ir::Instruction &append_loadarg(ir::VirtualRegister dst, ir::Type type, unsigned index);
@@ -125,7 +126,9 @@ public:
 
     ReturnMethod get_return_method(const ssa::Type return_type);
     ssa::Structure *create_struct(const sir::StructDef &sir_struct_def);
-    ir::Structure *get_tuple_struct(const std::vector<ir::Type> &member_types);
+    ssa::Structure *create_union(const sir::UnionDef &sir_union_def);
+    ssa::Structure *create_union_case(const sir::UnionCase &sir_union_case);
+    ssa::Structure *get_tuple_struct(const std::vector<ssa::Type> &member_types);
 };
 
 } // namespace lang

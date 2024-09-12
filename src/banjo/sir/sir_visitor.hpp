@@ -20,6 +20,7 @@
     array_literal_visitor,                                                                                             \
     string_literal_visitor,                                                                                            \
     struct_literal_visitor,                                                                                            \
+    union_case_literal_visitor,                                                                                        \
     closure_literal_visitor,                                                                                           \
     symbol_expr_visitor,                                                                                               \
     binary_expr_visitor,                                                                                               \
@@ -30,6 +31,7 @@
     field_expr_visitor,                                                                                                \
     range_expr_visitor,                                                                                                \
     tuple_expr_visitor,                                                                                                \
+    coercion_expr_visitor,                                                                                             \
     primitive_type_visitor,                                                                                            \
     pointer_type_visitor,                                                                                              \
     static_array_type_visitor,                                                                                         \
@@ -68,6 +70,8 @@
         string_literal_visitor;                                                                                        \
     } else if (auto inner = (expr).match<banjo::lang::sir::StructLiteral>()) {                                         \
         struct_literal_visitor;                                                                                        \
+    } else if (auto inner = (expr).match<banjo::lang::sir::UnionCaseLiteral>()) {                                      \
+        union_case_literal_visitor;                                                                                    \
     } else if (auto inner = (expr).match<banjo::lang::sir::ClosureLiteral>()) {                                        \
         closure_literal_visitor;                                                                                       \
     } else if (auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                                            \
@@ -88,6 +92,8 @@
         range_expr_visitor;                                                                                            \
     } else if (auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                                             \
         tuple_expr_visitor;                                                                                            \
+    } else if (auto inner = (expr).match<banjo::lang::sir::CoercionExpr>()) {                                          \
+        coercion_expr_visitor;                                                                                         \
     } else if (auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                                         \
         primitive_type_visitor;                                                                                        \
     } else if (auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                                           \
@@ -161,6 +167,7 @@
     comp_assign_stmt_visitor,                                                                                          \
     return_stmt_visitor,                                                                                               \
     if_stmt_visitor,                                                                                                   \
+    switch_stmt_visitor,                                                                                               \
     try_stmt_visitor,                                                                                                  \
     while_stmt_visitor,                                                                                                \
     for_stmt_visitor,                                                                                                  \
@@ -184,6 +191,8 @@
         return_stmt_visitor;                                                                                           \
     } else if (auto inner = (stmt).match<banjo::lang::sir::IfStmt>()) {                                                \
         if_stmt_visitor;                                                                                               \
+    } else if (auto inner = (stmt).match<banjo::lang::sir::SwitchStmt>()) {                                            \
+        switch_stmt_visitor;                                                                                           \
     } else if (auto inner = (stmt).match<banjo::lang::sir::TryStmt>()) {                                               \
         try_stmt_visitor;                                                                                              \
     } else if (auto inner = (stmt).match<banjo::lang::sir::WhileStmt>()) {                                             \
@@ -220,6 +229,8 @@
     native_var_decl_visitor,                                                                                           \
     enum_def_visitor,                                                                                                  \
     enum_variant_visitor,                                                                                              \
+    union_def_visitor,                                                                                                 \
+    union_case_visitor,                                                                                                \
     type_alias_visitor,                                                                                                \
     use_decl_visitor,                                                                                                  \
     meta_if_stmt_visitor,                                                                                              \
@@ -245,6 +256,10 @@
         enum_def_visitor;                                                                                              \
     } else if (auto inner = (decl).match<banjo::lang::sir::EnumVariant>()) {                                           \
         enum_variant_visitor;                                                                                          \
+    } else if (auto inner = (decl).match<banjo::lang::sir::UnionDef>()) {                                              \
+        union_def_visitor;                                                                                             \
+    } else if (auto inner = (decl).match<banjo::lang::sir::UnionCase>()) {                                             \
+        union_case_visitor;                                                                                            \
     } else if (auto inner = (decl).match<banjo::lang::sir::TypeAlias>()) {                                             \
         type_alias_visitor;                                                                                            \
     } else if (auto inner = (decl).match<banjo::lang::sir::UseDecl>()) {                                               \
@@ -270,10 +285,12 @@
     native_var_decl_visitor,                                                                                           \
     enum_def_visitor,                                                                                                  \
     enum_variant_visitor,                                                                                              \
+    union_def_visitor,                                                                                                 \
+    union_case_visitor,                                                                                                \
     type_alias_visitor,                                                                                                \
     use_ident_visitor,                                                                                                 \
     use_rebind_visitor,                                                                                                \
-    var_stmt_visitor,                                                                                                  \
+    local_visitor,                                                                                                     \
     param_visitor,                                                                                                     \
     overload_set_visitor                                                                                               \
 )                                                                                                                      \
@@ -299,14 +316,18 @@
         enum_def_visitor;                                                                                              \
     } else if (auto inner = (symbol).match<banjo::lang::sir::EnumVariant>()) {                                         \
         enum_variant_visitor;                                                                                          \
+    } else if (auto inner = (symbol).match<banjo::lang::sir::UnionDef>()) {                                            \
+        union_def_visitor;                                                                                             \
+    } else if (auto inner = (symbol).match<banjo::lang::sir::UnionCase>()) {                                           \
+        union_case_visitor;                                                                                            \
     } else if (auto inner = (symbol).match<banjo::lang::sir::TypeAlias>()) {                                           \
         type_alias_visitor;                                                                                            \
     } else if (auto inner = (symbol).match<banjo::lang::sir::UseIdent>()) {                                            \
         use_ident_visitor;                                                                                             \
     } else if (auto inner = (symbol).match<banjo::lang::sir::UseRebind>()) {                                           \
         use_rebind_visitor;                                                                                            \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::VarStmt>()) {                                             \
-        var_stmt_visitor;                                                                                              \
+    } else if (auto inner = (symbol).match<banjo::lang::sir::Local>()) {                                               \
+        local_visitor;                                                                                                 \
     } else if (auto inner = (symbol).match<banjo::lang::sir::Param>()) {                                               \
         param_visitor;                                                                                                 \
     } else if (auto inner = (symbol).match<banjo::lang::sir::OverloadSet>()) {                                         \

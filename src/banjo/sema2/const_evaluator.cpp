@@ -48,6 +48,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return analyze(expr),                    // array_literal
         return analyze(expr),                    // string_literal
         SIR_VISIT_IMPOSSIBLE,                    // struct_literal
+        SIR_VISIT_IMPOSSIBLE,                    // union_case_literal
         SIR_VISIT_IMPOSSIBLE,                    // closure_literal
         return evaluate_symbol_expr(*inner),     // symbol_expr
         return evaluate_binary_expr(*inner),     // binary_expr
@@ -58,6 +59,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                    // field_expr
         SIR_VISIT_IMPOSSIBLE,                    // range_expr
         return analyze(expr),                    // tuple_expr
+        SIR_VISIT_IMPOSSIBLE,                    // coercion_expr
         return analyze(expr),                    // primitive_type
         return analyze(expr),                    // pointer_type
         return analyze(expr),                    // static_array_type
@@ -93,23 +95,25 @@ sir::Expr ConstEvaluator::analyze_and_evaluate(sir::Expr &expr) {
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
     SIR_VISIT_SYMBOL(
         symbol_expr.symbol,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return evaluate(inner->value),
-        return &symbol_expr,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        return &symbol_expr,
-        return evaluate(inner->value),
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE,
-        SIR_VISIT_IMPOSSIBLE
+        SIR_VISIT_IMPOSSIBLE,          // empty
+        SIR_VISIT_IMPOSSIBLE,          // module
+        SIR_VISIT_IMPOSSIBLE,          // func_def
+        SIR_VISIT_IMPOSSIBLE,          // native_func_decl
+        return evaluate(inner->value), // const_def
+        return &symbol_expr,           // struct_def
+        SIR_VISIT_IMPOSSIBLE,          // struct_field
+        SIR_VISIT_IMPOSSIBLE,          // var_decl
+        SIR_VISIT_IMPOSSIBLE,          // native_var_decl
+        return &symbol_expr,           // enum_def
+        return evaluate(inner->value), // enum_variant
+        SIR_VISIT_IMPOSSIBLE,          // union_def
+        SIR_VISIT_IMPOSSIBLE,          // union_case
+        SIR_VISIT_IMPOSSIBLE,          // type_alias
+        SIR_VISIT_IMPOSSIBLE,          // use_ident
+        SIR_VISIT_IMPOSSIBLE,          // use_rebind
+        SIR_VISIT_IMPOSSIBLE,          // var_stmt
+        SIR_VISIT_IMPOSSIBLE,          // param
+        SIR_VISIT_IMPOSSIBLE           // overload_set
     );
 }
 

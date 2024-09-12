@@ -42,6 +42,7 @@ private:
     StoredValue generate_array_literal(const sir::ArrayLiteral &array_literal, const StorageHints &hints);
     StoredValue generate_string_literal(const sir::StringLiteral &string_literal);
     StoredValue generate_struct_literal(const sir::StructLiteral &struct_literal, const StorageHints &hints);
+    StoredValue generate_union_case_literal(const sir::UnionCaseLiteral &union_case_literal, const StorageHints &hints);
     StoredValue generate_symbol_expr(const sir::SymbolExpr &symbol_expr);
     StoredValue generate_param_expr(const sir::Param &param);
     StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr);
@@ -54,6 +55,7 @@ private:
     StoredValue generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints);
     StoredValue generate_field_expr(const sir::FieldExpr &field_expr);
     StoredValue generate_tuple_expr(const sir::TupleExpr &tuple_expr, const StorageHints &hints);
+    StoredValue generate_coercion_expr(const sir::CoercionExpr &coercion_expr, const StorageHints &hints);
 
     StoredValue generate_bool_expr(const sir::Expr &expr);
 

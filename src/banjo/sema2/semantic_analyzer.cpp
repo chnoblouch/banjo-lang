@@ -66,6 +66,12 @@ void SemanticAnalyzer::enter_enum_def(sir::EnumDef *enum_def) {
     scope.decl_block = &enum_def->block;
 }
 
+void SemanticAnalyzer::enter_union_def(sir::UnionDef *union_def) {
+    Scope &scope = push_scope();
+    scope.union_def = union_def;
+    scope.decl_block = &union_def->block;
+}
+
 sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
     Scope &scope = get_scope();
     return scope.block ? *scope.block->symbol_table : *scope.decl_block->symbol_table;

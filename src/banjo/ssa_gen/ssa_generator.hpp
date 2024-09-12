@@ -36,10 +36,14 @@ private:
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
     void generate_block(const sir::Block &sir_block);
+    void generate_block_allocas(const sir::Block &sir_block);
+    void generate_block_stmts(const sir::Block &sir_block);
+
     void generate_var_stmt(const sir::VarStmt &var_stmt);
     void generate_assign_stmt(const sir::AssignStmt &assign_stmt);
     void generate_return_stmt(const sir::ReturnStmt &return_stmt);
     void generate_if_stmt(const sir::IfStmt &if_stmt);
+    void generate_switch_stmt(const sir::SwitchStmt &switch_stmt);
     void generate_loop_stmt(const sir::LoopStmt &loop_stmt);
     void generate_continue_stmt(const sir::ContinueStmt &continue_stmt);
     void generate_break_stmt(const sir::BreakStmt &break_stmt);

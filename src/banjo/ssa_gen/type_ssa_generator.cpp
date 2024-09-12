@@ -48,6 +48,8 @@ ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::SymbolExpr &symbol_t
 
     if (auto struct_def = symbol.match<sir::StructDef>()) return generate_struct_type(*struct_def);
     else if (auto enum_def = symbol.match<sir::EnumDef>()) return generate_enum_type(*enum_def);
+    else if (auto union_def = symbol.match<sir::UnionDef>()) return generate_union_type(*union_def);
+    else if (auto union_case = symbol.match<sir::UnionCase>()) return generate_union_case_type(*union_case);
     else ASSERT_UNREACHABLE;
 }
 
@@ -57,6 +59,14 @@ ssa::Type TypeSSAGenerator::generate_struct_type(const sir::StructDef &struct_de
 
 ssa::Type TypeSSAGenerator::generate_enum_type(const sir::EnumDef & /*enum_def*/) {
     return ssa::Primitive::I32;
+}
+
+ssa::Type TypeSSAGenerator::generate_union_type(const sir::UnionDef &union_def) {
+    return ctx.create_union(union_def);
+}
+
+ssa::Type TypeSSAGenerator::generate_union_case_type(const sir::UnionCase &union_case) {
+    return ctx.create_union_case(union_case);
 }
 
 ssa::Type TypeSSAGenerator::generate_pointer_type() {

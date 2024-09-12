@@ -49,6 +49,8 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_native_var_decl(*inner),
         return clone_enum_def(*inner),
         return clone_enum_variant(*inner),
+        return clone_union_def(*inner),
+        return clone_union_case(*inner),
         return clone_type_alias(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_meta_if_stmt(*inner),
@@ -143,6 +145,23 @@ EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
     });
 }
 
+UnionDef *Cloner::clone_union_def(const UnionDef &union_def) {
+    return mod.create_decl(UnionDef{
+        .ast_node = union_def.ast_node,
+        .ident = union_def.ident,
+        .block = clone_decl_block(union_def.block),
+        .cases = {},
+    });
+}
+
+UnionCase *Cloner::clone_union_case(const UnionCase &union_case) {
+    return mod.create_decl(UnionCase{
+        .ast_node = union_case.ast_node,
+        .ident = union_case.ident,
+        .fields = union_case.fields,
+    });
+}
+
 TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
     return mod.create_decl(TypeAlias{
         .ast_node = type_alias.ast_node,
@@ -211,6 +230,7 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
         return clone_comp_assign_stmt(*inner),
         return clone_return_stmt(*inner),
         return clone_if_stmt(*inner),
+        return clone_switch_stmt(*inner),
         return clone_try_stmt(*inner),
         return clone_while_stmt(*inner),
         return clone_for_stmt(*inner),
@@ -227,8 +247,7 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
 VarStmt *Cloner::clone_var_stmt(const VarStmt &var_stmt) {
     return mod.create_stmt(VarStmt{
         .ast_node = var_stmt.ast_node,
-        .name = var_stmt.name,
-        .type = clone_expr(var_stmt.type),
+        .local = clone_local(var_stmt.local),
         .value = clone_expr(var_stmt.value),
     });
 }
@@ -258,8 +277,7 @@ ReturnStmt *Cloner::clone_return_stmt(const ReturnStmt &return_stmt) {
 }
 
 IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
-    std::vector<IfCondBranch> cond_branches;
-    cond_branches.resize(if_stmt.cond_branches.size());
+    std::vector<IfCondBranch> cond_branches(if_stmt.cond_branches.size());
 
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
         const IfCondBranch &if_cond_branch = if_stmt.cond_branches[i];
@@ -284,6 +302,26 @@ IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
         .ast_node = if_stmt.ast_node,
         .cond_branches = cond_branches,
         .else_branch = else_branch,
+    });
+}
+
+SwitchStmt *Cloner::clone_switch_stmt(const SwitchStmt &switch_stmt) {
+    std::vector<SwitchCaseBranch> case_branches(switch_stmt.case_branches.size());
+
+    for (unsigned i = 0; i < switch_stmt.case_branches.size(); i++) {
+        const SwitchCaseBranch &switch_cond_branch = switch_stmt.case_branches[i];
+
+        case_branches[i] = SwitchCaseBranch{
+            .ast_node = switch_cond_branch.ast_node,
+            .local = clone_local(switch_cond_branch.local),
+            .block = clone_block(switch_cond_branch.block),
+        };
+    }
+
+    return mod.create_stmt(SwitchStmt{
+        .ast_node = switch_stmt.ast_node,
+        .value = clone_expr(switch_stmt.value),
+        .case_branches = case_branches,
     });
 }
 
@@ -378,6 +416,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_array_literal(*inner),
         return clone_string_literal(*inner),
         return clone_struct_literal(*inner),
+        return clone_union_case_literal(*inner),
         return clone_closure_literal(*inner),
         return clone_symbol_expr(*inner),
         return clone_binary_expr(*inner),
@@ -388,6 +427,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_field_expr(*inner),
         return clone_range_expr(*inner),
         return clone_tuple_expr(*inner),
+        return clone_coercion_expr(*inner),
         return clone_primitive_type(*inner),
         return clone_pointer_type(*inner),
         return clone_static_array_type(*inner),
@@ -496,6 +536,14 @@ StructLiteral *Cloner::clone_struct_literal(const StructLiteral &struct_literal)
     });
 }
 
+UnionCaseLiteral *Cloner::clone_union_case_literal(const UnionCaseLiteral &union_case_literal) {
+    return mod.create_expr(UnionCaseLiteral{
+        .ast_node = union_case_literal.ast_node,
+        .type = clone_expr(union_case_literal.type),
+        .args = clone_expr_list(union_case_literal.args),
+    });
+}
+
 ClosureLiteral *Cloner::clone_closure_literal(const ClosureLiteral &closure_literal) {
     return mod.create_expr(ClosureLiteral{
         .ast_node = closure_literal.ast_node,
@@ -571,6 +619,14 @@ TupleExpr *Cloner::clone_tuple_expr(const TupleExpr &tuple_expr) {
         .ast_node = tuple_expr.ast_node,
         .type = clone_expr(tuple_expr.type),
         .exprs = clone_expr_list(tuple_expr.exprs),
+    });
+}
+
+CoercionExpr *Cloner::clone_coercion_expr(const CoercionExpr &coercion_expr) {
+    return mod.create_expr(CoercionExpr{
+        .ast_node = coercion_expr.ast_node,
+        .type = clone_expr(coercion_expr.type),
+        .value = clone_expr(coercion_expr.value),
     });
 }
 
@@ -707,6 +763,13 @@ SymbolTable *Cloner::push_symbol_table(SymbolTable *parent_if_empty) {
 
     symbol_tables.push(symbol_table);
     return symbol_table;
+}
+
+Local Cloner::clone_local(const Local &local) {
+    return Local{
+        .name = local.name,
+        .type = clone_expr(local.type),
+    };
 }
 
 std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {

@@ -124,6 +124,10 @@ void StoredValue::copy_to(const ir::Value &dst, SSAGeneratorContext &ctx) {
     }
 }
 
+void StoredValue::copy_to(const ir::VirtualRegister &dst, SSAGeneratorContext &ctx) {
+    copy_to(ssa::Value::from_register(dst, ssa::Primitive::ADDR), ctx);
+}
+
 } // namespace lang
 
 } // namespace banjo

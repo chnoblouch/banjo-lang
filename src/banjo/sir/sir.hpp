@@ -7,7 +7,6 @@
 #include "banjo/utils/large_int.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <concepts>
 #include <cstddef>
 #include <list>
 #include <optional>
@@ -41,6 +40,7 @@ struct UndefinedLiteral;
 struct ArrayLiteral;
 struct StringLiteral;
 struct StructLiteral;
+struct UnionCaseLiteral;
 struct ClosureLiteral;
 struct SymbolExpr;
 struct BinaryExpr;
@@ -51,6 +51,7 @@ struct CallExpr;
 struct FieldExpr;
 struct RangeExpr;
 struct TupleExpr;
+struct CoercionExpr;
 enum class Primitive;
 struct PrimitiveType;
 struct PointerType;
@@ -73,6 +74,7 @@ struct AssignStmt;
 struct CompAssignStmt;
 struct ReturnStmt;
 struct IfStmt;
+struct SwitchStmt;
 struct TryStmt;
 struct WhileStmt;
 struct ForStmt;
@@ -90,8 +92,9 @@ struct VarDecl;
 struct NativeVarDecl;
 struct EnumDef;
 struct EnumVariant;
+struct UnionDef;
+struct UnionCase;
 struct TypeAlias;
-struct Param;
 struct UseDecl;
 struct UseIdent;
 struct UseDotExpr;
@@ -105,6 +108,8 @@ struct SymbolTable;
 struct OverloadSet;
 struct Ident;
 struct Module;
+struct Param;
+struct Local;
 
 class Expr;
 class Stmt;
@@ -124,6 +129,7 @@ class Expr {
         ArrayLiteral *,
         StringLiteral *,
         StructLiteral *,
+        UnionCaseLiteral *,
         ClosureLiteral *,
         SymbolExpr *,
         BinaryExpr *,
@@ -134,6 +140,7 @@ class Expr {
         FieldExpr *,
         RangeExpr *,
         TupleExpr *,
+        CoercionExpr *,
         PrimitiveType *,
         PointerType *,
         StaticArrayType *,
@@ -179,6 +186,9 @@ public:
 
     template <typename T>
     T &as_symbol();
+
+    template <typename T>
+    const T &as_symbol() const;
 
     template <typename T>
     T *match() {
@@ -228,6 +238,7 @@ private:
         CompAssignStmt *,
         ReturnStmt *,
         IfStmt *,
+        SwitchStmt *,
         TryStmt *,
         WhileStmt *,
         ForStmt *,
@@ -285,6 +296,8 @@ private:
         NativeVarDecl *,
         EnumDef *,
         EnumVariant *,
+        UnionDef *,
+        UnionCase *,
         TypeAlias *,
         UseDecl *,
         MetaIfStmt *,
@@ -340,10 +353,12 @@ class Symbol {
         NativeVarDecl *,
         EnumDef *,
         EnumVariant *,
+        UnionDef *,
+        UnionCase *,
         TypeAlias *,
         UseIdent *,
         UseRebind *,
-        VarStmt *,
+        Local *,
         Param *,
         OverloadSet *,
         std::nullptr_t>
@@ -513,6 +528,11 @@ struct FuncType {
     bool operator!=(const FuncType &other) const { return !(*this == other); }
 };
 
+struct Local {
+    Ident name;
+    Expr type;
+};
+
 struct IntLiteral {
     ASTNode *ast_node;
     Expr type;
@@ -574,6 +594,12 @@ struct StructLiteral {
     ASTNode *ast_node;
     Expr type;
     std::vector<StructLiteralEntry> entries;
+};
+
+struct UnionCaseLiteral {
+    ASTNode *ast_node;
+    Expr type;
+    std::vector<Expr> args;
 };
 
 struct ClosureLiteral {
@@ -675,6 +701,12 @@ struct TupleExpr {
 
     bool operator==(const TupleExpr &other) const { return exprs == other.exprs; }
     bool operator!=(const TupleExpr &other) const { return !(*this == other); }
+};
+
+struct CoercionExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
 };
 
 enum class Primitive {
@@ -813,8 +845,7 @@ struct MetaCallExpr {
 
 struct VarStmt {
     ASTNode *ast_node;
-    Ident name;
-    Expr type;
+    Local local;
     Expr value;
 };
 
@@ -851,6 +882,18 @@ struct IfStmt {
     ASTNode *ast_node;
     std::vector<IfCondBranch> cond_branches;
     std::optional<IfElseBranch> else_branch;
+};
+
+struct SwitchCaseBranch {
+    ASTNode *ast_node;
+    Local local;
+    Block block;
+};
+
+struct SwitchStmt {
+    ASTNode *ast_node;
+    Expr value;
+    std::vector<SwitchCaseBranch> case_branches;
 };
 
 struct TrySuccessBranch {
@@ -1005,6 +1048,29 @@ struct EnumVariant {
     Expr value;
 };
 
+struct UnionDef {
+    ASTNode *ast_node;
+    Ident ident;
+    DeclBlock block;
+    std::vector<UnionCase *> cases;
+
+    unsigned get_index(const UnionCase &case_) const;
+};
+
+struct UnionCaseField {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr type;
+};
+
+struct UnionCase {
+    ASTNode *ast_node;
+    Ident ident;
+    std::vector<UnionCaseField> fields;
+
+    std::optional<unsigned> find_field(std::string_view name) const;
+};
+
 struct TypeAlias {
     ASTNode *ast_node;
     Ident ident;
@@ -1050,6 +1116,7 @@ typedef std::variant<
     ArrayLiteral,
     StringLiteral,
     StructLiteral,
+    UnionCaseLiteral,
     ClosureLiteral,
     SymbolExpr,
     BinaryExpr,
@@ -1060,6 +1127,7 @@ typedef std::variant<
     FieldExpr,
     RangeExpr,
     TupleExpr,
+    CoercionExpr,
     PrimitiveType,
     PointerType,
     StaticArrayType,
@@ -1084,6 +1152,7 @@ typedef std::variant<
     CompAssignStmt,
     ReturnStmt,
     IfStmt,
+    SwitchStmt,
     TryStmt,
     WhileStmt,
     ForStmt,
@@ -1106,6 +1175,8 @@ typedef std::variant<
     NativeVarDecl,
     EnumDef,
     EnumVariant,
+    UnionDef,
+    UnionCase,
     TypeAlias,
     UseDecl>
     DeclStorage;
@@ -1169,6 +1240,11 @@ bool Expr::is_symbol() const {
 
 template <typename T>
 T &Expr::as_symbol() {
+    return as<SymbolExpr>().symbol.as<T>();
+}
+
+template <typename T>
+const T &Expr::as_symbol() const {
     return as<SymbolExpr>().symbol.as<T>();
 }
 

@@ -84,6 +84,8 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_STRUCT_DEFINITION: return generate_struct(node);
         case AST_GENERIC_STRUCT_DEFINITION: return generate_generic_struct(node);
         case AST_ENUM_DEFINITION: return generate_enum(node);
+        case AST_UNION: return generate_union(node);
+        case AST_UNION_CASE: return generate_union_case(node);
         case AST_TYPE_ALIAS: return generate_type_alias(node);
         case AST_VAR: return generate_var_decl(node);
         case AST_NATIVE_VAR: return generate_native_var_decl(node);
@@ -203,6 +205,23 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
     });
 }
 
+sir::Decl SIRGenerator::generate_union(ASTNode *node) {
+    return create_decl(sir::UnionDef{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(UNION_NAME)),
+        .block = generate_decl_block(node->get_child(UNION_BLOCK)),
+        .cases = {},
+    });
+}
+
+sir::Decl SIRGenerator::generate_union_case(ASTNode *node) {
+    return create_decl(sir::UnionCase{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(UNION_CASE_NAME)),
+        .fields = generate_union_case_fields(node->get_child(UNION_CASE_FIELDS)),
+    });
+}
+
 sir::Decl SIRGenerator::generate_type_alias(ASTNode *node) {
     return create_decl(sir::TypeAlias{
         .ast_node = node,
@@ -219,7 +238,7 @@ sir::Decl SIRGenerator::generate_use_decl(ASTNode *node) {
 }
 
 sir::Ident SIRGenerator::generate_ident(ASTNode *node) {
-    return {
+    return sir::Ident{
         .ast_node = node,
         .value = node->get_value(),
     };
@@ -281,6 +300,7 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_IMPLICIT_TYPE_VAR: return generate_typeless_var_stmt(node);
         case AST_FUNCTION_RETURN: return generate_return_stmt(node);
         case AST_IF_CHAIN: return generate_if_stmt(node);
+        case AST_SWITCH: return generate_switch_stmt(node);
         case AST_TRY: return generate_try_stmt(node);
         case AST_WHILE: return generate_while_stmt(node);
         case AST_FOR: return generate_for_stmt(node);
@@ -296,8 +316,7 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
 sir::Stmt SIRGenerator::generate_var_stmt(ASTNode *node) {
     return create_stmt(sir::VarStmt{
         .ast_node = node,
-        .name = generate_ident(node->get_child(VAR_NAME)),
-        .type = generate_expr(node->get_child(VAR_TYPE)),
+        .local = generate_local(node->get_child(VAR_NAME), node->get_child(VAR_TYPE)),
         .value = node->has_child(VAR_VALUE) ? generate_expr(node->get_child(VAR_VALUE)) : nullptr,
     });
 }
@@ -305,8 +324,7 @@ sir::Stmt SIRGenerator::generate_var_stmt(ASTNode *node) {
 sir::Stmt SIRGenerator::generate_typeless_var_stmt(ASTNode *node) {
     return create_stmt(sir::VarStmt{
         .ast_node = node,
-        .name = generate_ident(node->get_child(TYPE_INFERRED_VAR_NAME)),
-        .type = nullptr,
+        .local = generate_local(node->get_child(TYPE_INFERRED_VAR_NAME), nullptr),
         .value = generate_expr(node->get_child(TYPE_INFERRED_VAR_VALUE)),
     });
 }
@@ -360,6 +378,24 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
     }
 
     return create_stmt(sir_if_stmt);
+}
+
+sir::Stmt SIRGenerator::generate_switch_stmt(ASTNode *node) {
+    sir::SwitchStmt sir_switch_stmt{
+        .ast_node = node,
+        .value = generate_expr(node->get_child(SWITCH_VALUE)),
+        .case_branches = {},
+    };
+
+    for (ASTNode *child : node->get_child(SWITCH_CASES)->get_children()) {
+        sir_switch_stmt.case_branches.push_back(sir::SwitchCaseBranch{
+            .ast_node = child,
+            .local = generate_local(child->get_child(0), child->get_child(1)),
+            .block = generate_block(child->get_child(2)),
+        });
+    }
+
+    return create_stmt(sir_switch_stmt);
 }
 
 sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
@@ -804,8 +840,7 @@ sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {
 }
 
 sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *return_node) {
-    std::vector<sir::Param> sir_params;
-    sir_params.resize(params_node->get_children().size());
+    std::vector<sir::Param> sir_params(params_node->get_children().size());
 
     for (unsigned i = 0; i < params_node->get_children().size(); i++) {
         ASTNode *param_node = params_node->get_child(i);
@@ -840,8 +875,7 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
 }
 
 std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode *node) {
-    std::vector<sir::GenericParam> sir_generic_params;
-    sir_generic_params.resize(node->get_children().size());
+    std::vector<sir::GenericParam> sir_generic_params(node->get_children().size());
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         ASTNode *child = node->get_child(i);
@@ -855,9 +889,15 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
     return sir_generic_params;
 }
 
+sir::Local SIRGenerator::generate_local(ASTNode *ident_node, ASTNode *type_node) {
+    return sir::Local{
+        .name = generate_ident(ident_node),
+        .type = type_node ? generate_expr(type_node) : nullptr,
+    };
+}
+
 std::vector<sir::Expr> SIRGenerator::generate_expr_list(ASTNode *node) {
-    std::vector<sir::Expr> exprs;
-    exprs.resize(node->get_children().size());
+    std::vector<sir::Expr> exprs(node->get_children().size());
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         exprs[i] = generate_expr(node->get_child(i));
@@ -867,8 +907,7 @@ std::vector<sir::Expr> SIRGenerator::generate_expr_list(ASTNode *node) {
 }
 
 std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries(ASTNode *node) {
-    std::vector<sir::StructLiteralEntry> entries;
-    entries.resize(node->get_children().size());
+    std::vector<sir::StructLiteralEntry> entries(node->get_children().size());
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         ASTNode *child = node->get_child(i);
@@ -881,6 +920,22 @@ std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entri
     }
 
     return entries;
+}
+
+std::vector<sir::UnionCaseField> SIRGenerator::generate_union_case_fields(ASTNode *node) {
+    std::vector<sir::UnionCaseField> fields(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        ASTNode *child = node->get_child(i);
+
+        fields[i] = sir::UnionCaseField{
+            .ast_node = child,
+            .ident = generate_ident(child->get_child(0)),
+            .type = generate_expr(child->get_child(1)),
+        };
+    }
+
+    return fields;
 }
 
 sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {

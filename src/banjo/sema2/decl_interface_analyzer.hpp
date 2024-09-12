@@ -22,6 +22,7 @@ public:
     Result analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) override;
     Result analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) override;
     Result analyze_enum_variant(sir::EnumVariant &enum_variant) override;
+    Result analyze_union_case(sir::UnionCase &union_case) override;
     Result analyze_type_alias(sir::TypeAlias &type_alias) override;
 };
 

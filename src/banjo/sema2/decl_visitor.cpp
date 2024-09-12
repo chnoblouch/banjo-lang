@@ -49,6 +49,8 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
         analyze_native_var_decl(*inner),  // native_var_decl
         process_enum_def(*inner),         // enum_def
         analyze_enum_variant(*inner),     // enum_variant
+        process_union_def(*inner),        // union_def
+        analyze_union_case(*inner),       // union_case
         analyze_type_alias(*inner),       // type_alias
         SIR_VISIT_IGNORE,                 // use_decl
         SIR_VISIT_IGNORE,                 // meta_if_stmt
@@ -84,6 +86,14 @@ void DeclVisitor::process_enum_def(sir::EnumDef &enum_def) {
     analyzer.enter_enum_def(&enum_def);
     analyze_decl_block(enum_def.block);
     analyzer.exit_enum_def();
+}
+
+void DeclVisitor::process_union_def(sir::UnionDef &union_def) {
+    analyze_union_def(union_def);
+
+    analyzer.enter_union_def(&union_def);
+    analyze_decl_block(union_def.block);
+    analyzer.exit_union_def();
 }
 
 } // namespace sema

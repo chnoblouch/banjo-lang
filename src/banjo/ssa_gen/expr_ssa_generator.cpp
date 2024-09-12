@@ -38,42 +38,44 @@ void ExprSSAGenerator::generate_into_dst(const sir::Expr &expr, ssa::VirtualRegi
 StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints &hints) {
     SIR_VISIT_EXPR(
         expr,
-        SIR_VISIT_IMPOSSIBLE,                          // empty
-        return generate_int_literal(*inner),           // int_literal
-        return generate_fp_literal(*inner),            // fp_literal
-        return generate_bool_literal(*inner),          // bool_literal
-        return generate_char_literal(*inner),          // char_literal
-        return generate_null_literal(*inner),          // null_literal
-        SIR_VISIT_IMPOSSIBLE,                          // none_literal
-        return generate_undefined_literal(*inner),     // undefined_literal
-        return generate_array_literal(*inner, hints),  // array_literal
-        return generate_string_literal(*inner),        // string_literal
-        return generate_struct_literal(*inner, hints), // struct_literal
-        SIR_VISIT_IMPOSSIBLE,                          // closure_literal
-        return generate_symbol_expr(*inner),           // symbol_expr
-        return generate_binary_expr(*inner, expr),     // binary_expr
-        return generate_unary_expr(*inner, expr),      // unary_expr
-        return generate_cast_expr(*inner),             // cast_expr
-        return generate_index_expr(*inner),            // index_expr
-        return generate_call_expr(*inner, hints),      // call_expr
-        return generate_field_expr(*inner),            // field_expr
-        SIR_VISIT_IMPOSSIBLE,                          // range_expr
-        return generate_tuple_expr(*inner, hints),     // tuple_expr
-        SIR_VISIT_IMPOSSIBLE,                          // primitive_type
-        SIR_VISIT_IMPOSSIBLE,                          // pointer_type
-        SIR_VISIT_IMPOSSIBLE,                          // static_array_type
-        SIR_VISIT_IMPOSSIBLE,                          // func_type
-        SIR_VISIT_IMPOSSIBLE,                          // optional_type
-        SIR_VISIT_IMPOSSIBLE,                          // result_type
-        SIR_VISIT_IMPOSSIBLE,                          // array_type
-        SIR_VISIT_IMPOSSIBLE,                          // closure_type
-        SIR_VISIT_IMPOSSIBLE,                          // ident_expr
-        SIR_VISIT_IMPOSSIBLE,                          // star_expr
-        SIR_VISIT_IMPOSSIBLE,                          // bracket_expr
-        SIR_VISIT_IMPOSSIBLE,                          // dot_expr
-        SIR_VISIT_IMPOSSIBLE,                          // meta_access
-        SIR_VISIT_IMPOSSIBLE,                          // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE                           // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                              // empty
+        return generate_int_literal(*inner),               // int_literal
+        return generate_fp_literal(*inner),                // fp_literal
+        return generate_bool_literal(*inner),              // bool_literal
+        return generate_char_literal(*inner),              // char_literal
+        return generate_null_literal(*inner),              // null_literal
+        SIR_VISIT_IMPOSSIBLE,                              // none_literal
+        return generate_undefined_literal(*inner),         // undefined_literal
+        return generate_array_literal(*inner, hints),      // array_literal
+        return generate_string_literal(*inner),            // string_literal
+        return generate_struct_literal(*inner, hints),     // struct_literal
+        return generate_union_case_literal(*inner, hints), // union_case_literal
+        SIR_VISIT_IMPOSSIBLE,                              // closure_literal
+        return generate_symbol_expr(*inner),               // symbol_expr
+        return generate_binary_expr(*inner, expr),         // binary_expr
+        return generate_unary_expr(*inner, expr),          // unary_expr
+        return generate_cast_expr(*inner),                 // cast_expr
+        return generate_index_expr(*inner),                // index_expr
+        return generate_call_expr(*inner, hints),          // call_expr
+        return generate_field_expr(*inner),                // field_expr
+        SIR_VISIT_IMPOSSIBLE,                              // range_expr
+        return generate_tuple_expr(*inner, hints),         // tuple_expr
+        return generate_coercion_expr(*inner, hints),      // coercion_expr
+        SIR_VISIT_IMPOSSIBLE,                              // primitive_type
+        SIR_VISIT_IMPOSSIBLE,                              // pointer_type
+        SIR_VISIT_IMPOSSIBLE,                              // static_array_type
+        SIR_VISIT_IMPOSSIBLE,                              // func_type
+        SIR_VISIT_IMPOSSIBLE,                              // optional_type
+        SIR_VISIT_IMPOSSIBLE,                              // result_type
+        SIR_VISIT_IMPOSSIBLE,                              // array_type
+        SIR_VISIT_IMPOSSIBLE,                              // closure_type
+        SIR_VISIT_IMPOSSIBLE,                              // ident_expr
+        SIR_VISIT_IMPOSSIBLE,                              // star_expr
+        SIR_VISIT_IMPOSSIBLE,                              // bracket_expr
+        SIR_VISIT_IMPOSSIBLE,                              // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                              // meta_access
+        SIR_VISIT_IMPOSSIBLE,                              // meta_field_expr
+        SIR_VISIT_IMPOSSIBLE                               // meta_call_expr
     );
 }
 
@@ -196,6 +198,22 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
     return stored_val;
 }
 
+StoredValue ExprSSAGenerator::generate_union_case_literal(
+    const sir::UnionCaseLiteral &union_case_literal,
+    const StorageHints &hints
+) {
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(union_case_literal.type);
+    StoredValue ssa_value = StoredValue::alloc(ssa_type, hints, ctx);
+
+    for (unsigned i = 0; i < union_case_literal.args.size(); i++) {
+        ssa::VirtualRegister ssa_field_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), i);
+        ssa::Value ssa_field_ptr = ssa::Value::from_register(ssa_field_ptr_reg, ssa::Primitive::ADDR);
+        ExprSSAGenerator(ctx).generate_into_dst(union_case_literal.args[i], ssa_field_ptr);
+    }
+
+    return ssa_value;
+}
+
 StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol_expr) {
     if (auto func_def = symbol_expr.symbol.match<sir::FuncDef>()) {
         ssa::Function *ssa_func = ctx.ssa_funcs[func_def];
@@ -215,9 +233,9 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto enum_variant = symbol_expr.symbol.match<sir::EnumVariant>()) {
         return generate(enum_variant->value).turn_into_value(ctx);
-    } else if (auto var_stmt = symbol_expr.symbol.match<sir::VarStmt>()) {
-        ssa::VirtualRegister reg = ctx.ssa_var_regs[var_stmt];
-        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(var_stmt->type);
+    } else if (auto local = symbol_expr.symbol.match<sir::Local>()) {
+        ssa::VirtualRegister reg = ctx.ssa_local_regs[local];
+        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto param = symbol_expr.symbol.match<sir::Param>()) {
@@ -435,24 +453,11 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 }
 
 StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_expr) {
-    sir::Expr base_type = field_expr.base.get_type();
-
     unsigned field_index = field_expr.field_index;
-    sir::Expr field_type;
-
-    if (auto struct_def = base_type.match_symbol<sir::StructDef>()) {
-        field_type = struct_def->fields[field_index]->type;
-    } else if (auto tuple_expr = base_type.match<sir::TupleExpr>()) {
-        field_type = tuple_expr->exprs[field_index];
-    } else if (auto closure_type = base_type.match<sir::ClosureType>()) {
-        field_type = closure_type->underlying_struct->fields[field_index]->type;
-    } else {
-        ASSERT_UNREACHABLE;
-    }
 
     StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate(field_expr.base, StorageHints::prefer_reference());
     ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(ssa_lhs.value_type, ssa_lhs.get_ptr(), field_index);
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_type);
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_expr.type);
 
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
 }
@@ -469,6 +474,28 @@ StoredValue ExprSSAGenerator::generate_tuple_expr(const sir::TupleExpr &tuple_ex
     }
 
     return stored_val;
+}
+
+StoredValue ExprSSAGenerator::generate_coercion_expr(
+    const sir::CoercionExpr &coercion_expr,
+    const StorageHints &hints
+) {
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(coercion_expr.type);
+
+    if (auto union_def = coercion_expr.type.match_symbol<sir::UnionDef>()) {
+        sir::UnionCase &union_case = coercion_expr.value.get_type().as_symbol<sir::UnionCase>();
+        StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);
+
+        unsigned tag = union_def->get_index(union_case);
+        ssa::VirtualRegister ssa_tag_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 0);
+        ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 1);
+
+        ctx.append_store(ssa::Operand::from_int_immediate(tag, ssa::Primitive::I32), ssa_tag_ptr_reg);
+        ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
+        return stored_val;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 StoredValue ExprSSAGenerator::generate_bool_expr(const sir::Expr &expr) {

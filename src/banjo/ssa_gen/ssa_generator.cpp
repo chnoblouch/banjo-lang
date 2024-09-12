@@ -260,6 +260,21 @@ void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native
 }
 
 void SSAGenerator::generate_block(const sir::Block &sir_block) {
+    generate_block_allocas(sir_block);
+    generate_block_stmts(sir_block);
+}
+
+void SSAGenerator::generate_block_allocas(const sir::Block &sir_block) {
+    for (const auto &[name, symbol] : sir_block.symbol_table->symbols) {
+        if (auto local = symbol.match<sir::Local>()) {
+            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
+            ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
+            ctx.ssa_local_regs.insert({local, reg});
+        }
+    }
+}
+
+void SSAGenerator::generate_block_stmts(const sir::Block &sir_block) {
     for (const sir::Stmt &sir_stmt : sir_block.stmts) {
         if (ir_builder::IRBuilderUtils::is_branching(*ctx.get_ssa_block())) {
             continue;
@@ -273,6 +288,7 @@ void SSAGenerator::generate_block(const sir::Block &sir_block) {
             SIR_VISIT_IMPOSSIBLE,                                           // comp_assign_stmt
             generate_return_stmt(*inner),                                   // return_stmt
             generate_if_stmt(*inner),                                       // if_stmt
+            generate_switch_stmt(*inner),                                   // switch_stmt
             SIR_VISIT_IMPOSSIBLE,                                           // try_stmt
             SIR_VISIT_IMPOSSIBLE,                                           // while_stmt
             SIR_VISIT_IMPOSSIBLE,                                           // for_stmt
@@ -288,11 +304,8 @@ void SSAGenerator::generate_block(const sir::Block &sir_block) {
 }
 
 void SSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(var_stmt.type);
-    ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
-    ctx.ssa_var_regs.insert({&var_stmt, reg});
-
     if (var_stmt.value) {
+        ssa::VirtualRegister reg = ctx.ssa_local_regs[&var_stmt.local];
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         ExprSSAGenerator(ctx).generate_into_dst(var_stmt.value, ssa_ptr);
     }
@@ -336,6 +349,48 @@ void SSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
     if (if_stmt.else_branch) {
         generate_block(if_stmt.else_branch->block);
         ctx.append_jmp(ssa_end_block);
+    }
+
+    ctx.append_block(ssa_end_block);
+}
+
+void SSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt) {
+    const sir::UnionDef &sir_union_def = switch_stmt.value.get_type().as_symbol<sir::UnionDef>();
+
+    ssa::BasicBlockIter ssa_end_block = ctx.create_block();
+
+    StoredValue ssa_value = ExprSSAGenerator(ctx).generate(switch_stmt.value);
+    ssa::VirtualRegister ssa_tag_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 0);
+    ssa::Value ssa_tag = ctx.append_load(ssa::Primitive::I32, ssa_tag_ptr_reg);
+
+    for (unsigned i = 0; i < switch_stmt.case_branches.size(); i++) {
+        const sir::SwitchCaseBranch &sir_branch = switch_stmt.case_branches[i];
+        const sir::UnionCase &sir_union_case = sir_branch.local.type.as_symbol<sir::UnionCase>();
+        unsigned tag = sir_union_def.get_index(sir_union_case);
+        bool is_final_branch = i == switch_stmt.case_branches.size() - 1;
+
+        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
+        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
+        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
+
+        ssa::Value ssa_tag_value = ssa::Value::from_int_immediate(tag, ssa::Primitive::I32);
+        ctx.append_cjmp(ssa_tag, ssa::Comparison::EQ, ssa_tag_value, ssa_target_if_true, ssa_target_if_false);
+        ctx.append_block(ssa_target_if_true);
+
+        generate_block_allocas(sir_branch.block);
+
+        ssa::Type ssa_case_type = TypeSSAGenerator(ctx).generate(sir_branch.local.type);
+        ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 1);
+        StoredValue ssa_data_ptr = StoredValue::create_reference(ssa_data_ptr_reg, ssa_case_type);
+        ssa::VirtualRegister ssa_local_reg = ctx.ssa_local_regs[&sir_branch.local];
+        ssa_data_ptr.copy_to(ssa_local_reg, ctx);
+
+        generate_block_stmts(sir_branch.block);
+        ctx.append_jmp(ssa_end_block);
+
+        if (!is_final_branch) {
+            ctx.append_block(ssa_next_block);
+        }
     }
 
     ctx.append_block(ssa_end_block);

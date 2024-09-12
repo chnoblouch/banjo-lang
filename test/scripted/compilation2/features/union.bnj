@@ -1,0 +1,62 @@
+# test:subtest
+# test:output "s,4;b,5,8,14"
+
+union Object {
+    case Sphere(radius: u32);
+    case Box(width: u32, height: u32, depth: u32);
+}
+
+func main() {
+    var sphere = Object.Sphere(4);
+    var box = Object.Box(5, 8, 14);
+    
+    var a: Object = sphere;
+    var b: Object = box;
+    
+    f(a);
+    print(';');
+    f(b);
+}
+
+func f(object: Object) {
+    switch object {
+        case sphere: Object.Sphere {
+            print('s');
+            print(',');
+            print(sphere.radius);
+        }
+        case box: Object.Box {
+            print('b');
+            print(',');
+            print(box.width);
+            print(',');
+            print(box.height);
+            print(',');
+            print(box.depth);
+        }
+    }
+}
+
+# test:subtest
+# test:output "-2,false"
+
+union Value {
+    case Int(value: i32);
+    case Bool(value: bool);
+}
+
+func main() {
+    var a: Value = Value.Int(-2);
+    var b: Value = Value.Bool(false);
+    
+    f(a);
+    print(',');
+    f(b);
+}
+
+func f(value: Value) {
+    switch value {
+        case i: Value.Int { print(i.value); }
+        case b: Value.Bool { print(b.value); }
+    }
+}

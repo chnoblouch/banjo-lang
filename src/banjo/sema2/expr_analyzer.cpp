@@ -65,16 +65,18 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_array_literal(*inner, expr),                // array_literal
         result = analyze_string_literal(*inner),                     // string_literal
         result = analyze_struct_literal(*inner),                     // struct_literal
+        SIR_VISIT_IGNORE,                                            // union_case_literal
         result = analyze_closure_literal(*inner, expr),              // closure_literal
         SIR_VISIT_IGNORE,                                            // symbol_expr
         result = analyze_binary_expr(*inner, expr),                  // binary_expr
         result = analyze_unary_expr(*inner, expr),                   // unary_expr
         analyze_cast_expr(*inner),                                   // cast_expr
         SIR_VISIT_IGNORE,                                            // index_expr
-        result = analyze_call_expr(*inner),                          // call_expr
+        result = analyze_call_expr(*inner, expr),                    // call_expr
         SIR_VISIT_IGNORE,                                            // field_expr
         analyze_range_expr(*inner),                                  // range_expr
         analyze_tuple_expr(*inner),                                  // tuple_expr
+        SIR_VISIT_IGNORE,                                            // coercion_expr
         SIR_VISIT_IGNORE,                                            // primitive_type
         SIR_VISIT_IGNORE,                                            // pointer_type
         result = analyze_static_array_type(*inner),                  // static_array_type
@@ -107,7 +109,20 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
     Result result;
 
     if (expr.get_type() != expected_type) {
-        if (auto specialization = as_std_optional_specialization(expected_type)) {
+        if (auto union_def = expected_type.match_symbol<sir::UnionDef>()) {
+            result = finalize_type(expr);
+            if (result != Result::SUCCESS) {
+                return Result::ERROR;
+            }
+
+            expr = analyzer.create_expr(sir::CoercionExpr{
+                .ast_node = nullptr,
+                .type = expected_type,
+                .value = expr,
+            });
+
+            return Result::SUCCESS;
+        } else if (auto specialization = as_std_optional_specialization(expected_type)) {
             if (auto none_literal = expr.match<sir::NoneLiteral>()) {
                 create_std_optional_none(*specialization, expr);
                 return Result::SUCCESS;
@@ -623,7 +638,7 @@ void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
     ExprAnalyzer(analyzer).analyze(cast_expr.value);
 }
 
-Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
+Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr) {
     Result partial_result;
     bool is_method = false;
 
@@ -635,6 +650,10 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr) {
 
     if (partial_result != Result::SUCCESS) {
         return partial_result;
+    }
+
+    if (call_expr.callee.is_symbol<sir::UnionCase>()) {
+        return analyze_union_case_literal(call_expr, out_expr);
     }
 
     unsigned first_arg_to_analyze = is_method ? 1 : 0;
@@ -774,6 +793,33 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         is_method = false;
         return partial_result;
     }
+}
+
+Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr) {
+    Result result = Result::SUCCESS;
+    Result partial_result;
+
+    sir::UnionCase &union_case = call_expr.callee.as_symbol<sir::UnionCase>();
+
+    for (unsigned i = 0; i < call_expr.args.size(); i++) {
+        sir::Expr expected_type = union_case.fields[i].type;
+        partial_result = ExprAnalyzer(analyzer, ExprConstraints::expect_type(expected_type)).analyze(call_expr.args[i]);
+        if (partial_result != Result::SUCCESS) {
+            result = Result::ERROR;
+        }
+    }
+
+    if (result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    out_expr = analyzer.create_expr(sir::UnionCaseLiteral{
+        .ast_node = nullptr,
+        .type = call_expr.callee,
+        .args = std::move(call_expr.args),
+    });
+
+    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_type) {
@@ -1398,6 +1444,20 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             .type = field->type,
             .base = lhs,
             .field_index = field->index,
+        });
+    } else if (auto union_case = lhs_type.match_symbol<sir::UnionCase>()) {
+        std::optional<unsigned> field_index = union_case->find_field(dot_expr.rhs.value);
+
+        if (!field_index) {
+            // analyzer.report_generator.report_err_no_field(dot_expr.rhs, *union_case);
+            return Result::ERROR;
+        }
+
+        out_expr = analyzer.create_expr(sir::FieldExpr{
+            .ast_node = dot_expr.ast_node,
+            .type = union_case->fields[*field_index].type,
+            .base = lhs,
+            .field_index = *field_index,
         });
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
         unsigned field_index = std::stoul(dot_expr.rhs.value);
