@@ -1,0 +1,5 @@
+# test:error 4:18 "type 'i32' is not a result or optional type"
+
+func main() {
+    try value in 100 {}
+}

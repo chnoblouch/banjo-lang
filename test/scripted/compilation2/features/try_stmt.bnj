@@ -45,3 +45,38 @@ func main() {
         print(error);
     }
 }
+
+# test:subtest
+# test:output "12"
+
+func main() {
+    var optional: ?i32 = 12;
+    
+    try value in optional {
+        print(value);
+    }
+}
+
+# test:subtest
+# test:output ""
+
+func main() {
+    var optional: ?i32 = none;
+    
+    try value in optional {
+        print(value);
+    }
+}
+
+# test:subtest
+# test:output "none"
+
+func main() {
+    var optional: ?i32 = none;
+    
+    try value in optional {
+        print("value");
+    } else {
+        print("none");
+    }
+}

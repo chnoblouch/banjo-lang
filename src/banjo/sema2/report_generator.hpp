@@ -81,6 +81,9 @@ public:
         const sir::Expr &second_source
     );
 
+    void report_err_cannot_use_in_try(const sir::Expr &expr);
+    void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
+
 private:
     template <typename... FormatArgs>
     ReportBuilder build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);

@@ -101,6 +101,48 @@ sir::Symbol SemanticAnalyzer::find_std_closure() {
     return find_std_symbol({"std", "closure"}, "Closure");
 }
 
+sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_array_specialization(sir::Expr &type) {
+    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
+        sir::StructDef &array_def = find_std_array().as<sir::StructDef>();
+
+        for (sir::Specialization<sir::StructDef> &specialization : array_def.specializations) {
+            if (specialization.def == struct_def) {
+                return &specialization;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_optional_specialization(sir::Expr &type) {
+    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
+        sir::StructDef &optional_def = find_std_optional().as<sir::StructDef>();
+
+        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
+            if (specialization.def == struct_def) {
+                return &specialization;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_result_specialization(sir::Expr &type) {
+    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
+        sir::StructDef &optional_def = find_std_result().as<sir::StructDef>();
+
+        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
+            if (specialization.def == struct_def) {
+                return &specialization;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
     SSAGeneratorContext dummy_ssa_gen_ctx(target);
     ssa::Type ssa_type = TypeSSAGenerator(dummy_ssa_gen_ctx).generate(type);

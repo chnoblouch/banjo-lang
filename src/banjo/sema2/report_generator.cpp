@@ -255,6 +255,14 @@ void ReportGenerator::report_err_generic_arg_inference_conflict(
         .report();
 }
 
+void ReportGenerator::report_err_cannot_use_in_try(const sir::Expr &expr) {
+    report_error("type '$' is not a result or optional type", expr.get_ast_node(), expr.get_type());
+}
+
+void ReportGenerator::report_err_try_no_error_field(const sir::TryExceptBranch &branch) {
+    report_error("optional types don't have an error field", branch.ast_node);
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,

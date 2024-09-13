@@ -1,0 +1,11 @@
+# test:error 8:7 "optional types don't have an error field"
+
+func main() {
+    var optional: ?i32 = 100;
+    
+    try value in optional {
+        print("value");
+    } except error: i32 {
+        print("error");
+    }
+}

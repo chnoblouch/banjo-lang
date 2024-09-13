@@ -101,6 +101,8 @@ class Compiler:
             print(self.stdout, end="")
 
         if result.returncode != 0:
+            print()
+
             if not output.quiet:
                 print("" if result.returncode == 1 else f"compiler returned with status code {result.returncode}")
 

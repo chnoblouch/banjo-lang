@@ -112,6 +112,11 @@ private:
     sir::Symbol find_std_array();
     sir::Symbol find_std_string();
     sir::Symbol find_std_closure();
+
+    sir::Specialization<sir::StructDef> *as_std_array_specialization(sir::Expr &type);
+    sir::Specialization<sir::StructDef> *as_std_optional_specialization(sir::Expr &type);
+    sir::Specialization<sir::StructDef> *as_std_result_specialization(sir::Expr &type);
+
     unsigned compute_size(sir::Expr type);
 
     void check_for_completeness(sir::DeclBlock &block);

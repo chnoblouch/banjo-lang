@@ -122,7 +122,7 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
             });
 
             return Result::SUCCESS;
-        } else if (auto specialization = as_std_optional_specialization(expected_type)) {
+        } else if (auto specialization = analyzer.as_std_optional_specialization(expected_type)) {
             if (auto none_literal = expr.match<sir::NoneLiteral>()) {
                 create_std_optional_none(*specialization, expr);
                 return Result::SUCCESS;
@@ -135,7 +135,7 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
 
             create_std_optional_some(*specialization, expr);
             return Result::SUCCESS;
-        } else if (auto specialization = as_std_result_specialization(expected_type)) {
+        } else if (auto specialization = analyzer.as_std_result_specialization(expected_type)) {
             result = finalize_type(expr);
             if (result != Result::SUCCESS) {
                 return result;
@@ -154,7 +154,7 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
     }
 
     if (auto array_literal = expr.match<sir::ArrayLiteral>()) {
-        if (auto specialization = as_std_array_specialization(expected_type)) {
+        if (auto specialization = analyzer.as_std_array_specialization(expected_type)) {
             sir::Expr element_type = specialization->args[0];
 
             array_literal->type = expected_type;
@@ -1169,20 +1169,6 @@ void ExprAnalyzer::create_std_string(sir::StringLiteral &string_literal, sir::Ex
     });
 }
 
-sir::Specialization<sir::StructDef> *ExprAnalyzer::as_std_array_specialization(sir::Expr &type) {
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        sir::StructDef &array_def = analyzer.find_std_array().as<sir::StructDef>();
-
-        for (sir::Specialization<sir::StructDef> &specialization : array_def.specializations) {
-            if (specialization.def == struct_def) {
-                return &specialization;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 void ExprAnalyzer::create_std_array(
     sir::ArrayLiteral &array_literal,
     const sir::Expr &element_type,
@@ -1244,20 +1230,6 @@ void ExprAnalyzer::create_std_array(
     });
 }
 
-sir::Specialization<sir::StructDef> *ExprAnalyzer::as_std_optional_specialization(sir::Expr &type) {
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        sir::StructDef &optional_def = analyzer.find_std_optional().as<sir::StructDef>();
-
-        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
-            if (specialization.def == struct_def) {
-                return &specialization;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 void ExprAnalyzer::create_std_optional_some(
     sir::Specialization<sir::StructDef> &specialization,
     sir::Expr &inout_expr
@@ -1293,20 +1265,6 @@ void ExprAnalyzer::create_std_optional_none(sir::Specialization<sir::StructDef> 
         .callee = callee,
         .args = {},
     });
-}
-
-sir::Specialization<sir::StructDef> *ExprAnalyzer::as_std_result_specialization(sir::Expr &type) {
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        sir::StructDef &optional_def = analyzer.find_std_result().as<sir::StructDef>();
-
-        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
-            if (specialization.def == struct_def) {
-                return &specialization;
-            }
-        }
-    }
-
-    return nullptr;
 }
 
 void ExprAnalyzer::create_std_result_success(

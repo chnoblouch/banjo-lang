@@ -60,12 +60,9 @@ private:
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
-    sir::Specialization<sir::StructDef> *as_std_array_specialization(sir::Expr &type);
     void create_std_array(sir::ArrayLiteral &array_literal, const sir::Expr &element_type, sir::Expr &out_expr);
-    sir::Specialization<sir::StructDef> *as_std_optional_specialization(sir::Expr &type);
     void create_std_optional_some(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
     void create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr);
-    sir::Specialization<sir::StructDef> *as_std_result_specialization(sir::Expr &type);
     void create_std_result_success(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
     void create_std_result_failure(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
     Result finalize_array_literal_elements(sir::ArrayLiteral &array_literal, sir::Expr element_type);

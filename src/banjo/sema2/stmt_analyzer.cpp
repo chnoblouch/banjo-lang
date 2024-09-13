@@ -129,10 +129,24 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
         return;
     }
 
-    sir::StructDef &struct_def = try_stmt.success_branch.expr.get_type().as_symbol<sir::StructDef>();
-    sir::StructField *successful_field = struct_def.find_field("successful");
-    sir::StructField *value_field = struct_def.find_field("value");
-    sir::StructField *error_field = struct_def.find_field("error");
+    sir::Expr type = try_stmt.success_branch.expr.get_type();
+
+    sir::StructField *successful_field;
+    sir::StructField *value_field;
+    sir::StructField *error_field;
+
+    if (auto specialization = analyzer.as_std_result_specialization(type)) {
+        successful_field = specialization->def->find_field("successful");
+        value_field = specialization->def->find_field("value");
+        error_field = specialization->def->find_field("error");
+    } else if (auto specialization = analyzer.as_std_optional_specialization(type)) {
+        successful_field = specialization->def->find_field("has_value");
+        value_field = specialization->def->find_field("value");
+        error_field = nullptr;
+    } else {
+        analyzer.report_generator.report_err_cannot_use_in_try(try_stmt.success_branch.expr);
+        return;
+    }
 
     sir::IfStmt if_stmt{
         .ast_node = nullptr,
@@ -180,39 +194,43 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     };
 
     if (try_stmt.except_branch) {
-        ExprAnalyzer(analyzer).analyze(try_stmt.except_branch->type);
+        if (error_field) {
+            ExprAnalyzer(analyzer).analyze(try_stmt.except_branch->type);
 
-        sir::Block except_block{
-            .ast_node = nullptr,
-            .stmts{
-                analyzer.create_stmt(sir::VarStmt{
-                    .ast_node = nullptr,
-                    .local{
-                        .name = try_stmt.except_branch->ident,
-                        .type = nullptr,
-                    },
-                    .value = analyzer.create_expr(sir::FieldExpr{
+            sir::Block except_block{
+                .ast_node = nullptr,
+                .stmts{
+                    analyzer.create_stmt(sir::VarStmt{
                         .ast_node = nullptr,
-                        .type = error_field->type,
-                        .base = try_stmt.success_branch.expr,
-                        .field_index = error_field->index,
+                        .local{
+                            .name = try_stmt.except_branch->ident,
+                            .type = nullptr,
+                        },
+                        .value = analyzer.create_expr(sir::FieldExpr{
+                            .ast_node = nullptr,
+                            .type = error_field->type,
+                            .base = try_stmt.success_branch.expr,
+                            .field_index = error_field->index,
+                        }),
                     }),
+                    analyzer.create_stmt(try_stmt.except_branch->block),
+                },
+                .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
+                    .parent = &analyzer.get_symbol_table(),
+                    .symbols = {},
                 }),
-                analyzer.create_stmt(try_stmt.except_branch->block),
-            },
-            .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
-                .parent = &analyzer.get_symbol_table(),
-                .symbols = {},
-            }),
-        };
+            };
 
-        try_stmt.except_branch->block.symbol_table->parent = except_block.symbol_table;
-        analyze_block(except_block);
+            try_stmt.except_branch->block.symbol_table->parent = except_block.symbol_table;
+            analyze_block(except_block);
 
-        if_stmt.else_branch = sir::IfElseBranch{
-            .ast_node = nullptr,
-            .block = except_block,
-        };
+            if_stmt.else_branch = sir::IfElseBranch{
+                .ast_node = nullptr,
+                .block = except_block,
+            };
+        } else {
+            analyzer.report_generator.report_err_try_no_error_field(*try_stmt.except_branch);
+        }
     } else if (try_stmt.else_branch) {
         sir::Block else_block = try_stmt.else_branch->block;
         analyze_block(else_block);
@@ -224,15 +242,6 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     }
 
     out_stmt = analyzer.create_stmt(if_stmt);
-
-    // sir::Block *block = analyzer.create_stmt(sir::Block{
-    //     .ast_node = nullptr,
-    //     .stmts = {},
-    //     .symbol_table = analyzer.create_symbol_table({
-    //         .parent = &analyzer.get_symbol_table(),
-    //         .symbols = {},
-    //     }),
-    // });
 }
 
 void StmtAnalyzer::analyze_while_stmt(sir::WhileStmt &while_stmt, sir::Stmt &out_stmt) {
