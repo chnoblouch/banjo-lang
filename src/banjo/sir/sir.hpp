@@ -82,6 +82,7 @@ struct LoopStmt;
 struct ContinueStmt;
 struct BreakStmt;
 struct MetaIfStmt;
+struct MetaForStmt;
 struct ExpandedMetaStmt;
 struct FuncDef;
 struct NativeFuncDecl;
@@ -246,6 +247,7 @@ private:
         ContinueStmt *,
         BreakStmt *,
         MetaIfStmt *,
+        MetaForStmt *,
         ExpandedMetaStmt *,
         Expr *,
         Block *,
@@ -479,7 +481,6 @@ struct Block {
 struct SymbolTable {
     SymbolTable *parent;
     std::unordered_map<std::string_view, Symbol> symbols;
-    bool complete = false;
 
     Symbol look_up(std::string_view name);
 };
@@ -508,9 +509,15 @@ struct Param {
     bool operator!=(const Param &other) const { return !(*this == other); }
 };
 
+enum class GenericParamKind {
+    TYPE,
+    SEQUENCE,
+};
+
 struct GenericParam {
     ASTNode *ast_node;
     Ident ident;
+    GenericParamKind kind;
 };
 
 template <typename T>
@@ -972,6 +979,13 @@ struct MetaIfStmt {
     std::optional<MetaIfElseBranch> else_branch;
 };
 
+struct MetaForStmt {
+    ASTNode *ast_node;
+    Ident ident;
+    Expr range;
+    MetaBlock block;
+};
+
 struct ExpandedMetaStmt {};
 
 struct FuncDef {
@@ -1160,6 +1174,7 @@ typedef std::variant<
     ContinueStmt,
     BreakStmt,
     MetaIfStmt,
+    MetaForStmt,
     ExpandedMetaStmt,
     Expr,
     Block>

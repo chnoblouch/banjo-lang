@@ -175,6 +175,7 @@
     continue_stmt_visitor,                                                                                             \
     break_stmt_visitor,                                                                                                \
     meta_if_stmt_visitor,                                                                                              \
+    meta_for_stmt_visitor,                                                                                             \
     expanded_meta_stmt_visitor,                                                                                        \
     expr_stmt_visitor,                                                                                                 \
     block_stmt_visitor                                                                                                 \
@@ -207,6 +208,8 @@
         break_stmt_visitor;                                                                                            \
     } else if (auto inner = (stmt).match<banjo::lang::sir::MetaIfStmt>()) {                                            \
         meta_if_stmt_visitor;                                                                                          \
+    } else if (auto inner = (stmt).match<banjo::lang::sir::MetaForStmt>()) {                                           \
+        meta_for_stmt_visitor;                                                                                         \
     } else if (auto inner = (stmt).match<banjo::lang::sir::ExpandedMetaStmt>()) {                                      \
         expanded_meta_stmt_visitor;                                                                                    \
     } else if (auto inner = (stmt).match<banjo::lang::sir::Expr>()) {                                                  \

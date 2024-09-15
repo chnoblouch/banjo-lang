@@ -79,7 +79,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
 }
 
 sir::Expr ConstEvaluator::analyze(sir::Expr &expr) {
-    Result result = ExprAnalyzer(analyzer).analyze(expr);
+    Result result = ExprAnalyzer(analyzer).analyze_uncoerced(expr);
     if (result != Result::SUCCESS) {
         return nullptr;
     }
@@ -106,13 +106,13 @@ sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
         SIR_VISIT_IMPOSSIBLE,          // native_var_decl
         return &symbol_expr,           // enum_def
         return evaluate(inner->value), // enum_variant
-        SIR_VISIT_IMPOSSIBLE,          // union_def
+        return &symbol_expr,           // union_def
         SIR_VISIT_IMPOSSIBLE,          // union_case
         SIR_VISIT_IMPOSSIBLE,          // type_alias
         SIR_VISIT_IMPOSSIBLE,          // use_ident
         SIR_VISIT_IMPOSSIBLE,          // use_rebind
-        SIR_VISIT_IMPOSSIBLE,          // var_stmt
-        SIR_VISIT_IMPOSSIBLE,          // param
+        return &symbol_expr,           // local
+        return &symbol_expr,           // param
         SIR_VISIT_IMPOSSIBLE           // overload_set
     );
 }

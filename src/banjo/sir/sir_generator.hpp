@@ -79,6 +79,7 @@ private:
     sir::Stmt generate_continue_stmt(ASTNode *node);
     sir::Stmt generate_break_stmt(ASTNode *node);
     sir::MetaIfStmt *generate_meta_if_stmt(ASTNode *node, MetaBlockKind kind);
+    sir::MetaForStmt *generate_meta_for_stmt(ASTNode *node, MetaBlockKind kind);
 
     sir::Expr generate_expr(ASTNode *node);
     sir::Expr generate_int_literal(ASTNode *node);

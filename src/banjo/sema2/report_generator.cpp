@@ -263,6 +263,14 @@ void ReportGenerator::report_err_try_no_error_field(const sir::TryExceptBranch &
     report_error("optional types don't have an error field", branch.ast_node);
 }
 
+void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &range) {
+    report_error("value is not known at compile time", range.get_ast_node());
+}
+
+void ReportGenerator::report_err_meta_for_cannot_iter(const sir::Expr &range) {
+    report_error("cannot iterate over type '$'", range.get_ast_node(), range.get_type());
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,

@@ -19,12 +19,16 @@ public:
     MetaExpansion(SemanticAnalyzer &analyzer);
     void run();
     void run_on_decl_block(sir::DeclBlock &decl_block);
-    
+
     void evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index);
     void expand(sir::DeclBlock &decl_block, unsigned &index, sir::MetaBlock &meta_block);
 
-    void evaluate_meta_if_stmt(sir::Block &block, unsigned index);
-    void expand(sir::Block &block, unsigned index, sir::MetaBlock &meta_block);
+    void evaluate_meta_if_stmt(sir::Block &block, unsigned &index);
+    void evaluate_meta_for_stmt(sir::Block &block, unsigned &index);
+    void expand(sir::Block &block, unsigned &index, sir::MetaBlock &meta_block);
+
+private:
+    Result evaluate_meta_for_range(sir::Expr range, std::vector<sir::Expr> &out_values);
 };
 
 } // namespace sema

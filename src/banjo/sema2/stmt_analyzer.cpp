@@ -19,31 +19,36 @@ void StmtAnalyzer::analyze_block(sir::Block &block) {
     scope.block = &block;
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
-        sir::Stmt &stmt = block.stmts[i];
-
-        SIR_VISIT_STMT(
-            stmt,
-            SIR_VISIT_IMPOSSIBLE,                                    // empty
-            analyze_var_stmt(*inner),                                // var_stmt
-            analyze_assign_stmt(*inner),                             // assign_stmt
-            analyze_comp_assign_stmt(*inner, stmt),                  // comp_assign_stmt
-            analyze_return_stmt(*inner),                             // return_stmt
-            analyze_if_stmt(*inner),                                 // if_stmt
-            analyze_switch_stmt(*inner),                             // switch_stmt
-            analyze_try_stmt(*inner, stmt),                          // try_stmt
-            analyze_while_stmt(*inner, stmt),                        // while_stmt
-            analyze_for_stmt(*inner, stmt),                          // for_stmt
-            analyze_loop_stmt(*inner),                               // loop_stmt
-            analyze_continue_stmt(*inner),                           // continue_stmt
-            analyze_break_stmt(*inner),                              // break_stmt
-            MetaExpansion(analyzer).evaluate_meta_if_stmt(block, i), // meta_if_stmt
-            SIR_VISIT_IGNORE,                                        // expanded_meta_stmt
-            ExprAnalyzer(analyzer).analyze(*inner),                  // expr_stmt
-            analyze_block(*inner)                                    // block_stmt
-        )
+        analyze(block, i);
     }
 
     analyzer.pop_scope();
+}
+
+void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
+    sir::Stmt &stmt = block.stmts[index];
+
+    SIR_VISIT_STMT(
+        stmt,
+        SIR_VISIT_IMPOSSIBLE,                                         // empty
+        analyze_var_stmt(*inner),                                     // var_stmt
+        analyze_assign_stmt(*inner),                                  // assign_stmt
+        analyze_comp_assign_stmt(*inner, stmt),                       // comp_assign_stmt
+        analyze_return_stmt(*inner),                                  // return_stmt
+        analyze_if_stmt(*inner),                                      // if_stmt
+        analyze_switch_stmt(*inner),                                  // switch_stmt
+        analyze_try_stmt(*inner, stmt),                               // try_stmt
+        analyze_while_stmt(*inner, stmt),                             // while_stmt
+        analyze_for_stmt(*inner, stmt),                               // for_stmt
+        analyze_loop_stmt(*inner),                                    // loop_stmt
+        analyze_continue_stmt(*inner),                                // continue_stmt
+        analyze_break_stmt(*inner),                                   // break_stmt
+        MetaExpansion(analyzer).evaluate_meta_if_stmt(block, index),  // meta_if_stmt
+        MetaExpansion(analyzer).evaluate_meta_for_stmt(block, index), // meta_for_stmt
+        SIR_VISIT_IGNORE,                                             // expanded_meta_stmt
+        ExprAnalyzer(analyzer).analyze(*inner),                       // expr_stmt
+        analyze_block(*inner)                                         // block_stmt
+    )
 }
 
 void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {

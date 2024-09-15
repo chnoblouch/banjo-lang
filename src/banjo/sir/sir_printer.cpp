@@ -341,6 +341,7 @@ void Printer::print_stmt(const Stmt &stmt) {
         print_continue_stmt(*inner),
         print_break_stmt(*inner),
         print_meta_if_stmt(*inner),
+        print_meta_for_stmt(*inner),
         print_expanded_meta_stmt(*inner),
         print_expr_stmt(*inner),
         print_block_stmt(*inner)
@@ -517,6 +518,14 @@ void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
         stream << "none\n";
     }
 
+    END_OBJECT();
+}
+
+void Printer::print_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
+    BEGIN_OBJECT("MetaForStmt");
+    PRINT_FIELD("ident", meta_for_stmt.ident.value);
+    PRINT_EXPR_FIELD("range", meta_for_stmt.range);
+    PRINT_META_BLOCK_FIELD("block", meta_for_stmt.block);
     END_OBJECT();
 }
 
@@ -886,9 +895,15 @@ void Printer::print_generic_params(const std::vector<GenericParam> &generic_para
 
     for (const GenericParam &generic_param : generic_params) {
         INDENT_LIST_ELEMENT();
-        BEGIN_OBJECT("GenericParam")
-        PRINT_FIELD("ident", generic_param.ident.value)
-        END_OBJECT()
+        BEGIN_OBJECT("GenericParam");
+        PRINT_FIELD("ident", generic_param.ident.value);
+
+        switch (generic_param.kind) {
+            case GenericParamKind::TYPE: PRINT_FIELD("kind", "TYPE"); break;
+            case GenericParamKind::SEQUENCE: PRINT_FIELD("kind", "SEQUENCE"); break;
+        }
+
+        END_OBJECT();
     }
 
     END_LIST()

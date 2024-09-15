@@ -21,8 +21,6 @@ void SymbolCollector::collect() {
 }
 
 void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
-    analyzer.check_for_completeness(decl_block);
-
     for (sir::Decl &decl : decl_block.decls) {
         collect_decl(decl);
     }

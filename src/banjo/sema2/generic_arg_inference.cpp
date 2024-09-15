@@ -1,5 +1,6 @@
 #include "generic_arg_inference.hpp"
 
+#include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <utility>
@@ -36,7 +37,11 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    for (unsigned i = 0; i < args.size(); i++) {
+    bool has_sequence = generic_params.back().kind == sir::GenericParamKind::SEQUENCE;
+    unsigned non_sequence_end = has_sequence ? params.size() - 1 : params.size();
+    unsigned num_sequence_args = has_sequence ? args.size() - (params.size() - 1) : 0;
+
+    for (unsigned i = 0; i < non_sequence_end; i++) {
         ASSUME(args[i].get_type());
 
         cur_arg = &args[i];
@@ -45,6 +50,20 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
         if (partial_result != Result::SUCCESS) {
             result = partial_result;
         }
+    }
+
+    if (has_sequence) {
+        std::vector<sir::Expr> sequence_types(num_sequence_args);
+
+        for (unsigned i = 0; i < num_sequence_args; i++) {
+            sequence_types[i] = args[non_sequence_end + i].get_type();
+        }
+
+        generic_args.back() = analyzer.create_expr(sir::TupleExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .exprs = sequence_types,
+        });
     }
 
     for (unsigned i = 0; i < generic_args.size(); i++) {

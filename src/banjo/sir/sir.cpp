@@ -306,7 +306,7 @@ const Ident &Symbol::get_ident() const {
         return inner->ident,  // type_alias
         return inner->ident,  // use_ident
         SIR_VISIT_IMPOSSIBLE, // use_rebind
-        return inner->name,   // var_stmt
+        return inner->name,   // local
         return inner->name,   // param
         SIR_VISIT_IMPOSSIBLE  // overload_set
     );
@@ -343,7 +343,7 @@ Expr Symbol::get_type() {
         return nullptr,      // type_alias
         return nullptr,      // use_ident
         return nullptr,      // use_rebind
-        return inner->type,  // var_stmt
+        return inner->type,  // local
         return inner->type,  // param
         return nullptr       // overload_set
     );

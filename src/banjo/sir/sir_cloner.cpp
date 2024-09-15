@@ -200,6 +200,15 @@ MetaIfStmt *Cloner::clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
     });
 }
 
+MetaForStmt *Cloner::clone_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
+    return mod.create_stmt(MetaForStmt{
+        .ast_node = meta_for_stmt.ast_node,
+        .ident = meta_for_stmt.ident,
+        .range = clone_expr(meta_for_stmt.range),
+        .block = clone_meta_block(meta_for_stmt.block),
+    });
+}
+
 Block Cloner::clone_block(const Block &block) {
     assert(block.symbol_table->symbols.empty());
 
@@ -238,6 +247,7 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
         return clone_continue_stmt(*inner),
         return clone_break_stmt(*inner),
         return clone_meta_if_stmt(*inner),
+        return clone_meta_for_stmt(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_expr_stmt(*inner),
         return clone_block_stmt(*inner)

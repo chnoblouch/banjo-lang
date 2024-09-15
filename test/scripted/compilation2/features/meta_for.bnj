@@ -1,0 +1,31 @@
+# test:subtest
+# test:output "5,81,-37,"
+
+func main() {
+    meta for value in [5, 81, -37] {
+        print(value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "3,true,test,"
+
+func main() {
+    meta for value in (3, true, "test") {
+        print(value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "3,true,test,"
+
+func main() {
+    var tuple = (3, true, "test");
+    
+    meta for value in tuple {
+        print(value);
+        print(',');
+    }
+}

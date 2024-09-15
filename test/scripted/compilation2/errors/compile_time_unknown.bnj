@@ -1,0 +1,14 @@
+# test:subtest
+# test:error 5:23 "value is not known at compile time"
+
+func test(array: [i32]) {
+    meta for value in array {}
+}
+
+# test:subtest
+# test:error 13:23 "value is not known at compile time"
+
+func test() {
+    var array: [i32] = [1, 2, 3];
+    meta for value in array {}
+}

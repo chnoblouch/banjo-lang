@@ -106,12 +106,12 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expected_type) {
-    Result result;
+    Result partial_result;
 
     if (expr.get_type() != expected_type) {
         if (auto union_def = expected_type.match_symbol<sir::UnionDef>()) {
-            result = finalize_type(expr);
-            if (result != Result::SUCCESS) {
+            partial_result = finalize_type(expr);
+            if (partial_result != Result::SUCCESS) {
                 return Result::ERROR;
             }
 
@@ -128,17 +128,17 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
                 return Result::SUCCESS;
             }
 
-            result = finalize_type_by_coercion(expr, specialization->args[0]);
-            if (result != Result::SUCCESS) {
-                return result;
+            partial_result = finalize_type_by_coercion(expr, specialization->args[0]);
+            if (partial_result != Result::SUCCESS) {
+                return partial_result;
             }
 
             create_std_optional_some(*specialization, expr);
             return Result::SUCCESS;
         } else if (auto specialization = analyzer.as_std_result_specialization(expected_type)) {
-            result = finalize_type(expr);
-            if (result != Result::SUCCESS) {
-                return result;
+            partial_result = finalize_type(expr);
+            if (partial_result != Result::SUCCESS) {
+                return partial_result;
             }
 
             sir::Expr type = expr.get_type();
@@ -233,6 +233,22 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
             analyzer.report_generator.report_err_cannot_coerce(*string_literal, expected_type);
             return Result::ERROR;
         }
+    } else if (auto tuple_literal = expr.match<sir::TupleExpr>()) {
+        if (auto tuple_type = expected_type.match<sir::TupleExpr>()) {
+            if (tuple_literal->exprs.size() == tuple_type->exprs.size()) {
+                Result result;
+
+                for (unsigned i = 0; i < tuple_literal->exprs.size(); i++) {
+                    partial_result = finalize_type_by_coercion(tuple_literal->exprs[i], tuple_type->exprs[i]);
+                    if (partial_result != Result::SUCCESS) {
+                        result = Result::ERROR;
+                    }
+                }
+
+                tuple_literal->type = expected_type;
+                return result;
+            }
+        }
     }
 
     analyzer.report_generator.report_err_type_mismatch(expr, expected_type, expr.get_type());
@@ -279,6 +295,15 @@ Result ExprAnalyzer::finalize_type(sir::Expr &expr) {
         } else {
             analyzer.report_generator.report_err_cannot_infer_type(*struct_literal);
             return Result::ERROR;
+        }
+    } else if (auto tuple_literal = expr.match<sir::TupleExpr>()) {
+        if (tuple_literal->type) {
+            sir::TupleExpr tuple_type = tuple_literal->type.as<sir::TupleExpr>();
+
+            for (unsigned i = 0; i < tuple_literal->exprs.size(); i++) {
+                finalize_type(tuple_literal->exprs[i]);
+                tuple_type.exprs[i] = tuple_literal->exprs[i].get_type();
+            }
         }
     }
 
@@ -538,10 +563,20 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     sir::Expr rhs_type = binary_expr.rhs.get_type();
 
     if (lhs_type.is<sir::PseudoType>() && !rhs_type.is<sir::PseudoType>()) {
-        lhs_result = finalize_type(binary_expr.rhs);
-        rhs_result = finalize_type_by_coercion(binary_expr.lhs, binary_expr.rhs.get_type());
+        rhs_result = finalize_type(binary_expr.rhs);
+
+        if (rhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        lhs_result = finalize_type_by_coercion(binary_expr.lhs, binary_expr.rhs.get_type());
     } else if (rhs_type.is<sir::PseudoType>() && !lhs_type.is<sir::PseudoType>()) {
         lhs_result = finalize_type(binary_expr.lhs);
+
+        if (lhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
         rhs_result = finalize_type_by_coercion(binary_expr.rhs, binary_expr.lhs.get_type());
     } else {
         lhs_result = finalize_type(binary_expr.lhs);
@@ -689,6 +724,24 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             partial_result = specialize(*func_def, generic_args, call_expr.callee);
             if (partial_result != Result::SUCCESS) {
                 return partial_result;
+            }
+
+            if (func_def->generic_params.back().kind == sir::GenericParamKind::SEQUENCE) {
+                unsigned num_non_sequence_args = func_def->type.params.size() - 1;
+                unsigned num_sequence_args = call_expr.args.size() - num_non_sequence_args;
+
+                std::vector<sir::Expr> sequence_args(num_sequence_args);
+                for (unsigned i = 0; i < num_sequence_args; i++) {
+                    sequence_args[i] = call_expr.args[num_non_sequence_args + i];
+                }
+
+                call_expr.args.resize(num_non_sequence_args + 1);
+
+                call_expr.args[num_non_sequence_args] = analyzer.create_expr(sir::TupleExpr{
+                    .ast_node = nullptr,
+                    .type = generic_args.back(),
+                    .exprs = sequence_args,
+                });
             }
         }
     } else if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
@@ -926,7 +979,7 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
     assert(!tuple_expr.exprs.empty());
 
     for (sir::Expr &expr : tuple_expr.exprs) {
-        ExprAnalyzer(analyzer).analyze(expr);
+        ExprAnalyzer(analyzer).analyze_uncoerced(expr);
     }
 
     if (tuple_expr.exprs[0].is_type()) {

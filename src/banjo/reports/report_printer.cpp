@@ -6,7 +6,7 @@ namespace banjo {
 
 namespace lang {
 
-constexpr unsigned MAX_PRINTED_REPORTS = 32;
+constexpr unsigned MAX_PRINTED_REPORTS = 256;
 
 ReportPrinter::ReportPrinter(ModuleManager &module_manager) : stream(std::cerr), module_manager(module_manager) {}
 

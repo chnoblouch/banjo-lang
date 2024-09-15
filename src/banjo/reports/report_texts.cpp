@@ -172,6 +172,13 @@ std::string ReportText::to_string(sir::Expr &expr) {
 
         str += ")";
         return str;
+    } else if (auto pseudo_type = expr.match<sir::PseudoType>()) {
+        switch (pseudo_type->kind) {
+            case sir::PseudoTypeKind::INT_LITERAL: return "integer literal";
+            case sir::PseudoTypeKind::FP_LITERAL: return "float literal";
+            case sir::PseudoTypeKind::STRING_LITERAL: return "string literal";
+            case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
+        }
     } else {
         return "<unknown>";
     }

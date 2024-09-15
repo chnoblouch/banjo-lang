@@ -7,11 +7,17 @@ struct Path {
         };
     }
     
-    pub func from(str: String) -> Path {
-        var path = Path {
-            path: str
-        };
-
+    pub func from[T](value: T) -> Path {
+        meta if T == String {
+            var path = Path {
+                path: value,
+            };
+        } else if T == *u8 {
+            var path = Path {
+                path: String.from(value),
+            };
+        }
+        
         path.normalize();
         return path;
     }

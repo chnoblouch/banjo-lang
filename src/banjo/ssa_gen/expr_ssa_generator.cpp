@@ -360,28 +360,43 @@ StoredValue ExprSSAGenerator::generate_deref(const sir::UnaryExpr &unary_expr) {
 
 StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr) {
     const sir::Expr &sir_type_from = cast_expr.value.get_type();
+    ssa::Value ssa_val_from = generate(cast_expr.value).turn_into_value(ctx).get_value();
+    unsigned size_from = ctx.target->get_data_layout().get_size(ssa_val_from.get_type());
+    bool is_from_fp = sir_type_from.is_fp_type();
+
     const sir::Expr &sir_type_to = cast_expr.type;
-
-    ssa::Value ssa_val_in = generate(cast_expr.value).turn_into_value(ctx).get_value();
     ssa::Type ssa_type_to = TypeSSAGenerator(ctx).generate(sir_type_to);
-
-    unsigned size_from = ctx.target->get_data_layout().get_size(ssa_val_in.get_type());
     unsigned size_to = ctx.target->get_data_layout().get_size(ssa_type_to);
+    bool is_to_fp = sir_type_to.is_fp_type();
 
-    if (size_from == size_to && sir_type_from.is_fp_type() == sir_type_to.is_fp_type()) {
-        return StoredValue::create_value(ssa_val_in);
+    if (size_from == size_to && is_from_fp == is_to_fp) {
+        return StoredValue::create_value(ssa_val_from);
+    }
+
+    if (ssa_val_from.is_int_immediate()) {
+        ssa::Value immediate;
+
+        if (!is_to_fp) {
+            immediate = ssa_val_from.with_type(ssa_type_to);
+        } else if (ssa_val_from.get_int_immediate().is_positive()) {
+            immediate = ssa::Value::from_fp_immediate(ssa_val_from.get_int_immediate().get_magnitude(), ssa_type_to);
+        } else if (ssa_val_from.get_int_immediate().is_negative()) {
+            immediate = ssa::Value::from_fp_immediate(-ssa_val_from.get_int_immediate().get_magnitude(), ssa_type_to);
+        }
+
+        return StoredValue::create_value(immediate);
     }
 
     ssa::Opcode ssa_op;
 
-    if (sir_type_from.is_fp_type()) {
-        if (sir_type_to.is_fp_type()) {
+    if (is_from_fp) {
+        if (is_to_fp) {
             ssa_op = size_to > size_from ? ir::Opcode::FPROMOTE : ir::Opcode::FDEMOTE;
         } else {
             ssa_op = sir_type_to.is_signed_type() ? ir::Opcode::FTOS : ir::Opcode::FTOU;
         }
     } else {
-        if (sir_type_to.is_fp_type()) {
+        if (is_to_fp) {
             ssa_op = sir_type_from.is_signed_type() ? ir::Opcode::STOF : ir::Opcode::UTOF;
         } else if (size_to > size_from) {
             ssa_op = sir_type_from.is_signed_type() ? ir::Opcode::SEXTEND : ir::Opcode::UEXTEND;
@@ -392,7 +407,7 @@ StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr)
 
     ssa::VirtualRegister ssa_reg_out = ctx.next_vreg();
     ssa::Value ssa_type_val = ssa::Value::from_type(ssa_type_to);
-    ctx.get_ssa_block()->append(ssa::Instruction(ssa_op, ssa_reg_out, {ssa_val_in, ssa_type_val}));
+    ctx.get_ssa_block()->append(ssa::Instruction(ssa_op, ssa_reg_out, {ssa_val_from, ssa_type_val}));
 
     ssa::Value ssa_val_out = ssa::Value::from_register(ssa_reg_out, ssa_type_to);
     return StoredValue::create_value(ssa_val_out);

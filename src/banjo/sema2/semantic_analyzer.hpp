@@ -119,8 +119,6 @@ private:
 
     unsigned compute_size(sir::Expr type);
 
-    void check_for_completeness(sir::DeclBlock &block);
-
     template <typename T>
     T *create_expr(T value) {
         return cur_sir_mod->create_expr(value);

@@ -26,9 +26,9 @@ public:
     ExprAnalyzer(SemanticAnalyzer &analyzer);
     ExprAnalyzer(SemanticAnalyzer &analyzer, ExprConstraints constraints);
     Result analyze(sir::Expr &expr);
+    Result analyze_uncoerced(sir::Expr &expr);
 
 private:
-    Result analyze_uncoerced(sir::Expr &expr);
     Result finalize_type_by_coercion(sir::Expr &expr, sir::Expr expected_type);
     Result finalize_type(sir::Expr &expr);
 

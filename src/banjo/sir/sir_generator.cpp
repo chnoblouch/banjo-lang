@@ -307,6 +307,7 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_CONTINUE: return generate_continue_stmt(node);
         case AST_BREAK: return generate_break_stmt(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::STMT);
+        case AST_META_FOR: return generate_meta_for_stmt(node, MetaBlockKind::STMT);
         case AST_FUNCTION_CALL: return create_stmt(generate_expr(node));
         case AST_BLOCK: return create_stmt(generate_block(node));
         default: ASSERT_UNREACHABLE;
@@ -485,6 +486,15 @@ sir::MetaIfStmt *SIRGenerator::generate_meta_if_stmt(ASTNode *node, MetaBlockKin
     }
 
     return create_stmt(sir_meta_if_stmt);
+}
+
+sir::MetaForStmt *SIRGenerator::generate_meta_for_stmt(ASTNode *node, MetaBlockKind kind) {
+    return create_stmt(sir::MetaForStmt{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(0)),
+        .range = generate_expr(node->get_child(1)),
+        .block = generate_meta_block(node->get_child(2), kind),
+    });
 }
 
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
@@ -880,9 +890,18 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         ASTNode *child = node->get_child(i);
 
+        sir::GenericParamKind kind = sir::GenericParamKind::TYPE;
+
+        if (child->has_child(GENERIC_PARAM_TYPE)) {
+            if (child->get_child(GENERIC_PARAM_TYPE)->get_type() == AST_PARAM_SEQUENCE_TYPE) {
+                kind = sir::GenericParamKind::SEQUENCE;
+            }
+        }
+
         sir_generic_params[i] = sir::GenericParam{
             .ast_node = child,
             .ident = generate_ident(child->get_child(GENERIC_PARAM_NAME)),
+            .kind = kind,
         };
     }
 

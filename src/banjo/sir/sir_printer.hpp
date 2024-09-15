@@ -61,6 +61,7 @@ private:
     void print_continue_stmt(const ContinueStmt &continue_stmt);
     void print_break_stmt(const BreakStmt &break_stmt);
     void print_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
+    void print_meta_for_stmt(const MetaForStmt &meta_for_stmt);
     void print_expanded_meta_stmt(const ExpandedMetaStmt &expanded_meta_stmt);
     void print_expr_stmt(const Expr &expr);
     void print_block_stmt(const Block &block);

@@ -1,0 +1,6 @@
+# test:subtest
+# test:error 5:23 "cannot iterate over type 'integer literal'"
+
+func main() {
+    meta for value in 10 {}
+}

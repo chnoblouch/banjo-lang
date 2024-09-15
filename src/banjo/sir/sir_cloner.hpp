@@ -36,6 +36,7 @@ public:
     UnionCase *clone_union_case(const UnionCase &union_case);
     TypeAlias *clone_type_alias(const TypeAlias &type_alias);
     MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
+    MetaForStmt *clone_meta_for_stmt(const MetaForStmt &meta_for_stmt);
 
     Block clone_block(const Block &block);
     Stmt clone_stmt(const Stmt &stmt);

@@ -1,0 +1,6 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var a: (u32, *u8) = (10, "test");
+}

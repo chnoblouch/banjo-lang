@@ -149,17 +149,6 @@ unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
     return target->get_data_layout().get_size(ssa_type);
 }
 
-void SemanticAnalyzer::check_for_completeness(sir::DeclBlock &block) {
-    block.symbol_table->complete = true;
-
-    for (sir::Decl &decl : block.decls) {
-        if (decl.is<sir::MetaIfStmt>()) {
-            block.symbol_table->complete = false;
-            break;
-        }
-    }
-}
-
 } // namespace sema
 
 } // namespace lang

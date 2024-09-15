@@ -83,6 +83,8 @@ public:
 
     void report_err_cannot_use_in_try(const sir::Expr &expr);
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
+    void report_err_compile_time_unknown(const sir::Expr &range);
+    void report_err_meta_for_cannot_iter(const sir::Expr &range);
 
 private:
     template <typename... FormatArgs>
