@@ -1,0 +1,21 @@
+# test:subtest
+# test:output "2,3,4,"
+
+func main() {
+    for i in 2..5 {
+        print(i);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "5,73,-18,"
+
+func main() {
+    var array = [5, 73, -18];
+
+    for value in array {
+        print(value);
+        print(',');
+    }
+}

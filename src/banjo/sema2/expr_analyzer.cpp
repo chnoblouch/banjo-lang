@@ -98,7 +98,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         return result;
     }
 
-    if (auto type_alias = expr.match_symbol<sir::TypeAlias>()) {
+    while (auto type_alias = expr.match_symbol<sir::TypeAlias>()) {
         expr = type_alias->type;
     }
 
@@ -107,6 +107,11 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
 
 Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expected_type) {
     Result partial_result;
+
+    if (auto undefined_literal = expr.match<sir::UndefinedLiteral>()) {
+        undefined_literal->type = expected_type;
+        return Result::SUCCESS;
+    }
 
     if (expr.get_type() != expected_type) {
         if (auto union_def = expected_type.match_symbol<sir::UnionDef>()) {
@@ -122,6 +127,7 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
             });
 
             return Result::SUCCESS;
+
         } else if (auto specialization = analyzer.as_std_optional_specialization(expected_type)) {
             if (auto none_literal = expr.match<sir::NoneLiteral>()) {
                 create_std_optional_none(*specialization, expr);
@@ -219,9 +225,6 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
     } else if (auto none_literal = expr.match<sir::NoneLiteral>()) {
         analyzer.report_generator.report_err_cannot_coerce(*none_literal, expected_type);
         return Result::ERROR;
-    } else if (auto undefined_literal = expr.match<sir::UndefinedLiteral>()) {
-        undefined_literal->type = expected_type;
-        return Result::SUCCESS;
     } else if (auto string_literal = expr.match<sir::StringLiteral>()) {
         if (expected_type.is_u8_ptr()) {
             string_literal->type = expected_type;
@@ -298,7 +301,7 @@ Result ExprAnalyzer::finalize_type(sir::Expr &expr) {
         }
     } else if (auto tuple_literal = expr.match<sir::TupleExpr>()) {
         if (tuple_literal->type) {
-            sir::TupleExpr tuple_type = tuple_literal->type.as<sir::TupleExpr>();
+            sir::TupleExpr &tuple_type = tuple_literal->type.as<sir::TupleExpr>();
 
             for (unsigned i = 0; i < tuple_literal->exprs.size(); i++) {
                 finalize_type(tuple_literal->exprs[i]);
@@ -812,34 +815,41 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         lhs_type = pointer_type->base_type;
     }
 
-    if (auto struct_def = lhs.get_type().match_symbol<sir::StructDef>()) {
+    if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
         sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
-        if (!method) {
-            analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
-            return Result::ERROR;
+        if (method) {
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            is_method = true;
+            return Result::SUCCESS;
         }
 
-        out_call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
-            .ast_node = dot_expr.rhs.ast_node,
-            .type = method.get_type(),
-            .symbol = method,
-        });
+        sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
 
-        sir::Expr self_arg = analyzer.create_expr(sir::UnaryExpr{
-            .ast_node = nullptr,
-            .type = analyzer.create_expr(sir::PointerType{
-                .ast_node = nullptr,
-                .base_type = lhs_type,
-            }),
-            .op = sir::UnaryOp::REF,
-            .value = lhs,
-        });
+        if (field) {
+            out_call_expr.callee = analyzer.create_expr(sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = field->type,
+                .base = lhs,
+                .field_index = field->index,
+            });
 
-        out_call_expr.args.insert(out_call_expr.args.begin(), self_arg);
+            return Result::SUCCESS;
+        }
 
-        is_method = true;
-        return Result::SUCCESS;
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
+        return Result::ERROR;
+    } else if (auto union_def = lhs_type.match_symbol<sir::UnionDef>()) {
+        sir::Symbol method = union_def->block.symbol_table->look_up(dot_expr.rhs.value);
+
+        if (method) {
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            is_method = true;
+            return Result::SUCCESS;
+        }
+
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
+        return Result::ERROR;
     } else {
         partial_result = analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
 
@@ -986,8 +996,7 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
         return;
     }
 
-    std::vector<sir::Expr> types;
-    types.resize(tuple_expr.exprs.size());
+    std::vector<sir::Expr> types(tuple_expr.exprs.size());
 
     for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
         types[i] = tuple_expr.exprs[i].get_type();
@@ -1196,6 +1205,26 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     }
 
     return Result::SUCCESS;
+}
+
+void ExprAnalyzer::create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident rhs, sir::Symbol method) {
+    call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = rhs.ast_node,
+        .type = method.get_type(),
+        .symbol = method,
+    });
+
+    sir::Expr self_arg = analyzer.create_expr(sir::UnaryExpr{
+        .ast_node = nullptr,
+        .type = analyzer.create_expr(sir::PointerType{
+            .ast_node = nullptr,
+            .base_type = lhs.get_type(),
+        }),
+        .op = sir::UnaryOp::REF,
+        .value = lhs,
+    });
+
+    call_expr.args.insert(call_expr.args.begin(), self_arg);
 }
 
 void ExprAnalyzer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
@@ -1412,18 +1441,34 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
         sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
-        if (!symbol) {
-            analyzer.report_generator.report_err_symbol_not_found(dot_expr.rhs);
-            return Result::ERROR;
+        if (symbol) {
+            out_expr = analyzer.create_expr(sir::SymbolExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = symbol.get_type(),
+                .symbol = symbol,
+            });
+
+            return Result::SUCCESS;
         }
 
-        out_expr = analyzer.create_expr(sir::SymbolExpr{
-            .ast_node = dot_expr.ast_node,
-            .type = symbol.get_type(),
-            .symbol = symbol,
-        });
+        if (auto mod = dot_expr.lhs.match_symbol<sir::Module>()) {
+            ModulePath sub_mod_path = mod->path;
+            sub_mod_path.append(dot_expr.rhs.value);
+            sir::Module *sub_mod = analyzer.sir_unit.mods_by_path[sub_mod_path];
 
-        return Result::SUCCESS;
+            if (sub_mod) {
+                out_expr = analyzer.create_expr(sir::SymbolExpr{
+                    .ast_node = dot_expr.ast_node,
+                    .type = nullptr,
+                    .symbol = sub_mod,
+                });
+
+                return Result::SUCCESS;
+            }
+        }
+
+        analyzer.report_generator.report_err_symbol_not_found(dot_expr.rhs);
+        return Result::ERROR;
     }
 
     sir::Expr lhs = dot_expr.lhs;

@@ -1,0 +1,10 @@
+# test:compiles
+
+union Union {
+    case A();
+    case B();
+}
+
+func main() {
+    var u: ?Union = undefined;
+}

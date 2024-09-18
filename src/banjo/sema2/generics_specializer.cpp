@@ -3,6 +3,7 @@
 #include "banjo/sema2/decl_interface_analyzer.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
+#include "banjo/sema2/type_alias_resolver.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 
@@ -104,6 +105,7 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
 
     SymbolCollector(analyzer).collect_in_block(clone->block);
     UseResolver(analyzer).resolve_in_block(clone->block);
+    TypeAliasResolver(analyzer).analyze_decl_block(clone->block);
     DeclInterfaceAnalyzer(analyzer).process_struct_def(*clone);
     MetaExpansion(analyzer).run_on_decl_block(clone->block);
     analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});

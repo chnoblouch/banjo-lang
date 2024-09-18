@@ -407,7 +407,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     sir::VarStmt *iter_var_stmt = analyzer.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
         .local{
-            .name = create_ident(""),
+            .name = create_ident(".iter"),
             .type = nullptr,
         },
         .value = create_method_call(for_stmt.range, iter_func_def),
@@ -422,7 +422,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     sir::VarStmt *next_var_stmt = analyzer.create_stmt(sir::VarStmt{
         .ast_node = nullptr,
         .local{
-            .name = create_ident(""),
+            .name = create_ident(".next"),
             .type = nullptr,
         },
         .value = create_method_call(iter_ref_expr, next_func_def),

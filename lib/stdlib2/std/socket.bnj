@@ -1,0 +1,14 @@
+enum Protoocl {
+    TCP,
+}
+
+struct Socket {
+    pub func close(self) {
+    }
+
+    pub func send(self, buffer: *u8, size: usize) -> i32 {
+    }
+
+    pub func recv(self, buffer: *u8, size: usize) -> i32 {
+    } 
+}

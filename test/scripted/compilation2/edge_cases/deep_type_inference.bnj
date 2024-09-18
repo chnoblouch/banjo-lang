@@ -4,3 +4,16 @@
 func main() {
     var a: (u32, *u8) = (10, "test");
 }
+
+# test:subtest
+# test:compiles
+
+struct S {
+    var f: u64;
+}
+
+func main() {
+    var a = S {
+        f: 100,
+    };
+}

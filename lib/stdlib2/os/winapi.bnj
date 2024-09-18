@@ -1,11 +1,42 @@
 type Bool = u32;
 type Handle = addr;
 type Dword = u32;
+type LargeInteger = u64;
 
 # --- handleapi.h ---
 
 @[link_name=CloseHandle]
-native func close_handle(object: addr) -> bool;
+native func close_handle(object: Handle) -> bool;
+
+# --- winbase.h ---
+
+const FORMAT_MESSAGE_ALLOCATE_BUFFER: u32 = 0x00000100;
+const FORMAT_MESSAGE_ARGUMENT_ARRAY: u32 = 0x00002000;
+const FORMAT_MESSAGE_FROM_HMODULE: u32 = 0x00000800;
+const FORMAT_MESSAGE_FROM_STRING: u32 = 0x00000400;
+const FORMAT_MESSAGE_FROM_SYSTEM: u32 = 0x00001000;
+const FORMAT_MESSAGE_IGNORE_INSERTS: u32 = 0x00000200;
+
+@[link_name=LocalFree]
+native func local_free(mem: addr) -> addr;
+
+@[link_name=FormatMessageA]
+native func format_message(
+	flags: Dword,
+	source: addr,
+	message_id: Dword,
+	language_id: Dword,
+	buffer: **u8,
+	size: Dword,
+	arguments: addr
+) -> u32;
+
+# --- minwinbase.h ---
+
+struct Filetime {
+    var low_date_time: u32;
+    var high_date_time: u32;
+}
 
 # --- synchapi.h ---
 
@@ -47,3 +78,19 @@ struct SystemInfo {
 
 @[link_name=GetNativeSystemInfo]
 native func get_native_system_info(system_info: *SystemInfo);
+
+@[link_name=GetSystemTimeAsFileTime]
+native func get_system_time_as_file_time(system_time_as_file_time: *Filetime);
+
+# --- profileapi.h ---
+
+@[link_name=QueryPerformanceCounter]
+native func query_performance_counter(performance_count: *LargeInteger) -> bool;
+
+@[link_name=QueryPerformanceFrequency]
+native func query_performance_frequency(frequency: *LargeInteger) -> bool;
+
+# --- errhandlingapi.h ---
+
+@[link_name=GetLastError]
+native func get_last_error() -> Dword;

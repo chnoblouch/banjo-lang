@@ -35,6 +35,10 @@ void ExprSSAGenerator::generate_into_dst(const sir::Expr &expr, ssa::VirtualRegi
     generate_into_dst(expr, ssa::Value::from_register(dst, ssa::Primitive::ADDR));
 }
 
+StoredValue ExprSSAGenerator::generate_as_reference(const sir::Expr &expr) {
+    return generate(expr, StorageHints::prefer_reference()).turn_into_reference(ctx);
+}
+
 StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints &hints) {
     SIR_VISIT_EXPR(
         expr,
@@ -348,7 +352,7 @@ StoredValue ExprSSAGenerator::generate_neg(const sir::UnaryExpr &unary_expr) {
 }
 
 StoredValue ExprSSAGenerator::generate_ref(const sir::UnaryExpr &unary_expr) {
-    StoredValue ssa_val = generate(unary_expr.value, StorageHints::prefer_reference());
+    StoredValue ssa_val = generate_as_reference(unary_expr.value);
     return StoredValue::create_value(ssa_val.get_ptr());
 }
 
@@ -470,7 +474,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_expr) {
     unsigned field_index = field_expr.field_index;
 
-    StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate(field_expr.base, StorageHints::prefer_reference());
+    StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate_as_reference(field_expr.base);
     ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(ssa_lhs.value_type, ssa_lhs.get_ptr(), field_index);
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_expr.type);
 

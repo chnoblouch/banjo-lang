@@ -137,7 +137,8 @@
     pointer_type_visitor,                                                                                              \
     static_array_type_visitor,                                                                                         \
     func_type_visitor,                                                                                                 \
-    closure_type_visitor                                                                                               \
+    closure_type_visitor,                                                                                              \
+    other_visitor                                                                                                      \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -156,7 +157,7 @@
     } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
         closure_type_visitor;                                                                                          \
     } else {                                                                                                           \
-        ASSERT_UNREACHABLE;                                                                                            \
+        other_visitor;                                                                                                 \
     }
 
 #define SIR_VISIT_STMT(                                                                                                \

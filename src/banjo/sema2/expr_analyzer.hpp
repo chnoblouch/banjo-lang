@@ -59,6 +59,7 @@ private:
     Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 
+    void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident rhs, sir::Symbol method);
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void create_std_array(sir::ArrayLiteral &array_literal, const sir::Expr &element_type, sir::Expr &out_expr);
     void create_std_optional_some(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);

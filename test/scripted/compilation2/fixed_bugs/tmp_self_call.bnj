@@ -1,0 +1,19 @@
+# test:output "42"
+
+struct S {
+    var value: i32;
+
+    func new() -> S {
+        return S {
+            value: 42,
+        };
+    }
+    
+    func method(self) {
+        print(self.value);
+    }
+}
+
+func main() {
+    S.new().method();
+}

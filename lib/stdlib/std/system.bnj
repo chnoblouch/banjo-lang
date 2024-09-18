@@ -1,14 +1,6 @@
 use c.lib.stdlib.exit as cexit;
 use std.{config, stack_trace};
 
-native func strerror(errnum: i32) -> *u8;
-
-meta if config.OS == config.WINDOWS {
-    native func _errno() -> *i32;
-} else if config.OS == config.LINUX {
-    native func __errno_location() -> *i32;
-}
-
 pub func exit(status: i32) {
 	cexit(status);
 }
@@ -25,14 +17,4 @@ pub func panic(message: String) {
 	println("================================================================\n");
 	
 	exit(1);
-}
-
-func errno_str() -> *u8 {
-	meta if config.OS == config.WINDOWS {
-		return strerror(*_errno());
-	} else if config.OS == config.LINUX {
-		return strerror(*__errno_location());
-	} else {
-        return "<unknown>";
-    }
 }

@@ -48,6 +48,7 @@ class SemanticAnalyzer {
     // This is getting slightly out of hand...
     friend class SymbolCollector;
     friend class UseResolver;
+    friend class TypeAliasResolver;
     friend class DeclInterfaceAnalyzer;
     friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;

@@ -14,14 +14,15 @@ TypeSSAGenerator::TypeSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
     SIR_VISIT_TYPE(
         type,
-        SIR_VISIT_IMPOSSIBLE,
+        return ssa::Primitive::VOID,
         return generate_symbol_type(*inner),
         return generate_tuple_type(*inner),
         return generate_primitive_type(*inner),
         return generate_pointer_type(),
         return generate_static_array_type(*inner),
         return generate_func_type(),
-        return generate_closure_type(*inner)
+        return generate_closure_type(*inner),
+        return ssa::Primitive::VOID
     );
 }
 

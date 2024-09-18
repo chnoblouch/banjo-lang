@@ -1,6 +1,32 @@
 use os.{IS_WINDOWS, winapi, msvcrt};
 
 meta if IS_WINDOWS {
+    type Error = winapi.Dword;
+    
+    pub func error_last() -> Error {
+        return winapi.get_last_error();
+    }
+
+    pub func error_to_string(error: Error) -> String {
+        var buffer: *u8 = null;
+		
+		var length = winapi.format_message(
+			winapi.FORMAT_MESSAGE_ALLOCATE_BUFFER | winapi.FORMAT_MESSAGE_FROM_SYSTEM | winapi.FORMAT_MESSAGE_IGNORE_INSERTS,
+			null,
+			error,
+			0x400,  # MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
+			&buffer,
+			0,
+			null
+		);
+		
+		var trimmed_length = length as usize - 2;
+		var string = String.from((buffer, trimmed_length));
+		winapi.local_free(buffer as addr);
+		
+        return string;
+    }
+
     pub func io_get_stdin_stream() -> addr {
         return msvcrt.acrt_iob_func(0);
     }
@@ -35,4 +61,30 @@ meta if IS_WINDOWS {
 		winapi.get_native_system_info(&system_info);
 		return system_info.number_of_processors;
 	}
+
+    pub func time_system_ticks() -> u64 {
+        var time: winapi.Filetime;
+        winapi.get_system_time_as_file_time(&time);
+        return time.low_date_time as u64 | (time.high_date_time as u64 << 32);
+    }
+    
+    pub func time_system_frequency() -> u64 {
+        return 10000000;
+    }
+    
+    pub func time_system_ticks_since_unix_epoch() -> u64 {
+        return 116444736000000000;
+    }
+
+    pub func time_monotonic_ticks() -> u64 {
+        var counter: u64;
+        winapi.query_performance_counter(&counter);
+        return counter;
+    }
+
+    pub func time_monotonic_frequency() -> u64 {
+        var frequency: u64;
+        winapi.query_performance_frequency(&frequency);
+        return frequency;
+    }
 }

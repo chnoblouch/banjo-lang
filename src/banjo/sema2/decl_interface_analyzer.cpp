@@ -21,12 +21,20 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         }
 
         if (param.name.value == "self") {
+            sir::Symbol symbol;
+
+            if (analyzer.get_scope().struct_def) {
+                symbol = analyzer.get_scope().struct_def;
+            } else if (analyzer.get_scope().union_def) {
+                symbol = analyzer.get_scope().union_def;
+            }
+
             param.type = analyzer.create_expr(sir::PointerType{
                 .ast_node = nullptr,
                 .base_type = analyzer.create_expr(sir::SymbolExpr{
                     .ast_node = nullptr,
                     .type = nullptr,
-                    .symbol = analyzer.get_scope().struct_def,
+                    .symbol = symbol,
                 }),
             });
         } else {
@@ -98,10 +106,6 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
     analyzer.get_scope().union_def->cases.push_back(&union_case);
 
     return Result::SUCCESS;
-}
-
-Result DeclInterfaceAnalyzer::analyze_type_alias(sir::TypeAlias &type_alias) {
-    return ExprAnalyzer(analyzer).analyze(type_alias.type);
 }
 
 } // namespace sema

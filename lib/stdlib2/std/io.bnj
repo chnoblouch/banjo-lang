@@ -50,6 +50,26 @@ struct Reader[T] {
     }
 }
 
+struct CFileWriter {
+    var stream: addr;
+}
+
+struct Writer[T] {
+    var impl: T;
+
+    pub func write(self, value: *u8) {
+    }
+
+    pub func write(self, value: String) {
+    }
+
+    pub func write(self, value: u8) {
+    }
+
+    pub func flush(self) {
+    }
+}
+
 pub func stdin() -> Reader[CFileReader] {
     var stream = platform.io_get_stdin_stream();
     var c_file_reader = CFileReader.new(stream);

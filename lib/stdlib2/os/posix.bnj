@@ -6,12 +6,22 @@ meta if os.IS_UNIX {
         var tv_nsec: u64;
     }
 
+    const CLOCK_REALTIME: u64 = 0;
+    const CLOCK_MONOTONIC: u64 = 1;
+
     native var stdin: addr;
     native var stdout: addr;
     native var stderr: addr;
 
+    native func strerror(errnum: i32) -> *u8;
+    native func __errno_location() -> *i32;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
     native func pthread_join(thread: usize, retval: *addr) -> i32;
     native func nanosleep(req: *Timespec, rem: *Timespec);
     native func get_nprocs() -> i32;
+    native func clock_gettime(clk_id: u64, tp: *Timespec) -> i32;
+
+    pub func errno() -> i32 {
+        return *__errno_location();
+    }
 }

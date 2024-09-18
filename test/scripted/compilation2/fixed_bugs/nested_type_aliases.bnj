@@ -1,0 +1,14 @@
+# test:compiles
+
+struct S {
+    var field: B;
+    
+    func new() -> S {
+        return S {
+            field: 0,
+        };
+    }
+}
+
+type B = A;
+type A = i32;

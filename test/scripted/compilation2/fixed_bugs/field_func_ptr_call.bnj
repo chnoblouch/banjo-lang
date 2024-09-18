@@ -1,0 +1,17 @@
+# test:output "test"
+
+struct S {
+    var f: func();
+}
+
+func function() {
+    print("test");
+}
+
+func main() {
+    var s = S {
+        f: function,
+    };
+    
+    s.f();
+}

@@ -112,7 +112,7 @@ Expr Expr::get_type() const {
 bool Expr::is_type() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
         const Symbol &symbol = symbol_expr->symbol;
-        return symbol.is<StructDef>() || symbol.is<EnumDef>();
+        return symbol.is<StructDef>() || symbol.is<EnumDef>() || symbol.is<UnionDef>();
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else {

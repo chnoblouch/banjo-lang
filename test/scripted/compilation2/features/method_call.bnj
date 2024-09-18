@@ -67,3 +67,50 @@ func main() {
     
     b.out('g');
 }
+
+# test:subtest
+# test:output "Ab"
+
+native func putchar(u8);
+
+union Char {
+    case Lower(value: u8);
+    case Upper(value: u8);
+
+    func out(self, arg: u8) {
+        switch *self {
+            case char: Lower { putchar(char.value); }
+            case char: Upper { putchar(char.value); }
+        }
+        
+        putchar(arg);
+    }
+}
+
+func main() {
+    var char: Char = Char.Upper('A');
+    char.out('b');
+}
+
+# test:subtest
+# test:output "a"
+
+native func putchar(u8);
+
+union Char {
+    case Lower(value: u8);
+    case Upper(value: u8);
+
+    func out(self) {
+        switch *self {
+            case char: Lower { putchar(char.value); }
+            case char: Upper { putchar(char.value); }
+        }
+    }
+}
+
+func main() {
+    var char: Char = Char.Lower('a');
+    var a = &char;
+    a.out();
+}

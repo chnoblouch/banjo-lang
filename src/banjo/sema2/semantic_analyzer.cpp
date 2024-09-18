@@ -9,6 +9,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/sema2/type_alias_resolver.hpp"
 
 #include <vector>
 
@@ -29,6 +30,7 @@ void SemanticAnalyzer::analyze() {
     SymbolCollector(*this).collect();
     MetaExpansion(*this).run();
     UseResolver(*this).resolve();
+    TypeAliasResolver(*this).analyze();
     DeclInterfaceAnalyzer(*this).analyze();
     DeclBodyAnalyzer(*this).analyze();
 

@@ -28,11 +28,13 @@ private:
     std::vector<ssa::Type> generate_params(const sir::FuncType &sir_func_type);
     ssa::Type generate_return_type(const sir::Expr &sir_return_type);
     void create_struct_def(const sir::StructDef &sir_struct_def, const std::vector<sir::Expr> *generic_args = nullptr);
+    void create_union_def(const sir::UnionDef &sir_union_def);
     void create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
     void generate_decls(const sir::DeclBlock &decl_block);
     void generate_func_def(const sir::FuncDef &sir_func);
     void generate_struct_def(const sir::StructDef &sir_struct_def);
+    void generate_union_def(const sir::UnionDef &sir_union_def);
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
     void generate_block(const sir::Block &sir_block);

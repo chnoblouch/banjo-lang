@@ -132,6 +132,7 @@ add_library(banjo STATIC
     sema2/semantic_analyzer.cpp
     sema2/stmt_analyzer.cpp
     sema2/symbol_collector.cpp
+    sema2/type_alias_resolver.cpp
     sema2/use_resolver.cpp
     sir/sir_cloner.cpp
     sir/sir_generator.cpp

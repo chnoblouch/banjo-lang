@@ -44,6 +44,7 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
         if (auto func_def = decl.match<sir::FuncDef>()) create_func_def(*func_def);
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) create_native_func_decl(*native_func_decl);
         else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_def(*struct_def);
+        else if (auto union_def = decl.match<sir::UnionDef>()) create_union_def(*union_def);
         else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) create_native_var_decl(*native_var_decl);
     }
 }
@@ -140,10 +141,12 @@ void SSAGenerator::create_struct_def(
     SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
     decl_context.sir_struct_def = &sir_struct_def;
     decl_context.sir_generic_args = generic_args;
-
     create_decls(sir_struct_def.block);
-
     ctx.pop_decl_context();
+}
+
+void SSAGenerator::create_union_def(const sir::UnionDef &sir_union_def) {
+    create_decls(sir_union_def.block);
 }
 
 void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
@@ -161,6 +164,7 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) generate_func_def(*func_def);
         else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def(*struct_def);
+        else if (auto union_def = decl.match<sir::UnionDef>()) generate_union_def(*union_def);
         else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) generate_native_var_decl(*native_var_decl);
     }
 }
@@ -252,6 +256,10 @@ void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
     }
 
     generate_decls(sir_struct_def.block);
+}
+
+void SSAGenerator::generate_union_def(const sir::UnionDef &sir_union_def) {
+    generate_decls(sir_union_def.block);
 }
 
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {

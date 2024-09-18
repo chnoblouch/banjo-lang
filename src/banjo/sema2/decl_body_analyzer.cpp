@@ -33,8 +33,9 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
 
     for (sir::EnumVariant *variant : enum_def.variants) {
         if (variant->value) {
+            variant->value = ConstEvaluator(analyzer, false).evaluate(variant->value);
+            next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprAnalyzer(analyzer).analyze(variant->value);
-            next_value = ConstEvaluator(analyzer).evaluate_to_int(variant->value) + 1;
         } else {
             variant->value = analyzer.create_expr(sir::IntLiteral{
                 .ast_node = nullptr,
@@ -43,6 +44,7 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
             });
 
             ExprAnalyzer(analyzer).analyze(variant->value);
+
             next_value += 1;
         }
     }
