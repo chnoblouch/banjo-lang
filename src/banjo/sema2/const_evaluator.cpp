@@ -88,7 +88,10 @@ sir::Expr ConstEvaluator::analyze(sir::Expr &expr) {
 }
 
 sir::Expr ConstEvaluator::analyze_and_evaluate(sir::Expr &expr) {
-    analyze(expr);
+    if (!analyze(expr)) {
+        return nullptr;
+    }
+    
     return evaluate(expr);
 }
 
@@ -149,10 +152,17 @@ sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
 }
 
 sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
-    LargeInt value = evaluate_to_int(unary_expr.value);
+    sir::Expr value = evaluate(unary_expr.value);
 
-    if (unary_expr.op == sir::UnaryOp::NEG) return create_int_literal(-value);
-    else ASSERT_UNREACHABLE;
+    if (auto int_literal = value.match<sir::IntLiteral>()) {
+        if (unary_expr.op == sir::UnaryOp::NEG) return create_int_literal(-int_literal->value);
+        else ASSERT_UNREACHABLE;
+    } else if (auto fp_literal = value.match<sir::FPLiteral>()) {
+        if (unary_expr.op == sir::UnaryOp::NEG) return create_fp_literal(-fp_literal->value);
+        else ASSERT_UNREACHABLE;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 sir::Expr ConstEvaluator::evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
@@ -175,6 +185,16 @@ sir::Expr ConstEvaluator::create_int_literal(LargeInt value) {
     };
 
     return use_owned_arena ? int_arena.create(int_literal) : analyzer.create_expr(int_literal);
+}
+
+sir::Expr ConstEvaluator::create_fp_literal(double value) {
+    sir::FPLiteral fp_literal{
+        .ast_node = nullptr,
+        .type = nullptr,
+        .value = value,
+    };
+
+    return use_owned_arena ? fp_arena.create(fp_literal) : analyzer.create_expr(fp_literal);
 }
 
 sir::Expr ConstEvaluator::create_bool_literal(bool value) {

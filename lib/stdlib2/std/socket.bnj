@@ -1,14 +1,75 @@
-enum Protoocl {
-    TCP,
-}
+use std.{platform, file.Error};
 
 struct Socket {
+    enum AddressFamily {
+        IPV4,
+        IPV6,
+    }
+
+    enum Protocol {
+        TCP,
+        UDP,
+    }
+
+    var handle: platform.Socket;
+
+    pub func new(address_family: AddressFamily, protocol: Protocol) -> Socket except Error {
+        var p_address_family: i32;
+        var p_socket_type: i32;
+        var p_protocol: i32;
+
+        if address_family == AddressFamily.IPV4 {
+            p_address_family = platform. SOCKET_ADDRESS_FAMILY_IPV4;
+        } else if address_family == AddressFamily.IPV6 {
+            p_address_family = platform.SOCKET_ADDRESS_FAMILY_IPV6;
+        }
+
+        if protocol == Protocol.TCP {
+            p_socket_type = platform.SOCKET_TYPE_STREAM;
+            p_protocol = platform.SOCKET_PROTOCOL_TCP;
+        } else if protocol == Protocol.UDP {
+            p_socket_type = platform.SOCKET_TYPE_DATAGRAM;
+            p_protocol = platform.SOCKET_PROTOCOL_UDP;
+        }
+        
+        var handle = platform.socket_create(p_address_family, p_socket_type, p_protocol);
+
+        if handle == platform.SOCKET_INVALID {
+            return Error.last();
+        }
+
+        return Socket { handle };
+    }
+
+    pub func set_blocking(self, blocking: bool) {
+        platform.socket_set_blocking(self.handle, blocking);
+    }
+
+    pub func connect(self, host: String, port: u32) -> bool {
+        return platform.socket_connect(self.handle, host, port);
+    }
+
+    pub func send(self, buffer: *u8, size: usize) -> usize except Error {
+        try size_sent in platform.socket_send(self.handle, buffer, size) {
+            return size_sent;
+        } except error: platform.Error {
+            return Error {
+                handle: error,
+            };
+        }
+    }
+
+    pub func recv(self, buffer: *u8, size: usize) -> usize except Error {
+        try size_received in platform.socket_recv(self.handle, buffer, size) {
+            return size_received;
+        } except error: platform.Error {
+            return Error {
+                handle: error,
+            };
+        }
+    }
+
     pub func close(self) {
+        platform.socket_close(self.handle);
     }
-
-    pub func send(self, buffer: *u8, size: usize) -> i32 {
-    }
-
-    pub func recv(self, buffer: *u8, size: usize) -> i32 {
-    } 
 }

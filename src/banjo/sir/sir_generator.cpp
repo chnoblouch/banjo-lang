@@ -171,6 +171,7 @@ sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {
         .ast_node = node,
         .ident = generate_ident(node->get_child(VAR_NAME)),
         .type = generate_expr(node->get_child(VAR_TYPE)),
+        .value = node->has_child(VAR_VALUE) ? generate_expr(node->get_child(VAR_VALUE)) : nullptr,
     });
 }
 

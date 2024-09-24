@@ -1,8 +1,20 @@
 use os.{IS_WINDOWS, winapi, msvcrt};
+use std.convert.to_string;
 
 meta if IS_WINDOWS {
     type Error = winapi.Dword;
+    type Socket = winapi.Socket;
+
+    const SOCKET_INVALID: Socket = winapi.INVALID_SOCKET;
+    const SOCKET_ADDRESS_FAMILY_IPV4: i32 = winapi.AF_INET;
+    const SOCKET_ADDRESS_FAMILY_IPV6: i32 = winapi.AF_INET6;
+    const SOCKET_TYPE_STREAM: i32 = winapi.SOCK_STREAM;
+    const SOCKET_TYPE_DATAGRAM: i32 = winapi.SOCK_DGRAM;
+    const SOCKET_PROTOCOL_TCP: i32 = winapi.IPPROTO_TCP;
+    const SOCKET_PROTOCOL_UDP: i32 = winapi.IPPROTO_UDP;
     
+    var wsa_intialized: bool = false;
+
     pub func error_last() -> Error {
         return winapi.get_last_error();
     }
@@ -86,5 +98,80 @@ meta if IS_WINDOWS {
         var frequency: u64;
         winapi.query_performance_frequency(&frequency);
         return frequency;
+    }
+
+    pub func socket_create(address_family: i32, socket_type: i32, protocol: i32) -> Socket {
+        if !wsa_intialized {            
+            var wsa_version: u16 = 514;  # MAKEWORD(2, 2)
+            var wsa_data: [u8; 512] = undefined;
+            winapi.wsa_startup(wsa_version, &wsa_data as addr);
+        
+            wsa_intialized = true;
+        }
+
+        return winapi.socket(address_family, socket_type, protocol);
+    }
+
+    pub func socket_set_blocking(socket: Socket, blocking: bool) {
+        var value: u32;
+    
+        if blocking {
+            value = 0;
+        } else {
+            value = 1;
+        }
+
+        winapi.ioctlsocket(socket, winapi.FIONBIO, &value);
+    }
+
+    pub func socket_connect(socket: Socket, host: String, port: u32) -> bool {
+        var result: i32;
+        
+        var addr_hints = winapi.Addrinfo {
+            flags: 0,
+            family: 0,
+            socktype: 0,
+            protocol: 0,
+            addrlen: 0,
+            canonname: null,
+            addr_: null,
+            next: null,
+        };
+
+        var addr_info: *winapi.Addrinfo;
+        result = winapi.getaddrinfo(host.cstr(), to_string(port).cstr(), &addr_hints, &addr_info);
+        if result != 0 {
+            return false;
+        }
+
+        result = winapi.connect(socket, addr_info.addr_, addr_info.addrlen as i32);
+        if result != 0 {
+            return false;
+        }
+
+        winapi.freeaddrinfo(addr_info);
+    }
+
+    pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+        var result = winapi.send(socket, buffer, size as i32, 0);
+        if result >= 0 {
+            return result as usize;
+        } else {
+            return error_last();
+        }
+    }
+
+    pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+        var result = winapi.recv(socket, buffer, size as i32, 0);
+        if result >= 0 {
+            return result as usize;
+        } else {
+            return error_last();
+        }
+    }
+
+    pub func socket_close(socket: Socket) {
+        winapi.shutdown(socket, winapi.SD_BOTH);
+        winapi.closesocket(socket);
     }
 }

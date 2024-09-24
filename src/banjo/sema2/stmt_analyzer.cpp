@@ -61,7 +61,7 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         ExprAnalyzer(analyzer).analyze(var_stmt.local.type);
 
         if (var_stmt.value) {
-            ExprAnalyzer(analyzer, ExprConstraints::expect_type(var_stmt.local.type)).analyze(var_stmt.value);
+            ExprAnalyzer(analyzer).analyze(var_stmt.value, ExprConstraints::expect_type(var_stmt.local.type));
         }
     } else {
         ExprAnalyzer(analyzer).analyze(var_stmt.value);
@@ -71,7 +71,7 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 
 void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
     ExprAnalyzer(analyzer).analyze(assign_stmt.lhs);
-    ExprAnalyzer(analyzer, ExprConstraints::expect_type(assign_stmt.lhs.get_type())).analyze(assign_stmt.rhs);
+    ExprAnalyzer(analyzer).analyze(assign_stmt.rhs, ExprConstraints::expect_type(assign_stmt.lhs.get_type()));
 }
 
 void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
@@ -96,7 +96,7 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     if (return_stmt.value) {
         sir::Expr return_type = analyzer.get_scope().func_def->type.return_type;
-        ExprAnalyzer(analyzer, ExprConstraints::expect_type(return_type)).analyze(return_stmt.value);
+        ExprAnalyzer(analyzer).analyze(return_stmt.value, ExprConstraints::expect_type(return_type));
     }
 }
 

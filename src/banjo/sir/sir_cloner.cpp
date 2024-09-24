@@ -113,6 +113,7 @@ VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
         .ast_node = var_decl.ast_node,
         .ident = var_decl.ident,
         .type = clone_expr(var_decl.type),
+        .value = clone_expr(var_decl.value),
     });
 }
 

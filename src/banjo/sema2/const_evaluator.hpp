@@ -17,6 +17,7 @@ private:
     SemanticAnalyzer &analyzer;
     bool use_owned_arena;
     utils::GrowableArena<sir::IntLiteral, 8> int_arena;
+    utils::GrowableArena<sir::FPLiteral, 8> fp_arena;
     utils::GrowableArena<sir::BoolLiteral, 8> bool_arena;
 
 public:
@@ -36,6 +37,7 @@ public:
 
 private:
     sir::Expr create_int_literal(LargeInt value);
+    sir::Expr create_fp_literal(double value);
     sir::Expr create_bool_literal(bool value);
 };
 

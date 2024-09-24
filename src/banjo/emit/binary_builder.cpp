@@ -38,7 +38,7 @@ BinModule BinaryBuilder::create_module() {
                 .addend = use.addend,
                 .symbol_index = def.bin_index,
                 .kind = use.kind,
-                .section = BinSectionKind::TEXT
+                .section = BinSectionKind::TEXT,
             });
         }
     }
@@ -54,7 +54,7 @@ BinModule BinaryBuilder::create_module() {
                 .addend = use.addend,
                 .symbol_index = def.bin_index,
                 .kind = use.kind,
-                .section = BinSectionKind::DATA
+                .section = BinSectionKind::DATA,
             });
         }
     }
@@ -74,7 +74,10 @@ BinModule BinaryBuilder::create_module() {
         for (const PushedRegInfo &pushed_reg : frame_info.pushed_regs) {
             bin_pushed_regs.insert(
                 bin_pushed_regs.begin(),
-                BinPushedRegInfo{.reg = pushed_reg.reg, .instr_end = defs[pushed_reg.end_label].bin_offset}
+                BinPushedRegInfo{
+                    .reg = pushed_reg.reg,
+                    .instr_end = defs[pushed_reg.end_label].bin_offset,
+                }
             );
         }
 
@@ -84,7 +87,7 @@ BinModule BinaryBuilder::create_module() {
             .alloca_size = frame_info.alloca_size,
             .alloca_instr_start = defs[frame_info.alloca_start_label].bin_offset,
             .alloca_instr_end = defs[frame_info.alloca_end_label].bin_offset,
-            .pushed_regs = std::move(bin_pushed_regs)
+            .pushed_regs = std::move(bin_pushed_regs),
         });
     }
 
@@ -119,7 +122,11 @@ void BinaryBuilder::add_func_symbol(std::string name, mcode::Module &machine_mod
 }
 
 void BinaryBuilder::add_label_symbol(std::string name) {
-    add_symbol_def(SymbolDef{.name = name, .kind = BinSymbolKind::TEXT_LABEL, .global = false});
+    add_symbol_def(SymbolDef{
+        .name = name,
+        .kind = BinSymbolKind::TEXT_LABEL,
+        .global = false,
+    });
 }
 
 void BinaryBuilder::add_data_symbol(std::string name, mcode::Module &machine_module) {
@@ -128,7 +135,7 @@ void BinaryBuilder::add_data_symbol(std::string name, mcode::Module &machine_mod
         .kind = BinSymbolKind::DATA_LABEL,
         .global = machine_module.get_global_symbols().contains(name),
         .slice_index = (std::uint32_t)data_slices.size() - 1,
-        .local_offset = (std::uint32_t)data_slices.back().buffer.get_size()
+        .local_offset = (std::uint32_t)data_slices.back().buffer.get_size(),
     });
 }
 
@@ -152,14 +159,15 @@ void BinaryBuilder::add_text_symbol_use(std::uint32_t symbol_index, BinSymbolUse
         .index = symbol_index,
         .local_offset = (std::uint32_t)text_slices.back().buffer.get_size(),
         .kind = kind,
-        .addend = addend
+        .addend = addend,
     });
 }
 
 void BinaryBuilder::add_data_symbol_use(const std::string &symbol) {
-    data_slices.back().uses.push_back(
-        SymbolUse{.index = symbol_indices[symbol], .local_offset = (std::uint32_t)data_slices.back().buffer.get_size()}
-    );
+    data_slices.back().uses.push_back(SymbolUse{
+        .index = symbol_indices[symbol],
+        .local_offset = (std::uint32_t)data_slices.back().buffer.get_size(),
+    });
 }
 
 std::uint32_t BinaryBuilder::add_empty_label() {

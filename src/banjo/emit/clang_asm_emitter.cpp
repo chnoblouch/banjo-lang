@@ -3,6 +3,7 @@
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/timing.hpp"
+#include <variant>
 
 namespace banjo {
 
@@ -98,14 +99,14 @@ void ClangAsmEmitter::generate() {
 }
 
 void ClangAsmEmitter::emit_global(const mcode::Global &global) {
-    stream << symbol_prefix << global.get_name() << ": ";
+    stream << symbol_prefix << global.name << ": ";
 
-    if (global.get_value().is_fp()) {
-        stream << (global.get_value().get_size() == 4 ? ".float " : ".double ") << global.get_value().get_fp();
-    } else if (global.get_value().is_data()) {
+    if (auto value = std::get_if<double>(&global.value)) {
+        stream << (global.size == 4 ? ".float " : ".double ") << value;
+    } else if (auto value = std::get_if<std::string>(&global.value)) {
         stream << ".string \"";
 
-        for (char c : global.get_value().get_data()) {
+        for (char c : *value) {
             if (c == '\0') stream << "\\0";
             else if (c == '\n') stream << "\\n";
             else if (c == '\r') stream << "\\r";

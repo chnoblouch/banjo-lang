@@ -38,12 +38,14 @@ mcode::Value X8664ConstLowering::load_f32(float value) {
 }
 
 mcode::Value X8664ConstLowering::load_f64(double value) {
-    std::string float_label = "float." + std::to_string(cur_id++);
-    std::string float_imm = "__float64__(" + std::to_string(value) + ")";
-    mcode::Value float_val = mcode::Value::from_immediate(float_imm, 8);
-    lowerer.get_machine_module().add(mcode::Global(float_label, float_val));
+    mcode::Global global{
+        .name = "float." + std::to_string(cur_id++),
+        .size = 8,
+        .value = value,
+    };
 
-    return lowerer.deref_symbol_addr(float_label, 8);
+    lowerer.get_machine_module().add(global);
+    return lowerer.deref_symbol_addr(global.name, global.size);
 }
 
 void X8664ConstLowering::process_block() {
@@ -71,9 +73,14 @@ void X8664ConstLowering::process_block() {
                 float_label = const_f32_iter->second;
             } else {
                 float_label = "float." + std::to_string(cur_id++);
-                std::string float_imm = "__float32__(" + std::to_string(val) + ")";
-                mcode::Value float_val = mcode::Value::from_immediate(float_imm, 4);
-                lowerer.get_machine_module().add(mcode::Global(float_label, float_val));
+
+                mcode::Global global{
+                    .name = float_label,
+                    .size = 4,
+                    .value = val,
+                };
+
+                lowerer.get_machine_module().add(global);
                 const_f32s.insert({val, float_label});
             }
 

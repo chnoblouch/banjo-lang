@@ -6,12 +6,14 @@
 #include "banjo/sema2/generic_arg_inference.hpp"
 #include "banjo/sema2/generics_specializer.hpp"
 #include "banjo/sema2/magic_methods.hpp"
+#include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/meta_expr_evaluator.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+
 
 #include <cassert>
 #include <vector>
@@ -30,11 +32,7 @@ ExprConstraints ExprConstraints::expect_type(sir::Expr type) {
 
 ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, ExprConstraints constraints)
-  : analyzer(analyzer),
-    constraints(constraints) {}
-
-Result ExprAnalyzer::analyze(sir::Expr &expr) {
+Result ExprAnalyzer::analyze(sir::Expr &expr, ExprConstraints constraints /*= {}*/) {
     Result result;
 
     result = analyze_uncoerced(expr);
@@ -252,6 +250,12 @@ Result ExprAnalyzer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expect
                 return result;
             }
         }
+    } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
+        if (unary_expr->type.is<sir::PseudoType>()) {
+            finalize_type_by_coercion(unary_expr->value, expected_type);
+            unary_expr->type = unary_expr->value.get_type();
+            return Result::SUCCESS;
+        }
     }
 
     analyzer.report_generator.report_err_type_mismatch(expr, expected_type, expr.get_type());
@@ -307,6 +311,12 @@ Result ExprAnalyzer::finalize_type(sir::Expr &expr) {
                 finalize_type(tuple_literal->exprs[i]);
                 tuple_type.exprs[i] = tuple_literal->exprs[i].get_type();
             }
+        }
+    } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
+        if (unary_expr->type.is<sir::PseudoType>()) {
+            finalize_type(unary_expr->value);
+            unary_expr->type = unary_expr->value.get_type();
+            return Result::SUCCESS;
         }
     }
 
@@ -631,12 +641,14 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     // Deref unary operations are handled by `analyze_star_expr`.
     ASSUME(unary_expr.op != sir::UnaryOp::DEREF);
 
-    partial_result = ExprAnalyzer(analyzer).analyze(unary_expr.value);
+    partial_result = analyze_uncoerced(unary_expr.value);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
 
     if (unary_expr.op == sir::UnaryOp::REF) {
+        finalize_type(unary_expr.value);
+
         unary_expr.type = analyzer.create_expr(sir::PointerType{
             .ast_node = nullptr,
             .base_type = unary_expr.value.get_type(),
@@ -646,6 +658,8 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     }
 
     if (auto struct_def = unary_expr.value.get_type().match_symbol<sir::StructDef>()) {
+        finalize_type(unary_expr.value);
+
         std::string_view impl_name = MagicMethods::look_up(unary_expr.op);
         sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
 
@@ -660,6 +674,8 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (unary_expr.op == sir::UnaryOp::NEG) {
         unary_expr.type = unary_expr.value.get_type();
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
+        finalize_type(unary_expr.value);
+
         unary_expr.type = analyzer.create_expr(sir::PrimitiveType{
             .ast_node = nullptr,
             .primitive = sir::Primitive::BOOL,
@@ -709,7 +725,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             constraints = ExprConstraints::expect_type(native_func_decl->type.params[i].type);
         }
 
-        partial_result = ExprAnalyzer(analyzer, constraints).analyze(arg);
+        partial_result = analyze(arg, constraints);
         if (partial_result != Result::SUCCESS) {
             return partial_result;
         }
@@ -866,7 +882,7 @@ Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::E
 
     for (unsigned i = 0; i < call_expr.args.size(); i++) {
         sir::Expr expected_type = union_case.fields[i].type;
-        partial_result = ExprAnalyzer(analyzer, ExprConstraints::expect_type(expected_type)).analyze(call_expr.args[i]);
+        partial_result = analyze(call_expr.args[i], ExprConstraints::expect_type(expected_type));
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -1024,6 +1040,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 
     if (analyzer.in_meta_expansion) {
         UseResolver(analyzer).resolve_in_block(*analyzer.get_scope().decl_block);
+        MetaExpansion(analyzer).run_on_decl_block(*analyzer.get_scope().decl_block);
     }
 
     sir::Symbol symbol = symbol_table.look_up(ident_expr.value);

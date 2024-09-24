@@ -199,6 +199,7 @@ void Printer::print_var_decl(const VarDecl &var_decl) {
     BEGIN_OBJECT("VarDecl");
     PRINT_FIELD("ident", var_decl.ident.value);
     PRINT_EXPR_FIELD("type", var_decl.type);
+    PRINT_EXPR_FIELD("value", var_decl.value);
     END_OBJECT();
 }
 

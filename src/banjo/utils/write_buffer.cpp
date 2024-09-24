@@ -16,6 +16,15 @@ void WriteBuffer::write_i8(std::int8_t i8) {
     position += 1;
 }
 
+void WriteBuffer::write_u16(std::uint16_t u16) {
+    ensure_size(position + 2);
+
+    data[position + 0] = (std::uint8_t)(u16 >> 0);
+    data[position + 1] = (std::uint8_t)(u16 >> 8);
+
+    position += 2;
+}
+
 void WriteBuffer::write_i16(std::int32_t i16) {
     ensure_size(position + 2);
 
@@ -74,7 +83,7 @@ void WriteBuffer::write_f64(double f64) {
     position += 8;
 }
 
-void WriteBuffer::write_data(void *data, std::size_t size) {
+void WriteBuffer::write_data(const void *data, std::size_t size) {
     ensure_size(position + size);
     std::memcpy(&this->data[position], data, size);
     position += size;
@@ -92,6 +101,12 @@ void WriteBuffer::write_data(const WriteBuffer &buffer) {
     }
 
     write_data((void *)buffer.get_data().data(), buffer.get_size());
+}
+
+void WriteBuffer::write_zeroes(std::size_t size) {
+    ensure_size(data.size() + size);
+    std::memset(&this->data[position], 0, size);
+    position += size;
 }
 
 void WriteBuffer::write_cstr(const char *cstr) {

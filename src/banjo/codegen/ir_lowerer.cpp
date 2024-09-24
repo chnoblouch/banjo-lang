@@ -1,10 +1,12 @@
 #include "ir_lowerer.hpp"
 
 #include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <iostream>
 #include <unordered_map>
+#include <utility>
 
 #define WARN_UNIMPLEMENTED(instruction) std::cerr << "warning: cannot lower instruction " << (instruction) << '\n';
 
@@ -200,17 +202,34 @@ void IRLowerer::lower_instr(ir::Instruction &instr) {
 
 void IRLowerer::lower_globals() {
     for (ir::Global &global : module_->get_globals()) {
-        mcode::Value val;
-        if (global.get_initial_value().is_symbol()) {
-            val = mcode::Value::from_symbol(global.get_initial_value().get_symbol_name());
-        } else {
-            val = lower_global_value(global.get_initial_value());
+        mcode::Global m_global{
+            .name = global.get_name(),
+            .size = get_size(global.get_type()),
+            .value = {},
+        };
+
+        if (global.initial_value) {
+            ir::Value &value = *global.initial_value;
+
+            if (value.is_int_immediate()) {
+                m_global.value = value.get_int_immediate();
+            } else if (value.is_fp_immediate()) {
+                m_global.value = value.get_fp_immediate();
+            } else if (value.is_string()) {
+                m_global.value = value.get_string();
+            } else if (value.is_symbol()) {
+                m_global.value = mcode::Global::SymbolRef{
+                    .name = value.get_symbol_name(),
+                };
+            } else {
+                ASSERT_UNREACHABLE;
+            }
         }
 
-        machine_module.add(mcode::Global(global.get_name(), val));
+        machine_module.add(m_global);
 
         if (global.is_external()) {
-            machine_module.add_global_symbol(global.get_name());
+            machine_module.add_global_symbol(m_global.name);
         }
     }
 }

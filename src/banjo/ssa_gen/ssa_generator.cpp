@@ -7,10 +7,12 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
+#include "banjo/ssa_gen/global_ssa_generator.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
+#include "global_ssa_generator.hpp"
 
 #include <utility>
 
@@ -45,6 +47,7 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) create_native_func_decl(*native_func_decl);
         else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_def(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) create_union_def(*union_def);
+        else if (auto var_decl = decl.match<sir::VarDecl>()) create_var_decl(*var_decl);
         else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) create_native_var_decl(*native_var_decl);
     }
 }
@@ -149,6 +152,12 @@ void SSAGenerator::create_union_def(const sir::UnionDef &sir_union_def) {
     create_decls(sir_union_def.block);
 }
 
+void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
+    ctx.ssa_globals.insert({&sir_var_decl, ssa_mod.get_globals().size()});
+    std::string name = sir_var_decl.ident.value;
+    ssa_mod.add(ssa::Global(name, {}, {}));
+}
+
 void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
     ctx.ssa_extern_globals.insert({&sir_native_var_decl, ssa_mod.get_external_globals().size()});
 
@@ -165,6 +174,7 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
         if (auto func_def = decl.match<sir::FuncDef>()) generate_func_def(*func_def);
         else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) generate_union_def(*union_def);
+        else if (auto var_decl = decl.match<sir::VarDecl>()) generate_var_decl(*var_decl);
         else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) generate_native_var_decl(*native_var_decl);
     }
 }
@@ -260,6 +270,17 @@ void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
 
 void SSAGenerator::generate_union_def(const sir::UnionDef &sir_union_def) {
     generate_decls(sir_union_def.block);
+}
+
+void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
+    ssa::Global &ssa_global = ssa_mod.get_globals()[ctx.ssa_globals[&sir_var_decl]];
+
+    ssa::Type type = TypeSSAGenerator(ctx).generate(sir_var_decl.type);
+    ssa_global.set_type(type);
+
+    if (sir_var_decl.value) {
+        ssa_global.initial_value = GlobalSSAGenerator(ctx).generate_value(sir_var_decl.value);
+    }
 }
 
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {

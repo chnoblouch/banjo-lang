@@ -111,20 +111,36 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &i
     unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
 
     unsigned byte_offset = lowerer.get_member_offset(type.get_struct(), int_offset);
+    mcode::Register base = mcode::Register::from_physical(0);
 
     // Try to merge the instruction with previous pointer operations.
-    ir::InstrIter base_producer_iter = lowerer.get_producer_globally(base_operand.get_register());
-    if (base_producer_iter != lowerer.get_block().end() && base_producer_iter->get_opcode() == ir::Opcode::MEMBERPTR) {
-        if (lowerer.get_num_uses(*instr.get_dest()) == 0) {
-            lowerer.discard_use(base_operand.get_register());
+    if (base_operand.is_register()) {
+        ir::InstrIter base_producer_iter = lowerer.get_producer_globally(base_operand.get_register());
+
+        if (base_producer_iter != lowerer.get_block().end() &&
+            base_producer_iter->get_opcode() == ir::Opcode::MEMBERPTR) {
+            if (lowerer.get_num_uses(*instr.get_dest()) == 0) {
+                lowerer.discard_use(base_operand.get_register());
+            }
+
+            mcode::IndirectAddress addr = calc_memberptr_addr(*base_producer_iter);
+            addr.set_int_offset(addr.get_int_offset() + byte_offset);
+            return addr;
         }
 
-        mcode::IndirectAddress addr = calc_memberptr_addr(*base_producer_iter);
-        addr.set_int_offset(addr.get_int_offset() + byte_offset);
-        return addr;
+        base = lowerer.lower_reg(base_operand.get_register());
+    } else if (base_operand.is_global()) {
+        base = lowerer.lower_reg(lowerer.get_func().next_virtual_reg());
+
+        lowerer.emit(mcode::Instruction(
+            X8664Opcode::LEA,
+            {
+                mcode::Operand::from_register(base, 8),
+                mcode::Operand::from_symbol_deref(base_operand.get_global_name(), 8),
+            }
+        ));
     }
 
-    mcode::Register base = lowerer.lower_reg(base_operand.get_register());
     return mcode::IndirectAddress(base, byte_offset, 1);
 }
 

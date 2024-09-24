@@ -36,7 +36,7 @@ void Writer::write(Module &mod) {
     if (!mod.get_globals().empty()) {
         for (Global &global : mod.get_globals()) {
             stream << "def global " << type_to_str(global.get_type()) << " @" << global.get_name();
-            stream << " = " << value_to_str(global.get_initial_value()) << "\n";
+            stream << " = " << (global.initial_value ? value_to_str(*global.initial_value) : "undefined") << "\n";
         }
         stream << "\n";
     }

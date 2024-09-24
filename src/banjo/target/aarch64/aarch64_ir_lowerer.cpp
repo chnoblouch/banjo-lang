@@ -4,8 +4,8 @@
 #include "banjo/target/aarch64/aarch64_immediate.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
-#include "banjo/utils/macros.hpp"
 #include "banjo/utils/bit_operations.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -22,7 +22,6 @@ mcode::Operand AArch64IRLowerer::lower_value(const ir::Operand& operand) {
     if(operand.is_immediate()) return move_const_into_register(operand, operand.get_type());
     else if(operand.is_register()) return lower_reg_val(operand.get_register(), size);
     else if(operand.is_symbol()) return move_symbol_into_register(operand.get_symbol_name());
-    else if(operand.is_string()) return lower_str_val(operand.get_string(), size);
 
     return {};
 }
@@ -60,10 +59,6 @@ mcode::Operand AArch64IRLowerer::lower_reg_val(ir::VirtualRegister virtual_reg, 
     }
         
     return mcode::Operand::from_register(reg, size);
-}
-
-mcode::Operand AArch64IRLowerer::lower_str_val(const std::string& str, int size) {
-    return mcode::Operand::from_data(std::vector<char>(str.begin(), str.end()), size);
 }
 
 mcode::Operand AArch64IRLowerer::lower_address(const ir::Operand& operand) {
@@ -556,12 +551,15 @@ mcode::Value AArch64IRLowerer::move_float_into_register(double value, int size) 
         move_elements_into_register(bits_value, elements, 2);
         emit(mcode::Instruction(AArch64Opcode::FMOV, {result, bits_value}));
     } else {
-        float value_f64 = (double)value;
-        mcode::Value value = mcode::Value::from_fp(value_f64, size);
-        std::string symbol_name = "double." + std::to_string(next_const_index++);
-        get_machine_module().add(mcode::Global(symbol_name, value));
+        mcode::Global global{
+            .name = "double." + std::to_string(next_const_index++),
+            .size = 8,
+            .value = value,
+        };
 
-        mcode::Value symbol_addr = move_symbol_into_register(symbol_name);
+        get_machine_module().add(global);
+
+        mcode::Value symbol_addr = move_symbol_into_register(global.name);
         AArch64Address addr = AArch64Address::new_base(symbol_addr.get_register());
         emit(mcode::Instruction(AArch64Opcode::LDR, {result, mcode::Value::from_aarch64_addr(addr)}));
     }

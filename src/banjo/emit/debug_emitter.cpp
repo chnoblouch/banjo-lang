@@ -5,6 +5,7 @@
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <cassert>
@@ -38,19 +39,41 @@ void DebugEmitter::generate() {
     stream << "\n";
 
     for (mcode::Global &global : module.get_globals()) {
-        stream << "data " << global.get_name() << " = ";
+        stream << "data " << global.name << ": " << global.size << "b = ";
 
-        if (global.get_value().is_immediate()) {
-            stream << get_size_specifier(global.get_value().get_size()) << " " << global.get_value().get_immediate();
-        } else if (global.get_value().is_data()) {
+        if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
+            stream << value->to_string();
+        } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
+            stream << *value;
+        } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
+            stream << "[";
+
+            for (unsigned i = 0; i < value->size(); i++) {
+                stream << (unsigned)(*value)[i];
+
+                if (i != value->size() - 1) {
+                    stream << ", ";
+                }
+            }
+
+            stream << "]";
+        } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
             stream << "\"";
-            for (char c : global.get_value().get_data()) {
+
+            for (char c : *value) {
                 if (c == '\0') stream << "\\0";
                 else if (c == '\n') stream << "\\n";
                 else if (c == '\r') stream << "\\r";
                 else stream << c;
             }
+
             stream << "\"";
+        } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
+            stream << "@" << value->name;
+        } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
+            stream << "undefined";
+        } else {
+            ASSERT_UNREACHABLE;
         }
 
         stream << "\n";

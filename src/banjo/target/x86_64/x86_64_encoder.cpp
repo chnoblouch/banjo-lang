@@ -35,37 +35,35 @@ BinModule X8664Encoder::encode(mcode::Module &machine_module) {
     data_slices.push_back(DataSlice{});
 
     for (const mcode::Global &global : machine_module.get_globals()) {
-        add_data_symbol(global.get_name(), machine_module);
+        add_data_symbol(global.name, machine_module);
 
-        if (global.get_value().is_data()) {
-            for (char c : global.get_value().get_data()) {
-                data_slices.back().buffer.write_u8(c);
+        if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
+            switch (global.size) {
+                case 1: data_slices.back().buffer.write_u8(value->to_bits()); break;
+                case 2: data_slices.back().buffer.write_u16(value->to_bits()); break;
+                case 4: data_slices.back().buffer.write_u32(value->to_bits()); break;
+                case 8: data_slices.back().buffer.write_u64(value->to_bits()); break;
+                default: ASSERT_UNREACHABLE;
             }
-        } else if (global.get_value().is_immediate()) {
-            std::string str = global.get_value().get_immediate();
-            if (str.find('.') == std::string::npos) {
-                if (global.get_value().get_size() == 1) {
-                    data_slices.back().buffer.write_i8(std::stoll(str));
-                } else if (global.get_value().get_size() == 2) {
-                    data_slices.back().buffer.write_i16(std::stoll(str));
-                } else if (global.get_value().get_size() == 4) {
-                    data_slices.back().buffer.write_i32(std::stoll(str));
-                } else if (global.get_value().get_size() == 8) {
-                    data_slices.back().buffer.write_i64(std::stoll(str));
-                }
-            } else {
-                // TODO: fix this in the lowerer
-                str = str.substr(12, str.length() - 13);
+        } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
+            switch (global.size) {
+                case 4: data_slices.back().buffer.write_f32(*value); break;
+                case 8: data_slices.back().buffer.write_f64(*value); break;
+                default: ASSERT_UNREACHABLE;
+            }
+        } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
+            data_slices.back().buffer.write_data(value->data(), value->size());
+        } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
+            data_slices.back().buffer.write_data(value->data(), value->size());
+        } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
+            add_data_symbol_use(value->name);
 
-                if (global.get_value().get_size() == 4) {
-                    data_slices.back().buffer.write_f32(std::stof(str));
-                } else if (global.get_value().get_size() == 8) {
-                    data_slices.back().buffer.write_f64(std::stod(str));
-                }
-            }
-        } else if (global.get_value().is_symbol()) {
-            add_data_symbol_use(global.get_value().get_symbol().name);
+            // FIXME: sizes other than 64 bits?
             data_slices.back().buffer.write_i64(0);
+        } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
+            data_slices.back().buffer.write_zeroes(global.size);
+        } else {
+            ASSERT_UNREACHABLE;
         }
     }
 
@@ -1206,9 +1204,15 @@ X8664Encoder::RegCode X8664Encoder::reg(mcode::Operand &operand) {
 
 X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
     if (operand.is_immediate()) {
-        return Immediate{.value = std::stoll(operand.get_immediate()), .symbol_index = -1};
+        return Immediate{
+            .value = LargeInt(operand.get_immediate()).to_bits(),
+            .symbol_index = -1,
+        };
     } else if (operand.is_symbol()) {
-        return Immediate{.value = 0, .symbol_index = symbol_indices[operand.get_symbol().name]};
+        return Immediate{
+            .value = 0,
+            .symbol_index = symbol_indices[operand.get_symbol().name],
+        };
     }
 
     assert(!"not an immediate");
@@ -1372,8 +1376,7 @@ bool X8664Encoder::fits_in_32_bits(Immediate imm) {
         return false;
     }
 
-    std::int64_t value = imm.value;
-    return value >= std::numeric_limits<std::int32_t>::min() && value <= std::numeric_limits<std::int32_t>::max();
+    return imm.value <= std::numeric_limits<std::uint32_t>::min();
 }
 
 } // namespace target

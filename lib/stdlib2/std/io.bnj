@@ -1,17 +1,5 @@
 use std.platform;
-use c.lib.stdio.fread;
-
-struct CFileReader {
-    var stream: addr;
-
-    pub func new(stream: addr) -> CFileReader {
-        return CFileReader { stream };
-    }
-
-    pub func read(self, buffer: *u8, size: usize) -> usize {
-        return fread(buffer as addr, 1, size, self.stream);
-    }
-}
+use c.lib.stdio.{fread, ferror, fgetc, fputc, fwrite, fflush};
 
 struct Reader[T] {
     var impl: T;
@@ -50,28 +38,68 @@ struct Reader[T] {
     }
 }
 
-struct CFileWriter {
-    var stream: addr;
-}
-
 struct Writer[T] {
     var impl: T;
 
-    pub func write(self, value: *u8) {
+    pub func new(impl: T) -> Writer[T] {
+        return Writer[T] { impl };
     }
 
-    pub func write(self, value: String) {
+    pub func write(self, buffer: *u8, size: usize) {
+        self.impl.write(buffer, size);
     }
 
-    pub func write(self, value: u8) {
+    pub func write(self, byte: u8) {
+        self.impl.write(byte);
+    }
+
+    pub func write(self, string: String) {
+        self.impl.write(string.data, string.length as usize);
     }
 
     pub func flush(self) {
+        self.impl.flush();
+    }
+}
+
+struct CFileReader {
+    var stream: addr;
+
+    pub func new(stream: addr) -> CFileReader {
+        return CFileReader { stream };
+    }
+
+    pub func read(self, buffer: *u8, size: usize) -> usize {
+        return fread(buffer as addr, 1, size, self.stream);
+    }
+}
+
+struct CFileWriter {
+    var stream: addr;
+
+    pub func new(stream: addr) -> CFileWriter {
+        return CFileWriter { stream };
+    }
+
+    pub func write(self, buffer: *u8, size: usize) {
+        fwrite(buffer as addr, size, 1, self.stream);
+    }
+
+    pub func write(self, byte: u8) {
+        fputc(byte as i32, self.stream);
+    }
+
+    pub func flush(self) {
+        fflush(self.stream);
     }
 }
 
 pub func stdin() -> Reader[CFileReader] {
     var stream = platform.io_get_stdin_stream();
-    var c_file_reader = CFileReader.new(stream);
-    return Reader[CFileReader].new(c_file_reader);
+    return Reader[CFileReader].new(CFileReader.new(stream));
+}
+
+pub func stdout() -> Writer[CFileWriter] {
+    var stream = platform.io_get_stdout_stream();
+    return Writer[CFileWriter].new(CFileWriter.new(stream));
 }

@@ -69,7 +69,6 @@ public:
 private:
     void lower_fp_operation(mcode::Opcode opcode, ir::Instruction &instr);
     mcode::Operand lower_reg_val(ir::VirtualRegister virtual_reg, int size);
-    mcode::Operand lower_str_val(const std::string &data, int size);
     mcode::Value move_const_into_register(const ir::Value &value, ir::Type type);
     mcode::Value move_int_into_register(LargeInt value, int size);
     mcode::Value move_float_into_register(double fp, int size);

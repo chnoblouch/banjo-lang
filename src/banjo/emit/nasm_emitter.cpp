@@ -3,12 +3,14 @@
 #include "banjo/config/config.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <algorithm>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 
 namespace banjo {
 
@@ -139,14 +141,35 @@ void NASMEmitter::generate() {
     stream << "section .data\n";
 
     for (mcode::Global &global : module.get_globals()) {
-        stream << global.get_name() << " ";
+        stream << global.name << " ";
 
-        if (global.get_value().is_immediate()) {
-            stream << get_size_declaration(global.get_value().get_size()) << " " << global.get_value().get_immediate();
-        } else if (global.get_value().is_data()) {
+        if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
+            stream << get_size_declaration(global.size) << " " << value->to_string();
+        } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
+            std::string string = std::to_string(*value);
+            if (string.find('.') == std::string::npos) {
+                string += ".0";
+            }
+
+            switch (global.size) {
+                case 4: stream << "dd __float32__(" << string << ")"; break;
+                case 8: stream << "dq __float64__(" << string << ")"; break;
+                default: ASSERT_UNREACHABLE;
+            }
+        } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
+            stream << "db ";
+
+            for (unsigned i = 0; i < value->size(); i++) {
+                stream << (unsigned)(*value)[i];
+
+                if (i != value->size() - 1) {
+                    stream << ", ";
+                }
+            }
+        } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
             std::string str = "\'";
 
-            for (char c : global.get_value().get_data()) {
+            for (char c : *value) {
                 if (c == '\0') str += "\', 0x00, \'";
                 else if (c == '\n') str += "\', 0x0A, \'";
                 else if (c == '\r') str += "\', 0x0D, \'";
@@ -161,6 +184,12 @@ void NASMEmitter::generate() {
             }
 
             stream << "db " << str;
+        } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
+            stream << get_size_declaration(global.size) << " " << value->name;
+        } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
+            stream << "times " << global.size << " db 0";
+        } else {
+            ASSERT_UNREACHABLE;
         }
 
         stream << "\n";
@@ -411,7 +440,7 @@ std::string NASMEmitter::get_size_declaration(int size) {
         case 2: return "dw";
         case 4: return "dd";
         case 8: return "dq";
-        default: return "???";
+        default: ASSERT_UNREACHABLE;
     }
 }
 

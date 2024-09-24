@@ -24,11 +24,13 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
             .type = nullptr,
             .value = analyzer.compute_size(base_expr),
         });
+    } else if (field_name == "is_enum") {
+        out_expr = create_bool_literal(base_expr.is_symbol<sir::EnumDef>());
     } else {
         ASSERT_UNREACHABLE;
     }
 
-    ExprAnalyzer(analyzer).analyze(out_expr);
+    ExprAnalyzer(analyzer).analyze_uncoerced(out_expr);
     return Result::SUCCESS;
 }
 

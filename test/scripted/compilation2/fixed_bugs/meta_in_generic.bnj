@@ -1,0 +1,11 @@
+# test:output "42"
+
+struct S[T] {
+	meta if true {
+		const VALUE: T = 42;
+	}
+}
+
+func main() {
+    print(S[i32].VALUE);
+}

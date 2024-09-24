@@ -8,7 +8,6 @@
 
 #include <string>
 #include <variant>
-#include <vector>
 
 namespace banjo {
 
@@ -69,7 +68,6 @@ private:
         Symbol,
         std::string,
         Symbol,
-        std::vector<char>,
         IndirectAddress,
         target::AArch64Address,
         StackSlotOffset,
@@ -121,13 +119,6 @@ public:
         return operand;
     }
 
-    static Operand from_data(std::vector<char> data, int size = 0) {
-        Operand operand;
-        operand.set_to_data(data);
-        operand.set_size(size);
-        return operand;
-    }
-
     static Operand from_addr(IndirectAddress addr, int size = 0) {
         Operand operand;
         operand.set_to_addr(addr);
@@ -171,12 +162,11 @@ public:
     bool is_symbol() const { return value.index() == 3; }
     bool is_label() const { return value.index() == 4; }
     bool is_symbol_deref() const { return value.index() == 5; }
-    bool is_data() const { return value.index() == 6; }
-    bool is_addr() const { return value.index() == 7; }
-    bool is_aarch64_addr() const { return value.index() == 8; }
-    bool is_stack_slot_offset() const { return value.index() == 9; }
-    bool is_aarch64_left_shift() const { return value.index() == 10; }
-    bool is_aarch64_condition() const { return value.index() == 11; }
+    bool is_addr() const { return value.index() == 6; }
+    bool is_aarch64_addr() const { return value.index() == 7; }
+    bool is_stack_slot_offset() const { return value.index() == 8; }
+    bool is_aarch64_left_shift() const { return value.index() == 9; }
+    bool is_aarch64_condition() const { return value.index() == 10; }
 
     bool is_virtual_reg() const { return is_register() && get_register().is_virtual_reg(); }
     bool is_physical_reg() const { return is_register() && get_register().is_physical_reg(); }
@@ -188,12 +178,11 @@ public:
     Symbol get_symbol() const { return std::get<3>(value); }
     std::string get_label() const { return std::get<4>(value); }
     Symbol get_deref_symbol() const { return std::get<5>(value); }
-    std::vector<char> get_data() const { return std::get<6>(value); }
-    IndirectAddress &get_addr() { return std::get<7>(value); }
-    const target::AArch64Address &get_aarch64_addr() const { return std::get<8>(value); }
-    StackSlotOffset get_stack_slot_offset() const { return std::get<9>(value); }
-    unsigned get_aarch64_left_shift() const { return std::get<10>(value); }
-    target::AArch64Condition get_aarch64_condition() const { return std::get<11>(value); }
+    IndirectAddress &get_addr() { return std::get<6>(value); }
+    const target::AArch64Address &get_aarch64_addr() const { return std::get<7>(value); }
+    StackSlotOffset get_stack_slot_offset() const { return std::get<8>(value); }
+    unsigned get_aarch64_left_shift() const { return std::get<9>(value); }
+    target::AArch64Condition get_aarch64_condition() const { return std::get<10>(value); }
 
     VirtualReg get_virtual_reg() const { return get_register().get_virtual_reg(); }
     PhysicalReg get_physical_reg() const { return get_register().get_physical_reg(); }
@@ -205,12 +194,11 @@ public:
     void set_to_symbol(Symbol symbol) { value.emplace<3>(symbol); }
     void set_to_label(std::string label) { value.emplace<4>(label); }
     void set_to_symbol_deref(Symbol symbol) { value.emplace<5>(symbol); }
-    void set_to_data(std::vector<char> data) { value.emplace<6>(data); }
-    void set_to_addr(IndirectAddress addr) { value.emplace<7>(addr); }
-    void set_to_aarch64_addr(target::AArch64Address addr) { value.emplace<8>(addr); }
-    void set_to_stack_slot_offset(StackSlotOffset offset) { value.emplace<9>(offset); }
-    void set_to_aarch64_left_shift(unsigned left_shift) { value.emplace<10>(left_shift); }
-    void set_to_aarch64_condition(target::AArch64Condition condition) { value.emplace<11>(condition); }
+    void set_to_addr(IndirectAddress addr) { value.emplace<6>(addr); }
+    void set_to_aarch64_addr(target::AArch64Address addr) { value.emplace<7>(addr); }
+    void set_to_stack_slot_offset(StackSlotOffset offset) { value.emplace<8>(offset); }
+    void set_to_aarch64_left_shift(unsigned left_shift) { value.emplace<9>(left_shift); }
+    void set_to_aarch64_condition(target::AArch64Condition condition) { value.emplace<10>(condition); }
 
     void set_to_virtual_reg(long virtual_reg) { set_to_register(Register::from_virtual(virtual_reg)); }
     void set_to_physical_reg(long physical_reg) { set_to_register(Register::from_physical(physical_reg)); }

@@ -1039,6 +1039,7 @@ struct VarDecl {
     ASTNode *ast_node;
     Ident ident;
     Expr type;
+    Expr value;
 };
 
 struct NativeVarDecl {

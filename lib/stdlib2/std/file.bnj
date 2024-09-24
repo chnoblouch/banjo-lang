@@ -84,22 +84,6 @@ struct File {
         return (data, size);
     }
     
-    # pub func read_str(self) -> *u8 {
-    #     var os_file = self.os_file;
-    
-    #     fseek(os_file, 0, SEEK_END);
-    #     var size = ftell(os_file);
-    #     fseek(os_file, 0, SEEK_SET);
-        
-    #     var alloc_size = (size + 1) as usize;
-    #     var string = memory.alloc(alloc_size) as *u8;
-    #     fread(string as addr, 1 as u64, size as u64, os_file);
-        
-    #     string[size] = 0;
-        
-    #     return string;
-    # }
-    
     func __deinit__(self) {
         fclose(self.stream);
     }

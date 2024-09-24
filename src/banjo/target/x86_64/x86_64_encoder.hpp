@@ -73,7 +73,7 @@ private:
     };
 
     struct Immediate {
-        std::int64_t value;
+        std::uint64_t value;
         std::int64_t symbol_index;
     };
 

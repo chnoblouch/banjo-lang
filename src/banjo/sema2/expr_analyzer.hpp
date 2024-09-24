@@ -20,12 +20,10 @@ class ExprAnalyzer {
 
 private:
     SemanticAnalyzer &analyzer;
-    ExprConstraints constraints;
 
 public:
     ExprAnalyzer(SemanticAnalyzer &analyzer);
-    ExprAnalyzer(SemanticAnalyzer &analyzer, ExprConstraints constraints);
-    Result analyze(sir::Expr &expr);
+    Result analyze(sir::Expr &expr, ExprConstraints constraints = {});
     Result analyze_uncoerced(sir::Expr &expr);
 
 private:

@@ -22,8 +22,8 @@ void DeadFuncEliminationPass::run(ir::Module &mod) {
     }
 
     for (ir::Global &global : mod.get_globals()) {
-        if (global.get_initial_value().is_func()) {
-            roots.push_back(global.get_initial_value().get_func());
+        if (global.initial_value && global.initial_value->is_func()) {
+            roots.push_back(global.initial_value->get_func());
         }
     }
 

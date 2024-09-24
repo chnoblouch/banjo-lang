@@ -18,20 +18,27 @@
 
 #include <iostream>
 
+// clang-format off
+
 namespace banjo {
 
 namespace target {
 
-// clang-format off
-
-X8664IRLowerer::X8664IRLowerer(Target* target) : IRLowerer(target), addr_lowering(*this), const_lowering(*this) {}
+X8664IRLowerer::X8664IRLowerer(Target *target) : IRLowerer(target), addr_lowering(*this), const_lowering(*this) {}
 
 void X8664IRLowerer::init_module(ir::Module &mod) {
-    mcode::Value value = mcode::Value::from_immediate(std::to_string(1u << 31), 4);
-    get_machine_module().add(mcode::Global("const.neg_zero", value));
-    get_machine_module().add(mcode::Global("const.neg_zero.1", value));
-    get_machine_module().add(mcode::Global("const.neg_zero.2", value));
-    get_machine_module().add(mcode::Global("const.neg_zero.3", value));
+    mcode::Global::Bytes const_neg_zero{
+        0, 0, 0, 1u << 7,
+        0, 0, 0, 1u << 7,
+        0, 0, 0, 1u << 7,
+        0, 0, 0, 1u << 7,
+    };
+
+    get_machine_module().add(mcode::Global{
+        .name = "const.neg_zero",
+        .size = 4,
+        .value = const_neg_zero,
+    });
 }
 
 mcode::Value X8664IRLowerer::lower_global_value(ir::Value &value) {
@@ -116,9 +123,6 @@ mcode::Operand X8664IRLowerer::lower_value(const ir::Operand& operand) {
         } else {
             ASSERT_UNREACHABLE;
         }
-    } else if(operand.is_string()) {
-        std::string string = operand.get_string();
-        return mcode::Operand::from_data(std::vector<char>(string.begin(), string.end()), size);
     } else {
         ASSERT_UNREACHABLE;
     }

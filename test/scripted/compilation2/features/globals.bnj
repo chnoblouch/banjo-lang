@@ -1,0 +1,75 @@
+# test:subtest
+# test:output "42"
+
+var a: i32;
+
+func main() {
+    a = 42;
+    print(a);
+}
+
+# test:subtest
+# test:output "53,-290"
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+var a: Point;
+
+func main() {
+    a = Point {
+        x: 53,
+        y: -290,
+    };
+    
+    print(a.x);
+    print(',');
+    print(a.y);
+}
+
+# test:subtest
+# test:output "42,256,65536,4294967296,-42,-256,-65536,-4294967296,0.5821,-192.47,false,true,x"
+
+var a: u8 = 42;
+var b: u16 = 256;
+var c: u32 = 65536;
+var d: u64 = 4294967296;
+var e: i8 = -42;
+var f: i16 = -256;
+var g: i32 = -65536;
+var h: i64 = -4294967296;
+var i: f32 = 0.5821;
+var j: f64 = -192.47;
+var k: bool = false;
+var l: bool = true;
+var m: u8 = 'x';
+
+func main() {
+    print(a as u32);
+    print(',');
+    print(b);
+    print(',');
+    print(c);
+    print(',');
+    print(d);
+    print(',');
+    print(e);
+    print(',');
+    print(f);
+    print(',');
+    print(g);
+    print(',');
+    print(h);
+    print(',');
+    print(i);
+    print(',');
+    print(j);
+    print(',');
+    print(k);
+    print(',');
+    print(l);
+    print(',');
+    print(m);
+}

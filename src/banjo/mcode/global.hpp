@@ -1,30 +1,33 @@
 #ifndef MCODE_GLOBAL_H
 #define MCODE_GLOBAL_H
 
-#include "banjo/mcode/operand.hpp"
+#include "banjo/utils/large_int.hpp"
+
+#include <cstdint>
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace banjo {
 
 namespace mcode {
 
-class Global {
+struct Global {
+    typedef std::monostate None;
+    typedef LargeInt Integer;
+    typedef double FloatingPoint;
+    typedef std::vector<std::uint8_t> Bytes;
+    typedef std::string String;
 
-private:
+    struct SymbolRef {
+        std::string name;
+    };
+
+    typedef std::variant<None, Integer, FloatingPoint, Bytes, String, SymbolRef> Value;
+
     std::string name;
+    unsigned size;
     Value value;
-
-public:
-    Global() {}
-    Global(std::string name, Value value) : name(name), value(value) {}
-
-    std::string get_name() const { return name; }
-    Value get_value() const { return value; }
-
-    friend bool operator==(const Global &lhs, const Global &rhs) {
-        return lhs.name == rhs.name && lhs.value == rhs.value;
-    }
-
-    friend bool operator!=(const Global &lhs, const Global &rhs) { return !(lhs == rhs); }
 };
 
 } // namespace mcode

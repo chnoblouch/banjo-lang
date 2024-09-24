@@ -25,7 +25,27 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
         return Result::ERROR;
     }
 
-    return ExprAnalyzer(analyzer, ExprConstraints::expect_type(const_def.type)).analyze(const_def.value);
+    return ExprAnalyzer(analyzer).analyze(const_def.value, ExprConstraints::expect_type(const_def.type));
+}
+
+Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
+    Result partial_result;
+
+    if (!var_decl.type) {
+        return Result::ERROR;
+    }
+
+    if (var_decl.value) {
+        partial_result = ExprAnalyzer(analyzer).analyze(var_decl.value, ExprConstraints::expect_type(var_decl.type));
+
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        var_decl.value = ConstEvaluator(analyzer, false).evaluate(var_decl.value);
+    }
+
+    return Result::SUCCESS;
 }
 
 Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {

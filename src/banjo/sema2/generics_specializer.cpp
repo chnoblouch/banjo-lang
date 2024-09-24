@@ -104,10 +104,10 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     }
 
     SymbolCollector(analyzer).collect_in_block(clone->block);
+    MetaExpansion(analyzer).run_on_decl_block(clone->block);
     UseResolver(analyzer).resolve_in_block(clone->block);
     TypeAliasResolver(analyzer).analyze_decl_block(clone->block);
     DeclInterfaceAnalyzer(analyzer).process_struct_def(*clone);
-    MetaExpansion(analyzer).run_on_decl_block(clone->block);
     analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});
 
     analyzer.exit_struct_def();

@@ -1,7 +1,9 @@
 type Bool = u32;
 type Handle = addr;
+type Word = u16;
 type Dword = u32;
 type LargeInteger = u64;
+type Int = i32;
 
 # --- handleapi.h ---
 
@@ -94,3 +96,122 @@ native func query_performance_frequency(frequency: *LargeInteger) -> bool;
 
 @[link_name=GetLastError]
 native func get_last_error() -> Dword;
+
+# --- ws2def.h ---
+
+struct Sockaddr {
+    var family: u16;
+    var data: [u8; 14];   
+}
+
+struct Addrinfo {
+    var flags: i32;
+    var family: i32;
+    var socktype: i32;
+    var protocol: i32;
+    var addrlen: usize;
+    var canonname: *u8;
+    var addr_: *Sockaddr;
+    var next: *Addrinfo;
+}
+
+# --- winsock2.h ---
+
+type Socket = u64;
+
+const INVALID_SOCKET: u64 = 0xFFFFFFFFFFFFFFFF;
+const SOCKET_ERROR: i32 = -1;
+
+const AF_UNSPEC: i32 = 0;
+const AF_INET: i32 = 2;
+const AF_IPX: i32 = 6;
+const AF_APPLETALK: i32 = 16;
+const AF_NETBIOS: i32 = 17;
+const AF_INET6: i32 = 23;
+const AF_IRDA: i32 = 26;
+const AF_BTH: i32 = 32;
+
+const SOCK_STREAM: i32 = 1;
+const SOCK_DGRAM: i32 = 2;
+const SOCK_RAW: i32 = 3;
+const SOCK_RDM: i32 = 4;
+const SOCK_SEQPACKET: i32 = 5;
+
+const IPPROTO_ICMP: i32 = 1;
+const IPPROTO_IGMP: i32 = 2;
+const BTHPROTO_RFCOMM: i32 = 3;
+const IPPROTO_TCP: i32 = 6;
+const IPPROTO_UDP: i32 = 17;
+const IPPROTO_ICMPV6: i32 = 58;
+const IPPROTO_RM: i32 = 113;
+
+const SD_RECEIVE: i32 = 0;
+const SD_SEND: i32 = 1;
+const SD_BOTH: i32 = 2;
+
+const FIONBIO: u32 = 0x8004667E;
+
+@[link_name=WSAStartup]
+native func wsa_startup(
+    version_required: Word,
+    wsa_data: addr
+) -> i32;
+
+@[link_name=socket]
+native func socket(
+    af: i32,
+    type_: i32,
+    protocol: i32
+) -> Socket;
+
+@[link_name=connect]
+native func connect(
+    s: Socket,
+    name: *Sockaddr,
+    namelen: i32
+) -> i32;
+
+@[link_name=send]
+native func send(
+    s: Socket,
+    buf: *u8,
+    len: i32,
+    flags: i32
+) -> i32;
+
+@[link_name=recv]
+native func recv(
+    s: Socket,
+    buf: *u8,
+    len: i32,
+    flags: i32
+) -> i32;
+
+@[link_name=shutdown]
+native func shutdown(
+    s: Socket,
+    how: i32
+) -> i32;
+
+@[link_name=closesocket]
+native func closesocket(s: Socket) -> i32;
+
+@[link_name=ioctlsocket]
+native func ioctlsocket(
+    s: Socket,
+    cmd: u32,
+    argp: *u32
+) -> i32;
+
+# --- ws2tcpip.h ---
+
+@[link_name=getaddrinfo]
+native func getaddrinfo(
+    node_name: *u8,
+    service_name: *u8,
+    hints: *Addrinfo,
+    result: **Addrinfo
+) -> i32;
+
+@[link_name=freeaddrinfo]
+native func freeaddrinfo(addr_info: *Addrinfo);
