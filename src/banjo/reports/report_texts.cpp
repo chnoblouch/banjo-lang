@@ -92,6 +92,14 @@ ReportText &ReportText::format(unsigned integer) {
     return format(std::to_string(integer));
 }
 
+ReportText &ReportText::format(long integer) {
+    return format(std::to_string(integer));
+}
+
+ReportText &ReportText::format(unsigned long integer) {
+    return format(std::to_string(integer));
+}
+
 ReportText &ReportText::format(long long integer) {
     return format(std::to_string(integer));
 }

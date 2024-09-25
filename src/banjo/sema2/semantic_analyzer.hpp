@@ -72,6 +72,7 @@ private:
 
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
+    std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::set<const sir::Decl *> blocked_decls;
     std::vector<std::tuple<sir::Decl, Scope>> decls_awaiting_body_analysis;
     bool in_meta_expansion = false;

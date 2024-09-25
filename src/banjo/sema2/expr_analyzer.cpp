@@ -14,7 +14,6 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
-
 #include <cassert>
 #include <vector>
 
@@ -1048,53 +1047,55 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     if (!symbol && closure_ctx) {
         symbol = closure_ctx->parent_block->symbol_table->look_up(ident_expr.value);
 
-        if (!symbol) {
-            analyzer.report_generator.report_err_symbol_not_found(ident_expr);
-            return Result::ERROR;
-        }
+        if (symbol) {
+            unsigned captured_var_index = 0;
+            bool captured_var_exists = false;
 
-        unsigned captured_var_index = 0;
-        bool captured_var_exists = false;
-
-        for (unsigned i = 0; i < closure_ctx->captured_vars.size(); i++) {
-            if (closure_ctx->captured_vars[i] == symbol) {
-                captured_var_index = i;
-                captured_var_exists = true;
-                break;
+            for (unsigned i = 0; i < closure_ctx->captured_vars.size(); i++) {
+                if (closure_ctx->captured_vars[i] == symbol) {
+                    captured_var_index = i;
+                    captured_var_exists = true;
+                    break;
+                }
             }
-        }
 
-        if (!captured_var_exists) {
-            captured_var_index = closure_ctx->captured_vars.size();
-            closure_ctx->captured_vars.push_back(symbol);
-        }
+            if (!captured_var_exists) {
+                captured_var_index = closure_ctx->captured_vars.size();
+                closure_ctx->captured_vars.push_back(symbol);
+            }
 
-        sir::Symbol data_ptr_param = &analyzer.get_scope().func_def->type.params[0];
+            sir::Symbol data_ptr_param = &analyzer.get_scope().func_def->type.params[0];
 
-        out_expr = analyzer.create_expr(sir::FieldExpr{
-            .ast_node = nullptr,
-            .type = symbol.get_type(),
-            .base = analyzer.create_expr(sir::UnaryExpr{
+            out_expr = analyzer.create_expr(sir::FieldExpr{
                 .ast_node = nullptr,
-                .type = closure_ctx->data_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = analyzer.create_expr(sir::CastExpr{
+                .type = symbol.get_type(),
+                .base = analyzer.create_expr(sir::UnaryExpr{
                     .ast_node = nullptr,
-                    .type = analyzer.create_expr(sir::PointerType{
+                    .type = closure_ctx->data_type,
+                    .op = sir::UnaryOp::DEREF,
+                    .value = analyzer.create_expr(sir::CastExpr{
                         .ast_node = nullptr,
-                        .base_type = closure_ctx->data_type,
+                        .type = analyzer.create_expr(sir::PointerType{
+                            .ast_node = nullptr,
+                            .base_type = closure_ctx->data_type,
+                        }),
+                        .value = analyzer.create_expr(sir::SymbolExpr{
+                            .ast_node = nullptr,
+                            .type = data_ptr_param.get_type(),
+                            .symbol = data_ptr_param,
+                        })
                     }),
-                    .value = analyzer.create_expr(sir::SymbolExpr{
-                        .ast_node = nullptr,
-                        .type = data_ptr_param.get_type(),
-                        .symbol = data_ptr_param,
-                    })
                 }),
-            }),
-            .field_index = captured_var_index,
-        });
+                .field_index = captured_var_index,
+            });
 
-        return Result::SUCCESS;
+            return Result::SUCCESS;
+        }
+    }
+
+    if (!symbol) {
+        auto iter = analyzer.preamble_symbols.find(ident_expr.value);
+        symbol = iter == analyzer.preamble_symbols.end() ? nullptr : iter->second;
     }
 
     if (!symbol) {

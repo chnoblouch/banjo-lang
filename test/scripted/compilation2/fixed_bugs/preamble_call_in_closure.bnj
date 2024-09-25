@@ -1,0 +1,7 @@
+# test:compiles
+
+func main() {
+    var a = || {
+        println(0);
+    };
+}

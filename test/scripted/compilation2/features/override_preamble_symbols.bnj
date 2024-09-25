@@ -1,0 +1,43 @@
+# test:subtest
+# test:output "test"
+
+native func puts(*u8);
+
+func println(value: i32) {
+    puts("test");
+}
+
+func main() {
+    println(10);
+}
+
+# test:subtest
+# test:output "2"
+
+enum Result {
+    SUCCESS = 0,
+    ERROR_NOT_FOUND = 1,
+    ERROR_OUT_OF_MEMORY = 2,
+}
+
+func main() {
+    var result = Result.ERROR_OUT_OF_MEMORY;
+    println(result as u32);
+}
+
+# test:subtest
+# test:output "true,none,42"
+
+type Optional = bool;
+
+func main() {
+    var a: Optional = true;
+    var b: ?i32 = none;
+    var c: ?i32 = 42;
+    
+    print(a);
+    print(',');
+    print(b);
+    print(',');
+    print(c);
+}

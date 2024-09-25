@@ -3,13 +3,12 @@
 #include "banjo/sema2/decl_body_analyzer.hpp"
 #include "banjo/sema2/decl_interface_analyzer.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
-#include "banjo/sema2/preamble.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
+#include "banjo/sema2/type_alias_resolver.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
-#include "banjo/sema2/type_alias_resolver.hpp"
 
 #include <vector>
 
@@ -26,8 +25,20 @@ SemanticAnalyzer::SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, 
     report_generator(*this) {}
 
 void SemanticAnalyzer::analyze() {
-    Preamble(*this).insert();
     SymbolCollector(*this).collect();
+
+    preamble_symbols = {
+        {"print", find_std_symbol({"internal", "preamble"}, "print")},
+        {"println", find_std_symbol({"internal", "preamble"}, "println")},
+        {"assert", find_std_symbol({"internal", "preamble"}, "assert")},
+        {"Optional", find_std_symbol({"std", "optional"}, "Optional")},
+        {"Result", find_std_symbol({"std", "result"}, "Result")},
+        {"Array", find_std_symbol({"std", "array"}, "Array")},
+        {"String", find_std_symbol({"std", "string"}, "String")},
+        {"Set", find_std_symbol({"std", "set"}, "Set")},
+        {"Closure", find_std_symbol({"std", "closure"}, "Closure")},
+    };
+
     MetaExpansion(*this).run();
     UseResolver(*this).resolve();
     TypeAliasResolver(*this).analyze();

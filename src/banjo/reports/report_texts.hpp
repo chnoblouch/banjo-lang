@@ -77,6 +77,8 @@ public:
     ReportText &format(const std::string &string);
     ReportText &format(int integer);
     ReportText &format(unsigned integer);
+    ReportText &format(long integer);
+    ReportText &format(unsigned long integer);
     ReportText &format(long long integer);
     ReportText &format(unsigned long long integer);
     ReportText &format(ASTNode *node);
