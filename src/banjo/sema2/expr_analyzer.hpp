@@ -27,9 +27,6 @@ public:
     Result analyze_uncoerced(sir::Expr &expr);
 
 private:
-    Result finalize_type_by_coercion(sir::Expr &expr, sir::Expr expected_type);
-    Result finalize_type(sir::Expr &expr);
-
     Result analyze_int_literal(sir::IntLiteral &int_literal);
     Result analyze_fp_literal(sir::FPLiteral &fp_literal);
     Result analyze_bool_literal(sir::BoolLiteral &bool_literal);
@@ -37,6 +34,7 @@ private:
     Result analyze_array_literal(sir::ArrayLiteral &array_literal, sir::Expr &out_expr);
     Result analyze_string_literal(sir::StringLiteral &string_literal);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);
+    Result analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr &out_expr);
     Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
@@ -51,6 +49,7 @@ private:
     Result analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr);
     Result analyze_result_type(sir::ResultType &result_type, sir::Expr &out_expr);
     Result analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr);
+    Result analyze_map_type(sir::MapType &map_type, sir::Expr &out_expr);
     Result analyze_closure_type(sir::ClosureType &closure_type);
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
@@ -58,14 +57,6 @@ private:
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
 
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident rhs, sir::Symbol method);
-    void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
-    void create_std_array(sir::ArrayLiteral &array_literal, const sir::Expr &element_type, sir::Expr &out_expr);
-    void create_std_optional_some(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
-    void create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr);
-    void create_std_result_success(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
-    void create_std_result_failure(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
-    Result finalize_array_literal_elements(sir::ArrayLiteral &array_literal, sir::Expr element_type);
-    Result finalize_struct_literal_fields(sir::StructLiteral &struct_literal);
     Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     sir::FuncDef *resolve_overload(sir::OverloadSet &overload_set, const std::vector<sir::Expr> &args);
     bool is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args);

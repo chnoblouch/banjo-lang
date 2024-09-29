@@ -14,6 +14,7 @@
 #    include "banjo/sir/sir.hpp"
 #    include "banjo/sir/sir_generator.hpp"
 #    include "banjo/sir/sir_printer.hpp"
+#    include "banjo/sir/test_driver_generator.hpp"
 #    include "banjo/ssa_gen/ssa_generator.hpp"
 #else
 #    include "banjo/ast/test_module.hpp"
@@ -79,6 +80,10 @@ ir::Module Compiler::run_frontend() {
     if (config.is_debug()) {
         std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
         sir::Printer(sir_file_analyzed).print(sir_unit);
+    }
+
+    if (config.testing) {
+        sir_unit.mods.push_back(TestDriverGenerator(sir_unit, target, report_manager).generate());
     }
 
     report_printer.print_reports(report_manager.get_reports());

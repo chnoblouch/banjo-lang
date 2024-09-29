@@ -562,6 +562,7 @@ void Printer::print_expr(const Expr &expr) {
         print_string_literal(*inner),
         print_struct_literal(*inner),
         print_union_case_literal(*inner),
+        print_map_literal(*inner),
         print_closure_literal(*inner),
         print_symbol_expr(*inner),
         print_binary_expr(*inner),
@@ -580,6 +581,7 @@ void Printer::print_expr(const Expr &expr) {
         print_optional_type(*inner),
         print_result_type(*inner),
         print_array_type(*inner),
+        print_map_type(*inner),
         print_closure_type(*inner),
         print_ident_expr(*inner),
         print_star_expr(*inner),
@@ -672,6 +674,23 @@ void Printer::print_union_case_literal(const UnionCaseLiteral &union_case_litera
     BEGIN_OBJECT("UnionCaseLiteral");
     PRINT_EXPR_FIELD("type", union_case_literal.type);
     PRINT_EXPR_LIST_FIELD("args", union_case_literal.args);
+    END_OBJECT();
+}
+
+void Printer::print_map_literal(const MapLiteral &map_literal) {
+    BEGIN_OBJECT("MapLiteral");
+    PRINT_EXPR_FIELD("type", map_literal.type);
+    BEGIN_LIST_FIELD("entries");
+
+    for (const MapLiteralEntry &entry : map_literal.entries) {
+        INDENT_LIST_ELEMENT();
+        BEGIN_OBJECT("MapLiteralEntry");
+        PRINT_EXPR_FIELD("key", entry.key);
+        PRINT_EXPR_FIELD("value", entry.value);
+        END_OBJECT();
+    }
+
+    END_LIST();
     END_OBJECT();
 }
 
@@ -838,6 +857,13 @@ void Printer::print_array_type(const ArrayType &array_type) {
     END_OBJECT();
 }
 
+void Printer::print_map_type(const MapType &map_type) {
+    BEGIN_OBJECT("MapType");
+    PRINT_EXPR_FIELD("key_type", map_type.key_type);
+    PRINT_EXPR_FIELD("value_type", map_type.value_type);
+    END_OBJECT();
+}
+
 void Printer::print_closure_type(const ClosureType &closure_type) {
     BEGIN_OBJECT("ClosureType");
     PRINT_FIELD_NAME("type");
@@ -921,6 +947,7 @@ void Printer::print_attrs(const Attributes &attrs) {
     BEGIN_OBJECT("Attributes");
     PRINT_FIELD("exposed", attrs.exposed ? "true" : "false");
     PRINT_FIELD("dllexport", attrs.dllexport ? "true" : "false");
+    PRINT_FIELD("test", attrs.test ? "true" : "false");
     PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
     END_OBJECT();
 }

@@ -186,6 +186,7 @@ std::string ReportText::to_string(sir::Expr &expr) {
             case sir::PseudoTypeKind::FP_LITERAL: return "float literal";
             case sir::PseudoTypeKind::STRING_LITERAL: return "string literal";
             case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
+            case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
         }
     } else {
         return "<unknown>";

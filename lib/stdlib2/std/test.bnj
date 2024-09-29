@@ -1,11 +1,11 @@
-use std.system.exit;
+use std.{system.exit, convert.to_repr};
 
 func assert_eq[T](a: T, b: T) {
     if a != b {
         print("assertion failed: ");
-        print(a);
+        print(to_repr(a));
         print(" != ");
-        println(b);
+        println(to_repr(b));
         exit(1);
     }
 }
@@ -13,9 +13,9 @@ func assert_eq[T](a: T, b: T) {
 func assert_ne[T](a: T, b: T) {
     if a == b {
         print("assertion failed: ");
-        print(a);
+        print(to_repr(a));
         print(" == ");
-        println(b);
+        println(to_repr(b));
         exit(1);
     }
 }

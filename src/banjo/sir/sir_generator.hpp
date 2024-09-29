@@ -93,6 +93,7 @@ private:
     sir::Expr generate_string_literal(ASTNode *node);
     sir::Expr generate_struct_literal(ASTNode *node);
     sir::Expr generate_typeless_struct_literal(ASTNode *node);
+    sir::Expr generate_map_literal(ASTNode *node);
     sir::Expr generate_closure_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
     sir::Expr generate_self(ASTNode *node);
@@ -118,6 +119,7 @@ private:
     sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node);
     std::vector<sir::Expr> generate_expr_list(ASTNode *node);
     std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
+    std::vector<sir::MapLiteralEntry> generate_map_literal_entries(ASTNode *node);
     std::vector<sir::UnionCaseField> generate_union_case_fields(ASTNode *node);
     sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
     char decode_char(const std::string &value, unsigned &index);

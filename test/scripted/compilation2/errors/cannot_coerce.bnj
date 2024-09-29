@@ -103,3 +103,19 @@ func main() {
         y: 20,
     };
 }
+
+# test:subtest
+# test:error 111:18 "cannot coerce map literal to type 'i32'"
+
+func main() {
+    var a: i32 = [10: true, -3: false];
+}
+
+# test:subtest
+# test:error 120:16 "cannot coerce map literal to type 'S'"
+
+struct S {}
+
+func main() {
+    var a: S = [10: true, -3: false];
+}

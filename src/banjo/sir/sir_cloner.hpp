@@ -67,6 +67,7 @@ public:
     StringLiteral *clone_string_literal(const StringLiteral &string_literal);
     StructLiteral *clone_struct_literal(const StructLiteral &struct_literal);
     UnionCaseLiteral *clone_union_case_literal(const UnionCaseLiteral &union_case_literal);
+    MapLiteral *clone_map_literal(const MapLiteral &map_literal);
     ClosureLiteral *clone_closure_literal(const ClosureLiteral &closure_literal);
     SymbolExpr *clone_symbol_expr(const SymbolExpr &symbol_expr);
     BinaryExpr *clone_binary_expr(const BinaryExpr &binary_expr);
@@ -85,6 +86,7 @@ public:
     OptionalType *clone_optional_type(const OptionalType &optional_type);
     ResultType *clone_result_type(const ResultType &result_type);
     ArrayType *clone_array_type(const ArrayType &array_type);
+    MapType *clone_map_type(const MapType &map_type);
     ClosureType *clone_closure_type(const ClosureType &closure_type);
     IdentExpr *clone_ident_expr(const IdentExpr &ident_expr);
     StarExpr *clone_star_expr(const StarExpr &star_expr);

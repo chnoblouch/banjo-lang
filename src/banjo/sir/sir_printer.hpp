@@ -78,6 +78,7 @@ private:
     void print_string_literal(const StringLiteral &string_literal);
     void print_struct_literal(const StructLiteral &struct_literal);
     void print_union_case_literal(const UnionCaseLiteral &union_case_literal);
+    void print_map_literal(const MapLiteral &map_literal);
     void print_closure_literal(const ClosureLiteral &closure_literal);
     void print_symbol_expr(const SymbolExpr &symbol_expr);
     void print_binary_expr(const BinaryExpr &binary_expr);
@@ -96,6 +97,7 @@ private:
     void print_optional_type(const OptionalType &optional_type);
     void print_result_type(const ResultType &result_type);
     void print_array_type(const ArrayType &array_type);
+    void print_map_type(const MapType &map_type);
     void print_closure_type(const ClosureType &closure_type);
     void print_ident_expr(const IdentExpr &ident_expr);
     void print_star_expr(const StarExpr &star_expr);

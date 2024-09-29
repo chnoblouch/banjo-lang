@@ -512,6 +512,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_STRING_LITERAL: return generate_string_literal(node);
         case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
         case AST_ANON_STRUCT_LITERAL: return generate_typeless_struct_literal(node);
+        case AST_MAP_EXPR: return generate_map_literal(node);
         case AST_CLOSURE: return generate_closure_literal(node);
         case AST_IDENTIFIER: return generate_ident_expr(node);
         case AST_SELF: return generate_self(node);
@@ -624,8 +625,7 @@ sir::Expr SIRGenerator::generate_undefined_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_array_literal(ASTNode *node) {
-    std::vector<sir::Expr> values;
-    values.resize(node->get_children().size());
+    std::vector<sir::Expr> values(node->get_children().size());
 
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         values[i] = generate_expr(node->get_child(i));
@@ -666,6 +666,14 @@ sir::Expr SIRGenerator::generate_typeless_struct_literal(ASTNode *node) {
         .ast_node = node,
         .type = nullptr,
         .entries = generate_struct_literal_entries(node->get_child()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_map_literal(ASTNode *node) {
+    return create_expr(sir::MapLiteral{
+        .ast_node = node,
+        .type = nullptr,
+        .entries = generate_map_literal_entries(node),
     });
 }
 
@@ -942,6 +950,21 @@ std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entri
     return entries;
 }
 
+std::vector<sir::MapLiteralEntry> SIRGenerator::generate_map_literal_entries(ASTNode *node) {
+    std::vector<sir::MapLiteralEntry> entries(node->get_children().size());
+
+    for (unsigned i = 0; i < node->get_children().size(); i++) {
+        ASTNode *child = node->get_child(i);
+
+        entries[i] = sir::MapLiteralEntry{
+            .key = generate_expr(child->get_child(MAP_LITERAL_PAIR_KEY)),
+            .value = generate_expr(child->get_child(MAP_LITERAL_PAIR_VALUE)),
+        };
+    }
+
+    return entries;
+}
+
 std::vector<sir::UnionCaseField> SIRGenerator::generate_union_case_fields(ASTNode *node) {
     std::vector<sir::UnionCaseField> fields(node->get_children().size());
 
@@ -964,6 +987,7 @@ sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {
     for (const Attribute &ast_attr : ast_attrs.get_attributes()) {
         if (ast_attr.get_name() == "exposed") sir_attrs.exposed = true;
         else if (ast_attr.get_name() == "dllexport") sir_attrs.dllexport = true;
+        else if (ast_attr.get_name() == "test") sir_attrs.test = true;
         else if (ast_attr.get_name() == "link_name") sir_attrs.link_name = ast_attr.get_value();
         else ASSERT_UNREACHABLE;
     }

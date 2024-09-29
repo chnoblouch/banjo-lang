@@ -32,6 +32,7 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // string_literal
         SIR_VISIT_IMPOSSIBLE,                                     // struct_literal
         SIR_VISIT_IMPOSSIBLE,                                     // union_case_literal
+        SIR_VISIT_IMPOSSIBLE,                                     // map_literal
         SIR_VISIT_IMPOSSIBLE,                                     // closure_literal
         return inner->symbol == other.as<SymbolExpr>().symbol,    // symbol_expr
         SIR_VISIT_IMPOSSIBLE,                                     // binary_expr
@@ -50,6 +51,7 @@ bool Expr::operator==(const Expr &other) const {
         return *inner == other.as<OptionalType>(),                // optional_type
         return *inner == other.as<ResultType>(),                  // result_type
         return *inner == other.as<ArrayType>(),                   // array_type
+        return *inner == other.as<MapType>(),                     // map_type
         return *inner == other.as<ClosureType>(),                 // closure_type
         SIR_VISIT_IMPOSSIBLE,                                     // ident_expr
         SIR_VISIT_IMPOSSIBLE,                                     // star_expr
@@ -80,6 +82,7 @@ Expr Expr::get_type() const {
         return inner->type,   // string_literal
         return inner->type,   // struct_literal
         return inner->type,   // union_case_literal
+        return inner->type,   // map_literal
         return inner->type,   // closure_literal
         return inner->type,   // symbol_expr
         return inner->type,   // binary_expr
@@ -98,6 +101,7 @@ Expr Expr::get_type() const {
         return nullptr,       // optional_type
         return nullptr,       // result_type
         return nullptr,       // array_type
+        return nullptr,       // map_type
         return nullptr,       // closure_type
         return nullptr,       // ident_expr
         return nullptr,       // star_expr
@@ -210,6 +214,8 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

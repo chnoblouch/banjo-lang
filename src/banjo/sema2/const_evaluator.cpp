@@ -49,6 +49,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return analyze(expr),                    // string_literal
         SIR_VISIT_IMPOSSIBLE,                    // struct_literal
         SIR_VISIT_IMPOSSIBLE,                    // union_case_literal
+        SIR_VISIT_IMPOSSIBLE,                    // map_literal
         SIR_VISIT_IMPOSSIBLE,                    // closure_literal
         return evaluate_symbol_expr(*inner),     // symbol_expr
         return evaluate_binary_expr(*inner),     // binary_expr
@@ -67,6 +68,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return analyze(expr),                    // optional_type
         return analyze(expr),                    // result_type
         return analyze(expr),                    // array_type
+        return analyze(expr),                    // map_type
         return analyze(expr),                    // closure_type
         return analyze_and_evaluate(expr),       // ident_expr
         return analyze_and_evaluate(expr),       // star_expr
@@ -91,7 +93,7 @@ sir::Expr ConstEvaluator::analyze_and_evaluate(sir::Expr &expr) {
     if (!analyze(expr)) {
         return nullptr;
     }
-    
+
     return evaluate(expr);
 }
 

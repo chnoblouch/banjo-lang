@@ -1,0 +1,25 @@
+# test:subtest
+# test:output "2,3,5"
+
+func main() {
+    var array = ["three": 3, "five": 5];
+    
+    print(array.length);
+    print(",");
+    print(array["three"]);
+    print(",");
+    print(array["five"]);
+}
+
+# test:subtest
+# test:output "2,3,5"
+
+func main() {
+    var array: [String: i32] = ["three": 3, "five": 5];
+    
+    print(array.length);
+    print(",");
+    print(array["three"]);
+    print(",");
+    print(array["five"]);
+}

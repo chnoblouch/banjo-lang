@@ -54,6 +54,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_string_literal(*inner),            // string_literal
         return generate_struct_literal(*inner, hints),     // struct_literal
         return generate_union_case_literal(*inner, hints), // union_case_literal
+        SIR_VISIT_IMPOSSIBLE,                              // map_literal
         SIR_VISIT_IMPOSSIBLE,                              // closure_literal
         return generate_symbol_expr(*inner),               // symbol_expr
         return generate_binary_expr(*inner, expr),         // binary_expr
@@ -72,6 +73,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // optional_type
         SIR_VISIT_IMPOSSIBLE,                              // result_type
         SIR_VISIT_IMPOSSIBLE,                              // array_type
+        SIR_VISIT_IMPOSSIBLE,                              // map_type
         SIR_VISIT_IMPOSSIBLE,                              // closure_type
         SIR_VISIT_IMPOSSIBLE,                              // ident_expr
         SIR_VISIT_IMPOSSIBLE,                              // star_expr

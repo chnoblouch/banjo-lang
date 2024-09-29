@@ -48,10 +48,10 @@ def load_setup(args):
     return config, toolchain
 
 
-def get_output_dir(config, toolchain, prefix=None):
+def get_output_dir(config, toolchain, suffix=None):
     dir_name = f"{toolchain.target}-{config.build_config}"
-    if prefix:
-        dir_name = f"{prefix}-{dir_name}"
+    if suffix:
+        dir_name = f"{dir_name}-{suffix}"
 
     output_dir = f"out{os.sep}{dir_name}"
     if not os.path.isdir(output_dir):
@@ -174,10 +174,10 @@ def test(args):
         result = subprocess.run([path, test], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if result.returncode == 0:
-            print("\u001b[1;32mOK\u001b[1;0m")
+            print("\u001b[1;32mok\u001b[1;0m")
             pass_count += 1
         else:
-            print("\u001b[1;31mFAILED\u001b[1;0m")
+            print("\u001b[1;31mfailed\u001b[1;0m")
             failures.append((test, result.stdout.decode().splitlines()[0]))
 
     if pass_count != len(tests):

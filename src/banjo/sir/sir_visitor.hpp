@@ -21,6 +21,7 @@
     string_literal_visitor,                                                                                            \
     struct_literal_visitor,                                                                                            \
     union_case_literal_visitor,                                                                                        \
+    map_literal_visitor,                                                                                               \
     closure_literal_visitor,                                                                                           \
     symbol_expr_visitor,                                                                                               \
     binary_expr_visitor,                                                                                               \
@@ -39,6 +40,7 @@
     optional_type_visitor,                                                                                             \
     result_type_visitor,                                                                                               \
     array_type_visitor,                                                                                                \
+    map_type_visitor,                                                                                                  \
     closure_type_visitor,                                                                                              \
     ident_expr_visitor,                                                                                                \
     star_expr_visitor,                                                                                                 \
@@ -72,6 +74,8 @@
         struct_literal_visitor;                                                                                        \
     } else if (auto inner = (expr).match<banjo::lang::sir::UnionCaseLiteral>()) {                                      \
         union_case_literal_visitor;                                                                                    \
+    } else if (auto inner = (expr).match<banjo::lang::sir::MapLiteral>()) {                                            \
+        map_literal_visitor;                                                                                           \
     } else if (auto inner = (expr).match<banjo::lang::sir::ClosureLiteral>()) {                                        \
         closure_literal_visitor;                                                                                       \
     } else if (auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                                            \
@@ -108,6 +112,8 @@
         result_type_visitor;                                                                                           \
     } else if (auto inner = (expr).match<banjo::lang::sir::ArrayType>()) {                                             \
         array_type_visitor;                                                                                            \
+    } else if (auto inner = (expr).match<banjo::lang::sir::MapType>()) {                                               \
+        map_type_visitor;                                                                                              \
     } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
         closure_type_visitor;                                                                                          \
     } else if (auto inner = (expr).match<banjo::lang::sir::IdentExpr>()) {                                             \

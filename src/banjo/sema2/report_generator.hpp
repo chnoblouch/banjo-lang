@@ -58,6 +58,7 @@ public:
     void report_err_cannot_coerce(const sir::ArrayLiteral &array_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::StringLiteral &string_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::StructLiteral &struct_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::MapLiteral &map_literal, const sir::Expr &expected_type);
     void report_err_cannot_infer_type(const sir::NoneLiteral &none_literal);
     void report_err_cannot_infer_type(const sir::UndefinedLiteral &undefined_literal);
     void report_err_cannot_infer_type(const sir::ArrayLiteral &array_literal);

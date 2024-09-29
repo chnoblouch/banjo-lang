@@ -122,6 +122,7 @@ add_library(banjo STATIC
     sema2/decl_interface_analyzer.cpp
     sema2/decl_visitor.cpp
     sema2/expr_analyzer.cpp
+    sema2/expr_finalizer.cpp
     sema2/generic_arg_inference.cpp
     sema2/generics_specializer.cpp
     sema2/magic_methods.cpp
@@ -134,9 +135,11 @@ add_library(banjo STATIC
     sema2/type_alias_resolver.cpp
     sema2/use_resolver.cpp
     sir/sir_cloner.cpp
+    sir/sir_create.cpp
     sir/sir_generator.cpp
     sir/sir_printer.cpp
     sir/sir.cpp
+    sir/test_driver_generator.cpp
     source/file_module_loader.cpp
     source/module_discovery.cpp
     source/module_manager.cpp

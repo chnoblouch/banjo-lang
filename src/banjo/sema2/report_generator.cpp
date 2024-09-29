@@ -128,6 +128,10 @@ void ReportGenerator::report_err_cannot_coerce(
     report_error("cannot coerce struct literal to type '$'", struct_literal.ast_node, expected_type);
 }
 
+void ReportGenerator::report_err_cannot_coerce(const sir::MapLiteral &map_literal, const sir::Expr &expected_type) {
+    report_error("cannot coerce map literal to type '$'", map_literal.ast_node, expected_type);
+}
+
 void ReportGenerator::report_err_cannot_infer_type(const sir::NoneLiteral &none_literal) {
     report_error("cannot infer type of `none`", none_literal.ast_node);
 }

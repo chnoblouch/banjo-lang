@@ -41,6 +41,7 @@ struct ArrayLiteral;
 struct StringLiteral;
 struct StructLiteral;
 struct UnionCaseLiteral;
+struct MapLiteral;
 struct ClosureLiteral;
 struct SymbolExpr;
 struct BinaryExpr;
@@ -60,6 +61,7 @@ struct FuncType;
 struct OptionalType;
 struct ResultType;
 struct ArrayType;
+struct MapType;
 struct ClosureType;
 struct IdentExpr;
 struct StarExpr;
@@ -131,6 +133,7 @@ class Expr {
         StringLiteral *,
         StructLiteral *,
         UnionCaseLiteral *,
+        MapLiteral *,
         ClosureLiteral *,
         SymbolExpr *,
         BinaryExpr *,
@@ -149,6 +152,7 @@ class Expr {
         OptionalType *,
         ResultType *,
         ArrayType *,
+        MapType *,
         ClosureType *,
         IdentExpr *,
         StarExpr *,
@@ -492,6 +496,7 @@ struct OverloadSet {
 struct Attributes {
     bool exposed = false;
     bool dllexport = false;
+    bool test = false;
     std::optional<std::string> link_name = {};
 };
 
@@ -607,6 +612,17 @@ struct UnionCaseLiteral {
     ASTNode *ast_node;
     Expr type;
     std::vector<Expr> args;
+};
+
+struct MapLiteralEntry {
+    Expr key;
+    Expr value;
+};
+
+struct MapLiteral {
+    ASTNode *ast_node;
+    Expr type;
+    std::vector<MapLiteralEntry> entries;
 };
 
 struct ClosureLiteral {
@@ -789,6 +805,15 @@ struct ArrayType {
     bool operator!=(const ArrayType &other) const { return !(*this == other); }
 };
 
+struct MapType {
+    ASTNode *ast_node;
+    Expr key_type;
+    Expr value_type;
+
+    bool operator==(const MapType &other) const { return key_type == other.key_type && value_type == other.value_type; }
+    bool operator!=(const MapType &other) const { return !(*this == other); }
+};
+
 struct ClosureType {
     ASTNode *ast_node;
     FuncType func_type;
@@ -825,6 +850,7 @@ enum class PseudoTypeKind {
     FP_LITERAL,
     STRING_LITERAL,
     ARRAY_LITERAL,
+    MAP_LITERAL,
 };
 
 struct PseudoType {
@@ -1132,6 +1158,7 @@ typedef std::variant<
     StringLiteral,
     StructLiteral,
     UnionCaseLiteral,
+    MapLiteral,
     ClosureLiteral,
     SymbolExpr,
     BinaryExpr,
@@ -1150,6 +1177,7 @@ typedef std::variant<
     OptionalType,
     ResultType,
     ArrayType,
+    MapType,
     ClosureType,
     IdentExpr,
     StarExpr,

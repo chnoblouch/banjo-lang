@@ -53,6 +53,7 @@ class SemanticAnalyzer {
     friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;
     friend class ExprAnalyzer;
+    friend class ExprFinalizer;
     friend class StmtAnalyzer;
     friend class ConstEvaluator;
     friend class GenericsSpecializer;
@@ -80,6 +81,7 @@ private:
 public:
     SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, ReportManager &report_manager);
     void analyze();
+    void analyze(sir::Module &mod);
 
 private:
     Scope &get_scope() { return scopes.top(); }
@@ -108,16 +110,21 @@ private:
     bool is_in_stmt_block() { return get_scope().block; }
     sir::SymbolTable &get_symbol_table();
 
+    void populate_preamble_symbols();
+    void run_postponed_analyses();
+
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
     sir::Symbol find_std_optional();
     sir::Symbol find_std_result();
     sir::Symbol find_std_array();
     sir::Symbol find_std_string();
+    sir::Symbol find_std_map();
     sir::Symbol find_std_closure();
 
     sir::Specialization<sir::StructDef> *as_std_array_specialization(sir::Expr &type);
     sir::Specialization<sir::StructDef> *as_std_optional_specialization(sir::Expr &type);
     sir::Specialization<sir::StructDef> *as_std_result_specialization(sir::Expr &type);
+    sir::Specialization<sir::StructDef> *as_std_map_specialization(sir::Expr &type);
 
     unsigned compute_size(sir::Expr type);
 

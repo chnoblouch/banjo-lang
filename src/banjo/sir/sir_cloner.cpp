@@ -428,6 +428,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_string_literal(*inner),
         return clone_struct_literal(*inner),
         return clone_union_case_literal(*inner),
+        return clone_map_literal(*inner),
         return clone_closure_literal(*inner),
         return clone_symbol_expr(*inner),
         return clone_binary_expr(*inner),
@@ -446,6 +447,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_optional_type(*inner),
         return clone_result_type(*inner),
         return clone_array_type(*inner),
+        return clone_map_type(*inner),
         return clone_closure_type(*inner),
         return clone_ident_expr(*inner),
         return clone_star_expr(*inner),
@@ -527,8 +529,7 @@ StringLiteral *Cloner::clone_string_literal(const StringLiteral &string_literal)
 }
 
 StructLiteral *Cloner::clone_struct_literal(const StructLiteral &struct_literal) {
-    std::vector<StructLiteralEntry> entries;
-    entries.resize(struct_literal.entries.size());
+    std::vector<StructLiteralEntry> entries(struct_literal.entries.size());
 
     for (unsigned i = 0; i < struct_literal.entries.size(); i++) {
         const StructLiteralEntry &entry = struct_literal.entries[i];
@@ -552,6 +553,25 @@ UnionCaseLiteral *Cloner::clone_union_case_literal(const UnionCaseLiteral &union
         .ast_node = union_case_literal.ast_node,
         .type = clone_expr(union_case_literal.type),
         .args = clone_expr_list(union_case_literal.args),
+    });
+}
+
+MapLiteral *Cloner::clone_map_literal(const MapLiteral &map_literal) {
+    std::vector<MapLiteralEntry> entries(map_literal.entries.size());
+
+    for (unsigned i = 0; i < map_literal.entries.size(); i++) {
+        const MapLiteralEntry &entry = map_literal.entries[i];
+
+        entries[i] = MapLiteralEntry{
+            .key = clone_expr(entry.key),
+            .value = clone_expr(entry.value),
+        };
+    }
+
+    return mod.create_expr(MapLiteral{
+        .ast_node = map_literal.ast_node,
+        .type = clone_expr(map_literal.type),
+        .entries = entries,
     });
 }
 
@@ -703,6 +723,14 @@ ArrayType *Cloner::clone_array_type(const ArrayType &array_type) {
     return mod.create_expr(ArrayType{
         .ast_node = array_type.ast_node,
         .base_type = clone_expr(array_type.base_type),
+    });
+}
+
+MapType *Cloner::clone_map_type(const MapType &map_type) {
+    return mod.create_expr(MapType{
+        .ast_node = map_type.ast_node,
+        .key_type = map_type.key_type,
+        .value_type = map_type.value_type,
     });
 }
 
