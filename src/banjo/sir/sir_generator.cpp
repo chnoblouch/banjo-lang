@@ -3,11 +3,10 @@
 #include "banjo/ast/ast_child_indices.hpp"
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/ast/expr.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
-#include "sir.hpp"
 
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -15,35 +14,37 @@ namespace banjo {
 namespace lang {
 
 sir::Unit SIRGenerator::generate(ModuleList &mods) {
+    sir::Unit sir_unit;
+
     for (ASTModule *mod : mods) {
         sir::Module *sir_mod = sir_unit.create_mod();
-        sir_mod->path = mod->get_path();
-
         sir_unit.mods.push_back(sir_mod);
         sir_unit.mods_by_path.insert({mod->get_path(), sir_mod});
-        mod_map.insert({mod, sir_mod});
     }
 
     for (ASTModule *mod : mods) {
-        sir::Module *sir_mod = mod_map[mod];
-
-        for (ASTModule *sub_mod : mod->get_sub_mods()) {
-            sir_mod->sub_mods.push_back(mod_map[sub_mod]);
-        }
+        sir::Module *sir_mod = sir_unit.mods_by_path[mod->get_path()];
+        generate_mod(mod, *sir_mod);
     }
 
-    for (ASTModule *mod : mods) {
-        generate_mod(mod);
-    }
-
-    return std::move(sir_unit);
+    return sir_unit;
 }
 
-sir::Module *SIRGenerator::generate_mod(ASTModule *node) {
-    sir::Module *sir_mod = mod_map[node];
-    cur_sir_mod = sir_mod;
-    sir_mod->block = generate_decl_block(node->get_block());
+sir::Module SIRGenerator::generate(ASTModule *node) {
+    sir::Module sir_mod;
+    generate_mod(node, sir_mod);
     return sir_mod;
+}
+
+void SIRGenerator::regenerate_mod(sir::Unit &unit, ASTModule *mod) {
+    sir::Module *sir_mod = unit.mods_by_path[mod->get_path()];
+    generate_mod(mod, *sir_mod);
+}
+
+void SIRGenerator::generate_mod(ASTModule *node, sir::Module &out_sir_mod) {
+    cur_sir_mod = &out_sir_mod;
+    out_sir_mod.path = node->get_path();
+    out_sir_mod.block = generate_decl_block(node->get_block());
 }
 
 sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
@@ -91,6 +92,9 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_NATIVE_VAR: return generate_native_var_decl(node);
         case AST_USE: return generate_use_decl(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
+        case AST_IDENTIFIER: return generate_error_decl(node);
+        case AST_ERROR: return generate_error_decl(node);
+        case AST_COMPLETION_TOKEN: return generate_completion_token(node);
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -238,6 +242,12 @@ sir::Decl SIRGenerator::generate_use_decl(ASTNode *node) {
     });
 }
 
+sir::Decl SIRGenerator::generate_error_decl(ASTNode *node) {
+    return create_decl(sir::Error{
+        .ast_node = node,
+    });
+}
+
 sir::Ident SIRGenerator::generate_ident(ASTNode *node) {
     return sir::Ident{
         .ast_node = node,
@@ -310,7 +320,11 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::STMT);
         case AST_META_FOR: return generate_meta_for_stmt(node, MetaBlockKind::STMT);
         case AST_FUNCTION_CALL: return create_stmt(generate_expr(node));
+        case AST_IDENTIFIER: return create_stmt(generate_expr(node));
+        case AST_DOT_OPERATOR: return create_stmt(generate_expr(node));
         case AST_BLOCK: return create_stmt(generate_block(node));
+        case AST_ERROR: return generate_error_stmt(node);
+        case AST_COMPLETION_TOKEN: return create_stmt(generate_expr(node));
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -498,6 +512,12 @@ sir::MetaForStmt *SIRGenerator::generate_meta_for_stmt(ASTNode *node, MetaBlockK
     });
 }
 
+sir::Stmt SIRGenerator::generate_error_stmt(ASTNode *node) {
+    return create_stmt(sir::Error{
+        .ast_node = node,
+    });
+}
+
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
     switch (node->get_type()) {
         case AST_INT_LITERAL: return generate_int_literal(node);
@@ -564,6 +584,8 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_RESULT_TYPE: return generate_result_type(node);
         case AST_CLOSURE_TYPE: return generate_closure_type(node);
         case AST_META_EXPR: return generate_meta_access(node);
+        case AST_ERROR: return generate_error_expr(node);
+        case AST_COMPLETION_TOKEN: return generate_completion_token(node);
         default: ASSERT_UNREACHABLE;
     }
 }
@@ -760,6 +782,16 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
             .ast_node = rhs_node,
             .value = rhs_node->as<IntLiteral>()->get_value().to_string(),
         };
+    } else if (rhs_node->get_type() == AST_COMPLETION_TOKEN) {
+        rhs = {
+            .ast_node = rhs_node,
+            .value = "[completion]",
+        };
+    } else if (rhs_node->get_type() == AST_ERROR) {
+        rhs = {
+            .ast_node = rhs_node,
+            .value = "[error]",
+        };
     }
 
     if (lhs.is<sir::MetaAccess>()) {
@@ -855,6 +887,12 @@ sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {
     return create_expr(sir::MetaAccess{
         .ast_node = node,
         .expr = generate_expr(node->get_child()),
+    });
+}
+
+sir::Expr SIRGenerator::generate_error_expr(ASTNode *node) {
+    return create_expr(sir::Error{
+        .ast_node = node,
     });
 }
 
@@ -993,6 +1031,12 @@ sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {
     }
 
     return create_attrs(sir_attrs);
+}
+
+sir::CompletionToken *SIRGenerator::generate_completion_token(ASTNode *node) {
+    return create_expr(sir::CompletionToken{
+        .ast_node = node,
+    });
 }
 
 char SIRGenerator::decode_char(const std::string &value, unsigned &index) {

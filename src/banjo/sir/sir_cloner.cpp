@@ -54,6 +54,8 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_type_alias(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_meta_if_stmt(*inner),
+        SIR_VISIT_IMPOSSIBLE,
+        return clone_error(*inner),
         SIR_VISIT_IMPOSSIBLE
     );
 }
@@ -251,7 +253,8 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
         return clone_meta_for_stmt(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_expr_stmt(*inner),
-        return clone_block_stmt(*inner)
+        return clone_block_stmt(*inner),
+        return clone_error(*inner)
     );
 }
 
@@ -455,8 +458,20 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_dot_expr(*inner),
         return clone_meta_access(*inner),
         return clone_meta_field_expr(*inner),
-        return clone_meta_call_expr(*inner)
+        return clone_meta_call_expr(*inner),
+        SIR_VISIT_IMPOSSIBLE
     );
+}
+
+std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
+    std::vector<Expr> clone;
+    clone.resize(exprs.size());
+
+    for (unsigned i = 0; i < exprs.size(); i++) {
+        clone[i] = clone_expr(exprs[i]);
+    }
+
+    return clone;
 }
 
 IntLiteral *Cloner::clone_int_literal(const IntLiteral &int_literal) {
@@ -584,8 +599,12 @@ ClosureLiteral *Cloner::clone_closure_literal(const ClosureLiteral &closure_lite
     });
 }
 
-SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr & /*symbol_expr*/) {
-    ASSERT_UNREACHABLE;
+SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr &symbol_expr) {
+    return mod.create_expr(SymbolExpr{
+        .ast_node = symbol_expr.ast_node,
+        .type = clone_expr(symbol_expr.type),
+        .symbol = symbol_expr.symbol,
+    });
 }
 
 BinaryExpr *Cloner::clone_binary_expr(const BinaryExpr &binary_expr) {
@@ -811,17 +830,6 @@ Local Cloner::clone_local(const Local &local) {
     };
 }
 
-std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
-    std::vector<Expr> clone;
-    clone.resize(exprs.size());
-
-    for (unsigned i = 0; i < exprs.size(); i++) {
-        clone[i] = clone_expr(exprs[i]);
-    }
-
-    return clone;
-}
-
 Attributes *Cloner::clone_attrs(const Attributes *attrs) {
     return attrs ? mod.create_attrs(*attrs) : nullptr;
 }
@@ -843,6 +851,12 @@ MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
         .ast_node = meta_block.ast_node,
         .nodes = nodes,
     };
+}
+
+Error *Cloner::clone_error(const Error &error) {
+    return mod.create_expr(Error{
+        .ast_node = error.ast_node,
+    });
 }
 
 } // namespace sir

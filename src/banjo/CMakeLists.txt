@@ -192,6 +192,9 @@ add_library(banjo STATIC
     target/x86_64/x86_64_reg_analyzer.cpp
     target/x86_64/x86_64_target.cpp
     utils/bit_operations.cpp
+    utils/json_parser.cpp
+    utils/json_serializer.cpp
+    utils/json.cpp
     utils/large_int.cpp
     utils/paths.cpp
     utils/timing.cpp

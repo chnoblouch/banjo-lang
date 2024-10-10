@@ -65,7 +65,11 @@ std::string URI::encode_from_path(std::filesystem::path path) {
         }
     }
 
-    return "file:///" + encode(lsp_path_str);
+    if (lsp_path_str[0] != '/') {
+        lsp_path_str = '/' + lsp_path_str;
+    }
+
+    return "file://" + encode(lsp_path_str);
 }
 
 } // namespace lsp

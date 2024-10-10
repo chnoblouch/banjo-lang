@@ -13,7 +13,7 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    analyzer.push_scope().func_def = &func_def;
+    analyzer.push_scope().decl = &func_def;
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
     analyzer.pop_scope();
 

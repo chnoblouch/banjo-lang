@@ -328,7 +328,8 @@ void SSAGenerator::generate_block_stmts(const sir::Block &sir_block) {
             SIR_VISIT_IGNORE,                                               // meta_for_stmt
             SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
             ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
-            generate_block(*inner)                                          // block_stmt
+            generate_block(*inner),                                         // block_stmt
+            SIR_VISIT_IMPOSSIBLE                                            // error
         );
     }
 }

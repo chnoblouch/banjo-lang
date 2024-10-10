@@ -39,7 +39,6 @@ private:
     SymbolTable *cur_symbol_table = nullptr;
 
     bool running_completion = false;
-    TextPosition completion_point;
     ASTNode *completion_node = nullptr;
 
     bool is_valid = false;
@@ -47,7 +46,7 @@ private:
 
 public:
     Parser(std::vector<Token> &tokens, const ModulePath &module_path);
-    void enable_completion(TextPosition completion_point);
+    void enable_completion();
 
     ParsedAST parse_module();
     ASTNode *get_completion_node() { return completion_node; }

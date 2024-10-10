@@ -13,11 +13,11 @@ namespace lang {
 const std::map<ReportText::ID, std::string> TEXTS = {
     {ReportText::ID::ERR_FIND_MODULE, "failed to find module"},
 
-    {ReportText::ID::ERR_PARSE_UNEXPECTED, "unexpected token %"},
-    {ReportText::ID::ERR_PARSE_EXPECTED, "expected %, got %"},
+    {ReportText::ID::ERR_PARSE_UNEXPECTED, "unexpected token $"},
+    {ReportText::ID::ERR_PARSE_EXPECTED, "expected $, got $"},
     {ReportText::ID::ERR_PARSE_EXPECTED_SEMI, "expected ';' after statement"},
-    {ReportText::ID::ERR_PARSE_EXPECTED_IDENTIFIER, "expected identifier, got %"},
-    {ReportText::ID::ERR_PARSE_EXPECTED_TYPE, "expected type, got %"},
+    {ReportText::ID::ERR_PARSE_EXPECTED_IDENTIFIER, "expected identifier, got $"},
+    {ReportText::ID::ERR_PARSE_EXPECTED_TYPE, "expected type, got $"},
     {ReportText::ID::ERR_PARSE_UNCLOSED_BLOCK, "file ends with unclosed block"},
 
     {ReportText::ID::ERR_EXPECTED_VALUE, "expected value"},
@@ -128,7 +128,7 @@ ReportText &ReportText::format(sir::Expr &expr) {
     return format(to_string(expr));
 }
 
-std::string ReportText::to_string(sir::Expr &expr) {
+std::string ReportText::to_string(const sir::Expr &expr) {
     if (!expr) {
         return "<null>";
     } else if (auto primitive_type = expr.match<sir::PrimitiveType>()) {

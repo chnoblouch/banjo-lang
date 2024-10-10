@@ -1,33 +1,33 @@
-#ifndef LSP_INDEX_H
-#define LSP_INDEX_H
+#ifndef BANJO_LSP_INDEX_H
+#define BANJO_LSP_INDEX_H
 
-#include "banjo/symbol/symbol.hpp"
-#include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/reports/report.hpp"
+#include "banjo/sir/sir.hpp"
+#include "banjo/source/text_range.hpp"
+#include "banjo/symbol/module_path.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 namespace banjo {
 
 namespace lsp {
 
-struct IndexedSymbolRef;
-
-struct IndexedSymbol {
-    lang::Symbol symbol;
-    lang::SymbolKind kind;
-    std::vector<IndexedSymbolRef *> refs;
+struct SymbolRef {
+    lang::TextRange range;
+    lang::sir::Symbol symbol;
+    lang::sir::Module *def_mod;
+    lang::TextRange def_range;
 };
 
-struct IndexedSymbolRef {
-    lang::ASTNode *node;
-    IndexedSymbolRef *symbol;
+struct ModuleIndex {
+    std::vector<SymbolRef> symbol_refs;
+    std::vector<lang::Report> reports;
+    std::vector<lang::ModulePath> dependents;
 };
 
-class Index {
-
-private:
-    std::unordered_map<lang::ASTNode, IndexedSymbol *> symbols;
-    std::unordered_map<lang::ASTNode, IndexedSymbolRef *> refs;
+struct Index {
+    std::unordered_map<lang::sir::Module *, ModuleIndex> mods;
 };
 
 } // namespace lsp

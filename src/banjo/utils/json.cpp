@@ -2,8 +2,6 @@
 
 namespace banjo {
 
-namespace lsp {
-
 JSONValue::JSONValue(JSONObject value) : value(value) {}
 
 JSONValue::JSONValue(JSONArray value) : value(value) {}
@@ -87,7 +85,5 @@ int JSONArray::length() const {
 void JSONArray::add(JSONValue value) {
     values.push_back(value);
 }
-
-} // namespace lsp
 
 } // namespace banjo

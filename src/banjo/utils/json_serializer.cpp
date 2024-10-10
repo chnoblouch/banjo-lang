@@ -2,8 +2,6 @@
 
 namespace banjo {
 
-namespace lsp {
-
 JSONSerializer::JSONSerializer(std::ostream &stream) : stream(stream) {}
 
 void JSONSerializer::serialize(const JSONObject &object) {
@@ -69,7 +67,5 @@ void JSONSerializer::serialize(const JSONValue &value, int indent) {
     else if (value.is_array()) serialize(value.as_array(), indent + 1);
     else if (value.is_null()) stream << "null";
 }
-
-} // namespace lsp
 
 } // namespace banjo

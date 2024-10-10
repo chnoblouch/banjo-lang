@@ -48,7 +48,8 @@
     dot_expr_visitor,                                                                                                  \
     meta_access_visitor,                                                                                               \
     meta_field_expr_visitor,                                                                                           \
-    meta_call_expr_visitor                                                                                             \
+    meta_call_expr_visitor,                                                                                            \
+    completion_token_visitor                                                                                           \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -130,6 +131,8 @@
         meta_field_expr_visitor;                                                                                       \
     } else if (auto inner = (expr).match<banjo::lang::sir::MetaCallExpr>()) {                                          \
         meta_call_expr_visitor;                                                                                        \
+    } else if (auto inner = (expr).match<banjo::lang::sir::CompletionToken>()) {                                       \
+        completion_token_visitor;                                                                                      \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }
@@ -185,7 +188,8 @@
     meta_for_stmt_visitor,                                                                                             \
     expanded_meta_stmt_visitor,                                                                                        \
     expr_stmt_visitor,                                                                                                 \
-    block_stmt_visitor                                                                                                 \
+    block_stmt_visitor,                                                                                                \
+    error_visitor                                                                                                      \
 )                                                                                                                      \
     if (!(stmt)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -223,6 +227,8 @@
         expr_stmt_visitor;                                                                                             \
     } else if (auto inner = (stmt).match<banjo::lang::sir::Block>()) {                                                 \
         block_stmt_visitor;                                                                                            \
+    } else if (auto inner = (stmt).match<banjo::lang::sir::Error>()) {                                                 \
+        error_visitor;                                                                                                 \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }
@@ -244,7 +250,9 @@
     type_alias_visitor,                                                                                                \
     use_decl_visitor,                                                                                                  \
     meta_if_stmt_visitor,                                                                                              \
-    expanded_meta_stmt_visitor                                                                                         \
+    expanded_meta_stmt_visitor,                                                                                        \
+    error_visitor,                                                                                                     \
+    completion_token_visitor                                                                                           \
 )                                                                                                                      \
     if (!(decl)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -278,6 +286,10 @@
         meta_if_stmt_visitor;                                                                                          \
     } else if (auto inner = (decl).match<banjo::lang::sir::ExpandedMetaStmt>()) {                                      \
         expanded_meta_stmt_visitor;                                                                                    \
+    } else if (auto inner = (decl).match<banjo::lang::sir::Error>()) {                                                 \
+        error_visitor;                                                                                                 \
+    }  else if (auto inner = (decl).match<banjo::lang::sir::CompletionToken>()) {                                                 \
+        completion_token_visitor;                                                                                                 \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }

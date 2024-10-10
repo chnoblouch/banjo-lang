@@ -5,14 +5,11 @@
 
 #include <initializer_list>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
 namespace banjo {
-
-namespace lsp {
 
 class JSONValue;
 typedef std::string JSONString;
@@ -31,6 +28,7 @@ private:
 public:
     JSONValue(JSONString value) : value(value) {}
     JSONValue(const char *value) : value(std::string(value)) {}
+    JSONValue(std::string_view value) : value(std::string(value)) {}
     JSONValue(JSONNumber value) : value(value) {}
     JSONValue(int value) : value((double)value) {}
     JSONValue(JSONBool value) : value(value) {}
@@ -95,8 +93,6 @@ public:
     int length() const;
     void add(JSONValue value);
 };
-
-} // namespace lsp
 
 } // namespace banjo
 

@@ -7,21 +7,16 @@ namespace banjo {
 
 namespace lsp {
 
-class SourceManager;
-struct SourceFile;
+class Workspace;
 
 class MemoryModuleLoader : public lang::ModuleLoader {
 
 private:
-    SourceManager &source_manager;
+    Workspace &workspace;
 
 public:
-    MemoryModuleLoader(SourceManager &source_manager);
+    MemoryModuleLoader(Workspace &workspace);
     std::istream *open(const lang::ModuleFile &module_file) override;
-    void after_load(const lang::ModuleFile &module_file, lang::ASTModule *mod, bool is_valid) override;
-
-private:
-    SourceFile *find_lsp_source_file(const lang::ModuleFile &module_file, const lang::ModulePath &path);
 };
 
 } // namespace lsp

@@ -2,16 +2,13 @@ add_executable(banjo-lsp
     ast_navigation.cpp
     base_message_stream.cpp
     connection.cpp
-    json_parser.cpp
-    json_serializer.cpp
-    json.cpp
     main.cpp
     memory_module_loader.cpp
     protocol_structs.cpp
     server.cpp
-    source_manager.cpp
     symbol_ref_info.cpp
     uri.cpp
+    workspace.cpp
     handlers/completion_handler.cpp
     handlers/definition_handler.cpp
     handlers/initialize_handler.cpp

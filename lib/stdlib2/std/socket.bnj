@@ -19,7 +19,7 @@ struct Socket {
         var p_protocol: i32;
 
         if address_family == AddressFamily.IPV4 {
-            p_address_family = platform. SOCKET_ADDRESS_FAMILY_IPV4;
+            p_address_family = platform.SOCKET_ADDRESS_FAMILY_IPV4;
         } else if address_family == AddressFamily.IPV6 {
             p_address_family = platform.SOCKET_ADDRESS_FAMILY_IPV6;
         }

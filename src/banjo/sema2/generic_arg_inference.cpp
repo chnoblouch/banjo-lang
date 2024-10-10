@@ -30,7 +30,7 @@ GenericArgInference::GenericArgInference(
     const sir::FuncDef &func_def
 )
   : GenericArgInference(analyzer, expr, func_def.generic_params, func_def.type.params) {
-    ASSUME(func_def.is_generic());
+    ASSERT(func_def.is_generic());
 }
 
 Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vector<sir::Expr> &out_generic_args) {
@@ -42,7 +42,7 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
     unsigned num_sequence_args = has_sequence ? args.size() - (params.size() - 1) : 0;
 
     for (unsigned i = 0; i < non_sequence_end; i++) {
-        ASSUME(args[i].get_type());
+        ASSERT(args[i].get_type());
 
         cur_arg = &args[i];
         partial_result = infer(params[i].type, cur_arg->get_type());

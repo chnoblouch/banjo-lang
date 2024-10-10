@@ -1,14 +1,20 @@
 #ifndef LSP_COMPLETION_HANDLER_H
 #define LSP_COMPLETION_HANDLER_H
 
-#include "connection.hpp"
-#include "source_manager.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/symbol/generics.hpp"
 #include "banjo/symbol/symbol_ref.hpp"
+#include "connection.hpp"
+#include "workspace.hpp"
 
 namespace banjo {
 
 namespace lsp {
+
+struct CompletionContext {
+    lang::ASTModule *module_node;
+    lang::ASTNode *node;
+};
 
 class CompletionHandler : public RequestHandler {
 
@@ -33,34 +39,21 @@ private:
         INSIDE_USE_TREE,
     };
 
-    SourceManager &source_manager;
+    Workspace &workspace;
 
 public:
-    CompletionHandler(SourceManager &source_manager);
+    CompletionHandler(Workspace &workspace);
     ~CompletionHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);
 
 private:
-    JSONArray build_items(const CompletionContext &context);
+    void build_items(JSONArray &items, const lang::sir::SymbolTable &symbol_table);
+    void build_item(JSONArray &items, std::string_view name, const lang::sir::Symbol &symbol);
+    JSONObject build_item(std::string_view name, const lang::sir::FuncType &type, bool is_method);
+    void build_item(JSONArray &items, std::string_view name, const lang::sir::OverloadSet &overload_set);
 
-    JSONArray complete_after_dot(lang::ASTNode *node);
-    JSONArray complete_inside_use_tree_list(lang::ASTNode *node);
-
-    JSONArray complete_module_members(lang::ASTNode *node);
-    JSONArray complete_struct_members(lang::ASTNode *node);
-    JSONArray complete_enum_members(lang::ASTNode *node);
-    void complete_symbol_table_members(lang::ASTNode *node, lang::SymbolTable *symbol_table, JSONArray &array);
-    CompletionKind get_completion_kind(lang::ASTNode *node);
-    LSPCompletionItemKind get_lsp_kind(const lang::SymbolRef &symbol);
-    JSONArray complete_struct_instance_members(lang::Structure *struct_);
-
-    void complete_inside_block(lang::ASTNode *node, JSONArray &array);
-
-    JSONObject build_symbol_item(CompletionKind kind, const std::string &name, const lang::SymbolRef &symbol);
-    JSONObject build_func_item(lang::Function *func);
-    JSONObject build_overload_group_item(const std::string &name);
-    JSONObject build_generic_func_item(lang::GenericFunc *generic_func);
+    JSONObject create_simple_item(std::string_view name, LSPCompletionItemKind kind);
 };
 
 } // namespace lsp

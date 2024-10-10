@@ -59,7 +59,8 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // dot_expr
         SIR_VISIT_IMPOSSIBLE,                                     // meta_access
         SIR_VISIT_IMPOSSIBLE,                                     // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE                                      // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE                                      // completion_token
     );
 }
 
@@ -109,14 +110,14 @@ Expr Expr::get_type() const {
         return nullptr,       // dot_expr
         SIR_VISIT_IMPOSSIBLE, // meta_access
         SIR_VISIT_IMPOSSIBLE, // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE  // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE, // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE  // completion_token
     );
 }
 
 bool Expr::is_type() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
-        const Symbol &symbol = symbol_expr->symbol;
-        return symbol.is<StructDef>() || symbol.is<EnumDef>() || symbol.is<UnionDef>();
+        return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef>();
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else {
@@ -252,6 +253,7 @@ ASTNode *Expr::get_ast_node() const {
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node
     );
 }
@@ -262,35 +264,6 @@ DeclBlock *Expr::get_decl_block() {
     } else {
         return nullptr;
     }
-}
-
-bool Symbol::operator==(const Symbol &other) const {
-    if (kind.index() != other.kind.index()) {
-        return false;
-    }
-
-    SIR_VISIT_SYMBOL(
-        *this,
-        SIR_VISIT_IMPOSSIBLE,
-        return inner == &other.as<Module>(),
-        return inner == &other.as<FuncDef>(),
-        return inner == &other.as<NativeFuncDecl>(),
-        return inner == &other.as<ConstDef>(),
-        return inner == &other.as<StructDef>(),
-        return inner == &other.as<StructField>(),
-        return inner == &other.as<VarDecl>(),
-        return inner == &other.as<NativeVarDecl>(),
-        return inner == &other.as<EnumDef>(),
-        return inner == &other.as<EnumVariant>(),
-        return inner == &other.as<UnionDef>(),
-        return inner == &other.as<UnionCase>(),
-        return inner == &other.as<TypeAlias>(),
-        return inner == &other.as<UseIdent>(),
-        return inner == &other.as<UseRebind>(),
-        return inner == &other.as<Local>(),
-        return inner == &other.as<Param>(),
-        return inner == &other.as<OverloadSet>()
-    );
 }
 
 const Ident &Symbol::get_ident() const {
@@ -328,6 +301,12 @@ std::string Symbol::get_name() const {
     } else {
         return get_ident().value;
     }
+}
+
+Symbol Symbol::get_parent() const {
+    if (auto func_def = match<FuncDef>()) return func_def->parent;
+    else if (auto struct_def = match<StructDef>()) return struct_def->parent;
+    else return nullptr;
 }
 
 Expr Symbol::get_type() {
@@ -389,6 +368,26 @@ bool PseudoType::is_struct_by_default() const {
         case PseudoTypeKind::STRING_LITERAL: return true;
         default: return false;
     }
+}
+
+Module &FuncDef::find_mod() const {
+    Symbol symbol = parent;
+
+    while (!symbol.is<sir::Module>()) {
+        symbol = symbol.get_parent();
+    }
+
+    return symbol.as<Module>();
+}
+
+Module &StructDef::find_mod() const {
+    Symbol symbol = parent;
+
+    while (!symbol.is<sir::Module>()) {
+        symbol = symbol.get_parent();
+    }
+
+    return symbol.as<Module>();
 }
 
 StructField *StructDef::find_field(std::string_view name) const {

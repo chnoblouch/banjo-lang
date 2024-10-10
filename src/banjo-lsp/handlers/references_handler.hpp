@@ -2,7 +2,7 @@
 #define LSP_REFERENCES_HANDLER_H
 
 #include "connection.hpp"
-#include "source_manager.hpp"
+#include "workspace.hpp"
 
 namespace banjo {
 
@@ -11,10 +11,10 @@ namespace lsp {
 class ReferencesHandler : public RequestHandler {
 
 private:
-    SourceManager &source_manager;
+    Workspace &workspace;
 
 public:
-    ReferencesHandler(SourceManager &source_manager);
+    ReferencesHandler(Workspace &workspace);
     ~ReferencesHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);

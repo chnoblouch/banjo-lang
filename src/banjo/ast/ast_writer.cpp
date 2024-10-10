@@ -1,4 +1,5 @@
 #include "ast_writer.hpp"
+#include "ast_node.hpp"
 
 namespace banjo {
 
@@ -183,6 +184,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_META_FIELD_ACCESS: return "META_FIELD_ACCESS";
         case AST_META_METHOD_CALL: return "META_METHOD_CALL";
         case AST_ERROR: return "ERROR";
+        case AST_COMPLETION_TOKEN: return "COMPLETION_TOKEN";
         case AST_INVALID: return "INVALID";
     }
 }

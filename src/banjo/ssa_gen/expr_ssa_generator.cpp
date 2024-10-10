@@ -81,7 +81,8 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // dot_expr
         SIR_VISIT_IMPOSSIBLE,                              // meta_access
         SIR_VISIT_IMPOSSIBLE,                              // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE                               // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE                               // completion_token
     );
 }
 

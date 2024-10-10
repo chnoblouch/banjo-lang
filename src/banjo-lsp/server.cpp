@@ -1,11 +1,11 @@
 #include "server.hpp"
 
-#include "banjo/ast/ast_child_indices.hpp"
 #include "ast_navigation.hpp"
+#include "banjo/ast/ast_child_indices.hpp"
 #include "banjo/config/config.hpp"
 #include "connection.hpp"
-#include "source_manager.hpp"
 #include "uri.hpp"
+#include "workspace.hpp"
 
 #include "handlers/completion_handler.hpp"
 #include "handlers/definition_handler.hpp"
@@ -21,14 +21,14 @@ namespace lsp {
 
 void Server::start() {
     Connection connection;
-    SourceManager source_manager;
+    Workspace workspace;
 
     InitializeHandler initialize_handler;
-    CompletionHandler completion_handler(source_manager);
-    DefinitionHandler definition_handler(source_manager);
-    ReferencesHandler references_handler(source_manager);
-    RenameHandler rename_handler(source_manager);
-    SemanticTokensHandler semantic_tokens_handler(source_manager);
+    CompletionHandler completion_handler(workspace);
+    DefinitionHandler definition_handler(workspace);
+    ReferencesHandler references_handler(workspace);
+    RenameHandler rename_handler(workspace);
+    SemanticTokensHandler semantic_tokens_handler(workspace);
     ShutdownHandler shutdown_handler;
 
     connection.on_request("initialize", &initialize_handler);
@@ -39,7 +39,7 @@ void Server::start() {
     connection.on_request("textDocument/semanticTokens/full", &semantic_tokens_handler);
     connection.on_request("shutdown", &shutdown_handler);
 
-    connection.on_notification("initialized", [&source_manager](JSONObject &) { source_manager.parse_full_source(); });
+    connection.on_notification("initialized", [&](JSONObject &) { workspace.initialize(); });
     connection.on_notification("exit", [](JSONObject &) { std::exit(0); });
 
     /*
@@ -66,16 +66,15 @@ void Server::start() {
     });
     */
 
-    connection.on_notification("textDocument/didChange", [&source_manager](JSONObject &params) {
+    connection.on_notification("textDocument/didChange", [&](JSONObject &params) {
         const JSONObject &document = params.get_object("textDocument");
-        std::filesystem::path path = URI::decode_to_path(document.get_string("uri"));
-        SourceFile &file = source_manager.get_file(path);
+        std::filesystem::path fs_path = URI::decode_to_path(document.get_string("uri"));
 
         const JSONArray &changes = params.get_array("contentChanges");
         const JSONObject &last_change = changes.get_object(changes.length() - 1);
-        file.source = last_change.get_string("text");
+        std::string new_content = last_change.get_string("text");
 
-        source_manager.on_file_changed(file);
+        workspace.update(fs_path, new_content);
     });
 
     connection.start();

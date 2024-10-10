@@ -83,16 +83,16 @@ ASTModule *ModuleManager::load(const ModuleFile &module_file) {
     return mod;
 }
 
-void ModuleManager::reload(ASTModule *mod) {
+ASTModule *ModuleManager::reload(ASTModule *mod) {
     std::optional<ModuleFile> module_file = module_discovery.find_module(mod->get_path());
     if (!module_file) {
-        return;
+        return nullptr;
     }
 
     ParsedAST parsed_ast = parse_module(*module_file);
     ASTModule *new_mod = parsed_ast.module_;
     if (!new_mod) {
-        return;
+        return nullptr;
     }
 
     new_mod->set_file_path(module_file->file_path);
@@ -101,13 +101,28 @@ void ModuleManager::reload(ASTModule *mod) {
     report_manager.merge_result(std::move(parsed_ast.reports), parsed_ast.is_valid);
     module_loader.after_load(*module_file, new_mod, parsed_ast.is_valid);
 
-    link_sub_modules(new_mod, *module_file);
+    return new_mod;
+}
 
-    if (new_mod->get_path().get_size() > 1) {
-        ASTModule *parent = module_list.get_by_path(new_mod->get_path().parent());
-        SymbolTable *symbol_table = ASTUtils::get_module_symbol_table(parent);
-        symbol_table->replace_symbol(new_mod->get_path().get_path().back(), new_mod);
+ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPosition completion_point) {
+    std::optional<ModuleFile> module_file = module_discovery.find_module(path);
+    if (!module_file) {
+        return nullptr;
     }
+
+    std::istream *stream = module_loader.open(*module_file);
+    if (!stream) {
+        return nullptr;
+    }
+
+    Lexer lexer(*stream);
+    lexer.enable_completion(completion_point);
+    std::vector<Token> tokens = lexer.tokenize();
+    delete stream;
+
+    Parser parser(tokens, module_file->path);
+    parser.enable_completion();
+    return parser.parse_module().module_;
 }
 
 void ModuleManager::clear() {
@@ -154,12 +169,20 @@ void ModuleManager::link_sub_module(ASTModule *mod, ASTModule *sub_mod) {
 
 ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
     if (module_file.path == ModulePath{"std", "config"}) {
-        return ParsedAST{.module_ = new StdConfigModule(), .is_valid = true, .reports = {}};
+        return ParsedAST{
+            .module_ = new StdConfigModule(),
+            .is_valid = true,
+            .reports = {},
+        };
     }
 
     std::istream *stream = module_loader.open(module_file);
     if (!stream) {
-        return ParsedAST{.module_ = nullptr, .is_valid = false, .reports = {}};
+        return ParsedAST{
+            .module_ = nullptr,
+            .is_valid = false,
+            .reports = {},
+        };
     }
 
     std::vector<Token> tokens = Lexer(*stream).tokenize();

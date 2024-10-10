@@ -54,7 +54,9 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
         analyze_type_alias(*inner),       // type_alias
         SIR_VISIT_IGNORE,                 // use_decl
         SIR_VISIT_IGNORE,                 // meta_if_stmt
-        SIR_VISIT_IGNORE                  // expanded_meta_stmt
+        SIR_VISIT_IGNORE,                 // expanded_meta_stmt
+        SIR_VISIT_IGNORE,                 // error
+        SIR_VISIT_IGNORE                  // completion_token
     );
 
     return Result::SUCCESS;
@@ -75,25 +77,25 @@ void DeclVisitor::process_struct_def(sir::StructDef &struct_def) {
 
     analyze_struct_def(struct_def);
 
-    analyzer.enter_struct_def(&struct_def);
+    analyzer.push_scope().decl = &struct_def;
     analyze_decl_block(struct_def.block);
-    analyzer.exit_struct_def();
+    analyzer.pop_scope();
 }
 
 void DeclVisitor::process_enum_def(sir::EnumDef &enum_def) {
     analyze_enum_def(enum_def);
 
-    analyzer.enter_enum_def(&enum_def);
+    analyzer.push_scope().decl = &enum_def;
     analyze_decl_block(enum_def.block);
-    analyzer.exit_enum_def();
+    analyzer.pop_scope();
 }
 
 void DeclVisitor::process_union_def(sir::UnionDef &union_def) {
     analyze_union_def(union_def);
 
-    analyzer.enter_union_def(&union_def);
+    analyzer.push_scope().decl = &union_def;
     analyze_decl_block(union_def.block);
-    analyzer.exit_union_def();
+    analyzer.pop_scope();
 }
 
 } // namespace sema

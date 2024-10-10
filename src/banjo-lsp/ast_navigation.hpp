@@ -2,11 +2,20 @@
 #define LSP_AST_NAVIGATION_H
 
 #include "banjo/ast/ast_node.hpp"
-#include "source_manager.hpp"
 
 namespace banjo {
 
 namespace lsp {
+
+struct LSPTextPosition {
+    int line;
+    int column;
+};
+
+struct LSPTextRange {
+    LSPTextPosition start;
+    LSPTextPosition end;
+};
 
 namespace ASTNavigation {
 

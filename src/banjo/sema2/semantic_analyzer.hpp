@@ -2,6 +2,7 @@
 #define SEMA2_SEMANTIC_ANALYZER_H
 
 #include "banjo/reports/report_manager.hpp"
+#include "banjo/sema2/extra_analysis.hpp"
 #include "banjo/sema2/report_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
@@ -12,6 +13,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace banjo {
@@ -20,6 +22,26 @@ namespace lang {
 
 namespace sema {
 
+enum class Mode {
+    COMPILATION,
+    INDEXING,
+    COMPLETION,
+};
+
+struct CompleteInDeclBlock {
+    sir::DeclBlock *decl_block;
+};
+
+struct CompleteInBlock {
+    sir::Block *block;
+};
+
+struct CompleteAfterDot {
+    sir::Expr lhs;
+};
+
+typedef std::variant<CompleteInDeclBlock, CompleteInBlock, CompleteAfterDot> CompletionContext;
+
 struct ClosureContext {
     std::vector<sir::Symbol> captured_vars;
     sir::TupleExpr *data_type;
@@ -27,12 +49,8 @@ struct ClosureContext {
 };
 
 struct Scope {
-    sir::FuncDef *func_def = nullptr;
+    sir::Symbol decl = nullptr;
     sir::Block *block = nullptr;
-    sir::DeclBlock *decl_block = nullptr;
-    sir::StructDef *struct_def = nullptr;
-    sir::EnumDef *enum_def = nullptr;
-    sir::UnionDef *union_def = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
     ClosureContext *closure_ctx = nullptr;
 };
@@ -70,6 +88,10 @@ private:
     target::Target *target;
     ReportManager &report_manager;
     ReportGenerator report_generator;
+    Mode mode;
+
+    ExtraAnalysis extra_analysis;
+    CompletionContext completion_context;
 
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
@@ -79,9 +101,18 @@ private:
     bool in_meta_expansion = false;
 
 public:
-    SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, ReportManager &report_manager);
+    SemanticAnalyzer(
+        sir::Unit &sir_unit,
+        target::Target *target,
+        ReportManager &report_manager,
+        Mode mode = Mode::COMPILATION
+    );
+
     void analyze();
     void analyze(sir::Module &mod);
+
+    ExtraAnalysis &get_extra_analysis() { return extra_analysis; }
+    CompletionContext &get_completion_context() { return completion_context; }
 
 private:
     Scope &get_scope() { return scopes.top(); }
@@ -100,12 +131,6 @@ private:
 
     void enter_mod(sir::Module *mod);
     void exit_mod() { scopes.pop(); }
-    void enter_struct_def(sir::StructDef *struct_def);
-    void exit_struct_def() { scopes.pop(); }
-    void enter_enum_def(sir::EnumDef *enum_def);
-    void exit_enum_def() { scopes.pop(); }
-    void enter_union_def(sir::UnionDef *union_def);
-    void exit_union_def() { scopes.pop(); }
 
     bool is_in_stmt_block() { return get_scope().block; }
     sir::SymbolTable &get_symbol_table();
@@ -127,6 +152,9 @@ private:
     sir::Specialization<sir::StructDef> *as_std_map_specialization(sir::Expr &type);
 
     unsigned compute_size(sir::Expr type);
+
+    void add_symbol_def(sir::Symbol sir_symbol);
+    void add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol);
 
     template <typename T>
     T *create_expr(T value) {

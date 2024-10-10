@@ -21,13 +21,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         }
 
         if (param.name.value == "self") {
-            sir::Symbol symbol;
-
-            if (analyzer.get_scope().struct_def) {
-                symbol = analyzer.get_scope().struct_def;
-            } else if (analyzer.get_scope().union_def) {
-                symbol = analyzer.get_scope().union_def;
-            }
+            sir::Symbol symbol = analyzer.get_scope().decl;
 
             param.type = analyzer.create_expr(sir::PointerType{
                 .ast_node = nullptr,
@@ -62,17 +56,17 @@ Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
     ExprAnalyzer(analyzer).analyze(var_decl.type);
 
-    if (analyzer.get_scope().struct_def) {
-        sir::StructDef &struct_def = *analyzer.get_scope().struct_def;
-
+    if (auto struct_def = analyzer.get_scope().decl.match<sir::StructDef>()) {
         out_decl = analyzer.create_decl(sir::StructField{
             .ast_node = var_decl.ast_node,
             .ident = var_decl.ident,
             .type = var_decl.type,
-            .index = static_cast<unsigned>(struct_def.fields.size()),
+            .index = static_cast<unsigned>(struct_def->fields.size()),
         });
 
-        struct_def.fields.push_back(&out_decl.as<sir::StructField>());
+        struct_def->fields.push_back(&out_decl.as<sir::StructField>());
+
+        analyzer.add_symbol_def(&out_decl.as<sir::StructField>());
     }
 
     return Result::SUCCESS;
@@ -87,12 +81,13 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
         ExprAnalyzer(analyzer).analyze(enum_variant.value);
     }
 
-    analyzer.get_scope().enum_def->variants.push_back(&enum_variant);
+    sir::EnumDef &enum_def = analyzer.get_scope().decl.as<sir::EnumDef>();
+    enum_def.variants.push_back(&enum_variant);
 
     enum_variant.type = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
         .type = nullptr,
-        .symbol = analyzer.get_scope().enum_def,
+        .symbol = &enum_def,
     });
 
     return Result::SUCCESS;
@@ -103,7 +98,8 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
         ExprAnalyzer(analyzer).analyze(field.type);
     }
 
-    analyzer.get_scope().union_def->cases.push_back(&union_case);
+    sir::UnionDef &union_def = analyzer.get_scope().decl.as<sir::UnionDef>();
+    union_def.cases.push_back(&union_case);
 
     return Result::SUCCESS;
 }

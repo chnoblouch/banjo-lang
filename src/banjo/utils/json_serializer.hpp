@@ -1,12 +1,11 @@
 #ifndef LSP_JSON_SERIALIZER_H
 #define LSP_JSON_SERIALIZER_H
 
-#include "json.hpp"
+#include "banjo/utils/json.hpp"
+
 #include <ostream>
 
 namespace banjo {
-
-namespace lsp {
 
 class JSONSerializer {
 
@@ -23,8 +22,6 @@ private:
     void serialize(const JSONArray &array, int indent);
     void serialize(const JSONValue &value, int indent);
 };
-
-} // namespace lsp
 
 } // namespace banjo
 

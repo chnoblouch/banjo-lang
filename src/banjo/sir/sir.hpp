@@ -3,6 +3,7 @@
 
 #include "banjo/ast/attribute.hpp"
 #include "banjo/symbol/module_path.hpp"
+#include "banjo/utils/dynamic_pointer.hpp"
 #include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
 #include "banjo/utils/macros.hpp"
@@ -103,6 +104,8 @@ struct UseIdent;
 struct UseDotExpr;
 struct UseRebind;
 struct UseList;
+struct Error;
+struct CompletionToken;
 
 struct Unit;
 struct DeclBlock;
@@ -162,6 +165,8 @@ class Expr {
         MetaAccess *,
         MetaFieldExpr *,
         MetaCallExpr *,
+        Error *,
+        CompletionToken *,
         std::nullptr_t>
         kind;
 
@@ -255,6 +260,7 @@ private:
         ExpandedMetaStmt *,
         Expr *,
         Block *,
+        Error *,
         std::nullptr_t>
         kind;
 
@@ -308,6 +314,8 @@ private:
         UseDecl *,
         MetaIfStmt *,
         ExpandedMetaStmt *,
+        Error *,
+        CompletionToken *,
         std::nullptr_t>
         kind;
 
@@ -347,69 +355,35 @@ public:
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
 };
 
-class Symbol {
-    std::variant<
-        Module *,
-        FuncDef *,
-        NativeFuncDecl *,
-        ConstDef *,
-        StructDef *,
-        StructField *,
-        VarDecl *,
-        NativeVarDecl *,
-        EnumDef *,
-        EnumVariant *,
-        UnionDef *,
-        UnionCase *,
-        TypeAlias *,
-        UseIdent *,
-        UseRebind *,
-        Local *,
-        Param *,
-        OverloadSet *,
-        std::nullptr_t>
-        kind;
-
+class Symbol : public DynamicPointer<
+                   Module,
+                   FuncDef,
+                   NativeFuncDecl,
+                   ConstDef,
+                   StructDef,
+                   StructField,
+                   VarDecl,
+                   NativeVarDecl,
+                   EnumDef,
+                   EnumVariant,
+                   UnionDef,
+                   UnionCase,
+                   TypeAlias,
+                   UseIdent,
+                   UseRebind,
+                   Local,
+                   Param,
+                   OverloadSet> {
 public:
-    Symbol() : kind(nullptr) {}
+    Symbol() : DynamicPointer() {}
 
     template <typename T>
-    Symbol(T value) : kind(std::move(value)) {}
-
-    template <typename T>
-    bool is() const {
-        return std::holds_alternative<T *>(kind);
-    }
-
-    template <typename T>
-    T &as() {
-        return *std::get<T *>(kind);
-    }
-
-    template <typename T>
-    const T &as() const {
-        return *std::get<T *>(kind);
-    }
-
-    template <typename T>
-    T *match() {
-        auto result = std::get_if<T *>(&kind);
-        return result ? *result : nullptr;
-    }
-
-    template <typename T>
-    const T *match() const {
-        auto result = std::get_if<T *>(&kind);
-        return result ? *result : nullptr;
-    }
-
-    operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
-    bool operator==(const Symbol &other) const;
-    bool operator!=(const Symbol &other) const { return !(*this == other); }
+    Symbol(T value) : DynamicPointer(value) {}
 
     const Ident &get_ident() const;
     Ident &get_ident();
     std::string get_name() const;
+    Symbol get_parent() const;
     Expr get_type();
     Symbol resolve();
     SymbolTable *get_symbol_table();
@@ -441,7 +415,7 @@ public:
 class Node {
 
 private:
-    std::variant<Expr, Stmt, Decl> kind;
+    std::variant<Expr, Stmt, Decl, UseItem> kind;
 
 public:
     Node() {}
@@ -1017,12 +991,14 @@ struct ExpandedMetaStmt {};
 struct FuncDef {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     FuncType type;
     Block block;
     Attributes *attrs = nullptr;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
 
+    Module &find_mod() const;
     bool is_generic() const { return !generic_params.empty(); }
     bool is_main() const { return ident.value == "main"; }
     bool is_method() const { return type.params.size() > 0 && type.params[0].name.value == "self"; }
@@ -1045,11 +1021,13 @@ struct ConstDef {
 struct StructDef {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     DeclBlock block;
     std::vector<StructField *> fields;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
 
+    Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
     bool is_generic() const { return !generic_params.empty(); }
 };
@@ -1146,6 +1124,14 @@ struct UseList {
     std::vector<UseItem> items;
 };
 
+struct Error {
+    ASTNode *ast_node;
+};
+
+struct CompletionToken {
+    ASTNode *ast_node;
+};
+
 typedef std::variant<
     IntLiteral,
     FPLiteral,
@@ -1186,7 +1172,9 @@ typedef std::variant<
     PseudoType,
     MetaAccess,
     MetaFieldExpr,
-    MetaCallExpr>
+    MetaCallExpr,
+    Error,
+    CompletionToken>
     ExprStorage;
 
 typedef std::variant<
@@ -1206,7 +1194,8 @@ typedef std::variant<
     MetaForStmt,
     ExpandedMetaStmt,
     Expr,
-    Block>
+    Block,
+    Error>
     StmtStorage;
 
 typedef std::variant<
@@ -1222,7 +1211,8 @@ typedef std::variant<
     UnionDef,
     UnionCase,
     TypeAlias,
-    UseDecl>
+    UseDecl,
+    Error>
     DeclStorage;
 
 typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;
@@ -1238,7 +1228,6 @@ struct Module {
 
     ModulePath path;
     DeclBlock block;
-    std::vector<Module *> sub_mods;
 
     template <typename T>
     T *create_expr(T value) {
@@ -1315,5 +1304,10 @@ const T *Expr::match_symbol() const {
 } // namespace lang
 
 } // namespace banjo
+
+template <>
+struct std::hash<banjo::lang::sir::Symbol> {
+    std::size_t operator()(const banjo::lang::sir::Symbol &symbol) const noexcept { return symbol.compute_hash(); }
+};
 
 #endif

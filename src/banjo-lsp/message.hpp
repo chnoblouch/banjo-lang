@@ -1,7 +1,8 @@
 #ifndef LSP_MESSAGE_H
 #define LSP_MESSAGE_H
 
-#include "json.hpp"
+#include "banjo/utils/json.hpp"
+
 #include <string>
 
 namespace banjo {

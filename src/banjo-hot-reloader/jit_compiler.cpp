@@ -1,6 +1,5 @@
 #include "jit_compiler.hpp"
 
-#include "banjo/ast/module_list.hpp"
 #include "banjo/codegen/ir_lowerer.hpp"
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/config/config.hpp"
@@ -8,7 +7,9 @@
 #include "banjo/ir_builder/root_ir_builder.hpp"
 #include "banjo/passes/addr_table_pass.hpp"
 #include "banjo/reports/report_printer.hpp"
-#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_generator.hpp"
 #include "banjo/target/x86_64/x86_64_encoder.hpp"
 
 namespace banjo {
@@ -18,14 +19,14 @@ namespace hot_reloader {
 JITCompiler::JITCompiler(lang::Config &config, AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
-    target_descr(target::Target::create(config.target, target::CodeModel::LARGE)),
+    target(target::Target::create(config.target, target::CodeModel::LARGE)),
     module_manager(module_loader, report_manager) {
     module_manager.add_standard_stdlib_search_path();
     module_manager.add_config_search_paths(config);
 }
 
 JITCompiler::~JITCompiler() {
-    delete target_descr;
+    delete target;
 }
 
 bool JITCompiler::build_ir() {
@@ -34,10 +35,8 @@ bool JITCompiler::build_ir() {
     module_manager.clear();
     module_manager.load_all();
 
-    type_manager = lang::DataTypeManager();
-
-    lang::SemanticAnalysis analysis = lang::SemanticAnalyzer(module_manager, type_manager, target_descr).analyze();
-    report_manager.merge_result(std::move(analysis.reports), analysis.is_valid);
+    lang::sir::Unit sir_unit = lang::SIRGenerator().generate(module_manager.get_module_list());
+    lang::sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
 
     if (!report_manager.is_valid()) {
         lang::ReportPrinter report_printer(module_manager);
@@ -49,8 +48,8 @@ bool JITCompiler::build_ir() {
         return false;
     }
 
-    ir_module = ir_builder::RootIRBuilder(module_manager.get_module_list(), target_descr).build();
-    passes::AddrTablePass(target_descr, addr_table).run(ir_module);
+    ir_module = ir_builder::RootIRBuilder(module_manager.get_module_list(), target).build();
+    passes::AddrTablePass(target, addr_table).run(ir_module);
 
     return true;
 }
@@ -75,13 +74,13 @@ BinModule JITCompiler::compile_func(const std::string &name) {
         partial_ir_module.add(struct_);
     }
 
-    codegen::IRLowerer *ir_lowerer = target_descr->create_ir_lowerer();
+    codegen::IRLowerer *ir_lowerer = target->create_ir_lowerer();
     mcode::Module machine_module = ir_lowerer->lower_module(partial_ir_module);
     delete ir_lowerer;
 
     partial_ir_module.forget_pointers();
 
-    codegen::MachinePassRunner(target_descr).create_and_run(machine_module);
+    codegen::MachinePassRunner(target).create_and_run(machine_module);
     return target::X8664Encoder().encode(machine_module);
 }
 

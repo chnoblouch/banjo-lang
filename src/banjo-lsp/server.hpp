@@ -1,4 +1,5 @@
-#include "json.hpp"
+#ifndef BANJO_LSP_SERVER_H
+#define BANJO_LSP_SERVER_H
 
 namespace banjo {
 
@@ -13,3 +14,5 @@ public:
 } // namespace lsp
 
 } // namespace banjo
+
+#endif

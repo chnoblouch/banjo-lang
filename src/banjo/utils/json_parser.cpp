@@ -4,8 +4,6 @@
 
 namespace banjo {
 
-namespace lsp {
-
 JSONParser::JSONParser(std::string string) : stream(string) {}
 
 JSONObject JSONParser::parse_object() {
@@ -130,7 +128,5 @@ void JSONParser::skip_whitespace() {
         c = stream.peek();
     }
 }
-
-} // namespace lsp
 
 } // namespace banjo

@@ -8,7 +8,6 @@
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/file_module_loader.hpp"
 #include "banjo/source/module_manager.hpp"
-#include "banjo/symbol/data_type_manager.hpp"
 
 namespace banjo {
 
@@ -19,9 +18,8 @@ class JITCompiler {
 private:
     lang::Config &config;
     AddrTable &addr_table;
-    target::Target *target_descr;
+    target::Target *target;
     ir::Module ir_module;
-    lang::DataTypeManager type_manager;
 
     lang::ReportManager report_manager;
     lang::FileModuleLoader module_loader;

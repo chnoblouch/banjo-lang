@@ -5,7 +5,6 @@
 #include "banjo/ast/module_list.hpp"
 #include "banjo/sir/sir.hpp"
 
-#include <unordered_map>
 #include <vector>
 
 namespace banjo {
@@ -25,15 +24,16 @@ private:
         STMT,
     };
 
-    sir::Unit sir_unit;
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
-    std::unordered_map<ASTModule *, sir::Module *> mod_map;
 
 public:
     sir::Unit generate(ModuleList &mods);
+    sir::Module generate(ASTModule *node);
+    void regenerate_mod(sir::Unit &unit, ASTModule *mod);
 
 private:
+    void generate_mod(ASTModule *node, sir::Module &out_sir_mod);
     Scope &get_scope() { return scopes.top(); }
 
     Scope &push_scope() {
@@ -42,8 +42,6 @@ private:
     }
 
     void pop_scope() { scopes.pop(); }
-
-    sir::Module *generate_mod(ASTModule *node);
 
     sir::DeclBlock generate_decl_block(ASTNode *node);
     sir::Decl generate_decl(ASTNode *node);
@@ -60,6 +58,7 @@ private:
     sir::Decl generate_union_case(ASTNode *node);
     sir::Decl generate_type_alias(ASTNode *node);
     sir::Decl generate_use_decl(ASTNode *node);
+    sir::Decl generate_error_decl(ASTNode *node);
 
     sir::Ident generate_ident(ASTNode *node);
     sir::Block generate_block(ASTNode *node);
@@ -80,6 +79,7 @@ private:
     sir::Stmt generate_break_stmt(ASTNode *node);
     sir::MetaIfStmt *generate_meta_if_stmt(ASTNode *node, MetaBlockKind kind);
     sir::MetaForStmt *generate_meta_for_stmt(ASTNode *node, MetaBlockKind kind);
+    sir::Stmt generate_error_stmt(ASTNode *node);
 
     sir::Expr generate_expr(ASTNode *node);
     sir::Expr generate_int_literal(ASTNode *node);
@@ -113,6 +113,7 @@ private:
     sir::Expr generate_result_type(ASTNode *node);
     sir::Expr generate_closure_type(ASTNode *node);
     sir::Expr generate_meta_access(ASTNode *node);
+    sir::Expr generate_error_expr(ASTNode *node);
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
@@ -155,6 +156,7 @@ private:
     }
 
     sir::Attributes *create_attrs(sir::Attributes value) { return cur_sir_mod->create_attrs(std::move(value)); }
+    sir::CompletionToken *generate_completion_token(ASTNode *node);
 };
 
 } // namespace lang

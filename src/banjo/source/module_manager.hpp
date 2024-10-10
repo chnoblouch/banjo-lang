@@ -6,6 +6,7 @@
 #include "banjo/config/config.hpp"
 #include "banjo/parser/parser.hpp"
 #include "banjo/source/module_discovery.hpp"
+#include "banjo/source/text_range.hpp"
 #include "banjo/symbol/module_path.hpp"
 
 #include <filesystem>
@@ -40,7 +41,8 @@ public:
     void load_all();
     ASTModule *load(const ModuleTreeNode &module_tree_node);
     ASTModule *load(const ModuleFile &module_file);
-    void reload(ASTModule *mod);
+    ASTModule *reload(ASTModule *mod);
+    ASTModule *load_for_completion(const ModulePath &path, TextPosition completion_point);
     void clear();
 
     std::optional<std::filesystem::path> find_source_file(const ModulePath &path);

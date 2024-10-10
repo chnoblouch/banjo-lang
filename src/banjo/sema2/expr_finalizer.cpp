@@ -592,6 +592,8 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
+
+        analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
     }
 
     return result;

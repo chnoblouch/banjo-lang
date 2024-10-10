@@ -46,6 +46,7 @@ void UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol) 
 
 void UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol) {
     use_ident.symbol = resolve_symbol(use_ident.ident, symbol);
+    analyzer.add_symbol_use(use_ident.ident.ast_node, symbol);
 }
 
 void UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol) {

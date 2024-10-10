@@ -1,4 +1,4 @@
-#ifndef DECL_INTERFACE_ANALYZER_H
+    #ifndef DECL_INTERFACE_ANALYZER_H
 #define DECL_INTERFACE_ANALYZER_H
 
 #include "banjo/sema2/decl_visitor.hpp"

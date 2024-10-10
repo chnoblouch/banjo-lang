@@ -5,6 +5,12 @@
 #    include <cstdlib>  // IWYU pragma: export
 #    include <iostream> // IWYU pragma: export
 
+#    define ASSERT(condition)                                                                                          \
+        if (!(condition)) {                                                                                            \
+            std::cerr << "assertion failure, aborting!\nat " << __FILE__ << ":" << __LINE__ << "\n" << std::flush;     \
+            std::abort();                                                                                              \
+        }
+
 #    define ASSERT_UNREACHABLE                                                                                         \
         {                                                                                                              \
             std::cerr << "unreachable code path triggered, aborting!\nat " << __FILE__ << ":" << __LINE__ << "\n"      \
@@ -18,6 +24,7 @@
             std::abort();                                                                                              \
         }
 #else
+#    define ASSERT(condition) ;
 #    ifdef _MSC_VER
 #        define ASSERT_UNREACHABLE __assume(false);
 #        define ASSUME(condition) __assume(condition);

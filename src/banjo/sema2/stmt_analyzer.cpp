@@ -47,7 +47,8 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
         MetaExpansion(analyzer).evaluate_meta_for_stmt(block, index), // meta_for_stmt
         SIR_VISIT_IGNORE,                                             // expanded_meta_stmt
         ExprAnalyzer(analyzer).analyze(*inner),                       // expr_stmt
-        analyze_block(*inner)                                         // block_stmt
+        analyze_block(*inner),                                        // block_stmt
+        SIR_VISIT_IGNORE                                              // error
     )
 }
 
@@ -67,6 +68,8 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         ExprAnalyzer(analyzer).analyze(var_stmt.value);
         var_stmt.local.type = var_stmt.value.get_type();
     }
+
+    analyzer.add_symbol_def(&var_stmt.local);
 }
 
 void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
@@ -95,7 +98,8 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     if (return_stmt.value) {
-        sir::Expr return_type = analyzer.get_scope().func_def->type.return_type;
+        sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
+        sir::Expr return_type = func_def.type.return_type;
         ExprAnalyzer(analyzer).analyze(return_stmt.value, ExprConstraints::expect_type(return_type));
     }
 }

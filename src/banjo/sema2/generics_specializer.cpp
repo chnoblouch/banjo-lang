@@ -44,9 +44,10 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     sir::FuncDef &generic_func_def,
     const std::vector<sir::Expr> &args
 ) {
-    sir::Cloner cloner(*analyzer.cur_sir_mod);
+    sir::Module &def_mod = generic_func_def.find_mod();
+    sir::Cloner cloner(def_mod);
 
-    sir::FuncDef *clone = analyzer.cur_sir_mod->create_decl(sir::FuncDef{
+    sir::FuncDef *clone = def_mod.create_decl(sir::FuncDef{
         .ast_node = generic_func_def.ast_node,
         .ident = generic_func_def.ident,
         .type = *cloner.clone_func_type(generic_func_def.type),
@@ -56,11 +57,14 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     });
 
     generic_func_def.specializations.push_back(sir::Specialization<sir::FuncDef>{
-        .args = args,
+        .args = cloner.clone_expr_list(args),
         .def = clone,
     });
 
-    analyzer.push_scope().func_def = clone;
+    sir::Module *prev_mod = analyzer.cur_sir_mod;
+
+    analyzer.cur_sir_mod = &def_mod;
+    analyzer.push_scope().decl = clone;
     analyzer.get_scope().closure_ctx = nullptr;
     analyzer.get_scope().generic_args.clear();
 
@@ -73,6 +77,8 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});
 
     analyzer.pop_scope();
+    analyzer.cur_sir_mod = prev_mod;
+
     return clone;
 }
 
@@ -80,9 +86,10 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     sir::StructDef &generic_struct_def,
     const std::vector<sir::Expr> &args
 ) {
-    sir::Cloner cloner(*analyzer.cur_sir_mod);
+    sir::Module &def_mod = generic_struct_def.find_mod();
+    sir::Cloner cloner(def_mod);
 
-    sir::StructDef *clone = analyzer.cur_sir_mod->create_decl(sir::StructDef{
+    sir::StructDef *clone = def_mod.create_decl(sir::StructDef{
         .ast_node = generic_struct_def.ast_node,
         .ident = generic_struct_def.ident,
         .block = cloner.clone_decl_block(generic_struct_def.block),
@@ -91,12 +98,15 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     });
 
     generic_struct_def.specializations.push_back(sir::Specialization<sir::StructDef>{
-        .args = args,
+        .args = cloner.clone_expr_list(args),
         .def = clone,
     });
 
+    sir::Module *prev_mod = analyzer.cur_sir_mod;
+
+    analyzer.cur_sir_mod = &def_mod;
     analyzer.push_empty_scope();
-    analyzer.enter_struct_def(clone);
+    analyzer.push_scope().decl = clone;
 
     for (unsigned i = 0; i < args.size(); i++) {
         std::string_view param_name = generic_struct_def.generic_params[i].ident.value;
@@ -110,8 +120,10 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     DeclInterfaceAnalyzer(analyzer).process_struct_def(*clone);
     analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});
 
-    analyzer.exit_struct_def();
     analyzer.pop_scope();
+    analyzer.pop_scope();
+    analyzer.cur_sir_mod = prev_mod;
+
     return clone;
 }
 

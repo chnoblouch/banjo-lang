@@ -1,9 +1,10 @@
 #ifndef LSP_SEMANTIC_TOKENS_HANDLER_H
 #define LSP_SEMANTIC_TOKENS_HANDLER_H
 
-#include "connection.hpp"
 #include "banjo/source/text_range.hpp"
-#include "source_manager.hpp"
+#include "connection.hpp"
+#include "index.hpp"
+#include "workspace.hpp"
 
 namespace banjo {
 
@@ -26,17 +27,19 @@ struct LSPSemanticToken {
 class SemanticTokensHandler : public RequestHandler {
 
 private:
-    SourceManager &source_manager;
+    Workspace &workspace;
 
 public:
-    SemanticTokensHandler(SourceManager &source_manager);
+    SemanticTokensHandler(Workspace &workspace);
     ~SemanticTokensHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);
-    void publish_diagnostics(const std::string &uri, Connection &connection);
-    void build_tokens(std::vector<SemanticToken> &tokens, lang::ASTNode *node);
+    void publish_diagnostics(const File *file, ModuleIndex &index, Connection &connection);
     std::vector<LSPSemanticToken> tokens_to_lsp(const std::string &source, const std::vector<SemanticToken> &tokens);
     JSONArray serialize(const std::vector<LSPSemanticToken> &lsp_tokens);
+
+private:
+    void add_symbol_token(std::vector<SemanticToken> &tokens, lang::TextRange range, const lang::sir::Symbol &symbol);
 };
 
 } // namespace lsp

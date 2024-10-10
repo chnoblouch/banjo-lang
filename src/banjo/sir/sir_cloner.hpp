@@ -56,6 +56,7 @@ public:
     Block *clone_block_stmt(const Block &block);
 
     Expr clone_expr(const Expr &expr);
+    std::vector<Expr> clone_expr_list(const std::vector<Expr> &exprs);
     IntLiteral *clone_int_literal(const IntLiteral &int_literal);
     FPLiteral *clone_fp_literal(const FPLiteral &fp_literal);
     BoolLiteral *clone_bool_literal(const BoolLiteral &bool_literal);
@@ -96,14 +97,13 @@ public:
     MetaFieldExpr *clone_meta_field_expr(const MetaFieldExpr &meta_field_expr);
     MetaCallExpr *clone_meta_call_expr(const MetaCallExpr &meta_call_expr);
 
-private:
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
     void pop_symbol_table() { symbol_tables.pop(); }
 
     Local clone_local(const Local &local);
-    std::vector<Expr> clone_expr_list(const std::vector<Expr> &exprs);
     Attributes *clone_attrs(const Attributes *attrs);
     MetaBlock clone_meta_block(const MetaBlock &meta_block);
+    Error *clone_error(const Error &error);
 };
 
 } // namespace sir

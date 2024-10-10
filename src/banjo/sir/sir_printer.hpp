@@ -112,6 +112,7 @@ private:
     void print_local(const Local &local);
     void print_binary_op(const char *field_name, BinaryOp op);
     void print_meta_block(const MetaBlock &meta_block);
+    void print_error(const Error &error);
 
     std::string get_indent();
     void new_line();

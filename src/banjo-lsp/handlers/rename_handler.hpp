@@ -3,7 +3,7 @@
 
 #include "banjo/ast/ast_node.hpp"
 #include "connection.hpp"
-#include "source_manager.hpp"
+#include "workspace.hpp"
 #include "banjo/symbol/symbol.hpp"
 
 namespace banjo {
@@ -18,10 +18,10 @@ struct SymbolDefinition {
 class RenameHandler : public RequestHandler {
 
 private:
-    SourceManager &source_manager;
+    Workspace &workspace;
 
 public:
-    RenameHandler(SourceManager &source_manager);
+    RenameHandler(Workspace &workspace);
     ~RenameHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);

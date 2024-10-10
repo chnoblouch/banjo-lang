@@ -1,12 +1,11 @@
 #ifndef LSP_JSON_PARSER_H
 #define LSP_JSON_PARSER_H
 
-#include "json.hpp"
+#include "banjo/utils/json.hpp"
+
 #include <sstream>
 
 namespace banjo {
-
-namespace lsp {
 
 class JSONParser {
 
@@ -26,8 +25,6 @@ private:
 
     void skip_whitespace();
 };
-
-} // namespace lsp
 
 } // namespace banjo
 

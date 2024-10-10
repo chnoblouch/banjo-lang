@@ -111,7 +111,9 @@ void Printer::print_decl(const Decl &decl) {
         print_type_alias(*inner),
         print_use_decl(*inner),
         print_meta_if_stmt(*inner),
-        print_expanded_meta_stmt(*inner)
+        print_expanded_meta_stmt(*inner),
+        print_error(*inner),
+        SIR_VISIT_IMPOSSIBLE
     );
 }
 
@@ -345,7 +347,8 @@ void Printer::print_stmt(const Stmt &stmt) {
         print_meta_for_stmt(*inner),
         print_expanded_meta_stmt(*inner),
         print_expr_stmt(*inner),
-        print_block_stmt(*inner)
+        print_block_stmt(*inner),
+        print_error(*inner)
     );
 }
 
@@ -589,7 +592,8 @@ void Printer::print_expr(const Expr &expr) {
         print_dot_expr(*inner),
         print_meta_access(*inner),
         print_meta_field_expr(*inner),
-        print_meta_call_expr(*inner)
+        print_meta_call_expr(*inner),
+        ASSERT_UNREACHABLE
     );
 }
 
@@ -989,6 +993,11 @@ void Printer::print_meta_block(const MetaBlock &meta_block) {
     }
 
     indent--;
+}
+
+void Printer::print_error(const Error & /* error */) {
+    BEGIN_OBJECT("Error");
+    END_OBJECT();
 }
 
 std::string Printer::get_indent() {

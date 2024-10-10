@@ -91,7 +91,8 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_dot_expr(*inner, expr),                     // dot_expr
         result = Result::SUCCESS,                                    // meta_access
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_field_expr
-        result = MetaExprEvaluator(analyzer).evaluate(*inner, expr)  // meta_call_expr
+        result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_call_expr
+        result = analyze_completion_token(*inner, expr)              // completion_token
     );
 
     if (result != Result::SUCCESS) {
@@ -267,7 +268,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         .specializations = {},
     });
 
-    generated_func->block.symbol_table->parent = analyzer.get_scope().decl_block->symbol_table;
+    generated_func->block.symbol_table->parent = analyzer.get_scope().decl.get_symbol_table();
 
     ClosureContext closure_ctx{
         .captured_vars = {},
@@ -517,6 +518,7 @@ void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
 
 Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr) {
     Result partial_result;
+    Result result = Result::SUCCESS;
     bool is_method = false;
 
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
@@ -550,8 +552,12 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
         partial_result = analyze(arg, constraints);
         if (partial_result != Result::SUCCESS) {
-            return partial_result;
+            result = Result::ERROR;
         }
+    }
+
+    if (result != Result::SUCCESS) {
+        return Result::ERROR;
     }
 
     if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
@@ -666,6 +672,8 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
 
         if (field) {
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
+
             out_call_expr.callee = analyzer.create_expr(sir::FieldExpr{
                 .ast_node = dot_expr.ast_node,
                 .type = field->type,
@@ -839,6 +847,14 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
         return result;
     }
 
+    if (analyzer.mode == Mode::COMPLETION && dot_expr.rhs.value == "[completion]") {
+        analyzer.completion_context = CompleteAfterDot{
+            .lhs = dot_expr.lhs,
+        };
+
+        return Result::SUCCESS;
+    }
+
     result = analyze_dot_expr_rhs(dot_expr, out_expr);
     return result;
 }
@@ -886,8 +902,9 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     }
 
     if (analyzer.in_meta_expansion) {
-        UseResolver(analyzer).resolve_in_block(*analyzer.get_scope().decl_block);
-        MetaExpansion(analyzer).run_on_decl_block(*analyzer.get_scope().decl_block);
+        sir::DeclBlock &decl_block = *analyzer.get_scope().decl.get_decl_block();
+        UseResolver(analyzer).resolve_in_block(decl_block);
+        MetaExpansion(analyzer).run_on_decl_block(decl_block);
     }
 
     sir::Symbol symbol = symbol_table.look_up(ident_expr.value);
@@ -912,7 +929,8 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
                 closure_ctx->captured_vars.push_back(symbol);
             }
 
-            sir::Symbol data_ptr_param = &analyzer.get_scope().func_def->type.params[0];
+            sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
+            sir::Symbol data_ptr_param = &func_def.type.params[0];
 
             out_expr = analyzer.create_expr(sir::FieldExpr{
                 .ast_node = nullptr,
@@ -950,6 +968,8 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         analyzer.report_generator.report_err_symbol_not_found(ident_expr);
         return Result::ERROR;
     }
+
+    analyzer.add_symbol_use(ident_expr.ast_node, symbol);
 
     out_expr = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = ident_expr.ast_node,
@@ -1044,7 +1064,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         });
     } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
         // FIXME: error handling
-        ASSUME(bracket_expr.rhs.size() == 1);
+        ASSERT(bracket_expr.rhs.size() == 1);
 
         sir::Symbol symbol = struct_def->block.symbol_table->look_up(MagicMethods::OP_INDEX);
 
@@ -1073,7 +1093,28 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     return Result::SUCCESS;
 }
 
+Result ExprAnalyzer::analyze_completion_token(sir::CompletionToken &completion_token, sir::Expr &out_expr) {
+    if (analyzer.is_in_stmt_block()) {
+        analyzer.completion_context = CompleteInBlock{
+            .block = analyzer.get_scope().block,
+        };
+    } else {
+        analyzer.completion_context = CompleteInDeclBlock{
+            .decl_block = analyzer.get_scope().decl.get_decl_block(),
+        };
+    }
+
+    out_expr = analyzer.create_expr(sir::IdentExpr{
+        .ast_node = nullptr,
+        .value = "[completion]",
+    });
+
+    return Result::SUCCESS;
+}
+
 void ExprAnalyzer::create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident rhs, sir::Symbol method) {
+    analyzer.add_symbol_use(rhs.ast_node, method);
+
     call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = rhs.ast_node,
         .type = method.get_type(),
@@ -1098,6 +1139,8 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     if (decl_block) {
         sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
         if (symbol) {
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, symbol);
+
             out_expr = analyzer.create_expr(sir::SymbolExpr{
                 .ast_node = dot_expr.ast_node,
                 .type = symbol.get_type(),
@@ -1113,6 +1156,8 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             sir::Module *sub_mod = analyzer.sir_unit.mods_by_path[sub_mod_path];
 
             if (sub_mod) {
+                analyzer.add_symbol_use(dot_expr.rhs.ast_node, sub_mod);
+
                 out_expr = analyzer.create_expr(sir::SymbolExpr{
                     .ast_node = dot_expr.ast_node,
                     .type = nullptr,
@@ -1151,6 +1196,8 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
+        analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
+
         out_expr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = dot_expr.ast_node,
             .type = field->type,
@@ -1165,12 +1212,16 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
+        sir::UnionCaseField &field = union_case->fields[*field_index];
+
         out_expr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = dot_expr.ast_node,
-            .type = union_case->fields[*field_index].type,
+            .type = field.type,
             .base = lhs,
             .field_index = *field_index,
         });
+
+        // analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
         unsigned field_index = std::stoul(dot_expr.rhs.value);
 
@@ -1249,6 +1300,8 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         .type = &impl->type,
         .symbol = impl,
     });
+
+    analyzer.add_symbol_use(out_expr.get_ast_node(), impl);
 
     out_expr = analyzer.create_expr(sir::CallExpr{
         .ast_node = nullptr,

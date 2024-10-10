@@ -37,9 +37,8 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
 
 Parser::Parser(std::vector<Token> &tokens, const ModulePath &module_path) : stream(tokens), module_path(module_path) {}
 
-void Parser::enable_completion(TextPosition completion_point) {
+void Parser::enable_completion() {
     running_completion = true;
-    this->completion_point = completion_point;
 }
 
 ParsedAST Parser::parse_module() {
@@ -374,7 +373,7 @@ bool Parser::is_at_completion_point() {
 }
 
 ASTNode *Parser::parse_completion_point() {
-    completion_node = new Identifier(stream.consume());
+    completion_node = new ASTNode(AST_COMPLETION_TOKEN, stream.consume());
     return completion_node;
 }
 

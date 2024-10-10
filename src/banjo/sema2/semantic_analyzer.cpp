@@ -2,6 +2,7 @@
 
 #include "banjo/sema2/decl_body_analyzer.hpp"
 #include "banjo/sema2/decl_interface_analyzer.hpp"
+#include "banjo/sema2/extra_analysis.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sema2/type_alias_resolver.hpp"
@@ -18,11 +19,17 @@ namespace lang {
 
 namespace sema {
 
-SemanticAnalyzer::SemanticAnalyzer(sir::Unit &sir_unit, target::Target *target, ReportManager &report_manager)
+SemanticAnalyzer::SemanticAnalyzer(
+    sir::Unit &sir_unit,
+    target::Target *target,
+    ReportManager &report_manager,
+    Mode mode /* = Mode::COMPILATION */
+)
   : sir_unit(sir_unit),
     target(target),
     report_manager(report_manager),
-    report_generator(*this) {}
+    report_generator(*this),
+    mode(mode) {}
 
 void SemanticAnalyzer::analyze() {
     SymbolCollector(*this).collect();
@@ -54,33 +61,14 @@ void SemanticAnalyzer::enter_mod(sir::Module *mod) {
     cur_sir_mod = mod;
 
     scopes.push(Scope{
-        .func_def = nullptr,
+        .decl = mod,
         .block = nullptr,
-        .decl_block = &mod->block,
     });
-}
-
-void SemanticAnalyzer::enter_struct_def(sir::StructDef *struct_def) {
-    Scope &scope = push_scope();
-    scope.struct_def = struct_def;
-    scope.decl_block = &struct_def->block;
-}
-
-void SemanticAnalyzer::enter_enum_def(sir::EnumDef *enum_def) {
-    Scope &scope = push_scope();
-    scope.enum_def = enum_def;
-    scope.decl_block = &enum_def->block;
-}
-
-void SemanticAnalyzer::enter_union_def(sir::UnionDef *union_def) {
-    Scope &scope = push_scope();
-    scope.union_def = union_def;
-    scope.decl_block = &union_def->block;
 }
 
 sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
     Scope &scope = get_scope();
-    return scope.block ? *scope.block->symbol_table : *scope.decl_block->symbol_table;
+    return scope.block ? *scope.block->symbol_table : *scope.decl.get_symbol_table();
 }
 
 void SemanticAnalyzer::populate_preamble_symbols() {
@@ -199,6 +187,38 @@ unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
     SSAGeneratorContext dummy_ssa_gen_ctx(target);
     ssa::Type ssa_type = TypeSSAGenerator(dummy_ssa_gen_ctx).generate(type);
     return target->get_data_layout().get_size(ssa_type);
+}
+
+void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
+    if (mode != Mode::INDEXING || !get_scope().generic_args.empty()) {
+        return;
+    }
+
+    ASTNode *ast_node = sir_symbol.get_ident().ast_node;
+    if (!ast_node) {
+        return;
+    }
+
+    ExtraAnalysis::SymbolDef def{
+        .mod = cur_sir_mod,
+        .symbol = sir_symbol,
+        .ident_range = ast_node->get_range(),
+    };
+
+    extra_analysis.mods[cur_sir_mod].symbol_defs.push_back(def);
+}
+
+void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol) {
+    if (mode != Mode::INDEXING || !get_scope().generic_args.empty() || !ast_node) {
+        return;
+    }
+
+    ExtraAnalysis::SymbolUse use{
+        .range = ast_node->get_range(),
+        .symbol = sir_symbol,
+    };
+
+    extra_analysis.mods[cur_sir_mod].symbol_uses.push_back(use);
 }
 
 } // namespace sema

@@ -1,7 +1,8 @@
 #include "test_driver_generator.hpp"
 
 #include "banjo/sema2/semantic_analyzer.hpp"
-#include "sir.hpp"
+
+#include <iostream>
 
 namespace banjo {
 

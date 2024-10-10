@@ -1,54 +1,68 @@
 #include "semantic_tokens_handler.hpp"
 
+#include "ast_navigation.hpp"
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/ast/expr.hpp"
-#include "ast_navigation.hpp"
-#include "protocol_structs.hpp"
+#include "banjo/sema2/extra_analysis.hpp"
+#include "banjo/sir/sir.hpp"
+#include "banjo/source/text_range.hpp"
 #include "banjo/symbol/symbol_ref.hpp"
+#include "banjo/utils/macros.hpp"
+#include "protocol_structs.hpp"
 #include "uri.hpp"
+
+#include <algorithm>
 
 namespace banjo {
 
 namespace lsp {
 
-SemanticTokensHandler::SemanticTokensHandler(SourceManager &source_manager) : source_manager(source_manager) {}
+using namespace lang;
+
+SemanticTokensHandler::SemanticTokensHandler(Workspace &workspace) : workspace(workspace) {}
 
 SemanticTokensHandler::~SemanticTokensHandler() {}
 
 JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &connection) {
     std::string uri = params.get_object("textDocument").get_string("uri");
-    std::filesystem::path path = URI::decode_to_path(uri);
-    if (!source_manager.has_file(path)) {
+    std::filesystem::path fs_path = URI::decode_to_path(uri);
+
+    File *file = workspace.find_file(fs_path);
+    if (!file) {
         return JSONObject{{"data", JSONArray{}}};
     }
 
-    const SourceFile &file = source_manager.get_file(path);
+    ModuleIndex *index = workspace.find_index(file->sir_module);
+    if (!index) {
+        return JSONObject{{"data", JSONArray{}}};
+    }
 
     std::vector<SemanticToken> tokens;
-    build_tokens(tokens, file.module_node);
-    std::vector<LSPSemanticToken> lsp_tokens = tokens_to_lsp(file.source, tokens);
+
+    for (const SymbolRef &symbol_ref : index->symbol_refs) {
+        add_symbol_token(tokens, symbol_ref.range, symbol_ref.symbol);
+    }
+
+    std::sort(tokens.begin(), tokens.end(), [](const SemanticToken &lhs, const SemanticToken &rhs) {
+        return lhs.range.start < rhs.range.start;
+    });
+
+    std::vector<LSPSemanticToken> lsp_tokens = tokens_to_lsp(file->content, tokens);
     JSONArray data = serialize(lsp_tokens);
 
-    publish_diagnostics(uri, connection);
+    publish_diagnostics(file, *index, connection);
 
     return JSONObject{{"data", data}};
 }
 
-void SemanticTokensHandler::publish_diagnostics(const std::string &uri, Connection &connection) {
-    std::filesystem::path path = URI::decode_to_path(uri);
+void SemanticTokensHandler::publish_diagnostics(const File *file, ModuleIndex &index, Connection &connection) {
     JSONArray diagnostics;
 
-    for (const lang::Report &report : source_manager.get_reports()) {
+    for (const lang::Report &report : index.reports) {
         const lang::SourceLocation &location = *report.get_message().location;
 
-        std::filesystem::path report_file_path = *source_manager.get_module_manager().find_source_file(location.path);
-        if (std::filesystem::absolute(report_file_path) != std::filesystem::absolute(path)) {
-            continue;
-        }
-
-        const std::string report_source = source_manager.get_file(report_file_path).source;
-        LSPTextPosition start = ASTNavigation::pos_to_lsp(report_source, location.range.start);
-        LSPTextPosition end = ASTNavigation::pos_to_lsp(report_source, location.range.end);
+        LSPTextPosition start = ASTNavigation::pos_to_lsp(file->content, location.range.start);
+        LSPTextPosition end = ASTNavigation::pos_to_lsp(file->content, location.range.end);
 
         std::string message = report.get_message().text;
 
@@ -74,68 +88,9 @@ void SemanticTokensHandler::publish_diagnostics(const std::string &uri, Connecti
         });
     }
 
+    std::string uri = URI::encode_from_path(file->fs_path);
     JSONObject notification{{"uri", uri}, {"diagnostics", diagnostics}};
     connection.send_notification("textDocument/publishDiagnostics", notification);
-}
-
-void SemanticTokensHandler::build_tokens(std::vector<SemanticToken> &tokens, lang::ASTNode *node) {
-    lang::TextRange range = node->get_range();
-
-    if (node->get_type() == lang::AST_IDENTIFIER) {
-        lang::Identifier *identifier = node->as<lang::Identifier>();
-
-        if (identifier->get_symbol()) {
-            std::optional<lang::SymbolRef> symbol = identifier->get_symbol()->resolve();
-
-            if (symbol) {
-                switch (symbol->get_kind()) {
-                    case lang::SymbolKind::MODULE:
-                        tokens.push_back({range, SemanticTokenType::NAMESPACE, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::FUNCTION:
-                    case lang::SymbolKind::GENERIC_FUNC:
-                        tokens.push_back({range, SemanticTokenType::FUNCTION, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::LOCAL:
-                        tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::PARAM:
-                        tokens.push_back({range, SemanticTokenType::PARAMETER, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::GLOBAL:
-                        tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::CONST:
-                        tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::READONLY});
-                        break;
-                    case lang::SymbolKind::STRUCT:
-                    case lang::SymbolKind::UNION:
-                    case lang::SymbolKind::UNION_CASE:
-                    case lang::SymbolKind::PROTO:
-                    case lang::SymbolKind::GENERIC_STRUCT:
-                        tokens.push_back({range, SemanticTokenType::STRUCT, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::ENUM:
-                        tokens.push_back({range, SemanticTokenType::ENUM, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::ENUM_VARIANT:
-                        tokens.push_back({range, SemanticTokenType::ENUM_MEMBER, SemanticTokenModifiers::NONE});
-                        break;
-                    case lang::SymbolKind::FIELD:
-                    case lang::SymbolKind::UNION_CASE_FIELD:
-                        tokens.push_back({range, SemanticTokenType::PROPERTY, SemanticTokenModifiers::NONE});
-                        break;
-                    default: break;
-                }
-            }
-        }
-    } else if (node->get_type() == lang::AST_SELF) {
-        tokens.push_back({range, SemanticTokenType::KEYWORD, SemanticTokenModifiers::NONE});
-    }
-
-    for (lang::ASTNode *child : node->get_children()) {
-        build_tokens(tokens, child);
-    }
 }
 
 std::vector<LSPSemanticToken> SemanticTokensHandler::tokens_to_lsp(
@@ -143,24 +98,30 @@ std::vector<LSPSemanticToken> SemanticTokensHandler::tokens_to_lsp(
     const std::vector<SemanticToken> &tokens
 ) {
     std::vector<LSPSemanticToken> lsp_tokens;
-    int last_line = 0;
-    int last_start_column = 0;
+    lang::TextPosition position = 0;
 
     for (const SemanticToken &token : tokens) {
-        LSPTextPosition start = ASTNavigation::pos_to_lsp(source, token.range.start);
-        LSPTextPosition end = ASTNavigation::pos_to_lsp(source, token.range.end);
-        end.column++;
+        int delta_line = 0;
+        int delta_start_column = 0;
+
+        while (position < token.range.start) {
+            if (source[position] == '\n') {
+                delta_line += 1;
+                delta_start_column = 0;
+            } else {
+                delta_start_column += 1;
+            }
+
+            position += 1;
+        }
 
         lsp_tokens.push_back({
-            .delta_line = start.line - last_line,
-            .delta_start_column = start.line == last_line == 0 ? start.column : start.column - last_start_column,
+            .delta_line = delta_line,
+            .delta_start_column = delta_start_column,
             .length = static_cast<int>(token.range.end - token.range.start),
             .type = token.type,
             .modifiers = token.modifiers,
         });
-
-        last_line = start.line;
-        last_start_column = start.column;
     }
 
     return lsp_tokens;
@@ -178,6 +139,30 @@ JSONArray SemanticTokensHandler::serialize(const std::vector<LSPSemanticToken> &
     }
 
     return data;
+}
+
+void SemanticTokensHandler::add_symbol_token(
+    std::vector<SemanticToken> &tokens,
+    TextRange range,
+    const sir::Symbol &symbol
+) {
+    if (symbol.is<sir::Module>()) {
+        tokens.push_back({range, SemanticTokenType::NAMESPACE, SemanticTokenModifiers::NONE});
+    } else if (symbol.is<sir::FuncDef>() || symbol.is<sir::NativeFuncDecl>()) {
+        tokens.push_back({range, SemanticTokenType::FUNCTION, SemanticTokenModifiers::NONE});
+    } else if (symbol.is<sir::ConstDef>()) {
+        tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::READONLY});
+    } else if (symbol.is_one_of<sir::StructDef, sir::EnumDef, sir::UnionDef, sir::UnionCase, sir::TypeAlias>()) {
+        tokens.push_back({range, SemanticTokenType::STRUCT, SemanticTokenModifiers::NONE});
+    } else if (symbol.is<sir::StructField>()) {
+        tokens.push_back({range, SemanticTokenType::PROPERTY, SemanticTokenModifiers::NONE});
+    } else if (symbol.is_one_of<sir::VarDecl, sir::NativeVarDecl, sir::Local>()) {
+        tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::NONE});
+    } else if (symbol.is<sir::EnumVariant>()) {
+        tokens.push_back({range, SemanticTokenType::ENUM_MEMBER, SemanticTokenModifiers::NONE});
+    } else if (symbol.is<sir::Param>()) {
+        tokens.push_back({range, SemanticTokenType::PARAMETER, SemanticTokenModifiers::NONE});
+    }
 }
 
 } // namespace lsp

@@ -1,7 +1,7 @@
 #include "connection.hpp"
 
-#include "json_parser.hpp"
-#include "json_serializer.hpp"
+#include "banjo/utils/json_parser.hpp"
+#include "banjo/utils/json_serializer.hpp"
 
 namespace banjo {
 
