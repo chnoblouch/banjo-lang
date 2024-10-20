@@ -490,6 +490,7 @@ struct Attributes {
     bool dllexport = false;
     bool test = false;
     std::optional<std::string> link_name = {};
+    bool unmanaged = false;
 };
 
 struct Ident {
@@ -501,6 +502,7 @@ struct Param {
     ASTNode *ast_node;
     Ident name;
     Expr type;
+    Attributes *attrs = nullptr;
 
     bool operator==(const Param &other) const { return type == other.type; }
     bool operator!=(const Param &other) const { return !(*this == other); }
@@ -1068,6 +1070,7 @@ struct StructField {
     ASTNode *ast_node;
     Ident ident;
     Expr type;
+    Attributes *attrs = nullptr;
     unsigned index;
 };
 
@@ -1076,6 +1079,7 @@ struct VarDecl {
     Ident ident;
     Expr type;
     Expr value;
+    Attributes *attrs = nullptr;
 };
 
 struct NativeVarDecl {

@@ -263,9 +263,8 @@ ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
         NodeBuilder node = new_node();
 
         if (stream.get()->is(TKN_AT)) {
-            parse_attribute_list();
-            node.set_attribute_list(current_attr_list);
-            current_attr_list = nullptr;
+            AttributeList *attribute_list = parse_attribute_list();
+            node.set_attribute_list(attribute_list);
         }
 
         if (stream.get()->is(TKN_SELF)) {

@@ -116,6 +116,7 @@ VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
         .ident = var_decl.ident,
         .type = clone_expr(var_decl.type),
         .value = clone_expr(var_decl.value),
+        .attrs = clone_attrs(var_decl.attrs),
     });
 }
 
@@ -709,8 +710,7 @@ StaticArrayType *Cloner::clone_static_array_type(const StaticArrayType &static_a
 }
 
 FuncType *Cloner::clone_func_type(const FuncType &func_type) {
-    std::vector<Param> params;
-    params.resize(func_type.params.size());
+    std::vector<Param> params(func_type.params.size());
 
     for (unsigned i = 0; i < func_type.params.size(); i++) {
         const Param &param = func_type.params[i];
@@ -719,6 +719,7 @@ FuncType *Cloner::clone_func_type(const FuncType &func_type) {
             .ast_node = param.ast_node,
             .name = param.name,
             .type = clone_expr(param.type),
+            .attrs = clone_attrs(param.attrs),
         };
     }
 

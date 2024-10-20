@@ -61,6 +61,7 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
             .ast_node = var_decl.ast_node,
             .ident = var_decl.ident,
             .type = var_decl.type,
+            .attrs = var_decl.attrs,
             .index = static_cast<unsigned>(struct_def->fields.size()),
         });
 

@@ -30,8 +30,14 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
         sir::Expr type;
 
         if (auto local = symbol.match<sir::Local>()) {
+            // TODO: unmanaged attribute
+
             type = local->type;
         } else if (auto param = symbol.match<sir::Param>()) {
+            if (param->attrs && param->attrs->unmanaged) {
+                continue;
+            }
+
             type = param->type;
         } else {
             continue;
@@ -112,7 +118,12 @@ std::optional<sir::Resource> ResourceAnalyzer::create_struct_resource(sir::Struc
     }
 
     for (unsigned i = 0; i < struct_def.fields.size(); i++) {
-        std::optional<sir::Resource> sub_resource = create_resource(struct_def.fields[i]->type);
+        sir::StructField &field = *struct_def.fields[i];
+        if (field.attrs && field.attrs->unmanaged) {
+            continue;
+        }
+
+        std::optional<sir::Resource> sub_resource = create_resource(field.type);
         if (!sub_resource) {
             continue;
         }
@@ -297,7 +308,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // meta_field_expr
         SIR_VISIT_IGNORE,                                // meta_call_expr
         SIR_VISIT_IGNORE,                                // move_expr
-        SIR_VISIT_IGNORE,                                // deinit_expr
+        result = analyze_deinit_expr(*inner, expr),      // deinit_expr
         SIR_VISIT_IGNORE                                 // completion_token
     );
 
@@ -423,6 +434,18 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
         }
 
         analyze_resource_use(&sub_resource, out_expr, ctx);
+    }
+
+    return Result::SUCCESS;
+}
+
+Result ResourceAnalyzer::analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr) {
+    if (!deinit_expr.resource) {
+        if (std::optional<sir::Resource> resource = create_resource(deinit_expr.type)) {
+            deinit_expr.resource = analyzer.cur_sir_mod->create_resource(*resource);
+        } else {
+            out_expr = deinit_expr.value;
+        }
     }
 
     return Result::SUCCESS;

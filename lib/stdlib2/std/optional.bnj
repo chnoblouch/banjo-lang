@@ -2,7 +2,7 @@ use std.{system.panic, convert.to_string};
 
 struct Optional[T] {
     var has_value: bool;
-    var value: T;
+    @unmanaged var value: T;
 
     pub func new_some(value: T) -> Optional[T] {
         return Optional[T] {
@@ -36,10 +36,8 @@ struct Optional[T] {
     }
 
     pub func __deinit__(self) {
-        meta if meta(T).has_method("__deinit__") {
-            if self.has_value {
-                self.value.__deinit__();
-            }
+        if self.has_value {
+            __builtin_deinit(self.value);
         }
     }
 }

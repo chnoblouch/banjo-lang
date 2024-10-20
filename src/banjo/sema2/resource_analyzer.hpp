@@ -71,6 +71,7 @@ private:
     Result analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx);
+    Result analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr);
 
     Result analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx);
     MoveState *find_move_state(sir::Resource *resource);

@@ -176,6 +176,7 @@ sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {
         .ident = generate_ident(node->get_child(VAR_NAME)),
         .type = generate_expr(node->get_child(VAR_TYPE)),
         .value = node->has_child(VAR_VALUE) ? generate_expr(node->get_child(VAR_VALUE)) : nullptr,
+        .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
     });
 }
 
@@ -900,34 +901,38 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
     std::vector<sir::Param> sir_params(params_node->get_children().size());
 
     for (unsigned i = 0; i < params_node->get_children().size(); i++) {
-        ASTNode *param_node = params_node->get_child(i);
-        ASTNodeType ident_type = param_node->get_child(PARAM_NAME)->get_type();
-
-        if (ident_type == AST_IDENTIFIER) {
-            sir_params[i] = {
-                .ast_node = param_node,
-                .name = generate_ident(param_node->get_child(PARAM_NAME)),
-                .type = generate_expr(param_node->get_child(PARAM_TYPE)),
-            };
-        } else if (ident_type == AST_SELF) {
-            sir::Ident sir_ident{
-                .ast_node = nullptr,
-                .value = "self",
-            };
-
-            sir_params[i] = {
-                .ast_node = param_node,
-                .name = sir_ident,
-                .type = nullptr,
-            };
-        } else {
-            ASSERT_UNREACHABLE;
-        }
+        sir_params[i] = generate_param(params_node->get_child(i));
     }
 
     return {
         .params = sir_params,
         .return_type = generate_expr(return_node),
+    };
+}
+
+sir::Param SIRGenerator::generate_param(ASTNode *node) {
+    ASTNodeType ident_type = node->get_child(PARAM_NAME)->get_type();
+
+    if (ident_type == AST_IDENTIFIER) {
+        return {
+            .ast_node = node,
+            .name = generate_ident(node->get_child(PARAM_NAME)),
+            .type = generate_expr(node->get_child(PARAM_TYPE)),
+            .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+        };
+    } else if (ident_type == AST_SELF) {
+        sir::Ident sir_ident{
+            .ast_node = nullptr,
+            .value = "self",
+        };
+
+        return {
+            .ast_node = node,
+            .name = sir_ident,
+            .type = nullptr,
+        };
+    } else {
+        ASSERT_UNREACHABLE;
     };
 }
 
@@ -1027,6 +1032,7 @@ sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {
         else if (ast_attr.get_name() == "dllexport") sir_attrs.dllexport = true;
         else if (ast_attr.get_name() == "test") sir_attrs.test = true;
         else if (ast_attr.get_name() == "link_name") sir_attrs.link_name = ast_attr.get_value();
+        else if (ast_attr.get_name() == "unmanaged") sir_attrs.unmanaged = true;
         else ASSERT_UNREACHABLE;
     }
 

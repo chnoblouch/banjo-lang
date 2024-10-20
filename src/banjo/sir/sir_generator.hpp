@@ -116,6 +116,7 @@ private:
     sir::Expr generate_error_expr(ASTNode *node);
 
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
+    sir::Param generate_param(ASTNode *node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
     sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node);
     std::vector<sir::Expr> generate_expr_list(ASTNode *node);

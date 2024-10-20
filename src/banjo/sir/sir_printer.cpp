@@ -194,6 +194,12 @@ void Printer::print_struct_field(const StructField &struct_field) {
     BEGIN_OBJECT("StructField");
     PRINT_FIELD("ident", struct_field.ident.value);
     PRINT_EXPR_FIELD("type", struct_field.type);
+
+    if (struct_field.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*struct_field.attrs);
+    }
+
     END_OBJECT();
 }
 
@@ -202,6 +208,12 @@ void Printer::print_var_decl(const VarDecl &var_decl) {
     PRINT_FIELD("ident", var_decl.ident.value);
     PRINT_EXPR_FIELD("type", var_decl.type);
     PRINT_EXPR_FIELD("value", var_decl.value);
+
+    if (var_decl.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*var_decl.attrs);
+    }
+
     END_OBJECT();
 }
 
@@ -836,6 +848,12 @@ void Printer::print_func_type(const FuncType &func_type) {
         BEGIN_OBJECT("Param");
         PRINT_FIELD("name", param.name.value);
         PRINT_EXPR_FIELD("type", param.type);
+
+        if (param.attrs) {
+            PRINT_FIELD_NAME("attrs");
+            print_attrs(*param.attrs);
+        }
+
         END_OBJECT();
     }
 
@@ -969,6 +987,7 @@ void Printer::print_attrs(const Attributes &attrs) {
     PRINT_FIELD("dllexport", attrs.dllexport ? "true" : "false");
     PRINT_FIELD("test", attrs.test ? "true" : "false");
     PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
+    PRINT_FIELD("unmanaged", attrs.unmanaged ? "true" : "false");
     END_OBJECT();
 }
 

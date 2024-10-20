@@ -524,6 +524,22 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     Result result = Result::SUCCESS;
     bool is_method = false;
 
+    // TODO: move this into some kind of builtin module.
+    if (auto ident_expr = call_expr.callee.match<sir::IdentExpr>()) {
+        if (ident_expr->value == "__builtin_deinit") {
+            analyze(call_expr.args[0]);
+
+            out_expr = analyzer.create_expr(sir::DeinitExpr{
+                .ast_node = nullptr,
+                .type = call_expr.args[0].get_type(),
+                .value = call_expr.args[0],
+                .resource = nullptr,
+            });
+
+            return Result::SUCCESS;
+        }
+    }
+
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
         partial_result = analyze_dot_expr_callee(*dot_expr, call_expr, is_method);
     } else {

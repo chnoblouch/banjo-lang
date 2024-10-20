@@ -257,13 +257,6 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
         ctx.append_block(end_block);
     }
 
-    if (resource.has_deinit) {
-        const std::string &name = resource.type.as_symbol<sir::StructDef>().ident.value;
-        if (name == "Result" || name == "Optional") {
-            return;
-        }
-    }
-
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(resource.type);
 
     for (const auto &[field_index, sub_resource] : resource.sub_resources) {

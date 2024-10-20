@@ -2,8 +2,8 @@ use std.{system.panic, convert.to_string};
 
 struct Result[T, E] {
     var successful: bool;
-    var value: T;
-    var error: E;
+    @unmanaged var value: T;
+    @unmanaged var error: E;
     
     pub func new_success(value: T) -> Result[T, E] {
         return Result[T, E] {
@@ -39,16 +39,10 @@ struct Result[T, E] {
     }
     
     pub func __deinit__(self) {
-        meta if meta(T).has_method("__deinit__") {
-            if self.successful {
-                self.value.__deinit__();
-            }
-        }
-        
-        meta if meta(E).has_method("__deinit__") {
-            if !self.successful {
-                self.error.__deinit__();
-            }
+        if self.successful {
+            __builtin_deinit(self.value);
+        } else {
+            __builtin_deinit(self.error);
         }
     }
 }
