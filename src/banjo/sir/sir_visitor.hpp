@@ -49,89 +49,95 @@
     meta_access_visitor,                                                                                               \
     meta_field_expr_visitor,                                                                                           \
     meta_call_expr_visitor,                                                                                            \
+    move_expr_visitor,                                                                                                 \
+    deinit_expr_visitor,                                                                                               \
     completion_token_visitor                                                                                           \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
-    } else if (auto inner = (expr).match<banjo::lang::sir::IntLiteral>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::IntLiteral>()) {                           \
         int_literal_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::FPLiteral>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::FPLiteral>()) {                            \
         fp_literal_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::BoolLiteral>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::BoolLiteral>()) {                          \
         bool_literal_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::CharLiteral>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CharLiteral>()) {                          \
         char_literal_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::NullLiteral>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::NullLiteral>()) {                          \
         null_literal_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::NoneLiteral>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::NoneLiteral>()) {                          \
         none_literal_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::UndefinedLiteral>()) {                                      \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::UndefinedLiteral>()) {                     \
         undefined_literal_visitor;                                                                                     \
-    } else if (auto inner = (expr).match<banjo::lang::sir::ArrayLiteral>()) {                                          \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ArrayLiteral>()) {                         \
         array_literal_visitor;                                                                                         \
-    } else if (auto inner = (expr).match<banjo::lang::sir::StringLiteral>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StringLiteral>()) {                        \
         string_literal_visitor;                                                                                        \
-    } else if (auto inner = (expr).match<banjo::lang::sir::StructLiteral>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StructLiteral>()) {                        \
         struct_literal_visitor;                                                                                        \
-    } else if (auto inner = (expr).match<banjo::lang::sir::UnionCaseLiteral>()) {                                      \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::UnionCaseLiteral>()) {                     \
         union_case_literal_visitor;                                                                                    \
-    } else if (auto inner = (expr).match<banjo::lang::sir::MapLiteral>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MapLiteral>()) {                           \
         map_literal_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::ClosureLiteral>()) {                                        \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ClosureLiteral>()) {                       \
         closure_literal_visitor;                                                                                       \
-    } else if (auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                           \
         symbol_expr_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::BinaryExpr>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::BinaryExpr>()) {                           \
         binary_expr_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::UnaryExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::UnaryExpr>()) {                            \
         unary_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::CastExpr>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CastExpr>()) {                             \
         cast_expr_visitor;                                                                                             \
-    } else if (auto inner = (expr).match<banjo::lang::sir::IndexExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::IndexExpr>()) {                            \
         index_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::CallExpr>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CallExpr>()) {                             \
         call_expr_visitor;                                                                                             \
-    } else if (auto inner = (expr).match<banjo::lang::sir::FieldExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::FieldExpr>()) {                            \
         field_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::RangeExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::RangeExpr>()) {                            \
         range_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                            \
         tuple_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::CoercionExpr>()) {                                          \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CoercionExpr>()) {                         \
         coercion_expr_visitor;                                                                                         \
-    } else if (auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                        \
         primitive_type_visitor;                                                                                        \
-    } else if (auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                          \
         pointer_type_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::StaticArrayType>()) {                                       \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StaticArrayType>()) {                      \
         static_array_type_visitor;                                                                                     \
-    } else if (auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                             \
         func_type_visitor;                                                                                             \
-    } else if (auto inner = (expr).match<banjo::lang::sir::OptionalType>()) {                                          \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::OptionalType>()) {                         \
         optional_type_visitor;                                                                                         \
-    } else if (auto inner = (expr).match<banjo::lang::sir::ResultType>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ResultType>()) {                           \
         result_type_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::ArrayType>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ArrayType>()) {                            \
         array_type_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::MapType>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MapType>()) {                              \
         map_type_visitor;                                                                                              \
-    } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                          \
         closure_type_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::IdentExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::IdentExpr>()) {                            \
         ident_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::StarExpr>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StarExpr>()) {                             \
         star_expr_visitor;                                                                                             \
-    } else if (auto inner = (expr).match<banjo::lang::sir::BracketExpr>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::BracketExpr>()) {                          \
         bracket_expr_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::DotExpr>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::DotExpr>()) {                              \
         dot_expr_visitor;                                                                                              \
-    } else if (auto inner = (expr).match<banjo::lang::sir::MetaAccess>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MetaAccess>()) {                           \
         meta_access_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::MetaFieldExpr>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MetaFieldExpr>()) {                        \
         meta_field_expr_visitor;                                                                                       \
-    } else if (auto inner = (expr).match<banjo::lang::sir::MetaCallExpr>()) {                                          \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MetaCallExpr>()) {                         \
         meta_call_expr_visitor;                                                                                        \
-    } else if (auto inner = (expr).match<banjo::lang::sir::CompletionToken>()) {                                       \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MoveExpr>()) {                             \
+        move_expr_visitor;                                                                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::DeinitExpr>()) {                           \
+        deinit_expr_visitor;                                                                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CompletionToken>()) {                      \
         completion_token_visitor;                                                                                      \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
@@ -151,19 +157,19 @@
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
-    } else if (auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                           \
         symbol_expr_visitor;                                                                                           \
-    } else if (auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                            \
         tuple_expr_visitor;                                                                                            \
-    } else if (auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                        \
         primitive_type_visitor;                                                                                        \
-    } else if (auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                          \
         pointer_type_visitor;                                                                                          \
-    } else if (auto inner = (expr).match<banjo::lang::sir::StaticArrayType>()) {                                       \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StaticArrayType>()) {                      \
         static_array_type_visitor;                                                                                     \
-    } else if (auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                             \
         func_type_visitor;                                                                                             \
-    } else if (auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                          \
         closure_type_visitor;                                                                                          \
     } else {                                                                                                           \
         other_visitor;                                                                                                 \
@@ -193,41 +199,41 @@
 )                                                                                                                      \
     if (!(stmt)) {                                                                                                     \
         empty_visitor;                                                                                                 \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::VarStmt>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::VarStmt>()) {                              \
         var_stmt_visitor;                                                                                              \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::AssignStmt>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::AssignStmt>()) {                           \
         assign_stmt_visitor;                                                                                           \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::CompAssignStmt>()) {                                        \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::CompAssignStmt>()) {                       \
         comp_assign_stmt_visitor;                                                                                      \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::ReturnStmt>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::ReturnStmt>()) {                           \
         return_stmt_visitor;                                                                                           \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::IfStmt>()) {                                                \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::IfStmt>()) {                               \
         if_stmt_visitor;                                                                                               \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::SwitchStmt>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::SwitchStmt>()) {                           \
         switch_stmt_visitor;                                                                                           \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::TryStmt>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::TryStmt>()) {                              \
         try_stmt_visitor;                                                                                              \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::WhileStmt>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::WhileStmt>()) {                            \
         while_stmt_visitor;                                                                                            \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::ForStmt>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::ForStmt>()) {                              \
         for_stmt_visitor;                                                                                              \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::LoopStmt>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::LoopStmt>()) {                             \
         loop_stmt_visitor;                                                                                             \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::ContinueStmt>()) {                                          \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::ContinueStmt>()) {                         \
         continue_stmt_visitor;                                                                                         \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::BreakStmt>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::BreakStmt>()) {                            \
         break_stmt_visitor;                                                                                            \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::MetaIfStmt>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::MetaIfStmt>()) {                           \
         meta_if_stmt_visitor;                                                                                          \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::MetaForStmt>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::MetaForStmt>()) {                          \
         meta_for_stmt_visitor;                                                                                         \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::ExpandedMetaStmt>()) {                                      \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::ExpandedMetaStmt>()) {                     \
         expanded_meta_stmt_visitor;                                                                                    \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::Expr>()) {                                                  \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::Expr>()) {                                 \
         expr_stmt_visitor;                                                                                             \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::Block>()) {                                                 \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::Block>()) {                                \
         block_stmt_visitor;                                                                                            \
-    } else if (auto inner = (stmt).match<banjo::lang::sir::Error>()) {                                                 \
+    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::lang::sir::Error>()) {                                \
         error_visitor;                                                                                                 \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
@@ -256,40 +262,40 @@
 )                                                                                                                      \
     if (!(decl)) {                                                                                                     \
         empty_visitor;                                                                                                 \
-    } else if (auto inner = (decl).match<banjo::lang::sir::FuncDef>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::FuncDef>()) {                              \
         func_def_visitor;                                                                                              \
-    } else if (auto inner = (decl).match<banjo::lang::sir::NativeFuncDecl>()) {                                        \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::NativeFuncDecl>()) {                       \
         native_func_decl_visitor;                                                                                      \
-    } else if (auto inner = (decl).match<banjo::lang::sir::ConstDef>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::ConstDef>()) {                             \
         const_def_visitor;                                                                                             \
-    } else if (auto inner = (decl).match<banjo::lang::sir::StructDef>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::StructDef>()) {                            \
         struct_def_visitor;                                                                                            \
-    } else if (auto inner = (decl).match<banjo::lang::sir::StructField>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::StructField>()) {                          \
         struct_field_visitor;                                                                                          \
-    } else if (auto inner = (decl).match<banjo::lang::sir::VarDecl>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::VarDecl>()) {                              \
         var_decl_visitor;                                                                                              \
-    } else if (auto inner = (decl).match<banjo::lang::sir::NativeVarDecl>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::NativeVarDecl>()) {                        \
         native_var_decl_visitor;                                                                                       \
-    } else if (auto inner = (decl).match<banjo::lang::sir::EnumDef>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::EnumDef>()) {                              \
         enum_def_visitor;                                                                                              \
-    } else if (auto inner = (decl).match<banjo::lang::sir::EnumVariant>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::EnumVariant>()) {                          \
         enum_variant_visitor;                                                                                          \
-    } else if (auto inner = (decl).match<banjo::lang::sir::UnionDef>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::UnionDef>()) {                             \
         union_def_visitor;                                                                                             \
-    } else if (auto inner = (decl).match<banjo::lang::sir::UnionCase>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::UnionCase>()) {                            \
         union_case_visitor;                                                                                            \
-    } else if (auto inner = (decl).match<banjo::lang::sir::TypeAlias>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::TypeAlias>()) {                            \
         type_alias_visitor;                                                                                            \
-    } else if (auto inner = (decl).match<banjo::lang::sir::UseDecl>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::UseDecl>()) {                              \
         use_decl_visitor;                                                                                              \
-    } else if (auto inner = (decl).match<banjo::lang::sir::MetaIfStmt>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::MetaIfStmt>()) {                           \
         meta_if_stmt_visitor;                                                                                          \
-    } else if (auto inner = (decl).match<banjo::lang::sir::ExpandedMetaStmt>()) {                                      \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::ExpandedMetaStmt>()) {                     \
         expanded_meta_stmt_visitor;                                                                                    \
-    } else if (auto inner = (decl).match<banjo::lang::sir::Error>()) {                                                 \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::Error>()) {                                \
         error_visitor;                                                                                                 \
-    }  else if (auto inner = (decl).match<banjo::lang::sir::CompletionToken>()) {                                                 \
-        completion_token_visitor;                                                                                                 \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::CompletionToken>()) {                      \
+        completion_token_visitor;                                                                                      \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }
@@ -318,41 +324,41 @@
 )                                                                                                                      \
     if (!(symbol)) {                                                                                                   \
         empty_visitor;                                                                                                 \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::Module>()) {                                              \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::Module>()) {                             \
         module_visitor;                                                                                                \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::FuncDef>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::FuncDef>()) {                            \
         func_def_visitor;                                                                                              \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::NativeFuncDecl>()) {                                      \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::NativeFuncDecl>()) {                     \
         native_func_decl_visitor;                                                                                      \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::ConstDef>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::ConstDef>()) {                           \
         const_def_visitor;                                                                                             \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::StructDef>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::StructDef>()) {                          \
         struct_def_visitor;                                                                                            \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::StructField>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::StructField>()) {                        \
         struct_field_visitor;                                                                                          \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::VarDecl>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::VarDecl>()) {                            \
         var_decl_visitor;                                                                                              \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::NativeVarDecl>()) {                                       \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::NativeVarDecl>()) {                      \
         native_var_decl_visitor;                                                                                       \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::EnumDef>()) {                                             \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::EnumDef>()) {                            \
         enum_def_visitor;                                                                                              \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::EnumVariant>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::EnumVariant>()) {                        \
         enum_variant_visitor;                                                                                          \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::UnionDef>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::UnionDef>()) {                           \
         union_def_visitor;                                                                                             \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::UnionCase>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::UnionCase>()) {                          \
         union_case_visitor;                                                                                            \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::TypeAlias>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::TypeAlias>()) {                          \
         type_alias_visitor;                                                                                            \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::UseIdent>()) {                                            \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::UseIdent>()) {                           \
         use_ident_visitor;                                                                                             \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::UseRebind>()) {                                           \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::UseRebind>()) {                          \
         use_rebind_visitor;                                                                                            \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::Local>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::Local>()) {                              \
         local_visitor;                                                                                                 \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::Param>()) {                                               \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::Param>()) {                              \
         param_visitor;                                                                                                 \
-    } else if (auto inner = (symbol).match<banjo::lang::sir::OverloadSet>()) {                                         \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::OverloadSet>()) {                        \
         overload_set_visitor;                                                                                          \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \

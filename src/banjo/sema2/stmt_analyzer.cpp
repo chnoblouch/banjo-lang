@@ -1,8 +1,8 @@
 #include "stmt_analyzer.hpp"
 
 #include "banjo/sema2/expr_analyzer.hpp"
-#include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
+#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
@@ -395,9 +395,9 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     }
 
     sir::SymbolTable *iterable_symbol_table = for_stmt.range.get_type().as_symbol<sir::StructDef>().block.symbol_table;
-    sir::FuncDef &iter_func_def = iterable_symbol_table->look_up(MagicMethods::ITER).as<sir::FuncDef>();
+    sir::FuncDef &iter_func_def = iterable_symbol_table->look_up(sir::MagicMethods::ITER).as<sir::FuncDef>();
     sir::SymbolTable *iter_symbol_table = iter_func_def.type.return_type.as_symbol<sir::StructDef>().block.symbol_table;
-    sir::FuncDef &next_func_def = iter_symbol_table->look_up(MagicMethods::NEXT).as<sir::FuncDef>();
+    sir::FuncDef &next_func_def = iter_symbol_table->look_up(sir::MagicMethods::NEXT).as<sir::FuncDef>();
 
     sir::Block *block = analyzer.create_stmt(sir::Block{
         .ast_node = nullptr,

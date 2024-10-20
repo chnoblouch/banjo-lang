@@ -1,5 +1,5 @@
-#ifndef MAGIC_METHODS_H
-#define MAGIC_METHODS_H
+#ifndef BANJO_SIR_MAGIC_METHODS_H
+#define BANJO_SIR_MAGIC_METHODS_H
 
 #include "banjo/sir/sir.hpp"
 
@@ -9,7 +9,7 @@ namespace banjo {
 
 namespace lang {
 
-namespace sema {
+namespace sir {
 
 namespace MagicMethods {
 
@@ -36,12 +36,14 @@ const std::string_view OP_INDEX = "__index__";
 const std::string_view ITER = "__iter__";
 const std::string_view NEXT = "__next__";
 
+const std::string_view DEINIT = "__deinit__";
+
 std::string_view look_up(sir::BinaryOp op);
 std::string_view look_up(sir::UnaryOp op);
 
 } // namespace MagicMethods
 
-} // namespace sema2
+} // namespace sir
 
 } // namespace lang
 

@@ -60,6 +60,8 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // meta_access
         SIR_VISIT_IMPOSSIBLE,                                     // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                                     // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // move_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // deinit_expr
         SIR_VISIT_IMPOSSIBLE                                      // completion_token
     );
 }
@@ -111,6 +113,8 @@ Expr Expr::get_type() const {
         SIR_VISIT_IMPOSSIBLE, // meta_access
         SIR_VISIT_IMPOSSIBLE, // meta_field_expr
         SIR_VISIT_IMPOSSIBLE, // meta_call_expr
+        return inner->type,   // move_expr
+        return inner->type,   // deinit_expr
         SIR_VISIT_IMPOSSIBLE  // completion_token
     );
 }
@@ -215,6 +219,8 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

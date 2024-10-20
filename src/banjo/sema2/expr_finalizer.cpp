@@ -34,6 +34,8 @@ Result ExprFinalizer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expec
         return finalize_coercion(*struct_literal, expected_type);
     } else if (auto map_literal = expr.match<sir::MapLiteral>()) {
         return finalize_coercion(*map_literal, expected_type, expr);
+    } else if (auto tuple_literal = expr.match<sir::TupleExpr>()) {
+        return finalize_coercion(*tuple_literal, expected_type);
     }
 
     if (expr.get_type() == expected_type) {
@@ -51,8 +53,6 @@ Result ExprFinalizer::finalize_type_by_coercion(sir::Expr &expr, sir::Expr expec
         return Result::ERROR;
     } else if (auto string_literal = expr.match<sir::StringLiteral>()) {
         return finalize_coercion(*string_literal, expected_type, expr);
-    } else if (auto tuple_literal = expr.match<sir::TupleExpr>()) {
-        return finalize_coercion(*tuple_literal, expected_type);
     } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         return finalize_coercion(*unary_expr, expected_type);
     } else {
@@ -211,10 +211,19 @@ Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr
     if (auto tuple_type = type.match<sir::TupleExpr>()) {
         if (tuple_literal.exprs.size() == tuple_type->exprs.size()) {
             for (unsigned i = 0; i < tuple_literal.exprs.size(); i++) {
-                partial_result = finalize_type_by_coercion(tuple_literal.exprs[i], tuple_type->exprs[i]);
+                sir::Expr &value = tuple_literal.exprs[i];
+
+                partial_result = finalize_type_by_coercion(value, tuple_type->exprs[i]);
                 if (partial_result != Result::SUCCESS) {
                     result = Result::ERROR;
                 }
+
+                tuple_literal.type.as<sir::TupleExpr>().exprs[i] = value.get_type();
+            }
+
+            if (tuple_literal.type != type) {
+                analyzer.report_generator.report_err_type_mismatch(&tuple_literal, type, tuple_literal.type);
+                return Result::ERROR;
             }
 
             tuple_literal.type = type;
@@ -337,8 +346,9 @@ Result ExprFinalizer::finalize_default(sir::TupleExpr &tuple_literal) {
     sir::TupleExpr &tuple_type = tuple_literal.type.as<sir::TupleExpr>();
 
     for (unsigned i = 0; i < tuple_literal.exprs.size(); i++) {
-        finalize_type(tuple_literal.exprs[i]);
-        tuple_type.exprs[i] = tuple_literal.exprs[i].get_type();
+        sir::Expr &value = tuple_literal.exprs[i];
+        finalize_type(value);
+        tuple_type.exprs[i] = value.get_type();
     }
 
     return Result::SUCCESS;

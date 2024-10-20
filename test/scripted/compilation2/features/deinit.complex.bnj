@@ -1,0 +1,94 @@
+# test:common
+
+struct Resource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+struct Pair {
+    var a: Resource;
+    var b: Resource;
+}
+
+# test:subtest
+# test:output "10,25,"
+
+func main() {
+    var tuple = (
+        Resource { value: 10 },
+        42,
+        Resource { value: 25 },
+    );
+}
+
+# test:subtest
+# test:output "10,25,"
+
+func main() {
+    var tuple = (
+        Resource { value: 10 },
+        Resource { value: 25 },
+    );
+    
+    var owner = tuple;
+}
+
+# test:subtest
+# test:output "10,25,"
+
+func main() {
+    var tuple = (
+        Resource { value: 10 },
+        Resource { value: 25 },
+    );
+    
+    var b = tuple.1;
+}
+
+# test:subtest
+# test:output "10,25,40,"
+
+func main() {
+    var tuple = (
+        Pair {
+            a: Resource { value: 10 },
+            b: Resource { value: 25 },
+        },
+        Resource { value: 40 },
+    );
+}
+
+# test:subtest
+# test:output "10,40,25,"
+
+func main() {
+    var tuple = (
+        Pair {
+            a: Resource { value: 10 },
+            b: Resource { value: 25 },
+        },
+        Resource { value: 40 },
+    );
+
+    var b = (tuple.0).b;
+}
+
+# test:subtest
+# test:output "40,10,25,"
+
+func main() {
+    var tuple = (
+        Pair {
+            a: Resource { value: 10 },
+            b: Resource { value: 25 },
+        },
+        Resource { value: 40 },
+    );
+
+    var r = tuple.1;
+    var p = tuple.0;
+}

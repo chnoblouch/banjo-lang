@@ -6,13 +6,12 @@
 #include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/ssa_gen/expr_ssa_generator.hpp"
+#include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/global_ssa_generator.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
-#include "global_ssa_generator.hpp"
 
 #include <utility>
 
@@ -225,7 +224,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         ctx.ssa_param_slots.insert({&sir_param, ssa_slot});
     }
 
-    generate_block(sir_func.block);
+    BlockSSAGenerator(ctx).generate_block(sir_func.block);
 
     if (!ir_builder::IRBuilderUtils::is_branching(*ctx.get_ssa_block())) {
         ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
@@ -286,184 +285,6 @@ void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
     ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]].set_type(ssa_type);
-}
-
-void SSAGenerator::generate_block(const sir::Block &sir_block) {
-    generate_block_allocas(sir_block);
-    generate_block_stmts(sir_block);
-}
-
-void SSAGenerator::generate_block_allocas(const sir::Block &sir_block) {
-    for (const auto &[name, symbol] : sir_block.symbol_table->symbols) {
-        if (auto local = symbol.match<sir::Local>()) {
-            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
-            ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
-            ctx.ssa_local_regs.insert({local, reg});
-        }
-    }
-}
-
-void SSAGenerator::generate_block_stmts(const sir::Block &sir_block) {
-    for (const sir::Stmt &sir_stmt : sir_block.stmts) {
-        if (ir_builder::IRBuilderUtils::is_branching(*ctx.get_ssa_block())) {
-            continue;
-        }
-
-        SIR_VISIT_STMT(
-            sir_stmt,
-            SIR_VISIT_IMPOSSIBLE,                                           // empty
-            generate_var_stmt(*inner),                                      // var_stmt
-            generate_assign_stmt(*inner),                                   // assign_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // comp_assign_stmt
-            generate_return_stmt(*inner),                                   // return_stmt
-            generate_if_stmt(*inner),                                       // if_stmt
-            generate_switch_stmt(*inner),                                   // switch_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // try_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // while_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // for_stmt
-            generate_loop_stmt(*inner),                                     // loop_stmt
-            generate_continue_stmt(*inner),                                 // continue_stmt
-            generate_break_stmt(*inner),                                    // break_stmt
-            SIR_VISIT_IGNORE,                                               // meta_if_stmt
-            SIR_VISIT_IGNORE,                                               // meta_for_stmt
-            SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
-            ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
-            generate_block(*inner),                                         // block_stmt
-            SIR_VISIT_IMPOSSIBLE                                            // error
-        );
-    }
-}
-
-void SSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {
-    if (var_stmt.value) {
-        ssa::VirtualRegister reg = ctx.ssa_local_regs[&var_stmt.local];
-        ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
-        ExprSSAGenerator(ctx).generate_into_dst(var_stmt.value, ssa_ptr);
-    }
-}
-
-void SSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt) {
-    StoredValue dst = ExprSSAGenerator(ctx).generate(assign_stmt.lhs, StorageHints::prefer_reference());
-    ExprSSAGenerator(ctx).generate_into_dst(assign_stmt.rhs, dst.get_ptr());
-}
-
-void SSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
-    if (return_stmt.value) {
-        ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
-    }
-
-    ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
-}
-
-void SSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
-    ssa::BasicBlockIter ssa_end_block = ctx.create_block();
-
-    for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
-        const sir::IfCondBranch &sir_branch = if_stmt.cond_branches[i];
-        bool is_final_branch = i == if_stmt.cond_branches.size() - 1 && !if_stmt.else_branch;
-
-        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
-
-        ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
-
-        ctx.append_block(ssa_target_if_true);
-        generate_block(sir_branch.block);
-        ctx.append_jmp(ssa_end_block);
-
-        if (!is_final_branch) {
-            ctx.append_block(ssa_next_block);
-        }
-    }
-
-    if (if_stmt.else_branch) {
-        generate_block(if_stmt.else_branch->block);
-        ctx.append_jmp(ssa_end_block);
-    }
-
-    ctx.append_block(ssa_end_block);
-}
-
-void SSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt) {
-    const sir::UnionDef &sir_union_def = switch_stmt.value.get_type().as_symbol<sir::UnionDef>();
-
-    ssa::BasicBlockIter ssa_end_block = ctx.create_block();
-
-    StoredValue ssa_value = ExprSSAGenerator(ctx).generate(switch_stmt.value);
-    ssa::VirtualRegister ssa_tag_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 0);
-    ssa::Value ssa_tag = ctx.append_load(ssa::Primitive::I32, ssa_tag_ptr_reg);
-
-    for (unsigned i = 0; i < switch_stmt.case_branches.size(); i++) {
-        const sir::SwitchCaseBranch &sir_branch = switch_stmt.case_branches[i];
-        const sir::UnionCase &sir_union_case = sir_branch.local.type.as_symbol<sir::UnionCase>();
-        unsigned tag = sir_union_def.get_index(sir_union_case);
-        bool is_final_branch = i == switch_stmt.case_branches.size() - 1;
-
-        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
-
-        ssa::Value ssa_tag_value = ssa::Value::from_int_immediate(tag, ssa::Primitive::I32);
-        ctx.append_cjmp(ssa_tag, ssa::Comparison::EQ, ssa_tag_value, ssa_target_if_true, ssa_target_if_false);
-        ctx.append_block(ssa_target_if_true);
-
-        generate_block_allocas(sir_branch.block);
-
-        ssa::Type ssa_case_type = TypeSSAGenerator(ctx).generate(sir_branch.local.type);
-        ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 1);
-        StoredValue ssa_data_ptr = StoredValue::create_reference(ssa_data_ptr_reg, ssa_case_type);
-        ssa::VirtualRegister ssa_local_reg = ctx.ssa_local_regs[&sir_branch.local];
-        ssa_data_ptr.copy_to(ssa_local_reg, ctx);
-
-        generate_block_stmts(sir_branch.block);
-        ctx.append_jmp(ssa_end_block);
-
-        if (!is_final_branch) {
-            ctx.append_block(ssa_next_block);
-        }
-    }
-
-    ctx.append_block(ssa_end_block);
-}
-
-void SSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
-    ssa::BasicBlockIter ssa_cond_block = ctx.create_block();
-    ssa::BasicBlockIter ssa_body_entry_block = ctx.create_block();
-    ssa::BasicBlockIter ssa_latch_block = loop_stmt.latch ? ctx.create_block() : nullptr;
-    ssa::BasicBlockIter ssa_end_block = ctx.create_block();
-
-    ctx.append_jmp(ssa_cond_block);
-    ctx.append_block(ssa_cond_block);
-
-    ExprSSAGenerator(ctx).generate_branch(loop_stmt.condition, {ssa_body_entry_block, ssa_end_block});
-
-    ctx.push_loop_context({
-        .ssa_continue_target = loop_stmt.latch ? ssa_latch_block : ssa_cond_block,
-        .ssa_break_target = ssa_end_block,
-    });
-
-    ctx.append_block(ssa_body_entry_block);
-    generate_block(loop_stmt.block);
-
-    ctx.pop_loop_context();
-
-    if (loop_stmt.latch) {
-        ctx.append_jmp(ssa_latch_block);
-        ctx.append_block(ssa_latch_block);
-        generate_block(*loop_stmt.latch);
-    }
-
-    ctx.append_jmp(ssa_cond_block);
-    ctx.append_block(ssa_end_block);
-}
-
-void SSAGenerator::generate_continue_stmt(const sir::ContinueStmt & /*continue_stmt*/) {
-    ctx.append_jmp(ctx.get_loop_context().ssa_continue_target);
-}
-
-void SSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*/) {
-    ctx.append_jmp(ctx.get_loop_context().ssa_break_target);
 }
 
 } // namespace lang

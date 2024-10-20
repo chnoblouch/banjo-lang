@@ -339,7 +339,7 @@ ParseResult ExprParser::parse_paren_expr() {
     stream.consume(); // Consume opening '('
 
     in_parentheses = true;
-    ASTNode *sub_expression = parse().node;
+    ASTNode *sub_expression = ExprParser(parser, true).parse().node;
     in_parentheses = false;
 
     if (stream.get()->is(TKN_COMMA)) {
@@ -353,7 +353,7 @@ ParseResult ExprParser::parse_paren_expr() {
                 break;
             }
 
-            tuple_literal->append_child(parse().node);
+            tuple_literal->append_child(ExprParser(parser, true).parse().node);
         }
 
         tuple_literal->set_range({start, stream.get()->get_end()});

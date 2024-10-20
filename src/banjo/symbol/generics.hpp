@@ -79,7 +79,7 @@ public:
     std::vector<GenericParam> &get_generic_params() { return generic_params; }
     const std::vector<GenericEntityInstance<T> *> &get_instances() { return instances; }
 
-    void set_generic_params(std::vector<std::string> generic_params) { this->generic_params = generic_params; }
+    void set_generic_params(std::vector<std::string> generic_params) { /* this->generic_params = generic_params; */ }
     void add_instance(GenericEntityInstance<T> *instance) { instances.push_back(instance); }
 };
 

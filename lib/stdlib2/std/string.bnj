@@ -188,7 +188,7 @@ struct String {
     }
     
     pub func __add__(self, rhs: String) -> String {
-        return concat(*self, rhs);
+        return concat(self.copy(), rhs);
     }
     
     pub func __add__(self, rhs: u8) -> String {

@@ -1,0 +1,112 @@
+# test:subtest
+# test:output "deinit"
+
+struct Resource {
+    var value: i32;
+
+    pub func create() -> Resource {
+        return Resource { value: 42 };
+    }
+
+    func __deinit__(self) {
+        print("deinit");
+    }
+}
+
+func main() {
+    var a = Resource.create().value;
+}
+
+# test:subtest
+# test:output "8,9,10,"
+
+struct Resource {
+    var value: i32;
+
+    pub func create() -> Resource {
+        return Resource { value: 8 };
+    }
+    
+    pub func next(self) -> Resource {
+        return Resource { value: self.value + 1 };
+    }
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+func main() {
+    var a = Resource.create().next().next().value;
+}
+
+# test:subtest
+# test:output "p,r10,r42,"
+
+struct Resource {
+    var value: i32;
+    
+    func __deinit__(self) {
+        print('r');
+        print(self.value);
+        print(',');
+    }
+}
+
+struct Pair {
+    var a: Resource;
+    var b: Resource;
+    
+    pub func new() -> Pair {
+        return Pair {
+            a: Resource { value: 10 },
+            b: Resource { value: 42 },
+        };
+    }
+    
+    func __deinit__(self) {
+        print("p,");
+    }
+}
+
+func main() {
+    var a = Pair.new().a.value;
+}
+
+# test:subtest
+# test:output "c,r2,r13,r38,m,"
+
+struct Resource {
+    var value: i32;
+    
+    func __deinit__(self) {
+        print('r');
+        print(self.value);
+        print(',');
+    }
+}
+
+struct Pair {
+    var a: Resource;
+    var b: Resource;
+}
+
+func create() -> (Resource, Pair) {
+    return (
+        Resource { value: 38 },
+        Pair {
+            a: Resource { value: 2 },
+            b: Resource { value: 13 },
+        }
+    );
+}
+
+func consume(pair: Pair) {
+    print("c,");
+}
+
+func main() {
+    consume(create().1);
+    print("m,");
+}

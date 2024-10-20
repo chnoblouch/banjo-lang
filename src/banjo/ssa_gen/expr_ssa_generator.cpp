@@ -12,6 +12,7 @@
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/symbol/magic_functions.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
@@ -82,6 +83,8 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // meta_access
         SIR_VISIT_IMPOSSIBLE,                              // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
+        return generate_move_expr(*inner, hints),          // move_expr
+        return generate_deinit_expr(*inner, hints),        // deinit_expr
         SIR_VISIT_IMPOSSIBLE                               // completion_token
     );
 }
@@ -524,6 +527,27 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+StoredValue ExprSSAGenerator::generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints) {
+    if (move_expr.resource->ownership == sir::Ownership::MOVED_COND) {
+        ssa::VirtualRegister deinit_flag = ctx.get_func_context().resource_deinit_flags.at(move_expr.resource);
+        ctx.append_store(DEINIT_FLAG_FALSE, deinit_flag);
+    }
+
+    return generate(move_expr.value, hints);
+}
+
+StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit_expr, StorageHints hints) {
+    hints.is_prefer_reference = true;
+    StoredValue ssa_val = generate(deinit_expr.value, hints).turn_into_reference(ctx);
+
+    ctx.get_func_context().cur_deferred_deinits.push_back({
+        .resource = deinit_expr.resource,
+        .ssa_ptr = ssa_val.get_ptr(),
+    });
+
+    return ssa_val;
 }
 
 StoredValue ExprSSAGenerator::generate_bool_expr(const sir::Expr &expr) {

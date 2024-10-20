@@ -1,0 +1,41 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {}
+}
+
+# test:subtest
+# test:error 13:13 "cannot move resource out of pointer"
+
+func main() {
+    var resource = Resource {};
+    var pointer = &resource;
+    var a = *pointer;
+}
+
+# test:subtest
+# test:error 22:13 "cannot move resource out of pointer"
+
+func main() {
+    var resource = (100, true, Resource {}); 
+    var pointer = &resource;
+    var a = *pointer;
+}
+
+# test:subtest
+# test:error 40:13 "cannot move resource out of pointer"
+
+struct Pair {
+    var a: f32;
+    var b: Resource;
+}
+
+func main() {
+    var pair = Pair {
+        a: 10.5,
+        b: Resource {},
+    };
+    
+    var pointer = &pair;
+    var a = *pointer;
+}

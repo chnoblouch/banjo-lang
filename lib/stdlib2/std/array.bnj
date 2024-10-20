@@ -36,11 +36,11 @@ struct Array[T] {
     }
     
     pub func __deinit__(self) {
-        # meta if type(T).is_struct && type(T).has_method("__deinit__") {
-            # for i in 0..self.length as i32 {
-                # self.data[i].__deinit__();
-            # }
-        # }
+        meta if meta(T).has_method("__deinit__") {
+            for i in 0..self.length {
+                self.data[i].__deinit__();
+            }
+        }
         
         memory.free(self.data as addr);
     }

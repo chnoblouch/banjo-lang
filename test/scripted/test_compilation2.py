@@ -210,14 +210,28 @@ def load_test_file(name, file_path):
 
         f.seek(0)
 
-        test_index = 0
+        subtest_index = None
+        common = False
 
         for i, line in enumerate(f.readlines()):
-            if i != 0 and line.startswith(CONDITION_PREFIX + "subtest"):
-                test_index += 1
+            if line.startswith(CONDITION_PREFIX + "common"):
+                common = True
+            
+            if line.startswith(CONDITION_PREFIX + "subtest"):
+                if subtest_index is not None:
+                    subtest_index += 1
+                else:
+                    subtest_index = 0
 
-            for i, test in enumerate(tests):
-                test.source += line if i == test_index else f"# DISABLED: {line}"
+                common = False
+
+            for j, test in enumerate(tests):
+                if has_subtests:
+                    enabled = common or j == subtest_index
+                else:
+                    enabled = True
+
+                test.source += line if enabled else f"# DISABLED: {line}"
 
     return tests
 

@@ -3,8 +3,8 @@
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/reports/report.hpp"
-#include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -171,18 +171,18 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryEx
         default: ASSERT_UNREACHABLE;
     }
 
-    std::string_view impl_name = MagicMethods::look_up(binary_expr.op);
+    std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
     report_err_operator_overload_not_found(binary_expr.ast_node, binary_expr.lhs.get_type(), operator_name, impl_name);
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr) {
     ASSUME(unary_expr.op == sir::UnaryOp::NEG);
-    std::string_view impl_name = MagicMethods::look_up(unary_expr.op);
+    std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
     report_err_operator_overload_not_found(unary_expr.ast_node, unary_expr.value.get_type(), "-", impl_name);
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(const sir::StarExpr &star_expr) {
-    std::string_view impl_name = MagicMethods::look_up(sir::UnaryOp::DEREF);
+    std::string_view impl_name = sir::MagicMethods::look_up(sir::UnaryOp::DEREF);
     report_err_operator_overload_not_found(star_expr.ast_node, star_expr.value.get_type(), "*", impl_name);
 }
 
@@ -191,7 +191,7 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::BracketE
         bracket_expr.ast_node,
         bracket_expr.lhs.get_type(),
         "[]",
-        MagicMethods::OP_INDEX
+        sir::MagicMethods::OP_INDEX
     );
 }
 
@@ -273,6 +273,35 @@ void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &range) {
 
 void ReportGenerator::report_err_meta_for_cannot_iter(const sir::Expr &range) {
     report_error("cannot iterate over type '$'", range.get_ast_node(), range.get_type());
+}
+
+void ReportGenerator::report_err_use_after_move(
+    const sir::Expr &use,
+    const sir::Expr &move,
+    bool partial,
+    bool conditional
+) {
+    std::string note_message = "previously moved";
+
+    if (partial) {
+        note_message += " partially";
+    }
+
+    if (conditional) {
+        note_message += " in conditional branch";
+    }
+
+    note_message += " here";
+
+    build_error("resource used after move", use.get_ast_node()).add_note(note_message, move.get_ast_node()).report();
+}
+
+void ReportGenerator::report_err_move_out_pointer(const sir::Expr &move) {
+    report_error("cannot move resource out of pointer", move.get_ast_node());
+}
+
+void ReportGenerator::report_err_move_out_deinit(const sir::Expr &move) {
+    report_error("cannot move out of resource implementing '__deinit__'", move.get_ast_node());
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(

@@ -57,6 +57,8 @@ private:
     StoredValue generate_field_expr(const sir::FieldExpr &field_expr);
     StoredValue generate_tuple_expr(const sir::TupleExpr &tuple_expr, const StorageHints &hints);
     StoredValue generate_coercion_expr(const sir::CoercionExpr &coercion_expr, const StorageHints &hints);
+    StoredValue generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints);
+    StoredValue generate_deinit_expr(const sir::DeinitExpr &deinit_expr, StorageHints hints);
 
     StoredValue generate_bool_expr(const sir::Expr &expr);
 

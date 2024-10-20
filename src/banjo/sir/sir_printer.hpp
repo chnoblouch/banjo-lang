@@ -106,6 +106,8 @@ private:
     void print_meta_access(const MetaAccess &meta_access);
     void print_meta_field_expr(const MetaFieldExpr &meta_field_expr);
     void print_meta_call_expr(const MetaCallExpr &meta_call_expr);
+    void print_move_expr(const MoveExpr &move_expr);
+    void print_deinit_expr(const DeinitExpr &deinit_expr);
 
     void print_generic_params(const std::vector<GenericParam> &generic_params);
     void print_attrs(const Attributes &attrs);

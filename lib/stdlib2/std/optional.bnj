@@ -34,4 +34,12 @@ struct Optional[T] {
             return "none";
         }
     }
+
+    pub func __deinit__(self) {
+        meta if meta(T).has_method("__deinit__") {
+            if self.has_value {
+                self.value.__deinit__();
+            }
+        }
+    }
 }

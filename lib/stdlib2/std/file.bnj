@@ -47,7 +47,7 @@ struct File {
         if stream == null {
             return Error.last();
         }
-        
+
         return File {
             stream
         };

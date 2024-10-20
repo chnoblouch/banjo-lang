@@ -1,0 +1,41 @@
+# test:common
+
+struct Point {
+    var x: i32;
+    var y: i32;
+}
+
+# test:subtest
+# test:output "3"
+
+func main() {
+    var tuple: (Point, Point) = (
+        Point {
+            x: 0,
+            y: 1,
+        },
+        Point {
+            x: 2,
+            y: 3,
+        },
+    );
+    
+    println((tuple.1).y);
+}
+
+
+# test:subtest
+# test:error 31:31 "type mismatch (expected '(Point, i32)', got '(Point, Point)')"
+
+func main() {
+    var tuple: (Point, i32) = (
+        Point {
+            x: 0,
+            y: 1,
+        },
+        Point {
+            x: 2,
+            y: 3,
+        },
+    );
+}

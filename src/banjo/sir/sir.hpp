@@ -72,6 +72,8 @@ struct PseudoType;
 struct MetaAccess;
 struct MetaFieldExpr;
 struct MetaCallExpr;
+struct MoveExpr;
+struct DeinitExpr;
 struct VarStmt;
 struct AssignStmt;
 struct CompAssignStmt;
@@ -165,6 +167,8 @@ class Expr {
         MetaAccess *,
         MetaFieldExpr *,
         MetaCallExpr *,
+        MoveExpr *,
+        DeinitExpr *,
         Error *,
         CompletionToken *,
         std::nullptr_t>
@@ -450,10 +454,24 @@ struct DeclBlock {
     SymbolTable *symbol_table;
 };
 
+enum class Ownership {
+    OWNED,
+    MOVED,
+    MOVED_COND,
+};
+
+struct Resource {
+    sir::Expr type;
+    bool has_deinit;
+    std::vector<std::pair<unsigned, Resource>> sub_resources;
+    Ownership ownership;
+};
+
 struct Block {
     ASTNode *ast_node;
     std::vector<Stmt> stmts;
     SymbolTable *symbol_table;
+    std::vector<std::pair<Symbol, Resource>> resources;
 };
 
 struct SymbolTable {
@@ -850,6 +868,20 @@ struct MetaCallExpr {
     std::vector<Expr> args;
 };
 
+struct MoveExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
+    Resource *resource;
+};
+
+struct DeinitExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
+    Resource *resource;
+};
+
 struct VarStmt {
     ASTNode *ast_node;
     Local local;
@@ -1173,6 +1205,8 @@ typedef std::variant<
     MetaAccess,
     MetaFieldExpr,
     MetaCallExpr,
+    MoveExpr,
+    DeinitExpr,
     Error,
     CompletionToken>
     ExprStorage;
@@ -1225,6 +1259,7 @@ struct Module {
     utils::GrowableArena<SymbolTable> symbol_table_arena;
     utils::GrowableArena<OverloadSet> overload_set_arena;
     utils::GrowableArena<Attributes> attributes_arena;
+    utils::GrowableArena<Resource> resource_arena;
 
     ModulePath path;
     DeclBlock block;
@@ -1252,6 +1287,7 @@ struct Module {
     SymbolTable *create_symbol_table(SymbolTable value) { return symbol_table_arena.create(std::move(value)); }
     OverloadSet *create_overload_set(OverloadSet value) { return overload_set_arena.create(std::move(value)); }
     Attributes *create_attrs(Attributes value) { return attributes_arena.create(std::move(value)); }
+    Resource *create_resource(Resource value) { return resource_arena.create(std::move(value)); }
 };
 
 struct Unit {

@@ -63,7 +63,7 @@ void Printer::print(const Unit &unit) {
     BEGIN_LIST_FIELD("mods");
 
     for (const Module *mod : unit.mods) {
-        if (mod->path != ModulePath({"main"})) {
+        if (mod->path != ModulePath{"main"}) {
             continue;
         }
 
@@ -593,6 +593,8 @@ void Printer::print_expr(const Expr &expr) {
         print_meta_access(*inner),
         print_meta_field_expr(*inner),
         print_meta_call_expr(*inner),
+        print_move_expr(*inner),
+        print_deinit_expr(*inner),
         ASSERT_UNREACHABLE
     );
 }
@@ -918,6 +920,20 @@ void Printer::print_meta_call_expr(const MetaCallExpr &meta_call_expr) {
     BEGIN_OBJECT("MetaCallExpr");
     PRINT_EXPR_FIELD("callee", meta_call_expr.callee);
     PRINT_EXPR_LIST_FIELD("args", meta_call_expr.args);
+    END_OBJECT();
+}
+
+void Printer::print_move_expr(const MoveExpr &move_expr) {
+    BEGIN_OBJECT("MoveExpr");
+    PRINT_EXPR_FIELD("type", move_expr.type);
+    PRINT_EXPR_FIELD("value", move_expr.value);
+    END_OBJECT();
+}
+
+void Printer::print_deinit_expr(const DeinitExpr &deinit_expr) {
+    BEGIN_OBJECT("DeinitExpr");
+    PRINT_EXPR_FIELD("type", deinit_expr.type);
+    PRINT_EXPR_FIELD("value", deinit_expr.value);
     END_OBJECT();
 }
 

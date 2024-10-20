@@ -7,7 +7,7 @@ namespace banjo {
 
 namespace lang {
 
-namespace sema {
+namespace sir {
 
 namespace MagicMethods {
 
@@ -45,7 +45,7 @@ std::string_view look_up(sir::UnaryOp op) {
 
 } // namespace MagicMethods
 
-} // namespace sema
+} // namespace sir
 
 } // namespace lang
 

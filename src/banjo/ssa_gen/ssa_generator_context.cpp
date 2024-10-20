@@ -192,8 +192,7 @@ void SSAGeneratorContext::append_copy(ir::Operand dst, ir::Operand src, ir::Type
 }
 
 ReturnMethod SSAGeneratorContext::get_return_method(const ssa::Type return_type) {
-    unsigned size = target->get_data_layout().get_size(return_type);
-    if (size == 0) {
+    if (return_type.is_primitive(ssa::Primitive::VOID)) {
         return ReturnMethod::NO_RETURN_VALUE;
     }
 

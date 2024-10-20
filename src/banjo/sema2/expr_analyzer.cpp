@@ -6,11 +6,11 @@
 #include "banjo/sema2/expr_finalizer.hpp"
 #include "banjo/sema2/generic_arg_inference.hpp"
 #include "banjo/sema2/generics_specializer.hpp"
-#include "banjo/sema2/magic_methods.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/meta_expr_evaluator.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sema2/use_resolver.hpp"
+#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
@@ -92,6 +92,8 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = Result::SUCCESS,                                    // meta_access
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_field_expr
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                                        // move_expr
+        SIR_VISIT_IMPOSSIBLE,                                        // deinit_expr
         result = analyze_completion_token(*inner, expr)              // completion_token
     );
 
@@ -385,7 +387,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (is_operator_overload) {
         sir::StructDef &struct_def = binary_expr.lhs.get_type().as_symbol<sir::StructDef>();
-        std::string_view impl_name = MagicMethods::look_up(binary_expr.op);
+        std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
         sir::Symbol symbol = struct_def.block.symbol_table->look_up(impl_name);
 
         if (!symbol) {
@@ -484,7 +486,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (auto struct_def = unary_expr.value.get_type().match_symbol<sir::StructDef>()) {
         ExprFinalizer(analyzer).finalize_type(unary_expr.value);
 
-        std::string_view impl_name = MagicMethods::look_up(unary_expr.op);
+        std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
         sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
 
         if (!symbol) {
@@ -997,7 +999,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
         sir::Expr value_type = star_expr.value.get_type();
 
         if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
-            std::string_view impl_name = MagicMethods::look_up(sir::UnaryOp::DEREF);
+            std::string_view impl_name = sir::MagicMethods::look_up(sir::UnaryOp::DEREF);
             sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
 
             if (!symbol) {
@@ -1066,7 +1068,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         // FIXME: error handling
         ASSERT(bracket_expr.rhs.size() == 1);
 
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up(MagicMethods::OP_INDEX);
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up(sir::MagicMethods::OP_INDEX);
 
         if (!symbol) {
             analyzer.report_generator.report_err_operator_overload_not_found(bracket_expr);

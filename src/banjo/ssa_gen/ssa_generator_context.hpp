@@ -10,6 +10,7 @@
 #include "banjo/target/target.hpp"
 
 #include <deque>
+#include <map>
 #include <stack>
 #include <unordered_map>
 
@@ -22,6 +23,15 @@ enum class ReturnMethod {
     IN_REGISTER,
     VIA_POINTER_ARG,
 };
+
+struct DeferredDeinit {
+    const sir::Resource *resource;
+    ssa::Value ssa_ptr;
+};
+
+const ssa::Type DEINIT_FLAG_TYPE = ssa::Primitive::I8;
+const ssa::Value DEINIT_FLAG_TRUE = ssa::Value::from_int_immediate(1, DEINIT_FLAG_TYPE);
+const ssa::Value DEINIT_FLAG_FALSE = ssa::Value::from_int_immediate(0, DEINIT_FLAG_TYPE);
 
 class SSAGeneratorContext {
 
@@ -39,6 +49,8 @@ public:
         ssa::VirtualRegister ssa_return_slot;
         ssa::InstrIter ssa_last_alloca;
         std::vector<ir::VirtualRegister> arg_regs;
+        std::map<const sir::Resource *, ssa::VirtualRegister> resource_deinit_flags;
+        std::vector<DeferredDeinit> cur_deferred_deinits;
     };
 
     struct LoopContext {
@@ -54,12 +66,12 @@ public:
     std::stack<LoopContext> loop_contexts;
 
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
-    std::unordered_map<const lang::sir::Local *, ir::VirtualRegister> ssa_local_regs;
+    std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
     std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
     std::unordered_map<const lang::sir::VarDecl *, unsigned> ssa_globals;
     std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
-    std::vector<ir::Structure *> tuple_structs;
+    std::vector<ssa::Structure *> tuple_structs;
 
     int string_name_id = 0;
     int block_id = 0;

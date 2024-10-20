@@ -86,6 +86,10 @@ public:
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
     void report_err_compile_time_unknown(const sir::Expr &range);
     void report_err_meta_for_cannot_iter(const sir::Expr &range);
+    
+    void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
+    void report_err_move_out_pointer(const sir::Expr &move);
+    void report_err_move_out_deinit(const sir::Expr &move);
 
 private:
     template <typename... FormatArgs>

@@ -3,7 +3,12 @@ use c.lib.{
     string.{memcpy as cmemcpy, memset as cmemset}
 };
 
+var alloc_counter: u32 = 0;
+var free_counter: u32 = 0;
+
 pub func alloc(size: usize) -> addr {
+    alloc_counter += 1;
+
     var pointer = cmalloc(size);
     return pointer;
 }
@@ -13,6 +18,8 @@ pub func realloc(pointer: addr, size: usize) -> addr {
 }
 
 pub func free(pointer: addr) {
+    free_counter += 1;
+
     cfree(pointer);
 }
 

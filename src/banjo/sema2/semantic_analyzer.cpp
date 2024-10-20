@@ -4,6 +4,7 @@
 #include "banjo/sema2/decl_interface_analyzer.hpp"
 #include "banjo/sema2/extra_analysis.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
+#include "banjo/sema2/resource_analyzer.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sema2/type_alias_resolver.hpp"
 #include "banjo/sema2/use_resolver.hpp"
@@ -39,6 +40,7 @@ void SemanticAnalyzer::analyze() {
     TypeAliasResolver(*this).analyze();
     DeclInterfaceAnalyzer(*this).analyze();
     DeclBodyAnalyzer(*this).analyze();
+    ResourceAnalyzer(*this).analyze();
     run_postponed_analyses();
 }
 
@@ -94,6 +96,7 @@ void SemanticAnalyzer::run_postponed_analyses() {
         for (auto &[decl, scope] : clone) {
             scopes.push(scope);
             DeclBodyAnalyzer(*this).analyze_decl(decl);
+            ResourceAnalyzer(*this).analyze_decl(decl);
             scopes.pop();
         }
     }

@@ -70,6 +70,7 @@ class SemanticAnalyzer {
     friend class DeclInterfaceAnalyzer;
     friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;
+    friend class ResourceAnalyzer;
     friend class ExprAnalyzer;
     friend class ExprFinalizer;
     friend class StmtAnalyzer;
@@ -79,7 +80,6 @@ class SemanticAnalyzer {
     friend class MetaExpansion;
     friend class MetaExprEvaluator;
     friend class DeclVisitor;
-    friend class Preamble;
     friend class ReportGenerator;
     friend class ReportBuilder;
 

@@ -96,6 +96,8 @@ public:
     MetaAccess *clone_meta_access(const MetaAccess &meta_access);
     MetaFieldExpr *clone_meta_field_expr(const MetaFieldExpr &meta_field_expr);
     MetaCallExpr *clone_meta_call_expr(const MetaCallExpr &meta_call_expr);
+    MoveExpr *clone_move_expr(const MoveExpr &move_expr);
+    DeinitExpr *clone_deinit_expr(const DeinitExpr &deinit_expr);
 
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
     void pop_symbol_table() { symbol_tables.pop(); }

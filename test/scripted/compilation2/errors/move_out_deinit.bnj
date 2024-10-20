@@ -1,0 +1,20 @@
+# test:subtest
+# test:error 19:20 "cannot move out of resource implementing '__deinit__'"
+
+struct Resource {
+    func __deinit__(self) {}
+}
+
+struct Pair {
+    var resource: Resource;
+
+    func __deinit__(self) {}
+}
+
+func main() {
+    var pair = Pair {
+        resource: Resource {}
+    };
+    
+    var resource = pair.resource;
+}

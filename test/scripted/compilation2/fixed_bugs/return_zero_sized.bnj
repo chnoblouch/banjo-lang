@@ -1,0 +1,11 @@
+# test:compiles
+
+struct Empty {
+    pub func new() -> Empty {
+        return Empty {};
+    }
+}
+
+func main() {
+    var empty = Empty.new();
+}

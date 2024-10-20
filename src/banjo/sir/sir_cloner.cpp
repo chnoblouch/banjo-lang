@@ -459,6 +459,8 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_meta_access(*inner),
         return clone_meta_field_expr(*inner),
         return clone_meta_call_expr(*inner),
+        return clone_move_expr(*inner),
+        return clone_deinit_expr(*inner),
         SIR_VISIT_IMPOSSIBLE
     );
 }
@@ -810,6 +812,24 @@ MetaCallExpr *Cloner::clone_meta_call_expr(const MetaCallExpr &meta_call_expr) {
         .ast_node = meta_call_expr.ast_node,
         .callee = clone_expr(meta_call_expr.callee),
         .args = clone_expr_list(meta_call_expr.args),
+    });
+}
+
+MoveExpr *Cloner::clone_move_expr(const MoveExpr &move_expr) {
+    return mod.create_expr(MoveExpr{
+        .ast_node = move_expr.ast_node,
+        .type = clone_expr(move_expr.type),
+        .value = clone_expr(move_expr.value),
+        .resource = move_expr.resource,
+    });
+}
+
+DeinitExpr *Cloner::clone_deinit_expr(const DeinitExpr &deinit_expr) {
+    return mod.create_expr(DeinitExpr{
+        .ast_node = deinit_expr.ast_node,
+        .type = clone_expr(deinit_expr.type),
+        .value = clone_expr(deinit_expr.value),
+        .resource = deinit_expr.resource,
     });
 }
 

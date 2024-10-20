@@ -8,7 +8,7 @@ struct Path {
     }
     
     pub func from[T](value: T) -> Path {
-        meta if T == String {
+        meta if T == String {            
             var path = Path {
                 path: value,
             };
