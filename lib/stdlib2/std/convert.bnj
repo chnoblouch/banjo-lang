@@ -18,14 +18,24 @@ pub func to_string[T](value: T) -> String {
         return bool_to_string(value);
     } else if meta(T).has_method("__str__") {
         return value.__str__();
+    } else if meta(T).is_struct {
+        return struct_to_repr(value, 0);
+    } else if meta(T).is_enum {
+        return enum_to_repr(value);
     } else {
         return "<?>";
     }
 }
 
 pub func to_repr[T](value: T) -> String {
+    return to_repr_indent(value, 0);
+}
+
+pub func to_repr_indent[T](value: T, indent: u32) -> String {
     meta if T == String {
         return "\"" + value + "\"";
+    } else if meta(T).is_struct {
+        return struct_to_repr(value, indent);
     } else {
         return to_string(value);
     }
@@ -110,3 +120,30 @@ func bool_to_string(value: bool) -> String {
     }
 }
 
+func struct_to_repr[T](struct_: T, indent: u32) -> String {
+    var string = meta(T).name + " {\n";
+
+    meta for field in meta(T).fields {    
+        for i in 0..indent + 1 {
+            string += "    ";
+        }
+
+        string += field;
+        string += ": ";
+        string += to_repr_indent(meta(struct_).field(field), indent + 1);
+        string += ",\n";
+    }
+
+    for i in 0..indent {
+        string += "    ";
+    }
+
+    string += '}';
+    return string;
+}
+
+func enum_to_repr[T](enum_: T) -> String {
+    # TODO: actually print the variant once the performance
+    # problems in the resource analyzer are fixed.
+    return meta(T).name + " variant";
+}

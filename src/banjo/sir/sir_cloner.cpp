@@ -417,6 +417,10 @@ Block *Cloner::clone_block_stmt(const Block &block) {
 }
 
 Expr Cloner::clone_expr(const Expr &expr) {
+    if (auto pseudo_type = expr.match<sir::PseudoType>()) {
+        return clone_pseudo_type(*pseudo_type);
+    }
+
     SIR_VISIT_EXPR(
         expr,
         return nullptr,
@@ -789,6 +793,12 @@ DotExpr *Cloner::clone_dot_expr(const DotExpr &dot_expr) {
         .ast_node = dot_expr.ast_node,
         .lhs = clone_expr(dot_expr.lhs),
         .rhs = dot_expr.rhs,
+    });
+}
+
+PseudoType *Cloner::clone_pseudo_type(const PseudoType &pseudo_type) {
+    return mod.create_expr(sir::PseudoType{
+        .kind = pseudo_type.kind,
     });
 }
 

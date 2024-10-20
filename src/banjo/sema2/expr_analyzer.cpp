@@ -12,6 +12,7 @@
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -898,7 +899,12 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     if (!generic_args.empty()) {
         auto iter = generic_args.find(ident_expr.value);
         if (iter != generic_args.end()) {
-            out_expr = iter->second;
+            if (iter->second.is<sir::StringLiteral>()) {
+                out_expr = sir::Cloner(*analyzer.cur_sir_mod).clone_expr(iter->second);
+            } else {
+                out_expr = iter->second;
+            }
+
             return Result::SUCCESS;
         }
     }

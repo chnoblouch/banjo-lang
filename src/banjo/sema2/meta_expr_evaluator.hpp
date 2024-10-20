@@ -23,9 +23,15 @@ public:
     Result evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr);
 
 private:
-    sir::Expr has_method(sir::Expr &type, const std::string &name);
+    sir::Expr compute_name(sir::Expr &type);
+    sir::Expr compute_fields(sir::Expr &type);
+    sir::Expr compute_variants(sir::Expr &type);
+    sir::Expr compute_has_method(sir::Expr &type, const std::vector<sir::Expr> &args);
+    sir::Expr compute_field(sir::Expr &base, const std::vector<sir::Expr> &args);
 
     sir::Expr create_bool_literal(bool value);
+    sir::Expr create_array_literal(std::vector<sir::Expr> values);
+    sir::Expr create_string_literal(std::string value);
 };
 
 } // namespace sema
