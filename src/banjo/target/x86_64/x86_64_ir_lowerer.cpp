@@ -609,10 +609,14 @@ void X8664IRLowerer::lower_sextend(ir::Instruction& instr) {
 void X8664IRLowerer::lower_truncate(ir::Instruction& instr) {
     assert(get_size(instr.get_operand(1).get_type()) != 8);
 
-    emit(mcode::Instruction(X8664Opcode::MOV, {
-        mcode::Operand::from_register(lower_reg(*instr.get_dest()), 4),
-        lower_value(instr.get_operand(0))
-    }));
+    mcode::Operand dst = mcode::Operand::from_register(lower_reg(*instr.get_dest()), 4);
+    mcode::Operand src = lower_value(instr.get_operand(0));
+
+    if (src.get_size() == 8) {
+        src.set_size(4);
+    }
+
+    emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
 }
 
 void X8664IRLowerer::lower_fpromote(ir::Instruction& instr) {

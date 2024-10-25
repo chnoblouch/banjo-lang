@@ -39,9 +39,9 @@ bool Validator::validate(ir::Module &mod, ir::Function &func) {
 
     for (ir::BasicBlock &block : func) {
         for (ir::Instruction &instr : block) {
-            passes::PassUtils::iter_regs(instr.get_operands(), [&defs, &valid, this](ir::VirtualRegister reg) {
+            passes::PassUtils::iter_regs(instr.get_operands(), [&](ir::VirtualRegister reg) {
                 if (!defs.contains(reg)) {
-                    stream << "%" << reg << " is not defined\n";
+                    stream << "error in `" << func.get_name() << "`: %" << reg << " is not defined\n";
                     valid = false;
                 }
             });

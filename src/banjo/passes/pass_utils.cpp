@@ -1,5 +1,8 @@
 #include "pass_utils.hpp"
 
+#include "banjo/ir/instruction.hpp"
+#include "banjo/ir/virtual_register.hpp"
+
 namespace banjo {
 
 namespace passes {
@@ -120,6 +123,18 @@ void PassUtils::replace_block(ir::Function *func, ir::ControlFlowGraph &cfg, uns
             }
         }
     }
+}
+
+PassUtils::UseMap PassUtils::collect_uses(ir::Function &func) {
+    UseMap uses;
+
+    for (ir::BasicBlock &block : func) {
+        for (ir::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
+            iter_regs(iter->get_operands(), [&uses, iter](ir::VirtualRegister reg) { uses[reg].push_back(iter); });
+        }
+    }
+
+    return uses;
 }
 
 } // namespace passes
