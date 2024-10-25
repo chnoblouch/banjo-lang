@@ -51,6 +51,7 @@ public:
         std::vector<ir::VirtualRegister> arg_regs;
         std::map<const sir::Resource *, ssa::VirtualRegister> resource_deinit_flags;
         std::vector<DeferredDeinit> cur_deferred_deinits;
+        std::vector<const sir::Block *> sir_scopes;
     };
 
     struct LoopContext {

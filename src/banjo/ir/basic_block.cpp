@@ -34,6 +34,10 @@ InstrIter BasicBlock::replace(InstrIter iter, Instruction instr) {
     return instrs.replace(iter, std::move(instr));
 }
 
+bool BasicBlock::is_branching() const {
+    return instrs.get_size() != 0 && instrs.get_last().is_branching();
+}
+
 } // namespace ir
 
 } // namespace banjo

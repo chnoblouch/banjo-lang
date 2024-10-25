@@ -3,7 +3,6 @@
 #include "banjo/ir/function_decl.hpp"
 #include "banjo/ir/primitive.hpp"
 #include "banjo/ir/virtual_register.hpp"
-#include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/block_ssa_generator.hpp"
@@ -226,7 +225,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
 
     BlockSSAGenerator(ctx).generate_block(sir_func.block);
 
-    if (!ir_builder::IRBuilderUtils::is_branching(*ctx.get_ssa_block())) {
+    if (!ctx.get_ssa_block()->is_branching()) {
         ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
     }
 

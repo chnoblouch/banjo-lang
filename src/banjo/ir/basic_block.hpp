@@ -42,6 +42,8 @@ public:
 
     InstrIter begin() { return instrs.begin(); }
     InstrIter end() { return instrs.end(); }
+
+    bool is_branching() const;
 };
 
 typedef LinkedListNode<BasicBlock> BasicBlockNode;

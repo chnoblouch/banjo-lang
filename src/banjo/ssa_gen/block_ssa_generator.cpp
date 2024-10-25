@@ -2,7 +2,6 @@
 
 #include "banjo/ir/comparison.hpp"
 #include "banjo/ir/virtual_register.hpp"
-#include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
@@ -51,11 +50,9 @@ void BlockSSAGenerator::generate_resource_flags(const sir::Resource &resource) {
 }
 
 void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
-    for (const sir::Stmt &sir_stmt : block.stmts) {
-        if (ir_builder::IRBuilderUtils::is_branching(*ctx.get_ssa_block())) {
-            return;
-        }
+    ctx.get_func_context().sir_scopes.push_back(&block);
 
+    for (const sir::Stmt &sir_stmt : block.stmts) {
         SIR_VISIT_STMT(
             sir_stmt,
             SIR_VISIT_IMPOSSIBLE,                                           // empty
@@ -79,12 +76,18 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
             SIR_VISIT_IMPOSSIBLE                                            // error
         );
 
+        if (ctx.get_ssa_block()->is_branching()) {
+            return;
+        }
+
         for (DeferredDeinit &deferred_deinit : ctx.get_func_context().cur_deferred_deinits) {
             generate_deinit(*deferred_deinit.resource, deferred_deinit.ssa_ptr);
         }
 
         ctx.get_func_context().cur_deferred_deinits.clear();
     }
+
+    ctx.get_func_context().sir_scopes.pop_back();
 
     generate_block_deinit(block);
 }
@@ -109,6 +112,12 @@ void BlockSSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt)
 }
 
 void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
+    const std::vector<const sir::Block *> &scopes = ctx.get_func_context().sir_scopes;
+
+    for (auto iter = scopes.rbegin(); iter != scopes.rend(); ++iter) {
+        generate_block_deinit(**iter);
+    }
+
     if (return_stmt.value) {
         ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
     }

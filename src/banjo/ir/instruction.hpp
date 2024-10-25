@@ -56,6 +56,10 @@ public:
     unsigned get_flags() const { return flags; }
     bool is_flag(unsigned flag) const { return flags & flag; }
     void set_flag(unsigned flag) { flags |= flag; }
+
+    bool is_branching() const {
+        return opcode == ir::Opcode::JMP || opcode == ir::Opcode::CJMP || opcode == ir::Opcode::FCJMP;
+    }
 };
 
 typedef LinkedListNode<Instruction> InstrNode;

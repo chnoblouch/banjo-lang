@@ -127,51 +127,51 @@ class UseItem;
 
 class Expr {
     std::variant<
-        IntLiteral *,
-        FPLiteral *,
-        BoolLiteral *,
-        CharLiteral *,
-        NullLiteral *,
-        NoneLiteral *,
-        UndefinedLiteral *,
-        ArrayLiteral *,
-        StringLiteral *,
-        StructLiteral *,
-        UnionCaseLiteral *,
-        MapLiteral *,
-        ClosureLiteral *,
-        SymbolExpr *,
-        BinaryExpr *,
-        UnaryExpr *,
-        CastExpr *,
-        IndexExpr *,
-        CallExpr *,
-        FieldExpr *,
-        RangeExpr *,
-        TupleExpr *,
-        CoercionExpr *,
-        PrimitiveType *,
-        PointerType *,
-        StaticArrayType *,
-        FuncType *,
-        OptionalType *,
-        ResultType *,
-        ArrayType *,
-        MapType *,
-        ClosureType *,
-        IdentExpr *,
-        StarExpr *,
-        BracketExpr *,
-        DotExpr *,
-        PseudoType *,
-        MetaAccess *,
-        MetaFieldExpr *,
-        MetaCallExpr *,
-        MoveExpr *,
-        DeinitExpr *,
-        Error *,
-        CompletionToken *,
-        std::nullptr_t>
+        IntLiteral *,       // 0
+        FPLiteral *,        // 1
+        BoolLiteral *,      // 2
+        CharLiteral *,      // 3
+        NullLiteral *,      // 4
+        NoneLiteral *,      // 5
+        UndefinedLiteral *, // 6
+        ArrayLiteral *,     // 7
+        StringLiteral *,    // 8
+        StructLiteral *,    // 9
+        UnionCaseLiteral *, // 10
+        MapLiteral *,       // 11
+        ClosureLiteral *,   // 12
+        SymbolExpr *,       // 13
+        BinaryExpr *,       // 14
+        UnaryExpr *,        // 15
+        CastExpr *,         // 16
+        IndexExpr *,        // 17
+        CallExpr *,         // 18
+        FieldExpr *,        // 19
+        RangeExpr *,        // 20
+        TupleExpr *,        // 21
+        CoercionExpr *,     // 22
+        PrimitiveType *,    // 23
+        PointerType *,      // 24
+        StaticArrayType *,  // 25
+        FuncType *,         // 26
+        OptionalType *,     // 27
+        ResultType *,       // 28
+        ArrayType *,        // 29
+        MapType *,          // 30
+        ClosureType *,      // 31
+        IdentExpr *,        // 32
+        StarExpr *,         // 33
+        BracketExpr *,      // 34
+        DotExpr *,          // 35
+        PseudoType *,       // 36
+        MetaAccess *,       // 37
+        MetaFieldExpr *,    // 38
+        MetaCallExpr *,     // 39
+        MoveExpr *,         // 40
+        DeinitExpr *,       // 41
+        Error *,            // 42
+        CompletionToken *,  // 43
+        std::nullptr_t>     // 44
         kind;
 
 public:
