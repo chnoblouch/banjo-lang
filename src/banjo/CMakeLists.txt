@@ -82,6 +82,7 @@ add_library(banjo STATIC
     passes/control_flow_opt_pass.cpp
     passes/cse_pass.cpp
     passes/dead_func_elimination_pass.cpp
+    passes/heap_to_stack_pass.cpp
     passes/inlining_pass.cpp
     passes/licm_pass.cpp
     passes/loop_analysis.cpp

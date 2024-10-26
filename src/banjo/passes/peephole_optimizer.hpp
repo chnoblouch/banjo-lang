@@ -14,14 +14,15 @@ public:
     void run(ir::Module &mod);
 
 private:
-    void run(ir::Function *func);
-    void run(ir::BasicBlock &block, ir::Function &func);
+    void run(ir::Function *func, ir::Module &mod);
+    void run(ir::BasicBlock &block, ir::Function &func, ir::Module &mod);
 
     void optimize_add(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_sub(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_mul(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_udiv(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
     void optimize_fmul(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
+    void optimize_call(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func, ir::Module &mod);
 
     void eliminate(ir::InstrIter &iter, ir::Value val, ir::BasicBlock &block, ir::Function &func);
     bool is_imm(ir::Operand &operand);

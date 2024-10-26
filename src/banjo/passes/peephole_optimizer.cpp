@@ -13,17 +13,17 @@ PeepholeOptimizer::PeepholeOptimizer(target::Target *target) : Pass("peephole-op
 
 void PeepholeOptimizer::run(ir::Module &mod) {
     for (ir::Function *func : mod.get_functions()) {
-        run(func);
+        run(func, mod);
     }
 }
 
-void PeepholeOptimizer::run(ir::Function *func) {
+void PeepholeOptimizer::run(ir::Function *func, ir::Module &mod) {
     for (ir::BasicBlock &block : func->get_basic_blocks()) {
-        run(block, *func);
+        run(block, *func, mod);
     }
 }
 
-void PeepholeOptimizer::run(ir::BasicBlock &block, ir::Function &func) {
+void PeepholeOptimizer::run(ir::BasicBlock &block, ir::Function &func, ir::Module &mod) {
     // TODO: canonicalization
     for (ir::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
         std::optional<ir::Value> value = Precomputing::precompute_result(*iter);
@@ -40,17 +40,8 @@ void PeepholeOptimizer::run(ir::BasicBlock &block, ir::Function &func) {
             case ir::Opcode::MUL: optimize_mul(iter, block, func); break;
             case ir::Opcode::UDIV: optimize_udiv(iter, block, func); break;
             case ir::Opcode::FMUL: optimize_fmul(iter, block, func); break;
+            case ir::Opcode::CALL: optimize_call(iter, block, func, mod); break;
             default: break;
-        }
-
-        if (iter->get_opcode() == ir::Opcode::CALL) {
-            if (iter->get_operand(0).is_extern_func() && iter->get_operand(0).get_extern_func_name() == "sqrtf") {
-                if (iter->get_dest() && iter->get_operands().size() == 2) {
-                    ir::InstrIter prev = iter.get_prev();
-                    block.replace(iter, ir::Instruction(ir::Opcode::SQRT, iter->get_dest(), {iter->get_operand(1)}));
-                    iter = prev;
-                }
-            }
         }
     }
 }
@@ -110,6 +101,36 @@ void PeepholeOptimizer::optimize_fmul(ir::InstrIter &iter, ir::BasicBlock &block
         ir::Operand tmp = iter->get_operand(0);
         iter->get_operand(0) = iter->get_operand(1);
         iter->get_operand(1) = tmp;
+    }
+}
+
+void PeepholeOptimizer::optimize_call(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func, ir::Module &mod) {
+    ir::Value &callee = iter->get_operand(0);
+    if (!callee.is_extern_func()) {
+        return;
+    }
+
+    if (callee.get_extern_func_name() == "sqrtf") {
+        if (iter->get_dest() && iter->get_operands().size() == 2) {
+            ir::InstrIter prev = iter.get_prev();
+            block.replace(iter, ir::Instruction(ir::Opcode::SQRT, iter->get_dest(), {iter->get_operand(1)}));
+            iter = prev;
+        }
+    } else if (callee.get_extern_func_name() == "strlen") {
+        if (!iter->get_operand(1).is_global()) {
+            return;
+        }
+
+        for (ssa::Global &global : mod.get_globals()) {
+            if (global.get_name() != iter->get_operand(1).get_global_name()) {
+                continue;
+            }
+
+            unsigned string_length = global.initial_value->get_string().size() - 1;
+            ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::I64);
+            eliminate(iter, value, block, func);
+            break;
+        }
     }
 }
 
