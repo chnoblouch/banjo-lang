@@ -3,6 +3,7 @@
 #include "banjo/codegen/ir_lowerer.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/mcode/function.hpp"
+#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
@@ -89,8 +90,25 @@ void SysVCallingConv::append_arg_move(
 }
 
 void SysVCallingConv::append_call(ir::Operand func_operand, codegen::IRLowerer &lowerer) {
-    mcode::Operand operand = lowerer.lower_value(func_operand);
-    mcode::InstrIter iter = lowerer.emit({X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL});
+    X8664IRLowerer &x86_64_lowerer = static_cast<X8664IRLowerer &>(lowerer);
+
+    int ptr_size = X8664IRLowerer::PTR_SIZE;
+
+    mcode::Operand operand;
+    if (func_operand.is_symbol()) {
+        operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
+    } else if (func_operand.is_register()) {
+        ir::InstrIter producer = lowerer.get_producer(func_operand.get_register());
+        if (producer->get_opcode() == ir::Opcode::LOAD) {
+            operand = lowerer.lower_address(producer->get_operand(1));
+            lowerer.discard_use(func_operand.get_register());
+        } else {
+            operand = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), ptr_size);
+        }
+    }
+
+    mcode::InstrIter iter =
+        lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL));
 
     iter->add_reg_op(X8664Register::RAX, mcode::RegUsage::DEF);
     iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);

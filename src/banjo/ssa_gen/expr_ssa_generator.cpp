@@ -12,7 +12,6 @@
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
-#include "banjo/symbol/magic_functions.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
@@ -80,6 +79,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // star_expr
         SIR_VISIT_IMPOSSIBLE,                              // bracket_expr
         SIR_VISIT_IMPOSSIBLE,                              // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                              // pseudo_type
         SIR_VISIT_IMPOSSIBLE,                              // meta_access
         SIR_VISIT_IMPOSSIBLE,                              // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr

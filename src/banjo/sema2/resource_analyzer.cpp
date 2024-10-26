@@ -304,6 +304,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // star_expr
         SIR_VISIT_IGNORE,                                // bracket_expr
         SIR_VISIT_IGNORE,                                // dot_expr
+        SIR_VISIT_IGNORE,                                // pseudo_tpe
         SIR_VISIT_IGNORE,                                // meta_access
         SIR_VISIT_IGNORE,                                // meta_field_expr
         SIR_VISIT_IGNORE,                                // meta_call_expr

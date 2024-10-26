@@ -57,6 +57,7 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // star_expr
         SIR_VISIT_IMPOSSIBLE,                                     // bracket_expr
         SIR_VISIT_IMPOSSIBLE,                                     // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                                     // pseudo_type
         SIR_VISIT_IMPOSSIBLE,                                     // meta_access
         SIR_VISIT_IMPOSSIBLE,                                     // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                                     // meta_call_expr
@@ -110,6 +111,7 @@ Expr Expr::get_type() const {
         return nullptr,       // star_expr
         return nullptr,       // bracket_expr
         return nullptr,       // dot_expr
+        return nullptr,       // pseudo_type
         SIR_VISIT_IMPOSSIBLE, // meta_access
         SIR_VISIT_IMPOSSIBLE, // meta_field_expr
         SIR_VISIT_IMPOSSIBLE, // meta_call_expr
@@ -125,7 +127,7 @@ bool Expr::is_type() const {
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else {
-        return is<PrimitiveType>() || is<PointerType>() || is<FuncType>();
+        return is<PrimitiveType>() || is<PointerType>() || is<FuncType>() || is<sir::ClosureType>();
     }
 }
 
@@ -219,6 +221,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

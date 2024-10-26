@@ -418,10 +418,6 @@ Block *Cloner::clone_block_stmt(const Block &block) {
 }
 
 Expr Cloner::clone_expr(const Expr &expr) {
-    if (auto pseudo_type = expr.match<sir::PseudoType>()) {
-        return clone_pseudo_type(*pseudo_type);
-    }
-
     SIR_VISIT_EXPR(
         expr,
         return nullptr,
@@ -461,6 +457,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_star_expr(*inner),
         return clone_bracket_expr(*inner),
         return clone_dot_expr(*inner),
+        return clone_pseudo_type(*inner),
         return clone_meta_access(*inner),
         return clone_meta_field_expr(*inner),
         return clone_meta_call_expr(*inner),

@@ -90,6 +90,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         analyze_star_expr(*inner, expr),                             // star_expr
         result = analyze_bracket_expr(*inner, expr),                 // bracket_expr
         result = analyze_dot_expr(*inner, expr),                     // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                                        // pseudo_tpe
         result = Result::SUCCESS,                                    // meta_access
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_field_expr
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_call_expr
@@ -111,6 +112,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
 
 Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
     int_literal.type = analyzer.create_expr(sir::PseudoType{
+        .ast_node = nullptr,
         .kind = sir::PseudoTypeKind::INT_LITERAL,
     });
 
@@ -119,6 +121,7 @@ Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
 
 Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
     fp_literal.type = analyzer.create_expr(sir::PseudoType{
+        .ast_node = nullptr,
         .kind = sir::PseudoTypeKind::FP_LITERAL,
     });
 
@@ -167,6 +170,7 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
         return analyze_array_type(out_expr.as<sir::ArrayType>(), out_expr);
     } else {
         array_literal.type = analyzer.create_expr(sir::PseudoType{
+            .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::ARRAY_LITERAL,
         });
     }
@@ -176,6 +180,7 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
 
 Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
     string_literal.type = analyzer.create_expr(sir::PseudoType{
+        .ast_node = nullptr,
         .kind = sir::PseudoTypeKind::STRING_LITERAL,
     });
 
@@ -232,6 +237,7 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
         return analyze_map_type(out_expr.as<sir::MapType>(), out_expr);
     } else {
         map_literal.type = analyzer.create_expr(sir::PseudoType{
+            .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::MAP_LITERAL,
         });
     }

@@ -103,6 +103,7 @@ private:
     void print_star_expr(const StarExpr &star_expr);
     void print_bracket_expr(const BracketExpr &bracket_expr);
     void print_dot_expr(const DotExpr &dot_expr);
+    void print_pseudo_type(const PseudoType &pseudo_type);
     void print_meta_access(const MetaAccess &meta_access);
     void print_meta_field_expr(const MetaFieldExpr &meta_field_expr);
     void print_meta_call_expr(const MetaCallExpr &meta_call_expr);

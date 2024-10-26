@@ -848,6 +848,7 @@ enum class PseudoTypeKind {
 };
 
 struct PseudoType {
+    ASTNode *ast_node;
     PseudoTypeKind kind;
 
     bool is_struct_by_default() const;

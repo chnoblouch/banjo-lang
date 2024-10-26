@@ -74,6 +74,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return analyze_and_evaluate(expr),       // star_expr
         return analyze_and_evaluate(expr),       // bracket_expr
         return analyze_and_evaluate(expr),       // dot_expr
+        SIR_VISIT_IMPOSSIBLE,                    // pseudo_tpe
         SIR_VISIT_IMPOSSIBLE,                    // meta_access
         return evaluate_meta_field_expr(*inner), // meta_field_expr
         return evaluate_meta_call_expr(*inner),  // meta_call_expr
