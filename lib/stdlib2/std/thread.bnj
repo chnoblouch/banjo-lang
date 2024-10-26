@@ -1,4 +1,29 @@
-use std.platform;
+use std.{platform, memory};
+
+struct Thread {
+	var handle: usize;
+
+	pub func spawn(target: ||) -> Thread {
+		var argument = memory.box(target) as addr;
+		var handle = platform.thread_spawn(initializer, argument);
+		return Thread { handle: handle };
+	}
+
+    pub func __deinit__(self) {
+		platform.thread_close(self.handle);
+	}
+
+	pub func join(self) {
+		platform.thread_join(self.handle);
+	}
+	
+	func initializer(data: addr) {	
+		var pointer = data as *||;
+		var target = *pointer;
+		memory.free(data);
+		target();
+	}
+}
 
 pub func sleep(milliseconds: u32) {
     platform.thread_sleep(milliseconds);
