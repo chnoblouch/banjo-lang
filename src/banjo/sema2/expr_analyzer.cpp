@@ -1128,9 +1128,13 @@ Result ExprAnalyzer::analyze_completion_token(sir::CompletionToken &completion_t
         analyzer.completion_context = CompleteInBlock{
             .block = analyzer.get_scope().block,
         };
-    } else {
+    } else if (analyzer.is_in_decl()) {
         analyzer.completion_context = CompleteInDeclBlock{
             .decl_block = analyzer.get_scope().decl.get_decl_block(),
+        };
+    } else {
+        analyzer.completion_context = CompleteInDeclBlock{
+            .decl_block = &analyzer.cur_sir_mod->block,
         };
     }
 

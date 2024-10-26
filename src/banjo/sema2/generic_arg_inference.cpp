@@ -41,8 +41,15 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
     unsigned non_sequence_end = has_sequence ? params.size() - 1 : params.size();
     unsigned num_sequence_args = has_sequence ? args.size() - (params.size() - 1) : 0;
 
+    if (args.size() < non_sequence_end) {
+        analyzer.report_generator.report_err_too_few_args_to_infer_generic_args(expr);
+        return Result::ERROR;
+    }
+
     for (unsigned i = 0; i < non_sequence_end; i++) {
-        ASSERT(args[i].get_type());
+        if (!args[i].get_type()) {
+            return Result::SUCCESS;
+        }
 
         cur_arg = &args[i];
         partial_result = infer(params[i].type, cur_arg->get_type());

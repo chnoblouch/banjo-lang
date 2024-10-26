@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 7:5 "too few arguments to infer generic parameter values"
+
+func f[T](a: T) {}
+
+func main() {
+    f();
+}
+
+# test:subtest
+# test:error 16:5 "too few arguments to infer generic parameter values"
+
+func f[T](a: i32, b: T) {}
+
+func main() {
+    f(10);
+}

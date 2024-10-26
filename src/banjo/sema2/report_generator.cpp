@@ -240,6 +240,10 @@ void ReportGenerator::report_err_unexpected_array_length(
     report_error(format_str, array_literal.ast_node, expected_count, array_literal.values.size());
 }
 
+void ReportGenerator::report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr) {
+    report_error("too few arguments to infer generic parameter values", expr.get_ast_node());
+}
+
 void ReportGenerator::report_err_cannot_infer_generic_arg(
     const sir::Expr &expr,
     const sir::GenericParam &generic_param

@@ -40,7 +40,7 @@ struct CompleteAfterDot {
     sir::Expr lhs;
 };
 
-typedef std::variant<CompleteInDeclBlock, CompleteInBlock, CompleteAfterDot> CompletionContext;
+typedef std::variant<std::monostate, CompleteInDeclBlock, CompleteInBlock, CompleteAfterDot> CompletionContext;
 
 struct ClosureContext {
     std::vector<sir::Symbol> captured_vars;
@@ -133,6 +133,7 @@ private:
     void exit_mod() { scopes.pop(); }
 
     bool is_in_stmt_block() { return get_scope().block; }
+    bool is_in_decl() { return get_scope().decl; }
     sir::SymbolTable &get_symbol_table();
 
     void populate_preamble_symbols();
