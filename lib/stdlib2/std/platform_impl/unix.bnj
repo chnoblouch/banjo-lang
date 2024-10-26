@@ -1,7 +1,17 @@
 use os.{IS_UNIX, posix};
+use std.system;
 
 meta if IS_UNIX {
     type Error = i32;
+    type Socket = i32;
+
+    const SOCKET_INVALID: Socket = 0;
+    const SOCKET_ADDRESS_FAMILY_IPV4: i32 = 0;
+    const SOCKET_ADDRESS_FAMILY_IPV6: i32 = 0;
+    const SOCKET_TYPE_STREAM: i32 = 0;
+    const SOCKET_TYPE_DATAGRAM: i32 = 0;
+    const SOCKET_PROTOCOL_TCP: i32 = 0;
+    const SOCKET_PROTOCOL_UDP: i32 = 0;
 
     pub func error_last() -> Error {
 		return posix.errno();
@@ -72,5 +82,29 @@ meta if IS_UNIX {
 
     pub func time_monotonic_frequency() -> u64 {
         return 1000000000;
+    }
+
+    pub func socket_create(address_family: i32, socket_type: i32, protocol: i32) -> Socket {
+        panic("unimplemented on this platform");
+    }
+
+    pub func socket_set_blocking(socket: Socket, blocking: bool) {
+        panic("unimplemented on this platform");
+    }
+
+    pub func socket_connect(socket: Socket, host: String, port: u32) -> bool {
+        panic("unimplemented on this platform");
+    }
+
+    pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+        panic("unimplemented on this platform");
+    }
+
+    pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+        panic("unimplemented on this platform");
+    }
+
+    pub func socket_close(socket: Socket) {
+        panic("unimplemented on this platform");
     }
 }
