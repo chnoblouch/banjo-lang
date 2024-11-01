@@ -18,10 +18,11 @@ private:
 public:
     ExprFinalizer(SemanticAnalyzer &analyzer);
 
-    Result finalize_type_by_coercion(sir::Expr &expr, sir::Expr expected_type);
-    Result finalize_type(sir::Expr &expr);
+    Result finalize_by_coercion(sir::Expr &expr, sir::Expr expected_type);
+    Result finalize(sir::Expr &expr);
 
     Result coerce_to_union(sir::Expr &inout_expr, sir::Expr union_type);
+    Result coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &proto_def, sir::Expr proto_ptr_type);
     Result coerce_to_std_optional(sir::Expr &inout_expr, sir::Specialization<sir::StructDef> &specialization);
     Result coerce_to_std_result(sir::Expr &inout_expr, sir::Specialization<sir::StructDef> &specialization);
 

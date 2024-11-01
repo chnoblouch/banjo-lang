@@ -1,0 +1,3 @@
+# test:error 3:11 "expected proto"
+
+struct S: i32 {}

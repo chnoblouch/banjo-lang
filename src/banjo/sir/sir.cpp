@@ -123,7 +123,7 @@ Expr Expr::get_type() const {
 
 bool Expr::is_type() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
-        return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef>();
+        return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, ProtoDef>();
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else {
@@ -149,7 +149,8 @@ bool Expr::is_int_type() const {
             case Primitive::U8:
             case Primitive::U16:
             case Primitive::U32:
-            case Primitive::U64: return true;
+            case Primitive::U64:
+            case Primitive::USIZE: return true;
             default: return false;
         }
     } else {
@@ -177,7 +178,8 @@ bool Expr::is_unsigned_type() const {
             case Primitive::U8:
             case Primitive::U16:
             case Primitive::U32:
-            case Primitive::U64: return true;
+            case Primitive::U64:
+            case Primitive::USIZE: return true;
             default: return false;
         }
     } else {
@@ -199,6 +201,18 @@ bool Expr::is_fp_type() const {
 
 bool Expr::is_addr_like_type() const {
     return is_primitive_type(sir::Primitive::ADDR) || is<sir::PointerType>() || is<sir::FuncType>();
+}
+
+const ProtoDef *Expr::match_proto_ptr() const {
+    if (auto pointer_type = match<PointerType>()) {
+        return pointer_type->base_type.match_symbol<sir::ProtoDef>();
+    } else {
+        return nullptr;
+    }
+}
+
+ProtoDef *Expr::match_proto_ptr() {
+    return const_cast<ProtoDef *>(std::as_const(*this).match_proto_ptr());
 }
 
 bool Expr::is_u8_ptr() const {
@@ -281,6 +295,7 @@ const Ident &Symbol::get_ident() const {
         SIR_VISIT_IMPOSSIBLE, // empty
         SIR_VISIT_IMPOSSIBLE, // module
         return inner->ident,  // func_def
+        return inner->ident,  // func_decl
         return inner->ident,  // native_func_decl
         return inner->ident,  // const_def
         return inner->ident,  // struct_def
@@ -291,6 +306,7 @@ const Ident &Symbol::get_ident() const {
         return inner->ident,  // enum_variant
         return inner->ident,  // union_def
         return inner->ident,  // union_case
+        return inner->ident,  // proto_def
         return inner->ident,  // type_alias
         return inner->ident,  // use_ident
         SIR_VISIT_IMPOSSIBLE, // use_rebind
@@ -324,6 +340,7 @@ Expr Symbol::get_type() {
         return nullptr,      // empty
         return nullptr,      // module
         return &inner->type, // func_def
+        return &inner->type, // func_decl
         return &inner->type, // native_func_decl
         return inner->type,  // const_def
         return nullptr,      // struct_def
@@ -334,6 +351,7 @@ Expr Symbol::get_type() {
         return inner->type,  // enum_variant
         return nullptr,      // union_def
         return nullptr,      // union_case
+        return nullptr,      // proto_def
         return nullptr,      // type_alias
         return nullptr,      // use_ident
         return nullptr,      // use_rebind
@@ -359,6 +377,7 @@ DeclBlock *Symbol::get_decl_block() {
     else if (auto struct_def = match<StructDef>()) return &struct_def->block;
     else if (auto enum_def = match<EnumDef>()) return &enum_def->block;
     else if (auto union_def = match<UnionDef>()) return &union_def->block;
+    else if (auto proto_def = match<ProtoDef>()) return &proto_def->block;
     else return nullptr;
 }
 
@@ -409,6 +428,18 @@ StructField *StructDef::find_field(std::string_view name) const {
     return nullptr;
 }
 
+bool StructDef::has_impl_for(const sir::ProtoDef &proto_def) const {
+    for (const sir::Expr &impl : impls) {
+        if (auto impl_proto_def = impl.match_symbol<sir::ProtoDef>()) {
+            if (impl_proto_def == &proto_def) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 unsigned UnionDef::get_index(const UnionCase &case_) const {
     for (unsigned i = 0; i < cases.size(); i++) {
         if (cases[i] == &case_) {
@@ -422,6 +453,16 @@ unsigned UnionDef::get_index(const UnionCase &case_) const {
 std::optional<unsigned> UnionCase::find_field(std::string_view name) const {
     for (unsigned i = 0; i < fields.size(); i++) {
         if (fields[i].ident.value == name) {
+            return i;
+        }
+    }
+
+    return {};
+}
+
+std::optional<unsigned> ProtoDef::get_index(const FuncDecl &func_decl) const {
+    for (unsigned i = 0; i < func_decls.size(); i++) {
+        if (func_decls[i] == &func_decl) {
             return i;
         }
     }

@@ -1,0 +1,118 @@
+# test:subtest
+# test:compiles
+
+proto P {
+    func f(self);
+}
+
+struct S: P {
+    func f(self) {}
+}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+}
+
+# test:subtest
+# test:output "40,10"
+
+proto Shape {
+    func area(self) -> u32;
+}
+
+struct Rectangle: Shape {
+    var width: u32;
+    var height: u32;
+    
+    func area(self) -> u32 {
+        return self.width * self.height;
+    }
+}
+
+struct Triangle: Shape {
+    var base: u32;
+    var height: u32;
+    
+    func area(self) -> u32 {
+        return self.base * self.height / 2;
+    }
+}
+
+func print_area(shape: *Shape) {
+    print(shape.area());
+}
+
+func main() {
+    var rectangle = Rectangle {
+        width: 5,
+        height: 8,
+    };
+    
+    var triangle = Triangle {
+        base: 5,
+        height: 4,
+    };
+    
+    print_area(&rectangle);
+    print(",");
+    print_area(&triangle);
+}
+
+# test:subtest
+# test:output "3;4,-3,8,"
+
+proto IntCollection {
+    func add(self, value: i32);
+    func count(self) -> usize;
+}
+
+proto DebugPrint {
+    func debug_print(self);
+}
+
+struct IntSet: IntCollection, DebugPrint {
+    var array: Array[i32];
+    
+    pub func new(self) -> IntSet {
+        return IntSet {
+            array: [],
+        };
+    }
+    
+    func add(self, value: i32) {
+        for i in self.array {
+            if i == value {
+                return;
+            }
+        }
+        
+        self.array.append(value);
+    }
+    
+    func count(self) -> usize {
+        return self.array.length;
+    }
+    
+    func debug_print(self) {
+        for value in self.array {
+            print(value);
+            print(",");
+        }
+    }
+}
+
+func main() {
+    var set = IntSet.new();
+    var collection: *IntCollection = &set;
+    var printable: *DebugPrint = &set;
+    
+    collection.add(4);
+    collection.add(-3);
+    collection.add(4);
+    collection.add(8);
+    
+    print(collection.count());
+    print(";");
+    printable.debug_print();
+}

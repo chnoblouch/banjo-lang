@@ -51,6 +51,7 @@ public:
     void report_err_module_not_found(const sir::Ident &ident);
     void report_err_redefinition(const sir::Ident &ident, const sir::Symbol &prev_def);
     void report_err_type_mismatch(const sir::Expr &value, const sir::Expr &expected, const sir::Expr &actual);
+    void report_err_cannot_coerce(const sir::Expr &expr, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
@@ -87,7 +88,11 @@ public:
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
     void report_err_compile_time_unknown(const sir::Expr &range);
     void report_err_meta_for_cannot_iter(const sir::Expr &range);
-    
+
+    void report_err_expected_proto(const sir::Expr &expr);
+    void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::FuncDecl &func_decl);
+    void report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::FuncDecl &func_decl);
+
     void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
     void report_err_move_out_pointer(const sir::Expr &move);
     void report_err_move_out_deinit(const sir::Expr &move);

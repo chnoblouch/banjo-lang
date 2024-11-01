@@ -1,5 +1,5 @@
 use os.{IS_UNIX, posix};
-use std.system;
+use std.system.panic;
 
 meta if IS_UNIX {
     type Error = i32;

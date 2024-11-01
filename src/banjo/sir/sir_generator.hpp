@@ -45,8 +45,9 @@ private:
 
     sir::DeclBlock generate_decl_block(ASTNode *node);
     sir::Decl generate_decl(ASTNode *node);
-    sir::Decl generate_func(ASTNode *node);
+    sir::Decl generate_func_def(ASTNode *node);
     sir::Decl generate_generic_func(ASTNode *node);
+    sir::Decl generate_func_decl(ASTNode *node);
     sir::Decl generate_native_func(ASTNode *node);
     sir::Decl generate_const(ASTNode *node);
     sir::Decl generate_struct(ASTNode *node);
@@ -56,6 +57,7 @@ private:
     sir::Decl generate_enum(ASTNode *node);
     sir::Decl generate_union(ASTNode *node);
     sir::Decl generate_union_case(ASTNode *node);
+    sir::Decl generate_proto(ASTNode *node);
     sir::Decl generate_type_alias(ASTNode *node);
     sir::Decl generate_use_decl(ASTNode *node);
     sir::Decl generate_error_decl(ASTNode *node);

@@ -98,6 +98,7 @@ void Printer::print_decl(const Decl &decl) {
         decl,
         SIR_VISIT_IMPOSSIBLE,
         print_func_def(*inner),
+        print_func_decl(*inner),
         print_native_func_decl(*inner),
         print_const_def(*inner),
         print_struct_def(*inner),
@@ -108,6 +109,7 @@ void Printer::print_decl(const Decl &decl) {
         print_enum_variant(*inner),
         print_union_def(*inner),
         print_union_case(*inner),
+        print_proto_def(*inner),
         print_type_alias(*inner),
         print_use_decl(*inner),
         print_meta_if_stmt(*inner),
@@ -146,6 +148,14 @@ void Printer::print_func_def(const FuncDef &func_def) {
     END_OBJECT();
 }
 
+void Printer::print_func_decl(const FuncDecl &func_decl) {
+    BEGIN_OBJECT("FuncDecl");
+    PRINT_FIELD("ident", func_decl.ident.value);
+    PRINT_FIELD_NAME("type");
+    print_func_type(func_decl.type);
+    END_OBJECT();
+}
+
 void Printer::print_native_func_decl(const NativeFuncDecl &native_func_decl) {
     BEGIN_OBJECT("NativeFuncDecl");
     PRINT_FIELD("ident", native_func_decl.ident.value);
@@ -173,6 +183,10 @@ void Printer::print_struct_def(const StructDef &struct_def) {
     PRINT_FIELD("ident", struct_def.ident.value);
     PRINT_FIELD_NAME("block");
     print_decl_block(struct_def.block);
+
+    if (!struct_def.impls.empty()) {
+        PRINT_EXPR_LIST_FIELD("impls", struct_def.impls);
+    }
 
     if (struct_def.is_generic()) {
         PRINT_FIELD_NAME("generic_params")
@@ -267,6 +281,14 @@ void Printer::print_union_case(const UnionCase &union_case) {
     }
 
     END_LIST();
+    END_OBJECT();
+}
+
+void Printer::print_proto_def(const ProtoDef &proto_def) {
+    BEGIN_OBJECT("ProtoDef");
+    PRINT_FIELD("ident", proto_def.ident.value);
+    PRINT_FIELD_NAME("block");
+    print_decl_block(proto_def.block);
     END_OBJECT();
 }
 
@@ -817,6 +839,7 @@ void Printer::print_primitive_type(const PrimitiveType &primitive_type) {
         case Primitive::U16: PRINT_FIELD("primitive", "U16"); break;
         case Primitive::U32: PRINT_FIELD("primitive", "U32"); break;
         case Primitive::U64: PRINT_FIELD("primitive", "U64"); break;
+        case Primitive::USIZE: PRINT_FIELD("primitive", "USIZE"); break;
         case Primitive::F32: PRINT_FIELD("primitive", "F32"); break;
         case Primitive::F64: PRINT_FIELD("primitive", "F64"); break;
         case Primitive::BOOL: PRINT_FIELD("primitive", "BOOL"); break;

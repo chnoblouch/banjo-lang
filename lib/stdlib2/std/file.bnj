@@ -79,7 +79,7 @@ struct File {
         fseek(self.stream, 0, SEEK_SET);
         
         var data = memory.alloc(size) as *u8;
-        fread(data as addr, 1, size as u64, self.stream);
+        fread(data as addr, 1, size, self.stream);
         
         return (data, size);
     }

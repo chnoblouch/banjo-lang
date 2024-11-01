@@ -41,6 +41,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         decl,
         return nullptr,
         return clone_func_def(*inner),
+        return clone_func_decl(*inner),
         return clone_native_func_decl(*inner),
         return clone_const_def(*inner),
         return clone_struct_def(*inner),
@@ -51,6 +52,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_enum_variant(*inner),
         return clone_union_def(*inner),
         return clone_union_case(*inner),
+        return clone_proto_def(*inner),
         return clone_type_alias(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_meta_if_stmt(*inner),
@@ -71,6 +73,14 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
         .attrs = clone_attrs(func_def.attrs),
         .generic_params = func_def.generic_params,
         .specializations = {},
+    });
+}
+
+FuncDecl *Cloner::clone_func_decl(const FuncDecl &func_decl) {
+    return mod.create_decl(FuncDecl{
+        .ast_node = func_decl.ast_node,
+        .ident = func_decl.ident,
+        .type = *clone_func_type(func_decl.type), // FIXME: unneccessary heap allocation
     });
 }
 
@@ -101,6 +111,7 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
         .ident = struct_def.ident,
         .block = clone_decl_block(struct_def.block),
         .fields = {},
+        .impls = clone_expr_list(struct_def.impls),
         .generic_params = struct_def.generic_params,
         .specializations = {},
     });
@@ -163,6 +174,15 @@ UnionCase *Cloner::clone_union_case(const UnionCase &union_case) {
         .ast_node = union_case.ast_node,
         .ident = union_case.ident,
         .fields = union_case.fields,
+    });
+}
+
+ProtoDef *Cloner::clone_proto_def(const ProtoDef &proto_def) {
+    return mod.create_decl(ProtoDef{
+        .ast_node = proto_def.ast_node,
+        .ident = proto_def.ident,
+        .block = clone_decl_block(proto_def.block),
+        .func_decls = {},
     });
 }
 

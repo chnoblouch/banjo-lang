@@ -24,6 +24,7 @@ public:
 
 private:
     void collect_func_def(sir::FuncDef &func_def);
+    void collect_func_decl(sir::FuncDecl &func_decl);
     void collect_native_func_decl(sir::NativeFuncDecl &native_func_decl);
     void collect_const_def(sir::ConstDef &const_def);
     void collect_struct_def(sir::StructDef &struct_def);
@@ -33,6 +34,7 @@ private:
     void collect_enum_variant(sir::EnumVariant &enum_variant);
     void collect_union_def(sir::UnionDef &union_def);
     void collect_union_case(sir::UnionCase &union_case);
+    void collect_proto_def(sir::ProtoDef &proto_def);
     void collect_type_alias(sir::TypeAlias &type_alias);
     void collect_use_decl(sir::UseDecl &use_decl);
 
@@ -42,7 +44,9 @@ private:
     void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr);
     void collect_use_list(sir::UseList &use_list);
 
+    void add_symbol(std::string_view name, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();
+    void collect_in_decl(sir::Symbol decl, sir::DeclBlock &block);
 };
 
 } // namespace sema

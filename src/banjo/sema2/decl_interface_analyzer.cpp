@@ -1,6 +1,7 @@
 #include "decl_interface_analyzer.hpp"
 
 #include "banjo/sema2/expr_analyzer.hpp"
+#include "banjo/sir/sir.hpp"
 
 namespace banjo {
 
@@ -40,6 +41,26 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     return result;
 }
 
+Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
+    func_decl.type.params[0].type = analyzer.create_expr(sir::PrimitiveType{
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::ADDR,
+    });
+
+    for (unsigned i = 1; i < func_decl.type.params.size(); i++) {
+        sir::Param &param = func_decl.type.params[i];
+        ExprAnalyzer(analyzer).analyze(param.type);
+    }
+
+    ExprAnalyzer(analyzer).analyze(func_decl.type.return_type);
+
+    if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
+        proto_def->func_decls.push_back(&func_decl);
+    }
+
+    return Result::SUCCESS;
+}
+
 Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
     for (sir::Param &param : native_func_decl.type.params) {
         ExprAnalyzer(analyzer).analyze(param.type);
@@ -51,6 +72,24 @@ Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &nati
 
 Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
     return ExprAnalyzer(analyzer).analyze(const_def.type);
+}
+
+Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
+    Result partial_result;
+
+    for (sir::Expr &impl : struct_def.impls) {
+        partial_result = ExprAnalyzer(analyzer).analyze(impl);
+
+        if (partial_result != Result::SUCCESS) {
+            continue;
+        }
+
+        if (!impl.match_symbol<sir::ProtoDef>()) {
+            analyzer.report_generator.report_err_expected_proto(impl);
+        }
+    }
+
+    return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {

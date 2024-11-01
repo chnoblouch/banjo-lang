@@ -78,8 +78,9 @@ sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
 
 sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
     switch (node->get_type()) {
-        case AST_FUNCTION_DEFINITION: return generate_func(node);
+        case AST_FUNCTION_DEFINITION: return generate_func_def(node);
         case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
+        case AST_FUNC_DECL: return generate_func_decl(node);
         case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node);
         case AST_CONSTANT: return generate_const(node);
         case AST_STRUCT_DEFINITION: return generate_struct(node);
@@ -87,6 +88,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_UNION: return generate_union(node);
         case AST_UNION_CASE: return generate_union_case(node);
+        case AST_PROTO: return generate_proto(node);
         case AST_TYPE_ALIAS: return generate_type_alias(node);
         case AST_VAR: return generate_var_decl(node);
         case AST_NATIVE_VAR: return generate_native_var_decl(node);
@@ -99,7 +101,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
     }
 }
 
-sir::Decl SIRGenerator::generate_func(ASTNode *node) {
+sir::Decl SIRGenerator::generate_func_def(ASTNode *node) {
     return create_decl(sir::FuncDef{
         .ast_node = node,
         .ident = generate_ident(node->get_child(FUNC_NAME)),
@@ -117,6 +119,14 @@ sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
         .type = generate_func_type(node->get_child(GENERIC_FUNC_PARAMS), node->get_child(GENERIC_FUNC_TYPE)),
         .block = generate_block(node->get_child(GENERIC_FUNC_BLOCK)),
         .generic_params = generate_generic_param_list(node->get_child(GENERIC_FUNC_GENERIC_PARAMS)),
+    });
+}
+
+sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {
+    return create_decl(sir::FuncDecl{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(FUNC_NAME)),
+        .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
     });
 }
 
@@ -144,6 +154,7 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node) {
         .ident = generate_ident(node->get_child(STRUCT_NAME)),
         .block = {},
         .fields = {},
+        .impls = generate_expr_list(node->get_child(STRUCT_IMPL_LIST)),
         .generic_params = {},
     });
 
@@ -225,6 +236,15 @@ sir::Decl SIRGenerator::generate_union_case(ASTNode *node) {
         .ast_node = node,
         .ident = generate_ident(node->get_child(UNION_CASE_NAME)),
         .fields = generate_union_case_fields(node->get_child(UNION_CASE_FIELDS)),
+    });
+}
+
+sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
+    return create_decl(sir::ProtoDef{
+        .ast_node = node,
+        .ident = generate_ident(node->get_child(PROTO_NAME)),
+        .block = generate_decl_block(node->get_child(PROTO_BLOCK)),
+        .func_decls = {},
     });
 }
 
@@ -575,7 +595,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_U64: return generate_primitive_type(node, sir::Primitive::U64);
         case AST_F32: return generate_primitive_type(node, sir::Primitive::F32);
         case AST_F64: return generate_primitive_type(node, sir::Primitive::F64);
-        case AST_USIZE: return generate_primitive_type(node, sir::Primitive::U64); // FIXME: usize in sir?
+        case AST_USIZE: return generate_primitive_type(node, sir::Primitive::USIZE);
         case AST_BOOL: return generate_primitive_type(node, sir::Primitive::BOOL);
         case AST_ADDR: return generate_primitive_type(node, sir::Primitive::ADDR);
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);

@@ -30,6 +30,7 @@ public:
     void generate_into_dst(const sir::Expr &expr, const ssa::Value &dst);
     void generate_into_dst(const sir::Expr &expr, ssa::VirtualRegister dst);
     StoredValue generate_as_reference(const sir::Expr &expr);
+
     StoredValue generate(const sir::Expr &expr, const StorageHints &hints);
     void generate_branch(const sir::Expr &expr, CondBranchTargets targets);
 

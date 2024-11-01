@@ -2,6 +2,7 @@
 
 #include "banjo/ir/function_decl.hpp"
 #include "banjo/ir/primitive.hpp"
+#include "banjo/ir/structure.hpp"
 #include "banjo/ir/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
@@ -45,6 +46,7 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) create_native_func_decl(*native_func_decl);
         else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_def(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) create_union_def(*union_def);
+        else if (auto proto_def = decl.match<sir::ProtoDef>()) create_proto_def(*proto_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) create_var_decl(*var_decl);
         else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) create_native_var_decl(*native_var_decl);
     }
@@ -148,6 +150,22 @@ void SSAGenerator::create_struct_def(
 
 void SSAGenerator::create_union_def(const sir::UnionDef &sir_union_def) {
     create_decls(sir_union_def.block);
+}
+
+void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
+    ssa::Structure *vtable_type = new ssa::Structure("vtable." + sir_proto_def.ident.value);
+
+    for (unsigned i = 0; i < sir_proto_def.func_decls.size(); i++) {
+        vtable_type->add(ssa::StructureMember{
+            .name = "f" + std::to_string(i),
+            .type = ssa::Primitive::ADDR,
+        });
+    }
+
+    ssa_mod.add(vtable_type);
+    ctx.ssa_vtable_types[&sir_proto_def] = vtable_type;
+
+    create_decls(sir_proto_def.block);
 }
 
 void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
@@ -261,6 +279,33 @@ void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
         }
 
         return;
+    }
+
+    const sir::SymbolTable &symbol_table = *sir_struct_def.block.symbol_table;
+
+    for (unsigned i = 0; i < sir_struct_def.impls.size(); i++) {
+        const sir::Expr &impl = sir_struct_def.impls[i];
+        const sir::ProtoDef &proto_def = impl.as_symbol<sir::ProtoDef>();
+
+        std::string vtable_name = "vtable." + sir_struct_def.ident.value + "." + std::to_string(i);
+
+        for (unsigned j = 0; j < proto_def.func_decls.size(); j++) {
+            const sir::FuncDecl *func_decl = proto_def.func_decls[j];
+            const sir::FuncDef &func_def = symbol_table.symbols.at(func_decl->ident.value).as<sir::FuncDef>();
+
+            std::string vtable_entry_name = vtable_name;
+
+            if (j != 0) {
+                vtable_entry_name += "." + std::to_string(j);
+            }
+
+            ssa::Function *ssa_func = ctx.ssa_funcs[&func_def];
+            ssa_mod.add(ssa::Global(vtable_entry_name, ssa::Primitive::ADDR, ssa::Operand::from_func(ssa_func)));
+
+            if (j == 0) {
+                ctx.ssa_vtables[&sir_struct_def].push_back(ssa_mod.get_globals().size() - 1);
+            }
+        }
     }
 
     generate_decls(sir_struct_def.block);

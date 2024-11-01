@@ -107,6 +107,7 @@ sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
         SIR_VISIT_IMPOSSIBLE,          // empty
         SIR_VISIT_IMPOSSIBLE,          // module
         SIR_VISIT_IMPOSSIBLE,          // func_def
+        SIR_VISIT_IMPOSSIBLE,          // func_decl
         SIR_VISIT_IMPOSSIBLE,          // native_func_decl
         return evaluate(inner->value), // const_def
         return &symbol_expr,           // struct_def
@@ -117,6 +118,7 @@ sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
         return evaluate(inner->value), // enum_variant
         return &symbol_expr,           // union_def
         SIR_VISIT_IMPOSSIBLE,          // union_case
+        SIR_VISIT_IMPOSSIBLE,          // proto_def
         SIR_VISIT_IMPOSSIBLE,          // type_alias
         SIR_VISIT_IMPOSSIBLE,          // use_ident
         SIR_VISIT_IMPOSSIBLE,          // use_rebind

@@ -43,7 +43,7 @@ pub func to_repr_indent[T](value: T, indent: u32) -> String {
 
 func i64_to_string(value: i64) -> String {
     var capacity: u32 = 32;
-    var data = memory.alloc(capacity as u64) as *u8;
+    var data = memory.alloc(capacity as usize) as *u8;
     var length: u32 = 0;
     
     var remainder: u64;
@@ -79,7 +79,7 @@ func i64_to_string(value: i64) -> String {
 
 func u64_to_string(value: u64) -> String {
     var capacity: u32 = 32;
-    var data = memory.alloc(capacity as u64) as *u8;
+    var data = memory.alloc(capacity as usize) as *u8;
     var length: u32 = 0;
     
     var remainder = value;

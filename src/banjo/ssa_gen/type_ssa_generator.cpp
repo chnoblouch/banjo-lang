@@ -18,7 +18,7 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
         return generate_symbol_type(*inner),
         return generate_tuple_type(*inner),
         return generate_primitive_type(*inner),
-        return generate_pointer_type(),
+        return generate_pointer_type(*inner),
         return generate_static_array_type(*inner),
         return generate_func_type(),
         return generate_closure_type(*inner),
@@ -36,6 +36,7 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
         case sir::Primitive::U16: return ssa::Primitive::I16;
         case sir::Primitive::U32: return ssa::Primitive::I32;
         case sir::Primitive::U64: return ssa::Primitive::I64;
+        case sir::Primitive::USIZE: return ssa::Primitive::I64;
         case sir::Primitive::F32: return ssa::Primitive::F32;
         case sir::Primitive::F64: return ssa::Primitive::F64;
         case sir::Primitive::BOOL: return ssa::Primitive::I8;
@@ -70,13 +71,16 @@ ssa::Type TypeSSAGenerator::generate_union_case_type(const sir::UnionCase &union
     return ctx.create_union_case(union_case);
 }
 
-ssa::Type TypeSSAGenerator::generate_pointer_type() {
-    return ssa::Primitive::ADDR;
+ssa::Type TypeSSAGenerator::generate_pointer_type(const sir::PointerType &pointer_type) {
+    if (pointer_type.base_type.is_symbol<sir::ProtoDef>()) {
+        return ctx.get_fat_pointer_type();
+    } else {
+        return ssa::Primitive::ADDR;
+    }
 }
 
 ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr) {
-    std::vector<ssa::Type> member_types;
-    member_types.resize(tuple_expr.exprs.size());
+    std::vector<ssa::Type> member_types(tuple_expr.exprs.size());
 
     for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
         member_types[i] = generate(tuple_expr.exprs[i]);

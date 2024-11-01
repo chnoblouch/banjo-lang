@@ -90,6 +90,7 @@ struct MetaIfStmt;
 struct MetaForStmt;
 struct ExpandedMetaStmt;
 struct FuncDef;
+struct FuncDecl;
 struct NativeFuncDecl;
 struct ConstDef;
 struct StructDef;
@@ -100,6 +101,7 @@ struct EnumDef;
 struct EnumVariant;
 struct UnionDef;
 struct UnionCase;
+struct ProtoDef;
 struct TypeAlias;
 struct UseDecl;
 struct UseIdent;
@@ -236,6 +238,8 @@ public:
     bool is_unsigned_type() const;
     bool is_fp_type() const;
     bool is_addr_like_type() const;
+    const ProtoDef *match_proto_ptr() const;
+    ProtoDef *match_proto_ptr();
     bool is_u8_ptr() const;
     bool is_symbol(sir::Symbol symbol) const;
 
@@ -304,6 +308,7 @@ class Decl {
 private:
     std::variant<
         FuncDef *,
+        FuncDecl *,
         NativeFuncDecl *,
         ConstDef *,
         StructDef *,
@@ -314,6 +319,7 @@ private:
         EnumVariant *,
         UnionDef *,
         UnionCase *,
+        ProtoDef *,
         TypeAlias *,
         UseDecl *,
         MetaIfStmt *,
@@ -362,6 +368,7 @@ public:
 class Symbol : public DynamicPointer<
                    Module,
                    FuncDef,
+                   FuncDecl,
                    NativeFuncDecl,
                    ConstDef,
                    StructDef,
@@ -372,6 +379,7 @@ class Symbol : public DynamicPointer<
                    EnumVariant,
                    UnionDef,
                    UnionCase,
+                   ProtoDef,
                    TypeAlias,
                    UseIdent,
                    UseRebind,
@@ -735,7 +743,7 @@ enum class Primitive {
     U16,
     U32,
     U64,
-    USIZE = U64,
+    USIZE,
     F32,
     F64,
     BOOL,
@@ -883,6 +891,12 @@ struct DeinitExpr {
     Expr type;
     Expr value;
     Resource *resource;
+};
+
+struct ProtoCallExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
 };
 
 struct VarStmt {
@@ -1039,6 +1053,13 @@ struct FuncDef {
     bool is_method() const { return type.params.size() > 0 && type.params[0].name.value == "self"; }
 };
 
+struct FuncDecl {
+    ASTNode *ast_node;
+    Ident ident;
+    Symbol parent;
+    FuncType type;
+};
+
 struct NativeFuncDecl {
     ASTNode *ast_node;
     Ident ident;
@@ -1059,11 +1080,13 @@ struct StructDef {
     Symbol parent;
     DeclBlock block;
     std::vector<StructField *> fields;
+    std::vector<Expr> impls;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
 
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
+    bool has_impl_for(const sir::ProtoDef &proto_def) const;
     bool is_generic() const { return !generic_params.empty(); }
 };
 
@@ -1125,6 +1148,15 @@ struct UnionCase {
     std::vector<UnionCaseField> fields;
 
     std::optional<unsigned> find_field(std::string_view name) const;
+};
+
+struct ProtoDef {
+    ASTNode *ast_node;
+    Ident ident;
+    DeclBlock block;
+    std::vector<FuncDecl *> func_decls;
+
+    std::optional<unsigned> get_index(const FuncDecl &func_decl) const;
 };
 
 struct TypeAlias {
@@ -1239,6 +1271,7 @@ typedef std::variant<
 
 typedef std::variant<
     FuncDef,
+    FuncDecl,
     NativeFuncDecl,
     ConstDef,
     StructDef,
@@ -1249,6 +1282,7 @@ typedef std::variant<
     EnumVariant,
     UnionDef,
     UnionCase,
+    ProtoDef,
     TypeAlias,
     UseDecl,
     Error>

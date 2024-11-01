@@ -1,0 +1,34 @@
+# test:common
+
+proto ToString {
+    func to_string(self) -> String;
+}
+
+proto Stream {
+    func write(self, data: *u8, size: usize);
+    func read(self, data: *u8, size: usize);
+}
+
+# test:subtest
+# test:error 16:8 "missing implementation of method 'to_string' from proto 'ToString'"
+# test:note 4:10 "method declared here"
+
+struct S: ToString {}
+
+# test:subtest
+# test:error 24:8 "missing implementation of method 'to_string' from proto 'ToString'"
+# test:note 4:10 "method declared here"
+# test:error 24:8 "missing implementation of method 'read' from proto 'Stream'"
+# test:note 9:10 "method declared here"
+
+struct S: ToString, Stream {
+    func write(self, data: *u8, size: usize) {}
+}
+
+# test:subtest
+# test:error 32:8 "missing implementation of method 'to_string' from proto 'ToString'"
+# test:note 4:10 "method declared here"
+
+struct S: ToString {
+    const to_string: *u8 = "";
+}

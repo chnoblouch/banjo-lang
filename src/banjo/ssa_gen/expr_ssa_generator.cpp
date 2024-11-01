@@ -448,7 +448,24 @@ StoredValue ExprSSAGenerator::generate_index_expr(const sir::IndexExpr &index_ex
 }
 
 StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr, const StorageHints &hints) {
-    ssa::Value ssa_callee = generate(call_expr.callee).turn_into_value(ctx).get_value();
+    ssa::Value ssa_callee;
+    std::optional<ssa::Value> ssa_proto_self;
+
+    if (auto func_decl = call_expr.callee.match_symbol<sir::FuncDecl>()) {
+        const sir::ProtoDef &proto_def = func_decl->parent.as<sir::ProtoDef>();
+        unsigned index = *proto_def.get_index(*func_decl);
+        ssa::Type vtable_type = ctx.ssa_vtable_types[&proto_def];
+
+        ssa_proto_self = generate(call_expr.args[0]).turn_into_value(ctx).get_value();
+
+        ssa::Value vtable_ptr_ptr = ctx.append_memberptr_val(ctx.get_fat_pointer_type(), *ssa_proto_self, 1);
+        ssa::Value vtable_ptr = ctx.append_load(ssa::Primitive::ADDR, vtable_ptr_ptr);
+        ssa::Value proto_func_ptr = ctx.append_memberptr_val(vtable_type, vtable_ptr, index);
+        ssa_callee = ctx.append_load(ssa::Primitive::ADDR, proto_func_ptr);
+    } else {
+        ssa_callee = generate(call_expr.callee).turn_into_value(ctx).get_value();
+    }
+
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(call_expr.type);
     ReturnMethod return_method = ctx.get_return_method(ssa_type);
 
@@ -463,8 +480,18 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
         ssa_operands.push_back(ssa_callee.with_type(ssa_type));
     }
 
-    for (const sir::Expr &arg : call_expr.args) {
-        ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
+    if (!ssa_proto_self) {
+        for (const sir::Expr &arg : call_expr.args) {
+            ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
+        }
+    } else {
+        ssa::Value data_ptr_ptr = ctx.append_memberptr_val(ctx.get_fat_pointer_type(), *ssa_proto_self, 0);
+        ssa::Value data_ptr = ctx.append_load(ssa::Primitive::ADDR, data_ptr_ptr);
+        ssa_operands.push_back(data_ptr);
+
+        for (unsigned i = 1; i < call_expr.args.size(); i++) {
+            ssa_operands.push_back(generate(call_expr.args[i]).turn_into_value_or_copy(ctx).value_or_ptr);
+        }
     }
 
     if (return_method == ReturnMethod::NO_RETURN_VALUE || hints.is_unused) {
@@ -523,6 +550,29 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
 
         ctx.append_store(ssa::Operand::from_int_immediate(tag, ssa::Primitive::I32), ssa_tag_ptr_reg);
         ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
+        return stored_val;
+    } else if (auto proto_def = coercion_expr.type.match_proto_ptr()) {
+        const sir::Expr &base_type = coercion_expr.value.get_type().as<sir::PointerType>().base_type;
+        const sir::StructDef &struct_def = base_type.as_symbol<sir::StructDef>();
+
+        unsigned impl_index;
+
+        for (unsigned i = 0; i < struct_def.impls.size(); i++) {
+            if (proto_def == struct_def.impls[i].match_symbol<sir::ProtoDef>()) {
+                impl_index = i;
+            }
+        }
+
+        StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);
+
+        ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 0);
+        ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
+
+        ssa::VirtualRegister ssa_vtable_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 1);
+        unsigned vtable_global_index = ctx.ssa_vtables[&struct_def][impl_index];
+        std::string vtable_global_name = ctx.ssa_mod->get_globals()[vtable_global_index].get_name();
+        ctx.append_store(ssa::Operand::from_global(vtable_global_name, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
+
         return stored_val;
     } else {
         ASSERT_UNREACHABLE;

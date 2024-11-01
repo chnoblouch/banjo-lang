@@ -72,6 +72,8 @@ public:
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
     std::unordered_map<const lang::sir::VarDecl *, unsigned> ssa_globals;
     std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
+    std::unordered_map<const lang::sir::ProtoDef *, ssa::Structure *> ssa_vtable_types;
+    std::unordered_map<const lang::sir::StructDef *, std::vector<unsigned>> ssa_vtables;
     std::vector<ssa::Structure *> tuple_structs;
 
     int string_name_id = 0;
@@ -132,8 +134,7 @@ public:
     ir::VirtualRegister append_offsetptr(ir::Operand base, ir::Operand offset, ir::Type type);
     void append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, unsigned member);
     ir::VirtualRegister append_memberptr(ir::Type type, ir::Operand base, unsigned member);
-    void append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, ir::Operand member);
-    ir::VirtualRegister append_memberptr(ir::Type type, ir::Operand base, ir::Operand member);
+    ir::Value append_memberptr_val(ir::Type type, ir::Operand base, unsigned member);
     void append_ret(ir::Operand val);
     void append_ret();
     void append_copy(ir::Operand dst, ir::Operand src, ir::Type type);
@@ -143,6 +144,7 @@ public:
     ssa::Structure *create_union(const sir::UnionDef &sir_union_def);
     ssa::Structure *create_union_case(const sir::UnionCase &sir_union_case);
     ssa::Structure *get_tuple_struct(const std::vector<ssa::Type> &member_types);
+    ssa::Type get_fat_pointer_type();
 };
 
 } // namespace lang

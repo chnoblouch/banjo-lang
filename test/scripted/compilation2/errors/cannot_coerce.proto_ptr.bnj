@@ -1,0 +1,20 @@
+# test:common
+
+proto P {}
+
+# test:subtest
+# test:error 9:17 "cannot coerce value with type 'i32' to type '*P'"
+
+func main() {
+    var p: *P = 10;
+}
+
+# test:subtest
+# test:error 19:17 "cannot coerce value with type 'S' to type '*P'"
+
+struct S: P {}
+
+func main() {
+    var s = S {}; 
+    var p: *P = s;
+}

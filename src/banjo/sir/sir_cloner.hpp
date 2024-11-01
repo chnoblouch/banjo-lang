@@ -24,6 +24,7 @@ public:
     DeclBlock clone_decl_block(const DeclBlock &decl_block);
     Decl clone_decl(const Decl &decl);
     FuncDef *clone_func_def(const FuncDef &func_def);
+    FuncDecl *clone_func_decl(const FuncDecl &func_decl);
     NativeFuncDecl *clone_native_func_decl(const NativeFuncDecl &native_func_decl);
     ConstDef *clone_const_def(const ConstDef &const_def);
     StructDef *clone_struct_def(const StructDef &struct_def);
@@ -34,6 +35,7 @@ public:
     EnumVariant *clone_enum_variant(const EnumVariant &enum_variant);
     UnionDef *clone_union_def(const UnionDef &union_def);
     UnionCase *clone_union_case(const UnionCase &union_case);
+    ProtoDef *clone_proto_def(const ProtoDef &proto_def);
     TypeAlias *clone_type_alias(const TypeAlias &type_alias);
     MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
     MetaForStmt *clone_meta_for_stmt(const MetaForStmt &meta_for_stmt);

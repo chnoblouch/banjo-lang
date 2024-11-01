@@ -154,28 +154,24 @@ ir::VirtualRegister SSAGeneratorContext::append_offsetptr(ir::Operand base, ir::
 }
 
 void SSAGeneratorContext::append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, unsigned member) {
-    return append_memberptr(dst, type, std::move(base), ir::Operand::from_int_immediate(member));
+    std::vector<ir::Operand> operands{
+        ir::Value::from_type(type),
+        std::move(base),
+        ir::Operand::from_int_immediate(member),
+    };
+
+    get_ssa_block()->append(ir::Instruction(ir::Opcode::MEMBERPTR, dst, operands));
 }
 
 ir::VirtualRegister SSAGeneratorContext::append_memberptr(ir::Type type, ir::Operand base, unsigned member) {
-    return append_memberptr(type, std::move(base), ir::Operand::from_int_immediate(member));
-}
-
-void SSAGeneratorContext::append_memberptr(
-    ir::VirtualRegister dst,
-    ir::Type type,
-    ir::Operand base,
-    ir::Operand member
-) {
-    ir::Value type_val = ir::Value::from_type(type);
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::MEMBERPTR, dst, {type_val, std::move(base), std::move(member)})
-    );
-}
-
-ir::VirtualRegister SSAGeneratorContext::append_memberptr(ir::Type type, ir::Operand base, ir::Operand member) {
     ir::VirtualRegister reg = next_vreg();
-    append_memberptr(reg, type, std::move(base), std::move(member));
+    append_memberptr(reg, type, std::move(base), member);
     return reg;
+}
+
+ir::Value SSAGeneratorContext::append_memberptr_val(ir::Type type, ir::Operand base, unsigned member) {
+    ir::VirtualRegister reg = append_memberptr(type, std::move(base), member);
+    return ssa::Value::from_register(reg, ssa::Primitive::ADDR);
 }
 
 void SSAGeneratorContext::append_ret(ir::Operand val) {
@@ -312,6 +308,10 @@ ssa::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ssa::Typ
 
     tuple_structs.push_back(ssa_struct);
     return ssa_struct;
+}
+
+ssa::Type SSAGeneratorContext::get_fat_pointer_type() {
+    return get_tuple_struct({ssa::Primitive::ADDR, ssa::Primitive::ADDR});
 }
 
 } // namespace lang

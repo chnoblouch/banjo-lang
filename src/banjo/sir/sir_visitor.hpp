@@ -246,6 +246,7 @@
     decl,                                                                                                              \
     empty_visitor,                                                                                                     \
     func_def_visitor,                                                                                                  \
+    func_decl_visitor,                                                                                                 \
     native_func_decl_visitor,                                                                                          \
     const_def_visitor,                                                                                                 \
     struct_def_visitor,                                                                                                \
@@ -256,6 +257,7 @@
     enum_variant_visitor,                                                                                              \
     union_def_visitor,                                                                                                 \
     union_case_visitor,                                                                                                \
+    proto_def_visitor,                                                                                                 \
     type_alias_visitor,                                                                                                \
     use_decl_visitor,                                                                                                  \
     meta_if_stmt_visitor,                                                                                              \
@@ -267,6 +269,8 @@
         empty_visitor;                                                                                                 \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::FuncDef>()) {                              \
         func_def_visitor;                                                                                              \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::FuncDecl>()) {                             \
+        func_decl_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::NativeFuncDecl>()) {                       \
         native_func_decl_visitor;                                                                                      \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::ConstDef>()) {                             \
@@ -287,6 +291,8 @@
         union_def_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::UnionCase>()) {                            \
         union_case_visitor;                                                                                            \
+    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::ProtoDef>()) {                             \
+        proto_def_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::TypeAlias>()) {                            \
         type_alias_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::UseDecl>()) {                              \
@@ -308,6 +314,7 @@
     empty_visitor,                                                                                                     \
     module_visitor,                                                                                                    \
     func_def_visitor,                                                                                                  \
+    func_decl_visitor,                                                                                                 \
     native_func_decl_visitor,                                                                                          \
     const_def_visitor,                                                                                                 \
     struct_def_visitor,                                                                                                \
@@ -318,6 +325,7 @@
     enum_variant_visitor,                                                                                              \
     union_def_visitor,                                                                                                 \
     union_case_visitor,                                                                                                \
+    proto_def_visitor,                                                                                                 \
     type_alias_visitor,                                                                                                \
     use_ident_visitor,                                                                                                 \
     use_rebind_visitor,                                                                                                \
@@ -331,6 +339,8 @@
         module_visitor;                                                                                                \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::FuncDef>()) {                            \
         func_def_visitor;                                                                                              \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::FuncDecl>()) {                           \
+        func_decl_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::NativeFuncDecl>()) {                     \
         native_func_decl_visitor;                                                                                      \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::ConstDef>()) {                           \
@@ -351,6 +361,8 @@
         union_def_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::UnionCase>()) {                          \
         union_case_visitor;                                                                                            \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::ProtoDef>()) {                           \
+        proto_def_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::TypeAlias>()) {                          \
         type_alias_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::UseIdent>()) {                           \

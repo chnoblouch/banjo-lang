@@ -94,6 +94,10 @@ void ReportGenerator::report_err_type_mismatch(
     report_error("type mismatch (expected '$', got '$')", value.get_ast_node(), expected, actual);
 }
 
+void ReportGenerator::report_err_cannot_coerce(const sir::Expr &expr, const sir::Expr &expected_type) {
+    report_error("cannot coerce value with type '$' to type '$'", expr.get_ast_node(), expr.get_type(), expected_type);
+}
+
 void ReportGenerator::report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type) {
     report_error("cannot coerce int literal to type '$'", int_literal.ast_node, expected_type);
 }
@@ -277,6 +281,36 @@ void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &range) {
 
 void ReportGenerator::report_err_meta_for_cannot_iter(const sir::Expr &range) {
     report_error("cannot iterate over type '$'", range.get_ast_node(), range.get_type());
+}
+
+void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {
+    report_error("expected proto", expr.get_ast_node());
+}
+
+void ReportGenerator::report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::FuncDecl &func_decl) {
+    const sir::ProtoDef &proto_def = func_decl.parent.as<sir::ProtoDef>();
+
+    build_error(
+        "missing implementation of method '$' from proto '$'",
+        struct_def.ident.ast_node,
+        func_decl.ident.value,
+        proto_def.ident.value
+    )
+        .add_note("method declared here", func_decl.ident.ast_node)
+        .report();
+}
+
+void ReportGenerator::report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::FuncDecl &func_decl) {
+    const sir::ProtoDef &proto_def = func_decl.parent.as<sir::ProtoDef>();
+
+    build_error(
+        "method type does not match declaration (expected '$', got '$')",
+        func_def.ident.ast_node,
+        sir::Expr(&func_decl.type),
+        sir::Expr(&func_def.type)
+    )
+        .add_note("method declared here, in proto '$'", func_decl.ident.ast_node, proto_def.ident.value)
+        .report();
 }
 
 void ReportGenerator::report_err_use_after_move(

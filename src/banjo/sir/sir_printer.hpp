@@ -27,6 +27,7 @@ private:
     void print_decl_block(const DeclBlock &decl_block);
     void print_decl(const Decl &decl);
     void print_func_def(const FuncDef &func_def);
+    void print_func_decl(const FuncDecl &func_decl);
     void print_native_func_decl(const NativeFuncDecl &native_func_decl);
     void print_const_def(const ConstDef &const_def);
     void print_struct_def(const StructDef &struct_def);
@@ -37,6 +38,7 @@ private:
     void print_enum_variant(const EnumVariant &enum_variant);
     void print_union_def(const UnionDef &union_def);
     void print_union_case(const UnionCase &union_case);
+    void print_proto_def(const ProtoDef &proto_def);
     void print_type_alias(const TypeAlias &type_alias);
     void print_use_decl(const UseDecl &use_decl);
 

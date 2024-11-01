@@ -1,8 +1,9 @@
 #include "name_mangling.hpp"
 
-#include <ranges>
 #include <cstdlib>
+#include <ranges>
 #include <string>
+
 
 namespace banjo {
 
@@ -41,6 +42,7 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
             case sir::Primitive::U16: string += "u1"; break;
             case sir::Primitive::U32: string += "u2"; break;
             case sir::Primitive::U64: string += "u3"; break;
+            case sir::Primitive::USIZE: string += "u4"; break;
             case sir::Primitive::F32: string += "f0"; break;
             case sir::Primitive::F64: string += "f1"; break;
             case sir::Primitive::BOOL: string += "b0"; break;

@@ -141,6 +141,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
             case sir::Primitive::U16: return "u16";
             case sir::Primitive::U32: return "u32";
             case sir::Primitive::U64: return "u64";
+            case sir::Primitive::USIZE: return "usize";
             case sir::Primitive::F32: return "f32";
             case sir::Primitive::F64: return "f64";
             case sir::Primitive::BOOL: return "bool";

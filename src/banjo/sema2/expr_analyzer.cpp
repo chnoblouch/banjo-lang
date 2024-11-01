@@ -42,9 +42,9 @@ Result ExprAnalyzer::analyze(sir::Expr &expr, ExprConstraints constraints /*= {}
     }
 
     if (constraints.expected_type) {
-        return ExprFinalizer(analyzer).finalize_type_by_coercion(expr, constraints.expected_type);
+        return ExprFinalizer(analyzer).finalize_by_coercion(expr, constraints.expected_type);
     } else {
-        return ExprFinalizer(analyzer).finalize_type(expr);
+        return ExprFinalizer(analyzer).finalize(expr);
     }
 }
 
@@ -372,8 +372,8 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (auto pseudo_type = binary_expr.lhs.get_type().match<sir::PseudoType>()) {
         if (pseudo_type->is_struct_by_default()) {
-            lhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.lhs);
-            rhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.rhs);
+            lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+            rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
             if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
                 return Result::ERROR;
@@ -382,8 +382,8 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             is_operator_overload = true;
         }
     } else if (binary_expr.lhs.get_type().is_symbol<sir::StructDef>()) {
-        lhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.lhs);
-        rhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.rhs);
+        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+        rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
         if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
             return Result::ERROR;
@@ -409,24 +409,24 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     sir::Expr rhs_type = binary_expr.rhs.get_type();
 
     if (lhs_type.is<sir::PseudoType>() && !rhs_type.is<sir::PseudoType>()) {
-        rhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.rhs);
+        rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
         if (rhs_result != Result::SUCCESS) {
             return Result::ERROR;
         }
 
-        lhs_result = ExprFinalizer(analyzer).finalize_type_by_coercion(binary_expr.lhs, binary_expr.rhs.get_type());
+        lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, binary_expr.rhs.get_type());
     } else if (rhs_type.is<sir::PseudoType>() && !lhs_type.is<sir::PseudoType>()) {
-        lhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.lhs);
+        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
 
         if (lhs_result != Result::SUCCESS) {
             return Result::ERROR;
         }
 
-        rhs_result = ExprFinalizer(analyzer).finalize_type_by_coercion(binary_expr.rhs, binary_expr.lhs.get_type());
+        rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, binary_expr.lhs.get_type());
     } else {
-        lhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.lhs);
-        rhs_result = ExprFinalizer(analyzer).finalize_type(binary_expr.rhs);
+        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+        rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
     }
 
     if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
@@ -480,7 +480,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     }
 
     if (unary_expr.op == sir::UnaryOp::REF) {
-        ExprFinalizer(analyzer).finalize_type(unary_expr.value);
+        ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         unary_expr.type = analyzer.create_expr(sir::PointerType{
             .ast_node = nullptr,
@@ -491,7 +491,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     }
 
     if (auto struct_def = unary_expr.value.get_type().match_symbol<sir::StructDef>()) {
-        ExprFinalizer(analyzer).finalize_type(unary_expr.value);
+        ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
         sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
@@ -507,7 +507,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (unary_expr.op == sir::UnaryOp::NEG) {
         unary_expr.type = unary_expr.value.get_type();
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
-        ExprFinalizer(analyzer).finalize_type(unary_expr.value);
+        ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         unary_expr.type = analyzer.create_expr(sir::PrimitiveType{
             .ast_node = nullptr,
@@ -630,7 +630,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     sir::Expr callee_type = call_expr.callee.get_type();
 
     if (auto func_type = callee_type.match<sir::FuncType>()) {
-        call_expr.type = callee_type.as<sir::FuncType>().return_type;
+        call_expr.type = func_type->return_type;
     } else if (auto closure_type = callee_type.match<sir::ClosureType>()) {
         call_expr.type = closure_type->func_type.return_type;
 
@@ -675,6 +675,10 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
     sir::Expr lhs_type = dot_expr.lhs.get_type();
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
+        if (pointer_type->base_type.match_symbol<sir::ProtoDef>()) {
+            break;
+        }
+
         lhs = analyzer.create_expr(sir::UnaryExpr{
             .ast_node = nullptr,
             .type = pointer_type->base_type,
@@ -721,6 +725,17 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         }
 
         analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
+        return Result::ERROR;
+    } else if (auto proto_def = lhs_type.match_proto_ptr()) {
+        sir::Symbol method = proto_def->block.symbol_table->look_up(dot_expr.rhs.value);
+
+        if (method) {
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            is_method = true;
+            return Result::SUCCESS;
+        }
+
+        // analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
         return Result::ERROR;
     } else {
         partial_result = analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);

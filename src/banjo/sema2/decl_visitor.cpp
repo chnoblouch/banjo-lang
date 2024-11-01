@@ -41,6 +41,7 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
         decl,
         SIR_VISIT_IMPOSSIBLE,             // empty
         return process_func_def(*inner),  // func_def
+        return analyze_func_decl(*inner), // func_decl
         analyze_native_func_decl(*inner), // native_func_decl
         analyze_const_def(*inner),        // const_def
         process_struct_def(*inner),       // struct_def
@@ -51,6 +52,7 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
         analyze_enum_variant(*inner),     // enum_variant
         process_union_def(*inner),        // union_def
         analyze_union_case(*inner),       // union_case
+        process_proto_def(*inner),        // proto_def
         analyze_type_alias(*inner),       // type_alias
         SIR_VISIT_IGNORE,                 // use_decl
         SIR_VISIT_IGNORE,                 // meta_if_stmt
@@ -95,6 +97,14 @@ void DeclVisitor::process_union_def(sir::UnionDef &union_def) {
 
     analyzer.push_scope().decl = &union_def;
     analyze_decl_block(union_def.block);
+    analyzer.pop_scope();
+}
+
+void DeclVisitor::process_proto_def(sir::ProtoDef &proto_def) {
+    analyze_proto_def(proto_def);
+
+    analyzer.push_scope().decl = &proto_def;
+    analyze_decl_block(proto_def.block);
     analyzer.pop_scope();
 }
 
