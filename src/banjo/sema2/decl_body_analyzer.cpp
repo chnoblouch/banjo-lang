@@ -3,6 +3,7 @@
 #include "banjo/sema2/const_evaluator.hpp"
 #include "banjo/sema2/expr_analyzer.hpp"
 #include "banjo/sema2/stmt_analyzer.hpp"
+#include "banjo/sir/sir.hpp"
 
 namespace banjo {
 
@@ -13,6 +14,10 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    if (analyzer.get_scope().decl.is<sir::ProtoDef>()) {
+        return Result::SUCCESS;
+    }
+
     analyzer.push_scope().decl = &func_def;
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
     analyzer.pop_scope();
@@ -41,18 +46,18 @@ Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
 void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def) {
     sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
 
-    for (sir::FuncDecl *func_decl : proto_def.func_decls) {
-        auto iter = symbol_table.symbols.find(func_decl->ident.value);
+    for (sir::ProtoFuncDecl func_decl : proto_def.func_decls) {
+        std::string_view name = func_decl.get_ident().value;
+        auto iter = symbol_table.symbols.find(name);
 
         if (iter == symbol_table.symbols.end() || !iter->second.is<sir::FuncDef>()) {
-            analyzer.report_generator.report_err_impl_missing_func(struct_def, *func_decl);
             continue;
         }
 
         sir::FuncDef &func_def = iter->second.as<sir::FuncDef>();
 
         sir::FuncType &def_type = func_def.type;
-        sir::FuncType &decl_type = func_decl->type;
+        sir::FuncType &decl_type = func_decl.get_type();
         bool types_equal = true;
 
         if (def_type.params.size() != decl_type.params.size()) {
@@ -70,7 +75,7 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Proto
         }
 
         if (!types_equal) {
-            analyzer.report_generator.report_err_impl_type_mismatch(func_def, *func_decl);
+            analyzer.report_generator.report_err_impl_type_mismatch(func_def, func_decl);
         }
     }
 }

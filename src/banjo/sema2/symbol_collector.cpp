@@ -74,12 +74,24 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     }
 
     analyzer.add_symbol_def(&func_def);
+
+    if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
+        proto_def->func_decls.push_back(sir::ProtoFuncDecl{
+            .decl = &func_def,
+        });
+    }
 }
 
 void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
     func_decl.parent = analyzer.get_scope().decl;
     add_symbol(func_decl.ident.value, &func_decl);
     analyzer.add_symbol_def(&func_decl);
+
+    if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
+        proto_def->func_decls.push_back(sir::ProtoFuncDecl{
+            .decl = &func_decl,
+        });
+    }
 }
 
 void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_decl) {

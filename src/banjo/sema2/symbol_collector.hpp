@@ -22,7 +22,6 @@ public:
     void collect_in_meta_block(sir::MetaBlock &meta_block);
     void collect_decl(sir::Decl &decl);
 
-private:
     void collect_func_def(sir::FuncDef &func_def);
     void collect_func_decl(sir::FuncDecl &func_decl);
     void collect_native_func_decl(sir::NativeFuncDecl &native_func_decl);

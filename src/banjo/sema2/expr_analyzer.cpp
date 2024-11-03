@@ -631,6 +631,10 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
     if (auto func_type = callee_type.match<sir::FuncType>()) {
         call_expr.type = func_type->return_type;
+
+        for (unsigned i = 0; i < call_expr.args.size(); i++) {
+            ExprFinalizer(analyzer).finalize_by_coercion(call_expr.args[i], func_type->params[i].type);
+        }
     } else if (auto closure_type = callee_type.match<sir::ClosureType>()) {
         call_expr.type = closure_type->func_type.return_type;
 
@@ -693,7 +697,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method, false);
             is_method = true;
             return Result::SUCCESS;
         }
@@ -719,7 +723,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::Symbol method = union_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method, false);
             is_method = true;
             return Result::SUCCESS;
         }
@@ -730,7 +734,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::Symbol method = proto_def->block.symbol_table->look_up(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method, true);
             is_method = true;
             return Result::SUCCESS;
         }
@@ -1161,7 +1165,13 @@ Result ExprAnalyzer::analyze_completion_token(sir::CompletionToken &completion_t
     return Result::SUCCESS;
 }
 
-void ExprAnalyzer::create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident rhs, sir::Symbol method) {
+void ExprAnalyzer::create_method_call(
+    sir::CallExpr &call_expr,
+    sir::Expr lhs,
+    sir::Ident rhs,
+    sir::Symbol method,
+    bool lhs_is_already_pointer
+) {
     analyzer.add_symbol_use(rhs.ast_node, method);
 
     call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
@@ -1170,17 +1180,21 @@ void ExprAnalyzer::create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, s
         .symbol = method,
     });
 
-    sir::Expr self_arg = analyzer.create_expr(sir::UnaryExpr{
-        .ast_node = nullptr,
-        .type = analyzer.create_expr(sir::PointerType{
+    if (lhs_is_already_pointer) {
+        call_expr.args.insert(call_expr.args.begin(), lhs);
+    } else {
+        sir::Expr self_arg = analyzer.create_expr(sir::UnaryExpr{
             .ast_node = nullptr,
-            .base_type = lhs.get_type(),
-        }),
-        .op = sir::UnaryOp::REF,
-        .value = lhs,
-    });
+            .type = analyzer.create_expr(sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = lhs.get_type(),
+            }),
+            .op = sir::UnaryOp::REF,
+            .value = lhs,
+        });
 
-    call_expr.args.insert(call_expr.args.begin(), self_arg);
+        call_expr.args.insert(call_expr.args.begin(), self_arg);
+    }
 }
 
 Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {

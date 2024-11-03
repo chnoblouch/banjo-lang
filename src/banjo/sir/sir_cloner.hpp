@@ -20,6 +20,7 @@ private:
 
 public:
     Cloner(Module &mod);
+    Cloner(Module &mod, SymbolTable &parent_symbol_table);
 
     DeclBlock clone_decl_block(const DeclBlock &decl_block);
     Decl clone_decl(const Decl &decl);

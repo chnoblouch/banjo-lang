@@ -287,29 +287,32 @@ void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {
     report_error("expected proto", expr.get_ast_node());
 }
 
-void ReportGenerator::report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::FuncDecl &func_decl) {
-    const sir::ProtoDef &proto_def = func_decl.parent.as<sir::ProtoDef>();
+void ReportGenerator::report_err_impl_missing_func(
+    const sir::StructDef &struct_def,
+    const sir::ProtoFuncDecl &func_decl
+) {
+    const sir::ProtoDef &proto_def = func_decl.get_parent().as<sir::ProtoDef>();
 
     build_error(
         "missing implementation of method '$' from proto '$'",
         struct_def.ident.ast_node,
-        func_decl.ident.value,
+        func_decl.get_ident().value,
         proto_def.ident.value
     )
-        .add_note("method declared here", func_decl.ident.ast_node)
+        .add_note("method declared here", func_decl.get_ident().ast_node)
         .report();
 }
 
-void ReportGenerator::report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::FuncDecl &func_decl) {
-    const sir::ProtoDef &proto_def = func_decl.parent.as<sir::ProtoDef>();
+void ReportGenerator::report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::ProtoFuncDecl &func_decl) {
+    const sir::ProtoDef &proto_def = func_decl.get_parent().as<sir::ProtoDef>();
 
     build_error(
         "method type does not match declaration (expected '$', got '$')",
         func_def.ident.ast_node,
-        sir::Expr(&func_decl.type),
+        sir::Expr(&func_decl.get_type()),
         sir::Expr(&func_def.type)
     )
-        .add_note("method declared here, in proto '$'", func_decl.ident.ast_node, proto_def.ident.value)
+        .add_note("method declared here, in proto '$'", func_decl.get_ident().ast_node, proto_def.ident.value)
         .report();
 }
 

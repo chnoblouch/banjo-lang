@@ -65,11 +65,11 @@ StoredValue StoredValue::turn_into_value(SSAGeneratorContext &ctx) {
     if (kind == Kind::VALUE) {
         return *this;
     } else if (kind == Kind::REFERENCE) {
-        assert(fits_in_reg(ctx));
+        ASSERT(fits_in_reg(ctx));
         ir::Value val = ctx.append_load(value_type, value_or_ptr);
         return StoredValue::create_value(val);
     } else if (kind == Kind::UNDEFINED) {
-        assert(fits_in_reg(ctx));
+        ASSERT(fits_in_reg(ctx));
         ir::Value val = ir::Value::from_int_immediate(0, value_type);
         return StoredValue::create_value(val);
     } else {

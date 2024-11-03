@@ -25,6 +25,11 @@ public:
     Result analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) override;
     Result analyze_enum_variant(sir::EnumVariant &enum_variant) override;
     Result analyze_union_case(sir::UnionCase &union_case) override;
+
+private:
+    void analyze_param_type(sir::Param &param);
+    void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
+    void insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def);
 };
 
 } // namespace sema

@@ -53,6 +53,10 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
+    if (sir_func.parent.is<sir::ProtoDef>()) {
+        return;
+    }
+
     if (sir_func.is_generic()) {
         for (const sir::Specialization<sir::FuncDef> &sir_specialization : sir_func.specializations) {
             create_func_def(*sir_specialization.def);
@@ -196,6 +200,10 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
+    if (sir_func.parent.is<sir::ProtoDef>()) {
+        return;
+    }
+
     if (sir_func.is_generic()) {
         for (const sir::Specialization<sir::FuncDef> &sir_specialization : sir_func.specializations) {
             generate_func_def(*sir_specialization.def);
@@ -204,7 +212,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         return;
     }
 
-    ssa::Function *ssa_func = ctx.ssa_funcs[&sir_func];
+    ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
     ctx.push_func_context(ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
 
@@ -290,16 +298,15 @@ void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
         std::string vtable_name = "vtable." + sir_struct_def.ident.value + "." + std::to_string(i);
 
         for (unsigned j = 0; j < proto_def.func_decls.size(); j++) {
-            const sir::FuncDecl *func_decl = proto_def.func_decls[j];
-            const sir::FuncDef &func_def = symbol_table.symbols.at(func_decl->ident.value).as<sir::FuncDef>();
+            sir::ProtoFuncDecl func_decl = proto_def.func_decls[j];
+            const sir::FuncDef &func_def = symbol_table.symbols.at(func_decl.get_ident().value).as<sir::FuncDef>();
 
             std::string vtable_entry_name = vtable_name;
-
             if (j != 0) {
                 vtable_entry_name += "." + std::to_string(j);
             }
 
-            ssa::Function *ssa_func = ctx.ssa_funcs[&func_def];
+            ssa::Function *ssa_func = ctx.ssa_funcs.at(&func_def);
             ssa_mod.add(ssa::Global(vtable_entry_name, ssa::Primitive::ADDR, ssa::Operand::from_func(ssa_func)));
 
             if (j == 0) {

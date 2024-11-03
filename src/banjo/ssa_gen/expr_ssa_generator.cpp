@@ -451,12 +451,25 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     ssa::Value ssa_callee;
     std::optional<ssa::Value> ssa_proto_self;
 
-    if (auto func_decl = call_expr.callee.match_symbol<sir::FuncDecl>()) {
-        const sir::ProtoDef &proto_def = func_decl->parent.as<sir::ProtoDef>();
-        unsigned index = *proto_def.get_index(*func_decl);
+    sir::Symbol callee_symbol = nullptr;
+    sir::Symbol callee_symbol_parent = nullptr;
+
+    if (auto symbol_expr = call_expr.callee.match<sir::SymbolExpr>()) {
+        callee_symbol = symbol_expr->symbol;
+
+        if (auto func_def = callee_symbol.match<sir::FuncDef>()) {
+            callee_symbol_parent = func_def->parent;
+        } else if (auto func_decl = callee_symbol.match<sir::FuncDecl>()) {
+            callee_symbol_parent = func_decl->parent;
+        }
+    }
+
+    if (callee_symbol_parent && callee_symbol_parent.is<sir::ProtoDef>()) {
+        const sir::ProtoDef &proto_def = callee_symbol_parent.as<sir::ProtoDef>();
+        unsigned index = *proto_def.get_index(callee_symbol.get_ident().value);
         ssa::Type vtable_type = ctx.ssa_vtable_types[&proto_def];
 
-        ssa_proto_self = generate(call_expr.args[0]).turn_into_value(ctx).get_value();
+        ssa_proto_self = generate(call_expr.args[0]).turn_into_reference(ctx).get_ptr();
 
         ssa::Value vtable_ptr_ptr = ctx.append_memberptr_val(ctx.get_fat_pointer_type(), *ssa_proto_self, 1);
         ssa::Value vtable_ptr = ctx.append_load(ssa::Primitive::ADDR, vtable_ptr_ptr);
@@ -573,7 +586,7 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         std::string vtable_global_name = ctx.ssa_mod->get_globals()[vtable_global_index].get_name();
         ctx.append_store(ssa::Operand::from_global(vtable_global_name, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
 
-        return stored_val;
+        return StoredValue::create_value(stored_val.get_ptr());
     } else {
         ASSERT_UNREACHABLE;
     }

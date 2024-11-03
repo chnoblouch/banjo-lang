@@ -120,6 +120,7 @@ struct Ident;
 struct Module;
 struct Param;
 struct Local;
+struct ProtoFuncDecl;
 
 class Expr;
 class Stmt;
@@ -511,6 +512,8 @@ struct Param {
     Ident name;
     Expr type;
     Attributes *attrs = nullptr;
+
+    bool is_self() const { return name.value == "self"; }
 
     bool operator==(const Param &other) const { return type == other.type; }
     bool operator!=(const Param &other) const { return !(*this == other); }
@@ -1154,9 +1157,18 @@ struct ProtoDef {
     ASTNode *ast_node;
     Ident ident;
     DeclBlock block;
-    std::vector<FuncDecl *> func_decls;
+    std::vector<ProtoFuncDecl> func_decls;
 
-    std::optional<unsigned> get_index(const FuncDecl &func_decl) const;
+    std::optional<unsigned> get_index(std::string_view name) const;
+};
+
+struct ProtoFuncDecl {
+    Decl decl;
+
+    ASTNode *get_ast_node() const;
+    const Ident &get_ident() const;
+    Symbol get_parent() const;
+    FuncType &get_type();
 };
 
 struct TypeAlias {

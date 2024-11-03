@@ -1,0 +1,81 @@
+# test:subtest
+# test:output "a"
+
+proto P {
+    func a(self) {
+        print("a");
+    }
+}
+
+struct S: P {}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    p.a();
+}
+
+# test:subtest
+# test:output "a"
+
+proto P {
+    func a(self) {
+        print("a");
+    }
+}
+
+struct S: P {}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    s.a();
+}
+
+# test:subtest
+# test:output "override"
+
+proto P {
+    func a(self) {
+        print("a");
+    }
+}
+
+struct S: P {
+    func a(self) {
+        print("override");
+    }
+}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    p.a();
+}
+
+# test:subtest
+# test:output "42"
+
+proto P {
+    func a(self) -> i32;
+    
+    func b(self) {
+        print(self.a() + 1);
+    }
+}
+
+struct S: P {
+    func a(self) -> i32 {
+        return 41;
+    }
+}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    p.b();
+}

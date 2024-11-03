@@ -91,9 +91,14 @@ Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &
         return Result::ERROR;
     }
 
+    sir::Expr type = inout_expr.get_type();
+    if (type == proto_ptr_type) {
+        return Result::SUCCESS;
+    }
+    
     bool is_valid = false;
 
-    if (auto pointer_type = inout_expr.get_type().match<sir::PointerType>()) {
+    if (auto pointer_type = type.match<sir::PointerType>()) {
         if (auto struct_def = pointer_type->base_type.match_symbol<sir::StructDef>()) {
             is_valid = struct_def->has_impl_for(proto_def);
         }

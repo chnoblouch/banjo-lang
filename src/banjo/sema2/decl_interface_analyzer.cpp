@@ -1,7 +1,9 @@
 #include "decl_interface_analyzer.hpp"
 
 #include "banjo/sema2/expr_analyzer.hpp"
+#include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_cloner.hpp"
 
 namespace banjo {
 
@@ -15,49 +17,27 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
         sir::Param &param = func_def.type.params[i];
 
-        func_def.block.symbol_table->symbols.insert({param.name.value, &param});
+        if (!analyzer.get_scope().decl.is<sir::ProtoDef>()) {
+            func_def.block.symbol_table->symbols.insert({param.name.value, &param});
+        }
 
         if (analyzer.get_scope().closure_ctx && i == 0) {
             continue;
         }
 
-        if (param.name.value == "self") {
-            sir::Symbol symbol = analyzer.get_scope().decl;
-
-            param.type = analyzer.create_expr(sir::PointerType{
-                .ast_node = nullptr,
-                .base_type = analyzer.create_expr(sir::SymbolExpr{
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .symbol = symbol,
-                }),
-            });
-        } else {
-            ExprAnalyzer(analyzer).analyze(param.type);
-        }
+        analyze_param_type(param);
     }
 
-    Result result = ExprAnalyzer(analyzer).analyze(func_def.type.return_type);
-    return result;
+    ExprAnalyzer(analyzer).analyze(func_def.type.return_type);
+    return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
-    func_decl.type.params[0].type = analyzer.create_expr(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::ADDR,
-    });
-
-    for (unsigned i = 1; i < func_decl.type.params.size(); i++) {
-        sir::Param &param = func_decl.type.params[i];
-        ExprAnalyzer(analyzer).analyze(param.type);
+    for (sir::Param &param : func_decl.type.params) {
+        analyze_param_type(param);
     }
 
     ExprAnalyzer(analyzer).analyze(func_decl.type.return_type);
-
-    if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
-        proto_def->func_decls.push_back(&func_decl);
-    }
-
     return Result::SUCCESS;
 }
 
@@ -77,6 +57,8 @@ Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
 Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     Result partial_result;
 
+    analyzer.push_scope().decl = &struct_def;
+
     for (sir::Expr &impl : struct_def.impls) {
         partial_result = ExprAnalyzer(analyzer).analyze(impl);
 
@@ -84,12 +66,46 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
             continue;
         }
 
-        if (!impl.match_symbol<sir::ProtoDef>()) {
+        if (auto proto_def = impl.match_symbol<sir::ProtoDef>()) {
+            analyze_proto_impl(struct_def, *proto_def);
+        } else {
             analyzer.report_generator.report_err_expected_proto(impl);
         }
     }
 
+    analyzer.pop_scope();
     return Result::SUCCESS;
+}
+
+void DeclInterfaceAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def) {
+    sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
+
+    for (sir::ProtoFuncDecl func_decl : proto_def.func_decls) {
+        std::string_view name = func_decl.get_ident().value;
+        auto iter = symbol_table.symbols.find(name);
+
+        if (iter == symbol_table.symbols.end()) {
+            if (auto func_def = func_decl.decl.match<sir::FuncDef>()) {
+                insert_default_impl(struct_def, *func_def);
+            } else {
+                analyzer.report_generator.report_err_impl_missing_func(struct_def, func_decl);
+            }
+        } else {
+            if (!iter->second.is<sir::FuncDef>()) {
+                analyzer.report_generator.report_err_impl_missing_func(struct_def, func_decl);
+            }
+        }
+    }
+}
+
+void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def) {
+    sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
+
+    sir::FuncDef *clone = sir::Cloner(*analyzer.cur_sir_mod, symbol_table).clone_func_def(func_def);
+    struct_def.block.decls.push_back(clone);
+
+    SymbolCollector(analyzer).collect_func_def(*clone);
+    analyze_func_def(*clone);
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
@@ -142,6 +158,21 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
     union_def.cases.push_back(&union_case);
 
     return Result::SUCCESS;
+}
+
+void DeclInterfaceAnalyzer::analyze_param_type(sir::Param &param) {
+    if (param.is_self()) {
+        param.type = analyzer.create_expr(sir::PointerType{
+            .ast_node = nullptr,
+            .base_type = analyzer.create_expr(sir::SymbolExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .symbol = analyzer.get_scope().decl,
+            }),
+        });
+    } else {
+        ExprAnalyzer(analyzer).analyze(param.type);
+    }
 }
 
 } // namespace sema

@@ -460,14 +460,54 @@ std::optional<unsigned> UnionCase::find_field(std::string_view name) const {
     return {};
 }
 
-std::optional<unsigned> ProtoDef::get_index(const FuncDecl &func_decl) const {
+std::optional<unsigned> ProtoDef::get_index(std::string_view name) const {
     for (unsigned i = 0; i < func_decls.size(); i++) {
-        if (func_decls[i] == &func_decl) {
+        if (func_decls[i].get_ident().value == name) {
             return i;
         }
     }
 
     return {};
+}
+
+ASTNode *ProtoFuncDecl::get_ast_node() const {
+    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+        return func_decl->ast_node;
+    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+        return func_def->ast_node;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+const Ident &ProtoFuncDecl::get_ident() const {
+    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+        return func_decl->ident;
+    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+        return func_def->ident;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+Symbol ProtoFuncDecl::get_parent() const {
+    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+        return func_decl->parent;
+    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+        return func_def->parent;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+FuncType &ProtoFuncDecl::get_type() {
+    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+        return func_decl->type;
+    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+        return func_def->type;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 } // namespace sir

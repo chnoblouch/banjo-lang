@@ -15,6 +15,10 @@ namespace sir {
 
 Cloner::Cloner(Module &mod) : mod(mod) {}
 
+Cloner::Cloner(Module &mod, SymbolTable &parent_symbol_table) : mod(mod) {
+    push_symbol_table(&parent_symbol_table);
+}
+
 DeclBlock Cloner::clone_decl_block(const DeclBlock &decl_block) {
     assert(decl_block.symbol_table->symbols.empty());
 

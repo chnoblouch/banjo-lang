@@ -57,7 +57,14 @@ private:
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
     Result analyze_completion_token(sir::CompletionToken &completion_token, sir::Expr &out_expr);
 
-    void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident rhs, sir::Symbol method);
+    void create_method_call(
+        sir::CallExpr &call_expr,
+        sir::Expr lhs,
+        sir::Ident rhs,
+        sir::Symbol method,
+        bool lhs_is_already_pointer
+    );
+
     Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     sir::FuncDef *resolve_overload(sir::OverloadSet &overload_set, const std::vector<sir::Expr> &args);
     bool is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args);
