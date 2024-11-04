@@ -127,7 +127,8 @@ bool Expr::is_type() const {
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else {
-        return is<PrimitiveType>() || is<PointerType>() || is<FuncType>() || is<sir::ClosureType>();
+        return is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
+               is<sir::ClosureType>();
     }
 }
 

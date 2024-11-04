@@ -162,13 +162,20 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
 
 void DeclInterfaceAnalyzer::analyze_param_type(sir::Param &param) {
     if (param.is_self()) {
+        sir::Expr base_type = analyzer.create_expr(sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .symbol = analyzer.get_scope().decl,
+        });
+
+        if (param.attrs && param.attrs->byval) {
+            param.type = base_type;
+            return;
+        }
+
         param.type = analyzer.create_expr(sir::PointerType{
             .ast_node = nullptr,
-            .base_type = analyzer.create_expr(sir::SymbolExpr{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .symbol = analyzer.get_scope().decl,
-            }),
+            .base_type = base_type,
         });
     } else {
         ExprAnalyzer(analyzer).analyze(param.type);

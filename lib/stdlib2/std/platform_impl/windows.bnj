@@ -139,7 +139,7 @@ meta if IS_WINDOWS {
         };
 
         var addr_info: *winapi.Addrinfo;
-        result = winapi.getaddrinfo(host.cstr(), to_string(port).cstr(), &addr_hints, &addr_info);
+        result = winapi.getaddrinfo(host.cstr(), to_string(&port).cstr(), &addr_hints, &addr_info);
         if result != 0 {
             return false;
         }

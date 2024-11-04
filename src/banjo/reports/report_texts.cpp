@@ -5,6 +5,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <map>
+#include <string>
 
 namespace banjo {
 
@@ -128,9 +129,27 @@ ReportText &ReportText::format(sir::Expr &expr) {
     return format(to_string(expr));
 }
 
+ReportText &ReportText::format(const std::vector<sir::Expr> &exprs) {
+    std::string string;
+
+    for (unsigned i = 0; i < exprs.size(); i++) {
+        string += to_string(exprs[i]);
+
+        if (i != exprs.size()) {
+            string += ", ";
+        }
+    }
+
+    return format(string);
+}
+
 std::string ReportText::to_string(const sir::Expr &expr) {
     if (!expr) {
         return "<null>";
+    } else if (auto int_literal = expr.match<sir::IntLiteral>()) {
+        return int_literal->value.to_string();
+    } else if (auto fp_literal = expr.match<sir::FPLiteral>()) {
+        return std::to_string(fp_literal->value);
     } else if (auto primitive_type = expr.match<sir::PrimitiveType>()) {
         switch (primitive_type->primitive) {
             case sir::Primitive::I8: return "i8";
@@ -150,6 +169,8 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         }
     } else if (auto pointer_type = expr.match<sir::PointerType>()) {
         return "*" + to_string(pointer_type->base_type);
+    } else if (auto static_array_type = expr.match<sir::StaticArrayType>()) {
+        return "[" + to_string(static_array_type->base_type) + "; " + std::to_string(static_array_type->length) + "]";
     } else if (auto func_type = expr.match<sir::FuncType>()) {
         std::string params_str = "";
 

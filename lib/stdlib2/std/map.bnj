@@ -116,9 +116,9 @@ struct Map[K, V] {
         var value = *self;
 
         for entry in value {
-            string.append(to_repr(entry.0));
+            string.append(to_repr(&entry.0));
             string.append(": ");
-            string.append(to_repr(entry.1));
+            string.append(to_repr(&entry.1));
             
             if index != self.length - 1 {
                 string.append(", ");

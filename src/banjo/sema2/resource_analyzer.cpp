@@ -255,6 +255,8 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, bool moving) {
     Context ctx{
         .moving = moving,
         .field_expr_lhs = false,
+        .in_resource_with_deinit = false,
+        .in_pointer = false,
         .cur_resource = nullptr,
     };
 
@@ -313,6 +315,10 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE                                 // completion_token
     );
 
+    if (ctx.cur_resource && ctx.cur_resource->has_deinit) {
+        ctx.in_resource_with_deinit = true;
+    }
+
     // FIXME: This doesn't only apply to call expressions!
     if (!ctx.moving && expr.is<sir::CallExpr>()) {
         sir::Expr type = expr.get_type();
@@ -367,12 +373,17 @@ Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_liter
 
 Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr, Context &ctx) {
     if (unary_expr.op == sir::UnaryOp::DEREF) {
+        Result result;
+
         if (ctx.moving && is_resource(unary_expr.type)) {
             analyzer.report_generator.report_err_move_out_pointer(&unary_expr);
-            return Result::ERROR;
+            result = Result::ERROR;
         } else {
-            return analyze_expr(unary_expr.value, ctx);
+            result = analyze_expr(unary_expr.value, ctx);
         }
+
+        ctx.in_pointer = true;
+        return result;
     } else if (unary_expr.op == sir::UnaryOp::REF) {
         return analyze_expr(unary_expr.value, false);
     } else {
@@ -409,11 +420,15 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     Context lhs_ctx{
         .moving = false,
         .field_expr_lhs = true,
+        .in_resource_with_deinit = false,
+        .in_pointer = false,
         .cur_resource = ctx.cur_resource,
     };
 
     Result lhs_result = analyze_expr(field_expr.base, lhs_ctx);
 
+    ctx.in_resource_with_deinit = lhs_ctx.in_resource_with_deinit;
+    ctx.in_pointer = lhs_ctx.in_pointer;
     ctx.cur_resource = lhs_ctx.cur_resource;
 
     if (lhs_result != Result::SUCCESS) {
@@ -421,6 +436,11 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     }
 
     if (!ctx.cur_resource) {
+        if (ctx.moving && ctx.in_pointer && is_resource(field_expr.type)) {
+            analyzer.report_generator.report_err_move_out_pointer(out_expr);
+            return Result::ERROR;
+        }
+
         return Result::SUCCESS;
     }
 
@@ -429,7 +449,7 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
             continue;
         }
 
-        if (ctx.cur_resource->has_deinit && ctx.moving) {
+        if (ctx.moving && ctx.in_resource_with_deinit) {
             analyzer.report_generator.report_err_move_out_deinit(&field_expr);
             return Result::ERROR;
         }

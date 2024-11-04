@@ -1174,15 +1174,26 @@ void ExprAnalyzer::create_method_call(
 ) {
     analyzer.add_symbol_use(rhs.ast_node, method);
 
+    sir::Expr callee_type = method.get_type();
+
     call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = rhs.ast_node,
-        .type = method.get_type(),
+        .type = callee_type,
         .symbol = method,
     });
 
     if (lhs_is_already_pointer) {
         call_expr.args.insert(call_expr.args.begin(), lhs);
     } else {
+        if (auto func_type = callee_type.match<sir::FuncType>()) {
+            sir::Param &self_param = func_type->params[0];
+
+            if (self_param.attrs && self_param.attrs->byval) {
+                call_expr.args.insert(call_expr.args.begin(), lhs);
+                return;
+            }
+        }
+
         sir::Expr self_arg = analyzer.create_expr(sir::UnaryExpr{
             .ast_node = nullptr,
             .type = analyzer.create_expr(sir::PointerType{
@@ -1357,6 +1368,8 @@ Result ExprAnalyzer::analyze_operator_overload_call(
     } else {
         ASSERT_UNREACHABLE;
     }
+
+    ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,

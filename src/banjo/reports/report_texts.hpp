@@ -86,6 +86,7 @@ public:
     ReportText &format(Structure *struct_);
     ReportText &format(const ModulePath &path);
     ReportText &format(sir::Expr &expr);
+    ReportText &format(const std::vector<sir::Expr> &exprs);
 
 public:
     static std::string to_string(const sir::Expr &expr);

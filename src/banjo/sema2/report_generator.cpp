@@ -41,6 +41,14 @@ SourceLocation ReportBuilder::find_location(ASTNode *node) {
 }
 
 void ReportBuilder::report() {
+    std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
+
+    if (!generic_args.empty()) {
+        for (auto &[name, value] : generic_args) {
+            add_note("generic argument '$' = '$'", value.get_ast_node(), name, value);
+        }
+    }
+
     analyzer.report_manager.insert(partial_report);
 }
 
@@ -338,10 +346,12 @@ void ReportGenerator::report_err_use_after_move(
 }
 
 void ReportGenerator::report_err_move_out_pointer(const sir::Expr &move) {
+    // TODO: Maybe change the location where the error is highlighted.
     report_error("cannot move resource out of pointer", move.get_ast_node());
 }
 
 void ReportGenerator::report_err_move_out_deinit(const sir::Expr &move) {
+    // TODO: Maybe change the location where the error is highlighted.
     report_error("cannot move out of resource implementing '__deinit__'", move.get_ast_node());
 }
 

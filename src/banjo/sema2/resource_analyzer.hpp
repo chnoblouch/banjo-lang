@@ -34,6 +34,8 @@ private:
     struct Context {
         bool moving;
         bool field_expr_lhs;
+        bool in_resource_with_deinit;
+        bool in_pointer;
         sir::Resource *cur_resource;
     };
 

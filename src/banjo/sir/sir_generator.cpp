@@ -950,6 +950,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             .ast_node = node,
             .name = sir_ident,
             .type = nullptr,
+            .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
         };
     } else {
         ASSERT_UNREACHABLE;
@@ -1053,6 +1054,7 @@ sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {
         else if (ast_attr.get_name() == "test") sir_attrs.test = true;
         else if (ast_attr.get_name() == "link_name") sir_attrs.link_name = ast_attr.get_value();
         else if (ast_attr.get_name() == "unmanaged") sir_attrs.unmanaged = true;
+        else if (ast_attr.get_name() == "byval") sir_attrs.byval = true;
         else ASSERT_UNREACHABLE;
     }
 

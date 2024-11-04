@@ -500,6 +500,7 @@ struct Attributes {
     bool test = false;
     std::optional<std::string> link_name = {};
     bool unmanaged = false;
+    bool byval = false;
 };
 
 struct Ident {

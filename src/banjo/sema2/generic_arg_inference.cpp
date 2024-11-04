@@ -57,7 +57,7 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
         if (partial_result != Result::SUCCESS) {
             result = partial_result;
         }
-    }
+}
 
     if (has_sequence) {
         std::vector<sir::Expr> sequence_types(num_sequence_args);

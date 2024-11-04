@@ -1,9 +1,11 @@
-# test:subtest
-# test:error 19:20 "cannot move out of resource implementing '__deinit__'"
+# test:common
 
 struct Resource {
     func __deinit__(self) {}
 }
+
+# test:subtest
+# test:error 21:20 "cannot move out of resource implementing '__deinit__'"
 
 struct Pair {
     var resource: Resource;
@@ -17,4 +19,53 @@ func main() {
     };
     
     var resource = pair.resource;
+}
+
+# test:subtest
+# test:error 44:20 "cannot move out of resource implementing '__deinit__'"
+
+struct Wrapper {
+    var resource: Resource;
+}
+
+struct Object {
+    var wrapper: Wrapper;
+
+    func __deinit__(self) {}
+}
+
+func main() {
+    var object = Object {
+        wrapper: Wrapper {
+            resource: Resource {},
+        },
+    };
+
+    var resource = object.wrapper.resource;
+}
+
+# test:subtest
+# test:error 70:20 "cannot move out of resource implementing '__deinit__'"
+
+struct Wrapper {
+    var resource: Resource;
+}
+
+struct Object {
+    var tuple: (i32, Wrapper);
+
+    func __deinit__(self) {}
+}
+
+func main() {
+    var object = Object {
+        tuple: (
+            0,
+            Wrapper {
+                resource: Resource {},
+            },
+        ),
+    };
+
+    var resource = (object.tuple.1).resource;  # TODO: Fix lexer
 }

@@ -116,7 +116,7 @@ struct Array[T] {
         var string = "[";
         
         for i in 0..self.length as i32 {
-            string.append(to_repr(self.data[i]));
+            string.append(to_repr(&self.data[i]));
             
             if i != self.length as i32 - 1 {
                 string.append(", ");

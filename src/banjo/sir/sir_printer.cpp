@@ -1026,6 +1026,7 @@ void Printer::print_attrs(const Attributes &attrs) {
     PRINT_FIELD("test", attrs.test ? "true" : "false");
     PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
     PRINT_FIELD("unmanaged", attrs.unmanaged ? "true" : "false");
+    PRINT_FIELD("byval", attrs.byval ? "true" : "false");
     END_OBJECT();
 }
 

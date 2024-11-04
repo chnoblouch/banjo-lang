@@ -39,3 +39,50 @@ func main() {
     var pointer = &pair;
     var a = *pointer;
 }
+
+# test:subtest
+# test:error 62:13 "cannot move resource out of pointer"
+
+struct Wrapper {
+    var resource: Resource;
+}
+
+struct Object {
+    var wrapper: Wrapper;
+}
+
+func main() {
+    var object = Object {
+        wrapper: Wrapper {
+            resource: Resource {},
+        },
+    };
+
+    var pointer = &object;
+    var a = pointer.wrapper.resource;
+}
+
+# test:subtest
+# test:error 87:13 "cannot move resource out of pointer"
+
+struct Wrapper {
+    var resource: Resource;
+}
+
+struct Object {
+    var tuple: (i32, Wrapper);
+}
+
+func main() {
+    var object = Object {
+        tuple: (
+            0,
+            Wrapper {
+                resource: Resource {},
+            },
+        ),
+    };
+
+    var pointer = &object;
+    var a = (pointer.tuple.1).resource;  # TODO: Fix lexer
+}

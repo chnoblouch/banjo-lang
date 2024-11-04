@@ -21,9 +21,9 @@ struct Result[T, E] {
         };
     }
     
-    pub func unwrap(self) -> T {
+    pub func unwrap(@byval self) -> T {
         if !self.successful {
-            panic(to_string(self.error));
+            panic(to_string(&self.error));
         }
         
         self.successful = false;
@@ -32,9 +32,9 @@ struct Result[T, E] {
     
     pub func __str__(self) -> String {
         if self.successful {
-            return to_string(self.value);
+            return to_string(&self.value);
         } else {
-            return to_string(self.error);
+            return to_string(&self.error);
         }
     }
     

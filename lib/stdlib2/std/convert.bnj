@@ -1,37 +1,37 @@
 use std.memory;
 use internal.runtime;
 
-pub func to_string[T](value: T) -> String {
+pub func to_string[T](value: *T) -> String {
     meta if T == String {
-        return value;
+        return value.copy();
     } else if T == *u8 {
-        return String.from(value);
+        return String.from(*value);
     } else if T == i8 || T == i16 || T == i32 || T == i64 {
-        return i64_to_string(value as i64);
+        return i64_to_string(*value as i64);
     } else if T == u16 || T == u32 || T == u64 || T == usize {
-        return u64_to_string(value as u64);
+        return u64_to_string(*value as u64);
     } else if T == f32 || T == f64 {
-        return f64_to_string(value as f64);
+        return f64_to_string(*value as f64);
     } else if T == u8 {
-        return char_to_string(value);
+        return char_to_string(*value);
     } else if T == bool {
-        return bool_to_string(value);
+        return bool_to_string(*value);
     } else if meta(T).has_method("__str__") {
         return value.__str__();
     } else if meta(T).is_struct {
         return struct_to_repr(value, 0);
     } else if meta(T).is_enum {
-        return enum_to_repr(value);
+        return enum_to_repr(*value);
     } else {
         return "<?>";
     }
 }
 
-pub func to_repr[T](value: T) -> String {
+pub func to_repr[T](value: *T) -> String {
     return to_repr_indent(value, 0);
 }
 
-pub func to_repr_indent[T](value: T, indent: u32) -> String {
+pub func to_repr_indent[T](value: *T, indent: u32) -> String {
     meta if T == String {
         return "\"" + value + "\"";
     } else if meta(T).is_struct {
@@ -120,17 +120,22 @@ func bool_to_string(value: bool) -> String {
     }
 }
 
-func struct_to_repr[T](struct_: T, indent: u32) -> String {
+func struct_to_repr[T](struct_: *T, indent: u32) -> String {
     var string = meta(T).name + " {\n";
 
-    meta for field in meta(T).fields {    
+    meta for field_name in meta(T).fields {    
         for i in 0..indent + 1 {
             string += "    ";
         }
 
-        string += field;
+        string += field_name;
         string += ": ";
-        string += to_repr_indent(meta(struct_).field(field), indent + 1);
+        
+        {
+            var field = &meta(struct_).field(field_name);
+            string += to_repr_indent(field, indent + 1);
+        }
+
         string += ",\n";
     }
 
