@@ -1,0 +1,9 @@
+# test:subtest
+# test:error 6:19 "type mismatch (expected '*i32', got '*bool')"
+
+func main() {
+    var a = true;
+    var b: *i32 = &a;
+}
+
+# TODO: the other unary expressions

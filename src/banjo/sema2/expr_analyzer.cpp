@@ -8,6 +8,7 @@
 #include "banjo/sema2/generics_specializer.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/meta_expr_evaluator.hpp"
+#include "banjo/sema2/resource_analyzer.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/magic_methods.hpp"
@@ -289,6 +290,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 
     DeclInterfaceAnalyzer(analyzer).analyze_func_def(*generated_func);
     DeclBodyAnalyzer(analyzer).analyze_func_def(*generated_func);
+    ResourceAnalyzer(analyzer).analyze_func_def(*generated_func);
 
     analyzer.pop_scope();
 
@@ -568,11 +570,13 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         ExprConstraints constraints;
 
         if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
-            if (!func_def->is_generic()) {
+            if (!func_def->is_generic() && call_expr.args.size() == func_def->type.params.size()) {
                 constraints = ExprConstraints::expect_type(func_def->type.params[i].type);
             }
         } else if (auto native_func_decl = call_expr.callee.match_symbol<sir::NativeFuncDecl>()) {
-            constraints = ExprConstraints::expect_type(native_func_decl->type.params[i].type);
+            if (call_expr.args.size() == native_func_decl->type.params.size()) {
+                constraints = ExprConstraints::expect_type(native_func_decl->type.params[i].type);
+            }
         }
 
         partial_result = analyze(arg, constraints);
@@ -584,6 +588,8 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     if (result != Result::SUCCESS) {
         return Result::ERROR;
     }
+
+    sir::FuncDef *callee_func_def = nullptr;
 
     if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
         if (func_def->is_generic()) {
@@ -617,27 +623,48 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                 });
             }
         }
+
+        callee_func_def = &call_expr.callee.as_symbol<sir::FuncDef>();
     } else if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
-        sir::FuncDef *func_def = resolve_overload(*overload_set, call_expr.args);
+        callee_func_def = resolve_overload(*overload_set, call_expr.args);
+
+        if (!callee_func_def) {
+            analyzer.report_generator.report_err_no_matching_overload(call_expr.callee, *overload_set);
+            return Result::ERROR;
+        }
 
         call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
             .ast_node = nullptr,
-            .type = &func_def->type,
-            .symbol = func_def,
+            .type = &callee_func_def->type,
+            .symbol = callee_func_def,
         });
     }
 
     sir::Expr callee_type = call_expr.callee.get_type();
+    sir::FuncType *callee_func_type;
 
     if (auto func_type = callee_type.match<sir::FuncType>()) {
-        call_expr.type = func_type->return_type;
-
-        for (unsigned i = 0; i < call_expr.args.size(); i++) {
-            ExprFinalizer(analyzer).finalize_by_coercion(call_expr.args[i], func_type->params[i].type);
-        }
+        callee_func_type = func_type;
     } else if (auto closure_type = callee_type.match<sir::ClosureType>()) {
-        call_expr.type = closure_type->func_type.return_type;
+        callee_func_type = &closure_type->func_type;
+    } else {
+        analyzer.report_generator.report_err_cannot_call(call_expr.callee);
+        return Result::ERROR;
+    }
 
+    if (call_expr.args.size() != callee_func_type->params.size()) {
+        analyzer.report_generator
+            .report_err_unexpected_arg_count(call_expr, callee_func_type->params.size(), callee_func_def);
+        return Result::ERROR;
+    }
+
+    for (unsigned i = 0; i < call_expr.args.size(); i++) {
+        ExprFinalizer(analyzer).finalize_by_coercion(call_expr.args[i], callee_func_type->params[i].type);
+    }
+
+    call_expr.type = callee_func_type->return_type;
+
+    if (auto closure_type = callee_type.match<sir::ClosureType>()) {
         sir::Expr func_ptr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = nullptr,
             .type = closure_type->underlying_struct->fields[0]->type,
@@ -659,9 +686,6 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         });
 
         call_expr.args.insert(call_expr.args.begin(), data_ptr);
-    } else {
-        analyzer.report_generator.report_err_cannot_call(call_expr.callee);
-        return Result::ERROR;
     }
 
     return Result::SUCCESS;
@@ -1087,10 +1111,20 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
 
     if (auto func_def = bracket_expr.lhs.match_symbol<sir::FuncDef>()) {
         if (func_def->is_generic()) {
+            if (bracket_expr.rhs.size() != func_def->generic_params.size()) {
+                analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, *func_def);
+                return Result::ERROR;
+            }
+
             return specialize(*func_def, bracket_expr.rhs, out_expr);
         }
     } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
         if (struct_def->is_generic()) {
+            if (bracket_expr.rhs.size() != struct_def->generic_params.size()) {
+                analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, *struct_def);
+                return Result::ERROR;
+            }
+
             return specialize(*struct_def, bracket_expr.rhs, out_expr);
         }
     }
@@ -1135,8 +1169,8 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
 
         return result;
     } else {
-        // FIXME: error handling
-        ASSERT_UNREACHABLE;
+        analyzer.report_generator.report_err_expected_generic_or_indexable(bracket_expr.lhs);
+        return Result::ERROR;
     }
 
     return Result::SUCCESS;
@@ -1319,7 +1353,7 @@ sir::FuncDef *ExprAnalyzer::resolve_overload(sir::OverloadSet &overload_set, con
         }
     }
 
-    ASSERT_UNREACHABLE;
+    return nullptr;
 }
 
 bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args) {
@@ -1340,7 +1374,7 @@ Result ExprAnalyzer::analyze_operator_overload_call(
     sir::Symbol symbol,
     sir::Expr self,
     sir::Expr arg,
-    sir::Expr &out_expr
+    sir::Expr &inout_expr
 ) {
     sir::Expr self_ref = analyzer.create_expr(sir::UnaryExpr{
         .ast_node = nullptr,
@@ -1365,6 +1399,11 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         impl = func_def;
     } else if (auto overload_set = symbol.match<sir::OverloadSet>()) {
         impl = resolve_overload(*overload_set, args);
+
+        if (!impl) {
+            analyzer.report_generator.report_err_no_matching_overload(inout_expr, *overload_set);
+            return Result::ERROR;
+        }
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1377,9 +1416,9 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         .symbol = impl,
     });
 
-    analyzer.add_symbol_use(out_expr.get_ast_node(), impl);
+    analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
 
-    out_expr = analyzer.create_expr(sir::CallExpr{
+    inout_expr = analyzer.create_expr(sir::CallExpr{
         .ast_node = nullptr,
         .type = impl->type.return_type,
         .callee = callee,

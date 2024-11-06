@@ -6,8 +6,7 @@
 #include "banjo/sema2/type_alias_resolver.hpp"
 #include "banjo/sema2/use_resolver.hpp"
 #include "banjo/sir/sir_cloner.hpp"
-
-#include <cassert>
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -18,7 +17,7 @@ namespace sema {
 GenericsSpecializer::GenericsSpecializer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args) {
-    assert(args.size() == generic_func_def.generic_params.size());
+    ASSERT(args.size() == generic_func_def.generic_params.size());
 
     if (sir::FuncDef *existing_specialization = find_existing_specialization(generic_func_def, args)) {
         return existing_specialization;
@@ -31,7 +30,7 @@ sir::StructDef *GenericsSpecializer::specialize(
     sir::StructDef &generic_struct_def,
     const std::vector<sir::Expr> &args
 ) {
-    assert(args.size() == generic_struct_def.generic_params.size());
+    ASSERT(args.size() == generic_struct_def.generic_params.size());
 
     if (sir::StructDef *existing_specialization = find_existing_specialization(generic_struct_def, args)) {
         return existing_specialization;

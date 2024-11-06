@@ -36,7 +36,7 @@ SourceLocation ReportBuilder::find_location(ASTNode *node) {
     if (node) {
         return SourceLocation{find_mod_path(node), node->get_range()};
     } else {
-        return SourceLocation{analyzer.cur_sir_mod->path, {0, 1}};
+        return SourceLocation{{}, {0, 0}};
     }
 }
 
@@ -215,6 +215,32 @@ void ReportGenerator::report_err_cannot_deref(const sir::Expr &expr) {
     report_error("cannot dereference value with type '$'", expr.get_ast_node(), expr.get_type());
 }
 
+void ReportGenerator::report_err_expected_generic_or_indexable(sir::Expr &expr) {
+    report_error("expected generic declaration or indexable value", expr.get_ast_node());
+}
+
+void ReportGenerator::report_err_unexpected_arg_count(
+    sir::CallExpr &call_expr,
+    unsigned expected_count,
+    sir::FuncDef *func_def
+) {
+    std::string format_str;
+
+    if (call_expr.args.size() < expected_count) {
+        format_str = "too few arguments (expected $, got $)";
+    } else if (call_expr.args.size() > expected_count) {
+        format_str = "too many arguments (expected $, got $)";
+    }
+
+    ReportBuilder builder = build_error(format_str, call_expr.ast_node, expected_count, call_expr.args.size());
+
+    if (func_def) {
+        builder.add_note("function declared with type '$'", func_def->ident.ast_node, sir::Expr(&func_def->type));
+    }
+
+    return builder.report();
+}
+
 void ReportGenerator::report_err_no_members(const sir::DotExpr &dot_expr) {
     report_error("type '$' doesn't have members", dot_expr.ast_node, dot_expr.lhs.get_type());
 }
@@ -237,6 +263,20 @@ void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const
     );
 }
 
+void ReportGenerator::report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set) {
+    ReportBuilder builder = build_error("no matching overload found", expr.get_ast_node());
+
+    for (sir::FuncDef *overload : overload_set.func_defs) {
+        builder.add_note(
+            "type of this candidate does not match: '$'",
+            overload->ident.ast_node,
+            sir::Expr(&overload->type)
+        );
+    }
+
+    builder.report();
+}
+
 void ReportGenerator::report_err_unexpected_array_length(
     const sir::ArrayLiteral &array_literal,
     unsigned expected_count
@@ -250,6 +290,17 @@ void ReportGenerator::report_err_unexpected_array_length(
     }
 
     report_error(format_str, array_literal.ast_node, expected_count, array_literal.values.size());
+}
+
+void ReportGenerator::report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::FuncDef &func_def) {
+    report_err_unexpected_generic_arg_count(bracket_expr, func_def.generic_params, func_def.ident, "function");
+}
+
+void ReportGenerator::report_err_unexpected_generic_arg_count(
+    sir::BracketExpr &bracket_expr,
+    sir::StructDef &struct_def
+) {
+    report_err_unexpected_generic_arg_count(bracket_expr, struct_def.generic_params, struct_def.ident, "struct");
 }
 
 void ReportGenerator::report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr) {
@@ -369,6 +420,31 @@ void ReportGenerator::report_err_operator_overload_not_found(
     }
 
     builder.report();
+}
+
+void ReportGenerator::report_err_unexpected_generic_arg_count(
+    sir::BracketExpr &bracket_expr,
+    std::vector<sir::GenericParam> &generic_params,
+    sir::Ident &decl_ident,
+    std::string_view decl_kind
+) {
+    std::string format_str;
+
+    if (bracket_expr.rhs.size() < generic_params.size()) {
+        format_str = "too few generic arguments (expected $, got $)";
+    } else if (bracket_expr.rhs.size() > generic_params.size()) {
+        format_str = "too many generic arguments (expected $, got $)";
+    }
+
+    build_error(format_str, bracket_expr.ast_node, generic_params.size(), bracket_expr.rhs.size())
+        .add_note(
+            "$ '$' defined here with the following generic parameters: $",
+            decl_ident.ast_node,
+            decl_kind,
+            decl_ident.value,
+            generic_params
+        )
+        .report();
 }
 
 } // namespace sema

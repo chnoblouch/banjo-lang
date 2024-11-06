@@ -1,0 +1,39 @@
+# test:subtest
+# test:error 8:5 "too few generic arguments (expected 2, got 1)"
+# test:note 5:6 "function 'f' defined here with the following generic parameters: 'A', 'B'"
+
+func f[A, B]() {}
+
+func main() {
+    f[i32]();
+}
+
+# test:subtest
+# test:error 18:5 "too many generic arguments (expected 1, got 2)"
+# test:note 15:6 "function 'f' defined here with the following generic parameters: 'T'"
+
+func f[T]() {}
+
+func main() {
+    f[i32, f32]();
+}
+
+# test:subtest
+# test:error 28:5 "too few generic arguments (expected 1, got 0)"
+# test:note 25:6 "function 'f' defined here with the following generic parameters: 'T'"
+
+func f[T]() {}
+
+func main() {
+    f[]();
+}
+
+# test:subtest
+# test:error 38:13 "too few generic arguments (expected 3, got 2)"
+# test:note 35:8 "struct 'S' defined here with the following generic parameters: 'A', 'B', 'C'"
+
+struct S[A, B, C] {}
+
+func main() {
+    var s = S[bool, i32] {};
+}

@@ -101,7 +101,7 @@ func main() {
     
     print(string.has_value);
     print(",");
-    print(string.value);
+    print(string.value.copy());
 }
 
 # test:subtest

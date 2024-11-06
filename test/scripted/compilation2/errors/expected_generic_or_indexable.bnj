@@ -1,0 +1,21 @@
+# test:subtest
+# test:error 6:13 "expected generic declaration or indexable value"
+
+func main() {
+    var a = 10;
+    var b = a[10];
+}
+
+# test:subtest
+# test:error 14:13 "expected generic declaration or indexable value"
+
+func main() {
+    var a = 10;
+    var b = a[i32];
+}
+
+# test:subtest
+# test:error 21:10 "expected generic declaration or indexable value"
+
+struct S {}
+type T = S[i32];

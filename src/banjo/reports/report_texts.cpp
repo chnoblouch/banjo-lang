@@ -135,7 +135,21 @@ ReportText &ReportText::format(const std::vector<sir::Expr> &exprs) {
     for (unsigned i = 0; i < exprs.size(); i++) {
         string += to_string(exprs[i]);
 
-        if (i != exprs.size()) {
+        if (i != exprs.size() - 1) {
+            string += ", ";
+        }
+    }
+
+    return format(string);
+}
+
+ReportText &ReportText::format(const std::vector<sir::GenericParam> &generic_params) {
+    std::string string;
+
+    for (unsigned i = 0; i < generic_params.size(); i++) {
+        string += "'" + generic_params[i].ident.value + "'";
+
+        if (i != generic_params.size() - 1) {
             string += ", ";
         }
     }

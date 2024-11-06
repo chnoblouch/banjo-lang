@@ -79,6 +79,11 @@ void ReportPrinter::print_report(const Report &report) {
 }
 
 void ReportPrinter::print_message_location(const SourceLocation &location) {
+    if (location.path.is_empty()) {
+        std::cerr << "(source location unknown)\n";
+        return;
+    }
+
     std::filesystem::path file_path = *module_manager.find_source_file(location.path);
     file_path.make_preferred();
     std::ifstream file(file_path, std::ios::binary);

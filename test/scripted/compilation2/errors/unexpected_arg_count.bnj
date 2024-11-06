@@ -1,0 +1,50 @@
+# test:subtest
+# test:error 8:5 "too few arguments (expected 3, got 2)"
+# test:note 5:6 "function declared with type 'func(bool, i32, f32)'"
+
+func f(a: bool, b: i32, c: f32) {}
+
+func main() {
+    f(true, 10);
+}
+
+# test:subtest
+# test:error 18:5 "too many arguments (expected 1, got 2)"
+# test:note 15:6 "function declared with type 'func(i32)'"
+
+func f(a: i32) {}
+
+func main() {
+    f(10, true);
+}
+
+# test:subtest
+# test:error 28:5 "too many arguments (expected 1, got 2)"
+# test:note 25:6 "function declared with type 'func(i32)'"
+
+func f(a: i32) {}
+
+func main() {
+    f(true, 0);
+}
+
+# test:subtest
+# test:error 41:5 "too few arguments (expected 2, got 1)"
+# test:note 36:10 "function declared with type 'func(*S, f32)'"
+
+struct S {
+    func f(self, a: f32) {}
+}
+
+func main() {
+    var s = S {};
+    s.f();
+}
+
+# test:subtest
+# test:error 49:5 "too few arguments (expected 2, got 1)"
+
+func main() {
+    var closure = |a: i32, b: bool| {};
+    closure(10);
+}

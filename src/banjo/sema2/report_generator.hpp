@@ -4,6 +4,7 @@
 #include "banjo/reports/report.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <optional>
 #include <string_view>
 
 namespace banjo {
@@ -70,10 +71,15 @@ public:
     void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr);
     void report_err_cannot_call(const sir::Expr &expr);
     void report_err_cannot_deref(const sir::Expr &expr);
+    void report_err_expected_generic_or_indexable(sir::Expr &expr);
+    void report_err_unexpected_arg_count(sir::CallExpr &call_expr, unsigned expected_count, sir::FuncDef *func_def);
     void report_err_no_members(const sir::DotExpr &dot_expr);
     void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
     void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);
+    void report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set);
     void report_err_unexpected_array_length(const sir::ArrayLiteral &array_literal, unsigned expected_count);
+    void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::FuncDef &func_def);
+    void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::StructDef &struct_def);
     void report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr);
     void report_err_cannot_infer_generic_arg(const sir::Expr &expr, const sir::GenericParam &generic_param);
 
@@ -109,6 +115,13 @@ private:
         sir::Expr type,
         std::string_view operator_name,
         std::string_view impl_name
+    );
+
+    void report_err_unexpected_generic_arg_count(
+        sir::BracketExpr &bracket_expr,
+        std::vector<sir::GenericParam> &generic_params,
+        sir::Ident &decl_ident,
+        std::string_view decl_kind
     );
 };
 

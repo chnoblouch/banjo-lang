@@ -95,7 +95,7 @@ Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &
     if (type == proto_ptr_type) {
         return Result::SUCCESS;
     }
-    
+
     bool is_valid = false;
 
     if (auto pointer_type = type.match<sir::PointerType>()) {
@@ -291,10 +291,25 @@ Result ExprFinalizer::finalize_coercion(sir::MapLiteral &map_literal, sir::Expr 
 }
 
 Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr type) {
-    finalize_by_coercion(unary_expr.value, type);
+    Result partial_result;
+
+    if (unary_expr.op == sir::UnaryOp::NEG) {
+        partial_result = finalize_by_coercion(unary_expr.value, type);
+    } else {
+        partial_result = finalize(unary_expr.value);
+    }
 
     if (unary_expr.type.is<sir::PseudoType>()) {
         unary_expr.type = unary_expr.value.get_type();
+    }
+
+    if (partial_result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    if (unary_expr.type != type) {
+        analyzer.report_generator.report_err_type_mismatch(&unary_expr, type, unary_expr.type);
+        return Result::ERROR;
     }
 
     return Result::SUCCESS;

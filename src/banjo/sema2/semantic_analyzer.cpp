@@ -54,6 +54,7 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
     TypeAliasResolver(*this).analyze_decl_block(mod.block);
     DeclInterfaceAnalyzer(*this).analyze_decl_block(mod.block);
     DeclBodyAnalyzer(*this).analyze_decl_block(mod.block);
+    ResourceAnalyzer(*this).analyze_decl_block(mod.block);
     run_postponed_analyses();
 
     exit_mod();
