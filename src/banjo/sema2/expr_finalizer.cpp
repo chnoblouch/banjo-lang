@@ -19,7 +19,19 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
         return Result::SUCCESS;
     }
 
-    if (expr.get_type() != expected_type) {
+    sir::Expr type = expr.get_type();
+
+    if (expected_type.is_primitive_type(sir::Primitive::ADDR) && type.is<sir::PointerType>()) {
+        expr = analyzer.create_expr(sir::CoercionExpr{
+            .ast_node = expr.get_ast_node(),
+            .type = expected_type,
+            .value = expr,
+        });
+
+        return Result::SUCCESS;
+    }
+
+    if (type != expected_type) {
         if (expected_type.is_symbol<sir::UnionDef>()) {
             return coerce_to_union(expr, expected_type);
         } else if (auto proto_def = expected_type.match_proto_ptr()) {
@@ -41,7 +53,7 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
         return finalize_coercion(*tuple_literal, expected_type);
     }
 
-    if (expr.get_type() == expected_type) {
+    if (type == expected_type) {
         return Result::SUCCESS;
     }
 
@@ -59,7 +71,7 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
     } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         return finalize_coercion(*unary_expr, expected_type);
     } else {
-        analyzer.report_generator.report_err_type_mismatch(expr, expected_type, expr.get_type());
+        analyzer.report_generator.report_err_type_mismatch(expr, expected_type, type);
         return Result::ERROR;
     }
 }

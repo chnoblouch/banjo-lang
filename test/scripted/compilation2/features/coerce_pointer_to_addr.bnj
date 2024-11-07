@@ -1,0 +1,18 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var value = 0;
+    var pointer = &value;
+    var address: addr = pointer;
+}
+
+# test:subtest
+# test:compiles
+
+func f(pointer: addr) {}
+
+func main() {
+    var value = 0;
+    f(&value);
+}

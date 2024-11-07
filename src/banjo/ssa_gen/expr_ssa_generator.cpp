@@ -588,7 +588,7 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
 
         return StoredValue::create_value(stored_val.get_ptr());
     } else {
-        ASSERT_UNREACHABLE;
+        return generate(coercion_expr.value, hints);
     }
 }
 
