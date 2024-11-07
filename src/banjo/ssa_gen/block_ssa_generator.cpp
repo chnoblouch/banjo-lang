@@ -112,14 +112,14 @@ void BlockSSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt)
 }
 
 void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
+    if (return_stmt.value) {
+        ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
+    }
+
     const std::vector<const sir::Block *> &scopes = ctx.get_func_context().sir_scopes;
 
     for (auto iter = scopes.rbegin(); iter != scopes.rend(); ++iter) {
         generate_block_deinit(**iter);
-    }
-
-    if (return_stmt.value) {
-        ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
     }
 
     ctx.append_jmp(ctx.get_func_context().ssa_func_exit);

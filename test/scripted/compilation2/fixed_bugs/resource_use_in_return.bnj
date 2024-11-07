@@ -1,0 +1,20 @@
+# test:output "ab"
+
+struct Resource {
+    func __deinit__(self) {
+        print('b');
+    }
+}
+
+func f(resource: *Resource) -> i32 {
+    print('a');
+}
+
+func g() -> i32 {
+    var resource = Resource {};
+    return f(&resource);
+}
+
+func main() {
+    g();
+}

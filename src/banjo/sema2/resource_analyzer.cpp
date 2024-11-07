@@ -291,7 +291,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_call_expr(*inner, expr, ctx),   // call_expr
         result = analyze_field_expr(*inner, expr, ctx),  // field_expr
         SIR_VISIT_IGNORE,                                // range_expr
-        SIR_VISIT_IGNORE,                                // tuple_expr
+        result = analyze_tuple_expr(*inner),             // tuple_expr
         SIR_VISIT_IGNORE,                                // coercion_expr
         SIR_VISIT_IGNORE,                                // primitive_type
         SIR_VISIT_IGNORE,                                // pointer_type
@@ -445,19 +445,34 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     }
 
     for (auto &[field_index, sub_resource] : ctx.cur_resource->sub_resources) {
-        if (field_index != field_expr.field_index) {
-            continue;
-        }
+        if (field_index == field_expr.field_index) {
+            if (ctx.moving && ctx.in_resource_with_deinit) {
+                analyzer.report_generator.report_err_move_out_deinit(&field_expr);
+                return Result::ERROR;
+            }
 
-        if (ctx.moving && ctx.in_resource_with_deinit) {
-            analyzer.report_generator.report_err_move_out_deinit(&field_expr);
-            return Result::ERROR;
+            analyze_resource_use(&sub_resource, out_expr, ctx);
+            return Result::SUCCESS;
         }
-
-        analyze_resource_use(&sub_resource, out_expr, ctx);
     }
 
+    ctx.cur_resource = nullptr;
     return Result::SUCCESS;
+}
+
+Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
+    Result result = Result::SUCCESS;
+    Result partial_result;
+
+    for (sir::Expr &expr : tuple_expr.exprs) {
+        partial_result = analyze_expr(expr, true);
+
+        if (partial_result != Result::SUCCESS) {
+            result = Result::ERROR;
+        }
+    }
+
+    return result;
 }
 
 Result ResourceAnalyzer::analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr) {

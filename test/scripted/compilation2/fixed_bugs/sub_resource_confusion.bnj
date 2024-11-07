@@ -1,0 +1,29 @@
+# test:output "deinit"
+
+struct Pair {
+    var first: i32;
+    var second: i32;
+}
+
+struct Resource {
+    func __deinit__(self) {
+        print("deinit");
+    }
+}
+
+struct Object {
+    var pair: Pair;
+    var resource: Resource;
+}
+
+func main() {
+    var object = Object {
+        pair: Pair {
+            first: 0,
+            second: 1,
+        },
+        resource: Resource {},
+    };
+    
+    var value = object.pair.second;
+}
