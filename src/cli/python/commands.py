@@ -215,11 +215,13 @@ def toolchain(args):
                 toolchains.append(
                     toolchain_loader.load_from_file(path, target))
 
+        print("\nToolchains:")
+
         for toolchain in toolchains:
             pairs = toolchain.store().items()
-            print("\n" + str(toolchain.target))
+            print(f"\n  - Target {toolchain.target}")
             for key, value in pairs:
-                print("  " + toolchain.keys[key] + ": " + str(value))
+                print("    - " + toolchain.keys[key] + ": " + str(value))
         print()
     elif command == "add":
         target = Target.from_triple(args.target)

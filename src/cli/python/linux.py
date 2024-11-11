@@ -19,6 +19,7 @@ class LinuxToolchain(Toolchain):
 
         self.keys = {
             "linker_path": "Linker",
+            "linker_args": "Target-specific linker arguments",
             "additional_libraries": "Additional libraries",
             "lib_dirs": "Library search directories",
             "crt_dir": "CRT directory"

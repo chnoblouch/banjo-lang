@@ -22,9 +22,10 @@ class MinGWToolchain(Toolchain):
 
         self.keys = {
             "linker_path": "Linker",
+            "linker_args": "Target-specific linker arguments",
             "lib_dirs": "Library search directories",
             "crt_dir": "CRT directory",
-            "runtime_path": "Runtime path"
+            "runtime_path": "Clang runtime path",
         }
 
         self.linker_path =  None
