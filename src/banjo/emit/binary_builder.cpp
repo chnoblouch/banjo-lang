@@ -1,7 +1,6 @@
 #include "binary_builder.hpp"
 
-#include <cstdlib>
-#include <iostream>
+#include <utility>
 
 namespace banjo {
 
@@ -25,7 +24,7 @@ BinModule BinaryBuilder::create_module() {
     }
 
     for (DataSlice &text_slice : text_slices) {
-        module_.text.write_data(std::move(text_slice.buffer));
+        module_.text.write_data(text_slice.buffer);
 
         for (SymbolUse &use : text_slice.uses) {
             SymbolDef &def = defs[use.index];
@@ -44,7 +43,7 @@ BinModule BinaryBuilder::create_module() {
     }
 
     for (DataSlice &data_slice : data_slices) {
-        module_.data.write_data(std::move(data_slice.buffer));
+        module_.data.write_data(data_slice.buffer);
 
         for (SymbolUse &use : data_slice.uses) {
             SymbolDef &def = defs[use.index];
@@ -112,9 +111,9 @@ void BinaryBuilder::create_text_slice() {
     text_slices.push_back(DataSlice{});
 }
 
-void BinaryBuilder::add_func_symbol(std::string name, mcode::Module &machine_module) {
+void BinaryBuilder::add_func_symbol(std::string name, mcode::Module & /* machine_module */) {
     add_symbol_def(SymbolDef{
-        .name = name,
+        .name = std::move(name),
         .kind = BinSymbolKind::TEXT_FUNC,
         //.global = machine_module.get_global_symbols().contains(name)
         .global = true
@@ -123,13 +122,13 @@ void BinaryBuilder::add_func_symbol(std::string name, mcode::Module &machine_mod
 
 void BinaryBuilder::add_label_symbol(std::string name) {
     add_symbol_def(SymbolDef{
-        .name = name,
+        .name = std::move(name),
         .kind = BinSymbolKind::TEXT_LABEL,
         .global = false,
     });
 }
 
-void BinaryBuilder::add_data_symbol(std::string name, mcode::Module &machine_module) {
+void BinaryBuilder::add_data_symbol(const std::string &name, mcode::Module &machine_module) {
     add_symbol_def(SymbolDef{
         .name = name,
         .kind = BinSymbolKind::DATA_LABEL,
@@ -139,7 +138,7 @@ void BinaryBuilder::add_data_symbol(std::string name, mcode::Module &machine_mod
     });
 }
 
-void BinaryBuilder::add_symbol_def(SymbolDef def) {
+void BinaryBuilder::add_symbol_def(const SymbolDef &def) {
     symbol_indices.insert({def.name, defs.size()});
     defs.push_back(def);
 }
@@ -180,19 +179,6 @@ void BinaryBuilder::push_out_slices(std::uint32_t starting_index, std::uint8_t o
     for (std::uint32_t i = starting_index; i < text_slices.size(); i++) {
         text_slices[i].offset += offset;
     }
-}
-
-void BinaryBuilder::assert_condition(bool condition, std::string message) {
-#ifndef NDEBUG
-    if (!condition) {
-        abort(message);
-    }
-#endif
-}
-
-void BinaryBuilder::abort(std::string message) {
-    std::cerr << "error: " << message << std::endl;
-    std::exit(1);
 }
 
 } // namespace banjo

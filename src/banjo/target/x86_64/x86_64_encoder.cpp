@@ -4,7 +4,6 @@
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <iostream>
 #include <limits>
 
 namespace banjo {
@@ -225,7 +224,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case CVTSS2SI: encode_cvtss2si(instr, func); break;
         case CVTSD2SI: encode_cvtsd2si(instr, func); break;
         case EH_PUSHREG: process_eh_pushreg(instr, frame_info); break;
-        default: abort("unknown instruction (opcode " + std::to_string(instr.get_opcode()) + ")"); break;
+        default: ASSERT_UNREACHABLE;
     }
 
     if (instr.is_flag(mcode::Instruction::FLAG_ALLOCA)) {
@@ -297,12 +296,12 @@ void X8664Encoder::encode_sub(mcode::Instruction &instr, mcode::Function *func) 
 }
 
 void X8664Encoder::encode_imul(mcode::Instruction &instr, mcode::Function *func) {
-    assert_condition(instr.get_operands().get_size() == 2, "imul must have two operands");
+    ASSERT_MESSAGE(instr.get_operands().get_size() == 2, "imul must have two operands");
 
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
-    assert_condition(is_reg(dst), "imul destination must be a register");
+    ASSERT_MESSAGE(is_reg(dst), "imul destination must be a register");
 
     if (is_reg(src)) emit_imul_rr(reg(dst), reg(src), dst.get_size());
     else if (is_addr(src)) emit_imul_rm(reg(dst), addr(src, func), dst.get_size());
@@ -462,7 +461,7 @@ void X8664Encoder::encode_call(mcode::Instruction &instr, mcode::Function *func)
         add_text_symbol_use(target.get_symbol().name, 0);
         get_back_text_buffer().write_i32(0);
     } else if (is_reg(target)) {
-        assert_condition(target.get_size() == 8, "call target register must be a 64-bit register");
+        ASSERT_MESSAGE(target.get_size() == 8, "call target register must be a 64-bit register");
         emit_opcode(0xFF);
         emit_modrm_rr(2, reg(target));
     } else if (is_addr(target)) {
@@ -471,7 +470,7 @@ void X8664Encoder::encode_call(mcode::Instruction &instr, mcode::Function *func)
         emit_opcode(0xFF);
         emit_mem_digit(a, 2);
     } else {
-        abort("invalid target for call instruction");
+        ASSERT_UNREACHABLE;
     }
 }
 
@@ -481,7 +480,7 @@ void X8664Encoder::encode_ret() {
 
 void X8664Encoder::encode_push(mcode::Instruction &instr) {
     mcode::Operand &src = instr.get_operand(0);
-    assert_condition(is_reg(src), "push source must be a register");
+    ASSERT_MESSAGE(is_reg(src), "push source must be a register");
 
     if (reg(src) >= R8) {
         emit_rex(0, 0, 0, 1);
@@ -491,7 +490,7 @@ void X8664Encoder::encode_push(mcode::Instruction &instr) {
 
 void X8664Encoder::encode_pop(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
-    assert_condition(is_reg(dst), "pop destination must be a register");
+    ASSERT_MESSAGE(is_reg(dst), "pop destination must be a register");
 
     if (reg(dst) >= R8) {
         emit_rex(0, 0, 0, 1);
@@ -617,7 +616,7 @@ void X8664Encoder::encode_xorps(mcode::Instruction &instr, mcode::Function *func
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
-    assert_condition(is_reg(dst), "SSE instructions can only operate on registers");
+    ASSERT_MESSAGE(is_reg(dst), "SSE instructions can only operate on registers");
 
     if (is_reg(src)) {
         emit_rex_rr(0, reg(dst), reg(src));
@@ -757,12 +756,12 @@ void X8664Encoder::encode_shift(mcode::Instruction &instr, mcode::Function *func
 
     if (is_reg(src)) {
         RegCode src_reg = reg(src);
-        assert_condition(src_reg == RegCode::ECX, "shift: src reg must be ecx");
+        ASSERT_MESSAGE(src_reg == RegCode::ECX, "shift: src reg must be ecx");
         emit_opcode(size == 1 ? 0xD2 : 0xD3);
         emit_modrm_sib(digit, dst_roa);
     } else if (is_imm(src)) {
         Immediate src_imm = imm(src);
-        assert_condition(src_imm.symbol_index == -1, "shift: cannot shift by symbol");
+        ASSERT_MESSAGE(src_imm.symbol_index == -1, "shift: cannot shift by symbol");
 
         if (src_imm.value == -1) {
             emit_opcode(size == 1 ? 0xD0 : 0xD1);
@@ -794,7 +793,7 @@ void X8664Encoder::encode_cmovcc(mcode::Instruction &instr, mcode::Function *fun
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
-    assert_condition(dst.get_size() != 1, "size of cmovcc must be 2, 4 or 8");
+    ASSERT_MESSAGE(dst.get_size() != 1, "size of cmovcc must be 2, 4 or 8");
     emit_cmovcc(opcode, reg(dst), roa(src, func), dst.get_size());
 }
 
@@ -807,7 +806,7 @@ void X8664Encoder::encode_sse_op(
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
-    assert_condition(is_reg(dst), "SSE instructions can only operate on registers");
+    ASSERT_MESSAGE(is_reg(dst), "SSE instructions can only operate on registers");
     emit_sse(prefix, opcode, reg(dst), roa(src, func), 0);
 }
 
@@ -857,7 +856,7 @@ void X8664Encoder::emit_mov_mr(Address dst, RegCode src, std::uint8_t size) {
 }
 
 void X8664Encoder::emit_mov_mi(Address dst, Immediate imm, std::uint8_t size) {
-    assert_condition(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
+    ASSERT_MESSAGE(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
 
     emit_16bit_prefix_if_required(size);
     emit_rex_rm(size, 0, dst);
@@ -893,8 +892,8 @@ void X8664Encoder::emit_imul_rm(RegCode dst, Address src, std::uint8_t size) {
 void X8664Encoder::emit_imul_rri(RegCode dst, Immediate imm, std::uint8_t size) {
     // TODO: optimization for 8-bit immediates
 
-    assert_condition(size == 4 || size == 8, "imul_rri size must be 4 or 8");
-    assert_condition(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
+    ASSERT_MESSAGE(size == 4 || size == 8, "imul_rri size must be 4 or 8");
+    ASSERT_MESSAGE(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
 
     emit_16bit_prefix_if_required(size);
     emit_rex_rr(size, dst, dst);
@@ -936,7 +935,7 @@ void X8664Encoder::emit_basic_ri(
     Immediate imm,
     std::uint8_t size
 ) {
-    assert_condition(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
+    ASSERT_MESSAGE(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
 
     emit_16bit_prefix_if_required(size);
     emit_rex_r(size, dst);
@@ -995,7 +994,7 @@ void X8664Encoder::emit_basic_mi(
     Immediate imm,
     std::uint8_t size
 ) {
-    assert_condition(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
+    ASSERT_MESSAGE(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
 
     emit_16bit_prefix_if_required(size);
     emit_rex_rm(size, 0, dst);
@@ -1045,8 +1044,8 @@ void X8664Encoder::emit_mem_reg(Address addr, RegCode reg) {
 
 void X8664Encoder::emit_mem_digit(Address addr, std::uint8_t digit, std::uint32_t offset_to_next_instr) {
     if (!addr.symbol.empty()) {
-        assert_condition(addr.base == AddrRegCode::ADDR_NO_BASE, "addresses with symbols must not have a base");
-        assert_condition(addr.index == AddrRegCode::ADDR_NO_INDEX, "addresses with symbols must not have an index");
+        ASSERT_MESSAGE(addr.base == AddrRegCode::ADDR_NO_BASE, "addresses with symbols must not have a base");
+        ASSERT_MESSAGE(addr.index == AddrRegCode::ADDR_NO_INDEX, "addresses with symbols must not have an index");
 
         emit_modrm(0b00, digit, 0b101);
         add_text_symbol_use(addr.symbol, -offset_to_next_instr);
@@ -1181,7 +1180,7 @@ void X8664Encoder::emit_sib(std::uint8_t scale, std::uint8_t index, std::uint8_t
     else if (scale == 2) ss = 0b01;
     else if (scale == 4) ss = 0b10;
     else if (scale == 8) ss = 0b11;
-    else abort("scale must be 1, 2, 4 or 8");
+    else ASSERT_UNREACHABLE;
 
     get_back_text_buffer().write_u8(((ss & 0b11) << 6) | ((index & 0b111) << 3) | (base & 0b111));
 }
@@ -1255,7 +1254,7 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
         addr.displacement =
             func->get_stack_frame().get_stack_slot(machine_addr.get_base().get_stack_slot()).get_offset();
     } else {
-        abort("virtual registers cannot be emitted");
+        ASSERT_UNREACHABLE;
     }
 
     if (!machine_addr.has_offset()) {
@@ -1273,7 +1272,7 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
 X8664Encoder::RegOrAddr X8664Encoder::roa(mcode::Operand &operand, mcode::Function *func) {
     if (is_reg(operand)) return reg(operand);
     else if (is_addr(operand)) return addr(operand, func);
-    else abort("expected register or address operand");
+    else ASSERT_UNREACHABLE;
 }
 
 bool X8664Encoder::is_reg(mcode::Operand &operand) {

@@ -69,17 +69,14 @@ protected:
 
     void add_func_symbol(std::string name, mcode::Module &machine_module);
     void add_label_symbol(std::string name);
-    void add_data_symbol(std::string name, mcode::Module &machine_module);
-    void add_symbol_def(SymbolDef def);
+    void add_data_symbol(const std::string &name, mcode::Module &machine_module);
+    void add_symbol_def(const SymbolDef &def);
     void attach_symbol_def(std::uint32_t index);
     void add_text_symbol_use(const std::string &symbol, std::int32_t addend);
     void add_text_symbol_use(std::uint32_t symbol_index, BinSymbolUseKind kind, std::int32_t addend);
     void add_data_symbol_use(const std::string &symbol);
     std::uint32_t add_empty_label();
     void push_out_slices(unsigned starting_index, std::uint8_t offset);
-
-    void assert_condition(bool condition, std::string message);
-    [[noreturn]] void abort(std::string message);
 };
 
 } // namespace banjo

@@ -11,6 +11,14 @@
             std::abort();                                                                                              \
         }
 
+#    define ASSERT_MESSAGE(condition, message)                                                                         \
+        if (!(condition)) {                                                                                            \
+            std::cerr << "assertion failure, aborting!\nmessage: " << message << "\nat " << __FILE__ << ":"            \
+                      << __LINE__ << "\n"                                                                              \
+                      << std::flush;                                                                                   \
+            std::abort();                                                                                              \
+        }
+
 #    define ASSERT_UNREACHABLE                                                                                         \
         {                                                                                                              \
             std::cerr << "unreachable code path triggered, aborting!\nat " << __FILE__ << ":" << __LINE__ << "\n"      \
@@ -25,6 +33,7 @@
         }
 #else
 #    define ASSERT(condition) ;
+#    define ASSERT_MESSAGE(condition, message) ;
 #    ifdef _MSC_VER
 #        define ASSERT_UNREACHABLE __assume(false);
 #        define ASSUME(condition) __assume(condition);

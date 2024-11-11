@@ -1,9 +1,5 @@
 #include "target_process.hpp"
 
-#include "diagnostics.hpp"
-
-#include <cstdint>
-
 // clang-format off
 #include <windows.h>
 #include <dbghelp.h>
