@@ -362,18 +362,22 @@ Expr Symbol::get_type() {
     );
 }
 
-Symbol Symbol::resolve() {
+Symbol Symbol::resolve() const {
     if (auto use_ident = match<UseIdent>()) return use_ident->symbol;
     else if (auto use_rebind = match<UseRebind>()) return use_rebind->symbol;
     else return *this;
 }
 
-SymbolTable *Symbol::get_symbol_table() {
-    DeclBlock *block = get_decl_block();
+const SymbolTable *Symbol::get_symbol_table() const {
+    const DeclBlock *block = get_decl_block();
     return block ? block->symbol_table : nullptr;
 }
 
-DeclBlock *Symbol::get_decl_block() {
+SymbolTable *Symbol::get_symbol_table() {
+    return const_cast<SymbolTable *>(std::as_const(*this).get_symbol_table());
+}
+
+const DeclBlock *Symbol::get_decl_block() const {
     if (auto mod = match<Module>()) return &mod->block;
     else if (auto struct_def = match<StructDef>()) return &struct_def->block;
     else if (auto enum_def = match<EnumDef>()) return &enum_def->block;
@@ -382,13 +386,22 @@ DeclBlock *Symbol::get_decl_block() {
     else return nullptr;
 }
 
-Symbol SymbolTable::look_up(std::string_view name) {
+DeclBlock *Symbol::get_decl_block() {
+    return const_cast<DeclBlock *>(std::as_const(*this).get_decl_block());
+}
+
+Symbol SymbolTable::look_up(std::string_view name) const {
     auto iter = symbols.find(name);
     if (iter == symbols.end()) {
         return parent ? parent->look_up(name) : nullptr;
     } else {
         return iter->second.resolve();
     }
+}
+
+Symbol SymbolTable::look_up_local(std::string_view name) const {
+    auto iter = symbols.find(name);
+    return iter == symbols.end() ? nullptr : iter->second;
 }
 
 bool PseudoType::is_struct_by_default() const {

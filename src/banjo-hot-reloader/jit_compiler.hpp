@@ -9,6 +9,8 @@
 #include "banjo/source/file_module_loader.hpp"
 #include "banjo/source/module_manager.hpp"
 
+#include <filesystem>
+
 namespace banjo {
 
 namespace hot_reloader {
@@ -19,19 +21,20 @@ private:
     lang::Config &config;
     AddrTable &addr_table;
     target::Target *target;
-    ir::Module ir_module;
+    ir::Module ssa_module;
 
     lang::ReportManager report_manager;
     lang::FileModuleLoader module_loader;
     lang::ModuleManager module_manager;
+    lang::sir::Unit sir_unit;
 
 public:
     JITCompiler(lang::Config &config, AddrTable &addr_table);
     ~JITCompiler();
 
     bool build_ir();
+    lang::sir::Module *find_mod(const std::filesystem::path &absolute_path);
     BinModule compile_func(const std::string &name);
-    lang::ModuleManager &get_module_manager() { return module_manager; }
 };
 
 } // namespace hot_reloader

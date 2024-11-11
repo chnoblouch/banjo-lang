@@ -67,7 +67,8 @@ Decl Cloner::clone_decl(const Decl &decl) {
 }
 
 FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
-    assert(func_def.specializations.empty());
+    ASSERT(func_def.specializations.empty());
+    ASSERT(!func_def.parent_specialization);
 
     return mod.create_decl(FuncDef{
         .ast_node = func_def.ast_node,
@@ -77,6 +78,7 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
         .attrs = clone_attrs(func_def.attrs),
         .generic_params = func_def.generic_params,
         .specializations = {},
+        .parent_specialization = nullptr,
     });
 }
 
@@ -107,8 +109,9 @@ ConstDef *Cloner::clone_const_def(const ConstDef &const_def) {
 }
 
 StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
-    assert(struct_def.fields.empty());
-    assert(struct_def.specializations.empty());
+    ASSERT(struct_def.fields.empty());
+    ASSERT(struct_def.specializations.empty());
+    ASSERT(!struct_def.parent_specialization);
 
     return mod.create_decl(StructDef{
         .ast_node = struct_def.ast_node,
@@ -118,6 +121,7 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
         .impls = clone_expr_list(struct_def.impls),
         .generic_params = struct_def.generic_params,
         .specializations = {},
+        .parent_specialization = nullptr,
     });
 }
 

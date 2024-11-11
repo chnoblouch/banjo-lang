@@ -67,7 +67,7 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
 
     sir::Attributes *attrs = sir_func.attrs;
 
-    std::string ssa_name = NameMangling::get_link_name(ctx, sir_func);
+    std::string ssa_name = NameMangling::get_link_name(sir_func);
     std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
     ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
 

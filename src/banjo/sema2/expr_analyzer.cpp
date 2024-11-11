@@ -276,6 +276,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         .attrs = nullptr,
         .generic_params = {},
         .specializations = {},
+        .parent_specialization = nullptr,
     });
 
     generated_func->block.symbol_table->parent = analyzer.get_scope().decl.get_symbol_table();

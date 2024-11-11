@@ -1,7 +1,8 @@
 #ifndef TARGET_PROCESS_H
 #define TARGET_PROCESS_H
 
-#include "banjo/emit/binary_module.hpp"
+#include <cstdint>
+#include <optional>
 #include <string>
 
 typedef unsigned long DWORD;
@@ -14,33 +15,41 @@ namespace hot_reloader {
 class TargetProcess {
 
 public:
-    struct LoadedFunc {
-        void *text_addr;
-        std::size_t text_size;
-        void *data_addr;
-        std::size_t data_size;
+    typedef std::uint64_t Address;
+    typedef std::uint64_t Size;
+
+    enum class State {
+        INITIALIZING,
+        RUNNING,
+        EXITED,
+    };
+
+    enum class MemoryProtection {
+        READ_WRITE,
+        READ_WRITE_EXECUTE,
     };
 
 private:
     HANDLE process;
     HANDLE thread;
+    State state;
 
 public:
-    TargetProcess(HANDLE process, HANDLE thread);
-
-    HANDLE get_process() { return process; }
-    HANDLE get_thread() { return thread; }
-
-    void init_symbols();
-    void *get_symbol_addr(const std::string &name);
-    void *read_func_ptr(unsigned index);
-    LoadedFunc load_func(BinModule &module_);
-    void close();
+    static std::optional<TargetProcess> spawn(std::string executable);
 
 private:
-    void *alloc_section(std::size_t size, DWORD protection);
-    void resolve_symbol_use(BinModule &module_, const LoadedFunc &loaded_func, const BinSymbolUse &use);
-    void write_section(void *address, const WriteBuffer &buffer);
+    TargetProcess(HANDLE process, HANDLE thread);
+
+public:
+    State get_state() { return state; }
+    bool is_running() { return state == State::RUNNING; }
+    bool is_exited() { return state == State::EXITED; }
+
+    void poll();
+    std::optional<Address> get_symbol_addr(const std::string &name);
+    std::optional<Address> allocate_memory(Size size, MemoryProtection protection);
+    bool write_memory(Address address, const void *data, Size size);
+    void close();
 };
 
 } // namespace hot_reloader

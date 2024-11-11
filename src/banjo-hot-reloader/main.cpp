@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
     lang::ParsedArgs args = arg_parser.parse(argc, argv);
 
     hot_reloader::HotReloader hot_reloader;
-    hot_reloader.load(args.values["executable"]);
-    hot_reloader.run(args.values["dir"]);
+    hot_reloader.run(args.values["executable"], args.values["dir"]);
     return 0;
 }

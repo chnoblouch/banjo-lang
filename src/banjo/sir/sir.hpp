@@ -398,8 +398,10 @@ public:
     std::string get_name() const;
     Symbol get_parent() const;
     Expr get_type();
-    Symbol resolve();
+    Symbol resolve() const;
+    const SymbolTable *get_symbol_table() const;
     SymbolTable *get_symbol_table();
+    const DeclBlock *get_decl_block() const;
     DeclBlock *get_decl_block();
 };
 
@@ -487,7 +489,8 @@ struct SymbolTable {
     SymbolTable *parent;
     std::unordered_map<std::string_view, Symbol> symbols;
 
-    Symbol look_up(std::string_view name);
+    Symbol look_up(std::string_view name) const;
+    Symbol look_up_local(std::string_view name) const;
 };
 
 struct OverloadSet {
@@ -1050,6 +1053,7 @@ struct FuncDef {
     Attributes *attrs = nullptr;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
+    Specialization<FuncDef> *parent_specialization;
 
     Module &find_mod() const;
     bool is_generic() const { return !generic_params.empty(); }
@@ -1087,6 +1091,7 @@ struct StructDef {
     std::vector<Expr> impls;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
+    Specialization<StructDef> *parent_specialization;
 
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;

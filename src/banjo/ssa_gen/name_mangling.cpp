@@ -1,9 +1,6 @@
 #include "name_mangling.hpp"
 
-#include <cstdlib>
-#include <ranges>
 #include <string>
-
 
 namespace banjo {
 
@@ -11,13 +8,15 @@ namespace lang {
 
 namespace NameMangling {
 
-std::string get_link_name(SSAGeneratorContext &ctx, const sir::FuncDef &func) {
+static void mangle_symbol_name(std::string &string, sir::Symbol symbol);
+
+std::string get_link_name(const sir::FuncDef &func) {
     if (func.attrs && func.attrs->link_name) {
         return *func.attrs->link_name;
     } else if (func.is_main() || (func.attrs && (func.attrs->exposed || func.attrs->dllexport))) {
         return func.ident.value;
     } else {
-        return mangle_func_name(ctx, func);
+        return mangle_func_name(func);
     }
 }
 
@@ -51,45 +50,84 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
         }
     } else if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
         string += 's';
+        mangle_symbol_name(string, symbol_expr->symbol);
+    } else if (auto pointer_type = type.match<sir::PointerType>()) {
+        string += 'a';
+        mangle_type(string, pointer_type->base_type);
+    } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
+        string += 't';
+        string += std::to_string(tuple_type->exprs.size());
+
+        for (sir::Expr type : tuple_type->exprs) {
+            mangle_type(string, type);
+        }
     }
 }
 
-std::string mangle_func_name(SSAGeneratorContext &ctx, const sir::FuncDef &func) {
-    std::string string = "bnj_";
+static void mangle_symbol_name(std::string &string, sir::Symbol symbol) {
+    if (!symbol) {
+        return;
+    }
 
-    for (const SSAGeneratorContext::DeclContext &decl_ctx : std::ranges::views::reverse(ctx.get_decl_contexts())) {
-        if (decl_ctx.sir_mod) {
-            for (const std::string &path_component : decl_ctx.sir_mod->path.get_path()) {
-                string += 'm';
-                string += std::to_string(path_component.size());
-                string += path_component;
-            }
-        } else if (decl_ctx.sir_struct_def) {
-            string += 's';
-            string += std::to_string(decl_ctx.sir_struct_def->ident.value.size());
-            string += decl_ctx.sir_struct_def->ident.value;
+    mangle_symbol_name(string, symbol.get_parent());
 
-            if (decl_ctx.sir_generic_args) {
-                string += 'g';
+    if (auto mod = symbol.match<sir::Module>()) {
+        for (const std::string &path_component : mod->path.get_path()) {
+            string += 'm';
+            string += std::to_string(path_component.size());
+            string += path_component;
+        }
+    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
+        string += 's';
+        string += std::to_string(struct_def->ident.value.size());
+        string += struct_def->ident.value;
 
-                for (const sir::Expr &generic_arg : *decl_ctx.sir_generic_args) {
-                    mangle_type(string, generic_arg);
-                }
+        if (struct_def->parent_specialization) {
+            string += 'g';
+
+            for (const sir::Expr &generic_arg : struct_def->parent_specialization->args) {
+                mangle_type(string, generic_arg);
             }
         }
     }
+}
+
+std::string mangle_func_name(const sir::FuncDef &func) {
+    std::string string = "bnj_";
+
+    mangle_symbol_name(string, func.parent);
 
     string += 'n';
     string += std::to_string(func.ident.value.size());
     string += func.ident.value;
-    string += '_';
+
+    if (func.parent_specialization) {
+        string += 'g';
+
+        for (const sir::Expr &generic_arg : func.parent_specialization->args) {
+            mangle_type(string, generic_arg);
+        }
+    }
+
+    string += 'p';
 
     for (const sir::Param &param : func.type.params) {
         mangle_type(string, param.type);
     }
 
-    // FIXME: temporary solution until I've got name mangling figured out.
-    string += std::to_string(std::rand());
+    if (func.parent) {
+        const sir::SymbolTable &parent_symbol_table = *func.parent.get_symbol_table();
+        sir::Symbol symbol = parent_symbol_table.look_up_local(func.ident.value);
+
+        if (auto overload_set = symbol.match<sir::OverloadSet>()) {
+            for (unsigned i = 0; i < overload_set->func_defs.size(); i++) {
+                if (&func == overload_set->func_defs[i]) {
+                    string += "_overload" + std::to_string(i);
+                    break;
+                }
+            }
+        }
+    }
 
     return string;
 }

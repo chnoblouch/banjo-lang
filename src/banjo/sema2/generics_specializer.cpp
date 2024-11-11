@@ -53,12 +53,15 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
         .block = cloner.clone_block(generic_func_def.block),
         .generic_params = {},
         .specializations = {},
+        .parent_specialization = nullptr,
     });
 
     generic_func_def.specializations.push_back(sir::Specialization<sir::FuncDef>{
         .args = cloner.clone_expr_list(args),
         .def = clone,
     });
+
+    clone->parent_specialization = &generic_func_def.specializations.back();
 
     sir::Module *prev_mod = analyzer.cur_sir_mod;
 
@@ -94,12 +97,15 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
         .block = cloner.clone_decl_block(generic_struct_def.block),
         .generic_params = {},
         .specializations = {},
+        .parent_specialization = nullptr,
     });
 
     generic_struct_def.specializations.push_back(sir::Specialization<sir::StructDef>{
         .args = cloner.clone_expr_list(args),
         .def = clone,
     });
+
+    clone->parent_specialization = &generic_struct_def.specializations.back();
 
     sir::Module *prev_mod = analyzer.cur_sir_mod;
 

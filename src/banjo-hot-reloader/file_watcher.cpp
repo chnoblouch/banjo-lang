@@ -1,9 +1,10 @@
-// clang-format off
-#include <windows.h>
 #include "file_watcher.hpp"
-// clang-format on
 
 #include "diagnostics.hpp"
+
+#include <utility>
+
+#include <windows.h>
 
 namespace banjo {
 
@@ -12,7 +13,7 @@ namespace hot_reloader {
 constexpr unsigned MIN_TIME_BETEWEEN_CHANGES_MS = 500;
 
 FileWatcher::FileWatcher(std::filesystem::path path, std::function<void(std::filesystem::path file_path)> on_changed)
-  : path(path),
+  : path(std::move(path)),
     on_changed(on_changed),
     thread([this]() { run(); }) {}
 
@@ -20,7 +21,7 @@ void FileWatcher::run() {
     std::string canonical_path = std::filesystem::canonical(path).string();
     Diagnostics::log("watching directory '" + canonical_path + "'");
 
-    dir_handle = CreateFile(
+    HANDLE dir_handle = CreateFile(
         canonical_path.c_str(),
         FILE_LIST_DIRECTORY,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -30,8 +31,11 @@ void FileWatcher::run() {
         NULL
     );
 
+    OVERLAPPED overlapped;
     ZeroMemory(&overlapped, sizeof(OVERLAPPED));
     overlapped.hEvent = CreateEvent(NULL, FALSE, 0, NULL);
+
+    char change_buffer[2048];
 
     BOOL result = ReadDirectoryChangesW(
         dir_handle,
@@ -48,9 +52,9 @@ void FileWatcher::run() {
         Diagnostics::abort("failed to create file watcher");
     }
 
-    running = true;
+    running.store(true);
 
-    while (running) {
+    while (running.load()) {
         DWORD status = WaitForSingleObject(overlapped.hEvent, 25);
         if (status != WAIT_OBJECT_0) {
             continue;
@@ -94,7 +98,7 @@ void FileWatcher::run() {
     }
 }
 
-void FileWatcher::handle_file_change(std::string file_name, std::vector<std::filesystem::path> &changed_files) {
+void FileWatcher::handle_file_change(const std::string &file_name, std::vector<std::filesystem::path> &changed_files) {
     TimePoint now = Clock::now();
 
     if (last_change_times.contains(file_name)) {
@@ -112,7 +116,7 @@ void FileWatcher::handle_file_change(std::string file_name, std::vector<std::fil
 }
 
 void FileWatcher::stop() {
-    running = false;
+    running.store(false);
     thread.join();
 }
 

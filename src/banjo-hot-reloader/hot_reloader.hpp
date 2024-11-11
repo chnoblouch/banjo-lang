@@ -1,10 +1,11 @@
 #ifndef HOT_RELOADER_H
 #define HOT_RELOADER_H
 
+#include "banjo/emit/binary_module.hpp"
 #include "banjo/ir/addr_table.hpp"
+#include "banjo/sir/sir.hpp"
 #include "target_process.hpp"
 
-#include <cstdlib>
 #include <filesystem>
 #include <string>
 
@@ -15,25 +16,29 @@ namespace hot_reloader {
 class HotReloader {
 
 private:
-    TargetProcess process{NULL, NULL};
-    bool running = true;
-    bool thread_created = false;
-    void *addr_table_ptr;
+    struct LoadedFunc {
+        TargetProcess::Address text_addr;
+        TargetProcess::Size text_size;
+        TargetProcess::Address data_addr;
+        TargetProcess::Size data_size;
+    };
+
+    std::optional<TargetProcess> process;
+    TargetProcess::Address addr_table_ptr;
     AddrTable addr_table;
 
 public:
     HotReloader();
-    void load(const std::string &executable);
-    void run(const std::filesystem::path &src_path);
+    void run(const std::string &executable, const std::filesystem::path &src_path);
 
 private:
-    void process_event(void *event);
-    void process_create_thread();
-    void load_addr_table_ptr();
     void reload_file(const std::filesystem::path &file_path);
-    void update_func_addr(unsigned index, void *new_addr, const std::string &name);
-    void free_func();
-    void terminate();
+    void collect_funcs(lang::sir::DeclBlock &block, std::vector<lang::sir::FuncDef *> &out_funcs);
+    LoadedFunc load_func(BinModule &mod);
+    TargetProcess::Address alloc_section(TargetProcess::Size size, TargetProcess::MemoryProtection protection);
+    void resolve_symbol_use(BinModule &mod, const LoadedFunc &loaded_func, const BinSymbolUse &use);
+    void write_section(TargetProcess::Address address, const WriteBuffer &buffer);
+    void update_func_addr(lang::sir::FuncDef &func_def, unsigned index, TargetProcess::Address new_addr);
 };
 
 } // namespace hot_reloader

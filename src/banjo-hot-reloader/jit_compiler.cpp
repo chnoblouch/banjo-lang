@@ -4,7 +4,7 @@
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/ir/addr_table.hpp"
-#include "banjo/ir_builder/root_ir_builder.hpp"
+#include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/passes/addr_table_pass.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
@@ -35,7 +35,7 @@ bool JITCompiler::build_ir() {
     module_manager.clear();
     module_manager.load_all();
 
-    lang::sir::Unit sir_unit = lang::SIRGenerator().generate(module_manager.get_module_list());
+    sir_unit = lang::SIRGenerator().generate(module_manager.get_module_list());
     lang::sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
 
     if (!report_manager.is_valid()) {
@@ -48,29 +48,39 @@ bool JITCompiler::build_ir() {
         return false;
     }
 
-    ir_module = ir_builder::RootIRBuilder(module_manager.get_module_list(), target).build();
-    passes::AddrTablePass(target, addr_table).run(ir_module);
+    ssa_module = lang::SSAGenerator(sir_unit, target).generate();
+    passes::AddrTablePass(target, addr_table).run(ssa_module);
 
     return true;
 }
 
+lang::sir::Module *JITCompiler::find_mod(const std::filesystem::path &absolute_path) {
+    for (lang::ASTModule *ast_mod : module_manager.get_module_list()) {
+        if (std::filesystem::absolute(ast_mod->get_file_path()) == absolute_path) {
+            return sir_unit.mods_by_path[ast_mod->get_path()];
+        }
+    }
+
+    return nullptr;
+}
+
 BinModule JITCompiler::compile_func(const std::string &name) {
     ir::Module partial_ir_module;
-    partial_ir_module.add(ir_module.get_function(name));
+    partial_ir_module.add(ssa_module.get_function(name));
 
-    for (const ir::Global &global : ir_module.get_globals()) {
+    for (const ir::Global &global : ssa_module.get_globals()) {
         partial_ir_module.add(global);
     }
 
-    for (const ir::FunctionDecl &external_func : ir_module.get_external_functions()) {
+    for (const ir::FunctionDecl &external_func : ssa_module.get_external_functions()) {
         partial_ir_module.add(external_func);
     }
 
-    for (const ir::GlobalDecl &external_global : ir_module.get_external_globals()) {
+    for (const ir::GlobalDecl &external_global : ssa_module.get_external_globals()) {
         partial_ir_module.add(external_global);
     }
 
-    for (ir::Structure *struct_ : ir_module.get_structures()) {
+    for (ir::Structure *struct_ : ssa_module.get_structures()) {
         partial_ir_module.add(struct_);
     }
 
