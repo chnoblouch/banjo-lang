@@ -2,6 +2,8 @@
 
 A small low-level programming language I use for personal projects. The language and toolchain are documented [here](https://chnoblouch.github.io/banjo-lang/). The name still needs some workshopping.
 
+![Some Banjo source code in VSCode](docs/example.png?)
+
 ## Features
 
 - Compiling to a binary executable
