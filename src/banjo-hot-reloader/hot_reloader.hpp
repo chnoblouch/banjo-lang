@@ -25,7 +25,7 @@ private:
 
     std::optional<TargetProcess> process;
     TargetProcess::Address addr_table_ptr;
-    AddrTable addr_table;
+    ir::AddrTable addr_table;
 
 public:
     HotReloader();

@@ -2,6 +2,7 @@
 #define WRITE_BUFFER_H
 
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -14,6 +15,7 @@ private:
 
 public:
     const std::vector<std::uint8_t> &get_data() const { return data; }
+    std::vector<std::uint8_t> move_data() { return std::move(data); }
     std::size_t get_size() const { return data.size(); }
 
     void write_u8(std::uint8_t u8);

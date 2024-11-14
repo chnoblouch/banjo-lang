@@ -4,19 +4,19 @@
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/ir/addr_table.hpp"
-#include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/passes/addr_table_pass.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
+#include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/target/x86_64/x86_64_encoder.hpp"
 
 namespace banjo {
 
 namespace hot_reloader {
 
-JITCompiler::JITCompiler(lang::Config &config, AddrTable &addr_table)
+JITCompiler::JITCompiler(lang::Config &config, ir::AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
     target(target::Target::create(config.target, target::CodeModel::LARGE)),
@@ -49,7 +49,8 @@ bool JITCompiler::build_ir() {
     }
 
     ssa_module = lang::SSAGenerator(sir_unit, target).generate();
-    passes::AddrTablePass(target, addr_table).run(ssa_module);
+    ssa_module.set_addr_table(addr_table);
+    passes::AddrTablePass(target).run(ssa_module);
 
     return true;
 }

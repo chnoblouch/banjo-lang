@@ -1,6 +1,7 @@
 #ifndef IR_MODULE_H
 #define IR_MODULE_H
 
+#include "banjo/ir/addr_table.hpp"
 #include "banjo/ir/function.hpp"
 #include "banjo/ir/function_decl.hpp"
 #include "banjo/ir/global.hpp"
@@ -21,6 +22,7 @@ private:
     std::vector<FunctionDecl> external_functions;
     std::vector<GlobalDecl> external_globals;
     std::vector<std::string> dll_exports;
+    std::optional<AddrTable> addr_table;
 
     std::vector<std::vector<ir::Type>> tuple_types;
 
@@ -39,6 +41,7 @@ public:
     std::vector<FunctionDecl> &get_external_functions() { return external_functions; }
     std::vector<GlobalDecl> &get_external_globals() { return external_globals; }
     std::vector<std::string> &get_dll_exports() { return dll_exports; }
+    std::optional<AddrTable> &get_addr_table() { return addr_table; }
 
     Function *get_function(const std::string &name);
     Structure *get_structure(const std::string &name);
@@ -55,6 +58,7 @@ public:
     void add(FunctionDecl external_function) { external_functions.push_back(std::move(external_function)); }
     void add(GlobalDecl external_global) { external_globals.push_back(std::move(external_global)); }
     void add_dll_export(std::string dll_export) { dll_exports.push_back(std::move(dll_export)); }
+    void set_addr_table(AddrTable addr_table) { this->addr_table = std::move(addr_table); }
 
     void forget_pointers();
 };

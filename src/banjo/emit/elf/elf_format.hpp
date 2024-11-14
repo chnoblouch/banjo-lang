@@ -2,26 +2,42 @@
 #define ELF_FORMAT_H
 
 #include <cstdint>
-#include <string>
 #include <variant>
 #include <vector>
 
 namespace banjo {
 
 namespace ELFSectionType {
-enum : std::uint32_t { PROGBITS = 1, SYMTAB = 2, STRTAB = 3, RELA = 4 };
+enum : std::uint32_t {
+    PROGBITS = 1,
+    SYMTAB = 2,
+    STRTAB = 3,
+    RELA = 4,
+};
 }
 
 namespace ELFSectionFlags {
-enum : std::uint64_t { WRITE = 0x1, ALLOC = 0x2, EXECINSTR = 0x4 };
+enum : std::uint64_t {
+    WRITE = 0x1,
+    ALLOC = 0x2,
+    EXECINSTR = 0x4,
+};
 }
 
 namespace ELFSymbolBinding {
-enum : std::uint8_t { LOCAL = 0, GLOBAL = 1 };
+enum : std::uint8_t {
+    LOCAL = 0,
+    GLOBAL = 1,
+};
 };
 
 namespace ELFSymbolType {
-enum : std::uint8_t { NOTYPE = 0, OBJECT = 1, FUNC = 2, SECTION = 3 };
+enum : std::uint8_t {
+    NOTYPE = 0,
+    OBJECT = 1,
+    FUNC = 2,
+    SECTION = 3,
+};
 };
 
 struct ELFSymbol {
@@ -34,7 +50,12 @@ struct ELFSymbol {
 };
 
 namespace ELFRelocationType {
-enum : std::uint32_t { X86_64_64 = 1, X86_64_PC32 = 2, X86_64_GOT32 = 3, X86_64_PLT32 = 4 };
+enum : std::uint32_t {
+    X86_64_64 = 1,
+    X86_64_PC32 = 2,
+    X86_64_GOT32 = 3,
+    X86_64_PLT32 = 4,
+};
 }
 
 struct ELFRelocation {
@@ -61,7 +82,10 @@ struct ELFSection {
 };
 
 namespace ELFMachine {
-enum : std::uint16_t { X86_64 = 62, AARCH64 = 183 };
+enum : std::uint16_t {
+    X86_64 = 62,
+    AARCH64 = 183,
+};
 };
 
 struct ELFFile {

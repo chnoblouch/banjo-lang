@@ -22,6 +22,24 @@ mcode::Module IRLowerer::lower_module(ir::Module &module_) {
     this->module_ = &module_;
     init_module(module_);
 
+    if (module_.get_addr_table()) {
+        ir::AddrTable &addr_table = *module_.get_addr_table();
+
+        mcode::AddrTable m_addr_table{
+            .entries = std::vector<std::string>(addr_table.get_size()),
+        };
+
+        for (const auto &[symbol, index] : addr_table) {
+            if (m_addr_table.entries.size() <= index) {
+                m_addr_table.entries.resize(index + 1);
+            }
+
+            m_addr_table.entries[index] = symbol;
+        }
+
+        machine_module.set_addr_table(m_addr_table);
+    }
+
     lower_funcs();
     lower_globals();
     lower_external_funcs();

@@ -1,10 +1,12 @@
 #include "pe_builder.hpp"
+#include "banjo/emit/pe/pe_format.hpp"
+#include <cstring>
 
 namespace banjo {
 
 PEFile PEBuilder::build(BinModule module_) {
-    create_sections();
-    create_extra_symbols();
+    create_sections(module_);
+    create_section_symbols();
 
     for (const BinSymbolDef &def : module_.symbol_defs) {
         process_x86_64_symbol_def(def);
@@ -15,15 +17,12 @@ PEFile PEBuilder::build(BinModule module_) {
     }
 
     create_unwind_info(module_.unwind_info);
-
-    file.sections[TEXT_SECTION_INDEX].data = std::move(module_.text.get_data());
-    file.sections[DATA_SECTION_INDEX].data = std::move(module_.data.get_data());
-    file.sections[DRECTVE_SECTION_INDEX].data = std::move(module_.drectve_data->get_data());
+    move_section_data(module_);
 
     return file;
 }
 
-void PEBuilder::create_sections() {
+void PEBuilder::create_sections(BinModule &module_) {
     using namespace PESectionFlags;
 
     file.sections = {
@@ -31,71 +30,76 @@ void PEBuilder::create_sections() {
             .name = {'.', 't', 'e', 'x', 't', '\0', '\0', '\0'},
             .data = {},
             .relocations = {},
-            .flags = CODE | ALIGN_16BYTES | EXECUTE | READ
+            .flags = CODE | ALIGN_16BYTES | EXECUTE | READ,
         },
         PESection{
             .name = {'.', 'd', 'a', 't', 'a', '\0', '\0', '\0'},
             .data = {},
             .relocations = {},
-            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ | WRITE
+            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ | WRITE,
         },
         PESection{
             .name = {'.', 'p', 'd', 'a', 't', 'a', '\0', '\0'},
             .data = {},
             .relocations = {},
-            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ
+            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ,
         },
         PESection{
             .name = {'.', 'x', 'd', 'a', 't', 'a', '\0', '\0'},
             .data = {},
             .relocations = {},
-            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ
+            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ,
         },
-        PESection{
+    };
+
+    if (module_.drectve_data) {
+        drectve_section_index = file.sections.size();
+
+        file.sections.push_back(PESection{
             .name = {'.', 'd', 'r', 'e', 'c', 't', 'v', 'e'},
             .data = {},
             .relocations = {},
-            .flags = LNK_INFO | LNK_REMOVE | ALIGN_1BYTES
-        }
-    };
+            .flags = LNK_INFO | LNK_REMOVE | ALIGN_1BYTES,
+        });
+    }
+
+    if (module_.bnjatbl_data) {
+        bnjatbl_section_index = file.sections.size();
+
+        file.sections.push_back(PESection{
+            .name = {'.', 'b', 'n', 'j', 'a', 't', 'b', 'l'},
+            .data = {},
+            .relocations = {},
+            .flags = INITIALIZED_DATA | ALIGN_16BYTES | READ | WRITE,
+        });
+    }
 }
 
-void PEBuilder::create_extra_symbols() {
-    file.add_symbol(PESymbolBlueprint{
-        .name = ".text",
-        .value = 0,
-        .section_number = TEXT_SECTION_NUMBER,
-        .storage_class = PEStorageClass::STATIC
-    });
+void PEBuilder::create_section_symbols() {
+    for (unsigned i = 0; i < file.sections.size(); i++) {
+        PESection &section = file.sections[i];
 
-    file.add_symbol(PESymbolBlueprint{
-        .name = ".data",
-        .value = 0,
-        .section_number = DATA_SECTION_NUMBER,
-        .storage_class = PEStorageClass::STATIC
-    });
+        std::string name(8, '\0');
+        std::memcpy(name.data(), section.name, 8);
 
-    file.add_symbol(PESymbolBlueprint{
-        .name = ".pdata",
-        .value = 0,
-        .section_number = PDATA_SECTION_NUMBER,
-        .storage_class = PEStorageClass::STATIC
-    });
+        file.add_symbol({
+            .name = name,
+            .value = 0,
+            .section_number = get_section_number(i),
+            .storage_class = PEStorageClass::STATIC,
+        });
+    }
 
-    file.add_symbol(PESymbolBlueprint{
-        .name = ".xdata",
-        .value = 0,
-        .section_number = XDATA_SECTION_NUMBER,
-        .storage_class = PEStorageClass::STATIC
-    });
+    num_section_symbols = file.sections.size();
 }
 
 void PEBuilder::process_x86_64_symbol_def(const BinSymbolDef &def) {
     std::int16_t section_number;
     switch (def.kind) {
-        case BinSymbolKind::TEXT_FUNC: section_number = TEXT_SECTION_NUMBER; break;
-        case BinSymbolKind::TEXT_LABEL: section_number = TEXT_SECTION_NUMBER; break;
-        case BinSymbolKind::DATA_LABEL: section_number = DATA_SECTION_NUMBER; break;
+        case BinSymbolKind::TEXT_FUNC: section_number = get_section_number(TEXT_SECTION_INDEX); break;
+        case BinSymbolKind::TEXT_LABEL: section_number = get_section_number(TEXT_SECTION_INDEX); break;
+        case BinSymbolKind::DATA_LABEL: section_number = get_section_number(DATA_SECTION_INDEX); break;
+        case BinSymbolKind::ADDRESS_TABLE: section_number = get_section_number(bnjatbl_section_index); break;
         case BinSymbolKind::UNKNOWN: section_number = 0; break;
     }
 
@@ -117,13 +121,13 @@ void PEBuilder::process_x86_64_symbol_use(const BinSymbolUse &use, BinModule &mo
 
             file.sections[TEXT_SECTION_INDEX].relocations.push_back(PERelocation{
                 .virt_addr = use.address,
-                .symbol_index = DATA_SYMBOL_INDEX,
+                .symbol_index = get_section_symbol_index(DATA_SECTION_INDEX),
                 .type = PERelocationType::AMD64_REL32
             });
         } else {
             file.sections[TEXT_SECTION_INDEX].relocations.push_back(PERelocation{
                 .virt_addr = use.address,
-                .symbol_index = use.symbol_index + EXTRA_SYMBOLS,
+                .symbol_index = use.symbol_index + num_section_symbols,
                 .type = PERelocationType::AMD64_REL32
             });
         }
@@ -133,7 +137,16 @@ void PEBuilder::process_x86_64_symbol_use(const BinSymbolUse &use, BinModule &mo
 
         file.sections[DATA_SECTION_INDEX].relocations.push_back(PERelocation{
             .virt_addr = use.address,
-            .symbol_index = use.symbol_index + EXTRA_SYMBOLS,
+            .symbol_index = use.symbol_index + num_section_symbols,
+            .type = PERelocationType::AMD64_ADDR64
+        });
+    } else if (use.section == BinSectionKind::BNJATBL) {
+        module_.bnjatbl_data->seek(use.address);
+        module_.bnjatbl_data->write_i64(0);
+
+        file.sections[bnjatbl_section_index].relocations.push_back(PERelocation{
+            .virt_addr = use.address,
+            .symbol_index = use.symbol_index + num_section_symbols,
             .type = PERelocationType::AMD64_ADDR64
         });
     }
@@ -150,7 +163,7 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
         // function start address
         pdata.relocations.push_back(PERelocation{
             .virt_addr = (std::uint32_t)pdata_buf.get_size(),
-            .symbol_index = TEXT_SYMBOL_INDEX,
+            .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
             .type = PERelocationType::AMD64_ADDR32NB
         });
         pdata_buf.write_i32(frame_info.start_addr);
@@ -158,7 +171,7 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
         // function end address
         pdata.relocations.push_back(PERelocation{
             .virt_addr = (std::uint32_t)pdata_buf.get_size(),
-            .symbol_index = TEXT_SYMBOL_INDEX,
+            .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
             .type = PERelocationType::AMD64_ADDR32NB
         });
         pdata_buf.write_i32(frame_info.end_addr);
@@ -166,7 +179,7 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
         // unwind info address
         pdata.relocations.push_back(PERelocation{
             .virt_addr = (std::uint32_t)pdata_buf.get_size(),
-            .symbol_index = XDATA_SECTION_INDEX,
+            .symbol_index = get_section_symbol_index(XDATA_SECTION_INDEX),
             .type = PERelocationType::AMD64_ADDR32NB
         });
         pdata_buf.write_i32(xdata_buf.get_size());
@@ -212,12 +225,34 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
         xdata_buf.seek(pos);
     }
 
-    pdata.data = std::move(pdata_buf.get_data());
-    xdata.data = std::move(xdata_buf.get_data());
+    pdata.data = pdata_buf.move_data();
+    xdata.data = xdata_buf.move_data();
 }
 
 void PEBuilder::create_debug_info() {
     // structure taken from: https://lists.llvm.org/pipermail/llvm-dev/2015-October/091847.html
+}
+
+void PEBuilder::move_section_data(BinModule &module_) {
+    file.sections[TEXT_SECTION_INDEX].data = module_.text.move_data();
+    file.sections[DATA_SECTION_INDEX].data = module_.data.move_data();
+
+    if (module_.drectve_data) {
+        file.sections[drectve_section_index].data = module_.drectve_data->move_data();
+    }
+
+    if (module_.bnjatbl_data) {
+        file.sections[bnjatbl_section_index].data = module_.bnjatbl_data->move_data();
+    }
+}
+
+std::int16_t PEBuilder::get_section_number(unsigned section_index) {
+    // The section number is a one-based index into the section table.
+    return static_cast<std::int16_t>(section_index) + 1;
+}
+
+std::uint32_t PEBuilder::get_section_symbol_index(unsigned section_index) {
+    return static_cast<std::uint32_t>(section_index);
 }
 
 } // namespace banjo

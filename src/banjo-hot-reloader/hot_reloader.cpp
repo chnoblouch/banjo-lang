@@ -33,13 +33,13 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
         process->poll();
     }
 
-    std::optional<TargetProcess::Address> pointer = process->get_symbol_addr("addr_table");
+    std::optional<TargetProcess::Address> pointer = process->find_section(".bnjatbl");
 
     if (pointer) {
         addr_table_ptr = *pointer;
-        Diagnostics::log("pointer to address table loaded");
+        Diagnostics::log("found address table in target process");
     } else {
-        Diagnostics::abort("failed to load pointer to address table");
+        Diagnostics::abort("failed to find address table in target process");
     }
 
     FileWatcher watcher(src_path, std::bind(&HotReloader::reload_file, this, std::placeholders::_1));
@@ -147,13 +147,7 @@ void HotReloader::resolve_symbol_use(BinModule &mod, const LoadedFunc &loaded_fu
     TargetProcess::Address def_addr = 0;
 
     if (def.name == "addr_table") {
-        std::optional<TargetProcess::Address> addr = process->get_symbol_addr("addr_table");
-
-        if (addr) {
-            def_addr = *addr;
-        } else {
-            Diagnostics::abort("failed to load pointer to address table");
-        }
+        def_addr = addr_table_ptr;
     } else if (def.kind == BinSymbolKind::DATA_LABEL) {
         def_addr = loaded_func.data_addr + def.offset;
     }

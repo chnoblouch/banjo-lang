@@ -262,7 +262,7 @@ private:
 
     void relax_jmp(std::uint32_t slice_index);
     void relax_jcc(SymbolUse &use, std::uint32_t slice_index);
-    std::int32_t compute_branch_displacement(DataSlice &branch_slice);
+    std::int32_t compute_branch_displacement(SectionSlice &branch_slice);
 
     bool fits_in_i8(std::int64_t value);
     bool fits_in_32_bits(Immediate imm);

@@ -14,7 +14,11 @@ constexpr unsigned MAX_RELAXATION_PASSES = 4;
 
 BinModule X8664Encoder::encode(mcode::Module &machine_module) {
     for (const std::string &external : machine_module.get_external_symbols()) {
-        add_symbol_def(SymbolDef{.name = external, .kind = BinSymbolKind::UNKNOWN, .global = true});
+        add_symbol_def(SymbolDef{
+            .name = external,
+            .kind = BinSymbolKind::UNKNOWN,
+            .global = true,
+        });
     }
 
     std::uint32_t first_text_symbol_index = defs.size();
@@ -31,46 +35,17 @@ BinModule X8664Encoder::encode(mcode::Module &machine_module) {
         add_label_symbol("");
     }
 
-    data_slices.push_back(DataSlice{});
-
-    for (const mcode::Global &global : machine_module.get_globals()) {
-        add_data_symbol(global.name, machine_module);
-
-        if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
-            switch (global.size) {
-                case 1: data_slices.back().buffer.write_u8(value->to_bits()); break;
-                case 2: data_slices.back().buffer.write_u16(value->to_bits()); break;
-                case 4: data_slices.back().buffer.write_u32(value->to_bits()); break;
-                case 8: data_slices.back().buffer.write_u64(value->to_bits()); break;
-                default: ASSERT_UNREACHABLE;
-            }
-        } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
-            switch (global.size) {
-                case 4: data_slices.back().buffer.write_f32(*value); break;
-                case 8: data_slices.back().buffer.write_f64(*value); break;
-                default: ASSERT_UNREACHABLE;
-            }
-        } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
-            data_slices.back().buffer.write_data(value->data(), value->size());
-        } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
-            data_slices.back().buffer.write_data(value->data(), value->size());
-        } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
-            add_data_symbol_use(value->name);
-
-            // FIXME: sizes other than 64 bits?
-            data_slices.back().buffer.write_i64(0);
-        } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
-            data_slices.back().buffer.write_zeroes(global.size);
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    }
+    generate_data_slices(machine_module);
+    generate_addr_table_slices(machine_module);
 
     std::uint32_t symbol_index = first_text_symbol_index;
     create_text_slice();
 
     for (mcode::Function *func : machine_module.get_functions()) {
-        UnwindInfo frame_info{.start_symbol_index = symbol_index, .alloca_size = func->get_unwind_info().alloc_size};
+        UnwindInfo frame_info{
+            .start_symbol_index = symbol_index,
+            .alloca_size = func->get_unwind_info().alloc_size,
+        };
 
         attach_symbol_def(symbol_index++);
 
@@ -104,7 +79,7 @@ void X8664Encoder::apply_relaxation() {
         continue_ = false;
 
         for (unsigned i = 0; i < text_slices.size(); i++) {
-            DataSlice &slice = text_slices[i];
+            SectionSlice &slice = text_slices[i];
             if (!slice.relaxable_branch) {
                 continue;
             }
@@ -132,7 +107,7 @@ void X8664Encoder::apply_relaxation() {
 
 void X8664Encoder::remove_internal_symbols() {
     for (unsigned i = 0; i < text_slices.size(); i++) {
-        DataSlice &slice = text_slices[i];
+        SectionSlice &slice = text_slices[i];
         if (!slice.relaxable_branch) {
             continue;
         }
@@ -1329,7 +1304,7 @@ X8664Encoder::RegCode X8664Encoder::reg(mcode::Register reg) {
     }
 }
 
-std::int32_t X8664Encoder::compute_branch_displacement(DataSlice &branch_slice) {
+std::int32_t X8664Encoder::compute_branch_displacement(SectionSlice &branch_slice) {
     SymbolUse &use = branch_slice.uses[0];
     SymbolDef &def = defs[use.index];
 
@@ -1348,7 +1323,7 @@ void X8664Encoder::process_eh_pushreg(mcode::Instruction &instr, UnwindInfo &fra
 }
 
 void X8664Encoder::relax_jmp(std::uint32_t slice_index) {
-    DataSlice &slice = text_slices[slice_index];
+    SectionSlice &slice = text_slices[slice_index];
     slice.buffer.seek(0);
     slice.buffer.write_i8(0xE9);
     slice.buffer.write_i32(0);
@@ -1356,7 +1331,7 @@ void X8664Encoder::relax_jmp(std::uint32_t slice_index) {
 }
 
 void X8664Encoder::relax_jcc(SymbolUse &use, std::uint32_t slice_index) {
-    DataSlice &slice = text_slices[slice_index];
+    SectionSlice &slice = text_slices[slice_index];
     std::uint8_t opcode = slice.buffer.get_data()[0];
     slice.buffer.seek(0);
     slice.buffer.write_i8(0x0F);

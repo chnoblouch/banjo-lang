@@ -9,7 +9,13 @@
 
 namespace banjo {
 
-enum class BinSymbolKind { TEXT_FUNC, TEXT_LABEL, DATA_LABEL, UNKNOWN };
+enum class BinSymbolKind {
+    TEXT_FUNC,
+    TEXT_LABEL,
+    DATA_LABEL,
+    ADDRESS_TABLE,
+    UNKNOWN,
+};
 
 struct BinSymbolDef {
     std::string name;
@@ -18,9 +24,16 @@ struct BinSymbolDef {
     bool global;
 };
 
-enum class BinSymbolUseKind { ABS64, REL32 };
+enum class BinSymbolUseKind {
+    ABS64,
+    REL32,
+};
 
-enum class BinSectionKind { TEXT, DATA };
+enum class BinSectionKind {
+    TEXT,
+    DATA,
+    BNJATBL,
+};
 
 struct BinSymbolUse {
     std::uint32_t address;
@@ -52,11 +65,12 @@ struct BinModule {
     std::vector<BinSymbolDef> symbol_defs;
     std::vector<BinSymbolUse> symbol_uses;
     std::vector<BinUnwindInfo> unwind_info;
+    std::optional<WriteBuffer> bnjatbl_data;
 
-    // PE-specific variables
+    // PE-specific variables:
     std::optional<WriteBuffer> drectve_data;
 
-    // ELF-specific
+    // ELF-specific variables:
 };
 
 } // namespace banjo

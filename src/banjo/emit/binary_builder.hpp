@@ -30,13 +30,11 @@ protected:
         std::int32_t addend;
     };
 
-    enum SliceType { OPAQUE, RELAXABLE, ALIGN16 };
-
-    struct DataSlice {
+    struct SectionSlice {
         std::vector<SymbolUse> uses;
         bool relaxable_branch = false;
         WriteBuffer buffer;
-        std::uint32_t offset;
+        std::uint32_t offset = 0;
     };
 
     struct PushedRegInfo {
@@ -54,22 +52,25 @@ protected:
         std::vector<PushedRegInfo> pushed_regs;
     };
 
-    std::vector<DataSlice> text_slices;
-    std::vector<DataSlice> data_slices;
+    std::vector<SectionSlice> text_slices;
+    std::vector<SectionSlice> data_slices;
     std::vector<SymbolDef> defs;
     std::vector<UnwindInfo> unwind_info;
+    std::optional<SectionSlice> addr_table_slice;
     std::unordered_map<std::string, std::uint32_t> symbol_indices;
     std::unordered_map<std::string, std::uint32_t> label_indices;
 
     BinModule create_module();
     void compute_slice_offsets();
 
-    DataSlice &get_text_slice() { return text_slices.back(); }
+    void generate_data_slices(mcode::Module &m_mod);
+    void generate_addr_table_slices(mcode::Module &m_mod);
+
+    SectionSlice &get_text_slice() { return text_slices.back(); }
     void create_text_slice();
 
     void add_func_symbol(std::string name, mcode::Module &machine_module);
     void add_label_symbol(std::string name);
-    void add_data_symbol(const std::string &name, mcode::Module &machine_module);
     void add_symbol_def(const SymbolDef &def);
     void attach_symbol_def(std::uint32_t index);
     void add_text_symbol_use(const std::string &symbol, std::int32_t addend);
@@ -77,6 +78,14 @@ protected:
     void add_data_symbol_use(const std::string &symbol);
     std::uint32_t add_empty_label();
     void push_out_slices(unsigned starting_index, std::uint8_t offset);
+
+private:
+    void bake_symbol_locations();
+    void merge_text_slices(BinModule &module_);
+    void merge_data_slices(BinModule &module_);
+    void bake_symbol_defs(BinModule &module_);
+    void bake_unwind_info(BinModule &module_);
+    void bake_addr_table(BinModule &module_);
 };
 
 } // namespace banjo

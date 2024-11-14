@@ -19,7 +19,7 @@ class JITCompiler {
 
 private:
     lang::Config &config;
-    AddrTable &addr_table;
+    ir::AddrTable &addr_table;
     target::Target *target;
     ir::Module ssa_module;
 
@@ -29,7 +29,7 @@ private:
     lang::sir::Unit sir_unit;
 
 public:
-    JITCompiler(lang::Config &config, AddrTable &addr_table);
+    JITCompiler(lang::Config &config, ir::AddrTable &addr_table);
     ~JITCompiler();
 
     bool build_ir();

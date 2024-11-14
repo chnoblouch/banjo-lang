@@ -1,16 +1,16 @@
 #include "addr_table_pass.hpp"
 
+#include "banjo/ir/addr_table.hpp"
+
 namespace banjo {
 
 namespace passes {
 
-AddrTablePass::AddrTablePass(target::Target *target, std::optional<AddrTable> addr_table /* = {} */)
-  : Pass("addr-table", target),
-    addr_table(addr_table) {}
+AddrTablePass::AddrTablePass(target::Target *target) : Pass("addr-table", target) {}
 
 void AddrTablePass::run(ir::Module &mod) {
-    if (!addr_table) {
-        addr_table = AddrTable();
+    if (!mod.get_addr_table()) {
+        mod.set_addr_table(ir::AddrTable{});
 
         addr_table_file = std::ofstream("out/x86_64-windows-msvc-debug/addr_table.txt");
         next_symbol_index = 0;
@@ -31,31 +31,25 @@ void AddrTablePass::run(ir::Module &mod) {
     }
 
     for (ir::Function *func : mod.get_functions()) {
-        replace_uses(func);
+        replace_uses(mod, func);
     }
 }
 
 void AddrTablePass::add_symbol(const std::string &name, ir::Module &mod) {
     unsigned index = next_symbol_index++;
-    addr_table->insert(name, index);
+    mod.get_addr_table()->insert(name, index);
     addr_table_file << name << '\n';
-
-    ir::Global global(
-        index == 0 ? "addr_table" : "addr_table_" + std::to_string(index),
-        ir::Primitive::I64,
-        ir::Value::from_global(name, ir::Primitive::ADDR)
-    );
-    global.set_external(true);
-    mod.add(global);
 }
 
-void AddrTablePass::replace_uses(ir::Function *func) {
+void AddrTablePass::replace_uses(ir::Module &mod, ir::Function *func) {
     for (ir::BasicBlock &basic_block : func->get_basic_blocks()) {
-        replace_uses(func, basic_block);
+        replace_uses(mod, func, basic_block);
     }
 }
 
-void AddrTablePass::replace_uses(ir::Function *func, ir::BasicBlock &basic_block) {
+void AddrTablePass::replace_uses(ir::Module &mod, ir::Function *func, ir::BasicBlock &basic_block) {
+    ir::AddrTable &addr_table = *mod.get_addr_table();
+
     for (ir::InstrIter iter = basic_block.begin(); iter != basic_block.end(); ++iter) {
         for (unsigned i = 0; i < iter->get_operands().size(); i++) {
             ir::Operand &operand = iter->get_operand(i);
@@ -63,8 +57,8 @@ void AddrTablePass::replace_uses(ir::Function *func, ir::BasicBlock &basic_block
                 continue;
             }
 
-            auto it = addr_table->find(operand.get_symbol_name());
-            if (it == addr_table->end()) {
+            auto it = addr_table.find(operand.get_symbol_name());
+            if (it == addr_table.end()) {
                 continue;
             }
 

@@ -14,11 +14,14 @@ void PEEmitter::generate() {
     PROFILE_SCOPE_END("x86-64 encoder");
 
     // TODO: move this elsewhere
-    bin_module.drectve_data = WriteBuffer{};
 
-    for (const std::string &dll_export : module.get_dll_exports()) {
-        bin_module.drectve_data->write_cstr("/EXPORT:");
-        bin_module.drectve_data->write_data((void *)dll_export.data(), dll_export.size());
+    if (!module.get_dll_exports().empty()) {
+        bin_module.drectve_data = WriteBuffer{};
+
+        for (const std::string &dll_export : module.get_dll_exports()) {
+            bin_module.drectve_data->write_cstr("/EXPORT:");
+            bin_module.drectve_data->write_data((void *)dll_export.data(), dll_export.size());
+        }
     }
 
     PROFILE_SCOPE_BEGIN("PE builder");

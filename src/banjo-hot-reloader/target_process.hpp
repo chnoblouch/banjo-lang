@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 
 typedef unsigned long DWORD;
 typedef void *HANDLE;
@@ -30,6 +31,8 @@ public:
     };
 
 private:
+    std::string executable;
+
     HANDLE process;
     HANDLE thread;
     State state;
@@ -38,7 +41,7 @@ public:
     static std::optional<TargetProcess> spawn(std::string executable);
 
 private:
-    TargetProcess(HANDLE process, HANDLE thread);
+    TargetProcess(std::string executable, HANDLE process, HANDLE thread);
 
 public:
     State get_state() { return state; }
@@ -46,7 +49,7 @@ public:
     bool is_exited() { return state == State::EXITED; }
 
     void poll();
-    std::optional<Address> get_symbol_addr(const std::string &name);
+    std::optional<TargetProcess::Address> find_section(std::string_view name);
     std::optional<Address> allocate_memory(Size size, MemoryProtection protection);
     bool write_memory(Address address, const void *data, Size size);
     void close();

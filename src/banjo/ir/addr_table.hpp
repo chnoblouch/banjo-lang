@@ -4,26 +4,32 @@
 #include <istream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace banjo {
+
+namespace ir {
 
 class AddrTable {
 
 private:
     typedef std::unordered_map<std::string, unsigned> Map;
 
-    Map items;
+    Map entries;
 
 public:
     void load(std::istream &stream);
-    void insert(const std::string name, unsigned index) { items.insert({name, index}); }
+    void insert(std::string name, unsigned index) { entries.insert({std::move(name), index}); }
 
-    unsigned get(const std::string &name) { return items[name]; }
-    Map::iterator find(const std::string &name) { return items.find(name); }
+    unsigned get_size() const { return entries.size(); }
+    unsigned get(const std::string &name) { return entries[name]; }
+    Map::iterator find(const std::string &name) { return entries.find(name); }
 
-    Map::iterator begin() { return items.begin(); }
-    Map::iterator end() { return items.end(); }
+    Map::iterator begin() { return entries.begin(); }
+    Map::iterator end() { return entries.end(); }
 };
+
+} // namespace ir
 
 } // namespace banjo
 

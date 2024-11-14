@@ -1,8 +1,14 @@
 #include "target_process.hpp"
 
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <utility>
+
 // clang-format off
 #include <windows.h>
 #include <dbghelp.h>
+#include <Psapi.h>
 // clang-format on
 
 namespace banjo {
@@ -28,14 +34,15 @@ std::optional<TargetProcess> TargetProcess::spawn(std::string executable) {
     );
 
     if (result) {
-        return TargetProcess(process_info.hProcess, process_info.hThread);
+        return TargetProcess(std::move(executable), process_info.hProcess, process_info.hThread);
     } else {
         return {};
     }
 }
 
-TargetProcess::TargetProcess(HANDLE process, HANDLE thread)
-  : process(process),
+TargetProcess::TargetProcess(std::string executable, HANDLE process, HANDLE thread)
+  : executable(std::move(executable)),
+    process(process),
     thread(thread),
     state(State::INITIALIZING) {}
 
@@ -65,20 +72,98 @@ void TargetProcess::poll() {
     ContinueDebugEvent(win_event.dwProcessId, win_event.dwThreadId, DBG_CONTINUE);
 }
 
-std::optional<TargetProcess::Address> TargetProcess::get_symbol_addr(const std::string &name) {
-    char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME];
+std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_view name) {
+    BOOL result;
 
-    SYMBOL_INFO *symbol = (SYMBOL_INFO *)buffer;
-    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-    symbol->MaxNameLen = MAX_SYM_NAME;
+    CHAR win_image_path[MAX_PATH + 1];
+    DWORD win_image_path_size = sizeof(win_image_path) / sizeof(CHAR);
+    result = QueryFullProcessImageName(process, 0, win_image_path, &win_image_path_size);
 
-    BOOL result = SymFromName(process, name.c_str(), symbol);
-
-    if (result) {
-        return static_cast<TargetProcess::Address>(symbol->Address);
-    } else {
+    if (!result) {
         return {};
     }
+
+    std::string image_path(win_image_path);
+    std::ifstream stream(image_path);
+
+    // Read the offset of the signature in the MS-DOS stub and skip it to get to the COFF header.
+    stream.seekg(0x3C, std::ios::beg);
+    std::uint32_t signature_offset;
+    stream.read(reinterpret_cast<char *>(&signature_offset), 4);
+    stream.seekg(signature_offset + 4);
+
+    // Read the number of sections.
+    stream.seekg(2, std::ios::cur);
+    std::uint16_t section_count;
+    stream.read(reinterpret_cast<char *>(&section_count), 2);
+
+    // Read the size of the optional header.
+    stream.seekg(12, std::ios::cur);
+    std::uint16_t optional_header_size;
+    stream.read(reinterpret_cast<char *>(&optional_header_size), 2);
+
+    // Skip the rest of the COFF header as well as the optional header to get to the section table.
+    stream.seekg(2 + optional_header_size, std::ios::cur);
+
+    std::optional<std::uint32_t> virtual_address;
+
+    // Find the requested section in the section table.
+    for (std::uint16_t i = 0; i < section_count; i++) {
+        // Read the section name.
+        char name_data[9];
+        stream.read(name_data, 8);
+        name_data[8] = '\0';
+
+        if (std::string_view(name_data) == name) {
+            // Read the virtual address.
+            stream.seekg(4, std::ios::cur);
+            virtual_address = 0;
+            stream.read(reinterpret_cast<char *>(&virtual_address.value()), 4);
+            break;
+        }
+
+        // Move on to the next section header.
+        stream.seekg(32, std::ios::cur);
+    }
+
+    HMODULE modules[1024];
+    DWORD modules_size;
+    result = EnumProcessModules(process, modules, sizeof(modules), &modules_size);
+
+    if (!result) {
+        return {};
+    }
+
+    HMODULE image_module = NULL;
+
+    for (unsigned i = 0; i < modules_size / sizeof(HMODULE); i++) {
+        TCHAR win_module_path[MAX_PATH + 1];
+        result = GetModuleFileNameEx(process, modules[i], win_module_path, sizeof(win_module_path) / sizeof(TCHAR));
+
+        if (!result) {
+            continue;
+        }
+
+        std::string module_path(win_module_path);
+        if (module_path == image_path) {
+            image_module = modules[i];
+            break;
+        }
+    }
+
+    if (!image_module) {
+        return {};
+    }
+
+    MODULEINFO module_info;
+    result = GetModuleInformation(process, image_module, &module_info, sizeof(module_info));
+
+    if (!result) {
+        return {};
+    }
+
+    TargetProcess::Address base_address = reinterpret_cast<TargetProcess::Address>(module_info.lpBaseOfDll);
+    return base_address + (*virtual_address);
 }
 
 std::optional<TargetProcess::Address> TargetProcess::allocate_memory(Size size, MemoryProtection protection) {
