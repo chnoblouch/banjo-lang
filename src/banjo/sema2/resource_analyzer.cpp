@@ -137,7 +137,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_struct_resource(sir::Struc
             };
         }
 
-        resource->sub_resources.push_back({i, *sub_resource});
+        sub_resource->field_index = i;
+        resource->sub_resources.push_back(*sub_resource);
     }
 
     return resource;
@@ -161,7 +162,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_tuple_resource(sir::TupleE
             };
         }
 
-        resource->sub_resources.push_back({i, *sub_resource});
+        sub_resource->field_index = i;
+        resource->sub_resources.push_back(*sub_resource);
     }
 
     return resource;
@@ -176,7 +178,7 @@ void ResourceAnalyzer::insert_move_states(sir::Resource *resource) {
 
     scopes.back().move_states.insert({resource, state});
 
-    for (auto &[field_index, sub_resource] : resource->sub_resources) {
+    for (sir::Resource &sub_resource : resource->sub_resources) {
         insert_move_states(&sub_resource);
         super_resources.insert({&sub_resource, resource});
     }
@@ -444,8 +446,8 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
         return Result::SUCCESS;
     }
 
-    for (auto &[field_index, sub_resource] : ctx.cur_resource->sub_resources) {
-        if (field_index == field_expr.field_index) {
+    for (sir::Resource &sub_resource : ctx.cur_resource->sub_resources) {
+        if (sub_resource.field_index == field_expr.field_index) {
             if (ctx.moving && ctx.in_resource_with_deinit) {
                 analyzer.report_generator.report_err_move_out_deinit(&field_expr);
                 return Result::ERROR;
@@ -551,7 +553,7 @@ ResourceAnalyzer::MoveState *ResourceAnalyzer::find_move_state(sir::Resource *re
 }
 
 void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr move_expr) {
-    for (auto &[field_index, sub_resource] : resource->sub_resources) {
+    for (sir::Resource &sub_resource : resource->sub_resources) {
         scopes.back().move_states[&sub_resource] = MoveState{
             .moved = true,
             .conditional = false,

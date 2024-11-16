@@ -44,7 +44,7 @@ void BlockSSAGenerator::generate_resource_flags(const sir::Resource &resource) {
         ctx.get_func_context().resource_deinit_flags.insert({&resource, flag_slot});
     }
 
-    for (const auto &[field_index, sub_resource] : resource.sub_resources) {
+    for (const sir::Resource &sub_resource : resource.sub_resources) {
         generate_resource_flags(sub_resource);
     }
 }
@@ -268,8 +268,8 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
 
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(resource.type);
 
-    for (const auto &[field_index, sub_resource] : resource.sub_resources) {
-        ssa::VirtualRegister field_ptr_reg = ctx.append_memberptr(ssa_type, ssa_ptr, field_index);
+    for (const sir::Resource &sub_resource : resource.sub_resources) {
+        ssa::VirtualRegister field_ptr_reg = ctx.append_memberptr(ssa_type, ssa_ptr, sub_resource.field_index);
         ssa::Value field_ptr = ssa::Value::from_register(field_ptr_reg, ssa::Primitive::ADDR);
         generate_deinit(sub_resource, field_ptr);
     }

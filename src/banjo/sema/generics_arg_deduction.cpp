@@ -3,6 +3,7 @@
 #include "banjo/ast/ast_child_indices.hpp"
 #include "banjo/ast/expr.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace banjo {

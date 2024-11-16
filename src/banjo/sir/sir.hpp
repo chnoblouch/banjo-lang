@@ -474,8 +474,10 @@ enum class Ownership {
 struct Resource {
     sir::Expr type;
     bool has_deinit;
-    std::vector<std::pair<unsigned, Resource>> sub_resources;
+    std::vector<Resource> sub_resources;
     Ownership ownership;
+
+    unsigned field_index;
 };
 
 struct Block {

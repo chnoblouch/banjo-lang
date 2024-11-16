@@ -1,5 +1,7 @@
 #include "module.hpp"
 
+#include <algorithm>
+
 namespace banjo {
 
 namespace ir {
