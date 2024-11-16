@@ -1,10 +1,10 @@
 #ifndef ADDR_TABLE_H
 #define ADDR_TABLE_H
 
-#include <istream>
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <utility>
+#include <vector>
 
 namespace banjo {
 
@@ -13,20 +13,15 @@ namespace ir {
 class AddrTable {
 
 private:
-    typedef std::unordered_map<std::string, unsigned> Map;
-
-    Map entries;
+    std::vector<std::string> entries;
+    std::unordered_map<std::string, unsigned> indices;
 
 public:
-    void load(std::istream &stream);
-    void insert(std::string name, unsigned index) { entries.insert({std::move(name), index}); }
+    void append(const std::string &symbol);
+    std::optional<unsigned> find_index(const std::string &symbol) const;
+    unsigned compute_offset(unsigned index);
 
-    unsigned get_size() const { return entries.size(); }
-    unsigned get(const std::string &name) { return entries[name]; }
-    Map::iterator find(const std::string &name) { return entries.find(name); }
-
-    Map::iterator begin() { return entries.begin(); }
-    Map::iterator end() { return entries.end(); }
+    const std::vector<std::string> &get_entries() const { return entries; }
 };
 
 } // namespace ir

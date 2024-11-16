@@ -8,4 +8,4 @@ add_executable(banjo-hot-reloader
 )
 
 target_include_directories(banjo-hot-reloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(banjo-hot-reloader PUBLIC banjo dbghelp)
+target_link_libraries(banjo-hot-reloader PUBLIC banjo)

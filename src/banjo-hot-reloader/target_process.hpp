@@ -51,7 +51,8 @@ public:
     void poll();
     std::optional<TargetProcess::Address> find_section(std::string_view name);
     std::optional<Address> allocate_memory(Size size, MemoryProtection protection);
-    bool write_memory(Address address, const void *data, Size size);
+    bool read_memory(Address address, void *buffer, Size size);
+    bool write_memory(Address address, const void *buffer, Size size);
     void close();
 };
 

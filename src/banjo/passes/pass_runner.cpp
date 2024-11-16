@@ -14,11 +14,11 @@
 #include "banjo/passes/stack_slot_merge_pass.hpp"
 #include "banjo/passes/stack_to_reg_pass.hpp"
 
-
 #include "banjo/ir/validator.hpp"
 #include "banjo/ir/writer.hpp"
 #include "banjo/utils/timing.hpp"
 
+#include <fstream>
 #include <iostream>
 
 namespace banjo {

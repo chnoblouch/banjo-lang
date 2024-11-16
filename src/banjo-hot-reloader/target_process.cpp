@@ -4,10 +4,10 @@
 #include <fstream>
 #include <iostream>
 #include <utility>
+#include <vector>
 
 // clang-format off
 #include <windows.h>
-#include <dbghelp.h>
 #include <Psapi.h>
 // clang-format on
 
@@ -53,11 +53,6 @@ void TargetProcess::poll() {
     }
 
     if (win_event.dwDebugEventCode == CREATE_THREAD_DEBUG_EVENT) {
-        if (state == State::INITIALIZING) {
-            SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-            SymInitialize(process, NULL, TRUE);
-        }
-
         state = State::RUNNING;
     } else if (win_event.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
         state = State::EXITED;
@@ -126,9 +121,17 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
         stream.seekg(32, std::ios::cur);
     }
 
-    HMODULE modules[1024];
+    std::vector<HMODULE> modules;
     DWORD modules_size;
-    result = EnumProcessModules(process, modules, sizeof(modules), &modules_size);
+    result = EnumProcessModules(process, modules.data(), 0, &modules_size);
+
+    if (!result) {
+        return {};
+    }
+
+    unsigned num_modules = modules_size / sizeof(HMODULE);
+    modules.resize(num_modules);
+    result = EnumProcessModules(process, modules.data(), modules.size() * sizeof(HMODULE), &modules_size);
 
     if (!result) {
         return {};
@@ -136,7 +139,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
 
     HMODULE image_module = NULL;
 
-    for (unsigned i = 0; i < modules_size / sizeof(HMODULE); i++) {
+    for (unsigned i = 0; i < num_modules; i++) {
         TCHAR win_module_path[MAX_PATH + 1];
         result = GetModuleFileNameEx(process, modules[i], win_module_path, sizeof(win_module_path) / sizeof(TCHAR));
 
@@ -144,8 +147,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
             continue;
         }
 
-        std::string module_path(win_module_path);
-        if (module_path == image_path) {
+        if (std::string(win_module_path) == image_path) {
             image_module = modules[i];
             break;
         }
@@ -183,11 +185,23 @@ std::optional<TargetProcess::Address> TargetProcess::allocate_memory(Size size, 
     }
 }
 
-bool TargetProcess::write_memory(Address address, const void *data, std::size_t size) {
+bool TargetProcess::read_memory(Address address, void *buffer, Size size) {
+    BOOL result = ReadProcessMemory(
+        process,
+        reinterpret_cast<LPCVOID>(address),
+        static_cast<LPVOID>(buffer),
+        static_cast<SIZE_T>(size),
+        NULL
+    );
+
+    return result;
+}
+
+bool TargetProcess::write_memory(Address address, const void *buffer, std::size_t size) {
     BOOL result = WriteProcessMemory(
         process,
         reinterpret_cast<LPVOID>(address),
-        static_cast<LPCVOID>(data),
+        static_cast<LPCVOID>(buffer),
         static_cast<SIZE_T>(size),
         NULL
     );

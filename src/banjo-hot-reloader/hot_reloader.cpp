@@ -6,8 +6,6 @@
 #include "jit_compiler.hpp"
 #include "target_process.hpp"
 
-#include <fstream>
-
 namespace banjo {
 
 namespace hot_reloader {
@@ -25,10 +23,6 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
         Diagnostics::abort("failed to load executable");
     }
 
-    std::ifstream stream("out/x86_64-windows-msvc-debug/addr_table.txt");
-    addr_table.load(stream);
-    Diagnostics::log("address table layout loaded");
-
     while (!process->is_running()) {
         process->poll();
     }
@@ -41,6 +35,35 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
     } else {
         Diagnostics::abort("failed to find address table in target process");
     }
+
+    TargetProcess::Address target_addr = addr_table_ptr;
+
+    std::uint32_t num_symbols;
+    if (process->read_memory(target_addr, &num_symbols, 4)) {
+        target_addr += 4;
+    } else {
+        Diagnostics::abort("failed to read number of symbols");
+    }
+
+    for (unsigned i = 0; i < num_symbols; i++) {
+        std::uint32_t symbol_length;
+        if (process->read_memory(target_addr, &symbol_length, 4)) {
+            target_addr += 4;
+        } else {
+            Diagnostics::abort("failed to read symbol length");
+        }
+
+        std::string symbol_name(symbol_length, '\0');
+        if (process->read_memory(target_addr, symbol_name.data(), symbol_length)) {
+            target_addr += symbol_length;
+        } else {
+            Diagnostics::abort("failed to read symbol name");
+        }
+
+        addr_table.append(symbol_name);
+    }
+
+    Diagnostics::log("address table layout loaded (" + std::to_string(num_symbols) + " symbols)");
 
     FileWatcher watcher(src_path, std::bind(&HotReloader::reload_file, this, std::placeholders::_1));
 
@@ -73,15 +96,14 @@ void HotReloader::reload_file(const std::filesystem::path &file_path) {
     for (lang::sir::FuncDef *func : funcs) {
         std::string name = lang::NameMangling::mangle_func_name(*func);
 
-        auto it = addr_table.find(name);
-        if (it == addr_table.end()) {
+        std::optional<unsigned> index = addr_table.find_index(name);
+        if (!index) {
             continue;
         }
 
-        unsigned index = it->second;
         BinModule mod = compiler.compile_func(name);
         LoadedFunc loaded_func = load_func(mod);
-        update_func_addr(*func, index, loaded_func.text_addr);
+        update_func_addr(*func, *index, loaded_func.text_addr);
     }
 }
 
@@ -180,7 +202,7 @@ void HotReloader::write_section(TargetProcess::Address address, const WriteBuffe
 }
 
 void HotReloader::update_func_addr(lang::sir::FuncDef &func_def, unsigned index, TargetProcess::Address new_addr) {
-    TargetProcess::Address item_addr = addr_table_ptr + 8 * index;
+    TargetProcess::Address item_addr = addr_table_ptr + addr_table.compute_offset(index);
     bool result = process->write_memory(item_addr, &new_addr, sizeof(TargetProcess::Address));
 
     if (result) {

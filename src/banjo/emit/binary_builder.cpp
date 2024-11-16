@@ -197,6 +197,7 @@ void BinaryBuilder::generate_addr_table_slices(mcode::Module &m_mod) {
     }
 
     addr_table_slice = SectionSlice{};
+    WriteBuffer &buffer = addr_table_slice->buffer;
 
     add_symbol_def(SymbolDef{
         .name = "addr_table",
@@ -206,13 +207,20 @@ void BinaryBuilder::generate_addr_table_slices(mcode::Module &m_mod) {
         .local_offset = 0,
     });
 
+    buffer.write_u32(m_mod.get_addr_table()->entries.size());
+
+    for (const std::string &symbol : m_mod.get_addr_table()->entries) {
+        buffer.write_u32(symbol.size());
+        buffer.write_cstr(symbol.c_str());
+    }
+
     for (const std::string &symbol : m_mod.get_addr_table()->entries) {
         addr_table_slice->uses.push_back(SymbolUse{
             .index = symbol_indices.at(symbol),
-            .local_offset = static_cast<std::uint32_t>(addr_table_slice->buffer.get_size()),
+            .local_offset = static_cast<std::uint32_t>(buffer.get_size()),
         });
 
-        addr_table_slice->buffer.write_zeroes(8);
+        buffer.write_zeroes(8);
     }
 }
 

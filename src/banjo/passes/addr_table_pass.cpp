@@ -10,22 +10,21 @@ AddrTablePass::AddrTablePass(target::Target *target) : Pass("addr-table", target
 
 void AddrTablePass::run(ir::Module &mod) {
     if (!mod.get_addr_table()) {
-        mod.set_addr_table(ir::AddrTable{});
-
-        addr_table_file = std::ofstream("out/x86_64-windows-msvc-debug/addr_table.txt");
-        next_symbol_index = 0;
+        ir::AddrTable addr_table;
 
         for (const ir::Function *func : mod.get_functions()) {
-            add_symbol(func->get_name(), mod);
+            addr_table.append(func->get_name());
         }
 
         for (const ir::FunctionDecl &external_func : mod.get_external_functions()) {
-            add_symbol(external_func.get_name(), mod);
+            addr_table.append(external_func.get_name());
         }
 
         for (const ir::GlobalDecl &external_global : mod.get_external_globals()) {
-            add_symbol(external_global.get_name(), mod);
+            addr_table.append(external_global.get_name());
         }
+
+        mod.set_addr_table(addr_table);
     } else {
         mod.add(ir::GlobalDecl("addr_table", ir::Primitive::I64));
     }
@@ -33,12 +32,6 @@ void AddrTablePass::run(ir::Module &mod) {
     for (ir::Function *func : mod.get_functions()) {
         replace_uses(mod, func);
     }
-}
-
-void AddrTablePass::add_symbol(const std::string &name, ir::Module &mod) {
-    unsigned index = next_symbol_index++;
-    mod.get_addr_table()->insert(name, index);
-    addr_table_file << name << '\n';
 }
 
 void AddrTablePass::replace_uses(ir::Module &mod, ir::Function *func) {
@@ -57,35 +50,23 @@ void AddrTablePass::replace_uses(ir::Module &mod, ir::Function *func, ir::BasicB
                 continue;
             }
 
-            auto it = addr_table.find(operand.get_symbol_name());
-            if (it == addr_table.end()) {
+            std::optional<unsigned> index = addr_table.find_index(operand.get_symbol_name());
+            if (!index) {
                 continue;
             }
 
-            unsigned index = it->second;
+            unsigned offset = addr_table.compute_offset(*index);
 
             ir::VirtualRegister ptr_reg = func->next_virtual_reg();
             ir::VirtualRegister reg = func->next_virtual_reg();
 
-            basic_block.insert_before(
-                iter,
-                ir::Instruction(
-                    ir::Opcode::ADD,
-                    ptr_reg,
-                    {ir::Operand::from_global("addr_table", ir::Primitive::ADDR),
-                     ir::Operand::from_int_immediate(8 * index, ir::Primitive::I64)}
-                )
-            );
+            ir::Operand ssa_base = ir::Operand::from_global("addr_table", ir::Primitive::ADDR);
+            ir::Operand ssa_offset = ir::Operand::from_int_immediate(offset, ir::Primitive::I64);
+            basic_block.insert_before(iter, ir::Instruction(ir::Opcode::ADD, ptr_reg, {ssa_base, ssa_offset}));
 
-            basic_block.insert_before(
-                iter,
-                ir::Instruction(
-                    ir::Opcode::LOAD,
-                    reg,
-                    {ir::Operand::from_type(ir::Primitive::ADDR),
-                     ir::Operand::from_register(ptr_reg, ir::Primitive::ADDR)}
-                )
-            );
+            ir::Operand ssa_type = ir::Operand::from_type(ir::Primitive::ADDR);
+            ir::Operand ssa_ptr = ir::Operand::from_register(ptr_reg, ir::Primitive::ADDR);
+            basic_block.insert_before(iter, ir::Instruction(ir::Opcode::LOAD, reg, {ssa_type, ssa_ptr}));
 
             operand = ir::Operand::from_register(reg, operand.get_type());
         }
