@@ -1,6 +1,7 @@
 #include "file_watcher.hpp"
 
 #include <filesystem>
+#include <utility>
 
 #include <windows.h>
 
@@ -50,13 +51,12 @@ std::optional<FileWatcher> FileWatcher::open(const std::filesystem::path &path) 
         return {};
     }
 
-    FileWatcher watcher;
-    watcher.path = path;
-    watcher.platform_data = platform_data;
-    return watcher;
+    return FileWatcher(path, platform_data);
 }
 
-FileWatcher::FileWatcher() {}
+FileWatcher::FileWatcher(std::filesystem::path path, PlatformData *platform_data)
+  : path(std::move(path)),
+    platform_data(platform_data) {}
 
 std::optional<std::vector<std::filesystem::path>> FileWatcher::poll(unsigned timeout_ms) {
     std::vector<std::filesystem::path> paths;

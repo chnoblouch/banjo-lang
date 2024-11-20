@@ -220,15 +220,22 @@ std::optional<TargetProcess::Address> TargetProcess::allocate_memory(Size size, 
     // Back up the current 8 bytes at the instruction pointer.
     long orig_word = ptrace(PTRACE_PEEKDATA, process, orig_regs.rip, 0);
 
+    // Convert the page protection.
+    int permissions;
+    switch (protection) {
+        case MemoryProtection::READ_WRITE: permissions = PROT_READ | PROT_WRITE; break;
+        case MemoryProtection::READ_WRITE_EXECUTE: permissions = PROT_READ | PROT_WRITE | PROT_EXEC; break;
+    }
+
     // Prepare the arguments for the mmap system call.
     struct user_regs_struct new_regs = orig_regs;
-    new_regs.rax = SYS_mmap;                           // Set system call number to sys_mmap.
-    new_regs.rdi = 0x0;                                // Set `addr` parameter to NULL.
-    new_regs.rsi = Utils::align(size, page_size);      // Set the allocation size (a multiple of the page size).
-    new_regs.rdx = PROT_READ | PROT_WRITE | PROT_EXEC; // Make the pages executable and writable.
-    new_regs.r10 = MAP_PRIVATE | MAP_ANONYMOUS;        // Create a private mapping not backed by a file (anonymous).
-    new_regs.r8 = -1;                                  // Set fd to -1 because this is an anonymous mapping.
-    new_regs.r9 = 0;                                   // Set the file offset to zero.
+    new_regs.rax = SYS_mmap;                      // Set system call number to sys_mmap.
+    new_regs.rdi = 0x0;                           // Set `addr` parameter to NULL.
+    new_regs.rsi = Utils::align(size, page_size); // Set the allocation size (a multiple of the page size).
+    new_regs.rdx = permissions;                   // Set the memory protection of the pages.
+    new_regs.r10 = MAP_PRIVATE | MAP_ANONYMOUS;   // Create a private mapping not backed by a file (anonymous).
+    new_regs.r8 = -1;                             // Set fd to -1 because this is an anonymous mapping.
+    new_regs.r9 = 0;                              // Set the file offset to zero.
 
     // Replace the register values in the target process with the system call arguments.
     if (ptrace(PTRACE_SETREGS, process, 0, &new_regs) == -1) {
