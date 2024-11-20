@@ -8,6 +8,8 @@
 
 #include <filesystem>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace banjo {
 
@@ -26,12 +28,14 @@ private:
     std::optional<TargetProcess> process;
     TargetProcess::Address addr_table_ptr;
     ir::AddrTable addr_table;
+    std::unordered_map<std::string, std::vector<char>> file_contents;
 
 public:
     HotReloader();
     void run(const std::string &executable, const std::filesystem::path &src_path);
 
 private:
+    bool has_changed(const std::filesystem::path &file_path);
     void reload_file(const std::filesystem::path &file_path);
     void collect_funcs(lang::sir::DeclBlock &block, std::vector<lang::sir::FuncDef *> &out_funcs);
     LoadedFunc load_func(BinModule &mod);

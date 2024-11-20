@@ -1,17 +1,30 @@
 #include "hot_reloader.hpp"
 
 #include "banjo/ssa_gen/name_mangling.hpp"
+#include "banjo/utils/platform.hpp"
 #include "diagnostics.hpp"
 #include "file_watcher.hpp"
 #include "jit_compiler.hpp"
 #include "target_process.hpp"
+
+#include <cstdint>
+#include <cstring>
+#include <fstream>
 
 namespace banjo {
 
 namespace hot_reloader {
 
 HotReloader::HotReloader() {
-    Diagnostics::log("platform: x86_64-windows");
+    std::string os;
+
+#if OS_WINDOWS
+    os = "windows";
+#elif OS_LINUX
+    os = "linux";
+#endif
+
+    Diagnostics::log("platform: x86_64-" + os);
 }
 
 void HotReloader::run(const std::string &executable, const std::filesystem::path &src_path) {
@@ -65,6 +78,7 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
 
     Diagnostics::log("address table layout loaded (" + std::to_string(num_symbols) + " symbols)");
 
+#if OS_WINDOWS
     FileWatcher watcher(src_path, std::bind(&HotReloader::reload_file, this, std::placeholders::_1));
 
     while (!process->is_exited()) {
@@ -72,11 +86,60 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
     }
 
     watcher.stop();
+#elif OS_LINUX
+    std::string canonical_src_path = std::filesystem::canonical(src_path).string();
+
+    std::optional<FileWatcher> watcher = FileWatcher::open(src_path);
+    if (watcher) {
+        Diagnostics::log("watching directory '" + canonical_src_path + "'");
+    } else {
+        Diagnostics::abort("cannot watch directory '" + canonical_src_path + "'");
+    }
+
+    while (!process->is_exited()) {
+        std::vector<std::filesystem::path> paths = watcher->poll(25);
+
+        for (const std::filesystem::path &path : paths) {
+            if (has_changed(path)) {
+                reload_file(path);
+            }
+        }
+    }
+
+    watcher->close();
+#endif
+
     process->close();
     Diagnostics::log("process exited");
 }
 
+bool HotReloader::has_changed(const std::filesystem::path &file_path) {
+    std::string path_string = file_path.string();
+
+    auto prev_content_iter = file_contents.find(path_string);
+    std::vector<char> *prev_content = prev_content_iter == file_contents.end() ? nullptr : &prev_content_iter->second;
+
+    std::vector<char> curr_content;
+    std::ifstream stream(path_string);
+    stream.seekg(0, std::ios::end);
+
+    std::uint64_t size = stream.tellg();
+    if (prev_content && size != prev_content->size()) {
+        return true;
+    }
+
+    curr_content.resize(size);
+    stream.seekg(0, std::ios::beg);
+    stream.read(curr_content.data(), size);
+
+    bool changed = prev_content ? (curr_content != *prev_content) : false;
+    file_contents[path_string] = curr_content;
+    return changed;
+}
+
 void HotReloader::reload_file(const std::filesystem::path &file_path) {
+    Diagnostics::log("reloading file '" + file_path.string() + "'...");
+
     JITCompiler compiler(lang::Config::instance(), addr_table);
     if (!compiler.build_ir()) {
         Diagnostics::log("failed to reload file");

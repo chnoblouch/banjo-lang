@@ -47,13 +47,13 @@ void ELFEmitter::emit_header(const ELFFile &file) {
     emit_u16(file.machine);             // machine (x86_64)
     emit_u32(1);                        // version (current)
     emit_u64(0);                        // entry point address
-    emit_u64(0);                        // program header offset
-    emit_u64(64);                       // section header offset
+    emit_u64(0);                        // program header table offset
+    emit_u64(64);                       // section header table offset
     emit_u32(0);                        // flags
     emit_u16(64);                       // header size
-    emit_u16(0);                        // size of program header entry
+    emit_u16(0);                        // size of a program header entry
     emit_u16(0);                        // number of program header entries
-    emit_u16(64);                       // size of section header entry
+    emit_u16(64);                       // size of a section header entry
     emit_u16(file.sections.size() + 1); // number of section header entries
     emit_u16(3);                        // section name string table index
 }
@@ -64,8 +64,7 @@ void ELFEmitter::emit_sections(const std::vector<ELFSection> &sections) {
         emit_u8(0);
     }
 
-    std::vector<SectionPointerPositions> pointer_positions;
-    pointer_positions.resize(sections.size());
+    std::vector<SectionPointerPositions> pointer_positions(sections.size());
 
     for (unsigned i = 0; i < sections.size(); i++) {
         emit_section_header(sections[i], pointer_positions[i]);

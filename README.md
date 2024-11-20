@@ -18,7 +18,7 @@ A small low-level programming language I use for personal projects. The language
 - Performance in the ballpark of C/C++
 - Automatic generating of bindings for C libraries
 - Built-in language server
-- Hot reloading (on Windows)
+- Hot reloading (on Windows and Linux)
 - Half-baked package management
 
 ## Building

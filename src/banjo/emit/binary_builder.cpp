@@ -201,7 +201,7 @@ void BinaryBuilder::generate_addr_table_slices(mcode::Module &m_mod) {
 
     add_symbol_def(SymbolDef{
         .name = "addr_table",
-        .kind = BinSymbolKind::ADDRESS_TABLE,
+        .kind = BinSymbolKind::ADDR_TABLE,
         .global = true,
         .slice_index = 0,
         .local_offset = 0,

@@ -1,11 +1,16 @@
 #ifndef FILE_WATCHER_H
 #define FILE_WATCHER_H
 
-#include <atomic>
-#include <chrono>
+#include "banjo/utils/platform.hpp"
+
 #include <filesystem>
-#include <functional>
-#include <thread>
+#include <optional>
+#include <unordered_map>
+#include <vector>
+
+#if OS_LINUX
+#    include <sys/poll.h>
+#endif
 
 namespace banjo {
 
@@ -14,23 +19,24 @@ namespace hot_reloader {
 class FileWatcher {
 
 private:
-    typedef std::chrono::file_clock Clock;
-    typedef std::chrono::time_point<Clock> TimePoint;
-    typedef std::chrono::duration<Clock> Duration;
-
     std::filesystem::path path;
-    std::function<void(const std::filesystem::path &file_path)> on_changed;
-    std::unordered_map<std::string, TimePoint> last_change_times;
-    std::thread thread;
-    std::atomic<bool> running = false;
+
+    int inotify_fd;
+    struct pollfd inotify_pollfd;
+    std::unordered_map<int, std::string> watch_descriptors;
 
 public:
-    FileWatcher(std::filesystem::path path, std::function<void(std::filesystem::path file_path)> on_changed);
-    void stop();
+    static std::optional<FileWatcher> open(const std::filesystem::path &path);
 
 private:
-    void run();
-    void handle_file_change(const std::string &name, std::vector<std::filesystem::path> &changed_files);
+    FileWatcher();
+
+public:
+    std::vector<std::filesystem::path> poll(unsigned timeout_ms);
+    void close();
+
+private:
+    bool watch_recursively(const std::filesystem::path &dir_path);
 };
 
 } // namespace hot_reloader

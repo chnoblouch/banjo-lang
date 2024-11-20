@@ -176,9 +176,13 @@ class HotReloader(Program):
     def run(self, config, toolchain, output_dir):
         opt_level = "0" if config.build_config == "debug" else "1"
 
+        executable = f"{output_dir}{os.sep}{config.name}"
+        if toolchain.target.os == "windows":
+            executable += ".exe"
+
         command = [
             "banjo-hot-reloader",
-            "--executable", f"{output_dir}{os.sep}{config.name}.exe",
+            "--executable", executable,
             "--dir", "src/",
             "--type", config.type,
             "--arch", toolchain.target.arch,

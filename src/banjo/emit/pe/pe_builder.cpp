@@ -99,7 +99,7 @@ void PEBuilder::process_x86_64_symbol_def(const BinSymbolDef &def) {
         case BinSymbolKind::TEXT_FUNC: section_number = get_section_number(TEXT_SECTION_INDEX); break;
         case BinSymbolKind::TEXT_LABEL: section_number = get_section_number(TEXT_SECTION_INDEX); break;
         case BinSymbolKind::DATA_LABEL: section_number = get_section_number(DATA_SECTION_INDEX); break;
-        case BinSymbolKind::ADDRESS_TABLE: section_number = get_section_number(bnjatbl_section_index); break;
+        case BinSymbolKind::ADDR_TABLE: section_number = get_section_number(bnjatbl_section_index); break;
         case BinSymbolKind::UNKNOWN: section_number = 0; break;
     }
 
