@@ -21,6 +21,9 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
+    // TODO: There are performance issues here when analyzing large numbers of resources.
+    // One example is `convert.enum_to_repr` with enums that have lots of variants.
+
     scopes.push_back({
         .block = &block,
         .move_states{},

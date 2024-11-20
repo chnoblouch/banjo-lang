@@ -148,7 +148,13 @@ func struct_to_repr[T](struct_: *T, indent: u32) -> String {
 }
 
 func enum_to_repr[T](enum_: T) -> String {
-    # TODO: actually print the variant once the performance
-    # problems in the resource analyzer are fixed.
-    return meta(T).name + " variant";
+    var variant_name: String;
+    
+    meta for variant in meta(T).variants {
+        if enum_ == variant.1 {
+            variant_name = variant.0;
+        }
+    }
+
+    return meta(T).name + "." + variant_name;
 }
