@@ -5,6 +5,10 @@ namespace banjo {
 namespace ir {
 
 void AddrTable::append(const std::string &symbol) {
+    if (indices.contains(symbol)) {
+        return;
+    }
+
     indices.insert({symbol, entries.size()});
     entries.push_back(symbol);
 }
