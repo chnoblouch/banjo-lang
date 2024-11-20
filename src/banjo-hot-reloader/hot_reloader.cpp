@@ -2,14 +2,15 @@
 
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/utils/platform.hpp"
-#include "diagnostics.hpp"
 #include "file_watcher.hpp"
 #include "jit_compiler.hpp"
 #include "target_process.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 namespace banjo {
 
@@ -24,29 +25,25 @@ HotReloader::HotReloader() {
     os = "linux";
 #endif
 
-    Diagnostics::log("platform: x86_64-" + os);
+    log("platform: x86_64-" + os);
 }
 
 void HotReloader::run(const std::string &executable, const std::filesystem::path &src_path) {
     process = TargetProcess::spawn(executable);
 
     if (process) {
-        Diagnostics::log("executable loaded");
+        log("executable loaded");
     } else {
-        Diagnostics::abort("failed to load executable");
-    }
-
-    while (!process->is_running()) {
-        process->poll();
+        abort("failed to load executable");
     }
 
     std::optional<TargetProcess::Address> pointer = process->find_section(".bnjatbl");
 
     if (pointer) {
         addr_table_ptr = *pointer;
-        Diagnostics::log("found address table in target process");
+        log("found address table in target process");
     } else {
-        Diagnostics::abort("failed to find address table in target process");
+        abort("failed to find address table in target process");
     }
 
     TargetProcess::Address target_addr = addr_table_ptr;
@@ -55,7 +52,7 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
     if (process->read_memory(target_addr, &num_symbols, 4)) {
         target_addr += 4;
     } else {
-        Diagnostics::abort("failed to read number of symbols");
+        abort("failed to read number of symbols");
     }
 
     for (unsigned i = 0; i < num_symbols; i++) {
@@ -63,54 +60,53 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
         if (process->read_memory(target_addr, &symbol_length, 4)) {
             target_addr += 4;
         } else {
-            Diagnostics::abort("failed to read symbol length");
+            abort("failed to read symbol length");
         }
 
         std::string symbol_name(symbol_length, '\0');
         if (process->read_memory(target_addr, symbol_name.data(), symbol_length)) {
             target_addr += symbol_length;
         } else {
-            Diagnostics::abort("failed to read symbol name");
+            abort("failed to read symbol name");
         }
 
         addr_table.append(symbol_name);
     }
 
-    Diagnostics::log("address table layout loaded (" + std::to_string(num_symbols) + " symbols)");
+    log("address table layout loaded (" + std::to_string(num_symbols) + " symbols)");
 
-#if OS_WINDOWS
-    FileWatcher watcher(src_path, std::bind(&HotReloader::reload_file, this, std::placeholders::_1));
-
-    while (!process->is_exited()) {
-        process->poll();
-    }
-
-    watcher.stop();
-#elif OS_LINUX
     std::string canonical_src_path = std::filesystem::canonical(src_path).string();
 
     std::optional<FileWatcher> watcher = FileWatcher::open(src_path);
     if (watcher) {
-        Diagnostics::log("watching directory '" + canonical_src_path + "'");
+        log("watching directory '" + canonical_src_path + "'");
     } else {
-        Diagnostics::abort("cannot watch directory '" + canonical_src_path + "'");
+        abort("cannot watch directory '" + canonical_src_path + "'");
     }
 
-    while (!process->is_exited()) {
-        std::vector<std::filesystem::path> paths = watcher->poll(25);
+    process->poll();
 
-        for (const std::filesystem::path &path : paths) {
+    while (!process->is_exited()) {
+        std::optional<std::vector<std::filesystem::path>> paths = watcher->poll(25);
+        if (!paths) {
+            abort("failed to poll directory watcher");
+        }
+
+        // FIXME: Reading the changed file right away might fail if it is
+        // still opened by the process that modified it.
+
+        for (const std::filesystem::path &path : *paths) {
             if (has_changed(path)) {
                 reload_file(path);
             }
         }
+
+        process->poll();
     }
 
     watcher->close();
-#endif
-
     process->close();
-    Diagnostics::log("process exited");
+    log("process exited");
 }
 
 bool HotReloader::has_changed(const std::filesystem::path &file_path) {
@@ -120,29 +116,36 @@ bool HotReloader::has_changed(const std::filesystem::path &file_path) {
     std::vector<char> *prev_content = prev_content_iter == file_contents.end() ? nullptr : &prev_content_iter->second;
 
     std::vector<char> curr_content;
+
     std::ifstream stream(path_string);
+    if (!stream.good()) {
+        return false;
+    }
+
     stream.seekg(0, std::ios::end);
 
-    std::uint64_t size = stream.tellg();
+    std::ios::pos_type size = stream.tellg();
     if (prev_content && size != prev_content->size()) {
         return true;
     }
 
-    curr_content.resize(size);
-    stream.seekg(0, std::ios::beg);
-    stream.read(curr_content.data(), size);
+    if (size != 0) {
+        curr_content.resize(size);
+        stream.seekg(0, std::ios::beg);
+        stream.read(curr_content.data(), size);
+    }
 
-    bool changed = prev_content ? (curr_content != *prev_content) : false;
+    bool changed = prev_content ? (curr_content != *prev_content) : true;
     file_contents[path_string] = curr_content;
     return changed;
 }
 
 void HotReloader::reload_file(const std::filesystem::path &file_path) {
-    Diagnostics::log("reloading file '" + file_path.string() + "'...");
+    log("reloading file '" + file_path.string() + "'...");
 
     JITCompiler compiler(lang::Config::instance(), addr_table);
     if (!compiler.build_ir()) {
-        Diagnostics::log("failed to reload file");
+        log("failed to reload file");
         return;
     }
 
@@ -216,7 +219,7 @@ TargetProcess::Address HotReloader::alloc_section(
     if (addr) {
         return reinterpret_cast<TargetProcess::Address>(*addr);
     } else {
-        Diagnostics::abort("failed to allocate memory for section");
+        abort("failed to allocate memory for section");
     }
 }
 
@@ -260,7 +263,7 @@ void HotReloader::write_section(TargetProcess::Address address, const WriteBuffe
     bool result = process->write_memory(address, buffer.get_data().data(), buffer.get_size());
 
     if (!result) {
-        Diagnostics::abort("failed to write section");
+        abort("failed to write section");
     }
 }
 
@@ -269,10 +272,40 @@ void HotReloader::update_func_addr(lang::sir::FuncDef &func_def, unsigned index,
     bool result = process->write_memory(item_addr, &new_addr, sizeof(TargetProcess::Address));
 
     if (result) {
-        Diagnostics::log("updated function '" + Diagnostics::symbol_to_string(&func_def) + "'");
+        log("updated function '" + symbol_to_string(&func_def) + "'");
     } else {
-        Diagnostics::abort("failed to write function address to address table");
+        abort("failed to write function address to address table");
     }
+}
+
+void HotReloader::log(const std::string &message) {
+    std::cout << "(hot reloader) " << message << "\n";
+}
+
+[[noreturn]] void HotReloader::abort(const std::string &message) {
+    std::cerr << "(hot reloader) error: " << message << "\n";
+    std::exit(1);
+}
+
+std::string HotReloader::symbol_to_string(lang::sir::Symbol symbol) {
+    std::string result;
+
+    lang::sir::Symbol parent = symbol.get_parent();
+    if (parent) {
+        result += symbol_to_string(parent) + '.';
+    }
+
+    if (auto mod = symbol.match<lang::sir::Module>()) {
+        result += mod->path.to_string();
+    } else if (auto func_def = symbol.match<lang::sir::FuncDef>()) {
+        result += func_def->ident.value;
+    } else if (auto struct_def = symbol.match<lang::sir::StructDef>()) {
+        result += struct_def->ident.value;
+    } else if (auto union_def = symbol.match<lang::sir::UnionDef>()) {
+        result += union_def->ident.value;
+    }
+
+    return result;
 }
 
 } // namespace hot_reloader

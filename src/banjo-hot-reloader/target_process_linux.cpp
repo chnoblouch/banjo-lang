@@ -66,10 +66,22 @@ std::optional<TargetProcess> TargetProcess::spawn(std::string executable) {
 
 TargetProcess::TargetProcess(std::string executable, int process)
   : executable(std::move(executable)),
-    process(process),
-    state(State::RUNNING) {}
+    exited(false),
+    process(process) {}
 
-void TargetProcess::poll() {}
+void TargetProcess::poll() {
+    // FIXME: I think this might break if another process with the same pid is spawned
+    // between calls to `is_exited`, though this should be extremely unlikely.
+
+    int status;
+    if (waitpid(process, &status, WNOHANG) <= 0) {
+        return;
+    }
+
+    if (WIFEXITED(status)) {
+        exited = true;
+    }
+}
 
 std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_view name) {
     // Get the page size of the system for aligning addresses.
@@ -307,18 +319,6 @@ bool TargetProcess::write_memory(Address address, const void *buffer, Size size)
     }
 
     return result;
-}
-
-bool TargetProcess::is_exited() {
-    // FIXME: I think this might break if another process with the same pid is spawned
-    // between calls to `is_exited`, though this should be extremely unlikely.
-
-    int status;
-    if (waitpid(process, &status, WNOHANG) <= 0) {
-        return false;
-    }
-
-    return WIFEXITED(status);
 }
 
 void TargetProcess::close() {}

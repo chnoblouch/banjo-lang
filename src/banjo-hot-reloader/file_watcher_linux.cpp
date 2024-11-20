@@ -11,8 +11,6 @@ namespace banjo {
 
 namespace hot_reloader {
 
-FileWatcher::FileWatcher() {}
-
 std::optional<FileWatcher> FileWatcher::open(const std::filesystem::path &path) {
     FileWatcher watcher;
 
@@ -29,7 +27,9 @@ std::optional<FileWatcher> FileWatcher::open(const std::filesystem::path &path) 
     return watcher;
 }
 
-std::vector<std::filesystem::path> FileWatcher::poll(unsigned timeout_ms) {
+FileWatcher::FileWatcher() {}
+
+std::optional<std::vector<std::filesystem::path>> FileWatcher::poll(unsigned timeout_ms) {
     if (::poll(&inotify_pollfd, 1, timeout_ms) <= 0) {
         return {};
     }

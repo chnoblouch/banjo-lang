@@ -12,7 +12,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 add_executable(banjo-hot-reloader
-    diagnostics.cpp
     hot_reloader.cpp 
     jit_compiler.cpp   
     main.cpp

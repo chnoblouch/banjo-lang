@@ -5,7 +5,6 @@
 
 #include <filesystem>
 #include <optional>
-#include <unordered_map>
 #include <vector>
 
 #if OS_LINUX
@@ -19,11 +18,17 @@ namespace hot_reloader {
 class FileWatcher {
 
 private:
+    struct PlatformData;
+
     std::filesystem::path path;
 
+#if OS_WINDOWS
+    PlatformData *platform_data;
+#elif OS_LINUX
     int inotify_fd;
     struct pollfd inotify_pollfd;
     std::unordered_map<int, std::string> watch_descriptors;
+#endif
 
 public:
     static std::optional<FileWatcher> open(const std::filesystem::path &path);
@@ -32,7 +37,7 @@ private:
     FileWatcher();
 
 public:
-    std::vector<std::filesystem::path> poll(unsigned timeout_ms);
+    std::optional<std::vector<std::filesystem::path>> poll(unsigned timeout_ms);
     void close();
 
 private:

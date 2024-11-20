@@ -33,6 +33,21 @@ std::optional<TargetProcess> TargetProcess::spawn(std::string executable) {
         &process_info
     );
 
+    DEBUG_EVENT win_event;
+    bool thread_created = false;
+
+    while (!thread_created) {
+        if (!WaitForDebugEvent(&win_event, INFINITE)) {
+            return {};
+        }
+
+        if (win_event.dwDebugEventCode == CREATE_THREAD_DEBUG_EVENT) {
+            thread_created = true;
+        }
+
+        ContinueDebugEvent(win_event.dwProcessId, win_event.dwThreadId, DBG_CONTINUE);
+    }
+
     if (result) {
         return TargetProcess(std::move(executable), process_info.hProcess, process_info.hThread);
     } else {
@@ -42,34 +57,26 @@ std::optional<TargetProcess> TargetProcess::spawn(std::string executable) {
 
 TargetProcess::TargetProcess(std::string executable, HANDLE process, HANDLE thread)
   : executable(std::move(executable)),
+    exited(false),
     process(process),
-    thread(thread),
-    state(State::INITIALIZING) {}
+    thread(thread) {}
 
 void TargetProcess::poll() {
     DEBUG_EVENT win_event;
-    if (!WaitForDebugEvent(&win_event, INFINITE)) {
-        return;
-    }
 
-    if (win_event.dwDebugEventCode == CREATE_THREAD_DEBUG_EVENT) {
-        state = State::RUNNING;
-    } else if (win_event.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
-        state = State::EXITED;
-    }
+    while (WaitForDebugEvent(&win_event, 0)) {
+        if (win_event.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
+            exited = true;
+        }
 
-    switch (win_event.dwDebugEventCode) {
-        case CREATE_THREAD_DEBUG_EVENT: state = State::RUNNING; break;
-        case EXIT_PROCESS_DEBUG_EVENT: state = State::EXITED; break;
-        default: break;
+        ContinueDebugEvent(win_event.dwProcessId, win_event.dwThreadId, DBG_CONTINUE);
     }
-
-    ContinueDebugEvent(win_event.dwProcessId, win_event.dwThreadId, DBG_CONTINUE);
 }
 
 std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_view name) {
     BOOL result;
 
+    // Get the file path of the image of the target process.
     CHAR win_image_path[MAX_PATH + 1];
     DWORD win_image_path_size = sizeof(win_image_path) / sizeof(CHAR);
     result = QueryFullProcessImageName(process, 0, win_image_path, &win_image_path_size);
@@ -121,6 +128,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
         stream.seekg(32, std::ios::cur);
     }
 
+    // Get the number of loaded modules in the target process.
     std::vector<HMODULE> modules;
     DWORD modules_size;
     result = EnumProcessModules(process, modules.data(), 0, &modules_size);
@@ -129,6 +137,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
         return {};
     }
 
+    // Get the loaded modules in the target process.
     unsigned num_modules = modules_size / sizeof(HMODULE);
     modules.resize(num_modules);
     result = EnumProcessModules(process, modules.data(), modules.size() * sizeof(HMODULE), &modules_size);
@@ -139,6 +148,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
 
     HMODULE image_module = NULL;
 
+    // Find the image module in the module list by comparing the module file paths to the image file path.
     for (unsigned i = 0; i < num_modules; i++) {
         TCHAR win_module_path[MAX_PATH + 1];
         result = GetModuleFileNameEx(process, modules[i], win_module_path, sizeof(win_module_path) / sizeof(TCHAR));
@@ -157,6 +167,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
         return {};
     }
 
+    // Get information about the image module, which includes the base address we're looking for.
     MODULEINFO module_info;
     result = GetModuleInformation(process, image_module, &module_info, sizeof(module_info));
 

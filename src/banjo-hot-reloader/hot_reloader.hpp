@@ -43,6 +43,10 @@ private:
     void resolve_symbol_use(BinModule &mod, const LoadedFunc &loaded_func, const BinSymbolUse &use);
     void write_section(TargetProcess::Address address, const WriteBuffer &buffer);
     void update_func_addr(lang::sir::FuncDef &func_def, unsigned index, TargetProcess::Address new_addr);
+
+    static void log(const std::string &message);
+    [[noreturn]] static void abort(const std::string &message);
+    static std::string symbol_to_string(lang::sir::Symbol symbol);
 };
 
 } // namespace hot_reloader
