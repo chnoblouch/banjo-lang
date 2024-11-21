@@ -1,5 +1,6 @@
 #include "symbol_collector.hpp"
 
+#include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
@@ -168,7 +169,6 @@ void SymbolCollector::collect_use_item(sir::UseItem &use_item) {
     else if (auto use_rebind = use_item.match<sir::UseRebind>()) collect_use_rebind(*use_rebind);
     else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) collect_use_dot_expr(*use_dot_expr);
     else if (auto use_list = use_item.match<sir::UseList>()) collect_use_list(*use_list);
-    else ASSERT_UNREACHABLE;
 }
 
 void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident) {
@@ -180,10 +180,17 @@ void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind) {
 }
 
 void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
+    if (analyzer.mode == Mode::COMPLETION) {
+        if (use_dot_expr.rhs.is<sir::CompletionToken>()) {
+            analyzer.completion_context = CompleteAfterUseDot{
+                .lhs = use_dot_expr.lhs,
+            };
+        }
+    }
+
     if (auto use_ident = use_dot_expr.rhs.match<sir::UseIdent>()) collect_use_ident(*use_ident);
     else if (auto use_rebind = use_dot_expr.rhs.match<sir::UseRebind>()) collect_use_rebind(*use_rebind);
     else if (auto use_list = use_dot_expr.rhs.match<sir::UseList>()) collect_use_list(*use_list);
-    else ASSERT_UNREACHABLE;
 }
 
 void SymbolCollector::collect_use_list(sir::UseList &use_list) {

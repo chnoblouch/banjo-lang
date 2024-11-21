@@ -311,6 +311,7 @@ void Printer::print_use_item(const UseItem &use_item) {
     else if (auto use_rebind = use_item.match<UseRebind>()) print_use_rebind(*use_rebind);
     else if (auto use_dot_expr = use_item.match<UseDotExpr>()) print_use_dot_expr(*use_dot_expr);
     else if (auto use_list = use_item.match<UseList>()) print_use_list(*use_list);
+    else if (auto error = use_item.match<sir::Error>()) print_error(*error);
     else ASSERT_UNREACHABLE;
 }
 

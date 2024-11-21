@@ -40,7 +40,12 @@ struct CompleteAfterDot {
     sir::Expr lhs;
 };
 
-typedef std::variant<std::monostate, CompleteInDeclBlock, CompleteInBlock, CompleteAfterDot> CompletionContext;
+struct CompleteAfterUseDot {
+    sir::UseItem lhs;
+};
+
+typedef std::variant<std::monostate, CompleteInDeclBlock, CompleteInBlock, CompleteAfterDot, CompleteAfterUseDot>
+    CompletionContext;
 
 struct ClosureContext {
     std::vector<sir::Symbol> captured_vars;

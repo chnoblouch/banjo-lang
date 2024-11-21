@@ -95,9 +95,8 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_USE: return generate_use_decl(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
         case AST_IDENTIFIER: return generate_error_decl(node);
-        case AST_ERROR: return generate_error_decl(node);
         case AST_COMPLETION_TOKEN: return generate_completion_token(node);
-        default: ASSERT_UNREACHABLE;
+        default: return generate_error_decl(node);
     }
 }
 
@@ -344,9 +343,8 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_IDENTIFIER: return create_stmt(generate_expr(node));
         case AST_DOT_OPERATOR: return create_stmt(generate_expr(node));
         case AST_BLOCK: return create_stmt(generate_block(node));
-        case AST_ERROR: return generate_error_stmt(node);
         case AST_COMPLETION_TOKEN: return create_stmt(generate_expr(node));
-        default: ASSERT_UNREACHABLE;
+        default: return generate_error_stmt(node);
     }
 }
 
@@ -605,9 +603,8 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_RESULT_TYPE: return generate_result_type(node);
         case AST_CLOSURE_TYPE: return generate_closure_type(node);
         case AST_META_EXPR: return generate_meta_access(node);
-        case AST_ERROR: return generate_error_expr(node);
         case AST_COMPLETION_TOKEN: return generate_completion_token(node);
-        default: ASSERT_UNREACHABLE;
+        default: return generate_error_expr(node);
     }
 }
 
@@ -1093,7 +1090,8 @@ sir::UseItem SIRGenerator::generate_use_item(ASTNode *node) {
         case AST_USE_REBINDING: return generate_use_rebind(node);
         case AST_DOT_OPERATOR: return generate_use_dot_expr(node);
         case AST_USE_TREE_LIST: return generate_use_list(node);
-        default: ASSERT_UNREACHABLE;
+        case AST_COMPLETION_TOKEN: return generate_completion_token(node);
+        default: return generate_error_use_item(node);
     }
 }
 
@@ -1132,6 +1130,12 @@ sir::UseItem SIRGenerator::generate_use_list(ASTNode *node) {
     return create_use_item(sir::UseList{
         .ast_node = node,
         .items = items,
+    });
+}
+
+sir::UseItem SIRGenerator::generate_error_use_item(ASTNode *node) {
+    return create_expr(sir::Error{
+        .ast_node = node,
     });
 }
 

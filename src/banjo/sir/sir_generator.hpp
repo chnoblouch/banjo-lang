@@ -133,6 +133,7 @@ private:
     sir::UseItem generate_use_rebind(ASTNode *node);
     sir::UseItem generate_use_dot_expr(ASTNode *node);
     sir::UseItem generate_use_list(ASTNode *node);
+    sir::UseItem generate_error_use_item(ASTNode *node);
 
     template <typename T>
     T *create_expr(T value) {

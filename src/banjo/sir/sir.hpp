@@ -405,26 +405,11 @@ public:
     DeclBlock *get_decl_block();
 };
 
-class UseItem {
-    std::variant<UseIdent *, UseRebind *, UseDotExpr *, UseList *> kind;
+class UseItem : public DynamicPointer<UseIdent, UseRebind, UseDotExpr, UseList, Error, CompletionToken> {
 
 public:
-    UseItem() {}
-
     template <typename T>
-    UseItem(T value) : kind(std::move(value)) {}
-
-    template <typename T>
-    T *match() {
-        auto result = std::get_if<T *>(&kind);
-        return result ? *result : nullptr;
-    }
-
-    template <typename T>
-    const T *match() const {
-        auto result = std::get_if<T *>(&kind);
-        return result ? *result : nullptr;
-    }
+    UseItem(T value) : DynamicPointer(value) {}
 };
 
 class Node {

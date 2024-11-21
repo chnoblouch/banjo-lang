@@ -41,7 +41,6 @@ void UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol) 
     else if (auto use_rebind = use_item.match<sir::UseRebind>()) resolve_use_rebind(*use_rebind, symbol);
     else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) resolve_use_dot_expr(*use_dot_expr, symbol);
     else if (auto use_list = use_item.match<sir::UseList>()) resolve_use_list(*use_list, symbol);
-    else ASSERT_UNREACHABLE;
 }
 
 void UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol) {

@@ -63,6 +63,8 @@ public:
     File *find_or_load_file(const std::filesystem::path &fs_path);
     ModuleIndex *find_index(lang::sir::Module *mod);
 
+    std::vector<lang::ModulePath> list_sub_mods(lang::sir::Module *mod);
+
 private:
     void build_index(lang::sema::ExtraAnalysis &analysis);
 };

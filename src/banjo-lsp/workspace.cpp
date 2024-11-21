@@ -124,6 +124,21 @@ ModuleIndex *Workspace::find_index(lang::sir::Module *mod) {
     return iter == index.mods.end() ? nullptr : &iter->second;
 }
 
+std::vector<lang::ModulePath> Workspace::list_sub_mods(lang::sir::Module *mod) {
+    lang::ASTModule *ast_mod = module_manager.get_module_list().get_by_path(mod->path);
+    if (!ast_mod) {
+        return {};
+    }
+
+    std::vector<lang::ModulePath> paths(ast_mod->get_sub_mods().size());
+
+    for (unsigned i = 0; i < ast_mod->get_sub_mods().size(); i++) {
+        paths[i] = ast_mod->get_sub_mods()[i]->get_path();
+    }
+
+    return paths;
+}
+
 void Workspace::build_index(sema::ExtraAnalysis &analysis) {
     index.mods.clear();
 
