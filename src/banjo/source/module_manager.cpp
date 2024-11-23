@@ -27,15 +27,7 @@ void ModuleManager::add_search_path(std::filesystem::path path) {
 }
 
 void ModuleManager::add_standard_stdlib_search_path() {
-    const char *stdlib_name;
-
-#if BANJO_ENABLE_SIR
-    stdlib_name = "stdlib2";
-#else
-    stdlib_name = "stdlib";
-#endif
-
-    std::filesystem::path stdlib_path = Paths::executable().parent_path().parent_path() / "lib" / stdlib_name;
+    std::filesystem::path stdlib_path = Paths::executable().parent_path().parent_path() / "lib" / "stdlib2";
     add_search_path(stdlib_path);
 }
 

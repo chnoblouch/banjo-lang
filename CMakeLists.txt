@@ -61,12 +61,6 @@ endif()
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")
 
-if(BANJO_ENABLE_SIR)
-    add_compile_definitions(BANJO_ENABLE_SIR=1)
-else ()
-    add_compile_definitions(BANJO_ENABLE_SIR=0)
-endif()
-
 if((TARGET_OS STREQUAL "windows" OR TARGET_OS STREQUAL "linux") AND TARGET_ARCH STREQUAL "x86_64")
     message(STATUS "Hot reloader enabled")
     set(BUILD_HOT_RELOADER ON)

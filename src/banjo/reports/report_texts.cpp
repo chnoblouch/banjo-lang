@@ -64,11 +64,7 @@ ReportText::ReportText(ReportText::ID id) : text(TEXTS.at(id)) {}
 ReportText::ReportText(std::string_view format_str) : text(format_str) {}
 
 ReportText &ReportText::format(std::string_view string) {
-#if BANJO_ENABLE_SIR
     std::string::size_type position = text.find('$');
-#else
-    std::string::size_type position = text.find('%');
-#endif
 
     if (position != std::string::npos) {
         text.replace(position, 1, string);
