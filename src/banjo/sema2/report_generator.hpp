@@ -71,6 +71,9 @@ public:
     void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr);
     void report_err_cannot_call(const sir::Expr &expr);
     void report_err_cannot_deref(const sir::Expr &expr);
+    void report_err_cannot_iter(const sir::Expr &expr);
+    void report_err_cannot_iter_struct(const sir::Expr &expr, bool by_ref);
+    void report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, bool by_ref);
     void report_err_expected_generic_or_indexable(sir::Expr &expr);
     void report_err_unexpected_arg_count(sir::CallExpr &call_expr, unsigned expected_count, sir::FuncDef *func_def);
     void report_err_no_members(const sir::DotExpr &dot_expr);
@@ -93,7 +96,6 @@ public:
     void report_err_cannot_use_in_try(const sir::Expr &expr);
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
     void report_err_compile_time_unknown(const sir::Expr &range);
-    void report_err_meta_for_cannot_iter(const sir::Expr &range);
 
     void report_err_expected_proto(const sir::Expr &expr);
     void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::ProtoFuncDecl &func_decl);

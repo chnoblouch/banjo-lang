@@ -19,3 +19,19 @@ func main() {
         print(',');
     }
 }
+
+# test:subtest
+# test:output "6,1,14,"
+
+func main() {
+    var array = [3, -2, 11];
+
+    for *value in array {
+        *value += 3;
+    }
+
+    for value in array {
+        print(value);
+        print(',');
+    }
+}

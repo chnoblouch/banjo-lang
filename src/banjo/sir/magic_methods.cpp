@@ -43,6 +43,10 @@ std::string_view look_up(sir::UnaryOp op) {
     }
 }
 
+std::string_view look_up_iter(bool by_ref) {
+    return by_ref ? REF_ITER : ITER;
+}
+
 } // namespace MagicMethods
 
 } // namespace sir

@@ -147,7 +147,7 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
             return Result::ERROR;
         }
     } else {
-        analyzer.report_generator.report_err_meta_for_cannot_iter(range);
+        analyzer.report_generator.report_err_cannot_iter(range);
         return Result::ERROR;
     }
 }

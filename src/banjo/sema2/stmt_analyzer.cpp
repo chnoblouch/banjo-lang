@@ -390,14 +390,31 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         return;
     }
 
-    if (!for_stmt.range.get_type()) {
+    sir::Expr iterable_type = for_stmt.range.get_type();
+    if (!iterable_type.is_symbol<sir::StructDef>()) {
+        analyzer.report_generator.report_err_cannot_iter(for_stmt.range);
         return;
     }
 
-    sir::SymbolTable *iterable_symbol_table = for_stmt.range.get_type().as_symbol<sir::StructDef>().block.symbol_table;
-    sir::FuncDef &iter_func_def = iterable_symbol_table->look_up(sir::MagicMethods::ITER).as<sir::FuncDef>();
+    sir::SymbolTable *iterable_symbol_table = iterable_type.as_symbol<sir::StructDef>().block.symbol_table;
+    sir::Symbol iter_symbol = iterable_symbol_table->look_up(sir::MagicMethods::look_up_iter(for_stmt.by_ref));
+    if (!iter_symbol) {
+        analyzer.report_generator.report_err_cannot_iter_struct(for_stmt.range, for_stmt.by_ref);
+        return;
+    }
+
+    // FIXME: error if it's not a method
+    sir::FuncDef &iter_func_def = iter_symbol.as<sir::FuncDef>();
+
     sir::SymbolTable *iter_symbol_table = iter_func_def.type.return_type.as_symbol<sir::StructDef>().block.symbol_table;
-    sir::FuncDef &next_func_def = iter_symbol_table->look_up(sir::MagicMethods::NEXT).as<sir::FuncDef>();
+    sir::Symbol next_symbol = iter_symbol_table->look_up(sir::MagicMethods::NEXT);
+    if (!next_symbol) {
+        analyzer.report_generator.report_err_iter_no_next(for_stmt.range, iter_func_def, for_stmt.by_ref);
+        return;
+    }
+
+    // FIXME: error if it's not a method
+    sir::FuncDef &next_func_def = next_symbol.as<sir::FuncDef>();
 
     sir::Block *block = analyzer.create_stmt(sir::Block{
         .ast_node = nullptr,

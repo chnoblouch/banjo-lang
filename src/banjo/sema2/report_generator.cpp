@@ -215,6 +215,33 @@ void ReportGenerator::report_err_cannot_deref(const sir::Expr &expr) {
     report_error("cannot dereference value with type '$'", expr.get_ast_node(), expr.get_type());
 }
 
+void ReportGenerator::report_err_cannot_iter(const sir::Expr &expr) {
+    report_error("cannot iterate over value with type '$'", expr.get_ast_node(), expr.get_type());
+}
+
+void ReportGenerator::report_err_cannot_iter_struct(const sir::Expr &expr, bool by_ref) {
+    std::string note_format_str = "implement '$' for this type to support ";
+    note_format_str += by_ref ? "reference iterating" : "iterating";
+
+    sir::StructDef &struct_def = expr.get_type().as_symbol<sir::StructDef>();
+
+    build_error("cannot iterate over value with type '$'", expr.get_ast_node(), expr.get_type())
+        .add_note(note_format_str, struct_def.ident.ast_node, sir::MagicMethods::look_up_iter(by_ref))
+        .report();
+}
+
+void ReportGenerator::report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, bool by_ref) {
+    sir::Expr iter_type = iter_func_def.type.return_type;
+
+    std::string note_format_str = "iterator type for ";
+    note_format_str += by_ref ? "reference iterating" : "iterating";
+    note_format_str += " over '$' defined here";
+
+    build_error("iterator type '$' does not implement '$'", expr.get_ast_node(), iter_type, sir::MagicMethods::NEXT)
+        .add_note(note_format_str, iter_type.get_ast_node(), expr.get_type())
+        .report();
+}
+
 void ReportGenerator::report_err_expected_generic_or_indexable(sir::Expr &expr) {
     report_error("expected generic declaration or indexable value", expr.get_ast_node());
 }
@@ -336,10 +363,6 @@ void ReportGenerator::report_err_try_no_error_field(const sir::TryExceptBranch &
 
 void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &range) {
     report_error("value is not known at compile time", range.get_ast_node());
-}
-
-void ReportGenerator::report_err_meta_for_cannot_iter(const sir::Expr &range) {
-    report_error("cannot iterate over type '$'", range.get_ast_node(), range.get_type());
 }
 
 void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {

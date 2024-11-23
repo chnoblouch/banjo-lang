@@ -1,6 +1,35 @@
 # test:subtest
-# test:error 5:23 "cannot iterate over type 'integer literal'"
+# test:error 5:18 "cannot iterate over value with type 'bool'"
 
 func main() {
-    meta for value in 10 {}
+    for value in true {}
+}
+
+# test:subtest
+# test:error 16:18 "cannot iterate over value with type 'S'"
+# test:note 12:8 "implement '__iter__' for this type to support iterating"
+
+struct S {}
+
+func main() {
+    var s = S {};
+    for value in s {}
+}
+
+# test:subtest
+# test:error 27:19 "cannot iterate over value with type 'S'"
+# test:note 23:8 "implement '__refiter__' for this type to support reference iterating"
+
+struct S {}
+
+func main() {
+    var s = S {};
+    for *value in s {}
+}
+
+# test:subtest
+# test:error 34:23 "cannot iterate over value with type 'integer literal'"
+
+func main() {
+    meta for value in 42 {}
 }

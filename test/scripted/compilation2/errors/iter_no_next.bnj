@@ -1,0 +1,31 @@
+# test:common
+
+struct I {}
+
+struct S {
+    func __iter__(self) -> I {
+        return I {};
+    }
+
+    func __refiter__(self) -> I {
+        return I {};
+    }
+}
+
+# test:subtest
+# test:error 21:18 "iterator type 'I' does not implement '__next__'"
+# test:note 6:28 "iterator type for iterating over 'S' defined here"
+
+func main() {
+    var s = S {};
+    for value in s {}
+}
+
+# test:subtest
+# test:error 30:19 "iterator type 'I' does not implement '__next__'"
+# test:note 10:31 "iterator type for reference iterating over 'S' defined here"
+
+func main() {
+    var s = S {};
+    for *value in s {}
+}

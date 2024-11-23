@@ -980,6 +980,7 @@ struct WhileStmt {
 
 struct ForStmt {
     ASTNode *ast_node;
+    bool by_ref;
     Ident ident;
     Expr range;
     Block block;

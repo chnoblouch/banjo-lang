@@ -504,6 +504,7 @@ void Printer::print_while_stmt(const WhileStmt &while_stmt) {
 
 void Printer::print_for_stmt(const ForStmt &for_stmt) {
     BEGIN_OBJECT("ForStmt");
+    PRINT_FIELD("by_ref", for_stmt.by_ref ? "true" : "false");
     PRINT_FIELD("ident", for_stmt.ident.value);
     PRINT_EXPR_FIELD("range", for_stmt.range);
     PRINT_BLOCK_FIELD("block", for_stmt.block);

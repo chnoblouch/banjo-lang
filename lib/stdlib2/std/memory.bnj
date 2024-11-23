@@ -63,3 +63,22 @@ struct PointerIter[T] {
         return value;
     }
 }
+
+struct PointerRefIter[T] {
+    var pointer: *T;
+    var end: *T;
+    
+    pub func new(pointer: *T, end: *T) -> PointerRefIter[T] {
+        return PointerRefIter[T] { pointer, end };
+    }
+    
+    func __next__(self) -> ?*T {
+        if self.pointer == self.end {
+            return none;
+        }
+        
+        var pointer = self.pointer;
+        self.pointer += 1;
+        return pointer;
+    }
+}

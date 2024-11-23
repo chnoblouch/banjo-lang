@@ -415,6 +415,7 @@ WhileStmt *Cloner::clone_while_stmt(const WhileStmt &while_stmt) {
 ForStmt *Cloner::clone_for_stmt(const ForStmt &for_stmt) {
     return mod.create_stmt(ForStmt{
         .ast_node = for_stmt.ast_node,
+        .by_ref = for_stmt.by_ref,
         .ident = for_stmt.ident,
         .range = clone_expr(for_stmt.range),
         .block = clone_block(for_stmt.block),

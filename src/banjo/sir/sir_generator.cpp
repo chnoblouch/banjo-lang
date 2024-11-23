@@ -477,6 +477,7 @@ sir::Stmt SIRGenerator::generate_while_stmt(ASTNode *node) {
 sir::Stmt SIRGenerator::generate_for_stmt(ASTNode *node) {
     return create_stmt(sir::ForStmt{
         .ast_node = node,
+        .by_ref = node->get_child(FOR_ITER_TYPE)->get_value() == "*",
         .ident = generate_ident(node->get_child(FOR_VAR)),
         .range = generate_expr(node->get_child(FOR_EXPR)),
         .block = generate_block(node->get_child(FOR_BLOCK)),
