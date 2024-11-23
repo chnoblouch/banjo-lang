@@ -37,7 +37,7 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 
         analyzer.blocked_decls.insert(&decl);
 
-        if (auto meta_if_stmt = decl.match<sir::MetaIfStmt>()) {
+        if (decl.is<sir::MetaIfStmt>()) {
             evaluate_meta_if_stmt(decl_block, i);
         }
 
@@ -45,6 +45,7 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
     }
 
     analyzer.in_meta_expansion = prev_in_meta_expansion;
+    analyzer.incomplete_decl_blocks.erase(&decl_block);
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index) {

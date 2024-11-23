@@ -1247,6 +1247,19 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
         sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
+
+        if (!symbol) {
+            auto iter = analyzer.incomplete_decl_blocks.find(decl_block);
+
+            if (iter != analyzer.incomplete_decl_blocks.end()) {
+                analyzer.push_scope() = iter->second;
+                MetaExpansion(analyzer).run_on_decl_block(*decl_block);
+                analyzer.pop_scope();
+
+                symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
+            }
+        }
+
         if (symbol) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, symbol);
 

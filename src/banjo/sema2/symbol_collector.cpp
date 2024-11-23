@@ -25,6 +25,13 @@ void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
     for (sir::Decl &decl : decl_block.decls) {
         collect_decl(decl);
     }
+
+    for (sir::Decl &decl : decl_block.decls) {
+        if (decl.is<sir::MetaIfStmt>()) {
+            analyzer.incomplete_decl_blocks.insert({&decl_block, analyzer.get_scope()});
+            break;
+        }
+    }
 }
 
 void SymbolCollector::collect_in_meta_block(sir::MetaBlock &meta_block) {

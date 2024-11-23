@@ -12,6 +12,7 @@
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -63,7 +64,6 @@ struct Scope {
 enum class Result {
     SUCCESS,
     ERROR,
-    AWAITING_DEPENDENCY,
 };
 
 class SemanticAnalyzer {
@@ -103,6 +103,7 @@ private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::set<const sir::Decl *> blocked_decls;
     std::vector<std::tuple<sir::Decl, Scope>> decls_awaiting_body_analysis;
+    std::unordered_map<sir::DeclBlock *, Scope> incomplete_decl_blocks;
     bool in_meta_expansion = false;
 
 public:
