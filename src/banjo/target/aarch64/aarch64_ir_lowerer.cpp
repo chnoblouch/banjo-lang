@@ -385,7 +385,7 @@ void AArch64IRLowerer::lower_uextend(ir::Instruction& instr) {
     // FIXME
 
     emit(mcode::Instruction(AArch64Opcode::MOV, {
-        mcode::Operand::from_register(lower_reg(*instr.get_dest()), 8),
+        mcode::Operand::from_register(lower_reg(*instr.get_dest()), 4),
         lower_value(instr.get_operand(0))
     }));
 }

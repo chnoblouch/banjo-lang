@@ -86,7 +86,7 @@ StoredValue StoredValue::turn_into_value_or_copy(SSAGeneratorContext &ctx) {
             return StoredValue::create_value(val);
         } else {
             const ir::Value &copy_src = value_or_ptr;
-            ir::Value copy_dst = ir::Operand::from_register(ctx.append_alloca(value_type));
+            ir::Value copy_dst = ir::Operand::from_register(ctx.append_alloca(value_type), ssa::Primitive::ADDR);
             ctx.append_copy(copy_dst, copy_src, value_type);
             return StoredValue::create_reference(copy_dst, value_type);
         }
