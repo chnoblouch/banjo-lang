@@ -126,6 +126,7 @@ public:
 public:
     TokenType get_type() { return type; }
     const std::string &get_value() { return value; }
+    std::string move_value() { return std::move(value); }
     TextPosition get_position() { return position; }
     TextPosition get_end() { return position + value.size(); }
     TextRange get_range() { return TextRange(position, get_end()); }

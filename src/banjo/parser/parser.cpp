@@ -7,6 +7,7 @@
 #include "banjo/parser/stmt_parser.hpp"
 #include "banjo/utils/timing.hpp"
 
+#include <memory>
 #include <unordered_set>
 
 namespace banjo {
@@ -168,10 +169,10 @@ ParseResult Parser::parse_type() {
     return ExprParser(*this).parse_type();
 }
 
-AttributeList *Parser::parse_attribute_list() {
+std::unique_ptr<AttributeList> Parser::parse_attribute_list() {
     stream.consume(); // Consume '@'
 
-    AttributeList *attr_list = new AttributeList();
+    std::unique_ptr<AttributeList> attr_list = std::make_unique<AttributeList>();
 
     if (stream.get()->is(TKN_LBRACKET)) {
         stream.consume(); // Consume '['
@@ -244,8 +245,7 @@ ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
         NodeBuilder node = new_node();
 
         if (stream.get()->is(TKN_AT)) {
-            AttributeList *attribute_list = parse_attribute_list();
-            node.set_attribute_list(attribute_list);
+            node.set_attribute_list(parse_attribute_list());
         }
 
         if (stream.get()->is(TKN_SELF)) {

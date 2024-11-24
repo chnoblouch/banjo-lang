@@ -5,7 +5,9 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -166,16 +168,13 @@ enum ASTNodeType {
     AST_INVALID,
 };
 
-enum class SemaStage { NONE, NAME, TYPE, BODY };
-
 class ASTNode {
 
 protected:
     ASTNodeType type;
     std::string value;
     TextRange range;
-    AttributeList *attribute_list = nullptr;
-    SemaStage sema_stage = SemaStage::NONE;
+    std::unique_ptr<AttributeList> attribute_list = nullptr;
 
     std::vector<ASTNode *> children;
     ASTNode *parent = nullptr;
@@ -190,18 +189,14 @@ public:
 
     ASTNodeType get_type() { return type; }
     TextRange get_range() { return range; }
-    AttributeList *get_attribute_list() { return attribute_list; }
-    SemaStage get_sema_stage() const { return sema_stage; }
+    AttributeList *get_attribute_list() { return attribute_list.get(); }
 
     const std::string &get_value() { return value; }
     void set_range(TextRange range) { this->range = range; }
-    void set_attribute_list(AttributeList *attribute_list) { this->attribute_list = attribute_list; }
-    void set_sema_stage(SemaStage sema_stage) { this->sema_stage = sema_stage; }
 
     std::vector<ASTNode *> &get_children() { return children; }
     ASTNode *get_child(int index) { return children[index]; }
     ASTNode *get_child() { return children[0]; }
-    ASTNode *get_child_of_type(ASTNodeType type);
     bool has_child(unsigned index);
     ASTNode *get_parent() { return parent; }
 
@@ -210,12 +205,6 @@ public:
     void set_parent(ASTNode *parent) { this->parent = parent; }
 
     void append_child(ASTNode *child);
-    void insert_child(int index, ASTNode *child);
-    void replace_child(ASTNode *old_child, ASTNode *new_child, bool keep_data);
-    void remove_child(int index);
-    ASTNode *detach_child(int index);
-    int index_of_child(ASTNode *child);
-    bool is_ancestor_of(ASTNode *other);
 
     void set_range_from_children();
 

@@ -21,7 +21,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
     }
 
     if (parser.current_attr_list) {
-        node.set_attribute_list(parser.current_attr_list);
+        node.set_attribute_list(std::move(parser.current_attr_list));
         parser.current_attr_list = nullptr;
     }
 
@@ -45,9 +45,9 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 
         node.append_child(parser.create_dummy_block());
         if (generic) {
-            return {node.build(new ASTNode(AST_GENERIC_FUNCTION_DEFINITION)), false};
+            return {node.build(AST_GENERIC_FUNCTION_DEFINITION), false};
         } else {
-            return {node.build(new ASTNode(AST_FUNCTION_DEFINITION)), false};
+            return {node.build(AST_FUNCTION_DEFINITION), false};
         }
     }
 
@@ -56,9 +56,9 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 
     bool is_valid = head_valid && result.is_valid;
     if (generic) {
-        return {node.build(new ASTNode(AST_GENERIC_FUNCTION_DEFINITION)), is_valid};
+        return {node.build(AST_GENERIC_FUNCTION_DEFINITION), is_valid};
     } else {
-        return {node.build(new ASTNode(AST_FUNCTION_DEFINITION)), is_valid};
+        return {node.build(AST_FUNCTION_DEFINITION), is_valid};
     }
 }
 
@@ -78,7 +78,7 @@ ParseResult DeclParser::parse_const() {
         return node.build_error();
     }
 
-    return node.build(new ASTNode(AST_CONSTANT));
+    return node.build(AST_CONSTANT);
 }
 
 ParseResult DeclParser::parse_struct() {
@@ -103,9 +103,9 @@ ParseResult DeclParser::parse_struct() {
         node.append_child(result.node);
 
         if (!result.is_valid) {
-            return {node.build(new ASTNode(AST_GENERIC_STRUCT_DEFINITION)), false};
+            return {node.build(AST_GENERIC_STRUCT_DEFINITION), false};
         }
-        return node.build(new ASTNode(AST_GENERIC_STRUCT_DEFINITION));
+        return node.build(AST_GENERIC_STRUCT_DEFINITION);
     }
 
     if (stream.get()->is(TKN_COLON)) {
@@ -129,9 +129,9 @@ ParseResult DeclParser::parse_struct() {
     node.append_child(result.node);
 
     if (!result.is_valid) {
-        return {node.build(new ASTNode(AST_STRUCT_DEFINITION)), false};
+        return {node.build(AST_STRUCT_DEFINITION), false};
     }
-    return node.build(new ASTNode(AST_STRUCT_DEFINITION));
+    return node.build(AST_STRUCT_DEFINITION);
 }
 
 ParseResult DeclParser::parse_enum() {
@@ -153,11 +153,11 @@ ParseResult DeclParser::parse_enum() {
             variant.append_child(ExprParser(parser, false).parse().node);
         }
 
-        return variant.build(new ASTNode(AST_ENUM_VARIANT));
+        return variant.build(AST_ENUM_VARIANT);
     });
 
     node.append_child(result.node);
-    return node.build(new ASTNode(AST_ENUM_DEFINITION));
+    return node.build(AST_ENUM_DEFINITION);
 }
 
 ParseResult DeclParser::parse_union() {
@@ -176,7 +176,7 @@ ParseResult DeclParser::parse_union() {
     }
     node.append_child(result.node);
 
-    return node.build(new ASTNode(AST_UNION));
+    return node.build(AST_UNION);
 }
 
 ParseResult DeclParser::parse_union_case() {
@@ -198,7 +198,7 @@ ParseResult DeclParser::parse_union_case() {
     ParseResult result = parser.parse_param_list();
     node.append_child(result.node);
     if (!result.is_valid) {
-        return node.build(new ASTNode(AST_UNION_CASE));
+        return node.build(AST_UNION_CASE);
     }
 
     if (stream.get()->is(TKN_SEMI)) {
@@ -207,7 +207,7 @@ ParseResult DeclParser::parse_union_case() {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "';'");
     }
 
-    return node.build(new ASTNode(AST_UNION_CASE));
+    return node.build(AST_UNION_CASE);
 }
 
 ParseResult DeclParser::parse_proto() {
@@ -226,7 +226,7 @@ ParseResult DeclParser::parse_proto() {
     }
     node.append_child(result.node);
 
-    return node.build(new ASTNode(AST_PROTO));
+    return node.build(AST_PROTO);
 }
 
 ParseResult DeclParser::parse_type_alias() {
@@ -259,7 +259,7 @@ ParseResult DeclParser::parse_type_alias() {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_SEMI);
     }
 
-    return node.build(new ASTNode(AST_TYPE_ALIAS));
+    return node.build(AST_TYPE_ALIAS);
 }
 
 ParseResult DeclParser::parse_use() {
@@ -355,7 +355,7 @@ ParseResult DeclParser::parse_native_var() {
     NodeBuilder node = parser.new_node();
 
     if (parser.current_attr_list) {
-        node.set_attribute_list(parser.current_attr_list);
+        node.set_attribute_list(std::move(parser.current_attr_list));
         parser.current_attr_list = nullptr;
     }
 
@@ -376,7 +376,7 @@ ParseResult DeclParser::parse_native_var() {
         return node.build_error();
     }
 
-    return node.build(new ASTNode(AST_NATIVE_VAR));
+    return node.build(AST_NATIVE_VAR);
 }
 
 ParseResult DeclParser::parse_native_func() {
@@ -386,7 +386,7 @@ ParseResult DeclParser::parse_native_func() {
     node.append_child(new ASTNode(AST_QUALIFIER_LIST));
 
     if (parser.current_attr_list) {
-        node.set_attribute_list(parser.current_attr_list);
+        node.set_attribute_list(std::move(parser.current_attr_list));
         parser.current_attr_list = nullptr;
     }
 
@@ -406,7 +406,7 @@ ParseResult DeclParser::parse_native_func() {
     }
 
     stream.consume(); // Consume ';'
-    return node.build(new ASTNode(AST_NATIVE_FUNCTION_DECLARATION));
+    return node.build(AST_NATIVE_FUNCTION_DECLARATION);
 }
 
 ParseResult DeclParser::parse_pub() {

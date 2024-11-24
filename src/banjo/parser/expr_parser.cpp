@@ -122,7 +122,7 @@ ParseResult ExprParser::parse_cast_level() {
         }
 
         cast_node.append_child(result.node);
-        return cast_node.build_with_inferred_range(new ASTNode(AST_CAST));
+        return cast_node.build_with_inferred_range(AST_CAST);
     } else {
         return result;
     }
@@ -145,7 +145,7 @@ ParseResult ExprParser::parse_result_level() {
         }
 
         cast_node.append_child(result.node);
-        return cast_node.build_with_inferred_range(new ASTNode(AST_RESULT_TYPE));
+        return cast_node.build_with_inferred_range(AST_RESULT_TYPE);
     } else {
         return result;
     }
@@ -168,7 +168,7 @@ ParseResult ExprParser::parse_unary_level() {
     stream.consume(); // Consume operator
     ParseResult result = parse_unary_level();
     node.append_child(result.node);
-    return {node.build(new ASTNode(type)), result.is_valid};
+    return {node.build(type), result.is_valid};
 }
 
 ParseResult ExprParser::parse_post_operand() {
@@ -285,7 +285,7 @@ ParseResult ExprParser::parse_array_literal() {
     while (true) {
         if (stream.get()->is(TKN_RBRACKET)) {
             stream.consume();
-            return node.build(new ASTNode(type));
+            return node.build(type);
         } else {
             ParseResult result = ExprParser(parser, true).parse();
             if (!result.is_valid) {
@@ -321,16 +321,16 @@ ParseResult ExprParser::parse_array_literal() {
 
         if (stream.get()->is(TKN_RBRACKET)) {
             stream.consume();
-            return node.build(new ASTNode(type));
+            return node.build(type);
         } else if (stream.get()->is(TKN_COMMA)) {
             stream.consume();
         } else {
             parser.report_unexpected_token();
-            return {node.build(new ASTNode(type)), false};
+            return {node.build(type), false};
         }
     }
 
-    return node.build(new ASTNode(type));
+    return node.build(type);
 }
 
 ParseResult ExprParser::parse_paren_expr() {
@@ -379,7 +379,7 @@ ParseResult ExprParser::parse_anon_struct_literal() {
     }
     node.append_child(result.node);
 
-    return node.build(new ASTNode(AST_ANON_STRUCT_LITERAL));
+    return node.build(AST_ANON_STRUCT_LITERAL);
 }
 
 ParseResult ExprParser::parse_closure() {
@@ -399,7 +399,7 @@ ParseResult ExprParser::parse_closure() {
     }
 
     if (!stream.get()->is(TKN_LBRACE) || type_expected) {
-        return node.build(new ASTNode(AST_CLOSURE_TYPE));
+        return node.build(AST_CLOSURE_TYPE);
     }
 
     result = parser.parse_block();
@@ -408,7 +408,7 @@ ParseResult ExprParser::parse_closure() {
     }
     node.append_child(result.node);
 
-    return node.build(new ASTNode(AST_CLOSURE_TYPE));
+    return node.build(AST_CLOSURE_TYPE);
 }
 
 ParseResult ExprParser::parse_func_type() {
@@ -434,7 +434,7 @@ ParseResult ExprParser::parse_func_type() {
         node.append_child(new ASTNode(AST_VOID));
     }
 
-    return node.build(new ASTNode(AST_FUNCTION_DATA_TYPE));
+    return node.build(AST_FUNCTION_DATA_TYPE);
 }
 
 ParseResult ExprParser::parse_meta_expr() {
@@ -446,7 +446,7 @@ ParseResult ExprParser::parse_meta_expr() {
     stream.consume(); // Consume ')'
 
     builder.append_child(result.node);
-    return {builder.build(new ASTNode(AST_META_EXPR)), result.is_valid};
+    return {builder.build(AST_META_EXPR), result.is_valid};
 }
 
 ParseResult ExprParser::parse_explicit_type() {
@@ -471,7 +471,7 @@ ParseResult ExprParser::parse_explicit_type() {
     }
     stream.consume(); // Consume ')'
 
-    return node.build(new ASTNode(AST_EXPLICIT_TYPE));
+    return node.build(AST_EXPLICIT_TYPE);
 }
 
 ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
@@ -506,12 +506,12 @@ ParseResult ExprParser::parse_bracket_expr(ASTNode *lhs_node) {
     node.set_start_position(lhs_node->get_range().start);
     node.append_child(lhs_node);
 
-    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this](NodeBuilder node) {
+    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this](NodeBuilder &) {
         return ExprParser(parser).parse();
     });
     node.append_child(result.node);
 
-    return {node.build(new ASTNode(AST_ARRAY_ACCESS)), result.is_valid};
+    return {node.build(AST_ARRAY_ACCESS), result.is_valid};
 }
 
 ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {

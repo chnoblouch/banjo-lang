@@ -10,6 +10,7 @@
 #include "banjo/source/module_path.hpp"
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace banjo {
@@ -42,7 +43,7 @@ public:
 private:
     TokenStream stream;
     const ModulePath &module_path;
-    AttributeList *current_attr_list = nullptr;
+    std::unique_ptr<AttributeList> current_attr_list = nullptr;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;
@@ -66,7 +67,7 @@ private:
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
     ParseResult parse_type_alias_or_explicit_type();
-    AttributeList *parse_attribute_list();
+    std::unique_ptr<AttributeList> parse_attribute_list();
 
     ParseResult parse_list(
         ASTNodeType type,

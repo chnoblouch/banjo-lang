@@ -15,7 +15,7 @@ namespace codegen {
 SSALowerer::SSALowerer(target::Target *target) : target(target) {}
 
 mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
-    PROFILE_SCOPE("ir lowering");
+    PROFILE_SCOPE("ssa lowering");
 
     this->module_ = &module_;
     init_module(module_);

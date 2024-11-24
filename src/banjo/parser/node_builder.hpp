@@ -4,6 +4,7 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/parser/token_stream.hpp"
 
+#include <memory>
 #include <utility>
 
 namespace banjo {
@@ -19,41 +20,27 @@ struct ParseResult {
 class NodeBuilder {
 
 private:
-    TextPosition start_position;
-    std::vector<ASTNode *> children;
-    AttributeList *attribute_list = nullptr;
     TokenStream &stream;
+    ASTNode *node;
 
 public:
-    NodeBuilder(TokenStream &stream) : start_position(stream.get()->get_position()), stream(stream) {}
-
-    void append_child(ASTNode *child) { children.push_back(child); }
-    void set_attribute_list(AttributeList *attribute_list) { this->attribute_list = attribute_list; }
-    void set_start_position(TextPosition start_position) { this->start_position = start_position; }
-
-    template <typename T>
-    T *build(T *node) {
-        Token *previous = stream.previous();
-        TextPosition end_position = previous ? previous->get_end() : start_position;
-        TextRange range(start_position, end_position);
-
-        for (ASTNode *child : children) {
-            node->append_child(child);
-        }
-
-        node->set_range(range);
-        node->set_attribute_list(attribute_list);
-        return node;
+    NodeBuilder(TokenStream &stream) : stream(stream), node(new ASTNode()) {
+        node->range.start = stream.get()->get_position();
     }
 
-    template <typename T>
-    T *build() {
-        return build(new T);
+    void append_child(ASTNode *child) { node->append_child(child); }
+
+    void set_attribute_list(std::unique_ptr<AttributeList> attribute_list) {
+        node->attribute_list = std::move(attribute_list);
     }
+
+    void set_start_position(TextPosition start_position) { node->range.start = start_position; }
 
     ASTNode *build(ASTNodeType type) {
-        ASTNode *node = build<ASTNode>();
-        node->set_type(type);
+        Token *previous = stream.previous();
+        node->range.end = previous ? previous->get_end() : node->range.start;
+
+        node->type = type;
         return node;
     }
 
@@ -63,26 +50,12 @@ public:
         return node;
     }
 
-    template <typename T>
-    T *build_with_inferred_range(T *node) {
-        build(node);
-        node->set_range_from_children();
-        return node;
-    }
-
     ParseResult build_error() {
-        ASTNode *node = new ASTNode(AST_ERROR);
-        node->children = std::move(children);
-
-        for (ASTNode *child : node->children) {
-            child->parent = node;
-        }
-
         if (!node->children.empty()) {
-            node->range = {start_position, node->children.back()->get_range().end};
+            node->range.end = node->children.back()->get_range().end;
         }
 
-        node->attribute_list = attribute_list;
+        node->type = AST_ERROR;
         return node;
     }
 };
