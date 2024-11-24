@@ -2,8 +2,6 @@
 #define LSP_COMPLETION_HANDLER_H
 
 #include "banjo/sir/sir.hpp"
-#include "banjo/symbol/generics.hpp"
-#include "banjo/symbol/symbol_ref.hpp"
 #include "banjo/utils/json.hpp"
 #include "connection.hpp"
 #include "workspace.hpp"

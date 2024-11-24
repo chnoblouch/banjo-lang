@@ -186,7 +186,7 @@ public:
     ASTNode(ASTNodeType type, std::string value, TextRange range = {0, 0});
     ASTNode(ASTNodeType type, TextRange range);
     ASTNode(ASTNodeType type, Token *token);
-    virtual ~ASTNode();
+    ~ASTNode();
 
     ASTNodeType get_type() { return type; }
     TextRange get_range() { return range; }
@@ -216,17 +216,13 @@ public:
     ASTNode *detach_child(int index);
     int index_of_child(ASTNode *child);
     bool is_ancestor_of(ASTNode *other);
-    ASTNode *clone();
 
     void set_range_from_children();
 
     template <typename T>
     T *as() {
-        assert(dynamic_cast<T *>(this));
         return static_cast<T *>(this);
     }
-
-    virtual ASTNode *create_clone();
 
     friend class NodeBuilder;
 };

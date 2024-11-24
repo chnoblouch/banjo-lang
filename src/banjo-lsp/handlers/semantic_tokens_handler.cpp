@@ -1,13 +1,7 @@
 #include "semantic_tokens_handler.hpp"
 
-#include "ast_navigation.hpp"
-#include "banjo/ast/ast_node.hpp"
-#include "banjo/ast/expr.hpp"
-#include "banjo/sema2/extra_analysis.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/text_range.hpp"
-#include "banjo/symbol/symbol_ref.hpp"
-#include "banjo/utils/macros.hpp"
 #include "protocol_structs.hpp"
 #include "uri.hpp"
 

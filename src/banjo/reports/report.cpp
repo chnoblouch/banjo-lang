@@ -23,10 +23,6 @@ Report &Report::set_message(std::string message) {
     return *this;
 }
 
-Report &Report::set_message(ReportText::ID text_id) {
-    return set_message(ReportText(text_id).str());
-}
-
 Report &Report::set_message(ReportMessage message) {
     this->message = std::move(message);
     return *this;

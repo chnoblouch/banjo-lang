@@ -1,9 +1,8 @@
 #ifndef AST_MODULE_H
 #define AST_MODULE_H
 
-#include "banjo/ast/ast_block.hpp"
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 
 #include <filesystem>
 #include <vector>
@@ -32,9 +31,7 @@ public:
     void add_sub_mod(ASTModule *sub_mod) { sub_mods.push_back(sub_mod); }
     void add_dependent(ASTModule *dependent) { dependents.push_back(dependent); }
 
-    ASTNode *create_clone() override { return new ASTModule(path); }
-
-    ASTBlock *get_block() { return get_child_of_type(AST_BLOCK)->as<ASTBlock>(); }
+    ASTNode *get_block() { return get_child_of_type(AST_BLOCK); }
 };
 
 } // namespace lang

@@ -1,16 +1,12 @@
 #include "parser.hpp"
 
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/ast/expr.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/decl_parser.hpp"
 #include "banjo/parser/expr_parser.hpp"
 #include "banjo/parser/stmt_parser.hpp"
-#include "banjo/symbol/symbol_table.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <algorithm>
-#include <cstddef>
 #include <unordered_set>
 
 namespace banjo {
@@ -58,31 +54,25 @@ ParsedAST Parser::parse_module() {
     };
 }
 
-ASTBlock *Parser::parse_top_level_block() {
-    ASTBlock *block = new ASTBlock({0, 0}, cur_symbol_table);
-    cur_symbol_table = block->get_symbol_table();
+ASTNode *Parser::parse_top_level_block() {
+    ASTNode *block = new ASTNode(AST_BLOCK, TextRange{0, 0});
 
     while (!stream.get()->is(TKN_EOF)) {
         parse_block_child(block);
     }
 
     block->set_range_from_children();
-    cur_symbol_table = cur_symbol_table->get_parent();
     return block;
 }
 
 ParseResult Parser::parse_block(bool with_symbol_table /* = true */) {
-    ASTBlock *block = new ASTBlock({0, 0}, cur_symbol_table);
+    ASTNode *block = new ASTNode(AST_BLOCK, TextRange{0, 0});
 
     if (stream.get()->is(TKN_LBRACE)) {
         stream.consume(); // Consume '{'
     } else {
-        report_unexpected_token(ReportText::ERR_PARSE_EXPECTED, "'{'");
+        report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'{'");
         return {block, false};
-    }
-
-    if (with_symbol_table) {
-        cur_symbol_table = block->get_symbol_table();
     }
 
     while (true) {
@@ -91,7 +81,7 @@ ParseResult Parser::parse_block(bool with_symbol_table /* = true */) {
             break;
         } else if (stream.get()->is(TKN_EOF)) {
             register_error(stream.previous()->get_range())
-                .set_message(ReportText(ReportText::ID::ERR_PARSE_UNCLOSED_BLOCK).str());
+                .set_message(ReportText("file ends with unclosed block").str());
             return {block, false};
         } else {
             parse_block_child(block);
@@ -99,15 +89,10 @@ ParseResult Parser::parse_block(bool with_symbol_table /* = true */) {
     }
 
     block->set_range_from_children();
-
-    if (with_symbol_table) {
-        cur_symbol_table = cur_symbol_table->get_parent();
-    }
-
     return block;
 }
 
-void Parser::parse_block_child(ASTBlock *block) {
+void Parser::parse_block_child(ASTNode *block) {
     ParseResult result;
 
     switch (stream.get()->get_type()) {
@@ -147,10 +132,6 @@ void Parser::parse_block_child(ASTBlock *block) {
 
 ASTNode *Parser::parse_expression() {
     return ExprParser(*this).parse().node;
-}
-
-ASTNode *Parser::parse_identifier() {
-    return new Identifier(stream.consume());
 }
 
 ParseResult Parser::parse_expr_or_assign() {
@@ -271,10 +252,10 @@ ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
             node.append_child(new ASTNode(AST_SELF, "", stream.consume()->get_range()));
         } else {
             if (stream.peek(1)->is(TKN_COLON)) {
-                node.append_child(new Identifier(stream.consume()));
+                node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
                 stream.consume(); // Consume ':'
             } else {
-                node.append_child(new Identifier("", {0, 0}));
+                node.append_child(new ASTNode(AST_IDENTIFIER, "", {0, 0}));
             }
 
             ParseResult result = parse_type();
@@ -298,7 +279,7 @@ ParseResult Parser::check_semi(ASTNode *node) {
         stream.consume(); // Consume ';'
         return {node, true};
     } else {
-        report_unexpected_token(ReportText::ID::ERR_PARSE_EXPECTED_SEMI);
+        report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);
         return {node, false};
     }
 }
@@ -314,18 +295,38 @@ Report &Parser::register_error(TextRange range) {
 }
 
 void Parser::report_unexpected_token() {
-    report_unexpected_token(ReportText::ID::ERR_PARSE_UNEXPECTED);
+    report_unexpected_token(ReportTextType::ERR_PARSE_UNEXPECTED);
 }
 
-void Parser::report_unexpected_token(ReportText::ID report_text_id) {
+void Parser::report_unexpected_token(ReportTextType report_text_type) {
+    std::string_view format_str;
+
+    switch (report_text_type) {
+        case ReportTextType::ERR_PARSE_UNEXPECTED: format_str = "unexpected token $"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED: format_str = "expected $, got $"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED_SEMI: format_str = "expected ';' after statement"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER: format_str = "expected identifier, got $"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED_TYPE: format_str = "expected type, got $"; break;
+    }
+
     Token *token = stream.get();
-    register_error(token->get_range()).set_message(ReportText(report_text_id).format(token_to_str(token)).str());
+    register_error(token->get_range()).set_message(ReportText(format_str).format(token_to_str(token)).str());
 }
 
-void Parser::report_unexpected_token(ReportText::ID report_text_id, std::string expected) {
+void Parser::report_unexpected_token(ReportTextType report_text_type, std::string expected) {
+    std::string_view format_str;
+
+    switch (report_text_type) {
+        case ReportTextType::ERR_PARSE_UNEXPECTED: format_str = "unexpected token $"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED: format_str = "expected $, got $"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED_SEMI: format_str = "expected ';' after statement"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER: format_str = "expected identifier, got $"; break;
+        case ReportTextType::ERR_PARSE_EXPECTED_TYPE: format_str = "expected type, got $"; break;
+    }
+
     Token *token = stream.get();
     register_error(token->get_range())
-        .set_message(ReportText(report_text_id).format(expected).format(token_to_str(token)).str());
+        .set_message(ReportText(format_str).format(expected).format(token_to_str(token)).str());
 }
 
 std::string Parser::token_to_str(Token *token) {
@@ -376,8 +377,8 @@ ASTNode *Parser::parse_completion_point() {
     return completion_node;
 }
 
-ASTBlock *Parser::create_dummy_block() {
-    return new ASTBlock({stream.get()->get_position(), stream.get()->get_position()}, cur_symbol_table);
+ASTNode *Parser::create_dummy_block() {
+    return new ASTNode(AST_BLOCK, TextRange{stream.get()->get_position(), stream.get()->get_position()});
 }
 
 } // namespace lang

@@ -2,7 +2,6 @@
 #define EXPR_PARSER_H
 
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/ast/expr.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/parser.hpp"

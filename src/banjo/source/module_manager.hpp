@@ -7,7 +7,7 @@
 #include "banjo/parser/parser.hpp"
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/source/text_range.hpp"
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 
 #include <filesystem>
 #include <vector>

@@ -2,12 +2,14 @@
 #define REPORT_H
 
 #include "banjo/reports/report_texts.hpp"
+#include "banjo/source/module_path.hpp"
 #include "banjo/source/text_range.hpp"
-#include "banjo/symbol/module_path.hpp"
+
 
 #include <string>
-#include <vector>
 #include <string_view>
+#include <vector>
+
 
 namespace banjo {
 
@@ -27,29 +29,12 @@ struct ReportMessage {
     ReportMessage(std::string text, SourceLocation location) : text(text), location(location) {}
 
     template <typename... FormatArgs>
-    ReportMessage(ReportText::ID text_id, FormatArgs... format_args) {
-        ReportText message(text_id);
-        ([&]() { message = message.format(format_args); }(), ...);
-        text = message.str();
-    }
-
-    template <typename... FormatArgs>
-    ReportMessage(SourceLocation location, ReportText::ID text_id, FormatArgs... format_args) : location(location) {
-        ReportText message(text_id);
-        ([&]() { message = message.format(format_args); }(), ...);
-        text = message.str();
-    }
-
-    template <typename... FormatArgs>
-    ReportMessage(SourceLocation location, std::string_view format_str, FormatArgs... format_args) : location(location) {
+    ReportMessage(SourceLocation location, std::string_view format_str, FormatArgs... format_args)
+      : location(location) {
         ReportText message(format_str);
         ([&]() { message = message.format(format_args); }(), ...);
         text = message.str();
     }
-
-    template <typename... FormatArgs>
-    ReportMessage(TextRange range, ReportText::ID text_id, FormatArgs... format_args)
-      : ReportMessage({{}, range}, text_id, format_args...) {}
 };
 
 class Report {
@@ -74,7 +59,6 @@ public:
     const std::vector<ReportMessage> &get_notes() const { return notes; }
 
     Report &set_message(std::string message);
-    Report &set_message(ReportText::ID text_id);
     Report &set_message(ReportMessage message);
     Report &add_note(ReportMessage note);
 };

@@ -2,7 +2,6 @@
 
 #include "banjo/ast/ast_child_indices.hpp"
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/ast/expr.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -613,7 +612,7 @@ sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
     return create_expr(sir::IntLiteral{
         .ast_node = node,
         .type = nullptr,
-        .value = node->as<IntLiteral>()->get_value(),
+        .value = LargeInt(node->get_value()),
     });
 }
 
@@ -799,7 +798,7 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
     } else if (rhs_node->get_type() == AST_INT_LITERAL) {
         rhs = {
             .ast_node = rhs_node,
-            .value = rhs_node->as<IntLiteral>()->get_value().to_string(),
+            .value = rhs_node->get_value(),
         };
     } else if (rhs_node->get_type() == AST_COMPLETION_TOKEN) {
         rhs = {

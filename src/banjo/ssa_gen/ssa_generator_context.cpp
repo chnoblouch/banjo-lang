@@ -1,12 +1,9 @@
 #include "ssa_generator_context.hpp"
 
-#include "banjo/ir_builder/ir_builder_utils.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 
 namespace banjo {
-
-namespace IRBuilderUtils = ir_builder::IRBuilderUtils;
 
 namespace lang {
 
@@ -84,7 +81,7 @@ ir::VirtualRegister SSAGeneratorContext::append_loadarg(ir::Type type, unsigned 
 }
 
 void SSAGeneratorContext::append_jmp(ir::BasicBlockIter block_iter) {
-    if (IRBuilderUtils::is_branching(*get_ssa_block())) {
+    if (get_ssa_block()->is_branching()) {
         return;
     }
 
@@ -99,8 +96,7 @@ void SSAGeneratorContext::append_cjmp(
     ir::BasicBlockIter true_block_iter,
     ir::BasicBlockIter false_block_iter
 ) {
-    if (get_ssa_block()->get_instrs().get_size() != 0 &&
-        IRBuilderUtils::is_branch(get_ssa_block()->get_instrs().get_last())) {
+    if (get_ssa_block()->is_branching()) {
         return;
     }
 
@@ -122,8 +118,7 @@ void SSAGeneratorContext::append_fcjmp(
     ir::BasicBlockIter true_block_iter,
     ir::BasicBlockIter false_block_iter
 ) {
-    if (get_ssa_block()->get_instrs().get_size() != 0 &&
-        IRBuilderUtils::is_branch(get_ssa_block()->get_instrs().get_last())) {
+    if (get_ssa_block()->is_branching()) {
         return;
     }
 

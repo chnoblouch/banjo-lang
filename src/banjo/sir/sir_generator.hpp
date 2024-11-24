@@ -6,6 +6,7 @@
 #include "banjo/sir/sir.hpp"
 
 #include <vector>
+#include <stack>
 
 namespace banjo {
 

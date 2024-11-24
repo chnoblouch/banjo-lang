@@ -1,10 +1,7 @@
 #include "std_config_module.hpp"
 
-#include "banjo/ast/ast_block.hpp"
-#include "banjo/ast/decl.hpp"
-#include "banjo/ast/expr.hpp"
+#include "banjo/ast/ast_node.hpp"
 #include "banjo/config/config.hpp"
-#include "banjo/symbol/symbol_table.hpp"
 
 namespace banjo {
 
@@ -15,7 +12,7 @@ enum ConfigOS { WINDOWS = 0, LINUX = 1, MACOS = 2, ANDROID = 3 };
 enum ConfigBuildConfig { BUILD_CONFIG_DEBUG = 0, BUILD_CONFIG_RELEASE = 1 };
 
 StdConfigModule::StdConfigModule() : ASTModule({"std", "config"}), config(Config::instance()) {
-    block = new ASTBlock({0, 0}, nullptr);
+    block = new ASTNode(AST_BLOCK, TextRange{0, 0});
 
     add_const_u32("DEBUG", BUILD_CONFIG_DEBUG);
     add_const_u32("RELEASE", BUILD_CONFIG_RELEASE);
@@ -53,10 +50,10 @@ unsigned StdConfigModule::get_os() {
 }
 
 void StdConfigModule::add_const_u32(const std::string &name, unsigned value) {
-    ASTConst *config_const = new ASTConst();
-    config_const->append_child(new Identifier(name, {0, 0}));
-    config_const->append_child(new Expr(AST_U32));
-    config_const->append_child(new IntLiteral(std::to_string(value)));
+    ASTNode *config_const = new ASTNode(AST_CONSTANT);
+    config_const->append_child(new ASTNode(AST_IDENTIFIER, name, TextRange{0, 0}));
+    config_const->append_child(new ASTNode(AST_U32));
+    config_const->append_child(new ASTNode(AST_INT_LITERAL, std::to_string(value)));
     block->append_child(config_const);
 }
 

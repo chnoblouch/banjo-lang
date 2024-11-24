@@ -1,8 +1,8 @@
 #ifndef STD_CONFIG_MODULE_H
 #define STD_CONFIG_MODULE_H
 
-#include "banjo/ast/ast_block.hpp"
 #include "banjo/ast/ast_module.hpp"
+#include "banjo/ast/ast_node.hpp"
 #include "banjo/config/config.hpp"
 
 namespace banjo {
@@ -13,7 +13,7 @@ class StdConfigModule : public ASTModule {
 
 private:
     const Config &config;
-    ASTBlock *block;
+    ASTNode *block;
 
 public:
     StdConfigModule();

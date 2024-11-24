@@ -7,7 +7,6 @@ add_executable(banjo-lsp
     memory_module_loader.cpp
     protocol_structs.cpp
     server.cpp
-    symbol_ref_info.cpp
     uri.cpp
     workspace.cpp
     handlers/completion_handler.cpp

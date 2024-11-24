@@ -1,15 +1,13 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "banjo/ast/ast_block.hpp"
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/token_stream.hpp"
 #include "banjo/reports/report.hpp"
-#include "banjo/symbol/module_path.hpp"
-#include "banjo/symbol/symbol_table.hpp"
+#include "banjo/source/module_path.hpp"
 
 #include <functional>
 #include <vector>
@@ -32,11 +30,19 @@ class Parser {
     friend class StmtParser;
     friend class ExprParser;
 
+public:
+    enum class ReportTextType {
+        ERR_PARSE_UNEXPECTED,
+        ERR_PARSE_EXPECTED,
+        ERR_PARSE_EXPECTED_SEMI,
+        ERR_PARSE_EXPECTED_IDENTIFIER,
+        ERR_PARSE_EXPECTED_TYPE,
+    };
+
 private:
     TokenStream stream;
     const ModulePath &module_path;
     AttributeList *current_attr_list = nullptr;
-    SymbolTable *cur_symbol_table = nullptr;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;
@@ -52,12 +58,11 @@ public:
     ASTNode *get_completion_node() { return completion_node; }
 
 private:
-    ASTBlock *parse_top_level_block();
+    ASTNode *parse_top_level_block();
     ParseResult parse_block(bool with_symbol_table = true);
-    void parse_block_child(ASTBlock *block);
+    void parse_block_child(ASTNode *block);
 
     ASTNode *parse_expression();
-    ASTNode *parse_identifier();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
     ParseResult parse_type_alias_or_explicit_type();
@@ -77,8 +82,8 @@ private:
     Report &register_error(TextRange range);
 
     void report_unexpected_token();
-    void report_unexpected_token(ReportText::ID report_text_id);
-    void report_unexpected_token(ReportText::ID report_text_id, std::string expected);
+    void report_unexpected_token(ReportTextType report_text_type);
+    void report_unexpected_token(ReportTextType report_text_type, std::string expected);
     std::string token_to_str(Token *token);
 
     void recover();
@@ -88,7 +93,7 @@ private:
     bool is_at_completion_point();
     ASTNode *parse_completion_point();
 
-    ASTBlock *create_dummy_block();
+    ASTNode *create_dummy_block();
 };
 
 } // namespace lang

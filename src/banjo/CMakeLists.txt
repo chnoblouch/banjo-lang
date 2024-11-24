@@ -1,10 +1,7 @@
 add_library(banjo STATIC
-    ast/ast_block.cpp
     ast/ast_node.cpp
-    ast/ast_utils.cpp
     ast/ast_writer.cpp
     ast/std_config_module.cpp
-    ast/test_module.cpp
     codegen/ir_lowerer.cpp
     codegen/late_reg_alloc.cpp
     codegen/liveness.cpp
@@ -39,33 +36,6 @@ add_library(banjo STATIC
     ir/validator.cpp
     ir/type.cpp
     ir/writer.cpp
-    ir_builder/assign_ir_builder.cpp
-    ir_builder/block_ir_builder.cpp
-    ir_builder/bool_expr_ir_builder.cpp
-    ir_builder/closure_ir_builder.cpp
-    ir_builder/compound_assign_ir_builder.cpp
-    ir_builder/conversion.cpp
-    ir_builder/deinit_ir_builder.cpp
-    ir_builder/expr_ir_builder.cpp
-    ir_builder/for_ir_builder.cpp
-    ir_builder/func_call_ir_builder.cpp
-    ir_builder/func_def_ir_builder.cpp
-    ir_builder/if_chain_ir_builder.cpp
-    ir_builder/ir_builder_context.cpp
-    ir_builder/ir_builder_utils.cpp
-    ir_builder/ir_builder.cpp
-    ir_builder/location_ir_builder.cpp
-    ir_builder/name_mangling.cpp
-    ir_builder/return_ir_builder.cpp
-    ir_builder/root_ir_builder.cpp
-    ir_builder/runtime_ir.cpp
-    ir_builder/storage.cpp
-    ir_builder/struct_def_ir_builder.cpp
-    ir_builder/switch_ir_builder.cpp
-    ir_builder/try_ir_builder.cpp
-    ir_builder/type_infer_var_decl_ir_builder.cpp
-    ir_builder/var_decl_ir_builder.cpp
-    ir_builder/while_ir_builder.cpp
     lexer/buffered_reader.cpp
     lexer/lexer.cpp
     mcode/basic_block.cpp
@@ -97,27 +67,7 @@ add_library(banjo STATIC
     reports/report_manager.cpp
     reports/report_printer.cpp    
     reports/report_texts.cpp
-    reports/report_utils.cpp
     reports/report.cpp
-    sema/block_analyzer.cpp
-    sema/const_evaluator.cpp
-    sema/decl_body_analyzer.cpp
-    sema/decl_name_analyzer.cpp
-    sema/decl_type_analyzer.cpp
-    sema/deinit_analyzer.cpp
-    sema/expr_analyzer.cpp
-    sema/function_resolution.cpp
-    sema/generics_arg_deduction.cpp
-    sema/generics_instantiator.cpp
-    sema/location_analyzer.cpp
-    sema/meta_evaluator.cpp
-    sema/meta_lowerer.cpp
-    sema/params_analyzer.cpp
-    sema/semantic_analyzer_context.cpp
-    sema/semantic_analyzer.cpp
-    sema/type_analyzer.cpp
-    sema/use_collector.cpp
-    sema/use_resolver.cpp
     sema2/const_evaluator.cpp
     sema2/decl_body_analyzer.cpp
     sema2/decl_interface_analyzer.cpp
@@ -145,6 +95,7 @@ add_library(banjo STATIC
     source/file_module_loader.cpp
     source/module_discovery.cpp
     source/module_manager.cpp
+    source/module_path.cpp
     source/text_range.cpp
     ssa_gen/block_ssa_generator.cpp
     ssa_gen/expr_ssa_generator.cpp
@@ -155,25 +106,6 @@ add_library(banjo STATIC
     ssa_gen/ssa_generator.cpp
     ssa_gen/stored_value.cpp
     ssa_gen/type_ssa_generator.cpp
-    symbol/constant.cpp
-    symbol/data_type_manager.cpp
-    symbol/data_type.cpp
-    symbol/enumeration.cpp
-    symbol/generics.cpp
-    symbol/global_variable.cpp
-    symbol/local_variable.cpp
-    symbol/location.cpp
-    symbol/magic_functions.cpp
-    symbol/method_table.cpp
-    symbol/module_path.cpp
-    symbol/parameter.cpp
-    symbol/protocol.cpp
-    symbol/standard_types.cpp
-    symbol/structure.cpp
-    symbol/symbol_ref.cpp
-    symbol/symbol_table.cpp
-    symbol/union.cpp
-    symbol/variable.cpp
     target/standard_data_layout.cpp
     target/target_data_layout.cpp
     target/target_description.cpp

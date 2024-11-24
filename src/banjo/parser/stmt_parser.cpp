@@ -1,7 +1,6 @@
 #include "stmt_parser.hpp"
 
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/ast/decl.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/expr_parser.hpp"
 #include "banjo/parser/node_builder.hpp"
@@ -35,11 +34,11 @@ ParseResult StmtParser::parse_var() {
     stream.consume(); // Consume 'var'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
-        parser.report_unexpected_token(ReportText::ID::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
 
-    node.append_child(new Identifier(stream.consume()));
+    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
 
     if (stream.get()->is(TKN_COLON)) {
         return parse_var_with_type(node);
@@ -77,7 +76,7 @@ ParseResult StmtParser::parse_var_with_type(NodeBuilder &node) {
         parser.current_attr_list = nullptr;
     }
 
-    return parser.check_semi(node.build(new ASTVar(AST_VAR)));
+    return parser.check_semi(node.build(new ASTNode(AST_VAR)));
 }
 
 ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
@@ -95,7 +94,7 @@ ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
         parser.current_attr_list = nullptr;
     }
 
-    return parser.check_semi(node.build(new ASTVar(AST_IMPLICIT_TYPE_VAR)));
+    return parser.check_semi(node.build(new ASTNode(AST_IMPLICIT_TYPE_VAR)));
 }
 
 ParseResult StmtParser::parse_if_chain() {
@@ -174,7 +173,7 @@ ParseResult StmtParser::parse_switch() {
             continue;
         }
 
-        case_node.append_child(new Identifier(ident_token));
+        case_node.append_child(new ASTNode(AST_IDENTIFIER, ident_token));
         stream.consume(); // Consume ':'
 
         result = parser.parse_type();
@@ -200,9 +199,9 @@ ParseResult StmtParser::parse_try() {
     stream.consume(); // Consume 'try'
 
     if (stream.get()->is(TKN_IDENTIFIER)) {
-        success_case_node.append_child(new Identifier(stream.consume()));
+        success_case_node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
     } else {
-        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
 
@@ -227,9 +226,9 @@ ParseResult StmtParser::parse_try() {
         stream.consume(); // Consume 'except'
 
         if (stream.get()->is(TKN_IDENTIFIER)) {
-            error_case_node.append_child(new Identifier(stream.consume()));
+            error_case_node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
         } else {
-            parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
+            parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
             return node.build_error();
         }
 
@@ -279,9 +278,9 @@ ParseResult StmtParser::parse_for() {
     }
 
     if (stream.get()->is(TKN_IDENTIFIER)) {
-        node.append_child(new Identifier(stream.consume()));
+        node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
     } else {
-        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
 
@@ -338,7 +337,7 @@ ParseResult StmtParser::parse_meta_stmt() {
     } else if (stream.get()->is(TKN_FOR)) {
         return parse_meta_for(node);
     } else {
-        parser.report_unexpected_token(ReportText::ID::ERR_PARSE_UNEXPECTED);
+        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_UNEXPECTED);
         return node.build_error();
     }
 }
@@ -373,7 +372,7 @@ ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
             branch.append_child(parser.parse_block(false).node);
             node.append_child(branch.build(AST_META_ELSE));
         } else {
-            parser.report_unexpected_token(ReportText::ERR_PARSE_UNEXPECTED);
+            parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_UNEXPECTED);
             return node.build_error();
         }
     }
@@ -385,10 +384,10 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
     stream.consume(); // Consume 'for'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
-        parser.report_unexpected_token(ReportText::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(new Identifier(stream.consume()));
+    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
 
     if (!stream.get()->is(TKN_IN)) {
         parser.report_unexpected_token();

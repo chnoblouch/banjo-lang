@@ -7,7 +7,7 @@
 #include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/module_manager.hpp"
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 #include "index.hpp"
 #include "memory_module_loader.hpp"
 

@@ -4,7 +4,7 @@
 #include "banjo/reports/report.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/text_range.hpp"
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 
 #include <unordered_map>
 #include <unordered_set>

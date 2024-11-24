@@ -1,13 +1,12 @@
 #include "module_manager.hpp"
 
 #include "banjo/ast/ast_module.hpp"
-#include "banjo/ast/ast_utils.hpp"
 #include "banjo/ast/std_config_module.hpp"
 #include "banjo/lexer/lexer.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/source/module_loader.hpp"
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 #include "banjo/utils/paths.hpp"
 
 #include <optional>
@@ -150,12 +149,6 @@ void ModuleManager::link_sub_modules(ASTModule *mod, const ModuleFile &module_fi
 }
 
 void ModuleManager::link_sub_module(ASTModule *mod, ASTModule *sub_mod) {
-    SymbolTable *symbol_table = ASTUtils::get_module_symbol_table(mod);
-
-    std::string name = sub_mod->get_path().get_path().back();
-    SymbolRef symbol = SymbolRef(sub_mod).as_sub_module();
-    symbol_table->add_symbol(name, symbol);
-
     mod->add_sub_mod(sub_mod);
 }
 

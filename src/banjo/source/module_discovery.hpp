@@ -1,7 +1,7 @@
 #ifndef MODULE_DISCOVERY_H
 #define MODULE_DISCOVERY_H
 
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 
 #include <filesystem>
 #include <optional>

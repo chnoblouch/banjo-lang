@@ -95,32 +95,10 @@ bool ASTNode::is_ancestor_of(ASTNode *other) {
     return false;
 }
 
-ASTNode *ASTNode::clone() {
-    assert(type != AST_MODULE);
-
-    ASTNode *clone = create_clone();
-    clone->value = value;
-    clone->range = range;
-    clone->attribute_list = attribute_list ? new AttributeList(*attribute_list) : nullptr;
-
-    clone->children.resize(children.size());
-    for (unsigned i = 0; i < children.size(); i++) {
-        ASTNode *child_clone = children[i]->clone();
-        child_clone->parent = clone;
-        clone->children[i] = child_clone;
-    }
-
-    return clone;
-}
-
 void ASTNode::set_range_from_children() {
     if (!children.empty()) {
         range = {children.front()->get_range().start, children.back()->get_range().end};
     }
-}
-
-ASTNode *ASTNode::create_clone() {
-    return new ASTNode(type);
 }
 
 } // namespace lang

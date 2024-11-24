@@ -2,7 +2,7 @@
 #define SIR_H
 
 #include "banjo/ast/attribute.hpp"
-#include "banjo/symbol/module_path.hpp"
+#include "banjo/source/module_path.hpp"
 #include "banjo/utils/dynamic_pointer.hpp"
 #include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
