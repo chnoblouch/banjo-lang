@@ -33,6 +33,8 @@ def load_setup(args):
         toolchain = toolchain_loader.load_from_file(cached_path, target)
     else:
         toolchain = toolchain_loader.from_target(target)
+
+        output.single_line = False
         output.print_step(f"Setting up toolchain for: {target}")
         toolchain.setup()
         toolchain.store_in_file()
@@ -109,7 +111,8 @@ def do_build(config, toolchain, args):
     time_after = time.perf_counter()
     time_between = time_after - time_before
 
-    output.print_step("Build finished! (%.2f seconds)" % time_between)
+    if not output.single_line:
+        output.print_step("Build finished! (%.2f seconds)" % time_between)
 
 
 def build(args):
@@ -127,7 +130,7 @@ def run(args):
     path = os.path.join(get_output_dir(config, toolchain), f"{config.name}")
 
     if not args.hot_reload:
-        output.print_step("Running...")
+        output.print_final_step("Running...")
         Program("build", True).run_command([path])
     else:
         HotReloader().run(config, toolchain, get_output_dir(config, toolchain))
@@ -159,7 +162,7 @@ def test(args):
         return
 
     path = os.path.join(linker_input.output_dir, config.name)
-    output.print_step("Running...")
+    output.print_final_step("Running...")
 
     max_name_len = max([len(name) for name in tests])
     pass_count = 0

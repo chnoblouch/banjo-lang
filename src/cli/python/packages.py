@@ -51,15 +51,15 @@ def load(config: Configuration, toolchain: Toolchain):
 
 
 def install(package):
-    if not output.quiet:
-        print(f"Installing package '{package}'...")
-        print(f"  Downloading {package}.zip...")
+    output.single_line = False
+    output.print_step(f"Installing package '{package}'...")
+    output.print_step(f"  Downloading {package}.zip...")
 
     response = cloud_storage.request(f"package/{package}.zip")
 
     if response.getcode() == 200:
         if not output.quiet:
-            print(f"  Extracting {package}.zip...")
+            output.print_step(f"  Extracting {package}.zip...")
 
         file_bytes = response.read()
         zip_file = zipfile.ZipFile(io.BytesIO(file_bytes), "r")
