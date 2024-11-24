@@ -1,7 +1,7 @@
 #include "block_ssa_generator.hpp"
 
-#include "banjo/ir/comparison.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"

@@ -2,7 +2,7 @@
 
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/mcode/function.hpp"
-#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
@@ -46,9 +46,9 @@ MSABICallingConv::MSABICallingConv() {
     volatile_regs = {RAX, RCX, RDX, RSP, RBP, R8, R9, R10, R11, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5};
 }
 
-void MSABICallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr) {
+void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
     for (int i = 1; i < instr.get_operands().size(); i++) {
-        ir::Operand &operand = instr.get_operands()[i];
+        ssa::Operand &operand = instr.get_operands()[i];
         mcode::Register reg = get_arg_reg(operand, i - 1, lowerer);
         mcode::Operand src = lowerer.lower_value(operand);
         append_arg_move(operand, src, reg, lowerer);
@@ -61,7 +61,7 @@ void MSABICallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &
     }
 }
 
-mcode::Register MSABICallingConv::get_arg_reg(ir::Operand &operand, int index, codegen::IRLowerer &lowerer) {
+mcode::Register MSABICallingConv::get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer) {
     if (index < 4) {
         long id = operand.get_type().is_floating_point() ? ARG_REGS_FLOAT[index] : ARG_REGS_INT[index];
         return mcode::Register::from_physical(id);
@@ -81,12 +81,12 @@ mcode::Register MSABICallingConv::get_arg_reg(ir::Operand &operand, int index, c
 }
 
 void MSABICallingConv::append_arg_move(
-    ir::Operand &operand,
+    ssa::Operand &operand,
     mcode::Operand &src,
     mcode::Register reg,
-    codegen::IRLowerer &lowerer
+    codegen::SSALowerer &lowerer
 ) {
-    X8664IRLowerer &x86_64_lowerer = static_cast<X8664IRLowerer &>(lowerer);
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
     mcode::InstrIter iter;
 
     if (operand.get_type().is_floating_point()) {
@@ -98,17 +98,17 @@ void MSABICallingConv::append_arg_move(
     iter->set_flag(mcode::Instruction::FLAG_CALL_ARG);
 }
 
-void MSABICallingConv::append_call(ir::Operand func_operand, codegen::IRLowerer &lowerer) {
-    X8664IRLowerer &x86_64_lowerer = static_cast<X8664IRLowerer &>(lowerer);
+void MSABICallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer) {
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
-    int ptr_size = X8664IRLowerer::PTR_SIZE;
+    int ptr_size = X8664SSALowerer::PTR_SIZE;
 
     mcode::Operand operand;
     if (func_operand.is_symbol()) {
         operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
     } else if (func_operand.is_register()) {
-        ir::InstrIter producer = lowerer.get_producer(func_operand.get_register());
-        if (producer->get_opcode() == ir::Opcode::LOAD) {
+        ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
+        if (producer->get_opcode() == ssa::Opcode::LOAD) {
             operand = lowerer.lower_address(producer->get_operand(1));
             lowerer.discard_use(func_operand.get_register());
         } else {
@@ -123,8 +123,8 @@ void MSABICallingConv::append_call(ir::Operand func_operand, codegen::IRLowerer 
     iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);
 }
 
-void MSABICallingConv::append_ret_val_move(codegen::IRLowerer &lowerer) {
-    ir::Instruction &instr = *lowerer.get_instr_iter();
+void MSABICallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {
+    ssa::Instruction &instr = *lowerer.get_instr_iter();
 
     bool is_floating_point = instr.get_operand(0).get_type().is_floating_point();
     unsigned return_size = lowerer.get_size(instr.get_operand(0).get_type());
@@ -334,7 +334,7 @@ bool MSABICallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == X8664Opcode::RET;
 }
 
-std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const std::vector<ir::Type> &types) {
+std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const std::vector<ssa::Type> &types) {
     std::vector<mcode::ArgStorage> result;
     result.resize(types.size());
 

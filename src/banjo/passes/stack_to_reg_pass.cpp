@@ -1,7 +1,7 @@
 #include "stack_to_reg_pass.hpp"
 
-#include "banjo/ir/dead_code_elimination.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/dead_code_elimination.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "pass_utils.hpp"
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
@@ -14,14 +14,14 @@ namespace passes {
 
 StackToRegPass::StackToRegPass(target::Target *target) : Pass("stack-to-reg", target) {}
 
-void StackToRegPass::run(ir::Module &mod) {
-    for (ir::Function *func : mod.get_functions()) {
+void StackToRegPass::run(ssa::Module &mod) {
+    for (ssa::Function *func : mod.get_functions()) {
         run(func, mod);
     }
 }
 
-void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
-    ir::ControlFlowGraph cfg(func);
+void StackToRegPass::run(ssa::Function *func, ssa::Module &mod) {
+    ssa::ControlFlowGraph cfg(func);
 
     if (is_logging()) {
         get_logging_stream() << "--- CFG FOR " << func->get_name() << " ---" << std::endl;
@@ -29,7 +29,7 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
         get_logging_stream() << std::endl;
     }
 
-    ir::DominatorTree dt(cfg);
+    ssa::DominatorTree dt(cfg);
 
     if (is_logging()) {
         get_logging_stream() << "--- DOMINATOR TREE FOR " << func->get_name() << " ---" << std::endl;
@@ -40,29 +40,29 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
     StackSlotMap stack_slots = find_stack_slots(func);
     BlockMap blocks;
 
-    std::unordered_map<long, ir::Value> init_replacements;
+    std::unordered_map<long, ssa::Value> init_replacements;
 
     for (auto iter : stack_slots) {
-        ir::VirtualRegister var = iter.first;
+        ssa::VirtualRegister var = iter.first;
         StackSlotInfo &stack_slot = iter.second;
 
         if (stack_slot.def_blocks.empty()) {
-            ir::Value replacement = stack_slot.type.is_floating_point()
-                                        ? ir::Value::from_fp_immediate(0.0, stack_slot.type)
-                                        : ir::Value::from_int_immediate(0, stack_slot.type);
+            ssa::Value replacement = stack_slot.type.is_floating_point()
+                                        ? ssa::Value::from_fp_immediate(0.0, stack_slot.type)
+                                        : ssa::Value::from_int_immediate(0, stack_slot.type);
             init_replacements[var] = replacement;
             stack_slot.cur_replacement = replacement;
             continue;
         }
 
-        std::unordered_set<ir::BasicBlockIter> def_blocks_analyzed;
-        for (ir::BasicBlockIter def_block : stack_slot.def_blocks) {
+        std::unordered_set<ssa::BasicBlockIter> def_blocks_analyzed;
+        for (ssa::BasicBlockIter def_block : stack_slot.def_blocks) {
             def_blocks_analyzed.insert(def_block);
         }
 
-        for (ir::BasicBlockIter def_block_iter : stack_slot.def_blocks) {
+        for (ssa::BasicBlockIter def_block_iter : stack_slot.def_blocks) {
             for (unsigned index : dt.get_node(def_block_iter).dominance_frontiers) {
-                ir::ControlFlowGraph::Node &cfg_node = cfg.get_node(index);
+                ssa::ControlFlowGraph::Node &cfg_node = cfg.get_node(index);
 
                 if (stack_slot.blocks_having_val_as_param.contains(cfg_node.block)) {
                     continue;
@@ -78,15 +78,15 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
                     .stack_slot = var,
                 });
 
-                ir::VirtualRegister param_reg = 1000 + func->next_virtual_reg();
+                ssa::VirtualRegister param_reg = 1000 + func->next_virtual_reg();
                 cfg_node.block->get_param_regs().push_back(param_reg);
                 cfg_node.block->get_param_types().push_back(stack_slot.type);
 
                 stack_slot.blocks_having_val_as_param.insert(cfg_node.block);
 
-                ir::Value replacement = stack_slot.type.is_floating_point()
-                                            ? ir::Value::from_fp_immediate(0.0, stack_slot.type)
-                                            : ir::Value::from_int_immediate(0, stack_slot.type);
+                ssa::Value replacement = stack_slot.type.is_floating_point()
+                                            ? ssa::Value::from_fp_immediate(0.0, stack_slot.type)
+                                            : ssa::Value::from_int_immediate(0, stack_slot.type);
                 init_replacements[var] = replacement;
                 stack_slot.cur_replacement = replacement;
 
@@ -105,24 +105,24 @@ void StackToRegPass::run(ir::Function *func, ir::Module &mod) {
     rename(func->begin(), stack_slots, blocks, init_replacements, dt);
 
     Precomputing::precompute_instrs(*func);
-    ir::DeadCodeElimination().run(*func);
+    ssa::DeadCodeElimination().run(*func);
 }
 
-StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func) {
+StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ssa::Function *func) {
     StackSlotMap stack_slots;
 
-    for (ir::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
-        for (ir::Instruction &instr : block_iter->get_instrs()) {
-            if (instr.get_opcode() == ir::Opcode::ALLOCA) {
-                ir::VirtualRegister dest = *instr.get_dest();
-                ir::Type type = instr.get_operand(0).get_type();
+    for (ssa::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
+        for (ssa::Instruction &instr : block_iter->get_instrs()) {
+            if (instr.get_opcode() == ssa::Opcode::ALLOCA) {
+                ssa::VirtualRegister dest = *instr.get_dest();
+                ssa::Type type = instr.get_operand(0).get_type();
 
                 if (get_target()->get_data_layout().fits_in_register(type)) {
                     stack_slots.insert({dest, StackSlotInfo{.type = type, .def_blocks = {}, .promotable = true}});
                 }
-            } else if (instr.get_opcode() == ir::Opcode::STORE) {
+            } else if (instr.get_opcode() == ssa::Opcode::STORE) {
                 if (instr.get_operand(1).is_register()) {
-                    ir::Operand &dst = instr.get_operand(1);
+                    ssa::Operand &dst = instr.get_operand(1);
                     if (dst.is_register() && stack_slots.contains(dst.get_register())) {
                         stack_slots[dst.get_register()].def_blocks.push_back(block_iter);
                     }
@@ -130,7 +130,7 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func
             } else {
                 PassUtils::iter_regs(
                     instr.get_operands(),
-                    [&instr, &stack_slots, &block_iter](ir::VirtualRegister reg) {
+                    [&instr, &stack_slots, &block_iter](ssa::VirtualRegister reg) {
                         auto iter = stack_slots.find(reg);
                         if (iter == stack_slots.end()) {
                             return;
@@ -150,7 +150,7 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func
                         }
 
                         // Can't promote registers whose address is stored somewhere.
-                        if (instr.get_opcode() != ir::Opcode::LOAD) {
+                        if (instr.get_opcode() != ssa::Opcode::LOAD) {
                             iter->second.promotable = false;
                         }
                     }
@@ -173,11 +173,11 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ir::Function *func
 
 bool StackToRegPass::is_stack_slot_used(
     StackSlotInfo &stack_slot,
-    ir::ControlFlowGraph &cfg,
+    ssa::ControlFlowGraph &cfg,
     unsigned node_index,
     std::unordered_set<unsigned> &nodes_visited
 ) {
-    ir::ControlFlowGraph::Node &node = cfg.get_node(node_index);
+    ssa::ControlFlowGraph::Node &node = cfg.get_node(node_index);
 
     if (stack_slot.use_blocks.contains(node.block)) {
         return true;
@@ -199,33 +199,33 @@ bool StackToRegPass::is_stack_slot_used(
 }
 
 void StackToRegPass::rename(
-    ir::BasicBlockIter block_iter,
+    ssa::BasicBlockIter block_iter,
     StackSlotMap &stack_slots,
     BlockMap &blocks,
-    std::unordered_map<long, ir::Value> cur_replacements,
-    ir::DominatorTree &dominator_tree
+    std::unordered_map<long, ssa::Value> cur_replacements,
+    ssa::DominatorTree &dominator_tree
 ) {
-    ir::BasicBlock &block = *block_iter;
+    ssa::BasicBlock &block = *block_iter;
 
     if (block_iter->has_label()) {
         for (ParamInfo param : blocks[block_iter].new_params) {
             unsigned index = param.param_index;
-            ir::Value value = ir::Value::from_register(block.get_param_regs()[index], block.get_param_types()[index]);
+            ssa::Value value = ssa::Value::from_register(block.get_param_regs()[index], block.get_param_types()[index]);
             cur_replacements[param.stack_slot] = value;
         }
     }
 
-    for (ir::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
-        ir::InstrIter prev = iter.get_prev();
+    for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
+        ssa::InstrIter prev = iter.get_prev();
 
-        if (iter->get_opcode() == ir::Opcode::ALLOCA && stack_slots[*iter->get_dest()].promotable) {
+        if (iter->get_opcode() == ssa::Opcode::ALLOCA && stack_slots[*iter->get_dest()].promotable) {
             block.remove(iter);
             iter = prev;
-        } else if (iter->get_opcode() == ir::Opcode::STORE && iter->get_operand(1).is_register()) {
-            ir::VirtualRegister store_reg = iter->get_operand(1).get_register();
+        } else if (iter->get_opcode() == ssa::Opcode::STORE && iter->get_operand(1).is_register()) {
+            ssa::VirtualRegister store_reg = iter->get_operand(1).get_register();
 
             if (stack_slots.contains(store_reg) && stack_slots[store_reg].promotable) {
-                ir::Value &value = iter->get_operand(0);
+                ssa::Value &value = iter->get_operand(0);
 
                 if (value.is_register() && cur_replacements.contains(value.get_register())) {
                     cur_replacements[store_reg] = cur_replacements[value.get_register()];
@@ -238,9 +238,9 @@ void StackToRegPass::rename(
             } else {
                 replace_regs(iter->get_operands(), cur_replacements);
             }
-        } else if (iter->get_opcode() == ir::Opcode::LOAD && iter->get_operand(1).is_register()) {
-            ir::VirtualRegister dst = *iter->get_dest();
-            ir::VirtualRegister load_reg = iter->get_operand(1).get_register();
+        } else if (iter->get_opcode() == ssa::Opcode::LOAD && iter->get_operand(1).is_register()) {
+            ssa::VirtualRegister dst = *iter->get_dest();
+            ssa::VirtualRegister load_reg = iter->get_operand(1).get_register();
 
             if (stack_slots.contains(load_reg) && stack_slots[load_reg].promotable) {
                 cur_replacements[dst] = cur_replacements[load_reg];
@@ -249,10 +249,10 @@ void StackToRegPass::rename(
             } else {
                 replace_regs(iter->get_operands(), cur_replacements);
             }
-        } else if (iter->get_opcode() == ir::Opcode::JMP) {
+        } else if (iter->get_opcode() == ssa::Opcode::JMP) {
             update_branch_target(iter->get_operand(0), blocks, cur_replacements);
             replace_regs(iter->get_operands(), cur_replacements);
-        } else if (iter->get_opcode() == ir::Opcode::CJMP || iter->get_opcode() == ir::Opcode::FCJMP) {
+        } else if (iter->get_opcode() == ssa::Opcode::CJMP || iter->get_opcode() == ssa::Opcode::FCJMP) {
             update_branch_target(iter->get_operand(3), blocks, cur_replacements);
             update_branch_target(iter->get_operand(4), blocks, cur_replacements);
             replace_regs(iter->get_operands(), cur_replacements);
@@ -262,16 +262,16 @@ void StackToRegPass::rename(
     }
 
     for (unsigned child_index : dominator_tree.get_node(block_iter).children_indices) {
-        ir::BasicBlockIter child_block = dominator_tree.get_cfg().get_nodes()[child_index].block;
+        ssa::BasicBlockIter child_block = dominator_tree.get_cfg().get_nodes()[child_index].block;
         rename(child_block, stack_slots, blocks, cur_replacements, dominator_tree);
     }
 }
 
 void StackToRegPass::replace_regs(
-    std::vector<ir::Operand> &operands,
-    std::unordered_map<long, ir::Value> cur_replacements
+    std::vector<ssa::Operand> &operands,
+    std::unordered_map<long, ssa::Value> cur_replacements
 ) {
-    PassUtils::iter_values(operands, [&cur_replacements](ir::Value &value) {
+    PassUtils::iter_values(operands, [&cur_replacements](ssa::Value &value) {
         if (value.is_register() && cur_replacements.count(value.get_register())) {
             value = cur_replacements[value.get_register()];
         }
@@ -279,11 +279,11 @@ void StackToRegPass::replace_regs(
 }
 
 void StackToRegPass::update_branch_target(
-    ir::Operand &operand,
+    ssa::Operand &operand,
     BlockMap &blocks,
-    std::unordered_map<long, ir::Value> cur_replacements
+    std::unordered_map<long, ssa::Value> cur_replacements
 ) {
-    ir::BranchTarget &target = operand.get_branch_target();
+    ssa::BranchTarget &target = operand.get_branch_target();
 
     for (ParamInfo &param : blocks[target.block].new_params) {
         target.args.push_back(cur_replacements[param.stack_slot]);

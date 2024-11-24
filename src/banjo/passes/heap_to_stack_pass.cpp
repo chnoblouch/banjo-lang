@@ -1,7 +1,7 @@
 #include "heap_to_stack_pass.hpp"
 
-#include "banjo/ir/instruction.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 
 #include <utility>
 #include <unordered_map>
@@ -13,30 +13,30 @@ namespace passes {
 
 HeapToStackPass::HeapToStackPass(target::Target *target) : Pass("heap-to-stack", target) {}
 
-void HeapToStackPass::run(ir::Module &mod) {
-    for (ir::Function *func : mod.get_functions()) {
+void HeapToStackPass::run(ssa::Module &mod) {
+    for (ssa::Function *func : mod.get_functions()) {
         run(*func);
     }
 }
 
-void HeapToStackPass::run(ir::Function &func) {
-    for (ir::BasicBlock &block : func) {
+void HeapToStackPass::run(ssa::Function &func) {
+    for (ssa::BasicBlock &block : func) {
         run(block, func);
     }
 }
 
-void HeapToStackPass::run(ir::BasicBlock &block, ir::Function &func) {
-    std::unordered_map<ir::VirtualRegister, ir::InstrIter> heap_allocs;
-    std::vector<std::pair<ir::InstrIter, ir::InstrIter>> replaceable_heap_allocs;
+void HeapToStackPass::run(ssa::BasicBlock &block, ssa::Function &func) {
+    std::unordered_map<ssa::VirtualRegister, ssa::InstrIter> heap_allocs;
+    std::vector<std::pair<ssa::InstrIter, ssa::InstrIter>> replaceable_heap_allocs;
 
-    for (ir::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
-        ir::Instruction &instr = *iter;
+    for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
+        ssa::Instruction &instr = *iter;
 
-        if (instr.get_opcode() != ir::Opcode::CALL) {
+        if (instr.get_opcode() != ssa::Opcode::CALL) {
             continue;
         }
 
-        ir::Operand &callee = instr.get_operand(0);
+        ssa::Operand &callee = instr.get_operand(0);
         if (!callee.is_extern_func()) {
             continue;
         }
@@ -48,14 +48,14 @@ void HeapToStackPass::run(ir::BasicBlock &block, ir::Function &func) {
                 continue;
             }
 
-            ir::Operand &arg = instr.get_operand(1);
+            ssa::Operand &arg = instr.get_operand(1);
             if (!arg.is_int_immediate()) {
                 continue;
             }
 
             heap_allocs.insert({*instr.get_dest(), iter});
         } else if (name == "free") {
-            ir::Operand &arg = instr.get_operand(1);
+            ssa::Operand &arg = instr.get_operand(1);
             if (!arg.is_register()) {
                 continue;
             }
@@ -73,8 +73,8 @@ void HeapToStackPass::run(ir::BasicBlock &block, ir::Function &func) {
         unsigned reg = *alloc_instr->get_dest();
         unsigned size = alloc_instr->get_operand(1).get_int_immediate().to_u64();
 
-        ir::Operand alloca_arg = ir::Operand::from_type(ir::Type(ir::Primitive::I8, size));
-        ir::Instruction alloca_instr(ir::Opcode::ALLOCA, reg, {alloca_arg});
+        ssa::Operand alloca_arg = ssa::Operand::from_type(ssa::Type(ssa::Primitive::I8, size));
+        ssa::Instruction alloca_instr(ssa::Opcode::ALLOCA, reg, {alloca_arg});
         func.get_entry_block().insert_before(func.get_entry_block().get_instrs().get_first_iter(), alloca_instr);
 
         block.remove(alloc_instr);

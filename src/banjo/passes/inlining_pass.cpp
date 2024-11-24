@@ -19,17 +19,17 @@ InliningPass::InliningPass(target::Target *target) : Pass("inlining", target) {
     enable_logging(std::cout);
 }
 
-void InliningPass::run(ir::Module &mod) {
-    call_graph = ir::CallGraph(mod);
+void InliningPass::run(ssa::Module &mod) {
+    call_graph = ssa::CallGraph(mod);
 
-    for (ir::Function *func : mod.get_functions()) {
+    for (ssa::Function *func : mod.get_functions()) {
         if (func->is_global()) {
             run(func);
         }
     }
 }
 
-void InliningPass::run(ir::Function *func) {
+void InliningPass::run(ssa::Function *func) {
     if (funcs_visited.contains(func)) {
         return;
     }
@@ -38,31 +38,31 @@ void InliningPass::run(ir::Function *func) {
 
     // First visit functions called in this function.
     // This has the effect that inlining at first happens deep in the call graph.
-    for (ir::BasicBlock &basic_block : func->get_basic_blocks()) {
-        for (ir::Instruction &instr : basic_block) {
-            if (instr.get_opcode() == ir::Opcode::CALL && instr.get_operand(0).is_func()) {
+    for (ssa::BasicBlock &basic_block : func->get_basic_blocks()) {
+        for (ssa::Instruction &instr : basic_block) {
+            if (instr.get_opcode() == ssa::Opcode::CALL && instr.get_operand(0).is_func()) {
                 run(instr.get_operand(0).get_func());
             }
         }
     }
 
     // Now try to inline call instructions in this function.
-    for (ir::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
-        for (ir::InstrIter instr_iter = block_iter->begin(); instr_iter != block_iter->end(); ++instr_iter) {
-            if (instr_iter->get_opcode() == ir::Opcode::CALL && instr_iter->get_operand(0).is_func()) {
+    for (ssa::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
+        for (ssa::InstrIter instr_iter = block_iter->begin(); instr_iter != block_iter->end(); ++instr_iter) {
+            if (instr_iter->get_opcode() == ssa::Opcode::CALL && instr_iter->get_operand(0).is_func()) {
                 try_inline(func, block_iter, instr_iter);
             }
         }
     }
 }
 
-void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter, ir::InstrIter &call_iter) {
-    ir::Instruction &call_instr = *call_iter;
-    std::optional<ir::VirtualRegister> dest = call_instr.get_dest();
-    std::vector<ir::Operand> call_operands = call_instr.get_operands();
-    ir::Function *callee = call_instr.get_operand(0).get_func();
+void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter) {
+    ssa::Instruction &call_instr = *call_iter;
+    std::optional<ssa::VirtualRegister> dest = call_instr.get_dest();
+    std::vector<ssa::Operand> call_operands = call_instr.get_operands();
+    ssa::Function *callee = call_instr.get_operand(0).get_func();
 
-    ir::InstrIter instr_after_call = call_iter.get_next();
+    ssa::InstrIter instr_after_call = call_iter.get_next();
 
     if (!is_inlining_beneficial(func, callee)) {
         if (is_logging()) {
@@ -86,7 +86,7 @@ void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter
 
     bool single_block = callee->get_basic_blocks().get_size() == 1;
 
-    ir::BasicBlockIter end_block;
+    ssa::BasicBlockIter end_block;
     if (!single_block) {
         end_block = func->split_block_after(block_iter, call_iter);
     }
@@ -97,20 +97,20 @@ void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter
         .end_block = end_block,
     };
 
-    std::optional<ir::Value> return_val;
+    std::optional<ssa::Value> return_val;
 
-    for (ir::BasicBlock &callee_block : *callee) {
-        for (ir::InstrIter iter = callee_block.begin(); iter != callee_block.end(); ++iter) {
-            ir::Instruction &callee_instr = *iter;
+    for (ssa::BasicBlock &callee_block : *callee) {
+        for (ssa::InstrIter iter = callee_block.begin(); iter != callee_block.end(); ++iter) {
+            ssa::Instruction &callee_instr = *iter;
 
-            if (callee_instr.get_opcode() == ir::Opcode::LOADARG) {
-                ir::Value value = call_operands[callee_instr.get_operand(1).get_int_immediate().to_u64() + 1];
+            if (callee_instr.get_opcode() == ssa::Opcode::LOADARG) {
+                ssa::Value value = call_operands[callee_instr.get_operand(1).get_int_immediate().to_u64() + 1];
                 ctx.reg2val[*callee_instr.get_dest()] = value;
                 ctx.removed_instrs.insert(iter);
                 continue;
             }
 
-            if (callee_instr.get_opcode() == ir::Opcode::RET) {
+            if (callee_instr.get_opcode() == ssa::Opcode::RET) {
                 if (!callee_instr.get_operands().empty() && dest) {
                     return_val = callee_instr.get_operand(0);
                 }
@@ -124,7 +124,7 @@ void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter
                 continue;
             }
 
-            std::optional<ir::Value> precomputed_result = Precomputing::precompute_result(callee_instr);
+            std::optional<ssa::Value> precomputed_result = Precomputing::precompute_result(callee_instr);
             if (precomputed_result) {
                 ctx.reg2val[*callee_instr.get_dest()] = *precomputed_result;
                 ctx.removed_instrs.insert(iter);
@@ -138,32 +138,32 @@ void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter
     }
 
     if (!single_block) {
-        for (ir::BasicBlockIter iter = callee->begin(); iter != callee->end(); ++iter) {
-            ir::BasicBlock inline_block("inlined." + std::to_string(inlining_label++));
+        for (ssa::BasicBlockIter iter = callee->begin(); iter != callee->end(); ++iter) {
+            ssa::BasicBlock inline_block("inlined." + std::to_string(inlining_label++));
 
             if (iter != callee->get_entry_block_iter()) {
                 inline_block.get_param_regs().resize(iter->get_param_regs().size());
                 inline_block.get_param_types().resize(iter->get_param_regs().size());
 
                 for (unsigned i = 0; i < iter->get_param_regs().size(); i++) {
-                    ir::VirtualRegister inline_param_reg = next_vreg++;
+                    ssa::VirtualRegister inline_param_reg = next_vreg++;
                     inline_block.get_param_regs()[i] = inline_param_reg;
                     inline_block.get_param_types()[i] = iter->get_param_types()[i];
                     ctx.reg2reg.insert({iter->get_param_regs()[i], inline_param_reg});
                 }
             }
 
-            ir::BasicBlockIter inline_block_iter = func->get_basic_blocks().insert_before(end_block, inline_block);
+            ssa::BasicBlockIter inline_block_iter = func->get_basic_blocks().insert_before(end_block, inline_block);
             ctx.block_map.insert({iter, inline_block_iter});
         }
     } else {
         ctx.block_map.insert({callee->begin(), block_iter});
     }
 
-    for (ir::BasicBlockIter block_iter = callee->begin(); block_iter != callee->end(); ++block_iter) {
-        ir::BasicBlockIter inline_block = ctx.block_map[block_iter];
+    for (ssa::BasicBlockIter block_iter = callee->begin(); block_iter != callee->end(); ++block_iter) {
+        ssa::BasicBlockIter inline_block = ctx.block_map[block_iter];
 
-        for (ir::InstrIter instr_iter = block_iter->begin(); instr_iter != block_iter->end(); ++instr_iter) {
+        for (ssa::InstrIter instr_iter = block_iter->begin(); instr_iter != block_iter->end(); ++instr_iter) {
             inline_instr(instr_iter, *inline_block, ctx);
         }
     }
@@ -173,8 +173,8 @@ void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter
     }
 
     if (!single_block) {
-        ir::BranchTarget entry_target{.block = block_iter.get_next(), .args = {}};
-        block_iter->append(ir::Instruction(ir::Opcode::JMP, {ir::Operand::from_branch_target(entry_target)}));
+        ssa::BranchTarget entry_target{.block = block_iter.get_next(), .args = {}};
+        block_iter->append(ssa::Instruction(ssa::Opcode::JMP, {ssa::Operand::from_branch_target(entry_target)}));
     }
 
     if (return_val) {
@@ -193,7 +193,7 @@ void InliningPass::try_inline(ir::Function *func, ir::BasicBlockIter &block_iter
     Precomputing::precompute_instrs(*func);
 }
 
-InliningPass::CalleeInfo InliningPass::collect_info(ir::Function *callee) {
+InliningPass::CalleeInfo InliningPass::collect_info(ssa::Function *callee) {
     CalleeInfo info{
         .multiple_blocks = callee->get_basic_blocks().get_size() > 1,
         .multiple_returns = false,
@@ -202,16 +202,16 @@ InliningPass::CalleeInfo InliningPass::collect_info(ir::Function *callee) {
     return info;
 }
 
-void InliningPass::inline_instr(ir::InstrIter instr_iter, ir::BasicBlock &block, Context &ctx) {
+void InliningPass::inline_instr(ssa::InstrIter instr_iter, ssa::BasicBlock &block, Context &ctx) {
     if (ctx.removed_instrs.contains(instr_iter)) {
         return;
     }
 
-    ir::Instruction inline_instr = *instr_iter;
+    ssa::Instruction inline_instr = *instr_iter;
 
-    if (inline_instr.get_opcode() == ir::Opcode::RET) {
-        ir::BranchTarget target{.block = ctx.end_block, .args = {}};
-        inline_instr = ir::Instruction(ir::Opcode::JMP, {ir::Operand::from_branch_target(target)});
+    if (inline_instr.get_opcode() == ssa::Opcode::RET) {
+        ssa::BranchTarget target{.block = ctx.end_block, .args = {}};
+        inline_instr = ssa::Instruction(ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target)});
     }
 
     if (inline_instr.get_dest()) {
@@ -221,17 +221,17 @@ void InliningPass::inline_instr(ir::InstrIter instr_iter, ir::BasicBlock &block,
         }
     }
 
-    for (ir::Operand &operand : inline_instr.get_operands()) {
+    for (ssa::Operand &operand : inline_instr.get_operands()) {
         if (operand.is_register()) {
             operand = get_inlined_value(operand, ctx);
         } else if (operand.is_branch_target()) {
-            ir::BranchTarget &target = operand.get_branch_target();
+            ssa::BranchTarget &target = operand.get_branch_target();
 
             if (ctx.block_map.contains(target.block)) {
                 target.block = ctx.block_map[target.block];
             }
 
-            for (ir::Operand &arg : target.args) {
+            for (ssa::Operand &arg : target.args) {
                 arg = get_inlined_value(arg, ctx);
             }
         }
@@ -244,14 +244,14 @@ void InliningPass::inline_instr(ir::InstrIter instr_iter, ir::BasicBlock &block,
     }
 }
 
-ir::Value InliningPass::get_inlined_value(ir::Value &value, Context &ctx) {
+ssa::Value InliningPass::get_inlined_value(ssa::Value &value, Context &ctx) {
     if (!value.is_register()) {
         return value;
     }
 
     auto reg2reg_iter = ctx.reg2reg.find(value.get_register());
     if (reg2reg_iter != ctx.reg2reg.end()) {
-        return ir::Value::from_register(reg2reg_iter->second, value.get_type());
+        return ssa::Value::from_register(reg2reg_iter->second, value.get_type());
     }
 
     auto reg2val_iter = ctx.reg2val.find(value.get_register());
@@ -262,7 +262,7 @@ ir::Value InliningPass::get_inlined_value(ir::Value &value, Context &ctx) {
     return value;
 }
 
-int InliningPass::estimate_cost(ir::Function &func) {
+int InliningPass::estimate_cost(ssa::Function &func) {
     /*
     int cost = 0;
 
@@ -294,11 +294,11 @@ int InliningPass::estimate_cost(ir::Function &func) {
     return 0;
 }
 
-int InliningPass::estimate_gain(ir::Function &func) {
+int InliningPass::estimate_gain(ssa::Function &func) {
     return 2 * (int)(func.get_params().size()) + GAIN_BIAS;
 }
 
-bool InliningPass::is_inlining_beneficial(ir::Function *caller, ir::Function *callee) {
+bool InliningPass::is_inlining_beneficial(ssa::Function *caller, ssa::Function *callee) {
     if (call_graph.get_node(callee).preds.size() == 1) {
         return callee->get_basic_blocks().get_size() <= 64;
     }
@@ -308,14 +308,14 @@ bool InliningPass::is_inlining_beneficial(ir::Function *caller, ir::Function *ca
     }
 
     unsigned num_instrs = 0;
-    for (ir::BasicBlock &block : *callee) {
+    for (ssa::BasicBlock &block : *callee) {
         num_instrs += block.get_instrs().get_size();
     }
 
     return num_instrs <= 24;
 }
 
-bool InliningPass::is_inlining_legal(ir::Function *caller, ir::Function *callee) {
+bool InliningPass::is_inlining_legal(ssa::Function *caller, ssa::Function *callee) {
     // Can't inline if this is a recursive function call.
     if (caller == callee) {
         return false;

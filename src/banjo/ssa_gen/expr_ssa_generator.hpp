@@ -1,8 +1,8 @@
 #ifndef EXPR_SSA_GENERATOR_H
 #define EXPR_SSA_GENERATOR_H
 
-#include "banjo/ir/comparison.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"

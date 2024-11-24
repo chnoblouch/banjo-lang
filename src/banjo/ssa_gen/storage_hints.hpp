@@ -1,14 +1,12 @@
 #ifndef SSA_GEN_STORAGE_HINTS_H
 #define SSA_GEN_STORAGE_HINTS_H
 
-#include "banjo/ir/operand.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 
 #include <optional>
 
 namespace banjo {
-
-namespace ssa = ir;
 
 namespace lang {
 

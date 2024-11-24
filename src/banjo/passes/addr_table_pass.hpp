@@ -11,11 +11,11 @@ class AddrTablePass : public Pass {
 
 public:
     AddrTablePass(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void replace_uses(ir::Module &mod, ir::Function *func);
-    void replace_uses(ir::Module &mod, ir::Function *func, ir::BasicBlock &basic_block);
+    void replace_uses(ssa::Module &mod, ssa::Function *func);
+    void replace_uses(ssa::Module &mod, ssa::Function *func, ssa::BasicBlock &basic_block);
 };
 
 } // namespace passes

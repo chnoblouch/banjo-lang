@@ -1,13 +1,13 @@
 #include "compiler.hpp"
 
 #include "banjo/ast/ast_writer.hpp"
-#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/config/config.hpp"
-#include "banjo/ir/module.hpp"
-#include "banjo/ir/writer.hpp"
+#include "banjo/ssa/module.hpp"
+#include "banjo/ssa/writer.hpp"
 #include "banjo/passes/pass_runner.hpp"
-#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
 #include "banjo/sir/sir_printer.hpp"
@@ -40,7 +40,7 @@ void Compiler::compile() {
         report_printer.enable_colors();
     }
 
-    ir::Module ir_module = run_frontend();
+    ssa::Module ir_module = run_frontend();
     run_middleend(ir_module);
     run_backend(ir_module);
 
@@ -49,7 +49,7 @@ void Compiler::compile() {
     delete target;
 }
 
-ir::Module Compiler::run_frontend() {
+ssa::Module Compiler::run_frontend() {
     PROFILE_SECTION_BEGIN("FRONTEND");
 
     module_manager.add_standard_stdlib_search_path();
@@ -89,7 +89,7 @@ ir::Module Compiler::run_frontend() {
 
     if (config.is_debug()) {
         std::ofstream stream("logs/ssa.input.cryoir");
-        ir::Writer(stream).write(ssa_module);
+        ssa::Writer(stream).write(ssa_module);
     }
 
     PROFILE_SECTION_END("LOWERING");
@@ -97,7 +97,7 @@ ir::Module Compiler::run_frontend() {
     return ssa_module;
 }
 
-void Compiler::run_middleend(ir::Module &ir_module) {
+void Compiler::run_middleend(ssa::Module &ir_module) {
     PROFILE_SECTION("OPTIMIZATION");
 
     passes::PassRunner pass_runner;
@@ -107,12 +107,12 @@ void Compiler::run_middleend(ir::Module &ir_module) {
     pass_runner.run(ir_module, target);
 }
 
-void Compiler::run_backend(ir::Module &ir_module) {
+void Compiler::run_backend(ssa::Module &ir_module) {
     PROFILE_SECTION("BACKEND");
 
-    codegen::IRLowerer *ir_lowerer = target->create_ir_lowerer();
-    mcode::Module machine_module = ir_lowerer->lower_module(ir_module);
-    delete ir_lowerer;
+    codegen::SSALowerer *ssa_lowerer = target->create_ssa_lowerer();
+    mcode::Module machine_module = ssa_lowerer->lower_module(ir_module);
+    delete ssa_lowerer;
 
     codegen::MachinePassRunner(target).create_and_run(machine_module);
 

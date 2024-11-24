@@ -1,7 +1,7 @@
 #ifndef SSA_GENERATOR_H
 #define SSA_GENERATOR_H
 
-#include "banjo/ir/module.hpp"
+#include "banjo/ssa/module.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/target/target.hpp"

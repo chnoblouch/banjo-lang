@@ -1,9 +1,9 @@
 #include "ssa_generator.hpp"
 
-#include "banjo/ir/function_decl.hpp"
-#include "banjo/ir/primitive.hpp"
-#include "banjo/ir/structure.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/function_decl.hpp"
+#include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa/structure.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/block_ssa_generator.hpp"

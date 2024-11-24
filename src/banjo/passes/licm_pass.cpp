@@ -11,64 +11,64 @@ namespace passes {
 
 LICMPass::LICMPass(target::Target *target) : Pass("licm", target) {}
 
-void LICMPass::run(ir::Module &mod) {
-    for (ir::Function *func : mod.get_functions()) {
+void LICMPass::run(ssa::Module &mod) {
+    for (ssa::Function *func : mod.get_functions()) {
         run(func);
     }
 }
 
-void LICMPass::run(ir::Function *func) {
-    ir::ControlFlowGraph cfg(func);
-    ir::DominatorTree domtree(cfg);
-    ir::LoopAnalyzer analyzer(cfg, domtree);
-    std::vector<ir::LoopAnalysis> loops = analyzer.analyze();
+void LICMPass::run(ssa::Function *func) {
+    ssa::ControlFlowGraph cfg(func);
+    ssa::DominatorTree domtree(cfg);
+    ssa::LoopAnalyzer analyzer(cfg, domtree);
+    std::vector<ssa::LoopAnalysis> loops = analyzer.analyze();
 
     if (!loops.empty()) {
         std::cout << func->get_name() << '\n' << std::string(16, '-') << '\n';
         analyzer.dump(std::cout);
     }
 
-    for (const ir::LoopAnalysis &loop : loops) {
+    for (const ssa::LoopAnalysis &loop : loops) {
         run(loop, cfg, func);
     }
 }
 
-void LICMPass::run(const ir::LoopAnalysis &loop, ir::ControlFlowGraph &cfg, ir::Function *func) {
+void LICMPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function *func) {
     if (loop.entries.size() != 1) {
         return;
     }
 
-    std::unordered_set<ir::VirtualRegister> in_loop_defs;
+    std::unordered_set<ssa::VirtualRegister> in_loop_defs;
 
     for (unsigned block_index : loop.body) {
-        ir::BasicBlockIter block = cfg.get_node(block_index).block;
+        ssa::BasicBlockIter block = cfg.get_node(block_index).block;
 
-        for (ir::VirtualRegister param_reg : block->get_param_regs()) {
+        for (ssa::VirtualRegister param_reg : block->get_param_regs()) {
             in_loop_defs.insert(param_reg);
         }
 
-        for (ir::Instruction &instr : block->get_instrs()) {
+        for (ssa::Instruction &instr : block->get_instrs()) {
             if (instr.get_dest()) {
                 in_loop_defs.insert(*instr.get_dest());
             }
         }
     }
 
-    ir::BasicBlockIter entry_block = cfg.get_node(*loop.entries.begin()).block;
+    ssa::BasicBlockIter entry_block = cfg.get_node(*loop.entries.begin()).block;
     bool changed = false;
 
     for (unsigned block_index : loop.body) {
-        ir::BasicBlockIter block = cfg.get_node(block_index).block;
+        ssa::BasicBlockIter block = cfg.get_node(block_index).block;
 
-        for (ir::InstrIter iter = block->begin(); iter != block->end(); ++iter) {
-            if (iter->get_opcode() == ir::Opcode::LOAD || iter->get_opcode() == ir::Opcode::STORE ||
-                iter->get_opcode() == ir::Opcode::CALL || iter->get_opcode() == ir::Opcode::MEMBERPTR) {
+        for (ssa::InstrIter iter = block->begin(); iter != block->end(); ++iter) {
+            if (iter->get_opcode() == ssa::Opcode::LOAD || iter->get_opcode() == ssa::Opcode::STORE ||
+                iter->get_opcode() == ssa::Opcode::CALL || iter->get_opcode() == ssa::Opcode::MEMBERPTR) {
                 continue;
             }
 
             bool uses_in_loop_def = false;
 
-            PassUtils::iter_regs(iter->get_operands(), [&in_loop_defs, &uses_in_loop_def](ir::VirtualRegister reg) {
+            PassUtils::iter_regs(iter->get_operands(), [&in_loop_defs, &uses_in_loop_def](ssa::VirtualRegister reg) {
                 if (in_loop_defs.contains(reg)) {
                     uses_in_loop_def = true;
                 }
@@ -80,7 +80,7 @@ void LICMPass::run(const ir::LoopAnalysis &loop, ir::ControlFlowGraph &cfg, ir::
 
                 in_loop_defs.erase(*iter->get_dest());
 
-                ir::InstrIter next_iter = iter.get_prev();
+                ssa::InstrIter next_iter = iter.get_prev();
                 entry_block->get_instrs().insert_before(entry_block->get_instrs().get_last_iter(), *iter);
                 block->remove(iter);
                 iter = next_iter;
@@ -98,16 +98,16 @@ void LICMPass::run(const ir::LoopAnalysis &loop, ir::ControlFlowGraph &cfg, ir::
     if (cfg.get_node(loop.header).predecessors.size() != 1 || false) {
         std::cout << "inserting loop preheader\n";
 
-        ir::ControlFlowGraph::Node &header_node = cfg.get_node(loop.header);
-        ir::BasicBlockIter header = header_node.block;
+        ssa::ControlFlowGraph::Node &header_node = cfg.get_node(loop.header);
+        ssa::BasicBlockIter header = header_node.block;
         std::string preheader_name = header->get_label() + ".preheader";
-        ir::BasicBlockIter preheader = func->get_basic_blocks().insert_before(header, ir::BasicBlock(preheader_name));
+        ssa::BasicBlockIter preheader = func->get_basic_blocks().insert_before(header, ssa::BasicBlock(preheader_name));
 
         for (unsigned pred : header_node.predecessors) {
 
         }
 
-        preheader->append(ir::Instruction(ir::Opcode::JMP, {ir::Operand::from_branch_target()}));
+        preheader->append(ssa::Instruction(ssa::Opcode::JMP, {ssa::Operand::from_branch_target()}));
 
         return;
     }

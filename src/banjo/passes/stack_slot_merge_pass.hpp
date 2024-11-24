@@ -11,16 +11,16 @@ class StackSlotMergePass : public Pass {
 
 private:
     struct StackSlotInfo {
-        ir::BasicBlock &alloca_basic_block;
-        ir::InstrIter alloca_iter;
+        ssa::BasicBlock &alloca_basic_block;
+        ssa::InstrIter alloca_iter;
     };
 
 public:
     StackSlotMergePass(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void run(ir::Function *func);
+    void run(ssa::Function *func);
 };
 
 } // namespace passes

@@ -5,7 +5,7 @@
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/emit/pe/pe_emitter.hpp"
 #include "banjo/target/target_description.hpp"
-#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_peephole_opt_pass.hpp"
 
 namespace banjo {
@@ -14,8 +14,8 @@ namespace target {
 
 X8664Target::X8664Target(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
 
-codegen::IRLowerer *X8664Target::create_ir_lowerer() {
-    return new X8664IRLowerer(this);
+codegen::SSALowerer *X8664Target::create_ssa_lowerer() {
+    return new X8664SSALowerer(this);
 }
 
 std::vector<codegen::MachinePass *> X8664Target::create_pre_passes() {

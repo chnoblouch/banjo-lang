@@ -1,7 +1,7 @@
 #include "dead_func_elimination_pass.hpp"
 
-#include "banjo/ir/function.hpp"
-#include "banjo/ir/function_decl.hpp"
+#include "banjo/ssa/function.hpp"
+#include "banjo/ssa/function_decl.hpp"
 #include <vector>
 
 namespace banjo {
@@ -10,30 +10,30 @@ namespace passes {
 
 DeadFuncEliminationPass::DeadFuncEliminationPass(target::Target *target) : Pass("dead-func-elimination", target) {}
 
-void DeadFuncEliminationPass::run(ir::Module &mod) {
+void DeadFuncEliminationPass::run(ssa::Module &mod) {
     this->mod = &mod;
 
-    std::vector<ir::Function *> roots;
+    std::vector<ssa::Function *> roots;
 
-    for (ir::Function *func : mod.get_functions()) {
+    for (ssa::Function *func : mod.get_functions()) {
         if (func->is_global()) {
             roots.push_back(func);
         }
     }
 
-    for (ir::Global &global : mod.get_globals()) {
+    for (ssa::Global &global : mod.get_globals()) {
         if (global.initial_value && global.initial_value->is_func()) {
             roots.push_back(global.initial_value->get_func());
         }
     }
 
-    for (ir::Function *root : roots) {
+    for (ssa::Function *root : roots) {
         walk_call_graph(root);
     }
 
-    std::vector<ir::Function *> new_funcs;
+    std::vector<ssa::Function *> new_funcs;
 
-    for (ir::Function *func : mod.get_functions()) {
+    for (ssa::Function *func : mod.get_functions()) {
         if (func->is_global() || used_funcs.contains(func)) {
             new_funcs.push_back(func);
         } else {
@@ -43,9 +43,9 @@ void DeadFuncEliminationPass::run(ir::Module &mod) {
 
     mod.set_functions(new_funcs);
 
-    std::vector<ir::FunctionDecl> new_extern_funcs;
+    std::vector<ssa::FunctionDecl> new_extern_funcs;
 
-    for (ir::FunctionDecl &extern_func : mod.get_external_functions()) {
+    for (ssa::FunctionDecl &extern_func : mod.get_external_functions()) {
         if (used_extern_funcs.contains(extern_func.get_name())) {
             new_extern_funcs.push_back(extern_func);
         }
@@ -54,19 +54,19 @@ void DeadFuncEliminationPass::run(ir::Module &mod) {
     mod.set_external_functions(new_extern_funcs);
 }
 
-void DeadFuncEliminationPass::walk_call_graph(ir::Function *func) {
+void DeadFuncEliminationPass::walk_call_graph(ssa::Function *func) {
     used_funcs.insert(func);
 
-    for (ir::BasicBlock &basic_block : func->get_basic_blocks()) {
-        for (ir::Instruction &instr : basic_block.get_instrs()) {
-            for (ir::Operand &operand : instr.get_operands()) {
+    for (ssa::BasicBlock &basic_block : func->get_basic_blocks()) {
+        for (ssa::Instruction &instr : basic_block.get_instrs()) {
+            for (ssa::Operand &operand : instr.get_operands()) {
                 analyze_value(operand);
             }
         }
     }
 }
 
-void DeadFuncEliminationPass::analyze_value(ir::Value &value) {
+void DeadFuncEliminationPass::analyze_value(ssa::Value &value) {
     if (value.is_func()) {
         if (!used_funcs.contains(value.get_func())) {
             walk_call_graph(value.get_func());
@@ -74,7 +74,7 @@ void DeadFuncEliminationPass::analyze_value(ir::Value &value) {
     } else if (value.is_extern_func()) {
         used_extern_funcs.insert(value.get_extern_func_name());
     } else if (value.is_branch_target()) {
-        for (ir::Operand &arg : value.get_branch_target().args) {
+        for (ssa::Operand &arg : value.get_branch_target().args) {
             analyze_value(arg);
         }
     }

@@ -1,6 +1,6 @@
 #include "ir_parser.hpp"
 
-#include "banjo/ir/primitive.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cctype>
@@ -10,7 +10,7 @@ namespace banjo {
 
 IRParser::IRParser(std::istream &stream) : stream(stream) {}
 
-ir::Module IRParser::parse() {
+ssa::Module IRParser::parse() {
     while (std::getline(stream, line)) {
         pos = 0;
 
@@ -36,7 +36,7 @@ ir::Module IRParser::parse() {
 void IRParser::enter_func() {
     cur_struct = nullptr;
 
-    cur_func = new ir::Function("none", {}, ir::Primitive::VOID, ir::CallingConv::X86_64_MS_ABI);
+    cur_func = new ssa::Function("none", {}, ssa::Primitive::VOID, ssa::CallingConv::X86_64_MS_ABI);
     cur_block = cur_func->get_entry_block_iter();
     mod.add(cur_func);
 
@@ -46,7 +46,7 @@ void IRParser::enter_func() {
 }
 
 void IRParser::parse_instr() {
-    ir::Instruction instr;
+    ssa::Instruction instr;
 
     if (get() == '%') {
         instr.set_dest(parse_reg());
@@ -82,18 +82,18 @@ void IRParser::enter_struct() {
     skip_whitespace();
 
     std::string name = parse_ident();
-    mod.add(new ir::Structure(name));
+    mod.add(new ssa::Structure(name));
     cur_struct = mod.get_structure(name);
 }
 
 void IRParser::parse_field() {
-    ir::Type type = parse_type();
+    ssa::Type type = parse_type();
     skip_whitespace();
     std::string name = parse_ident();
-    cur_struct->add(ir::StructureMember{name, type});
+    cur_struct->add(ssa::StructureMember{name, type});
 }
 
-ir::VirtualRegister IRParser::parse_reg() {
+ssa::VirtualRegister IRParser::parse_reg() {
     consume(); // '%'
 
     std::string str;
@@ -104,63 +104,63 @@ ir::VirtualRegister IRParser::parse_reg() {
     return std::stoi(str);
 }
 
-ir::Opcode IRParser::parse_opcode() {
+ssa::Opcode IRParser::parse_opcode() {
     std::string str;
     while (isalpha(get()) || get() == '_') {
         str += consume();
     }
 
-    if (str == "alloca") return ir::Opcode::ALLOCA;
-    else if (str == "load") return ir::Opcode::LOAD;
-    else if (str == "store") return ir::Opcode::STORE;
-    else if (str == "loadarg") return ir::Opcode::LOADARG;
-    else if (str == "add") return ir::Opcode::ADD;
-    else if (str == "sub") return ir::Opcode::SUB;
-    else if (str == "mul") return ir::Opcode::MUL;
-    else if (str == "sdiv") return ir::Opcode::SDIV;
-    else if (str == "srem") return ir::Opcode::SREM;
-    else if (str == "udiv") return ir::Opcode::UDIV;
-    else if (str == "urem") return ir::Opcode::UREM;
-    else if (str == "fadd") return ir::Opcode::FADD;
-    else if (str == "fsub") return ir::Opcode::FSUB;
-    else if (str == "fmul") return ir::Opcode::FMUL;
-    else if (str == "fdiv") return ir::Opcode::FDIV;
-    else if (str == "and") return ir::Opcode::AND;
-    else if (str == "or") return ir::Opcode::OR;
-    else if (str == "xor") return ir::Opcode::XOR;
-    else if (str == "shl") return ir::Opcode::SHL;
-    else if (str == "shr") return ir::Opcode::SHR;
-    else if (str == "jmp") return ir::Opcode::JMP;
-    else if (str == "cjmp") return ir::Opcode::CJMP;
-    else if (str == "fcjmp") return ir::Opcode::FCJMP;
-    else if (str == "select") return ir::Opcode::SELECT;
-    else if (str == "call") return ir::Opcode::CALL;
-    else if (str == "ret") return ir::Opcode::RET;
-    else if (str == "uextend") return ir::Opcode::UEXTEND;
-    else if (str == "sextend") return ir::Opcode::SEXTEND;
-    else if (str == "fpromote") return ir::Opcode::FPROMOTE;
-    else if (str == "truncate") return ir::Opcode::TRUNCATE;
-    else if (str == "fdemote") return ir::Opcode::FDEMOTE;
-    else if (str == "utof") return ir::Opcode::UTOF;
-    else if (str == "stof") return ir::Opcode::STOF;
-    else if (str == "ftou") return ir::Opcode::FTOU;
-    else if (str == "ftos") return ir::Opcode::FTOS;
-    else if (str == "memberptr") return ir::Opcode::MEMBERPTR;
-    else if (str == "offsetptr") return ir::Opcode::OFFSETPTR;
-    else if (str == "copy") return ir::Opcode::COPY;
-    else if (str == "sqrt") return ir::Opcode::SQRT;
-    else if (str == "asm") return ir::Opcode::ASM;
-    else return ir::Opcode::INVALID;
+    if (str == "alloca") return ssa::Opcode::ALLOCA;
+    else if (str == "load") return ssa::Opcode::LOAD;
+    else if (str == "store") return ssa::Opcode::STORE;
+    else if (str == "loadarg") return ssa::Opcode::LOADARG;
+    else if (str == "add") return ssa::Opcode::ADD;
+    else if (str == "sub") return ssa::Opcode::SUB;
+    else if (str == "mul") return ssa::Opcode::MUL;
+    else if (str == "sdiv") return ssa::Opcode::SDIV;
+    else if (str == "srem") return ssa::Opcode::SREM;
+    else if (str == "udiv") return ssa::Opcode::UDIV;
+    else if (str == "urem") return ssa::Opcode::UREM;
+    else if (str == "fadd") return ssa::Opcode::FADD;
+    else if (str == "fsub") return ssa::Opcode::FSUB;
+    else if (str == "fmul") return ssa::Opcode::FMUL;
+    else if (str == "fdiv") return ssa::Opcode::FDIV;
+    else if (str == "and") return ssa::Opcode::AND;
+    else if (str == "or") return ssa::Opcode::OR;
+    else if (str == "xor") return ssa::Opcode::XOR;
+    else if (str == "shl") return ssa::Opcode::SHL;
+    else if (str == "shr") return ssa::Opcode::SHR;
+    else if (str == "jmp") return ssa::Opcode::JMP;
+    else if (str == "cjmp") return ssa::Opcode::CJMP;
+    else if (str == "fcjmp") return ssa::Opcode::FCJMP;
+    else if (str == "select") return ssa::Opcode::SELECT;
+    else if (str == "call") return ssa::Opcode::CALL;
+    else if (str == "ret") return ssa::Opcode::RET;
+    else if (str == "uextend") return ssa::Opcode::UEXTEND;
+    else if (str == "sextend") return ssa::Opcode::SEXTEND;
+    else if (str == "fpromote") return ssa::Opcode::FPROMOTE;
+    else if (str == "truncate") return ssa::Opcode::TRUNCATE;
+    else if (str == "fdemote") return ssa::Opcode::FDEMOTE;
+    else if (str == "utof") return ssa::Opcode::UTOF;
+    else if (str == "stof") return ssa::Opcode::STOF;
+    else if (str == "ftou") return ssa::Opcode::FTOU;
+    else if (str == "ftos") return ssa::Opcode::FTOS;
+    else if (str == "memberptr") return ssa::Opcode::MEMBERPTR;
+    else if (str == "offsetptr") return ssa::Opcode::OFFSETPTR;
+    else if (str == "copy") return ssa::Opcode::COPY;
+    else if (str == "sqrt") return ssa::Opcode::SQRT;
+    else if (str == "asm") return ssa::Opcode::ASM;
+    else return ssa::Opcode::INVALID;
 }
 
-ir::Operand IRParser::parse_operand() {
-    ir::Type type = parse_type();
+ssa::Operand IRParser::parse_operand() {
+    ssa::Type type = parse_type();
     skip_whitespace();
 
     if (get() == '%') {
-        return ir::Operand::from_register(parse_reg(), type);
+        return ssa::Operand::from_register(parse_reg(), type);
     } else if (get() == '@') {
-        return ir::Operand::from_extern_func(parse_ident(), type);
+        return ssa::Operand::from_extern_func(parse_ident(), type);
     } else if (get() == '-' || isdigit(get())) {
         std::string str;
         while (get() == '-' || get() == '.' || isdigit(get())) {
@@ -168,33 +168,33 @@ ir::Operand IRParser::parse_operand() {
         }
 
         if (str.find('.') == std::string::npos) {
-            return ir::Operand::from_int_immediate(LargeInt{str}, type);
+            return ssa::Operand::from_int_immediate(LargeInt{str}, type);
         } else {
-            return ir::Operand::from_fp_immediate(std::stod(str));
+            return ssa::Operand::from_fp_immediate(std::stod(str));
         }
     } else {
-        return ir::Operand::from_type(type);
+        return ssa::Operand::from_type(type);
     }
 }
 
-ir::Type IRParser::parse_type() {
+ssa::Type IRParser::parse_type() {
     if (get() == '@') {
-        return ir::Type(mod.get_structure(parse_ident()));
+        return ssa::Type(mod.get_structure(parse_ident()));
     } else {
         std::string str;
         while (std::isalnum(get())) {
             str += consume();
         }
 
-        if (str == "void") return ir::Primitive::VOID;
-        else if (str == "i8") return ir::Primitive::I8;
-        else if (str == "i16") return ir::Primitive::I16;
-        else if (str == "i32") return ir::Primitive::I32;
-        else if (str == "i64") return ir::Primitive::I64;
-        else if (str == "f32") return ir::Primitive::F32;
-        else if (str == "f64") return ir::Primitive::F64;
-        else if (str == "addr") return ir::Primitive::ADDR;
-        else return ir::Primitive::VOID;
+        if (str == "void") return ssa::Primitive::VOID;
+        else if (str == "i8") return ssa::Primitive::I8;
+        else if (str == "i16") return ssa::Primitive::I16;
+        else if (str == "i32") return ssa::Primitive::I32;
+        else if (str == "i64") return ssa::Primitive::I64;
+        else if (str == "f32") return ssa::Primitive::F32;
+        else if (str == "f64") return ssa::Primitive::F64;
+        else if (str == "addr") return ssa::Primitive::ADDR;
+        else return ssa::Primitive::VOID;
     }
 }
 

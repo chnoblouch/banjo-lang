@@ -1,8 +1,8 @@
 #ifndef MCODE_CALLING_CONVENTION_H
 #define MCODE_CALLING_CONVENTION_H
 
-#include "banjo/ir/function.hpp"
-#include "banjo/ir/type.hpp"
+#include "banjo/ssa/function.hpp"
+#include "banjo/ssa/type.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/parameter.hpp"
 #include "banjo/mcode/register.hpp"
@@ -18,7 +18,7 @@ class TargetRegAnalyzer;
 };
 
 namespace codegen {
-class IRLowerer;
+class SSALowerer;
 };
 
 namespace mcode {
@@ -51,7 +51,7 @@ public:
         return std::find(volatile_regs.begin(), volatile_regs.end(), reg) != volatile_regs.end();
     }
 
-    virtual void lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr) = 0;
+    virtual void lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) = 0;
     virtual void create_arg_store_region(StackFrame &frame, StackRegions &regions) = 0;
     virtual void create_call_arg_region(Function *func, StackFrame &frame, StackRegions &regions) = 0;
     virtual void create_implicit_region(Function *func, StackFrame &frame, StackRegions &regions) = 0;
@@ -64,7 +64,7 @@ public:
     }
 
     virtual bool is_func_exit(Opcode opcode) = 0;
-    virtual std::vector<ArgStorage> get_arg_storage(const std::vector<ir::Type> &types) = 0;
+    virtual std::vector<ArgStorage> get_arg_storage(const std::vector<ssa::Type> &types) = 0;
     virtual int get_implicit_stack_bytes(Function *func) = 0;
 };
 

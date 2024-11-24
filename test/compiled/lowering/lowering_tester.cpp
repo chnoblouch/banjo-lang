@@ -1,7 +1,7 @@
 #include "lowering_tester.hpp"
 
 #include "banjo/target/x86_64/x86_64_target.hpp"
-#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 
 #include <filesystem>
 #include <iomanip>
@@ -34,9 +34,9 @@ int LoweringTester::run() {
 
 bool LoweringTester::run(const std::filesystem::path &file_path, target::Target *arch_descr) {
     std::ifstream stream(file_path);
-    ir::Module ir_module = load_ir_section(stream);
+    ssa::Module ir_module = load_ir_section(stream);
     gen::MachineModule m_module = load_machine_section(stream);
-    gen::MachineModule lowered_module = target::X8664IRLowerer(arch_descr).lower_module(ir_module);
+    gen::MachineModule lowered_module = target::X8664SSALowerer(arch_descr).lower_module(ir_module);
 
     if (m_module.get_functions().size() != lowered_module.get_functions().size()) {
         return fail("unequal number of functions");
@@ -47,15 +47,15 @@ bool LoweringTester::run(const std::filesystem::path &file_path, target::Target 
     return true;
 }
 
-ir::Module LoweringTester::load_ir_section(std::ifstream &stream) {
-    ir::Module ir_module;
+ssa::Module LoweringTester::load_ir_section(std::ifstream &stream) {
+    ssa::Module ir_module;
 
-    ir::Function *cur_func = nullptr;
+    ssa::Function *cur_func = nullptr;
 
     std::string line;
     while (std::getline(stream, line)) {
         if (line.starts_with("func")) {
-            cur_func = new ir::Function("name", {}, ir::Primitive::VOID, ir::CallingConv::X86_64_MS_ABI);
+            cur_func = new ssa::Function("name", {}, ssa::Primitive::VOID, ssa::CallingConv::X86_64_MS_ABI);
             ir_module.add(cur_func);
         } else if (line.starts_with("  ")) {
             

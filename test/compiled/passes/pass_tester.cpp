@@ -1,6 +1,6 @@
 #include "pass_tester.hpp"
 
-#include "banjo/ir/writer.hpp"
+#include "banjo/ssa/writer.hpp"
 #include "ir_parser.hpp"
 
 #include "banjo/passes/inlining_pass.hpp"
@@ -44,10 +44,10 @@ bool PassTester::run(const std::filesystem::path &file_path) {
 
     std::stringstream source_before_copy(source_before.str());
 
-    ir::Module mod_before = IRParser(source_before).parse();
-    ir::Module mod_expected = IRParser(source_after).parse();
+    ssa::Module mod_before = IRParser(source_before).parse();
+    ssa::Module mod_expected = IRParser(source_after).parse();
 
-    ir::Module mod_result = IRParser(source_before_copy).parse();
+    ssa::Module mod_result = IRParser(source_before_copy).parse();
     std::string pass_logs = run_pass(mod_result);
 
     bool result = true;
@@ -70,11 +70,11 @@ bool PassTester::run(const std::filesystem::path &file_path) {
 
         std::ofstream report_file(report_path);
         report_file << "INPUT\n" << std::string(16, '-') << '\n';
-        ir::Writer(report_file).write(mod_before);
+        ssa::Writer(report_file).write(mod_before);
         report_file << "RESULT\n" << std::string(16, '-') << '\n';
-        ir::Writer(report_file).write(mod_result);
+        ssa::Writer(report_file).write(mod_result);
         report_file << "EXPECTED\n" << std::string(16, '-') << '\n';
-        ir::Writer(report_file).write(mod_expected);
+        ssa::Writer(report_file).write(mod_expected);
         report_file << "LOGS\n" << std::string(16, '-') << '\n' << pass_logs;
 
         std::cout << " (" << report_path.string() << ")" << std::endl;
@@ -83,7 +83,7 @@ bool PassTester::run(const std::filesystem::path &file_path) {
     return result;
 }
 
-std::string PassTester::run_pass(ir::Module &mod) {
+std::string PassTester::run_pass(ssa::Module &mod) {
     passes::Pass *pass = nullptr;
 
     if (pass_name == "sroa") pass = new passes::SROAPass(&arch_descr);
@@ -99,13 +99,13 @@ std::string PassTester::run_pass(ir::Module &mod) {
     return logging_stream.str();
 }
 
-bool PassTester::compare_funcs(ir::Function *func_a, ir::Function *func_b) {
+bool PassTester::compare_funcs(ssa::Function *func_a, ssa::Function *func_b) {
     if (func_a->get_basic_blocks().get_size() != func_b->get_basic_blocks().get_size()) {
         return fail("number of basic blocks doesn't match");
     }
 
-    ir::BasicBlockIter block_a = func_a->begin();
-    ir::BasicBlockIter block_b = func_b->begin();
+    ssa::BasicBlockIter block_a = func_a->begin();
+    ssa::BasicBlockIter block_b = func_b->begin();
 
     VRegMap vreg_map = create_vreg_map(func_a, func_b);
 
@@ -121,19 +121,19 @@ bool PassTester::compare_funcs(ir::Function *func_a, ir::Function *func_b) {
     return true;
 }
 
-PassTester::VRegMap PassTester::create_vreg_map(ir::Function *func_a, ir::Function *func_b) {
+PassTester::VRegMap PassTester::create_vreg_map(ssa::Function *func_a, ssa::Function *func_b) {
     VRegMap map;
 
-    ir::BasicBlockIter block_a = func_a->begin();
-    ir::BasicBlockIter block_b = func_b->begin();
+    ssa::BasicBlockIter block_a = func_a->begin();
+    ssa::BasicBlockIter block_b = func_b->begin();
 
     while (block_a != func_a->end()) {
         if (block_a->get_instrs().get_size() != block_b->get_instrs().get_size()) {
             return map;
         }
 
-        ir::InstrIter instr_a = block_a->begin();
-        ir::InstrIter instr_b = block_b->begin();
+        ssa::InstrIter instr_a = block_a->begin();
+        ssa::InstrIter instr_b = block_b->begin();
 
         while (instr_a != block_a->end()) {
             if (instr_a->get_dest().has_value() != instr_b->get_dest().has_value()) {
@@ -155,13 +155,13 @@ PassTester::VRegMap PassTester::create_vreg_map(ir::Function *func_a, ir::Functi
     return map;
 }
 
-bool PassTester::compare_blocks(ir::BasicBlock &block_a, ir::BasicBlock &block_b, const VRegMap &vreg_map) {
+bool PassTester::compare_blocks(ssa::BasicBlock &block_a, ssa::BasicBlock &block_b, const VRegMap &vreg_map) {
     if (block_a.get_instrs().get_size() != block_b.get_instrs().get_size()) {
         return fail("number of instructions doesn't match");
     }
 
-    ir::InstrIter instr_a = block_a.begin();
-    ir::InstrIter instr_b = block_b.begin();
+    ssa::InstrIter instr_a = block_a.begin();
+    ssa::InstrIter instr_b = block_b.begin();
 
     while (instr_a != block_a.end()) {
         if (!compare_instrs(*instr_a, *instr_b, vreg_map)) {
@@ -175,7 +175,7 @@ bool PassTester::compare_blocks(ir::BasicBlock &block_a, ir::BasicBlock &block_b
     return true;
 }
 
-bool PassTester::compare_instrs(ir::Instruction &instr_a, ir::Instruction &instr_b, const VRegMap &vreg_map) {
+bool PassTester::compare_instrs(ssa::Instruction &instr_a, ssa::Instruction &instr_b, const VRegMap &vreg_map) {
     if (instr_a.get_opcode() != instr_b.get_opcode()) {
         return fail("opcode doesn't match");
     }
@@ -197,7 +197,7 @@ bool PassTester::compare_instrs(ir::Instruction &instr_a, ir::Instruction &instr
     return true;
 }
 
-bool PassTester::compare_operands(ir::Operand &operand_a, ir::Operand &operand_b, const VRegMap &vreg_map) {
+bool PassTester::compare_operands(ssa::Operand &operand_a, ssa::Operand &operand_b, const VRegMap &vreg_map) {
     if (operand_a.is_register() && operand_b.is_register()) {
         return operand_b.get_register() == vreg_map.at(operand_a.get_register());
     }

@@ -186,7 +186,7 @@ void AArch64RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::
         return;
     }
 
-    ir::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
+    ssa::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
 
     if (is_float_instr(instr)) {
         reg_classes.insert({reg, AArch64RegClass::FP_AND_VECTOR});

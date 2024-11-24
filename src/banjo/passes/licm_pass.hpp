@@ -12,12 +12,12 @@ class LICMPass : public Pass {
 
 public:
     LICMPass(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void run(ir::Function *func);
-    void run(const ir::LoopAnalysis &loop, ir::ControlFlowGraph &cfg, ir::Function *func);
-    bool is_volatile_load(ir::InstrIter iter, ir::Function *func);
+    void run(ssa::Function *func);
+    void run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function *func);
+    bool is_volatile_load(ssa::InstrIter iter, ssa::Function *func);
 };
 
 } // namespace passes

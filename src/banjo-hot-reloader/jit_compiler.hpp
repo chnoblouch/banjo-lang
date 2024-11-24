@@ -3,8 +3,8 @@
 
 #include "banjo/config/config.hpp"
 #include "banjo/emit/binary_module.hpp"
-#include "banjo/ir/addr_table.hpp"
-#include "banjo/ir/module.hpp"
+#include "banjo/ssa/addr_table.hpp"
+#include "banjo/ssa/module.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/file_module_loader.hpp"
 #include "banjo/source/module_manager.hpp"
@@ -19,9 +19,9 @@ class JITCompiler {
 
 private:
     lang::Config &config;
-    ir::AddrTable &addr_table;
+    ssa::AddrTable &addr_table;
     target::Target *target;
-    ir::Module ssa_module;
+    ssa::Module ssa_module;
 
     lang::ReportManager report_manager;
     lang::FileModuleLoader module_loader;
@@ -29,7 +29,7 @@ private:
     lang::sir::Unit sir_unit;
 
 public:
-    JITCompiler(lang::Config &config, ir::AddrTable &addr_table);
+    JITCompiler(lang::Config &config, ssa::AddrTable &addr_table);
     ~JITCompiler();
 
     bool build_ir();

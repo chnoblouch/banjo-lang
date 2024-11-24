@@ -2,7 +2,7 @@
 #define HOT_RELOADER_H
 
 #include "banjo/emit/binary_module.hpp"
-#include "banjo/ir/addr_table.hpp"
+#include "banjo/ssa/addr_table.hpp"
 #include "banjo/sir/sir.hpp"
 #include "target_process.hpp"
 
@@ -27,7 +27,7 @@ private:
 
     std::optional<TargetProcess> process;
     TargetProcess::Address addr_table_ptr;
-    ir::AddrTable addr_table;
+    ssa::AddrTable addr_table;
     std::unordered_map<std::string, std::vector<char>> file_contents;
 
 public:

@@ -1,6 +1,6 @@
 #include "type_ssa_generator.hpp"
 
-#include "banjo/ir/primitive.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"

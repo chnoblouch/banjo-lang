@@ -3,7 +3,7 @@
 
 #include "banjo/codegen/machine_pass.hpp"
 #include "banjo/emit/emitter.hpp"
-#include "banjo/ir/calling_conv.hpp"
+#include "banjo/ssa/calling_conv.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/target/target_reg_analyzer.hpp"
@@ -13,7 +13,7 @@
 namespace banjo {
 
 namespace codegen {
-class IRLowerer;
+class SSALowerer;
 } // namespace codegen
 
 namespace target {
@@ -38,12 +38,12 @@ public:
     virtual TargetDataLayout &get_data_layout() = 0;
     virtual TargetRegAnalyzer &get_reg_analyzer() = 0;
 
-    virtual codegen::IRLowerer *create_ir_lowerer() = 0;
+    virtual codegen::SSALowerer *create_ssa_lowerer() = 0;
     virtual std::vector<codegen::MachinePass *> create_pre_passes() = 0;
     virtual std::vector<codegen::MachinePass *> create_post_passes() = 0;
     virtual std::string get_output_file_ext() = 0;
     virtual codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream) = 0;
-    ir::CallingConv get_default_calling_conv();
+    ssa::CallingConv get_default_calling_conv();
 
     static Target *create(TargetDescription descr, CodeModel code_model);
 };

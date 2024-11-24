@@ -2,7 +2,7 @@
 
 #include "banjo/emit/clang_asm_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_instr_merge_pass.hpp"
-#include "banjo/target/aarch64/aarch64_ir_lowerer.hpp"
+#include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 
 namespace banjo {
 
@@ -10,8 +10,8 @@ namespace target {
 
 AArch64Target::AArch64Target(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
 
-codegen::IRLowerer *AArch64Target::create_ir_lowerer() {
-    return new AArch64IRLowerer(this);
+codegen::SSALowerer *AArch64Target::create_ssa_lowerer() {
+    return new AArch64SSALowerer(this);
 }
 
 std::vector<codegen::MachinePass *> AArch64Target::create_pre_passes() {

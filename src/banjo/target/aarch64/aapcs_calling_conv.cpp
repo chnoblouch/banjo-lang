@@ -1,7 +1,7 @@
 #include "aapcs_calling_conv.hpp"
 
 #include "aarch64_reg_analyzer.hpp"
-#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/late_reg_alloc.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/config/config.hpp"
@@ -31,10 +31,10 @@ AAPCSCallingConv::AAPCSCallingConv() {
     };
 }
 
-void AAPCSCallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr) {
-    ir::Operand &func_operand = instr.get_operand(0);
+void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
+    ssa::Operand &func_operand = instr.get_operand(0);
 
-    std::vector<ir::Type> types;
+    std::vector<ssa::Type> types;
     for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
         types.push_back(instr.get_operand(i).get_type());
     }
@@ -42,7 +42,7 @@ void AAPCSCallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &
     std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(types);
 
     for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
-        ir::Operand &operand = instr.get_operand(i);
+        ssa::Operand &operand = instr.get_operand(i);
         int size = lowerer.get_size(operand.get_type());
         bool is_float = operand.get_type().is_floating_point();
         mcode::ArgStorage cur_arg_storage = arg_storage[i - 1];
@@ -103,7 +103,7 @@ void AAPCSCallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &
     }
 }
 
-mcode::Register AAPCSCallingConv::get_arg_reg(ir::Operand &operand, int index, codegen::IRLowerer &lowerer) {
+mcode::Register AAPCSCallingConv::get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer) {
     if (index < GENERAL_ARG_REGS.size()) {
         long id = operand.get_type().is_floating_point() ? FLOAT_ARG_REGS[index] : GENERAL_ARG_REGS[index];
         return mcode::Register::from_physical(id);
@@ -386,7 +386,7 @@ bool AAPCSCallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == AArch64Opcode::RET;
 }
 
-std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const std::vector<ir::Type> &types) {
+std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const std::vector<ssa::Type> &types) {
     std::vector<mcode::ArgStorage> result;
     result.resize(types.size());
 

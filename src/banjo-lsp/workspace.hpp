@@ -3,8 +3,8 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/reports/report_manager.hpp"
-#include "banjo/sema2/extra_analysis.hpp"
-#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema/extra_analysis.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/module_manager.hpp"
 #include "banjo/source/module_path.hpp"

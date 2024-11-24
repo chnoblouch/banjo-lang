@@ -62,7 +62,7 @@ void StackFramePass::run(mcode::Function *func) {
         }
     }
 
-    std::vector<ir::Type> types;
+    std::vector<ssa::Type> types;
     for (mcode::Parameter &param : func->get_parameters()) {
         types.push_back(param.get_type());
     }

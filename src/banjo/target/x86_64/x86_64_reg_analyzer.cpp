@@ -1,6 +1,6 @@
 #include "x86_64_reg_analyzer.hpp"
 
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/operand.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
@@ -239,7 +239,7 @@ void X8664RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::Re
     }
 
     mcode::Opcode opcode = instr.get_opcode();
-    ir::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
+    ssa::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
 
     if ((opcode >= MOVSS && opcode <= MOVUPS) || (opcode >= ADDSS && opcode <= UCOMISD) || opcode == CVTSS2SD ||
         opcode == CVTSD2SS || opcode == CVTSI2SS || opcode == CVTSI2SD) {
@@ -249,7 +249,7 @@ void X8664RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::Re
     }
 }
 
-bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ir::VirtualRegister src_reg) {
+bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) {
     using namespace X8664Opcode;
 
     mcode::Opcode opcode = instr.get_opcode();

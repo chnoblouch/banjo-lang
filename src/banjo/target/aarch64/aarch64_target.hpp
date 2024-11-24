@@ -12,7 +12,7 @@ namespace target {
 class AArch64Target : public Target {
 
 private:
-    StandardDataLayout data_layout = StandardDataLayout(8, ir::Primitive::I64);
+    StandardDataLayout data_layout = StandardDataLayout(8, ssa::Primitive::I64);
     AArch64RegAnalyzer reg_analyzer;
 
 public:
@@ -21,7 +21,7 @@ public:
     TargetDataLayout &get_data_layout() { return data_layout; }
     AArch64RegAnalyzer &get_reg_analyzer() { return reg_analyzer; }
 
-    codegen::IRLowerer *create_ir_lowerer();
+    codegen::SSALowerer *create_ssa_lowerer();
     std::vector<codegen::MachinePass *> create_pre_passes();
     std::vector<codegen::MachinePass *> create_post_passes();
     std::string get_output_file_ext();

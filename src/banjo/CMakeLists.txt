@@ -2,13 +2,13 @@ add_library(banjo STATIC
     ast/ast_node.cpp
     ast/ast_writer.cpp
     ast/std_config_module.cpp
-    codegen/ir_lowerer.cpp
     codegen/late_reg_alloc.cpp
     codegen/liveness.cpp
     codegen/machine_pass_runner.cpp
     codegen/machine_pass_utils.cpp
     codegen/prolog_epilog_pass.cpp
     codegen/reg_alloc_pass.cpp
+    codegen/ssa_lowerer.cpp
     codegen/stack_frame_pass.cpp
     config/argument_parser.cpp
     config/config_parser.cpp
@@ -23,19 +23,6 @@ add_library(banjo STATIC
     emit/elf/elf_builder.cpp
     emit/elf/elf_emitter.cpp
     emit/elf/elf_format.cpp
-    ir/addr_table.cpp
-    ir/basic_block.cpp
-    ir/comparison.cpp
-    ir/control_flow_graph.cpp
-    ir/call_graph.cpp
-    ir/dead_code_elimination.cpp
-    ir/function.cpp
-    ir/module.cpp
-    ir/operand.cpp
-    ir/structure.cpp
-    ir/validator.cpp
-    ir/type.cpp
-    ir/writer.cpp
     lexer/buffered_reader.cpp
     lexer/lexer.cpp
     mcode/basic_block.cpp
@@ -68,23 +55,23 @@ add_library(banjo STATIC
     reports/report_printer.cpp    
     reports/report_texts.cpp
     reports/report.cpp
-    sema2/const_evaluator.cpp
-    sema2/decl_body_analyzer.cpp
-    sema2/decl_interface_analyzer.cpp
-    sema2/decl_visitor.cpp
-    sema2/expr_analyzer.cpp
-    sema2/expr_finalizer.cpp
-    sema2/generic_arg_inference.cpp
-    sema2/generics_specializer.cpp
-    sema2/meta_expansion.cpp
-    sema2/meta_expr_evaluator.cpp
-    sema2/report_generator.cpp
-    sema2/resource_analyzer.cpp
-    sema2/semantic_analyzer.cpp
-    sema2/stmt_analyzer.cpp
-    sema2/symbol_collector.cpp
-    sema2/type_alias_resolver.cpp
-    sema2/use_resolver.cpp
+    sema/const_evaluator.cpp
+    sema/decl_body_analyzer.cpp
+    sema/decl_interface_analyzer.cpp
+    sema/decl_visitor.cpp
+    sema/expr_analyzer.cpp
+    sema/expr_finalizer.cpp
+    sema/generic_arg_inference.cpp
+    sema/generics_specializer.cpp
+    sema/meta_expansion.cpp
+    sema/meta_expr_evaluator.cpp
+    sema/report_generator.cpp
+    sema/resource_analyzer.cpp
+    sema/semantic_analyzer.cpp
+    sema/stmt_analyzer.cpp
+    sema/symbol_collector.cpp
+    sema/type_alias_resolver.cpp
+    sema/use_resolver.cpp
     sir/magic_methods.cpp
     sir/sir_cloner.cpp
     sir/sir_create.cpp
@@ -97,6 +84,19 @@ add_library(banjo STATIC
     source/module_manager.cpp
     source/module_path.cpp
     source/text_range.cpp
+    ssa/addr_table.cpp
+    ssa/basic_block.cpp
+    ssa/comparison.cpp
+    ssa/control_flow_graph.cpp
+    ssa/call_graph.cpp
+    ssa/dead_code_elimination.cpp
+    ssa/function.cpp
+    ssa/module.cpp
+    ssa/operand.cpp
+    ssa/structure.cpp
+    ssa/validator.cpp
+    ssa/type.cpp
+    ssa/writer.cpp
     ssa_gen/block_ssa_generator.cpp
     ssa_gen/expr_ssa_generator.cpp
     ssa_gen/global_ssa_generator.cpp
@@ -114,17 +114,17 @@ add_library(banjo STATIC
     target/aarch64/aarch64_encoding_info.cpp
     target/aarch64/aarch64_immediate.cpp
     target/aarch64/aarch64_instr_merge_pass.cpp
-    target/aarch64/aarch64_ir_lowerer.cpp
     target/aarch64/aarch64_reg_analyzer.cpp
+    target/aarch64/aarch64_ssa_lowerer.cpp
     target/aarch64/aarch64_target.cpp
     target/x86_64/ms_abi_calling_conv.cpp
     target/x86_64/sys_v_calling_conv.cpp
     target/x86_64/x86_64_addr_lowering.cpp
     target/x86_64/x86_64_const_lowering.cpp
     target/x86_64/x86_64_encoder.cpp
-    target/x86_64/x86_64_ir_lowerer.cpp
     target/x86_64/x86_64_peephole_opt_pass.cpp
     target/x86_64/x86_64_reg_analyzer.cpp
+    target/x86_64/x86_64_ssa_lowerer.cpp
     target/x86_64/x86_64_target.cpp
     utils/bit_operations.cpp
     utils/json_parser.cpp

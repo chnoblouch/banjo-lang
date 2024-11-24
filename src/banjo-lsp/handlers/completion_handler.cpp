@@ -2,7 +2,7 @@
 
 #include "ast_navigation.hpp"
 #include "banjo/reports/report_texts.hpp"
-#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/json.hpp"
 #include "uri.hpp"

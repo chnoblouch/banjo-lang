@@ -1,12 +1,12 @@
 #include "jit_compiler.hpp"
 
-#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/config/config.hpp"
-#include "banjo/ir/addr_table.hpp"
+#include "banjo/ssa/addr_table.hpp"
 #include "banjo/passes/addr_table_pass.hpp"
 #include "banjo/reports/report_printer.hpp"
-#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator.hpp"
@@ -16,7 +16,7 @@ namespace banjo {
 
 namespace hot_reloader {
 
-JITCompiler::JITCompiler(lang::Config &config, ir::AddrTable &addr_table)
+JITCompiler::JITCompiler(lang::Config &config, ssa::AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
     target(target::Target::create(config.target, target::CodeModel::LARGE)),
@@ -66,28 +66,28 @@ lang::sir::Module *JITCompiler::find_mod(const std::filesystem::path &absolute_p
 }
 
 BinModule JITCompiler::compile_func(const std::string &name) {
-    ir::Module partial_ir_module;
+    ssa::Module partial_ir_module;
     partial_ir_module.add(ssa_module.get_function(name));
 
-    for (const ir::Global &global : ssa_module.get_globals()) {
+    for (const ssa::Global &global : ssa_module.get_globals()) {
         partial_ir_module.add(global);
     }
 
-    for (const ir::FunctionDecl &external_func : ssa_module.get_external_functions()) {
+    for (const ssa::FunctionDecl &external_func : ssa_module.get_external_functions()) {
         partial_ir_module.add(external_func);
     }
 
-    for (const ir::GlobalDecl &external_global : ssa_module.get_external_globals()) {
+    for (const ssa::GlobalDecl &external_global : ssa_module.get_external_globals()) {
         partial_ir_module.add(external_global);
     }
 
-    for (ir::Structure *struct_ : ssa_module.get_structures()) {
+    for (ssa::Structure *struct_ : ssa_module.get_structures()) {
         partial_ir_module.add(struct_);
     }
 
-    codegen::IRLowerer *ir_lowerer = target->create_ir_lowerer();
-    mcode::Module machine_module = ir_lowerer->lower_module(partial_ir_module);
-    delete ir_lowerer;
+    codegen::SSALowerer *ssa_lowerer = target->create_ssa_lowerer();
+    mcode::Module machine_module = ssa_lowerer->lower_module(partial_ir_module);
+    delete ssa_lowerer;
 
     partial_ir_module.forget_pointers();
 

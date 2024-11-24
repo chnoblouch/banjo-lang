@@ -2,7 +2,7 @@
 #define COMPILER_H
 
 #include "banjo/config/config.hpp"
-#include "banjo/ir/module.hpp"
+#include "banjo/ssa/module.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/source/file_module_loader.hpp"
@@ -33,10 +33,10 @@ public:
     void compile();
 
 private:
-    ir::Module run_frontend();
+    ssa::Module run_frontend();
 
-    void run_middleend(ir::Module &ir_module);
-    void run_backend(ir::Module &ir_module);
+    void run_middleend(ssa::Module &ir_module);
+    void run_backend(ssa::Module &ir_module);
 };
 
 } // namespace lang

@@ -1,10 +1,10 @@
 #include "expr_ssa_generator.hpp"
 
-#include "banjo/ir/basic_block.hpp"
-#include "banjo/ir/comparison.hpp"
-#include "banjo/ir/instruction.hpp"
-#include "banjo/ir/primitive.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
@@ -407,17 +407,17 @@ StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr)
 
     if (is_from_fp) {
         if (is_to_fp) {
-            ssa_op = size_to > size_from ? ir::Opcode::FPROMOTE : ir::Opcode::FDEMOTE;
+            ssa_op = size_to > size_from ? ssa::Opcode::FPROMOTE : ssa::Opcode::FDEMOTE;
         } else {
-            ssa_op = sir_type_to.is_signed_type() ? ir::Opcode::FTOS : ir::Opcode::FTOU;
+            ssa_op = sir_type_to.is_signed_type() ? ssa::Opcode::FTOS : ssa::Opcode::FTOU;
         }
     } else {
         if (is_to_fp) {
-            ssa_op = sir_type_from.is_signed_type() ? ir::Opcode::STOF : ir::Opcode::UTOF;
+            ssa_op = sir_type_from.is_signed_type() ? ssa::Opcode::STOF : ssa::Opcode::UTOF;
         } else if (size_to > size_from) {
-            ssa_op = sir_type_from.is_signed_type() ? ir::Opcode::SEXTEND : ir::Opcode::UEXTEND;
+            ssa_op = sir_type_from.is_signed_type() ? ssa::Opcode::SEXTEND : ssa::Opcode::UEXTEND;
         } else {
-            ssa_op = ir::Opcode::TRUNCATE;
+            ssa_op = ssa::Opcode::TRUNCATE;
         }
     }
 

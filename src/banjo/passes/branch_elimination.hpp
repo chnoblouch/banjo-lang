@@ -11,10 +11,10 @@ class BranchElimination : public Pass {
 
 public:
     BranchElimination(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void run(ir::Function *func);
+    void run(ssa::Function *func);
 };
 
 } // namespace passes

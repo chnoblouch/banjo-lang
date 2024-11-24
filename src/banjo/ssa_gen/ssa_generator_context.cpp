@@ -23,163 +23,163 @@ void SSAGeneratorContext::push_func_context(ssa::Function *ssa_func) {
     });
 }
 
-ir::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {
+ssa::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {
     return get_ssa_func()->create_block(std::move(label));
 }
 
-ir::BasicBlockIter SSAGeneratorContext::create_block() {
+ssa::BasicBlockIter SSAGeneratorContext::create_block() {
     return create_block("b." + std::to_string(next_block_id()));
 }
 
-void SSAGeneratorContext::append_block(ir::BasicBlockIter block) {
+void SSAGeneratorContext::append_block(ssa::BasicBlockIter block) {
     get_ssa_func()->append_block(block);
     get_func_context().ssa_block = block;
 }
 
-ir::Instruction &SSAGeneratorContext::append_alloca(ir::VirtualRegister dest, ir::Type type) {
-    ir::BasicBlockIter block_iter = get_ssa_func()->get_entry_block_iter();
-    ir::Instruction instr = ir::Instruction(ir::Opcode::ALLOCA, dest, {ir::Operand::from_type(type)});
+ssa::Instruction &SSAGeneratorContext::append_alloca(ssa::VirtualRegister dest, ssa::Type type) {
+    ssa::BasicBlockIter block_iter = get_ssa_func()->get_entry_block_iter();
+    ssa::Instruction instr = ssa::Instruction(ssa::Opcode::ALLOCA, dest, {ssa::Operand::from_type(type)});
     get_func_context().ssa_last_alloca = block_iter->insert_after(get_func_context().ssa_last_alloca, instr);
     return *get_func_context().ssa_last_alloca;
 }
 
-ir::VirtualRegister SSAGeneratorContext::append_alloca(ir::Type type) {
-    ir::VirtualRegister reg = next_vreg();
+ssa::VirtualRegister SSAGeneratorContext::append_alloca(ssa::Type type) {
+    ssa::VirtualRegister reg = next_vreg();
     append_alloca(reg, type);
     return reg;
 }
 
-ir::Instruction &SSAGeneratorContext::append_store(ir::Operand src, ir::Operand dst) {
-    return *get_ssa_block()->append(ir::Instruction(ir::Opcode::STORE, {std::move(src), std::move(dst)}));
+ssa::Instruction &SSAGeneratorContext::append_store(ssa::Operand src, ssa::Operand dst) {
+    return *get_ssa_block()->append(ssa::Instruction(ssa::Opcode::STORE, {std::move(src), std::move(dst)}));
 }
 
-ir::Instruction &SSAGeneratorContext::append_store(ir::Operand src, ir::VirtualRegister dst) {
-    return append_store(std::move(src), ir::Operand::from_register(dst, ssa::Primitive::ADDR));
+ssa::Instruction &SSAGeneratorContext::append_store(ssa::Operand src, ssa::VirtualRegister dst) {
+    return append_store(std::move(src), ssa::Operand::from_register(dst, ssa::Primitive::ADDR));
 }
 
-ir::Value SSAGeneratorContext::append_load(ir::Type type, ir::Operand src) {
-    ir::VirtualRegister reg = next_vreg();
-    ir::Operand type_operand = ir::Operand::from_type(type);
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::LOAD, reg, {type_operand, std::move(src)}));
-    return ir::Value::from_register(reg, type);
+ssa::Value SSAGeneratorContext::append_load(ssa::Type type, ssa::Operand src) {
+    ssa::VirtualRegister reg = next_vreg();
+    ssa::Operand type_operand = ssa::Operand::from_type(type);
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::LOAD, reg, {type_operand, std::move(src)}));
+    return ssa::Value::from_register(reg, type);
 }
 
-ir::Value SSAGeneratorContext::append_load(ir::Type type, ir::VirtualRegister src) {
+ssa::Value SSAGeneratorContext::append_load(ssa::Type type, ssa::VirtualRegister src) {
     return append_load(type, ssa::Value::from_register(src, ssa::Primitive::ADDR));
 }
 
-ir::Instruction &SSAGeneratorContext::append_loadarg(ir::VirtualRegister dst, ir::Type type, unsigned index) {
-    ir::Operand type_operand = ir::Operand::from_type(type);
-    ir::Operand index_operand = ir::Operand::from_int_immediate(index);
-    return *get_ssa_block()->append(ir::Instruction(ir::Opcode::LOADARG, dst, {type_operand, index_operand}));
+ssa::Instruction &SSAGeneratorContext::append_loadarg(ssa::VirtualRegister dst, ssa::Type type, unsigned index) {
+    ssa::Operand type_operand = ssa::Operand::from_type(type);
+    ssa::Operand index_operand = ssa::Operand::from_int_immediate(index);
+    return *get_ssa_block()->append(ssa::Instruction(ssa::Opcode::LOADARG, dst, {type_operand, index_operand}));
 }
 
-ir::VirtualRegister SSAGeneratorContext::append_loadarg(ir::Type type, unsigned index) {
-    ir::VirtualRegister reg = next_vreg();
+ssa::VirtualRegister SSAGeneratorContext::append_loadarg(ssa::Type type, unsigned index) {
+    ssa::VirtualRegister reg = next_vreg();
     append_loadarg(reg, type, index);
     return reg;
 }
 
-void SSAGeneratorContext::append_jmp(ir::BasicBlockIter block_iter) {
+void SSAGeneratorContext::append_jmp(ssa::BasicBlockIter block_iter) {
     if (get_ssa_block()->is_branching()) {
         return;
     }
 
-    ir::BranchTarget target{.block = block_iter, .args = {}};
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::JMP, {ir::Operand::from_branch_target(target)}));
+    ssa::BranchTarget target{.block = block_iter, .args = {}};
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target)}));
 }
 
 void SSAGeneratorContext::append_cjmp(
-    ir::Operand lhs,
-    ir::Comparison comparison,
-    ir::Operand rhs,
-    ir::BasicBlockIter true_block_iter,
-    ir::BasicBlockIter false_block_iter
+    ssa::Operand lhs,
+    ssa::Comparison comparison,
+    ssa::Operand rhs,
+    ssa::BasicBlockIter true_block_iter,
+    ssa::BasicBlockIter false_block_iter
 ) {
     if (get_ssa_block()->is_branching()) {
         return;
     }
 
-    std::vector<ir::Operand> operands{
+    std::vector<ssa::Operand> operands{
         std::move(lhs),
-        ir::Operand::from_comparison(comparison),
+        ssa::Operand::from_comparison(comparison),
         std::move(rhs),
-        ir::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
-        ir::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
+        ssa::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
+        ssa::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
     };
 
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::CJMP, operands));
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::CJMP, operands));
 }
 
 void SSAGeneratorContext::append_fcjmp(
-    ir::Operand lhs,
-    ir::Comparison comparison,
-    ir::Operand rhs,
-    ir::BasicBlockIter true_block_iter,
-    ir::BasicBlockIter false_block_iter
+    ssa::Operand lhs,
+    ssa::Comparison comparison,
+    ssa::Operand rhs,
+    ssa::BasicBlockIter true_block_iter,
+    ssa::BasicBlockIter false_block_iter
 ) {
     if (get_ssa_block()->is_branching()) {
         return;
     }
 
-    std::vector<ir::Operand> operands{
+    std::vector<ssa::Operand> operands{
         std::move(lhs),
-        ir::Operand::from_comparison(comparison),
+        ssa::Operand::from_comparison(comparison),
         std::move(rhs),
-        ir::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
-        ir::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
+        ssa::Operand::from_branch_target({.block = true_block_iter, .args = {}}),
+        ssa::Operand::from_branch_target({.block = false_block_iter, .args = {}}),
     };
 
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::FCJMP, operands));
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::FCJMP, operands));
 }
 
-ir::VirtualRegister SSAGeneratorContext::append_offsetptr(ir::Operand base, unsigned offset, ir::Type type) {
-    ir::Value offset_val = ir::Value::from_int_immediate(offset, ir::Primitive::I64);
+ssa::VirtualRegister SSAGeneratorContext::append_offsetptr(ssa::Operand base, unsigned offset, ssa::Type type) {
+    ssa::Value offset_val = ssa::Value::from_int_immediate(offset, ssa::Primitive::I64);
     return append_offsetptr(std::move(base), offset_val, type);
 }
 
-ir::VirtualRegister SSAGeneratorContext::append_offsetptr(ir::Operand base, ir::Operand offset, ir::Type type) {
+ssa::VirtualRegister SSAGeneratorContext::append_offsetptr(ssa::Operand base, ssa::Operand offset, ssa::Type type) {
     // FIXME: make sure offset is always an i64
 
-    ir::VirtualRegister dst = next_vreg();
-    ir::Value type_val = ir::Value::from_type(type);
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::OFFSETPTR, dst, {std::move(base), std::move(offset), type_val})
+    ssa::VirtualRegister dst = next_vreg();
+    ssa::Value type_val = ssa::Value::from_type(type);
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::OFFSETPTR, dst, {std::move(base), std::move(offset), type_val})
     );
     return dst;
 }
 
-void SSAGeneratorContext::append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, unsigned member) {
-    std::vector<ir::Operand> operands{
-        ir::Value::from_type(type),
+void SSAGeneratorContext::append_memberptr(ssa::VirtualRegister dst, ssa::Type type, ssa::Operand base, unsigned member) {
+    std::vector<ssa::Operand> operands{
+        ssa::Value::from_type(type),
         std::move(base),
-        ir::Operand::from_int_immediate(member),
+        ssa::Operand::from_int_immediate(member),
     };
 
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::MEMBERPTR, dst, operands));
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::MEMBERPTR, dst, operands));
 }
 
-ir::VirtualRegister SSAGeneratorContext::append_memberptr(ir::Type type, ir::Operand base, unsigned member) {
-    ir::VirtualRegister reg = next_vreg();
+ssa::VirtualRegister SSAGeneratorContext::append_memberptr(ssa::Type type, ssa::Operand base, unsigned member) {
+    ssa::VirtualRegister reg = next_vreg();
     append_memberptr(reg, type, std::move(base), member);
     return reg;
 }
 
-ir::Value SSAGeneratorContext::append_memberptr_val(ir::Type type, ir::Operand base, unsigned member) {
-    ir::VirtualRegister reg = append_memberptr(type, std::move(base), member);
+ssa::Value SSAGeneratorContext::append_memberptr_val(ssa::Type type, ssa::Operand base, unsigned member) {
+    ssa::VirtualRegister reg = append_memberptr(type, std::move(base), member);
     return ssa::Value::from_register(reg, ssa::Primitive::ADDR);
 }
 
-void SSAGeneratorContext::append_ret(ir::Operand val) {
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::RET, {std::move(val)}));
+void SSAGeneratorContext::append_ret(ssa::Operand val) {
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::RET, {std::move(val)}));
 }
 
 void SSAGeneratorContext::append_ret() {
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::RET));
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::RET));
 }
 
-void SSAGeneratorContext::append_copy(ir::Operand dst, ir::Operand src, ir::Type type) {
-    ir::Value type_val = ir::Operand::from_type(type);
-    get_ssa_block()->append(ir::Instruction(ir::Opcode::COPY, {std::move(dst), std::move(src), type_val}));
+void SSAGeneratorContext::append_copy(ssa::Operand dst, ssa::Operand src, ssa::Type type) {
+    ssa::Value type_val = ssa::Operand::from_type(type);
+    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::COPY, {std::move(dst), std::move(src), type_val}));
 }
 
 ReturnMethod SSAGeneratorContext::get_return_method(const ssa::Type return_type) {

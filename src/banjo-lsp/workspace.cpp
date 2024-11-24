@@ -1,7 +1,7 @@
 #include "workspace.hpp"
 
 #include "banjo/config/config.hpp"
-#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
 #include "banjo/source/module_manager.hpp"

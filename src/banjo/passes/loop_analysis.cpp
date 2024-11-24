@@ -2,7 +2,7 @@
 
 namespace banjo {
 
-namespace ir {
+namespace ssa {
 
 LoopAnalyzer::LoopAnalyzer(ControlFlowGraph &cfg, DominatorTree &domtree) : cfg(cfg), domtree(domtree) {}
 
@@ -109,6 +109,6 @@ void LoopAnalyzer::dump(std::ostream &stream) {
     }
 }
 
-} // namespace ir
+} // namespace ssa
 
 } // namespace banjo

@@ -9,21 +9,21 @@ namespace target {
 
 Target::Target(TargetDescription descr, CodeModel code_model) : descr(descr), code_model(code_model) {}
 
-ir::CallingConv Target::get_default_calling_conv() {
+ssa::CallingConv Target::get_default_calling_conv() {
     // TODO: move into virtual function
 
     if (descr.get_architecture() == target::Architecture::X86_64) {
         switch (descr.get_operating_system()) {
-            case target::OperatingSystem::WINDOWS: return ir::CallingConv::X86_64_MS_ABI;
-            case target::OperatingSystem::LINUX: return ir::CallingConv::X86_64_SYS_V_ABI;
-            case target::OperatingSystem::MACOS: return ir::CallingConv::X86_64_SYS_V_ABI;
-            case target::OperatingSystem::ANDROID: return ir::CallingConv::X86_64_SYS_V_ABI;
-            default: return ir::CallingConv::NONE;
+            case target::OperatingSystem::WINDOWS: return ssa::CallingConv::X86_64_MS_ABI;
+            case target::OperatingSystem::LINUX: return ssa::CallingConv::X86_64_SYS_V_ABI;
+            case target::OperatingSystem::MACOS: return ssa::CallingConv::X86_64_SYS_V_ABI;
+            case target::OperatingSystem::ANDROID: return ssa::CallingConv::X86_64_SYS_V_ABI;
+            default: return ssa::CallingConv::NONE;
         }
     } else if (descr.get_architecture() == target::Architecture::AARCH64) {
-        return ir::CallingConv::AARCH64_AAPCS;
+        return ssa::CallingConv::AARCH64_AAPCS;
     } else {
-        return ir::CallingConv::NONE;
+        return ssa::CallingConv::NONE;
     }
 }
 

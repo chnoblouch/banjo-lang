@@ -17,7 +17,7 @@ public:
 
 public:
     AAPCSCallingConv();
-    void lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr);
+    void lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr);
     void create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions);
     void create_call_arg_region(mcode::Function *func, mcode::StackFrame &frame, mcode::StackRegions &regions);
     void create_implicit_region(mcode::Function *func, mcode::StackFrame &frame, mcode::StackRegions &regions);
@@ -29,11 +29,11 @@ public:
 
     bool is_func_exit(mcode::Opcode opcode);
 
-    std::vector<mcode::ArgStorage> get_arg_storage(const std::vector<ir::Type> &types);
+    std::vector<mcode::ArgStorage> get_arg_storage(const std::vector<ssa::Type> &types);
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    mcode::Register get_arg_reg(ir::Operand &operand, int index, codegen::IRLowerer &lowerer);
+    mcode::Register get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer);
 };
 
 } // namespace target

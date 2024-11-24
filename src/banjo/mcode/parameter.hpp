@@ -1,7 +1,7 @@
 #ifndef MCODE_PARAMETER_H
 #define MCODE_PARAMETER_H
 
-#include "banjo/ir/type.hpp"
+#include "banjo/ssa/type.hpp"
 #include "banjo/mcode/register.hpp"
 
 namespace banjo {
@@ -19,7 +19,7 @@ public:
 
     Register get_src_reg() { return src_reg; }
     long get_stack_slot_index() { return stack_slot_index; }
-    ir::Type get_type() { return ir::Primitive::I32; }
+    ssa::Type get_type() { return ssa::Primitive::I32; }
 };
 
 } // namespace mcode

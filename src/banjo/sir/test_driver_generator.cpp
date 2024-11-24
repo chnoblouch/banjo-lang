@@ -1,6 +1,6 @@
 #include "test_driver_generator.hpp"
 
-#include "banjo/sema2/semantic_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 
 #include <iostream>
 

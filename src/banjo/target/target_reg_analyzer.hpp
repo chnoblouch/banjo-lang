@@ -2,7 +2,7 @@
 #define TARGET_REG_ANALYZER_H
 
 #include "banjo/codegen/reg_alloc_func.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
@@ -40,7 +40,7 @@ public:
 
     virtual std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) = 0;
     virtual void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) = 0;
-    virtual bool is_move_from(mcode::Instruction &instr, ir::VirtualRegister src_reg) { return false; }
+    virtual bool is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) { return false; }
     virtual void insert_load(SpilledRegUse use) = 0;
     virtual void insert_store(SpilledRegUse use) = 0;
     virtual bool is_instr_removable(mcode::Instruction &instr) = 0;

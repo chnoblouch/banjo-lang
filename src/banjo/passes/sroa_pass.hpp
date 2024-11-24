@@ -1,7 +1,7 @@
 #ifndef PASSES_SROA_PASS_H
 #define PASSES_SROA_PASS_H
 
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/passes/pass.hpp"
 #include "banjo/passes/pass_utils.hpp"
 
@@ -16,55 +16,55 @@ class SROAPass : public Pass {
 
 private:
     struct StackValue {
-        ir::InstrIter alloca_instr;
-        ir::BasicBlockIter alloca_block;
-        ir::Type type;
-        std::optional<ir::VirtualRegister> parent;
+        ssa::InstrIter alloca_instr;
+        ssa::BasicBlockIter alloca_block;
+        ssa::Type type;
+        std::optional<ssa::VirtualRegister> parent;
         std::optional<std::vector<unsigned>> members;
-        std::optional<ir::VirtualRegister> replacement;
+        std::optional<ssa::VirtualRegister> replacement;
     };
 
     struct InsertionContext {
-        ir::Function *func;
-        ir::BasicBlock &block;
-        ir::InstrIter instr;
+        ssa::Function *func;
+        ssa::BasicBlock &block;
+        ssa::InstrIter instr;
     };
 
     struct Ref {
-        std::optional<ir::VirtualRegister> ptr;
+        std::optional<ssa::VirtualRegister> ptr;
         std::optional<unsigned> stack_value;
     };
 
     std::vector<StackValue> stack_values;
-    std::unordered_map<ir::VirtualRegister, unsigned> stack_ptr_defs;
+    std::unordered_map<ssa::VirtualRegister, unsigned> stack_ptr_defs;
 
 public:
     SROAPass(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void run(ir::Function *func);
-    void collect_stack_values(ir::BasicBlockIter block_iter);
+    void run(ssa::Function *func);
+    void collect_stack_values(ssa::BasicBlockIter block_iter);
     void collect_members(unsigned val_index);
-    void disable_invalid_splits(ir::BasicBlock &block);
-    void split_root(StackValue &value, ir::Function *func);
-    void split_member(StackValue &value, ir::Function *func);
+    void disable_invalid_splits(ssa::BasicBlock &block);
+    void split_root(StackValue &value, ssa::Function *func);
+    void split_member(StackValue &value, ssa::Function *func);
 
-    void collect_stack_ptr_defs(ir::Function &func);
-    void collect_member_ptr_defs(PassUtils::UseMap &use_map, ir::VirtualRegister base, StackValue &value);
+    void collect_stack_ptr_defs(ssa::Function &func);
+    void collect_member_ptr_defs(PassUtils::UseMap &use_map, ssa::VirtualRegister base, StackValue &value);
 
-    void split_copies(ir::Function *func, ir::BasicBlock &block);
-    void copy_members(InsertionContext &ctx, Ref dst, Ref src, const ir::Type &type);
-    Ref create_member_pointer(InsertionContext &ctx, Ref ref, const ir::Type &parent_type, unsigned index);
-    void apply_splits(ir::Function &func);
+    void split_copies(ssa::Function *func, ssa::BasicBlock &block);
+    void copy_members(InsertionContext &ctx, Ref dst, Ref src, const ssa::Type &type);
+    Ref create_member_pointer(InsertionContext &ctx, Ref ref, const ssa::Type &parent_type, unsigned index);
+    void apply_splits(ssa::Function &func);
 
-    StackValue *look_up_stack_value(ir::VirtualRegister reg);
-    std::optional<unsigned> look_up_stack_value_index(ir::VirtualRegister reg);
-    bool is_aggregate(const ir::Type &type);
+    StackValue *look_up_stack_value(ssa::VirtualRegister reg);
+    std::optional<unsigned> look_up_stack_value_index(ssa::VirtualRegister reg);
+    bool is_aggregate(const ssa::Type &type);
 
-    void dump(ir::Function &func);
+    void dump(ssa::Function &func);
     void dump_stack_values();
-    void dump_stack_value(std::optional<ir::VirtualRegister> reg, StackValue &value, unsigned indent);
+    void dump_stack_value(std::optional<ssa::VirtualRegister> reg, StackValue &value, unsigned indent);
     void dump_stack_replacements();
 };
 

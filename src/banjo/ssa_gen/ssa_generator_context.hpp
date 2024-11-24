@@ -1,11 +1,11 @@
 #ifndef SSA_GENERATOR_CONTEXT_H
 #define SSA_GENERATOR_CONTEXT_H
 
-#include "banjo/ir/basic_block.hpp"
-#include "banjo/ir/function.hpp"
-#include "banjo/ir/instruction.hpp"
-#include "banjo/ir/module.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/function.hpp"
+#include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/module.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 
@@ -48,7 +48,7 @@ public:
         ssa::BasicBlockIter ssa_func_exit;
         ssa::VirtualRegister ssa_return_slot;
         ssa::InstrIter ssa_last_alloca;
-        std::vector<ir::VirtualRegister> arg_regs;
+        std::vector<ssa::VirtualRegister> arg_regs;
         std::map<const sir::Resource *, ssa::VirtualRegister> resource_deinit_flags;
         std::vector<DeferredDeinit> cur_deferred_deinits;
         std::vector<const sir::Block *> sir_scopes;
@@ -96,48 +96,48 @@ public:
     ssa::Function *get_ssa_func() { return get_func_context().ssa_func; }
     ssa::BasicBlockIter get_ssa_block() { return get_func_context().ssa_block; }
 
-    ir::VirtualRegister next_vreg() { return get_ssa_func()->next_virtual_reg(); }
+    ssa::VirtualRegister next_vreg() { return get_ssa_func()->next_virtual_reg(); }
     std::string next_string_name() { return "str." + std::to_string(string_name_id++); }
     int next_block_id() { return block_id++; }
 
-    ir::BasicBlockIter create_block(std::string label);
-    ir::BasicBlockIter create_block();
-    void append_block(ir::BasicBlockIter block);
+    ssa::BasicBlockIter create_block(std::string label);
+    ssa::BasicBlockIter create_block();
+    void append_block(ssa::BasicBlockIter block);
 
-    ir::Instruction &append_alloca(ir::VirtualRegister dst, ir::Type type);
-    ir::VirtualRegister append_alloca(ir::Type type);
-    ir::Instruction &append_store(ir::Operand src, ir::Operand dst);
-    ir::Instruction &append_store(ir::Operand src, ir::VirtualRegister dst);
-    ir::Value append_load(ir::Type type, ir::Operand src);
-    ir::Value append_load(ir::Type type, ir::VirtualRegister src);
-    ir::Instruction &append_loadarg(ir::VirtualRegister dst, ir::Type type, unsigned index);
-    ir::VirtualRegister append_loadarg(ir::Type type, unsigned index);
-    void append_jmp(ir::BasicBlockIter block_iter);
+    ssa::Instruction &append_alloca(ssa::VirtualRegister dst, ssa::Type type);
+    ssa::VirtualRegister append_alloca(ssa::Type type);
+    ssa::Instruction &append_store(ssa::Operand src, ssa::Operand dst);
+    ssa::Instruction &append_store(ssa::Operand src, ssa::VirtualRegister dst);
+    ssa::Value append_load(ssa::Type type, ssa::Operand src);
+    ssa::Value append_load(ssa::Type type, ssa::VirtualRegister src);
+    ssa::Instruction &append_loadarg(ssa::VirtualRegister dst, ssa::Type type, unsigned index);
+    ssa::VirtualRegister append_loadarg(ssa::Type type, unsigned index);
+    void append_jmp(ssa::BasicBlockIter block_iter);
 
     void append_cjmp(
-        ir::Operand lhs,
-        ir::Comparison comparison,
-        ir::Operand rhs,
-        ir::BasicBlockIter true_block_iter,
-        ir::BasicBlockIter false_block_iter
+        ssa::Operand lhs,
+        ssa::Comparison comparison,
+        ssa::Operand rhs,
+        ssa::BasicBlockIter true_block_iter,
+        ssa::BasicBlockIter false_block_iter
     );
 
     void append_fcjmp(
-        ir::Operand lhs,
-        ir::Comparison comparison,
-        ir::Operand rhs,
-        ir::BasicBlockIter true_block_iter,
-        ir::BasicBlockIter false_block_iter
+        ssa::Operand lhs,
+        ssa::Comparison comparison,
+        ssa::Operand rhs,
+        ssa::BasicBlockIter true_block_iter,
+        ssa::BasicBlockIter false_block_iter
     );
 
-    ir::VirtualRegister append_offsetptr(ir::Operand base, unsigned offset, ir::Type type);
-    ir::VirtualRegister append_offsetptr(ir::Operand base, ir::Operand offset, ir::Type type);
-    void append_memberptr(ir::VirtualRegister dst, ir::Type type, ir::Operand base, unsigned member);
-    ir::VirtualRegister append_memberptr(ir::Type type, ir::Operand base, unsigned member);
-    ir::Value append_memberptr_val(ir::Type type, ir::Operand base, unsigned member);
-    void append_ret(ir::Operand val);
+    ssa::VirtualRegister append_offsetptr(ssa::Operand base, unsigned offset, ssa::Type type);
+    ssa::VirtualRegister append_offsetptr(ssa::Operand base, ssa::Operand offset, ssa::Type type);
+    void append_memberptr(ssa::VirtualRegister dst, ssa::Type type, ssa::Operand base, unsigned member);
+    ssa::VirtualRegister append_memberptr(ssa::Type type, ssa::Operand base, unsigned member);
+    ssa::Value append_memberptr_val(ssa::Type type, ssa::Operand base, unsigned member);
+    void append_ret(ssa::Operand val);
     void append_ret();
-    void append_copy(ir::Operand dst, ir::Operand src, ir::Type type);
+    void append_copy(ssa::Operand dst, ssa::Operand src, ssa::Type type);
 
     ReturnMethod get_return_method(const ssa::Type return_type);
     ssa::Structure *create_struct(const sir::StructDef &sir_struct_def);

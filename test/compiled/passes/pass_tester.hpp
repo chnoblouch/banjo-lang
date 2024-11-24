@@ -1,7 +1,7 @@
 #ifndef PASS_TESTER_H
 #define PASS_TESTER_H
 
-#include "banjo/ir/module.hpp"
+#include "banjo/ssa/module.hpp"
 #include "banjo/mcode/module.hpp"
 #include "banjo/target/target.hpp"
 
@@ -16,7 +16,7 @@ namespace banjo {
 class PassTester {
 
 private:
-    typedef std::unordered_map<ir::VirtualRegister, ir::VirtualRegister> VRegMap;
+    typedef std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> VRegMap;
 
     const std::string pass_name;
     const std::string &file_name;
@@ -32,12 +32,12 @@ public:
 
 private:
     bool run(const std::filesystem::path &file_path);
-    std::string run_pass(ir::Module &mod);
-    bool compare_funcs(ir::Function *func_a, ir::Function *func_b);
-    VRegMap create_vreg_map(ir::Function *func_a, ir::Function *func_b);
-    bool compare_blocks(ir::BasicBlock &block_a, ir::BasicBlock &block_b, const VRegMap &vreg_map);
-    bool compare_instrs(ir::Instruction &instr_a, ir::Instruction &instr_b, const VRegMap &vreg_map);
-    bool compare_operands(ir::Operand &operand_a, ir::Operand &operand_b, const VRegMap &vreg_map);
+    std::string run_pass(ssa::Module &mod);
+    bool compare_funcs(ssa::Function *func_a, ssa::Function *func_b);
+    VRegMap create_vreg_map(ssa::Function *func_a, ssa::Function *func_b);
+    bool compare_blocks(ssa::BasicBlock &block_a, ssa::BasicBlock &block_b, const VRegMap &vreg_map);
+    bool compare_instrs(ssa::Instruction &instr_a, ssa::Instruction &instr_b, const VRegMap &vreg_map);
+    bool compare_operands(ssa::Operand &operand_a, ssa::Operand &operand_b, const VRegMap &vreg_map);
     bool fail(const std::string &message);
 };
 

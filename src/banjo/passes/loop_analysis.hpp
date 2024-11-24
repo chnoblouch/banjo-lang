@@ -1,14 +1,14 @@
 #ifndef LOOP_ANALYSIS_H
 #define LOOP_ANALYSIS_H
 
-#include "banjo/ir/control_flow_graph.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 
 #include <ostream>
 #include <unordered_set>
 
 namespace banjo {
 
-namespace ir {
+namespace ssa {
 
 struct LoopAnalysis {
     unsigned header;
@@ -38,7 +38,7 @@ private:
     bool is_in_loop(LoopAnalysis &loop, unsigned node);
 };
 
-} // namespace ir
+} // namespace ssa
 
 } // namespace banjo
 

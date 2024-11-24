@@ -1,16 +1,16 @@
 #include "x86_64_addr_lowering.hpp"
 
 #include "banjo/config/config.hpp"
-#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 
 namespace banjo {
 
 namespace target {
 
-X8664AddrLowering::X8664AddrLowering(X8664IRLowerer &lowerer) : lowerer(lowerer) {}
+X8664AddrLowering::X8664AddrLowering(X8664SSALowerer &lowerer) : lowerer(lowerer) {}
 
-mcode::Operand X8664AddrLowering::lower_address(const ir::Operand &operand) {
+mcode::Operand X8664AddrLowering::lower_address(const ssa::Operand &operand) {
     if (operand.is_register()) {
         return lower_reg_addr(operand.get_register());
     } else if (operand.is_symbol()) {
@@ -20,7 +20,7 @@ mcode::Operand X8664AddrLowering::lower_address(const ir::Operand &operand) {
     }
 }
 
-mcode::Operand X8664AddrLowering::lower_reg_addr(ir::VirtualRegister vreg) {
+mcode::Operand X8664AddrLowering::lower_reg_addr(ssa::VirtualRegister vreg) {
     mcode::Register reg = lowerer.lower_reg(vreg);
 
     if (reg.is_virtual_reg()) {
@@ -31,12 +31,12 @@ mcode::Operand X8664AddrLowering::lower_reg_addr(ir::VirtualRegister vreg) {
 }
 
 mcode::Operand X8664AddrLowering::lower_vreg_addr(mcode::Register reg) {
-    ir::InstrIter producer = lowerer.get_producer_globally(reg.get_virtual_reg());
+    ssa::InstrIter producer = lowerer.get_producer_globally(reg.get_virtual_reg());
 
-    if (producer->get_opcode() == ir::Opcode::MEMBERPTR) {
+    if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
         lowerer.discard_use(reg.get_virtual_reg());
         return mcode::Operand::from_addr(calc_memberptr_addr(*producer), 8);
-    } else if (producer->get_opcode() == ir::Opcode::OFFSETPTR) {
+    } else if (producer->get_opcode() == ssa::Opcode::OFFSETPTR) {
         lowerer.discard_use(reg.get_virtual_reg());
         return mcode::Operand::from_addr(calc_offsetptr_addr(*producer), 8);
     }
@@ -44,7 +44,7 @@ mcode::Operand X8664AddrLowering::lower_vreg_addr(mcode::Register reg) {
     return mcode::Operand::from_addr(mcode::IndirectAddress(reg), 8);
 }
 
-mcode::Operand X8664AddrLowering::lower_symbol_addr(const ir::Operand &operand) {
+mcode::Operand X8664AddrLowering::lower_symbol_addr(const ssa::Operand &operand) {
     mcode::Relocation reloc = mcode::Relocation::NONE;
     if (lang::Config::instance().is_pic() && lowerer.get_target()->get_descr().is_unix()) {
         if (operand.is_extern_func()) reloc = mcode::Relocation::PLT;
@@ -56,10 +56,10 @@ mcode::Operand X8664AddrLowering::lower_symbol_addr(const ir::Operand &operand) 
     return lowerer.deref_symbol_addr(symbol, size);
 }
 
-mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ir::Instruction &instr) {
+mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &instr) {
     mcode::Register base = lowerer.lower_reg(instr.get_operand(0).get_register());
-    ir::Operand &operand = instr.get_operand(1);
-    const ir::Type &base_type = instr.get_operand(2).get_type();
+    ssa::Operand &operand = instr.get_operand(1);
+    const ssa::Type &base_type = instr.get_operand(2).get_type();
 
     mcode::IndirectAddress addr(base, 0, 1);
     if (operand.is_int_immediate()) {
@@ -105,9 +105,9 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ir::Instruction &i
     return addr;
 }
 
-mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &instr) {
-    const ir::Type &type = instr.get_operand(0).get_type();
-    const ir::Operand &base_operand = instr.get_operand(1);
+mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ssa::Instruction &instr) {
+    const ssa::Type &type = instr.get_operand(0).get_type();
+    const ssa::Operand &base_operand = instr.get_operand(1);
     unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
 
     unsigned byte_offset = lowerer.get_member_offset(type.get_struct(), int_offset);
@@ -115,10 +115,10 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ir::Instruction &i
 
     // Try to merge the instruction with previous pointer operations.
     if (base_operand.is_register()) {
-        ir::InstrIter base_producer_iter = lowerer.get_producer_globally(base_operand.get_register());
+        ssa::InstrIter base_producer_iter = lowerer.get_producer_globally(base_operand.get_register());
 
         if (base_producer_iter != lowerer.get_block().end() &&
-            base_producer_iter->get_opcode() == ir::Opcode::MEMBERPTR) {
+            base_producer_iter->get_opcode() == ssa::Opcode::MEMBERPTR) {
             if (lowerer.get_num_uses(*instr.get_dest()) == 0) {
                 lowerer.discard_use(base_operand.get_register());
             }

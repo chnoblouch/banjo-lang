@@ -1,8 +1,8 @@
 #ifndef SSA_GEN_STORED_VALUE_H
 #define SSA_GEN_STORED_VALUE_H
 
-#include "banjo/ir/operand.hpp"
-#include "banjo/ir/virtual_register.hpp"
+#include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 
@@ -20,22 +20,22 @@ struct StoredValue {
     };
 
     Kind kind;
-    ir::Type value_type;
-    ir::Value value_or_ptr;
+    ssa::Type value_type;
+    ssa::Value value_or_ptr;
 
-    static StoredValue create_value(ir::Value value);
-    static StoredValue create_value(ir::VirtualRegister reg, ir::Type value_type);
-    static StoredValue create_reference(ir::Value value, ir::Type value_type);
-    static StoredValue create_reference(ir::VirtualRegister reg, ir::Type value_type);
-    static StoredValue create_undefined(ir::Type value_type);
-    static StoredValue alloc(const ir::Type &type, const StorageHints &hints, SSAGeneratorContext &ctx);
+    static StoredValue create_value(ssa::Value value);
+    static StoredValue create_value(ssa::VirtualRegister reg, ssa::Type value_type);
+    static StoredValue create_reference(ssa::Value value, ssa::Type value_type);
+    static StoredValue create_reference(ssa::VirtualRegister reg, ssa::Type value_type);
+    static StoredValue create_undefined(ssa::Type value_type);
+    static StoredValue alloc(const ssa::Type &type, const StorageHints &hints, SSAGeneratorContext &ctx);
 
-    const ir::Value &get_value() const {
+    const ssa::Value &get_value() const {
         assert(kind == Kind::VALUE);
         return value_or_ptr;
     }
 
-    const ir::Value &get_ptr() const {
+    const ssa::Value &get_ptr() const {
         assert(kind == Kind::REFERENCE);
         return value_or_ptr;
     }
@@ -45,8 +45,8 @@ struct StoredValue {
     StoredValue try_turn_into_value(SSAGeneratorContext &ctx);
     StoredValue turn_into_value(SSAGeneratorContext &ctx);
     StoredValue turn_into_value_or_copy(SSAGeneratorContext &ctx);
-    void copy_to(const ir::Value &dst, SSAGeneratorContext &ctx);
-    void copy_to(const ir::VirtualRegister &dst, SSAGeneratorContext &ctx);
+    void copy_to(const ssa::Value &dst, SSAGeneratorContext &ctx);
+    void copy_to(const ssa::VirtualRegister &dst, SSAGeneratorContext &ctx);
 };
 
 } // namespace lang

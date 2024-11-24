@@ -11,23 +11,23 @@ class PeepholeOptimizer : public Pass {
 
 public:
     PeepholeOptimizer(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void run(ir::Function *func, ir::Module &mod);
-    void run(ir::BasicBlock &block, ir::Function &func, ir::Module &mod);
+    void run(ssa::Function *func, ssa::Module &mod);
+    void run(ssa::BasicBlock &block, ssa::Function &func, ssa::Module &mod);
 
-    void optimize_add(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
-    void optimize_sub(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
-    void optimize_mul(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
-    void optimize_udiv(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
-    void optimize_fmul(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func);
-    void optimize_call(ir::InstrIter &iter, ir::BasicBlock &block, ir::Function &func, ir::Module &mod);
+    void optimize_add(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void optimize_sub(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void optimize_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func, ssa::Module &mod);
 
-    void eliminate(ir::InstrIter &iter, ir::Value val, ir::BasicBlock &block, ir::Function &func);
-    bool is_imm(ir::Operand &operand);
-    bool is_zero(ir::Operand &operand);
-    bool is_float_one(ir::Operand &operand);
+    void eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::BasicBlock &block, ssa::Function &func);
+    bool is_imm(ssa::Operand &operand);
+    bool is_zero(ssa::Operand &operand);
+    bool is_float_one(ssa::Operand &operand);
 };
 
 } // namespace passes

@@ -1,9 +1,9 @@
 #include "sys_v_calling_conv.hpp"
 
-#include "banjo/codegen/ir_lowerer.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/mcode/function.hpp"
-#include "banjo/target/x86_64/x86_64_ir_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
@@ -26,15 +26,15 @@ SysVCallingConv::SysVCallingConv() {
     };
 }
 
-void SysVCallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr) {
-    std::vector<ir::Type> types;
+void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
+    std::vector<ssa::Type> types;
     for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
         types.push_back(instr.get_operand(i).get_type());
     }
     std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(types);
 
     for (int i = 1; i < instr.get_operands().size(); i++) {
-        ir::Operand &operand = instr.get_operands()[i];
+        ssa::Operand &operand = instr.get_operands()[i];
         mcode::Register reg = get_arg_reg(instr, i - 1, lowerer);
         mcode::Operand src = lowerer.lower_value(operand);
         append_arg_move(operand, src, reg, lowerer);
@@ -47,10 +47,10 @@ void SysVCallingConv::lower_call(codegen::IRLowerer &lowerer, ir::Instruction &i
     }
 }
 
-mcode::Register SysVCallingConv::get_arg_reg(ir::Instruction &instr, unsigned index, codegen::IRLowerer &lowerer) {
+mcode::Register SysVCallingConv::get_arg_reg(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer) {
     mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
 
-    std::vector<ir::Type> types;
+    std::vector<ssa::Type> types;
     for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
         types.push_back(instr.get_operand(i).get_type());
     }
@@ -69,16 +69,16 @@ mcode::Register SysVCallingConv::get_arg_reg(ir::Instruction &instr, unsigned in
 }
 
 void SysVCallingConv::append_arg_move(
-    ir::Operand &operand,
+    ssa::Operand &operand,
     mcode::Operand &src,
     mcode::Register reg,
-    codegen::IRLowerer &lowerer
+    codegen::SSALowerer &lowerer
 ) {
     mcode::Opcode opcode;
 
-    if (operand.get_type().is_primitive(ir::Primitive::F32)) {
+    if (operand.get_type().is_primitive(ssa::Primitive::F32)) {
         opcode = X8664Opcode::MOVSS;
-    } else if (operand.get_type().is_primitive(ir::Primitive::F64)) {
+    } else if (operand.get_type().is_primitive(ssa::Primitive::F64)) {
         opcode = X8664Opcode::MOVSD;
     } else {
         bool is_reference = src.is_stack_slot() || src.is_symbol_deref() || src.is_addr();
@@ -89,17 +89,17 @@ void SysVCallingConv::append_arg_move(
     lowerer.emit(mcode::Instruction(opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG));
 }
 
-void SysVCallingConv::append_call(ir::Operand func_operand, codegen::IRLowerer &lowerer) {
-    X8664IRLowerer &x86_64_lowerer = static_cast<X8664IRLowerer &>(lowerer);
+void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer) {
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
-    int ptr_size = X8664IRLowerer::PTR_SIZE;
+    int ptr_size = X8664SSALowerer::PTR_SIZE;
 
     mcode::Operand operand;
     if (func_operand.is_symbol()) {
         operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
     } else if (func_operand.is_register()) {
-        ir::InstrIter producer = lowerer.get_producer(func_operand.get_register());
-        if (producer->get_opcode() == ir::Opcode::LOAD) {
+        ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
+        if (producer->get_opcode() == ssa::Opcode::LOAD) {
             operand = lowerer.lower_address(producer->get_operand(1));
             lowerer.discard_use(func_operand.get_register());
         } else {
@@ -114,8 +114,8 @@ void SysVCallingConv::append_call(ir::Operand func_operand, codegen::IRLowerer &
     iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);
 }
 
-void SysVCallingConv::append_ret_val_move(codegen::IRLowerer &lowerer) {
-    ir::Instruction &instr = *lowerer.get_instr_iter();
+void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {
+    ssa::Instruction &instr = *lowerer.get_instr_iter();
 
     bool is_floating_point = instr.get_operand(0).get_type().is_floating_point();
     int return_size = lowerer.get_size(instr.get_operand(0).get_type());
@@ -308,7 +308,7 @@ bool SysVCallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == X8664Opcode::RET;
 }
 
-std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const std::vector<ir::Type> &types) {
+std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const std::vector<ssa::Type> &types) {
     std::vector<mcode::ArgStorage> result;
     result.resize(types.size());
 

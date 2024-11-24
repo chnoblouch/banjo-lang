@@ -8,31 +8,31 @@ namespace banjo {
 
 namespace lang {
 
-StoredValue StoredValue::create_value(ir::Value value) {
+StoredValue StoredValue::create_value(ssa::Value value) {
     return {Kind::VALUE, value.get_type(), std::move(value)};
 }
 
-StoredValue StoredValue::create_value(ir::VirtualRegister reg, ir::Type value_type) {
-    ir::Value value = ir::Value::from_register(reg, value_type);
+StoredValue StoredValue::create_value(ssa::VirtualRegister reg, ssa::Type value_type) {
+    ssa::Value value = ssa::Value::from_register(reg, value_type);
     return {Kind::VALUE, value_type, value};
 }
 
-StoredValue StoredValue::create_reference(ir::Value value, ir::Type value_type) {
+StoredValue StoredValue::create_reference(ssa::Value value, ssa::Type value_type) {
     return {Kind::REFERENCE, value_type, std::move(value)};
 }
 
-StoredValue StoredValue::create_reference(ir::VirtualRegister reg, ir::Type value_type) {
-    ir::Value value = ir::Value::from_register(reg, ir::Primitive::ADDR);
+StoredValue StoredValue::create_reference(ssa::VirtualRegister reg, ssa::Type value_type) {
+    ssa::Value value = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
     return {Kind::REFERENCE, value_type, std::move(value)};
 }
 
-StoredValue StoredValue::create_undefined(ir::Type value_type) {
+StoredValue StoredValue::create_undefined(ssa::Type value_type) {
     return {Kind::UNDEFINED, value_type};
 }
 
-StoredValue StoredValue::alloc(const ir::Type &type, const StorageHints &hints, SSAGeneratorContext &ctx) {
-    ir::Value val = hints.dst ? *hints.dst : ir::Operand::from_register(ctx.append_alloca(type));
-    return StoredValue::create_reference(val.with_type(ir::Primitive::ADDR), type);
+StoredValue StoredValue::alloc(const ssa::Type &type, const StorageHints &hints, SSAGeneratorContext &ctx) {
+    ssa::Value val = hints.dst ? *hints.dst : ssa::Operand::from_register(ctx.append_alloca(type));
+    return StoredValue::create_reference(val.with_type(ssa::Primitive::ADDR), type);
 }
 
 bool StoredValue::fits_in_reg(SSAGeneratorContext &ctx) {
@@ -41,8 +41,8 @@ bool StoredValue::fits_in_reg(SSAGeneratorContext &ctx) {
 
 StoredValue StoredValue::turn_into_reference(SSAGeneratorContext &ctx) {
     if (kind == Kind::VALUE) {
-        ir::VirtualRegister dst_reg = ctx.append_alloca(value_type);
-        ir::Value dst = ir::Value::from_register(dst_reg, ir::Primitive::ADDR);
+        ssa::VirtualRegister dst_reg = ctx.append_alloca(value_type);
+        ssa::Value dst = ssa::Value::from_register(dst_reg, ssa::Primitive::ADDR);
         ctx.append_store(value_or_ptr, dst);
         return create_reference(dst, value_type);
     } else if (kind == Kind::REFERENCE) {
@@ -54,7 +54,7 @@ StoredValue StoredValue::turn_into_reference(SSAGeneratorContext &ctx) {
 
 StoredValue StoredValue::try_turn_into_value(SSAGeneratorContext &ctx) {
     if (kind == Kind::REFERENCE && fits_in_reg(ctx)) {
-        ir::Value val = ctx.append_load(value_type, value_or_ptr);
+        ssa::Value val = ctx.append_load(value_type, value_or_ptr);
         return StoredValue::create_value(val);
     } else {
         return *this;
@@ -66,11 +66,11 @@ StoredValue StoredValue::turn_into_value(SSAGeneratorContext &ctx) {
         return *this;
     } else if (kind == Kind::REFERENCE) {
         ASSERT(fits_in_reg(ctx));
-        ir::Value val = ctx.append_load(value_type, value_or_ptr);
+        ssa::Value val = ctx.append_load(value_type, value_or_ptr);
         return StoredValue::create_value(val);
     } else if (kind == Kind::UNDEFINED) {
         ASSERT(fits_in_reg(ctx));
-        ir::Value val = ir::Value::from_int_immediate(0, value_type);
+        ssa::Value val = ssa::Value::from_int_immediate(0, value_type);
         return StoredValue::create_value(val);
     } else {
         ASSERT_UNREACHABLE;
@@ -82,20 +82,20 @@ StoredValue StoredValue::turn_into_value_or_copy(SSAGeneratorContext &ctx) {
         return *this;
     } else if (kind == Kind::REFERENCE) {
         if (fits_in_reg(ctx)) {
-            ir::Value val = ctx.append_load(value_type, value_or_ptr);
+            ssa::Value val = ctx.append_load(value_type, value_or_ptr);
             return StoredValue::create_value(val);
         } else {
-            const ir::Value &copy_src = value_or_ptr;
-            ir::Value copy_dst = ir::Operand::from_register(ctx.append_alloca(value_type), ssa::Primitive::ADDR);
+            const ssa::Value &copy_src = value_or_ptr;
+            ssa::Value copy_dst = ssa::Operand::from_register(ctx.append_alloca(value_type), ssa::Primitive::ADDR);
             ctx.append_copy(copy_dst, copy_src, value_type);
             return StoredValue::create_reference(copy_dst, value_type);
         }
     } else if (kind == Kind::UNDEFINED) {
         if (fits_in_reg(ctx)) {
-            ir::Value val = ir::Value::from_int_immediate(0, value_type);
+            ssa::Value val = ssa::Value::from_int_immediate(0, value_type);
             return StoredValue::create_value(val);
         } else {
-            ir::Value stack_slot = ir::Operand::from_register(ctx.append_alloca(value_type));
+            ssa::Value stack_slot = ssa::Operand::from_register(ctx.append_alloca(value_type));
             return StoredValue::create_reference(stack_slot, value_type);
         }
     } else {
@@ -103,7 +103,7 @@ StoredValue StoredValue::turn_into_value_or_copy(SSAGeneratorContext &ctx) {
     }
 }
 
-void StoredValue::copy_to(const ir::Value &dst, SSAGeneratorContext &ctx) {
+void StoredValue::copy_to(const ssa::Value &dst, SSAGeneratorContext &ctx) {
     if (value_or_ptr.is_register() && value_or_ptr == dst) {
         return;
     }
@@ -112,11 +112,11 @@ void StoredValue::copy_to(const ir::Value &dst, SSAGeneratorContext &ctx) {
         ctx.append_store(value_or_ptr, dst);
     } else if (kind == Kind::REFERENCE) {
         if (fits_in_reg(ctx)) {
-            ir::Value val = ctx.append_load(value_type, value_or_ptr);
+            ssa::Value val = ctx.append_load(value_type, value_or_ptr);
             ctx.append_store(val, dst);
         } else {
-            const ir::Value &copy_src = value_or_ptr;
-            ir::Value copy_dst = dst.with_type(copy_src.get_type());
+            const ssa::Value &copy_src = value_or_ptr;
+            ssa::Value copy_dst = dst.with_type(copy_src.get_type());
             ctx.append_copy(copy_dst, copy_src, value_type);
         }
     } else if (kind == Kind::UNDEFINED) {
@@ -124,7 +124,7 @@ void StoredValue::copy_to(const ir::Value &dst, SSAGeneratorContext &ctx) {
     }
 }
 
-void StoredValue::copy_to(const ir::VirtualRegister &dst, SSAGeneratorContext &ctx) {
+void StoredValue::copy_to(const ssa::VirtualRegister &dst, SSAGeneratorContext &ctx) {
     copy_to(ssa::Value::from_register(dst, ssa::Primitive::ADDR), ctx);
 }
 

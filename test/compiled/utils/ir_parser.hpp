@@ -1,7 +1,7 @@
 #ifndef TEST_IR_PARSER_H
 #define TEST_IR_PARSER_H
 
-#include "banjo/ir/module.hpp"
+#include "banjo/ssa/module.hpp"
 #include <istream>
 
 namespace banjo {
@@ -13,14 +13,14 @@ private:
     std::string line;
     unsigned pos;
 
-    ir::Module mod;
-    ir::Function *cur_func;
-    ir::Structure *cur_struct;
-    ir::BasicBlockIter cur_block;
+    ssa::Module mod;
+    ssa::Function *cur_func;
+    ssa::Structure *cur_struct;
+    ssa::BasicBlockIter cur_block;
 
 public:
     IRParser(std::istream &stream);
-    ir::Module parse();
+    ssa::Module parse();
 
 private:
     void enter_func();
@@ -28,10 +28,10 @@ private:
     void enter_struct();
     void parse_field();
 
-    ir::VirtualRegister parse_reg();
-    ir::Opcode parse_opcode();
-    ir::Operand parse_operand();
-    ir::Type parse_type();
+    ssa::VirtualRegister parse_reg();
+    ssa::Opcode parse_opcode();
+    ssa::Operand parse_operand();
+    ssa::Type parse_type();
     std::string parse_ident();
 
     char get();

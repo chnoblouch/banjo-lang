@@ -3,9 +3,9 @@
 
 #include "banjo/mcode/calling_convention.hpp"
 
-namespace ir {
+namespace ssa {
 class Operand;
-} // namespace ir
+} // namespace ssa
 
 // TODO: reformat
 namespace mcode {
@@ -25,7 +25,7 @@ public:
 
 public:
     MSABICallingConv();
-    void lower_call(codegen::IRLowerer &lowerer, ir::Instruction &instr);
+    void lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr);
     void create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions);
     void create_call_arg_region(mcode::Function *func, mcode::StackFrame &frame, mcode::StackRegions &regions);
     void create_implicit_region(mcode::Function *func, mcode::StackFrame &frame, mcode::StackRegions &regions);
@@ -34,14 +34,14 @@ public:
     std::vector<mcode::Instruction> get_epilog(mcode::Function *func);
     bool is_func_exit(mcode::Opcode opcode);
 
-    std::vector<mcode::ArgStorage> get_arg_storage(const std::vector<ir::Type> &types);
+    std::vector<mcode::ArgStorage> get_arg_storage(const std::vector<ssa::Type> &types);
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    mcode::Register get_arg_reg(ir::Operand &operand, int index, codegen::IRLowerer &lowerer);
-    void append_arg_move(ir::Operand &operand, mcode::Operand &src, mcode::Register reg, codegen::IRLowerer &lowerer);
-    void append_call(ir::Operand func_operand, codegen::IRLowerer &lowerer);
-    void append_ret_val_move(codegen::IRLowerer &lowerer);
+    mcode::Register get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer);
+    void append_arg_move(ssa::Operand &operand, mcode::Operand &src, mcode::Register reg, codegen::SSALowerer &lowerer);
+    void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
+    void append_ret_val_move(codegen::SSALowerer &lowerer);
 };
 
 } // namespace target

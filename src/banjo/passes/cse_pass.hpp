@@ -11,11 +11,11 @@ class CSEPass : public Pass {
 
 public:
     CSEPass(target::Target *target);
-    void run(ir::Module &mod);
+    void run(ssa::Module &mod);
 
 private:
-    void run(ir::Function *func);
-    void run(ir::BasicBlock &block, ir::Function *func);
+    void run(ssa::Function *func);
+    void run(ssa::BasicBlock &block, ssa::Function *func);
 };
 
 } // namespace passes

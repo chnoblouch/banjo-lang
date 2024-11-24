@@ -1,10 +1,11 @@
 #ifndef X86_64_CONST_LOWERING_H
 #define X86_64_CONST_LOWERING_H
 
-#include "banjo/ir/basic_block.hpp"
-#include "banjo/ir/instruction.hpp"
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/instruction.hpp"
+
 
 #include <map>
 #include <string>
@@ -14,12 +15,16 @@ namespace banjo {
 
 namespace target {
 
-class X8664IRLowerer;
+class X8664SSALowerer;
 
 class X8664ConstLowering {
 
 private:
-    enum class ConstStorageAccess { LOAD, LOAD_INTO_REG, READ_REG };
+    enum class ConstStorageAccess {
+        LOAD,
+        LOAD_INTO_REG,
+        READ_REG,
+    };
 
     struct ConstStorage {
         ConstStorageAccess access;
@@ -27,23 +32,23 @@ private:
         mcode::Register reg = mcode::Register::from_virtual(-1);
     };
 
-    X8664IRLowerer &lowerer;
+    X8664SSALowerer &lowerer;
 
     unsigned cur_id = 0;
     std::map<float, std::string> const_f32s;
 
-    std::unordered_map<ir::InstrIter, std::map<float, ConstStorage>> f32_storage;
-    ir::BasicBlockIter last_block = nullptr;
+    std::unordered_map<ssa::InstrIter, std::map<float, ConstStorage>> f32_storage;
+    ssa::BasicBlockIter last_block = nullptr;
 
 public:
-    X8664ConstLowering(X8664IRLowerer &lowerer);
+    X8664ConstLowering(X8664SSALowerer &lowerer);
     mcode::Value load_f32(float value);
     mcode::Value load_f64(double value);
 
 private:
     void process_block();
-    bool is_f32_used_later_on(float value, ir::InstrIter user);
-    bool is_discarding_instr(ir::Opcode opcode);
+    bool is_f32_used_later_on(float value, ssa::InstrIter user);
+    bool is_discarding_instr(ssa::Opcode opcode);
 };
 
 } // namespace target

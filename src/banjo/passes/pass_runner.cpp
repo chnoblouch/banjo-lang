@@ -14,8 +14,8 @@
 #include "banjo/passes/stack_slot_merge_pass.hpp"
 #include "banjo/passes/stack_to_reg_pass.hpp"
 
-#include "banjo/ir/validator.hpp"
-#include "banjo/ir/writer.hpp"
+#include "banjo/ssa/validator.hpp"
+#include "banjo/ssa/writer.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <fstream>
@@ -25,7 +25,7 @@ namespace banjo {
 
 namespace passes {
 
-void PassRunner::run(ir::Module &mod, target::Target *target) {
+void PassRunner::run(ssa::Module &mod, target::Target *target) {
     std::vector<Pass *> passes = create_opt_passes(target);
 
     if (is_generate_addr_table) {
@@ -75,7 +75,7 @@ std::vector<Pass *> PassRunner::create_opt_passes(target::Target *target) {
     return passes;
 }
 
-void PassRunner::run_pass(Pass *pass, unsigned index, ir::Module &mod) {
+void PassRunner::run_pass(Pass *pass, unsigned index, ssa::Module &mod) {
     PROFILE_SCOPE(std::to_string(index) + "_" + pass->get_name());
     pass->run(mod);
 
@@ -85,10 +85,10 @@ void PassRunner::run_pass(Pass *pass, unsigned index, ir::Module &mod) {
         std::string file_name = "ssa.pass" + prefix + "_" + pass->get_name() + ".cryoir";
         std::string path = "logs/" + file_name;
         std::ofstream stream(path);
-        ir::Writer(stream).write(mod);
+        ssa::Writer(stream).write(mod);
 
         std::cout << "validating pass " << index << std::endl;
-        if (!ir::Validator(std::cout).validate(mod)) {
+        if (!ssa::Validator(std::cout).validate(mod)) {
             std::exit(1);
         }
     }

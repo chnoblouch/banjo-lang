@@ -2,7 +2,7 @@
 #define TEST_DRIVER_GENERATOR_H
 
 #include "banjo/reports/report_manager.hpp"
-#include "banjo/sema2/decl_visitor.hpp"
+#include "banjo/sema/decl_visitor.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 

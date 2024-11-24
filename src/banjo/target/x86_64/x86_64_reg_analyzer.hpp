@@ -33,7 +33,7 @@ public:
     bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, mcode::PhysicalReg reg) override;
     std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) override;
     void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) override;
-    bool is_move_from(mcode::Instruction &instr, ir::VirtualRegister src_reg) override;
+    bool is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) override;
     void insert_load(SpilledRegUse use) override;
     void insert_store(SpilledRegUse use) override;
     bool is_instr_removable(mcode::Instruction &instr) override;
