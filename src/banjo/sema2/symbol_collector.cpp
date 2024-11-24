@@ -13,8 +13,8 @@ namespace sema {
 
 SymbolCollector::SymbolCollector(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void SymbolCollector::collect() {
-    for (sir::Module *mod : analyzer.sir_unit.mods) {
+void SymbolCollector::collect(const std::vector<sir::Module *> &mods) {
+    for (sir::Module *mod : mods) {
         analyzer.enter_mod(mod);
         collect_in_block(mod->block);
         analyzer.exit_mod();

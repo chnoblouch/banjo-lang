@@ -2,6 +2,7 @@ add_executable(banjo-lsp
     ast_navigation.cpp
     base_message_stream.cpp
     connection.cpp
+    diagnostics.cpp
     main.cpp
     memory_module_loader.cpp
     protocol_structs.cpp

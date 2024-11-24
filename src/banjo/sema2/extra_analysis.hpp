@@ -15,7 +15,6 @@ namespace sema {
 
 struct ExtraAnalysis {
     struct SymbolDef {
-        sir::Module *mod;
         sir::Symbol symbol;
         TextRange ident_range;
     };

@@ -10,8 +10,8 @@ namespace sema {
 
 UseResolver::UseResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void UseResolver::resolve() {
-    for (sir::Module *mod : analyzer.sir_unit.mods) {
+void UseResolver::resolve(const std::vector<sir::Module *> &mods) {
+    for (sir::Module *mod : mods) {
         analyzer.enter_mod(mod);
         resolve_in_block(mod->block);
         analyzer.exit_mod();

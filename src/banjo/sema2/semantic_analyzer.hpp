@@ -115,6 +115,7 @@ public:
     );
 
     void analyze();
+    void analyze(const std::vector<sir::Module *> &mods);
     void analyze(sir::Module &mod);
 
     ExtraAnalysis &get_extra_analysis() { return extra_analysis; }

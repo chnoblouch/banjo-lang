@@ -18,7 +18,7 @@ protected:
     DeclVisitor(SemanticAnalyzer &analyzer);
 
 public:
-    void analyze();
+    void analyze(const std::vector<sir::Module *> &mods);
     void analyze_decl_block(sir::DeclBlock &decl_block);
     void analyze_meta_block(sir::MetaBlock &meta_block);
     Result analyze_decl(sir::Decl &decl);

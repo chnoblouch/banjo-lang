@@ -4,6 +4,7 @@
 #include "banjo/ast/ast_child_indices.hpp"
 #include "banjo/config/config.hpp"
 #include "connection.hpp"
+#include "diagnostics.hpp"
 #include "uri.hpp"
 #include "workspace.hpp"
 
@@ -39,7 +40,11 @@ void Server::start() {
     connection.on_request("textDocument/semanticTokens/full", &semantic_tokens_handler);
     connection.on_request("shutdown", &shutdown_handler);
 
-    connection.on_notification("initialized", [&](JSONObject &) { workspace.initialize(); });
+    connection.on_notification("initialized", [&](JSONObject &) {
+        std::vector<lang::sir::Module *> mods = workspace.initialize();
+        publish_diagnostics(connection, workspace, mods);
+    });
+
     connection.on_notification("exit", [](JSONObject &) { std::exit(0); });
 
     /*
@@ -74,7 +79,8 @@ void Server::start() {
         const JSONObject &last_change = changes.get_object(changes.length() - 1);
         std::string new_content = last_change.get_string("text");
 
-        workspace.update(fs_path, new_content);
+        std::vector<lang::sir::Module *> mods = workspace.update(fs_path, new_content);
+        publish_diagnostics(connection, workspace, mods);
     });
 
     connection.start();

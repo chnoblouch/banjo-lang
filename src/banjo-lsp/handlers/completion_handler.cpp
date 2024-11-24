@@ -38,23 +38,28 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection &connec
     JSONArray items;
 
     if (auto in_decl_block = std::get_if<sema::CompleteInDeclBlock>(&completion_info.context)) {
-        build_items(completion_info.context, items, *in_decl_block->decl_block->symbol_table);
+        build_in_block(items, *in_decl_block->decl_block->symbol_table);
     } else if (auto in_block = std::get_if<sema::CompleteInBlock>(&completion_info.context)) {
-        build_items(completion_info.context, items, *in_block->block->symbol_table);
+        build_in_block(items, *in_block->block->symbol_table);
     } else if (auto after_dot = std::get_if<sema::CompleteAfterDot>(&completion_info.context)) {
-        build_after_dot(completion_info.context, items, after_dot->lhs);
+        build_after_dot(items, after_dot->lhs);
     } else if (auto after_use_dot = std::get_if<sema::CompleteAfterUseDot>(&completion_info.context)) {
-        build_after_use_dot(completion_info.context, items, after_use_dot->lhs);
+        build_after_use_dot(items, after_use_dot->lhs);
     }
 
     return items;
 }
 
-void CompletionHandler::build_after_dot(
-    lang::sema::CompletionContext &context,
-    JSONArray &items,
-    lang::sir::Expr &lhs
-) {
+void CompletionHandler::build_in_block(JSONArray &items, lang::sir::SymbolTable &symbol_table) {
+    CompletionConfig config{
+        .include_uses = true,
+        .append_func_parameters = true,
+    };
+
+    build_items(config, items, symbol_table);
+}
+
+void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) {
     sir::Expr type = lhs.get_type();
 
     if (type) {
@@ -63,27 +68,73 @@ void CompletionHandler::build_after_dot(
         }
 
         if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-            build_value_members(context, items, *struct_def->block.symbol_table);
+            build_value_members(items, *struct_def);
         }
     } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {
-        build_symbol_members(context, items, symbol_expr->symbol);
+        CompletionConfig config{
+            .include_uses = false,
+            .append_func_parameters = true,
+        };
+
+        build_symbol_members(config, items, symbol_expr->symbol);
     }
 }
 
-void CompletionHandler::build_after_use_dot(
-    lang::sema::CompletionContext &context,
-    JSONArray &items,
-    lang::sir::UseItem &lhs
-) {
+void CompletionHandler::build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs) {
+    CompletionConfig config{
+        .include_uses = false,
+        .append_func_parameters = false,
+    };
+
     if (auto use_ident = lhs.match<sir::UseIdent>()) {
-        build_symbol_members(context, items, use_ident->symbol);
+        build_symbol_members(config, items, use_ident->symbol);
     } else if (auto use_dot_expr = lhs.match<sir::UseDotExpr>()) {
-        build_symbol_members(context, items, use_dot_expr->rhs.as<sir::UseIdent>().symbol);
+        build_symbol_members(config, items, use_dot_expr->rhs.as<sir::UseIdent>().symbol);
+    }
+}
+
+void CompletionHandler::build_value_members(JSONArray &items, lang::sir::StructDef &struct_def) {
+    CompletionConfig config{
+        .include_uses = false,
+        .append_func_parameters = true,
+    };
+
+    for (lang::sir::StructField *field : struct_def.fields) {
+        items.add(create_simple_item(field->ident.value, LSPCompletionItemKind::FIELD));
+    }
+
+    for (const auto &[name, symbol] : struct_def.block.symbol_table->symbols) {
+        bool is_value_member = false;
+
+        if (auto func_def = symbol.match<sir::FuncDef>()) {
+            is_value_member = func_def->is_method();
+        } else if (symbol.is<sir::OverloadSet>()) {
+            // TODO: Only include the overloads that are actually methods.
+            is_value_member = true;
+        }
+
+        if (is_value_member) {
+            build_item(config, items, name, symbol);
+        }
+    }
+}
+
+void CompletionHandler::build_items(
+    const CompletionConfig &config,
+    JSONArray &items,
+    lang::sir::SymbolTable &symbol_table
+) {
+    for (const auto &[name, symbol] : symbol_table.symbols) {
+        build_item(config, items, name, symbol);
+    }
+
+    if (symbol_table.parent) {
+        build_items(config, items, *symbol_table.parent);
     }
 }
 
 void CompletionHandler::build_symbol_members(
-    lang::sema::CompletionContext &context,
+    const CompletionConfig &config,
     JSONArray &items,
     lang::sir::Symbol &symbol
 ) {
@@ -94,46 +145,12 @@ void CompletionHandler::build_symbol_members(
     }
 
     if (sir::SymbolTable *symbol_table = symbol.get_symbol_table()) {
-        build_items(context, items, *symbol_table);
-    }
-}
-
-void CompletionHandler::build_value_members(
-    lang::sema::CompletionContext &context,
-    JSONArray &items,
-    const lang::sir::SymbolTable &symbol_table
-) {
-    for (const auto &[name, symbol] : symbol_table.symbols) {
-        bool is_value_member = false;
-
-        if (symbol.is<sir::StructField>()) {
-            is_value_member = true;
-        } else if (auto func_def = symbol.match<sir::FuncDef>()) {
-            is_value_member = func_def->is_method();
-        }
-
-        if (is_value_member) {
-            build_item(context, items, name, symbol);
-        }
-    }
-}
-
-void CompletionHandler::build_items(
-    lang::sema::CompletionContext &context,
-    JSONArray &items,
-    const lang::sir::SymbolTable &symbol_table
-) {
-    for (const auto &[name, symbol] : symbol_table.symbols) {
-        build_item(context, items, name, symbol);
-    }
-
-    if (symbol_table.parent) {
-        build_items(context, items, *symbol_table.parent);
+        build_items(config, items, *symbol_table);
     }
 }
 
 void CompletionHandler::build_item(
-    lang::sema::CompletionContext &context,
+    const CompletionConfig &config,
     JSONArray &items,
     std::string_view name,
     const lang::sir::Symbol &symbol
@@ -141,9 +158,17 @@ void CompletionHandler::build_item(
     if (symbol.is<sir::Module>()) {
         items.add(create_simple_item(name, LSPCompletionItemKind::MODULE));
     } else if (auto func_def = symbol.match<sir::FuncDef>()) {
-        items.add(build_item(name, func_def->type, func_def->is_method()));
+        if (config.append_func_parameters) {
+            items.add(build_item(name, func_def->type, func_def->is_method()));
+        } else {
+            items.add(create_simple_item(name, LSPCompletionItemKind::FUNCTION));
+        }
     } else if (auto native_func_decl = symbol.match<sir::NativeFuncDecl>()) {
-        items.add(build_item(name, native_func_decl->type, false));
+        if (config.append_func_parameters) {
+            items.add(build_item(name, native_func_decl->type, false));
+        } else {
+            items.add(create_simple_item(name, LSPCompletionItemKind::FUNCTION));
+        }
     } else if (symbol.is<sir::ConstDef>()) {
         items.add(create_simple_item(name, LSPCompletionItemKind::CONSTANT));
     } else if (symbol.is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::TypeAlias>()) {
@@ -156,11 +181,11 @@ void CompletionHandler::build_item(
         items.add(create_simple_item(name, LSPCompletionItemKind::ENUM_MEMBER));
     } else if (auto overload_set = symbol.match<sir::OverloadSet>()) {
         build_item(items, name, *overload_set);
-    } else if (std::holds_alternative<lang::sema::CompleteInBlock>(context)) {
+    } else if (config.include_uses) {
         if (auto use_ident = symbol.match<sir::UseIdent>()) {
-            build_item(context, items, name, use_ident->symbol);
+            build_item(config, items, name, use_ident->symbol);
         } else if (auto use_rebind = symbol.match<sir::UseRebind>()) {
-            build_item(context, items, name, use_rebind->symbol);
+            build_item(config, items, name, use_rebind->symbol);
         }
     }
 }

@@ -16,8 +16,8 @@ namespace sema {
 
 MetaExpansion::MetaExpansion(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void MetaExpansion::run() {
-    for (sir::Module *mod : analyzer.sir_unit.mods) {
+void MetaExpansion::run(const std::vector<sir::Module *> &mods) {
+    for (sir::Module *mod : mods) {
         analyzer.enter_mod(mod);
         run_on_decl_block(mod->block);
         analyzer.exit_mod();

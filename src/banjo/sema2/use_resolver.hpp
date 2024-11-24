@@ -17,7 +17,7 @@ private:
 
 public:
     UseResolver(SemanticAnalyzer &analyzer);
-    void resolve();
+    void resolve(const std::vector<sir::Module *> &mods);
     void resolve_in_block(sir::DeclBlock &decl_block);
     void resolve_in_meta_block(sir::MetaBlock &meta_block);
 

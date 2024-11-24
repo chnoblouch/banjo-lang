@@ -1,13 +1,8 @@
 #include "definition_handler.hpp"
 
 #include "ast_navigation.hpp"
-#include "banjo/ast/ast_module.hpp"
-#include "banjo/ast/ast_node.hpp"
-#include "banjo/ast/expr.hpp"
 #include "banjo/source/text_range.hpp"
-#include "banjo/symbol/symbol_ref.hpp"
 #include "protocol_structs.hpp"
-#include "symbol_ref_info.hpp"
 #include "uri.hpp"
 
 namespace banjo {
@@ -20,7 +15,7 @@ DefinitionHandler::DefinitionHandler(Workspace &workspace) : workspace(workspace
 
 DefinitionHandler::~DefinitionHandler() {}
 
-JSONValue DefinitionHandler::handle(const JSONObject &params, Connection &connection) {
+JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*connection*/) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 

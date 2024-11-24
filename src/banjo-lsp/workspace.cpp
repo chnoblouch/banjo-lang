@@ -27,7 +27,7 @@ Workspace::Workspace()
     config(Config::instance()),
     target(target::Target::create(config.target, target::CodeModel::LARGE)) {}
 
-void Workspace::initialize() {
+std::vector<lang::sir::Module *> Workspace::initialize() {
     module_manager.add_standard_stdlib_search_path();
     module_manager.add_config_search_paths(config);
     module_manager.load_all();
@@ -36,7 +36,7 @@ void Workspace::initialize() {
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::INDEXING);
     analyzer.analyze();
-    build_index(analyzer.get_extra_analysis());
+    build_index(analyzer.get_extra_analysis(), sir_unit.mods);
 
     for (sir::Module *mod : sir_unit.mods) {
         ASTModule *ast_module = module_manager.get_module_list().get_by_path(mod->path);
@@ -50,9 +50,11 @@ void Workspace::initialize() {
         file->sir_module = mod;
         files_by_mod_path[mod->path] = file;
     }
+
+    return sir_unit.mods;
 }
 
-void Workspace::update(const std::filesystem::path &fs_path, std::string new_content) {
+std::vector<lang::sir::Module *> Workspace::update(const std::filesystem::path &fs_path, std::string new_content) {
     report_manager.reset();
 
     File *file = find_file(fs_path);
@@ -61,11 +63,24 @@ void Workspace::update(const std::filesystem::path &fs_path, std::string new_con
     ASTModule *new_mod = module_manager.reload(file->ast_module);
     file->ast_module = new_mod;
 
-    SIRGenerator().regenerate_mod(sir_unit, new_mod);
+    std::unordered_set<lang::ModulePath> paths_to_analyze;
+    paths_to_analyze.insert(file->sir_module->path);
+    collect_dependents(*file->sir_module, paths_to_analyze);
+
+    std::vector<lang::sir::Module *> mods_to_analyze;
+    mods_to_analyze.reserve(paths_to_analyze.size());
+
+    for (const lang::ModulePath &path : paths_to_analyze) {
+        File *file = find_file(path);
+        SIRGenerator().regenerate_mod(sir_unit, file->ast_module);
+        mods_to_analyze.push_back(file->sir_module);
+    }
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::INDEXING);
-    analyzer.analyze(*file->sir_module);
-    build_index(analyzer.get_extra_analysis());
+    analyzer.analyze(mods_to_analyze);
+    build_index(analyzer.get_extra_analysis(), mods_to_analyze);
+
+    return mods_to_analyze;
 }
 
 CompletionInfo Workspace::run_completion(const File *file, TextPosition completion_point) {
@@ -91,6 +106,10 @@ File *Workspace::find_file(const std::filesystem::path &fs_path) {
 File *Workspace::find_file(const lang::ModulePath &mod_path) {
     auto iter = files_by_mod_path.find(mod_path);
     return iter == files_by_mod_path.end() ? nullptr : iter->second;
+}
+
+File *Workspace::find_file(const lang::sir::Module &mod) {
+    return find_file(mod.path);
 }
 
 File *Workspace::find_or_load_file(const std::filesystem::path &fs_path) {
@@ -124,6 +143,10 @@ ModuleIndex *Workspace::find_index(lang::sir::Module *mod) {
     return iter == index.mods.end() ? nullptr : &iter->second;
 }
 
+const SymbolRef &Workspace::get_index_symbol(const SymbolKey &key) {
+    return index.get_symbol(key);
+}
+
 std::vector<lang::ModulePath> Workspace::list_sub_mods(lang::sir::Module *mod) {
     lang::ASTModule *ast_mod = module_manager.get_module_list().get_by_path(mod->path);
     if (!ast_mod) {
@@ -139,18 +162,23 @@ std::vector<lang::ModulePath> Workspace::list_sub_mods(lang::sir::Module *mod) {
     return paths;
 }
 
-void Workspace::build_index(sema::ExtraAnalysis &analysis) {
-    index.mods.clear();
+void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods) {
+    for (lang::sir::Module *mod : mods) {
+        index.mods.erase(mod);
+    }
 
     for (const Report &report : report_manager.get_reports()) {
         ModuleIndex &mod = index.mods[sir_unit.mods_by_path[report.get_message().location->path]];
         mod.reports.push_back(report);
     }
 
-    std::unordered_map<sir::Symbol, SymbolRef> symbol_defs;
+    std::unordered_map<sir::Symbol, SymbolKey> symbol_defs;
 
     for (auto &[mod, mod_analysis] : analysis.mods) {
+        ModuleIndex &mod_index = index.mods[mod];
+
         for (sema::ExtraAnalysis::SymbolDef &def : mod_analysis.symbol_defs) {
+
             SymbolRef ref{
                 .range = def.ident_range,
                 .symbol = def.symbol,
@@ -158,12 +186,19 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis) {
                 .def_range = def.ident_range,
             };
 
-            index.mods[mod].symbol_refs.push_back(ref);
-            symbol_defs.insert({def.symbol, ref});
+            SymbolKey key{
+                .mod = mod,
+                .index = static_cast<unsigned>(mod_index.symbol_refs.size()),
+            };
+
+            mod_index.symbol_refs.push_back(ref);
+            symbol_defs.insert({def.symbol, key});
         }
     }
 
     for (auto &[mod, mod_analysis] : analysis.mods) {
+        ModuleIndex &mod_index = index.mods[mod];
+
         for (sema::ExtraAnalysis::SymbolUse &use : mod_analysis.symbol_uses) {
             SymbolRef ref{
                 .range = use.range,
@@ -172,19 +207,47 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis) {
                 .def_range = {0, 0},
             };
 
+            SymbolKey key{
+                .mod = mod,
+                .index = static_cast<unsigned>(mod_index.symbol_refs.size()),
+            };
+
             if (auto ref_mod = use.symbol.match<sir::Module>()) {
                 ref.def_mod = ref_mod;
                 ref.def_range = ref_mod->block.ast_node->get_range();
+
+                ModuleIndex &def_mod_index = index.mods[ref_mod];
+                def_mod_index.dependents.insert(mod->path);
             } else {
-                auto def = symbol_defs.find(use.symbol);
-                if (def != symbol_defs.end()) {
-                    ref.def_mod = def->second.def_mod;
-                    ref.def_range = def->second.def_range;
+                auto def_key = symbol_defs.find(use.symbol);
+
+                if (def_key != symbol_defs.end()) {
+                    ModuleIndex &def_mod_index = index.mods[def_key->second.mod];
+                    SymbolRef &def = def_mod_index.symbol_refs[def_key->second.index];
+
+                    ref.def_mod = def.def_mod;
+                    ref.def_range = def.def_range;
+
+                    def.uses.push_back(key);
+                    def_mod_index.dependents.insert(mod->path);
                 }
             }
 
-            index.mods[mod].symbol_refs.push_back(ref);
+            mod_index.symbol_refs.push_back(ref);
         }
+    }
+}
+
+void Workspace::collect_dependents(lang::sir::Module &mod, std::unordered_set<lang::ModulePath> &dependents) {
+    ModuleIndex &mod_index = index.mods[&mod];
+
+    for (const lang::ModulePath &path : mod_index.dependents) {
+        if (dependents.contains(path)) {
+            continue;
+        }
+
+        dependents.insert(path);
+        collect_dependents(*sir_unit.mods_by_path[path], dependents);
     }
 }
 

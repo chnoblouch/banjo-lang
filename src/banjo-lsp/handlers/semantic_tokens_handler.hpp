@@ -34,7 +34,6 @@ public:
     ~SemanticTokensHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);
-    void publish_diagnostics(const File *file, ModuleIndex &index, Connection &connection);
     std::vector<LSPSemanticToken> tokens_to_lsp(const std::string &source, const std::vector<SemanticToken> &tokens);
     JSONArray serialize(const std::vector<LSPSemanticToken> &lsp_tokens);
 

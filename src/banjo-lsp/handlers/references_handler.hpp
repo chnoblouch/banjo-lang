@@ -18,6 +18,10 @@ public:
     ~ReferencesHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);
+
+private:
+    const File *find_file(const JSONObject &params);
+    const SymbolRef *find_symbol(const File &file, const JSONObject &params);
 };
 
 } // namespace lsp

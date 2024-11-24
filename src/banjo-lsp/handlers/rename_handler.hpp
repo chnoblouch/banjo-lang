@@ -2,18 +2,15 @@
 #define LSP_RENAME_HANDLER_H
 
 #include "banjo/ast/ast_node.hpp"
+#include "banjo/symbol/symbol.hpp"
 #include "connection.hpp"
 #include "workspace.hpp"
-#include "banjo/symbol/symbol.hpp"
+
+#include <optional>
 
 namespace banjo {
 
 namespace lsp {
-
-struct SymbolDefinition {
-    lang::Symbol *symbol;
-    lang::ASTNode *identifier;
-};
 
 class RenameHandler : public RequestHandler {
 
@@ -25,6 +22,10 @@ public:
     ~RenameHandler();
 
     JSONValue handle(const JSONObject &params, Connection &connection);
+
+private:
+    const File *find_file(const JSONObject &params);
+    const SymbolRef *find_symbol(const File &file, const JSONObject &params);
 };
 
 } // namespace lsp

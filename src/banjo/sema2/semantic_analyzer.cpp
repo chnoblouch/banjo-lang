@@ -5,6 +5,7 @@
 #include "banjo/sema2/extra_analysis.hpp"
 #include "banjo/sema2/meta_expansion.hpp"
 #include "banjo/sema2/resource_analyzer.hpp"
+#include "banjo/sema2/semantic_analyzer.hpp"
 #include "banjo/sema2/symbol_collector.hpp"
 #include "banjo/sema2/type_alias_resolver.hpp"
 #include "banjo/sema2/use_resolver.hpp"
@@ -33,14 +34,18 @@ SemanticAnalyzer::SemanticAnalyzer(
     mode(mode) {}
 
 void SemanticAnalyzer::analyze() {
-    SymbolCollector(*this).collect();
+    analyze(sir_unit.mods);
+}
+
+void SemanticAnalyzer::analyze(const std::vector<sir::Module *> &mods) {
+    SymbolCollector(*this).collect(mods);
     populate_preamble_symbols();
-    MetaExpansion(*this).run();
-    UseResolver(*this).resolve();
-    TypeAliasResolver(*this).analyze();
-    DeclInterfaceAnalyzer(*this).analyze();
-    DeclBodyAnalyzer(*this).analyze();
-    ResourceAnalyzer(*this).analyze();
+    MetaExpansion(*this).run(mods);
+    UseResolver(*this).resolve(mods);
+    TypeAliasResolver(*this).analyze(mods);
+    DeclInterfaceAnalyzer(*this).analyze(mods);
+    DeclBodyAnalyzer(*this).analyze(mods);
+    ResourceAnalyzer(*this).analyze(mods);
     run_postponed_analyses();
 }
 
@@ -204,7 +209,6 @@ void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
     }
 
     ExtraAnalysis::SymbolDef def{
-        .mod = cur_sir_mod,
         .symbol = sir_symbol,
         .ident_range = ast_node->get_range(),
     };

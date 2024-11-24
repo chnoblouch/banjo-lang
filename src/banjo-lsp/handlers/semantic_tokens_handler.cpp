@@ -50,47 +50,7 @@ JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &co
     std::vector<LSPSemanticToken> lsp_tokens = tokens_to_lsp(file->content, tokens);
     JSONArray data = serialize(lsp_tokens);
 
-    publish_diagnostics(file, *index, connection);
-
     return JSONObject{{"data", data}};
-}
-
-void SemanticTokensHandler::publish_diagnostics(const File *file, ModuleIndex &index, Connection &connection) {
-    JSONArray diagnostics;
-
-    for (const lang::Report &report : index.reports) {
-        const lang::SourceLocation &location = *report.get_message().location;
-
-        LSPTextPosition start = ASTNavigation::pos_to_lsp(file->content, location.range.start);
-        LSPTextPosition end = ASTNavigation::pos_to_lsp(file->content, location.range.end);
-
-        std::string message = report.get_message().text;
-
-        for (const lang::ReportMessage &note : report.get_notes()) {
-            message += "\n" + note.text;
-        }
-
-        // TODO: add protocol enum
-        int severity;
-        switch (report.get_type()) {
-            case lang::Report::Type::ERROR: severity = 1; break;
-            case lang::Report::Type::WARNING: severity = 2; break;
-        }
-
-        diagnostics.add(JSONObject{
-            {"range",
-             JSONObject{
-                 {"start", JSONObject{{"line", start.line}, {"character", start.column}}},
-                 {"end", JSONObject{{"line", end.line}, {"character", end.column}}},
-             }},
-            {"severity", severity},
-            {"message", message},
-        });
-    }
-
-    std::string uri = URI::encode_from_path(file->fs_path);
-    JSONObject notification{{"uri", uri}, {"diagnostics", diagnostics}};
-    connection.send_notification("textDocument/publishDiagnostics", notification);
 }
 
 std::vector<LSPSemanticToken> SemanticTokensHandler::tokens_to_lsp(

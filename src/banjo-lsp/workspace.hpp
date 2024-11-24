@@ -17,6 +17,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace banjo {
 
@@ -54,19 +55,23 @@ private:
 public:
     Workspace();
 
-    void initialize();
-    void update(const std::filesystem::path &fs_path, std::string new_content);
+    std::vector<lang::sir::Module *> initialize();
+    std::vector<lang::sir::Module *> update(const std::filesystem::path &fs_path, std::string new_content);
     CompletionInfo run_completion(const File *file, lang::TextPosition completion_point);
 
     File *find_file(const std::filesystem::path &fs_path);
     File *find_file(const lang::ModulePath &mod_path);
+    File *find_file(const lang::sir::Module &mod);
     File *find_or_load_file(const std::filesystem::path &fs_path);
+
     ModuleIndex *find_index(lang::sir::Module *mod);
+    const SymbolRef &get_index_symbol(const SymbolKey &key);
 
     std::vector<lang::ModulePath> list_sub_mods(lang::sir::Module *mod);
 
 private:
-    void build_index(lang::sema::ExtraAnalysis &analysis);
+    void build_index(lang::sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods);
+    void collect_dependents(lang::sir::Module &mod, std::unordered_set<lang::ModulePath> &dependents);
 };
 
 } // namespace lsp

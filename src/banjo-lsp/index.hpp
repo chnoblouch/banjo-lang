@@ -7,27 +7,36 @@
 #include "banjo/symbol/module_path.hpp"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace banjo {
 
 namespace lsp {
 
+struct SymbolKey {
+    lang::sir::Module *mod;
+    unsigned index;
+};
+
 struct SymbolRef {
     lang::TextRange range;
     lang::sir::Symbol symbol;
     lang::sir::Module *def_mod;
     lang::TextRange def_range;
+    std::vector<SymbolKey> uses;
 };
 
 struct ModuleIndex {
     std::vector<SymbolRef> symbol_refs;
     std::vector<lang::Report> reports;
-    std::vector<lang::ModulePath> dependents;
+    std::unordered_set<lang::ModulePath> dependents;
 };
 
 struct Index {
     std::unordered_map<lang::sir::Module *, ModuleIndex> mods;
+
+    SymbolRef &get_symbol(SymbolKey key) { return mods.at(key.mod).symbol_refs[key.index]; }
 };
 
 } // namespace lsp

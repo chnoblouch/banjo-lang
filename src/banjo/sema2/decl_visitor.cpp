@@ -10,8 +10,8 @@ namespace sema {
 
 DeclVisitor::DeclVisitor(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void DeclVisitor::analyze() {
-    for (sir::Module *mod : analyzer.sir_unit.mods) {
+void DeclVisitor::analyze(const std::vector<sir::Module *> &mods) {
+    for (sir::Module *mod : mods) {
         analyzer.enter_mod(mod);
         analyze_decl_block(mod->block);
         analyzer.exit_mod();
