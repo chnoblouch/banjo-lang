@@ -19,7 +19,10 @@ ASTNode::ASTNode(ASTNodeType type, std::string value, TextRange range)
 
 ASTNode::ASTNode(ASTNodeType type, TextRange range) : type(type), range(range) {}
 
-ASTNode::ASTNode(ASTNodeType type, Token *token) : type(type), value(token->move_value()), range(token->get_range()) {}
+ASTNode::ASTNode(ASTNodeType type, Token *token) : type(type), value(""), range{0, 0} {
+    range = token->get_range();
+    value = token->move_value();
+}
 
 ASTNode::~ASTNode() {
     for (ASTNode *child : children) {

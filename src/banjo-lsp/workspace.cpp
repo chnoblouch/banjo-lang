@@ -207,10 +207,10 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
                 .def_range = {0, 0},
             };
 
-            SymbolKey key{
-                .mod = mod,
-                .index = static_cast<unsigned>(mod_index.symbol_refs.size()),
-            };
+            // SymbolKey key{
+            //     .mod = mod,
+            //     .index = static_cast<unsigned>(mod_index.symbol_refs.size()),
+            // };
 
             if (auto ref_mod = use.symbol.match<sir::Module>()) {
                 ref.def_mod = ref_mod;
@@ -228,7 +228,7 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
                     ref.def_mod = def.def_mod;
                     ref.def_range = def.def_range;
 
-                    def.uses.push_back(key);
+                    // def.uses.push_back(key);
                     def_mod_index.dependents.insert(mod->path);
                 }
             }

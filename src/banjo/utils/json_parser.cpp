@@ -1,7 +1,5 @@
 #include "json_parser.hpp"
 
-#include <iostream>
-
 namespace banjo {
 
 JSONParser::JSONParser(std::string string) : stream(string) {}
@@ -89,14 +87,19 @@ JSONValue JSONParser::parse_value() {
         return JSONValue(string);
     } else if ((c >= '0' && c <= '9') || c == '-') {
         std::string string;
+        bool is_int = true;
 
         while ((c >= '0' && c <= '9') || c == '-' || c == '.') {
+            if (c == '.') {
+                is_int = false;
+            }
+
             string += c;
             stream.get();
             c = stream.peek();
         }
 
-        return JSONValue(std::stod(string));
+        return is_int ? JSONValue(std::stoll(string)) : JSONValue(std::stod(string));
     } else if (c == 'f') {
         for (int i = 0; i < 5; i++) {
             stream.get(); // Consume 'false'

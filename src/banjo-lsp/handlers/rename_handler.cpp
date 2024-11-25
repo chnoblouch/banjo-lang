@@ -24,31 +24,32 @@ JSONValue RenameHandler::handle(const JSONObject &params, Connection & /*connect
         return JSONObject{{"changes", JSONObject{}}};
     }
 
-    std::unordered_map<const lang::sir::Module *, std::vector<const SymbolRef *>> uses_by_mod;
-    uses_by_mod[file->sir_module].push_back(symbol_def);
-
-    for (const SymbolKey &key : symbol_def->uses) {
-        const SymbolRef &symbol_ref = workspace.get_index_symbol(key);
-        uses_by_mod[key.mod].push_back(&symbol_ref);
-    }
-
     const std::string &new_name = params.get_string("newName");
     JSONObject changes;
 
-    for (const auto &[mod, uses] : uses_by_mod) {
-        File &file = *workspace.find_file(*mod);
-        std::string uri = URI::encode_from_path(file.fs_path);
+    for (const auto &[path, mod_index] : workspace.get_index().mods) {
+        File *use_file = workspace.find_file(*path);
+        if (!use_file) {
+            continue;
+        }
 
         JSONArray edits;
 
-        for (const SymbolRef *use : uses) {
+        for (const SymbolRef &symbol_ref : mod_index.symbol_refs) {
+            if (symbol_ref.symbol != symbol_def->symbol) {
+                continue;
+            }
+
             edits.add(JSONObject{
-                {"range", ProtocolStructs::range_to_lsp(file.content, use->range)},
+                {"range", ProtocolStructs::range_to_lsp(use_file->content, symbol_ref.range)},
                 {"newText", new_name},
             });
         }
 
-        changes.add(uri, edits);
+        if (edits.length() > 0) {
+            std::string uri = URI::encode_from_path(use_file->fs_path);
+            changes.add(uri, edits);
+        }
     }
 
     return JSONObject{{"changes", changes}};
@@ -67,8 +68,8 @@ const SymbolRef *RenameHandler::find_symbol(const File &file, const JSONObject &
     }
 
     const JSONObject &lsp_position = params.get_object("position");
-    int line = lsp_position.get_number("line");
-    int column = lsp_position.get_number("character");
+    int line = lsp_position.get_int("line");
+    int column = lsp_position.get_int("character");
     lang::TextPosition position = ASTNavigation::pos_from_lsp(file.content, line, column);
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {

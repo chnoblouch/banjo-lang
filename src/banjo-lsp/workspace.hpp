@@ -64,6 +64,7 @@ public:
     File *find_file(const lang::sir::Module &mod);
     File *find_or_load_file(const std::filesystem::path &fs_path);
 
+    Index &get_index() { return index; }
     ModuleIndex *find_index(lang::sir::Module *mod);
     const SymbolRef &get_index_symbol(const SymbolKey &key);
 

@@ -20,7 +20,7 @@ CompletionHandler::CompletionHandler(Workspace &workspace) : workspace(workspace
 
 CompletionHandler::~CompletionHandler() {}
 
-JSONValue CompletionHandler::handle(const JSONObject &params, Connection &connection) {
+JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*connection*/) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
@@ -30,8 +30,8 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection &connec
     }
 
     const JSONObject &lsp_position = params.get_object("position");
-    int line = lsp_position.get_number("line");
-    int column = lsp_position.get_number("character");
+    int line = lsp_position.get_int("line");
+    int column = lsp_position.get_int("character");
     TextPosition position = ASTNavigation::pos_from_lsp(file->content, line, column);
 
     CompletionInfo completion_info = workspace.run_completion(file, position);

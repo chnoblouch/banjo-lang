@@ -26,14 +26,26 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*con
 
     JSONArray array;
 
-    for (const SymbolKey &key : symbol_def->uses) {
-        const SymbolRef &symbol_ref = workspace.get_index_symbol(key);
-        File &file = *workspace.find_file(*key.mod);
+    for (const auto &[path, mod_index] : workspace.get_index().mods) {
+        for (const SymbolRef &symbol_ref : mod_index.symbol_refs) {
+            if (symbol_ref.symbol != symbol_def->symbol) {
+                continue;
+            }
 
-        array.add(JSONObject{
-            {"uri", URI::encode_from_path(file.fs_path)},
-            {"range", ProtocolStructs::range_to_lsp(file.content, symbol_ref.range)}
-        });
+            if (symbol_ref.range == symbol_def->range) {
+                continue;
+            }
+
+            File *file = workspace.find_file(*path);
+            if (!file) {
+                continue;
+            }
+
+            array.add(JSONObject{
+                {"uri", URI::encode_from_path(file->fs_path)},
+                {"range", ProtocolStructs::range_to_lsp(file->content, symbol_ref.range)}
+            });
+        }
     }
 
     return array;
@@ -52,8 +64,8 @@ const SymbolRef *ReferencesHandler::find_symbol(const File &file, const JSONObje
     }
 
     const JSONObject &lsp_position = params.get_object("position");
-    int line = lsp_position.get_number("line");
-    int column = lsp_position.get_number("character");
+    int line = lsp_position.get_int("line");
+    int column = lsp_position.get_int("character");
     lang::TextPosition position = ASTNavigation::pos_from_lsp(file.content, line, column);
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {

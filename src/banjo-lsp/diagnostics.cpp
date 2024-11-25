@@ -1,6 +1,5 @@
 #include "diagnostics.hpp"
 
-#include "ast_navigation.hpp"
 #include "protocol_structs.hpp"
 #include "uri.hpp"
 

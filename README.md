@@ -55,14 +55,14 @@ The internals of the compiler are documented [here](docs/compiler.md).
 
 ### Language Server
 
-The toolchain includes a _language server_ implementing the [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/). This language server can be integrated into any editor that supports LSP to get features like syntax highlighting and code completion. I've only tested the language server with VS Code on Windows.
+The toolchain includes a language server implementing the [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/). This language server can be integrated into any editor that supports LSP to get features like syntax highlighting and code completion. I've only tested the language server with VS Code on Windows.
 
 The language server currently supports these LSP features:
 - Semantic highlighting
 - Completion
 - Go to definition
-- Find references (semi-broken)
-- Rename (semi-broken)
+- Find references
+- Rename
 
 ### Hot Reloader
 

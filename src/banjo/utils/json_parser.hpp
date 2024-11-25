@@ -21,8 +21,6 @@ private:
     std::string parse_key();
     JSONValue parse_value();
 
-    JSONNumber parse_number();
-
     void skip_whitespace();
 };
 

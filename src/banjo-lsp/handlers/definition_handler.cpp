@@ -30,8 +30,8 @@ JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*con
     }
 
     const JSONObject &lsp_position = params.get_object("position");
-    int line = lsp_position.get_number("line");
-    int column = lsp_position.get_number("character");
+    int line = lsp_position.get_int("line");
+    int column = lsp_position.get_int("character");
     lang::TextPosition position = ASTNavigation::pos_from_lsp(file->content, line, column);
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {

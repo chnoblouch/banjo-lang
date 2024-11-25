@@ -24,7 +24,7 @@ struct SymbolRef {
     lang::sir::Symbol symbol;
     lang::sir::Module *def_mod;
     lang::TextRange def_range;
-    std::vector<SymbolKey> uses;
+    // std::vector<SymbolKey> uses;
 };
 
 struct ModuleIndex {

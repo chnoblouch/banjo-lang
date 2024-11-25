@@ -22,8 +22,12 @@ const JSONString &JSONObject::get_string(std::string key) const {
     return get(key).as_string();
 }
 
-JSONNumber JSONObject::get_number(std::string key) const {
-    return get(key).as_number();
+JSONInt JSONObject::get_int(std::string key) const {
+    return get(key).as_int();
+}
+
+JSONFloat JSONObject::get_float(std::string key) const {
+    return get(key).as_float();
 }
 
 JSONBool JSONObject::get_bool(std::string key) const {
@@ -62,8 +66,12 @@ const JSONString &JSONArray::get_string(int index) const {
     return get(index).as_string();
 }
 
-JSONNumber JSONArray::get_number(int index) const {
-    return get(index).as_number();
+JSONInt JSONArray::get_int(int index) const {
+    return get(index).as_int();
+}
+
+JSONFloat JSONArray::get_float(int index) const {
+    return get(index).as_float();
 }
 
 JSONBool JSONArray::get_bool(int index) const {

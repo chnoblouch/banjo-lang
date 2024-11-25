@@ -61,7 +61,8 @@ void JSONSerializer::serialize(const JSONValue &value, int indent) {
         }
 
         stream << "\"" << escaped_string << "\"";
-    } else if (value.is_number()) stream << value.as_number();
+    } else if (value.is_int()) stream << value.as_int();
+    else if (value.is_float()) stream << value.as_float();
     else if (value.is_bool()) stream << (value.as_bool() ? "true" : "false");
     else if (value.is_object()) serialize(value.as_object(), indent + 1);
     else if (value.is_array()) serialize(value.as_array(), indent + 1);
