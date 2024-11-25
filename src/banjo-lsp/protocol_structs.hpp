@@ -1,6 +1,7 @@
 #ifndef LSP_PROTOCOL_STRUCTS
 #define LSP_PROTOCOL_STRUCTS
 
+#include "banjo/reports/report.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/json.hpp"
 
@@ -48,9 +49,17 @@ enum SemanticTokenModifiers {
     DEFAULT_LIBRARY = 512
 };
 
+enum DiagnosticSeverity {
+    ERROR = 1,
+    WARNING = 2,
+    INFORMATION = 3,
+    HINT = 4,
+};
+
 namespace ProtocolStructs {
 
 JSONObject range_to_lsp(const std::string &source, lang::TextRange range);
+DiagnosticSeverity report_type_to_lsp(lang::Report::Type type);
 
 } // namespace ProtocolStructs
 

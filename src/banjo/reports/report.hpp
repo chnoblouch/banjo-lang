@@ -5,11 +5,9 @@
 #include "banjo/source/module_path.hpp"
 #include "banjo/source/text_range.hpp"
 
-
 #include <string>
 #include <string_view>
 #include <vector>
-
 
 namespace banjo {
 

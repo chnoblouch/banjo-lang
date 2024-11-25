@@ -15,7 +15,7 @@ public:
     Box() : value(nullptr) {}
     Box(T value) : value(new T(value)) {}
     Box(const Box &other) : value(new T(*other.value)) {}
-    Box(Box &&other) : value(std::exchange(other.value, nullptr)) {}
+    Box(Box &&other) noexcept : value(std::exchange(other.value, nullptr)) {}
     ~Box() { delete value; }
 
     T &get_value() const { return *value; }

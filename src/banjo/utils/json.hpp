@@ -18,23 +18,22 @@ typedef bool JSONBool;
 class JSONObject;
 class JSONArray;
 
-enum JSONNull { JSON_NULL };
-
 class JSONValue {
 
 private:
-    std::variant<JSONString, JSONNumber, JSONBool, Box<JSONObject>, Box<JSONArray>, JSONNull> value;
+    std::variant<JSONString, JSONNumber, JSONBool, Box<JSONObject>, Box<JSONArray>, std::nullptr_t> value;
 
 public:
     JSONValue(JSONString value) : value(value) {}
     JSONValue(const char *value) : value(std::string(value)) {}
     JSONValue(std::string_view value) : value(std::string(value)) {}
     JSONValue(JSONNumber value) : value(value) {}
-    JSONValue(int value) : value((double)value) {}
+    JSONValue(int value) : value(static_cast<double>(value)) {}
+    JSONValue(unsigned value) : value(static_cast<double>(value)) {}
     JSONValue(JSONBool value) : value(value) {}
     JSONValue(JSONObject value);
     JSONValue(JSONArray value);
-    JSONValue(JSONNull value) : value(value) {}
+    JSONValue(std::nullptr_t value) : value(value) {}
 
     const JSONString &as_string() const { return std::get<0>(value); }
     JSONNumber as_number() const { return std::get<1>(value); }

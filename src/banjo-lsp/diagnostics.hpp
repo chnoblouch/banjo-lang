@@ -10,7 +10,7 @@ namespace banjo {
 namespace lsp {
 
 void publish_diagnostics(Connection &connection, Workspace &workspace, std::vector<lang::sir::Module *> &mods);
-void publish_diagnostics(Connection &connection, File &file, ModuleIndex &index);
+void publish_diagnostics(Connection &connection, Workspace &workspace, lang::sir::Module &mod);
 
 } // namespace lsp
 

@@ -6,7 +6,7 @@ namespace lsp {
 
 JSONValue ShutdownHandler::handle(const JSONObject &, Connection &) {
     return {
-        {"result", JSONValue(JSON_NULL)},
+        {"result", JSONValue(nullptr)},
     };
 }
 

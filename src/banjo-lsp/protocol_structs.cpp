@@ -16,6 +16,13 @@ JSONObject ProtocolStructs::range_to_lsp(const std::string &source, lang::TextRa
     };
 }
 
+DiagnosticSeverity ProtocolStructs::report_type_to_lsp(lang::Report::Type type) {
+    switch (type) {
+        case lang::Report::Type::ERROR: return DiagnosticSeverity::ERROR;
+        case lang::Report::Type::WARNING: return DiagnosticSeverity::WARNING;
+    }
+}
+
 } // namespace lsp
 
 } // namespace banjo
