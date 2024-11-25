@@ -52,6 +52,7 @@
     meta_call_expr_visitor,                                                                                            \
     move_expr_visitor,                                                                                                 \
     deinit_expr_visitor,                                                                                               \
+    error_visitor,                                                                                                     \
     completion_token_visitor                                                                                           \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
@@ -140,6 +141,8 @@
         move_expr_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::DeinitExpr>()) {                           \
         deinit_expr_visitor;                                                                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::Error>()) {                                \
+        error_visitor;                                                                                                 \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CompletionToken>()) {                      \
         completion_token_visitor;                                                                                      \
     } else {                                                                                                           \

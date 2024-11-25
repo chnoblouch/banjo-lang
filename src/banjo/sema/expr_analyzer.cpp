@@ -71,7 +71,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_VISIT_IGNORE,                                            // symbol_expr
         result = analyze_binary_expr(*inner, expr),                  // binary_expr
         result = analyze_unary_expr(*inner, expr),                   // unary_expr
-        analyze_cast_expr(*inner),                                   // cast_expr
+        result = analyze_cast_expr(*inner),                          // cast_expr
         SIR_VISIT_IGNORE,                                            // index_expr
         result = analyze_call_expr(*inner, expr),                    // call_expr
         SIR_VISIT_IGNORE,                                            // field_expr
@@ -97,6 +97,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_call_expr
         SIR_VISIT_IMPOSSIBLE,                                        // move_expr
         SIR_VISIT_IMPOSSIBLE,                                        // deinit_expr
+        result = Result::ERROR,                                      // error
         result = analyze_completion_token(*inner, expr)              // completion_token
     );
 
@@ -523,9 +524,47 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     return Result::SUCCESS;
 }
 
-void ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
-    ExprAnalyzer(analyzer).analyze(cast_expr.type);
-    ExprAnalyzer(analyzer).analyze(cast_expr.value);
+Result ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
+    Result result = Result::SUCCESS;
+    Result partial_result;
+
+    partial_result = ExprAnalyzer(analyzer).analyze(cast_expr.type);
+    if (partial_result != Result::SUCCESS) {
+        result = partial_result;
+    }
+
+    partial_result = ExprAnalyzer(analyzer).analyze(cast_expr.value);
+    if (partial_result != Result::SUCCESS) {
+        result = partial_result;
+    }
+
+    if (result != Result::SUCCESS) {
+        return result;
+    }
+
+    sir::Expr from = cast_expr.value.get_type();
+    sir::Expr to = cast_expr.type;
+    bool is_cast_possible;
+
+    if (from.is_int_type()) {
+        is_cast_possible =
+            to.is_int_type() || to.is_fp_type() || to.is_addr_like_type() || to.is_symbol<sir::EnumDef>();
+    } else if (from.is_fp_type()) {
+        is_cast_possible = to.is_int_type() || to.is_fp_type();
+    } else if (from.is_addr_like_type()) {
+        is_cast_possible = to.is_int_type() || to.is_addr_like_type();
+    } else if (from.is_symbol<sir::EnumDef>()) {
+        is_cast_possible = from == to || to.is_int_type();
+    } else {
+        is_cast_possible = false;
+    }
+
+    if (!is_cast_possible) {
+        analyzer.report_generator.report_err_cannot_cast(cast_expr);
+        return Result::ERROR;
+    }
+
+    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr) {

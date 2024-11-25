@@ -82,8 +82,8 @@ struct String {
         var new_length = self.length + other.length;
         self.ensure_capacity(new_length + 1);
         
-        var copy_dst = self.data as addr + self.length as addr;
-        var copy_src = other.data as addr;
+        var copy_dst = &self.data[self.length];
+        var copy_src = other.data;
         memory.copy(copy_src, copy_dst, other.length as usize + 1);
         
         self.length = new_length;
@@ -95,8 +95,8 @@ struct String {
         var new_length = self.length + other_length;
         self.ensure_capacity(new_length + 1);
         
-        var copy_dst = self.data as addr + self.length as addr;
-        var copy_src = other as addr;
+        var copy_dst = &self.data[self.length];
+        var copy_src = other;
         memory.copy(copy_src, copy_dst, other_length as usize + 1);
         
         self.length = new_length;
@@ -105,9 +105,9 @@ struct String {
     pub func substr(self, start: u32, end: u32) -> String {            
         var substr_length = end - start;
         var substr_data = memory.alloc(substr_length as usize + 1) as *u8;
-                                
-        var copy_dest = substr_data as addr;
-        var copy_src = self.data as addr + start as addr;
+
+        var copy_dest = substr_data;
+        var copy_src = &self.data[start];
         memory.copy(copy_src, copy_dest, substr_length as usize);
         
         substr_data[substr_length] = 0;

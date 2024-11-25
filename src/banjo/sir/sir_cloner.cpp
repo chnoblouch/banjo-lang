@@ -492,6 +492,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_meta_call_expr(*inner),
         return clone_move_expr(*inner),
         return clone_deinit_expr(*inner),
+        return clone_error(*inner),
         SIR_VISIT_IMPOSSIBLE
     );
 }

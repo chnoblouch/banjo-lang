@@ -106,6 +106,7 @@ ParseResult StmtParser::parse_if_chain() {
     ParseResult result = ExprParser(parser).parse();
     first_if.append_child(result.node);
     if (!result.is_valid) {
+        first_if.append_child(new ASTNode(AST_ERROR));
         node.append_child(first_if.build_with_inferred_range(AST_IF));
         return {node.build_with_inferred_range(AST_IF_CHAIN), false};
     }
@@ -128,6 +129,7 @@ ParseResult StmtParser::parse_if_chain() {
             result = ExprParser(parser).parse();
             else_if_node.append_child(result.node);
             if (!result.is_valid) {
+                else_if_node.append_child(new ASTNode(AST_ERROR));
                 node.append_child(else_if_node.build_with_inferred_range(AST_ELSE_IF));
                 return {node.build_with_inferred_range(AST_IF), false};
             }

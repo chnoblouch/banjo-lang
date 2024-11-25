@@ -632,6 +632,7 @@ void Printer::print_expr(const Expr &expr) {
         print_meta_call_expr(*inner),
         print_move_expr(*inner),
         print_deinit_expr(*inner),
+        print_error(*inner),
         ASSERT_UNREACHABLE
     );
 }

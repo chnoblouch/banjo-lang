@@ -317,6 +317,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // meta_call_expr
         SIR_VISIT_IGNORE,                                // move_expr
         result = analyze_deinit_expr(*inner, expr),      // deinit_expr
+        SIR_VISIT_IGNORE,                                // error
         SIR_VISIT_IGNORE                                 // completion_token
     );
 

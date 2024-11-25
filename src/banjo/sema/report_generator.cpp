@@ -207,6 +207,10 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::BracketE
     );
 }
 
+void ReportGenerator::report_err_cannot_cast(const sir::CastExpr &cast_expr) {
+    report_error("cannot cast from '$' to '$'", cast_expr.ast_node, cast_expr.value.get_type(), cast_expr.type);
+}
+
 void ReportGenerator::report_err_cannot_call(const sir::Expr &expr) {
     report_error("cannot call value with type '$'", expr.get_ast_node(), expr.get_type());
 }

@@ -1,18 +1,19 @@
 #include "expr_ssa_generator.hpp"
 
+#include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
+
 
 #include <cassert>
 #include <vector>
@@ -85,6 +86,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner, hints),        // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                              // error
         SIR_VISIT_IMPOSSIBLE                               // completion_token
     );
 }

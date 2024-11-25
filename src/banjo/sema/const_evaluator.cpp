@@ -80,6 +80,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return evaluate_meta_call_expr(*inner),  // meta_call_expr
         SIR_VISIT_IMPOSSIBLE,                    // move_expr
         SIR_VISIT_IMPOSSIBLE,                    // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                    // error
         SIR_VISIT_IMPOSSIBLE                     // completion_token
     );
 }

@@ -48,7 +48,7 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
 
     for (unsigned i = 0; i < non_sequence_end; i++) {
         if (!args[i].get_type()) {
-            return Result::SUCCESS;
+            continue;
         }
 
         cur_arg = &args[i];
