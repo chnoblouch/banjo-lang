@@ -1236,7 +1236,9 @@ Result ExprAnalyzer::analyze_completion_token(sir::CompletionToken &completion_t
         .value = "[completion]",
     });
 
-    return Result::SUCCESS;
+    // Return an error so as not to continue analysing expressions that contain
+    // a completion token and cannot be valid anyway.
+    return Result::ERROR;
 }
 
 void ExprAnalyzer::create_method_call(
