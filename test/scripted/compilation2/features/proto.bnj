@@ -74,7 +74,7 @@ proto DebugPrint {
 struct IntSet: IntCollection, DebugPrint {
     var array: Array[i32];
     
-    pub func new(self) -> IntSet {
+    pub func new() -> IntSet {
         return IntSet {
             array: [],
         };
