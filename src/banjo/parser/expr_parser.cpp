@@ -408,7 +408,7 @@ ParseResult ExprParser::parse_closure() {
     }
     node.append_child(result.node);
 
-    return node.build(AST_CLOSURE_TYPE);
+    return node.build(AST_CLOSURE);
 }
 
 ParseResult ExprParser::parse_func_type() {
