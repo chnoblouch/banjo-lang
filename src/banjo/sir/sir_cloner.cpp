@@ -490,6 +490,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_meta_access(*inner),
         return clone_meta_field_expr(*inner),
         return clone_meta_call_expr(*inner),
+        return clone_init_expr(*inner),
         return clone_move_expr(*inner),
         return clone_deinit_expr(*inner),
         return clone_error(*inner),
@@ -850,6 +851,15 @@ MetaCallExpr *Cloner::clone_meta_call_expr(const MetaCallExpr &meta_call_expr) {
         .ast_node = meta_call_expr.ast_node,
         .callee = clone_expr(meta_call_expr.callee),
         .args = clone_expr_list(meta_call_expr.args),
+    });
+}
+
+InitExpr *Cloner::clone_init_expr(const InitExpr &init_expr) {
+    return mod.create_expr(InitExpr{
+        .ast_node = init_expr.ast_node,
+        .type = clone_expr(init_expr.type),
+        .value = clone_expr(init_expr.value),
+        .resource = init_expr.resource,
     });
 }
 

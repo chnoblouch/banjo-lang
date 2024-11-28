@@ -354,6 +354,18 @@ void Printer::print_block(const Block &block) {
     stream << "\n";
     indent++;
 
+    if (!block.resources.empty()) {
+        BEGIN_LIST_FIELD("resources");
+
+        for (const auto &[symbol, resource] : block.resources) {
+            INDENT_LIST_ELEMENT();
+            stream << "\"" << symbol.get_name() << "\": ";
+            print_resource(resource, false);
+        }
+
+        END_LIST();
+    }
+
     for (const Stmt &stmt : block.stmts) {
         stream << get_indent();
         print_stmt(stmt);
@@ -630,6 +642,7 @@ void Printer::print_expr(const Expr &expr) {
         print_meta_access(*inner),
         print_meta_field_expr(*inner),
         print_meta_call_expr(*inner),
+        print_init_expr(*inner),
         print_move_expr(*inner),
         print_deinit_expr(*inner),
         print_error(*inner),
@@ -982,6 +995,13 @@ void Printer::print_meta_call_expr(const MetaCallExpr &meta_call_expr) {
     END_OBJECT();
 }
 
+void Printer::print_init_expr(const InitExpr &init_expr) {
+    BEGIN_OBJECT("InitExpr");
+    PRINT_EXPR_FIELD("type", init_expr.type);
+    PRINT_EXPR_FIELD("value", init_expr.value);
+    END_OBJECT();
+}
+
 void Printer::print_move_expr(const MoveExpr &move_expr) {
     BEGIN_OBJECT("MoveExpr");
     PRINT_EXPR_FIELD("type", move_expr.type);
@@ -1070,6 +1090,35 @@ void Printer::print_meta_block(const MetaBlock &meta_block) {
     }
 
     indent--;
+}
+
+void Printer::print_resource(const Resource &resource, bool is_sub_resource) {
+    BEGIN_OBJECT("Resource");
+    PRINT_FIELD("has_deinit", resource.has_deinit ? "true" : "false");
+
+    switch (resource.ownership) {
+        case Ownership::OWNED: PRINT_FIELD("ownership", "OWNED"); break;
+        case Ownership::MOVED: PRINT_FIELD("ownership", "MOVED"); break;
+        case Ownership::MOVED_COND: PRINT_FIELD("ownership", "MOVED_COND"); break;
+        case Ownership::INIT_COND: PRINT_FIELD("ownership", "INIT_COND"); break;
+    }
+
+    if (is_sub_resource) {
+        PRINT_FIELD("field_index", resource.field_index);
+    }
+
+    if (!resource.sub_resources.empty()) {
+        BEGIN_LIST_FIELD("sub_resources");
+
+        for (const Resource &sub_resource : resource.sub_resources) {
+            INDENT_LIST_ELEMENT();
+            print_resource(sub_resource, true);
+        }
+
+        END_LIST();
+    }
+
+    END_OBJECT();
 }
 
 void Printer::print_error(const Error & /* error */) {

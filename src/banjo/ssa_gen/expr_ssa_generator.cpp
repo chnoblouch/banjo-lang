@@ -14,7 +14,6 @@
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
 
-
 #include <cassert>
 #include <vector>
 
@@ -84,6 +83,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // meta_access
         SIR_VISIT_IMPOSSIBLE,                              // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
+        return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner, hints),        // deinit_expr
         SIR_VISIT_IMPOSSIBLE,                              // error
@@ -594,10 +594,21 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
     }
 }
 
+StoredValue ExprSSAGenerator::generate_init_expr(const sir::InitExpr &init_expr, const StorageHints &hints) {
+    sir::Ownership ownership = init_expr.resource->ownership;
+
+    if (ownership == sir::Ownership::INIT_COND) {
+        generate_deinit_flag_store(*init_expr.resource, DEINIT_FLAG_TRUE);
+    }
+
+    return generate(init_expr.value, hints);
+}
+
 StoredValue ExprSSAGenerator::generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints) {
-    if (move_expr.resource->ownership == sir::Ownership::MOVED_COND) {
-        ssa::VirtualRegister deinit_flag = ctx.get_func_context().resource_deinit_flags.at(move_expr.resource);
-        ctx.append_store(DEINIT_FLAG_FALSE, deinit_flag);
+    sir::Ownership ownership = move_expr.resource->ownership;
+
+    if (ownership == sir::Ownership::MOVED_COND || ownership == sir::Ownership::INIT_COND) {
+        generate_deinit_flag_store(*move_expr.resource, DEINIT_FLAG_FALSE);
     }
 
     return generate(move_expr.value, hints);
@@ -679,6 +690,15 @@ void ExprSSAGenerator::generate_zero_check_branch(const sir::Expr &expr, CondBra
     ssa::Comparison ssa_cmp = ssa::Comparison::NE;
     ssa::Value ssa_zero = ssa::Value::from_int_immediate(0, ssa_value.get_type());
     ctx.append_cjmp(ssa_value, ssa_cmp, ssa_zero, targets.target_if_true, targets.target_if_false);
+}
+
+void ExprSSAGenerator::generate_deinit_flag_store(const sir::Resource &resource, const ssa::Value &value) {
+    ssa::VirtualRegister deinit_flag = ctx.get_func_context().resource_deinit_flags.at(&resource);
+    ctx.append_store(value, deinit_flag);
+
+    for (const sir::Resource &sub_resource : resource.sub_resources) {
+        generate_deinit_flag_store(sub_resource, value);
+    }
 }
 
 } // namespace lang

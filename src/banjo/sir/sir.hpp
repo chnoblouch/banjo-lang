@@ -72,6 +72,7 @@ struct PseudoType;
 struct MetaAccess;
 struct MetaFieldExpr;
 struct MetaCallExpr;
+struct InitExpr;
 struct MoveExpr;
 struct DeinitExpr;
 struct VarStmt;
@@ -170,11 +171,12 @@ class Expr {
         MetaAccess *,       // 37
         MetaFieldExpr *,    // 38
         MetaCallExpr *,     // 39
-        MoveExpr *,         // 40
-        DeinitExpr *,       // 41
-        Error *,            // 42
-        CompletionToken *,  // 43
-        std::nullptr_t>     // 44
+        InitExpr *,         // 40
+        MoveExpr *,         // 41
+        DeinitExpr *,       // 42
+        Error *,            // 43
+        CompletionToken *,  // 44
+        std::nullptr_t>     // 45
         kind;
 
 public:
@@ -454,13 +456,14 @@ enum class Ownership {
     OWNED,
     MOVED,
     MOVED_COND,
+    INIT_COND,
 };
 
 struct Resource {
     sir::Expr type;
     bool has_deinit;
-    std::vector<Resource> sub_resources;
     Ownership ownership;
+    std::vector<Resource> sub_resources;
 
     unsigned field_index;
 };
@@ -873,6 +876,13 @@ struct MetaCallExpr {
     std::vector<Expr> args;
 };
 
+struct InitExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
+    Resource *resource;
+};
+
 struct MoveExpr {
     ASTNode *ast_node;
     Expr type;
@@ -1248,6 +1258,7 @@ typedef std::variant<
     MetaAccess,
     MetaFieldExpr,
     MetaCallExpr,
+    InitExpr,
     MoveExpr,
     DeinitExpr,
     Error,

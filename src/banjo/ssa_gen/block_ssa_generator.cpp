@@ -1,15 +1,17 @@
 #include "block_ssa_generator.hpp"
 
-#include "banjo/ssa/comparison.hpp"
-#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+
+#include <utility>
 
 namespace banjo {
 
@@ -38,10 +40,9 @@ void BlockSSAGenerator::generate_block_allocas(const sir::Block &block) {
 
 void BlockSSAGenerator::generate_resource_flags(const sir::Resource &resource) {
     if (resource.ownership == sir::Ownership::MOVED_COND) {
-        ssa::VirtualRegister flag_slot = ctx.append_alloca(ssa::Primitive::I8);
-        ctx.append_store(DEINIT_FLAG_TRUE, flag_slot);
-
-        ctx.get_func_context().resource_deinit_flags.insert({&resource, flag_slot});
+        generate_resource_flag_slot(resource, DEINIT_FLAG_TRUE);
+    } else if (resource.ownership == sir::Ownership::INIT_COND) {
+        generate_resource_flag_slot(resource, DEINIT_FLAG_FALSE);
     }
 
     for (const sir::Resource &sub_resource : resource.sub_resources) {
@@ -112,13 +113,13 @@ void BlockSSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt)
 }
 
 void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
+    SSAGeneratorContext::FuncContext &func_context = ctx.get_func_context();
+
     if (return_stmt.value) {
         ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
     }
 
-    const std::vector<const sir::Block *> &scopes = ctx.get_func_context().sir_scopes;
-
-    for (auto iter = scopes.rbegin(); iter != scopes.rend(); ++iter) {
+    for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
         generate_block_deinit(**iter);
     }
 
@@ -209,6 +210,7 @@ void BlockSSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
     ExprSSAGenerator(ctx).generate_branch(loop_stmt.condition, {ssa_body_entry_block, ssa_end_block});
 
     ctx.push_loop_context({
+        .sir_block = &loop_stmt.block,
         .ssa_continue_target = loop_stmt.latch ? ssa_latch_block : ssa_cond_block,
         .ssa_break_target = ssa_end_block,
     });
@@ -229,11 +231,32 @@ void BlockSSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
 }
 
 void BlockSSAGenerator::generate_continue_stmt(const sir::ContinueStmt & /*continue_stmt*/) {
+    generate_loop_jump_deinit();
     ctx.append_jmp(ctx.get_loop_context().ssa_continue_target);
 }
 
 void BlockSSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*/) {
+    generate_loop_jump_deinit();
     ctx.append_jmp(ctx.get_loop_context().ssa_break_target);
+}
+
+void BlockSSAGenerator::generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value) {
+    ssa::VirtualRegister flag_slot = ctx.append_alloca(ssa::Primitive::I8);
+    ctx.append_store(std::move(initial_value), flag_slot);
+    ctx.get_func_context().resource_deinit_flags.insert({&resource, flag_slot});
+}
+
+void BlockSSAGenerator::generate_loop_jump_deinit() {
+    SSAGeneratorContext::FuncContext &func_context = ctx.get_func_context();
+    SSAGeneratorContext::LoopContext &loop_context = ctx.get_loop_context();
+
+    for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
+        generate_block_deinit(**iter);
+
+        if (*iter == loop_context.sir_block) {
+            break;
+        }
+    }
 }
 
 void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, sir::Symbol symbol) {
@@ -252,7 +275,7 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, sir::Symb
 void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr) {
     if (resource.ownership == sir::Ownership::OWNED) {
         generate_deinit_call(resource, std::move(ssa_ptr));
-    } else if (resource.ownership == sir::Ownership::MOVED_COND) {
+    } else if (resource.ownership == sir::Ownership::MOVED_COND || resource.ownership == sir::Ownership::INIT_COND) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
 

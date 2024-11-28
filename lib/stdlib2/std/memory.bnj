@@ -39,7 +39,7 @@ pub func box[T](value: T) -> *T {
 
 pub func zero[T]() -> T {
 	var value: T;
-	cmemset(&value as addr, 0, meta(T).size);
+	cmemset(&value, 0, meta(T).size);
 	return value;
 }
 
@@ -57,7 +57,7 @@ struct PointerIter[T] {
         }
         
         var value: T;
-        copy(self.pointer as addr, &value as addr, meta(T).size);
+        copy(self.pointer, &value, meta(T).size);
 
         self.pointer += 1;
         return value;

@@ -4,7 +4,7 @@ struct Thread {
 	var handle: usize;
 
 	pub func spawn(target: ||) -> Thread {
-		var argument = memory.box(target) as addr;
+		var argument = memory.box(target);
 		var handle = platform.thread_spawn(initializer, argument);
 		return Thread { handle: handle };
 	}

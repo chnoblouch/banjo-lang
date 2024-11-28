@@ -23,7 +23,7 @@ struct String {
 
     pub func from(slice: (*u8, usize)) -> String {
         var data = memory.alloc(slice.1 + 1) as *u8;
-        memory.copy(slice.0 as addr, data as addr, slice.1);
+        memory.copy(slice.0, data, slice.1);
         data[slice.1] = '\0';
 
         return String {
@@ -38,7 +38,7 @@ struct String {
         var capacity = length + 1;
         var data = memory.alloc(capacity as usize) as *u8;
         
-        memory.copy(cstr as addr, data as addr, capacity);
+        memory.copy(cstr, data, capacity);
                 
         return String {
             data: data,
@@ -54,13 +54,13 @@ struct String {
     }
     
     pub func __deinit__(self) {
-        memory.free(self.data as addr);
+        memory.free(self.data);
     }
     
     pub func copy(self) -> String {
         var size = self.length as usize + 1;
         var data = memory.alloc(size) as *u8;
-        memory.copy(self.data as addr, data as addr, size);
+        memory.copy(self.data, data, size);
         
         return String {
             data: data,
@@ -259,7 +259,7 @@ struct String {
             }
         }
 
-        self.data = memory.realloc(self.data as addr, self.capacity as usize) as *u8;
+        self.data = memory.realloc(self.data, self.capacity as usize) as *u8;
     }
     
     func reverse_in_place(self) {

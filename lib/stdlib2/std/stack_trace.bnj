@@ -30,7 +30,7 @@ pub func print_stack_trace() {
             print("\x1B[0;0m");
         }
         
-        memory.free(frames as addr);
+        memory.free(frames);
     }
 }
 

@@ -1,0 +1,56 @@
+# test:subtest
+# test:output "cdm"
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+func consume(resource: Resource) {
+    print('c');
+}
+
+func main() {
+    var skip = false;
+
+    if skip {
+        return;
+    }
+
+    var resource = Resource {};
+    consume(resource);
+    print('m');
+}
+
+# test:subtest
+# test:output "c,-37,m,104,"
+
+struct Resource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+func consume(resource: Resource) {
+    print("c,");
+}
+
+func main() {
+    var skip = false;
+
+    if skip {
+        return;
+    }
+
+    var pair = (
+        Resource { value: 104 },
+        Resource { value: -37 },
+    );
+
+    consume(pair.1);
+    print("m,");
+}

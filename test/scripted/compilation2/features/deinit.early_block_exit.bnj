@@ -1,0 +1,88 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+struct ValueResource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "20,10,"
+
+func test(a: i32, b: i32) {
+    var r0 = ValueResource { value: 10 };
+
+    if a == 1 {
+        var r1 = ValueResource { value: 20 };
+        
+        if b == 2 {
+            return;
+        }
+    }
+
+    var never_initialized = 0;
+}
+
+func main() {
+    test(1, 2);
+}
+
+# test:subtest
+# test:output "ddddd"
+
+func main() {
+    for i in 0..5 {
+        var resource = Resource {};
+
+        if i != 100 {
+            continue;
+        }
+
+        var never_initialized = 0;
+    }
+}
+
+# test:subtest
+# test:output "d"
+
+func main() {
+    for i in 0..5 {
+        var resource = Resource {};
+
+        if i == 0 {
+            break;
+        }
+
+        var never_initialized = 0;
+    }
+}
+
+# test:subtest
+# test:output "1,2,10,3,10,4,10,5,"
+
+func main() {
+    var a = 1;
+    
+    while true {
+        var r1 = ValueResource { value: a };
+
+        if a > 2 {
+            var r2 = ValueResource { value: 10 };
+
+            if a == 5 {
+                break;
+            }
+        }
+
+        a += 1;
+    }
+}

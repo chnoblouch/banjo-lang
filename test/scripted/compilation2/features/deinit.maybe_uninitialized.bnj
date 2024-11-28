@@ -1,0 +1,126 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+struct ValueResource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "ed,s"
+
+func test(skip: bool) {
+    if skip {
+        print('s');
+        return;
+    }
+
+    var resource = Resource {};
+    print('e');
+}
+
+func main() {
+    test(false);
+    print(',');
+    test(true);
+}
+
+# test:subtest
+# test:output "s"
+
+func test(a: bool, b: bool, c: bool) {
+    if a {
+        for i in 0..10 {
+            if b {
+                while true {
+                    if c {
+                        print('s');
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    var resource = Resource {};
+    print('e');
+}
+
+func main() {
+    test(true, true, true);
+}
+
+# test:subtest
+# test:output "edd,s"
+
+func test(skip: bool) {
+    if skip {
+        print('s');
+        return;
+    }
+
+    var pair = (
+        Resource {},
+        Resource {},
+    );
+
+    print('e');
+}
+
+func main() {
+    test(false);
+    print(',');
+    test(true);
+}
+
+# test:subtest
+# test:output "dd"
+
+func main() {
+    for i in 0..10 {
+        if i < 8 {
+            continue;
+        }
+
+        var resource = Resource {};
+    }
+}
+
+# test:subtest
+# test:output "ddddd"
+
+func main() {
+    for i in 0..10 {
+        if i == 5 {
+            break;
+        }
+
+        var resource = Resource {};
+    }
+}
+
+# test:subtest
+# test:output "1,2,5,"
+
+func main() {
+    var a = 1;
+
+    while a != 10 {
+        if a == 4 {
+            a += 1;
+            continue;
+        }
+        
+        var resource = ValueResource { value: a };
+        a *= 2;
+    }
+}

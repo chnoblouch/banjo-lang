@@ -95,6 +95,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = Result::SUCCESS,                                    // meta_access
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_field_expr
         result = MetaExprEvaluator(analyzer).evaluate(*inner, expr), // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                                        // init_expr
         SIR_VISIT_IMPOSSIBLE,                                        // move_expr
         SIR_VISIT_IMPOSSIBLE,                                        // deinit_expr
         result = Result::ERROR,                                      // error

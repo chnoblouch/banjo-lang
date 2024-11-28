@@ -1,12 +1,12 @@
 #ifndef SSA_GENERATOR_CONTEXT_H
 #define SSA_GENERATOR_CONTEXT_H
 
+#include "banjo/sir/sir.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 
 #include <deque>
@@ -55,6 +55,7 @@ public:
     };
 
     struct LoopContext {
+        const sir::Block *sir_block;
         ssa::BasicBlockIter ssa_continue_target;
         ssa::BasicBlockIter ssa_break_target;
     };

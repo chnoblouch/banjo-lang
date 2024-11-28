@@ -102,7 +102,7 @@ func u64_to_string(value: u64) -> String {
 func f64_to_string(value: f64) -> String {
     var cstr = runtime.f64_to_string(value as f64);
     var string = String.from(cstr);
-    memory.free(cstr as addr);
+    memory.free(cstr);
     return string;
 }
 

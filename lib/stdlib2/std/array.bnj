@@ -16,7 +16,7 @@ struct Array[T] {
     pub func from(pointer: *T, length: usize) -> Array[T] {
         var size = length * meta(T).size;
         var data = memory.alloc(size) as *T;
-        memory.copy(pointer as addr, data as addr, size);
+        memory.copy(pointer, data, size);
         
         return Array[T] {
             data,
@@ -36,13 +36,11 @@ struct Array[T] {
     }
     
     pub func __deinit__(self) {
-        meta if meta(T).has_method("__deinit__") {
-            for i in 0..self.length {
-                self.data[i].__deinit__();
-            }
+        for i in 0..self.length {
+            __builtin_deinit(self.data[i]);
         }
         
-        memory.free(self.data as addr);
+        memory.free(self.data);
     }
     
     pub func append(self, value: T) {    
@@ -63,7 +61,7 @@ struct Array[T] {
     pub func copy(self) -> Array[T] {
         var size = self.length * meta(T).size;
         var data = memory.alloc(size) as *T;
-        memory.copy(self.data as addr, data as addr, size);
+        memory.copy(self.data, data, size);
         
         return Array[T] {
 			data,
@@ -92,7 +90,7 @@ struct Array[T] {
         var length = self.length + 1;
         var data = memory.alloc(length * meta(T).size) as *T;
         
-        memory.copy(self.data as addr, data as addr, self.length * meta(T).size);
+        memory.copy(self.data, data, self.length * meta(T).size);
         data[self.length] = value;
 
         return Array[T] {
@@ -106,8 +104,8 @@ struct Array[T] {
         var length = self.length + other.length;
         var data = memory.alloc(length * meta(T).size) as *T;
         
-        memory.copy(self.data as addr, &data[0] as addr, self.length * meta(T).size);
-        memory.copy(other.data as addr, &data[self.length] as addr, other.length * meta(T).size);
+        memory.copy(self.data, &data[0], self.length * meta(T).size);
+        memory.copy(other.data, &data[self.length], other.length * meta(T).size);
 
         return Array[T] {
             data,
@@ -149,6 +147,6 @@ struct Array[T] {
         }
 
         var size = self.capacity * meta(T).size;
-        self.data = memory.realloc(self.data as addr, size) as *T;
+        self.data = memory.realloc(self.data, size) as *T;
     }
 }

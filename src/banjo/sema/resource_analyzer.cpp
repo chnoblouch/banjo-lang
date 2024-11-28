@@ -3,6 +3,7 @@
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -20,11 +21,12 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     return Result::SUCCESS;
 }
 
-ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
+ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type /*= ScopeType::GENERIC*/) {
     // TODO: There are performance issues here when analyzing large numbers of resources.
     // One example is `convert.enum_to_repr` with enums that have lots of variants.
 
     scopes.push_back({
+        .type = type,
         .block = &block,
         .move_states{},
     });
@@ -52,7 +54,17 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
     }
 
     for (auto &[symbol, resource] : block.resources) {
-        insert_move_states(&resource);
+        InitState init_state;
+
+        if (symbol.is<sir::Local>()) {
+            init_state = InitState::UNINITIALIZED;
+        } else if (symbol.is<sir::Param>()) {
+            init_state = InitState::INITIALIZED;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+
+        insert_states(&resource, init_state);
         resources_by_symbols.insert({symbol, &resource});
     }
 
@@ -70,8 +82,8 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
             SIR_VISIT_IGNORE,                 // while_stmt
             SIR_VISIT_IGNORE,                 // for_stmt
             analyze_loop_stmt(*inner),        // loop_stmt
-            SIR_VISIT_IGNORE,                 // continue_stmt
-            SIR_VISIT_IGNORE,                 // break_stmt
+            analyze_continue_stmt(*inner),    // continue_stmt
+            analyze_break_stmt(*inner),       // break_stmt
             SIR_VISIT_IGNORE,                 // meta_if_stmt
             SIR_VISIT_IGNORE,                 // meta_for_stmt
             SIR_VISIT_IGNORE,                 // expanded_meta_stmt
@@ -81,9 +93,15 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
         );
     }
 
-    Scope child_scope = scopes.back();
+    Scope scope = scopes.back();
 
-    for (auto &[resource, state] : child_scope.move_states) {
+    for (auto &[resource, state] : scope.move_states) {
+        auto iter = scope.init_states.find(resource);
+        if (iter != scope.init_states.end() && iter->second == InitState::COND_INITIALIZED) {
+            resource->ownership = sir::Ownership::INIT_COND;
+            continue;
+        }
+
         if (state.moved) {
             resource->ownership = state.conditional ? sir::Ownership::MOVED_COND : sir::Ownership::MOVED;
         } else {
@@ -92,7 +110,7 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block) {
     }
 
     scopes.pop_back();
-    return child_scope;
+    return scope;
 }
 
 std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
@@ -115,8 +133,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_struct_resource(sir::Struc
         resource = sir::Resource{
             .type = type,
             .has_deinit = true,
-            .sub_resources = {},
             .ownership = sir::Ownership::OWNED,
+            .sub_resources = {},
         };
     }
 
@@ -135,8 +153,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_struct_resource(sir::Struc
             resource = sir::Resource{
                 .type = type,
                 .has_deinit = false,
-                .sub_resources = {},
                 .ownership = sir::Ownership::OWNED,
+                .sub_resources = {},
             };
         }
 
@@ -160,8 +178,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_tuple_resource(sir::TupleE
             resource = sir::Resource{
                 .type = type,
                 .has_deinit = false,
-                .sub_resources = {},
                 .ownership = sir::Ownership::OWNED,
+                .sub_resources = {},
             };
         }
 
@@ -172,25 +190,49 @@ std::optional<sir::Resource> ResourceAnalyzer::create_tuple_resource(sir::TupleE
     return resource;
 }
 
-void ResourceAnalyzer::insert_move_states(sir::Resource *resource) {
-    MoveState state{
+void ResourceAnalyzer::insert_states(sir::Resource *resource, InitState init_state) {
+    scopes.back().init_states.insert({resource, init_state});
+
+    MoveState move_state{
         .moved = false,
         .conditional = false,
         .move_expr = nullptr,
     };
 
-    scopes.back().move_states.insert({resource, state});
+    scopes.back().move_states.insert({resource, move_state});
 
     for (sir::Resource &sub_resource : resource->sub_resources) {
-        insert_move_states(&sub_resource);
+        insert_states(&sub_resource, init_state);
         super_resources.insert({&sub_resource, resource});
     }
 }
 
 void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
-    if (var_stmt.value) {
-        analyze_expr(var_stmt.value, true);
+    sir::Expr &value = var_stmt.value;
+    if (!value) {
+        return;
     }
+
+    analyze_expr(value, true);
+
+    auto iter = resources_by_symbols.find(&var_stmt.local);
+    if (iter == resources_by_symbols.end()) {
+        return;
+    }
+
+    sir::Resource *resource = iter->second;
+
+    InitState &init_state = scopes.back().init_states.at(iter->second);
+    if (init_state == InitState::UNINITIALIZED) {
+        update_init_state(scopes.back(), resource, InitState::INITIALIZED);
+    }
+
+    value = analyzer.create_expr(sir::InitExpr{
+        .ast_node = value.get_ast_node(),
+        .type = value.get_type(),
+        .value = value,
+        .resource = resource,
+    });
 }
 
 void ResourceAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
@@ -205,6 +247,10 @@ void ResourceAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign
 
 void ResourceAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     analyze_expr(return_stmt.value, true);
+
+    for (auto scope_iter = scopes.rbegin(); scope_iter != scopes.rend(); scope_iter++) {
+        mark_uninit_as_cond_init(*scope_iter);
+    }
 }
 
 void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
@@ -243,12 +289,20 @@ void ResourceAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt) {
 
 void ResourceAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
     std::vector<Scope> child_scopes{
-        analyze_block(loop_stmt.block),
+        analyze_block(loop_stmt.block, ScopeType::LOOP),
     };
 
     for (Scope &child_scope : child_scopes) {
         merge_move_states(scopes.back(), child_scope, true);
     }
+}
+
+void ResourceAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt*/) {
+    analyze_loop_jump();
+}
+
+void ResourceAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {
+    analyze_loop_jump();
 }
 
 void ResourceAnalyzer::analyze_block_stmt(sir::Block &block) {
@@ -290,10 +344,10 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // closure_literal
         result = analyze_symbol_expr(*inner, expr, ctx), // symbol_expr
         SIR_VISIT_IGNORE,                                // binary_expr
-        result = analyze_unary_expr(*inner, expr, ctx),  // unary_expr
+        result = analyze_unary_expr(*inner, ctx),        // unary_expr
         SIR_VISIT_IGNORE,                                // cast_expr
         SIR_VISIT_IGNORE,                                // index_expr
-        result = analyze_call_expr(*inner, expr, ctx),   // call_expr
+        result = analyze_call_expr(*inner, ctx),         // call_expr
         result = analyze_field_expr(*inner, expr, ctx),  // field_expr
         SIR_VISIT_IGNORE,                                // range_expr
         result = analyze_tuple_expr(*inner),             // tuple_expr
@@ -315,6 +369,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // meta_access
         SIR_VISIT_IGNORE,                                // meta_field_expr
         SIR_VISIT_IGNORE,                                // meta_call_expr
+        SIR_VISIT_IGNORE,                                // init_expr
         SIR_VISIT_IGNORE,                                // move_expr
         result = analyze_deinit_expr(*inner, expr),      // deinit_expr
         SIR_VISIT_IGNORE,                                // error
@@ -340,14 +395,14 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
             });
 
             ctx.cur_resource = temporary_resource;
-            insert_move_states(temporary_resource);
+            insert_states(temporary_resource, InitState::INITIALIZED);
         }
     }
 
     return result;
 }
 
-Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, Context &ctx) {
+Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, Context & /*ctx*/) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
@@ -362,7 +417,7 @@ Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal,
     return result;
 }
 
-Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx) {
+Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal, Context & /*ctx*/) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
@@ -377,7 +432,7 @@ Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_liter
     return result;
 }
 
-Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr, Context &ctx) {
+Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, Context &ctx) {
     if (unary_expr.op == sir::UnaryOp::DEREF) {
         Result result;
 
@@ -407,7 +462,7 @@ Result ResourceAnalyzer::analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::
     return analyze_resource_use(resource, out_expr, ctx);
 }
 
-Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr, Context &ctx) {
+Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, Context & /*ctx*/) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
@@ -566,6 +621,35 @@ void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr mov
         };
 
         move_sub_resources(&sub_resource, move_expr);
+    }
+}
+
+void ResourceAnalyzer::update_init_state(Scope &scope, sir::Resource *resource, InitState value) {
+    scope.init_states.at(resource) = value;
+
+    for (sir::Resource &sub_resource : resource->sub_resources) {
+        update_init_state(scope, &sub_resource, value);
+    }
+}
+
+void ResourceAnalyzer::analyze_loop_jump() {
+    for (auto scope_iter = scopes.rbegin(); scope_iter != scopes.rend(); scope_iter++) {
+        mark_uninit_as_cond_init(*scope_iter);
+
+        if (scope_iter->type == ScopeType::LOOP) {
+            break;
+        }
+    }
+}
+
+void ResourceAnalyzer::mark_uninit_as_cond_init(Scope &scope) {
+    // All resources that aren't initialized at the point of a branch are only initialized if
+    // the branch is not taken, so mark them as conditionally initialized.
+
+    for (auto &[resource, state] : scope.init_states) {
+        if (state == InitState::UNINITIALIZED) {
+            update_init_state(scope, resource, InitState::COND_INITIALIZED);
+        }
     }
 }
 

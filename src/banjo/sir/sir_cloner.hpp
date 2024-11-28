@@ -100,6 +100,7 @@ public:
     MetaAccess *clone_meta_access(const MetaAccess &meta_access);
     MetaFieldExpr *clone_meta_field_expr(const MetaFieldExpr &meta_field_expr);
     MetaCallExpr *clone_meta_call_expr(const MetaCallExpr &meta_call_expr);
+    InitExpr *clone_init_expr(const InitExpr &init_expr);
     MoveExpr *clone_move_expr(const MoveExpr &move_expr);
     DeinitExpr *clone_deinit_expr(const DeinitExpr &deinit_expr);
 

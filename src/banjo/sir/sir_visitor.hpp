@@ -50,6 +50,7 @@
     meta_access_visitor,                                                                                               \
     meta_field_expr_visitor,                                                                                           \
     meta_call_expr_visitor,                                                                                            \
+    init_expr_visitor,                                                                                                 \
     move_expr_visitor,                                                                                                 \
     deinit_expr_visitor,                                                                                               \
     error_visitor,                                                                                                     \
@@ -137,6 +138,8 @@
         meta_field_expr_visitor;                                                                                       \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MetaCallExpr>()) {                         \
         meta_call_expr_visitor;                                                                                        \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::InitExpr>()) {                             \
+        init_expr_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::MoveExpr>()) {                             \
         move_expr_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::DeinitExpr>()) {                           \

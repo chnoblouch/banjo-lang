@@ -34,7 +34,7 @@ meta if IS_WINDOWS {
 		
 		var trimmed_length = length as usize - 2;
 		var string = String.from((buffer, trimmed_length));
-		winapi.local_free(buffer as addr);
+		winapi.local_free(buffer);
 		
         return string;
     }
@@ -104,7 +104,7 @@ meta if IS_WINDOWS {
         if !wsa_intialized {            
             var wsa_version: u16 = 514;  # MAKEWORD(2, 2)
             var wsa_data: [u8; 512] = undefined;
-            winapi.wsa_startup(wsa_version, &wsa_data as addr);
+            winapi.wsa_startup(wsa_version, &wsa_data);
         
             wsa_intialized = true;
         }

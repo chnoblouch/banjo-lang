@@ -78,6 +78,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                    // meta_access
         return evaluate_meta_field_expr(*inner), // meta_field_expr
         return evaluate_meta_call_expr(*inner),  // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                    // init_expr
         SIR_VISIT_IMPOSSIBLE,                    // move_expr
         SIR_VISIT_IMPOSSIBLE,                    // deinit_expr
         SIR_VISIT_IMPOSSIBLE,                    // error

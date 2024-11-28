@@ -70,7 +70,7 @@ struct CFileReader {
     }
 
     pub func read(self, buffer: *u8, size: usize) -> usize {
-        return fread(buffer as addr, 1, size, self.stream);
+        return fread(buffer, 1, size, self.stream);
     }
 }
 
@@ -82,7 +82,7 @@ struct CFileWriter {
     }
 
     pub func write(self, buffer: *u8, size: usize) {
-        fwrite(buffer as addr, size, 1, self.stream);
+        fwrite(buffer, size, 1, self.stream);
     }
 
     pub func write(self, byte: u8) {

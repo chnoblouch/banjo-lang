@@ -19,6 +19,12 @@ class ResourceAnalyzer final : public DeclVisitor {
 private:
     struct Scope;
 
+    enum class InitState {
+        INITIALIZED,
+        UNINITIALIZED,
+        COND_INITIALIZED,
+    };
+
     struct MoveState {
         bool moved;
         bool conditional;
@@ -26,8 +32,15 @@ private:
         sir::Expr move_expr;
     };
 
+    enum class ScopeType {
+        GENERIC,
+        LOOP,
+    };
+
     struct Scope {
+        ScopeType type;
         sir::Block *block;
+        std::unordered_map<sir::Resource *, InitState> init_states;
         std::unordered_map<sir::Resource *, MoveState> move_states;
     };
 
@@ -48,13 +61,13 @@ public:
     Result analyze_func_def(sir::FuncDef &func_def) override;
 
 private:
-    Scope analyze_block(sir::Block &block);
+    Scope analyze_block(sir::Block &block, ScopeType type = ScopeType::GENERIC);
 
     std::optional<sir::Resource> create_resource(sir::Expr type);
     std::optional<sir::Resource> create_struct_resource(sir::StructDef &struct_def, sir::Expr type);
     std::optional<sir::Resource> create_tuple_resource(sir::TupleExpr &tuple_type, sir::Expr type);
 
-    void insert_move_states(sir::Resource *resource);
+    void insert_states(sir::Resource *resource, InitState init_state);
 
     void analyze_var_stmt(sir::VarStmt &var_stmt);
     void analyze_assign_stmt(sir::AssignStmt &assign_stmt);
@@ -63,15 +76,17 @@ private:
     void analyze_if_stmt(sir::IfStmt &if_stmt);
     void analyze_try_stmt(sir::TryStmt &try_stmt);
     void analyze_loop_stmt(sir::LoopStmt &loop_stmt);
+    void analyze_continue_stmt(sir::ContinueStmt &continue_stmt);
+    void analyze_break_stmt(sir::BreakStmt &break_stmt);
     void analyze_block_stmt(sir::Block &block);
 
     Result analyze_expr(sir::Expr &expr, bool moving);
     Result analyze_expr(sir::Expr &expr, Context &ctx);
     Result analyze_array_literal(sir::ArrayLiteral &array_literal, Context &ctx);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx);
-    Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr, Context &ctx);
+    Result analyze_unary_expr(sir::UnaryExpr &unary_expr, Context &ctx);
     Result analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx);
-    Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr, Context &ctx);
+    Result analyze_call_expr(sir::CallExpr &call_expr, Context &ctx);
     Result analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     Result analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr);
@@ -79,6 +94,9 @@ private:
     Result analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx);
     MoveState *find_move_state(sir::Resource *resource);
     void move_sub_resources(sir::Resource *resource, sir::Expr move_expr);
+    void update_init_state(Scope &scope, sir::Resource *resource, InitState value);
+    void analyze_loop_jump();
+    void mark_uninit_as_cond_init(Scope &scope);
     unsigned get_scope_depth();
 
     static bool is_resource(const sir::Expr &type);

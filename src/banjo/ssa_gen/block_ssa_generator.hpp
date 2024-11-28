@@ -32,6 +32,8 @@ private:
     void generate_continue_stmt(const sir::ContinueStmt &continue_stmt);
     void generate_break_stmt(const sir::BreakStmt &break_stmt);
 
+    void generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value);
+    void generate_loop_jump_deinit();
     void generate_deinit(const sir::Resource &resource, sir::Symbol symbol);
     void generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr);
     void generate_deinit_call(const sir::Resource &resource, ssa::Value ssa_ptr);
