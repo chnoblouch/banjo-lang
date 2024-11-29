@@ -444,6 +444,12 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return analyze_uncoerced(out_expr);
     }
 
+    if (binary_expr.lhs.get_type().is_addr_like_type()) {
+        binary_expr.rhs = create_isize_cast(binary_expr.rhs);
+    } else if (binary_expr.rhs.get_type().is_addr_like_type()) {
+        binary_expr.lhs = create_isize_cast(binary_expr.lhs);
+    }
+
     switch (binary_expr.op) {
         case sir::BinaryOp::ADD:
         case sir::BinaryOp::SUB:
@@ -1177,14 +1183,14 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             .ast_node = bracket_expr.ast_node,
             .type = pointer_type->base_type,
             .base = bracket_expr.lhs,
-            .index = bracket_expr.rhs[0],
+            .index = create_isize_cast(bracket_expr.rhs[0]),
         });
     } else if (auto static_array_type = lhs_type.match<sir::StaticArrayType>()) {
         out_expr = analyzer.create_expr(sir::IndexExpr{
             .ast_node = bracket_expr.ast_node,
             .type = static_array_type->base_type,
             .base = bracket_expr.lhs,
-            .index = bracket_expr.rhs[0],
+            .index = create_isize_cast(bracket_expr.rhs[0]),
         });
     } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
         // FIXME: error handling
@@ -1514,6 +1520,17 @@ Result ExprAnalyzer::specialize(
     });
 
     return Result::SUCCESS;
+}
+
+sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
+    return analyzer.create_expr(sir::CastExpr{
+        .ast_node = value.get_ast_node(),
+        .type = analyzer.create_expr(sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::I64, // TODO: Add isize primitive type
+        }),
+        .value = value,
+    });
 }
 
 } // namespace sema

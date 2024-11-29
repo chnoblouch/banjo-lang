@@ -327,9 +327,9 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
         ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
     } else if (auto pointer_type = binary_expr.lhs.get_type().match<sir::PointerType>()) {
         ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(pointer_type->base_type);
-        reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa_base_type);
+        reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa_base_type);
     } else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
-        reg = ctx.append_offsetptr(ssa_lhs, ssa_rhs, ssa::Primitive::I8);
+        reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa::Primitive::I8);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -624,6 +624,26 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
     });
 
     return ssa_val;
+}
+
+ssa::VirtualRegister ExprSSAGenerator::generate_pointer_expr(
+    sir::BinaryOp op,
+    ssa::Value ssa_lhs,
+    ssa::Value ssa_rhs,
+    ssa::Type ssa_base_type
+) {
+    if (op == sir::BinaryOp::ADD) {
+        return ctx.append_offsetptr(std::move(ssa_lhs), std::move(ssa_rhs), ssa_base_type);
+    } else if (op == sir::BinaryOp::SUB) {
+        ssa::VirtualRegister ssa_neg_reg = ctx.next_vreg();
+        ssa::Value ssa_zero = ssa::Value::from_int_immediate(0, ssa_rhs.get_type());
+        ctx.get_ssa_block()->append(ssa::Instruction(ssa::Opcode::SUB, ssa_neg_reg, {ssa_zero, ssa_rhs}));
+
+        ssa::Value ssa_neg_val = ssa::Value::from_register(ssa_neg_reg, ssa_rhs.get_type());
+        return ctx.append_offsetptr(std::move(ssa_lhs), ssa_neg_val, ssa_base_type);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 StoredValue ExprSSAGenerator::generate_bool_expr(const sir::Expr &expr) {

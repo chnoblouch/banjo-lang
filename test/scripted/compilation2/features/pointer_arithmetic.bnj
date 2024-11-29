@@ -1,0 +1,178 @@
+# test:subtest
+# test:output "9,15,52,49,218,259,8581,8013"
+
+func main() {
+    var array_i8: [i8; 3] = [3, 9, 15];
+    var array_i16: [i16; 3] = [58, 52, 49];
+    var array_i32: [i32; 3] = [204, 218, 259];
+    var array_i64: [i64; 3] = [8424, 8581, 8013];
+
+    print(*(&array_i8[0] + 1));
+    print(',');
+    print(*(&array_i8[0] + 2));
+    print(',');
+    print(*(&array_i16[0] + 1));
+    print(',');
+    print(*(&array_i16[0] + 2));
+    print(',');
+    print(*(&array_i32[0] + 1));
+    print(',');
+    print(*(&array_i32[0] + 2));
+    print(',');
+    print(*(&array_i64[0] + 1));
+    print(',');
+    print(*(&array_i64[0] + 2));
+}
+
+# test:subtest
+# test:output "9,15,52,49,218,259,8581,8013"
+
+func main() {
+    var array_i8: [i8; 3] = [3, 9, 15];
+    var array_i16: [i16; 3] = [58, 52, 49];
+    var array_i32: [i32; 3] = [204, 218, 259];
+    var array_i64: [i64; 3] = [8424, 8581, 8013];
+
+    var add0 = 1;
+    var add1 = 2;
+
+    print(*(&array_i8[0] + add0));
+    print(',');
+    print(*(&array_i8[0] + add1));
+    print(',');
+    print(*(&array_i16[0] + add0));
+    print(',');
+    print(*(&array_i16[0] + add1));
+    print(',');
+    print(*(&array_i32[0] + add0));
+    print(',');
+    print(*(&array_i32[0] + add1));
+    print(',');
+    print(*(&array_i64[0] + add0));
+    print(',');
+    print(*(&array_i64[0] + add1));
+}
+
+# test:subtest
+# test:output "2,34"
+
+func main() {
+    var array: [i32; 3] = [59, 2, 34];
+    var address = &array as addr;
+
+    address += 4;
+    print(*(address as *i32));
+    print(',');
+
+    address += 4;
+    print(*(address as *i32));
+}
+
+# test:subtest
+# test:output "9,3,52,58,218,204,8581,8424"
+
+func main() {
+    var array_i8: [i8; 3] = [3, 9, 15];
+    var array_i16: [i16; 3] = [58, 52, 49];
+    var array_i32: [i32; 3] = [204, 218, 259];
+    var array_i64: [i64; 3] = [8424, 8581, 8013];
+
+    print(*(&array_i8[2] - 1));
+    print(',');
+    print(*(&array_i8[2] - 2));
+    print(',');
+    print(*(&array_i16[2] - 1));
+    print(',');
+    print(*(&array_i16[2] - 2));
+    print(',');
+    print(*(&array_i32[2] - 1));
+    print(',');
+    print(*(&array_i32[2] - 2));
+    print(',');
+    print(*(&array_i64[2] - 1));
+    print(',');
+    print(*(&array_i64[2] - 2));
+}
+
+# test:subtest
+# test:output "9,3,52,58,218,204,8581,8424"
+
+func main() {
+    var array_i8: [i8; 3] = [3, 9, 15];
+    var array_i16: [i16; 3] = [58, 52, 49];
+    var array_i32: [i32; 3] = [204, 218, 259];
+    var array_i64: [i64; 3] = [8424, 8581, 8013];
+
+    var sub0 = 1;
+    var sub1 = 2;
+
+    print(*(&array_i8[2] - sub0));
+    print(',');
+    print(*(&array_i8[2] - sub1));
+    print(',');
+    print(*(&array_i16[2] - sub0));
+    print(',');
+    print(*(&array_i16[2] - sub1));
+    print(',');
+    print(*(&array_i32[2] - sub0));
+    print(',');
+    print(*(&array_i32[2] - sub1));
+    print(',');
+    print(*(&array_i64[2] - sub0));
+    print(',');
+    print(*(&array_i64[2] - sub1));
+}
+
+# test:subtest
+# test:output "831,52,8,19,573"
+
+func main() {
+    var array: [i32; 5] = [573, 19, 831, 52, 8];
+    var pointer = &array[2];
+
+    print(*(pointer));
+    print(',');
+    print(*(pointer + 1));
+    print(',');
+    print(*(pointer + 2));
+    print(',');
+    print(*(pointer - 1));
+    print(',');
+    print(*(pointer - 2));
+}
+
+# test:subtest
+# test:output "831,52,8,19,573"
+
+func main() {
+    var array: [i32; 5] = [573, 19, 831, 52, 8];
+    var pointer = &array[2];
+
+    print(pointer[0]);
+    print(',');
+    print(pointer[1]);
+    print(',');
+    print(pointer[2]);
+    print(',');
+    print(pointer[-1]);
+    print(',');
+    print(pointer[-2]);
+}
+
+# test:subtest
+# test:output "true,true,true,true,true"
+
+func main() {
+    var array: [i32; 5] = [573, 19, 831, 52, 8];
+    var pointer = &array[2];
+
+    print(pointer == &pointer[0]);
+    print(',');
+    print(pointer + 1 == &pointer[1]);
+    print(',');
+    print(pointer + 2 == &pointer[2]);
+    print(',');
+    print(pointer - 1 == &pointer[-1]);
+    print(',');
+    print(pointer - 2 == &pointer[-2]);
+}

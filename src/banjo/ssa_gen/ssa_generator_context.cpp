@@ -139,16 +139,22 @@ ssa::VirtualRegister SSAGeneratorContext::append_offsetptr(ssa::Operand base, un
 }
 
 ssa::VirtualRegister SSAGeneratorContext::append_offsetptr(ssa::Operand base, ssa::Operand offset, ssa::Type type) {
-    // FIXME: make sure offset is always an i64
-
     ssa::VirtualRegister dst = next_vreg();
-    ssa::Value type_val = ssa::Value::from_type(type);
-    get_ssa_block()->append(ssa::Instruction(ssa::Opcode::OFFSETPTR, dst, {std::move(base), std::move(offset), type_val})
+    ssa::Value type_operand = ssa::Value::from_type(type);
+
+    get_ssa_block()->append(
+        ssa::Instruction(ssa::Opcode::OFFSETPTR, dst, {std::move(base), std::move(offset), type_operand})
     );
+
     return dst;
 }
 
-void SSAGeneratorContext::append_memberptr(ssa::VirtualRegister dst, ssa::Type type, ssa::Operand base, unsigned member) {
+void SSAGeneratorContext::append_memberptr(
+    ssa::VirtualRegister dst,
+    ssa::Type type,
+    ssa::Operand base,
+    unsigned member
+) {
     std::vector<ssa::Operand> operands{
         ssa::Value::from_type(type),
         std::move(base),

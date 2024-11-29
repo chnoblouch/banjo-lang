@@ -71,6 +71,8 @@ private:
     Result analyze_operator_overload_call(sir::Symbol symbol, sir::Expr self, sir::Expr arg, sir::Expr &inout_expr);
     Result specialize(sir::FuncDef &func_def, const std::vector<sir::Expr> &generic_args, sir::Expr &inout_expr);
     Result specialize(sir::StructDef &struct_def, const std::vector<sir::Expr> &generic_args, sir::Expr &inout_expr);
+
+    sir::Expr create_isize_cast(sir::Expr value);
 };
 
 } // namespace sema

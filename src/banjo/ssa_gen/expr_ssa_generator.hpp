@@ -1,9 +1,9 @@
 #ifndef EXPR_SSA_GENERATOR_H
 #define EXPR_SSA_GENERATOR_H
 
+#include "banjo/sir/sir.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
@@ -61,6 +61,13 @@ private:
     StoredValue generate_init_expr(const sir::InitExpr &init_expr, const StorageHints &hints);
     StoredValue generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints);
     StoredValue generate_deinit_expr(const sir::DeinitExpr &deinit_expr, StorageHints hints);
+
+    ssa::VirtualRegister generate_pointer_expr(
+        sir::BinaryOp op,
+        ssa::Value ssa_lhs,
+        ssa::Value ssa_rhs,
+        ssa::Type ssa_base_type
+    );
 
     StoredValue generate_bool_expr(const sir::Expr &expr);
 
