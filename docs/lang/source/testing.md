@@ -1,7 +1,7 @@
 # Testing
 
-Banjo has built-in features for unit testing. To create a test, add a function with the ```@test``` attribute
-somewhere in your code:
+Banjo has built-in features for unit testing. To create a test, add a function with the `@test` attribute somewhere
+in your code:
 
 ```banjo
 @test func test() {
@@ -14,7 +14,7 @@ The test can be run using:
 banjo test
 ```
 
-This command looks for all functions with the ```@test``` attribute and
+This command looks for all functions with the `@test` attribute and
 runs them.
 
 ```
@@ -28,7 +28,7 @@ Tests:
 Passed: 1/1
 ```
 
-The ```std.test``` module provides assertions to check conditions in your tests.
+The `std.test` module provides assertions to check conditions in your tests.
 
 ```banjo
 use std.test.assert_eq;

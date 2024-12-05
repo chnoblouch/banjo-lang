@@ -9,7 +9,8 @@ proto DataSink {
 }
 ```
 
-A struct can implement a protocol by defining the required methods. In the following example, both `Keyboard` and `Gamepad` implement the `InputDevice` protocol:
+A struct can implement a protocol by defining the required methods. In the following example, both `Keyboard` and
+`Gamepad` implement the `InputDevice` protocol:
 
 ```banjo
 proto InputDevice {
@@ -54,7 +55,8 @@ struct Gamepad: InputDevice {
 }
 ```
 
-Protocols are used to write functions that work with types that share the same behaviour. A pointer to a concrete type can be coerced to a pointer to a protocol:
+Protocols are used to write functions that work with types that share the same behaviour. A pointer to a concrete type
+can be coerced to a pointer to a protocol:
 
 ```banjo
 func main() {

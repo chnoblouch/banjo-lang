@@ -1,7 +1,7 @@
 # The Basics
 
-Functions are defined using the `func` keyword.
-The following snippet declares the `main` function, which is the entry point to our programs:
+Functions are defined using the `func` keyword. The following snippet declares the `main` function, which is the entry
+point to our programs:
 
 ```banjo
 func main() {

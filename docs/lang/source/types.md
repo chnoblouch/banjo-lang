@@ -31,7 +31,7 @@ var ptr: *i32 = &a;
 # Dereferencing the pointer
 println(*ptr);  # 100
 
-# Modifying the value behind the pointer
+# Modifying the pointee
 *ptr = 50;
 println(a);  # 50
 
@@ -41,7 +41,7 @@ var null_ptr: *i32 = null;
 
 ## Structs
 
-A struct defines a type that is composed of individual values that are called fields:
+Structs are types that contain multiple values that are called fields:
 
 ```banjo
 use std.math.sqrt;
@@ -65,7 +65,7 @@ struct Vec2 {
 
 ## Enums
 
-An enum defines a type for a set of possible values.
+Enums store one of a set of possible values.
 
 ```banjo
 enum Fruit {
@@ -83,8 +83,8 @@ func main() {
 
 ## Unions
 
-A union defines a type for a value that can be one of multiple cases.
-The different cases can each contain their own fields, similar to structs:
+Union values contain one of multiple possible cases. The different cases can each contain their own fields, similar to
+structs:
 
 ```banjo
 union Shape {
@@ -118,8 +118,8 @@ func print_shape(shape: *Shape) {
 
 ## Tuples
 
-Tuples group related data together, similar to structs. The fields don't have a name, but are
-rather referenced by their index in the tuple.
+Tuples group related data together, similar to structs. The fields don't have a name and are
+referenced by their index in the tuple.
 
 ```banjo
 var a: (i32, bool) = (100, true);
@@ -140,7 +140,7 @@ func get_coordinates() -> (i32, i32) {
 
 ## Arrays
 
-Arrays store a list of values of the same type:
+Arrays store a list of values with the same type:
 
 ```banjo
 # Initializing arrays with a literal
@@ -158,7 +158,7 @@ for value in array {
 # Arrays are dynamic
 array.append(4);
 
-# Arrays can be iterated over by reference in order to modify values
+# Arrays can be iterated over by reference to modify values
 for *value in array {
     *value = 100;
 }
@@ -170,12 +170,12 @@ Optionals store either a value or `none`:
 
 ```banjo
 func main() {
-    # Initializing an optional with a value.
+    # Initializing an optional with a value
     var opt1: ?i32 = 100;
     println(opt1.has_value);  # true
     println(opt1.value);  # 100
 
-    # Initializing an empty optional.
+    # Initializing an empty optional
     var opt2 = none;
     println(opt2.has_value);  # false
 }

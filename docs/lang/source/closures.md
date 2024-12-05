@@ -1,7 +1,7 @@
 # Closures
 
-Closures are anonymous functions that capture values from their environment.
-The following snippet declares and calls a closure that adds two values:
+Closures are anonymous functions that capture values from their environment. The following snippet declares and calls a
+closure that adds two values:
 
 ```banjo
 func main() {
@@ -13,10 +13,10 @@ func main() {
 }
 ```
 
-Closures can be used to pass logic to another function that would be hard to express using data alone.
-The following snippet defines a generic filter function that takes a closure as parameter. The closure is
-called for every element of the array. If the call returns true, the element is kept in the array. Otherwise,
-it is discarded. This filter function can now be used with any predicate, for example to filter out even numbers.
+Closures can be used to pass logic to another function that would be hard to express using data alone. The following
+snippet defines a generic filter function that takes a closure as parameter. The closure is called for every element of
+the array. If the call returns true, the element is kept in the array. Otherwise, it is discarded. This filter function
+can now be used with any predicate, for example to filter out even numbers.
 
 ```banjo
 func main() {
@@ -42,8 +42,8 @@ func filter(values: Array[i32], predicate: |value: i32| -> bool) -> Array[i32] {
 }
 ```
 
-Closures can capture values from their environment. In the following snippet, the variable `factor` is
-stored in the closure and can be used inside it.
+Closures can capture values from their environment. In the following snippet, the variable `factor` is stored in the
+closure and can be used inside it.
 
 ```banjo
 func main() {

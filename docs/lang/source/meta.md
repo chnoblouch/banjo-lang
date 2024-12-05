@@ -1,20 +1,20 @@
 # Metaprogramming
 
-Banjo provides access to compile-time features through the `meta` system.
-Meta expressions and statements are evaluated at compile-time, generating runtime code.
-These constructs can only access compile-time values like `const` values or type information.
+Banjo provides compile-time features through the `meta` system. Meta expressions and statements are evaluated at
+compile-time, generating runtime code. These constructs can only access compile-time values like `const` values or type
+information.
 
-The size of a type can be accessed using `meta.size(T)`.
-    
+The size of a type can be accessed using `meta(T).size`.
+
 ```banjo
-println(meta.size(i32));  # 4
-println(meta.size(f64));  # 8
-println(meta.size(Array[i8]));  # 16 on 64-bit targets
+println(meta(i32).size);  # 4
+println(meta(f64).size);  # 8
+println(meta(Array[i8]).size);  # 24 on 64-bit targets
 ```
 
 ## Type Reflection
 
-Type reflection can be achieved using type expressions.
+Type reflection is possible using type expressions.
 
 ```banjo
 struct Circle {
@@ -25,20 +25,20 @@ struct Circle {
 }
 
 func main() {
-    var name = type(Circle).name;  # "Circle"
-    var fields = type(Circle).fields;  # ["x", "y", "radius", "color"]
+    println(meta(Circle).name);  # "Circle"
+    println(meta(Circle).fields);  # ["x", "y", "radius", "color"]
 
     var circle = Circle {
         x: 10.0,
         y: 5.0,
-        radius: 2.0,
+        radius: 3.5,
         color: 0xFF0000FF
     };
     
-    var radius = type(Circle).fieldof(circle, "radius");  # 2.0
+    println(meta(circle).field("radius"));  # 3.5
     
-    type(Circle).fieldof(circle, "y") = 20.0;
-    var y = circle.y;  # 20.0
+    meta(circle).field("y") = 25.0;
+    println(circle.y);  # 25
 }
 ```
 
@@ -60,7 +60,7 @@ meta if config.OS == config.ANDROID {
 
 ## meta for
 
-Repeating code can be generated at compile-time using `meta for` statements.
+Repetitive code can be generated at compile-time using `meta for` statements.
 
 ```banjo
 struct Point {
@@ -76,8 +76,8 @@ func main() {
     
     var point: Point;
     
-    meta for field_name in type(Point).fields {
-        type(Point).fieldof(point, field_name) = map[field_name];
+    meta for field_name in meta(Point).fields {
+        meta(point).field(field_name) = map[field_name];
     }
     
     println(point.x);  # 10
@@ -87,8 +87,8 @@ func main() {
 
 ## std.config
 
-The standard library features a built-in module that provides information about the current build.
-These are the constants stored by the compiler in this module:
+The standard library features a built-in module called `std.module` that provides information about the current build.
+These constants are currently available:
 
 | Name         | Description             | Values                         |
 |--------------|-------------------------|--------------------------------|

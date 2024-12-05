@@ -32,7 +32,7 @@ func main() {
 }
 ```
 
-You can also import specific symbols from another module:
+We can also import specific symbols from another module:
 
 ```banjo
 use math_utils.add;

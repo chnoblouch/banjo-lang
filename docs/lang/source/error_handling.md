@@ -20,8 +20,8 @@ func load(name: String) -> String except ResourceError {
 
 func main() {
     println(load("recipe"));  # "cookies"
-    println(load("topsecretfile"));  # ACCESS_DENIED
-    println(load("keys"));  # NOT_FOUND
+    println(load("topsecretfile"));  # ResourceError.ACCESS_DENIED
+    println(load("keys"));  # ResourceError.NOT_FOUND
 }
 ```
 
@@ -67,8 +67,8 @@ func main() {
 }
 ```
 
-If you're 100% sure the result is always successful, you can recklessly `unwrap` the result.
-This returns the value on success and exits the program on failure.
+If you're 100% sure the result is always successful, you can recklessly `unwrap` the result. This returns the value on
+success and exits the program on failure.
 
 ```banjo
 use std.file.File;

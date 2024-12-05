@@ -9,7 +9,7 @@ import sys
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Banjo'
-copyright = '2023, Marino von Wattenwyl'
+copyright = '2024, Marino von Wattenwyl'
 author = 'Marino von Wattenwyl'
 
 # -- General configuration ---------------------------------------------------
@@ -29,7 +29,7 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_static_path = []
 
 def setup(sphinx):
     sys.path.append("./source")

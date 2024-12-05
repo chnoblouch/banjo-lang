@@ -1,13 +1,13 @@
 # Hot Reloading
 
 ```{note}
-Hot reloading is currently only supported on Windows.
+Hot reloading is currently only supported on Windows and Linux.
 ```
 
 Banjo supports a very limited form of hot reloading. The hot reloader can detect changes to files, recompile
-the functions inside it and inject them into the running process.
+the functions inside and inject them into the running process.
 
-As an example, create a new project and paste this snippet into ```src/main.bnj```:
+As an example, create a new project and paste this snippet into `src/main.bnj`:
 
 ```banjo
 use std.thread.sleep;
@@ -33,20 +33,17 @@ banjo run --hot-reload
 The output should look something like this:
 
 ```
-Compiling...
-Linking...
-Build finished! (0.60 seconds)
 (hot reloader) platform: x86_64-windows
 (hot reloader) executable loaded
-(hot reloader) address table layout loaded
-(hot reloader) watching directory 'C:\DEV\Banjo\projects\testing\src'
-(hot reloader) pointer to address table loaded
+(hot reloader) found address table in target process
+(hot reloader) address table layout loaded (19 symbols)
+(hot reloader) watching directory 'C:\dev\banjo\projects\testing\src'
 Hello, World!
 Hello, World!
 Hello, World!
 ```
 
-Now try editing the message in ```print_something``` and save your changes to the file.
+Now try editing the message in `print_something` and save your changes to the file.
 
 ```banjo
 func print_something() {
@@ -54,7 +51,7 @@ func print_something() {
 }
 ```
 
-The hot reloader detects this change and the output of the program changes:
+The hot reloader detects this edit and the output of the program changes:
 
 ```
 ...
@@ -67,6 +64,6 @@ Hello, Hot Reloader!
 Hello, Hot Reloader!
 ```
 
-Remember that the changes are only visible when the function is called again. Changing ```main``` for example
+Keep in mind that the changes are only visible when the function is called again. Changing `main` for example
 would appear to have no effect because this function is only called once and then enters a loop. It is also
 not possible to update data structures.

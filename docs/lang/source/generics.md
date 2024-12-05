@@ -14,7 +14,8 @@ func max[T](a: T, b: T) -> T {
 }
 ```
 
-The function has a type parameter `T` that is specified when calling the function. This means that `max` can be used with any numeric type:
+The function has a type parameter `T` that is specified when calling the function. This means that `max` can be used
+with any numeric type:
 
 ```banjo
 func main() {
@@ -76,4 +77,6 @@ func main() {
 }
 ```
 
-The function `print_all` has a parameter sequence (`T: ...`) as a generic parameter. All arguments passed to the function are packed together into a tuple and stored in the parameter `values`. A `meta for` statement is used to iterate over the values in the tuple and print them.
+The function `print_all` has a parameter sequence (`T: ...`) as a generic parameter. All arguments passed to the
+function are packed together into a tuple and stored in the parameter `values`. A `meta for` statement is used to
+iterate over the values in the tuple and print them.
