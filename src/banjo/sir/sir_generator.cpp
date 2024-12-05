@@ -94,7 +94,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_USE: return generate_use_decl(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
         case AST_IDENTIFIER: return generate_error_decl(node);
-        case AST_COMPLETION_TOKEN: return generate_completion_token(node);
+        // case AST_COMPLETION_TOKEN: return generate_completion_token(node);
         default: return generate_error_decl(node);
     }
 }
@@ -803,7 +803,7 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
     } else if (rhs_node->get_type() == AST_COMPLETION_TOKEN) {
         rhs = {
             .ast_node = rhs_node,
-            .value = "[completion]",
+            .value = std::string(sir::COMPLETION_TOKEN_VALUE),
         };
     } else if (rhs_node->get_type() == AST_ERROR) {
         rhs = {
@@ -1001,6 +1001,21 @@ std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entri
     for (unsigned i = 0; i < node->get_children().size(); i++) {
         ASTNode *child = node->get_child(i);
 
+        if (child->get_type() == AST_COMPLETION_TOKEN) {
+            entries[i] = sir::StructLiteralEntry{
+                .ident{
+                    .ast_node = child,
+                    .value = std::string(sir::COMPLETION_TOKEN_VALUE),
+                },
+                .value = create_expr(sir::Error{
+                    .ast_node = child,
+                }),
+                .field = nullptr,
+            };
+
+            continue;
+        }
+
         entries[i] = sir::StructLiteralEntry{
             .ident = generate_ident(child->get_child(STRUCT_FIELD_VALUE_NAME)),
             .value = generate_expr(child->get_child(STRUCT_FIELD_VALUE_VALUE)),
@@ -1058,9 +1073,10 @@ sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {
     return create_attrs(sir_attrs);
 }
 
-sir::CompletionToken *SIRGenerator::generate_completion_token(ASTNode *node) {
-    return create_expr(sir::CompletionToken{
+sir::IdentExpr *SIRGenerator::generate_completion_token(ASTNode *node) {
+    return create_expr(sir::IdentExpr{
         .ast_node = node,
+        .value = std::string(sir::COMPLETION_TOKEN_VALUE),
     });
 }
 
@@ -1090,7 +1106,7 @@ sir::UseItem SIRGenerator::generate_use_item(ASTNode *node) {
         case AST_USE_REBINDING: return generate_use_rebind(node);
         case AST_DOT_OPERATOR: return generate_use_dot_expr(node);
         case AST_USE_TREE_LIST: return generate_use_list(node);
-        case AST_COMPLETION_TOKEN: return generate_completion_token(node);
+        case AST_COMPLETION_TOKEN: return generate_use_completion_token(node);
         default: return generate_error_use_item(node);
     }
 }
@@ -1130,6 +1146,16 @@ sir::UseItem SIRGenerator::generate_use_list(ASTNode *node) {
     return create_use_item(sir::UseList{
         .ast_node = node,
         .items = items,
+    });
+}
+
+sir::UseItem SIRGenerator::generate_use_completion_token(ASTNode *node) {
+    return create_use_item(sir::UseIdent{
+        .ident{
+            .ast_node = node,
+            .value = std::string(sir::COMPLETION_TOKEN_VALUE),
+        },
+        .symbol = nullptr,
     });
 }
 

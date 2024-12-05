@@ -81,8 +81,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                    // init_expr
         SIR_VISIT_IMPOSSIBLE,                    // move_expr
         SIR_VISIT_IMPOSSIBLE,                    // deinit_expr
-        SIR_VISIT_IMPOSSIBLE,                    // error
-        SIR_VISIT_IMPOSSIBLE                     // completion_token
+        SIR_VISIT_IMPOSSIBLE                     // error
     );
 }
 

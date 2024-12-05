@@ -372,8 +372,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // init_expr
         SIR_VISIT_IGNORE,                                // move_expr
         result = analyze_deinit_expr(*inner, expr),      // deinit_expr
-        SIR_VISIT_IGNORE,                                // error
-        SIR_VISIT_IGNORE                                 // completion_token
+        SIR_VISIT_IGNORE                                 // error
     );
 
     if (ctx.cur_resource && ctx.cur_resource->has_deinit) {

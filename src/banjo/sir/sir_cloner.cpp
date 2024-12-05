@@ -61,8 +61,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         SIR_VISIT_IMPOSSIBLE,
         return clone_meta_if_stmt(*inner),
         SIR_VISIT_IMPOSSIBLE,
-        return clone_error(*inner),
-        SIR_VISIT_IMPOSSIBLE
+        return clone_error(*inner)
     );
 }
 
@@ -493,8 +492,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_init_expr(*inner),
         return clone_move_expr(*inner),
         return clone_deinit_expr(*inner),
-        return clone_error(*inner),
-        SIR_VISIT_IMPOSSIBLE
+        return clone_error(*inner)
     );
 }
 

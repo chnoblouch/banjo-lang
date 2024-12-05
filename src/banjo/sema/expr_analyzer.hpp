@@ -55,7 +55,8 @@ private:
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
     Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
-    Result analyze_completion_token(sir::CompletionToken &completion_token, sir::Expr &out_expr);
+
+    Result analyze_completion_token();
 
     void create_method_call(
         sir::CallExpr &call_expr,

@@ -63,8 +63,7 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // init_expr
         SIR_VISIT_IMPOSSIBLE,                                     // move_expr
         SIR_VISIT_IMPOSSIBLE,                                     // deinit_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // error
-        SIR_VISIT_IMPOSSIBLE                                      // completion_token
+        SIR_VISIT_IMPOSSIBLE                                      // error
     );
 }
 
@@ -119,8 +118,7 @@ Expr Expr::get_type() const {
         return inner->type,   // init_expr
         return inner->type,   // move_expr
         return inner->type,   // deinit_expr
-        SIR_VISIT_IMPOSSIBLE, // error
-        SIR_VISIT_IMPOSSIBLE  // completion_token
+        SIR_VISIT_IMPOSSIBLE  // error
     );
 }
 
@@ -239,7 +237,6 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
-        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

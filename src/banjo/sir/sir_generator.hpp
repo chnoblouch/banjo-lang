@@ -5,8 +5,9 @@
 #include "banjo/ast/module_list.hpp"
 #include "banjo/sir/sir.hpp"
 
-#include <vector>
 #include <stack>
+#include <vector>
+
 
 namespace banjo {
 
@@ -134,6 +135,7 @@ private:
     sir::UseItem generate_use_rebind(ASTNode *node);
     sir::UseItem generate_use_dot_expr(ASTNode *node);
     sir::UseItem generate_use_list(ASTNode *node);
+    sir::UseItem generate_use_completion_token(ASTNode *node);
     sir::UseItem generate_error_use_item(ASTNode *node);
 
     template <typename T>
@@ -161,7 +163,7 @@ private:
     }
 
     sir::Attributes *create_attrs(sir::Attributes value) { return cur_sir_mod->create_attrs(std::move(value)); }
-    sir::CompletionToken *generate_completion_token(ASTNode *node);
+    sir::IdentExpr *generate_completion_token(ASTNode *node);
 };
 
 } // namespace lang

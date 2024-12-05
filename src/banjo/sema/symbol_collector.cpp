@@ -3,7 +3,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/utils/macros.hpp"
+#include "completion_context.hpp"
 
 namespace banjo {
 
@@ -61,8 +61,7 @@ void SymbolCollector::collect_decl(sir::Decl &decl) {
         collect_use_decl(*inner),         // use_decl
         SIR_VISIT_IGNORE,                 // meta_if_stmt
         SIR_VISIT_IGNORE,                 // expanded_meta_stmt
-        SIR_VISIT_IGNORE,                 // error
-        SIR_VISIT_IGNORE                  // completion_token
+        SIR_VISIT_IGNORE                  // error
     );
 }
 
@@ -168,6 +167,13 @@ void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
 }
 
 void SymbolCollector::collect_use_decl(sir::UseDecl &use_decl) {
+    if (auto use_ident = use_decl.root_item.match<sir::UseIdent>()) {
+        if (analyzer.mode == Mode::COMPLETION && use_ident->is_completion_token()) {
+            analyzer.completion_context = CompleteInUse{};
+            return;
+        }
+    }
+
     collect_use_item(use_decl.root_item);
 }
 
@@ -187,17 +193,21 @@ void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind) {
 }
 
 void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
-    if (analyzer.mode == Mode::COMPLETION) {
-        if (use_dot_expr.rhs.is<sir::CompletionToken>()) {
+    if (auto use_ident = use_dot_expr.rhs.match<sir::UseIdent>()) {
+        if (analyzer.mode == Mode::COMPLETION && use_ident->is_completion_token()) {
             analyzer.completion_context = CompleteAfterUseDot{
                 .lhs = use_dot_expr.lhs,
             };
-        }
-    }
 
-    if (auto use_ident = use_dot_expr.rhs.match<sir::UseIdent>()) collect_use_ident(*use_ident);
-    else if (auto use_rebind = use_dot_expr.rhs.match<sir::UseRebind>()) collect_use_rebind(*use_rebind);
-    else if (auto use_list = use_dot_expr.rhs.match<sir::UseList>()) collect_use_list(*use_list);
+            return;
+        }
+
+        collect_use_ident(*use_ident);
+    } else if (auto use_rebind = use_dot_expr.rhs.match<sir::UseRebind>()) {
+        collect_use_rebind(*use_rebind);
+    } else if (auto use_list = use_dot_expr.rhs.match<sir::UseList>()) {
+        collect_use_list(*use_list);
+    }
 }
 
 void SymbolCollector::collect_use_list(sir::UseList &use_list) {

@@ -13,7 +13,7 @@ InitializeHandler::~InitializeHandler() {}
 
 JSONValue InitializeHandler::handle(const JSONObject &params, Connection &) {
     JSONValue workspace_folders = params.get("workspaceFolders");
-    init_config(workspace_folders);
+    // init_config(workspace_folders);
 
     return JSONObject{
         {"capabilities",

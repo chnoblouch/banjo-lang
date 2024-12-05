@@ -1,7 +1,6 @@
 #ifndef SIR_H
 #define SIR_H
 
-#include "banjo/ast/attribute.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/utils/dynamic_pointer.hpp"
 #include "banjo/utils/growable_arena.hpp"
@@ -110,7 +109,6 @@ struct UseDotExpr;
 struct UseRebind;
 struct UseList;
 struct Error;
-struct CompletionToken;
 
 struct Unit;
 struct DeclBlock;
@@ -128,6 +126,8 @@ class Stmt;
 class Decl;
 class Symbol;
 class UseItem;
+
+constexpr std::string_view COMPLETION_TOKEN_VALUE = "[completion]";
 
 class Expr {
     std::variant<
@@ -175,8 +175,7 @@ class Expr {
         MoveExpr *,         // 41
         DeinitExpr *,       // 42
         Error *,            // 43
-        CompletionToken *,  // 44
-        std::nullptr_t>     // 45
+        std::nullptr_t>     // 44
         kind;
 
 public:
@@ -328,7 +327,6 @@ private:
         MetaIfStmt *,
         ExpandedMetaStmt *,
         Error *,
-        CompletionToken *,
         std::nullptr_t>
         kind;
 
@@ -407,7 +405,7 @@ public:
     DeclBlock *get_decl_block();
 };
 
-class UseItem : public DynamicPointer<UseIdent, UseRebind, UseDotExpr, UseList, Error, CompletionToken> {
+class UseItem : public DynamicPointer<UseIdent, UseRebind, UseDotExpr, UseList, Error> {
 
 public:
     template <typename T>
@@ -499,6 +497,8 @@ struct Attributes {
 struct Ident {
     ASTNode *ast_node;
     std::string value;
+
+    bool is_completion_token() const { return value == COMPLETION_TOKEN_VALUE; }
 };
 
 struct Param {
@@ -825,6 +825,8 @@ struct ClosureType {
 struct IdentExpr {
     ASTNode *ast_node;
     std::string value;
+
+    bool is_completion_token() const { return value == COMPLETION_TOKEN_VALUE; }
 };
 
 struct StarExpr {
@@ -1189,6 +1191,8 @@ struct UseDecl {
 struct UseIdent {
     Ident ident;
     Symbol symbol;
+
+    bool is_completion_token() const { return ident.is_completion_token(); }
 };
 
 struct UseRebind {
@@ -1210,10 +1214,6 @@ struct UseList {
 };
 
 struct Error {
-    ASTNode *ast_node;
-};
-
-struct CompletionToken {
     ASTNode *ast_node;
 };
 
@@ -1261,8 +1261,7 @@ typedef std::variant<
     InitExpr,
     MoveExpr,
     DeinitExpr,
-    Error,
-    CompletionToken>
+    Error>
     ExprStorage;
 
 typedef std::variant<

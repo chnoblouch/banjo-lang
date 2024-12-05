@@ -64,6 +64,8 @@ public:
 
     std::list<ASTModule *>::iterator begin() { return modules.begin(); }
     std::list<ASTModule *>::iterator end() { return modules.end(); }
+    std::list<ASTModule *>::const_iterator begin() const { return modules.begin(); }
+    std::list<ASTModule *>::const_iterator end() const { return modules.end(); }
 };
 
 } // namespace lang

@@ -2,11 +2,12 @@
 
 #include "ast_navigation.hpp"
 #include "banjo/reports/report_texts.hpp"
-#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/completion_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/json.hpp"
 #include "uri.hpp"
 
+#include <set>
 #include <string_view>
 #include <variant>
 
@@ -43,8 +44,12 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
         build_in_block(items, *in_block->block->symbol_table);
     } else if (auto after_dot = std::get_if<sema::CompleteAfterDot>(&completion_info.context)) {
         build_after_dot(items, after_dot->lhs);
+    } else if (std::holds_alternative<sema::CompleteInUse>(completion_info.context)) {
+        build_in_use(items);
     } else if (auto after_use_dot = std::get_if<sema::CompleteAfterUseDot>(&completion_info.context)) {
         build_after_use_dot(items, after_use_dot->lhs);
+    } else if (auto in_struct_literal = std::get_if<sema::CompleteInStructLiteral>(&completion_info.context)) {
+        build_in_struct_literal(items, *in_struct_literal->struct_literal);
     }
 
     return items;
@@ -80,6 +85,14 @@ void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) 
     }
 }
 
+void CompletionHandler::build_in_use(JSONArray &items) {
+    for (lang::ASTModule *mod : workspace.get_mod_list()) {
+        if (mod->get_path().get_size() == 1) {
+            items.add(create_simple_item(mod->get_path().get_path()[0], LSPCompletionItemKind::MODULE));
+        }
+    }
+}
+
 void CompletionHandler::build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs) {
     CompletionConfig config{
         .include_uses = false,
@@ -90,6 +103,33 @@ void CompletionHandler::build_after_use_dot(JSONArray &items, lang::sir::UseItem
         build_symbol_members(config, items, use_ident->symbol);
     } else if (auto use_dot_expr = lhs.match<sir::UseDotExpr>()) {
         build_symbol_members(config, items, use_dot_expr->rhs.as<sir::UseIdent>().symbol);
+    }
+}
+
+void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::StructLiteral &struct_literal) {
+    if (auto struct_def = struct_literal.type.match_symbol<sir::StructDef>()) {
+        std::set<sir::StructField *> set_fields;
+
+        for (lang::sir::StructLiteralEntry &entry : struct_literal.entries) {
+            if (entry.field) {
+                set_fields.insert(entry.field);
+            }
+        }
+
+        for (sir::StructField *field : struct_def->fields) {
+            if (set_fields.contains(field)) {
+                continue;
+            }
+
+            const std::string &name = field->ident.value;
+
+            items.add(JSONObject{
+                {"label", name},
+                {"kind", LSPCompletionItemKind::FIELD},
+                {"insertText", name + ": "},
+                {"insertTextFormat", 2},
+            });
+        }
     }
 }
 

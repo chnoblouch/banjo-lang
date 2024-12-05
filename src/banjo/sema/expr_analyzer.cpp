@@ -98,8 +98,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                                        // init_expr
         SIR_VISIT_IMPOSSIBLE,                                        // move_expr
         SIR_VISIT_IMPOSSIBLE,                                        // deinit_expr
-        result = Result::ERROR,                                      // error
-        result = analyze_completion_token(*inner, expr)              // completion_token
+        result = Result::ERROR                                       // error
     );
 
     if (result != Result::SUCCESS) {
@@ -201,6 +200,14 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
     }
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
+        if (entry.ident.is_completion_token()) {
+            analyzer.completion_context = CompleteInStructLiteral{
+                .struct_literal = &struct_literal,
+            };
+
+            continue;
+        }
+
         result = ExprAnalyzer(analyzer).analyze_uncoerced(entry.value);
         if (result != Result::SUCCESS) {
             return result;
@@ -962,7 +969,7 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
         return result;
     }
 
-    if (analyzer.mode == Mode::COMPLETION && dot_expr.rhs.value == "[completion]") {
+    if (analyzer.mode == Mode::COMPLETION && dot_expr.rhs.is_completion_token()) {
         analyzer.completion_context = CompleteAfterDot{
             .lhs = dot_expr.lhs,
         };
@@ -1004,6 +1011,10 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
 }
 
 Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr) {
+    if (ident_expr.is_completion_token()) {
+        return analyze_completion_token();
+    }
+
     sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
     const std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
     ClosureContext *closure_ctx = analyzer.get_scope().closure_ctx;
@@ -1223,7 +1234,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     return Result::SUCCESS;
 }
 
-Result ExprAnalyzer::analyze_completion_token(sir::CompletionToken &completion_token, sir::Expr &out_expr) {
+Result ExprAnalyzer::analyze_completion_token() {
     if (analyzer.is_in_stmt_block()) {
         analyzer.completion_context = CompleteInBlock{
             .block = analyzer.get_scope().block,
@@ -1237,11 +1248,6 @@ Result ExprAnalyzer::analyze_completion_token(sir::CompletionToken &completion_t
             .decl_block = &analyzer.cur_sir_mod->block,
         };
     }
-
-    out_expr = analyzer.create_expr(sir::IdentExpr{
-        .ast_node = nullptr,
-        .value = "[completion]",
-    });
 
     // Return an error so as not to continue analysing expressions that contain
     // a completion token and cannot be valid anyway.

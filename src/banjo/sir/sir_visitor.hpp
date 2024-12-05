@@ -53,8 +53,7 @@
     init_expr_visitor,                                                                                                 \
     move_expr_visitor,                                                                                                 \
     deinit_expr_visitor,                                                                                               \
-    error_visitor,                                                                                                     \
-    completion_token_visitor                                                                                           \
+    error_visitor                                                                                                     \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -146,9 +145,7 @@
         deinit_expr_visitor;                                                                                           \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::Error>()) {                                \
         error_visitor;                                                                                                 \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CompletionToken>()) {                      \
-        completion_token_visitor;                                                                                      \
-    } else {                                                                                                           \
+    }else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }
 
@@ -268,8 +265,7 @@
     use_decl_visitor,                                                                                                  \
     meta_if_stmt_visitor,                                                                                              \
     expanded_meta_stmt_visitor,                                                                                        \
-    error_visitor,                                                                                                     \
-    completion_token_visitor                                                                                           \
+    error_visitor                                                                                                     \
 )                                                                                                                      \
     if (!(decl)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -309,8 +305,6 @@
         expanded_meta_stmt_visitor;                                                                                    \
     } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::Error>()) {                                \
         error_visitor;                                                                                                 \
-    } else if ([[maybe_unused]] auto inner = (decl).match<banjo::lang::sir::CompletionToken>()) {                      \
-        completion_token_visitor;                                                                                      \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }

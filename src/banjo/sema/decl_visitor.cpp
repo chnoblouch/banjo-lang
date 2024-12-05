@@ -57,8 +57,7 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
         SIR_VISIT_IGNORE,                 // use_decl
         SIR_VISIT_IGNORE,                 // meta_if_stmt
         SIR_VISIT_IGNORE,                 // expanded_meta_stmt
-        SIR_VISIT_IGNORE,                 // error
-        SIR_VISIT_IGNORE                  // completion_token
+        SIR_VISIT_IGNORE                  // error
     );
 
     return Result::SUCCESS;

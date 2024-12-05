@@ -114,8 +114,7 @@ void Printer::print_decl(const Decl &decl) {
         print_use_decl(*inner),
         print_meta_if_stmt(*inner),
         print_expanded_meta_stmt(*inner),
-        print_error(*inner),
-        SIR_VISIT_IMPOSSIBLE
+        print_error(*inner)
     );
 }
 
@@ -645,8 +644,7 @@ void Printer::print_expr(const Expr &expr) {
         print_init_expr(*inner),
         print_move_expr(*inner),
         print_deinit_expr(*inner),
-        print_error(*inner),
-        ASSERT_UNREACHABLE
+        print_error(*inner)
     );
 }
 
@@ -823,7 +821,7 @@ void Printer::print_field_expr(const FieldExpr &field_expr) {
 }
 
 void Printer::print_range_expr(const RangeExpr &range_expr) {
-    BEGIN_OBJECT("DotExpr");
+    BEGIN_OBJECT("RangeExpr");
     PRINT_EXPR_FIELD("lhs", range_expr.lhs);
     PRINT_EXPR_FIELD("rhs", range_expr.rhs);
     END_OBJECT();

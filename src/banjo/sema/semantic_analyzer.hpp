@@ -2,6 +2,7 @@
 #define sema_SEMANTIC_ANALYZER_H
 
 #include "banjo/reports/report_manager.hpp"
+#include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
 #include "banjo/sema/report_generator.hpp"
 #include "banjo/sir/sir.hpp"
@@ -12,9 +13,7 @@
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace banjo {
@@ -28,25 +27,6 @@ enum class Mode {
     INDEXING,
     COMPLETION,
 };
-
-struct CompleteInDeclBlock {
-    sir::DeclBlock *decl_block;
-};
-
-struct CompleteInBlock {
-    sir::Block *block;
-};
-
-struct CompleteAfterDot {
-    sir::Expr lhs;
-};
-
-struct CompleteAfterUseDot {
-    sir::UseItem lhs;
-};
-
-typedef std::variant<std::monostate, CompleteInDeclBlock, CompleteInBlock, CompleteAfterDot, CompleteAfterUseDot>
-    CompletionContext;
 
 struct ClosureContext {
     std::vector<sir::Symbol> captured_vars;

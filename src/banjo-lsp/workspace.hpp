@@ -68,6 +68,7 @@ public:
     ModuleIndex *find_index(lang::sir::Module *mod);
     const SymbolRef &get_index_symbol(const SymbolKey &key);
 
+    const lang::ModuleList &get_mod_list() { return module_manager.get_module_list(); }
     std::vector<lang::ModulePath> list_sub_mods(lang::sir::Module *mod);
 
 private:
