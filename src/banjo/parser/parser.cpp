@@ -66,7 +66,7 @@ ASTNode *Parser::parse_top_level_block() {
     return block;
 }
 
-ParseResult Parser::parse_block(bool with_symbol_table /* = true */) {
+ParseResult Parser::parse_block() {
     ASTNode *block = new ASTNode(AST_BLOCK, TextRange{0, 0});
 
     if (stream.get()->is(TKN_LBRACE)) {
@@ -118,7 +118,7 @@ void Parser::parse_block_child(ASTNode *block) {
         case TKN_SELF: result = parse_expr_or_assign(); break;
         case TKN_NATIVE: result = DeclParser(*this).parse_native(); break;
         case TKN_USE: result = DeclParser(*this).parse_use(); break;
-        case TKN_META: result = StmtParser(*this).parse_meta_stmt(); break;
+        case TKN_META: result = parse_meta(); break;
         case TKN_LBRACE: result = parse_block(); break;
         case TKN_AT: current_attr_list = parse_attribute_list(); return;
         default: result = parse_expr_or_assign();
@@ -162,6 +162,14 @@ ParseResult Parser::parse_type_alias_or_explicit_type() {
         return parse_expr_or_assign();
     } else {
         return DeclParser(*this).parse_type_alias();
+    }
+}
+
+ParseResult Parser::parse_meta() {
+    if (stream.peek(1)->is(TKN_IF) || stream.peek(1)->is(TKN_FOR)) {
+        return StmtParser(*this).parse_meta_stmt();
+    } else {
+        return parse_expr_or_assign();
     }
 }
 

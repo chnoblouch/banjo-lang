@@ -368,10 +368,10 @@ ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
                 return node.build_error();
             }
             branch.append_child(result.node);
-            branch.append_child(parser.parse_block(false).node);
+            branch.append_child(parser.parse_block().node);
             node.append_child(branch.build(AST_META_IF_CONDITION));
         } else if (stream.get()->is(TKN_LBRACE)) {
-            branch.append_child(parser.parse_block(false).node);
+            branch.append_child(parser.parse_block().node);
             node.append_child(branch.build(AST_META_ELSE));
         } else {
             parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_UNEXPECTED);
@@ -403,7 +403,7 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
     }
     node.append_child(result.node);
 
-    node.append_child(parser.parse_block(false).node);
+    node.append_child(parser.parse_block().node);
 
     return node.build(AST_META_FOR);
 }

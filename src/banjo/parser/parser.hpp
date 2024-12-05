@@ -60,13 +60,14 @@ public:
 
 private:
     ASTNode *parse_top_level_block();
-    ParseResult parse_block(bool with_symbol_table = true);
+    ParseResult parse_block();
     void parse_block_child(ASTNode *block);
 
     ASTNode *parse_expression();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
     ParseResult parse_type_alias_or_explicit_type();
+    ParseResult parse_meta();
     std::unique_ptr<AttributeList> parse_attribute_list();
 
     ParseResult parse_list(
