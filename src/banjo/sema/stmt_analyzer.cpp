@@ -4,6 +4,7 @@
 #include "banjo/sema/meta_expansion.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
 namespace banjo {
@@ -141,17 +142,17 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     sir::Expr type = try_stmt.success_branch.expr.get_type();
 
     sir::StructField *successful_field;
-    sir::StructField *value_field;
-    sir::StructField *error_field;
+    sir::FuncDef *unwrap_func;
+    sir::FuncDef *unwrap_error_func;
 
     if (auto specialization = analyzer.as_std_result_specialization(type)) {
         successful_field = specialization->def->find_field("successful");
-        value_field = specialization->def->find_field("value");
-        error_field = specialization->def->find_field("error");
+        unwrap_func = &specialization->def->block.symbol_table->look_up_local("unwrap").as<sir::FuncDef>();
+        unwrap_error_func = &specialization->def->block.symbol_table->look_up_local("unwrap_error").as<sir::FuncDef>();
     } else if (auto specialization = analyzer.as_std_optional_specialization(type)) {
         successful_field = specialization->def->find_field("has_value");
-        value_field = specialization->def->find_field("value");
-        error_field = nullptr;
+        unwrap_func = &specialization->def->block.symbol_table->look_up_local("unwrap").as<sir::FuncDef>();
+        unwrap_error_func = nullptr;
     } else {
         analyzer.report_generator.report_err_cannot_use_in_try(try_stmt.success_branch.expr);
         return;
@@ -169,14 +170,9 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
                 .ast_node = nullptr,
                 .local{
                     .name = try_stmt.success_branch.ident,
-                    .type = nullptr,
+                    .type = unwrap_func->type.return_type,
                 },
-                .value = analyzer.create_expr(sir::FieldExpr{
-                    .ast_node = nullptr,
-                    .type = value_field->type,
-                    .base = try_stmt.success_branch.expr,
-                    .field_index = value_field->index,
-                }),
+                .value = sir::create_call(*analyzer.cur_sir_mod, *unwrap_func, {try_stmt.success_branch.expr}),
             }),
             analyzer.create_stmt(try_stmt.success_branch.block),
         },
@@ -203,7 +199,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     };
 
     if (try_stmt.except_branch) {
-        if (error_field) {
+        if (unwrap_error_func) {
             ExprAnalyzer(analyzer).analyze(try_stmt.except_branch->type);
 
             sir::Block except_block{
@@ -215,12 +211,8 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
                             .name = try_stmt.except_branch->ident,
                             .type = nullptr,
                         },
-                        .value = analyzer.create_expr(sir::FieldExpr{
-                            .ast_node = nullptr,
-                            .type = error_field->type,
-                            .base = try_stmt.success_branch.expr,
-                            .field_index = error_field->index,
-                        }),
+                        .value =
+                            sir::create_call(*analyzer.cur_sir_mod, *unwrap_error_func, {try_stmt.success_branch.expr}),
                     }),
                     analyzer.create_stmt(try_stmt.except_branch->block),
                 },
@@ -241,6 +233,10 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
             analyzer.report_generator.report_err_try_no_error_field(*try_stmt.except_branch);
         }
     } else if (try_stmt.else_branch) {
+        // TODO: If the error type is a resource, the error is moved in `except` blocks, but not in `else` blocks.
+        // This means that the error will be deinitialized at the end of the scope it was declared in. Is this
+        // actually what we want?
+
         sir::Block else_block = try_stmt.else_branch->block;
         analyze_block(else_block);
 

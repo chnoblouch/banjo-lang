@@ -1,0 +1,65 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+# test:subtest
+# test:output "vdm"
+
+func main() {
+    var optional: ?Resource = Resource {};
+    
+    try value in optional {
+        print('v');
+    }
+    
+    print('m');
+}
+
+# test:subtest
+# test:output "sdm"
+
+func main() {
+    var result: Resource except i32 = Resource {};
+    
+    try value in result {
+        print('s');
+    } else {
+        print('e');
+    }
+    
+    print('m');
+}
+
+# test:subtest
+# test:output "edm"
+
+func main() {
+    var result: i32 except Resource = Resource {};
+    
+    try value in result {
+        print('s');
+    } except error: Resource {
+        print('e');
+    }
+    
+    print('m');
+}
+
+# test:subtest
+# test:output "emd"
+
+func main() {
+    var result: i32 except Resource = Resource {};
+    
+    try value in result {
+        print('s');
+    } else {
+        print('e');
+    }
+    
+    print('m');
+}

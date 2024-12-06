@@ -4,12 +4,14 @@ struct Result[T, E] {
     var successful: bool;
     @unmanaged var value: T;
     @unmanaged var error: E;
+    var unwrapped: bool;
     
     pub func new_success(value: T) -> Result[T, E] {
         return Result[T, E] {
             successful: true,
             value,
-            error: undefined
+            error: undefined,
+            unwrapped: false,
         };
     }
     
@@ -17,7 +19,8 @@ struct Result[T, E] {
         return Result[T, E] {
             successful: false,
             value: undefined,
-            error
+            error,
+            unwrapped: false,
         };
     }
     
@@ -26,8 +29,17 @@ struct Result[T, E] {
             panic(to_string(&self.error));
         }
         
-        self.successful = false;
+        self.unwrapped = true;
         return self.value;
+    }
+
+    pub func unwrap_error(@byval self) -> E {
+        if self.successful {
+            panic("tried to unwrap successful result error");
+        }
+
+        self.unwrapped = true;
+        return self.error;
     }
     
     pub func __str__(self) -> String {
@@ -39,6 +51,10 @@ struct Result[T, E] {
     }
     
     pub func __deinit__(self) {
+        if self.unwrapped {
+            return;
+        }
+
         if self.successful {
             __builtin_deinit(self.value);
         } else {
