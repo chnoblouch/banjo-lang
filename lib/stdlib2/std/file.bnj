@@ -2,7 +2,7 @@ use std.{
     platform,
     memory,
     path.Path,
-    io.{Reader, Writer, CFileReader, CFileWriter},
+    io.{Reader, Writer, CFileReader, CFileWriter, Error},
 };
 
 use c.lib.stdio.{fopen, fseek, ftell, fread, fclose, SEEK_END, SEEK_SET};
@@ -14,20 +14,6 @@ enum FileMode {
     READ_WRITE,
     READ_WRITE_ERASE,
     READ_APPEND
-}
-
-struct Error {
-	var handle: platform.Error;
-	
-	pub func last() -> Error {
-		return Error {
-			handle: platform.error_last(),
-		};
-	}
-	
-	pub func __str__(self) -> String {
-		return platform.error_to_string(self.handle);
-	}
 }
 
 struct File {
@@ -82,6 +68,22 @@ struct File {
         fread(data, 1, size, self.stream);
         
         return (data, size);
+    }
+
+    pub func read_as_string(self) -> String {
+        fseek(self.stream, 0, SEEK_END);
+        var size = ftell(self.stream) as usize;
+        fseek(self.stream, 0, SEEK_SET);
+        
+        var data = memory.alloc(size + 1) as *u8;
+        fread(data, 1, size, self.stream);
+        data[size] = '\0';
+
+        return String {
+            data,
+            length: size as u32,
+            capacity: size as u32 + 1,
+        };
     }
     
     func __deinit__(self) {

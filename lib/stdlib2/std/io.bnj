@@ -1,6 +1,20 @@
 use std.platform;
 use c.lib.stdio.{fread, ferror, fgetc, fputc, fwrite, fflush};
 
+struct Error {
+	var handle: platform.Error;
+	
+	pub func last() -> Error {
+		return Error {
+			handle: platform.error_last(),
+		};
+	}
+	
+	pub func __str__(self) -> String {
+		return platform.error_to_string(self.handle);
+	}
+}
+
 struct Reader[T] {
     var impl: T;
 

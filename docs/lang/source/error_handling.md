@@ -33,7 +33,7 @@ use std.file.File;
 
 func main() {
     try file in File.open("somefile.txt") {
-        println(file.read_str());
+        println(file.read_as_string());
     }
 }
 ```
@@ -45,7 +45,7 @@ use std.{file.File, io.Error};
 
 func main() {
     try file in File.open("somefile.txt") {
-        println(file.read_str());
+        println(file.read_as_string());
     } except error: Error {
         print("failed to open: ");
         println(error);
@@ -60,7 +60,7 @@ use std.file.File;
 
 func main() {
     try file in File.open("somefile.txt") {
-        println(file.read_str());
+        println(file.read_as_string());
     } else {
         println("failed to open");
     }
