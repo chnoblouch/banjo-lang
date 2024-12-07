@@ -50,6 +50,8 @@ void UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbo
 
 void UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol) {
     use_rebind.symbol = resolve_symbol(use_rebind.target_ident, symbol);
+    analyzer.add_symbol_use(use_rebind.target_ident.ast_node, symbol);
+    analyzer.add_symbol_use(use_rebind.local_ident.ast_node, symbol);
 }
 
 void UseResolver::resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol) {
