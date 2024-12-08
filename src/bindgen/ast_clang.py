@@ -129,10 +129,15 @@ class ASTConverter:
         name = cursor.spelling
         fields = []
 
-        for field in cursor.type.get_fields():
+        for i, field in enumerate(cursor.type.get_fields()):
             param_names = self.collect_param_names(field)
 
             field_name = field.spelling
+
+            # FIXME: Thie needs a better solution.
+            if "anonymous " in field_name:
+                field_name = f"field{i}"
+
             field_type = self.gen_type(field.type, param_names)
             fields.append(Field(field_name, field_type))
 
