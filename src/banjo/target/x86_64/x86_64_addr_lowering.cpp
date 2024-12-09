@@ -1,8 +1,8 @@
 #include "x86_64_addr_lowering.hpp"
 
 #include "banjo/config/config.hpp"
-#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 
 namespace banjo {
 
@@ -78,10 +78,17 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &
             mcode::Register offset_reg = lowerer.lower_reg(lowerer.get_func().next_virtual_reg());
             mcode::Register tmp_reg = lowerer.lower_reg(lowerer.get_func().next_virtual_reg());
 
-            lowerer.emit(mcode::Instruction(
-                X8664Opcode::MOV,
-                {mcode::Operand::from_register(tmp_reg, 8), mcode::Operand::from_register(addr.get_base(), 8)}
-            ));
+            if (addr.get_base().is_virtual_reg()) {
+                lowerer.emit(mcode::Instruction(
+                    X8664Opcode::MOV,
+                    {mcode::Operand::from_register(tmp_reg, 8), mcode::Operand::from_register(addr.get_base(), 8)}
+                ));
+            } else if (addr.get_base().is_stack_slot()) {
+                lowerer.emit(mcode::Instruction(
+                    X8664Opcode::LEA,
+                    {mcode::Operand::from_register(tmp_reg, 8), mcode::Operand::from_register(addr.get_base(), 8)}
+                ));
+            }
 
             lowerer.emit(mcode::Instruction(
                 X8664Opcode::MOV,

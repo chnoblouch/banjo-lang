@@ -1,0 +1,36 @@
+# test:common
+
+struct S {
+    var a: u64;
+    var b: u64;
+}
+
+# test:subtest
+# test:output "16,64"
+
+func main() {
+    var array: [S; 8];
+    
+    var index0 = 1;
+    print(&array[index0] as usize - &array as usize);
+    print(',');
+    
+    var index1 = 4;
+    print(&array[index1] as usize - &array as usize);
+}
+
+# test:subtest
+# test:output "16,64"
+
+use std.memory.alloc;
+
+func main() {
+    var array = alloc(128) as *S;
+    
+    var index0 = 1;
+    print(&array[index0] as usize - array as usize);
+    print(',');
+    
+    var index1 = 4;
+    print(&array[index1] as usize - array as usize);
+}
