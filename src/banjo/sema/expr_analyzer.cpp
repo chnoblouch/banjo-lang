@@ -14,6 +14,7 @@
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
+#include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -1097,6 +1098,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 
     if (!symbol) {
         analyzer.report_generator.report_err_symbol_not_found(ident_expr);
+        out_expr = sir::create_error_value(*analyzer.cur_sir_mod, ident_expr.ast_node);
         return Result::ERROR;
     }
 

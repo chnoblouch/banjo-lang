@@ -93,8 +93,8 @@ ReportText &ReportText::format(const std::vector<sir::GenericParam> &generic_par
 }
 
 std::string ReportText::to_string(const sir::Expr &expr) {
-    if (!expr) {
-        return "<null>";
+    if (!expr || expr.is<sir::Error>()) {
+        return "invalid";
     } else if (auto int_literal = expr.match<sir::IntLiteral>()) {
         return int_literal->value.to_string();
     } else if (auto fp_literal = expr.match<sir::FPLiteral>()) {

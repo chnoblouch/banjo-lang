@@ -59,6 +59,12 @@ sir::Expr create_unary_ref(sir::Module &mod, sir::Expr base_value) {
     });
 }
 
+sir::Expr create_error_value(sir::Module &mod, ASTNode *ast_node) {
+    return mod.create_expr(sir::Error{
+        .ast_node = ast_node,
+    });
+}
+
 } // namespace sir
 
 } // namespace lang

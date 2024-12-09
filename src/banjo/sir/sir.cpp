@@ -19,7 +19,7 @@ bool Expr::operator==(const Expr &other) const {
 
     SIR_VISIT_EXPR(
         *this,
-        SIR_VISIT_IMPOSSIBLE,                                     // empty
+        return true,                                              // empty
         return inner->value == other.as<sir::IntLiteral>().value, // int_literal
         SIR_VISIT_IMPOSSIBLE,                                     // fp_literal
         SIR_VISIT_IMPOSSIBLE,                                     // bool_literal
@@ -63,7 +63,7 @@ bool Expr::operator==(const Expr &other) const {
         SIR_VISIT_IMPOSSIBLE,                                     // init_expr
         SIR_VISIT_IMPOSSIBLE,                                     // move_expr
         SIR_VISIT_IMPOSSIBLE,                                     // deinit_expr
-        SIR_VISIT_IMPOSSIBLE                                      // error
+        return true                                               // error
     );
 }
 
@@ -118,7 +118,7 @@ Expr Expr::get_type() const {
         return inner->type,   // init_expr
         return inner->type,   // move_expr
         return inner->type,   // deinit_expr
-        SIR_VISIT_IMPOSSIBLE  // error
+        return nullptr        // error
     );
 }
 

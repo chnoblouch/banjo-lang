@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 7:12 "cannot find 'A'"
+# test:error 7:16 "cannot coerce int literal to type 'invalid'"
+# test:error 8:12 "cannot find 'B'"
+
+func main() {
+    var a: A = 0;
+    var b: B = a;
+}
+
+# test:subtest
+# test:error 15:13 "cannot coerce int literal to type 'bool'"
+# test:error 16:18 "type mismatch (expected 'i32', got 'invalid')"
+func main() {
+    var a = 5 + true;
+    var b: i32 = a;
+}
