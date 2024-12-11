@@ -214,8 +214,19 @@ Result ExprFinalizer::finalize_coercion(sir::ArrayLiteral &array_literal, sir::E
         array_literal.type = type;
         finalize_array_literal_elements(array_literal, static_array_type->base_type);
 
+        unsigned expected_length;
+        
+        if (auto int_literal = static_array_type->length.match<sir::IntLiteral>()) {
+            if (int_literal->value >= 0) {
+                expected_length = int_literal->value.to_u64();
+            } else {
+                return Result::ERROR;
+            }
+        } else {
+            return Result::ERROR;
+        }
+
         unsigned length = array_literal.values.size();
-        unsigned expected_length = static_array_type->length.as<sir::IntLiteral>().value.to_u64();
 
         if (length != expected_length) {
             analyzer.report_generator.report_err_unexpected_array_length(array_literal, expected_length);

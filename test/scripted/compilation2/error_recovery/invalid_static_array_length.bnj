@@ -1,0 +1,6 @@
+# test:subtest
+# test:error 5:18 "cannot find 'LENGTH'"
+
+func main() {
+    var a: [i32; LENGTH] = [0, 1, 2];
+}

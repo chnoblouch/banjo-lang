@@ -1,0 +1,10 @@
+# test:subtest
+# test:error 4:20 "static array length -2 is negative"
+
+const ARRAY: [i32; -2] = [];
+
+# test:subtest
+# test:error 10:20 "static array length -10 is negative"
+
+const LENGTH: i32 = -10;
+const ARRAY: [i32; LENGTH] = [];

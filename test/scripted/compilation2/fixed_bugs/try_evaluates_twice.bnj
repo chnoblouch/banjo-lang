@@ -1,0 +1,12 @@
+# test:output "g1"
+
+func get() -> i32 except bool {
+    print('g');
+    return 1;
+}
+
+func main() {
+    try value in get() {   
+        println(value);
+    }
+}

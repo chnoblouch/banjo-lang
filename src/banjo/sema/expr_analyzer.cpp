@@ -866,11 +866,29 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
 
     partial_result = ExprAnalyzer(analyzer).analyze(static_array_type.length);
     if (partial_result != Result::SUCCESS) {
-        result = Result::ERROR;
+        return Result::ERROR;
     }
 
-    static_array_type.length = ConstEvaluator(analyzer).evaluate(static_array_type.length);
+    sir::Expr length_evaluated = ConstEvaluator(analyzer, false).evaluate(static_array_type.length);
+    if (!length_evaluated) {
+        return Result::ERROR;
+    }
 
+    // TODO: Maybe only allow unsigned types as array lengths?
+    // This requires better literal coercion though, so int literals can be coerced to
+    // unsigned integers for array lengths.
+
+    if (auto int_literal = length_evaluated.match<sir::IntLiteral>()) {
+        if (int_literal->value < 0) {
+            analyzer.report_generator.report_err_negative_array_length(static_array_type.length, int_literal->value);
+            return Result::ERROR;
+        }
+    } else {
+        analyzer.report_generator.report_err_unexpected_array_length_type(static_array_type.length);
+        return Result::ERROR;
+    }
+
+    static_array_type.length = length_evaluated;
     return result;
 }
 
@@ -1192,19 +1210,9 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     const sir::Expr &lhs_type = bracket_expr.lhs.get_type();
 
     if (auto pointer_type = lhs_type.match<sir::PointerType>()) {
-        out_expr = analyzer.create_expr(sir::IndexExpr{
-            .ast_node = bracket_expr.ast_node,
-            .type = pointer_type->base_type,
-            .base = bracket_expr.lhs,
-            .index = create_isize_cast(bracket_expr.rhs[0]),
-        });
+        return analyze_index_expr(bracket_expr, pointer_type->base_type, out_expr);
     } else if (auto static_array_type = lhs_type.match<sir::StaticArrayType>()) {
-        out_expr = analyzer.create_expr(sir::IndexExpr{
-            .ast_node = bracket_expr.ast_node,
-            .type = static_array_type->base_type,
-            .base = bracket_expr.lhs,
-            .index = create_isize_cast(bracket_expr.rhs[0]),
-        });
+        return analyze_index_expr(bracket_expr, static_array_type->base_type, out_expr);
     } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
         // FIXME: error handling
         ASSERT(bracket_expr.rhs.size() == 1);
@@ -1232,8 +1240,6 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         analyzer.report_generator.report_err_expected_generic_or_indexable(bracket_expr.lhs);
         return Result::ERROR;
     }
-
-    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_completion_token() {
@@ -1412,6 +1418,25 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     } else {
         analyzer.report_generator.report_err_no_members(dot_expr);
     }
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr) {
+    if (bracket_expr.rhs.size() == 0) {
+        analyzer.report_generator.report_err_expected_index(bracket_expr);
+        return Result::ERROR;
+    } else if (bracket_expr.rhs.size() > 1) {
+        analyzer.report_generator.report_err_too_many_indices(bracket_expr);
+        return Result::ERROR;
+    }
+
+    out_expr = analyzer.create_expr(sir::IndexExpr{
+        .ast_node = bracket_expr.ast_node,
+        .type = base_type,
+        .base = bracket_expr.lhs,
+        .index = create_isize_cast(bracket_expr.rhs[0]),
+    });
 
     return Result::SUCCESS;
 }

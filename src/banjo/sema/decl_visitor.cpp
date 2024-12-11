@@ -1,6 +1,7 @@
 #include "decl_visitor.hpp"
 
 #include "banjo/sir/sir_visitor.hpp"
+#include <variant>
 
 namespace banjo {
 
@@ -26,6 +27,11 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
     unsigned num_decls = decl_block.decls.size();
 
     for (unsigned i = 0; i < num_decls; i++) {
+        // Stop here if a completion context has been filled it so we don't override it.
+        if (!std::holds_alternative<std::monostate>(analyzer.get_completion_context())) {
+            return;
+        }
+
         analyze_decl(decl_block.decls[i]);
     }
 }

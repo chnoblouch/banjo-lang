@@ -3,6 +3,7 @@
 #include "banjo/sema/const_evaluator.hpp"
 #include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/decl_interface_analyzer.hpp"
+#include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sir/sir.hpp"
@@ -52,6 +53,10 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
     sir::MetaIfStmt &meta_if_stmt = decl_block.decls[index].as<sir::MetaIfStmt>();
 
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
+        if (ExprAnalyzer(analyzer).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+            return;
+        }
+
         if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition)) {
             expand(decl_block, index, cond_branch.block);
             return;
@@ -81,6 +86,10 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
     sir::MetaIfStmt &meta_if_stmt = block.stmts[index].as<sir::MetaIfStmt>();
 
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
+        if (ExprAnalyzer(analyzer).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+            return;
+        }
+
         if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition)) {
             expand(block, index, cond_branch.block);
             return;
@@ -118,6 +127,10 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
 }
 
 Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::Expr> &out_values) {
+    if (ExprAnalyzer(analyzer).analyze_uncoerced(range) != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
     sir::Expr evaluated_range = ConstEvaluator(analyzer).evaluate(range);
 
     if (auto array_literal = evaluated_range.match<sir::ArrayLiteral>()) {

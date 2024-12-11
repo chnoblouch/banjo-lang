@@ -83,16 +83,20 @@ std::vector<lang::sir::Module *> Workspace::update(const std::filesystem::path &
     return mods_to_analyze;
 }
 
-CompletionInfo Workspace::run_completion(const File *file, TextPosition completion_point) {
+CompletionInfo Workspace::run_completion(
+    const File *file,
+    TextPosition completion_point,
+    lang::sir::Module &out_sir_mod
+) {
     ASTModule *mod = module_manager.load_for_completion(file->ast_module->get_path(), completion_point);
     assert(mod);
-    sir::Module sir_mod = SIRGenerator().generate(mod);
+    out_sir_mod = SIRGenerator().generate(mod);
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::COMPLETION);
-    analyzer.analyze(sir_mod);
+    analyzer.analyze(out_sir_mod);
 
     return CompletionInfo{
-        .sir_mod = std::move(sir_mod),
+        .sir_mod = std::move(out_sir_mod),
         .context = analyzer.get_completion_context(),
     };
 }

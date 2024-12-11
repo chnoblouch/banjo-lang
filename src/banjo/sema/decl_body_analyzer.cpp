@@ -4,6 +4,7 @@
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include "expr_finalizer.hpp"
 
 namespace banjo {
 
@@ -80,7 +81,7 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Proto
     }
 }
 
-Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
+Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*out_decl*/) {
     Result partial_result;
 
     if (!var_decl.type) {
@@ -88,26 +89,37 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out
     }
 
     if (var_decl.value) {
-        partial_result = ExprAnalyzer(analyzer).analyze(var_decl.value, ExprConstraints::expect_type(var_decl.type));
-
+        partial_result = ExprAnalyzer(analyzer).analyze_uncoerced(var_decl.value);
         if (partial_result != Result::SUCCESS) {
             return Result::ERROR;
         }
 
         var_decl.value = ConstEvaluator(analyzer, false).evaluate(var_decl.value);
+
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(var_decl.value, var_decl.type);
+        if (partial_result != Result::SUCCESS) {
+            return Result::SUCCESS;
+        }
     }
 
     return Result::SUCCESS;
 }
 
 Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
+    Result partial_result;
+
     LargeInt next_value = 0;
 
     for (sir::EnumVariant *variant : enum_def.variants) {
         if (variant->value) {
+            partial_result = ExprAnalyzer(analyzer).analyze_uncoerced(variant->value);
+            if (partial_result != Result::SUCCESS) {
+                continue;
+            }
+
             variant->value = ConstEvaluator(analyzer, false).evaluate(variant->value);
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
-            ExprAnalyzer(analyzer).analyze(variant->value);
+            ExprFinalizer(analyzer).finalize(variant->value);
         } else {
             variant->value = analyzer.create_expr(sir::IntLiteral{
                 .ast_node = nullptr,

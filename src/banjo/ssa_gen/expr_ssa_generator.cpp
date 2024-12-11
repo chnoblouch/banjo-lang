@@ -85,7 +85,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
-        return generate_deinit_expr(*inner, hints),        // deinit_expr
+        return generate_deinit_expr(*inner),               // deinit_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
 }
@@ -613,9 +613,8 @@ StoredValue ExprSSAGenerator::generate_move_expr(const sir::MoveExpr &move_expr,
     return generate(move_expr.value, hints);
 }
 
-StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit_expr, StorageHints hints) {
-    hints.is_prefer_reference = true;
-    StoredValue ssa_val = generate(deinit_expr.value, hints).turn_into_reference(ctx);
+StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit_expr) {
+    StoredValue ssa_val = generate_as_reference(deinit_expr.value);
 
     ctx.get_func_context().cur_deferred_deinits.push_back({
         .resource = deinit_expr.resource,

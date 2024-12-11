@@ -22,7 +22,7 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
         return generate_static_array_type(*inner),
         return generate_func_type(),
         return generate_closure_type(*inner),
-        return ssa::Primitive::VOID
+        SIR_VISIT_IMPOSSIBLE
     );
 }
 

@@ -1,0 +1,9 @@
+# test:subtest
+# test:error 4:20 "expected integer type, got 'bool'"
+
+const ARRAY: [i32; true] = [5, 10, 15];
+
+# test:subtest
+# test:error 9:20 "expected integer type, got 'addr'"
+
+const ARRAY: [i32; null] = [5, 10, 15];

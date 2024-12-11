@@ -1,0 +1,18 @@
+# test:output "ok"
+
+struct Resource {
+    pub func new() -> Resource {
+        return Resource {};
+    }
+
+    func __deinit__(self) {}
+}
+
+func test() {
+    Resource.new();
+}
+
+func main() {
+    test();
+    print("ok");
+}

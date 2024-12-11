@@ -52,6 +52,10 @@ ReportText &ReportText::format(unsigned long long integer) {
     return format(std::to_string(integer));
 }
 
+ReportText &ReportText::format(LargeInt integer) {
+    return format(integer.to_string());
+}
+
 ReportText &ReportText::format(ASTNode *node) {
     return format(node->get_value());
 }
@@ -119,7 +123,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
     } else if (auto pointer_type = expr.match<sir::PointerType>()) {
         return "*" + to_string(pointer_type->base_type);
     } else if (auto static_array_type = expr.match<sir::StaticArrayType>()) {
-        return "[" + to_string(static_array_type->base_type) + "; " + std::to_string(static_array_type->length) + "]";
+        return "[" + to_string(static_array_type->base_type) + "; " + to_string(static_array_type->length) + "]";
     } else if (auto func_type = expr.match<sir::FuncType>()) {
         std::string params_str = "";
 

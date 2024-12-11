@@ -308,6 +308,14 @@ void ReportGenerator::report_err_no_matching_overload(const sir::Expr &expr, sir
     builder.report();
 }
 
+void ReportGenerator::report_err_unexpected_array_length_type(const sir::Expr &expr) {
+    report_error("expected integer type, got '$'", expr.get_ast_node(), expr.get_type());
+}
+
+void ReportGenerator::report_err_negative_array_length(const sir::Expr &expr, LargeInt value) {
+    report_error("static array length $ is negative", expr.get_ast_node(), value);
+}
+
 void ReportGenerator::report_err_unexpected_array_length(
     const sir::ArrayLiteral &array_literal,
     unsigned expected_count
@@ -321,6 +329,15 @@ void ReportGenerator::report_err_unexpected_array_length(
     }
 
     report_error(format_str, array_literal.ast_node, expected_count, array_literal.values.size());
+}
+
+void ReportGenerator::report_err_expected_index(const sir::BracketExpr &bracket_expr) {
+    // TODO: Range could be just brackets...
+    report_error("expected an index", bracket_expr.ast_node);
+}
+
+void ReportGenerator::report_err_too_many_indices(const sir::BracketExpr &bracket_expr) {
+    report_error("expected just one index, got $", bracket_expr.ast_node, bracket_expr.rhs.size());
 }
 
 void ReportGenerator::report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::FuncDef &func_def) {

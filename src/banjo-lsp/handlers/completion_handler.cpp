@@ -35,7 +35,8 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     int column = lsp_position.get_int("character");
     TextPosition position = ASTNavigation::pos_from_lsp(file->content, line, column);
 
-    CompletionInfo completion_info = workspace.run_completion(file, position);
+    sir::Module sir_mod;
+    CompletionInfo completion_info = workspace.run_completion(file, position, sir_mod);
     JSONArray items;
 
     if (auto in_decl_block = std::get_if<sema::CompleteInDeclBlock>(&completion_info.context)) {

@@ -30,6 +30,7 @@ public:
     ReportText &format(unsigned long integer);
     ReportText &format(long long integer);
     ReportText &format(unsigned long long integer);
+    ReportText &format(LargeInt integer);
     ReportText &format(ASTNode *node);
     ReportText &format(const ModulePath &path);
     ReportText &format(sir::Expr &expr);

@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 8:5 "expected an index"
+
+use std.memory;
+
+func main() {
+    var pointer = memory.alloc(32) as *i32;
+    pointer[] = 10;
+}
+
+# test:subtest
+# test:error 16:13 "expected an index"
+
+func main() {
+    var array: [i32; 3] = [1, 2, 3];
+    var a = array[];
+}

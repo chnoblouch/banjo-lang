@@ -963,11 +963,11 @@ void Printer::print_pseudo_type(const PseudoType &pseudo_type) {
     BEGIN_OBJECT("PseudoType");
 
     switch (pseudo_type.kind) {
-        case PseudoTypeKind::INT_LITERAL: PRINT_FIELD("kind", "INT_LITERAL");
-        case PseudoTypeKind::FP_LITERAL: PRINT_FIELD("kind", "FP_LITERAL");
-        case PseudoTypeKind::STRING_LITERAL: PRINT_FIELD("kind", "STRING_LITERAL");
-        case PseudoTypeKind::ARRAY_LITERAL: PRINT_FIELD("kind", "ARRAY_LITERAL");
-        case PseudoTypeKind::MAP_LITERAL: PRINT_FIELD("kind", "MAP_LITERAL");
+        case PseudoTypeKind::INT_LITERAL: PRINT_FIELD("kind", "INT_LITERAL"); break;
+        case PseudoTypeKind::FP_LITERAL: PRINT_FIELD("kind", "FP_LITERAL"); break;
+        case PseudoTypeKind::STRING_LITERAL: PRINT_FIELD("kind", "STRING_LITERAL"); break;
+        case PseudoTypeKind::ARRAY_LITERAL: PRINT_FIELD("kind", "ARRAY_LITERAL"); break;
+        case PseudoTypeKind::MAP_LITERAL: PRINT_FIELD("kind", "MAP_LITERAL"); break;
     }
 
     END_OBJECT();
@@ -1011,6 +1011,8 @@ void Printer::print_deinit_expr(const DeinitExpr &deinit_expr) {
     BEGIN_OBJECT("DeinitExpr");
     PRINT_EXPR_FIELD("type", deinit_expr.type);
     PRINT_EXPR_FIELD("value", deinit_expr.value);
+    PRINT_FIELD_NAME("resource");
+    print_resource(*deinit_expr.resource, false);
     END_OBJECT();
 }
 
@@ -1092,6 +1094,7 @@ void Printer::print_meta_block(const MetaBlock &meta_block) {
 
 void Printer::print_resource(const Resource &resource, bool is_sub_resource) {
     BEGIN_OBJECT("Resource");
+    PRINT_EXPR_FIELD("type", resource.type);
     PRINT_FIELD("has_deinit", resource.has_deinit ? "true" : "false");
 
     switch (resource.ownership) {

@@ -1,0 +1,11 @@
+# test:output "01234"
+
+const LENGTH: u32 = 5;
+
+func main() {
+    var array: [i32; LENGTH];
+    
+    for i in 0..LENGTH {
+        print(i);
+    }
+}

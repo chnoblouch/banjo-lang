@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 8:5 "expected just one index, got 2"
+
+use std.memory;
+
+func main() {
+    var pointer = memory.alloc(32) as *i32;
+    pointer[1, 2] = 10;
+}
+
+# test:subtest
+# test:error 16:13 "expected just one index, got 3"
+
+func main() {
+    var array: [i32; 3] = [1, 2, 3];
+    var a = array[1, 2, 3];
+}

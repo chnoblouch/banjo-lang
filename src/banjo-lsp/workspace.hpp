@@ -57,7 +57,12 @@ public:
 
     std::vector<lang::sir::Module *> initialize();
     std::vector<lang::sir::Module *> update(const std::filesystem::path &fs_path, std::string new_content);
-    CompletionInfo run_completion(const File *file, lang::TextPosition completion_point);
+
+    CompletionInfo run_completion(
+        const File *file,
+        lang::TextPosition completion_point,
+        lang::sir::Module &out_sir_mod
+    );
 
     File *find_file(const std::filesystem::path &fs_path);
     File *find_file(const lang::ModulePath &mod_path);

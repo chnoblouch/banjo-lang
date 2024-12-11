@@ -60,7 +60,7 @@ private:
     StoredValue generate_coercion_expr(const sir::CoercionExpr &coercion_expr, const StorageHints &hints);
     StoredValue generate_init_expr(const sir::InitExpr &init_expr, const StorageHints &hints);
     StoredValue generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints);
-    StoredValue generate_deinit_expr(const sir::DeinitExpr &deinit_expr, StorageHints hints);
+    StoredValue generate_deinit_expr(const sir::DeinitExpr &deinit_expr);
 
     ssa::VirtualRegister generate_pointer_expr(
         sir::BinaryOp op,
