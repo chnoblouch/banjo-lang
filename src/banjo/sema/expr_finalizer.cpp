@@ -21,7 +21,7 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
 
     sir::Expr type = expr.get_type();
 
-    if (expected_type.is_primitive_type(sir::Primitive::ADDR) && type.is<sir::PointerType>()) {
+    if (expected_type.is_primitive_type(sir::Primitive::ADDR) && type.is_addr_like_type()) {
         expr = analyzer.create_expr(sir::CoercionExpr{
             .ast_node = expr.get_ast_node(),
             .type = expected_type,
@@ -215,7 +215,7 @@ Result ExprFinalizer::finalize_coercion(sir::ArrayLiteral &array_literal, sir::E
         finalize_array_literal_elements(array_literal, static_array_type->base_type);
 
         unsigned expected_length;
-        
+
         if (auto int_literal = static_array_type->length.match<sir::IntLiteral>()) {
             if (int_literal->value >= 0) {
                 expected_length = int_literal->value.to_u64();
