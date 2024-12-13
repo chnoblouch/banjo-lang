@@ -41,6 +41,10 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         stream.consume(); // Consume ';'
         return {node.build(AST_FUNC_DECL), head_valid};
     } else if (!stream.get()->is(TKN_LBRACE)) {
+        if (stream.previous()->end_of_line) {
+            return {node.build(AST_FUNC_DECL), head_valid};
+        }
+
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'{'");
 
         node.append_child(parser.create_dummy_block());
@@ -71,14 +75,7 @@ ParseResult DeclParser::parse_const() {
     stream.consume(); // Consume '='
     node.append_child(parser.parse_expression());
 
-    if (stream.get()->is(TKN_SEMI)) {
-        stream.consume(); // Consume ';'
-    } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_SEMI);
-        return node.build_error();
-    }
-
-    return node.build(AST_CONSTANT);
+    return parser.check_stmt_terminator(node.build(AST_CONSTANT));
 }
 
 ParseResult DeclParser::parse_struct() {
@@ -201,13 +198,7 @@ ParseResult DeclParser::parse_union_case() {
         return node.build(AST_UNION_CASE);
     }
 
-    if (stream.get()->is(TKN_SEMI)) {
-        stream.consume(); // Consume ';'
-    } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "';'");
-    }
-
-    return node.build(AST_UNION_CASE);
+    return parser.check_stmt_terminator(node.build(AST_UNION_CASE));
 }
 
 ParseResult DeclParser::parse_proto() {
@@ -253,13 +244,7 @@ ParseResult DeclParser::parse_type_alias() {
         return node.build_error();
     }
 
-    if (stream.get()->is(TKN_SEMI)) {
-        stream.consume(); // Consume ';'
-    } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_SEMI);
-    }
-
-    return node.build(AST_TYPE_ALIAS);
+    return parser.check_stmt_terminator(node.build(AST_TYPE_ALIAS));
 }
 
 ParseResult DeclParser::parse_use() {
@@ -273,7 +258,7 @@ ParseResult DeclParser::parse_use() {
         return {node.build(AST_USE), false};
     }
 
-    return parser.check_semi(node.build(AST_USE));
+    return parser.check_stmt_terminator(node.build(AST_USE));
 }
 
 ParseResult DeclParser::parse_use_tree() {
@@ -369,14 +354,7 @@ ParseResult DeclParser::parse_native_var() {
     node.append_child(identifier);
     node.append_child(data_type);
 
-    if (stream.get()->is(TKN_SEMI)) {
-        stream.consume(); // Consume ';'
-    } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_SEMI);
-        return node.build_error();
-    }
-
-    return node.build(AST_NATIVE_VAR);
+    return parser.check_stmt_terminator(node.build(AST_NATIVE_VAR));
 }
 
 ParseResult DeclParser::parse_native_func() {
@@ -405,8 +383,7 @@ ParseResult DeclParser::parse_native_func() {
         return node.build_error();
     }
 
-    stream.consume(); // Consume ';'
-    return node.build(AST_NATIVE_FUNCTION_DECLARATION);
+    return parser.check_stmt_terminator(node.build(AST_NATIVE_FUNCTION_DECLARATION));
 }
 
 ParseResult DeclParser::parse_pub() {
@@ -468,7 +445,7 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
         if (!result.is_valid) {
             return false;
         }
-    } else if (stream.get()->is(TKN_LBRACE) || stream.get()->is(TKN_SEMI)) {
+    } else if (stream.get()->is(TKN_LBRACE) || stream.get()->is(TKN_SEMI) || stream.previous()->end_of_line) {
         node.append_child(new ASTNode(AST_VOID));
     } else {
         parser.report_unexpected_token();

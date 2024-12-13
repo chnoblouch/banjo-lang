@@ -46,7 +46,7 @@ mcode::Operand X8664AddrLowering::lower_vreg_addr(mcode::Register reg) {
 
 mcode::Operand X8664AddrLowering::lower_symbol_addr(const ssa::Operand &operand) {
     mcode::Relocation reloc = mcode::Relocation::NONE;
-    if (lang::Config::instance().is_pic() && lowerer.get_target()->get_descr().is_unix()) {
+    if (lang::Config::instance().pic && lowerer.get_target()->get_descr().is_unix()) {
         if (operand.is_extern_func()) reloc = mcode::Relocation::PLT;
         else if (operand.is_extern_global()) reloc = mcode::Relocation::GOT;
     }

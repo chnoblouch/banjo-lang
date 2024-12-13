@@ -33,7 +33,7 @@ Token *TokenStream::peek(std::vector<Token>::size_type offset) {
 }
 
 Token *TokenStream::previous() {
-    return position > 0 ? &tokens[position - 1] : nullptr;
+    return position > 0 ? &tokens[position - 1] : &eof_token;
 }
 
 void TokenStream::seek(std::vector<Token>::size_type position) {

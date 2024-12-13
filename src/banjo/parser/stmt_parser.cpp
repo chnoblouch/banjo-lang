@@ -26,7 +26,7 @@ ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
         return {node, false};
     }
 
-    return parser.check_semi(node);
+    return parser.check_stmt_terminator(node);
 }
 
 ParseResult StmtParser::parse_var() {
@@ -76,7 +76,7 @@ ParseResult StmtParser::parse_var_with_type(NodeBuilder &node) {
         parser.current_attr_list = nullptr;
     }
 
-    return parser.check_semi(node.build(AST_VAR));
+    return parser.check_stmt_terminator(node.build(AST_VAR));
 }
 
 ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
@@ -94,7 +94,7 @@ ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
         parser.current_attr_list = nullptr;
     }
 
-    return parser.check_semi(node.build(AST_IMPLICIT_TYPE_VAR));
+    return parser.check_stmt_terminator(node.build(AST_IMPLICIT_TYPE_VAR));
 }
 
 ParseResult StmtParser::parse_if_chain() {
@@ -306,19 +306,19 @@ ParseResult StmtParser::parse_for() {
 
 ParseResult StmtParser::parse_break() {
     TextRange range = stream.consume()->get_range();
-    return parser.check_semi(new ASTNode(AST_BREAK, range));
+    return parser.check_stmt_terminator(new ASTNode(AST_BREAK, range));
 }
 
 ParseResult StmtParser::parse_continue() {
     TextRange range = stream.consume()->get_range();
-    return parser.check_semi(new ASTNode(AST_CONTINUE, range));
+    return parser.check_stmt_terminator(new ASTNode(AST_CONTINUE, range));
 }
 
 ParseResult StmtParser::parse_return() {
     NodeBuilder builder = parser.new_node();
     stream.consume(); // Consume 'return'
 
-    if (!stream.get()->is(TKN_SEMI)) {
+    if (!stream.get()->is(TKN_SEMI) && !stream.previous()->end_of_line) {
         ParseResult result = ExprParser(parser, true).parse();
         builder.append_child(result.node);
 
@@ -327,7 +327,7 @@ ParseResult StmtParser::parse_return() {
         }
     }
 
-    return parser.check_semi(builder.build(AST_FUNCTION_RETURN));
+    return parser.check_stmt_terminator(builder.build(AST_FUNCTION_RETURN));
 }
 
 ParseResult StmtParser::parse_meta_stmt() {

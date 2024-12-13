@@ -1,17 +1,17 @@
 #include "compiler.hpp"
 
 #include "banjo/ast/ast_writer.hpp"
-#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/machine_pass_runner.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/config/config.hpp"
-#include "banjo/ssa/module.hpp"
-#include "banjo/ssa/writer.hpp"
 #include "banjo/passes/pass_runner.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
 #include "banjo/sir/sir_printer.hpp"
 #include "banjo/sir/test_driver_generator.hpp"
+#include "banjo/ssa/module.hpp"
+#include "banjo/ssa/writer.hpp"
 #include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -29,7 +29,7 @@ Compiler::Compiler(const Config &config)
     report_printer(module_manager) {}
 
 void Compiler::compile() {
-    if (config.is_debug() && !std::filesystem::is_directory("logs")) {
+    if (config.debug && !std::filesystem::is_directory("logs")) {
         std::filesystem::create_directories("logs");
     }
 
@@ -56,19 +56,19 @@ ssa::Module Compiler::run_frontend() {
     module_manager.add_config_search_paths(config);
     module_manager.load_all();
 
-    if (config.is_debug()) {
+    if (config.debug) {
         std::ofstream stream("logs/ast.bnj-tree");
         ASTWriter(stream).write_all(module_manager.get_module_list());
     }
 
     sir::Unit sir_unit = SIRGenerator().generate(module_manager.get_module_list());
-    if (config.is_debug()) {
+    if (config.debug) {
         std::ofstream sir_file_generated("logs/sir.generated.txt");
         sir::Printer(sir_file_generated).print(sir_unit);
     }
 
     sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
-    if (config.is_debug()) {
+    if (config.debug) {
         std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
         sir::Printer(sir_file_analyzed).print(sir_unit);
     }
@@ -87,7 +87,7 @@ ssa::Module Compiler::run_frontend() {
 
     ssa::Module ssa_module = SSAGenerator(sir_unit, target).generate();
 
-    if (config.is_debug()) {
+    if (config.debug) {
         std::ofstream stream("logs/ssa.input.cryoir");
         ssa::Writer(stream).write(ssa_module);
     }
@@ -101,9 +101,9 @@ void Compiler::run_middleend(ssa::Module &ir_module) {
     PROFILE_SECTION("OPTIMIZATION");
 
     passes::PassRunner pass_runner;
-    pass_runner.set_opt_level(config.get_opt_level());
-    pass_runner.set_generate_addr_table(config.is_hot_reload());
-    pass_runner.set_debug(config.is_debug());
+    pass_runner.set_opt_level(config.opt_level);
+    pass_runner.set_generate_addr_table(config.hot_reload);
+    pass_runner.set_debug(config.debug);
     pass_runner.run(ir_module, target);
 }
 

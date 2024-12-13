@@ -1,17 +1,18 @@
 #include "lexer.hpp"
 
+#include "banjo/config/config.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <iostream>
+#include <map>
 #include <string_view>
-#include <unordered_map>
 
 namespace banjo {
 
 namespace lang {
 
-const std::unordered_map<std::string_view, TokenType> KEYWORDS{
+const std::map<std::string_view, TokenType> KEYWORDS{
     {"var", TKN_VAR},       {"const", TKN_CONST},   {"func", TKN_FUNC},     {"i8", TKN_I8},
     {"i16", TKN_I16},       {"i32", TKN_I32},       {"i64", TKN_I64},       {"u8", TKN_U8},
     {"u16", TKN_U16},       {"u32", TKN_U32},       {"u64", TKN_U64},       {"f32", TKN_F32},
@@ -45,19 +46,26 @@ std::vector<Token> Lexer::tokenize() {
         try_insert_completion_token();
     }
 
+    finish_line();
     return tokens;
 }
 
 void Lexer::read_token() {
     char c = reader.get();
 
-    if (is_whitespace_char(c)) read_whitespace();
+    if (c == '\n') read_newline();
+    else if (is_whitespace_char(c)) read_whitespace();
     else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') read_identifier();
     else if (c >= '0' && c <= '9') read_number();
     else if (c == '\'') read_character();
     else if (c == '\"') read_string();
     else if (c == '#') skip_comment();
     else read_punctuation();
+}
+
+void Lexer::read_newline() {
+    reader.consume();
+    finish_line();
 }
 
 void Lexer::read_whitespace() {
@@ -199,6 +207,12 @@ void Lexer::finish_token(TokenType type) {
     token_builder.clear();
 }
 
+void Lexer::finish_line() {
+    if (Config::instance().optional_semicolons && !tokens.empty()) {
+        tokens.back().end_of_line = true;
+    }
+}
+
 void Lexer::try_insert_completion_token() {
     if (completion_enabled && !completion_token_inserted && reader.get_position() >= completion_point) {
         // Delete the previous token if it's an identifier and if the completion point is at its end
@@ -215,7 +229,7 @@ void Lexer::try_insert_completion_token() {
 }
 
 bool Lexer::is_whitespace_char(char c) {
-    return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+    return c == ' ' || c == '\r' || c == '\t';
 }
 
 bool Lexer::is_identifier_char(char c) {

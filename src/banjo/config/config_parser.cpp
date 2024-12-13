@@ -9,6 +9,7 @@ static const std::string ARG_ARCH = "arch";
 static const std::string ARG_OS = "os";
 static const std::string ARG_ENV = "env";
 static const std::string ARG_TYPE = "type";
+static const std::string ARG_OPTIONAL_SEMICOLONS = "optional-semicolons";
 static const std::string ARG_OPT_LEVEL = "opt-level";
 static const std::string ARG_NO_COLOR = "no-color";
 static const std::string ARG_PIC = "pic";
@@ -25,6 +26,7 @@ ConfigParser::ConfigParser() {
         .add_value(ARG_OS, "windows")
         .add_value(ARG_ENV, "msvc")
         .add_value(ARG_TYPE, "executable")
+        .add_flag(ARG_OPTIONAL_SEMICOLONS)
         .add_value(ARG_OPT_LEVEL, "0")
         .add_flag(ARG_NO_COLOR)
         .add_flag(ARG_PIC)
@@ -45,14 +47,15 @@ Config ConfigParser::parse(int argc, char **argv) {
 Config ConfigParser::create_config(const ParsedArgs &args) {
     Config config;
     config.target = create_target(args);
-    config.set_opt_level(std::stoi(args.values.at(ARG_OPT_LEVEL)));
+    config.optional_semicolons = args.flags.at(ARG_OPTIONAL_SEMICOLONS);
+    config.opt_level = std::stoi(args.values.at(ARG_OPT_LEVEL));
     config.color_diagnostics = !args.flags.at(ARG_NO_COLOR);
-    config.set_pic(args.flags.at(ARG_PIC));
-    config.set_hot_reload(args.flags.at(ARG_HOT_RELOAD));
+    config.pic = args.flags.at(ARG_PIC);
+    config.hot_reload = args.flags.at(ARG_HOT_RELOAD);
     config.testing = args.flags.at(ARG_TESTING);
-    config.set_force_asm(args.flags.at(ARG_FORCE_ASM));
+    config.force_asm = args.flags.at(ARG_FORCE_ASM);
     config.disable_std = args.flags.at(ARG_DISABLE_STD);
-    config.set_debug(args.flags.at(ARG_DEBUG));
+    config.debug = args.flags.at(ARG_DEBUG);
 
     const std::string &code_model = args.values.at(ARG_CODE_MODEL);
     if (code_model == "small") config.code_model = {target::CodeModel::SMALL};

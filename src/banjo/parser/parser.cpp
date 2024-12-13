@@ -153,7 +153,7 @@ ParseResult Parser::parse_expr_or_assign() {
         case TKN_CARET_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_XOR_ASSIGN);
         case TKN_SHL_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHL_ASSIGN);
         case TKN_SHR_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHR_ASSIGN);
-        default: return check_semi(result.node);
+        default: return check_stmt_terminator(result.node);
     }
 }
 
@@ -282,9 +282,11 @@ ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
     });
 }
 
-ParseResult Parser::check_semi(ASTNode *node) {
+ParseResult Parser::check_stmt_terminator(ASTNode *node) {
     if (stream.get()->is(TKN_SEMI)) {
-        stream.consume(); // Consume ';'
+        stream.consume();
+        return {node, true};
+    } else if (stream.previous()->end_of_line) {
         return {node, true};
     } else {
         report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);

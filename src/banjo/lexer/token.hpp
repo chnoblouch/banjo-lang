@@ -112,10 +112,11 @@ enum TokenType {
 
 class Token {
 
-private:
+public:
     TokenType type;
     std::string value;
     TextPosition position;
+    bool end_of_line = false;
 
 public:
     Token(TokenType type, std::string value, TextPosition position)

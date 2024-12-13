@@ -16,7 +16,7 @@ StdConfigModule::StdConfigModule() : ASTModule({"std", "config"}), config(Config
 
     add_const_u32("DEBUG", BUILD_CONFIG_DEBUG);
     add_const_u32("RELEASE", BUILD_CONFIG_RELEASE);
-    add_const_u32("BUILD_CONFIG", config.get_opt_level() == 0 ? BUILD_CONFIG_DEBUG : BUILD_CONFIG_RELEASE);
+    add_const_u32("BUILD_CONFIG", config.opt_level == 0 ? BUILD_CONFIG_DEBUG : BUILD_CONFIG_RELEASE);
 
     add_const_u32("X86_64", X86_64);
     add_const_u32("AARCH64", AARCH64);

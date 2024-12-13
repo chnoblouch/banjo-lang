@@ -32,6 +32,7 @@ public:
 
 private:
     void read_token();
+    void read_newline();
     void read_whitespace();
     void read_identifier();
     void read_number();
@@ -41,6 +42,7 @@ private:
     void read_punctuation();
 
     void finish_token(TokenType type);
+    void finish_line();
     void try_insert_completion_token();
 
     bool is_whitespace_char(char c);

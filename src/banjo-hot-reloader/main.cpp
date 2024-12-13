@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
-    lang::Config::instance().set_hot_reload(true);
+    lang::Config::instance().hot_reload = true;
 
     lang::ArgumentParser arg_parser;
     arg_parser.add_value("executable", "");

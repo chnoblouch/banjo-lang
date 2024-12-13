@@ -13,7 +13,6 @@
 #include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
 
-
 #include <algorithm>
 #include <string>
 
@@ -100,7 +99,7 @@ mcode::Operand X8664SSALowerer::lower_value(const ssa::Operand& operand) {
         const std::string &symbol_name = operand.get_symbol_name();
 
         mcode::Relocation reloc = mcode::Relocation::NONE;
-        if (lang::Config::instance().is_pic() && target->get_descr().is_unix()) {
+        if (lang::Config::instance().pic && target->get_descr().is_unix()) {
             if (operand.is_extern_func()) reloc = mcode::Relocation::PLT;
             else if (operand.is_extern_global()) reloc = mcode::Relocation::GOT;
             else ASSERT_UNREACHABLE;

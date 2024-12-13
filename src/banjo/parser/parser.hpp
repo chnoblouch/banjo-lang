@@ -78,7 +78,7 @@ private:
     );
 
     ParseResult parse_param_list(TokenType terminator = TKN_RPAREN);
-    ParseResult check_semi(ASTNode *node);
+    ParseResult check_stmt_terminator(ASTNode *node);
 
     NodeBuilder new_node();
     Report &register_error(TextRange range);

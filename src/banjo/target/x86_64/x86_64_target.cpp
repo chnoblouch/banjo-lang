@@ -5,8 +5,8 @@
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/emit/pe/pe_emitter.hpp"
 #include "banjo/target/target_description.hpp"
-#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_peephole_opt_pass.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 
 namespace banjo {
 
@@ -27,7 +27,7 @@ std::vector<codegen::MachinePass *> X8664Target::create_post_passes() {
 }
 
 std::string X8664Target::get_output_file_ext() {
-    if (lang::Config::instance().is_force_asm()) {
+    if (lang::Config::instance().force_asm) {
         return "asm";
     }
 
@@ -41,7 +41,7 @@ std::string X8664Target::get_output_file_ext() {
 }
 
 codegen::Emitter *X8664Target::create_emitter(mcode::Module &module, std::ostream &stream) {
-    if (lang::Config::instance().is_force_asm()) {
+    if (lang::Config::instance().force_asm) {
         return new codegen::NASMEmitter(module, stream, descr);
     }
 
