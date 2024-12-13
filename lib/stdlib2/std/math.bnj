@@ -2,6 +2,14 @@ use c.lib.math as cmath;
 
 const PI32: f32 = 3.14159;
 
+pub func abs(x: f64) -> f64 {
+	if x >= 0.0 {
+		return x;
+	} else {
+		return -x;
+	}
+}
+
 pub func sqrt(x: f64) -> f64 {
     return cmath.sqrt(x);
 }
@@ -18,6 +26,30 @@ pub func tan(x: f64) -> f64 {
 	return cmath.tan(x);
 }
 
+pub func asin(x: f64) -> f64 {
+	return cmath.asin(x);
+}
+
+pub func acos(x: f64) -> f64 {
+	return cmath.acos(x);
+}
+
+pub func atan(x: f64) -> f64 {
+	return cmath.atan(x);
+}
+
+pub func atan2(y: f64, x: f64) -> f64 {
+	return cmath.atan2(y, x);
+}
+
+pub func abs(x: f32) -> f32 {
+	if x >= 0.0 {
+		return x;
+	} else {
+		return -x;
+	}
+}
+
 pub func sqrt(x: f32) -> f32 {
     return cmath.sqrtf(x);
 }
@@ -32,6 +64,22 @@ pub func cos(x: f32) -> f32 {
 
 pub func tan(x: f32) -> f32 {
 	return cmath.tanf(x);
+}
+
+pub func asin(x: f32) -> f32 {
+	return cmath.asinf(x);
+}
+
+pub func acos(x: f32) -> f32 {
+	return cmath.acosf(x);
+}
+
+pub func atan(x: f32) -> f32 {
+	return cmath.atanf(x);
+}
+
+pub func atan2(y: f32, x: f32) -> f32 {
+	return cmath.atan2f(y, x);
 }
 
 pub func deg2rad(deg: f32) -> f32 {
