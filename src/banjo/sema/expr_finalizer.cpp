@@ -166,10 +166,10 @@ Result ExprFinalizer::coerce_to_std_result(sir::Expr &inout_expr, sir::Specializ
     } else if (type == specialization.args[1]) {
         create_std_result_failure(specialization, inout_expr);
         return Result::SUCCESS;
+    } else {
+        analyzer.report_generator.report_err_cannot_coerce_result(inout_expr, specialization);
+        return Result::ERROR;
     }
-
-    // FIXME: error handling
-    ASSERT_UNREACHABLE;
 }
 
 Result ExprFinalizer::finalize_coercion(sir::IntLiteral &int_literal, sir::Expr type) {

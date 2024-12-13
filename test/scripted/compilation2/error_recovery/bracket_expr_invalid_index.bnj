@@ -1,0 +1,12 @@
+# test:subtest
+# test:error 6:12 "cannot find 'test'"
+
+func main() {
+    var array: [i32; 3] = [0, 1, 2];
+    array[*test] = 10;
+}
+
+# test:subtest
+# test:error 12:20 "cannot find 'test'"
+
+type T = Optional[*test];

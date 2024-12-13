@@ -17,8 +17,8 @@
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
-#include <cassert>
 #include <vector>
 
 namespace banjo {
@@ -89,7 +89,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_map_type(*inner, expr),                     // map_type
         result = analyze_closure_type(*inner),                       // closure_type
         result = analyze_ident_expr(*inner, expr),                   // ident_expr
-        analyze_star_expr(*inner, expr),                             // star_expr
+        result = analyze_star_expr(*inner, expr),                    // star_expr
         result = analyze_bracket_expr(*inner, expr),                 // bracket_expr
         result = analyze_dot_expr(*inner, expr),                     // dot_expr
         SIR_VISIT_IMPOSSIBLE,                                        // pseudo_tpe
@@ -458,30 +458,53 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         binary_expr.lhs = create_isize_cast(binary_expr.lhs);
     }
 
-    switch (binary_expr.op) {
-        case sir::BinaryOp::ADD:
-        case sir::BinaryOp::SUB:
-        case sir::BinaryOp::MUL:
-        case sir::BinaryOp::DIV:
-        case sir::BinaryOp::MOD:
-        case sir::BinaryOp::BIT_AND:
-        case sir::BinaryOp::BIT_OR:
-        case sir::BinaryOp::BIT_XOR:
-        case sir::BinaryOp::SHL:
-        case sir::BinaryOp::SHR: binary_expr.type = binary_expr.lhs.get_type(); break;
-        case sir::BinaryOp::EQ:
-        case sir::BinaryOp::NE:
-        case sir::BinaryOp::GT:
-        case sir::BinaryOp::LT:
-        case sir::BinaryOp::GE:
-        case sir::BinaryOp::LE:
-        case sir::BinaryOp::AND:
-        case sir::BinaryOp::OR:
-            binary_expr.type = analyzer.create_expr(sir::PrimitiveType{
-                .ast_node = nullptr,
-                .primitive = sir::Primitive::BOOL,
-            });
-            break;
+    std::initializer_list<sir::BinaryOp> arith_bitwise_ops{
+        sir::BinaryOp::ADD,
+        sir::BinaryOp::SUB,
+        sir::BinaryOp::MUL,
+        sir::BinaryOp::DIV,
+        sir::BinaryOp::MOD,
+        sir::BinaryOp::BIT_AND,
+        sir::BinaryOp::BIT_OR,
+        sir::BinaryOp::BIT_XOR,
+        sir::BinaryOp::SHL,
+        sir::BinaryOp::SHR,
+    };
+
+    std::initializer_list<sir::BinaryOp> comparison_ops{
+        sir::BinaryOp::EQ,
+        sir::BinaryOp::NE,
+        sir::BinaryOp::GT,
+        sir::BinaryOp::LT,
+        sir::BinaryOp::GE,
+        sir::BinaryOp::LE,
+    };
+
+    std::initializer_list<sir::BinaryOp> logical_ops{
+        sir::BinaryOp::AND,
+        sir::BinaryOp::OR,
+    };
+
+    if (Utils::is_one_of(binary_expr.op, arith_bitwise_ops)) {
+        binary_expr.type = binary_expr.lhs.get_type();
+    } else if (Utils::is_one_of(binary_expr.op, comparison_ops)) {
+        binary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
+    } else if (Utils::is_one_of(binary_expr.op, logical_ops)) {
+        if (!binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+            analyzer.report_generator.report_err_expected_bool(binary_expr.lhs);
+            lhs_result = Result::ERROR;
+        }
+
+        if (!binary_expr.rhs.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+            analyzer.report_generator.report_err_expected_bool(binary_expr.rhs);
+            rhs_result = Result::ERROR;
+        }
+
+        if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        binary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
     }
 
     return Result::SUCCESS;
@@ -526,12 +549,17 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (unary_expr.op == sir::UnaryOp::NEG) {
         unary_expr.type = unary_expr.value.get_type();
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
-        ExprFinalizer(analyzer).finalize(unary_expr.value);
+        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
 
-        unary_expr.type = analyzer.create_expr(sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::BOOL,
-        });
+        if (!unary_expr.value.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+            analyzer.report_generator.report_err_expected_bool(unary_expr.value);
+            return Result::ERROR;
+        }
+
+        unary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1006,7 +1034,7 @@ void ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
 }
 
 void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
-    assert(!tuple_expr.exprs.empty());
+    ASSERT(!tuple_expr.exprs.empty());
 
     for (sir::Expr &expr : tuple_expr.exprs) {
         ExprAnalyzer(analyzer).analyze_uncoerced(expr);
@@ -1176,15 +1204,23 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
 }
 
 Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
-    Result result;
+    Result result = Result::SUCCESS;
+    Result partial_result;
 
-    result = ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
-    if (result != Result::SUCCESS) {
-        return result;
+    partial_result = ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
+    if (partial_result != Result::SUCCESS) {
+        return Result::ERROR;
     }
 
     for (sir::Expr &expr : bracket_expr.rhs) {
-        ExprAnalyzer(analyzer).analyze(expr);
+        partial_result = ExprAnalyzer(analyzer).analyze(expr);
+        if (partial_result != Result::SUCCESS) {
+            result = Result::ERROR;
+        }
+    }
+
+    if (result != Result::SUCCESS) {
+        return Result::ERROR;
     }
 
     if (auto func_def = bracket_expr.lhs.match_symbol<sir::FuncDef>()) {

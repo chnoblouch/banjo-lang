@@ -85,6 +85,7 @@ private:
     std::vector<std::tuple<sir::Decl, Scope>> decls_awaiting_body_analysis;
     std::unordered_map<sir::DeclBlock *, Scope> incomplete_decl_blocks;
     bool in_meta_expansion = false;
+    unsigned loop_depth = 0;
 
 public:
     SemanticAnalyzer(

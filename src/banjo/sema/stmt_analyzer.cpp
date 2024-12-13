@@ -108,6 +108,11 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     for (sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
         ExprAnalyzer(analyzer).analyze(cond_branch.condition);
+
+        if (!cond_branch.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+            analyzer.report_generator.report_err_expected_bool(cond_branch.condition);
+        }
+
         analyze_block(cond_branch.block);
     }
 
@@ -299,16 +304,33 @@ void StmtAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt)
 
 void StmtAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
     ExprAnalyzer(analyzer).analyze(loop_stmt.condition);
+
+    if (!loop_stmt.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+        analyzer.report_generator.report_err_expected_bool(loop_stmt.condition);
+    }
+
+    analyzer.loop_depth += 1;
+
     analyze_block(loop_stmt.block);
 
     if (loop_stmt.latch) {
         analyze_block(*loop_stmt.latch);
     }
+
+    analyzer.loop_depth -= 1;
 }
 
-void StmtAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt*/) {}
+void StmtAnalyzer::analyze_continue_stmt(sir::ContinueStmt &continue_stmt) {
+    if (analyzer.loop_depth == 0) {
+        analyzer.report_generator.report_err_continue_outside_loop(continue_stmt);
+    }
+}
 
-void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {}
+void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt &break_stmt) {
+    if (analyzer.loop_depth == 0) {
+        analyzer.report_generator.report_err_break_outside_loop(break_stmt);
+    }
+}
 
 void StmtAnalyzer::insert_symbol(sir::Ident &ident, sir::Symbol symbol) {
     insert_symbol(*analyzer.get_scope().block->symbol_table, ident, symbol);

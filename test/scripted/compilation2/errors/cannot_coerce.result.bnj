@@ -1,0 +1,6 @@
+# test:subtest
+# test:error 5:35 "cannot coerce value with type 'i32' to result type 'f32 except bool'"
+
+func main() {
+    var result: f32 except bool = 5;
+}

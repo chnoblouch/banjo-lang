@@ -16,10 +16,15 @@ namespace sema {
 MetaExprEvaluator::MetaExprEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Expr &out_expr) {
+    Result partial_result;
+
     sir::Expr base_expr = meta_field_expr.base.as<sir::MetaAccess>().expr;
     const std::string &field_name = meta_field_expr.field.value;
 
-    ExprAnalyzer(analyzer).analyze(base_expr);
+    partial_result = ExprAnalyzer(analyzer).analyze(base_expr);
+    if (partial_result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
 
     if (field_name == "size") {
         out_expr = analyzer.create_expr(sir::IntLiteral{

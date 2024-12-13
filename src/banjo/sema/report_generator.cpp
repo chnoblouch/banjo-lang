@@ -144,6 +144,19 @@ void ReportGenerator::report_err_cannot_coerce(const sir::MapLiteral &map_litera
     report_error("cannot coerce map literal to type '$'", map_literal.ast_node, expected_type);
 }
 
+void ReportGenerator::report_err_cannot_coerce_result(
+    const sir::Expr &value,
+    sir::Specialization<sir::StructDef> &result_specialization
+) {
+    report_error(
+        "cannot coerce value with type '$' to result type '$ except $'",
+        value.get_ast_node(),
+        value.get_type(),
+        result_specialization.args[0],
+        result_specialization.args[1]
+    );
+}
+
 void ReportGenerator::report_err_cannot_infer_type(const sir::NoneLiteral &none_literal) {
     report_error("cannot infer type of `none`", none_literal.ast_node);
 }
@@ -246,6 +259,12 @@ void ReportGenerator::report_err_iter_no_next(const sir::Expr &expr, const sir::
         .report();
 }
 
+void ReportGenerator::report_err_expected_bool(const sir::Expr &expr) {
+    // TODO: Maybe add notes e.g. for ints that have to be converted to bools first?
+
+    report_error("expected 'bool', got '$'", expr.get_ast_node(), expr.get_type());
+}
+
 void ReportGenerator::report_err_expected_generic_or_indexable(sir::Expr &expr) {
     report_error("expected generic declaration or indexable value", expr.get_ast_node());
 }
@@ -306,6 +325,14 @@ void ReportGenerator::report_err_no_matching_overload(const sir::Expr &expr, sir
     }
 
     builder.report();
+}
+
+void ReportGenerator::report_err_continue_outside_loop(const sir::ContinueStmt &continue_stmt) {
+    report_error("'continue' statement outside of a loop", continue_stmt.ast_node);
+}
+
+void ReportGenerator::report_err_break_outside_loop(const sir::BreakStmt &break_stmt) {
+    report_error("'break' statement outside of a loop", break_stmt.ast_node);
 }
 
 void ReportGenerator::report_err_unexpected_array_length_type(const sir::Expr &expr) {

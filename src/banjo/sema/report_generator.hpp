@@ -60,6 +60,12 @@ public:
     void report_err_cannot_coerce(const sir::StringLiteral &string_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::StructLiteral &struct_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::MapLiteral &map_literal, const sir::Expr &expected_type);
+
+    void report_err_cannot_coerce_result(
+        const sir::Expr &value,
+        sir::Specialization<sir::StructDef> &result_specialization
+    );
+
     void report_err_cannot_infer_type(const sir::NoneLiteral &none_literal);
     void report_err_cannot_infer_type(const sir::UndefinedLiteral &undefined_literal);
     void report_err_cannot_infer_type(const sir::ArrayLiteral &array_literal);
@@ -74,12 +80,15 @@ public:
     void report_err_cannot_iter(const sir::Expr &expr);
     void report_err_cannot_iter_struct(const sir::Expr &expr, bool by_ref);
     void report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, bool by_ref);
+    void report_err_expected_bool(const sir::Expr &expr);
     void report_err_expected_generic_or_indexable(sir::Expr &expr);
     void report_err_unexpected_arg_count(sir::CallExpr &call_expr, unsigned expected_count, sir::FuncDef *func_def);
     void report_err_no_members(const sir::DotExpr &dot_expr);
     void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
     void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);
     void report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set);
+    void report_err_continue_outside_loop(const sir::ContinueStmt &continue_stmt);
+    void report_err_break_outside_loop(const sir::BreakStmt &break_stmt);
     void report_err_unexpected_array_length_type(const sir::Expr &expr);
     void report_err_negative_array_length(const sir::Expr &expr, LargeInt value);
     void report_err_unexpected_array_length(const sir::ArrayLiteral &array_literal, unsigned expected_count);

@@ -1,0 +1,58 @@
+# test:subtest
+# test:error 11:13 "expected 'bool', got 'i32'"
+# test:error 12:22 "expected 'bool', got 'f32'"
+# test:error 13:13 "expected 'bool', got 'i32'"
+# test:error 13:18 "expected 'bool', got 'f32'"
+
+func main() {
+    var a: i32 = 10;
+    var b: f32 = 0.5;
+    
+    var c = a && true;
+    var d = false && b;
+    var e = a && b;
+}
+
+# test:subtest
+# test:error 26:13 "expected 'bool', got 'i32'"
+# test:error 27:22 "expected 'bool', got 'f32'"
+# test:error 28:13 "expected 'bool', got 'i32'"
+# test:error 28:18 "expected 'bool', got 'f32'"
+
+func main() {
+    var a: i32 = 10;
+    var b: f32 = 0.5;
+    
+    var c = a || true;
+    var d = false || b;
+    var e = a || b;
+}
+
+# test:subtest
+# test:error 36:14 "expected 'bool', got 'i32'"
+
+func main() {
+    var a: i32 = 10;
+    var b = !a;
+}
+
+# test:subtest
+# test:error 47:8 "expected 'bool', got 'i32'"
+# test:error 48:13 "expected 'bool', got 'f32'"
+
+func main() {
+    var a: i32 = 10;
+    var b: f32 = 0.5;
+    
+    if a {}
+    else if b {}
+}
+
+# test:subtest
+# test:error 57:11 "expected 'bool', got 'i32'"
+
+func main() {
+    var a: i32 = 10;
+    
+    while a {}
+}

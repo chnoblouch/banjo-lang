@@ -25,11 +25,6 @@ class ASTNode;
 
 namespace sir {
 
-template <class... Ts>
-struct Visitor : Ts... {
-    using Ts::operator()...;
-};
-
 struct IntLiteral;
 struct FPLiteral;
 struct BoolLiteral;

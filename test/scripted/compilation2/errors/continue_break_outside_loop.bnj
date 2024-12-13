@@ -1,0 +1,35 @@
+# test:subtest
+# test:error 5:5 "'continue' statement outside of a loop"
+
+func main() {
+    continue;
+}
+
+# test:subtest
+# test:error 12:5 "'break' statement outside of a loop"
+
+func main() {
+    break;
+}
+
+# test:subtest
+# test:error 20:5 "'continue' statement outside of a loop"
+
+func main() {
+    for i in 0..10 {}
+    continue;
+}
+
+# test:subtest
+# test:error 34:5 "'break' statement outside of a loop"
+
+func main() {
+    var i = 0;
+    
+    while i < 10 {
+        for j in 0..10 {}
+        i += 1;
+    }
+    
+    break;
+}
