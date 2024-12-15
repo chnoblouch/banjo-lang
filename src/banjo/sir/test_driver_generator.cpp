@@ -53,130 +53,136 @@ sir::Module *TestDriverGenerator::generate() {
         }
     }
 
-    sir::VarStmt *map_var_stmt = mod->create_stmt(sir::VarStmt{
-        .ast_node = nullptr,
-        .local{
-            .name{
-                .ast_node = nullptr,
-                .value = "map",
-            },
-            .type = nullptr,
-        },
-        .value = mod->create_expr(sir::MapLiteral{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .entries = map_entries,
-        }),
-    });
+    std::vector<sir::Stmt> stmts;
 
-    sir::Expr test_name = mod->create_expr(sir::CallExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .callee = mod->create_expr(sir::DotExpr{
+    if (!map_entries.empty()) {
+        sir::VarStmt *map_var_stmt = mod->create_stmt(sir::VarStmt{
             .ast_node = nullptr,
-            .lhs = mod->create_expr(sir::IdentExpr{
+            .local{
+                .name{
+                    .ast_node = nullptr,
+                    .value = "map",
+                },
+                .type = nullptr,
+            },
+            .value = mod->create_expr(sir::MapLiteral{
                 .ast_node = nullptr,
-                .value = "String",
+                .type = nullptr,
+                .entries = map_entries,
             }),
-            .rhs{
-                .ast_node = nullptr,
-                .value = "from",
-            }
-        }),
-        .args{
-            mod->create_expr(sir::BracketExpr{
+        });
+
+        sir::Expr test_name = mod->create_expr(sir::CallExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .callee = mod->create_expr(sir::DotExpr{
                 .ast_node = nullptr,
                 .lhs = mod->create_expr(sir::IdentExpr{
                     .ast_node = nullptr,
-                    .value = "argv",
+                    .value = "String",
                 }),
                 .rhs{
-                    mod->create_expr(sir::IntLiteral{
-                        .ast_node = nullptr,
-                        .type = nullptr,
-                        .value = 1,
-                    }),
-                },
+                    .ast_node = nullptr,
+                    .value = "from_cstr",
+                }
             }),
-        },
-    });
-
-    sir::Expr test_call_expr = mod->create_expr(sir::CallExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .callee = mod->create_expr(sir::IdentExpr{
-            .ast_node = nullptr,
-            .value = "function",
-        }),
-        .args{},
-    });
-
-    sir::Expr error_call_expr = mod->create_expr(sir::CallExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .callee = mod->create_expr(sir::IdentExpr{
-            .ast_node = nullptr,
-            .value = "println",
-        }),
-        .args{
-            mod->create_expr(sir::StringLiteral{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .value = "no such test",
-            }),
-        },
-    });
-
-    sir::TryStmt *try_stmt = mod->create_stmt(sir::TryStmt{
-        .ast_node = nullptr,
-        .success_branch{
-            .ast_node = nullptr,
-            .ident{
-                .ast_node = nullptr,
-                .value = "function",
-            },
-            .expr = mod->create_expr(sir::CallExpr{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .callee = mod->create_expr(sir::DotExpr{
+            .args{
+                mod->create_expr(sir::BracketExpr{
                     .ast_node = nullptr,
                     .lhs = mod->create_expr(sir::IdentExpr{
                         .ast_node = nullptr,
-                        .value = "map",
+                        .value = "argv",
                     }),
                     .rhs{
-                        .ast_node = nullptr,
-                        .value = "try_get",
+                        mod->create_expr(sir::IntLiteral{
+                            .ast_node = nullptr,
+                            .type = nullptr,
+                            .value = 1,
+                        }),
                     },
                 }),
-                .args{test_name},
-            }),
-            .block{
-                .ast_node = nullptr,
-                .stmts{
-                    mod->create_stmt(test_call_expr),
-                },
-                .symbol_table = mod->create_symbol_table(sir::SymbolTable{
-                    .parent = main_symbol_table,
-                    .symbols{},
-                }),
-            }
-        },
-        .except_branch{},
-        .else_branch{sir::TryElseBranch{
+            },
+        });
+
+        sir::Expr test_call_expr = mod->create_expr(sir::CallExpr{
             .ast_node = nullptr,
-            .block{
+            .type = nullptr,
+            .callee = mod->create_expr(sir::IdentExpr{
                 .ast_node = nullptr,
-                .stmts{
-                    mod->create_stmt(error_call_expr),
-                },
-                .symbol_table = mod->create_symbol_table(sir::SymbolTable{
-                    .parent = main_symbol_table,
-                    .symbols{},
+                .value = "function",
+            }),
+            .args{},
+        });
+
+        sir::Expr error_call_expr = mod->create_expr(sir::CallExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .callee = mod->create_expr(sir::IdentExpr{
+                .ast_node = nullptr,
+                .value = "println",
+            }),
+            .args{
+                mod->create_expr(sir::StringLiteral{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .value = "no such test",
                 }),
-            }
-        }}
-    });
+            },
+        });
+
+        sir::TryStmt *try_stmt = mod->create_stmt(sir::TryStmt{
+            .ast_node = nullptr,
+            .success_branch{
+                .ast_node = nullptr,
+                .ident{
+                    .ast_node = nullptr,
+                    .value = "function",
+                },
+                .expr = mod->create_expr(sir::CallExpr{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .callee = mod->create_expr(sir::DotExpr{
+                        .ast_node = nullptr,
+                        .lhs = mod->create_expr(sir::IdentExpr{
+                            .ast_node = nullptr,
+                            .value = "map",
+                        }),
+                        .rhs{
+                            .ast_node = nullptr,
+                            .value = "try_get",
+                        },
+                    }),
+                    .args{test_name},
+                }),
+                .block{
+                    .ast_node = nullptr,
+                    .stmts{
+                        mod->create_stmt(test_call_expr),
+                    },
+                    .symbol_table = mod->create_symbol_table(sir::SymbolTable{
+                        .parent = main_symbol_table,
+                        .symbols{},
+                    }),
+                }
+            },
+            .except_branch{},
+            .else_branch{sir::TryElseBranch{
+                .ast_node = nullptr,
+                .block{
+                    .ast_node = nullptr,
+                    .stmts{
+                        mod->create_stmt(error_call_expr),
+                    },
+                    .symbol_table = mod->create_symbol_table(sir::SymbolTable{
+                        .parent = main_symbol_table,
+                        .symbols{},
+                    }),
+                }
+            }}
+        });
+
+        stmts = {map_var_stmt, try_stmt};
+    }
 
     sir::FuncDef *main_def = mod->create_decl(sir::FuncDef{
         .ast_node = nullptr,
@@ -223,9 +229,12 @@ sir::Module *TestDriverGenerator::generate() {
         },
         .block{
             .ast_node = nullptr,
-            .stmts{map_var_stmt, try_stmt},
+            .stmts = stmts,
             .symbol_table = main_symbol_table,
-        }
+        },
+        .attrs = mod->create_attrs(sir::Attributes{
+            .link_name = "main",
+        }),
     });
 
     mod->block.decls.push_back(main_def);

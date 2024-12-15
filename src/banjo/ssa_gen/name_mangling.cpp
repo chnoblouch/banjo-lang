@@ -1,5 +1,7 @@
 #include "name_mangling.hpp"
 
+#include "banjo/config/config.hpp"
+
 #include <string>
 
 namespace banjo {
@@ -13,7 +15,9 @@ static void mangle_symbol_name(std::string &string, sir::Symbol symbol);
 std::string get_link_name(const sir::FuncDef &func) {
     if (func.attrs && func.attrs->link_name) {
         return *func.attrs->link_name;
-    } else if (func.is_main() || (func.attrs && (func.attrs->exposed || func.attrs->dllexport))) {
+    } else if (func.is_main() && !Config::instance().testing) {
+        return "main";
+    } else if (func.attrs && (func.attrs->exposed || func.attrs->dllexport)) {
         return func.ident.value;
     } else {
         return mangle_func_name(func);

@@ -40,9 +40,9 @@ run_parser.add_argument("--hot-reload", action="store_true")
 add_standard_args(run_parser)
 
 test_parser = subparsers.add_parser("test")
-add_common_build_args(test_parser)
 test_parser.add_argument("pattern", nargs=argparse.OPTIONAL, default="*")
 test_parser.add_argument("compiler_args", nargs=argparse.REMAINDER)
+add_common_build_args(test_parser)
 add_standard_args(test_parser)
 
 invoke_parser = subparsers.add_parser("invoke")
