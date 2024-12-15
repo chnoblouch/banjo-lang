@@ -28,19 +28,19 @@ pub func copy(src: addr, dst: addr, size: usize) {
 }
 
 pub func alloc_box[T]() -> *T {
-	return alloc(meta(T).size) as *T;
+    return alloc(meta(T).size) as *T;
 }
 
 pub func box[T](value: T) -> *T {
-	var box = alloc(meta(T).size) as *T;
+    var box = alloc(meta(T).size) as *T;
     *box = value;
-	return box;
+    return box;
 }
 
 pub func zero[T]() -> T {
-	var value: T;
-	cmemset(&value, 0, meta(T).size);
-	return value;
+    var value: T;
+    cmemset(&value, 0, meta(T).size);
+    return value;
 }
 
 struct PointerIter[T] {

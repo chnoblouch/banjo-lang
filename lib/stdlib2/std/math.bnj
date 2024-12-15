@@ -3,11 +3,11 @@ use c.lib.math as cmath;
 const PI32: f32 = 3.14159;
 
 pub func abs(x: f64) -> f64 {
-	if x >= 0.0 {
-		return x;
-	} else {
-		return -x;
-	}
+    if x >= 0.0 {
+        return x;
+    } else {
+        return -x;
+    }
 }
 
 pub func sqrt(x: f64) -> f64 {
@@ -15,39 +15,39 @@ pub func sqrt(x: f64) -> f64 {
 }
 
 pub func sin(x: f64) -> f64 {
-	return cmath.sin(x);
+    return cmath.sin(x);
 }
 
 pub func cos(x: f64) -> f64 {
-	return cmath.cos(x);
+    return cmath.cos(x);
 }
 
 pub func tan(x: f64) -> f64 {
-	return cmath.tan(x);
+    return cmath.tan(x);
 }
 
 pub func asin(x: f64) -> f64 {
-	return cmath.asin(x);
+    return cmath.asin(x);
 }
 
 pub func acos(x: f64) -> f64 {
-	return cmath.acos(x);
+    return cmath.acos(x);
 }
 
 pub func atan(x: f64) -> f64 {
-	return cmath.atan(x);
+    return cmath.atan(x);
 }
 
 pub func atan2(y: f64, x: f64) -> f64 {
-	return cmath.atan2(y, x);
+    return cmath.atan2(y, x);
 }
 
 pub func abs(x: f32) -> f32 {
-	if x >= 0.0 {
-		return x;
-	} else {
-		return -x;
-	}
+    if x >= 0.0 {
+        return x;
+    } else {
+        return -x;
+    }
 }
 
 pub func sqrt(x: f32) -> f32 {
@@ -55,49 +55,49 @@ pub func sqrt(x: f32) -> f32 {
 }
 
 pub func sin(x: f32) -> f32 {
-	return cmath.sinf(x);
+    return cmath.sinf(x);
 }
 
 pub func cos(x: f32) -> f32 {
-	return cmath.cosf(x);
+    return cmath.cosf(x);
 }
 
 pub func tan(x: f32) -> f32 {
-	return cmath.tanf(x);
+    return cmath.tanf(x);
 }
 
 pub func asin(x: f32) -> f32 {
-	return cmath.asinf(x);
+    return cmath.asinf(x);
 }
 
 pub func acos(x: f32) -> f32 {
-	return cmath.acosf(x);
+    return cmath.acosf(x);
 }
 
 pub func atan(x: f32) -> f32 {
-	return cmath.atanf(x);
+    return cmath.atanf(x);
 }
 
 pub func atan2(y: f32, x: f32) -> f32 {
-	return cmath.atan2f(y, x);
+    return cmath.atan2f(y, x);
 }
 
 pub func deg2rad(deg: f32) -> f32 {
-	return deg * PI32 / 180.0;
+    return deg * PI32 / 180.0;
 }
 
 pub func rad2deg(rad: f32) -> f32 {
-	return rad * 180.0 / PI32;
+    return rad * 180.0 / PI32;
 }
 
 pub func min[T](a: T, b: T) -> T {
-	if a < b { return a; } else { return b; }
+    if a < b { return a; } else { return b; }
 }
 
 pub func max[T](a: T, b: T) -> T {
-	if a > b { return a; } else { return b; }
+    if a > b { return a; } else { return b; }
 }
 
 pub func clamp[T](v: T, minv: T, maxv: T) -> T {
-	return min[T](maxv, max[T](minv, v)); 
+    return min[T](maxv, max[T](minv, v)); 
 }

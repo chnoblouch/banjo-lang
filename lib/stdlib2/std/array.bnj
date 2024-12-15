@@ -64,10 +64,10 @@ struct Array[T] {
         memory.copy(self.data, data, size);
         
         return Array[T] {
-			data,
-			length: self.length,
-			capacity: self.length,
-		};
+            data,
+            length: self.length,
+            capacity: self.length,
+        };
     }
     
     pub func __index__(self, index: usize) -> *T {

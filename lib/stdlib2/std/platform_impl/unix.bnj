@@ -14,12 +14,12 @@ meta if IS_UNIX {
     const SOCKET_PROTOCOL_UDP: i32 = posix.IPPROTO_UDP;
 
     pub func error_last() -> Error {
-		return posix.errno();
-	}
-	
-	pub func error_to_string(error: Error) -> String {
-		return String.from_cstr(posix.strerror(error));
-	}
+        return posix.errno();
+    }
+    
+    pub func error_to_string(error: Error) -> String {
+        return String.from_cstr(posix.strerror(error));
+    }
 
     pub func io_get_stdin_stream() -> addr {
         return posix.stdin;

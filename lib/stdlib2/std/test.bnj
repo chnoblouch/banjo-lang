@@ -21,5 +21,5 @@ func assert_ne[T](a: T, b: T) {
 }
 
 func fail() {
-	print("test failed");
+    print("test failed");
 }

@@ -21,21 +21,21 @@ meta if IS_WINDOWS {
 
     pub func error_to_string(error: Error) -> String {
         var buffer: *u8 = null;
-		
-		var length = winapi.format_message(
-			winapi.FORMAT_MESSAGE_ALLOCATE_BUFFER | winapi.FORMAT_MESSAGE_FROM_SYSTEM | winapi.FORMAT_MESSAGE_IGNORE_INSERTS,
-			null,
-			error,
-			0x400,  # MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
-			&buffer,
-			0,
-			null
-		);
-		
-		var trimmed_length = length as usize - 2;
-		var string = String.from((buffer, trimmed_length));
-		winapi.local_free(buffer);
-		
+        
+        var length = winapi.format_message(
+            winapi.FORMAT_MESSAGE_ALLOCATE_BUFFER | winapi.FORMAT_MESSAGE_FROM_SYSTEM | winapi.FORMAT_MESSAGE_IGNORE_INSERTS,
+            null,
+            error,
+            0x400,  # MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
+            &buffer,
+            0,
+            null
+        );
+        
+        var trimmed_length = length as usize - 2;
+        var string = String.from((buffer, trimmed_length));
+        winapi.local_free(buffer);
+        
         return string;
     }
 
@@ -52,27 +52,27 @@ meta if IS_WINDOWS {
     }
 
     pub func thread_spawn(function: func(addr), argument: addr) -> usize {
-		var handle = winapi.create_thread(null, 0, function, argument, 0, null);
-		return handle as usize;
-	}
+        var handle = winapi.create_thread(null, 0, function, argument, 0, null);
+        return handle as usize;
+    }
 
-	pub func thread_join(handle: usize) {
-		winapi.wait_for_single_object(handle as addr, 0xFFFFFFFF);
-	}
+    pub func thread_join(handle: usize) {
+        winapi.wait_for_single_object(handle as addr, 0xFFFFFFFF);
+    }
 
-	pub func thread_close(handle: usize) {
-		winapi.close_handle(handle as addr);
-	}
+    pub func thread_close(handle: usize) {
+        winapi.close_handle(handle as addr);
+    }
 
-	pub func thread_sleep(milliseconds: u32) {
-		winapi.sleep(milliseconds);
-	}
+    pub func thread_sleep(milliseconds: u32) {
+        winapi.sleep(milliseconds);
+    }
 
-	pub func thread_hardware_concurrency() -> u32 {
-		var system_info: winapi.SystemInfo;
-		winapi.get_native_system_info(&system_info);
-		return system_info.number_of_processors;
-	}
+    pub func thread_hardware_concurrency() -> u32 {
+        var system_info: winapi.SystemInfo;
+        winapi.get_native_system_info(&system_info);
+        return system_info.number_of_processors;
+    }
 
     pub func time_system_ticks() -> u64 {
         var time: winapi.Filetime;

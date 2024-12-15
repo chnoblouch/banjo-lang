@@ -1,6 +1,6 @@
 struct StackFrame {
-	var address: addr;
-	var symbol: *u8;
+    var address: addr;
+    var symbol: *u8;
 }
 
 @[link_name=___banjo_print_string] native func print_string(format: *u8, string: *u8);

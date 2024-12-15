@@ -10,29 +10,29 @@ meta if config.OS == config.WINDOWS {
 }
 
 pub func exit(status: i32) {
-	cexit(status);
+    cexit(status);
 }
 
 pub func panic(message: String) {
-	println("\n================================================================");
-	print("panic: ");
-	println(message);
-	
-	meta if config.BUILD_CONFIG == config.DEBUG {
-		stack_trace.print_stack_trace();
-	}
-	
-	println("================================================================\n");
-	
-	exit(1);
+    println("\n================================================================");
+    print("panic: ");
+    println(message);
+    
+    meta if config.BUILD_CONFIG == config.DEBUG {
+        stack_trace.print_stack_trace();
+    }
+    
+    println("================================================================\n");
+    
+    exit(1);
 }
 
 func errno_str() -> *u8 {
-	meta if config.OS == config.WINDOWS {
-		return strerror(*_errno());
-	} else if config.OS == config.LINUX {
-		return strerror(*__errno_location());
-	} else {
+    meta if config.OS == config.WINDOWS {
+        return strerror(*_errno());
+    } else if config.OS == config.LINUX {
+        return strerror(*__errno_location());
+    } else {
         return "<unknown>";
     }
 }
