@@ -831,7 +831,7 @@ mcode::Operand X8664SSALowerer::lower_as_move(mcode::Operand m_dst, const ssa::V
 mcode::Operand X8664SSALowerer::lower_int_imm_as_move(mcode::Operand m_dst, LargeInt value) {
     // Use `XOR dst, dst` for zeroing registers to save code size and also because modern CPUs recognize and optimize
     // this idiom.
-    if (value == 0 && (m_dst.is_virtual_reg() || m_dst.is_physical_reg())) {
+    if (value == 0 && will_be_physical_reg(m_dst)) {
         // Use the 32-bit variant even when operating on 64-bit registers so we can potentially omit the REX prefix.
         m_dst.set_size(std::min(m_dst.get_size(), 4));
 
@@ -848,13 +848,31 @@ mcode::Operand X8664SSALowerer::lower_fp_imm_as_move(mcode::Operand m_dst, doubl
     // Use `XORP[S,D] dst, dst` to generate a zero floating-point number so we don't have to load it from memory.
     if (value == 0.0) {
         mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::XORPS : X8664Opcode::XORPD;
-        emit({m_opcode, {m_dst, m_dst}});
+
+        if (will_be_physical_reg(m_dst)) {
+            emit({m_opcode, {m_dst, m_dst}});
+        } else {
+            mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), m_dst.get_size());
+            mcode::Opcode m_mov_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+
+            emit({m_opcode, {m_tmp, m_tmp}});
+            emit({m_mov_opcode, {m_dst, m_tmp}});
+        }
+
         return m_dst;
     }
 
     mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
     mcode::Operand m_src = create_fp_const_load(value, m_dst.get_size());
-    emit({m_opcode, {m_dst, m_src}});
+
+    if (!will_be_physical_reg(m_dst) && m_src.is_symbol_deref()) {
+        mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), m_dst.get_size());
+        emit({m_opcode, {m_tmp, m_src}});
+        emit({m_opcode, {m_dst, m_tmp}});
+    } else {
+        emit({m_opcode, {m_dst, m_src}});
+    }
+
     return m_dst;
 }
 
@@ -1011,6 +1029,10 @@ mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+bool X8664SSALowerer::will_be_physical_reg(mcode::Operand &operand) {
+    return operand.is_virtual_reg() || operand.is_physical_reg();
 }
 
 } // namespace target
