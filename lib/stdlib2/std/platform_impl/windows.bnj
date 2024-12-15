@@ -145,11 +145,8 @@ meta if IS_WINDOWS {
         }
 
         result = winapi.connect(socket, addr_info.addr_, addr_info.addrlen as i32);
-        if result != 0 {
-            return false;
-        }
-
         winapi.freeaddrinfo(addr_info);
+        return result == 0;
     }
 
     pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {

@@ -1,17 +1,17 @@
 use os.{IS_UNIX, posix};
-use std.system.panic;
+use std.{convert.to_string, system.panic};
 
 meta if IS_UNIX {
     type Error = i32;
     type Socket = i32;
 
-    const SOCKET_INVALID: Socket = 0;
-    const SOCKET_ADDRESS_FAMILY_IPV4: i32 = 0;
-    const SOCKET_ADDRESS_FAMILY_IPV6: i32 = 0;
-    const SOCKET_TYPE_STREAM: i32 = 0;
-    const SOCKET_TYPE_DATAGRAM: i32 = 0;
-    const SOCKET_PROTOCOL_TCP: i32 = 0;
-    const SOCKET_PROTOCOL_UDP: i32 = 0;
+    const SOCKET_INVALID: Socket = -1;
+    const SOCKET_ADDRESS_FAMILY_IPV4: i32 = posix.AF_INET;
+    const SOCKET_ADDRESS_FAMILY_IPV6: i32 = posix.AF_INET6;
+    const SOCKET_TYPE_STREAM: i32 = posix.SOCK_STREAM;
+    const SOCKET_TYPE_DATAGRAM: i32 = posix.SOCK_DGRAM;
+    const SOCKET_PROTOCOL_TCP: i32 = posix.IPPROTO_TCP;
+    const SOCKET_PROTOCOL_UDP: i32 = posix.IPPROTO_UDP;
 
     pub func error_last() -> Error {
 		return posix.errno();
@@ -85,26 +85,59 @@ meta if IS_UNIX {
     }
 
     pub func socket_create(address_family: i32, socket_type: i32, protocol: i32) -> Socket {
-        panic("unimplemented on this platform");
+        return posix.socket(address_family, socket_type, protocol);
     }
 
     pub func socket_set_blocking(socket: Socket, blocking: bool) {
+        # TODO
         panic("unimplemented on this platform");
     }
 
     pub func socket_connect(socket: Socket, host: String, port: u32) -> bool {
-        panic("unimplemented on this platform");
+        var result: i32;
+        
+        var addr_hints = posix.Addrinfo {
+            flags: 0,
+            family: 0,
+            socktype: 0,
+            protocol: 0,
+            addrlen: 0,
+            addr_: null,
+            canonname: null,
+            next: null,
+        };
+
+        var addr_info: *posix.Addrinfo;
+        result = posix.getaddrinfo(host.cstr(), to_string(&port).cstr(), &addr_hints, &addr_info);
+        if result != 0 {
+            return false;
+        }
+
+        result = posix.connect(socket, addr_info.addr_, addr_info.addrlen);
+        posix.freeaddrinfo(addr_info);
+        return result == 0;
     }
 
     pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
-        panic("unimplemented on this platform");
+        var result = posix.send(socket, buffer, size, 0);
+        if result >= 0 {
+            return result as usize;
+        } else {
+            return error_last();
+        }
     }
 
     pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
-        panic("unimplemented on this platform");
+        var result = posix.recv(socket, buffer, size, 0);
+        if result >= 0 {
+            return result as usize;
+        } else {
+            return error_last();
+        }
     }
 
     pub func socket_close(socket: Socket) {
-        panic("unimplemented on this platform");
+        posix.shutdown(socket, posix.SHUT_RDWR);
+        posix.close(socket);
     }
 }
