@@ -20,8 +20,8 @@ class MSABICallingConv : public mcode::CallingConvention {
 
 public:
     static const MSABICallingConv INSTANCE;
-    static const std::vector<int> ARG_REGS_INT;
-    static const std::vector<int> ARG_REGS_FLOAT;
+    static const std::vector<mcode::PhysicalReg> ARG_REGS_INT;
+    static const std::vector<mcode::PhysicalReg> ARG_REGS_FP;
 
 public:
     MSABICallingConv();
@@ -38,10 +38,12 @@ public:
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    mcode::Register get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer);
-    void append_arg_move(ssa::Operand &operand, mcode::Operand &src, mcode::Register reg, codegen::SSALowerer &lowerer);
-    void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
-    void append_ret_val_move(codegen::SSALowerer &lowerer);
+    void emit_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer);
+    void emit_reg_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer);
+    void emit_stack_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer);
+
+    void emit_call(const ssa::Operand &func_operand, codegen::SSALowerer &lowerer);
+    void emit_ret_val_move(codegen::SSALowerer &lowerer);
 };
 
 } // namespace target

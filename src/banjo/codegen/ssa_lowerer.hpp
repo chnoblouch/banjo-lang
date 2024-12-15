@@ -65,10 +65,7 @@ public:
     mcode::Module &get_machine_module() { return machine_module; }
     mcode::Function *get_machine_func() { return machine_func; }
     mcode::BasicBlock &get_machine_basic_block() { return *machine_basic_block; }
-
-    virtual mcode::Operand lower_value(const ssa::Operand &operand) = 0;
-    virtual mcode::Operand lower_address(const ssa::Operand &operand) = 0;
-
+    
     mcode::InstrIter emit(mcode::Instruction instr);
     mcode::Register lower_reg(ssa::VirtualRegister reg);
 
@@ -99,7 +96,6 @@ private:
     void lower_alloca(ssa::Instruction &instr);
 
     virtual void init_module(ssa::Module &mod) {}
-    virtual mcode::Value lower_global_value(ssa::Value &value) = 0;
 
     virtual void lower_load(ssa::Instruction &instr);
     virtual void lower_store(ssa::Instruction &instr);

@@ -212,13 +212,21 @@ void ELFBuilder::process_uses(const std::vector<BinSymbolUse> &uses) {
         std::uint32_t type;
 
         switch (use.kind) {
+            case BinSymbolUseKind::ABS64:
+                address_offset = 0;
+                type = ELFRelocationType::X86_64_64;
+                break;
             case BinSymbolUseKind::REL32:
                 address_offset = -4;
                 type = ELFRelocationType::X86_64_PC32;
                 break;
-            case BinSymbolUseKind::ABS64:
-                address_offset = 0;
-                type = ELFRelocationType::X86_64_64;
+            case BinSymbolUseKind::GOTPCREL32:
+                address_offset = -4;
+                type = ELFRelocationType::X86_64_GOTPCREL;
+                break;
+            case BinSymbolUseKind::PLT32:
+                address_offset = -4;
+                type = ELFRelocationType::X86_64_PLT32;
                 break;
         }
 

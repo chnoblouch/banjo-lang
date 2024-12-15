@@ -27,6 +27,8 @@ struct BinSymbolDef {
 enum class BinSymbolUseKind {
     ABS64,
     REL32,
+    GOTPCREL32,
+    PLT32,
 };
 
 enum class BinSectionKind {

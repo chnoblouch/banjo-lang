@@ -2,9 +2,9 @@
 
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/mcode/function.hpp"
-#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -39,66 +39,64 @@ namespace target {
 using namespace X8664Register;
 
 MSABICallingConv const MSABICallingConv::INSTANCE = MSABICallingConv();
-std::vector<int> const MSABICallingConv::ARG_REGS_INT = {RCX, RDX, R8, R9};
-std::vector<int> const MSABICallingConv::ARG_REGS_FLOAT = {XMM0, XMM1, XMM2, XMM3};
+std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_INT = {RCX, RDX, R8, R9};
+std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_FP = {XMM0, XMM1, XMM2, XMM3};
 
 MSABICallingConv::MSABICallingConv() {
     volatile_regs = {RAX, RCX, RDX, RSP, RBP, R8, R9, R10, R11, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5};
 }
 
 void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
-    for (int i = 1; i < instr.get_operands().size(); i++) {
+    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
-        mcode::Register reg = get_arg_reg(operand, i - 1, lowerer);
-        mcode::Operand src = lowerer.lower_value(operand);
-        append_arg_move(operand, src, reg, lowerer);
+        emit_arg_move(operand, i - 1, lowerer);
     }
 
-    append_call(instr.get_operand(0), lowerer);
+    emit_call(instr.get_operand(0), lowerer);
 
-    if (instr.get_dest().has_value()) {
-        append_ret_val_move(lowerer);
+    if (instr.get_dest()) {
+        emit_ret_val_move(lowerer);
     }
 }
 
-mcode::Register MSABICallingConv::get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer) {
     if (index < 4) {
-        long id = operand.get_type().is_floating_point() ? ARG_REGS_FLOAT[index] : ARG_REGS_INT[index];
-        return mcode::Register::from_physical(id);
+        emit_reg_arg_move(operand, index, lowerer);
     } else {
-        int arg_slot_index = index - 4;
-        mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
-
-        if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
-            mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
-            stack_slot.set_call_arg_index(arg_slot_index);
-            return mcode::Register::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
-        } else {
-            int slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
-            return mcode::Register::from_stack_slot(slot_index);
-        }
+        emit_stack_arg_move(operand, index, lowerer);
     }
 }
 
-void MSABICallingConv::append_arg_move(
-    ssa::Operand &operand,
-    mcode::Operand &src,
-    mcode::Register reg,
-    codegen::SSALowerer &lowerer
-) {
+void MSABICallingConv::emit_reg_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
-    mcode::InstrIter iter;
 
-    if (operand.get_type().is_floating_point()) {
-        iter = x86_64_lowerer.move_float_into_reg(reg, src);
-    } else {
-        iter = x86_64_lowerer.move_int_into_reg(reg, src);
-    }
+    bool is_fp = operand.get_type().is_floating_point();
+    mcode::PhysicalReg m_reg = is_fp ? ARG_REGS_FP[index] : ARG_REGS_INT[index];
+    mcode::Register m_dst_reg = mcode::Register::from_physical(m_reg);
 
-    iter->set_flag(mcode::Instruction::FLAG_CALL_ARG);
+    x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
 }
 
-void MSABICallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_stack_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer) {
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
+
+    unsigned arg_slot_index = index - 4;
+    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
+    mcode::StackSlotID slot_index;
+
+    if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
+        mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
+        stack_slot.set_call_arg_index(arg_slot_index);
+        slot_index = stack_frame.new_stack_slot(stack_slot);
+    } else {
+        slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
+    }
+
+    mcode::Register m_dst_reg = mcode::Register::from_stack_slot(slot_index);
+    x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
+}
+
+void MSABICallingConv::emit_call(const ssa::Operand &func_operand, codegen::SSALowerer &lowerer) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
     int ptr_size = X8664SSALowerer::PTR_SIZE;
@@ -109,7 +107,7 @@ void MSABICallingConv::append_call(ssa::Operand func_operand, codegen::SSALowere
     } else if (func_operand.is_register()) {
         ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
         if (producer->get_opcode() == ssa::Opcode::LOAD) {
-            operand = lowerer.lower_address(producer->get_operand(1));
+            operand = x86_64_lowerer.lower_address(producer->get_operand(1));
             lowerer.discard_use(func_operand.get_register());
         } else {
             operand = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), ptr_size);
@@ -123,14 +121,14 @@ void MSABICallingConv::append_call(ssa::Operand func_operand, codegen::SSALowere
     iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);
 }
 
-void MSABICallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer) {
     ssa::Instruction &instr = *lowerer.get_instr_iter();
 
     bool is_floating_point = instr.get_operand(0).get_type().is_floating_point();
     unsigned return_size = lowerer.get_size(instr.get_operand(0).get_type());
 
     mcode::Opcode opcode;
-    long src_reg;
+    mcode::PhysicalReg src_reg;
 
     if (!is_floating_point) {
         opcode = X8664Opcode::MOV;
@@ -343,7 +341,7 @@ std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const std::vect
 
         if (i < ARG_REGS_INT.size()) {
             storage.in_reg = true;
-            storage.reg = types[i].is_floating_point() ? ARG_REGS_FLOAT[i] : ARG_REGS_INT[i];
+            storage.reg = types[i].is_floating_point() ? ARG_REGS_FP[i] : ARG_REGS_INT[i];
         } else {
             storage.in_reg = false;
             storage.stack_offset = 8 * i;

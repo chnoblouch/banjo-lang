@@ -39,7 +39,6 @@ public:
 
 private:
     mcode::Register get_arg_reg(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer);
-    void append_arg_move(ssa::Operand &operand, mcode::Operand &src, mcode::Register reg, codegen::SSALowerer &lowerer);
     void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
     void append_ret_val_move(codegen::SSALowerer &lowerer);
 };

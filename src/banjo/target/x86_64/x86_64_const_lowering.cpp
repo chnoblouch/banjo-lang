@@ -1,10 +1,9 @@
 #include "x86_64_const_lowering.hpp"
 
 #include "banjo/passes/pass_utils.hpp"
-#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
-
-#include <cassert>
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -13,7 +12,7 @@ namespace target {
 X8664ConstLowering::X8664ConstLowering(X8664SSALowerer &lowerer) : lowerer(lowerer) {}
 
 mcode::Value X8664ConstLowering::load_f32(float value) {
-    assert(value != 0.0);
+    ASSERT(value != 0.0);
 
     if (lowerer.get_basic_block_iter() != last_block) {
         last_block = lowerer.get_basic_block_iter();
@@ -61,7 +60,7 @@ void X8664ConstLowering::process_block() {
                 return;
             }
 
-            float val = (float)imm.get_fp_immediate();
+            float val = static_cast<float>(imm.get_fp_immediate());
             if (val == 0.0f) {
                 return;
             }

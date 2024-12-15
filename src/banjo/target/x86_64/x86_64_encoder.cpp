@@ -1,10 +1,12 @@
 #include "x86_64_encoder.hpp"
 
+#include "banjo/emit/binary_module.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <limits>
+#include <variant>
 
 namespace banjo {
 
@@ -122,6 +124,22 @@ void X8664Encoder::remove_internal_symbols() {
             slice.buffer.write_i32(displacement);
         }
     }
+
+    for (SectionSlice &slice : text_slices) {
+        for (SymbolUse &use : slice.uses) {
+            SymbolDef &def = defs[use.index];
+            if (def.kind != BinSymbolKind::TEXT_FUNC) {
+                continue;
+            }
+
+            std::uint32_t use_offset = slice.offset + use.local_offset + 4;
+            std::uint32_t def_offset = text_slices[def.slice_index].offset + def.local_offset;
+            std::int32_t displacement = def_offset - use_offset;
+
+            slice.buffer.seek(use.local_offset);
+            slice.buffer.write_i32(displacement);
+        }
+    }
 }
 
 void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) {
@@ -143,8 +161,8 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case XOR: encode_xor(instr, func); break;
         case SHL: encode_shl(instr, func); break;
         case SHR: encode_shr(instr, func); break;
-        case CDQ: encode_cdq(instr); break;
-        case CQO: encode_cqo(instr); break;
+        case CDQ: encode_cdq(); break;
+        case CQO: encode_cqo(); break;
         case IMUL: encode_imul(instr, func); break;
         case IDIV: encode_idiv(instr, func); break;
         case JMP: encode_jmp(instr); break;
@@ -313,11 +331,11 @@ void X8664Encoder::encode_shr(mcode::Instruction &instr, mcode::Function *func) 
     encode_shift(instr, func, 5);
 }
 
-void X8664Encoder::encode_cdq(mcode::Instruction &instr) {
+void X8664Encoder::encode_cdq() {
     emit_opcode(0x99);
 }
 
-void X8664Encoder::encode_cqo(mcode::Instruction &instr) {
+void X8664Encoder::encode_cqo() {
     emit_rex(1, 0, 0, 0);
     emit_opcode(0x99);
 }
@@ -330,7 +348,7 @@ void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
         get_text_slice().relaxable_branch = true;
 
         emit_opcode(0xEB);
-        add_text_symbol_use(target.get_label(), 0);
+        add_text_symbol_use(target.get_label(), BinSymbolUseKind::REL32, 0);
         get_back_text_buffer().write_u8(0);
 
         create_text_slice();
@@ -433,7 +451,7 @@ void X8664Encoder::encode_call(mcode::Instruction &instr, mcode::Function *func)
 
     if (target.is_symbol()) {
         emit_opcode(0xE8);
-        add_text_symbol_use(target.get_symbol().name, 0);
+        add_text_symbol_use(target.get_symbol().name, use_kind(target.get_symbol()), 0);
         get_back_text_buffer().write_i32(0);
     } else if (is_reg(target)) {
         ASSERT_MESSAGE(target.get_size() == 8, "call target register must be a 64-bit register");
@@ -757,7 +775,7 @@ void X8664Encoder::encode_jcc(mcode::Instruction &instr, std::uint8_t opcode) {
         get_text_slice().relaxable_branch = true;
 
         emit_opcode(opcode);
-        add_text_symbol_use(target.get_label(), 0);
+        add_text_symbol_use(target.get_label(), BinSymbolUseKind::REL32, 0);
         get_back_text_buffer().write_i8(0);
 
         create_text_slice();
@@ -919,7 +937,7 @@ void X8664Encoder::emit_basic_ri(
         emit_opcode(opcode8);
         emit_modrm_rr(modrm_reg_digit, dst);
         get_back_text_buffer().write_i8(imm.value);
-    } else if (imm.value >= -128 && imm.value <= 127) {
+    } else if (imm.value <= 255) {
         emit_opcode(opcode_imm8);
         emit_modrm_rr(modrm_reg_digit, dst);
         get_back_text_buffer().write_i8(imm.value);
@@ -978,7 +996,7 @@ void X8664Encoder::emit_basic_mi(
         emit_opcode(opcode8);
         emit_mem_digit(dst, modrm_reg_digit, 1);
         get_back_text_buffer().write_i8(imm.value);
-    } else if (imm.value >= -128 && imm.value <= 127) {
+    } else if (imm.value <= 255) {
         emit_opcode(opcode_imm8);
         emit_mem_digit(dst, modrm_reg_digit, 1);
         get_back_text_buffer().write_i8(imm.value);
@@ -1018,16 +1036,16 @@ void X8664Encoder::emit_mem_reg(Address addr, RegCode reg) {
 }
 
 void X8664Encoder::emit_mem_digit(Address addr, std::uint8_t digit, std::uint32_t offset_to_next_instr) {
-    if (!addr.symbol.empty()) {
-        ASSERT_MESSAGE(addr.base == AddrRegCode::ADDR_NO_BASE, "addresses with symbols must not have a base");
-        ASSERT_MESSAGE(addr.index == AddrRegCode::ADDR_NO_INDEX, "addresses with symbols must not have an index");
-
-        emit_modrm(0b00, digit, 0b101);
-        add_text_symbol_use(addr.symbol, -offset_to_next_instr);
-        get_back_text_buffer().write_i32(0);
-        return;
+    if (RegAddress *reg_addr = std::get_if<RegAddress>(&addr)) {
+        return emit_mem_digit(*reg_addr, digit);
+    } else if (SymbolAddress *symbol_addr = std::get_if<SymbolAddress>(&addr)) {
+        return emit_mem_digit(*symbol_addr, digit, offset_to_next_instr);
+    } else {
+        ASSERT_UNREACHABLE;
     }
+}
 
+void X8664Encoder::emit_mem_digit(RegAddress addr, std::uint8_t digit) {
     bool has_index = addr.index != AddrRegCode::ADDR_NO_INDEX;
     std::uint8_t base_trunc = addr.base & 0b111;
 
@@ -1068,6 +1086,12 @@ void X8664Encoder::emit_mem_digit(Address addr, std::uint8_t digit, std::uint32_
 
         get_back_text_buffer().write_i32(addr.displacement);
     }
+}
+
+void X8664Encoder::emit_mem_digit(SymbolAddress addr, std::uint8_t digit, std::uint32_t offset_to_next_instr) {
+    emit_modrm(0b00, digit, 0b101);
+    add_text_symbol_use(addr.symbol_index, addr.use_kind, -offset_to_next_instr);
+    get_back_text_buffer().write_i32(0);
 }
 
 void X8664Encoder::emit_combined_opcode(std::uint8_t opcode, std::uint8_t reg) {
@@ -1111,8 +1135,18 @@ void X8664Encoder::emit_rex_rr(std::uint8_t size, std::uint8_t reg, RegCode rm) 
 }
 
 void X8664Encoder::emit_rex_rm(std::uint8_t size, std::uint8_t reg, Address addr) {
-    std::uint8_t index = addr.index;
-    std::uint8_t base = addr.base;
+    std::uint8_t index;
+    std::uint8_t base;
+
+    if (RegAddress *reg_addr = std::get_if<RegAddress>(&addr)) {
+        index = reg_addr->index;
+        base = reg_addr->base;
+    } else if (std::holds_alternative<SymbolAddress>(addr)) {
+        index = AddrRegCode::ADDR_NO_INDEX;
+        base = AddrRegCode::ADDR_NO_BASE;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 
     bool w = size == 8;
     bool r = reg > AddrRegCode::ADDR_EDI;
@@ -1195,7 +1229,7 @@ X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
 
 X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Function *func) {
     if (operand.is_stack_slot()) {
-        return Address{
+        return RegAddress{
             .scale = 1,
             .index = AddrRegCode::ADDR_NO_INDEX,
             .base = AddrRegCode::ADDR_ESP,
@@ -1204,18 +1238,16 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
     }
 
     if (operand.is_symbol_deref()) {
-        return Address{
-            .scale = 1,
-            .index = AddrRegCode::ADDR_NO_INDEX,
-            .base = AddrRegCode::ADDR_NO_BASE,
+        return SymbolAddress{
+            .symbol_index = symbol_indices[operand.get_deref_symbol().name],
+            .use_kind = use_kind(operand.get_deref_symbol()),
             .displacement = 0,
-            .symbol = operand.get_deref_symbol().name,
         };
     }
 
     mcode::IndirectAddress &machine_addr = operand.get_addr();
 
-    Address addr = {
+    RegAddress addr = {
         .scale = 1,
         .index = AddrRegCode::ADDR_NO_INDEX,
         .base = AddrRegCode::ADDR_NO_BASE,
@@ -1301,6 +1333,15 @@ X8664Encoder::RegCode X8664Encoder::reg(mcode::Register reg) {
         case target::X8664Register::XMM14: return RegCode::XMM14;
         case target::X8664Register::XMM15: return RegCode::XMM15;
         default: return RegCode::EAX;
+    }
+}
+
+BinSymbolUseKind X8664Encoder::use_kind(const mcode::Symbol &symbol) {
+    switch (symbol.reloc) {
+        case mcode::Relocation::NONE: return BinSymbolUseKind::REL32;
+        case mcode::Relocation::GOT: return BinSymbolUseKind::GOTPCREL32;
+        case mcode::Relocation::PLT: return BinSymbolUseKind::PLT32;
+        default: ASSERT_UNREACHABLE;
     }
 }
 

@@ -1,4 +1,5 @@
 #include "binary_builder.hpp"
+#include "banjo/emit/binary_module.hpp"
 
 #include <utility>
 
@@ -41,7 +42,7 @@ void BinaryBuilder::merge_text_slices(BinModule &module_) {
         for (SymbolUse &use : text_slice.uses) {
             SymbolDef &def = defs[use.index];
 
-            if (def.kind == BinSymbolKind::TEXT_LABEL) {
+            if (def.kind == BinSymbolKind::TEXT_LABEL || def.kind == BinSymbolKind::TEXT_FUNC) {
                 continue;
             }
 
@@ -256,8 +257,8 @@ void BinaryBuilder::attach_symbol_def(std::uint32_t index) {
     def.local_offset = (std::uint32_t)text_slices.back().buffer.get_size();
 }
 
-void BinaryBuilder::add_text_symbol_use(const std::string &symbol, std::int32_t addend) {
-    add_text_symbol_use(symbol_indices[symbol], BinSymbolUseKind::REL32, addend);
+void BinaryBuilder::add_text_symbol_use(const std::string &symbol, BinSymbolUseKind kind, std::int32_t addend) {
+    add_text_symbol_use(symbol_indices[symbol], kind, addend);
 }
 
 void BinaryBuilder::add_text_symbol_use(std::uint32_t symbol_index, BinSymbolUseKind kind, std::int32_t addend) {

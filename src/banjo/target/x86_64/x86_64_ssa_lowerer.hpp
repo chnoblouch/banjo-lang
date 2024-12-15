@@ -17,6 +17,11 @@ namespace target {
 class X8664SSALowerer : public codegen::SSALowerer {
 
 private:
+    struct ValueLowerFlags {
+        bool allow_addrs = false;
+        bool is_callee = false;
+    };
+
     X8664AddrLowering addr_lowering;
     X8664ConstLowering const_lowering;
     std::optional<std::string> const_neg_zero;
@@ -27,16 +32,13 @@ public:
     X8664SSALowerer(Target *target);
 
     mcode::Operand into_reg_or_addr(ssa::Operand &operand);
-    mcode::InstrIter move_int_into_reg(mcode::Register reg, mcode::Value &value);
-    mcode::InstrIter move_float_into_reg(mcode::Register reg, mcode::Value &value);
     mcode::Operand read_symbol_addr(const mcode::Symbol &symbol);
     mcode::Operand deref_symbol_addr(const mcode::Symbol &symbol, unsigned size);
 
-private:
-    mcode::Operand lower_value(const ssa::Operand &operand) override;
-    mcode::Operand lower_address(const ssa::Operand &operand) override;
+    mcode::Operand lower_address(const ssa::Operand &operand);
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
+public:
     void append_mov_and_operation(
         mcode::Opcode machine_opcode,
         ssa::VirtualRegister dst,
@@ -46,7 +48,6 @@ private:
     bool lower_stored_operation(ssa::Instruction &store);
 
     void init_module(ssa::Module &mod) override;
-    mcode::Value lower_global_value(ssa::Value &value) override;
 
     void lower_load(ssa::Instruction &instr) override;
     void lower_store(ssa::Instruction &instr) override;
@@ -93,9 +94,24 @@ private:
     mcode::Opcode get_jcc_opcode(ssa::Comparison comparison);
     mcode::Opcode get_cmovcc_opcode(ssa::Comparison comparison);
     unsigned get_condition_code(ssa::Comparison comparison);
-    mcode::Operand get_float_addr(double value, const ssa::Type &type);
     void move_branch_args(ssa::BranchTarget &target);
     void emit_shift(ssa::Instruction &instr, mcode::Opcode opcode);
+
+    mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
+    mcode::Operand lower_as_move(mcode::Operand m_dst, const ssa::Value &value);
+    mcode::Operand lower_int_imm_as_move(mcode::Operand m_dst, LargeInt value);
+    mcode::Operand lower_fp_imm_as_move(mcode::Operand m_dst, double value);
+    mcode::Operand lower_reg_as_move(mcode::Operand m_dst, ssa::VirtualRegister src_reg, ssa::Type type);
+
+    mcode::Operand lower_as_operand(const ssa::Value &value);
+    mcode::Operand lower_as_operand(const ssa::Value &value, ValueLowerFlags flags);
+    mcode::Operand lower_int_imm_as_operand(LargeInt value, unsigned size);
+    mcode::Operand lower_fp_imm_as_operand(double value, unsigned size);
+    mcode::Operand lower_reg_as_operand(ssa::VirtualRegister src_reg, unsigned size, ValueLowerFlags flags);
+    mcode::Operand lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags);
+
+    mcode::Register create_reg();
+    mcode::Operand create_fp_const_load(double value, unsigned size);
 };
 
 } // namespace target

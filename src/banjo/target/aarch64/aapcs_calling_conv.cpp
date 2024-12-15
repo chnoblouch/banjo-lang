@@ -1,16 +1,15 @@
 #include "aapcs_calling_conv.hpp"
 
 #include "aarch64_reg_analyzer.hpp"
-#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/late_reg_alloc.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
-#include "banjo/config/config.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
-#include "banjo/utils/bit_operations.hpp"
+#include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -32,6 +31,8 @@ AAPCSCallingConv::AAPCSCallingConv() {
 }
 
 void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
+    AArch64SSALowerer &aarch64_ssa_lowerer = static_cast<AArch64SSALowerer &>(lowerer);
+
     ssa::Operand &func_operand = instr.get_operand(0);
 
     std::vector<ssa::Type> types;
@@ -57,7 +58,7 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
         // TODO: Try moving immediately so the register allocator doesn't have to clean this up.
         lowerer.emit(mcode::Instruction(
             is_float ? AArch64Opcode::FMOV : AArch64Opcode::MOV,
-            {mcode::Operand::from_register(reg, size), lowerer.lower_value(operand)},
+            {mcode::Operand::from_register(reg, size), aarch64_ssa_lowerer.lower_value(operand)},
             mcode::Instruction::FLAG_CALL_ARG
         ));
 

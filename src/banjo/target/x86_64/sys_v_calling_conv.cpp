@@ -1,11 +1,11 @@
 #include "sys_v_calling_conv.hpp"
 
-#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
-#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -27,8 +27,10 @@ SysVCallingConv::SysVCallingConv() {
 }
 
 void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
+
     std::vector<ssa::Type> types;
-    for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
+    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         types.push_back(instr.get_operand(i).get_type());
     }
     std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(types);
@@ -36,8 +38,7 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
     for (int i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
         mcode::Register reg = get_arg_reg(instr, i - 1, lowerer);
-        mcode::Operand src = lowerer.lower_value(operand);
-        append_arg_move(operand, src, reg, lowerer);
+        x86_64_lowerer.lower_as_move_into_reg(reg, operand);
     }
 
     append_call(instr.get_operand(0), lowerer);
@@ -51,7 +52,7 @@ mcode::Register SysVCallingConv::get_arg_reg(ssa::Instruction &instr, unsigned i
     mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
 
     std::vector<ssa::Type> types;
-    for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
+    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         types.push_back(instr.get_operand(i).get_type());
     }
 
@@ -63,30 +64,9 @@ mcode::Register SysVCallingConv::get_arg_reg(ssa::Instruction &instr, unsigned i
         stack_slot.set_call_arg_index(storage.arg_slot_index);
         return mcode::Register::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
     } else {
-        int slot_index = stack_frame.get_call_arg_slot_indices()[storage.arg_slot_index];
+        mcode::StackSlotID slot_index = stack_frame.get_call_arg_slot_indices()[storage.arg_slot_index];
         return mcode::Register::from_stack_slot(slot_index);
     }
-}
-
-void SysVCallingConv::append_arg_move(
-    ssa::Operand &operand,
-    mcode::Operand &src,
-    mcode::Register reg,
-    codegen::SSALowerer &lowerer
-) {
-    mcode::Opcode opcode;
-
-    if (operand.get_type().is_primitive(ssa::Primitive::F32)) {
-        opcode = X8664Opcode::MOVSS;
-    } else if (operand.get_type().is_primitive(ssa::Primitive::F64)) {
-        opcode = X8664Opcode::MOVSD;
-    } else {
-        bool is_reference = src.is_stack_slot() || src.is_symbol_deref() || src.is_addr();
-        opcode = is_reference ? X8664Opcode::LEA : X8664Opcode::MOV;
-    }
-
-    mcode::Operand dst = mcode::Operand::from_register(reg, src.get_size());
-    lowerer.emit(mcode::Instruction(opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG));
 }
 
 void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer) {
@@ -94,21 +74,21 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
 
     int ptr_size = X8664SSALowerer::PTR_SIZE;
 
-    mcode::Operand operand;
+    mcode::Operand m_callee;
     if (func_operand.is_symbol()) {
-        operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
+        m_callee = x86_64_lowerer.lower_as_operand(func_operand, {.is_callee = true});
     } else if (func_operand.is_register()) {
         ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
         if (producer->get_opcode() == ssa::Opcode::LOAD) {
-            operand = lowerer.lower_address(producer->get_operand(1));
+            m_callee = x86_64_lowerer.lower_address(producer->get_operand(1));
             lowerer.discard_use(func_operand.get_register());
         } else {
-            operand = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), ptr_size);
+            m_callee = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), ptr_size);
         }
     }
 
     mcode::InstrIter iter =
-        lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL));
+        lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL));
 
     iter->add_reg_op(X8664Register::RAX, mcode::RegUsage::DEF);
     iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);

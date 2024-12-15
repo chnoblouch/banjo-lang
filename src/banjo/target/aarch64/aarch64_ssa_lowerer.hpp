@@ -27,8 +27,6 @@ public:
     mcode::Operand lower_address(const ssa::Operand &operand);
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv);
 
-    mcode::Value lower_global_value(ssa::Value &value);
-
     void lower_load(ssa::Instruction &instr);
     void lower_store(ssa::Instruction &instr);
     void lower_loadarg(ssa::Instruction &instr);

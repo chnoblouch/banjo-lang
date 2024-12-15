@@ -26,14 +26,6 @@ mcode::Operand AArch64SSALowerer::lower_value(const ssa::Operand& operand) {
     return {};
 }
 
-mcode::Value AArch64SSALowerer::lower_global_value(ssa::Value &value) {
-    int size = get_size(value.get_type());
-
-    if (value.is_int_immediate()) return mcode::Value::from_immediate(value.get_int_immediate().to_string(), size);
-    else if (value.is_fp_immediate()) return mcode::Value::from_immediate(std::to_string(value.get_fp_immediate()), size);
-    else return lower_value(value);
-}
-
 void AArch64SSALowerer::lower_fp_operation(mcode::Opcode opcode, ssa::Instruction& instr) {
     mcode::Register reg = lower_reg(*instr.get_dest());
     int size = get_size(instr.get_operand(0).get_type());

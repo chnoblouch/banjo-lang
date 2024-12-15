@@ -73,7 +73,7 @@ protected:
     void add_label_symbol(std::string name);
     void add_symbol_def(const SymbolDef &def);
     void attach_symbol_def(std::uint32_t index);
-    void add_text_symbol_use(const std::string &symbol, std::int32_t addend);
+    void add_text_symbol_use(const std::string &symbol, BinSymbolUseKind kind, std::int32_t addend);
     void add_text_symbol_use(std::uint32_t symbol_index, BinSymbolUseKind kind, std::int32_t addend);
     void add_data_symbol_use(const std::string &symbol);
     std::uint32_t add_empty_label();

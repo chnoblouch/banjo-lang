@@ -2,10 +2,10 @@
 #define X86_64_ENCODER_H
 
 #include "banjo/emit/binary_builder.hpp"
+#include "banjo/emit/binary_module.hpp"
 
 #include <cstdint>
 #include <ostream>
-#include <string>
 #include <variant>
 #include <vector>
 
@@ -77,14 +77,20 @@ private:
         std::int64_t symbol_index;
     };
 
-    struct Address {
+    struct RegAddress {
         std::uint8_t scale;
         AddrRegCode index;
         AddrRegCode base;
         std::int32_t displacement;
-        std::string symbol = "";
     };
 
+    struct SymbolAddress {
+        std::uint32_t symbol_index;
+        BinSymbolUseKind use_kind;
+        std::int32_t displacement;
+    };
+
+    typedef std::variant<RegAddress, SymbolAddress> Address;
     typedef std::variant<RegCode, Address> RegOrAddr;
 
     struct BasicInstrOpcodes {
@@ -120,8 +126,8 @@ private:
     void encode_xor(mcode::Instruction &instr, mcode::Function *func);
     void encode_shl(mcode::Instruction &instr, mcode::Function *func);
     void encode_shr(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cdq(mcode::Instruction &instr);
-    void encode_cqo(mcode::Instruction &instr);
+    void encode_cdq();
+    void encode_cqo();
     void encode_jmp(mcode::Instruction &instr);
     void encode_cmp(mcode::Instruction &instr, mcode::Function *func);
     void encode_je(mcode::Instruction &instr);
@@ -232,6 +238,8 @@ private:
     void emit_opcode(std::uint8_t opcode);
     void emit_mem_reg(Address addr, RegCode reg);
     void emit_mem_digit(Address addr, std::uint8_t digit, std::uint32_t offset_to_next_instr = 0);
+    void emit_mem_digit(RegAddress addr, std::uint8_t digit);
+    void emit_mem_digit(SymbolAddress addr, std::uint8_t digit, std::uint32_t offset_to_next_instr);
     void emit_combined_opcode(std::uint8_t opcode, std::uint8_t reg);
     void emit_modrm_rr(std::uint8_t reg, RegCode rm);
     void emit_modrm_sib(std::uint8_t reg, RegOrAddr roa);
@@ -257,6 +265,7 @@ private:
     bool is_addr(mcode::Operand &operand);
     bool is_roa(mcode::Operand &operand);
     RegCode reg(mcode::Register reg);
+    BinSymbolUseKind use_kind(const mcode::Symbol &symbol);
 
     void process_eh_pushreg(mcode::Instruction &instr, UnwindInfo &frame_info);
 
