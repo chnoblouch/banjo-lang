@@ -5,7 +5,6 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <memory>
 #include <string>
@@ -21,7 +20,6 @@ class Variable;
 class NodeBuilder;
 
 enum ASTNodeType {
-    AST_ROOT,
     AST_MODULE,
     AST_BLOCK,
     AST_IDENTIFIER,
@@ -97,7 +95,6 @@ enum ASTNodeType {
     AST_BIT_XOR_ASSIGN,
     AST_SHL_ASSIGN,
     AST_SHR_ASSIGN,
-    AST_ARRAY_INSTANTIATION,
     AST_ARRAY_ACCESS,
     AST_TUPLE_EXPR,
     AST_IF_CHAIN,
@@ -125,8 +122,6 @@ enum ASTNodeType {
     AST_GENERIC_STRUCT_DEFINITION,
     AST_GENERIC_PARAM_LIST,
     AST_GENERIC_PARAMETER,
-    AST_GENERIC_INSTANTIATION,
-    AST_GENERIC_ARGUMENT_LIST,
     AST_FUNCTION_CALL,
     AST_FUNCTION_ARGUMENT_LIST,
     AST_FUNCTION_RETURN,
@@ -145,17 +140,13 @@ enum ASTNodeType {
     AST_IMPL_LIST,
     AST_TYPE_ALIAS,
     AST_NATIVE_FUNCTION_DECLARATION,
-    AST_CALLING_CONVENTION,
     AST_NATIVE_VAR,
     AST_QUALIFIER_LIST,
     AST_QUALIFIER,
     AST_USE,
     AST_USE_TREE_LIST,
     AST_USE_REBINDING,
-    AST_WILDCARD,
-    AST_ASSEMBLY_CODE,
     AST_META_EXPR,
-    AST_META_EXPR_ARGS,
     AST_META_IF,
     AST_META_IF_CONDITION,
     AST_META_ELSE,
@@ -163,12 +154,19 @@ enum ASTNodeType {
     AST_EXPLICIT_TYPE,
     AST_META_FIELD_ACCESS,
     AST_META_METHOD_CALL,
+    AST_PAREN_EXPR,
+    AST_EMPTY_LINE,
     AST_ERROR,
     AST_COMPLETION_TOKEN,
     AST_INVALID,
 };
 
 class ASTNode {
+
+public:
+    struct Flags {
+        bool trailing_comma : 1 = false;
+    };
 
 protected:
     ASTNodeType type;
@@ -178,6 +176,9 @@ protected:
 
     std::vector<ASTNode *> children;
     ASTNode *parent = nullptr;
+
+public:
+    Flags flags;
 
 public:
     ASTNode();

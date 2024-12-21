@@ -32,6 +32,11 @@ class Parser {
     friend class ExprParser;
 
 public:
+    enum class Mode {
+        COMPILATION,
+        FORMATTING,
+    };
+
     enum class ReportTextType {
         ERR_PARSE_UNEXPECTED,
         ERR_PARSE_EXPECTED,
@@ -43,6 +48,8 @@ public:
 private:
     TokenStream stream;
     const ModulePath &module_path;
+    Mode mode;
+
     std::unique_ptr<AttributeList> current_attr_list = nullptr;
 
     bool running_completion = false;
@@ -52,10 +59,12 @@ private:
     std::vector<Report> reports;
 
 public:
-    Parser(std::vector<Token> &tokens, const ModulePath &module_path);
+    Parser(std::vector<Token> &tokens, const ModulePath &module_path, Mode mode = Mode::COMPILATION);
     void enable_completion();
 
     ParsedAST parse_module();
+
+    Mode get_mode() { return mode; }
     ASTNode *get_completion_node() { return completion_node; }
 
 private:

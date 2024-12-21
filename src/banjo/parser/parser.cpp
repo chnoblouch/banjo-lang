@@ -32,7 +32,10 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_NATIVE,
 };
 
-Parser::Parser(std::vector<Token> &tokens, const ModulePath &module_path) : stream(tokens), module_path(module_path) {}
+Parser::Parser(std::vector<Token> &tokens, const ModulePath &module_path, Mode mode /*= Mode::COMPILATION*/)
+  : stream(tokens),
+    module_path(module_path),
+    mode(mode) {}
 
 void Parser::enable_completion() {
     running_completion = true;
@@ -95,6 +98,10 @@ ParseResult Parser::parse_block() {
 
 void Parser::parse_block_child(ASTNode *block) {
     ParseResult result;
+
+    if (mode == Mode::FORMATTING && stream.get()->after_empty_line) {
+        block->append_child(new ASTNode(AST_EMPTY_LINE));
+    }
 
     switch (stream.get()->get_type()) {
         case TKN_VAR: result = StmtParser(*this).parse_var(); break;
@@ -223,7 +230,12 @@ ParseResult Parser::parse_list(
                 stream.consume();
             }
 
-            return node.build(type);
+            ASTNode *result = node.build(type);
+            if (mode == Mode::FORMATTING && stream.peek(-2)->is(TKN_COMMA)) {
+                result->flags.trailing_comma = true;
+            }
+
+            return result;
         } else {
             ParseResult result = element_parser(node);
             node.append_child(result.node);

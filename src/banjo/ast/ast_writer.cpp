@@ -41,7 +41,6 @@ void ASTWriter::write(ASTNode *node, unsigned indentation) {
 
 const char *ASTWriter::get_type_name(ASTNodeType type) {
     switch (type) {
-        case AST_ROOT: return "ROOT";
         case AST_MODULE: return "MODULE";
         case AST_BLOCK: return "BLOCK";
         case AST_IDENTIFIER: return "IDENTIFIER";
@@ -117,7 +116,6 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_BIT_XOR_ASSIGN: return "BIT_XOR_ASSIGN";
         case AST_SHL_ASSIGN: return "SHL_ASSIGN";
         case AST_SHR_ASSIGN: return "SHR_ASSIGN";
-        case AST_ARRAY_INSTANTIATION: return "ARRAY_INSTANTIATION";
         case AST_ARRAY_ACCESS: return "ARRAY_ACCESS";
         case AST_TUPLE_EXPR: return "TUPLE_EXPR";
         case AST_IF_CHAIN: return "IF_CHAIN";
@@ -145,8 +143,6 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_GENERIC_STRUCT_DEFINITION: return "GENERIC_STRUCT_DEFINITION";
         case AST_GENERIC_PARAM_LIST: return "GENERIC_PARAM_LIST";
         case AST_GENERIC_PARAMETER: return "GENERIC_PARAMETER";
-        case AST_GENERIC_INSTANTIATION: return "GENERIC_INSTANTIATION";
-        case AST_GENERIC_ARGUMENT_LIST: return "GENERIC_ARGUMENT_LIST";
         case AST_FUNCTION_CALL: return "FUNCTION_CALL";
         case AST_FUNCTION_ARGUMENT_LIST: return "FUNCTION_ARGUMENT_LIST";
         case AST_FUNCTION_RETURN: return "FUNCTION_RETURN";
@@ -165,17 +161,13 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_IMPL_LIST: return "IMPL_LIST";
         case AST_TYPE_ALIAS: return "TYPE_ALIAS";
         case AST_NATIVE_FUNCTION_DECLARATION: return "NATIVE_FUNCTION_DECLARATION";
-        case AST_CALLING_CONVENTION: return "CALLING_CONVENTION";
         case AST_NATIVE_VAR: return "NATIVE_VAR";
         case AST_QUALIFIER_LIST: return "QUALIFIER_LIST";
         case AST_QUALIFIER: return "QUALIFIER";
         case AST_USE: return "USE";
         case AST_USE_TREE_LIST: return "USE_TREE_LIST";
         case AST_USE_REBINDING: return "USE_REBINDING";
-        case AST_WILDCARD: return "WILDCARD";
-        case AST_ASSEMBLY_CODE: return "ASSEMBLY_CODE";
         case AST_META_EXPR: return "META_EXPR";
-        case AST_META_EXPR_ARGS: return "META_EXPR_ARGS";
         case AST_META_IF: return "META_IF";
         case AST_META_IF_CONDITION: return "META_IF_CONDITION";
         case AST_META_ELSE: return "META_ELSE";
@@ -183,6 +175,8 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_EXPLICIT_TYPE: return "EXPLICIT_TYPE";
         case AST_META_FIELD_ACCESS: return "META_FIELD_ACCESS";
         case AST_META_METHOD_CALL: return "META_METHOD_CALL";
+        case AST_PAREN_EXPR: return "PAREN_EXPR";
+        case AST_EMPTY_LINE: return "EMPTY_LINE";
         case AST_ERROR: return "ERROR";
         case AST_COMPLETION_TOKEN: return "COMPLETION_TOKEN";
         case AST_INVALID: return "INVALID";

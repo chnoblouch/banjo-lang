@@ -27,7 +27,7 @@ const std::map<std::string_view, TokenType> KEYWORDS{
     {"type", TKN_TYPE},
 };
 
-Lexer::Lexer(std::istream &input_stream) : reader(input_stream) {}
+Lexer::Lexer(std::istream &input_stream, Mode mode /*= Mode::COMPILATION*/) : reader(input_stream), mode(mode) {}
 
 void Lexer::enable_completion(TextPosition completion_point) {
     completion_enabled = true;
@@ -205,11 +205,28 @@ void Lexer::read_punctuation() {
 void Lexer::finish_token(TokenType type) {
     tokens.push_back({type, token_builder, start_position});
     token_builder.clear();
+
+    if (mode == Mode::FORMATTING) {
+        current_line_empty = false;
+
+        if (previous_line_empty) {
+            previous_line_empty = false;
+            tokens.back().after_empty_line = true;
+        }
+    }
 }
 
 void Lexer::finish_line() {
     if (Config::instance().optional_semicolons && !tokens.empty()) {
         tokens.back().end_of_line = true;
+    }
+
+    if (mode == Mode::FORMATTING) {
+        if (current_line_empty) {
+            previous_line_empty = true;
+        } else {
+            current_line_empty = true;
+        }
     }
 }
 

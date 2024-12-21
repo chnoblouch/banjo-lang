@@ -74,6 +74,7 @@ add_subdirectory(test)
 
 install(TARGETS banjo-compiler RUNTIME DESTINATION bin)
 install(TARGETS banjo-lsp RUNTIME DESTINATION bin)
+install(TARGETS banjo-format RUNTIME DESTINATION bin)
 install(TARGETS cli RUNTIME DESTINATION bin)
 
 if(BUILD_HOT_RELOADER)

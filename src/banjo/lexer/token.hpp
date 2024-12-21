@@ -2,6 +2,7 @@
 #define TOKEN_H
 
 #include "banjo/source/text_range.hpp"
+
 #include <string>
 
 namespace banjo {
@@ -117,6 +118,7 @@ public:
     std::string value;
     TextPosition position;
     bool end_of_line = false;
+    bool after_empty_line = false;
 
 public:
     Token(TokenType type, std::string value, TextPosition position)

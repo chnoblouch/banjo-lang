@@ -13,8 +13,18 @@ namespace lang {
 
 class Lexer {
 
+public:
+    enum class Mode {
+        COMPILATION,
+        FORMATTING,
+    };
+
 private:
     BufferedReader reader;
+    Mode mode;
+
+    bool current_line_empty = true;
+    bool previous_line_empty = false;
 
     bool completion_enabled = false;
     TextPosition completion_point;
@@ -26,7 +36,7 @@ private:
     TextPosition start_position;
 
 public:
-    Lexer(std::istream &input_stream);
+    Lexer(std::istream &input_stream, Mode mode = Mode::COMPILATION);
     void enable_completion(TextPosition completion_point);
     std::vector<Token> tokenize();
 

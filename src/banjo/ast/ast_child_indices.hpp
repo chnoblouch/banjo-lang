@@ -111,9 +111,6 @@ constexpr unsigned FUNC_TYPE_RETURN_TYPE = 1;
 constexpr unsigned CLOSURE_TYPE_PARAMS = 0;
 constexpr unsigned CLOSURE_TYPE_RETURN_TYPE = 1;
 
-constexpr unsigned META_EXPR_KIND = 0;
-constexpr unsigned META_EXPR_ARGS = 1;
-
 } // namespace lang
 
 } // namespace banjo

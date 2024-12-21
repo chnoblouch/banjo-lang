@@ -285,7 +285,7 @@ ParseResult ExprParser::parse_array_literal() {
     while (true) {
         if (stream.get()->is(TKN_RBRACKET)) {
             stream.consume();
-            return node.build(type);
+            break;
         } else {
             ParseResult result = ExprParser(parser, true).parse();
             if (!result.is_valid) {
@@ -321,7 +321,7 @@ ParseResult ExprParser::parse_array_literal() {
 
         if (stream.get()->is(TKN_RBRACKET)) {
             stream.consume();
-            return node.build(type);
+            break;
         } else if (stream.get()->is(TKN_COMMA)) {
             stream.consume();
         } else {
@@ -330,7 +330,12 @@ ParseResult ExprParser::parse_array_literal() {
         }
     }
 
-    return node.build(type);
+    ASTNode *result = node.build(type);
+    if (parser.mode == Parser::Mode::FORMATTING && stream.peek(-2)->is(TKN_COMMA)) {
+        result->flags.trailing_comma = true;
+    }
+
+    return result;
 }
 
 ParseResult ExprParser::parse_paren_expr() {
@@ -357,10 +362,22 @@ ParseResult ExprParser::parse_paren_expr() {
 
         tuple_literal->set_range({start, stream.get()->get_end()});
         stream.consume(); // Consume ')'
+
+        if (parser.mode == Parser::Mode::FORMATTING && stream.peek(-2)->is(TKN_COMMA)) {
+            tuple_literal->flags.trailing_comma = true;
+        }
+
         return tuple_literal;
+    }
+
+    sub_expression->set_range({start, stream.get()->get_end()});
+    stream.consume(); // Consume ')'
+
+    if (parser.mode == Parser::Mode::FORMATTING) {
+        ASTNode *paren_expr = new ASTNode(AST_PAREN_EXPR, sub_expression->get_range());
+        paren_expr->append_child(sub_expression);
+        return paren_expr;
     } else {
-        sub_expression->set_range({start, stream.get()->get_end()});
-        stream.consume(); // Consume ')'
         return sub_expression;
     }
 }
