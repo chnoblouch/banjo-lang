@@ -107,10 +107,12 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
 
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     for (sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
-        ExprAnalyzer(analyzer).analyze(cond_branch.condition);
+        Result result = ExprAnalyzer(analyzer).analyze(cond_branch.condition);
 
-        if (!cond_branch.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
-            analyzer.report_generator.report_err_expected_bool(cond_branch.condition);
+        if (result == Result::SUCCESS) {
+            if (!cond_branch.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+                analyzer.report_generator.report_err_expected_bool(cond_branch.condition);
+            }
         }
 
         analyze_block(cond_branch.block);
@@ -303,10 +305,12 @@ void StmtAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt)
 }
 
 void StmtAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
-    ExprAnalyzer(analyzer).analyze(loop_stmt.condition);
+    Result result = ExprAnalyzer(analyzer).analyze(loop_stmt.condition);
 
-    if (!loop_stmt.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
-        analyzer.report_generator.report_err_expected_bool(loop_stmt.condition);
+    if (result == Result::SUCCESS) {
+        if (!loop_stmt.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+            analyzer.report_generator.report_err_expected_bool(loop_stmt.condition);
+        }
     }
 
     analyzer.loop_depth += 1;
@@ -351,6 +355,8 @@ void StmtAnalyzer::insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ide
 void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
     sir::RangeExpr &range = for_stmt.range.as<sir::RangeExpr>();
 
+    ExprAnalyzer(analyzer).analyze(for_stmt.range);
+
     sir::Block *block = analyzer.create_stmt(sir::Block{
         .ast_node = nullptr,
         .stmts = {},
@@ -364,7 +370,7 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
         .ast_node = nullptr,
         .local{
             .name = for_stmt.ident,
-            .type = nullptr,
+            .type = range.lhs.get_type(),
         },
         .value = range.lhs,
     });
@@ -382,13 +388,13 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
         .rhs = range.rhs,
     });
 
-    for_stmt.block.symbol_table->parent = block->symbol_table;
-
     sir::Block loop_block{
         .ast_node = for_stmt.block.ast_node,
         .stmts = std::move(for_stmt.block.stmts),
         .symbol_table = for_stmt.block.symbol_table,
     };
+
+    loop_block.symbol_table->parent = block->symbol_table;
 
     sir::AssignStmt *inc_stmt = analyzer.create_stmt(sir::AssignStmt{
         .ast_node = nullptr,
@@ -423,8 +429,12 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
     });
 
     block->stmts = {var_stmt, loop_stmt};
+    block->symbol_table->symbols.insert({var_stmt->local.name.value, &var_stmt->local});
 
-    analyze_block(*block);
+    analyzer.push_scope().block = block;
+    analyze_loop_stmt(*loop_stmt);
+    analyzer.pop_scope();
+
     out_stmt = block;
 }
 

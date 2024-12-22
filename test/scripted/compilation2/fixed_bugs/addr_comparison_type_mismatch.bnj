@@ -1,0 +1,9 @@
+# test:compiles
+
+func main() {
+    var address = null;
+
+    if address == null {
+        print("null");
+    }
+}

@@ -21,28 +21,28 @@ bool Expr::operator==(const Expr &other) const {
         *this,
         return true,                                              // empty
         return inner->value == other.as<sir::IntLiteral>().value, // int_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // fp_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // bool_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // char_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // null_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // none_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // undefined_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // array_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // string_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // struct_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // union_case_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // map_literal
-        SIR_VISIT_IMPOSSIBLE,                                     // closure_literal
+        return false,                                             // fp_literal
+        return false,                                             // bool_literal
+        return false,                                             // char_literal
+        return false,                                             // null_literal
+        return false,                                             // none_literal
+        return false,                                             // undefined_literal
+        return false,                                             // array_literal
+        return false,                                             // string_literal
+        return false,                                             // struct_literal
+        return false,                                             // union_case_literal
+        return false,                                             // map_literal
+        return false,                                             // closure_literal
         return inner->symbol == other.as<SymbolExpr>().symbol,    // symbol_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // binary_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // unary_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // cast_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // index_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // call_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // field_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // range_expr
+        return false,                                             // binary_expr
+        return false,                                             // unary_expr
+        return false,                                             // cast_expr
+        return false,                                             // index_expr
+        return false,                                             // call_expr
+        return false,                                             // field_expr
+        return false,                                             // range_expr
         return *inner == other.as<TupleExpr>(),                   // tuple_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // coercion_expr
+        return false,                                             // coercion_expr
         return *inner == other.as<PrimitiveType>(),               // primitive_type
         return *inner == other.as<PointerType>(),                 // pointer_type
         return *inner == other.as<StaticArrayType>(),             // static_array_type
@@ -52,17 +52,17 @@ bool Expr::operator==(const Expr &other) const {
         return *inner == other.as<ArrayType>(),                   // array_type
         return *inner == other.as<MapType>(),                     // map_type
         return *inner == other.as<ClosureType>(),                 // closure_type
-        SIR_VISIT_IMPOSSIBLE,                                     // ident_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // star_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // bracket_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // dot_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // pseudo_type
-        SIR_VISIT_IMPOSSIBLE,                                     // meta_access
-        SIR_VISIT_IMPOSSIBLE,                                     // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // meta_call_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // init_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // move_expr
-        SIR_VISIT_IMPOSSIBLE,                                     // deinit_expr
+        return false,                                             // ident_expr
+        return false,                                             // star_expr
+        return false,                                             // bracket_expr
+        return false,                                             // dot_expr
+        return false,                                             // pseudo_type
+        return false,                                             // meta_access
+        return false,                                             // meta_field_expr
+        return false,                                             // meta_call_expr
+        return false,                                             // init_expr
+        return false,                                             // move_expr
+        return false,                                             // deinit_expr
         return true                                               // error
     );
 }

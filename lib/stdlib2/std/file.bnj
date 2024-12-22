@@ -81,8 +81,8 @@ struct File {
 
         return String {
             data,
-            length: size as u32,
-            capacity: size as u32 + 1,
+            length: size,
+            capacity: size + 1,
         };
     }
     

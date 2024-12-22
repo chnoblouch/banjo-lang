@@ -418,10 +418,10 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return analyze_operator_overload_call(symbol, binary_expr.lhs, binary_expr.rhs, out_expr);
     }
 
-    sir::Expr lhs_type = binary_expr.lhs.get_type();
-    sir::Expr rhs_type = binary_expr.rhs.get_type();
+    bool can_lhs_be_coerced = can_be_coerced(binary_expr.lhs);
+    bool can_rhs_be_coerced = can_be_coerced(binary_expr.rhs);
 
-    if (lhs_type.is<sir::PseudoType>() && !rhs_type.is<sir::PseudoType>()) {
+    if (can_lhs_be_coerced && !can_rhs_be_coerced) {
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
         if (rhs_result != Result::SUCCESS) {
@@ -429,7 +429,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
 
         lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, binary_expr.rhs.get_type());
-    } else if (rhs_type.is<sir::PseudoType>() && !lhs_type.is<sir::PseudoType>()) {
+    } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
         lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
 
         if (lhs_result != Result::SUCCESS) {
@@ -452,10 +452,15 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return analyze_uncoerced(out_expr);
     }
 
-    if (binary_expr.lhs.get_type().is_addr_like_type()) {
-        binary_expr.rhs = create_isize_cast(binary_expr.rhs);
-    } else if (binary_expr.rhs.get_type().is_addr_like_type()) {
-        binary_expr.lhs = create_isize_cast(binary_expr.lhs);
+    sir::Expr lhs_type = binary_expr.lhs.get_type();
+    sir::Expr rhs_type = binary_expr.rhs.get_type();
+
+    if (lhs_type != rhs_type) {
+        if (binary_expr.lhs.get_type().is_addr_like_type()) {
+            binary_expr.rhs = create_isize_cast(binary_expr.rhs);
+        } else if (binary_expr.rhs.get_type().is_addr_like_type()) {
+            binary_expr.lhs = create_isize_cast(binary_expr.lhs);
+        }
     }
 
     std::initializer_list<sir::BinaryOp> arith_bitwise_ops{
@@ -486,16 +491,28 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     };
 
     if (Utils::is_one_of(binary_expr.op, arith_bitwise_ops)) {
-        binary_expr.type = binary_expr.lhs.get_type();
+        if (lhs_type != rhs_type) {
+            if (!(lhs_type.is<sir::PointerType>() && rhs_type.is_int_type())) {
+                analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
+                return Result::ERROR;
+            }
+        }
+
+        binary_expr.type = lhs_type;
     } else if (Utils::is_one_of(binary_expr.op, comparison_ops)) {
+        if (lhs_type != rhs_type) {
+            analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
+            return Result::ERROR;
+        }
+
         binary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
     } else if (Utils::is_one_of(binary_expr.op, logical_ops)) {
-        if (!binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+        if (!lhs_type.is_primitive_type(sir::Primitive::BOOL)) {
             analyzer.report_generator.report_err_expected_bool(binary_expr.lhs);
             lhs_result = Result::ERROR;
         }
 
-        if (!binary_expr.rhs.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+        if (!rhs_type.is_primitive_type(sir::Primitive::BOOL)) {
             analyzer.report_generator.report_err_expected_bool(binary_expr.rhs);
             rhs_result = Result::ERROR;
         }
@@ -1028,9 +1045,46 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
     return result;
 }
 
-void ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
-    ExprAnalyzer(analyzer).analyze(range_expr.lhs);
-    ExprAnalyzer(analyzer).analyze(range_expr.rhs);
+Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
+    Result lhs_result;
+    Result rhs_result;
+
+    lhs_result = analyze_uncoerced(range_expr.lhs);
+    rhs_result = analyze_uncoerced(range_expr.rhs);
+
+    if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    bool can_lhs_be_coerced = can_be_coerced(range_expr.lhs);
+    bool can_rhs_be_coerced = can_be_coerced(range_expr.rhs);
+
+    if (can_lhs_be_coerced && !can_rhs_be_coerced) {
+        rhs_result = ExprFinalizer(analyzer).finalize(range_expr.rhs);
+
+        if (rhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(range_expr.lhs, range_expr.rhs.get_type());
+    } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
+        lhs_result = ExprFinalizer(analyzer).finalize(range_expr.lhs);
+
+        if (lhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(range_expr.rhs, range_expr.lhs.get_type());
+    } else {
+        lhs_result = ExprFinalizer(analyzer).finalize(range_expr.lhs);
+        rhs_result = ExprFinalizer(analyzer).finalize(range_expr.rhs);
+    }
+
+    if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
@@ -1600,6 +1654,10 @@ sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
         }),
         .value = value,
     });
+}
+
+bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
+    return value.is<sir::IntLiteral>() || value.is<sir::FPLiteral>() || value.is<sir::NullLiteral>();
 }
 
 } // namespace sema

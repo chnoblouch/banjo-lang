@@ -42,7 +42,7 @@ private:
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);
     Result analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr, bool &is_method);
     Result analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr);
-    void analyze_range_expr(sir::RangeExpr &range_expr);
+    Result analyze_range_expr(sir::RangeExpr &range_expr);
     void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     Result analyze_static_array_type(sir::StaticArrayType &static_array_type);
     void analyze_func_type(sir::FuncType &func_type);
@@ -75,6 +75,7 @@ private:
     Result specialize(sir::StructDef &struct_def, const std::vector<sir::Expr> &generic_args, sir::Expr &inout_expr);
 
     sir::Expr create_isize_cast(sir::Expr value);
+    bool can_be_coerced(sir::Expr value);
 };
 
 } // namespace sema

@@ -32,8 +32,8 @@ struct Path {
     # }
     
     pub func parent(self) -> Path {
-        var index = self.path.rfind('/');
-        return from(self.path.substr(0, index as u32));
+        var index = self.path.rfind('/').unwrap();
+        return from(self.path.substr(0, index));
     }
     
     # pub func list_dir(self) -> Array[Path] {

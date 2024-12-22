@@ -42,9 +42,9 @@ pub func to_repr_indent[T](value: *T, indent: u32) -> String {
 }
 
 func i64_to_string(value: i64) -> String {
-    var capacity: u32 = 32;
-    var data = memory.alloc(capacity as usize) as *u8;
-    var length: u32 = 0;
+    var capacity: usize = 32;
+    var data = memory.alloc(capacity) as *u8;
+    var length: usize = 0;
     
     var remainder: u64;
     var negative: bool;
@@ -78,9 +78,9 @@ func i64_to_string(value: i64) -> String {
 }
 
 func u64_to_string(value: u64) -> String {
-    var capacity: u32 = 32;
-    var data = memory.alloc(capacity as usize) as *u8;
-    var length: u32 = 0;
+    var capacity: usize = 32;
+    var data = memory.alloc(capacity) as *u8;
+    var length: usize = 0;
     
     var remainder = value;
     
@@ -151,7 +151,8 @@ func enum_to_repr[T](enum_: T) -> String {
     var variant_name: String;
     
     meta for variant in meta(T).variants {
-        if enum_ == variant.1 {
+        # TODO: This cast to 'i32' should not be necessary.
+        if enum_ as i32 == variant.1 {
             variant_name = variant.0;
         }
     }

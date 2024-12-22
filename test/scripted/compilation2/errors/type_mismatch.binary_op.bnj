@@ -1,0 +1,52 @@
+# test:subtest
+# test:error 23:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 24:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 25:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 26:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 27:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 28:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 29:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 30:15 "type mismatch (expected 'i32', got 'f32')"
+# test:error 31:16 "type mismatch (expected 'i32', got 'f32')"
+# test:error 32:16 "type mismatch (expected 'i32', got 'f32')"
+# test:error 34:13 "type mismatch (expected 'i32', got 'f32')"
+# test:error 35:13 "type mismatch (expected 'i32', got 'f32')"
+# test:error 36:12 "type mismatch (expected 'i32', got 'f32')"
+# test:error 37:12 "type mismatch (expected 'i32', got 'f32')"
+# test:error 38:13 "type mismatch (expected 'i32', got 'f32')"
+# test:error 39:13 "type mismatch (expected 'i32', got 'f32')"
+
+func main() {
+    var a: i32 = 10;
+    var b: f32 = 0.5;
+
+    print(a + b);
+    print(a - b);
+    print(a * b);
+    print(a / b);
+    print(a % b);
+    print(a & b);
+    print(a | b);
+    print(a ^ b);
+    print(a << b);
+    print(a >> b);
+
+    if a == b {}
+    if a != b {}
+    if a > b {}
+    if a < b {}
+    if a >= b {}
+    if a <= b {}
+}
+
+# test:subtest
+# test:error 50:15 "type mismatch (expected 'i32', got 'i64')"
+# test:error 51:16 "type mismatch (expected 'i32', got 'i64')"
+
+func main() {
+    var a: i32 = 10;
+    var b: i64 = 20;
+
+    print(a + b);
+    print(a == b);
+}

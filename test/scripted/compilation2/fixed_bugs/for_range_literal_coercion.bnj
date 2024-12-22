@@ -1,0 +1,9 @@
+# test:compiles
+
+func main() {
+    var end: i64 = 10;
+
+    for i in 0..end {
+        var value: i64 = i;
+    }
+}
