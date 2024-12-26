@@ -292,6 +292,10 @@ void ResourceAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
         analyze_block(loop_stmt.block, ScopeType::LOOP),
     };
 
+    if (loop_stmt.latch) {
+        child_scopes.push_back(analyze_block(*loop_stmt.latch, ScopeType::LOOP));
+    }
+
     for (Scope &child_scope : child_scopes) {
         merge_move_states(scopes.back(), child_scope, true);
     }
@@ -690,31 +694,34 @@ void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope
             continue;
         }
 
+        bool moved_conditionally = conditional || state.conditional;
         auto iter = parent_scope.move_states.find(symbol);
 
         if (iter == parent_scope.move_states.end()) {
             // If the resource does not exist in the parent scope, set it to moved.
 
-            state.conditional = conditional;
+            state.conditional = moved_conditionally;
             parent_scope.move_states.insert({symbol, state});
             continue;
         }
 
         MoveState &parent_state = iter->second;
 
-        if (!parent_state.moved) {
+        if (parent_state.moved) {
+            if (!moved_conditionally && parent_state.conditional) {
+                // If the resource is moved only conditionally in the parent scope, but
+                // unconditionally in the child scope, set it to unconditionally moved
+                // in the parent scope and update the expression that moved it.
+
+                parent_state.conditional = false;
+                parent_state.move_expr = state.move_expr;
+            }
+        } else {
             // If the resource is not moved in the parent scope, set it to moved.
 
             parent_state.moved = true;
-            parent_state.conditional = conditional;
+            parent_state.conditional = moved_conditionally;
             parent_state.partial = state.partial;
-            parent_state.move_expr = state.move_expr;
-        } else if (!conditional && parent_state.conditional) {
-            // If the resource is moved only conditionally in the parent scope, but
-            // unconditionally in the child scope, set it to unconditionally moved
-            // in the parent scope and update the expression that moved it.
-
-            parent_state.conditional = false;
             parent_state.move_expr = state.move_expr;
         }
     }

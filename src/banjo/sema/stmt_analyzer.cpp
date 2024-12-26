@@ -268,9 +268,10 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
             analyzer.report_generator.report_err_try_no_error_field(*try_stmt.except_branch);
         }
     } else if (try_stmt.else_branch) {
-        // TODO: If the error type is a resource, the error is moved in `except` blocks, but not in `else` blocks.
-        // This means that the error will be deinitialized at the end of the scope it was declared in. Is this
-        // actually what we want?
+        // TODO: If the error type is a resource, the error is moved in `except` blocks, but not in
+        // `else` blocks. This means that the error will be deinitialized right after the try
+        // statement since it's wrapped in a block that consumes the result. Is this actually what
+        // we want?
 
         sir::Block else_block = try_stmt.else_branch->block;
         analyze_block(else_block);

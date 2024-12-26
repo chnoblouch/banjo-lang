@@ -1,0 +1,36 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+func test(enter_loop: bool) -> i32 {
+    var looping = enter_loop;
+    
+    while looping {
+        var resource = Resource {};
+        looping = false;
+
+        if false {
+            break;
+        }
+    }
+
+    return 10;
+}
+
+# test:subtest
+# test:output "d"
+
+func main() {
+    test(true);
+}
+
+# test:subtest
+# test:output ""
+
+func main() {
+    test(false);
+}

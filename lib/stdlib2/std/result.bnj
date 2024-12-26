@@ -26,7 +26,7 @@ struct Result[T, E] {
     
     pub func unwrap(@byval self) -> T {
         if !self.successful {
-            panic(to_string(&self.error));
+            panic("tried to unwrap error result: " + to_string(&self.error));
         }
         
         self.unwrapped = true;
@@ -35,7 +35,7 @@ struct Result[T, E] {
 
     pub func unwrap_error(@byval self) -> E {
         if self.successful {
-            panic("tried to unwrap successful result error");
+            panic("tried to unwrap successful result to error");
         }
 
         self.unwrapped = true;
@@ -50,15 +50,17 @@ struct Result[T, E] {
         }
     }
     
-    pub func __deinit__(self) {
-        if self.unwrapped {
-            return;
-        }
+    meta if meta(T).is_resource || meta(E).is_resource {
+        pub func __deinit__(self) {
+            if self.unwrapped {
+                return;
+            }
 
-        if self.successful {
-            __builtin_deinit(self.value);
-        } else {
-            __builtin_deinit(self.error);
+            if self.successful {
+                __builtin_deinit(self.value);
+            } else {
+                __builtin_deinit(self.error);
+            }
         }
     }
 }

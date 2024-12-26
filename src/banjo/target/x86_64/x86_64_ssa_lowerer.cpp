@@ -891,10 +891,8 @@ mcode::Operand X8664SSALowerer::lower_reg_as_move(mcode::Operand m_dst, ssa::Vir
     } else if (type.is_floating_point()) {
         mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
         emit({m_opcode, {m_dst, m_src}});
-    } else if (type.is_integer()) {
-        emit({X8664Opcode::MOV, {m_dst, m_src}});
     } else {
-        ASSERT_UNREACHABLE;
+        emit({X8664Opcode::MOV, {m_dst, m_src}});
     }
 
     return m_dst;

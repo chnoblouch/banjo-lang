@@ -1,0 +1,13 @@
+# test:subtest
+# test:output "4"
+
+func main() {
+    print(2.0 * 2.0);
+}
+
+# test:subtest
+# test:output "0.25"
+
+func main() {
+    print(0.5 * 0.5);
+}

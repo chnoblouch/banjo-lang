@@ -1,6 +1,7 @@
 #include "meta_expr_evaluator.hpp"
 
 #include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/resource_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -42,6 +43,8 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
         out_expr = create_bool_literal(base_expr.is_symbol<sir::EnumDef>());
     } else if (field_name == "fields") {
         out_expr = compute_fields(base_expr);
+    } else if (field_name == "is_resource") {
+        out_expr = compute_is_resource(base_expr);
     } else if (field_name == "variants") {
         out_expr = compute_variants(base_expr);
     } else {
@@ -135,6 +138,11 @@ sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, const std::vect
     }
 
     return create_bool_literal(false);
+}
+
+sir::Expr MetaExprEvaluator::compute_is_resource(sir::Expr &type) {
+    bool is_resource = ResourceAnalyzer(analyzer).create_resource(type).has_value();
+    return create_bool_literal(is_resource);
 }
 
 sir::Expr MetaExprEvaluator::compute_field(sir::Expr &base, const std::vector<sir::Expr> &args) {

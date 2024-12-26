@@ -78,6 +78,7 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
         );
 
         if (ctx.get_ssa_block()->is_branching()) {
+            ctx.get_func_context().sir_scopes.pop_back();
             return;
         }
 

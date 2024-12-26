@@ -50,7 +50,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "emd"
+# test:output "edm"
 
 func main() {
     var result: i32 except Resource = Resource {};

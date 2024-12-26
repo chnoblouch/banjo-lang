@@ -2,6 +2,7 @@
 
 #include "banjo/config/config.hpp"
 
+#include <cstdlib>
 #include <string>
 
 namespace banjo {
@@ -132,6 +133,8 @@ std::string mangle_func_name(const sir::FuncDef &func) {
             }
         }
     }
+
+    string += std::to_string(std::rand());
 
     return string;
 }

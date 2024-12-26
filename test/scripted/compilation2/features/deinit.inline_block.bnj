@@ -1,0 +1,44 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+# test:subtest
+# test:output "dbf"
+
+func consume(resource: Resource) {}
+
+func main() {
+    var resource = Resource {};
+
+    {
+        consume(resource);
+        print('b');
+    }
+
+    print('f');
+}
+
+# test:subtest
+# test:output "bfd"
+
+func consume(resource: Resource) {}
+
+func main() {
+    var resource = Resource {};
+
+    {
+        var flag = false;
+
+        if flag {
+            consume(resource);
+        }
+
+        print('b');
+    }
+
+    print('f');
+}
