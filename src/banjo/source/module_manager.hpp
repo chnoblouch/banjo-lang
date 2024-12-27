@@ -6,10 +6,13 @@
 #include "banjo/config/config.hpp"
 #include "banjo/parser/parser.hpp"
 #include "banjo/source/module_discovery.hpp"
-#include "banjo/source/text_range.hpp"
 #include "banjo/source/module_path.hpp"
+#include "banjo/source/text_range.hpp"
 
 #include <filesystem>
+#include <functional>
+#include <istream>
+#include <memory>
 #include <vector>
 
 namespace banjo {
@@ -21,15 +24,19 @@ class ReportManager;
 
 class ModuleManager {
 
+public:
+    typedef std::function<std::unique_ptr<std::istream>(const ModuleFile &module_file)> OpenFunc;
+
 private:
-    ModuleLoader &module_loader;
+    OpenFunc open_func;
     ReportManager &report_manager;
 
     ModuleList module_list;
     ModuleDiscovery module_discovery;
 
 public:
-    ModuleManager(ModuleLoader &module_loader, ReportManager &report_manager);
+    ModuleManager(ReportManager &report_manager);
+    ModuleManager(OpenFunc open_func, ReportManager &report_manager);
 
     ModuleList &get_module_list() { return module_list; }
     ReportManager &get_report_manager() { return report_manager; }
@@ -51,6 +58,8 @@ public:
     void link_sub_module(ASTModule *mod, ASTModule *sub_mod);
 
 private:
+    static std::unique_ptr<std::istream> open_module_file(const ModuleFile &module_file);
+
     ParsedAST parse_module(const ModuleFile &module_file);
 };
 

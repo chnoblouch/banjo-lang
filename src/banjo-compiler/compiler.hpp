@@ -2,11 +2,10 @@
 #define COMPILER_H
 
 #include "banjo/config/config.hpp"
-#include "banjo/ssa/module.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/reports/report_printer.hpp"
-#include "banjo/source/file_module_loader.hpp"
 #include "banjo/source/module_manager.hpp"
+#include "banjo/ssa/module.hpp"
 #include "banjo/target/target.hpp"
 
 namespace banjo {
@@ -24,8 +23,6 @@ private:
     target::Target *target;
     ReportManager report_manager;
     ModuleManager module_manager;
-
-    FileModuleLoader loader;
     ReportPrinter report_printer;
 
 public:

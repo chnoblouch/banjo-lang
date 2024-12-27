@@ -6,7 +6,6 @@
 #include "banjo/ssa/addr_table.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/reports/report_manager.hpp"
-#include "banjo/source/file_module_loader.hpp"
 #include "banjo/source/module_manager.hpp"
 
 #include <filesystem>
@@ -24,7 +23,6 @@ private:
     ssa::Module ssa_module;
 
     lang::ReportManager report_manager;
-    lang::FileModuleLoader module_loader;
     lang::ModuleManager module_manager;
     lang::sir::Unit sir_unit;
 

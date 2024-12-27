@@ -3,18 +3,16 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/reports/report_manager.hpp"
+#include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
-#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/module_manager.hpp"
 #include "banjo/source/module_path.hpp"
 #include "index.hpp"
-#include "memory_module_loader.hpp"
 
 #include <filesystem>
 #include <list>
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -38,7 +36,6 @@ struct CompletionInfo {
 class Workspace {
 
 private:
-    MemoryModuleLoader module_loader;
     lang::ModuleManager module_manager;
     lang::ReportManager report_manager;
 
@@ -77,6 +74,8 @@ public:
     std::vector<lang::ModulePath> list_sub_mods(lang::sir::Module *mod);
 
 private:
+    std::unique_ptr<std::istream> open_module(const lang::ModuleFile &module_file);
+
     void build_index(lang::sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods);
     void collect_dependents(lang::sir::Module &mod, std::unordered_set<lang::ModulePath> &dependents);
 };

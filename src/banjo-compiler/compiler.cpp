@@ -25,7 +25,7 @@ namespace lang {
 
 Compiler::Compiler(const Config &config)
   : config(config),
-    module_manager(loader, report_manager),
+    module_manager(report_manager),
     report_printer(module_manager) {}
 
 void Compiler::compile() {

@@ -1,14 +1,14 @@
 #include "jit_compiler.hpp"
 
-#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/codegen/machine_pass_runner.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/config/config.hpp"
-#include "banjo/ssa/addr_table.hpp"
 #include "banjo/passes/addr_table_pass.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
+#include "banjo/ssa/addr_table.hpp"
 #include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/target/x86_64/x86_64_encoder.hpp"
 
@@ -20,7 +20,7 @@ JITCompiler::JITCompiler(lang::Config &config, ssa::AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
     target(target::Target::create(config.target, target::CodeModel::LARGE)),
-    module_manager(module_loader, report_manager) {
+    module_manager(report_manager) {
     module_manager.add_standard_stdlib_search_path();
     module_manager.add_config_search_paths(config);
 }

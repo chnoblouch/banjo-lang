@@ -4,7 +4,6 @@ add_executable(banjo-lsp
     connection.cpp
     diagnostics.cpp
     main.cpp
-    memory_module_loader.cpp
     protocol_structs.cpp
     server.cpp
     uri.cpp

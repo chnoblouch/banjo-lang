@@ -79,7 +79,6 @@ add_library(banjo STATIC
     sir/sir_printer.cpp
     sir/sir.cpp
     sir/test_driver_generator.cpp
-    source/file_module_loader.cpp
     source/module_discovery.cpp
     source/module_manager.cpp
     source/module_path.cpp

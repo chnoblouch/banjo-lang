@@ -5,10 +5,10 @@
 #include "banjo/lexer/lexer.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/module_discovery.hpp"
-#include "banjo/source/module_loader.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/utils/paths.hpp"
 
+#include <fstream>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -17,8 +17,12 @@ namespace banjo {
 
 namespace lang {
 
-ModuleManager::ModuleManager(ModuleLoader &module_loader, ReportManager &report_manager)
-  : module_loader(module_loader),
+ModuleManager::ModuleManager(ReportManager &report_manager)
+  : open_func(open_module_file),
+    report_manager(report_manager) {}
+
+ModuleManager::ModuleManager(OpenFunc open_func, ReportManager &report_manager)
+  : open_func(std::move(open_func)),
     report_manager(report_manager) {}
 
 void ModuleManager::add_search_path(std::filesystem::path path) {
@@ -69,7 +73,6 @@ ASTModule *ModuleManager::load(const ModuleFile &module_file) {
 
     module_list.add(mod);
     report_manager.merge_result(std::move(parsed_ast.reports), parsed_ast.is_valid);
-    module_loader.after_load(module_file, mod, parsed_ast.is_valid);
 
     return mod;
 }
@@ -90,7 +93,6 @@ ASTModule *ModuleManager::reload(ASTModule *mod) {
 
     module_list.replace(mod, new_mod);
     report_manager.merge_result(std::move(parsed_ast.reports), parsed_ast.is_valid);
-    module_loader.after_load(*module_file, new_mod, parsed_ast.is_valid);
 
     return new_mod;
 }
@@ -101,7 +103,7 @@ ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPositi
         return nullptr;
     }
 
-    std::istream *stream = module_loader.open(*module_file);
+    std::unique_ptr<std::istream> stream = open_func(*module_file);
     if (!stream) {
         return nullptr;
     }
@@ -109,7 +111,6 @@ ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPositi
     Lexer lexer(*stream);
     lexer.enable_completion(completion_point);
     std::vector<Token> tokens = lexer.tokenize();
-    delete stream;
 
     Parser parser(tokens, module_file->path);
     parser.enable_completion();
@@ -152,6 +153,10 @@ void ModuleManager::link_sub_module(ASTModule *mod, ASTModule *sub_mod) {
     mod->add_sub_mod(sub_mod);
 }
 
+std::unique_ptr<std::istream> ModuleManager::open_module_file(const ModuleFile &module_file) {
+    return std::make_unique<std::ifstream>(module_file.file_path);
+}
+
 ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
     if (module_file.path == ModulePath{"std", "config"}) {
         return ParsedAST{
@@ -161,7 +166,7 @@ ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
         };
     }
 
-    std::istream *stream = module_loader.open(module_file);
+    std::unique_ptr<std::istream> stream = open_func(module_file);
     if (!stream) {
         return ParsedAST{
             .module_ = nullptr,
@@ -171,8 +176,6 @@ ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
     }
 
     std::vector<Token> tokens = Lexer(*stream).tokenize();
-    delete stream;
-
     return Parser(tokens, module_file.path).parse_module();
 }
 

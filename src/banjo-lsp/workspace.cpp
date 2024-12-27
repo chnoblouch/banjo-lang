@@ -22,8 +22,7 @@ namespace lsp {
 using namespace lang;
 
 Workspace::Workspace()
-  : module_loader(*this),
-    module_manager(module_loader, report_manager),
+  : module_manager(std::bind(&Workspace::open_module, this, std::placeholders::_1), report_manager),
     config(Config::instance()),
     target(target::Target::create(config.target, target::CodeModel::LARGE)) {}
 
@@ -164,6 +163,15 @@ std::vector<lang::ModulePath> Workspace::list_sub_mods(lang::sir::Module *mod) {
     }
 
     return paths;
+}
+
+std::unique_ptr<std::istream> Workspace::open_module(const lang::ModuleFile &module_file) {
+    File *file = find_or_load_file(module_file.file_path);
+    if (!file) {
+        return nullptr;
+    }
+
+    return std::make_unique<std::stringstream>(file->content);
 }
 
 void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods) {
