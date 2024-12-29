@@ -51,6 +51,7 @@ private:
     Mode mode;
 
     std::unique_ptr<AttributeList> current_attr_list = nullptr;
+    ASTModule *cur_mod;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;
@@ -89,7 +90,6 @@ private:
     ParseResult parse_param_list(TokenType terminator = TKN_RPAREN);
     ParseResult check_stmt_terminator(ASTNode *node);
 
-    NodeBuilder new_node();
     Report &register_error(TextRange range);
 
     void report_unexpected_token();
@@ -104,6 +104,12 @@ private:
     bool is_at_completion_point();
     ASTNode *parse_completion_point();
 
+    template <typename... Args>
+    ASTNode *create_node(Args... args) {
+        return cur_mod->create_node(args...);
+    }
+
+    NodeBuilder build_node() { return NodeBuilder(stream, create_node()); }
     ASTNode *create_dummy_block();
 };
 

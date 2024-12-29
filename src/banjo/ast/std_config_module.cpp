@@ -7,12 +7,25 @@ namespace banjo {
 
 namespace lang {
 
-enum ConfigArch { X86_64 = 0, AARCH64 = 1 };
-enum ConfigOS { WINDOWS = 0, LINUX = 1, MACOS = 2, ANDROID = 3 };
-enum ConfigBuildConfig { BUILD_CONFIG_DEBUG = 0, BUILD_CONFIG_RELEASE = 1 };
+enum ConfigArch {
+    X86_64 = 0,
+    AARCH64 = 1,
+};
+
+enum ConfigOS {
+    WINDOWS = 0,
+    LINUX = 1,
+    MACOS = 2,
+    ANDROID = 3,
+};
+
+enum ConfigBuildConfig {
+    BUILD_CONFIG_DEBUG = 0,
+    BUILD_CONFIG_RELEASE = 1,
+};
 
 StdConfigModule::StdConfigModule() : ASTModule({"std", "config"}), config(Config::instance()) {
-    block = new ASTNode(AST_BLOCK, TextRange{0, 0});
+    block = create_node(AST_BLOCK, TextRange{0, 0});
 
     add_const_u32("DEBUG", BUILD_CONFIG_DEBUG);
     add_const_u32("RELEASE", BUILD_CONFIG_RELEASE);
@@ -50,10 +63,10 @@ unsigned StdConfigModule::get_os() {
 }
 
 void StdConfigModule::add_const_u32(const std::string &name, unsigned value) {
-    ASTNode *config_const = new ASTNode(AST_CONSTANT);
-    config_const->append_child(new ASTNode(AST_IDENTIFIER, name, TextRange{0, 0}));
-    config_const->append_child(new ASTNode(AST_U32));
-    config_const->append_child(new ASTNode(AST_INT_LITERAL, std::to_string(value)));
+    ASTNode *config_const = create_node(AST_CONSTANT);
+    config_const->append_child(create_node(AST_IDENTIFIER, name, TextRange{0, 0}));
+    config_const->append_child(create_node(AST_U32));
+    config_const->append_child(create_node(AST_INT_LITERAL, std::to_string(value)));
     block->append_child(config_const);
 }
 

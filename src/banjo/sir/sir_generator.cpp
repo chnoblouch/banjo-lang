@@ -4,6 +4,7 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <string>
 #include <vector>
@@ -13,6 +14,8 @@ namespace banjo {
 namespace lang {
 
 sir::Unit SIRGenerator::generate(ModuleList &mods) {
+    PROFILE_SCOPE("sir generator");
+
     sir::Unit sir_unit;
 
     for (ASTModule *mod : mods) {

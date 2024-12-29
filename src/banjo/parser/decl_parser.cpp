@@ -12,12 +12,12 @@ namespace lang {
 DeclParser::DeclParser(Parser &parser) : parser(parser), stream(parser.stream) {}
 
 ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
 
     if (qualifier_list) {
         node.append_child(qualifier_list);
     } else {
-        node.append_child(new ASTNode(AST_QUALIFIER_LIST));
+        node.append_child(parser.create_node(AST_QUALIFIER_LIST));
     }
 
     if (parser.current_attr_list) {
@@ -32,7 +32,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         return node.build_error();
     }
 
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     bool generic;
     bool head_valid = parse_func_head(node, generic);
@@ -67,9 +67,9 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 }
 
 ParseResult DeclParser::parse_const() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'const'
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
     stream.consume(); // Consume ':'
     node.append_child(parser.parse_type().node);
     stream.consume(); // Consume '='
@@ -79,14 +79,14 @@ ParseResult DeclParser::parse_const() {
 }
 
 ParseResult DeclParser::parse_struct() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'struct'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     if (stream.get()->is(TKN_LBRACKET)) {
         ParseResult result = parse_generic_param_list();
@@ -119,7 +119,7 @@ ParseResult DeclParser::parse_struct() {
             return node.build_error();
         }
     } else {
-        node.append_child(new ASTNode(AST_IMPL_LIST));
+        node.append_child(parser.create_node(AST_IMPL_LIST));
     }
 
     ParseResult result = parser.parse_block();
@@ -132,18 +132,18 @@ ParseResult DeclParser::parse_struct() {
 }
 
 ParseResult DeclParser::parse_enum() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'enum'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     ParseResult result = parser.parse_list(AST_ENUM_VARIANT_LIST, TKN_RBRACE, [this](NodeBuilder &) {
-        NodeBuilder variant = parser.new_node();
-        variant.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+        NodeBuilder variant = parser.build_node();
+        variant.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
         if (stream.get()->is(TKN_EQ)) {
             stream.consume(); // Consume '='
@@ -158,14 +158,14 @@ ParseResult DeclParser::parse_enum() {
 }
 
 ParseResult DeclParser::parse_union() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'union'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     ParseResult result = parser.parse_block();
     if (!result.is_valid) {
@@ -177,11 +177,11 @@ ParseResult DeclParser::parse_union() {
 }
 
 ParseResult DeclParser::parse_union_case() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'case'
 
     if (stream.get()->is(TKN_IDENTIFIER)) {
-        node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+        node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
     } else {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
@@ -202,14 +202,14 @@ ParseResult DeclParser::parse_union_case() {
 }
 
 ParseResult DeclParser::parse_proto() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'proto'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     ParseResult result = parser.parse_block();
     if (!result.is_valid) {
@@ -221,7 +221,7 @@ ParseResult DeclParser::parse_proto() {
 }
 
 ParseResult DeclParser::parse_type_alias() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'type'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
@@ -229,7 +229,7 @@ ParseResult DeclParser::parse_type_alias() {
         return node.build_error();
     }
 
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     if (!stream.get()->is(TKN_EQ)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'='");
@@ -248,7 +248,7 @@ ParseResult DeclParser::parse_type_alias() {
 }
 
 ParseResult DeclParser::parse_use() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'use'
 
     ParseResult result = parse_use_tree();
@@ -270,7 +270,7 @@ ParseResult DeclParser::parse_use_tree() {
     ASTNode *current_node = result.node;
 
     while (stream.get()->is(TKN_DOT)) {
-        ASTNode *dot_operator = new ASTNode(AST_DOT_OPERATOR);
+        ASTNode *dot_operator = parser.create_node(AST_DOT_OPERATOR);
         dot_operator->append_child(current_node);
         stream.consume(); // Consume '.'
 
@@ -294,16 +294,16 @@ ParseResult DeclParser::parse_use_tree_element() {
 
     Token *token = stream.get();
     if (token->get_type() == TKN_IDENTIFIER) {
-        ASTNode *identifier = new ASTNode(AST_IDENTIFIER, stream.consume());
+        ASTNode *identifier = parser.create_node(AST_IDENTIFIER, stream.consume());
 
         if (!stream.get()->is(TKN_AS)) {
             return identifier;
         } else {
             stream.consume(); // Consume 'as'
 
-            ASTNode *rebinding_node = new ASTNode(AST_USE_REBINDING);
+            ASTNode *rebinding_node = parser.create_node(AST_USE_REBINDING);
             rebinding_node->append_child(identifier);
-            rebinding_node->append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+            rebinding_node->append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
             rebinding_node->set_range_from_children();
             return rebinding_node;
         }
@@ -311,14 +311,14 @@ ParseResult DeclParser::parse_use_tree_element() {
         return parser.parse_list(AST_USE_TREE_LIST, TKN_RBRACE, [this](NodeBuilder &) { return parse_use_tree(); });
     } else {
         parser.report_unexpected_token();
-        return {new ASTNode(AST_ERROR), false};
+        return {parser.create_node(AST_ERROR), false};
     }
 }
 
 ParseResult DeclParser::parse_qualifiers() {
-    ASTNode *qualifier_list = new ASTNode(AST_QUALIFIER_LIST);
+    ASTNode *qualifier_list = parser.create_node(AST_QUALIFIER_LIST);
     while (stream.get()->is(TKN_PUB)) {
-        qualifier_list->append_child(new ASTNode(AST_QUALIFIER, stream.consume()));
+        qualifier_list->append_child(parser.create_node(AST_QUALIFIER, stream.consume()));
     }
 
     return qualifier_list;
@@ -332,12 +332,12 @@ ParseResult DeclParser::parse_native() {
         stream.consume(); // Consume 'native'
         parser.report_unexpected_token();
         stream.consume(); // Consume invalid token
-        return {new ASTNode(AST_ERROR), false};
+        return {parser.create_node(AST_ERROR), false};
     }
 }
 
 ParseResult DeclParser::parse_native_var() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
 
     if (parser.current_attr_list) {
         node.set_attribute_list(std::move(parser.current_attr_list));
@@ -347,7 +347,7 @@ ParseResult DeclParser::parse_native_var() {
     stream.consume(); // Consume native keyword
     stream.consume(); // Consume var keyword
 
-    ASTNode *identifier = new ASTNode(AST_IDENTIFIER, stream.consume());
+    ASTNode *identifier = parser.create_node(AST_IDENTIFIER, stream.consume());
     stream.consume(); // Consume ':'
     ASTNode *data_type = parser.parse_type().node;
 
@@ -358,10 +358,10 @@ ParseResult DeclParser::parse_native_var() {
 }
 
 ParseResult DeclParser::parse_native_func() {
-    NodeBuilder node = parser.new_node();
+    NodeBuilder node = parser.build_node();
 
     stream.consume(); // Consume 'native'
-    node.append_child(new ASTNode(AST_QUALIFIER_LIST));
+    node.append_child(parser.create_node(AST_QUALIFIER_LIST));
 
     if (parser.current_attr_list) {
         node.set_attribute_list(std::move(parser.current_attr_list));
@@ -375,7 +375,7 @@ ParseResult DeclParser::parse_native_func() {
         return node.build_error();
     }
 
-    node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     bool generic;
     bool head_valid = parse_func_head(node, generic);
@@ -403,7 +403,7 @@ ParseResult DeclParser::parse_pub() {
         case TKN_TYPE: return parse_type_alias();
         case TKN_NATIVE: return parse_native();
         case TKN_USE: return parse_use();
-        default: parser.report_unexpected_token(); return {new ASTNode(AST_ERROR), false};
+        default: parser.report_unexpected_token(); return {parser.create_node(AST_ERROR), false};
     }
 }
 
@@ -416,8 +416,8 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
 
         ParseResult result = parse_generic_param_list();
         if (!result.is_valid) {
-            node.append_child(new ASTNode(AST_PARAM_LIST));
-            node.append_child(new ASTNode(AST_VOID));
+            node.append_child(parser.create_node(AST_PARAM_LIST));
+            node.append_child(parser.create_node(AST_VOID));
             return false;
         }
 
@@ -426,8 +426,8 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
 
     if (!stream.get()->is(TKN_LPAREN)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'('");
-        node.append_child(new ASTNode(AST_PARAM_LIST));
-        node.append_child(new ASTNode(AST_VOID));
+        node.append_child(parser.create_node(AST_PARAM_LIST));
+        node.append_child(parser.create_node(AST_VOID));
         return false;
     }
 
@@ -446,10 +446,10 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
             return false;
         }
     } else if (stream.get()->is(TKN_LBRACE) || stream.get()->is(TKN_SEMI) || stream.previous()->end_of_line) {
-        node.append_child(new ASTNode(AST_VOID));
+        node.append_child(parser.create_node(AST_VOID));
     } else {
         parser.report_unexpected_token();
-        node.append_child(new ASTNode(AST_VOID));
+        node.append_child(parser.create_node(AST_VOID));
         return false;
     }
 
@@ -458,8 +458,8 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
 
 ParseResult DeclParser::parse_generic_param_list() {
     return parser.parse_list(AST_GENERIC_PARAM_LIST, TKN_RBRACKET, [this](NodeBuilder &) {
-        NodeBuilder node = parser.new_node();
-        node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+        NodeBuilder node = parser.build_node();
+        node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
         if (stream.get()->is(TKN_COLON)) {
             stream.consume(); // Consume ':'
@@ -468,7 +468,7 @@ ParseResult DeclParser::parse_generic_param_list() {
             if (result.is_valid) {
                 node.append_child(result.node);
             } else {
-                node.append_child(new ASTNode(AST_ERROR));
+                node.append_child(parser.create_node(AST_ERROR));
             }
         }
 

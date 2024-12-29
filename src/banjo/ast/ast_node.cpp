@@ -24,12 +24,6 @@ ASTNode::ASTNode(ASTNodeType type, Token *token) : type(type), value(""), range{
     value = token->move_value();
 }
 
-ASTNode::~ASTNode() {
-    for (ASTNode *child : children) {
-        delete child;
-    }
-}
-
 bool ASTNode::has_child(unsigned index) {
     return children.size() >= index + 1;
 }

@@ -40,16 +40,6 @@ void Compiler::compile() {
         report_printer.enable_colors();
     }
 
-    ssa::Module ir_module = run_frontend();
-    run_middleend(ir_module);
-    run_backend(ir_module);
-
-    PROFILE_SECTION_BEGIN("CLEANUP");
-
-    delete target;
-}
-
-ssa::Module Compiler::run_frontend() {
     PROFILE_SECTION_BEGIN("FRONTEND");
 
     module_manager.add_standard_stdlib_search_path();
@@ -82,9 +72,6 @@ ssa::Module Compiler::run_frontend() {
         std::exit(EXIT_FAILURE);
     }
 
-    PROFILE_SECTION_END("FRONTEND");
-    PROFILE_SECTION_BEGIN("LOWERING");
-
     ssa::Module ssa_module = SSAGenerator(sir_unit, target).generate();
 
     if (config.debug) {
@@ -92,26 +79,20 @@ ssa::Module Compiler::run_frontend() {
         ssa::Writer(stream).write(ssa_module);
     }
 
-    PROFILE_SECTION_END("LOWERING");
-
-    return ssa_module;
-}
-
-void Compiler::run_middleend(ssa::Module &ir_module) {
-    PROFILE_SECTION("OPTIMIZATION");
+    PROFILE_SECTION_END("FRONTEND");
+    PROFILE_SECTION_BEGIN("OPTIMIZATION");
 
     passes::PassRunner pass_runner;
     pass_runner.set_opt_level(config.opt_level);
     pass_runner.set_generate_addr_table(config.hot_reload);
     pass_runner.set_debug(config.debug);
-    pass_runner.run(ir_module, target);
-}
+    pass_runner.run(ssa_module, target);
 
-void Compiler::run_backend(ssa::Module &ir_module) {
-    PROFILE_SECTION("BACKEND");
+    PROFILE_SECTION_END("OPTIMIZATION");
+    PROFILE_SECTION_BEGIN("BACKEND");
 
     codegen::SSALowerer *ssa_lowerer = target->create_ssa_lowerer();
-    mcode::Module machine_module = ssa_lowerer->lower_module(ir_module);
+    mcode::Module machine_module = ssa_lowerer->lower_module(ssa_module);
     delete ssa_lowerer;
 
     codegen::MachinePassRunner(target).create_and_run(machine_module);
@@ -120,6 +101,10 @@ void Compiler::run_backend(ssa::Module &ir_module) {
     codegen::Emitter *emitter = target->create_emitter(machine_module, stream);
     emitter->generate();
     delete emitter;
+
+    PROFILE_SECTION_END("BACKEND");
+
+    delete target;
 }
 
 } // namespace lang

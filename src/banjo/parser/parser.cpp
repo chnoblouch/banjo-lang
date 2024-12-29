@@ -47,19 +47,19 @@ ParsedAST Parser::parse_module() {
     stream.seek(0);
     is_valid = true;
 
-    ASTModule *module_ = new ASTModule(module_path);
-    module_->append_child(parse_top_level_block());
-    module_->set_range_from_children();
+    cur_mod = new ASTModule(module_path);
+    cur_mod->append_child(parse_top_level_block());
+    cur_mod->set_range_from_children();
 
     return ParsedAST{
-        .module_ = module_,
+        .module_ = cur_mod,
         .is_valid = is_valid,
         .reports = reports,
     };
 }
 
 ASTNode *Parser::parse_top_level_block() {
-    ASTNode *block = new ASTNode(AST_BLOCK, TextRange{0, 0});
+    ASTNode *block = create_node(AST_BLOCK, TextRange{0, 0});
 
     while (!stream.get()->is(TKN_EOF)) {
         parse_block_child(block);
@@ -70,7 +70,7 @@ ASTNode *Parser::parse_top_level_block() {
 }
 
 ParseResult Parser::parse_block() {
-    ASTNode *block = new ASTNode(AST_BLOCK, TextRange{0, 0});
+    ASTNode *block = create_node(AST_BLOCK, TextRange{0, 0});
 
     if (stream.get()->is(TKN_LBRACE)) {
         stream.consume(); // Consume '{'
@@ -100,7 +100,7 @@ void Parser::parse_block_child(ASTNode *block) {
     ParseResult result;
 
     if (mode == Mode::FORMATTING && stream.get()->after_empty_line) {
-        block->append_child(new ASTNode(AST_EMPTY_LINE));
+        block->append_child(create_node(AST_EMPTY_LINE));
     }
 
     switch (stream.get()->get_type()) {
@@ -221,7 +221,7 @@ ParseResult Parser::parse_list(
     const ListElementParser &element_parser,
     bool consume_terminator /* = true */
 ) {
-    NodeBuilder node = new_node();
+    NodeBuilder node = build_node();
     stream.consume(); // Consume starting token
 
     while (true) {
@@ -262,20 +262,20 @@ ParseResult Parser::parse_list(
 
 ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
     return parse_list(AST_PARAM_LIST, terminator, [this](NodeBuilder &) -> ParseResult {
-        NodeBuilder node = new_node();
+        NodeBuilder node = build_node();
 
         if (stream.get()->is(TKN_AT)) {
             node.set_attribute_list(parse_attribute_list());
         }
 
         if (stream.get()->is(TKN_SELF)) {
-            node.append_child(new ASTNode(AST_SELF, "", stream.consume()->get_range()));
+            node.append_child(create_node(AST_SELF, "", stream.consume()->get_range()));
         } else {
             if (stream.peek(1)->is(TKN_COLON)) {
-                node.append_child(new ASTNode(AST_IDENTIFIER, stream.consume()));
+                node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
                 stream.consume(); // Consume ':'
             } else {
-                node.append_child(new ASTNode(AST_IDENTIFIER, "", {0, 0}));
+                node.append_child(create_node(AST_IDENTIFIER, "", TextRange{0, 0}));
             }
 
             ParseResult result = parse_type();
@@ -304,10 +304,6 @@ ParseResult Parser::check_stmt_terminator(ASTNode *node) {
         report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);
         return {node, false};
     }
-}
-
-NodeBuilder Parser::new_node() {
-    return NodeBuilder(stream);
 }
 
 Report &Parser::register_error(TextRange range) {
@@ -395,12 +391,12 @@ bool Parser::is_at_completion_point() {
 }
 
 ASTNode *Parser::parse_completion_point() {
-    completion_node = new ASTNode(AST_COMPLETION_TOKEN, stream.consume());
+    completion_node = create_node(AST_COMPLETION_TOKEN, stream.consume());
     return completion_node;
 }
 
 ASTNode *Parser::create_dummy_block() {
-    return new ASTNode(AST_BLOCK, TextRange{stream.get()->get_position(), stream.get()->get_position()});
+    return create_node(AST_BLOCK, TextRange{stream.get()->get_position(), stream.get()->get_position()});
 }
 
 } // namespace lang

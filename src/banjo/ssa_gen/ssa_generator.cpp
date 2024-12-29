@@ -1,17 +1,18 @@
 #include "ssa_generator.hpp"
 
+#include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/function_decl.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/global_ssa_generator.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <utility>
 
@@ -25,6 +26,8 @@ const ssa::Value SSA_MAIN_RETURN_VALUE = ssa::Value::from_int_immediate(0, SSA_M
 SSAGenerator::SSAGenerator(const sir::Unit &sir_unit, target::Target *target) : sir_unit(sir_unit), ctx(target) {}
 
 ssa::Module SSAGenerator::generate() {
+    PROFILE_SCOPE("ssa generator");
+
     ctx.ssa_mod = &ssa_mod;
 
     for (const sir::Module *sir_mod : sir_unit.mods) {

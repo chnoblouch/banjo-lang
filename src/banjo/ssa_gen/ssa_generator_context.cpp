@@ -204,9 +204,7 @@ ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_str
     }
 
     ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
-    if (ssa_mod) {
-        ssa_mod->add(ssa_struct);
-    }
+    ssa_mod->add(ssa_struct);
 
     for (sir::StructField *sir_field : sir_struct_def.fields) {
         ssa_struct->add({
@@ -226,9 +224,7 @@ ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union
     }
 
     ssa::Structure *ssa_struct = new ssa::Structure(sir_union_def.ident.value);
-    if (ssa_mod) {
-        ssa_mod->add(ssa_struct);
-    }
+    ssa_mod->add(ssa_struct);
 
     ssa_struct->add({
         .name = "tag",
@@ -259,9 +255,7 @@ ssa::Structure *SSAGeneratorContext::create_union_case(const sir::UnionCase &sir
     }
 
     ssa::Structure *ssa_struct = new ssa::Structure(sir_union_case.ident.value);
-    if (ssa_mod) {
-        ssa_mod->add(ssa_struct);
-    }
+    ssa_mod->add(ssa_struct);
 
     for (unsigned i = 0; i < sir_union_case.fields.size(); i++) {
         ssa_struct->add({
@@ -303,10 +297,7 @@ ssa::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ssa::Typ
         });
     }
 
-    if (ssa_mod) {
-        ssa_mod->add(ssa_struct);
-    }
-
+    ssa_mod->add(ssa_struct);
     tuple_structs.push_back(ssa_struct);
     return ssa_struct;
 }

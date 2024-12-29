@@ -186,7 +186,6 @@ public:
     ASTNode(ASTNodeType type, std::string value, TextRange range = {0, 0});
     ASTNode(ASTNodeType type, TextRange range);
     ASTNode(ASTNodeType type, Token *token);
-    ~ASTNode();
 
     ASTNodeType get_type() { return type; }
     TextRange get_range() { return range; }

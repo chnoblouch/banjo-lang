@@ -28,12 +28,6 @@ private:
 public:
     Compiler(const Config &config);
     void compile();
-
-private:
-    ssa::Module run_frontend();
-
-    void run_middleend(ssa::Module &ir_module);
-    void run_backend(ssa::Module &ir_module);
 };
 
 } // namespace lang

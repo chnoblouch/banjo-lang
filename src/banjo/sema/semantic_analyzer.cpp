@@ -12,6 +12,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/utils/timing.hpp"
 
 #include <vector>
 
@@ -34,6 +35,7 @@ SemanticAnalyzer::SemanticAnalyzer(
     mode(mode) {}
 
 void SemanticAnalyzer::analyze() {
+    PROFILE_SCOPE("semantic analyzer");
     analyze(sir_unit.mods);
 }
 
@@ -193,7 +195,10 @@ sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_map_specialization
 }
 
 unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
+    ssa::Module dummy_ssa_mod;
     SSAGeneratorContext dummy_ssa_gen_ctx(target);
+    dummy_ssa_gen_ctx.ssa_mod = &dummy_ssa_mod;
+
     ssa::Type ssa_type = TypeSSAGenerator(dummy_ssa_gen_ctx).generate(type);
     return target->get_data_layout().get_size(ssa_type);
 }

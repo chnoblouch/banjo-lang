@@ -24,7 +24,7 @@ private:
     ASTNode *node;
 
 public:
-    NodeBuilder(TokenStream &stream) : stream(stream), node(new ASTNode()) {
+    NodeBuilder(TokenStream &stream, ASTNode *node) : stream(stream), node(node) {
         node->range.start = stream.get()->get_position();
     }
 
