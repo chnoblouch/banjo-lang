@@ -215,16 +215,22 @@ ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_str
             });
         }
     } else if (sir_struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
+        ssa::Type largest_type = ssa::Primitive::VOID;
         unsigned largest_size = 0;
 
         for (sir::StructField *sir_field : sir_struct_def.fields) {
             ssa::Type ssa_type = TypeSSAGenerator(*this).generate(sir_field->type);
-            largest_size = std::max(largest_size, target->get_data_layout().get_size(ssa_type));
+            unsigned size = target->get_data_layout().get_size(ssa_type);
+
+            if (size > largest_size) {
+                largest_type = ssa_type;
+                largest_size = size;
+            }
         }
 
         ssa_struct->add({
             .name = "data",
-            .type = ssa::Type(ssa::Primitive::I8, largest_size),
+            .type = largest_type,
         });
     }
 
@@ -246,17 +252,22 @@ ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union
         .type = ssa::Primitive::I32,
     });
 
+    ssa::Type largest_case_type = ssa::Primitive::VOID;
     unsigned largest_case_size = 0;
 
     for (sir::UnionCase *sir_union_case : sir_union_def.cases) {
         ssa::Structure *case_ssa_struct = create_union_case(*sir_union_case);
         unsigned case_size = target->get_data_layout().get_size(case_ssa_struct);
-        largest_case_size = std::max(largest_case_size, case_size);
+
+        if (case_size > largest_case_size) {
+            largest_case_type = case_ssa_struct;
+            largest_case_size = case_size;
+        }
     }
 
     ssa_struct->add({
         .name = "data",
-        .type = ssa::Type(ssa::Primitive::I8, largest_case_size),
+        .type = largest_case_type,
     });
 
     ssa_structs.insert({&sir_union_def, ssa_struct});

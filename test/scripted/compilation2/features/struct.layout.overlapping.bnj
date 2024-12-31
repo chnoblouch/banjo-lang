@@ -75,3 +75,48 @@ func main() {
     print(',');
     print(s.c);
 }
+
+# test:subtest
+# test:output "4"
+
+@[layout=overlapping]
+struct S {
+    var a: u16;
+    var c: u32;
+    var b: u8;
+}
+
+func main() {
+    var tuple: (u8, S) = (0, S { a: 0 });
+    print(&tuple.1 as usize - &tuple as usize);
+}
+
+# test:subtest
+# test:output "8"
+
+struct Pair {
+    var a: i64;
+    var b: i64;
+}
+
+@[layout=overlapping]
+struct S {
+    var a: u16;
+    var b: u8;
+    var c: Pair;
+}
+
+func main() {
+    var tuple: (u8, S) = (0, S { a: 0 });
+    print(&tuple.1 as usize - &tuple as usize);
+}
+
+# test:subtest
+# test:compiles
+
+@[layout=overlapping]
+struct S {}
+
+func main() {
+    var s = S {};
+}
