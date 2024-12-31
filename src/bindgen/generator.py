@@ -14,20 +14,27 @@ class ConstInfo:
 
 
 class StructInfo:
-    def __init__(self, struct: Structure):
+    def __init__(self, struct: Struct):
         self.kind = "struct"
         self.name = struct.name
+        self.fields = [FieldInfo(field) for field in struct.fields]
+
+
+class UnionInfo:
+    def __init__(self, union: Union):
+        self.kind = "union"
+        self.name = union.name
+        self.fields = [FieldInfo(field) for field in union.fields]
 
 
 class FieldInfo:
-    def __init__(self, field: Field, struct: Structure):
+    def __init__(self, field: Field):
         self.kind = "field"
         self.name = field.name
-        self.struct = StructInfo(struct)
 
 
 class EnumInfo:
-    def __init__(self, enum: Enumeration):
+    def __init__(self, enum: Enum):
         self.kind = "enum"
         self.name = enum.name
         self.variants = [EnumVariantInfo(variant) for variant in enum.variants]
@@ -54,3 +61,20 @@ class Generator:
         self.filter_file_path = None
         self.filter_symbol = None
         self.rename_symbol = None
+
+
+def get_symbol_info(symbol):
+    if type(symbol) == Function:
+        return FuncInfo(symbol)
+    elif type(symbol) == Constant:
+        return ConstInfo(symbol)
+    elif type(symbol) == Struct:
+        return StructInfo(symbol)
+    elif type(symbol) == Union:
+        return UnionInfo(symbol)
+    elif type(symbol) == Enum:
+        return EnumInfo(symbol)
+    elif type(symbol) == TypeAlias:
+        return TypeAliasInfo(symbol)
+    else:
+        return None

@@ -6,8 +6,9 @@ Type = typing.Union[
     "IdentifierType",
     "PtrType",
     "ArrayType",
-    "Structure",
-    "Enumeration"
+    "Struct",
+    "Union",
+    "Enum"
 ]
 
 
@@ -63,8 +64,15 @@ class Field:
 
 
 @dataclass
-class Structure:
+class Struct:
     kind = "struct"
+    name: str
+    fields: list[Field]
+
+
+@dataclass
+class Union:
+    kind = "union"
     name: str
     fields: list[Field]
 
@@ -77,16 +85,10 @@ class EnumVariant:
 
 
 @dataclass
-class Enumeration:
+class Enum:
     kind = "enum"
     name: str
     variants: list[EnumVariant]
-
-
-@dataclass
-class Union:
-    kind = "union"
-    name: str
 
 
 @dataclass
@@ -101,9 +103,10 @@ class Bindings:
     symbols: typing.List[
         typing.Union[
             Function,
-            Structure,
-            Enumeration,
-            TypeAlias
+            Struct,
+            Union,
+            Enum,
+            TypeAlias,
         ]
     ]
 

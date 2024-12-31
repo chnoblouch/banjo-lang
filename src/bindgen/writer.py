@@ -3,6 +3,55 @@ from generator import *
 import utils
 
 
+KEYWORDS = set([
+    "var",
+    "const",
+    "func",
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "f32",
+    "f64",
+    "usize",
+    "bool",
+    "addr",
+    "void",
+    "except",
+    "as",
+    "if",
+    "else",
+    "switch",
+    "try",
+    "while",
+    "for",
+    "in",
+    "break",
+    "continue",
+    "return",
+    "struct",
+    "self",
+    "enum",
+    "union",
+    "case",
+    "proto",
+    "false",
+    "true",
+    "null",
+    "none",
+    "undefined",
+    "use",
+    "pub",
+    "native",
+    "meta",
+    "type",
+])
+
+
 class Writer:
     def __init__(self, bindings: Bindings, filename):
         self.bindings = bindings
@@ -13,7 +62,7 @@ class Writer:
 
         for symbol in self.bindings.symbols:
             if last_type != type(symbol):
-                if last_type not in (Structure, Enumeration):
+                if last_type not in (None, Struct, Union, Enum):
                     self.file.write("\n")
                 last_type = type(symbol)
 
@@ -21,9 +70,11 @@ class Writer:
                 self.write_func(symbol)
             elif type(symbol) is Constant:
                 self.write_const(symbol)
-            elif type(symbol) is Structure:
+            elif type(symbol) is Struct:
                 self.write_struct(symbol)
-            elif type(symbol) is Enumeration:
+            elif type(symbol) is Union:
+                self.write_union(symbol)
+            elif type(symbol) is Enum:
                 self.write_enum(symbol)
             elif type(symbol) is TypeAlias:
                 self.write_type_alias(symbol)
@@ -51,41 +102,37 @@ class Writer:
         self.file.write(str(const.value))
         self.file.write(";\n")
 
-    def write_struct(self, struct: Structure):
+    def write_struct(self, struct: Struct):
         self.file.write("struct ")
         self.write_identifier(struct.name)
-
         self.file.write(" {\n")
 
         for field in struct.fields:
             self.file.write("    var ")
             self.write_identifier(field.name)
             self.file.write(": ")
-
-            if type(field.type) != ArrayType:
-                self.write_type(field.type)
-                self.file.write(";\n")
-            elif field.type.length <= 8:
-                self.file.write("(")
-                
-                for _ in range(field.type.length):
-                    self.write_type(field.type.base)
-                    self.file.write(", ")
-
-                self.file.write(");\n")
-            else:
-                self.file.write("[")
-                self.write_type(field.type.base)
-                self.file.write("; ")
-                self.file.write(str(field.type.length))
-                self.file.write("];\n")
+            self.write_field_type(field.type)
+            self.file.write(";\n")
 
         self.file.write("}\n\n")
 
-    def write_enum(self, enum: Enumeration):
+    def write_union(self, union: Union):
+        self.file.write("@[layout=overlapping]\nstruct ")
+        self.write_identifier(union.name)
+        self.file.write(" {\n")
+
+        for field in union.fields:
+            self.file.write("    var ")
+            self.write_identifier(field.name)
+            self.file.write(": ")
+            self.write_field_type(field.type)
+            self.file.write(";\n")
+
+        self.file.write("}\n\n")
+
+    def write_enum(self, enum: Enum):
         self.file.write("enum ")
         self.write_identifier(enum.name)
-
         self.file.write(" {\n")
 
         for i, variant in enumerate(enum.variants):
@@ -110,19 +157,20 @@ class Writer:
 
     def write_type(self, type_):
         if type(type_) == PrimitiveType:
-            self.write_identifier(type_.name)
+            self.file.write(type_.name)
         elif type(type_) == IdentifierType:
             if self.bindings.resolve_symbol(type_.name):
                 type_ = self.resolve_type(type_)
                 self.write_identifier(type_.name)
             else:
-                self.write_identifier("u64")
-        elif type(type_) == Structure:
+                print(f"    Warning: Could not resolve type '{type_.name}'")
+                self.file.write("u64")
+        elif type(type_) == Struct:
             self.write_identifier(type_.name)
-        elif type(type_) == Enumeration:
+        elif type(type_) == Enum:
             self.write_identifier(type_.name)
         elif type(type_) == Union:
-            self.file.write("u64")
+            self.write_identifier(type_.name)
         elif type(type_) == Function:
             self.file.write("func(")
             self.write_params(type_.params)
@@ -151,6 +199,16 @@ class Writer:
 
         self.file.write("*")
         self.write_type(type_.base)
+
+    def write_field_type(self, type_):
+        if type(type_) != ArrayType:
+            self.write_type(type_)
+        else:
+            self.file.write("[")
+            self.write_type(type_.base)
+            self.file.write("; ")
+            self.file.write(str(type_.length))
+            self.file.write("]")
 
     def resolve_type(self, type_):
         if type(type_) is not IdentifierType:
@@ -182,7 +240,7 @@ class Writer:
         if identifier[0].isdigit():
             identifier = "_" + identifier
 
-        if identifier == "type":
+        if identifier in KEYWORDS:
             identifier += "_"
 
         self.file.write(identifier)

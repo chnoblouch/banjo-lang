@@ -67,12 +67,12 @@ class ASTConverter:
     def gen_typedef(self, typedef):
         name, type_ = self.gen_decl(typedef)
 
-        if type(type_) is Structure or type(type_) is Enumeration:
+        if type(type_) is Struct or type(type_) is Enum:
             return type_
         else:
             return TypeAlias(name, type_)
 
-    def gen_decl(self, decl) -> (str, Type):
+    def gen_decl(self, decl) -> tuple[str, Type]:
         if type(decl.type) is c_ast.PtrDecl:
             name, type_ = self.gen_decl(decl.type)
             type_ = PtrType(type_)
@@ -103,7 +103,7 @@ class ASTConverter:
             print(type(type_))
             return None
 
-    def gen_struct(self, struct) -> Structure:
+    def gen_struct(self, struct) -> Struct:
         members = []
 
         if struct.decls:
@@ -111,9 +111,9 @@ class ASTConverter:
                 member = self.gen_decl(member_decl)
                 members.append(member)
 
-        return Structure(struct.name, members)
+        return Struct(struct.name, members)
 
-    def gen_enum(self, enum) -> Enumeration:
+    def gen_enum(self, enum) -> Enum:
         name = enum.name
 
         variants = []
@@ -122,7 +122,7 @@ class ASTConverter:
                 value = self.gen_value(enumerator.value)
                 variants.append((enumerator.name, value))
 
-        return Enumeration(name, variants)
+        return Enum(name, variants)
 
     def gen_union(self, union):
         name = union.name

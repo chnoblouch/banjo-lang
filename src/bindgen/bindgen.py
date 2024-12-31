@@ -27,7 +27,7 @@ def generate(filename, generator, include_paths):
 
 
 def run(source_file_path, generator_path, include_paths):
-    symbols = object()
+    symbols = {}
 
     if generator_path:
         dont_write_bytecode = sys.dont_write_bytecode

@@ -59,6 +59,9 @@ class ASTConverter:
             elif child.kind == cindex.CursorKind.STRUCT_DECL:
                 symbol = self.gen_struct(child)
                 symbols[symbol.name] = symbol
+            elif child.kind == cindex.CursorKind.UNION_DECL:
+                symbol = self.gen_union(child)
+                symbols[symbol.name] = symbol
             elif child.kind == cindex.CursorKind.ENUM_DECL:
                 symbol = self.gen_enum(child)
                 symbols[symbol.name] = symbol
@@ -131,7 +134,6 @@ class ASTConverter:
 
         for i, field in enumerate(cursor.type.get_fields()):
             param_names = self.collect_param_names(field)
-
             field_name = field.spelling
 
             # FIXME: Thie needs a better solution.
@@ -141,7 +143,24 @@ class ASTConverter:
             field_type = self.gen_type(field.type, param_names)
             fields.append(Field(field_name, field_type))
 
-        return Structure(name, fields)
+        return Struct(name, fields)
+
+    def gen_union(self, cursor):
+        name = cursor.spelling
+        fields = []
+
+        for i, field in enumerate(cursor.type.get_fields()):
+            param_names = self.collect_param_names(field)
+            field_name = field.spelling
+
+            # FIXME: Thie needs a better solution.
+            if "anonymous " in field_name:
+                field_name = f"field{i}"
+
+            field_type = self.gen_type(field.type, param_names)
+            fields.append(Field(field_name, field_type))
+
+        return Union(name, fields)
 
     def gen_enum(self, cursor):
         name = cursor.spelling
@@ -155,7 +174,7 @@ class ASTConverter:
             variant_value = child.enum_value
             variants.append(EnumVariant(variant_name, variant_value))
 
-        return Enumeration(name, variants)
+        return Enum(name, variants)
 
     def gen_type_alias(self, cursor):
         first_child = next(cursor.get_children(), None)
