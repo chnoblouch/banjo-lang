@@ -28,7 +28,7 @@ unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
         ssa::Structure &struct_ = *type.get_struct();
 
         unsigned offset = 0;
-        for (const ssa::StructureMember &member : struct_.get_members()) {
+        for (const ssa::StructureMember &member : struct_.members) {
             unsigned size = get_size(member.type);
             unsigned alignment = get_alignment(member.type);
             offset = Utils::align(offset, alignment) + size;
@@ -50,7 +50,7 @@ unsigned StandardDataLayout::get_alignment(const ssa::Type &type) const {
         ssa::Structure &struct_ = *type.get_struct();
 
         unsigned alignment = 0;
-        for (const ssa::StructureMember &member : struct_.get_members()) {
+        for (const ssa::StructureMember &member : struct_.members) {
             alignment = std::max(alignment, get_alignment(member.type));
         }
         return alignment;
@@ -63,28 +63,13 @@ unsigned StandardDataLayout::get_member_offset(ssa::Structure *struct_, unsigned
     unsigned offset = 0;
 
     for (unsigned i = 0; i < index; i++) {
-        const ssa::Type &type = struct_->get_members()[i].type;
+        const ssa::Type &type = struct_->members[i].type;
         unsigned size = get_size(type);
         unsigned alignment = get_alignment(type);
         offset = Utils::align(offset, alignment) + size;
     }
 
-    const ssa::Type &type = struct_->get_members()[index].type;
-    unsigned alignment = get_alignment(type);
-    return Utils::align(offset, alignment);
-}
-
-unsigned StandardDataLayout::get_member_offset(const std::vector<ssa::Type> &types, unsigned index) const {
-    unsigned offset = 0;
-
-    for (unsigned i = 0; i < index; i++) {
-        const ssa::Type &type = types[i];
-        unsigned size = get_size(type);
-        unsigned alignment = get_alignment(type);
-        offset = Utils::align(offset, alignment) + size;
-    }
-
-    const ssa::Type &type = types[index];
+    const ssa::Type &type = struct_->members[index].type;
     unsigned alignment = get_alignment(type);
     return Utils::align(offset, alignment);
 }

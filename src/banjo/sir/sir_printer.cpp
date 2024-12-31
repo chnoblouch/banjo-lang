@@ -187,6 +187,11 @@ void Printer::print_struct_def(const StructDef &struct_def) {
         PRINT_EXPR_LIST_FIELD("impls", struct_def.impls);
     }
 
+    if (struct_def.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*struct_def.attrs);
+    }
+
     if (struct_def.is_generic()) {
         PRINT_FIELD_NAME("generic_params")
         print_generic_params(struct_def.generic_params);
@@ -1047,9 +1052,27 @@ void Printer::print_attrs(const Attributes &attrs) {
     PRINT_FIELD("exposed", attrs.exposed ? "true" : "false");
     PRINT_FIELD("dllexport", attrs.dllexport ? "true" : "false");
     PRINT_FIELD("test", attrs.test ? "true" : "false");
-    PRINT_FIELD("link_name", attrs.link_name ? "\"" + *attrs.link_name + "\"" : "none");
+
+    if (attrs.link_name) {
+        PRINT_FIELD("link_name", *attrs.link_name);
+    }
+
     PRINT_FIELD("unmanaged", attrs.unmanaged ? "true" : "false");
     PRINT_FIELD("byval", attrs.byval ? "true" : "false");
+
+    if (attrs.layout) {
+        std::string value;
+
+        switch (*attrs.layout) {
+            case Attributes::Layout::DEFAULT: value = "default"; break;
+            case Attributes::Layout::PACKED: value = "packed"; break;
+            case Attributes::Layout::OVERLAPPING: value = "overlapping"; break;
+            case Attributes::Layout::C: value = "c"; break;
+        }
+
+        PRINT_FIELD("layout", value);
+    }
+
     END_OBJECT();
 }
 

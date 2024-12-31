@@ -282,10 +282,6 @@ unsigned SSALowerer::get_member_offset(ssa::Structure *struct_, unsigned index) 
     return target->get_data_layout().get_member_offset(struct_, index);
 }
 
-unsigned SSALowerer::get_member_offset(const std::vector<ssa::Type> &types, unsigned index) {
-    return target->get_data_layout().get_member_offset(types, index);
-}
-
 mcode::Register SSALowerer::create_tmp_reg() {
     return mcode::Register::from_virtual(func->next_virtual_reg());
 }

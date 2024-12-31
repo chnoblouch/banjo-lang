@@ -66,7 +66,7 @@ bool Validator::validate_memberptr(ssa::Instruction &instr) {
 
     if (type.is_struct()) {
         ssa::Structure &struct_ = *type.get_struct();
-        if (index >= struct_.get_members().size()) {
+        if (index >= struct_.members.size()) {
             stream << "out of bounds memberptr";
             return false;
         }

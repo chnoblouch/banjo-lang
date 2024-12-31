@@ -20,11 +20,6 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         node.append_child(parser.create_node(AST_QUALIFIER_LIST));
     }
 
-    if (parser.current_attr_list) {
-        node.set_attribute_list(std::move(parser.current_attr_list));
-        parser.current_attr_list = nullptr;
-    }
-
     stream.consume(); // Consume 'func'
 
     if (stream.get()->get_type() != TKN_IDENTIFIER) {
@@ -106,12 +101,8 @@ ParseResult DeclParser::parse_struct() {
     }
 
     if (stream.get()->is(TKN_COLON)) {
-        ParseResult result = parser.parse_list(
-            AST_IMPL_LIST,
-            TKN_LBRACE,
-            [this](NodeBuilder &) { return ExprParser(parser).parse_type(); },
-            false
-        );
+        ParseResult result =
+            parser.parse_list(AST_IMPL_LIST, TKN_LBRACE, [this]() { return ExprParser(parser).parse_type(); }, false);
 
         if (result.is_valid) {
             node.append_child(result.node);
@@ -141,7 +132,7 @@ ParseResult DeclParser::parse_enum() {
     }
     node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
-    ParseResult result = parser.parse_list(AST_ENUM_VARIANT_LIST, TKN_RBRACE, [this](NodeBuilder &) {
+    ParseResult result = parser.parse_list(AST_ENUM_VARIANT_LIST, TKN_RBRACE, [this]() {
         NodeBuilder variant = parser.build_node();
         variant.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
@@ -308,7 +299,7 @@ ParseResult DeclParser::parse_use_tree_element() {
             return rebinding_node;
         }
     } else if (token->is(TKN_LBRACE)) {
-        return parser.parse_list(AST_USE_TREE_LIST, TKN_RBRACE, [this](NodeBuilder &) { return parse_use_tree(); });
+        return parser.parse_list(AST_USE_TREE_LIST, TKN_RBRACE, std::bind(&DeclParser::parse_use_tree, this));
     } else {
         parser.report_unexpected_token();
         return {parser.create_node(AST_ERROR), false};
@@ -339,13 +330,8 @@ ParseResult DeclParser::parse_native() {
 ParseResult DeclParser::parse_native_var() {
     NodeBuilder node = parser.build_node();
 
-    if (parser.current_attr_list) {
-        node.set_attribute_list(std::move(parser.current_attr_list));
-        parser.current_attr_list = nullptr;
-    }
-
-    stream.consume(); // Consume native keyword
-    stream.consume(); // Consume var keyword
+    stream.consume(); // Consume 'native'
+    stream.consume(); // Consume 'var'
 
     ASTNode *identifier = parser.create_node(AST_IDENTIFIER, stream.consume());
     stream.consume(); // Consume ':'
@@ -362,11 +348,6 @@ ParseResult DeclParser::parse_native_func() {
 
     stream.consume(); // Consume 'native'
     node.append_child(parser.create_node(AST_QUALIFIER_LIST));
-
-    if (parser.current_attr_list) {
-        node.set_attribute_list(std::move(parser.current_attr_list));
-        parser.current_attr_list = nullptr;
-    }
 
     stream.consume(); // Consume 'func'
 
@@ -457,7 +438,7 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
 }
 
 ParseResult DeclParser::parse_generic_param_list() {
-    return parser.parse_list(AST_GENERIC_PARAM_LIST, TKN_RBRACKET, [this](NodeBuilder &) {
+    return parser.parse_list(AST_GENERIC_PARAM_LIST, TKN_RBRACKET, [this]() {
         NodeBuilder node = parser.build_node();
         node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 

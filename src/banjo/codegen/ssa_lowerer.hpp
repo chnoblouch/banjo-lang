@@ -72,7 +72,6 @@ public:
     unsigned get_size(const ssa::Type &type);
     unsigned get_alignment(const ssa::Type &type);
     unsigned get_member_offset(ssa::Structure *struct_, unsigned index);
-    unsigned get_member_offset(const std::vector<ssa::Type> &types, unsigned index);
     mcode::Register create_tmp_reg();
 
     ssa::InstrIter get_producer(ssa::VirtualRegister reg);

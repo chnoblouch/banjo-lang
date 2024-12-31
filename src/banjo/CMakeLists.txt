@@ -92,7 +92,6 @@ add_library(banjo STATIC
     ssa/function.cpp
     ssa/module.cpp
     ssa/operand.cpp
-    ssa/structure.cpp
     ssa/validator.cpp
     ssa/type.cpp
     ssa/writer.cpp

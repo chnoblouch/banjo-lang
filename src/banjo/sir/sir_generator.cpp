@@ -79,21 +79,28 @@ sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
 }
 
 sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
+    sir::Attributes *attrs = nullptr;
+
+    if (node->get_type() == AST_ATTRIBUTE_WRAPPER) {
+        attrs = generate_attrs(node->get_child(0));
+        node = node->get_child(1);
+    }
+
     switch (node->get_type()) {
-        case AST_FUNCTION_DEFINITION: return generate_func_def(node);
+        case AST_FUNCTION_DEFINITION: return generate_func_def(node, attrs);
         case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
         case AST_FUNC_DECL: return generate_func_decl(node);
-        case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node);
+        case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node, attrs);
         case AST_CONSTANT: return generate_const(node);
-        case AST_STRUCT_DEFINITION: return generate_struct(node);
+        case AST_STRUCT_DEFINITION: return generate_struct(node, attrs);
         case AST_GENERIC_STRUCT_DEFINITION: return generate_generic_struct(node);
         case AST_ENUM_DEFINITION: return generate_enum(node);
         case AST_UNION: return generate_union(node);
         case AST_UNION_CASE: return generate_union_case(node);
         case AST_PROTO: return generate_proto(node);
         case AST_TYPE_ALIAS: return generate_type_alias(node);
-        case AST_VAR: return generate_var_decl(node);
-        case AST_NATIVE_VAR: return generate_native_var_decl(node);
+        case AST_VAR: return generate_var_decl(node, attrs);
+        case AST_NATIVE_VAR: return generate_native_var_decl(node, attrs);
         case AST_USE: return generate_use_decl(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
         case AST_IDENTIFIER: return generate_error_decl(node);
@@ -102,13 +109,13 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
     }
 }
 
-sir::Decl SIRGenerator::generate_func_def(ASTNode *node) {
+sir::Decl SIRGenerator::generate_func_def(ASTNode *node, sir::Attributes *attrs) {
     return create_decl(sir::FuncDef{
         .ast_node = node,
         .ident = generate_ident(node->get_child(FUNC_NAME)),
         .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
         .block = generate_block(node->get_child(FUNC_BLOCK)),
-        .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+        .attrs = attrs,
         .generic_params = {},
     });
 }
@@ -131,12 +138,12 @@ sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {
     });
 }
 
-sir::Decl SIRGenerator::generate_native_func(ASTNode *node) {
+sir::Decl SIRGenerator::generate_native_func(ASTNode *node, sir::Attributes *attrs) {
     return create_decl(sir::NativeFuncDecl{
         .ast_node = node,
         .ident = generate_ident(node->get_child(FUNC_NAME)),
         .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
-        .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+        .attrs = attrs,
     });
 }
 
@@ -149,13 +156,14 @@ sir::Decl SIRGenerator::generate_const(ASTNode *node) {
     });
 }
 
-sir::Decl SIRGenerator::generate_struct(ASTNode *node) {
+sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
     sir::StructDef *struct_def = create_decl(sir::StructDef{
         .ast_node = node,
         .ident = generate_ident(node->get_child(STRUCT_NAME)),
         .block = {},
         .fields = {},
         .impls = generate_expr_list(node->get_child(STRUCT_IMPL_LIST)),
+        .attrs = attrs,
         .generic_params = {},
     });
 
@@ -182,22 +190,22 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
     return struct_def;
 }
 
-sir::Decl SIRGenerator::generate_var_decl(ASTNode *node) {
+sir::Decl SIRGenerator::generate_var_decl(ASTNode *node, sir::Attributes *attrs) {
     return create_decl(sir::VarDecl{
         .ast_node = node,
         .ident = generate_ident(node->get_child(VAR_NAME)),
         .type = generate_expr(node->get_child(VAR_TYPE)),
         .value = node->has_child(VAR_VALUE) ? generate_expr(node->get_child(VAR_VALUE)) : nullptr,
-        .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+        .attrs = attrs,
     });
 }
 
-sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node) {
+sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node, sir::Attributes *attrs) {
     return create_decl(sir::NativeVarDecl{
         .ast_node = node,
         .ident = generate_ident(node->get_child(VAR_NAME)),
         .type = generate_expr(node->get_child(VAR_TYPE)),
-        .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+        .attrs = attrs,
     });
 }
 
@@ -931,6 +939,13 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
 }
 
 sir::Param SIRGenerator::generate_param(ASTNode *node) {
+    sir::Attributes *attrs = nullptr;
+
+    if (node->get_type() == AST_ATTRIBUTE_WRAPPER) {
+        attrs = generate_attrs(node->get_child(0));
+        node = node->get_child(1);
+    }
+
     ASTNodeType ident_type = node->get_child(PARAM_NAME)->get_type();
 
     if (ident_type == AST_IDENTIFIER) {
@@ -938,7 +953,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             .ast_node = node,
             .name = generate_ident(node->get_child(PARAM_NAME)),
             .type = generate_expr(node->get_child(PARAM_TYPE)),
-            .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+            .attrs = attrs,
         };
     } else if (ident_type == AST_SELF) {
         sir::Ident sir_ident{
@@ -950,7 +965,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             .ast_node = node,
             .name = sir_ident,
             .type = nullptr,
-            .attrs = node->get_attribute_list() ? generate_attrs(*node->get_attribute_list()) : nullptr,
+            .attrs = attrs,
         };
     } else {
         ASSERT_UNREACHABLE;
@@ -1060,17 +1075,37 @@ std::vector<sir::UnionCaseField> SIRGenerator::generate_union_case_fields(ASTNod
     return fields;
 }
 
-sir::Attributes *SIRGenerator::generate_attrs(const AttributeList &ast_attrs) {
+sir::Attributes *SIRGenerator::generate_attrs(ASTNode *node) {
     sir::Attributes sir_attrs;
 
-    for (const Attribute &ast_attr : ast_attrs.get_attributes()) {
-        if (ast_attr.get_name() == "exposed") sir_attrs.exposed = true;
-        else if (ast_attr.get_name() == "dllexport") sir_attrs.dllexport = true;
-        else if (ast_attr.get_name() == "test") sir_attrs.test = true;
-        else if (ast_attr.get_name() == "link_name") sir_attrs.link_name = ast_attr.get_value();
-        else if (ast_attr.get_name() == "unmanaged") sir_attrs.unmanaged = true;
-        else if (ast_attr.get_name() == "byval") sir_attrs.byval = true;
-        else ASSERT_UNREACHABLE;
+    for (ASTNode *child : node->get_children()) {
+        if (child->get_type() == AST_ATTRIBUTE_TAG) {
+            const std::string &name = child->get_value();
+
+            if (name == "exposed") sir_attrs.exposed = true;
+            else if (name == "dllexport") sir_attrs.dllexport = true;
+            else if (name == "test") sir_attrs.test = true;
+            else if (name == "unmanaged") sir_attrs.unmanaged = true;
+            else if (name == "byval") sir_attrs.byval = true;
+            else ASSERT_UNREACHABLE;
+        } else if (child->get_type() == AST_ATTRIBUTE_VALUE) {
+            const std::string &name = child->get_child(0)->get_value();
+            const std::string &value = child->get_child(1)->get_value();
+
+            if (name == "link_name") {
+                sir_attrs.link_name = value;
+            } else if (name == "layout") {
+                if (value == "default") sir_attrs.layout = sir::Attributes::Layout::DEFAULT;
+                else if (value == "packed") sir_attrs.layout = sir::Attributes::Layout::PACKED;
+                else if (value == "overlapping") sir_attrs.layout = sir::Attributes::Layout::OVERLAPPING;
+                else if (value == "c") sir_attrs.layout = sir::Attributes::Layout::C;
+                else ASSERT_UNREACHABLE;
+            } else {
+                ASSERT_UNREACHABLE;
+            }
+        } else {
+            ASSERT_UNREACHABLE;
+        }
     }
 
     return create_attrs(sir_attrs);

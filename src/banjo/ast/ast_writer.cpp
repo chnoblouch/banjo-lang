@@ -164,6 +164,10 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_NATIVE_VAR: return "NATIVE_VAR";
         case AST_QUALIFIER_LIST: return "QUALIFIER_LIST";
         case AST_QUALIFIER: return "QUALIFIER";
+        case AST_ATTRIBUTE_WRAPPER: return "ATTRIBUTE_WRAPPER";
+        case AST_ATTRIBUTE_LIST: return "ATTRIBUTE_LIST";
+        case AST_ATTRIBUTE_TAG: return "ATTRIBUTE_TAG";
+        case AST_ATTRIBUTE_VALUE: return "ATTRIBUTE_VALUE";
         case AST_USE: return "USE";
         case AST_USE_TREE_LIST: return "USE_TREE_LIST";
         case AST_USE_REBINDING: return "USE_REBINDING";

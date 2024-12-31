@@ -10,7 +10,7 @@ namespace banjo {
 
 namespace ssa {
 
-class Structure;
+struct Structure;
 
 class Type {
 

@@ -62,7 +62,7 @@ ASTNode *Parser::parse_top_level_block() {
     ASTNode *block = create_node(AST_BLOCK, TextRange{0, 0});
 
     while (!stream.get()->is(TKN_EOF)) {
-        parse_block_child(block);
+        parse_and_append_block_child(block);
     }
 
     block->set_range_from_children();
@@ -88,7 +88,7 @@ ParseResult Parser::parse_block() {
                 .set_message(ReportText("file ends with unclosed block").str());
             return {block, false};
         } else {
-            parse_block_child(block);
+            parse_and_append_block_child(block);
         }
     }
 
@@ -96,45 +96,46 @@ ParseResult Parser::parse_block() {
     return block;
 }
 
-void Parser::parse_block_child(ASTNode *block) {
-    ParseResult result;
-
-    if (mode == Mode::FORMATTING && stream.get()->after_empty_line) {
-        block->append_child(create_node(AST_EMPTY_LINE));
-    }
-
-    switch (stream.get()->get_type()) {
-        case TKN_VAR: result = StmtParser(*this).parse_var(); break;
-        case TKN_CONST: result = DeclParser(*this).parse_const(); break;
-        case TKN_FUNC: result = DeclParser(*this).parse_func(nullptr); break;
-        case TKN_IF: result = StmtParser(*this).parse_if_chain(); break;
-        case TKN_SWITCH: result = StmtParser(*this).parse_switch(); break;
-        case TKN_TRY: result = StmtParser(*this).parse_try(); break;
-        case TKN_WHILE: result = StmtParser(*this).parse_while(); break;
-        case TKN_FOR: result = StmtParser(*this).parse_for(); break;
-        case TKN_BREAK: result = StmtParser(*this).parse_break(); break;
-        case TKN_CONTINUE: result = StmtParser(*this).parse_continue(); break;
-        case TKN_RETURN: result = StmtParser(*this).parse_return(); break;
-        case TKN_PUB: result = DeclParser(*this).parse_pub(); break;
-        case TKN_STRUCT: result = DeclParser(*this).parse_struct(); break;
-        case TKN_ENUM: result = DeclParser(*this).parse_enum(); break;
-        case TKN_UNION: result = DeclParser(*this).parse_union(); break;
-        case TKN_PROTO: result = DeclParser(*this).parse_proto(); break;
-        case TKN_TYPE: result = parse_type_alias_or_explicit_type(); break;
-        case TKN_CASE: result = DeclParser(*this).parse_union_case(); break;
-        case TKN_SELF: result = parse_expr_or_assign(); break;
-        case TKN_NATIVE: result = DeclParser(*this).parse_native(); break;
-        case TKN_USE: result = DeclParser(*this).parse_use(); break;
-        case TKN_META: result = parse_meta(); break;
-        case TKN_LBRACE: result = parse_block(); break;
-        case TKN_AT: current_attr_list = parse_attribute_list(); return;
-        default: result = parse_expr_or_assign();
-    }
-
+void Parser::parse_and_append_block_child(ASTNode *block) {
+    ParseResult result = parse_block_child();
     block->append_child(result.node);
 
     if (!result.is_valid) {
         recover();
+    }
+}
+
+ParseResult Parser::parse_block_child() {
+    if (mode == Mode::FORMATTING && stream.get()->after_empty_line) {
+        return create_node(AST_EMPTY_LINE);
+    }
+
+    switch (stream.get()->get_type()) {
+        case TKN_VAR: return StmtParser(*this).parse_var();
+        case TKN_CONST: return DeclParser(*this).parse_const();
+        case TKN_FUNC: return DeclParser(*this).parse_func(nullptr);
+        case TKN_IF: return StmtParser(*this).parse_if_chain();
+        case TKN_SWITCH: return StmtParser(*this).parse_switch();
+        case TKN_TRY: return StmtParser(*this).parse_try();
+        case TKN_WHILE: return StmtParser(*this).parse_while();
+        case TKN_FOR: return StmtParser(*this).parse_for();
+        case TKN_BREAK: return StmtParser(*this).parse_break();
+        case TKN_CONTINUE: return StmtParser(*this).parse_continue();
+        case TKN_RETURN: return StmtParser(*this).parse_return();
+        case TKN_PUB: return DeclParser(*this).parse_pub();
+        case TKN_STRUCT: return DeclParser(*this).parse_struct();
+        case TKN_ENUM: return DeclParser(*this).parse_enum();
+        case TKN_UNION: return DeclParser(*this).parse_union();
+        case TKN_PROTO: return DeclParser(*this).parse_proto();
+        case TKN_TYPE: return parse_type_alias_or_explicit_type();
+        case TKN_CASE: return DeclParser(*this).parse_union_case();
+        case TKN_SELF: return parse_expr_or_assign();
+        case TKN_NATIVE: return DeclParser(*this).parse_native();
+        case TKN_USE: return DeclParser(*this).parse_use();
+        case TKN_META: return parse_meta();
+        case TKN_LBRACE: return parse_block();
+        case TKN_AT: return parse_attribute_wrapper(std::bind(&Parser::parse_block_child, this));
+        default: return parse_expr_or_assign();
     }
 }
 
@@ -184,35 +185,35 @@ ParseResult Parser::parse_type() {
     return ExprParser(*this).parse_type();
 }
 
-std::unique_ptr<AttributeList> Parser::parse_attribute_list() {
+ParseResult Parser::parse_attribute_wrapper(const std::function<ParseResult()> &child_parser) {
+    NodeBuilder node = build_node();
+
     stream.consume(); // Consume '@'
+    node.append_child(parse_attribute_list().node);
+    node.append_child(child_parser().node);
+    return node.build(AST_ATTRIBUTE_WRAPPER);
+}
 
-    std::unique_ptr<AttributeList> attr_list = std::make_unique<AttributeList>();
-
+ParseResult Parser::parse_attribute_list() {
     if (stream.get()->is(TKN_LBRACKET)) {
-        stream.consume(); // Consume '['
-
-        while (!stream.get()->is(TKN_RBRACKET)) {
-            std::string name = stream.consume()->get_value();
-            if (stream.get()->is(TKN_EQ)) {
-                stream.consume(); // Consume '='
-                attr_list->add(Attribute(name, stream.consume()->get_value()));
-            } else {
-                attr_list->add(Attribute(name));
-            }
-
-            if (stream.get()->is(TKN_COMMA)) {
-                stream.consume(); // Consume comma
-            }
-        }
-
-        stream.consume(); // Consume ']'
+        return parse_list(AST_ATTRIBUTE_LIST, TKN_RBRACKET, std::bind(&Parser::parse_attribute, this));
     } else {
-        std::string name = stream.consume()->get_value();
-        attr_list->add(Attribute(name));
+        NodeBuilder node = build_node();
+        node.append_child(parse_attribute().node);
+        return node.build(AST_ATTRIBUTE_LIST);
     }
+}
 
-    return attr_list;
+ParseResult Parser::parse_attribute() {
+    if (stream.peek(1)->is(TKN_EQ)) {
+        NodeBuilder node = build_node();
+        node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
+        stream.consume(); // Consume '='
+        node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
+        return node.build(AST_ATTRIBUTE_VALUE);
+    } else {
+        return create_node(AST_ATTRIBUTE_TAG, stream.consume());
+    }
 }
 
 ParseResult Parser::parse_list(
@@ -237,7 +238,7 @@ ParseResult Parser::parse_list(
 
             return result;
         } else {
-            ParseResult result = element_parser(node);
+            ParseResult result = element_parser();
             node.append_child(result.node);
 
             if (!result.is_valid) {
@@ -261,37 +262,39 @@ ParseResult Parser::parse_list(
 }
 
 ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
-    return parse_list(AST_PARAM_LIST, terminator, [this](NodeBuilder &) -> ParseResult {
-        NodeBuilder node = build_node();
+    return parse_list(AST_PARAM_LIST, terminator, std::bind(&Parser::parse_param, this));
+}
 
-        if (stream.get()->is(TKN_AT)) {
-            node.set_attribute_list(parse_attribute_list());
-        }
+ParseResult Parser::parse_param() {
+    NodeBuilder node = build_node();
 
-        if (stream.get()->is(TKN_SELF)) {
-            node.append_child(create_node(AST_SELF, "", stream.consume()->get_range()));
+    if (stream.get()->is(TKN_AT)) {
+        return parse_attribute_wrapper(std::bind(&Parser::parse_param, this));
+    }
+
+    if (stream.get()->is(TKN_SELF)) {
+        node.append_child(create_node(AST_SELF, "", stream.consume()->get_range()));
+    } else {
+        if (stream.peek(1)->is(TKN_COLON)) {
+            node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
+            stream.consume(); // Consume ':'
         } else {
-            if (stream.peek(1)->is(TKN_COLON)) {
-                node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
-                stream.consume(); // Consume ':'
-            } else {
-                node.append_child(create_node(AST_IDENTIFIER, "", TextRange{0, 0}));
-            }
-
-            ParseResult result = parse_type();
-            node.append_child(result.node);
-
-            if (!result.is_valid) {
-                if (stream.get()->is(TKN_RPAREN)) {
-                    stream.consume();
-                }
-
-                return {node.build(AST_PARAM), false};
-            }
+            node.append_child(create_node(AST_IDENTIFIER, "", TextRange{0, 0}));
         }
 
-        return node.build(AST_PARAM);
-    });
+        ParseResult result = parse_type();
+        node.append_child(result.node);
+
+        if (!result.is_valid) {
+            if (stream.get()->is(TKN_RPAREN)) {
+                stream.consume();
+            }
+
+            return {node.build(AST_PARAM), false};
+        }
+    }
+
+    return node.build(AST_PARAM);
 }
 
 ParseResult Parser::check_stmt_terminator(ASTNode *node) {

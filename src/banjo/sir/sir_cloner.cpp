@@ -118,6 +118,7 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
         .block = clone_decl_block(struct_def.block),
         .fields = {},
         .impls = clone_expr_list(struct_def.impls),
+        .attrs = clone_attrs(struct_def.attrs),
         .generic_params = struct_def.generic_params,
         .specializations = {},
         .parent_specialization = nullptr,

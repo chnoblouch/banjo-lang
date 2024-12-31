@@ -1,12 +1,10 @@
 #ifndef AST_NODE_H
 #define AST_NODE_H
 
-#include "banjo/ast/attribute_list.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
 
 #include <cassert>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,10 +12,6 @@
 namespace banjo {
 
 namespace lang {
-
-class SymbolTable;
-class Variable;
-class NodeBuilder;
 
 enum ASTNodeType {
     AST_MODULE,
@@ -143,6 +137,10 @@ enum ASTNodeType {
     AST_NATIVE_VAR,
     AST_QUALIFIER_LIST,
     AST_QUALIFIER,
+    AST_ATTRIBUTE_WRAPPER,
+    AST_ATTRIBUTE_LIST,
+    AST_ATTRIBUTE_TAG,
+    AST_ATTRIBUTE_VALUE,
     AST_USE,
     AST_USE_TREE_LIST,
     AST_USE_REBINDING,
@@ -172,7 +170,6 @@ protected:
     ASTNodeType type;
     std::string value;
     TextRange range;
-    std::unique_ptr<AttributeList> attribute_list = nullptr;
 
     std::vector<ASTNode *> children;
     ASTNode *parent = nullptr;
@@ -189,7 +186,6 @@ public:
 
     ASTNodeType get_type() { return type; }
     TextRange get_range() { return range; }
-    AttributeList *get_attribute_list() { return attribute_list.get(); }
 
     const std::string &get_value() { return value; }
     void set_range(TextRange range) { this->range = range; }

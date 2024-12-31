@@ -5,9 +5,9 @@
 #include "banjo/utils/dynamic_pointer.hpp"
 #include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
-#include "banjo/utils/macros.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <list>
 #include <optional>
 #include <string>
@@ -481,12 +481,20 @@ struct OverloadSet {
 };
 
 struct Attributes {
+    enum class Layout : std::uint8_t {
+        DEFAULT,
+        PACKED,
+        OVERLAPPING,
+        C,
+    };
+
     bool exposed = false;
     bool dllexport = false;
     bool test = false;
     std::optional<std::string> link_name = {};
     bool unmanaged = false;
     bool byval = false;
+    std::optional<Layout> layout = {};
 };
 
 struct Ident {
@@ -1084,6 +1092,7 @@ struct StructDef {
     DeclBlock block;
     std::vector<StructField *> fields;
     std::vector<Expr> impls;
+    Attributes *attrs = nullptr;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
     Specialization<StructDef> *parent_specialization;
@@ -1091,6 +1100,7 @@ struct StructDef {
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
     bool has_impl_for(const sir::ProtoDef &proto_def) const;
+    Attributes::Layout get_layout() const;
     bool is_generic() const { return !generic_params.empty(); }
 };
 

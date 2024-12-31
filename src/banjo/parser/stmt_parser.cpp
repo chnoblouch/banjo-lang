@@ -70,11 +70,6 @@ ParseResult StmtParser::parse_var_with_type(NodeBuilder &node) {
         }
     }
 
-    if (parser.current_attr_list) {
-        node.set_attribute_list(std::move(parser.current_attr_list));
-        parser.current_attr_list = nullptr;
-    }
-
     return parser.check_stmt_terminator(node.build(AST_VAR));
 }
 
@@ -86,11 +81,6 @@ ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
 
     if (!result.is_valid) {
         return node.build_error();
-    }
-
-    if (parser.current_attr_list) {
-        node.set_attribute_list(std::move(parser.current_attr_list));
-        parser.current_attr_list = nullptr;
     }
 
     return parser.check_stmt_terminator(node.build(AST_IMPLICIT_TYPE_VAR));

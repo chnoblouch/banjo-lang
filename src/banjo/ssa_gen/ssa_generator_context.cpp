@@ -2,6 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include <algorithm>
 
 namespace banjo {
 
@@ -206,10 +207,24 @@ ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_str
     ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
     ssa_mod->add(ssa_struct);
 
-    for (sir::StructField *sir_field : sir_struct_def.fields) {
+    if (sir_struct_def.get_layout() == sir::Attributes::Layout::DEFAULT) {
+        for (sir::StructField *sir_field : sir_struct_def.fields) {
+            ssa_struct->add({
+                .name = sir_field->ident.value,
+                .type = TypeSSAGenerator(*this).generate(sir_field->type),
+            });
+        }
+    } else if (sir_struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
+        unsigned largest_size = 0;
+
+        for (sir::StructField *sir_field : sir_struct_def.fields) {
+            ssa::Type ssa_type = TypeSSAGenerator(*this).generate(sir_field->type);
+            largest_size = std::max(largest_size, target->get_data_layout().get_size(ssa_type));
+        }
+
         ssa_struct->add({
-            .name = sir_field->ident.value,
-            .type = TypeSSAGenerator(*this).generate(sir_field->type),
+            .name = "data",
+            .type = ssa::Type(ssa::Primitive::I8, largest_size),
         });
     }
 
@@ -270,14 +285,14 @@ ssa::Structure *SSAGeneratorContext::create_union_case(const sir::UnionCase &sir
 
 ssa::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ssa::Type> &member_types) {
     for (ssa::Structure *ssa_struct : tuple_structs) {
-        if (ssa_struct->get_members().size() != member_types.size()) {
+        if (ssa_struct->members.size() != member_types.size()) {
             continue;
         }
 
         bool compatible = true;
 
         for (unsigned i = 0; i < member_types.size(); i++) {
-            if (ssa_struct->get_members()[i].type != member_types[i]) {
+            if (ssa_struct->members[i].type != member_types[i]) {
                 compatible = false;
                 break;
             }

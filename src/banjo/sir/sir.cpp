@@ -456,6 +456,14 @@ bool StructDef::has_impl_for(const sir::ProtoDef &proto_def) const {
     return false;
 }
 
+Attributes::Layout StructDef::get_layout() const {
+    if (!attrs || !attrs->layout) {
+        return Attributes::Layout::DEFAULT;
+    }
+
+    return *attrs->layout;
+}
+
 unsigned UnionDef::get_index(const UnionCase &case_) const {
     for (unsigned i = 0; i < cases.size(); i++) {
         if (cases[i] == &case_) {

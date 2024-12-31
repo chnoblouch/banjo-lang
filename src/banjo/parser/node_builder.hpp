@@ -4,7 +4,6 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/parser/token_stream.hpp"
 
-#include <memory>
 #include <utility>
 
 namespace banjo {
@@ -29,11 +28,6 @@ public:
     }
 
     void append_child(ASTNode *child) { node->append_child(child); }
-
-    void set_attribute_list(std::unique_ptr<AttributeList> attribute_list) {
-        node->attribute_list = std::move(attribute_list);
-    }
-
     void set_start_position(TextPosition start_position) { node->range.start = start_position; }
 
     ASTNode *build(ASTNodeType type) {

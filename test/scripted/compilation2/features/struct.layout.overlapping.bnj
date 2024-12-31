@@ -1,0 +1,77 @@
+# test:subtest
+# test:output "16"
+
+@[layout=overlapping]
+struct S {
+    var a: f32;
+    var b: (i64, f32);
+    var c: i64;
+}
+
+func main() {
+    print(meta(S).size);
+}
+
+# test:subtest
+# test:output "1094861636,D,C,B,A"
+
+@[layout=overlapping]
+struct S {
+    var a: i32;
+    var b: (u8, u8, u8, u8);
+}
+
+func main() {
+    var s: S;
+    s.a = 0x41424344;
+
+    print(s.a);
+    print(',');
+    print(s.b.0);
+    print(',');
+    print(s.b.1);
+    print(',');
+    print(s.b.2);
+    print(',');
+    print(s.b.3);
+}
+
+# test:subtest
+# test:output "1056964608,0.5"
+
+@[layout=overlapping]
+struct S {
+    var a: i32;
+    var b: f32;
+}
+
+func main() {
+    var s = S {
+        b: 0.5,
+    };
+
+    print(s.a);
+    print(',');
+    print(s.b);
+}
+
+# test:subtest
+# test:output "-1,65535,131071"
+
+@[layout=overlapping]
+struct S {
+    var a: i16;
+    var b: u16;
+    var c: u32;
+}
+
+func main() {
+    var s: S;
+    s.c = 0x0001FFFF;
+
+    print(s.a);
+    print(',');
+    print(s.b);
+    print(',');
+    print(s.c);
+}

@@ -1,10 +1,11 @@
 #include "sroa_pass.hpp"
 
+#include "banjo/passes/pass_utils.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/passes/pass_utils.hpp"
+
 
 #include <iostream>
 #include <unordered_map>
@@ -81,7 +82,7 @@ void SROAPass::collect_stack_values(ssa::BasicBlockIter block_iter) {
 
         // Disable splitting if there is an array member.
         if (type.is_struct()) {
-            for (const ssa::StructureMember &member : type.get_struct()->get_members()) {
+            for (const ssa::StructureMember &member : type.get_struct()->members) {
                 if (member.type.get_array_length() != 1) {
                     continue;
                 }
@@ -96,7 +97,7 @@ void SROAPass::collect_members(unsigned val_index) {
     ssa::Type type = stack_values[val_index].type;
     stack_values[val_index].members = std::vector<unsigned>{};
 
-    for (const ssa::StructureMember &member : type.get_struct()->get_members()) {
+    for (const ssa::StructureMember &member : type.get_struct()->members) {
         StackValue member_value{
             .alloca_instr = stack_values[val_index].alloca_instr,
             .alloca_block = stack_values[val_index].alloca_block,
@@ -235,8 +236,8 @@ void SROAPass::split_copies(ssa::Function *func, ssa::BasicBlock &block) {
 }
 
 void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ssa::Type &type) {
-    for (unsigned i = 0; i < type.get_struct()->get_members().size(); i++) {
-        const ssa::Type &member_type = type.get_struct()->get_members()[i].type;
+    for (unsigned i = 0; i < type.get_struct()->members.size(); i++) {
+        const ssa::Type &member_type = type.get_struct()->members[i].type;
 
         Ref member_dst = create_member_pointer(ctx, dst, type, i);
         Ref member_src = create_member_pointer(ctx, src, type, i);
@@ -379,7 +380,7 @@ void SROAPass::dump_stack_value(std::optional<ssa::VirtualRegister> reg, StackVa
         return;
     }
 
-    if (value.type.is_struct()) std::cout << value.type.get_struct()->get_name();
+    if (value.type.is_struct()) std::cout << value.type.get_struct()->name;
     std::cout << " {\n";
 
     for (unsigned member_index : *value.members) {

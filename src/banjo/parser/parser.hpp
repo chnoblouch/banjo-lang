@@ -10,7 +10,6 @@
 #include "banjo/source/module_path.hpp"
 
 #include <functional>
-#include <memory>
 #include <vector>
 
 namespace banjo {
@@ -23,7 +22,7 @@ struct ParsedAST {
     std::vector<Report> reports;
 };
 
-typedef std::function<ParseResult(NodeBuilder &list_node)> ListElementParser;
+typedef std::function<ParseResult()> ListElementParser;
 
 class Parser {
 
@@ -50,7 +49,6 @@ private:
     const ModulePath &module_path;
     Mode mode;
 
-    std::unique_ptr<AttributeList> current_attr_list = nullptr;
     ASTModule *cur_mod;
 
     bool running_completion = false;
@@ -71,14 +69,18 @@ public:
 private:
     ASTNode *parse_top_level_block();
     ParseResult parse_block();
-    void parse_block_child(ASTNode *block);
+    void parse_and_append_block_child(ASTNode *block);
 
+    ParseResult parse_block_child();
     ASTNode *parse_expression();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
     ParseResult parse_type_alias_or_explicit_type();
     ParseResult parse_meta();
-    std::unique_ptr<AttributeList> parse_attribute_list();
+
+    ParseResult parse_attribute_wrapper(const std::function<ParseResult()> &child_parser);
+    ParseResult parse_attribute_list();
+    ParseResult parse_attribute();
 
     ParseResult parse_list(
         ASTNodeType type,
@@ -88,6 +90,7 @@ private:
     );
 
     ParseResult parse_param_list(TokenType terminator = TKN_RPAREN);
+    ParseResult parse_param();
     ParseResult check_stmt_terminator(ASTNode *node);
 
     Report &register_error(TextRange range);

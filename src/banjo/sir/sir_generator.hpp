@@ -47,15 +47,15 @@ private:
 
     sir::DeclBlock generate_decl_block(ASTNode *node);
     sir::Decl generate_decl(ASTNode *node);
-    sir::Decl generate_func_def(ASTNode *node);
+    sir::Decl generate_func_def(ASTNode *node, sir::Attributes *attrs);
     sir::Decl generate_generic_func(ASTNode *node);
     sir::Decl generate_func_decl(ASTNode *node);
-    sir::Decl generate_native_func(ASTNode *node);
+    sir::Decl generate_native_func(ASTNode *node, sir::Attributes *attrs);
     sir::Decl generate_const(ASTNode *node);
-    sir::Decl generate_struct(ASTNode *node);
+    sir::Decl generate_struct(ASTNode *node, sir::Attributes *attrs);
     sir::Decl generate_generic_struct(ASTNode *node);
-    sir::Decl generate_var_decl(ASTNode *node);
-    sir::Decl generate_native_var_decl(ASTNode *node);
+    sir::Decl generate_var_decl(ASTNode *node, sir::Attributes *attrs);
+    sir::Decl generate_native_var_decl(ASTNode *node, sir::Attributes *attrs);
     sir::Decl generate_enum(ASTNode *node);
     sir::Decl generate_union(ASTNode *node);
     sir::Decl generate_union_case(ASTNode *node);
@@ -127,7 +127,7 @@ private:
     std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
     std::vector<sir::MapLiteralEntry> generate_map_literal_entries(ASTNode *node);
     std::vector<sir::UnionCaseField> generate_union_case_fields(ASTNode *node);
-    sir::Attributes *generate_attrs(const AttributeList &ast_attrs);
+    sir::Attributes *generate_attrs(ASTNode *node);
     char decode_char(const std::string &value, unsigned &index);
 
     sir::UseItem generate_use_item(ASTNode *node);

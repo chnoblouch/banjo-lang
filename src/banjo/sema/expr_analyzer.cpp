@@ -191,6 +191,11 @@ Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) 
 }
 
 Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
+    // TODO: Add errors/warnings for:
+    //   - not initializing a field
+    //   - initializing the same field twice
+    //   - initializing multiple fields in structs with the `overlapped` layout
+
     Result result;
 
     if (struct_literal.type) {

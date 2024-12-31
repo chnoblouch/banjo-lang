@@ -83,6 +83,14 @@ private:
     void generate_not_branch(const sir::UnaryExpr &unary_expr, CondBranchTargets targets);
     void generate_zero_check_branch(const sir::Expr &expr, CondBranchTargets targets);
     void generate_deinit_flag_store(const sir::Resource &resource, const ssa::Value &value);
+
+    ssa::Value generate_field_access(
+        const StoredValue &base,
+        unsigned field_index,
+        sir::Attributes::Layout type_layout
+    );
+
+    sir::Attributes::Layout get_type_layout(const sir::Expr &type);
 };
 
 } // namespace lang

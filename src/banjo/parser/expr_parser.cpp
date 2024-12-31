@@ -511,7 +511,7 @@ ParseResult ExprParser::parse_call_expr(ASTNode *lhs_node) {
         is_meta_method_call ? parser.create_node(AST_META_METHOD_CALL) : parser.create_node(AST_FUNCTION_CALL);
     node->append_child(lhs_node);
 
-    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RPAREN, [this](NodeBuilder &) {
+    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RPAREN, [this]() {
         return ExprParser(parser, true).parse();
     });
     node->append_child(result.node);
@@ -525,9 +525,8 @@ ParseResult ExprParser::parse_bracket_expr(ASTNode *lhs_node) {
     node.set_start_position(lhs_node->get_range().start);
     node.append_child(lhs_node);
 
-    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this](NodeBuilder &) {
-        return ExprParser(parser).parse();
-    });
+    ParseResult result =
+        parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this]() { return ExprParser(parser).parse(); });
     node.append_child(result.node);
 
     return {node.build(AST_ARRAY_ACCESS), result.is_valid};
@@ -549,7 +548,7 @@ ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
 }
 
 ParseResult ExprParser::parse_struct_literal_body() {
-    return parser.parse_list(AST_STRUCT_FIELD_VALUE_LIST, TKN_RBRACE, [this](NodeBuilder &) -> ParseResult {
+    return parser.parse_list(AST_STRUCT_FIELD_VALUE_LIST, TKN_RBRACE, [this]() -> ParseResult {
         if (parser.is_at_completion_point()) {
             return {parser.parse_completion_point(), true};
         }

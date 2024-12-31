@@ -9,8 +9,8 @@ Writer::Writer(std::ostream &stream) : stream(stream) {}
 void Writer::write(Module &mod) {
     if (!mod.get_structures().empty()) {
         for (ssa::Structure *struct_ : mod.get_structures()) {
-            stream << "struct @" << struct_->get_name() << " {\n";
-            for (const StructureMember &member : struct_->get_members()) {
+            stream << "struct @" << struct_->name << " {\n";
+            for (const StructureMember &member : struct_->members) {
                 stream << "    " << type_to_str(member.type) << " @" << member.name << "\n";
             }
             stream << "}\n\n";
@@ -228,7 +228,7 @@ std::string Writer::type_to_str(Type type) {
             case Primitive::ADDR: str = "addr"; break;
         }
     } else if (type.is_struct()) {
-        str = "@" + type.get_struct()->get_name();
+        str = "@" + type.get_struct()->name;
     }
 
     if (type.get_array_length() != 1) {

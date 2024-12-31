@@ -23,7 +23,7 @@ Function *Module::get_function(const std::string &name) {
 }
 
 Structure *Module::get_structure(const std::string &name) {
-    auto predicate = [&name](const Structure *struct_) { return struct_->get_name() == name; };
+    auto predicate = [&name](const Structure *struct_) { return struct_->name == name; };
     auto it = std::find_if(structures.begin(), structures.end(), predicate);
     return it == structures.end() ? nullptr : *it;
 }

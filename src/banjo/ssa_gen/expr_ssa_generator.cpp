@@ -195,14 +195,14 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
     const sir::StructLiteral &struct_literal,
     const StorageHints &hints
 ) {
+    const sir::StructDef &sir_struct_def = struct_literal.type.as_symbol<sir::StructDef>();
+    sir::Attributes::Layout layout = sir_struct_def.get_layout();
+
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(struct_literal.type);
     StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);
 
     for (const sir::StructLiteralEntry &entry : struct_literal.entries) {
-        unsigned index = entry.field->index;
-        ssa::VirtualRegister ssa_field_ptr_reg =
-            ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), index);
-        ssa::Value ssa_field_ptr = ssa::Value::from_register(ssa_field_ptr_reg, ssa::Primitive::ADDR);
+        ssa::Value ssa_field_ptr = generate_field_access(stored_val, entry.field->index, layout);
         ExprSSAGenerator(ctx).generate_into_dst(entry.value, ssa_field_ptr);
     }
 
@@ -525,10 +525,10 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 }
 
 StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_expr) {
-    unsigned field_index = field_expr.field_index;
+    sir::Attributes::Layout base_type_layout = get_type_layout(field_expr.base.get_type());
 
     StoredValue ssa_lhs = ExprSSAGenerator(ctx).generate_as_reference(field_expr.base);
-    ssa::VirtualRegister ssa_field_ptr = ctx.append_memberptr(ssa_lhs.value_type, ssa_lhs.get_ptr(), field_index);
+    ssa::Value ssa_field_ptr = generate_field_access(ssa_lhs, field_expr.field_index, base_type_layout);
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_expr.type);
 
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
@@ -716,6 +716,29 @@ void ExprSSAGenerator::generate_deinit_flag_store(const sir::Resource &resource,
 
     for (const sir::Resource &sub_resource : resource.sub_resources) {
         generate_deinit_flag_store(sub_resource, value);
+    }
+}
+
+ssa::Value ExprSSAGenerator::generate_field_access(
+    const StoredValue &base,
+    unsigned field_index,
+    sir::Attributes::Layout type_layout
+) {
+    if (type_layout == sir::Attributes::Layout::DEFAULT) {
+        ssa::VirtualRegister ssa_field_ptr_reg = ctx.append_memberptr(base.value_type, base.get_ptr(), field_index);
+        return ssa::Value::from_register(ssa_field_ptr_reg, ssa::Primitive::ADDR);
+    } else if (type_layout == sir::Attributes::Layout::OVERLAPPING) {
+        return base.get_ptr();
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+sir::Attributes::Layout ExprSSAGenerator::get_type_layout(const sir::Expr &type) {
+    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
+        return struct_def->get_layout();
+    } else {
+        return sir::Attributes::Layout::DEFAULT;
     }
 }
 
