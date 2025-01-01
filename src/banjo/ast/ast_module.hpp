@@ -35,7 +35,7 @@ public:
         return node_arena.create(args...);
     }
 
-    ASTNode *get_block() { return get_child(0); }
+    ASTNode *get_block() { return first_child; }
 };
 
 } // namespace lang

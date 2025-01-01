@@ -57,7 +57,7 @@ ReportText &ReportText::format(LargeInt integer) {
 }
 
 ReportText &ReportText::format(ASTNode *node) {
-    return format(node->get_value());
+    return format(node->value);
 }
 
 ReportText &ReportText::format(const ModulePath &path) {

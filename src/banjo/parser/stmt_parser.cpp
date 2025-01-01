@@ -32,7 +32,7 @@ ParseResult StmtParser::parse_var() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'var'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -158,7 +158,7 @@ ParseResult StmtParser::parse_switch() {
         stream.consume(); // Consume 'case'
 
         Token *ident_token = stream.consume();
-        if (ident_token->get_value() == "_") {
+        if (ident_token->value == "_") {
             case_node.append_child(parser.parse_block().node);
             cases_node.append_child(case_node.build(AST_SWITCH_DEFAULT_CASE));
             continue;
@@ -294,12 +294,12 @@ ParseResult StmtParser::parse_for() {
 }
 
 ParseResult StmtParser::parse_break() {
-    TextRange range = stream.consume()->get_range();
+    TextRange range = stream.consume()->range();
     return parser.check_stmt_terminator(parser.create_node(AST_BREAK, range));
 }
 
 ParseResult StmtParser::parse_continue() {
-    TextRange range = stream.consume()->get_range();
+    TextRange range = stream.consume()->range();
     return parser.check_stmt_terminator(parser.create_node(AST_CONTINUE, range));
 }
 

@@ -3,13 +3,14 @@
 
 #include "banjo/source/text_range.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace banjo {
 
 namespace lang {
 
-enum TokenType {
+enum TokenType : std::uint8_t {
     TKN_IDENTIFIER,
     TKN_LITERAL,
     TKN_CHARACTER,
@@ -111,28 +112,20 @@ enum TokenType {
     TKN_AT
 };
 
-class Token {
-
-public:
+struct Token {
     TokenType type;
     std::string value;
     TextPosition position;
     bool end_of_line = false;
     bool after_empty_line = false;
 
-public:
     Token(TokenType type, std::string value, TextPosition position)
       : type(type),
         value(std::move(value)),
         position(position) {}
 
-public:
-    TokenType get_type() { return type; }
-    const std::string &get_value() { return value; }
-    std::string move_value() { return std::move(value); }
-    TextPosition get_position() { return position; }
-    TextPosition get_end() { return position + value.size(); }
-    TextRange get_range() { return TextRange(position, get_end()); }
+    TextPosition end() { return position + value.size(); }
+    TextRange range() { return TextRange(position, end()); }
 
     bool is(TokenType type) { return this->type == type; }
 };

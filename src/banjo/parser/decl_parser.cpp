@@ -22,7 +22,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 
     stream.consume(); // Consume 'func'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -77,7 +77,7 @@ ParseResult DeclParser::parse_struct() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'struct'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -126,7 +126,7 @@ ParseResult DeclParser::parse_enum() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'enum'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -152,7 +152,7 @@ ParseResult DeclParser::parse_union() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'union'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -196,7 +196,7 @@ ParseResult DeclParser::parse_proto() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'proto'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -215,7 +215,7 @@ ParseResult DeclParser::parse_type_alias() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'type'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -284,7 +284,7 @@ ParseResult DeclParser::parse_use_tree_element() {
     }
 
     Token *token = stream.get();
-    if (token->get_type() == TKN_IDENTIFIER) {
+    if (token->is(TKN_IDENTIFIER)) {
         ASTNode *identifier = parser.create_node(AST_IDENTIFIER, stream.consume());
 
         if (!stream.get()->is(TKN_AS)) {
@@ -351,7 +351,7 @@ ParseResult DeclParser::parse_native_func() {
 
     stream.consume(); // Consume 'func'
 
-    if (stream.get()->get_type() != TKN_IDENTIFIER) {
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
@@ -373,7 +373,7 @@ ParseResult DeclParser::parse_pub() {
         qualifier_list = parse_qualifiers().node;
     }
 
-    switch (stream.get()->get_type()) {
+    switch (stream.get()->type) {
         case TKN_FUNC: return parse_func(qualifier_list);
         case TKN_CONST: return parse_const();
         case TKN_STRUCT: return parse_struct();

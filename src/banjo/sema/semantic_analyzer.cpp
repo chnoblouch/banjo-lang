@@ -215,7 +215,7 @@ void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
 
     ExtraAnalysis::SymbolDef def{
         .symbol = sir_symbol,
-        .ident_range = ast_node->get_range(),
+        .ident_range = ast_node->range,
     };
 
     extra_analysis.mods[cur_sir_mod].symbol_defs.push_back(def);
@@ -227,7 +227,7 @@ void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol)
     }
 
     ExtraAnalysis::SymbolUse use{
-        .range = ast_node->get_range(),
+        .range = ast_node->range,
         .symbol = sir_symbol,
     };
 

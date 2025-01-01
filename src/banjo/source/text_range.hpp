@@ -1,12 +1,11 @@
-#ifndef TEXR_RANGE_H
-#define TEXR_RANGE_H
+#ifndef TEXT_RANGE_H
+#define TEXT_RANGE_H
 
 namespace banjo {
 
 namespace lang {
 
-class Token;
-class ASTNode;
+struct Token;
 
 typedef unsigned TextPosition;
 

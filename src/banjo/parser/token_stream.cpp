@@ -43,10 +43,10 @@ void TokenStream::seek(std::vector<Token>::size_type position) {
 void TokenStream::split_current() {
     Token *token = &tokens[position];
 
-    switch (token->get_type()) {
+    switch (token->type) {
         case TKN_OR_OR:
-            tokens[position] = Token(TKN_OR, "", token->get_position());
-            tokens.insert(tokens.begin() + position, Token(TKN_OR, "", token->get_position() + 1));
+            tokens[position] = Token(TKN_OR, "", token->position);
+            tokens.insert(tokens.begin() + position, Token(TKN_OR, "", token->position + 1));
             break;
         default: break;
     }

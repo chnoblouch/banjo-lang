@@ -20,22 +20,40 @@ ASTNode::ASTNode(ASTNodeType type, std::string value, TextRange range)
 ASTNode::ASTNode(ASTNodeType type, TextRange range) : type(type), range(range) {}
 
 ASTNode::ASTNode(ASTNodeType type, Token *token) : type(type), value(""), range{0, 0} {
-    range = token->get_range();
-    value = token->move_value();
+    range = token->range();
+    value = std::move(token->value);
 }
 
-bool ASTNode::has_child(unsigned index) {
-    return children.size() >= index + 1;
+unsigned ASTNode::num_children() {
+    unsigned num_children = 0;
+
+    for (ASTNode *child = first_child; child; child = child->next_sibling) {
+        num_children += 1;
+    }
+
+    return num_children;
 }
 
 void ASTNode::append_child(ASTNode *child) {
-    children.push_back(child);
-    child->parent = this;
+    if (!first_child) {
+        first_child = child;
+    } else {
+        last_child->next_sibling = child;
+    }
+
+    last_child = child;
 }
 
 void ASTNode::set_range_from_children() {
-    if (!children.empty()) {
-        range = {children.front()->get_range().start, children.back()->get_range().end};
+    if (!has_children()) {
+        range = {0, 0};
+        return;
+    }
+
+    range.start = first_child->range.start;
+
+    for (ASTNode *child = first_child; child; child = child->next_sibling) {
+        range.end = child->range.end;
     }
 }
 

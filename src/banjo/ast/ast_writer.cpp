@@ -22,19 +22,19 @@ void ASTWriter::write(ASTNode *node, unsigned indentation) {
         stream << "  ";
     }
 
-    ASTNodeType type = node->get_type();
-    unsigned range_start = node->get_range().start;
-    unsigned range_end = node->get_range().end;
+    ASTNodeType type = node->type;
+    unsigned range_start = node->range.start;
+    unsigned range_end = node->range.end;
 
     stream << get_type_name(type) << " [" << range_start << ":" << range_end << "]";
 
-    if (node->get_value().length() > 0) {
-        stream << ": " << node->get_value();
+    if (node->value.length() > 0) {
+        stream << ": " << node->value;
     }
 
     stream << "\n";
 
-    for (ASTNode *child : node->get_children()) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         write(child, indentation + 1);
     }
 }

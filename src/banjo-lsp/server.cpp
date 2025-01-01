@@ -1,8 +1,5 @@
 #include "server.hpp"
 
-#include "ast_navigation.hpp"
-#include "banjo/ast/ast_child_indices.hpp"
-#include "banjo/config/config.hpp"
 #include "connection.hpp"
 #include "diagnostics.hpp"
 #include "uri.hpp"

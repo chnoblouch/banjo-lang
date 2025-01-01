@@ -235,7 +235,7 @@ void Lexer::try_insert_completion_token() {
         // Delete the previous token if it's an identifier and if the completion point is at its end
         if (!tokens.empty()) {
             Token &back = tokens.back();
-            if (back.get_type() == TKN_IDENTIFIER && completion_point == tokens.back().get_range().end) {
+            if (back.is(TKN_IDENTIFIER) && completion_point == tokens.back().range().end) {
                 tokens.pop_back();
             }
         }

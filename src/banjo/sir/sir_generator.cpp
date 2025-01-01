@@ -1,6 +1,5 @@
 #include "sir_generator.hpp"
 
-#include "banjo/ast/ast_child_indices.hpp"
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
@@ -69,7 +68,7 @@ sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
         push_scope().symbol_table = symbol_table;
     }
 
-    for (ASTNode *child : node->get_children()) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         sir_block.decls.push_back(generate_decl(child));
     }
 
@@ -81,12 +80,14 @@ sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
 sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
     sir::Attributes *attrs = nullptr;
 
-    if (node->get_type() == AST_ATTRIBUTE_WRAPPER) {
-        attrs = generate_attrs(node->get_child(0));
-        node = node->get_child(1);
+    if (node->type == AST_ATTRIBUTE_WRAPPER) {
+        ASTNode *attrs_node = node->first_child;
+        node = attrs_node->next_sibling;
+
+        attrs = generate_attrs(attrs_node);
     }
 
-    switch (node->get_type()) {
+    switch (node->type) {
         case AST_FUNCTION_DEFINITION: return generate_func_def(node, attrs);
         case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
         case AST_FUNC_DECL: return generate_func_decl(node);
@@ -110,165 +111,225 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
 }
 
 sir::Decl SIRGenerator::generate_func_def(ASTNode *node, sir::Attributes *attrs) {
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *params_node = name_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+    ASTNode *block_node = return_type_node->next_sibling;
+
     return create_decl(sir::FuncDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(FUNC_NAME)),
-        .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
-        .block = generate_block(node->get_child(FUNC_BLOCK)),
+        .ident = generate_ident(name_node),
+        .type = generate_func_type(params_node, return_type_node),
+        .block = generate_block(block_node),
         .attrs = attrs,
         .generic_params = {},
     });
 }
 
 sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *params_node = generic_params_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+    ASTNode *block_node = return_type_node->next_sibling;
+
     return create_decl(sir::FuncDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(GENERIC_FUNC_NAME)),
-        .type = generate_func_type(node->get_child(GENERIC_FUNC_PARAMS), node->get_child(GENERIC_FUNC_TYPE)),
-        .block = generate_block(node->get_child(GENERIC_FUNC_BLOCK)),
-        .generic_params = generate_generic_param_list(node->get_child(GENERIC_FUNC_GENERIC_PARAMS)),
+        .ident = generate_ident(name_node),
+        .type = generate_func_type(params_node, return_type_node),
+        .block = generate_block(block_node),
+        .generic_params = generate_generic_param_list(generic_params_node),
     });
 }
 
 sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *params_node = name_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+
     return create_decl(sir::FuncDecl{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(FUNC_NAME)),
-        .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
+        .ident = generate_ident(name_node),
+        .type = generate_func_type(params_node, return_type_node),
     });
 }
 
 sir::Decl SIRGenerator::generate_native_func(ASTNode *node, sir::Attributes *attrs) {
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *params_node = name_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+
     return create_decl(sir::NativeFuncDecl{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(FUNC_NAME)),
-        .type = generate_func_type(node->get_child(FUNC_PARAMS), node->get_child(FUNC_TYPE)),
+        .ident = generate_ident(name_node),
+        .type = generate_func_type(params_node, return_type_node),
         .attrs = attrs,
     });
 }
 
 sir::Decl SIRGenerator::generate_const(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+    ASTNode *value_node = type_node->next_sibling;
+
     return create_decl(sir::ConstDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(CONST_NAME)),
-        .type = generate_expr(node->get_child(CONST_TYPE)),
-        .value = generate_expr(node->get_child(CONST_VALUE)),
+        .ident = generate_ident(name_node),
+        .type = generate_expr(type_node),
+        .value = generate_expr(value_node),
     });
 }
 
 sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *impls_node = name_node->next_sibling;
+    ASTNode *block_node = impls_node->next_sibling;
+
     sir::StructDef *struct_def = create_decl(sir::StructDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(STRUCT_NAME)),
+        .ident = generate_ident(name_node),
         .block = {},
         .fields = {},
-        .impls = generate_expr_list(node->get_child(STRUCT_IMPL_LIST)),
+        .impls = generate_expr_list(impls_node),
         .attrs = attrs,
         .generic_params = {},
     });
 
     push_scope().struct_def = struct_def;
-    struct_def->block = generate_decl_block(node->get_child(STRUCT_BLOCK));
+    struct_def->block = generate_decl_block(block_node);
     pop_scope();
 
     return struct_def;
 }
 
 sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *block_node = generic_params_node->next_sibling;
+
     sir::StructDef *struct_def = create_decl(sir::StructDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(GENERIC_STRUCT_NAME)),
+        .ident = generate_ident(name_node),
         .block = {},
         .fields = {},
-        .generic_params = generate_generic_param_list(node->get_child(GENERIC_STRUCT_GENERIC_PARAMS)),
+        .generic_params = generate_generic_param_list(generic_params_node),
     });
 
     push_scope().struct_def = struct_def;
-    struct_def->block = generate_decl_block(node->get_child(GENERIC_STRUCT_BLOCK));
+    struct_def->block = generate_decl_block(block_node);
     pop_scope();
 
     return struct_def;
 }
 
 sir::Decl SIRGenerator::generate_var_decl(ASTNode *node, sir::Attributes *attrs) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+    ASTNode *value_node = type_node->next_sibling;
+
     return create_decl(sir::VarDecl{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(VAR_NAME)),
-        .type = generate_expr(node->get_child(VAR_TYPE)),
-        .value = node->has_child(VAR_VALUE) ? generate_expr(node->get_child(VAR_VALUE)) : nullptr,
+        .ident = generate_ident(name_node),
+        .type = generate_expr(type_node),
+        .value = value_node ? generate_expr(value_node) : nullptr,
         .attrs = attrs,
     });
 }
 
 sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node, sir::Attributes *attrs) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+
     return create_decl(sir::NativeVarDecl{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(VAR_NAME)),
-        .type = generate_expr(node->get_child(VAR_TYPE)),
+        .ident = generate_ident(name_node),
+        .type = generate_expr(type_node),
         .attrs = attrs,
     });
 }
 
 sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *variants_node = name_node->next_sibling;
+
     // TODO: The parser should create a block node instead of a variant list node so this hack can be removed.
     ASTNode dummy_block_node;
     sir::DeclBlock block = generate_decl_block(&dummy_block_node);
 
-    for (ASTNode *variant : node->get_child(ENUM_VARIANTS)->get_children()) {
-        bool has_value = variant->has_child(ENUM_VARIANT_VALUE);
+    for (ASTNode *variant_node = variants_node->first_child; variant_node; variant_node = variant_node->next_sibling) {
+        ASTNode *name_node = variant_node->first_child;
+        ASTNode *value_node = name_node->next_sibling;
 
         block.decls.push_back(create_decl(sir::EnumVariant{
-            .ast_node = variant,
-            .ident = generate_ident(variant->get_child(ENUM_VARIANT_NAME)),
-            .value = has_value ? generate_expr(variant->get_child(ENUM_VARIANT_VALUE)) : nullptr,
+            .ast_node = variant_node,
+            .ident = generate_ident(name_node),
+            .value = value_node ? generate_expr(value_node) : nullptr,
         }));
     }
 
     return create_decl(sir::EnumDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(ENUM_NAME)),
+        .ident = generate_ident(name_node),
         .block = block,
     });
 }
 
 sir::Decl SIRGenerator::generate_union(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *block_node = name_node->next_sibling;
+
     return create_decl(sir::UnionDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(UNION_NAME)),
-        .block = generate_decl_block(node->get_child(UNION_BLOCK)),
+        .ident = generate_ident(name_node),
+        .block = generate_decl_block(block_node),
         .cases = {},
     });
 }
 
 sir::Decl SIRGenerator::generate_union_case(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *fields_node = name_node->next_sibling;
+
     return create_decl(sir::UnionCase{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(UNION_CASE_NAME)),
-        .fields = generate_union_case_fields(node->get_child(UNION_CASE_FIELDS)),
+        .ident = generate_ident(name_node),
+        .fields = generate_union_case_fields(fields_node),
     });
 }
 
 sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *block_node = name_node->next_sibling;
+
     return create_decl(sir::ProtoDef{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(PROTO_NAME)),
-        .block = generate_decl_block(node->get_child(PROTO_BLOCK)),
+        .ident = generate_ident(name_node),
+        .block = generate_decl_block(block_node),
         .func_decls = {},
     });
 }
 
 sir::Decl SIRGenerator::generate_type_alias(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *underlying_type_node = name_node->next_sibling;
+
     return create_decl(sir::TypeAlias{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(TYPE_ALIAS_NAME)),
-        .type = generate_expr(node->get_child(TYPE_ALIAS_UNDERLYING_TYPE)),
+        .ident = generate_ident(name_node),
+        .type = generate_expr(underlying_type_node),
     });
 }
 
 sir::Decl SIRGenerator::generate_use_decl(ASTNode *node) {
+    ASTNode *root_item_node = node->first_child;
+
     return create_decl(sir::UseDecl{
         .ast_node = node,
-        .root_item = generate_use_item(node->get_child()),
+        .root_item = generate_use_item(root_item_node),
     });
 }
 
@@ -281,7 +342,7 @@ sir::Decl SIRGenerator::generate_error_decl(ASTNode *node) {
 sir::Ident SIRGenerator::generate_ident(ASTNode *node) {
     return sir::Ident{
         .ast_node = node,
-        .value = node->get_value(),
+        .value = node->value,
     };
 }
 
@@ -299,7 +360,7 @@ sir::Block SIRGenerator::generate_block(ASTNode *node) {
 
     push_scope().symbol_table = symbol_table;
 
-    for (ASTNode *child : node->get_children()) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         sir_block.stmts.push_back(generate_stmt(child));
     }
 
@@ -314,7 +375,7 @@ sir::MetaBlock SIRGenerator::generate_meta_block(ASTNode *node, MetaBlockKind ki
         .nodes = {},
     };
 
-    for (ASTNode *child : node->get_children()) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         switch (kind) {
             case MetaBlockKind::DECL: sir_meta_block.nodes.push_back(generate_decl(child)); break;
             case MetaBlockKind::STMT: sir_meta_block.nodes.push_back(generate_stmt(child)); break;
@@ -325,7 +386,7 @@ sir::MetaBlock SIRGenerator::generate_meta_block(ASTNode *node, MetaBlockKind ki
 }
 
 sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
-    switch (node->get_type()) {
+    switch (node->type) {
         case AST_VAR: return generate_var_stmt(node);
         case AST_ASSIGNMENT: return generate_assign_stmt(node);
         case AST_ADD_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::ADD);
@@ -359,42 +420,57 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
 }
 
 sir::Stmt SIRGenerator::generate_var_stmt(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+    ASTNode *value_node = type_node->next_sibling;
+
     return create_stmt(sir::VarStmt{
         .ast_node = node,
-        .local = generate_local(node->get_child(VAR_NAME), node->get_child(VAR_TYPE)),
-        .value = node->has_child(VAR_VALUE) ? generate_expr(node->get_child(VAR_VALUE)) : nullptr,
+        .local = generate_local(name_node, type_node),
+        .value = value_node ? generate_expr(value_node) : nullptr,
     });
 }
 
 sir::Stmt SIRGenerator::generate_typeless_var_stmt(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *value_node = name_node->next_sibling;
+
     return create_stmt(sir::VarStmt{
         .ast_node = node,
-        .local = generate_local(node->get_child(TYPE_INFERRED_VAR_NAME), nullptr),
-        .value = generate_expr(node->get_child(TYPE_INFERRED_VAR_VALUE)),
+        .local = generate_local(name_node, nullptr),
+        .value = generate_expr(value_node),
     });
 }
 
 sir::Stmt SIRGenerator::generate_assign_stmt(ASTNode *node) {
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
+
     return create_stmt(sir::AssignStmt{
         .ast_node = node,
-        .lhs = generate_expr(node->get_child(ASSIGN_LOCATION)),
-        .rhs = generate_expr(node->get_child(ASSIGN_VALUE)),
+        .lhs = generate_expr(lhs_node),
+        .rhs = generate_expr(rhs_node),
     });
 }
 
 sir::Stmt SIRGenerator::generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op) {
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
+
     return create_stmt(sir::CompAssignStmt{
         .ast_node = node,
         .op = op,
-        .lhs = generate_expr(node->get_child(ASSIGN_LOCATION)),
-        .rhs = generate_expr(node->get_child(ASSIGN_VALUE)),
+        .lhs = generate_expr(lhs_node),
+        .rhs = generate_expr(rhs_node),
     });
 }
 
 sir::Stmt SIRGenerator::generate_return_stmt(ASTNode *node) {
+    ASTNode *value_node = node->first_child;
+
     return create_stmt(sir::ReturnStmt{
         .ast_node = node,
-        .value = node->has_child(0) ? generate_expr(node->get_child()) : nullptr,
+        .value = value_node ? generate_expr(value_node) : nullptr,
     });
 }
 
@@ -405,17 +481,22 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
         .else_branch = {},
     };
 
-    for (ASTNode *child : node->get_children()) {
-        if (child->get_type() == AST_IF || child->get_type() == AST_ELSE_IF) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->type == AST_IF || child->type == AST_ELSE_IF) {
+            ASTNode *condition_node = child->first_child;
+            ASTNode *block_node = condition_node->next_sibling;
+
             sir_if_stmt.cond_branches.push_back({
                 .ast_node = child,
-                .condition = generate_expr(child->get_child(IF_CONDITION)),
-                .block = generate_block(child->get_child(IF_BLOCK)),
+                .condition = generate_expr(condition_node),
+                .block = generate_block(block_node),
             });
-        } else if (child->get_type() == AST_ELSE) {
+        } else if (child->type == AST_ELSE) {
+            ASTNode *block_node = child->first_child;
+
             sir_if_stmt.else_branch = {
                 .ast_node = child,
-                .block = generate_block(child->get_child()),
+                .block = generate_block(block_node),
             };
         } else {
             ASSERT_UNREACHABLE;
@@ -426,17 +507,24 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
 }
 
 sir::Stmt SIRGenerator::generate_switch_stmt(ASTNode *node) {
+    ASTNode *value_node = node->first_child;
+    ASTNode *cases_node = value_node->next_sibling;
+
     sir::SwitchStmt sir_switch_stmt{
         .ast_node = node,
-        .value = generate_expr(node->get_child(SWITCH_VALUE)),
+        .value = generate_expr(value_node),
         .case_branches = {},
     };
 
-    for (ASTNode *child : node->get_child(SWITCH_CASES)->get_children()) {
+    for (ASTNode *child = cases_node->first_child; child; child = child->next_sibling) {
+        ASTNode *name_node = child->first_child;
+        ASTNode *type_node = name_node->next_sibling;
+        ASTNode *block_node = type_node->next_sibling;
+
         sir_switch_stmt.case_branches.push_back(sir::SwitchCaseBranch{
             .ast_node = child,
-            .local = generate_local(child->get_child(0), child->get_child(1)),
-            .block = generate_block(child->get_child(2)),
+            .local = generate_local(name_node, type_node),
+            .block = generate_block(block_node),
         });
     }
 
@@ -448,25 +536,35 @@ sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
         .ast_node = node,
     };
 
-    for (ASTNode *child : node->get_children()) {
-        if (child->get_type() == AST_TRY_SUCCESS_CASE) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->type == AST_TRY_SUCCESS_CASE) {
+            ASTNode *name_node = child->first_child;
+            ASTNode *expr_node = name_node->next_sibling;
+            ASTNode *block_node = expr_node->next_sibling;
+
             sir_try_stmt.success_branch = sir::TrySuccessBranch{
                 .ast_node = child,
-                .ident = generate_ident(child->get_child(0)),
-                .expr = generate_expr(child->get_child(1)),
-                .block = generate_block(child->get_child(2)),
+                .ident = generate_ident(name_node),
+                .expr = generate_expr(expr_node),
+                .block = generate_block(block_node),
             };
-        } else if (child->get_type() == AST_TRY_ERROR_CASE) {
+        } else if (child->type == AST_TRY_ERROR_CASE) {
+            ASTNode *name_node = child->first_child;
+            ASTNode *type_node = name_node->next_sibling;
+            ASTNode *block_node = type_node->next_sibling;
+
             sir_try_stmt.except_branch = sir::TryExceptBranch{
                 .ast_node = child,
-                .ident = generate_ident(child->get_child(0)),
-                .type = generate_expr(child->get_child(1)),
-                .block = generate_block(child->get_child(2)),
+                .ident = generate_ident(name_node),
+                .type = generate_expr(type_node),
+                .block = generate_block(block_node),
             };
-        } else if (child->get_type() == AST_TRY_ELSE_CASE) {
+        } else if (child->type == AST_TRY_ELSE_CASE) {
+            ASTNode *block_node = child->first_child;
+
             sir_try_stmt.else_branch = sir::TryElseBranch{
                 .ast_node = child,
-                .block = generate_block(child->get_child(0)),
+                .block = generate_block(block_node),
             };
         } else {
             ASSERT_UNREACHABLE;
@@ -477,20 +575,28 @@ sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
 }
 
 sir::Stmt SIRGenerator::generate_while_stmt(ASTNode *node) {
+    ASTNode *condition_node = node->first_child;
+    ASTNode *block_node = condition_node->next_sibling;
+
     return create_stmt(sir::WhileStmt{
         .ast_node = node,
-        .condition = generate_expr(node->get_child(WHILE_CONDITION)),
-        .block = generate_block(node->get_child(WHILE_BLOCK)),
+        .condition = generate_expr(condition_node),
+        .block = generate_block(block_node),
     });
 }
 
 sir::Stmt SIRGenerator::generate_for_stmt(ASTNode *node) {
+    ASTNode *iter_type_node = node->first_child;
+    ASTNode *name_node = iter_type_node->next_sibling;
+    ASTNode *range_node = name_node->next_sibling;
+    ASTNode *block_node = range_node->next_sibling;
+
     return create_stmt(sir::ForStmt{
         .ast_node = node,
-        .by_ref = node->get_child(FOR_ITER_TYPE)->get_value() == "*",
-        .ident = generate_ident(node->get_child(FOR_VAR)),
-        .range = generate_expr(node->get_child(FOR_EXPR)),
-        .block = generate_block(node->get_child(FOR_BLOCK)),
+        .by_ref = iter_type_node->value == "*",
+        .ident = generate_ident(name_node),
+        .range = generate_expr(range_node),
+        .block = generate_block(block_node),
     });
 }
 
@@ -513,17 +619,22 @@ sir::MetaIfStmt *SIRGenerator::generate_meta_if_stmt(ASTNode *node, MetaBlockKin
         .else_branch = {},
     };
 
-    for (ASTNode *child : node->get_children()) {
-        if (child->get_type() == AST_META_IF_CONDITION) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->type == AST_META_IF_CONDITION) {
+            ASTNode *condition_node = child->first_child;
+            ASTNode *block_node = condition_node->next_sibling;
+
             sir_meta_if_stmt.cond_branches.push_back({
                 .ast_node = child,
-                .condition = generate_expr(child->get_child(IF_CONDITION)),
-                .block = generate_meta_block(child->get_child(IF_BLOCK), kind),
+                .condition = generate_expr(condition_node),
+                .block = generate_meta_block(block_node, kind),
             });
-        } else if (child->get_type() == AST_META_ELSE) {
+        } else if (child->type == AST_META_ELSE) {
+            ASTNode *block_node = child->first_child;
+
             sir_meta_if_stmt.else_branch = {
                 .ast_node = child,
-                .block = generate_meta_block(child->get_child(), kind),
+                .block = generate_meta_block(block_node, kind),
             };
         } else {
             ASSERT_UNREACHABLE;
@@ -534,11 +645,15 @@ sir::MetaIfStmt *SIRGenerator::generate_meta_if_stmt(ASTNode *node, MetaBlockKin
 }
 
 sir::MetaForStmt *SIRGenerator::generate_meta_for_stmt(ASTNode *node, MetaBlockKind kind) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *range_node = name_node->next_sibling;
+    ASTNode *block_node = range_node->next_sibling;
+
     return create_stmt(sir::MetaForStmt{
         .ast_node = node,
-        .ident = generate_ident(node->get_child(0)),
-        .range = generate_expr(node->get_child(1)),
-        .block = generate_meta_block(node->get_child(2), kind),
+        .ident = generate_ident(name_node),
+        .range = generate_expr(range_node),
+        .block = generate_meta_block(block_node, kind),
     });
 }
 
@@ -549,7 +664,7 @@ sir::Stmt SIRGenerator::generate_error_stmt(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
-    switch (node->get_type()) {
+    switch (node->type) {
         case AST_INT_LITERAL: return generate_int_literal(node);
         case AST_FLOAT_LITERAL: return generate_fp_literal(node);
         case AST_FALSE: return generate_bool_literal(node, false);
@@ -623,7 +738,7 @@ sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
     return create_expr(sir::IntLiteral{
         .ast_node = node,
         .type = nullptr,
-        .value = LargeInt(node->get_value()),
+        .value = LargeInt(node->value),
     });
 }
 
@@ -631,7 +746,7 @@ sir::Expr SIRGenerator::generate_fp_literal(ASTNode *node) {
     return create_expr(sir::FPLiteral{
         .ast_node = node,
         .type = nullptr,
-        .value = std::stod(node->get_value()),
+        .value = std::stod(node->value),
     });
 }
 
@@ -645,7 +760,7 @@ sir::Expr SIRGenerator::generate_bool_literal(ASTNode *node, bool value) {
 
 sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
     unsigned index = 0;
-    char value = decode_char(node->get_value(), index);
+    char value = decode_char(node->value, index);
 
     return create_expr(sir::CharLiteral{
         .ast_node = node,
@@ -676,10 +791,12 @@ sir::Expr SIRGenerator::generate_undefined_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_array_literal(ASTNode *node) {
-    std::vector<sir::Expr> values(node->get_children().size());
+    std::vector<sir::Expr> values(node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        values[i] = generate_expr(node->get_child(i));
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        values[index] = generate_expr(child);
+        index += 1;
     }
 
     return create_expr(sir::ArrayLiteral{
@@ -693,8 +810,8 @@ sir::Expr SIRGenerator::generate_string_literal(ASTNode *node) {
     unsigned index = 0;
     std::string value = "";
 
-    while (index < node->get_value().length()) {
-        value += decode_char(node->get_value(), index);
+    while (index < node->value.length()) {
+        value += decode_char(node->value, index);
     }
 
     return create_expr(sir::StringLiteral{
@@ -705,18 +822,23 @@ sir::Expr SIRGenerator::generate_string_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_struct_literal(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *entries_node = name_node->next_sibling;
+
     return create_expr(sir::StructLiteral{
         .ast_node = node,
-        .type = generate_expr(node->get_child(STRUCT_LITERAL_NAME)),
-        .entries = generate_struct_literal_entries(node->get_child(STRUCT_LITERAL_VALUES)),
+        .type = generate_expr(name_node),
+        .entries = generate_struct_literal_entries(entries_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_typeless_struct_literal(ASTNode *node) {
+    ASTNode *entries_node = node->first_child;
+
     return create_expr(sir::StructLiteral{
         .ast_node = node,
         .type = nullptr,
-        .entries = generate_struct_literal_entries(node->get_child()),
+        .entries = generate_struct_literal_entries(entries_node),
     });
 }
 
@@ -729,18 +851,22 @@ sir::Expr SIRGenerator::generate_map_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_closure_literal(ASTNode *node) {
+    ASTNode *params_node = node->first_child;
+    ASTNode *return_type_node = params_node->next_sibling;
+    ASTNode *block_node = return_type_node->next_sibling;
+
     return create_expr(sir::ClosureLiteral{
         .ast_node = node,
         .type = nullptr,
-        .func_type = generate_func_type(node->get_child(CLOSURE_PARAMS), node->get_child(CLOSURE_RETURN_TYPE)),
-        .block = generate_block(node->get_child(CLOSURE_BLOCK)),
+        .func_type = generate_func_type(params_node, return_type_node),
+        .block = generate_block(block_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_ident_expr(ASTNode *node) {
     return create_expr(sir::IdentExpr{
         .ast_node = node,
-        .value = node->get_value(),
+        .value = node->value,
     });
 }
 
@@ -752,35 +878,46 @@ sir::Expr SIRGenerator::generate_self(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_binary_expr(ASTNode *node, sir::BinaryOp op) {
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
+
     return create_expr(sir::BinaryExpr{
         .ast_node = node,
         .type = nullptr,
         .op = op,
-        .lhs = generate_expr(node->get_child(0)),
-        .rhs = generate_expr(node->get_child(1)),
+        .lhs = generate_expr(lhs_node),
+        .rhs = generate_expr(rhs_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_unary_expr(ASTNode *node, sir::UnaryOp op) {
+    ASTNode *value_node = node->first_child;
+
     return create_expr(sir::UnaryExpr{
         .ast_node = node,
         .type = nullptr,
         .op = op,
-        .value = generate_expr(node->get_child()),
+        .value = generate_expr(value_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_cast_expr(ASTNode *node) {
+    ASTNode *value_node = node->first_child;
+    ASTNode *type_node = value_node->next_sibling;
+
     return create_expr(sir::CastExpr{
         .ast_node = node,
-        .type = generate_expr(node->get_child(1)),
-        .value = generate_expr(node->get_child(0)),
+        .type = generate_expr(type_node),
+        .value = generate_expr(value_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_call_expr(ASTNode *node) {
-    sir::Expr callee = generate_expr(node->get_child(0));
-    std::vector<sir::Expr> args = generate_expr_list(node->get_child(1));
+    ASTNode *callee_node = node->first_child;
+    ASTNode *args_node = callee_node->next_sibling;
+
+    sir::Expr callee = generate_expr(callee_node);
+    std::vector<sir::Expr> args = generate_expr_list(args_node);
 
     if (callee.is<sir::MetaFieldExpr>()) {
         return create_expr(sir::MetaCallExpr{
@@ -798,25 +935,25 @@ sir::Expr SIRGenerator::generate_call_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
-    ASTNode *lhs_node = node->get_child(0);
-    ASTNode *rhs_node = node->get_child(1);
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
 
     sir::Expr lhs = generate_expr(lhs_node);
     sir::Ident rhs;
 
-    if (rhs_node->get_type() == AST_IDENTIFIER) {
+    if (rhs_node->type == AST_IDENTIFIER) {
         rhs = generate_ident(rhs_node);
-    } else if (rhs_node->get_type() == AST_INT_LITERAL) {
+    } else if (rhs_node->type == AST_INT_LITERAL) {
         rhs = {
             .ast_node = rhs_node,
-            .value = rhs_node->get_value(),
+            .value = rhs_node->value,
         };
-    } else if (rhs_node->get_type() == AST_COMPLETION_TOKEN) {
+    } else if (rhs_node->type == AST_COMPLETION_TOKEN) {
         rhs = {
             .ast_node = rhs_node,
             .value = std::string(sir::COMPLETION_TOKEN_VALUE),
         };
-    } else if (rhs_node->get_type() == AST_ERROR) {
+    } else if (rhs_node->type == AST_ERROR) {
         rhs = {
             .ast_node = rhs_node,
             .value = "[error]",
@@ -839,18 +976,24 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_bracket_expr(ASTNode *node) {
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
+
     return create_expr(sir::BracketExpr{
         .ast_node = node,
-        .lhs = generate_expr(node->get_child(0)),
-        .rhs = generate_expr_list(node->get_child(1)),
+        .lhs = generate_expr(lhs_node),
+        .rhs = generate_expr_list(rhs_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
+
     return create_expr(sir::RangeExpr{
         .ast_node = node,
-        .lhs = generate_expr(node->get_child(0)),
-        .rhs = generate_expr(node->get_child(1)),
+        .lhs = generate_expr(lhs_node),
+        .rhs = generate_expr(rhs_node),
     });
 }
 
@@ -863,9 +1006,11 @@ sir::Expr SIRGenerator::generate_tuple_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_star_expr(ASTNode *node) {
+    ASTNode *value_node = node->first_child;
+
     return create_expr(sir::StarExpr{
         .ast_node = node,
-        .value = generate_expr(node->get_child()),
+        .value = generate_expr(value_node),
     });
 }
 
@@ -877,45 +1022,60 @@ sir::Expr SIRGenerator::generate_primitive_type(ASTNode *node, sir::Primitive pr
 }
 
 sir::Expr SIRGenerator::generate_static_array_type(ASTNode *node) {
+    ASTNode *base_type_node = node->first_child;
+    ASTNode *length_node = base_type_node->next_sibling;
+
     return create_expr(sir::StaticArrayType{
         .ast_node = node,
-        .base_type = generate_expr(node->get_child(0)),
-        .length = generate_expr(node->get_child(1)),
+        .base_type = generate_expr(base_type_node),
+        .length = generate_expr(length_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_func_type(ASTNode *node) {
-    return create_expr(generate_func_type(node->get_child(FUNC_TYPE_PARAMS), node->get_child(FUNC_TYPE_RETURN_TYPE)));
+    ASTNode *params_node = node->first_child;
+    ASTNode *return_type_node = params_node->next_sibling;
+
+    return create_expr(generate_func_type(params_node, return_type_node));
 }
 
 sir::Expr SIRGenerator::generate_optional_type(ASTNode *node) {
+    ASTNode *base_type_node = node->first_child;
+
     return create_expr(sir::OptionalType{
         .ast_node = node,
-        .base_type = generate_expr(node->get_child()),
+        .base_type = generate_expr(base_type_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_result_type(ASTNode *node) {
+    ASTNode *value_type_node = node->first_child;
+    ASTNode *error_type_node = value_type_node->next_sibling;
+
     return create_expr(sir::ResultType{
         .ast_node = node,
-        .value_type = generate_expr(node->get_child(0)),
-        .error_type = generate_expr(node->get_child(1)),
+        .value_type = generate_expr(value_type_node),
+        .error_type = generate_expr(error_type_node),
     });
 }
 
 sir::Expr SIRGenerator::generate_closure_type(ASTNode *node) {
+    ASTNode *params_node = node->first_child;
+    ASTNode *return_type_node = params_node->next_sibling;
+
     return create_expr(sir::ClosureType{
         .ast_node = nullptr,
-        .func_type =
-            generate_func_type(node->get_child(CLOSURE_TYPE_PARAMS), node->get_child(CLOSURE_TYPE_RETURN_TYPE)),
+        .func_type = generate_func_type(params_node, return_type_node),
         .underlying_struct = nullptr,
     });
 }
 
 sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {
+    ASTNode *expr_node = node->first_child;
+
     return create_expr(sir::MetaAccess{
         .ast_node = node,
-        .expr = generate_expr(node->get_child()),
+        .expr = generate_expr(expr_node),
     });
 }
 
@@ -926,10 +1086,12 @@ sir::Expr SIRGenerator::generate_error_expr(ASTNode *node) {
 }
 
 sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *return_node) {
-    std::vector<sir::Param> sir_params(params_node->get_children().size());
+    std::vector<sir::Param> sir_params(params_node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < params_node->get_children().size(); i++) {
-        sir_params[i] = generate_param(params_node->get_child(i));
+    for (ASTNode *child = params_node->first_child; child; child = child->next_sibling) {
+        sir_params[index] = generate_param(child);
+        index += 1;
     }
 
     return {
@@ -941,21 +1103,25 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
 sir::Param SIRGenerator::generate_param(ASTNode *node) {
     sir::Attributes *attrs = nullptr;
 
-    if (node->get_type() == AST_ATTRIBUTE_WRAPPER) {
-        attrs = generate_attrs(node->get_child(0));
-        node = node->get_child(1);
+    if (node->type == AST_ATTRIBUTE_WRAPPER) {
+        ASTNode *attrs_node = node->first_child;
+        node = attrs_node->next_sibling;
+
+        attrs = generate_attrs(attrs_node);
     }
 
-    ASTNodeType ident_type = node->get_child(PARAM_NAME)->get_type();
+    ASTNode *name_node = node->first_child;
 
-    if (ident_type == AST_IDENTIFIER) {
+    if (name_node->type == AST_IDENTIFIER) {
+        ASTNode *type_node = name_node->next_sibling;
+
         return {
             .ast_node = node,
-            .name = generate_ident(node->get_child(PARAM_NAME)),
-            .type = generate_expr(node->get_child(PARAM_TYPE)),
+            .name = generate_ident(name_node),
+            .type = generate_expr(type_node),
             .attrs = attrs,
         };
-    } else if (ident_type == AST_SELF) {
+    } else if (name_node->type == AST_SELF) {
         sir::Ident sir_ident{
             .ast_node = nullptr,
             .value = "self",
@@ -973,24 +1139,25 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
 }
 
 std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode *node) {
-    std::vector<sir::GenericParam> sir_generic_params(node->get_children().size());
+    std::vector<sir::GenericParam> sir_generic_params(node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        ASTNode *child = node->get_child(i);
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        ASTNode *name_node = child->first_child;
+        ASTNode *type_node = name_node->next_sibling;
 
         sir::GenericParamKind kind = sir::GenericParamKind::TYPE;
-
-        if (child->has_child(GENERIC_PARAM_TYPE)) {
-            if (child->get_child(GENERIC_PARAM_TYPE)->get_type() == AST_PARAM_SEQUENCE_TYPE) {
-                kind = sir::GenericParamKind::SEQUENCE;
-            }
+        if (type_node && type_node->type == AST_PARAM_SEQUENCE_TYPE) {
+            kind = sir::GenericParamKind::SEQUENCE;
         }
 
-        sir_generic_params[i] = sir::GenericParam{
+        sir_generic_params[index] = sir::GenericParam{
             .ast_node = child,
-            .ident = generate_ident(child->get_child(GENERIC_PARAM_NAME)),
+            .ident = generate_ident(name_node),
             .kind = kind,
         };
+
+        index += 1;
     }
 
     return sir_generic_params;
@@ -1004,23 +1171,24 @@ sir::Local SIRGenerator::generate_local(ASTNode *ident_node, ASTNode *type_node)
 }
 
 std::vector<sir::Expr> SIRGenerator::generate_expr_list(ASTNode *node) {
-    std::vector<sir::Expr> exprs(node->get_children().size());
+    std::vector<sir::Expr> exprs(node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        exprs[i] = generate_expr(node->get_child(i));
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        exprs[index] = generate_expr(child);
+        index += 1;
     }
 
     return exprs;
 }
 
 std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries(ASTNode *node) {
-    std::vector<sir::StructLiteralEntry> entries(node->get_children().size());
+    std::vector<sir::StructLiteralEntry> entries(node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        ASTNode *child = node->get_child(i);
-
-        if (child->get_type() == AST_COMPLETION_TOKEN) {
-            entries[i] = sir::StructLiteralEntry{
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->type == AST_COMPLETION_TOKEN) {
+            entries[index] = sir::StructLiteralEntry{
                 .ident{
                     .ast_node = child,
                     .value = std::string(sir::COMPLETION_TOKEN_VALUE),
@@ -1034,42 +1202,55 @@ std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entri
             continue;
         }
 
-        entries[i] = sir::StructLiteralEntry{
-            .ident = generate_ident(child->get_child(STRUCT_FIELD_VALUE_NAME)),
-            .value = generate_expr(child->get_child(STRUCT_FIELD_VALUE_VALUE)),
+        ASTNode *name_node = child->first_child;
+        ASTNode *value_node = name_node->next_sibling;
+
+        entries[index] = sir::StructLiteralEntry{
+            .ident = generate_ident(name_node),
+            .value = generate_expr(value_node),
             .field = nullptr,
         };
+
+        index += 1;
     }
 
     return entries;
 }
 
 std::vector<sir::MapLiteralEntry> SIRGenerator::generate_map_literal_entries(ASTNode *node) {
-    std::vector<sir::MapLiteralEntry> entries(node->get_children().size());
+    std::vector<sir::MapLiteralEntry> entries(node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        ASTNode *child = node->get_child(i);
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        ASTNode *key_node = child->first_child;
+        ASTNode *value_node = key_node->next_sibling;
 
-        entries[i] = sir::MapLiteralEntry{
-            .key = generate_expr(child->get_child(MAP_LITERAL_PAIR_KEY)),
-            .value = generate_expr(child->get_child(MAP_LITERAL_PAIR_VALUE)),
+        entries[index] = sir::MapLiteralEntry{
+            .key = generate_expr(key_node),
+            .value = generate_expr(value_node),
         };
+
+        index += 1;
     }
 
     return entries;
 }
 
 std::vector<sir::UnionCaseField> SIRGenerator::generate_union_case_fields(ASTNode *node) {
-    std::vector<sir::UnionCaseField> fields(node->get_children().size());
+    std::vector<sir::UnionCaseField> fields(node->num_children());
+    unsigned index = 0;
 
-    for (unsigned i = 0; i < node->get_children().size(); i++) {
-        ASTNode *child = node->get_child(i);
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        ASTNode *name_node = child->first_child;
+        ASTNode *type_node = name_node->next_sibling;
 
-        fields[i] = sir::UnionCaseField{
+        fields[index] = sir::UnionCaseField{
             .ast_node = child,
-            .ident = generate_ident(child->get_child(0)),
-            .type = generate_expr(child->get_child(1)),
+            .ident = generate_ident(name_node),
+            .type = generate_expr(type_node),
         };
+
+        index += 1;
     }
 
     return fields;
@@ -1078,9 +1259,9 @@ std::vector<sir::UnionCaseField> SIRGenerator::generate_union_case_fields(ASTNod
 sir::Attributes *SIRGenerator::generate_attrs(ASTNode *node) {
     sir::Attributes sir_attrs;
 
-    for (ASTNode *child : node->get_children()) {
-        if (child->get_type() == AST_ATTRIBUTE_TAG) {
-            const std::string &name = child->get_value();
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->type == AST_ATTRIBUTE_TAG) {
+            const std::string &name = child->value;
 
             if (name == "exposed") sir_attrs.exposed = true;
             else if (name == "dllexport") sir_attrs.dllexport = true;
@@ -1088,9 +1269,12 @@ sir::Attributes *SIRGenerator::generate_attrs(ASTNode *node) {
             else if (name == "unmanaged") sir_attrs.unmanaged = true;
             else if (name == "byval") sir_attrs.byval = true;
             else ASSERT_UNREACHABLE;
-        } else if (child->get_type() == AST_ATTRIBUTE_VALUE) {
-            const std::string &name = child->get_child(0)->get_value();
-            const std::string &value = child->get_child(1)->get_value();
+        } else if (child->type == AST_ATTRIBUTE_VALUE) {
+            ASTNode *name_node = child->first_child;
+            ASTNode *value_node = name_node->next_sibling;
+
+            const std::string &name = name_node->value;
+            const std::string &value = value_node->value;
 
             if (name == "link_name") {
                 sir_attrs.link_name = value;
@@ -1139,7 +1323,7 @@ char SIRGenerator::decode_char(const std::string &value, unsigned &index) {
 }
 
 sir::UseItem SIRGenerator::generate_use_item(ASTNode *node) {
-    switch (node->get_type()) {
+    switch (node->type) {
         case AST_IDENTIFIER: return generate_use_ident(node);
         case AST_USE_REBINDING: return generate_use_rebind(node);
         case AST_DOT_OPERATOR: return generate_use_dot_expr(node);
@@ -1157,28 +1341,35 @@ sir::UseItem SIRGenerator::generate_use_ident(ASTNode *node) {
 }
 
 sir::UseItem SIRGenerator::generate_use_rebind(ASTNode *node) {
+    ASTNode *target_name_node = node->first_child;
+    ASTNode *local_name_node = target_name_node->next_sibling;
+
     return create_use_item(sir::UseRebind{
         .ast_node = node,
-        .target_ident = generate_ident(node->get_child(USE_REBINDING_TARGET)),
-        .local_ident = generate_ident(node->get_child(USE_REBINDING_LOCAL)),
+        .target_ident = generate_ident(target_name_node),
+        .local_ident = generate_ident(local_name_node),
         .symbol = nullptr,
     });
 }
 
 sir::UseItem SIRGenerator::generate_use_dot_expr(ASTNode *node) {
+    ASTNode *lhs_node = node->first_child;
+    ASTNode *rhs_node = lhs_node->next_sibling;
+
     return create_use_item(sir::UseDotExpr{
         .ast_node = node,
-        .lhs = generate_use_item(node->get_child(0)),
-        .rhs = generate_use_item(node->get_child(1)),
+        .lhs = generate_use_item(lhs_node),
+        .rhs = generate_use_item(rhs_node),
     });
 }
 
 sir::UseItem SIRGenerator::generate_use_list(ASTNode *node) {
-    std::vector<sir::UseItem> items;
-    items.reserve(node->get_children().size());
+    std::vector<sir::UseItem> items(node->num_children());
+    unsigned index = 0;
 
-    for (ASTNode *child : node->get_children()) {
-        items.push_back(generate_use_item(child));
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        items[index] = generate_use_item(child);
+        index += 1;
     }
 
     return create_use_item(sir::UseList{

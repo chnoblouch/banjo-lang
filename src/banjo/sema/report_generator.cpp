@@ -34,7 +34,7 @@ ReportBuilder &ReportBuilder::add_note(std::string_view format_str, ASTNode *nod
 
 SourceLocation ReportBuilder::find_location(ASTNode *node) {
     if (node) {
-        return SourceLocation{find_mod_path(node), node->get_range()};
+        return SourceLocation{find_mod_path(node), node->range};
     } else {
         return SourceLocation{{}, {0, 0}};
     }
@@ -53,11 +53,11 @@ void ReportBuilder::report() {
 }
 
 const ModulePath &ReportBuilder::find_mod_path(ASTNode *node) {
-    while (node->get_type() != AST_MODULE) {
-        node = node->get_parent();
+    while (node->type != AST_MODULE) {
+        node = node->parent;
     }
 
-    return node->as<ASTModule>()->get_path();
+    return static_cast<ASTModule *>(node)->get_path();
 }
 
 ReportGenerator::ReportGenerator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}

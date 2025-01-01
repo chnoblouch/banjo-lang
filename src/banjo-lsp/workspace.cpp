@@ -226,7 +226,7 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
 
             if (auto ref_mod = use.symbol.match<sir::Module>()) {
                 ref.def_mod = ref_mod;
-                ref.def_range = ref_mod->block.ast_node->get_range();
+                ref.def_range = ref_mod->block.ast_node->range;
 
                 ModuleIndex &def_mod_index = index.mods[ref_mod];
                 def_mod_index.dependents.insert(mod->path);

@@ -84,8 +84,7 @@ ParseResult Parser::parse_block() {
             stream.consume(); // Consume '}'
             break;
         } else if (stream.get()->is(TKN_EOF)) {
-            register_error(stream.previous()->get_range())
-                .set_message(ReportText("file ends with unclosed block").str());
+            register_error(stream.previous()->range()).set_message(ReportText("file ends with unclosed block").str());
             return {block, false};
         } else {
             parse_and_append_block_child(block);
@@ -110,7 +109,7 @@ ParseResult Parser::parse_block_child() {
         return create_node(AST_EMPTY_LINE);
     }
 
-    switch (stream.get()->get_type()) {
+    switch (stream.get()->type) {
         case TKN_VAR: return StmtParser(*this).parse_var();
         case TKN_CONST: return DeclParser(*this).parse_const();
         case TKN_FUNC: return DeclParser(*this).parse_func(nullptr);
@@ -149,7 +148,7 @@ ParseResult Parser::parse_expr_or_assign() {
         return {result.node, false};
     }
 
-    switch (stream.get()->get_type()) {
+    switch (stream.get()->type) {
         case TKN_EQ: return StmtParser(*this).parse_assign(result.node, AST_ASSIGNMENT);
         case TKN_PLUS_EQ: return StmtParser(*this).parse_assign(result.node, AST_ADD_ASSIGN);
         case TKN_MINUS_EQ: return StmtParser(*this).parse_assign(result.node, AST_SUB_ASSIGN);
@@ -273,7 +272,7 @@ ParseResult Parser::parse_param() {
     }
 
     if (stream.get()->is(TKN_SELF)) {
-        node.append_child(create_node(AST_SELF, "", stream.consume()->get_range()));
+        node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
     } else {
         if (stream.peek(1)->is(TKN_COLON)) {
             node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
@@ -331,7 +330,7 @@ void Parser::report_unexpected_token(ReportTextType report_text_type) {
     }
 
     Token *token = stream.get();
-    register_error(token->get_range()).set_message(ReportText(format_str).format(token_to_str(token)).str());
+    register_error(token->range()).set_message(ReportText(format_str).format(token_to_str(token)).str());
 }
 
 void Parser::report_unexpected_token(ReportTextType report_text_type, std::string expected) {
@@ -346,14 +345,14 @@ void Parser::report_unexpected_token(ReportTextType report_text_type, std::strin
     }
 
     Token *token = stream.get();
-    register_error(token->get_range())
+    register_error(token->range())
         .set_message(ReportText(format_str).format(expected).format(token_to_str(token)).str());
 }
 
 std::string Parser::token_to_str(Token *token) {
-    if (token->get_type() == TKN_EOF) return "end of file";
-    else if (token->get_type() == TKN_STRING) return token->get_value();
-    else return "'" + token->get_value() + "'";
+    if (token->is(TKN_EOF)) return "end of file";
+    else if (token->is(TKN_STRING)) return token->value;
+    else return "'" + token->value + "'";
 }
 
 void Parser::recover() {
@@ -386,11 +385,11 @@ bool Parser::is_at_recover_punctuation() {
 }
 
 bool Parser::is_at_recover_keyword() {
-    return RECOVER_KEYWORDS.count(stream.get()->get_type());
+    return RECOVER_KEYWORDS.contains(stream.get()->type);
 }
 
 bool Parser::is_at_completion_point() {
-    return running_completion && stream.get()->get_type() == TKN_COMPLETION;
+    return running_completion && stream.get()->is(TKN_COMPLETION);
 }
 
 ASTNode *Parser::parse_completion_point() {
@@ -399,7 +398,7 @@ ASTNode *Parser::parse_completion_point() {
 }
 
 ASTNode *Parser::create_dummy_block() {
-    return create_node(AST_BLOCK, TextRange{stream.get()->get_position(), stream.get()->get_position()});
+    return create_node(AST_BLOCK, TextRange{stream.get()->position, stream.get()->position});
 }
 
 } // namespace lang

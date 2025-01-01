@@ -21,7 +21,7 @@ namespace banjo {
 
 namespace lang {
 
-class ASTNode;
+struct ASTNode;
 
 namespace sir {
 
@@ -403,6 +403,8 @@ public:
 class UseItem : public DynamicPointer<UseIdent, UseRebind, UseDotExpr, UseList, Error> {
 
 public:
+    UseItem() : DynamicPointer() {}
+
     template <typename T>
     UseItem(T value) : DynamicPointer(value) {}
 };

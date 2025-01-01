@@ -37,8 +37,8 @@ LSPTextPosition ASTNavigation::pos_to_lsp(const std::string &source, lang::TextP
 }
 
 lang::ASTNode *ASTNavigation::get_node_at(lang::ASTNode *node, lang::TextPosition position) {
-    for (lang::ASTNode *child : node->get_children()) {
-        if (position >= child->get_range().start && position <= child->get_range().end) {
+    for (lang::ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (position >= child->range.start && position <= child->range.end) {
             return get_node_at(child, position);
         }
     }

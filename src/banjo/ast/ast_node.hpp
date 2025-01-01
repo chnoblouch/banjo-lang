@@ -5,15 +5,14 @@
 #include "banjo/source/text_range.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <string>
-#include <utility>
-#include <vector>
 
 namespace banjo {
 
 namespace lang {
 
-enum ASTNodeType {
+enum ASTNodeType : std::uint8_t {
     AST_MODULE,
     AST_BLOCK,
     AST_IDENTIFIER,
@@ -159,57 +158,31 @@ enum ASTNodeType {
     AST_INVALID,
 };
 
-class ASTNode {
-
-public:
+struct ASTNode {
     struct Flags {
         bool trailing_comma : 1 = false;
     };
 
-protected:
     ASTNodeType type;
+    Flags flags;
     std::string value;
     TextRange range;
 
-    std::vector<ASTNode *> children;
+    ASTNode *first_child = nullptr;
+    ASTNode *last_child = nullptr;
+    ASTNode *next_sibling = nullptr;
     ASTNode *parent = nullptr;
 
-public:
-    Flags flags;
-
-public:
     ASTNode();
     ASTNode(ASTNodeType type);
     ASTNode(ASTNodeType type, std::string value, TextRange range = {0, 0});
     ASTNode(ASTNodeType type, TextRange range);
     ASTNode(ASTNodeType type, Token *token);
 
-    ASTNodeType get_type() { return type; }
-    TextRange get_range() { return range; }
-
-    const std::string &get_value() { return value; }
-    void set_range(TextRange range) { this->range = range; }
-
-    std::vector<ASTNode *> &get_children() { return children; }
-    ASTNode *get_child(int index) { return children[index]; }
-    ASTNode *get_child() { return children[0]; }
-    bool has_child(unsigned index);
-    ASTNode *get_parent() { return parent; }
-
-    void set_type(ASTNodeType type) { this->type = type; }
-    void set_value(std::string value) { this->value = std::move(value); }
-    void set_parent(ASTNode *parent) { this->parent = parent; }
-
+    bool has_children() { return first_child; }
+    unsigned num_children();
     void append_child(ASTNode *child);
-
     void set_range_from_children();
-
-    template <typename T>
-    T *as() {
-        return static_cast<T *>(this);
-    }
-
-    friend class NodeBuilder;
 };
 
 } // namespace lang

@@ -24,7 +24,7 @@ private:
 
 public:
     NodeBuilder(TokenStream &stream, ASTNode *node) : stream(stream), node(node) {
-        node->range.start = stream.get()->get_position();
+        node->range.start = stream.get()->position;
     }
 
     void append_child(ASTNode *child) { node->append_child(child); }
@@ -32,7 +32,7 @@ public:
 
     ASTNode *build(ASTNodeType type) {
         Token *previous = stream.previous();
-        node->range.end = previous ? previous->get_end() : node->range.start;
+        node->range.end = previous ? previous->end() : node->range.start;
 
         node->type = type;
         return node;
@@ -45,8 +45,8 @@ public:
     }
 
     ParseResult build_error() {
-        if (!node->children.empty()) {
-            node->range.end = node->children.back()->get_range().end;
+        if (node->last_child) {
+            node->range.end = node->last_child->range.end;
         }
 
         node->type = AST_ERROR;
