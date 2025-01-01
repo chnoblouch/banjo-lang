@@ -1,6 +1,9 @@
 #ifndef MCODE_REGISTER_H
 #define MCODE_REGISTER_H
 
+#include "banjo/utils/bit_set.hpp"
+#include "banjo/utils/macros.hpp"
+
 #include <unordered_set>
 
 namespace banjo {
@@ -49,6 +52,64 @@ public:
     }
 
     friend bool operator!=(const Register &left, const Register &right) { return !(left == right); }
+
+    friend class RegisterSet;
+};
+
+class RegisterSet {
+
+public:
+    class Iterator {
+
+    private:
+        BitSet::Iterator iter;
+
+    public:
+        Iterator(BitSet::Iterator iter) : iter(iter) {}
+
+        Register operator*() const {
+            unsigned position = *iter;
+
+            if (position & 1) {
+                return Register::from_physical(position >> 1);
+            } else {
+                return Register::from_virtual(position >> 1);
+            }
+        }
+
+        Iterator &operator++() {
+            ++iter;
+            return *this;
+        }
+
+        bool operator==(const Iterator &other) const { return iter == other.iter; }
+        bool operator!=(const Iterator &other) const { return iter != other.iter; }
+    };
+
+private:
+    BitSet set;
+
+public:
+    bool contains(Register reg) const { return set.get(get_bit_position(reg)); }
+    unsigned size() const { return set.size(); }
+
+    void insert(Register reg) { set.set(get_bit_position(reg)); }
+    void remove(Register reg) { set.clear(get_bit_position(reg)); }
+    void union_with(const RegisterSet &other) { set.union_with(other.set); }
+
+    Iterator begin() const { return Iterator(set.begin()); }
+    Iterator end() const { return Iterator(set.end()); }
+
+private:
+    static unsigned get_bit_position(Register reg) {
+        if (reg.is_virtual_reg()) {
+            return (reg.value << 1) | 0;
+        } else if (reg.is_physical_reg()) {
+            return (reg.value << 1) | 1;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
 };
 
 } // namespace mcode

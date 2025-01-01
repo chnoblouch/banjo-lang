@@ -360,7 +360,7 @@ void X8664RegAnalyzer::add_udu_ops(mcode::Instruction &instr, std::vector<mcode:
 }
 
 void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
-    if (operand.is_register()) {
+    if (operand.is_virtual_reg() || operand.is_physical_reg()) {
         dst.push_back({.reg = operand.get_register(), .usage = usage});
     } else if (operand.is_addr()) {
         collect_addr_regs(operand, dst);

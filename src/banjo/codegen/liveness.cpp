@@ -61,7 +61,7 @@ void LivenessAnalysis::compute_ins_and_outs(RegAllocFunc &func, LivenessAnalysis
             // Insert all ins from successors into the outs of the current block.
             for (unsigned succ : block.succs) {
                 BlockLiveness &succ_liveness = analysis.block_liveness[succ];
-                liveness.outs.insert(succ_liveness.ins.begin(), succ_liveness.ins.end());
+                liveness.outs.union_with(succ_liveness.ins);
             }
 
             // Insert the uses into the ins.

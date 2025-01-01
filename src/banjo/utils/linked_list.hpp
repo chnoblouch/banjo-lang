@@ -33,10 +33,10 @@ public:
 
     friend bool operator==(const LinkedListIter &rhs, const LinkedListIter &lhs) { return rhs.node == lhs.node; }
     friend bool operator!=(const LinkedListIter &rhs, const LinkedListIter &lhs) { return !(rhs == lhs); }
-    friend bool operator<(const LinkedListIter &rhs, const LinkedListIter &lhs) { return rhs.node < rhs.node; }
-    friend bool operator<=(const LinkedListIter &rhs, const LinkedListIter &lhs) { return rhs.node <= rhs.node; }
-    friend bool operator>(const LinkedListIter &rhs, const LinkedListIter &lhs) { return rhs.node > rhs.node; }
-    friend bool operator>=(const LinkedListIter &rhs, const LinkedListIter &lhs) { return rhs.node >= rhs.node; }
+    friend bool operator<(const LinkedListIter &rhs, const LinkedListIter &lhs) { return lhs.node < rhs.node; }
+    friend bool operator<=(const LinkedListIter &rhs, const LinkedListIter &lhs) { return lhs.node <= rhs.node; }
+    friend bool operator>(const LinkedListIter &rhs, const LinkedListIter &lhs) { return lhs.node > rhs.node; }
+    friend bool operator>=(const LinkedListIter &rhs, const LinkedListIter &lhs) { return lhs.node >= rhs.node; }
 
     LinkedListIter &operator++() {
         node = node->next;

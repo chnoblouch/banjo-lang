@@ -125,6 +125,7 @@ add_library(banjo STATIC
     target/x86_64/x86_64_ssa_lowerer.cpp
     target/x86_64/x86_64_target.cpp
     utils/bit_operations.cpp
+    utils/bit_set.cpp
     utils/json_parser.cpp
     utils/json_serializer.cpp
     utils/json.cpp

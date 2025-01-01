@@ -14,10 +14,10 @@ namespace banjo {
 namespace codegen {
 
 struct BlockLiveness {
-    std::unordered_set<mcode::Register> defs;
-    std::unordered_set<mcode::Register> uses;
-    std::unordered_set<mcode::Register> ins;
-    std::unordered_set<mcode::Register> outs;
+    mcode::RegisterSet defs;
+    mcode::RegisterSet uses;
+    mcode::RegisterSet ins;
+    mcode::RegisterSet outs;
 };
 
 struct KillPoint {
