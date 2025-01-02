@@ -74,7 +74,7 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
             SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
             ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
             generate_block(*inner),                                         // block_stmt
-            SIR_VISIT_IMPOSSIBLE                                            // error
+            continue                                                        // error
         );
 
         if (ctx.get_ssa_block()->is_branching()) {
