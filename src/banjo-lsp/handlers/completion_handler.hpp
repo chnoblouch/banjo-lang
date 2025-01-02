@@ -40,7 +40,7 @@ public:
     JSONValue handle(const JSONObject &params, Connection &connection);
 
 private:
-    void build_in_block(JSONArray &items, lang::sir::SymbolTable &symbol_table);
+    void build_in_block(JSONArray &items, lang::sir::SymbolTable &symbol_table, const CompletionInfo &completion_info);
     void build_after_dot(JSONArray &items, lang::sir::Expr &lhs);
     void build_in_use(JSONArray &items);
     void build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs);

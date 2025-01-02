@@ -88,15 +88,23 @@ CompletionInfo Workspace::run_completion(
     lang::sir::Module &out_sir_mod
 ) {
     ASTModule *mod = module_manager.load_for_completion(file->ast_module->get_path(), completion_point);
-    assert(mod);
+    ASSERT(mod);
     out_sir_mod = SIRGenerator().generate(mod);
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::COMPLETION);
     analyzer.analyze(out_sir_mod);
 
+    std::vector<lang::sir::Symbol> preamble_symbols;
+    preamble_symbols.reserve(analyzer.get_preamble_symbols().size());
+
+    for (const auto &[name, symbol] : analyzer.get_preamble_symbols()) {
+        preamble_symbols.push_back(symbol);
+    }
+
     return CompletionInfo{
         .sir_mod = std::move(out_sir_mod),
         .context = analyzer.get_completion_context(),
+        .preamble_symbols = preamble_symbols,
     };
 }
 

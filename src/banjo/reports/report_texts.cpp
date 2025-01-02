@@ -163,6 +163,8 @@ std::string ReportText::to_string(const sir::Expr &expr) {
             case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
             case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
         }
+    } else if (auto ident_expr = expr.match<sir::IdentExpr>()) {
+        return ident_expr->value;
     } else {
         return "<unknown>";
     }

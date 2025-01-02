@@ -101,6 +101,7 @@ public:
 
     ExtraAnalysis &get_extra_analysis() { return extra_analysis; }
     CompletionContext &get_completion_context() { return completion_context; }
+    const std::unordered_map<std::string_view, sir::Symbol> &get_preamble_symbols() { return preamble_symbols; }
 
 private:
     Scope &get_scope() { return scopes.top(); }

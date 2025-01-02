@@ -16,6 +16,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace banjo {
 
@@ -31,6 +32,7 @@ struct File {
 struct CompletionInfo {
     lang::sir::Module sir_mod;
     lang::sema::CompletionContext context;
+    std::vector<lang::sir::Symbol> preamble_symbols;
 };
 
 class Workspace {

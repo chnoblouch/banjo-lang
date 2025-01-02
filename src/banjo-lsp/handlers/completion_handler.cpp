@@ -40,9 +40,9 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     JSONArray items;
 
     if (auto in_decl_block = std::get_if<sema::CompleteInDeclBlock>(&completion_info.context)) {
-        build_in_block(items, *in_decl_block->decl_block->symbol_table);
+        build_in_block(items, *in_decl_block->decl_block->symbol_table, completion_info);
     } else if (auto in_block = std::get_if<sema::CompleteInBlock>(&completion_info.context)) {
-        build_in_block(items, *in_block->block->symbol_table);
+        build_in_block(items, *in_block->block->symbol_table, completion_info);
     } else if (auto after_dot = std::get_if<sema::CompleteAfterDot>(&completion_info.context)) {
         build_after_dot(items, after_dot->lhs);
     } else if (std::holds_alternative<sema::CompleteInUse>(completion_info.context)) {
@@ -56,13 +56,26 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     return items;
 }
 
-void CompletionHandler::build_in_block(JSONArray &items, lang::sir::SymbolTable &symbol_table) {
+void CompletionHandler::build_in_block(
+    JSONArray &items,
+    lang::sir::SymbolTable &symbol_table,
+    const CompletionInfo &completion_info
+) {
     CompletionConfig config{
         .include_uses = true,
         .append_func_parameters = true,
     };
 
     build_items(config, items, symbol_table);
+
+    for (const lang::sir::Symbol &symbol : completion_info.preamble_symbols) {
+        CompletionConfig config{
+            .include_uses = false,
+            .append_func_parameters = true,
+        };
+
+        build_item(config, items, symbol.get_name(), symbol);
+    }
 }
 
 void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) {
@@ -234,12 +247,14 @@ void CompletionHandler::build_item(
 JSONObject CompletionHandler::build_item(std::string_view name, const lang::sir::FuncType &type, bool is_method) {
     std::string detail = "(";
 
-    for (int i = 0; i < type.params.size(); i++) {
-        if (!(is_method && i == 0)) {
-            detail += ReportText::to_string(type.params[i].type);
-        } else {
-            detail += "self";
-        }
+    for (unsigned i = 0; i < type.params.size(); i++) {
+        // if (!(is_method && i == 0)) {
+        //     detail += ReportText::to_string(type.params[i].type);
+        // } else {
+        //     detail += "self";
+        // }
+
+        detail += type.params[i].name.value;
 
         if (i != type.params.size() - 1) {
             detail += ", ";
