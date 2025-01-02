@@ -154,7 +154,7 @@ void ModuleManager::link_sub_module(ASTModule *mod, ASTModule *sub_mod) {
 }
 
 std::unique_ptr<std::istream> ModuleManager::open_module_file(const ModuleFile &module_file) {
-    return std::make_unique<std::ifstream>(module_file.file_path);
+    return std::make_unique<std::ifstream>(module_file.file_path, std::ios::binary);
 }
 
 ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {

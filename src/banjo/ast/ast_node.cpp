@@ -42,6 +42,7 @@ void ASTNode::append_child(ASTNode *child) {
     }
 
     last_child = child;
+    child->parent = this;
 }
 
 void ASTNode::set_range_from_children() {
