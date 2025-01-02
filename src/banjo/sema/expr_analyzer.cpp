@@ -19,6 +19,7 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
+#include <optional>
 #include <vector>
 
 namespace banjo {
@@ -1475,24 +1476,24 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
-        analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
-
         out_expr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = dot_expr.ast_node,
             .type = field->type,
             .base = lhs,
             .field_index = field->index,
         });
+
+        analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
     } else if (auto union_case = lhs_type.match_symbol<sir::UnionCase>()) {
         std::optional<unsigned> field_index = union_case->find_field(dot_expr.rhs.value);
 
         if (!field_index) {
-            // analyzer.report_generator.report_err_no_field(dot_expr.rhs, *union_case);
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *union_case);
             return Result::ERROR;
         }
 
         sir::UnionCaseField &field = union_case->fields[*field_index];
-
+        
         out_expr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = dot_expr.ast_node,
             .type = field.type,
@@ -1500,9 +1501,21 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             .field_index = *field_index,
         });
 
-        // analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
+        analyzer.add_symbol_use(dot_expr.rhs.ast_node, &field);
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
-        unsigned field_index = std::stoul(dot_expr.rhs.value);
+        std::optional<std::uint64_t> field_parsed = Utils::parse_u64(dot_expr.rhs.value);
+
+        if (!field_parsed) {
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *tuple_expr);
+            return Result::ERROR;
+        }
+
+        unsigned field_index = static_cast<unsigned>(*field_parsed);
+
+        if (field_index >= tuple_expr->exprs.size()) {
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *tuple_expr);
+            return Result::ERROR;
+        }
 
         out_expr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = dot_expr.ast_node,

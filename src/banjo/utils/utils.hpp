@@ -1,7 +1,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <cstdint>
 #include <initializer_list>
+#include <optional>
+#include <string_view>
 
 namespace banjo {
 
@@ -19,6 +22,8 @@ bool is_one_of(T value, std::initializer_list<T> candidates) {
 
     return false;
 }
+
+std::optional<std::uint64_t> parse_u64(std::string_view string);
 
 } // namespace Utils
 

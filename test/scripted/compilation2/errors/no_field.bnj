@@ -76,3 +76,34 @@ func main() {
     var pointer = &point;
     pointer.a = 2;
 }
+
+# test:subtest
+# test:error 90:15 "union case 'A' has no field named 'test'"
+
+union U {
+    case A(a: i32);
+    case B(b: i32);
+}
+
+func main() {
+    var a = U.A(0);
+    var b = a.test;
+}
+
+# test:subtest
+# test:error 99:15 "tuple '(i32, bool)' has no field named '2'"
+# test:error 100:15 "tuple '(i32, bool)' has no field named '3'"
+
+func main() {
+    var a = (5, true);
+    var b = a.2;
+    var c = a.3;
+}
+
+# test:subtest
+# test:error 108:15 "tuple '(i32, bool)' has no field named 'test'"
+
+func main() {
+    var a = (5, true);
+    var b = a.test;
+}

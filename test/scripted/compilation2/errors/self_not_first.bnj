@@ -1,0 +1,14 @@
+# test:subtest
+# test:error 5:20 "'self' must be the first parameter of the method"
+
+struct S {
+    func f(a: i32, self) {}
+}
+
+# test:subtest
+# test:error 13:20 "'self' must be the first parameter of the method"
+# test:error 13:26 "'self' must be the first parameter of the method"
+
+struct S {
+    func f(a: i32, self, self) {}
+}

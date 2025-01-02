@@ -1,0 +1,9 @@
+# test:subtest
+# test:error 4:8 "'self' parameter is only allowed inside structs, unions, and protos"
+
+func f(self) {}
+
+# test:subtest
+# test:error 9:16 "'self' parameter is only allowed inside structs, unions, and protos"
+
+func f(a: i32, self) {}

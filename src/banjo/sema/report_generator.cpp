@@ -304,6 +304,19 @@ void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, const s
     );
 }
 
+void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, const sir::UnionCase &union_case) {
+    report_error(
+        "union case '$' has no field named '$'",
+        field_ident.ast_node,
+        union_case.ident.ast_node,
+        field_ident.value
+    );
+}
+
+void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, sir::TupleExpr &tuple_expr) {
+    report_error("tuple '$' has no field named '$'", field_ident.ast_node, sir::Expr(&tuple_expr), field_ident.value);
+}
+
 void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def) {
     report_error(
         "struct '$' has no method named '$'",
@@ -444,6 +457,22 @@ void ReportGenerator::report_err_impl_type_mismatch(sir::FuncDef &func_def, sir:
     )
         .add_note("method declared here, in proto '$'", func_decl.get_ident().ast_node, proto_def.ident.value)
         .report();
+}
+
+void ReportGenerator::report_err_self_not_allowed(const sir::Param &param) {
+    report_error("'self' parameter is only allowed inside structs, unions, and protos", param.ast_node);
+}
+
+void ReportGenerator::report_err_self_not_first(const sir::Param &param) {
+    report_error("'self' must be the first parameter of the method", param.ast_node);
+}
+
+void ReportGenerator::report_err_case_outside_union(const sir::UnionCase &union_case) {
+    report_error("'case' definition outside of a 'union' definition", union_case.ast_node);
+}
+
+void ReportGenerator::report_err_func_decl_outside_proto(const sir::FuncDecl &func_decl) {
+    report_error("function declaration outside of a 'proto' definition", func_decl.ast_node);
 }
 
 void ReportGenerator::report_err_use_after_move(

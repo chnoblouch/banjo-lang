@@ -1,0 +1,13 @@
+# test:subtest
+# test:error 4:1 "function declaration outside of a 'proto' definition"
+
+func f(a: i32) -> i32;
+
+# test:subtest
+# test:error 10:5 "function declaration outside of a 'proto' definition"
+
+struct S {
+    func f(a: i32) -> i32;
+}
+
+# TODO: function declarations in function blocks?

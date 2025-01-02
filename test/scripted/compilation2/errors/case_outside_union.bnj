@@ -1,0 +1,13 @@
+# test:subtest
+# test:error 4:1 "'case' definition outside of a 'union' definition"
+
+case A(a: i32);
+
+# test:subtest
+# test:error 10:5 "'case' definition outside of a 'union' definition"
+
+struct S {
+    case A(a: i32);
+}
+
+# TODO: case declarations in function blocks?

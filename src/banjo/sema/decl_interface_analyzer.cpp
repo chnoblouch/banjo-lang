@@ -25,7 +25,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
             continue;
         }
 
-        analyze_param_type(param);
+        analyze_param(i, param);
     }
 
     ExprAnalyzer(analyzer).analyze(func_def.type.return_type);
@@ -33,11 +33,16 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
-    for (sir::Param &param : func_decl.type.params) {
-        analyze_param_type(param);
+    for (unsigned i = 0; i < func_decl.type.params.size(); i++) {
+        analyze_param(i, func_decl.type.params[i]);
     }
 
     ExprAnalyzer(analyzer).analyze(func_decl.type.return_type);
+
+    if (!analyzer.get_scope().decl.is<sir::ProtoDef>()) {
+        analyzer.report_generator.report_err_func_decl_outside_proto(func_decl);
+    }
+
     return Result::SUCCESS;
 }
 
@@ -154,14 +159,27 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
         ExprAnalyzer(analyzer).analyze(field.type);
     }
 
-    sir::UnionDef &union_def = analyzer.get_scope().decl.as<sir::UnionDef>();
-    union_def.cases.push_back(&union_case);
+    if (auto union_def = analyzer.get_scope().decl.match<sir::UnionDef>()) {
+        union_def->cases.push_back(&union_case);
+    } else {
+        analyzer.report_generator.report_err_case_outside_union(union_case);
+    }
 
     return Result::SUCCESS;
 }
 
-void DeclInterfaceAnalyzer::analyze_param_type(sir::Param &param) {
+void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
     if (param.is_self()) {
+        if (!analyzer.get_scope().decl.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
+            analyzer.report_generator.report_err_self_not_allowed(param);
+            return;
+        }
+
+        if (index != 0) {
+            analyzer.report_generator.report_err_self_not_first(param);
+            return;
+        }
+
         sir::Expr base_type = analyzer.create_expr(sir::SymbolExpr{
             .ast_node = nullptr,
             .type = nullptr,
