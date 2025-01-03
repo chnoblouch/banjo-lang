@@ -5,6 +5,7 @@
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/module_manager.hpp"
 #include "banjo/source/module_path.hpp"
@@ -32,6 +33,7 @@ struct File {
 struct CompletionInfo {
     lang::sir::Module sir_mod;
     lang::sema::CompletionContext context;
+    lang::sema::CompletionInfection infection;
     std::vector<lang::sir::Symbol> preamble_symbols;
 };
 
@@ -62,6 +64,7 @@ public:
         lang::TextPosition completion_point,
         lang::sir::Module &out_sir_mod
     );
+    void undo_infection(lang::sema::CompletionInfection &infection);
 
     File *find_file(const std::filesystem::path &fs_path);
     File *find_file(const lang::ModulePath &mod_path);

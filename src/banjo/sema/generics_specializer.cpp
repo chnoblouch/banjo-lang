@@ -57,7 +57,7 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     });
 
     generic_func_def.specializations.push_back(sir::Specialization<sir::FuncDef>{
-        .args = cloner.clone_expr_list(args),
+        .args = args,
         .def = clone,
     });
 
@@ -81,6 +81,10 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     analyzer.pop_scope();
     analyzer.cur_sir_mod = prev_mod;
 
+    if (analyzer.mode == sema::Mode::COMPLETION) {
+        analyzer.get_completion_infection().func_specializations[&generic_func_def] += 1;
+    }
+
     return clone;
 }
 
@@ -101,7 +105,7 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     });
 
     generic_struct_def.specializations.push_back(sir::Specialization<sir::StructDef>{
-        .args = cloner.clone_expr_list(args),
+        .args = args,
         .def = clone,
     });
 
@@ -128,6 +132,10 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     analyzer.pop_scope();
     analyzer.pop_scope();
     analyzer.cur_sir_mod = prev_mod;
+
+    if (analyzer.mode == sema::Mode::COMPLETION) {
+        analyzer.get_completion_infection().struct_specializations[&generic_struct_def] += 1;
+    }
 
     return clone;
 }

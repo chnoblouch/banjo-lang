@@ -61,7 +61,7 @@ ReportText &ReportText::format(ASTNode *node) {
 }
 
 ReportText &ReportText::format(const ModulePath &path) {
-    return format(path.to_string("."));
+    return format(path.to_string());
 }
 
 ReportText &ReportText::format(sir::Expr &expr) {

@@ -498,8 +498,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
 }
 
 std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
-    std::vector<Expr> clone;
-    clone.resize(exprs.size());
+    std::vector<Expr> clone(exprs.size());
 
     for (unsigned i = 0; i < exprs.size(); i++) {
         clone[i] = clone_expr(exprs[i]);

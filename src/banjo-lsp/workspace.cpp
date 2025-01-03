@@ -8,7 +8,6 @@
 #include "banjo/target/target.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -104,8 +103,23 @@ CompletionInfo Workspace::run_completion(
     return CompletionInfo{
         .sir_mod = std::move(out_sir_mod),
         .context = analyzer.get_completion_context(),
+        .infection = analyzer.get_completion_infection(),
         .preamble_symbols = preamble_symbols,
     };
+}
+
+void Workspace::undo_infection(lang::sema::CompletionInfection &infection) {
+    // HACK: Completion is 'infectious' because it may create specializations in other modules. In
+    // completion mode, these changes are recorded so they can be undone here. There has to be a
+    // better way to solve this issue...
+
+    for (auto [func_def, num_specializations] : infection.func_specializations) {
+        func_def->specializations.resize(func_def->specializations.size() - num_specializations);
+    }
+
+    for (auto [struct_def, num_specializations] : infection.struct_specializations) {
+        struct_def->specializations.resize(struct_def->specializations.size() - num_specializations);
+    }
 }
 
 File *Workspace::find_file(const std::filesystem::path &fs_path) {

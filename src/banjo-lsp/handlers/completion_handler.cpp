@@ -53,6 +53,7 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
         build_in_struct_literal(items, *in_struct_literal->struct_literal);
     }
 
+    workspace.undo_infection(completion_info.infection);
     return items;
 }
 
@@ -102,7 +103,7 @@ void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) 
 void CompletionHandler::build_in_use(JSONArray &items) {
     for (lang::ASTModule *mod : workspace.get_mod_list()) {
         if (mod->get_path().get_size() == 1) {
-            items.add(create_simple_item(mod->get_path().get_path()[0], LSPCompletionItemKind::MODULE));
+            items.add(create_simple_item(mod->get_path()[0], LSPCompletionItemKind::MODULE));
         }
     }
 }
@@ -194,7 +195,7 @@ void CompletionHandler::build_symbol_members(
 ) {
     if (auto mod = symbol.match<sir::Module>()) {
         for (const lang::ModulePath &path : workspace.list_sub_mods(mod)) {
-            items.add(create_simple_item(path.get_path().back(), LSPCompletionItemKind::MODULE));
+            items.add(create_simple_item(path[path.get_size() - 1], LSPCompletionItemKind::MODULE));
         }
     }
 

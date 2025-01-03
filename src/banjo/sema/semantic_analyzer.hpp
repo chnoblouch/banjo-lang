@@ -46,6 +46,11 @@ enum class Result {
     ERROR,
 };
 
+struct CompletionInfection {
+    std::unordered_map<sir::FuncDef *, unsigned> func_specializations;
+    std::unordered_map<sir::StructDef *, unsigned> struct_specializations;
+};
+
 class SemanticAnalyzer {
 
     // This is getting slightly out of hand...
@@ -77,6 +82,7 @@ private:
 
     ExtraAnalysis extra_analysis;
     CompletionContext completion_context;
+    CompletionInfection completion_infection;
 
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
@@ -101,6 +107,7 @@ public:
 
     ExtraAnalysis &get_extra_analysis() { return extra_analysis; }
     CompletionContext &get_completion_context() { return completion_context; }
+    CompletionInfection &get_completion_infection() { return completion_infection; }
     const std::unordered_map<std::string_view, sir::Symbol> &get_preamble_symbols() { return preamble_symbols; }
 
 private:

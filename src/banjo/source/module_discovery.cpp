@@ -1,6 +1,8 @@
 #include "module_discovery.hpp"
 
+#include <algorithm>
 #include <filesystem>
+#include <random>
 
 namespace banjo {
 
@@ -21,7 +23,15 @@ void ModuleDiscovery::find_modules(
     const ModulePath &prefix,
     std::vector<ModuleTreeNode> &modules
 ) {
+    std::vector<std::filesystem::path> file_paths;
+
     for (std::filesystem::path file_path : std::filesystem::directory_iterator(directory)) {
+        file_paths.push_back(file_path);
+    }
+
+    std::reverse(file_paths.begin(), file_paths.end());
+
+    for (std::filesystem::path file_path : file_paths) {
         if (file_path.extension() == ".bnj" && file_path.stem() != "module") {
             modules.push_back(node_from_file(file_path, prefix));
         } else if (std::filesystem::is_directory(file_path)) {
@@ -36,7 +46,7 @@ void ModuleDiscovery::find_modules(
 
 ModuleTreeNode ModuleDiscovery::node_from_file(const std::filesystem::path &file_path, const ModulePath &prefix) {
     ModulePath path{prefix};
-    path.append(ModulePath{file_path.stem().string()});
+    path.append(file_path.stem().string());
 
     ModuleFile file = {
         .path = std::move(path),
@@ -51,7 +61,7 @@ ModuleTreeNode ModuleDiscovery::node_from_file(const std::filesystem::path &file
 
 ModuleTreeNode ModuleDiscovery::node_from_dir(const std::filesystem::path &dir_path, const ModulePath &prefix) {
     ModulePath path{prefix};
-    path.append(ModulePath{dir_path.filename().string()});
+    path.append(dir_path.filename().string());
 
     ModuleFile file = {
         .path = std::move(path),
@@ -113,7 +123,7 @@ std::vector<ModulePath> ModuleDiscovery::find_sub_modules(const ModuleFile &modu
             }
 
             ModulePath sub_module_path(module_file.path);
-            sub_module_path.append(entry_file_name.substr(0, entry_file_name.length() - 4));
+            sub_module_path.append(entry_file_path.stem().string());
             sub_paths.push_back(sub_module_path);
         }
     }
