@@ -24,6 +24,30 @@ LargeInt::LargeInt(int value) {
 
 LargeInt::LargeInt(unsigned value) : magnitude(value), negative(false) {}
 
+LargeInt::LargeInt(long value) {
+    if (value >= 0) {
+        magnitude = value;
+        negative = false;
+    } else {
+        magnitude = -value;
+        negative = true;
+    }
+}
+
+LargeInt::LargeInt(unsigned long value) : magnitude(value), negative(false) {}
+
+LargeInt::LargeInt(long long value) {
+    if (value >= 0) {
+        magnitude = value;
+        negative = false;
+    } else {
+        magnitude = -value;
+        negative = true;
+    }
+}
+
+LargeInt::LargeInt(unsigned long long value) : magnitude(value), negative(false) {}
+
 LargeInt::LargeInt(const std::string &string) : LargeInt(std::string_view{string}) {}
 
 LargeInt::LargeInt(const char *string) : LargeInt(std::string_view{string}) {}

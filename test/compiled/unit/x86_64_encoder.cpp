@@ -124,11 +124,11 @@ Operand rcx(unsigned size) {
 }
 
 Operand imm(unsigned size) {
-    if (size == 1) return Operand::from_immediate("100", size);
-    else if (size == 2) return Operand::from_immediate("1000", size);
-    else if (size == 4) return Operand::from_immediate("100000", size);
-    else if (size == 8) return Operand::from_immediate("10000000000", size);
-    else return Operand::from_immediate("0", size);
+    if (size == 1) return Operand::from_int_immediate(100, size);
+    else if (size == 2) return Operand::from_int_immediate(1000, size);
+    else if (size == 4) return Operand::from_int_immediate(100000, size);
+    else if (size == 8) return Operand::from_int_immediate(10000000000, size);
+    else return Operand::from_int_immediate(0, size);
 }
 
 void test(Opcode opcode) {
@@ -229,11 +229,11 @@ void test_movzx() {
 
 void test_shift(Opcode opcode) {
     for (unsigned size : SIZES) {
-        assemble_instr({opcode, {random_gp_reg(size), Operand::from_immediate("1", 1)}});
+        assemble_instr({opcode, {random_gp_reg(size), Operand::from_int_immediate(1, 1)}});
         assemble_instr({opcode, {random_gp_reg(size), rcx(1)}});
         assemble_instr({opcode, {random_gp_reg(size), imm(1)}});
 
-        assemble_instr({opcode, {random_addr(size), Operand::from_immediate("1", 1)}});
+        assemble_instr({opcode, {random_addr(size), Operand::from_int_immediate(1, 1)}});
         assemble_instr({opcode, {random_addr(size), rcx(1)}});
         assemble_instr({opcode, {random_addr(size), imm(1)}});
     }

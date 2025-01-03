@@ -202,7 +202,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
         AArch64Opcode::SUB,
         {mcode::Operand::from_register(sp, 8),
          mcode::Operand::from_register(sp, 8),
-         mcode::Operand::from_immediate(std::to_string(size))},
+         mcode::Operand::from_int_immediate(size)},
         mcode::Instruction::FLAG_ALLOCA
     ));
 
@@ -244,7 +244,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
         prolog.push_back(mcode::Instruction(AArch64Opcode::SUB, {
             mcode::Operand::from_register(sp, 8),
             mcode::Operand::from_register(sp, 8),
-            mcode::Operand::from_immediate(std::to_string(size))
+            mcode::Operand::from_int_immediate(size)
         }, mcode::Instruction::FLAG_ALLOCA));
     }
 
@@ -264,7 +264,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
         AArch64Opcode::ADD,
         {mcode::Operand::from_register(sp, 8),
          mcode::Operand::from_register(sp, 8),
-         mcode::Operand::from_immediate(std::to_string(size))}
+         mcode::Operand::from_int_immediate(size)}
     ));
 
     epilog.push_back(mcode::Instruction(
@@ -272,7 +272,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
         {mcode::Operand::from_register(fp, 8),
          mcode::Operand::from_register(lr, 8),
          mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
-         mcode::Operand::from_immediate("16")}
+         mcode::Operand::from_int_immediate(16)}
     ));
 
     std::vector<long> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
@@ -287,7 +287,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
             AArch64Opcode::LDR,
             {mcode::Operand::from_register(mcode::Register::from_physical(modified_reg), 8),
              mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
-             mcode::Operand::from_immediate("16")}
+             mcode::Operand::from_int_immediate(16)}
         ));
     }
 
@@ -300,7 +300,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
                 mcode::Operand::from_register(fp, 8),
                 mcode::Operand::from_register(lr, 8),
                 mcode::Operand::from_aarch64_addr(addr),
-                mcode::Operand::from_immediate(std::to_string(offset))
+                mcode::Operand::from_int_immediate(offset)
             })
         };
     } else {
@@ -308,13 +308,13 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
             mcode::Instruction(AArch64Opcode::ADD, {
                 mcode::Operand::from_register(sp, 8),
                 mcode::Operand::from_register(sp, 8),
-                mcode::Operand::from_immediate(std::to_string(size))
+                mcode::Operand::from_int_immediate(size)
             }),
             mcode::Instruction(AArch64Opcode::LDP, {
                 mcode::Operand::from_register(fp, 8),
                 mcode::Operand::from_register(lr, 8),
                 mcode::Operand::from_aarch64_addr(addr),
-                mcode::Operand::from_immediate(std::to_string(32))
+                mcode::Operand::from_int_immediate(32)
             })
         };
     }
@@ -349,7 +349,7 @@ mcode::InstrIter AAPCSCallingConv::fix_up_instr(
         mcode::Instruction(
             target::AArch64Opcode::MOV,
             {mcode::Operand::from_register(mcode::Register::from_physical(-1), 8),
-             mcode::Operand::from_immediate(std::to_string(offset), 8)}
+             mcode::Operand::from_int_immediate(offset, 8)}
         )
     );
 

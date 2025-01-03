@@ -81,7 +81,7 @@ void AArch64InstrMergePass::try_merge_str(mcode::Instruction &instr, RegUsageMap
 }
 
 void AArch64InstrMergePass::try_merge_add(mcode::Instruction &instr, RegUsageMap &usages) {
-    if (!instr.get_operand(1).is_virtual_reg() || !instr.get_operand(2).is_immediate()) {
+    if (!instr.get_operand(1).is_virtual_reg() || !instr.get_operand(2).is_int_immediate()) {
         return;
     }
 
@@ -93,7 +93,7 @@ void AArch64InstrMergePass::try_merge_add(mcode::Instruction &instr, RegUsageMap
     }
 
     mcode::Operand::StackSlotOffset new_offset = producer.get_operand(2).get_stack_slot_offset();
-    new_offset.additional_offset += std::stoi(instr.get_operand(2).get_immediate());
+    new_offset.additional_offset += instr.get_operand(2).get_int_immediate().to_s32();
 
     int size = instr.get_operand(2).get_size();
     instr.get_operand(1) = producer.get_operand(1);
@@ -107,9 +107,9 @@ AArch64Address AArch64InstrMergePass::try_merge_addr(const AArch64Address &addr,
 
     if (addr.get_type() == AArch64Address::Type::BASE && addr.get_base().is_virtual_reg()) {
         if (producer.get_opcode() == AArch64Opcode::ADD) {
-            if (producer.get_operand(2).is_immediate()) {
+            if (producer.get_operand(2).is_int_immediate()) {
                 mcode::Register new_base = producer.get_operand(1).get_register();
-                int new_offset = std::stoi(producer.get_operand(2).get_immediate());
+                int new_offset = producer.get_operand(2).get_int_immediate().to_s32();
                 auto new_addr = AArch64Address::new_base_offset(new_base, new_offset);
 
                 producer_usage.num_consumers--;

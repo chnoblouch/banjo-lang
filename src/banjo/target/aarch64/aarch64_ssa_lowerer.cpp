@@ -495,13 +495,12 @@ mcode::Value AArch64SSALowerer::move_int_into_register(LargeInt value, int size)
 
     // Zero can be moved directly without decomposing because MOVN sets the upper bits to zero.
     if(bits == 0) {
-        emit(mcode::Instruction(AArch64Opcode::MOV, {result, mcode::Operand::from_immediate("0")}));
+        emit(mcode::Instruction(AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(0)}));
         return result;
     }
 
     if(size == 1 || size == 2) {
-        std::string imm = std::to_string(bits);
-        emit(mcode::Instruction(AArch64Opcode::MOV, {result, mcode::Operand::from_immediate(imm)}));
+        emit(mcode::Instruction(AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(bits)}));
     } else if(size == 4) {
         std::uint16_t elements[2];
         AArch64Immediate::decompose_u32_u16(bits, elements);
@@ -518,12 +517,11 @@ mcode::Value AArch64SSALowerer::move_int_into_register(LargeInt value, int size)
 }
 
 mcode::Value AArch64SSALowerer::move_float_into_register(double value, int size) {
-    std::string immediate = std::to_string(value);
     mcode::Value result = create_temp_value(size);
 
     // Emit FMOV if the value can be represented using 8 bits.
     if(AArch64Immediate::is_float_encodable(value)) {
-        emit(mcode::Instruction(AArch64Opcode::FMOV, {result, mcode::Operand::from_immediate(immediate)}));
+        emit(mcode::Instruction(AArch64Opcode::FMOV, {result, mcode::Operand::from_fp_immediate(value)}));
         return result;
     }
 
@@ -575,7 +573,7 @@ void AArch64SSALowerer::move_elements_into_register(mcode::Value value, std::uin
         int element = elements[non_zero_element_index];
         emit(mcode::Instruction(AArch64Opcode::MOVZ, {
             value,
-            mcode::Operand::from_immediate(std::to_string(element)),
+            mcode::Operand::from_int_immediate(element),
             mcode::Operand::from_aarch64_left_shift(16 * non_zero_element_index)
         }));
         return;
@@ -584,7 +582,7 @@ void AArch64SSALowerer::move_elements_into_register(mcode::Value value, std::uin
     // Move the lower 16 bits and set all other bits to zero.
     emit(mcode::Instruction(AArch64Opcode::MOVZ, {
         value,
-        mcode::Operand::from_immediate(std::to_string(elements[0]))
+        mcode::Operand::from_int_immediate(elements[0])
     }));
 
     for(int i = 0; i < count; i++) {
@@ -598,7 +596,7 @@ void AArch64SSALowerer::move_elements_into_register(mcode::Value value, std::uin
         // Set the bits by shifting the value by 16 * index to the left and moving them.
         emit(mcode::Instruction(AArch64Opcode::MOVK, {
             value,
-            mcode::Operand::from_immediate(std::to_string(element)),
+            mcode::Operand::from_int_immediate(element),
             mcode::Operand::from_aarch64_left_shift(16 * i)
         }));
     }
@@ -640,7 +638,7 @@ void AArch64SSALowerer::calculate_address(mcode::Register dst, Address addr) {
         else {
             mcode::Register scale_reg = lower_reg(get_func().next_virtual_reg());
             mcode::Operand scale_val = mcode::Operand::from_register(scale_reg, 8);
-            mcode::Operand imm_val = mcode::Operand::from_immediate(std::to_string(addr.reg_scale), 8);
+            mcode::Operand imm_val = mcode::Operand::from_int_immediate(addr.reg_scale, 8);
 
             emit(mcode::Instruction(AArch64Opcode::MOV, {scale_val, imm_val}));
             emit(mcode::Instruction(AArch64Opcode::MUL, {offset, offset, scale_val}));
@@ -649,7 +647,7 @@ void AArch64SSALowerer::calculate_address(mcode::Register dst, Address addr) {
         auto shift = mcode::Operand::from_aarch64_left_shift(shift_amount);
         emit(mcode::Instruction(AArch64Opcode::ADD, {dst_operand, addr.base, offset, shift}));
     } else if(addr.imm_offset >= 0 && addr.imm_offset < 4096) {
-        auto offset = mcode::Operand::from_immediate(std::to_string(addr.imm_offset), 8);
+        auto offset = mcode::Operand::from_int_immediate(addr.imm_offset, 8);
         emit(mcode::Instruction(AArch64Opcode::ADD, {dst_operand, addr.base, offset}));
     } else {
         mcode::Value offset = move_int_into_register(LargeInt{addr.imm_offset}, 8);

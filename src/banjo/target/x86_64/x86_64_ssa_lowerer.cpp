@@ -164,7 +164,7 @@ void X8664SSALowerer::lower_store(ssa::Instruction& instr) {
 
     if (instr.get_operand(0).is_immediate() && type.is_primitive(ssa::Primitive::F32) && (dst.is_addr() || dst.is_stack_slot())) {
         float val = (float)instr.get_operand(0).get_fp_immediate();
-        mcode::Operand src = mcode::Operand::from_immediate(std::to_string(BitOperations::get_bits_32(val)), 4);
+        mcode::Operand src = mcode::Operand::from_int_immediate(BitOperations::get_bits_32(val), 4);
         dst.set_size(src.get_size());
         m_instr = mcode::Instruction(X8664Opcode::MOV, {dst, src});
     } else {
@@ -791,7 +791,7 @@ void X8664SSALowerer::emit_shift(ssa::Instruction &instr, mcode::Opcode opcode) 
     mcode::Operand op1;
 
     if (instr.get_operand(1).is_int_immediate()) {
-        op1 = mcode::Operand::from_immediate(instr.get_operand(1).get_int_immediate().to_string(), 1);
+        op1 = mcode::Operand::from_int_immediate(instr.get_operand(1).get_int_immediate(), 1);
     } else {
         mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
         mcode::Operand rcx8 = mcode::Operand::from_register(rcx, 8);
@@ -839,7 +839,7 @@ mcode::Operand X8664SSALowerer::lower_int_imm_as_move(mcode::Operand m_dst, Larg
         return m_dst;
     }
 
-    mcode::Operand m_src = mcode::Operand::from_immediate(value.to_string(), m_dst.get_size());
+    mcode::Operand m_src = mcode::Operand::from_int_immediate(value, m_dst.get_size());
     emit({X8664Opcode::MOV, {m_dst, m_src}});
     return m_dst;
 }
@@ -919,24 +919,25 @@ mcode::Operand X8664SSALowerer::lower_as_operand(const ssa::Value &value, ValueL
 }
 
 mcode::Operand X8664SSALowerer::lower_int_imm_as_operand(LargeInt value, unsigned size) {
-    // Integer immediates that are larger than 32 bits cannot be encoded as an operand, so move them into a register
-    // using an extra `MOV` instruction.
+    // Integer immediates that are larger than 32 bits cannot be encoded as an operand, so move them
+    // into a register using an extra `MOV` instruction.
     if (size == 8 && value.to_bits() >= (1ull << 32)) {
         mcode::Register m_reg = mcode::Register::from_virtual(get_func().next_virtual_reg());
         mcode::Operand m_dst = mcode::Operand::from_register(m_reg, 8);
-        mcode::Operand m_src = mcode::Operand::from_immediate(value.to_string(), 8);
+        mcode::Operand m_src = mcode::Operand::from_int_immediate(value, 8);
         emit({X8664Opcode::MOV, {m_dst, m_src}});
         return m_dst;
     }
 
-    return mcode::Operand::from_immediate(value.to_string(), size);
+    return mcode::Operand::from_int_immediate(value, size);
 }
 
 mcode::Operand X8664SSALowerer::lower_fp_imm_as_operand(double value, unsigned size) {
     mcode::Register m_reg = mcode::Register::from_virtual(get_func().next_virtual_reg());
     mcode::Operand m_dst = mcode::Operand::from_register(m_reg, size);
 
-    // Use `XORP[S,D] dst, dst` to generate a zero floating-point number so we don't have to load it from memory.
+    // Use `XORP[S,D] dst, dst` to generate a zero floating-point number so we don't have to load it
+    // from memory.
     if (value == 0.0) {
         mcode::Opcode m_opcode = size == 4 ? X8664Opcode::XORPS : X8664Opcode::XORPD;
         emit({m_opcode, {m_dst, m_dst}});
@@ -967,8 +968,8 @@ mcode::Operand X8664SSALowerer::lower_reg_as_operand(
     if (flags.allow_addrs) {
         ssa::InstrIter producer = get_producer(src_reg);
 
-        // If this register was produced by a load, use the loaded value directly instead of first loading it into a
-        // register.
+        // If this register was produced by a load, use the loaded value directly instead of first
+        // loading it into a register.
         if (producer->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*producer->get_dest()) == 1) {
             mcode::Operand m_load_dst = lower_address(producer->get_operand(1));
             discard_use(*producer->get_dest());
@@ -985,8 +986,8 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
     mcode::Relocation reloc = mcode::Relocation::NONE;
     if (target->get_descr().is_unix()) {
         if (value.is_extern_func()) {
-            // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to not use it?
-            // Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592
+            // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to not
+            // use it? Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592
             reloc = mcode::Relocation::PLT;
         } else if (value.is_extern_global()) {
             reloc = mcode::Relocation::GOT;

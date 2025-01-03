@@ -19,9 +19,13 @@ public:
     LargeInt(std::uint64_t magnitude, bool negative);
     LargeInt(int value);
     LargeInt(unsigned value);
-    LargeInt(const std::string &string);
-    LargeInt(const char *string);
-    LargeInt(std::string_view string);
+    LargeInt(long value);
+    LargeInt(unsigned long value);
+    LargeInt(long long value);
+    LargeInt(unsigned long long value);
+    explicit LargeInt(const std::string &string);
+    explicit LargeInt(const char *string);
+    explicit LargeInt(std::string_view string);
 
     std::uint64_t get_magnitude() { return magnitude; }
     bool is_negative() { return negative; }

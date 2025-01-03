@@ -274,7 +274,7 @@ void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction 
 }
 
 std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand) {
-    if (operand.is_immediate()) return operand.get_immediate();
+    if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
     else if (operand.is_register()) return get_reg_name(basic_block, operand.get_register(), operand.get_size());
     else if (operand.is_symbol()) return gen_symbol(operand.get_symbol());
     else if (operand.is_label()) return operand.get_label();

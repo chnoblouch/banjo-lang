@@ -212,7 +212,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
     prolog.push_back(mcode::Instruction(
         X8664Opcode::SUB,
         {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-         mcode::Operand::from_immediate(std::to_string(func->get_stack_frame().get_size()))},
+         mcode::Operand::from_int_immediate(func->get_stack_frame().get_size())},
         mcode::Instruction::FLAG_ALLOCA
     ));
 
@@ -261,7 +261,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
     epilog.push_back(mcode::Instruction(
         X8664Opcode::ADD,
         {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-         mcode::Operand::from_immediate(std::to_string(func->get_stack_frame().get_size()))}
+         mcode::Operand::from_int_immediate(func->get_stack_frame().get_size())}
     ));
 
     // Pop frame pointer.

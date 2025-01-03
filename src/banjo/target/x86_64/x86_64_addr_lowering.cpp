@@ -74,7 +74,6 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &
         unsigned scale = addr.get_scale();
 
         if (scale != 1 && scale != 2 && scale != 4 && scale != 8) {
-            std::string scale_str = std::to_string(addr.get_scale());
             mcode::Register offset_reg = lowerer.lower_reg(lowerer.get_func().next_virtual_reg());
             mcode::Register tmp_reg = lowerer.lower_reg(lowerer.get_func().next_virtual_reg());
 
@@ -97,7 +96,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &
 
             lowerer.emit(mcode::Instruction(
                 X8664Opcode::IMUL,
-                {mcode::Operand::from_register(offset_reg, 8), mcode::Operand::from_immediate(scale_str)}
+                {mcode::Operand::from_register(offset_reg, 8), mcode::Operand::from_int_immediate(addr.get_scale())}
             ));
 
             lowerer.emit(mcode::Instruction(

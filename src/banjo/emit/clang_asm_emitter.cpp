@@ -162,7 +162,8 @@ void ClangAsmEmitter::emit_instr(mcode::Function *func, mcode::Instruction &inst
 }
 
 void ClangAsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand &operand) {
-    if (operand.is_immediate()) stream << "#" << operand.get_immediate();
+    if (operand.is_int_immediate()) stream << "#" << operand.get_int_immediate();
+    else if (operand.is_fp_immediate()) stream << "#" << operand.get_fp_immediate();
     else if (operand.is_physical_reg()) emit_reg(operand.get_physical_reg(), operand.get_size());
     else if (operand.is_stack_slot()) emit_stack_slot(func, operand.get_stack_slot());
     else if (operand.is_symbol()) emit_symbol(operand.get_symbol());

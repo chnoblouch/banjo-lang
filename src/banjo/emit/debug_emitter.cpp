@@ -205,7 +205,8 @@ std::string DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
 }
 
 std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand, int instr_index) {
-    if (operand.is_immediate()) return operand.get_immediate();
+    if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
+    else if (operand.is_fp_immediate()) return std::to_string(operand.get_fp_immediate());
     else if (operand.is_register())
         return get_reg_name(basic_block, operand.get_register(), operand.get_size(), instr_index);
     else if (operand.is_symbol()) return operand.get_symbol().name;

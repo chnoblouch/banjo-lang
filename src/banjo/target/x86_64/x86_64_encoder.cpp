@@ -1211,9 +1211,9 @@ X8664Encoder::RegCode X8664Encoder::reg(mcode::Operand &operand) {
 }
 
 X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
-    if (operand.is_immediate()) {
+    if (operand.is_int_immediate()) {
         return Immediate{
-            .value = LargeInt(operand.get_immediate()).to_bits(),
+            .value = operand.get_int_immediate().to_bits(),
             .symbol_index = -1,
         };
     } else if (operand.is_symbol()) {
@@ -1287,7 +1287,7 @@ bool X8664Encoder::is_reg(mcode::Operand &operand) {
 }
 
 bool X8664Encoder::is_imm(mcode::Operand &operand) {
-    return operand.is_immediate() || operand.is_symbol();
+    return operand.is_int_immediate() || operand.is_symbol();
 }
 
 bool X8664Encoder::is_addr(mcode::Operand &operand) {

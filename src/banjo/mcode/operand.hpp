@@ -5,6 +5,7 @@
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
+#include "banjo/utils/large_int.hpp"
 
 #include <string>
 #include <variant>
@@ -32,11 +33,8 @@ struct Symbol {
     Directive directive;
 
     Symbol(std::string name) : name(name), reloc(Relocation::NONE), directive(Directive::NONE) {}
-
     Symbol(std::string name, Relocation reloc) : name(name), reloc(reloc), directive(Directive::NONE) {}
-
     Symbol(std::string name, Directive directive) : name(name), reloc(Relocation::NONE), directive(directive) {}
-
     Symbol(std::string name, Relocation reloc, Directive directive) : name(name), reloc(reloc), directive(directive) {}
 
     friend bool operator==(const Symbol &lhs, const Symbol &rhs) {
@@ -62,7 +60,7 @@ public:
 
 private:
     std::variant<
-        std::string,
+        LargeInt,
         double,
         Register,
         Symbol,
@@ -77,16 +75,16 @@ private:
     int size;
 
 public:
-    static Operand from_immediate(std::string immediate, int size = 0) {
+    static Operand from_int_immediate(LargeInt immediate, int size = 0) {
         Operand operand;
-        operand.set_to_immediate(immediate);
+        operand.set_to_int_immediate(immediate);
         operand.set_size(size);
         return operand;
     }
 
-    static Operand from_fp(float fp, int size = 0) {
+    static Operand from_fp_immediate(double immediate, int size = 0) {
         Operand operand;
-        operand.set_to_fp(fp);
+        operand.set_to_fp_immediate(immediate);
         operand.set_size(size);
         return operand;
     }
@@ -156,8 +154,8 @@ public:
 
     Operand() : value{std::in_place_index<0>, "???"}, size(0) {};
 
-    bool is_immediate() const { return value.index() == 0; }
-    bool is_fp() const { return value.index() == 1; }
+    bool is_int_immediate() const { return value.index() == 0; }
+    bool is_fp_immediate() const { return value.index() == 1; }
     bool is_register() const { return value.index() == 2; }
     bool is_symbol() const { return value.index() == 3; }
     bool is_label() const { return value.index() == 4; }
@@ -172,8 +170,8 @@ public:
     bool is_physical_reg() const { return is_register() && get_register().is_physical_reg(); }
     bool is_stack_slot() const { return is_register() && get_register().is_stack_slot(); }
 
-    std::string get_immediate() const { return std::get<0>(value); }
-    double get_fp() const { return std::get<1>(value); }
+    LargeInt get_int_immediate() const { return std::get<0>(value); }
+    double get_fp_immediate() const { return std::get<1>(value); }
     Register get_register() const { return std::get<2>(value); }
     Symbol get_symbol() const { return std::get<3>(value); }
     std::string get_label() const { return std::get<4>(value); }
@@ -188,8 +186,8 @@ public:
     PhysicalReg get_physical_reg() const { return get_register().get_physical_reg(); }
     long get_stack_slot() const { return get_register().get_stack_slot(); }
 
-    void set_to_immediate(std::string immediate) { value.emplace<0>(immediate); }
-    void set_to_fp(double fp) { value.emplace<1>(fp); }
+    void set_to_int_immediate(LargeInt immediate) { value.emplace<0>(immediate); }
+    void set_to_fp_immediate(double immediate) { value.emplace<1>(immediate); }
     void set_to_register(Register reg) { value.emplace<2>(reg); }
     void set_to_symbol(Symbol symbol) { value.emplace<3>(symbol); }
     void set_to_label(std::string label) { value.emplace<4>(label); }
