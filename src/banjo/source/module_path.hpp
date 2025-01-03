@@ -4,7 +4,6 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace banjo {
 
@@ -12,23 +11,39 @@ namespace lang {
 
 class ModulePath {
 
+public:
+    class Iterator {
+
+    private:
+        std::string_view value;
+        unsigned index;
+
+    public:
+        Iterator(std::string_view value, unsigned index);
+        std::string_view operator*() const;
+        Iterator &operator++();
+        bool operator==(const Iterator &other) const;
+        bool operator!=(const Iterator &other) const;
+    };
+
 private:
-    std::vector<std::string> path;
+    std::string value;
 
 public:
     ModulePath();
     ModulePath(std::initializer_list<std::string> elements);
 
-    void append(std::string element);
+    void append(std::string_view element);
     unsigned get_size() const;
     bool is_empty() const;
-    std::string to_string(const std::string &delimiter = ".") const;
+    std::string_view to_string() const;
+    std::string to_string(std::string_view delimiter) const;
 
-    std::vector<std::string>::const_iterator begin() const { return path.begin(); }
-    std::vector<std::string>::const_iterator end() const { return path.end(); }
+    Iterator begin() const { return Iterator(value, 0); }
+    Iterator end() const { return Iterator(value, value.size()); }
 
-    std::string_view operator[](unsigned index) const { return path[index]; }
-    friend bool operator==(const ModulePath &lhs, const ModulePath &right) { return lhs.path == right.path; }
+    std::string_view operator[](unsigned index) const;
+    friend bool operator==(const ModulePath &lhs, const ModulePath &right) { return lhs.value == right.value; }
     friend bool operator!=(const ModulePath &rhs, const ModulePath &right) { return !(rhs == right); }
 };
 
@@ -39,11 +54,7 @@ public:
 template <>
 struct std::hash<banjo::lang::ModulePath> {
     std::size_t operator()(const banjo::lang::ModulePath &path) const noexcept {
-        std::size_t hash = 0;
-        for (const std::string &element : path) {
-            hash ^= std::hash<std::string>()(element);
-        }
-        return hash;
+        return std::hash<std::string_view>{}(path.to_string());
     }
 };
 

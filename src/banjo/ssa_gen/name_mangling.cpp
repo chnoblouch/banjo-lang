@@ -77,7 +77,7 @@ static void mangle_symbol_name(std::string &string, sir::Symbol symbol) {
     mangle_symbol_name(string, symbol.get_parent());
 
     if (auto mod = symbol.match<sir::Module>()) {
-        for (const std::string &path_component : mod->path) {
+        for (std::string_view path_component : mod->path) {
             string += 'm';
             string += std::to_string(path_component.size());
             string += path_component;

@@ -325,7 +325,7 @@ Ident &Symbol::get_ident() {
 
 std::string Symbol::get_name() const {
     if (auto mod = match<Module>()) {
-        return mod->path.to_string();
+        return std::string(mod->path.to_string());
     } else {
         return get_ident().value;
     }
