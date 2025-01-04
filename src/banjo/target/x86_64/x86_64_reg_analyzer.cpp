@@ -1,8 +1,8 @@
 #include "x86_64_reg_analyzer.hpp"
 
-#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/operand.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -130,6 +130,10 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
 
             prev = prev.get_prev();
         }
+
+        // TODO: Move this into the calling convention.
+        operands.push_back({mcode::Register::from_physical(X8664Register::RAX), mcode::RegUsage::DEF});
+        operands.push_back({mcode::Register::from_physical(X8664Register::XMM0), mcode::RegUsage::DEF});
     }
 
     switch (instr.get_opcode()) {

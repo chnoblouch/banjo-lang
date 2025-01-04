@@ -87,11 +87,7 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
         }
     }
 
-    mcode::InstrIter iter =
-        lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL));
-
-    iter->add_reg_op(X8664Register::RAX, mcode::RegUsage::DEF);
-    iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);
+    lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL));
 }
 
 void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {

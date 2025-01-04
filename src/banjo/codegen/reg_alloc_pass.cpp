@@ -104,10 +104,12 @@ std::vector<RegAllocInstr> RegAllocPass::collect_instrs(mcode::BasicBlock &basic
     unsigned index = 0;
 
     for (mcode::InstrIter iter = basic_block.begin(); iter != basic_block.end(); ++iter) {
-        std::vector<mcode::RegOp> regs = analyzer.get_operands(iter, basic_block);
-        regs.insert(regs.end(), iter->get_reg_ops().begin(), iter->get_reg_ops().end());
-
-        instrs[index] = RegAllocInstr{.index = index, .iter = iter, .regs = std::move(regs)};
+        instrs[index] = RegAllocInstr{
+            .index = index,
+            .iter = iter,
+            .regs = analyzer.get_operands(iter, basic_block),
+        };
+        
         index += 1;
     }
 

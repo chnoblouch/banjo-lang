@@ -114,11 +114,7 @@ void MSABICallingConv::emit_call(const ssa::Operand &func_operand, codegen::SSAL
         }
     }
 
-    mcode::InstrIter iter =
-        lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL));
-
-    iter->add_reg_op(X8664Register::RAX, mcode::RegUsage::DEF);
-    iter->add_reg_op(X8664Register::XMM0, mcode::RegUsage::DEF);
+    lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL));
 }
 
 void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer) {

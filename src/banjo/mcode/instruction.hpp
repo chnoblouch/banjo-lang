@@ -45,7 +45,6 @@ public:
 private:
     Opcode opcode;
     OperandList operands;
-    std::vector<RegOp> reg_ops;
     unsigned flags = 0;
 
 public:
@@ -66,13 +65,6 @@ public:
 
     Operand &get_dest() { return operands[0]; }
     bool has_dest() { return operands.get_size() > 0; }
-    void set_dest(Operand dest) { operands[0] = dest; }
-
-    void add_reg_op(PhysicalReg reg, RegUsage usage) {
-        reg_ops.push_back(RegOp{.reg = Register::from_physical(reg), .usage = usage});
-    }
-
-    std::vector<RegOp> &get_reg_ops() { return reg_ops; }
 
     unsigned get_flags() { return flags; }
     bool is_flag(unsigned flag) { return flags & flag; }
