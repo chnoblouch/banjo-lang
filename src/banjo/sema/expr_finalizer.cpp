@@ -3,7 +3,8 @@
 #include "banjo/sema/generics_specializer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
-#include "banjo/utils/macros.hpp"
+
+#include <unordered_map>
 
 namespace banjo {
 
@@ -688,7 +689,14 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    sir::StructDef &struct_def = struct_literal.type.as<sir::SymbolExpr>().symbol.as<sir::StructDef>();
+    sir::StructDef &struct_def = struct_literal.type.as_symbol<sir::StructDef>();
+    bool is_layout_overlapping = struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING;
+
+    if (is_layout_overlapping && struct_literal.entries.size() != 1) {
+        analyzer.report_generator.report_err_struct_overlapping_not_one_field(struct_literal);
+    }
+
+    std::unordered_map<sir::StructField *, sir::StructLiteralEntry *> initialized_fields;
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
         for (sir::StructField *field : struct_def.fields) {
@@ -703,12 +711,29 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
             continue;
         }
 
+        if (!is_layout_overlapping) {
+            auto prev_init = initialized_fields.find(entry.field);
+            if (prev_init != initialized_fields.end()) {
+                analyzer.report_generator.report_err_duplicate_field(struct_literal, entry, *prev_init->second);
+            }
+
+            initialized_fields.insert({entry.field, &entry});
+        }
+
         partial_result = finalize_by_coercion(entry.value, entry.field->type);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
 
         analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
+    }
+
+    if (!is_layout_overlapping) {
+        for (sir::StructField *field : struct_def.fields) {
+            if (!initialized_fields.contains(field)) {
+                analyzer.report_generator.report_err_missing_field(struct_literal, *field);
+            }
+        }
     }
 
     return result;

@@ -87,6 +87,15 @@ public:
     void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
     void report_err_no_field(const sir::Ident &field_ident, const sir::UnionCase &union_case);
     void report_err_no_field(const sir::Ident &field_ident, sir::TupleExpr &tuple_expr);
+    void report_err_missing_field(const sir::StructLiteral &struct_literal, const sir::StructField &field);
+
+    void report_err_duplicate_field(
+        const sir::StructLiteral &struct_literal,
+        const sir::StructLiteralEntry &entry,
+        const sir::StructLiteralEntry &previous_entry
+    );
+
+    void report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal);
     void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);
     void report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set);
     void report_err_continue_outside_loop(const sir::ContinueStmt &continue_stmt);
@@ -115,11 +124,12 @@ public:
     void report_err_expected_proto(const sir::Expr &expr);
     void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::ProtoFuncDecl &func_decl);
     void report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::ProtoFuncDecl &func_decl);
-    
+
     void report_err_self_not_allowed(const sir::Param &param);
     void report_err_self_not_first(const sir::Param &param);
     void report_err_case_outside_union(const sir::UnionCase &union_case);
     void report_err_func_decl_outside_proto(const sir::FuncDecl &func_decl);
+    void report_err_struct_overlapping_no_fields(const sir::StructDef &struct_def);
 
     void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
     void report_err_move_out_pointer(const sir::Expr &move);

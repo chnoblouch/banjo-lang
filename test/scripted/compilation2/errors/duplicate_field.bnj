@@ -1,0 +1,45 @@
+# test:common
+
+struct S {
+    var a: i32;
+    var b: i32;
+}
+
+# test:subtest
+# test:error 16:9 "more than one value specified for field 'b' of struct 'S'"
+# test:note 15:9 "value first specified here"
+
+func main() {
+    var s = S {
+        a: 0,
+        b: 1,
+        b: 2,
+    };
+}
+
+# test:subtest
+# test:error 28:9 "more than one value specified for field 'b' of struct 'S'"
+# test:note 27:9 "value first specified here"
+
+func main() {
+    var s: S = {
+        a: 0,
+        b: 1,
+        b: 2,
+    };
+}
+
+# test:subtest
+# test:error 42:9 "more than one value specified for field 'a' of struct 'S'"
+# test:note 40:9 "value first specified here"
+# test:error 43:9 "more than one value specified for field 'b' of struct 'S'"
+# test:note 41:9 "value first specified here"
+
+func main() {
+    var s = S {
+        a: 0,
+        b: 1,
+        a: 2,
+        b: 3,
+    };
+}

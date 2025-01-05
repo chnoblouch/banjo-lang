@@ -1,0 +1,32 @@
+# test:common
+
+struct S {
+    var a: i32;
+    var b: i32;
+}
+
+# test:subtest
+# test:error 12:13 "missing value for field 'b' of struct 'S'"
+
+func main() {
+    var s = S {
+        a: 0,
+    };
+}
+
+# test:subtest
+# test:error 22:13 "missing value for field 'a' of struct 'S'"
+# test:error 22:13 "missing value for field 'b' of struct 'S'"
+
+func main() {
+    var s = S {};
+}
+
+# test:subtest
+# test:error 29:16 "missing value for field 'a' of struct 'S'"
+
+func main() {
+    var s: S = {
+        b: 0,
+    };
+}

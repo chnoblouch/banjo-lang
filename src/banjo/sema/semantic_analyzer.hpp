@@ -1,5 +1,5 @@
-#ifndef sema_SEMANTIC_ANALYZER_H
-#define sema_SEMANTIC_ANALYZER_H
+#ifndef BANJO_SEMA_SEMANTIC_ANALYZER_H
+#define BANJO_SEMA_SEMANTIC_ANALYZER_H
 
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sema/completion_context.hpp"

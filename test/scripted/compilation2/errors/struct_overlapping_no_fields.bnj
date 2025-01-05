@@ -1,0 +1,4 @@
+# test:error 4:8 "structs with `overlapping` layout require at least one field"
+
+@[layout=overlapping]
+struct S {}

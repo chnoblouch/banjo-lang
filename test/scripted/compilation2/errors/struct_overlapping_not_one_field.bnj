@@ -1,0 +1,26 @@
+# test:common
+
+@[layout=overlapping]
+struct S {
+    var a: i32;
+    var b: i32;
+}
+
+# test:subtest
+# test:error 14:13 "no field of struct 'S' initialized"
+# test:note 4:8 "struct 'S' has layout `overlapping` and therefore requires exactly one field value"
+
+func main() {
+    var s = S {};
+}
+
+# test:subtest
+# test:error 24:9 "more than one field of struct 'S' initialized"
+# test:note 4:8 "struct 'S' has layout `overlapping` and therefore requires exactly one field value"
+
+func main() {
+    var s = S {
+        a: 0,
+        b: 1,
+    };
+}

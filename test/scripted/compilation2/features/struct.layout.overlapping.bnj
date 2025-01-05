@@ -110,13 +110,3 @@ func main() {
     var tuple: (u8, S) = (0, S { a: 0 });
     print(&tuple.1 as usize - &tuple as usize);
 }
-
-# test:subtest
-# test:compiles
-
-@[layout=overlapping]
-struct S {}
-
-func main() {
-    var s = S {};
-}

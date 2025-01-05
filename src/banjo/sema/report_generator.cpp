@@ -317,6 +317,59 @@ void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, sir::Tu
     report_error("tuple '$' has no field named '$'", field_ident.ast_node, sir::Expr(&tuple_expr), field_ident.value);
 }
 
+void ReportGenerator::report_err_missing_field(
+    const sir::StructLiteral &struct_literal,
+    const sir::StructField &field
+) {
+    report_error(
+        "missing value for field '$' of struct '$'",
+        struct_literal.ast_node,
+        field.ident.value,
+        struct_literal.type.as_symbol<sir::StructDef>().ident.value
+    );
+}
+
+void ReportGenerator::report_err_duplicate_field(
+    const sir::StructLiteral &struct_literal,
+    const sir::StructLiteralEntry &entry,
+    const sir::StructLiteralEntry &previous_entry
+) {
+    // TODO: Set range to entire entry.
+
+    build_error(
+        "more than one value specified for field '$' of struct '$'",
+        entry.ident.ast_node,
+        entry.field->ident.value,
+        struct_literal.type.as_symbol<sir::StructDef>().ident.value
+    )
+        .add_note("value first specified here", previous_entry.ident.ast_node)
+        .report();
+}
+
+void ReportGenerator::report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal) {
+
+    const sir::StructDef &struct_def = struct_literal.type.as_symbol<sir::StructDef>();
+
+    std::string_view format_str;
+    ASTNode *ast_node;
+
+    if (struct_literal.entries.size() == 0) {
+        format_str = "no field of struct '$' initialized";
+        ast_node = struct_literal.ast_node;
+    } else {
+        format_str = "more than one field of struct '$' initialized";
+        ast_node = struct_literal.entries[1].ident.ast_node; // TODO: Set range to entire entry.
+    }
+
+    build_error(format_str, ast_node, struct_def.ident.value)
+        .add_note(
+            "struct '$' has layout `overlapping` and therefore requires exactly one field value",
+            struct_def.ident.ast_node,
+            struct_def.ident.value
+        )
+        .report();
+}
+
 void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def) {
     report_error(
         "struct '$' has no method named '$'",
@@ -360,7 +413,7 @@ void ReportGenerator::report_err_unexpected_array_length(
     const sir::ArrayLiteral &array_literal,
     unsigned expected_count
 ) {
-    std::string format_str;
+    std::string_view format_str;
 
     if (array_literal.values.size() < expected_count) {
         format_str = "too few elements in array literal (expected $, got $)";
@@ -473,6 +526,10 @@ void ReportGenerator::report_err_case_outside_union(const sir::UnionCase &union_
 
 void ReportGenerator::report_err_func_decl_outside_proto(const sir::FuncDecl &func_decl) {
     report_error("function declaration outside of a 'proto' definition", func_decl.ast_node);
+}
+
+void ReportGenerator::report_err_struct_overlapping_no_fields(const sir::StructDef &struct_def) {
+    report_error("structs with `overlapping` layout require at least one field", struct_def.ident.ast_node);
 }
 
 void ReportGenerator::report_err_use_after_move(

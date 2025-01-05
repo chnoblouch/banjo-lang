@@ -41,6 +41,11 @@ Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
         }
     }
 
+    // TODO: This should probably be checked during interface analysis.
+    if (struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING && struct_def.fields.empty()) {
+        analyzer.report_generator.report_err_struct_overlapping_no_fields(struct_def);
+    }
+
     return Result::SUCCESS;
 }
 
