@@ -1,0 +1,176 @@
+use std.memory;
+use c.lib.string.strlen;
+
+struct StringSlice {
+    var data: *u8;
+    var length: usize;
+
+    pub func new(data: *u8, length: usize) -> StringSlice {
+        return StringSlice { data, length };
+    }
+
+    pub func new_empty() -> StringSlice {
+        return StringSlice {
+            data: null,
+            length: 0,
+        };
+    }
+
+    pub func of_cstring(data: *u8) -> StringSlice {
+        return StringSlice {
+            data,
+            length: strlen(data),
+        };
+    }
+
+    pub func substring(self, start: usize, end: usize) -> StringSlice {
+        return StringSlice {
+            data: &self.data[start],
+            length: end - start,
+        };
+    }
+
+    pub func starts_with(self, other: StringSlice) -> bool {
+        if self.length < other.length {
+            return false;
+        }
+
+        return memory.compare(self.data, other.data, other.length);
+    }
+
+    pub func ends_with(self, other: StringSlice) -> bool {
+        if self.length < other.length {
+            return false;
+        }
+
+        return memory.compare(&self.data[self.length - other.length], other.data, other.length); 
+    }
+
+    pub func find(self, char: u8) -> ?usize {
+        for i in 0..self.length {
+            if self.data[i] == char {
+                return i;
+            }
+        }
+
+        return none;
+    }
+
+    pub func rfind(self, char: u8) -> ?usize {
+        var i = self.length - 1;
+
+        while i >= 0 {
+            if self.data[i] == char {
+                return i;
+            }
+
+            i -= 1;
+        }
+
+        return none;
+    }
+
+    pub func find(self, substr: StringSlice) -> ?usize {
+        var i: usize = 0;
+        
+        while i < self.length - substr.length {
+            if self.data[i] == substr.data[0] {
+                var j: usize = 1;
+                var matching = true;
+                
+                while j < substr.length {
+                    if self.data[i + j] != substr.data[j] {
+                        matching = false;
+                    }
+
+                    j = j + 1;
+                }
+                
+                if matching {
+                    return i;
+                }
+            }
+
+            i = i + 1;
+        }
+
+        return none;
+    }
+
+    pub func to_i64(self) -> i64 {
+        var sign: i64 = 1;
+        var last_index = 0;
+
+        if self.data[0] == '-' {
+            sign = -1 as i64;
+            last_index = 1;
+        }
+
+        var result: i64 = 0;
+        var index = self.length as i32 - 1;
+        var place_value: i64 = 1;
+
+        while index >= last_index {
+            var digit = (self.data[index] - '0') as i64;
+            result += digit * place_value;
+
+            index -= 1;
+            place_value *= 10;
+        }
+
+        return sign * result;
+    }
+
+    pub func __eq__(self, rhs: StringSlice) -> bool {
+        if self.length != rhs.length {
+            return false;
+        }
+
+        return memory.compare(self.data, rhs.data, self.length);
+    }
+
+    pub func __ne__(self, rhs: StringSlice) -> bool {
+        return !(*self == rhs);
+    }
+
+    pub func __str__(self) -> String {
+        return String.from(*self);
+    }
+
+    pub func __repr__(self) -> String {
+        var result = "\"";
+
+        for i in 0..self.length {
+            var char = self.data[i];
+
+            if char == '\n' {
+                result.append('\\');
+                result.append('n');
+            } else if char == '\r' {
+                result.append('\\');
+                result.append('r');
+            } else if char == '\t' {
+                result.append('\\');
+                result.append('t');
+            } else {
+                result.append(char);
+            }
+        }
+
+        result.append('\"');
+
+        return result;
+    }
+
+    pub func __hash__(self) -> u64 {
+        # www.cse.yorku.ca/~oz/hash.html
+
+        var hash: u64 = 5381;
+
+        for i in 0..self.length {
+            hash = ((hash << 5) + hash) + self.data[i] as u64;
+        }
+
+        return hash;
+    }
+}

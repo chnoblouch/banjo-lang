@@ -49,6 +49,7 @@ public:
     Result finalize_default(sir::UnaryExpr &unary_expr);
 
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
+    void create_std_string_slice(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void create_std_array(sir::ArrayLiteral &array_literal, const sir::Expr &element_type, sir::Expr &out_expr);
     void create_std_optional_some(sir::Specialization<sir::StructDef> &specialization, sir::Expr &inout_expr);
     void create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr);

@@ -33,7 +33,7 @@ meta if IS_WINDOWS {
         );
         
         var trimmed_length = length as usize - 2;
-        var string = String.from((buffer, trimmed_length));
+        var string = String.from(StringSlice.new(buffer, trimmed_length));
         winapi.local_free(buffer);
         
         return string;
@@ -138,8 +138,11 @@ meta if IS_WINDOWS {
             next: null,
         };
 
+        var host_cstring = host.to_cstring();
+        var port_cstring = to_string(&port).to_cstring();
+
         var addr_info: *winapi.Addrinfo;
-        result = winapi.getaddrinfo(host.cstr(), to_string(&port).cstr(), &addr_hints, &addr_info);
+        result = winapi.getaddrinfo(host_cstring.data, port_cstring.data, &addr_hints, &addr_info);
         if result != 0 {
             return false;
         }

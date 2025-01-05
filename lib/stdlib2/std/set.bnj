@@ -26,4 +26,14 @@ struct Set[T] {
         
         self.elements.append(element);
     }
+
+    pub func contains(self, element: T) -> bool {
+        for i in 0..self.elements.length {
+            if self.elements[i] == element {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

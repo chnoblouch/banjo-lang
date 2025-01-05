@@ -62,6 +62,7 @@ struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
 struct DotExpr;
+enum class PseudoTypeKind;
 struct PseudoType;
 struct MetaAccess;
 struct MetaFieldExpr;
@@ -239,6 +240,7 @@ public:
     ProtoDef *match_proto_ptr();
     bool is_u8_ptr() const;
     bool is_symbol(sir::Symbol symbol) const;
+    bool is_pseudo_type(PseudoTypeKind kind) const;
 
     ASTNode *get_ast_node() const;
     DeclBlock *get_decl_block();

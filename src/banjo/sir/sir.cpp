@@ -233,6 +233,14 @@ bool Expr::is_symbol(sir::Symbol symbol) const {
     }
 }
 
+bool Expr::is_pseudo_type(PseudoTypeKind kind) const {
+    if (auto pseudo_type = match<PseudoType>()) {
+        return pseudo_type->kind == kind;
+    } else {
+        return false;
+    }
+}
+
 ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,

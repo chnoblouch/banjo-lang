@@ -33,7 +33,7 @@ struct Path {
     
     pub func parent(self) -> Path {
         var index = self.path.rfind('/').unwrap();
-        return from(self.path.substr(0, index));
+        return from(self.path.substring(0, index));
     }
     
     # pub func list_dir(self) -> Array[Path] {
@@ -49,9 +49,9 @@ struct Path {
     }
     
     func normalize(self) {
-        for i in 0..self.path.length {
-            if self.path.data[i] == '\\' {
-                self.path.data[i] = '/';
+        for i in 0..self.path.length() {
+            if self.path.bytes()[i] == '\\' {
+                self.path.bytes()[i] = '/';
             }
         }
     }

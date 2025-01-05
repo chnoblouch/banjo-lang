@@ -68,7 +68,7 @@ struct Writer[T] {
     }
 
     pub func write(self, string: String) {
-        self.impl.write(string.data, string.length as usize);
+        self.impl.write(string.bytes(), string.length());
     }
 
     pub func flush(self) {

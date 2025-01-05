@@ -2,18 +2,13 @@ use std.memory;
 use c.lib.{string.{strlen, strcmp}, stdlib.{strtol, strtof}};
 
 struct String {
-    var data: *u8;
-    var length: usize;
+    var slice: StringSlice;
     var capacity: usize;
 
     pub func new() -> String {
-        var data = memory.alloc(1) as *u8;
-        data[0] = 0;
-
         return String {
-            data,
-            length: 0,
-            capacity: 1,
+            slice: StringSlice.new_empty(),
+            capacity: 0,
         };
     }
 
@@ -21,30 +16,21 @@ struct String {
         return from_cstr(cstr);
     }
 
-    pub func from(slice: (*u8, usize)) -> String {
-        var data = memory.alloc(slice.1 + 1) as *u8;
-        memory.copy(slice.0, data, slice.1);
-        data[slice.1] = '\0';
+    pub func from(slice: StringSlice) -> String {
+        var data = memory.alloc(slice.length) as *u8;
+        memory.copy(slice.data, data, slice.length);
 
         return String {
-            data,
-            length: slice.1,
-            capacity: slice.1 + 1,
+            slice: StringSlice {
+                data,
+                length: slice.length,
+            },
+            capacity: slice.length,
         };
     }
 
     pub func from_cstr(cstr: *u8) -> String {
-        var length = strlen(cstr);
-        var capacity = length + 1;
-        var data = memory.alloc(capacity) as *u8;
-
-        memory.copy(cstr, data, capacity);
-
-        return String {
-            data,
-            length: length,
-            capacity: capacity,
-        };
+        return from(StringSlice.of_cstring(cstr));
     }
 
     pub func concat(a: String, b: String) -> String {
@@ -54,148 +40,82 @@ struct String {
     }
 
     pub func __deinit__(self) {
-        memory.free(self.data);
+        memory.free(self.slice.data);
+    }
+
+    pub func slice(self) -> StringSlice {
+        return self.slice;
+    }
+
+    pub func bytes(self) -> *u8 {
+        return self.slice.data;
+    }
+
+    pub func length(self) -> usize {
+        return self.slice.length;
     }
 
     pub func copy(self) -> String {
-        var size = self.length + 1;
-        var data = memory.alloc(size) as *u8;
-        memory.copy(self.data, data, size);
-
-        return String {
-            data,
-            length: self.length,
-            capacity: self.length + 1,
-        };
+        return String.from(self.slice);
     }
 
     pub func append(self, char: u8) {
-        self.length = self.length + 1;
-        self.ensure_capacity(self.length + 1);
+        var new_length = self.slice.length + 1;
+        self.ensure_capacity(new_length);
+        self.slice.data[self.slice.length] = char;
+        self.slice.length = new_length;
+    }
 
-        var index = self.length - 1;
-        self.data[index] = char;
-        self.data[self.length] = 0;
+    pub func append(self, slice: StringSlice) {
+        var new_length = self.slice.length + slice.length;
+        self.ensure_capacity(new_length);
+        memory.copy(slice.data, &self.slice.data[self.slice.length], slice.length);
+        self.slice.length = new_length;
     }
 
     pub func append(self, other: String) {
-        var new_length = self.length + other.length;
-        self.ensure_capacity(new_length + 1);
-
-        var copy_dst = &self.data[self.length];
-        var copy_src = other.data;
-        memory.copy(copy_src, copy_dst, other.length + 1);
-
-        self.length = new_length;
+        self.append(other.slice);
     }
 
-    pub func append(self, other: *u8) {
-        var other_length = strlen(other);
-
-        var new_length = self.length + other_length;
-        self.ensure_capacity(new_length + 1);
-
-        var copy_dst = &self.data[self.length];
-        var copy_src = other;
-        memory.copy(copy_src, copy_dst, other_length + 1);
-
-        self.length = new_length;
+    pub func substring(self, start: usize, end: usize) -> String {
+        return String.from(self.slice.substring(start, end));
     }
 
-    pub func substr(self, start: usize, end: usize) -> String {
-        var substr_length = end - start;
-        var substr_data = memory.alloc(substr_length + 1) as *u8;
+    pub func starts_with(self, other: StringSlice) -> bool {
+        return self.slice.starts_with(other);
+    }
 
-        var copy_dest = substr_data;
-        var copy_src = &self.data[start];
-        memory.copy(copy_src, copy_dest, substr_length);
-
-        substr_data[substr_length] = 0;
-
-        return String {
-            data: substr_data,
-            length: substr_length,
-            capacity: substr_length,
-        };
+    pub func ends_with(self, other: StringSlice) -> bool {
+        return self.slice.ends_with(other);
     }
 
     pub func find(self, char: u8) -> ?usize {
-        for i in 0..self.length {
-            if self.data[i] == char {
-                return i;
-            }
-        }
-
-        return none;
+        return self.slice.find(char);
     }
 
     pub func rfind(self, char: u8) -> ?usize {
-        var i = self.length - 1;
-
-        while i >= 0 {
-            if self.data[i] == char {
-                return i;
-            }
-
-            i -= 1;
-        }
-
-        return none;
+        return self.slice.rfind(char);
     }
 
-    pub func find(self, substr: String) -> ?usize {
-        var i: usize = 0;
-        
-        while i < self.length - substr.length {
-            if self.data[i] == substr.data[0] {
-                var j: usize = 1;
-                var matching = true;
-                
-                while j < substr.length {
-                    if self.data[i + j] != substr.data[j] {
-                        matching = false;
-                    }
-
-                    j = j + 1;
-                }
-                
-                if matching {
-                    return i;
-                }
-            }
-
-            i = i + 1;
-        }
-
-        return none;
+    pub func find(self, substr: StringSlice) -> ?usize {
+        return self.slice.find(substr);
     }
 
-    pub func cstr(self) -> *u8 {
-        return self.data;
+    pub func to_cstring(self) -> Array[u8] {
+        var size = self.slice.length + 1;
+        var data = memory.alloc(size) as *u8;
+        memory.copy(self.slice.data, data, self.slice.length);
+        data[self.slice.length] = '\0';
+
+        return Array[u8] {
+            data,
+            length: size,
+            capacity: size,
+        };
     }
 
     pub func to_i64(self) -> i64 {
-        var sign: i64 = 1;
-        var last_index = 0;
-
-        if self.data[0] == '-' {
-            sign = -1 as i64;
-            last_index = 1;
-        }
-
-        var result: i64 = 0;
-        var index = self.length as i32 - 1;
-        var place_value: i64 = 1;
-
-        while index >= last_index {
-            var digit = (self.data[index] - '0') as i64;
-            result += digit * place_value;
-
-            index -= 1;
-            place_value *= 10;
-        }
-
-        return sign * result;
+        return self.slice.to_i64();
     }
 
     pub func __add__(self, rhs: String) -> String {
@@ -208,53 +128,32 @@ struct String {
         return copy;
     }
 
-    pub func __eq__(self, rhs: *String) -> bool {
-        return strcmp(self.data, rhs.data) == 0;
+    pub func __eq__(self, rhs: StringSlice) -> bool {
+        return self.slice == rhs;
     }
 
-    pub func __ne__(self, rhs: *String) -> bool {
-        return strcmp(self.data, rhs.data) != 0;
+    pub func __eq__(self, rhs: String) -> bool {
+        return self.slice == rhs.slice;
+    }
+
+    pub func __ne__(self, rhs: StringSlice) -> bool {
+        return self.slice != rhs;
+    }
+
+    pub func __ne__(self, rhs: String) -> bool {
+        return self.slice != rhs.slice;
     }
 
     pub func __str__(self) -> String {
-        return self.copy();
+        return self.slice.__str__();
     }
 
     pub func __repr__(self) -> String {
-        var result = "\"";
-
-        for i in 0..self.length {
-            var char = self.data[i];
-
-            if char == '\n' {
-                result.append('\\');
-                result.append('n');
-            } else if char == '\r' {
-                result.append('\\');
-                result.append('r');
-            } else if char == '\t' {
-                result.append('\\');
-                result.append('t');
-            } else {
-                result.append(char);
-            }
-        }
-
-        result.append('\"');
-
-        return result;
+        return self.slice.__repr__();
     }
 
     pub func __hash__(self) -> u64 {
-        # www.cse.yorku.ca/~oz/hash.html
-
-        var hash: u64 = 5381;
-
-        for i in 0..self.length {
-            hash = ((hash << 5) + hash) + self.data[i] as u64;
-        }
-
-        return hash;
+        return self.slice.__hash__();
     }
 
     func ensure_capacity(self, required: usize) {
@@ -270,18 +169,18 @@ struct String {
             }
         }
 
-        self.data = memory.realloc(self.data, self.capacity) as *u8;
+        self.slice.data = memory.realloc(self.slice.data, self.capacity) as *u8;
     }
 
     func reverse_in_place(self) {
-        for i1 in 0..self.length / 2 {
-            var i2 = self.length - 1 - i1;
+        for i1 in 0..self.slice.length / 2 {
+            var i2 = self.slice.length - 1 - i1;
 
-            var c1 = self.data[i1];
-            var c2 = self.data[i2];
+            var c1 = self.slice.data[i1];
+            var c2 = self.slice.data[i2];
 
-            self.data[i1] = c2;
-            self.data[i2] = c1;
+            self.slice.data[i1] = c2;
+            self.slice.data[i2] = c1;
         }
     }
 }

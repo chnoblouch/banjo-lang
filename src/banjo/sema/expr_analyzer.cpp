@@ -739,6 +739,8 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             return Result::ERROR;
         }
 
+        analyzer.add_symbol_use(call_expr.callee.as<sir::SymbolExpr>().ast_node, callee_func_def);
+
         call_expr.callee = analyzer.create_expr(sir::SymbolExpr{
             .ast_node = nullptr,
             .type = &callee_func_def->type,
@@ -1208,7 +1210,9 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return Result::ERROR;
     }
 
-    analyzer.add_symbol_use(ident_expr.ast_node, symbol);
+    if (!symbol.is<sir::OverloadSet>()) {
+        analyzer.add_symbol_use(ident_expr.ast_node, symbol);
+    }
 
     out_expr = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = ident_expr.ast_node,
@@ -1493,7 +1497,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         }
 
         sir::UnionCaseField &field = union_case->fields[*field_index];
-        
+
         out_expr = analyzer.create_expr(sir::FieldExpr{
             .ast_node = dot_expr.ast_node,
             .type = field.type,
@@ -1565,6 +1569,12 @@ bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, const std::vecto
     }
 
     for (unsigned i = 0; i < args.size(); i++) {
+        if (args[i].get_type().is_symbol(analyzer.find_std_string_slice())) {
+            if (func_def.type.params[i].type.is_pseudo_type(sir::PseudoTypeKind::STRING_LITERAL)) {
+                continue;
+            }
+        }
+
         if (args[i].get_type() != func_def.type.params[i].type) {
             return false;
         }

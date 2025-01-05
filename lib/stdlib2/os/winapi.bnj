@@ -2,10 +2,13 @@ type Bool = u32;
 type Handle = addr;
 type Word = u16;
 type Dword = u32;
+type Dword64 = u64;
 type LargeInteger = u64;
 type Int = i32;
 
 # --- handleapi.h ---
+
+const INVALID_HANDLE_VALUE: addr = 0xFFFFFFFFFFFFFFFF;
 
 @[link_name=CloseHandle]
 native func close_handle(object: Handle) -> bool;
@@ -39,6 +42,37 @@ struct Filetime {
     var low_date_time: u32;
     var high_date_time: u32;
 }
+
+# --- fileapi.h ---
+
+# TODO: Overlapped
+
+@[link_name=ReadFile]
+native func read_file(
+    file: Handle,
+    buffer: addr,
+    number_of_bytes_to_read: Dword,
+    number_of_bytes_read: *Dword,
+    overlapped: addr
+) -> Bool;
+
+@[link_name=WriteFile]
+native func write_file(
+    file: Handle,
+    buffer: addr,
+    number_of_bytes_to_write: Dword,
+    number_of_bytes_written: *Dword,
+    overlapped: addr
+) -> Bool;
+
+# --- processenv.h ---
+
+const STD_INPUT_HANDLE: Dword = 0xFFFFFFF6;
+const STD_OUTPUT_HANDLE: Dword = 0xFFFFFFF5;
+const STD_ERROR_HANDLE: Dword = 0xFFFFFFF4;
+
+@[link_name=GetStdHandle]
+native func get_std_handle(std_handle: Dword) -> addr;
 
 # --- synchapi.h ---
 

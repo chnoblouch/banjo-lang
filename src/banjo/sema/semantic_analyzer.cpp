@@ -90,6 +90,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
         {"Result", find_std_symbol({"std", "result"}, "Result")},
         {"Array", find_std_symbol({"std", "array"}, "Array")},
         {"String", find_std_symbol({"std", "string"}, "String")},
+        {"StringSlice", find_std_symbol({"std", "string_slice"}, "StringSlice")},
         {"Map", find_std_symbol({"std", "map"}, "Map")},
         {"Set", find_std_symbol({"std", "set"}, "Set")},
         {"Closure", find_std_symbol({"std", "closure"}, "Closure")},
@@ -128,6 +129,10 @@ sir::Symbol SemanticAnalyzer::find_std_array() {
 
 sir::Symbol SemanticAnalyzer::find_std_string() {
     return find_std_symbol({"std", "string"}, "String");
+}
+
+sir::Symbol SemanticAnalyzer::find_std_string_slice() {
+    return find_std_symbol({"std", "string_slice"}, "StringSlice");
 }
 
 sir::Symbol SemanticAnalyzer::find_std_map() {

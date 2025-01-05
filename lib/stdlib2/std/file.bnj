@@ -29,7 +29,9 @@ struct File {
         else if mode == FileMode.READ_WRITE_ERASE { c_mode = "w+b"; }
         else if mode == FileMode.READ_APPEND { c_mode = "a+b"; }
     
-        var stream = fopen(path.str().cstr(), c_mode);
+        var path_cstring = path.str().to_cstring();
+        var stream = fopen(path_cstring.data, c_mode);
+    
         if stream == null {
             return Error.last();
         }
@@ -75,13 +77,11 @@ struct File {
         var size = ftell(self.stream) as usize;
         fseek(self.stream, 0, SEEK_SET);
         
-        var data = memory.alloc(size + 1) as *u8;
+        var data = memory.alloc(size) as *u8;
         fread(data, 1, size, self.stream);
-        data[size] = '\0';
 
         return String {
-            data,
-            length: size,
+            slice: StringSlice.new(data, size),
             capacity: size + 1,
         };
     }

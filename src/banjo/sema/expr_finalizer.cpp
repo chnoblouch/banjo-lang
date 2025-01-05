@@ -247,6 +247,9 @@ Result ExprFinalizer::finalize_coercion(sir::StringLiteral &string_literal, sir:
     } else if (type.is_symbol(analyzer.find_std_string())) {
         create_std_string(string_literal, out_expr);
         return Result::SUCCESS;
+    } else if (type.is_symbol(analyzer.find_std_string_slice())) {
+        create_std_string_slice(string_literal, out_expr);
+        return Result::SUCCESS;
     } else {
         analyzer.report_generator.report_err_cannot_coerce(string_literal, type);
         return Result::ERROR;
@@ -451,6 +454,30 @@ Result ExprFinalizer::finalize_default(sir::UnaryExpr &unary_expr) {
 void ExprFinalizer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
     sir::StructDef &struct_def = analyzer.find_std_string().as<sir::StructDef>();
     sir::FuncDef &func_def = struct_def.block.symbol_table->look_up("from_cstr").as<sir::FuncDef>();
+
+    sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
+        .ast_node = nullptr,
+        .type = &func_def.type,
+        .symbol = &func_def,
+    });
+
+    sir::Expr arg = analyzer.create_expr(sir::StringLiteral{
+        .ast_node = string_literal.ast_node,
+        .type = func_def.type.params[0].type,
+        .value = std::move(string_literal.value),
+    });
+
+    out_expr = analyzer.create_expr(sir::CallExpr{
+        .ast_node = nullptr,
+        .type = func_def.type.return_type,
+        .callee = callee,
+        .args = {arg},
+    });
+}
+
+void ExprFinalizer::create_std_string_slice(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
+    sir::StructDef &struct_def = analyzer.find_std_string_slice().as<sir::StructDef>();
+    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up("of_cstring").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,

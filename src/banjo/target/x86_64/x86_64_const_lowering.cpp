@@ -102,10 +102,9 @@ void X8664ConstLowering::process_block() {
 }
 
 bool X8664ConstLowering::is_f32_used_later_on(float value, ssa::InstrIter user) {
-    // TODO: Currently we start looking at instructions after the current one since instructions
-    // that use the same floating-point constant twice break everything.
-    ++user;
-
+    // Buggy and therefore disabled for now.
+    return false;
+    
     for (ssa::InstrIter iter = user; iter != lowerer.get_block().end(); ++iter) {
         if (is_discarding_instr(iter->get_opcode())) {
             return false;

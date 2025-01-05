@@ -16,6 +16,13 @@ func main() {
 # test:compiles
 
 func main() {
+    var string: StringSlice = "Hi!";
+} 
+
+# test:subtest
+# test:compiles
+
+func main() {
     var string: *u8 = "Hi!";
 }
 
@@ -26,7 +33,7 @@ native func puts(*u8);
 
 func main() {
     var string = "Hi!";
-    puts(string.cstr());
+    puts(string.to_cstring().data);
 }
 
 # test:subtest

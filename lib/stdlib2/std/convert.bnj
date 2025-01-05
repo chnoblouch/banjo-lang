@@ -72,7 +72,11 @@ func i64_to_string(value: i64) -> String {
     
     data[length] = 0;
     
-    var string = String { data, capacity, length };
+    var string = String {
+        slice: StringSlice.new(data, length),
+        capacity,
+    };
+
     string.reverse_in_place();
     return string;
 }
@@ -94,7 +98,11 @@ func u64_to_string(value: u64) -> String {
     
     data[length] = 0;
     
-    var string = String { data, capacity, length };
+    var string = String {
+        slice: StringSlice.new(data, length),
+        capacity,
+    };
+
     string.reverse_in_place();
     return string;
 }

@@ -1,17 +1,42 @@
-use std.{convert, system.{panic, exit}};
-use internal.runtime;
+use std.{convert, system.panic};
+use os;
 
-func print[T](value: T) {
-    runtime.print_string("%s", convert.to_string(&value).cstr());
+meta if os.IS_WINDOWS {
+    use os.winapi;
+} else if os.IS_UNIX {
+    use os.posix;
+    use c.lib.stdio.fwrite;
 }
 
-func println[T](value: T) {
-    runtime.print_string("%s\n", convert.to_string(&value).cstr());
+pub func print[T](value: T) {
+    var string = convert.to_string(&value);
+    write_to_stdout(string.bytes(), string.length());
 }
 
-func assert(condition: bool, message: String) {
+pub func println[T](value: T) {
+    var string = convert.to_string(&value);
+    write_to_stdout(string.bytes(), string.length());
+    
+    var line_ending: u8 = '\n';
+    write_to_stdout(&line_ending, 1);
+}
+
+pub func assert(condition: bool, message: String) {
     if !condition {
         panic("assertion failed: " + message);
-        exit(1);
+    }
+}
+
+func write_to_stdout(data: *u8, size: usize) {
+    meta if os.IS_WINDOWS {
+        var handle = winapi.get_std_handle(winapi.STD_OUTPUT_HANDLE);
+        if handle == winapi.INVALID_HANDLE_VALUE {
+            return;
+        }
+
+        var bytes_written: winapi.Dword;
+        winapi.write_file(handle, data, size as winapi.Dword, &bytes_written, null);
+    } else if os.IS_UNIX {
+        fwrite(data, size, 1, posix.stdout);
     }
 }

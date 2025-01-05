@@ -1,6 +1,6 @@
 use c.lib.{
     stdlib.{malloc as cmalloc, realloc as crealloc, free as cfree},
-    string.{memcpy as cmemcpy, memset as cmemset}
+    string.{memcpy as cmemcpy, memcmp as cmemcmp, memset as cmemset}
 };
 
 var alloc_counter: u32 = 0;
@@ -25,6 +25,10 @@ pub func free(pointer: addr) {
 
 pub func copy(src: addr, dst: addr, size: usize) {
     cmemcpy(dst, src, size);
+}
+
+pub func compare(addr0: addr, addr1: addr, size: usize) -> bool {
+    return cmemcmp(addr0, addr1, size) == 0;
 }
 
 pub func alloc_box[T]() -> *T {
