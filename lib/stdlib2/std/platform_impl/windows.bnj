@@ -1,8 +1,9 @@
 use os.{IS_WINDOWS, winapi, msvcrt};
-use std.convert.to_string;
+use std.{convert.to_string, system.panic};
 
 meta if IS_WINDOWS {
     type Error = winapi.Dword;
+    type Mutex = winapi.Handle;
     type Socket = winapi.Socket;
 
     const SOCKET_INVALID: Socket = winapi.INVALID_SOCKET;
@@ -72,6 +73,32 @@ meta if IS_WINDOWS {
         var system_info: winapi.SystemInfo;
         winapi.get_native_system_info(&system_info);
         return system_info.number_of_processors;
+    }
+
+    pub func mutex_create() -> Mutex {
+        return winapi.create_mutex(null, winapi.FALSE, null);
+    }
+
+    pub func mutex_lock(mutex: Mutex) {
+        var result = winapi.wait_for_single_object(mutex, winapi.INFINITE);
+        if result != winapi.WAIT_OBJECT_0 {
+            panic("failed to lock mutex");
+        }
+
+        println("locked!");
+    }
+
+    pub func mutex_unlock(mutex: Mutex) {
+        var result = winapi.release_mutex(mutex);
+        if result == 0 {
+            panic("failed to unlock mutex");
+        }
+
+        println("unlocked!");
+    }
+
+    pub func mutex_destroy(mutex: Mutex) {
+        winapi.close_handle(mutex);
     }
 
     pub func time_system_ticks() -> u64 {

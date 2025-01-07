@@ -3,6 +3,7 @@ use std.{convert.to_string, system.panic};
 
 meta if IS_UNIX {
     type Error = i32;
+    type Mutex = i32;
     type Socket = i32;
 
     const SOCKET_INVALID: Socket = -1;
@@ -58,6 +59,26 @@ meta if IS_UNIX {
 
     pub func thread_hardware_concurrency() -> u32 {
         return posix.get_nprocs() as u32;
+    }
+
+    pub func mutex_create() -> Mutex {
+        # TODO
+        panic("unimplemented on this platform");
+    }
+
+    pub func mutex_lock(mutex: Mutex) {
+        # TODO
+        panic("unimplemented on this platform");
+    }
+
+    pub func mutex_unlock(mutex: Mutex) {
+        # TODO
+        panic("unimplemented on this platform");
+    }
+
+    pub func mutex_destroy(mutex: Mutex) {
+        # TODO
+        panic("unimplemented on this platform");
     }
 
     pub func time_system_ticks() -> u64 {

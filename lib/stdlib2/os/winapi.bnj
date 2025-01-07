@@ -6,6 +6,9 @@ type Dword64 = u64;
 type LargeInteger = u64;
 type Int = i32;
 
+const FALSE: Bool = 0;
+const TRUE: Bool = 1;
+
 # --- handleapi.h ---
 
 const INVALID_HANDLE_VALUE: addr = 0xFFFFFFFFFFFFFFFF;
@@ -76,11 +79,30 @@ native func get_std_handle(std_handle: Dword) -> addr;
 
 # --- synchapi.h ---
 
+const INFINITE: Dword = 0xFFFFFFFF;
+
+const WAIT_ABANDONED: Dword = 0x00000080;
+const WAIT_OBJECT_0: Dword = 0x00000000;
+const WAIT_TIMEOUT: Dword = 0x00000102;
+const WAIT_FAILED: Dword = 0xFFFFFFFF;
+
 @[link_name=WaitForSingleObject]
 native func wait_for_single_object(
     handle: addr,
     milliseconds: u32
 ) -> u32;
+
+@[link_name=CreateMutexA]
+native func create_mutex(
+    mutex_attributes: addr,
+    initial_owner: Bool,
+    name: *u8
+) -> Handle;
+
+@[link_name=ReleaseMutex]
+native func release_mutex(
+    mutex: Handle
+) -> Bool;
 
 @[link_name=Sleep]
 native func sleep(milliseconds: u32);

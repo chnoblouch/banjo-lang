@@ -1,0 +1,27 @@
+use std.platform;
+
+struct Mutex {
+    var handle: platform.Mutex;
+
+    pub func new() -> Mutex {
+        return Mutex {
+            handle: platform.mutex_create(),
+        };
+    }
+
+    pub func lock(self) -> Lock {
+        platform.mutex_lock(self.handle);
+        
+        return Lock {
+            handle: self.handle,
+        };
+    }
+}
+
+struct Lock {
+    var handle: platform.Mutex;
+
+    pub func __deinit__(self) {
+        platform.mutex_unlock(self.handle);
+    }
+}
