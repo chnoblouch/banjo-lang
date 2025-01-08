@@ -13,8 +13,8 @@ add_library(banjo STATIC
     config/argument_parser.cpp
     config/config_parser.cpp
     config/config.cpp
+    emit/aarch64_asm_emitter.cpp
     emit/binary_builder.cpp
-    emit/clang_asm_emitter.cpp
     emit/debug_emitter.cpp
     emit/nasm_emitter.cpp
     emit/pe/pe_builder.cpp

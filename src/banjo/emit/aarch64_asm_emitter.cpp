@@ -1,5 +1,6 @@
-#include "clang_asm_emitter.hpp"
+#include "aarch64_asm_emitter.hpp"
 
+#include "banjo/mcode/operand.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/macros.hpp"
@@ -12,7 +13,7 @@ namespace banjo {
 namespace codegen {
 
 // clang-format off
-const std::unordered_map<mcode::Opcode, std::string> ClangAsmEmitter::OPCODE_NAMES = {
+const std::unordered_map<mcode::Opcode, std::string> AArch64AsmEmitter::OPCODE_NAMES = {
     {target::AArch64Opcode::MOV, "mov"},
     {target::AArch64Opcode::MOVZ, "movz"},
     {target::AArch64Opcode::MOVK, "movk"},
@@ -68,11 +69,11 @@ const std::unordered_map<mcode::Opcode, std::string> ClangAsmEmitter::OPCODE_NAM
 };
 // clang-format on
 
-ClangAsmEmitter::ClangAsmEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
+AArch64AsmEmitter::AArch64AsmEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
   : Emitter(module, stream),
     target(target) {}
 
-void ClangAsmEmitter::generate() {
+void AArch64AsmEmitter::generate() {
     PROFILE_SCOPE("clang asm emitter");
 
     if (target.is_darwin()) {
@@ -100,7 +101,7 @@ void ClangAsmEmitter::generate() {
     }
 }
 
-void ClangAsmEmitter::emit_global(const mcode::Global &global) {
+void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
     stream << symbol_prefix << global.name << ": ";
 
     if (auto value = std::get_if<double>(&global.value)) {
@@ -123,7 +124,7 @@ void ClangAsmEmitter::emit_global(const mcode::Global &global) {
     stream << "\n";
 }
 
-void ClangAsmEmitter::emit_func(mcode::Function *func) {
+void AArch64AsmEmitter::emit_func(mcode::Function *func) {
     stream << symbol_prefix << func->get_name() << ":\n";
 
     for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
@@ -133,7 +134,7 @@ void ClangAsmEmitter::emit_func(mcode::Function *func) {
     stream << "\n";
 }
 
-void ClangAsmEmitter::emit_basic_block(mcode::BasicBlock &basic_block) {
+void AArch64AsmEmitter::emit_basic_block(mcode::BasicBlock &basic_block) {
     if (!basic_block.get_label().empty()) {
         stream << basic_block.get_label() << ":\n";
     }
@@ -146,7 +147,7 @@ void ClangAsmEmitter::emit_basic_block(mcode::BasicBlock &basic_block) {
     stream << "\n";
 }
 
-void ClangAsmEmitter::emit_instr(mcode::Function *func, mcode::Instruction &instr) {
+void AArch64AsmEmitter::emit_instr(mcode::Function *func, mcode::Instruction &instr) {
     stream << "  " << OPCODE_NAMES.find(instr.get_opcode())->second;
 
     if (instr.get_operands().get_size() == 0) {
@@ -163,7 +164,7 @@ void ClangAsmEmitter::emit_instr(mcode::Function *func, mcode::Instruction &inst
     }
 }
 
-void ClangAsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand &operand) {
+void AArch64AsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand &operand) {
     if (operand.is_int_immediate()) stream << "#" << operand.get_int_immediate();
     else if (operand.is_fp_immediate()) stream << "#" << operand.get_fp_immediate();
     else if (operand.is_physical_reg()) emit_reg(operand.get_physical_reg(), operand.get_size());
@@ -177,7 +178,7 @@ void ClangAsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand &
     else ASSERT_UNREACHABLE;
 }
 
-void ClangAsmEmitter::emit_reg(int reg, int size) {
+void AArch64AsmEmitter::emit_reg(int reg, int size) {
     if (reg >= target::AArch64Register::R0 && reg <= target::AArch64Register::R_LAST) {
         stream << (size == 8 ? "x" : "w") << (reg - target::AArch64Register::R0);
     } else if (reg >= target::AArch64Register::V0 && reg <= target::AArch64Register::V_LAST) {
@@ -198,28 +199,27 @@ void ClangAsmEmitter::emit_reg(int reg, int size) {
     }
 }
 
-void ClangAsmEmitter::emit_stack_slot(mcode::Function *func, int index) {
+void AArch64AsmEmitter::emit_stack_slot(mcode::Function *func, int index) {
     mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(index);
     stream << "[sp, #" << slot.get_offset() << "]";
 }
 
-void ClangAsmEmitter::emit_symbol(const mcode::Symbol &symbol) {
+void AArch64AsmEmitter::emit_symbol(const mcode::Symbol &symbol) {
+    std::string full_name = symbol_prefix + symbol.name;
+
     switch (symbol.reloc) {
-        case mcode::Relocation::NONE: break;
-        case mcode::Relocation::LO12: stream << ":lo12:"; break;
-        default: break;
-    }
-
-    stream << symbol_prefix << symbol.name;
-
-    switch (symbol.directive) {
-        case mcode::Directive::NONE: break;
-        case mcode::Directive::PAGE: stream << "@PAGE"; break;
-        case mcode::Directive::PAGEOFF: stream << "@PAGEOFF"; break;
+        case mcode::Relocation::NONE: stream << full_name; break;
+        case mcode::Relocation::ADR_PREL_PG_HI21: stream << full_name; break;
+        case mcode::Relocation::ADD_ABS_LO12_NC: stream << ":lo12:" << full_name; break;
+        case mcode::Relocation::PAGE21: stream << full_name << "@PAGE"; break;
+        case mcode::Relocation::PAGEOFF12: stream << full_name << "@PAGEOFF"; break;
+        case mcode::Relocation::GOT_LOAD_PAGE21: stream << full_name << "@GOTPAGE"; break;
+        case mcode::Relocation::GOT_LOAD_PAGEOFF12: stream << full_name << "@GOTPAGEOFF"; break;
+        default: ASSERT_UNREACHABLE;
     }
 }
 
-void ClangAsmEmitter::emit_addr(const target::AArch64Address &addr) {
+void AArch64AsmEmitter::emit_addr(const target::AArch64Address &addr) {
     stream << "[";
 
     switch (addr.get_type()) {
@@ -241,17 +241,23 @@ void ClangAsmEmitter::emit_addr(const target::AArch64Address &addr) {
             emit_reg(addr.get_offset_reg().get_physical_reg(), 8);
             stream << "]";
             break;
+        case target::AArch64Address::Type::BASE_OFFSET_SYMBOL:
+            emit_reg(addr.get_base().get_physical_reg(), 8);
+            stream << ", ";
+            emit_symbol(addr.get_offset_symbol());
+            stream << "]";
+            break;
     }
 }
 
-void ClangAsmEmitter::emit_stack_slot_offset(mcode::Function *func, mcode::Operand::StackSlotOffset offset) {
+void AArch64AsmEmitter::emit_stack_slot_offset(mcode::Function *func, mcode::Operand::StackSlotOffset offset) {
     mcode::StackFrame &frame = func->get_stack_frame();
     mcode::StackSlot &stack_slot = frame.get_stack_slot(offset.slot_index);
     int total_offset = stack_slot.get_offset() + offset.additional_offset;
     stream << "#" << total_offset;
 }
 
-void ClangAsmEmitter::emit_condition(target::AArch64Condition condition) {
+void AArch64AsmEmitter::emit_condition(target::AArch64Condition condition) {
     switch (condition) {
         case target::AArch64Condition::EQ: stream << "eq"; break;
         case target::AArch64Condition::NE: stream << "ne"; break;

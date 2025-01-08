@@ -36,9 +36,20 @@ meta if os.IS_UNIX {
     const SHUT_WR: i32 = 1;
     const SHUT_RDWR: i32 = 2;
 
-    native var stdin: addr;
-    native var stdout: addr;
-    native var stderr: addr;
+    meta if os.IS_DARWIN {
+        @[link_name=__stdinp]
+        native var stdin: addr;
+        
+        @[link_name=__stdoutp]
+        native var stdout: addr;
+
+        @[link_name=__stderrp]
+        native var stderr: addr;
+    } else {
+        native var stdin: addr;
+        native var stdout: addr;
+        native var stderr: addr;
+    }
 
     native func close(fd: i32) -> i32;
     native func strerror(errnum: i32) -> *u8;

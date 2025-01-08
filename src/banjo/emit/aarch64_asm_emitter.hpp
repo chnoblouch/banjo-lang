@@ -1,5 +1,5 @@
-#ifndef CLANG_ASM_EMITTER_H
-#define CLANG_ASM_EMITTER_H
+#ifndef BANJO_EMIT_AARCH64_ASM_EMITTER_H
+#define BANJO_EMIT_AARCH64_ASM_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
 #include "banjo/target/target_description.hpp"
@@ -10,7 +10,7 @@ namespace banjo {
 
 namespace codegen {
 
-class ClangAsmEmitter : public Emitter {
+class AArch64AsmEmitter : public Emitter {
 
 public:
     static const std::unordered_map<mcode::Opcode, std::string> OPCODE_NAMES;
@@ -20,7 +20,7 @@ private:
     std::string symbol_prefix;
 
 public:
-    ClangAsmEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target);
+    AArch64AsmEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target);
     void generate();
 
 private:

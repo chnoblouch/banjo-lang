@@ -4,6 +4,7 @@
 #include "banjo/mcode/indirect_address.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
+#include "banjo/mcode/symbol.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/utils/large_int.hpp"
@@ -14,36 +15,6 @@
 namespace banjo {
 
 namespace mcode {
-
-enum class Relocation {
-    NONE,
-    GOT,
-    PLT,
-    LO12,
-};
-
-enum class Directive {
-    NONE,
-    PAGE,
-    PAGEOFF,
-};
-
-struct Symbol {
-    std::string name;
-    Relocation reloc;
-    Directive directive;
-
-    Symbol(std::string name) : name(name), reloc(Relocation::NONE), directive(Directive::NONE) {}
-    Symbol(std::string name, Relocation reloc) : name(name), reloc(reloc), directive(Directive::NONE) {}
-    Symbol(std::string name, Directive directive) : name(name), reloc(Relocation::NONE), directive(directive) {}
-    Symbol(std::string name, Relocation reloc, Directive directive) : name(name), reloc(reloc), directive(directive) {}
-
-    friend bool operator==(const Symbol &lhs, const Symbol &rhs) {
-        return lhs.name == rhs.name && lhs.reloc == rhs.reloc && lhs.directive == rhs.directive;
-    }
-
-    friend bool operator!=(const Symbol &lhs, const Symbol &rhs) { return !(lhs == rhs); }
-};
 
 class Operand {
 

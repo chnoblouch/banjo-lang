@@ -26,10 +26,10 @@ mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
         });
     }
 
-    lower_funcs();
-    lower_globals();
     lower_external_funcs();
     lower_external_globals();
+    lower_funcs();
+    lower_globals();
     lower_dll_exports();
 
     return std::move(machine_module);

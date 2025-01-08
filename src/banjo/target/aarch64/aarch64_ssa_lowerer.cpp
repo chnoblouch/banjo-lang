@@ -1,7 +1,9 @@
 #include "aarch64_ssa_lowerer.hpp"
 
+#include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/target/aarch64/aapcs_calling_conv.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_immediate.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
@@ -574,24 +576,33 @@ void AArch64SSALowerer::move_elements_into_register(mcode::Value value, std::uin
 
 // clang-format on
 
-mcode::Value AArch64SSALowerer::move_symbol_into_register(std::string symbol) {
+mcode::Value AArch64SSALowerer::move_symbol_into_register(const std::string &symbol) {
     mcode::Value m_dst = create_temp_value(8);
 
-    bool is_darwin = target->get_descr().is_darwin();
+    if (target->get_descr().is_darwin()) {
+        if (get_machine_module().get_external_symbols().contains(symbol)) {
+            mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::GOT_LOAD_PAGE21});
 
-    mcode::Operand symbol_page = mcode::Operand::from_symbol({
-        symbol,
-        is_darwin ? mcode::Directive::PAGE : mcode::Directive::NONE,
-    });
+            mcode::Symbol offset_symbol = mcode::Symbol(symbol, mcode::Relocation::GOT_LOAD_PAGEOFF12);
+            AArch64Address ldr_addr = AArch64Address::new_base_offset(m_dst.get_register(), offset_symbol);
+            mcode::Operand m_ldr_addr = mcode::Operand::from_aarch64_addr(ldr_addr, 8);
 
-    mcode::Operand symbol_pageoff = mcode::Operand::from_symbol({
-        symbol,
-        is_darwin ? mcode::Relocation::NONE : mcode::Relocation::LO12,
-        is_darwin ? mcode::Directive::PAGEOFF : mcode::Directive::NONE,
-    });
+            emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
+            emit(mcode::Instruction(AArch64Opcode::LDR, {m_dst, m_ldr_addr}));
+        } else {
+            mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::PAGE21});
+            mcode::Operand m_add_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::PAGEOFF12});
 
-    emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, symbol_page}));
-    emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, m_dst, symbol_pageoff}));
+            emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
+            emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, m_dst, m_add_addr}));
+        }
+    } else {
+        mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::ADR_PREL_PG_HI21});
+        mcode::Operand m_add_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::ADD_ABS_LO12_NC});
+
+        emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
+        emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, m_dst, m_add_addr}));
+    }
 
     return m_dst;
 }

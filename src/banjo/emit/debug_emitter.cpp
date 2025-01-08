@@ -1,7 +1,7 @@
 #include "debug_emitter.hpp"
 
 #include "banjo/config/config.hpp"
-#include "banjo/emit/clang_asm_emitter.hpp"
+#include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
@@ -198,7 +198,7 @@ std::string DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
     if (lang::Config::instance().target.get_architecture() == target::Architecture::X86_64) {
         return NASMEmitter::OPCODE_NAMES.at(opcode);
     } else if (lang::Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
-        return ClangAsmEmitter::OPCODE_NAMES.at(opcode);
+        return AArch64AsmEmitter::OPCODE_NAMES.at(opcode);
     }
 
     return "";
@@ -257,6 +257,12 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
                 str += get_reg_name(basic_block, addr.get_base(), 8, instr_index);
                 str += ", ";
                 str += get_reg_name(basic_block, addr.get_offset_reg(), 8, instr_index);
+                str += "]";
+                break;
+            case target::AArch64Address::Type::BASE_OFFSET_SYMBOL:
+                str += get_reg_name(basic_block, addr.get_base(), 8, instr_index);
+                str += ", ";
+                str += addr.get_offset_symbol().name;
                 str += "]";
                 break;
         }

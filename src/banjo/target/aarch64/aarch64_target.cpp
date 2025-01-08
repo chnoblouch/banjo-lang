@@ -1,6 +1,6 @@
 #include "aarch64_target.hpp"
 
-#include "banjo/emit/clang_asm_emitter.hpp"
+#include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_instr_merge_pass.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 
@@ -27,7 +27,7 @@ std::string AArch64Target::get_output_file_ext() {
 }
 
 codegen::Emitter *AArch64Target::create_emitter(mcode::Module &module, std::ostream &stream) {
-    return new codegen::ClangAsmEmitter(module, stream, descr);
+    return new codegen::AArch64AsmEmitter(module, stream, descr);
 }
 
 } // namespace target

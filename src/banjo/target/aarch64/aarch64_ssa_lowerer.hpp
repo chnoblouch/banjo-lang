@@ -76,7 +76,7 @@ private:
     mcode::Value move_int_into_register(LargeInt value, unsigned size);
     mcode::Value move_float_into_register(double fp, unsigned size);
     void move_elements_into_register(mcode::Value value, std::uint16_t *elements, unsigned count);
-    mcode::Value move_symbol_into_register(std::string symbol);
+    mcode::Value move_symbol_into_register(const std::string &symbol);
     void calculate_address(mcode::Operand m_dst, Address addr);
     mcode::Value create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);
