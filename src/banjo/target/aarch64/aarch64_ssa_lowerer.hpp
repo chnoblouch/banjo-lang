@@ -19,7 +19,7 @@ private:
 
     struct Address {
         mcode::Operand base;
-        std::variant<RegOffset, int> offset;
+        std::variant<RegOffset, int> offset = 0;
     };
 
     unsigned next_const_index = 0;
