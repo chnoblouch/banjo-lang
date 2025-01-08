@@ -112,7 +112,6 @@ public:
 
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
-    bool will_be_physical_reg(mcode::Operand &operand);
 };
 
 } // namespace target

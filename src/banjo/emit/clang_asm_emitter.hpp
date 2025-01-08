@@ -4,6 +4,8 @@
 #include "banjo/emit/emitter.hpp"
 #include "banjo/target/target_description.hpp"
 
+#include <unordered_map>
+
 namespace banjo {
 
 namespace codegen {

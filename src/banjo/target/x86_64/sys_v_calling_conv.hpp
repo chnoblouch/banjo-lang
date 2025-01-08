@@ -38,7 +38,7 @@ public:
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    mcode::Register get_arg_reg(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer);
+    mcode::Operand get_arg_dst(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer);
     void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
     void append_ret_val_move(codegen::SSALowerer &lowerer);
 };

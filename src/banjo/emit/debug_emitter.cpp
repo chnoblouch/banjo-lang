@@ -209,6 +209,8 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
     else if (operand.is_fp_immediate()) return std::to_string(operand.get_fp_immediate());
     else if (operand.is_register())
         return get_reg_name(basic_block, operand.get_register(), operand.get_size(), instr_index);
+    else if (operand.is_stack_slot())
+        return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot(), instr_index);
     else if (operand.is_symbol()) return operand.get_symbol().name;
     else if (operand.is_label()) return operand.get_label();
     else if (operand.is_symbol_deref()) return "[" + operand.get_deref_symbol().name + "]";
@@ -216,21 +218,18 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
         mcode::IndirectAddress addr = operand.get_addr();
 
         std::string base;
-        if (addr.get_base().is_stack_slot()) {
-            base = get_stack_slot_name(basic_block.get_func(), addr.get_base(), instr_index, false);
+        if (addr.is_base_reg()) {
+            base = get_reg_name(basic_block, addr.get_base_reg(), 8, instr_index);
+        } else if (addr.is_base_stack_slot()) {
+            base = get_stack_slot_name(basic_block.get_func(), addr.get_base_stack_slot(), instr_index, false);
         } else {
-            base = get_reg_name(basic_block, addr.get_base(), 8, instr_index);
+            ASSERT_UNREACHABLE;
         }
 
         if (addr.has_offset()) {
             std::string offset;
-            if (addr.has_reg_offset()) {
-                if (addr.get_reg_offset().is_stack_slot()) {
-                    offset = get_stack_slot_name(basic_block.get_func(), addr.get_reg_offset(), false);
-                } else {
-                    offset = get_reg_name(basic_block, addr.get_reg_offset(), 8, instr_index);
-                }
-            } else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
+            if (addr.has_reg_offset()) offset = get_reg_name(basic_block, addr.get_reg_offset(), 8, instr_index);
+            else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
 
             std::string scaled_offset =
                 addr.get_scale() == 1 ? offset : std::to_string(addr.get_scale()) + " * " + offset;
@@ -265,14 +264,15 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
         return str;
     } else if (operand.is_aarch64_left_shift()) {
         return "lsl #" + std::to_string(operand.get_aarch64_left_shift());
-    } else return "???";
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 std::string DebugEmitter::get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size, int instr_index) {
-    if (reg.is_virtual_reg()) return "%" + std::to_string(reg.get_virtual_reg());
-    else if (reg.is_physical_reg()) return get_physical_reg_name(reg.get_physical_reg(), size);
-    else if (reg.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), reg, instr_index);
-    else return "???";
+    if (reg.is_virtual()) return "%" + std::to_string(reg.get_virtual_reg());
+    else if (reg.is_physical()) return get_physical_reg_name(reg.get_physical_reg(), size);
+    else ASSERT_UNREACHABLE;
 }
 
 std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
@@ -385,14 +385,18 @@ std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
     return "???";
 }
 
-std::string DebugEmitter::
-    get_stack_slot_name(mcode::Function *func, mcode::Register reg, int instr_index, bool brackets /* = true */) {
+std::string DebugEmitter::get_stack_slot_name(
+    mcode::Function *func,
+    mcode::StackSlotID stack_slot,
+    int instr_index,
+    bool brackets /* = true */
+) {
     mcode::StackFrame &frame = func->get_stack_frame();
-    mcode::StackSlot &slot = frame.get_stack_slot(reg.get_stack_slot());
+    mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
     int offset = slot.get_offset();
 
     if (offset == mcode::StackSlot::INVALID_OFFSET) {
-        return "<%" + std::to_string(reg.get_stack_slot()) + ">";
+        return "s" + std::to_string(stack_slot);
     }
 
     if (lang::Config::instance().target.get_architecture() == target::Architecture::X86_64) {

@@ -92,8 +92,10 @@ void MSABICallingConv::emit_stack_arg_move(ssa::Operand &operand, unsigned index
         slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
     }
 
-    mcode::Register m_dst_reg = mcode::Register::from_stack_slot(slot_index);
-    x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
+    unsigned size = x86_64_lowerer.get_size(operand.get_type());
+    mcode::Operand m_dst = mcode::Operand::from_stack_slot(slot_index, size);
+
+    x86_64_lowerer.lower_as_move(m_dst, operand);
 }
 
 void MSABICallingConv::emit_call(const ssa::Operand &func_operand, codegen::SSALowerer &lowerer) {
@@ -110,7 +112,7 @@ void MSABICallingConv::emit_call(const ssa::Operand &func_operand, codegen::SSAL
             operand = x86_64_lowerer.lower_address(producer->get_operand(1));
             lowerer.discard_use(func_operand.get_register());
         } else {
-            operand = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), ptr_size);
+            operand = lowerer.map_vreg_as_operand(func_operand.get_register(), ptr_size);
         }
     }
 
@@ -262,13 +264,9 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
         if (reg >= XMM0 && reg <= XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
-            prolog.push_back(mcode::Instruction(
-                X8664Opcode::MOVSD,
-                {
-                    mcode::Operand::from_register(mcode::Register::from_stack_slot(slot_index), 8),
-                    mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                }
-            ));
+            mcode::Operand m_dst = mcode::Operand::from_stack_slot(slot_index, 8);
+            mcode::Operand m_src = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
+            prolog.push_back(mcode::Instruction(X8664Opcode::MOVSD, {m_dst, m_src}));
         }
     }
 
@@ -287,13 +285,9 @@ std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *fu
         if (reg >= XMM0 && reg <= XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
-            epilog.push_back(mcode::Instruction(
-                X8664Opcode::MOVSD,
-                {
-                    mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                    mcode::Operand::from_register(mcode::Register::from_stack_slot(slot_index), 8),
-                }
-            ));
+            mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
+            mcode::Operand m_src = mcode::Operand::from_stack_slot(slot_index, 8);
+            epilog.push_back(mcode::Instruction(X8664Opcode::MOVSD, {m_dst, m_src}));
         }
     }
 

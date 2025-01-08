@@ -3,6 +3,8 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 
+#include <variant>
+
 namespace banjo {
 
 namespace target {
@@ -10,11 +12,14 @@ namespace target {
 class AArch64SSALowerer : public codegen::SSALowerer {
 
 private:
+    struct RegOffset {
+        mcode::Register reg;
+        unsigned scale = 0;
+    };
+
     struct Address {
         mcode::Operand base;
-        int imm_offset = 0;
-        mcode::Register reg_offset = mcode::Register::from_virtual(-1);
-        int reg_scale = 0;
+        std::variant<RegOffset, int> offset;
     };
 
     unsigned next_const_index = 0;
@@ -66,13 +71,13 @@ public:
 
 private:
     void lower_fp_operation(mcode::Opcode opcode, ssa::Instruction &instr);
-    mcode::Operand lower_reg_val(ssa::VirtualRegister virtual_reg, int size);
+    mcode::Operand lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size);
     mcode::Value move_const_into_register(const ssa::Value &value, ssa::Type type);
-    mcode::Value move_int_into_register(LargeInt value, int size);
-    mcode::Value move_float_into_register(double fp, int size);
-    void move_elements_into_register(mcode::Value value, std::uint16_t *elements, int count);
+    mcode::Value move_int_into_register(LargeInt value, unsigned size);
+    mcode::Value move_float_into_register(double fp, unsigned size);
+    void move_elements_into_register(mcode::Value value, std::uint16_t *elements, unsigned count);
     mcode::Value move_symbol_into_register(std::string symbol);
-    void calculate_address(mcode::Register dst, Address addr);
+    void calculate_address(mcode::Operand m_dst, Address addr);
     mcode::Value create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);

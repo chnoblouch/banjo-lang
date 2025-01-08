@@ -1,5 +1,6 @@
 #include "aarch64_reg_analyzer.hpp"
 
+#include "banjo/mcode/calling_convention.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -229,7 +230,7 @@ bool AArch64RegAnalyzer::is_float_instr(mcode::Instruction &instr) {
 }
 
 void AArch64RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
-    if (operand.is_virtual_reg() || operand.is_physical_reg()) {
+    if (operand.is_register()) {
         dst.push_back({.reg = operand.get_register(), .usage = usage});
     } else if (operand.is_aarch64_addr()) {
         collect_addr_regs(operand, dst);

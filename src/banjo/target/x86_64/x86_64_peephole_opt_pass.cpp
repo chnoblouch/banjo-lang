@@ -35,16 +35,12 @@ void X8664PeepholeOptPass::run(mcode::Function *func) {
 
     for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
         for (mcode::Instruction &instr : basic_block) {
-            if (instr.get_opcode() == X8664Opcode::MOVSS && is_reg(instr.get_operand(0)) &&
-                is_reg(instr.get_operand(1))) {
+            if (instr.get_opcode() == X8664Opcode::MOVSS && instr.get_operand(0).is_register() &&
+                instr.get_operand(1).is_register()) {
                 instr.set_opcode(X8664Opcode::MOVAPS);
             }
         }
     }
-}
-
-bool X8664PeepholeOptPass::is_reg(mcode::Operand &operand) {
-    return operand.is_virtual_reg() || operand.is_physical_reg();
 }
 
 } // namespace target

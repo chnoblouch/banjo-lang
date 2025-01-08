@@ -2,6 +2,7 @@
 #define DEBUG_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 #include "banjo/target/target_description.hpp"
 
 namespace banjo {
@@ -30,7 +31,7 @@ private:
 
     static std::string get_stack_slot_name(
         mcode::Function *func,
-        mcode::Register reg,
+        mcode::StackSlotID stack_slot,
         int instr_index,
         bool brackets = true
     );

@@ -170,7 +170,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
     stream << "useless:";
 
     for (const auto &[reg, ranges] : reg_ranges) {
-        if (!reg.is_virtual_reg()) continue;
+        if (!reg.is_virtual()) continue;
 
         bool used = false;
 
@@ -196,7 +196,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
     for (const auto &[reg, ranges] : reg_ranges) {
         std::string vreg_header;
 
-        if (reg.is_virtual_reg()) {
+        if (reg.is_virtual()) {
             vreg_header = '%' + std::to_string(reg.get_virtual_reg());
         } else {
             vreg_header = DebugEmitter::get_physical_reg_name(reg.get_physical_reg(), 8);

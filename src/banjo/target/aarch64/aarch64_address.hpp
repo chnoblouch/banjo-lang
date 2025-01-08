@@ -19,11 +19,11 @@ public:
 
 private:
     Type type;
-    mcode::Register base = mcode::Register::from_virtual(-1);
+    mcode::Register base;
 
     union {
         int offset_imm;
-        mcode::Register offset_reg = mcode::Register::from_virtual(-1);
+        mcode::Register offset_reg = mcode::Register();
     };
 
 public:

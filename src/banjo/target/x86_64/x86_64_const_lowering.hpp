@@ -29,7 +29,7 @@ private:
     struct ConstStorage {
         ConstStorageAccess access;
         std::string const_label;
-        mcode::Register reg = mcode::Register::from_virtual(-1);
+        mcode::Register reg;
     };
 
     X8664SSALowerer &lowerer;

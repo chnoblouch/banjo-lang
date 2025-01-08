@@ -1,20 +1,22 @@
 #ifndef CODEGEN_SSA_LOWERER_H
 #define CODEGEN_SSA_LOWERER_H
 
+#include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/module.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 #include "banjo/ssa/module.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target.hpp"
 
-
 #include <unordered_map>
-#include <vector>
+#include <variant>
 
 namespace banjo {
 
 namespace codegen {
 
-struct IRLoweringContext {
-    std::unordered_map<long, long> stack_regs;
+struct SSALoweringContext {
+    std::unordered_map<ssa::VirtualRegister, mcode::StackSlotID> stack_regs;
     std::unordered_map<ssa::VirtualRegister, int> reg_use_counts;
 };
 
@@ -36,7 +38,7 @@ private:
 
 protected:
     target::Target *target;
-    IRLoweringContext context;
+    SSALoweringContext context;
     BasicBlockContext basic_block_context;
 
 private:
@@ -65,9 +67,13 @@ public:
     mcode::Module &get_machine_module() { return machine_module; }
     mcode::Function *get_machine_func() { return machine_func; }
     mcode::BasicBlock &get_machine_basic_block() { return *machine_basic_block; }
-    
+
     mcode::InstrIter emit(mcode::Instruction instr);
-    mcode::Register lower_reg(ssa::VirtualRegister reg);
+
+    std::variant<mcode::Register, mcode::StackSlotID> map_vreg(ssa::VirtualRegister reg);
+    mcode::Register map_vreg_as_reg(ssa::VirtualRegister reg);
+    mcode::Operand map_vreg_as_operand(ssa::VirtualRegister reg, unsigned size);
+    mcode::Operand map_vreg_dst(ssa::Instruction &instr, unsigned size);
 
     unsigned get_size(const ssa::Type &type);
     unsigned get_alignment(const ssa::Type &type);

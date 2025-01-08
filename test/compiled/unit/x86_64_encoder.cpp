@@ -110,7 +110,7 @@ Operand random_sse_reg() {
 
 Operand random_addr(unsigned size = 0) {
     Register reg = Register::from_physical(X8664Register::RAX + std::rand() % 16);
-    return Operand::from_addr(reg, size);
+    return Operand::from_addr(IndirectAddress(reg), size);
 }
 
 Operand rax(unsigned size) {

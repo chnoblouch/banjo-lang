@@ -109,7 +109,7 @@ std::vector<RegAllocInstr> RegAllocPass::collect_instrs(mcode::BasicBlock &basic
             .iter = iter,
             .regs = analyzer.get_operands(iter, basic_block),
         };
-        
+
         index += 1;
     }
 
@@ -127,7 +127,7 @@ void RegAllocPass::assign_reg_classes(Context &ctx) {
 void RegAllocPass::reserve_fixed_ranges(Context &ctx) {
     // Reserve ranges for fixed physical registers.
     for (auto &[reg, ranges] : ctx.liveness.reg_ranges) {
-        if (!reg.is_physical_reg()) {
+        if (!reg.is_physical()) {
             continue;
         }
 
@@ -160,7 +160,7 @@ std::vector<Bundle> RegAllocPass::create_bundles(Context &ctx) {
     std::vector<Bundle> bundles;
 
     for (auto &[reg, ranges] : ctx.liveness.reg_ranges) {
-        if (!reg.is_virtual_reg()) {
+        if (!reg.is_virtual()) {
             continue;
         }
 
@@ -445,7 +445,7 @@ void RegAllocPass::try_replace(
         mcode::IndirectAddress &addr = operand.get_addr();
         mcode::Register reg = mcode::Register::from_virtual(virtual_reg);
 
-        if (addr.get_base() == reg) {
+        if (addr.is_base_reg() && addr.get_base_reg() == reg) {
             addr.set_base(mcode::Register::from_physical(physical_reg));
         }
 

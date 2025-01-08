@@ -1,12 +1,12 @@
 #ifndef MCODE_CALLING_CONVENTION_H
 #define MCODE_CALLING_CONVENTION_H
 
-#include "banjo/ssa/function.hpp"
-#include "banjo/ssa/type.hpp"
+#include "banjo/mcode/function.hpp"
 #include "banjo/mcode/instruction.hpp"
-#include "banjo/mcode/parameter.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_regions.hpp"
+#include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/type.hpp"
 
 #include <algorithm>
 #include <vector>

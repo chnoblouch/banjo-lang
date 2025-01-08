@@ -1,5 +1,6 @@
 #include "x86_64_reg_analyzer.hpp"
 
+#include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -267,7 +268,7 @@ bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegis
 
 void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
     unsigned size = use.instr_iter->get_operand(1).get_size();
-    mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_stack_slot(use.stack_slot), size);
+    mcode::Operand src = mcode::Operand::from_stack_slot(use.stack_slot, size);
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
 
     if (is_memory_operand_allowed(*use.instr_iter)) {
@@ -288,7 +289,7 @@ void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
 void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
     unsigned size = use.instr_iter->get_operand(0).get_size();
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
-    mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_stack_slot(use.stack_slot), size);
+    mcode::Operand dst = mcode::Operand::from_stack_slot(use.stack_slot, size);
 
     if (is_memory_operand_allowed(*use.instr_iter)) {
         use.instr_iter->get_operand(0) = dst;
@@ -341,7 +342,7 @@ bool X8664RegAnalyzer::is_memory_operand_allowed(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
-    if (!((dst.is_virtual_reg() || dst.is_physical_reg()) && (src.is_virtual_reg() || src.is_physical_reg()))) {
+    if (!dst.is_register() || !src.is_register()) {
         return false;
     }
 
@@ -364,7 +365,7 @@ void X8664RegAnalyzer::add_udu_ops(mcode::Instruction &instr, std::vector<mcode:
 }
 
 void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
-    if (operand.is_virtual_reg() || operand.is_physical_reg()) {
+    if (operand.is_register()) {
         dst.push_back({.reg = operand.get_register(), .usage = usage});
     } else if (operand.is_addr()) {
         collect_addr_regs(operand, dst);
@@ -374,11 +375,11 @@ void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usa
 void X8664RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst) {
     mcode::IndirectAddress &addr = operand.get_addr();
 
-    if (!addr.get_base().is_stack_slot()) {
-        dst.push_back({addr.get_base(), mcode::RegUsage::USE});
+    if (addr.is_base_reg()) {
+        dst.push_back({addr.get_base_reg(), mcode::RegUsage::USE});
     }
 
-    if (addr.has_reg_offset() && !addr.get_reg_offset().is_stack_slot()) {
+    if (addr.has_reg_offset()) {
         dst.push_back({addr.get_reg_offset(), mcode::RegUsage::USE});
     }
 }

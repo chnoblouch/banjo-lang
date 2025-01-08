@@ -2,9 +2,8 @@
 #define MCODE_REGISTER_H
 
 #include "banjo/utils/bit_set.hpp"
-#include "banjo/utils/macros.hpp"
 
-#include <unordered_set>
+#include <unordered_set> // IWYU pragma: keep
 
 namespace banjo {
 
@@ -18,40 +17,28 @@ typedef unsigned PhysicalReg;
 class Register {
 
 private:
-    enum class Type {
-        VIRTUAL_REG,
-        PHYSICAL_REG,
-        STACK_SLOT,
-    };
-
-    Type type;
-    long value;
+    unsigned value;
 
 public:
-    static Register from_virtual(long id) { return Register(Type::VIRTUAL_REG, id); }
-    static Register from_physical(long id) { return Register(Type::PHYSICAL_REG, id); }
-    static Register from_stack_slot(long slot) { return Register(Type::STACK_SLOT, slot); }
+    static Register from_virtual(VirtualReg reg) { return Register((reg << 1) | 0); }
+    static Register from_physical(PhysicalReg reg) { return Register((reg << 1) | 1); }
 
-    Register(Type type, long value) : type(type), value(value) {}
+    Register() : value(0xFFFFFFFF) {}
 
-    Type get_type() const { return type; }
-    bool is_virtual_reg() const { return type == Type::VIRTUAL_REG; }
-    bool is_physical_reg() const { return type == Type::PHYSICAL_REG; }
-    bool is_stack_slot() const { return type == Type::STACK_SLOT; }
+private:
+    Register(unsigned value) : value(value) {}
 
-    VirtualReg get_virtual_reg() const { return static_cast<VirtualReg>(value); }
-    PhysicalReg get_physical_reg() const { return static_cast<PhysicalReg>(value); }
-    long get_stack_slot() const { return value; }
+public:
+    unsigned internal_value() const { return value; }
 
-    bool is_virtual_reg(long id) const { return is_virtual_reg() && value == id; }
-    bool is_physical_reg(long id) const { return is_physical_reg() && value == id; }
-    bool is_stack_slot(long slot) const { return is_stack_slot() && value == slot; }
+    bool is_virtual() const { return (value & 1) == 0; }
+    bool is_physical() const { return (value & 1) == 1; }
 
-    friend bool operator==(const Register &left, const Register &right) {
-        return left.type == right.type && left.value == right.value;
-    }
+    VirtualReg get_virtual_reg() const { return value >> 1; }
+    PhysicalReg get_physical_reg() const { return value >> 1; }
 
-    friend bool operator!=(const Register &left, const Register &right) { return !(left == right); }
+    friend bool operator==(const Register &lhs, const Register &rhs) { return lhs.value == rhs.value; }
+    friend bool operator!=(const Register &lhs, const Register &rhs) { return !(lhs == rhs); }
 
     friend class RegisterSet;
 };
@@ -66,16 +53,7 @@ public:
 
     public:
         Iterator(BitSet::Iterator iter) : iter(iter) {}
-
-        Register operator*() const {
-            unsigned position = *iter;
-
-            if (position & 1) {
-                return Register::from_physical(position >> 1);
-            } else {
-                return Register::from_virtual(position >> 1);
-            }
-        }
+        Register operator*() const { return Register(*iter); }
 
         Iterator &operator++() {
             ++iter;
@@ -90,26 +68,15 @@ private:
     BitSet set;
 
 public:
-    bool contains(Register reg) const { return set.get(get_bit_position(reg)); }
+    bool contains(Register reg) const { return set.get(reg.value); }
     unsigned size() const { return set.size(); }
 
-    void insert(Register reg) { set.set(get_bit_position(reg)); }
-    void remove(Register reg) { set.clear(get_bit_position(reg)); }
+    void insert(Register reg) { set.set(reg.value); }
+    void remove(Register reg) { set.clear(reg.value); }
     void union_with(const RegisterSet &other) { set.union_with(other.set); }
 
     Iterator begin() const { return Iterator(set.begin()); }
     Iterator end() const { return Iterator(set.end()); }
-
-private:
-    static unsigned get_bit_position(Register reg) {
-        if (reg.is_virtual_reg()) {
-            return (reg.value << 1) | 0;
-        } else if (reg.is_physical_reg()) {
-            return (reg.value << 1) | 1;
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    }
 };
 
 } // namespace mcode
@@ -119,7 +86,7 @@ private:
 template <>
 struct std::hash<banjo::mcode::Register> {
     std::size_t operator()(const banjo::mcode::Register &reg) const noexcept {
-        return (std::size_t)(reg.get_type()) << 32 | (std::size_t)reg.get_type();
+        return static_cast<std::size_t>(reg.internal_value());
     }
 };
 

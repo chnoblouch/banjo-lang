@@ -1254,12 +1254,11 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
         .displacement = 0,
     };
 
-    if (machine_addr.get_base().is_physical_reg()) {
-        addr.base = (AddrRegCode)reg(machine_addr.get_base());
-    } else if (machine_addr.get_base().is_stack_slot()) {
+    if (machine_addr.is_base_reg()) {
+        addr.base = (AddrRegCode)reg(machine_addr.get_base_reg());
+    } else if (machine_addr.is_base_stack_slot()) {
         addr.base = AddrRegCode::ADDR_ESP;
-        addr.displacement =
-            func->get_stack_frame().get_stack_slot(machine_addr.get_base().get_stack_slot()).get_offset();
+        addr.displacement = func->get_stack_frame().get_stack_slot(machine_addr.get_base_stack_slot()).get_offset();
     } else {
         ASSERT_UNREACHABLE;
     }

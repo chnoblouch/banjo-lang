@@ -1,5 +1,7 @@
 #include "machine_pass_utils.hpp"
 
+#include "banjo/mcode/calling_convention.hpp"
+
 #include <algorithm>
 
 namespace banjo {
@@ -16,7 +18,7 @@ void MachinePassUtils::replace_virtual_reg(mcode::BasicBlock &basic_block, long 
             if (operand.is_addr()) {
                 mcode::IndirectAddress &addr = operand.get_addr();
 
-                if (addr.get_base().is_virtual_reg() && addr.get_base().get_virtual_reg() == old_register) {
+                if (addr.is_base_reg() && addr.get_base_reg() == mcode::Register::from_virtual(old_register)) {
                     addr.set_base(mcode::Register::from_virtual(new_register));
                 }
 
@@ -37,7 +39,7 @@ void MachinePassUtils::replace_reg(mcode::Instruction &instr, mcode::Register ol
         if (operand.is_addr()) {
             mcode::IndirectAddress &addr = operand.get_addr();
 
-            if (addr.get_base() == old_reg) {
+            if (addr.is_base_reg() && addr.get_base_reg() == old_reg) {
                 addr.set_base(new_reg);
             }
 

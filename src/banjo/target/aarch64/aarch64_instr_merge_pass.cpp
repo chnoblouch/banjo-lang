@@ -54,7 +54,7 @@ AArch64InstrMergePass::RegUsageMap AArch64InstrMergePass::analyze_usages(mcode::
 
             if (operand.is_aarch64_addr()) {
                 const AArch64Address &addr = operand.get_aarch64_addr();
-                if (addr.get_base().is_virtual_reg()) {
+                if (addr.get_base().is_virtual()) {
                     usages[addr.get_base().get_virtual_reg()].num_consumers++;
                 }
             }
@@ -105,7 +105,7 @@ AArch64Address AArch64InstrMergePass::try_merge_addr(const AArch64Address &addr,
     RegUsage &producer_usage = usages[addr.get_base().get_virtual_reg()];
     mcode::Instruction &producer = *producer_usage.producer;
 
-    if (addr.get_type() == AArch64Address::Type::BASE && addr.get_base().is_virtual_reg()) {
+    if (addr.get_type() == AArch64Address::Type::BASE && addr.get_base().is_virtual()) {
         if (producer.get_opcode() == AArch64Opcode::ADD) {
             if (producer.get_operand(2).is_int_immediate()) {
                 mcode::Register new_base = producer.get_operand(1).get_register();

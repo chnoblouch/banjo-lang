@@ -2,6 +2,7 @@
 #define NASM_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 #include "banjo/target/target_description.hpp"
 
 #include <unordered_map>
@@ -30,7 +31,7 @@ private:
 
     std::string get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand);
     std::string get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size);
-    std::string get_stack_slot_name(mcode::Function *func, mcode::Register reg, bool brackets = true);
+    std::string get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot, bool brackets = true);
     std::string get_physical_reg_name(long reg, int size);
     std::string gen_symbol(const mcode::Symbol &symbol);
     std::string get_size_specifier(int size);

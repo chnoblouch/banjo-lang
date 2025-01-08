@@ -37,8 +37,10 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
 
     for (int i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
-        mcode::Register reg = get_arg_reg(instr, i - 1, lowerer);
-        x86_64_lowerer.lower_as_move_into_reg(reg, operand);
+        unsigned size = x86_64_lowerer.get_size(operand.get_type());
+
+        mcode::Operand dst = get_arg_dst(instr, i - 1, lowerer).with_size(size);
+        x86_64_lowerer.lower_as_move(dst, operand);
     }
 
     append_call(instr.get_operand(0), lowerer);
@@ -48,7 +50,7 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
     }
 }
 
-mcode::Register SysVCallingConv::get_arg_reg(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer) {
+mcode::Operand SysVCallingConv::get_arg_dst(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer) {
     mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
 
     std::vector<ssa::Type> types;
@@ -58,14 +60,14 @@ mcode::Register SysVCallingConv::get_arg_reg(ssa::Instruction &instr, unsigned i
 
     mcode::ArgStorage storage = get_arg_storage(types)[index];
     if (storage.in_reg) {
-        return mcode::Register::from_physical(storage.reg);
+        return mcode::Operand::from_register(mcode::Register::from_physical(storage.reg));
     } else if (stack_frame.get_call_arg_slot_indices().size() <= storage.arg_slot_index) {
         mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
         stack_slot.set_call_arg_index(storage.arg_slot_index);
-        return mcode::Register::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
+        return mcode::Operand::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
     } else {
         mcode::StackSlotID slot_index = stack_frame.get_call_arg_slot_indices()[storage.arg_slot_index];
-        return mcode::Register::from_stack_slot(slot_index);
+        return mcode::Operand::from_stack_slot(slot_index);
     }
 }
 
@@ -83,7 +85,7 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
             m_callee = x86_64_lowerer.lower_address(producer->get_operand(1));
             lowerer.discard_use(func_operand.get_register());
         } else {
-            m_callee = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), ptr_size);
+            m_callee = lowerer.map_vreg_as_operand(func_operand.get_register(), ptr_size);
         }
     }
 
@@ -221,7 +223,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
             prolog.push_back(mcode::Instruction(
                 X8664Opcode::MOVSD,
                 {
-                    mcode::Operand::from_register(mcode::Register::from_stack_slot(slot_index), 8),
+                    mcode::Operand::from_stack_slot(slot_index, 8),
                     mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
                 }
             ));
@@ -247,7 +249,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
                 X8664Opcode::MOVSD,
                 {
                     mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                    mcode::Operand::from_register(mcode::Register::from_stack_slot(slot_index), 8),
+                    mcode::Operand::from_stack_slot(slot_index, 8),
                 }
             ));
         }

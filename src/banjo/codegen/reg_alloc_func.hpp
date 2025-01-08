@@ -4,6 +4,7 @@
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/register.hpp"
 
+#include <optional>
 #include <unordered_map>
 #include <vector>
 

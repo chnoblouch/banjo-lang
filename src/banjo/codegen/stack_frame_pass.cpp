@@ -1,6 +1,8 @@
 #include "stack_frame_pass.hpp"
 
-#include "banjo/codegen/machine_pass_utils.hpp"
+#include "banjo/mcode/calling_convention.hpp"
+#include "banjo/mcode/stack_frame.hpp"
+#include "banjo/mcode/stack_regions.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <algorithm>
@@ -64,7 +66,7 @@ void StackFramePass::run(mcode::Function *func) {
 
     std::vector<ssa::Type> types;
     for (mcode::Parameter &param : func->get_parameters()) {
-        types.push_back(param.get_type());
+        types.push_back(param.type);
     }
 
     std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(types);
@@ -75,7 +77,7 @@ void StackFramePass::run(mcode::Function *func) {
             continue;
         }
 
-        mcode::StackSlot &slot = frame.get_stack_slot(param.get_stack_slot_index());
+        mcode::StackSlot &slot = frame.get_stack_slot(std::get<mcode::StackSlotID>(param.storage));
         int sp_offset = arg_storage[i].stack_offset;
         slot.set_offset(frame.get_total_size() + sp_offset);
     }

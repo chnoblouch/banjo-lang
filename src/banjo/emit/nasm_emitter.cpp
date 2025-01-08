@@ -276,6 +276,7 @@ void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction 
 std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand) {
     if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
     else if (operand.is_register()) return get_reg_name(basic_block, operand.get_register(), operand.get_size());
+    else if (operand.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot());
     else if (operand.is_symbol()) return gen_symbol(operand.get_symbol());
     else if (operand.is_label()) return operand.get_label();
     else if (operand.is_symbol_deref()) return "[" + gen_symbol(operand.get_deref_symbol()) + "]";
@@ -283,21 +284,18 @@ std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode:
         mcode::IndirectAddress addr = operand.get_addr();
 
         std::string base;
-        if (addr.get_base().is_stack_slot()) {
-            base = get_stack_slot_name(basic_block.get_func(), addr.get_base(), false);
+        if (addr.is_base_reg()) {
+            base = get_reg_name(basic_block, addr.get_base_reg(), 8);
+        } else if (addr.is_base_stack_slot()) {
+            base = get_stack_slot_name(basic_block.get_func(), addr.get_base_stack_slot(), false);
         } else {
-            base = get_reg_name(basic_block, addr.get_base(), 8);
+            ASSERT_UNREACHABLE;
         }
 
         if (addr.has_offset()) {
             std::string offset;
-            if (addr.has_reg_offset()) {
-                if (addr.get_reg_offset().is_stack_slot()) {
-                    offset = get_stack_slot_name(basic_block.get_func(), addr.get_reg_offset(), false);
-                } else {
-                    offset = get_reg_name(basic_block, addr.get_reg_offset(), 8);
-                }
-            } else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
+            if (addr.has_reg_offset()) offset = get_reg_name(basic_block, addr.get_reg_offset(), 8);
+            else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
 
             std::string scaled_offset =
                 addr.get_scale() == 1 ? offset : std::to_string(addr.get_scale()) + " * " + offset;
@@ -309,10 +307,9 @@ std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode:
 }
 
 std::string NASMEmitter::get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size) {
-    if (reg.is_virtual_reg()) return "%" + std::to_string(reg.get_virtual_reg());
-    else if (reg.is_physical_reg()) return get_physical_reg_name(reg.get_physical_reg(), size);
-    else if (reg.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), reg);
-    else return "???";
+    if (reg.is_virtual()) return "%" + std::to_string(reg.get_virtual_reg());
+    else if (reg.is_physical()) return get_physical_reg_name(reg.get_physical_reg(), size);
+    else ASSERT_UNREACHABLE;
 }
 
 std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
@@ -404,9 +401,10 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
     return "???";
 }
 
-std::string NASMEmitter::get_stack_slot_name(mcode::Function *func, mcode::Register reg, bool brackets /* = true */) {
+std::string NASMEmitter::
+    get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot, bool brackets /*= true*/) {
     mcode::StackFrame &frame = func->get_stack_frame();
-    mcode::StackSlot &slot = frame.get_stack_slot(reg.get_stack_slot());
+    mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
     int offset = slot.get_offset();
     std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);
 

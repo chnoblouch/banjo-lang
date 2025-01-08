@@ -2,7 +2,9 @@
 
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
+
 #include <variant>
 
 namespace banjo {
@@ -172,6 +174,7 @@ void ClangAsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand &
     else if (operand.is_stack_slot_offset()) emit_stack_slot_offset(func, operand.get_stack_slot_offset());
     else if (operand.is_aarch64_left_shift()) stream << "lsl #" << operand.get_aarch64_left_shift();
     else if (operand.is_aarch64_condition()) emit_condition(operand.get_aarch64_condition());
+    else ASSERT_UNREACHABLE;
 }
 
 void ClangAsmEmitter::emit_reg(int reg, int size) {

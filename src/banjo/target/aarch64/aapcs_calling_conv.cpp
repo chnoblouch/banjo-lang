@@ -48,7 +48,8 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
         bool is_float = operand.get_type().is_floating_point();
         mcode::ArgStorage cur_arg_storage = arg_storage[i - 1];
 
-        mcode::Register reg = mcode::Register::from_virtual(-1);
+        mcode::Register reg;
+
         if (cur_arg_storage.in_reg) {
             reg = mcode::Register::from_physical(cur_arg_storage.reg);
         } else {
@@ -63,12 +64,9 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
         ));
 
         if (!cur_arg_storage.in_reg) {
-            int size = lowerer.get_size(operand.get_type());
-            mcode::Register stack_slot = get_arg_reg(operand, i - 1, lowerer);
-            lowerer.emit(mcode::Instruction(
-                AArch64Opcode::STR,
-                {mcode::Operand::from_register(reg, size), mcode::Operand::from_register(stack_slot, 8)}
-            ));
+            unsigned size = lowerer.get_size(operand.get_type());
+            mcode::Operand dst = get_arg_dst(operand, i - 1, lowerer).with_size(size);
+            lowerer.emit(mcode::Instruction(AArch64Opcode::STR, {mcode::Operand::from_register(reg, size), dst}));
         }
     }
 
@@ -83,7 +81,7 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
         call_operand = mcode::Operand::from_symbol(func_operand.get_symbol_name(), 8);
     } else if (func_operand.is_register()) {
         call_opcode = AArch64Opcode::BLR;
-        call_operand = mcode::Operand::from_register(lowerer.lower_reg(func_operand.get_register()), 8);
+        call_operand = lowerer.map_vreg_as_operand(func_operand.get_register(), 8);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -104,10 +102,10 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
     }
 }
 
-mcode::Register AAPCSCallingConv::get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer) {
+mcode::Operand AAPCSCallingConv::get_arg_dst(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer) {
     if (index < GENERAL_ARG_REGS.size()) {
         long id = operand.get_type().is_floating_point() ? FLOAT_ARG_REGS[index] : GENERAL_ARG_REGS[index];
-        return mcode::Register::from_physical(id);
+        return mcode::Operand::from_register(mcode::Register::from_physical(id));
     } else {
         int arg_slot_index = index - GENERAL_ARG_REGS.size();
         mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
@@ -115,10 +113,10 @@ mcode::Register AAPCSCallingConv::get_arg_reg(ssa::Operand &operand, int index, 
         if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
             mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
             stack_slot.set_call_arg_index(arg_slot_index);
-            return mcode::Register::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
+            return mcode::Operand::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
         } else {
             int slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
-            return mcode::Register::from_stack_slot(slot_index);
+            return mcode::Operand::from_stack_slot(slot_index);
         }
     }
 }

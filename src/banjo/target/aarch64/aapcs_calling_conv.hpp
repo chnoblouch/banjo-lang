@@ -33,7 +33,7 @@ public:
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    mcode::Register get_arg_reg(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer);
+    mcode::Operand get_arg_dst(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer);
 };
 
 } // namespace target

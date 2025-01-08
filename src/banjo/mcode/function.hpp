@@ -2,9 +2,8 @@
 #define MCODE_FUNCTION_H
 
 #include "banjo/mcode/basic_block.hpp"
-#include "banjo/mcode/calling_convention.hpp"
-#include "banjo/mcode/parameter.hpp"
 #include "banjo/mcode/stack_frame.hpp"
+#include "banjo/ssa/type.hpp"
 
 #include <string>
 #include <vector>
@@ -12,6 +11,15 @@
 namespace banjo {
 
 namespace mcode {
+
+class CallingConvention;
+
+class Parameter {
+
+public:
+    std::variant<Register, StackSlotID> storage;
+    ssa::Type type;
+};
 
 struct UnwindInfo {
     unsigned int alloc_size;

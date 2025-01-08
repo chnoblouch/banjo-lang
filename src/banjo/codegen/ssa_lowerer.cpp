@@ -97,11 +97,11 @@ void SSALowerer::lower_funcs() {
 
 mcode::Parameter SSALowerer::lower_param(mcode::ArgStorage storage, mcode::Function *machine_func) {
     if (storage.in_reg) {
-        return mcode::Parameter(mcode::Register::from_physical(storage.reg), -1);
+        return mcode::Parameter{mcode::Register::from_physical(storage.reg)};
     } else {
         mcode::StackSlot slot(mcode::StackSlot::Type::GENERIC, 8, 1);
-        long slot_index = machine_func->get_stack_frame().new_stack_slot(slot);
-        return mcode::Parameter(mcode::Register::from_stack_slot(slot_index), slot_index);
+        mcode::StackSlotID slot_index = machine_func->get_stack_frame().new_stack_slot(slot);
+        return mcode::Parameter{slot_index};
     }
 }
 
@@ -260,14 +260,33 @@ mcode::InstrIter SSALowerer::emit(mcode::Instruction instr) {
     return basic_block_context.basic_block->insert_before(basic_block_context.insertion_iter, std::move(instr));
 }
 
-mcode::Register SSALowerer::lower_reg(ssa::VirtualRegister reg) {
-    auto it = context.stack_regs.find(reg);
+std::variant<mcode::Register, mcode::StackSlotID> SSALowerer::map_vreg(ssa::VirtualRegister reg) {
+    auto iter = context.stack_regs.find(reg);
 
-    if (it != context.stack_regs.end()) {
-        return mcode::Register::from_stack_slot(it->second);
+    if (iter != context.stack_regs.end()) {
+        return iter->second;
     } else {
         return mcode::Register::from_virtual(reg);
     }
+}
+
+mcode::Register SSALowerer::map_vreg_as_reg(ssa::VirtualRegister reg) {
+    ASSERT(!context.stack_regs.contains(reg));
+    return mcode::Register::from_virtual(reg);
+}
+
+mcode::Operand SSALowerer::map_vreg_as_operand(ssa::VirtualRegister reg, unsigned size) {
+    auto iter = context.stack_regs.find(reg);
+
+    if (iter != context.stack_regs.end()) {
+        return mcode::Operand::from_stack_slot(iter->second, size);
+    } else {
+        return mcode::Operand::from_register(mcode::Register::from_virtual(reg), size);
+    }
+}
+
+mcode::Operand SSALowerer::map_vreg_dst(ssa::Instruction &instr, unsigned size) {
+    return mcode::Operand::from_register(map_vreg_as_reg(*instr.get_dest()), size);
 }
 
 unsigned SSALowerer::get_size(const ssa::Type &type) {
