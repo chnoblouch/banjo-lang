@@ -55,7 +55,7 @@ enum : std::uint32_t {
     X86_64_PC32 = 2,
     X86_64_GOT32 = 3,
     X86_64_PLT32 = 4,
-    X86_64_GOTPCREL = 5,
+    X86_64_GOTPCREL = 9,
 };
 }
 
