@@ -22,6 +22,9 @@ meta if os.IS_UNIX {
         var next: *Addrinfo;
     }
 
+    # TODO: This size is definitely only 40 on x86-64.
+    type PthreadMutex = [u8; 40];
+
     const CLOCK_REALTIME: u64 = 0;
     const CLOCK_MONOTONIC: u64 = 1;
 
@@ -56,6 +59,10 @@ meta if os.IS_UNIX {
     native func __errno_location() -> *i32;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
     native func pthread_join(thread: usize, retval: *addr) -> i32;
+    native func pthread_mutex_init(mutex: *PthreadMutex, attr: addr) -> i32;
+    native func pthread_mutex_lock(mutex: *PthreadMutex) -> i32;
+    native func pthread_mutex_unlock(mutex: *PthreadMutex) -> i32;
+    native func pthread_mutex_destroy(mutex: *PthreadMutex) -> i32;
     native func nanosleep(req: *Timespec, rem: *Timespec);
     native func get_nprocs() -> i32;
     native func clock_gettime(clk_id: u64, tp: *Timespec) -> i32;

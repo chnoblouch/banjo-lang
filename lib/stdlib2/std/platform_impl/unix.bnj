@@ -1,9 +1,9 @@
 use os.{IS_UNIX, posix};
-use std.{convert.to_string, system.panic};
+use std.{memory, convert.to_string, system.panic};
 
 meta if IS_UNIX {
     type Error = i32;
-    type Mutex = i32;
+    type Mutex = *posix.PthreadMutex;
     type Socket = i32;
 
     const SOCKET_INVALID: Socket = -1;
@@ -62,23 +62,33 @@ meta if IS_UNIX {
     }
 
     pub func mutex_create() -> Mutex {
-        # TODO
-        panic("unimplemented on this platform");
+        var mutex = memory.alloc_box[posix.PthreadMutex]();
+        
+        if posix.pthread_mutex_init(mutex, null) != 0 {
+            panic("failed to create mutex");
+        }
+
+        return mutex;
     }
 
     pub func mutex_lock(mutex: Mutex) {
-        # TODO
-        panic("unimplemented on this platform");
+        if posix.pthread_mutex_lock(mutex) != 0 {
+            panic("failed to lock mutex");
+        }
     }
 
     pub func mutex_unlock(mutex: Mutex) {
-        # TODO
-        panic("unimplemented on this platform");
+        if posix.pthread_mutex_unlock(mutex) != 0 {
+            panic("failed to lock mutex");
+        }
     }
 
     pub func mutex_destroy(mutex: Mutex) {
-        # TODO
-        panic("unimplemented on this platform");
+        if posix.pthread_mutex_destroy(mutex) != 0 {
+            panic("failed to destroy mutex");
+        }
+
+        memory.free(mutex);
     }
 
     pub func time_system_ticks() -> u64 {

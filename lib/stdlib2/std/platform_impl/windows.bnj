@@ -84,17 +84,13 @@ meta if IS_WINDOWS {
         if result != winapi.WAIT_OBJECT_0 {
             panic("failed to lock mutex");
         }
-
-        println("locked!");
     }
 
     pub func mutex_unlock(mutex: Mutex) {
         var result = winapi.release_mutex(mutex);
         if result == 0 {
-            panic("failed to unlock mutex");
+            println("failed to unlock mutex");
         }
-
-        println("unlocked!");
     }
 
     pub func mutex_destroy(mutex: Mutex) {
