@@ -56,7 +56,6 @@ meta if os.IS_UNIX {
 
     native func close(fd: i32) -> i32;
     native func strerror(errnum: i32) -> *u8;
-    native func __errno_location() -> *i32;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
     native func pthread_join(thread: usize, retval: *addr) -> i32;
     native func pthread_mutex_init(mutex: *PthreadMutex, attr: addr) -> i32;
@@ -74,7 +73,17 @@ meta if os.IS_UNIX {
     native func getaddrinfo(node: *u8, service: *u8, hints: *Addrinfo, res: **Addrinfo) -> i32;
     native func freeaddrinfo(res: *Addrinfo);
 
-    pub func errno() -> i32 {
-        return *__errno_location();
+    meta if os.IS_DARWIN {
+        native func __error() -> *i32;
+
+        pub func errno() -> i32 {
+            return *__error();
+        }
+    } else {
+        native func __errno_location() -> *i32;
+        
+        pub func errno() -> i32 {
+            return *__errno_location();
+        }
     }
 }
