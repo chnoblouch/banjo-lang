@@ -1,0 +1,14 @@
+# test:compiles
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+}
+
+proto P {
+    func f(self);
+}
+
+struct S: P {
+    func f(self) {}
+}

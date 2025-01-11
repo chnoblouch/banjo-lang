@@ -37,6 +37,7 @@ private:
     void generate_func_def(const sir::FuncDef &sir_func);
     void generate_struct_def(const sir::StructDef &sir_struct_def);
     void generate_union_def(const sir::UnionDef &sir_union_def);
+    void generate_proto_def(const sir::ProtoDef &sir_proto_def);
     void generate_var_decl(const sir::VarDecl &sir_var_decl);
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 };

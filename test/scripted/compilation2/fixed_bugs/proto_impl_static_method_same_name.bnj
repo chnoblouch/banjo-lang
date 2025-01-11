@@ -1,0 +1,9 @@
+# test:compiles
+
+proto P {
+    pub func f() {}
+}
+
+struct S: P {
+    pub func f(a: i32) {}
+}

@@ -328,6 +328,41 @@ ssa::Structure *SSAGeneratorContext::get_tuple_struct(const std::vector<ssa::Typ
     return ssa_struct;
 }
 
+const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::StructDef &struct_def) {
+    auto iter = ssa_vtables.find(&struct_def);
+    if (iter != ssa_vtables.end()) {
+        return iter->second;
+    }
+
+    const sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
+
+    for (unsigned i = 0; i < struct_def.impls.size(); i++) {
+        const sir::Expr &impl = struct_def.impls[i];
+        const sir::ProtoDef &proto_def = impl.as_symbol<sir::ProtoDef>();
+
+        std::string vtable_name = "vtable." + struct_def.ident.value + "." + std::to_string(i);
+
+        for (unsigned j = 0; j < proto_def.func_decls.size(); j++) {
+            sir::ProtoFuncDecl func_decl = proto_def.func_decls[j];
+            const sir::FuncDef &func_def = symbol_table.symbols.at(func_decl.get_ident().value).as<sir::FuncDef>();
+
+            std::string vtable_entry_name = vtable_name;
+            if (j != 0) {
+                vtable_entry_name += "." + std::to_string(j);
+            }
+
+            ssa::Function *ssa_func = ssa_funcs.at(&func_def);
+            ssa_mod->add(ssa::Global(vtable_entry_name, ssa::Primitive::ADDR, ssa::Operand::from_func(ssa_func)));
+
+            if (j == 0) {
+                ssa_vtables[&struct_def].push_back(ssa_mod->get_globals().size() - 1);
+            }
+        }
+    }
+
+    return ssa_vtables[&struct_def];
+}
+
 ssa::Type SSAGeneratorContext::get_fat_pointer_type() {
     return get_tuple_struct({ssa::Primitive::ADDR, ssa::Primitive::ADDR});
 }

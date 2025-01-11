@@ -542,6 +542,8 @@ struct FuncType {
     std::vector<Param> params;
     Expr return_type;
 
+    bool is_func_method() const { return params.size() > 0 && params[0].is_self(); }
+
     bool operator==(const FuncType &other) const { return params == other.params && return_type == other.return_type; }
     bool operator!=(const FuncType &other) const { return !(*this == other); }
 };
@@ -1065,7 +1067,7 @@ struct FuncDef {
     Module &find_mod() const;
     bool is_generic() const { return !generic_params.empty(); }
     bool is_main() const { return ident.value == "main"; }
-    bool is_method() const { return type.params.size() > 0 && type.params[0].name.value == "self"; }
+    bool is_method() const { return type.is_func_method(); }
 };
 
 struct FuncDecl {
@@ -1073,6 +1075,8 @@ struct FuncDecl {
     Ident ident;
     Symbol parent;
     FuncType type;
+
+    bool is_method() const { return type.is_func_method(); }
 };
 
 struct NativeFuncDecl {

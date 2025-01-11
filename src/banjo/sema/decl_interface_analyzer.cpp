@@ -17,7 +17,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
         sir::Param &param = func_def.type.params[i];
 
-        if (!analyzer.get_scope().decl.is<sir::ProtoDef>()) {
+        if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_def.is_method())) {
             func_def.block.symbol_table->symbols.insert({param.name.value, &param});
         }
 
@@ -39,7 +39,7 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
 
     ExprAnalyzer(analyzer).analyze(func_decl.type.return_type);
 
-    if (!analyzer.get_scope().decl.is<sir::ProtoDef>()) {
+    if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_decl.is_method())) {
         analyzer.report_generator.report_err_func_decl_outside_proto(func_decl);
     }
 

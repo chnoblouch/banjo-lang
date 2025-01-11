@@ -1,0 +1,11 @@
+# test:output "42"
+
+proto P {
+    pub func f() -> i32 {
+        return 42;
+    }
+}
+
+func main() {
+    println(P.f());
+}

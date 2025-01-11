@@ -453,22 +453,30 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     std::optional<ssa::Value> ssa_proto_self;
 
     sir::Symbol callee_symbol = nullptr;
-    sir::Symbol callee_symbol_parent = nullptr;
+    sir::ProtoDef *proto_def = nullptr;
 
     if (auto symbol_expr = call_expr.callee.match<sir::SymbolExpr>()) {
         callee_symbol = symbol_expr->symbol;
 
+        sir::Symbol callee_symbol_parent = nullptr;
+        bool is_method = false;
+
         if (auto func_def = callee_symbol.match<sir::FuncDef>()) {
             callee_symbol_parent = func_def->parent;
+            is_method = func_def->is_method();
         } else if (auto func_decl = callee_symbol.match<sir::FuncDecl>()) {
             callee_symbol_parent = func_decl->parent;
+            is_method = func_decl->is_method();
+        }
+
+        if (callee_symbol_parent && callee_symbol_parent.is<sir::ProtoDef>() && is_method) {
+            proto_def = &callee_symbol_parent.as<sir::ProtoDef>();
         }
     }
 
-    if (callee_symbol_parent && callee_symbol_parent.is<sir::ProtoDef>()) {
-        const sir::ProtoDef &proto_def = callee_symbol_parent.as<sir::ProtoDef>();
-        unsigned index = *proto_def.get_index(callee_symbol.get_ident().value);
-        ssa::Type vtable_type = ctx.ssa_vtable_types[&proto_def];
+    if (proto_def) {
+        unsigned index = *proto_def->get_index(callee_symbol.get_ident().value);
+        ssa::Type vtable_type = ctx.ssa_vtable_types[proto_def];
 
         ssa_proto_self = generate(call_expr.args[0]).turn_into_reference(ctx).get_ptr();
 
@@ -583,9 +591,15 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
 
         ssa::VirtualRegister ssa_vtable_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 1);
-        unsigned vtable_global_index = ctx.ssa_vtables[&struct_def][impl_index];
-        std::string vtable_global_name = ctx.ssa_mod->get_globals()[vtable_global_index].get_name();
-        ctx.append_store(ssa::Operand::from_global(vtable_global_name, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
+        const std::vector<unsigned> &vtables = ctx.create_vtables(struct_def);
+
+        if (!vtables.empty()) {
+            unsigned vtable_global_index = vtables[impl_index];
+            std::string vtable_global_name = ctx.ssa_mod->get_globals()[vtable_global_index].get_name();
+            ctx.append_store(ssa::Operand::from_global(vtable_global_name, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
+        } else {
+            ctx.append_store(ssa::Operand::from_int_immediate(0, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
+        }
 
         return StoredValue::create_value(stored_val.get_ptr());
     } else {

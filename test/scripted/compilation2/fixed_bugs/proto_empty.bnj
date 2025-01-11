@@ -1,0 +1,9 @@
+# test:compiles
+
+proto P {}
+struct S: P {}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+}

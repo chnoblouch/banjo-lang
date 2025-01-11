@@ -145,6 +145,7 @@ public:
     ssa::Structure *create_union(const sir::UnionDef &sir_union_def);
     ssa::Structure *create_union_case(const sir::UnionCase &sir_union_case);
     ssa::Structure *get_tuple_struct(const std::vector<ssa::Type> &member_types);
+    const std::vector<unsigned> &create_vtables(const sir::StructDef &struct_def);
     ssa::Type get_fat_pointer_type();
 };
 

@@ -83,9 +83,11 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     analyzer.add_symbol_def(&func_def);
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
-        proto_def->func_decls.push_back(sir::ProtoFuncDecl{
-            .decl = &func_def,
-        });
+        if (func_def.is_method()) {
+            proto_def->func_decls.push_back(sir::ProtoFuncDecl{
+                .decl = &func_def,
+            });
+        }
     }
 }
 

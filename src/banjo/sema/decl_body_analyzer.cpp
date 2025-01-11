@@ -15,7 +15,7 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    if (analyzer.get_scope().decl.is<sir::ProtoDef>()) {
+    if (analyzer.get_scope().decl.is<sir::ProtoDef>() && func_def.is_method()) {
         return Result::SUCCESS;
     }
 
