@@ -38,8 +38,15 @@ public:
     UnionCase *clone_union_case(const UnionCase &union_case);
     ProtoDef *clone_proto_def(const ProtoDef &proto_def);
     TypeAlias *clone_type_alias(const TypeAlias &type_alias);
+    UseDecl *clone_use_decl(const UseDecl &use_decl);
     MetaIfStmt *clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt);
     MetaForStmt *clone_meta_for_stmt(const MetaForStmt &meta_for_stmt);
+
+    UseItem clone_use_item(const UseItem &use_item);
+    UseIdent *clone_use_ident(const UseIdent &use_ident);
+    UseRebind *clone_use_rebind(const UseRebind &use_rebind);
+    UseDotExpr *clone_use_dot_expr(const UseDotExpr &use_dot_expr);
+    UseList *clone_use_list(const UseList &use_list);
 
     Block clone_block(const Block &block);
     Stmt clone_stmt(const Stmt &stmt);

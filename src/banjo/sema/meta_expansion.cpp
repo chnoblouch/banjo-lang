@@ -30,7 +30,7 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
     analyzer.in_meta_expansion = true;
 
     for (unsigned i = 0; i < decl_block.decls.size(); i++) {
-        const sir::Decl &decl = decl_block.decls[i];
+        sir::Decl &decl = decl_block.decls[i];
 
         if (analyzer.blocked_decls.contains(&decl)) {
             continue;
@@ -38,7 +38,17 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 
         analyzer.blocked_decls.insert(&decl);
 
-        if (decl.is<sir::MetaIfStmt>()) {
+        // TODO: This code is duplicated and brittle.
+
+        if (auto struct_def = decl.match<sir::StructDef>()) {
+            if (!struct_def->is_generic()) {
+                run_on_decl_block(struct_def->block);
+            }
+        } else if (auto union_def = decl.match<sir::UnionDef>()) {
+            run_on_decl_block(union_def->block);
+        } else if (auto proto_def = decl.match<sir::ProtoDef>()) {
+            run_on_decl_block(proto_def->block);
+        } else if (decl.is<sir::MetaIfStmt>()) {
             evaluate_meta_if_stmt(decl_block, i);
         }
 
@@ -54,6 +64,11 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
 
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
         if (ExprAnalyzer(analyzer).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+            return;
+        }
+
+        // Evaluating the expression may have already expanded this `meta if` statement.
+        if (!decl_block.decls[index].is<sir::MetaIfStmt>()) {
             return;
         }
 
@@ -78,8 +93,6 @@ void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::Met
     for (sir::Node &node : meta_block.nodes) {
         decl_block.decls.push_back(node.as<sir::Decl>());
     }
-
-    index--;
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {

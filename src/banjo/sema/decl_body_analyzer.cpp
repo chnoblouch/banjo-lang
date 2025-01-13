@@ -2,9 +2,9 @@
 
 #include "banjo/sema/const_evaluator.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/expr_finalizer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
-#include "expr_finalizer.hpp"
 
 namespace banjo {
 

@@ -58,7 +58,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_union_case(*inner),
         return clone_proto_def(*inner),
         return clone_type_alias(*inner),
-        SIR_VISIT_IMPOSSIBLE,
+        return clone_use_decl(*inner),
         return clone_meta_if_stmt(*inner),
         SIR_VISIT_IMPOSSIBLE,
         return clone_error(*inner)
@@ -202,6 +202,13 @@ TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
     });
 }
 
+UseDecl *Cloner::clone_use_decl(const UseDecl &use_decl) {
+    return mod.create_decl(UseDecl{
+        .ast_node = use_decl.ast_node,
+        .root_item = clone_use_item(use_decl.root_item),
+    });
+}
+
 MetaIfStmt *Cloner::clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
     std::vector<MetaIfCondBranch> cond_branches;
     cond_branches.resize(meta_if_stmt.cond_branches.size());
@@ -238,6 +245,52 @@ MetaForStmt *Cloner::clone_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
         .ident = meta_for_stmt.ident,
         .range = clone_expr(meta_for_stmt.range),
         .block = clone_meta_block(meta_for_stmt.block),
+    });
+}
+
+UseItem Cloner::clone_use_item(const UseItem &use_item) {
+    if (auto use_ident = use_item.match<UseIdent>()) return clone_use_ident(*use_ident);
+    else if (auto use_rebind = use_item.match<UseRebind>()) return clone_use_rebind(*use_rebind);
+    else if (auto use_dot_expr = use_item.match<UseDotExpr>()) return clone_use_dot_expr(*use_dot_expr);
+    else if (auto use_list = use_item.match<UseList>()) return clone_use_list(*use_list);
+    else if (auto error = use_item.match<sir::Error>()) return clone_error(*error);
+    else ASSERT_UNREACHABLE;
+}
+
+UseIdent *Cloner::clone_use_ident(const UseIdent &use_ident) {
+    return mod.create_use_item(sir::UseIdent{
+        .ident = use_ident.ident,
+        .symbol = nullptr,
+    });
+}
+
+UseRebind *Cloner::clone_use_rebind(const UseRebind &use_rebind) {
+    return mod.create_use_item(sir::UseRebind{
+        .ast_node = use_rebind.ast_node,
+        .target_ident = use_rebind.target_ident,
+        .local_ident = use_rebind.local_ident,
+        .symbol = nullptr,
+    });
+}
+
+UseDotExpr *Cloner::clone_use_dot_expr(const UseDotExpr &use_dot_expr) {
+    return mod.create_use_item(sir::UseDotExpr{
+        .ast_node = use_dot_expr.ast_node,
+        .lhs = clone_use_item(use_dot_expr.lhs),
+        .rhs = clone_use_item(use_dot_expr.rhs),
+    });
+}
+
+UseList *Cloner::clone_use_list(const UseList &use_list) {
+    std::vector<sir::UseItem> items(use_list.items.size());
+
+    for (unsigned i = 0; i < use_list.items.size(); i++) {
+        items[i] = clone_use_item(use_list.items[i]);
+    }
+
+    return mod.create_use_item(sir::UseList{
+        .ast_node = use_list.ast_node,
+        .items = items,
     });
 }
 
