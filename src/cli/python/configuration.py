@@ -49,7 +49,6 @@ def load_into(json_config, config: Configuration, target):
     config.name = json_config.get("name", config.name)
     config.type = json_config.get("type", config.type)
     config.arguments.extend(json_config.get("args", []))
-    config.win_subsystem = json_config.get("win.subsystem", config.win_subsystem)
 
     config.libraries.extend(json_config.get("libraries", []))
     config.library_paths.extend(json_config.get("library_paths", []))
@@ -57,6 +56,9 @@ def load_into(json_config, config: Configuration, target):
     config.linked_object_files.extend(json_config.get("object_files", []))
     config.build_script = json_config.get("build_script", config.build_script)
     config.packages.extend(json_config.get("packages", []))
+
+    config.win_subsystem = json_config.get("win.subsystem", config.win_subsystem)
+    config.macos_frameworks = json_config.get("macos.frameworks", [])
 
     if "targets" in json_config:
         if target.triple in json_config["targets"]:
