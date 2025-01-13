@@ -119,6 +119,16 @@ void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
         }
 
         stream << "\"";
+    } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
+        switch (global.size) {
+            case 1: stream << ".byte"; break;
+            case 2: stream << ".hword"; break;
+            case 4: stream << ".word"; break;
+            case 8: stream << ".xword"; break;
+            default: ASSERT_UNREACHABLE;
+        }
+
+        stream << " " << symbol_prefix << value->name;
     }
 
     stream << "\n";
