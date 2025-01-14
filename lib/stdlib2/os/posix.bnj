@@ -1,3 +1,4 @@
+use std.config;
 use os;
 
 meta if os.IS_UNIX {
@@ -6,51 +7,87 @@ meta if os.IS_UNIX {
         var tv_nsec: u64;
     }
 
-    struct Sockaddr {
-        var family: u16;
-        var data: [u8; 14];   
-    }
+    meta if config.OS == config.LINUX {
+        struct Sockaddr {
+            var family: u16;
+            var data: [u8; 14];
+        }
 
-    struct Addrinfo {
-        var flags: i32;
-        var family: i32;
-        var socktype: i32;
-        var protocol: i32;
-        var addrlen: u32;
-        var addr_: *Sockaddr;
-        var canonname: *u8;
-        var next: *Addrinfo;
-    }
+        struct Addrinfo {
+            var flags: i32;
+            var family: i32;
+            var socktype: i32;
+            var protocol: i32;
+            var addrlen: u32;
+            var addr_: *Sockaddr;
+            var canonname: *u8;
+            var next: *Addrinfo;
+        }
 
-    # TODO: This size is definitely only 40 on x86-64.
-    type PthreadMutex = [u8; 40];
+        # TODO: This size is definitely only 40 on x86-64.
+        type PthreadMutex = [u8; 40];
 
-    const CLOCK_REALTIME: u64 = 0;
-    const CLOCK_MONOTONIC: u64 = 1;
+        const CLOCK_REALTIME: u64 = 0;
+        const CLOCK_MONOTONIC: u64 = 1;
 
-    # TODO: These are probably different per operating system.
-    const AF_INET: i32 = 2;
-    const AF_INET6: i32 = 10;
-    const SOCK_STREAM: i32 = 1;
-    const SOCK_DGRAM: i32 = 2;
-    const IPPROTO_TCP: i32 = 6;
-    const IPPROTO_UDP: i32 = 17;
-    const SHUT_RD: i32 = 0;
-    const SHUT_WR: i32 = 1;
-    const SHUT_RDWR: i32 = 2;
+        const AF_INET: i32 = 2;
+        const AF_INET6: i32 = 10;
+        const SOCK_STREAM: i32 = 1;
+        const SOCK_DGRAM: i32 = 2;
+        const IPPROTO_TCP: i32 = 6;
+        const IPPROTO_UDP: i32 = 17;
+        const SHUT_RD: i32 = 0;
+        const SHUT_WR: i32 = 1;
+        const SHUT_RDWR: i32 = 2;
 
-    meta if os.IS_DARWIN {
+        native var stdin: addr;
+        native var stdout: addr;
+        native var stderr: addr;
+    } else if os.IS_DARWIN {
+        struct Sockaddr {
+            var len: u8;
+            var family: u8;
+            var data: [u8; 14];
+        }
+
+        struct Addrinfo {
+            var flags: i32;
+            var family: i32;
+            var socktype: i32;
+            var protocol: i32;
+            var addrlen: u32;
+            var canonname: *u8;
+            var addr_: *Sockaddr;
+            var next: *Addrinfo;
+        }
+
+        struct PthreadMutex {
+            var sig: u64;
+
+            # TODO: This size is definitely only 56 on AArch64.
+            var opaque: [u8; 56];
+        }
+
+        const CLOCK_REALTIME: u64 = 0;
+        const CLOCK_MONOTONIC: u64 = 6;
+
+        const AF_INET: i32 = 2;
+        const AF_INET6: i32 = 30;
+        const SOCK_STREAM: i32 = 1;
+        const SOCK_DGRAM: i32 = 2;
+        const IPPROTO_TCP: i32 = 6;
+        const IPPROTO_UDP: i32 = 17;
+        const SHUT_RD: i32 = 0;
+        const SHUT_WR: i32 = 1;
+        const SHUT_RDWR: i32 = 2;
+
         @[link_name=__stdinp]
         native var stdin: addr;
-        
+
         @[link_name=__stdoutp]
         native var stdout: addr;
 
         @[link_name=__stderrp]
-        native var stderr: addr;
-    } else {
-        native var stdin: addr;
-        native var stdout: addr;
         native var stderr: addr;
     }
 
@@ -73,17 +110,17 @@ meta if os.IS_UNIX {
     native func getaddrinfo(node: *u8, service: *u8, hints: *Addrinfo, res: **Addrinfo) -> i32;
     native func freeaddrinfo(res: *Addrinfo);
 
-    meta if os.IS_DARWIN {
+    meta if config.OS == config.LINUX {
+        native func __errno_location() -> *i32;
+
+        pub func errno() -> i32 {
+            return *__errno_location();
+        }
+    } else if os.IS_DARWIN {
         native func __error() -> *i32;
 
         pub func errno() -> i32 {
             return *__error();
-        }
-    } else {
-        native func __errno_location() -> *i32;
-        
-        pub func errno() -> i32 {
-            return *__errno_location();
         }
     }
 }
