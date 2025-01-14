@@ -87,6 +87,10 @@ void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned size = get_size(type);
     unsigned flag = type.is_floating_point() ? mcode::Instruction::FLAG_FLOAT : 0;
 
+    if (size == 0) {
+        return;
+    }
+
     mcode::Opcode opcode;
 
     switch (size) {
@@ -106,6 +110,10 @@ void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
 void AArch64SSALowerer::lower_store(ssa::Instruction &instr) {
     const ssa::Type &type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
+
+    if (size == 0) {
+        return;
+    }
 
     mcode::Opcode opcode;
 
@@ -192,13 +200,12 @@ void AArch64SSALowerer::lower_srem(ssa::Instruction &instr) {
     unsigned size = get_size(instr.get_operand(0).get_type());
     mcode::Operand m_dividend = lower_value(instr.get_operand(0));
     mcode::Operand m_divisor = lower_value(instr.get_operand(1));
-    mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), size);
-    mcode::Operand m_tmp2 = mcode::Operand::from_register(create_tmp_reg(), size);
-    mcode::Operand m_remainder = mcode::Operand::from_register(create_tmp_reg(), size);
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
 
-    emit(mcode::Instruction(AArch64Opcode::SDIV, {m_tmp1, m_dividend, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp2, m_tmp1, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::SUB, {m_remainder, m_dividend, m_tmp2}));
+    emit(mcode::Instruction(AArch64Opcode::SDIV, {m_tmp, m_dividend, m_divisor}));
+    emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp, m_tmp, m_divisor}));
+    emit(mcode::Instruction(AArch64Opcode::SUB, {m_dst, m_dividend, m_tmp}));
 }
 
 void AArch64SSALowerer::lower_udiv(ssa::Instruction &instr) {
@@ -212,13 +219,12 @@ void AArch64SSALowerer::lower_urem(ssa::Instruction &instr) {
     unsigned size = get_size(instr.get_operand(0).get_type());
     mcode::Operand m_dividend = lower_value(instr.get_operand(0));
     mcode::Operand m_divisor = lower_value(instr.get_operand(1));
-    mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), size);
-    mcode::Operand m_tmp2 = mcode::Operand::from_register(create_tmp_reg(), size);
-    mcode::Operand m_remainder = mcode::Operand::from_register(create_tmp_reg(), size);
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
 
-    emit(mcode::Instruction(AArch64Opcode::UDIV, {m_tmp1, m_dividend, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp2, m_tmp1, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::SUB, {m_remainder, m_dividend, m_tmp2}));
+    emit(mcode::Instruction(AArch64Opcode::UDIV, {m_tmp, m_dividend, m_divisor}));
+    emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp, m_tmp, m_divisor}));
+    emit(mcode::Instruction(AArch64Opcode::SUB, {m_dst, m_dividend, m_tmp}));
 }
 
 void AArch64SSALowerer::lower_fadd(ssa::Instruction &instr) {
