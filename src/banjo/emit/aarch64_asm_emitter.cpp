@@ -104,9 +104,27 @@ void AArch64AsmEmitter::generate() {
 void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
     stream << symbol_prefix << global.name << ": ";
 
-    if (auto value = std::get_if<double>(&global.value)) {
+    if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
+        switch (global.size) {
+            case 1: stream << ".byte"; break;
+            case 2: stream << ".hword"; break;
+            case 4: stream << ".word"; break;
+            case 8: stream << ".xword"; break;
+            default: ASSERT_UNREACHABLE;
+        }
+
+        stream << " " << value->to_string();
+    } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
         stream << (global.size == 4 ? ".float " : ".double ") << value;
-    } else if (auto value = std::get_if<std::string>(&global.value)) {
+    } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
+        stream << ".ascii \"" << std::hex;
+
+        for (unsigned char c : *value) {
+            stream << "\\x" << (unsigned)c;
+        }
+
+        stream << std::dec << "\"";
+    } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
         stream << ".string \"";
 
         for (char c : *value) {
@@ -129,6 +147,10 @@ void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
         }
 
         stream << " " << symbol_prefix << value->name;
+    } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
+        stream << ".zero " << global.size;
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     stream << "\n";
