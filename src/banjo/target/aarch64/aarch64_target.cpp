@@ -3,6 +3,7 @@
 #include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_instr_merge_pass.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
+#include "banjo/target/aarch64/aarch64_stack_offset_fixup_pass.hpp"
 
 namespace banjo {
 
@@ -19,7 +20,7 @@ std::vector<codegen::MachinePass *> AArch64Target::create_pre_passes() {
 }
 
 std::vector<codegen::MachinePass *> AArch64Target::create_post_passes() {
-    return {};
+    return {new AArch64StackOffsetFixupPass()};
 }
 
 std::string AArch64Target::get_output_file_ext() {

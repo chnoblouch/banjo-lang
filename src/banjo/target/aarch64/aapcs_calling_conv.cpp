@@ -4,6 +4,7 @@
 #include "banjo/codegen/late_reg_alloc.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
@@ -196,13 +197,10 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
          mcode::Operand::from_aarch64_addr(AArch64Address::new_base_offset_write(sp, -16))}
     ));
 
-    prolog.push_back(mcode::Instruction(
-        AArch64Opcode::SUB,
-        {mcode::Operand::from_register(sp, 8),
-         mcode::Operand::from_register(sp, 8),
-         mcode::Operand::from_int_immediate(size)},
-        mcode::Instruction::FLAG_ALLOCA
-    ));
+    modify_sp(AArch64Opcode::SUB, size, [&prolog](mcode::Instruction instr) {
+        instr.set_flag(mcode::Instruction::FLAG_ALLOCA);
+        prolog.push_back(std::move(instr));
+    });
 
     return prolog;
 
@@ -258,12 +256,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
 
     std::vector<mcode::Instruction> epilog;
 
-    epilog.push_back(mcode::Instruction(
-        AArch64Opcode::ADD,
-        {mcode::Operand::from_register(sp, 8),
-         mcode::Operand::from_register(sp, 8),
-         mcode::Operand::from_int_immediate(size)}
-    ));
+    modify_sp(AArch64Opcode::ADD, size, [&epilog](mcode::Instruction instr) { epilog.push_back(std::move(instr)); });
 
     epilog.push_back(mcode::Instruction(
         AArch64Opcode::LDP,
@@ -317,6 +310,29 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
         };
     }
     */
+}
+
+void AAPCSCallingConv::modify_sp(
+    mcode::Opcode opcode,
+    unsigned value,
+    const std::function<void(mcode::Instruction)> &emit
+) {
+    mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+    mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
+
+    if (value < 4096) {
+        mcode::Operand m_imm = mcode::Operand::from_int_immediate(value);
+        emit(mcode::Instruction(opcode, {m_sp, m_sp, m_imm}));
+    } else if (value < 4096 * 4096) {
+        mcode::Operand m_imm_shifted = mcode::Operand::from_int_immediate(value >> 12);
+        mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(12);
+        emit(mcode::Instruction(opcode, {m_sp, m_sp, m_imm_shifted, m_shift}));
+
+        mcode::Operand m_imm_remainder = mcode::Operand::from_int_immediate(value & 0xFFF);
+        emit(mcode::Instruction(opcode, {m_sp, m_sp, m_imm_remainder}));
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 mcode::InstrIter AAPCSCallingConv::fix_up_instr(

@@ -4,6 +4,8 @@
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/register.hpp"
 
+#include <functional>
+
 namespace banjo {
 
 namespace target {
@@ -34,6 +36,8 @@ public:
 
 private:
     mcode::Operand get_arg_dst(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer);
+
+    void modify_sp(mcode::Opcode opcode, unsigned value, const std::function<void(mcode::Instruction)> &emit);
 };
 
 } // namespace target

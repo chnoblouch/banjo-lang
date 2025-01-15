@@ -114,6 +114,7 @@ add_library(banjo STATIC
     target/aarch64/aarch64_instr_merge_pass.cpp
     target/aarch64/aarch64_reg_analyzer.cpp
     target/aarch64/aarch64_ssa_lowerer.cpp
+    target/aarch64/aarch64_stack_offset_fixup_pass.cpp
     target/aarch64/aarch64_target.cpp
     target/x86_64/ms_abi_calling_conv.cpp
     target/x86_64/sys_v_calling_conv.cpp
