@@ -18,9 +18,15 @@ void PEEmitter::generate() {
     if (!module.get_dll_exports().empty()) {
         bin_module.drectve_data = WriteBuffer{};
 
-        for (const std::string &dll_export : module.get_dll_exports()) {
+        for (unsigned i = 0; i < module.get_dll_exports().size(); i++) {
+            const std::string &dll_export = module.get_dll_exports()[i];
+
             bin_module.drectve_data->write_cstr("/EXPORT:");
-            bin_module.drectve_data->write_data((void *)dll_export.data(), dll_export.size());
+            bin_module.drectve_data->write_data(dll_export.data(), dll_export.size());
+
+            if (i != module.get_dll_exports().size() - 1) {
+                bin_module.drectve_data->write_u8(' ');
+            }
         }
     }
 
