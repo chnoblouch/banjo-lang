@@ -127,6 +127,8 @@ bool Expr::is_type() const {
         return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, ProtoDef>();
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
+    } else if (auto star_expr = match<StarExpr>()) {
+        return star_expr->value.is_type();
     } else {
         return is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
                is<sir::ClosureType>();
