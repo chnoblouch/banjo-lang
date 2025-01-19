@@ -207,32 +207,38 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
 void SSALowerer::lower_globals() {
     for (ssa::Global &global : module_->get_globals()) {
         mcode::Global m_global{
-            .name = global.get_name(),
-            .size = get_size(global.get_type()),
+            .name = global.name,
+            .size = get_size(global.type),
             .value = {},
         };
 
-        if (global.initial_value) {
-            ssa::Value &value = *global.initial_value;
+        ssa::Global::Value &value = global.initial_value;
 
-            if (value.is_int_immediate()) {
-                m_global.value = value.get_int_immediate();
-            } else if (value.is_fp_immediate()) {
-                m_global.value = value.get_fp_immediate();
-            } else if (value.is_string()) {
-                m_global.value = value.get_string();
-            } else if (value.is_symbol()) {
-                m_global.value = mcode::Global::SymbolRef{
-                    .name = value.get_symbol_name(),
-                };
-            } else {
-                ASSERT_UNREACHABLE;
-            }
+        if (std::holds_alternative<ssa::Global::None>(value)) {
+            m_global.value = mcode::Global::None{};
+        } else if (auto int_value = std::get_if<ssa::Global::Integer>(&value)) {
+            m_global.value = *int_value;
+        } else if (auto fp_value = std::get_if<ssa::Global::FloatingPoint>(&value)) {
+            m_global.value = *fp_value;
+        } else if (auto bytes = std::get_if<ssa::Global::Bytes>(&value)) {
+            m_global.value = *bytes;
+        } else if (auto string = std::get_if<ssa::Global::String>(&value)) {
+            m_global.value = *string;
+        } else if (auto func = std::get_if<ssa::Function *>(&value)) {
+            m_global.value = mcode::Global::SymbolRef{.name = (*func)->get_name()};
+        } else if (auto global_ref = std::get_if<ssa::Global::GlobalRef>(&value)) {
+            m_global.value = mcode::Global::SymbolRef{.name = global_ref->name};
+        } else if (auto extern_func_ref = std::get_if<ssa::Global::ExternFuncRef>(&value)) {
+            m_global.value = mcode::Global::SymbolRef{.name = extern_func_ref->name};
+        } else if (auto extern_global_ref = std::get_if<ssa::Global::ExternGlobalRef>(&value)) {
+            m_global.value = mcode::Global::SymbolRef{.name = extern_global_ref->name};
+        } else {
+            ASSERT_UNREACHABLE;
         }
 
         machine_module.add(m_global);
 
-        if (global.is_external()) {
+        if (global.external) {
             machine_module.add_global_symbol(m_global.name);
         }
     }
@@ -246,7 +252,7 @@ void SSALowerer::lower_external_funcs() {
 
 void SSALowerer::lower_external_globals() {
     for (ssa::GlobalDecl &external_global : module_->get_external_globals()) {
-        machine_module.add_external_symbol(external_global.get_name());
+        machine_module.add_external_symbol(external_global.name);
     }
 }
 

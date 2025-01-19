@@ -119,7 +119,7 @@ public:
 
     void report_err_cannot_use_in_try(const sir::Expr &expr);
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
-    void report_err_compile_time_unknown(const sir::Expr &range);
+    void report_err_compile_time_unknown(const sir::Expr &value);
 
     void report_err_expected_proto(const sir::Expr &expr);
     void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::ProtoFuncDecl &func_decl);
@@ -130,6 +130,7 @@ public:
     void report_err_case_outside_union(const sir::UnionCase &union_case);
     void report_err_func_decl_outside_proto(const sir::FuncDecl &func_decl);
     void report_err_struct_overlapping_no_fields(const sir::StructDef &struct_def);
+    void report_err_invalid_global_value(const sir::Expr &value);
 
     void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
     void report_err_move_out_pointer(const sir::Expr &move);

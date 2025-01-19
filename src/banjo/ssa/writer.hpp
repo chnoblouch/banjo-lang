@@ -27,6 +27,7 @@ private:
     std::string reg_to_str(VirtualRegister reg);
     std::string type_to_str(Type type);
     std::string value_to_str(Value value);
+    std::string global_value_to_str(const Global::Value &value);
     std::string calling_conv_to_str(CallingConv calling_conv);
 };
 

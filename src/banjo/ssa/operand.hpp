@@ -18,7 +18,7 @@ namespace ssa {
 
 class Operand;
 class Function;
-class Global;
+struct Global;
 class BasicBlock;
 
 struct BranchTarget {

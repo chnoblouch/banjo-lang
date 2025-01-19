@@ -475,8 +475,8 @@ void ReportGenerator::report_err_try_no_error_field(const sir::TryExceptBranch &
     report_error("optional types don't have an error field", branch.ast_node);
 }
 
-void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &range) {
-    report_error("value is not known at compile time", range.get_ast_node());
+void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &value) {
+    report_error("value is not known at compile time", value.get_ast_node());
 }
 
 void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {
@@ -530,6 +530,10 @@ void ReportGenerator::report_err_func_decl_outside_proto(const sir::FuncDecl &fu
 
 void ReportGenerator::report_err_struct_overlapping_no_fields(const sir::StructDef &struct_def) {
     report_error("structs with `overlapping` layout require at least one field", struct_def.ident.ast_node);
+}
+
+void ReportGenerator::report_err_invalid_global_value(const sir::Expr &value) {
+    report_error("globals cannot be initialized with this type of value", value.get_ast_node());
 }
 
 void ReportGenerator::report_err_use_after_move(

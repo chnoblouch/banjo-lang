@@ -352,7 +352,13 @@ const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::Stru
             }
 
             ssa::Function *ssa_func = ssa_funcs.at(&func_def);
-            ssa_mod->add(ssa::Global(vtable_entry_name, ssa::Primitive::ADDR, ssa::Operand::from_func(ssa_func)));
+
+            ssa_mod->add(ssa::Global{
+                .name = vtable_entry_name,
+                .type = ssa::Primitive::ADDR,
+                .initial_value = ssa_func,
+                .external = false,
+            });
 
             if (j == 0) {
                 ssa_vtables[&struct_def].push_back(ssa_mod->get_globals().size() - 1);

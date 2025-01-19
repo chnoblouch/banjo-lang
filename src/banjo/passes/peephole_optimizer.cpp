@@ -1,8 +1,8 @@
 #include "peephole_optimizer.hpp"
 
-#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/utils/bit_operations.hpp"
 
 namespace banjo {
@@ -104,7 +104,12 @@ void PeepholeOptimizer::optimize_fmul(ssa::InstrIter &iter, ssa::BasicBlock &blo
     }
 }
 
-void PeepholeOptimizer::optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func, ssa::Module &mod) {
+void PeepholeOptimizer::optimize_call(
+    ssa::InstrIter &iter,
+    ssa::BasicBlock &block,
+    ssa::Function &func,
+    ssa::Module &mod
+) {
     ssa::Value &callee = iter->get_operand(0);
     if (!callee.is_extern_func()) {
         return;
@@ -122,11 +127,12 @@ void PeepholeOptimizer::optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &blo
         }
 
         for (ssa::Global &global : mod.get_globals()) {
-            if (global.get_name() != iter->get_operand(1).get_global_name()) {
+            if (global.name != iter->get_operand(1).get_global_name()) {
                 continue;
             }
 
-            unsigned string_length = global.initial_value->get_string().size() - 1;
+            std::string string = std::get<std::string>(global.initial_value);
+            unsigned string_length = string.size() - 1;
             ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::I64);
             eliminate(iter, value, block, func);
             break;

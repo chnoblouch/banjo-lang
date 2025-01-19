@@ -27,16 +27,15 @@ void Writer::write(Module &mod) {
 
     if (!mod.get_external_globals().empty()) {
         for (GlobalDecl &external_global : mod.get_external_globals()) {
-            stream << "decl global " << type_to_str(external_global.get_type()) << " @" << external_global.get_name()
-                   << "\n";
+            stream << "decl global " << type_to_str(external_global.type) << " @" << external_global.name << "\n";
         }
         stream << "\n";
     }
 
     if (!mod.get_globals().empty()) {
         for (Global &global : mod.get_globals()) {
-            stream << "def global " << type_to_str(global.get_type()) << " @" << global.get_name();
-            stream << " = " << (global.initial_value ? value_to_str(*global.initial_value) : "undefined") << "\n";
+            stream << "def global " << type_to_str(global.type) << " @" << global.name;
+            stream << " = " << global_value_to_str(global.initial_value) << "\n";
         }
         stream << "\n";
     }
@@ -294,6 +293,51 @@ std::string Writer::value_to_str(Value value) {
         }
     } else if (value.is_type()) return "";
     else return "???";
+}
+
+std::string Writer::global_value_to_str(const Global::Value &value) {
+    if (auto int_value = std::get_if<ssa::Global::Integer>(&value)) {
+        return int_value->to_string();
+    } else if (auto fp_value = std::get_if<ssa::Global::FloatingPoint>(&value)) {
+        return std::to_string(*fp_value);
+    } else if (auto bytes = std::get_if<ssa::Global::Bytes>(&value)) {
+        std::string result = "[";
+
+        for (unsigned i = 0; i < bytes->size(); i++) {
+            result += std::to_string((unsigned)(*bytes)[i]);
+
+            if (i != bytes->size() - 1) {
+                result += ", ";
+            }
+        }
+
+        result += "]";
+        return result;
+    } else if (auto string = std::get_if<ssa::Global::String>(&value)) {
+        std::string result = "\"";
+
+        for (char c : *string) {
+            if (c == '\0') result += "\\0";
+            else if (c == '\n') result += "\\n";
+            else if (c == '\r') result += "\\r";
+            else result += c;
+        }
+
+        result += "\"";
+        return result;
+    } else if (auto func = std::get_if<ssa::Function *>(&value)) {
+        return "@" + (*func)->get_name();
+    } else if (auto global_ref = std::get_if<ssa::Global::GlobalRef>(&value)) {
+        return "@" + global_ref->name;
+    } else if (auto extern_func_ref = std::get_if<ssa::Global::ExternFuncRef>(&value)) {
+        return "@" + extern_func_ref->name;
+    } else if (auto extern_global_ref = std::get_if<ssa::Global::ExternGlobalRef>(&value)) {
+        return "@" + extern_global_ref->name;
+    } else if (std::holds_alternative<ssa::Global::None>(value)) {
+        return "undefined";
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 std::string Writer::calling_conv_to_str(CallingConv calling_conv) {

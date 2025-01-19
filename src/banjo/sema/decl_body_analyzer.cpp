@@ -99,7 +99,12 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
             return Result::ERROR;
         }
 
-        var_decl.value = ConstEvaluator(analyzer, false).evaluate(var_decl.value);
+        sir::Expr evaluated = ConstEvaluator(analyzer, false).evaluate(var_decl.value);
+        if (evaluated) {
+            var_decl.value = evaluated;
+        } else {
+            return Result::ERROR;
+        }
 
         partial_result = ExprFinalizer(analyzer).finalize_by_coercion(var_decl.value, var_decl.type);
         if (partial_result != Result::SUCCESS) {

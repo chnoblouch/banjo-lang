@@ -177,8 +177,13 @@ void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
 
 void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
     ctx.ssa_globals.insert({&sir_var_decl, ssa_mod.get_globals().size()});
-    std::string name = sir_var_decl.ident.value;
-    ssa_mod.add(ssa::Global(name, {}, {}));
+
+    ssa_mod.add(ssa::Global{
+        .name = sir_var_decl.ident.value,
+        .type = {},
+        .initial_value = {},
+        .external = false,
+    });
 }
 
 void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
@@ -189,7 +194,10 @@ void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_v
         name = *sir_native_var_decl.attrs->link_name;
     }
 
-    ssa_mod.add(ssa::GlobalDecl(name, {}));
+    ssa_mod.add(ssa::GlobalDecl{
+        .name = name,
+        .type = {},
+    });
 }
 
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
@@ -307,8 +315,7 @@ void SSAGenerator::generate_proto_def(const sir::ProtoDef &sir_proto_def) {
 void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
     ssa::Global &ssa_global = ssa_mod.get_globals()[ctx.ssa_globals[&sir_var_decl]];
 
-    ssa::Type type = TypeSSAGenerator(ctx).generate(sir_var_decl.type);
-    ssa_global.set_type(type);
+    ssa_global.type = TypeSSAGenerator(ctx).generate(sir_var_decl.type);
 
     if (sir_var_decl.value) {
         ssa_global.initial_value = GlobalSSAGenerator(ctx).generate_value(sir_var_decl.value);
@@ -316,8 +323,8 @@ void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
 }
 
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
-    ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]].set_type(ssa_type);
+    ssa::GlobalDecl &ssa_global = ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]];
+    ssa_global.type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
 }
 
 } // namespace lang

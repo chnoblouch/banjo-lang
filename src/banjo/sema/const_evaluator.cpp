@@ -43,24 +43,24 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // bool_literal
         return expr,                             // char_literal
         return expr,                             // null_literal
-        SIR_VISIT_IMPOSSIBLE,                    // none_literal
-        SIR_VISIT_IMPOSSIBLE,                    // undefined_literal
-        return expr,                             // array_literal
+        return evaluate_non_const(expr),         // none_literal
+        return evaluate_non_const(expr),         // undefined_literal
+        return evaluate_array_literal(*inner),   // array_literal
         return expr,                             // string_literal
-        SIR_VISIT_IMPOSSIBLE,                    // struct_literal
-        SIR_VISIT_IMPOSSIBLE,                    // union_case_literal
-        SIR_VISIT_IMPOSSIBLE,                    // map_literal
-        SIR_VISIT_IMPOSSIBLE,                    // closure_literal
+        return evaluate_non_const(expr),         // struct_literal
+        return evaluate_non_const(expr),         // union_case_literal
+        return evaluate_non_const(expr),         // map_literal
+        return evaluate_non_const(expr),         // closure_literal
         return evaluate_symbol_expr(*inner),     // symbol_expr
         return evaluate_binary_expr(*inner),     // binary_expr
         return evaluate_unary_expr(*inner),      // unary_expr
-        SIR_VISIT_IMPOSSIBLE,                    // cast_expr
-        SIR_VISIT_IMPOSSIBLE,                    // index_expr
-        SIR_VISIT_IMPOSSIBLE,                    // call_expr
-        SIR_VISIT_IMPOSSIBLE,                    // field_expr
-        SIR_VISIT_IMPOSSIBLE,                    // range_expr
-        return expr,                             // tuple_expr
-        SIR_VISIT_IMPOSSIBLE,                    // coercion_expr
+        return evaluate_non_const(expr),         // cast_expr
+        return evaluate_non_const(expr),         // index_expr
+        return evaluate_non_const(expr),         // call_expr
+        return evaluate_non_const(expr),         // field_expr
+        return evaluate_non_const(expr),         // range_expr
+        return evaluate_tuple_expr(*inner),      // tuple_expr
+        return evaluate_non_const(expr),         // coercion_expr
         return expr,                             // primitive_type
         return expr,                             // pointer_type
         return expr,                             // static_array_type
@@ -83,6 +83,25 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                    // deinit_expr
         return nullptr                           // error
     );
+}
+
+sir::Expr ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_literal) {
+    sir::ArrayLiteral result{
+        .ast_node = array_literal.ast_node,
+        .type = clone(array_literal.type),
+        .values = std::vector<sir::Expr>(array_literal.values.size()),
+    };
+
+    for (unsigned i = 0; i < array_literal.values.size(); i++) {
+        sir::Expr value = evaluate(array_literal.values[i]);
+        if (!value) {
+            return nullptr;
+        }
+
+        result.values[i] = value;
+    }
+
+    return analyzer.create_expr(result);
 }
 
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
@@ -157,6 +176,25 @@ sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
     }
 }
 
+sir::Expr ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {
+    sir::TupleExpr result{
+        .ast_node = tuple_expr.ast_node,
+        .type = clone(tuple_expr.type),
+        .exprs = std::vector<sir::Expr>(tuple_expr.exprs.size()),
+    };
+
+    for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
+        sir::Expr value = evaluate(tuple_expr.exprs[i]);
+        if (!value) {
+            return nullptr;
+        }
+
+        result.exprs[i] = value;
+    }
+
+    return analyzer.create_expr(result);
+}
+
 sir::Expr ConstEvaluator::evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
     sir::Expr dummy_expr = &meta_field_expr;
     MetaExprEvaluator(analyzer).evaluate(meta_field_expr, dummy_expr);
@@ -167,6 +205,11 @@ sir::Expr ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_e
     sir::Expr dummy_expr = &meta_call_expr;
     MetaExprEvaluator(analyzer).evaluate(meta_call_expr, dummy_expr);
     return dummy_expr;
+}
+
+sir::Expr ConstEvaluator::evaluate_non_const(sir::Expr &value) {
+    analyzer.report_generator.report_err_compile_time_unknown(value);
+    return nullptr;
 }
 
 sir::Expr ConstEvaluator::create_int_literal(LargeInt value, ASTNode *ast_node /*= nullptr*/) {

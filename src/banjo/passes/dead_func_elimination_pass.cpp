@@ -22,8 +22,8 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
     }
 
     for (ssa::Global &global : mod.get_globals()) {
-        if (global.initial_value && global.initial_value->is_func()) {
-            roots.push_back(global.initial_value->get_func());
+        if (auto func = std::get_if<ssa::Function *>(&global.initial_value)) {
+            roots.push_back(*func);
         }
     }
 

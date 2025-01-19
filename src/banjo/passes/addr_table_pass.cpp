@@ -21,7 +21,7 @@ void AddrTablePass::run(ssa::Module &mod) {
         }
 
         for (const ssa::GlobalDecl &external_global : mod.get_external_globals()) {
-            addr_table.append(external_global.get_name());
+            addr_table.append(external_global.name);
         }
 
         mod.set_addr_table(addr_table);

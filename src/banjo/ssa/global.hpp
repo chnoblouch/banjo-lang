@@ -1,24 +1,52 @@
 #ifndef IR_GLOBAL_H
 #define IR_GLOBAL_H
 
-#include "banjo/ssa/global_decl.hpp"
-#include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/type.hpp"
+#include "banjo/utils/large_int.hpp"
 
-#include <optional>
+#include <cstdint>
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace banjo {
 
 namespace ssa {
 
-class Global : public GlobalDecl {
+class Function;
 
-public:
-    std::optional<Value> initial_value;
+struct GlobalDecl {
+    std::string name;
+    Type type;
+};
 
-public:
-    Global(std::string name, Type type, std::optional<Value> initial_value)
-      : GlobalDecl(name, type),
-        initial_value(initial_value) {}
+struct Global {
+    typedef std::monostate None;
+    typedef LargeInt Integer;
+    typedef double FloatingPoint;
+    typedef std::vector<std::uint8_t> Bytes;
+    typedef std::string String;
+
+    struct GlobalRef {
+        std::string name;
+    };
+
+    struct ExternFuncRef {
+        std::string name;
+    };
+
+    struct ExternGlobalRef {
+        std::string name;
+    };
+
+    typedef std::
+        variant<None, Integer, FloatingPoint, Bytes, String, Function *, GlobalRef, ExternFuncRef, ExternGlobalRef>
+            Value;
+
+    std::string name;
+    Type type;
+    Value initial_value;
+    bool external;
 };
 
 } // namespace ssa
