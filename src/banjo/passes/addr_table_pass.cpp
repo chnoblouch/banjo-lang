@@ -26,7 +26,10 @@ void AddrTablePass::run(ssa::Module &mod) {
 
         mod.set_addr_table(addr_table);
     } else {
-        mod.add(ssa::GlobalDecl("addr_table", ssa::Primitive::I64));
+        mod.add(ssa::GlobalDecl{
+            .name = "addr_table",
+            .type = ssa::Primitive::I64,
+        });
     }
 
     for (ssa::Function *func : mod.get_functions()) {
