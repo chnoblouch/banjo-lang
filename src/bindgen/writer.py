@@ -225,7 +225,7 @@ class Writer:
             if type(param.type) == IdentifierType and param.type.name == "void":
                 continue
 
-            if param.name is not None:
+            if param.name is not None and param.name != "":
                 self.write_identifier(f"{utils.to_snake_case(param.name)}: ")
 
             self.write_type(param.type)
