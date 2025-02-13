@@ -32,7 +32,7 @@ ELFFile ELFBuilder::build(BinModule module_) {
         .name_offset = add_string(shstrtab_section, ".data"),
         .type = ELFSectionType::PROGBITS,
         .flags = ELFSectionFlags::ALLOC | ELFSectionFlags::WRITE,
-        .alignment = 4,
+        .alignment = 16, // FIXME: This is usually 4, but required to be 16 for aligning SSE constants.
         .data = module_.data.move_data(),
     };
 
@@ -91,6 +91,16 @@ ELFFile ELFBuilder::build(BinModule module_) {
         .data = ELFSection::RelocationList{},
     };
 
+    data_rela_section = ELFSection{
+        .name_offset = add_string(shstrtab_section, ".rela.data"),
+        .type = ELFSectionType::RELA,
+        .link = 5,
+        .info = 2,
+        .alignment = 8,
+        .entry_size = 24,
+        .data = ELFSection::RelocationList{},
+    };
+
     if (module_.bnjatbl_data) {
         bnjatbl_section = ELFSection{
             .name_offset = add_string(shstrtab_section, ".bnjatbl"),
@@ -104,7 +114,7 @@ ELFFile ELFBuilder::build(BinModule module_) {
             .name_offset = add_string(shstrtab_section, ".rela.bnjatbl"),
             .type = ELFSectionType::RELA,
             .link = 5,
-            .info = 7,
+            .info = 8,
             .alignment = 8,
             .entry_size = 24,
             .data = ELFSection::RelocationList{},
@@ -120,7 +130,8 @@ ELFFile ELFBuilder::build(BinModule module_) {
         std::move(shstrtab_section),
         std::move(strtab_section),
         std::move(symtab_section),
-        std::move(text_rela_section)
+        std::move(text_rela_section),
+        std::move(data_rela_section),
     };
 
     if (bnjatbl_section) {
@@ -204,8 +215,8 @@ void ELFBuilder::process_uses(const std::vector<BinSymbolUse> &uses) {
 
         switch (use.section) {
             case BinSectionKind::TEXT: section = &text_rela_section; break;
+            case BinSectionKind::DATA: section = &data_rela_section; break;
             case BinSectionKind::BNJATBL: section = &*bnjatbl_rela_section; break;
-            default: ASSERT_UNREACHABLE;
         }
 
         int address_offset;
