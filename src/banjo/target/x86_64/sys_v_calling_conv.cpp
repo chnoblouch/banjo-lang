@@ -307,7 +307,7 @@ std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const std::vecto
         } else {
             storage.in_reg = false;
             storage.arg_slot_index = arg_slot_index++;
-            storage.stack_offset = 8 * arg_slot_index;
+            storage.stack_offset = 8 * storage.arg_slot_index;
         }
 
         result[i] = storage;
