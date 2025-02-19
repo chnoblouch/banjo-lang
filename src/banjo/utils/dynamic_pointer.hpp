@@ -72,12 +72,10 @@ public:
     }
 
     operator bool() const { return tag != 0; }
-    bool operator==(const DynamicPointer &other) const { return tag == other.tag && pointer == other.pointer; }
+    bool operator==(const DynamicPointer &other) const { return pointer == other.pointer; }
     bool operator!=(const DynamicPointer &other) const { return !(*this == other); }
-
-    std::size_t compute_hash() const noexcept {
-        return static_cast<std::size_t>(tag) << 48 & reinterpret_cast<std::size_t>(pointer);
-    }
+    
+    std::size_t compute_hash() const noexcept { return reinterpret_cast<std::size_t>(pointer); }
 
     template <typename T>
     static constexpr Tag tag_of() {

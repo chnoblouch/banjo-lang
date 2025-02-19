@@ -212,7 +212,6 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
         ModuleIndex &mod_index = index.mods[mod];
 
         for (sema::ExtraAnalysis::SymbolDef &def : mod_analysis.symbol_defs) {
-
             SymbolRef ref{
                 .range = def.ident_range,
                 .symbol = def.symbol,
