@@ -273,7 +273,7 @@ Result ExprFinalizer::finalize_coercion(sir::StructLiteral &struct_literal, sir:
 
 Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr type) {
     Result partial_result;
-    Result result;
+    Result result = Result::SUCCESS;
 
     if (auto tuple_type = type.match<sir::TupleExpr>()) {
         if (tuple_literal.exprs.size() == tuple_type->exprs.size()) {

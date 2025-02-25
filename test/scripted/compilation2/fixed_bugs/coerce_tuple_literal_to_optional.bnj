@@ -1,0 +1,9 @@
+# test:subtest
+# test:output "42,true"
+
+func main() {
+    var tuple: ?(u32, bool) = (42, true);
+    print(tuple.value.0);
+    print(',');
+    print(tuple.value.1);
+}
