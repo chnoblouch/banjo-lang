@@ -3,6 +3,5 @@ struct StackFrame {
     var symbol: *u8;
 }
 
-@[link_name=___banjo_print_string] native func print_string(format: *u8, string: *u8);
-@[link_name=___banjo_f64_to_string] native func f64_to_string(value: f64) -> *u8;
+@[link_name=___banjo_f64_to_string] native func f64_to_string(value: f64, buffer: *u8, buffer_size: u32);
 @[link_name=___acquire_stack_trace] native func acquire_stack_trace(frames: **StackFrame, num_frames: *u32);

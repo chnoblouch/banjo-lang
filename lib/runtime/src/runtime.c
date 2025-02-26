@@ -21,11 +21,8 @@ int snprintf(char *buffer, u64 bufsz, const char *format, ...);
 void *malloc(u64 size);
 #endif
 
-char *___banjo_f64_to_string(double value) {
-    int length = snprintf(0, 0, "%g", value);
-    char *string = malloc(length + 1);
-    snprintf(string, length + 1, "%g", value);
-    return string;
+void ___banjo_f64_to_string(double value, char* buffer, unsigned buffer_size) {
+    snprintf(buffer, buffer_size, "%g", value);
 }
 
 typedef struct {

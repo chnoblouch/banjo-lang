@@ -108,10 +108,9 @@ func u64_to_string(value: u64) -> String {
 }
 
 func f64_to_string(value: f64) -> String {
-    var cstr = runtime.f64_to_string(value as f64);
-    var string = String.from(cstr);
-    memory.free(cstr);
-    return string;
+    var buffer: [u8; 64];
+    runtime.f64_to_string(value, &buffer[0], 64);
+    return String.from(&buffer[0]);
 }
 
 func char_to_string(value: u8) -> String {
