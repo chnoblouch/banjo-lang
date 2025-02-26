@@ -69,15 +69,15 @@ BinModule JITCompiler::compile_func(const std::string &name) {
     ssa::Module partial_ir_module;
     partial_ir_module.add(ssa_module.get_function(name));
 
-    for (const ssa::Global &global : ssa_module.get_globals()) {
+    for (ssa::Global *global : ssa_module.get_globals()) {
         partial_ir_module.add(global);
     }
 
-    for (const ssa::FunctionDecl &external_func : ssa_module.get_external_functions()) {
+    for (ssa::FunctionDecl *external_func : ssa_module.get_external_functions()) {
         partial_ir_module.add(external_func);
     }
 
-    for (const ssa::GlobalDecl &external_global : ssa_module.get_external_globals()) {
+    for (ssa::GlobalDecl *external_global : ssa_module.get_external_globals()) {
         partial_ir_module.add(external_global);
     }
 

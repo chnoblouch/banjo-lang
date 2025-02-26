@@ -150,7 +150,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ssa::Instruction &
         mcode::Register base_reg = lowerer.create_reg();
 
         mcode::Operand lea_dst = mcode::Operand::from_register(base_reg, 8);
-        mcode::Operand lea_addr = mcode::Operand::from_symbol_deref(base_operand.get_global_name(), 8);
+        mcode::Operand lea_addr = mcode::Operand::from_symbol_deref(base_operand.get_global()->name, 8);
         lowerer.emit(mcode::Instruction(X8664Opcode::LEA, {lea_dst, lea_addr}));
 
         base = base_reg;

@@ -1,6 +1,9 @@
 #ifndef ADDR_TABLE_H
 #define ADDR_TABLE_H
 
+#include "banjo/ssa/global.hpp"
+
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -11,6 +14,9 @@ namespace banjo {
 namespace ssa {
 
 class AddrTable {
+
+public:
+    static ssa::GlobalDecl DUMMY_GLOBAL;
 
 private:
     std::vector<std::string> entries;

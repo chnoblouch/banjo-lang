@@ -115,28 +115,21 @@ void PeepholeOptimizer::optimize_call(
         return;
     }
 
-    if (callee.get_extern_func_name() == "sqrtf") {
+    if (callee.get_extern_func()->get_name() == "sqrtf") {
         if (iter->get_dest() && iter->get_operands().size() == 2) {
             ssa::InstrIter prev = iter.get_prev();
             block.replace(iter, ssa::Instruction(ssa::Opcode::SQRT, iter->get_dest(), {iter->get_operand(1)}));
             iter = prev;
         }
-    } else if (callee.get_extern_func_name() == "strlen") {
+    } else if (callee.get_extern_func()->get_name() == "strlen") {
         if (!iter->get_operand(1).is_global()) {
             return;
         }
 
-        for (ssa::Global &global : mod.get_globals()) {
-            if (global.name != iter->get_operand(1).get_global_name()) {
-                continue;
-            }
-
-            std::string string = std::get<std::string>(global.initial_value);
-            unsigned string_length = string.size() - 1;
-            ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::I64);
-            eliminate(iter, value, block, func);
-            break;
-        }
+        std::string string = std::get<std::string>(iter->get_operand(1).get_global()->initial_value);
+        unsigned string_length = string.size() - 1;
+        ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::I64);
+        eliminate(iter, value, block, func);
     }
 }
 

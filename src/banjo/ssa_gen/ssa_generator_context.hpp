@@ -70,6 +70,7 @@ public:
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
     std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
     std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
+    std::unordered_map<const lang::sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
     std::unordered_map<const lang::sir::VarDecl *, unsigned> ssa_globals;
     std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;

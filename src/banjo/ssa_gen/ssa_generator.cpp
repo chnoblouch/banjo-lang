@@ -95,7 +95,10 @@ void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) 
     std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
     ssa::Type ssa_return_type = generate_return_type(sir_func.type.return_type);
     ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
-    ssa_mod.add(ssa::FunctionDecl(ssa_name, ssa_params, ssa_return_type, ssa_calling_conv));
+
+    ssa::FunctionDecl *ssa_func = new ssa::FunctionDecl(ssa_name, ssa_params, ssa_return_type, ssa_calling_conv);
+    ssa_mod.add(ssa_func);
+    ctx.ssa_native_funcs.insert({&sir_func, ssa_func});
 }
 
 std::vector<ssa::Type> SSAGenerator::generate_params(const sir::FuncType &sir_func_type) {
@@ -178,7 +181,7 @@ void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
 void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
     ctx.ssa_globals.insert({&sir_var_decl, ssa_mod.get_globals().size()});
 
-    ssa_mod.add(ssa::Global{
+    ssa_mod.add(new ssa::Global{
         .name = sir_var_decl.ident.value,
         .type = {},
         .initial_value = {},
@@ -194,7 +197,7 @@ void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_v
         name = *sir_native_var_decl.attrs->link_name;
     }
 
-    ssa_mod.add(ssa::GlobalDecl{
+    ssa_mod.add(new ssa::GlobalDecl{
         .name = name,
         .type = {},
     });
@@ -313,18 +316,18 @@ void SSAGenerator::generate_proto_def(const sir::ProtoDef &sir_proto_def) {
 }
 
 void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
-    ssa::Global &ssa_global = ssa_mod.get_globals()[ctx.ssa_globals[&sir_var_decl]];
+    ssa::Global *ssa_global = ssa_mod.get_globals()[ctx.ssa_globals[&sir_var_decl]];
 
-    ssa_global.type = TypeSSAGenerator(ctx).generate(sir_var_decl.type);
+    ssa_global->type = TypeSSAGenerator(ctx).generate(sir_var_decl.type);
 
     if (sir_var_decl.value) {
-        ssa_global.initial_value = GlobalSSAGenerator(ctx).generate_value(sir_var_decl.value);
+        ssa_global->initial_value = GlobalSSAGenerator(ctx).generate_value(sir_var_decl.value);
     }
 }
 
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
-    ssa::GlobalDecl &ssa_global = ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]];
-    ssa_global.type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
+    ssa::GlobalDecl *ssa_global = ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]];
+    ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
 }
 
 } // namespace lang

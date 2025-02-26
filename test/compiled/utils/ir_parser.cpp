@@ -160,7 +160,8 @@ ssa::Operand IRParser::parse_operand() {
     if (get() == '%') {
         return ssa::Operand::from_register(parse_reg(), type);
     } else if (get() == '@') {
-        return ssa::Operand::from_extern_func(parse_ident(), type);
+        ASSERT_UNREACHABLE;
+        // return ssa::Operand::from_extern_func(parse_ident(), type);
     } else if (get() == '-' || isdigit(get())) {
         std::string str;
         while (get() == '-' || get() == '.' || isdigit(get())) {

@@ -4,6 +4,11 @@ namespace banjo {
 
 namespace ssa {
 
+ssa::GlobalDecl AddrTable::DUMMY_GLOBAL{
+    .name = "addr_table",
+    .type = ssa::Primitive::ADDR,
+};
+
 void AddrTable::append(const std::string &symbol) {
     if (indices.contains(symbol)) {
         return;

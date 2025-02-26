@@ -16,17 +16,17 @@ void AddrTablePass::run(ssa::Module &mod) {
             addr_table.append(func->get_name());
         }
 
-        for (const ssa::FunctionDecl &external_func : mod.get_external_functions()) {
-            addr_table.append(external_func.get_name());
+        for (const ssa::FunctionDecl *external_func : mod.get_external_functions()) {
+            addr_table.append(external_func->get_name());
         }
 
-        for (const ssa::GlobalDecl &external_global : mod.get_external_globals()) {
-            addr_table.append(external_global.name);
+        for (const ssa::GlobalDecl *external_global : mod.get_external_globals()) {
+            addr_table.append(external_global->name);
         }
 
         mod.set_addr_table(addr_table);
     } else {
-        mod.add(ssa::GlobalDecl{
+        mod.add(new ssa::GlobalDecl{
             .name = "addr_table",
             .type = ssa::Primitive::I64,
         });
@@ -63,7 +63,8 @@ void AddrTablePass::replace_uses(ssa::Module &mod, ssa::Function *func, ssa::Bas
             ssa::VirtualRegister ptr_reg = func->next_virtual_reg();
             ssa::VirtualRegister reg = func->next_virtual_reg();
 
-            ssa::Operand ssa_base = ssa::Operand::from_global("addr_table", ssa::Primitive::ADDR);
+            ssa::GlobalDecl &ssa_global = ssa::AddrTable::DUMMY_GLOBAL;
+            ssa::Operand ssa_base = ssa::Operand::from_extern_global(&ssa_global, ssa::Primitive::ADDR);
             ssa::Operand ssa_offset = ssa::Operand::from_int_immediate(offset, ssa::Primitive::I64);
             basic_block.insert_before(iter, ssa::Instruction(ssa::Opcode::ADD, ptr_reg, {ssa_base, ssa_offset}));
 

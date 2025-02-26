@@ -26,6 +26,14 @@ mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
         });
     }
 
+    for (ssa::FunctionDecl *external_func : module_.get_external_functions()) {
+        if (external_func->get_name() == "memcpy") {
+            memcpy_func = external_func;
+        } else if (external_func->get_name() == "sqrt") {
+            sqrt_func = external_func;
+        }
+    }
+
     lower_external_funcs();
     lower_external_globals();
     lower_funcs();
@@ -205,14 +213,14 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
 }
 
 void SSALowerer::lower_globals() {
-    for (ssa::Global &global : module_->get_globals()) {
+    for (ssa::Global *global : module_->get_globals()) {
         mcode::Global m_global{
-            .name = global.name,
-            .size = get_size(global.type),
+            .name = global->name,
+            .size = get_size(global->type),
             .value = {},
         };
 
-        ssa::Global::Value &value = global.initial_value;
+        ssa::Global::Value &value = global->initial_value;
 
         if (std::holds_alternative<ssa::Global::None>(value)) {
             m_global.value = mcode::Global::None{};
@@ -238,21 +246,21 @@ void SSALowerer::lower_globals() {
 
         machine_module.add(m_global);
 
-        if (global.external) {
+        if (global->external) {
             machine_module.add_global_symbol(m_global.name);
         }
     }
 }
 
 void SSALowerer::lower_external_funcs() {
-    for (ssa::FunctionDecl &external_function : module_->get_external_functions()) {
-        machine_module.add_external_symbol(external_function.get_name());
+    for (ssa::FunctionDecl *external_function : module_->get_external_functions()) {
+        machine_module.add_external_symbol(external_function->get_name());
     }
 }
 
 void SSALowerer::lower_external_globals() {
-    for (ssa::GlobalDecl &external_global : module_->get_external_globals()) {
-        machine_module.add_external_symbol(external_global.name);
+    for (ssa::GlobalDecl *external_global : module_->get_external_globals()) {
+        machine_module.add_external_symbol(external_global->name);
     }
 }
 
@@ -466,7 +474,9 @@ void SSALowerer::lower_memberptr(ssa::Instruction &) {
 }
 
 void SSALowerer::lower_copy(ssa::Instruction &instr) {
-    ssa::Operand func_operand = ssa::Operand::from_extern_func("memcpy", ssa::Primitive::VOID);
+    ASSERT(memcpy_func);
+
+    ssa::Operand func_operand = ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::VOID);
     ssa::Operand dst_operand = instr.get_operand(0);
     ssa::Operand src_operand = instr.get_operand(1);
 
@@ -478,7 +488,9 @@ void SSALowerer::lower_copy(ssa::Instruction &instr) {
 }
 
 void SSALowerer::lower_sqrt(ssa::Instruction &instr) {
-    ssa::Operand func_operand = ssa::Operand::from_extern_func("sqrt", ssa::Primitive::F32);
+    ASSERT(sqrt_func);
+
+    ssa::Operand func_operand = ssa::Operand::from_extern_func(sqrt_func, ssa::Primitive::F32);
     ssa::Operand input_operand = instr.get_operand(0);
     ssa::VirtualRegister output_reg = *instr.get_dest();
 

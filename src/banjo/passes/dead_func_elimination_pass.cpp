@@ -21,8 +21,8 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
         }
     }
 
-    for (ssa::Global &global : mod.get_globals()) {
-        if (auto func = std::get_if<ssa::Function *>(&global.initial_value)) {
+    for (ssa::Global *global : mod.get_globals()) {
+        if (auto func = std::get_if<ssa::Function *>(&global->initial_value)) {
             roots.push_back(*func);
         }
     }
@@ -43,10 +43,10 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
 
     mod.set_functions(new_funcs);
 
-    std::vector<ssa::FunctionDecl> new_extern_funcs;
+    std::vector<ssa::FunctionDecl *> new_extern_funcs;
 
-    for (ssa::FunctionDecl &extern_func : mod.get_external_functions()) {
-        if (used_extern_funcs.contains(extern_func.get_name())) {
+    for (ssa::FunctionDecl *extern_func : mod.get_external_functions()) {
+        if (used_extern_funcs.contains(extern_func->get_name())) {
             new_extern_funcs.push_back(extern_func);
         }
     }
@@ -72,7 +72,7 @@ void DeadFuncEliminationPass::analyze_value(ssa::Value &value) {
             walk_call_graph(value.get_func());
         }
     } else if (value.is_extern_func()) {
-        used_extern_funcs.insert(value.get_extern_func_name());
+        used_extern_funcs.insert(value.get_extern_func()->get_name());
     } else if (value.is_branch_target()) {
         for (ssa::Operand &arg : value.get_branch_target().args) {
             analyze_value(arg);

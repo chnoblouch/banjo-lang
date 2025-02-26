@@ -353,7 +353,7 @@ const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::Stru
 
             ssa::Function *ssa_func = ssa_funcs.at(&func_def);
 
-            ssa_mod->add(ssa::Global{
+            ssa_mod->add(new ssa::Global{
                 .name = vtable_entry_name,
                 .type = ssa::Primitive::ADDR,
                 .initial_value = ssa_func,

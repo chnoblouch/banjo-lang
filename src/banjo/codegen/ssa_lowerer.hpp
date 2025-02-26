@@ -41,6 +41,9 @@ protected:
     SSALoweringContext context;
     BasicBlockContext basic_block_context;
 
+    ssa::FunctionDecl *memcpy_func;
+    ssa::FunctionDecl *sqrt_func;
+
 private:
     ssa::Module *module_;
     ssa::Function *func;

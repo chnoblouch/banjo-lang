@@ -185,14 +185,15 @@ StoredValue ExprSSAGenerator::generate_string_literal(const sir::StringLiteral &
     std::string ssa_name = ctx.next_string_name();
     ssa::Type ssa_type = ssa::Primitive::ADDR;
 
-    ctx.ssa_mod->add(ssa::Global{
+    ssa::Global *ssa_global = new ssa::Global{
         .name = ssa_name,
         .type = ssa_type,
         .initial_value = string_literal.value + std::string(1, '\0'),
         .external = false,
-    });
+    };
 
-    ssa::Value ssa_global_val = ssa::Operand::from_global(ssa_name, ssa_type);
+    ctx.ssa_mod->add(ssa_global);
+    ssa::Value ssa_global_val = ssa::Operand::from_global(ssa_global, ssa_type);
     return StoredValue::create_value(ssa_global_val);
 }
 
@@ -236,22 +237,22 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
-        std::string ssa_name = NameMangling::get_link_name(*native_func_decl);
-        ssa::Value ssa_value = ssa::Value::from_extern_func(ssa_name, ssa::Primitive::ADDR);
+        ssa::FunctionDecl *ssa_func = ctx.ssa_native_funcs[native_func_decl];
+        ssa::Value ssa_value = ssa::Value::from_extern_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto const_def = symbol_expr.symbol.match<sir::ConstDef>()) {
         return generate(const_def->value);
     } else if (auto var_decl = symbol_expr.symbol.match<sir::VarDecl>()) {
         unsigned index = ctx.ssa_globals[var_decl];
-        ssa::Global &ssa_global = ctx.ssa_mod->get_globals()[index];
+        ssa::Global *ssa_global = ctx.ssa_mod->get_globals()[index];
         ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(var_decl->type);
-        ssa::Value ssa_ptr = ssa::Value::from_global(ssa_global.name, ssa::Primitive::ADDR);
+        ssa::Value ssa_ptr = ssa::Value::from_global(ssa_global, ssa::Primitive::ADDR);
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto native_var_decl = symbol_expr.symbol.match<sir::NativeVarDecl>()) {
         unsigned index = ctx.ssa_extern_globals[native_var_decl];
-        ssa::GlobalDecl &ssa_extern_global = ctx.ssa_mod->get_external_globals()[index];
+        ssa::GlobalDecl *ssa_extern_global = ctx.ssa_mod->get_external_globals()[index];
         ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(native_var_decl->type);
-        ssa::Value ssa_ptr = ssa::Value::from_extern_global(ssa_extern_global.name, ssa::Primitive::ADDR);
+        ssa::Value ssa_ptr = ssa::Value::from_extern_global(ssa_extern_global, ssa::Primitive::ADDR);
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto enum_variant = symbol_expr.symbol.match<sir::EnumVariant>()) {
         return generate(enum_variant->value).turn_into_value(ctx);
@@ -600,8 +601,8 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
 
         if (!vtables.empty()) {
             unsigned vtable_global_index = vtables[impl_index];
-            std::string vtable_global_name = ctx.ssa_mod->get_globals()[vtable_global_index].name;
-            ctx.append_store(ssa::Operand::from_global(vtable_global_name, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
+            ssa::Global *vtable_global = ctx.ssa_mod->get_globals()[vtable_global_index];
+            ctx.append_store(ssa::Operand::from_global(vtable_global, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
         } else {
             ctx.append_store(ssa::Operand::from_int_immediate(0, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
         }

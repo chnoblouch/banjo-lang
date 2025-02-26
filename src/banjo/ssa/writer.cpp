@@ -18,24 +18,24 @@ void Writer::write(Module &mod) {
     }
 
     if (!mod.get_external_functions().empty()) {
-        for (FunctionDecl &external_function : mod.get_external_functions()) {
-            write_func_decl(external_function);
+        for (FunctionDecl *external_function : mod.get_external_functions()) {
+            write_func_decl(*external_function);
             stream << "\n";
         }
         stream << "\n";
     }
 
     if (!mod.get_external_globals().empty()) {
-        for (GlobalDecl &external_global : mod.get_external_globals()) {
-            stream << "decl global " << type_to_str(external_global.type) << " @" << external_global.name << "\n";
+        for (GlobalDecl *external_global : mod.get_external_globals()) {
+            stream << "decl global " << type_to_str(external_global->type) << " @" << external_global->name << "\n";
         }
         stream << "\n";
     }
 
     if (!mod.get_globals().empty()) {
-        for (Global &global : mod.get_globals()) {
-            stream << "def global " << type_to_str(global.type) << " @" << global.name;
-            stream << " = " << global_value_to_str(global.initial_value) << "\n";
+        for (Global *global : mod.get_globals()) {
+            stream << "def global " << type_to_str(global->type) << " @" << global->name;
+            stream << " = " << global_value_to_str(global->initial_value) << "\n";
         }
         stream << "\n";
     }
@@ -242,18 +242,7 @@ std::string Writer::value_to_str(Value value) {
     else if (value.is_fp_immediate()) return std::to_string(value.get_fp_immediate());
     else if (value.is_register()) return reg_to_str(value.get_register());
     else if (value.is_symbol()) return "@" + value.get_symbol_name();
-    else if (value.is_string()) {
-        std::string str = "\"";
-        for (char c : value.get_string()) {
-            if (c == '\0') str += "\\0";
-            else if (c == '\n') str += "\\n";
-            else if (c == '\"') str += "\\\"";
-            else if (c == '\\') str += "\\\\";
-            else str += c;
-        }
-        str += "\"";
-        return str;
-    } else if (value.is_branch_target()) {
+    else if (value.is_branch_target()) {
         std::string str = "@" + value.get_branch_target().block->get_label();
 
         if (!value.get_branch_target().args.empty()) {
