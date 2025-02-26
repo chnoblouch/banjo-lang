@@ -9,9 +9,9 @@ namespace banjo {
 namespace ssa {
 
 const std::string &Operand::get_symbol_name() const {
-    if (is_func()) return get_func()->get_name();
+    if (is_func()) return get_func()->name;
     else if (is_global()) return get_global()->name;
-    else if (is_extern_func()) return get_extern_func()->get_name();
+    else if (is_extern_func()) return get_extern_func()->name;
     else if (is_extern_global()) return get_extern_global()->name;
     else ASSERT_UNREACHABLE;
 }

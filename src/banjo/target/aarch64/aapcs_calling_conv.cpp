@@ -76,7 +76,7 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
 
     if (func_operand.is_func()) {
         call_opcode = AArch64Opcode::BL;
-        call_operand = mcode::Operand::from_symbol(func_operand.get_func()->get_name(), 8);
+        call_operand = mcode::Operand::from_symbol(func_operand.get_func()->name, 8);
     } else if (func_operand.is_symbol()) {
         call_opcode = AArch64Opcode::BL;
         call_operand = mcode::Operand::from_symbol(func_operand.get_symbol_name(), 8);

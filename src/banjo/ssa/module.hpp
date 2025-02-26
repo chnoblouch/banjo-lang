@@ -3,7 +3,6 @@
 
 #include "banjo/ssa/addr_table.hpp"
 #include "banjo/ssa/function.hpp"
-#include "banjo/ssa/function_decl.hpp"
 #include "banjo/ssa/global.hpp"
 #include "banjo/ssa/structure.hpp"
 

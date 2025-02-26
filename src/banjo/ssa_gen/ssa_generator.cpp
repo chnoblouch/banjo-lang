@@ -2,7 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/ssa/function_decl.hpp"
+#include "banjo/ssa/function.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -71,16 +71,19 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
     sir::Attributes *attrs = sir_func.attrs;
 
     std::string ssa_name = NameMangling::get_link_name(sir_func);
-    std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
-    ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
 
-    ssa::Type ssa_return_type = generate_return_type(sir_func.type.return_type);
-    if (sir_func.is_main() && ssa_return_type.is_primitive(ssa::Primitive::VOID)) {
-        ssa_return_type = SSA_MAIN_RETURN_TYPE;
+    ssa::FunctionType ssa_func_type{
+        .params = generate_params(sir_func.type),
+        .return_type = generate_return_type(sir_func.type.return_type),
+        .calling_conv = ctx.target->get_default_calling_conv(),
+    };
+
+    if (sir_func.is_main() && ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
+        ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
     }
 
-    ssa::Function *ssa_func = new ssa::Function(ssa_name, ssa_params, ssa_return_type, ssa_calling_conv);
-    ssa_func->set_global(sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport)));
+    ssa::Function *ssa_func = new ssa::Function(ssa_name, ssa_func_type);
+    ssa_func->global = sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport));
 
     ssa_mod.add(ssa_func);
     ctx.ssa_funcs.insert({&sir_func, ssa_func});
@@ -92,11 +95,14 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
 
 void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) {
     std::string ssa_name = NameMangling::get_link_name(sir_func);
-    std::vector<ssa::Type> ssa_params = generate_params(sir_func.type);
-    ssa::Type ssa_return_type = generate_return_type(sir_func.type.return_type);
-    ssa::CallingConv ssa_calling_conv = ctx.target->get_default_calling_conv();
 
-    ssa::FunctionDecl *ssa_func = new ssa::FunctionDecl(ssa_name, ssa_params, ssa_return_type, ssa_calling_conv);
+    ssa::FunctionType ssa_func_type{
+        .params = generate_params(sir_func.type),
+        .return_type = generate_return_type(sir_func.type.return_type),
+        .calling_conv = ctx.target->get_default_calling_conv(),
+    };
+
+    ssa::FunctionDecl *ssa_func = new ssa::FunctionDecl(ssa_name, ssa_func_type);
     ssa_mod.add(ssa_func);
     ctx.ssa_native_funcs.insert({&sir_func, ssa_func});
 }
@@ -231,8 +237,8 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     ctx.push_func_context(ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
 
-    for (unsigned i = 0; i < ssa_func->get_params().size(); i++) {
-        const ssa::Type &ssa_param_type = ssa_func->get_params()[i];
+    for (unsigned i = 0; i < ssa_func->type.params.size(); i++) {
+        const ssa::Type &ssa_param_type = ssa_func->type.params[i];
         ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
         ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_param_type);
         alloca_instr.set_flag(ssa::Instruction::FLAG_ARG_STORE);

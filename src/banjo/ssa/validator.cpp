@@ -41,7 +41,7 @@ bool Validator::validate(ssa::Module &mod, ssa::Function &func) {
         for (ssa::Instruction &instr : block) {
             passes::PassUtils::iter_regs(instr.get_operands(), [&](ssa::VirtualRegister reg) {
                 if (!defs.contains(reg)) {
-                    stream << "error in `" << func.get_name() << "`: %" << reg << " is not defined\n";
+                    stream << "error in `" << func.name << "`: %" << reg << " is not defined\n";
                     valid = false;
                 }
             });

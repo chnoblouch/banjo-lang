@@ -41,7 +41,7 @@ void HeapToStackPass::run(ssa::BasicBlock &block, ssa::Function &func) {
             continue;
         }
 
-        const std::string &name = callee.get_extern_func()->get_name();
+        const std::string &name = callee.get_extern_func()->name;
 
         if (name == "malloc") {
             if (!instr.get_dest()) {

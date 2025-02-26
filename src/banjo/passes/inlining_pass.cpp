@@ -23,7 +23,7 @@ void InliningPass::run(ssa::Module &mod) {
     call_graph = ssa::CallGraph(mod);
 
     for (ssa::Function *func : mod.get_functions()) {
-        if (func->is_global()) {
+        if (func->global) {
             run(func);
         }
     }
@@ -66,7 +66,7 @@ void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_it
 
     if (!is_inlining_beneficial(func, callee)) {
         if (is_logging()) {
-            get_logging_stream() << "not inlining " << callee->get_name() << " into " << func->get_name() << std::endl;
+            get_logging_stream() << "not inlining " << callee->name << " into " << func->name << std::endl;
         }
 
         return;
@@ -74,14 +74,14 @@ void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_it
 
     if (!is_inlining_legal(func, callee)) {
         if (is_logging()) {
-            get_logging_stream() << callee->get_name() << " -> " << func->get_name() << " is illegal\n";
+            get_logging_stream() << callee->name << " -> " << func->name << " is illegal\n";
         }
 
         return;
     }
 
     if (is_logging()) {
-        get_logging_stream() << "inlining " << callee->get_name() << " into " << func->get_name() << std::endl;
+        get_logging_stream() << "inlining " << callee->name << " into " << func->name << std::endl;
     }
 
     bool single_block = callee->get_basic_blocks().get_size() == 1;
@@ -295,7 +295,7 @@ int InliningPass::estimate_cost(ssa::Function &func) {
 }
 
 int InliningPass::estimate_gain(ssa::Function &func) {
-    return 2 * (int)(func.get_params().size()) + GAIN_BIAS;
+    return 2 * static_cast<int>(func.type.params.size()) + GAIN_BIAS;
 }
 
 bool InliningPass::is_inlining_beneficial(ssa::Function *caller, ssa::Function *callee) {

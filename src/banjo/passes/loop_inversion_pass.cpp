@@ -1,9 +1,10 @@
 #include "loop_inversion_pass.hpp"
 
+#include "banjo/passes/pass_utils.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/passes/pass_utils.hpp"
+
 
 #include <iostream>
 #include <utility>
@@ -67,7 +68,7 @@ bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph
 
     if (is_logging()) {
         const std::string &label = cfg.get_node(loop.header).block->get_debug_label();
-        get_logging_stream() << func->get_name() << ": inverting " << label << "\n";
+        get_logging_stream() << func->name << ": inverting " << label << "\n";
     }
 
     ssa::BranchTarget true_target = cond_jump_iter->get_operand(3).get_branch_target();

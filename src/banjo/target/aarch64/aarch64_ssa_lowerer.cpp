@@ -137,7 +137,7 @@ void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     unsigned size = get_size(type);
 
     mcode::CallingConvention *calling_conv = get_machine_func()->get_calling_conv();
-    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().get_params());
+    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type.params);
     mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
 
     mcode::Operand m_src;

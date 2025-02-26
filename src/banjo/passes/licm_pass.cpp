@@ -24,7 +24,7 @@ void LICMPass::run(ssa::Function *func) {
     std::vector<ssa::LoopAnalysis> loops = analyzer.analyze();
 
     if (!loops.empty()) {
-        std::cout << func->get_name() << '\n' << std::string(16, '-') << '\n';
+        std::cout << func->name << '\n' << std::string(16, '-') << '\n';
         analyzer.dump(std::cout);
     }
 

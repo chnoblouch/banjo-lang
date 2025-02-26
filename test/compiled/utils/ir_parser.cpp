@@ -36,7 +36,15 @@ ssa::Module IRParser::parse() {
 void IRParser::enter_func() {
     cur_struct = nullptr;
 
-    cur_func = new ssa::Function("none", {}, ssa::Primitive::VOID, ssa::CallingConv::X86_64_MS_ABI);
+    cur_func = new ssa::Function(
+        "none",
+        ssa::FunctionType{
+            .params = {},
+            .return_type = ssa::Primitive::VOID,
+            .calling_conv = ssa::CallingConv::X86_64_MS_ABI,
+        }
+    );
+
     cur_block = cur_func->get_entry_block_iter();
     mod.add(cur_func);
 

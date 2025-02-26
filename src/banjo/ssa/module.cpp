@@ -29,7 +29,7 @@ Module::~Module() {
 }
 
 Function *Module::get_function(const std::string &name) {
-    auto predicate = [&name](const Function *func) { return func->get_name() == name; };
+    auto predicate = [&name](const Function *func) { return func->name == name; };
     auto it = std::find_if(functions.begin(), functions.end(), predicate);
     return it == functions.end() ? nullptr : *it;
 }

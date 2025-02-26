@@ -1,17 +1,28 @@
-#ifndef IR_FUNCTION_H
-#define IR_FUNCTION_H
+#ifndef BANJO_SSA_FUNCTION_H
+#define BANJO_SSA_FUNCTION_H
 
 #include "banjo/ssa/basic_block.hpp"
-#include "banjo/ssa/function_decl.hpp"
+#include "banjo/ssa/function_type.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
-#include <vector>
+#include <string>
 
 namespace banjo {
 
 namespace ssa {
 
-class Function : public FunctionDecl {
+struct FunctionDecl {
+    std::string name;
+    FunctionType type;
+    bool global = false;
+};
+
+class Function {
+
+public:
+    std::string name;
+    FunctionType type;
+    bool global = false;
 
 private:
     LinkedList<BasicBlock> basic_blocks;
@@ -20,8 +31,7 @@ private:
     int last_float_label_id = 0;
 
 public:
-    Function();
-    Function(std::string name, std::vector<Type> params, Type return_type, CallingConv calling_conv);
+    Function(std::string name, FunctionType type);
 
     LinkedList<BasicBlock> &get_basic_blocks() { return basic_blocks; }
 

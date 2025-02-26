@@ -115,13 +115,13 @@ void PeepholeOptimizer::optimize_call(
         return;
     }
 
-    if (callee.get_extern_func()->get_name() == "sqrtf") {
+    if (callee.get_extern_func()->name == "sqrtf") {
         if (iter->get_dest() && iter->get_operands().size() == 2) {
             ssa::InstrIter prev = iter.get_prev();
             block.replace(iter, ssa::Instruction(ssa::Opcode::SQRT, iter->get_dest(), {iter->get_operand(1)}));
             iter = prev;
         }
-    } else if (callee.get_extern_func()->get_name() == "strlen") {
+    } else if (callee.get_extern_func()->name == "strlen") {
         if (!iter->get_operand(1).is_global()) {
             return;
         }

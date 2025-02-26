@@ -1,7 +1,7 @@
 #include "dead_func_elimination_pass.hpp"
 
 #include "banjo/ssa/function.hpp"
-#include "banjo/ssa/function_decl.hpp"
+
 #include <vector>
 
 namespace banjo {
@@ -16,7 +16,7 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
     std::vector<ssa::Function *> roots;
 
     for (ssa::Function *func : mod.get_functions()) {
-        if (func->is_global()) {
+        if (func->global) {
             roots.push_back(func);
         }
     }
@@ -34,7 +34,7 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
     std::vector<ssa::Function *> new_funcs;
 
     for (ssa::Function *func : mod.get_functions()) {
-        if (func->is_global() || used_funcs.contains(func)) {
+        if (func->global || used_funcs.contains(func)) {
             new_funcs.push_back(func);
         } else {
             delete func;
@@ -46,7 +46,7 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
     std::vector<ssa::FunctionDecl *> new_extern_funcs;
 
     for (ssa::FunctionDecl *extern_func : mod.get_external_functions()) {
-        if (used_extern_funcs.contains(extern_func->get_name())) {
+        if (used_extern_funcs.contains(extern_func->name)) {
             new_extern_funcs.push_back(extern_func);
         }
     }
@@ -72,7 +72,7 @@ void DeadFuncEliminationPass::analyze_value(ssa::Value &value) {
             walk_call_graph(value.get_func());
         }
     } else if (value.is_extern_func()) {
-        used_extern_funcs.insert(value.get_extern_func()->get_name());
+        used_extern_funcs.insert(value.get_extern_func()->name);
     } else if (value.is_branch_target()) {
         for (ssa::Operand &arg : value.get_branch_target().args) {
             analyze_value(arg);

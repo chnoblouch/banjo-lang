@@ -27,9 +27,9 @@ mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
     }
 
     for (ssa::FunctionDecl *external_func : module_.get_external_functions()) {
-        if (external_func->get_name() == "memcpy") {
+        if (external_func->name == "memcpy") {
             memcpy_func = external_func;
-        } else if (external_func->get_name() == "sqrt") {
+        } else if (external_func->name == "sqrt") {
             sqrt_func = external_func;
         }
     }
@@ -47,15 +47,15 @@ void SSALowerer::lower_funcs() {
     for (ssa::Function *func : module_->get_functions()) {
         this->func = func;
 
-        mcode::CallingConvention *calling_conv = get_calling_convention(func->get_calling_conv());
-        mcode::Function *machine_func = new mcode::Function(func->get_name(), calling_conv);
+        mcode::CallingConvention *calling_conv = get_calling_convention(func->type.calling_conv);
+        mcode::Function *machine_func = new mcode::Function(func->name, calling_conv);
         this->machine_func = machine_func;
 
         context = {};
 
-        std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func->get_params());
+        std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func->type.params);
 
-        for (unsigned int i = 0; i < func->get_params().size(); i++) {
+        for (unsigned i = 0; i < func->type.params.size(); i++) {
             mcode::Parameter param = lower_param(storage[i], machine_func);
             machine_func->get_parameters().push_back(param);
         }
@@ -96,9 +96,10 @@ void SSALowerer::lower_funcs() {
 
         store_graphs(*func, machine_func, block_map);
 
-        machine_module.add(std::move(machine_func));
-        if (func->is_global()) {
-            machine_module.add_global_symbol(func->get_name());
+        machine_module.add(machine_func);
+
+        if (func->global) {
+            machine_module.add_global_symbol(func->name);
         }
     }
 }
@@ -233,7 +234,7 @@ void SSALowerer::lower_globals() {
         } else if (auto string = std::get_if<ssa::Global::String>(&value)) {
             m_global.value = *string;
         } else if (auto func = std::get_if<ssa::Function *>(&value)) {
-            m_global.value = mcode::Global::SymbolRef{.name = (*func)->get_name()};
+            m_global.value = mcode::Global::SymbolRef{.name = (*func)->name};
         } else if (auto global_ref = std::get_if<ssa::Global::GlobalRef>(&value)) {
             m_global.value = mcode::Global::SymbolRef{.name = global_ref->name};
         } else if (auto extern_func_ref = std::get_if<ssa::Global::ExternFuncRef>(&value)) {
@@ -254,7 +255,7 @@ void SSALowerer::lower_globals() {
 
 void SSALowerer::lower_external_funcs() {
     for (ssa::FunctionDecl *external_function : module_->get_external_functions()) {
-        machine_module.add_external_symbol(external_function->get_name());
+        machine_module.add_external_symbol(external_function->name);
     }
 }
 

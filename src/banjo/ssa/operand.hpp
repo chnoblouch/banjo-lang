@@ -19,7 +19,7 @@ namespace ssa {
 class Operand;
 class Function;
 struct Global;
-class FunctionDecl;
+struct FunctionDecl;
 struct GlobalDecl;
 class BasicBlock;
 

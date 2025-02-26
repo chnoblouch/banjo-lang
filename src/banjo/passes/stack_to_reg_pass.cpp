@@ -1,10 +1,11 @@
 #include "stack_to_reg_pass.hpp"
 
+#include "banjo/passes/pass_utils.hpp"
+#include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/dead_code_elimination.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "pass_utils.hpp"
-#include "banjo/passes/pass_utils.hpp"
-#include "banjo/passes/precomputing.hpp"
+
 
 #include <unordered_set>
 
@@ -24,7 +25,7 @@ void StackToRegPass::run(ssa::Function *func, ssa::Module &mod) {
     ssa::ControlFlowGraph cfg(func);
 
     if (is_logging()) {
-        get_logging_stream() << "--- CFG FOR " << func->get_name() << " ---" << std::endl;
+        get_logging_stream() << "--- CFG FOR " << func->name << " ---" << std::endl;
         cfg.dump(get_logging_stream());
         get_logging_stream() << std::endl;
     }
@@ -32,7 +33,7 @@ void StackToRegPass::run(ssa::Function *func, ssa::Module &mod) {
     ssa::DominatorTree dt(cfg);
 
     if (is_logging()) {
-        get_logging_stream() << "--- DOMINATOR TREE FOR " << func->get_name() << " ---" << std::endl;
+        get_logging_stream() << "--- DOMINATOR TREE FOR " << func->name << " ---" << std::endl;
         dt.dump(get_logging_stream());
         get_logging_stream() << std::endl;
     }
@@ -48,8 +49,8 @@ void StackToRegPass::run(ssa::Function *func, ssa::Module &mod) {
 
         if (stack_slot.def_blocks.empty()) {
             ssa::Value replacement = stack_slot.type.is_floating_point()
-                                        ? ssa::Value::from_fp_immediate(0.0, stack_slot.type)
-                                        : ssa::Value::from_int_immediate(0, stack_slot.type);
+                                         ? ssa::Value::from_fp_immediate(0.0, stack_slot.type)
+                                         : ssa::Value::from_int_immediate(0, stack_slot.type);
             init_replacements[var] = replacement;
             stack_slot.cur_replacement = replacement;
             continue;
@@ -85,8 +86,8 @@ void StackToRegPass::run(ssa::Function *func, ssa::Module &mod) {
                 stack_slot.blocks_having_val_as_param.insert(cfg_node.block);
 
                 ssa::Value replacement = stack_slot.type.is_floating_point()
-                                            ? ssa::Value::from_fp_immediate(0.0, stack_slot.type)
-                                            : ssa::Value::from_int_immediate(0, stack_slot.type);
+                                             ? ssa::Value::from_fp_immediate(0.0, stack_slot.type)
+                                             : ssa::Value::from_int_immediate(0, stack_slot.type);
                 init_replacements[var] = replacement;
                 stack_slot.cur_replacement = replacement;
 

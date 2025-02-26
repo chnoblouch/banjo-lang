@@ -6,7 +6,6 @@
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
-
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
@@ -340,7 +339,7 @@ bool SROAPass::is_aggregate(const ssa::Type &type) {
 }
 
 void SROAPass::dump(ssa::Function &func) {
-    std::cout << "\n  stack values for function `" << func.get_name() << "`:\n\n";
+    std::cout << "\n  stack values for function `" << func.name << "`:\n\n";
     dump_stack_values();
 
     std::cout << "  stack pointer replacements: \n\n";

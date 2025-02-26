@@ -58,17 +58,19 @@ void Writer::write(Module &mod) {
 }
 
 void Writer::write_func_decl(FunctionDecl &func_decl) {
+    const FunctionType &func_type = func_decl.type;
+
     stream << "decl func ";
-    stream << calling_conv_to_str(func_decl.get_calling_conv()) + " ";
-    stream << type_to_str(func_decl.get_return_type()) + " ";
-    stream << "@" + func_decl.get_name();
+    stream << calling_conv_to_str(func_type.calling_conv) + " ";
+    stream << type_to_str(func_type.return_type) + " ";
+    stream << "@" + func_decl.name;
     stream << "(";
 
-    for (int i = 0; i < func_decl.get_params().size(); i++) {
-        Type param = func_decl.get_params()[i];
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
+        Type param = func_type.params[i];
         stream << type_to_str(param);
 
-        if (i != func_decl.get_params().size() - 1) {
+        if (i != func_type.params.size() - 1) {
             stream << ", ";
         }
     }
@@ -77,17 +79,19 @@ void Writer::write_func_decl(FunctionDecl &func_decl) {
 }
 
 void Writer::write_func_def(Function *func_def) {
+    const FunctionType &func_type = func_def->type;
+
     stream << "def func ";
-    stream << calling_conv_to_str(func_def->get_calling_conv()) + " ";
-    stream << type_to_str(func_def->get_return_type()) + " ";
-    stream << "@" + func_def->get_name();
+    stream << calling_conv_to_str(func_type.calling_conv) + " ";
+    stream << type_to_str(func_type.return_type) + " ";
+    stream << "@" + func_def->name;
     stream << "(";
 
-    for (int i = 0; i < func_def->get_params().size(); i++) {
-        Type param = func_def->get_params()[i];
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
+        Type param = func_type.params[i];
         stream << type_to_str(param);
 
-        if (i != func_def->get_params().size() - 1) {
+        if (i != func_type.params.size() - 1) {
             stream << ", ";
         }
     }
@@ -315,7 +319,7 @@ std::string Writer::global_value_to_str(const Global::Value &value) {
         result += "\"";
         return result;
     } else if (auto func = std::get_if<ssa::Function *>(&value)) {
-        return "@" + (*func)->get_name();
+        return "@" + (*func)->name;
     } else if (auto global_ref = std::get_if<ssa::Global::GlobalRef>(&value)) {
         return "@" + global_ref->name;
     } else if (auto extern_func_ref = std::get_if<ssa::Global::ExternFuncRef>(&value)) {

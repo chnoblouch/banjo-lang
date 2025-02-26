@@ -13,11 +13,11 @@ void AddrTablePass::run(ssa::Module &mod) {
         ssa::AddrTable addr_table;
 
         for (const ssa::Function *func : mod.get_functions()) {
-            addr_table.append(func->get_name());
+            addr_table.append(func->name);
         }
 
         for (const ssa::FunctionDecl *external_func : mod.get_external_functions()) {
-            addr_table.append(external_func->get_name());
+            addr_table.append(external_func->name);
         }
 
         for (const ssa::GlobalDecl *external_global : mod.get_external_globals()) {

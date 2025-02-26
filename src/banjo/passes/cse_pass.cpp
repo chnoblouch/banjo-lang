@@ -44,7 +44,7 @@ void CSEPass::run(ssa::BasicBlock &block, ssa::Function *func) {
         std::pair<ssa::VirtualRegister, unsigned> key{ptr.get_register(), index.get_int_immediate().to_u64()};
 
         if (member_ptrs.contains(key)) {
-            std::cout << "merging memberptr in " << func->get_name() << " (%" << *iter->get_dest() << ")" << std::endl;
+            std::cout << "merging memberptr in " << func->name << " (%" << *iter->get_dest() << ")" << std::endl;
             PassUtils::replace_in_block(block, *iter->get_dest(), *member_ptrs[key]->get_dest());
             iter = iter.get_prev();
             block.remove(iter.get_next());
@@ -63,7 +63,7 @@ void CSEPass::run(ssa::BasicBlock &block, ssa::Function *func) {
         if (iter->get_opcode() == ssa::Opcode::LOAD && iter->get_operand(1).is_register()) {
             ssa::VirtualRegister key = iter->get_operand(1).get_register();
             if (loads.contains(key)) {
-                std::cout << "merging load in " << func->get_name() << " (%" << *iter->get_dest() << ")" << std::endl;
+                std::cout << "merging load in " << func->name << " (%" << *iter->get_dest() << ")" << std::endl;
                 PassUtils::replace_in_block(block, *iter->get_dest(), *loads[key]->get_dest());
                 iter = iter.get_prev();
                 block.remove(iter.get_next());

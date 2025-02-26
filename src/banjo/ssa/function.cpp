@@ -8,12 +8,7 @@ namespace banjo {
 
 namespace ssa {
 
-Function::Function() {
-    basic_blocks.append(BasicBlock());
-}
-
-Function::Function(std::string name, std::vector<Type> params, Type return_type, CallingConv calling_conv)
-  : FunctionDecl(std::move(name), std::move(params), std::move(return_type), calling_conv) {
+Function::Function(std::string name, FunctionType type) : name(std::move(name)), type(std::move(type)) {
     basic_blocks.append(BasicBlock());
 }
 
