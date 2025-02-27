@@ -454,7 +454,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     }
 
     sir::SymbolTable *iterable_symbol_table = iterable_type.as_symbol<sir::StructDef>().block.symbol_table;
-    sir::Symbol iter_symbol = iterable_symbol_table->look_up(sir::MagicMethods::look_up_iter(for_stmt.by_ref));
+    sir::Symbol iter_symbol = iterable_symbol_table->look_up_local(sir::MagicMethods::look_up_iter(for_stmt.by_ref));
     if (!iter_symbol) {
         analyzer.report_generator.report_err_cannot_iter_struct(for_stmt.range, for_stmt.by_ref);
         return;
@@ -464,7 +464,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     sir::FuncDef &iter_func_def = iter_symbol.as<sir::FuncDef>();
 
     sir::SymbolTable *iter_symbol_table = iter_func_def.type.return_type.as_symbol<sir::StructDef>().block.symbol_table;
-    sir::Symbol next_symbol = iter_symbol_table->look_up(sir::MagicMethods::NEXT);
+    sir::Symbol next_symbol = iter_symbol_table->look_up_local(sir::MagicMethods::NEXT);
     if (!next_symbol) {
         analyzer.report_generator.report_err_iter_no_next(for_stmt.range, iter_func_def, for_stmt.by_ref);
         return;

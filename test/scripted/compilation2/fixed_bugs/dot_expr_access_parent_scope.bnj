@@ -1,0 +1,22 @@
+# test:subtest
+# test:error 9:15 "cannot find 'C'"
+
+const C: i32 = 42;
+
+struct S {}
+
+func main() {
+    println(S.C);
+}
+
+# test:subtest
+# test:error 21:7 "struct 'S' has no method named 'f'"
+
+struct S {}
+
+func f() {}
+
+func main() {
+    var s = S {};
+    s.f();
+}

@@ -130,7 +130,7 @@ sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, const std::vect
     const std::string &name = args[0].as<sir::StringLiteral>().value;
 
     if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up(name);
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up_local(name);
 
         if (auto func_def = symbol.match<sir::FuncDef>()) {
             return create_bool_literal(func_def->is_method());

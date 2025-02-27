@@ -335,7 +335,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 
     sir::StructDef &std_closure_def = analyzer.find_std_closure().as<sir::StructDef>();
 
-    sir::FuncDef &new_def_generic = std_closure_def.block.symbol_table->look_up("new").as<sir::FuncDef>();
+    sir::FuncDef &new_def_generic = std_closure_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>();
     sir::FuncDef &new_def = *GenericsSpecializer(analyzer).specialize(new_def_generic, {data_type});
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
@@ -411,7 +411,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     if (is_operator_overload) {
         sir::StructDef &struct_def = binary_expr.lhs.get_type().as_symbol<sir::StructDef>();
         std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
-        sir::Symbol symbol = struct_def.block.symbol_table->look_up(impl_name);
+        sir::Symbol symbol = struct_def.block.symbol_table->look_up_local(impl_name);
 
         if (!symbol) {
             analyzer.report_generator.report_err_operator_overload_not_found(binary_expr);
@@ -556,7 +556,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up_local(impl_name);
 
         if (!symbol) {
             analyzer.report_generator.report_err_operator_overload_not_found(unary_expr);
@@ -823,7 +823,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
     }
 
     if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
-        sir::Symbol method = struct_def->block.symbol_table->look_up(dot_expr.rhs.value);
+        sir::Symbol method = struct_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
             create_method_call(out_call_expr, lhs, dot_expr.rhs, method, false);
@@ -849,7 +849,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
         return Result::ERROR;
     } else if (auto union_def = lhs_type.match_symbol<sir::UnionDef>()) {
-        sir::Symbol method = union_def->block.symbol_table->look_up(dot_expr.rhs.value);
+        sir::Symbol method = union_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
             create_method_call(out_call_expr, lhs, dot_expr.rhs, method, false);
@@ -860,7 +860,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
         return Result::ERROR;
     } else if (auto proto_def = lhs_type.match_proto_ptr()) {
-        sir::Symbol method = proto_def->block.symbol_table->look_up(dot_expr.rhs.value);
+        sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
             create_method_call(out_call_expr, lhs, dot_expr.rhs, method, true);
@@ -1238,7 +1238,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
 
         if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
             std::string_view impl_name = sir::MagicMethods::look_up(sir::UnaryOp::DEREF);
-            sir::Symbol symbol = struct_def->block.symbol_table->look_up(impl_name);
+            sir::Symbol symbol = struct_def->block.symbol_table->look_up_local(impl_name);
 
             if (!symbol) {
                 analyzer.report_generator.report_err_operator_overload_not_found(star_expr);
@@ -1405,7 +1405,7 @@ void ExprAnalyzer::create_method_call(
 Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
-        sir::Symbol symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
+        sir::Symbol symbol = decl_block->symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (!symbol) {
             auto iter = analyzer.incomplete_decl_blocks.find(decl_block);
@@ -1415,7 +1415,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
                 MetaExpansion(analyzer).run_on_decl_block(*decl_block);
                 analyzer.pop_scope();
 
-                symbol = decl_block->symbol_table->look_up(dot_expr.rhs.value);
+                symbol = decl_block->symbol_table->look_up_local(dot_expr.rhs.value);
             }
         }
 

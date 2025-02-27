@@ -83,7 +83,7 @@ func main() {
 # var b: [bool; 4] = [true, false, false, true];
 # var c: [i64; 2] = [1003847, -23791283];
 
-# func main() {
+func main() {
 #     print(a[0]);
 #     print(',');
 #     print(a[1]);
@@ -101,4 +101,4 @@ func main() {
 #     print(c[0]);
 #     print(',');
 #     print(c[1]);
-# }
+}

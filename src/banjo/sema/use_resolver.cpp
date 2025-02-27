@@ -71,6 +71,7 @@ sir::Symbol UseResolver::resolve_symbol(sir::Ident &ident, sir::Symbol &symbol) 
         return resolve_module(ident, symbol);
     }
 
+    // TODO: Maybe this should be a local lookup.
     sir::Symbol new_symbol = symbol.get_symbol_table()->look_up(ident.value);
     if (new_symbol) {
         symbol = new_symbol;

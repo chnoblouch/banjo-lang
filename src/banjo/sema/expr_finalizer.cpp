@@ -454,7 +454,7 @@ Result ExprFinalizer::finalize_default(sir::UnaryExpr &unary_expr) {
 
 void ExprFinalizer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
     sir::StructDef &struct_def = analyzer.find_std_string().as<sir::StructDef>();
-    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up("from_cstr").as<sir::FuncDef>();
+    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up_local("from_cstr").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
@@ -478,7 +478,7 @@ void ExprFinalizer::create_std_string(sir::StringLiteral &string_literal, sir::E
 
 void ExprFinalizer::create_std_string_slice(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
     sir::StructDef &struct_def = analyzer.find_std_string_slice().as<sir::StructDef>();
-    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up("of_cstring").as<sir::FuncDef>();
+    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up_local("of_cstring").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
@@ -534,7 +534,7 @@ void ExprFinalizer::create_std_array(
 
     sir::StructDef &array_type = analyzer.find_std_array().as<sir::StructDef>();
     sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(array_type, {element_type});
-    sir::FuncDef &func_def = specialization->block.symbol_table->look_up("from").as<sir::FuncDef>();
+    sir::FuncDef &func_def = specialization->block.symbol_table->look_up_local("from").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
@@ -554,12 +554,12 @@ void ExprFinalizer::create_std_optional_some(
     sir::Specialization<sir::StructDef> &specialization,
     sir::Expr &inout_expr
 ) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_some").as<sir::FuncDef>();
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_some").as<sir::FuncDef>();
     inout_expr = sir::create_call(*analyzer.cur_sir_mod, func_def, {inout_expr});
 }
 
 void ExprFinalizer::create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_none").as<sir::FuncDef>();
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_none").as<sir::FuncDef>();
     out_expr = sir::create_call(*analyzer.cur_sir_mod, func_def, {});
 }
 
@@ -567,7 +567,7 @@ void ExprFinalizer::create_std_result_success(
     sir::Specialization<sir::StructDef> &specialization,
     sir::Expr &inout_expr
 ) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_success").as<sir::FuncDef>();
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_success").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
@@ -587,7 +587,7 @@ void ExprFinalizer::create_std_result_failure(
     sir::Specialization<sir::StructDef> &specialization,
     sir::Expr &inout_expr
 ) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up("new_failure").as<sir::FuncDef>();
+    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_failure").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create_expr(sir::SymbolExpr{
         .ast_node = nullptr,
@@ -609,7 +609,7 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
 
     sir::StructDef &map_type = analyzer.find_std_map().as<sir::StructDef>();
     sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(map_type, {key_type, value_type});
-    sir::FuncDef &func_def = specialization->block.symbol_table->look_up("from").as<sir::FuncDef>();
+    sir::FuncDef &func_def = specialization->block.symbol_table->look_up_local("from").as<sir::FuncDef>();
 
     sir::Expr entry_type = analyzer.create_expr(sir::TupleExpr{
         .ast_node = nullptr,
