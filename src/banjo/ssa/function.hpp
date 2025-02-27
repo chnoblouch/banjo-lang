@@ -24,7 +24,6 @@ public:
     FunctionType type;
     bool global = false;
 
-private:
     LinkedList<BasicBlock> basic_blocks;
 
     ssa::VirtualRegister last_virtual_reg = 0;

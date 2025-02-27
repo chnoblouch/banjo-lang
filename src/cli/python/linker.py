@@ -47,7 +47,15 @@ class WindowsLinker(Linker):
         command.append("/OUT:" + output_path)
 
         #command.extend(["msvcrt.lib", "ws2_32.lib", "shlwapi.lib"])
-        command.extend(["msvcrt.lib", "ws2_32.lib", "shlwapi.lib", "dbghelp.lib", "kernel32.lib", "user32.lib"])
+        command.extend([
+            "msvcrt.lib",
+            "ws2_32.lib",
+            "kernel32.lib",
+            "user32.lib",
+            "legacy_stdio_definitions.lib",
+            "shlwapi.lib",
+            "dbghelp.lib",
+        ])
         command.append("/SUBSYSTEM:" + input.config.win_subsystem)
 
         if arch == "x86_64":

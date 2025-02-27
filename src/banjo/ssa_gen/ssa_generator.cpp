@@ -36,6 +36,8 @@ ssa::Module SSAGenerator::generate() {
         ctx.pop_decl_context();
     }
 
+    generate_runtime();
+
     for (const sir::Module *sir_mod : sir_unit.mods) {
         generate_decls(sir_mod->block);
     }
@@ -209,6 +211,82 @@ void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_v
     });
 }
 
+void SSAGenerator::generate_runtime() {
+    ssa::FunctionDecl *func_snprintf = new ssa::FunctionDecl{
+        .name = "snprintf",
+        .type{
+            .params{
+                ssa::Primitive::ADDR,
+                ssa::Primitive::I64,
+                ssa::Primitive::ADDR,
+            },
+            .return_type = ssa::Primitive::I32,
+            .calling_conv = ctx.target->get_default_calling_conv(),
+        },
+    };
+
+    ssa::Global *global_format_string = new ssa::Global{
+        .name = "___runtime_f64_format",
+        .type = ssa::Primitive::ADDR,
+        .initial_value = std::string("%g\0", 3),
+        .external = false,
+    };
+
+    for (ssa::Function *func : ssa_mod.get_functions()) {
+        if (func->name != "___runtime_f64_to_string") {
+            continue;
+        }
+
+        func->get_entry_block().append({
+            ssa::Opcode::LOADARG,
+            0,
+            {
+                ssa::Operand::from_type(ssa::Primitive::F64),
+                ssa::Operand::from_int_immediate(0),
+            },
+        });
+
+        func->get_entry_block().append({
+            ssa::Opcode::LOADARG,
+            1,
+            {
+                ssa::Operand::from_type(ssa::Primitive::ADDR),
+                ssa::Operand::from_int_immediate(1),
+            },
+        });
+
+        func->get_entry_block().append({
+            ssa::Opcode::LOADARG,
+            2,
+            {
+                ssa::Operand::from_type(ssa::Primitive::I64),
+                ssa::Operand::from_int_immediate(2),
+            },
+        });
+
+        ssa::Instruction call{
+            ssa::Opcode::CALL,
+            {
+                ssa::Operand::from_extern_func(func_snprintf, ssa::Primitive::VOID),
+                ssa::Operand::from_register(1, ssa::Primitive::ADDR),
+                ssa::Operand::from_register(2, ssa::Primitive::I64),
+                ssa::Operand::from_global(global_format_string, ssa::Primitive::ADDR),
+                ssa::Operand::from_register(0, ssa::Primitive::F64),
+            }
+        };
+
+        call.set_attr(ssa::Instruction::Attribute::VARIADIC);
+
+        func->get_entry_block().append(call);
+        func->get_entry_block().append({ssa::Opcode::RET});
+
+        func->last_virtual_reg = 3;
+    }
+
+    ssa_mod.add(func_snprintf);
+    ssa_mod.add(global_format_string);
+}
+
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) generate_func_def(*func_def);
@@ -234,6 +312,10 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     }
 
     ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
+    if (ssa_func->name == "___runtime_f64_to_string") {
+        return;
+    }
+
     ctx.push_func_context(ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
 
@@ -241,17 +323,17 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         const ssa::Type &ssa_param_type = ssa_func->type.params[i];
         ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
         ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_param_type);
-        alloca_instr.set_flag(ssa::Instruction::FLAG_ARG_STORE);
+        alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
 
         ssa::VirtualRegister ssa_arg_val = ssa_func->next_virtual_reg();
         ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_val, ssa_param_type, i);
-        loadarg_instr.set_flag(ssa::Instruction::FLAG_SAVE_ARG);
+        loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
 
         ssa::Instruction &store_instr = ctx.append_store(
             ssa::Operand::from_register(ssa_arg_val, ssa_param_type),
             ssa::Operand::from_register(ssa_slot, ssa::Primitive::ADDR)
         );
-        store_instr.set_flag(ssa::Instruction::FLAG_SAVE_ARG);
+        store_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
 
         ctx.get_func_context().arg_regs.push_back(ssa_slot);
     }

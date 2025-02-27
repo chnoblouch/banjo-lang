@@ -1,40 +1,97 @@
 use std.{memory, config};
 use c.lib.string.{strcmp, strncmp};
-use internal.runtime;
 
-native func printf(format: *u8, value: u64);
+meta if config.OS == config.WINDOWS {
+    use os.winapi;
+
+    native func printf(format: *u8, value: u64);
+}
+
+struct StackFrame {
+    var address: addr;
+    var symbol: String;
+}
+
+const MAX_SYMBOL_LENGTH: usize = 255;
 
 pub func print_stack_trace() {
     meta if config.OS == config.WINDOWS {
-        var frames: *runtime.StackFrame;
-        var num_frames: u32;
-        runtime.acquire_stack_trace(&frames, &num_frames);
-        
+        var process = winapi.get_current_process();
+        var thread = winapi.get_current_thread();
+
+        winapi.sym_set_options(winapi.SYMOPT_UNDNAME | winapi.SYMOPT_DEFERRED_LOADS);
+
+        if winapi.sym_initialize(process, null, 1) == 0 {
+            return;
+        }
+
+        var context = memory.alloc(2048) as *u8;
+        winapi.rtl_capture_context(context);
+
+        var rip = *((context + 248) as *u64);
+        var rsp = *((context + 152) as *u64);
+        var rbp = *((context + 160) as *u64);
+
+        var stack_frame = memory.zero[winapi.StackFrame64]();
+        stack_frame.addr_pc.offset = rip;
+        stack_frame.addr_stack.offset = rsp;
+        stack_frame.addr_frame.offset = rbp;
+        stack_frame.addr_pc.mode = winapi.ADDR_MODE_FLAT;
+        stack_frame.addr_stack.mode = winapi.ADDR_MODE_FLAT;
+        stack_frame.addr_frame.mode = winapi.ADDR_MODE_FLAT;
+
+        var symbol = memory.alloc(meta(winapi.SymbolInfo).size + (MAX_SYMBOL_LENGTH - 1)) as *winapi.SymbolInfo;
+        symbol.size_of_struct = meta(winapi.SymbolInfo).size;
+        symbol.max_name_len = MAX_SYMBOL_LENGTH as u32;
+
+        var frames: Array[StackFrame] = [];
+
+        while true {
+            if winapi.stack_walk_64(
+                winapi.IMAGE_FILE_MACHINE_AMD64,
+                process,
+                thread,
+                &stack_frame,
+                context,
+                null,
+                winapi.sym_function_table_access_64,
+                winapi.sym_get_module_base_64,
+                null,
+            ) == 0 {
+                break;
+            }
+
+            var displacement: u64;
+
+            if winapi.sym_from_addr(process, stack_frame.addr_pc.offset, &displacement, symbol) != 0 {
+                frames.append(StackFrame {
+                    address: stack_frame.addr_pc.offset as addr,
+                    symbol: String.from(StringSlice.new(&symbol.name, symbol.name_len as usize)),
+                });
+            }
+        }
+
+        memory.free(symbol);
+        memory.free(context);
+
         println("stack trace:");
         
-        for i in 2..num_frames {
-            var frame = frames[i];
+        for i in 1..frames.length {
+            var frame = &frames[i];
             printf("  0x%016llX: ", frame.address as u64);
             
-            if strncmp(&frame.symbol[0], "bnj_", 4) == 0 {
+            if frame.symbol.starts_with(StringSlice.of_cstring("bnj_")) {
                 print("\x1B[0;36m");
-                print_symbol_demangled(frame.symbol);
-            } else if strcmp(frame.symbol, "main") == 0 {
+                println(frame.symbol.slice());
+            } else if frame.symbol == "main" {
                 print("\x1B[0;36m");
-                println(frame.symbol);
+                println(frame.symbol.slice());
             } else {
                 print("\x1B[0;2m");
-                println(frame.symbol);
+                println(frame.symbol.slice());
             }
             
             print("\x1B[0;0m");
         }
-        
-        memory.free(frames);
     }
-}
-
-func print_symbol_demangled(symbol: *u8) {
-    # TODO: actually demangle
-    println(&symbol[4]);
 }
