@@ -104,7 +104,6 @@ The hot reloader is a tool that watches source files for changes, recompiles the
     - `bindgen`: Tool for generating bindings for C libraries
     - `cli`: CLI tool that wraps all other tools
 - `lib`: Libraries used by the compiler and linker
-    - `runtime`: A small runtime written in C linked into all Banjo executables
     - `stdlib2`: The standard library
 - `test`: Test cases
     - `compiled`: Tests written in C++ that have to be compiled first

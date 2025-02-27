@@ -13,14 +13,6 @@ class LinkerInput:
     toolchain: Toolchain
     output_dir: str
 
-    def get_runtime_path(self):
-        target = self.toolchain.target
-
-        dir = Path(__file__).parents[2] / "lib" / "runtime"
-        name = str(target) + (".lib" if target.os == "windows" else ".a")
-
-        return str(dir / name)
-
 
 class Linker:
 
@@ -39,7 +31,7 @@ class WindowsLinker(Linker):
     def build_command(self, input: LinkerInput):
         arch = input.toolchain.target.arch
 
-        command = [self.executable, self.get_object_file(arch), input.get_runtime_path()]
+        command = [self.executable, self.get_object_file(arch)]
 
         output_file_extension = "dll" if input.config.type == "shared_library" else "exe"
         output_file = input.config.name + "." + output_file_extension
@@ -49,10 +41,10 @@ class WindowsLinker(Linker):
         #command.extend(["msvcrt.lib", "ws2_32.lib", "shlwapi.lib"])
         command.extend([
             "msvcrt.lib",
-            "ws2_32.lib",
             "kernel32.lib",
             "user32.lib",
             "legacy_stdio_definitions.lib",
+            "ws2_32.lib",
             "shlwapi.lib",
             "dbghelp.lib",
         ])
@@ -99,7 +91,7 @@ class MinGWLinker(Linker):
         self.runtime_path = runtime_path
     
     def build_command(self, input: LinkerInput):
-        command = [self.executable] + self.args + ["main.o", input.get_runtime_path()]
+        command = [self.executable] + self.args + ["main.o"]
 
         if input.config.type == "executable":
             output_file = f"{input.config.name}.exe"
@@ -164,7 +156,7 @@ class UnixLinker(Linker):
         self.crt_files = crt_files
 
     def build_command(self, input: LinkerInput):
-        command = [self.executable] + self.args + ["main.o", input.get_runtime_path()]
+        command = [self.executable] + self.args + ["main.o"]
 
         output_file = input.config.name
         if input.config.type == "shared_library":
@@ -205,7 +197,7 @@ class DarwinLinker(Linker):
 
         command = [self.executable]
         command.extend(self.extra_args)
-        command.extend(["main.o", input.get_runtime_path()])
+        command.extend(["main.o"])
 
         output_file = input.config.name
         if input.config.type == "shared_library":

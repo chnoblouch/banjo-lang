@@ -166,8 +166,13 @@ class Test:
         subprocess.run([
             "lld-link.exe",
             "main.obj",
-            "../../lib/runtime/bin/x86_64-windows-msvc.lib",
-            "msvcrt.lib", "ws2_32.lib", "shlwapi.lib", "dbghelp.lib", "kernel32.lib", "user32.lib",
+            "msvcrt.lib",
+            "kernel32.lib",
+            "user32.lib",
+            "legacy_stdio_definitions.lib",
+            "ws2_32.lib",
+            "shlwapi.lib",
+            "dbghelp.lib",
             "/SUBSYSTEM:CONSOLE",
             "/OUT:test.exe"
         ])
