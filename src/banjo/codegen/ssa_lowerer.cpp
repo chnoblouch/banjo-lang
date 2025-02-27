@@ -322,7 +322,7 @@ mcode::Register SSALowerer::create_tmp_reg() {
 
 void SSALowerer::lower_alloca(ssa::Instruction &instr) {
     unsigned size = std::max(get_size(instr.get_operand(0).get_type()), 8u);
-    bool is_arg_store = instr.is_flag(ssa::Instruction::FLAG_ARG_STORE);
+    bool is_arg_store = instr.get_attr() == ssa::Instruction::Attribute::ARG_STORE;
     mcode::StackSlot::Type type = is_arg_store ? mcode::StackSlot::Type::ARG_STORE : mcode::StackSlot::Type::GENERIC;
     mcode::StackSlot slot(type, size, 1);
 

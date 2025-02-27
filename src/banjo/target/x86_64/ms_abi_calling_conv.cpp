@@ -2,6 +2,7 @@
 
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/mcode/function.hpp"
+#include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
@@ -47,27 +48,38 @@ MSABICallingConv::MSABICallingConv() {
 }
 
 void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
+    bool variadic = instr.get_attr() == ssa::Instruction::Attribute::VARIADIC;
+
     for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
-        emit_arg_move(operand, i - 1, lowerer);
+        emit_arg_move(lowerer, operand, i - 1, variadic);
     }
 
-    emit_call(instr.get_operand(0), lowerer);
+    emit_call(lowerer, instr.get_operand(0));
 
     if (instr.get_dest()) {
         emit_ret_val_move(lowerer);
     }
 }
 
-void MSABICallingConv::emit_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_arg_move(
+    codegen::SSALowerer &lowerer,
+    ssa::Operand &operand,
+    unsigned index,
+    bool variadic
+) {
     if (index < 4) {
-        emit_reg_arg_move(operand, index, lowerer);
+        if (variadic) {
+            emit_reg_arg_move_variadic(lowerer, operand, index);
+        } else {
+            emit_reg_arg_move(lowerer, operand, index);
+        }
     } else {
-        emit_stack_arg_move(operand, index, lowerer);
+        emit_stack_arg_move(lowerer, operand, index);
     }
 }
 
-void MSABICallingConv::emit_reg_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_reg_arg_move(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
     bool is_fp = operand.get_type().is_floating_point();
@@ -77,7 +89,27 @@ void MSABICallingConv::emit_reg_arg_move(ssa::Operand &operand, unsigned index, 
     x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
 }
 
-void MSABICallingConv::emit_stack_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_reg_arg_move_variadic(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index) {
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
+    bool is_fp = operand.get_type().is_floating_point();
+
+    if (is_fp) {
+        ASSERT(operand.get_type() == ssa::Primitive::F64);
+
+        mcode::Register m_dst_reg_fp = mcode::Register::from_physical(ARG_REGS_FP[index]);
+        mcode::Operand m_dst_fp = mcode::Operand::from_register(m_dst_reg_fp, 8);
+        x86_64_lowerer.lower_as_move_into_reg(m_dst_reg_fp, operand);
+
+        mcode::Register m_dst_reg_gp = mcode::Register::from_physical(ARG_REGS_INT[index]);
+        mcode::Operand m_dst_gp = mcode::Operand::from_register(m_dst_reg_gp, 8);
+        lowerer.emit({X8664Opcode::MOVQ, {m_dst_gp, m_dst_fp}});
+    } else {
+        mcode::Register m_dst_reg = mcode::Register::from_physical(ARG_REGS_INT[index]);
+        x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
+    }
+}
+
+void MSABICallingConv::emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
     unsigned arg_slot_index = index - 4;
@@ -98,7 +130,7 @@ void MSABICallingConv::emit_stack_arg_move(ssa::Operand &operand, unsigned index
     x86_64_lowerer.lower_as_move(m_dst, operand);
 }
 
-void MSABICallingConv::emit_call(const ssa::Operand &func_operand, codegen::SSALowerer &lowerer) {
+void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operand &func_operand) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
     int ptr_size = X8664SSALowerer::PTR_SIZE;

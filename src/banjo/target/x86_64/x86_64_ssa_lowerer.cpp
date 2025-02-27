@@ -179,7 +179,7 @@ void X8664SSALowerer::lower_store(ssa::Instruction& instr) {
         m_instr = mcode::Instruction(opcode, {dst, src});
     }
 
-    if(instr.is_flag(ssa::Instruction::FLAG_SAVE_ARG)) {
+    if(instr.get_attr() == ssa::Instruction::Attribute::SAVE_ARG) {
         m_instr.set_flag(mcode::Instruction::FLAG_ARG_STORE);
     }
 

@@ -196,6 +196,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case MOVSD: encode_movsd(instr, func); break;
         case MOVAPS: encode_movaps(instr, func); break;
         case MOVUPS: encode_movups(instr, func); break;
+        case MOVQ: encode_movq(instr); break;
         case ADDSS: encode_addss(instr, func); break;
         case ADDSD: encode_addsd(instr, func); break;
         case SUBSS: encode_subss(instr, func); break;
@@ -570,6 +571,29 @@ void X8664Encoder::encode_movups(mcode::Instruction &instr, mcode::Function *fun
         emit_opcode(0x0F);
         emit_opcode(0x11);
         emit_modrm_sib(src_reg, dst_roa);
+    }
+}
+
+void X8664Encoder::encode_movq(mcode::Instruction &instr) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+
+    // TODO: Implement all the other variants.
+
+    if (is_reg(dst) && is_reg(src)) {
+        ASSERT(dst.get_physical_reg() >= X8664Register::RAX && dst.get_physical_reg() <= X8664Register::R15);
+        ASSERT(src.get_physical_reg() >= X8664Register::XMM0 && dst.get_physical_reg() <= X8664Register::XMM15);
+
+        RegCode dst_reg = reg(dst);
+        RegCode src_reg = reg(src);
+
+        emit_opcode(0x66);
+        emit_rex_rr(8, src_reg, dst_reg);
+        emit_opcode(0x0F);
+        emit_opcode(0x7E);
+        emit_modrm_rr(src_reg, dst_reg);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 

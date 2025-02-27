@@ -160,7 +160,6 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::FCJMP: opcode = "fcjmp"; break;
             case Opcode::SELECT: opcode = "select"; break;
             case Opcode::CALL: opcode = "call"; break;
-            case Opcode::CALLINTR: opcode = "callintr"; break;
             case Opcode::RET: opcode = "ret"; break;
             case Opcode::UEXTEND: opcode = "uextend"; break;
             case Opcode::SEXTEND: opcode = "sextend"; break;
@@ -203,8 +202,13 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             }
         }
 
-        if (instr.get_flags() & ssa::Instruction::FLAG_ARG_STORE) stream << " !arg_store";
-        if (instr.get_flags() & ssa::Instruction::FLAG_SAVE_ARG) stream << " !save_arg";
+        if (instr.get_attr() == ssa::Instruction::Attribute::ARG_STORE) {
+            stream << " !arg_store";
+        } else if (instr.get_attr() == ssa::Instruction::Attribute::SAVE_ARG) {
+            stream << " !save_arg";
+        } else if (instr.get_attr() == ssa::Instruction::Attribute::VARIADIC) {
+            stream << " !variadic";
+        }
 
         stream << "\n";
     }
@@ -313,6 +317,7 @@ std::string Writer::global_value_to_str(const Global::Value &value) {
             if (c == '\0') result += "\\0";
             else if (c == '\n') result += "\\n";
             else if (c == '\r') result += "\\r";
+            else if (c == '\"') result += "\\\"";
             else result += c;
         }
 

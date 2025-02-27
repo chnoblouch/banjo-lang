@@ -32,7 +32,6 @@ enum class Opcode {
     FCJMP,
     SELECT,
     CALL,
-    CALLINTR,
     RET,
     UEXTEND,
     SEXTEND,

@@ -1,12 +1,12 @@
-#ifndef IR_INSTRUCTION_H
-#define IR_INSTRUCTION_H
+#ifndef BANJO_SSA_INSTRUCTION_H
+#define BANJO_SSA_INSTRUCTION_H
 
 #include "banjo/ssa/opcode.hpp"
 #include "banjo/ssa/operand.hpp"
-#include "banjo/ssa/type.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/utils/linked_list.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -18,14 +18,18 @@ namespace ssa {
 class Instruction {
 
 public:
-    static constexpr unsigned FLAG_ARG_STORE = 1 << 0;
-    static constexpr unsigned FLAG_SAVE_ARG = 1 << 1;
+    enum class Attribute : std::uint8_t {
+        NONE,
+        ARG_STORE,
+        SAVE_ARG,
+        VARIADIC,
+    };
 
 private:
     Opcode opcode;
     std::optional<VirtualRegister> dest;
     std::vector<Operand> operands;
-    unsigned flags = 0;
+    Attribute attr = Attribute::NONE;
 
 public:
     Instruction() {}
@@ -45,17 +49,14 @@ public:
     Instruction(Opcode opcode) : opcode(opcode), dest{}, operands{} {}
 
     Opcode get_opcode() const { return opcode; }
-    void set_opcode(ssa::Opcode opcode) { this->opcode = opcode; }
-
     std::optional<VirtualRegister> &get_dest() { return dest; }
-    void set_dest(VirtualRegister dest) { this->dest = std::optional{dest}; }
-
     std::vector<Operand> &get_operands() { return operands; }
     Operand &get_operand(int index) { return operands[index]; }
+    Attribute get_attr() const { return attr; }
 
-    unsigned get_flags() const { return flags; }
-    bool is_flag(unsigned flag) const { return flags & flag; }
-    void set_flag(unsigned flag) { flags |= flag; }
+    void set_opcode(ssa::Opcode opcode) { this->opcode = opcode; }
+    void set_dest(VirtualRegister dest) { this->dest = std::optional{dest}; }
+    void set_attr(Attribute attr) { this->attr = attr; }
 
     bool is_branching() const {
         return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;

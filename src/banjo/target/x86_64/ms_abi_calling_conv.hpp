@@ -38,11 +38,12 @@ public:
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    void emit_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer);
-    void emit_reg_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer);
-    void emit_stack_arg_move(ssa::Operand &operand, unsigned index, codegen::SSALowerer &lowerer);
+    void emit_arg_move(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index, bool variadic);
+    void emit_reg_arg_move(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index);
+    void emit_reg_arg_move_variadic(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index);
+    void emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index);
 
-    void emit_call(const ssa::Operand &func_operand, codegen::SSALowerer &lowerer);
+    void emit_call(codegen::SSALowerer &lowerer, const ssa::Operand &func_operand);
     void emit_ret_val_move(codegen::SSALowerer &lowerer);
 };
 

@@ -3,6 +3,7 @@
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
@@ -35,12 +36,26 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
     }
     std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(types);
 
-    for (int i = 1; i < instr.get_operands().size(); i++) {
+    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
         unsigned size = x86_64_lowerer.get_size(operand.get_type());
 
         mcode::Operand dst = get_arg_dst(instr, i - 1, lowerer).with_size(size);
         x86_64_lowerer.lower_as_move(dst, operand);
+    }
+
+    if (instr.get_attr() == ssa::Instruction::Attribute::VARIADIC) {
+        unsigned num_fp_args = 0;
+
+        for (unsigned i = 1; i < instr.get_operands().size(); i++) {
+            if (instr.get_operand(i).get_type().is_floating_point()) {
+                num_fp_args += 1;
+            }
+        }
+
+        mcode::Operand m_imm = mcode::Operand::from_int_immediate(num_fp_args, 1);
+        mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RAX), 1);
+        lowerer.emit({X8664Opcode::MOV, {m_dst, m_imm}});
     }
 
     append_call(instr.get_operand(0), lowerer);
