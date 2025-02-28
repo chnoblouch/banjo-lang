@@ -42,12 +42,18 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 
         if (auto struct_def = decl.match<sir::StructDef>()) {
             if (!struct_def->is_generic()) {
+                analyzer.push_scope().decl = struct_def;
                 run_on_decl_block(struct_def->block);
+                analyzer.pop_scope();
             }
         } else if (auto union_def = decl.match<sir::UnionDef>()) {
+            analyzer.push_scope().decl = union_def;
             run_on_decl_block(union_def->block);
+            analyzer.pop_scope();
         } else if (auto proto_def = decl.match<sir::ProtoDef>()) {
+            analyzer.push_scope().decl = proto_def;
             run_on_decl_block(proto_def->block);
+            analyzer.pop_scope();
         } else if (decl.is<sir::MetaIfStmt>()) {
             evaluate_meta_if_stmt(decl_block, i);
         }

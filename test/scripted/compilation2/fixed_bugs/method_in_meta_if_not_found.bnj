@@ -1,0 +1,13 @@
+# test:subtest
+# test:compiles
+
+struct S {
+    meta if true {
+        func f(self) {}
+    }
+}
+
+func main() {
+    var s = S {};
+    s.f();
+}

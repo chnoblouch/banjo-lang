@@ -413,7 +413,7 @@ Symbol SymbolTable::look_up(std::string_view name) const {
 
 Symbol SymbolTable::look_up_local(std::string_view name) const {
     auto iter = symbols.find(name);
-    return iter == symbols.end() ? nullptr : iter->second;
+    return iter == symbols.end() ? nullptr : iter->second.resolve();
 }
 
 bool PseudoType::is_struct_by_default() const {
