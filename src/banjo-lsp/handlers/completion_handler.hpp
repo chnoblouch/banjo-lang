@@ -27,6 +27,7 @@ private:
     };
 
     struct CompletionConfig {
+        bool include_parent_scopes;
         bool include_uses;
         bool append_func_parameters;
     };

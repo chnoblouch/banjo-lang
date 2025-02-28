@@ -63,6 +63,7 @@ void CompletionHandler::build_in_block(
     const CompletionInfo &completion_info
 ) {
     CompletionConfig config{
+        .include_parent_scopes = true,
         .include_uses = true,
         .append_func_parameters = true,
     };
@@ -71,6 +72,7 @@ void CompletionHandler::build_in_block(
 
     for (const lang::sir::Symbol &symbol : completion_info.preamble_symbols) {
         CompletionConfig config{
+            .include_parent_scopes = false,
             .include_uses = false,
             .append_func_parameters = true,
         };
@@ -92,6 +94,7 @@ void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) 
         }
     } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {
         CompletionConfig config{
+            .include_parent_scopes = false,
             .include_uses = false,
             .append_func_parameters = true,
         };
@@ -110,6 +113,7 @@ void CompletionHandler::build_in_use(JSONArray &items) {
 
 void CompletionHandler::build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs) {
     CompletionConfig config{
+        .include_parent_scopes = false,
         .include_uses = false,
         .append_func_parameters = false,
     };
@@ -150,6 +154,7 @@ void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::Str
 
 void CompletionHandler::build_value_members(JSONArray &items, lang::sir::StructDef &struct_def) {
     CompletionConfig config{
+        .include_parent_scopes = false,
         .include_uses = false,
         .append_func_parameters = true,
     };
@@ -183,7 +188,7 @@ void CompletionHandler::build_items(
         build_item(config, items, name, symbol);
     }
 
-    if (symbol_table.parent) {
+    if (config.include_parent_scopes && symbol_table.parent) {
         build_items(config, items, *symbol_table.parent);
     }
 }
