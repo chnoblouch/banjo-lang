@@ -35,11 +35,6 @@ JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*con
     lang::TextPosition position = ASTNavigation::pos_from_lsp(file->content, line, column);
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {
-        // FIXME: Where do these null def modules come from?
-        if (!symbol_ref.def_mod) {
-            continue;
-        }
-
         if (position >= symbol_ref.range.start && position <= symbol_ref.range.end) {
             File *target_file = workspace.find_file(symbol_ref.def_mod->path);
 

@@ -16,6 +16,7 @@ DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclV
 Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
         sir::Param &param = func_def.type.params[i];
+        analyzer.add_symbol_def(&param);
 
         if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_def.is_method())) {
             func_def.block.symbol_table->symbols.insert({param.name.value, &param});

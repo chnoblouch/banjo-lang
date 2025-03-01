@@ -44,6 +44,7 @@ private:
     lang::ReportManager report_manager;
 
     lang::sir::Unit sir_unit;
+    std::unordered_map<lang::sir::Symbol, SymbolKey> symbol_defs;
     Index index;
 
     std::list<File> files;
