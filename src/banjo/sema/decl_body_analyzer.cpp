@@ -31,7 +31,7 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
         return Result::ERROR;
     }
 
-    return ExprAnalyzer(analyzer).analyze(const_def.value, ExprConstraints::expect_type(const_def.type));
+    return ExprAnalyzer(analyzer).analyze_value(const_def.value, ExprConstraints::expect_type(const_def.type));
 }
 
 Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
@@ -127,6 +127,11 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
                 continue;
             }
 
+            if (!variant->value.is<sir::IntLiteral>()) {
+                // FIXME: ERROR
+                continue;
+            }
+
             variant->value = ConstEvaluator(analyzer, false).evaluate(variant->value);
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprFinalizer(analyzer).finalize(variant->value);
@@ -137,7 +142,7 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
                 .value = next_value,
             });
 
-            ExprAnalyzer(analyzer).analyze(variant->value);
+            ExprAnalyzer(analyzer).analyze_value(variant->value);
 
             next_value += 1;
         }

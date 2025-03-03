@@ -1,0 +1,51 @@
+# test:subtest
+# test:error 6:13 "expected type, got value"
+# test:error 9:18 "expected value, got type"
+
+func main() {
+    var a: [0; 0];
+
+    # TODO: The error message should probably be something like "expected unsigned integer, got type"
+    var b: [i32; i32];
+}
+
+# test:subtest
+# test:error 17:17 "expected type, got value"
+# test:error 18:22 "expected type, got value"
+
+func main() {
+    var a: func(0);
+    var b: func() -> 0;
+}
+
+# test:subtest
+# test:error 25:13 "expected type, got value"
+
+func main() {
+    var a: ?0;
+}
+
+# test:subtest
+# test:error 33:12 "expected type, got value"
+# test:error 34:23 "expected type, got value"
+
+func main() {
+    var a: 0 except i32;
+    var b: i32 except 0;
+}
+
+# TODO: Array types are weird because they are parsed as an array of values and hence don't produce
+# the correct error message.
+
+# func main() {
+#     var a: [0];
+# }
+
+# test:subtest
+# test:error 49:13 "expected type, got value"
+# test:error 50:18 "expected type, got value"
+
+func main() {
+    var a: [0: i32];
+    var b: [i32: 0];
+}

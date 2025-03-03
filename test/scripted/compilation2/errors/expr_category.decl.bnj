@@ -1,0 +1,69 @@
+# test:subtest
+# test:error 5:11 "expected type, got value"
+# test:error 6:13 "expected type, got value"
+
+func f(a: 0) {}
+func f() -> 0 {}
+
+# test:subtest
+# test:error 13:21 "expected type, got value"
+# test:error 14:21 "expected type, got value"
+
+proto P {
+    func f(self, a: 0);
+    func f(self) -> 0;
+}
+
+# test:subtest
+# test:error 21:18 "expected type, got value"
+# test:error 22:20 "expected type, got value"
+
+native func f(a: 0);
+native func f() -> 0;
+
+# test:subtest
+# test:error 28:10 "expected type, got value"
+# test:error 29:16 "expected value, got type"
+
+const C: 0 = 0;
+const C: i32 = i32;
+
+# test:subtest
+# test:error 36:12 "expected type, got value"
+# test:error 40:11 "expected type, got value"
+
+struct S {
+    var f: 0;
+}
+
+# TODO: The error message should probably be something like "expected proto, got value"
+struct S: 0 {}
+
+# test:subtest
+# test:error 45:8 "expected type, got value"
+
+var v: 0;
+
+# test:subtest
+# test:error 50:15 "expected type, got value"
+
+native var v: 0;
+
+# test:subtest
+# test:error 56:9 "expected value, got type"
+
+enum E {
+    V = i32,
+}
+
+# test:subtest
+# test:error 63:15 "expected type, got value"
+
+union U {
+    case C(f: 0);
+}
+
+# test:subtest
+# test:error 69:10 "expected type, got value"
+
+type A = 0;

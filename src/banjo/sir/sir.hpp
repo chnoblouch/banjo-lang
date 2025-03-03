@@ -125,6 +125,13 @@ class UseItem;
 
 constexpr std::string_view COMPLETION_TOKEN_VALUE = "[completion]";
 
+enum class ExprCategory : std::uint8_t {
+    VALUE,
+    TYPE,
+    VALUE_OR_TYPE,
+    MODULE,
+};
+
 class Expr {
     std::variant<
         IntLiteral *,       // 0
@@ -229,6 +236,7 @@ public:
     bool is_value() const;
     Expr get_type() const;
 
+    ExprCategory get_category() const;
     bool is_type() const;
     bool is_primitive_type(Primitive primitive) const;
     bool is_int_type() const;

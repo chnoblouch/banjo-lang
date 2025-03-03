@@ -1,0 +1,66 @@
+# test:subtest
+# test:error 11:13 "expected type, got value"
+# test:error 13:20 "expected value, got type"
+
+struct S {
+    var f: i32;
+}
+
+func main() {
+    # TODO: The error message should probably be something like "expected struct, got value"
+    var a = 0 {};
+    
+    var b = S { f: i32 };
+}
+
+# test:subtest
+# test:error 23:13 "expected value, got type"
+# test:error 24:17 "expected value, got type"
+# test:error 25:13 "expected value, got type"
+# test:error 25:19 "expected value, got type"
+
+func main() {
+    var a = i32 + 0;
+    var b = 0 + i32;
+    var c = i32 + i32;
+}
+
+# test:subtest
+# test:error 32:14 "expected value, got type"
+
+func main() {
+    var a = -i32;
+}
+
+# test:subtest
+# test:error 40:13 "expected value, got type"
+# test:error 41:18 "expected type, got value"
+
+func main() {
+    var a = i32 as i32;
+    var b = 0 as 0;
+}
+
+# test:subtest
+# test:error 51:13 "expected value, got type"
+# test:error 52:15 "expected value, got type"
+
+func f(a: i32) {}
+
+func main() {
+    var a = i32();
+    var b = f(i32);
+}
+
+# test:subtest
+# test:error 63:17 "expected value, got type"
+
+union U {
+    case C(f: i32);
+}
+
+func main() {
+    var a = U.C(i32);
+}
+
+# TODO: Dot expressions (standard and as callees)

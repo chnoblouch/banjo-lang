@@ -250,18 +250,12 @@ ParseResult ExprParser::parse_operand() {
 
 ParseResult ExprParser::parse_number_literal() {
     Token *token = stream.consume();
-    std::string str = token->value;
 
-    ASTNode *node;
-
-    if (str.find('.') != std::string::npos) {
+    if (token->value.find('.') != std::string::npos) {
         return parser.create_node(AST_FLOAT_LITERAL, token);
     } else {
-        node = parser.create_node(AST_INT_LITERAL, token);
+        return parser.create_node(AST_INT_LITERAL, token);
     }
-
-    node->range = token->range();
-    return node;
 }
 
 ParseResult ExprParser::parse_char_literal() {

@@ -68,6 +68,19 @@ ReportText &ReportText::format(sir::Expr &expr) {
     return format(to_string(expr));
 }
 
+ReportText &ReportText::format(sir::ExprCategory expr_category) {
+    std::string string;
+
+    switch (expr_category) {
+        case sir::ExprCategory::VALUE: string = "value"; break;
+        case sir::ExprCategory::TYPE: string = "type"; break;
+        case sir::ExprCategory::VALUE_OR_TYPE: string = "value or type"; break;
+        case sir::ExprCategory::MODULE: string = "module"; break;
+    }
+
+    return format(string);
+}
+
 ReportText &ReportText::format(const std::vector<sir::Expr> &exprs) {
     std::string string;
 

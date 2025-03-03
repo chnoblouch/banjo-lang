@@ -122,6 +122,31 @@ Expr Expr::get_type() const {
     );
 }
 
+ExprCategory Expr::get_category() const {
+    if (auto symbol_expr = match<SymbolExpr>()) {
+        if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, ProtoDef>()) {
+            return ExprCategory::TYPE;
+        } else if (symbol_expr->symbol.is<Module>()) {
+            return ExprCategory::MODULE;
+        } else {
+            return ExprCategory::VALUE;
+        }
+    } else if (auto tuple_expr = match<TupleExpr>()) {
+        if (tuple_expr->exprs.empty()) {
+            return ExprCategory::VALUE_OR_TYPE;
+        } else {
+            return tuple_expr->exprs[0].get_category();
+        }
+    } else if (auto star_expr = match<StarExpr>()) {
+        return star_expr->value.get_category();
+    } else if (is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
+               is<sir::ClosureType>()) {
+        return ExprCategory::TYPE;
+    } else {
+        return ExprCategory::VALUE;
+    }
+}
+
 bool Expr::is_type() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
         return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, ProtoDef>();

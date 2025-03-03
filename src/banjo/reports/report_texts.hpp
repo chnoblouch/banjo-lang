@@ -34,6 +34,7 @@ public:
     ReportText &format(ASTNode *node);
     ReportText &format(const ModulePath &path);
     ReportText &format(sir::Expr &expr);
+    ReportText &format(sir::ExprCategory expr_category);
     ReportText &format(const std::vector<sir::Expr> &exprs);
     ReportText &format(const std::vector<sir::GenericParam> &generic_params);
 

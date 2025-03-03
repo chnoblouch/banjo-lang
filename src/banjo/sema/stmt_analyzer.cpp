@@ -54,19 +54,27 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
 }
 
 void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
+    Result partial_result;
+
     // Variables with empty names can be generated during semantic analysis.
     if (!var_stmt.local.name.value.empty()) {
         insert_symbol(var_stmt.local.name, &var_stmt.local);
     }
 
     if (var_stmt.local.type) {
-        ExprAnalyzer(analyzer).analyze(var_stmt.local.type);
+        partial_result = ExprAnalyzer(analyzer).analyze_type(var_stmt.local.type);
 
         if (var_stmt.value) {
-            ExprAnalyzer(analyzer).analyze(var_stmt.value, ExprConstraints::expect_type(var_stmt.local.type));
+            ExprConstraints constraints;
+
+            if (partial_result == Result::SUCCESS) {
+                constraints = ExprConstraints::expect_type(var_stmt.local.type);
+            }
+
+            ExprAnalyzer(analyzer).analyze_value(var_stmt.value, constraints);
         }
     } else {
-        ExprAnalyzer(analyzer).analyze(var_stmt.value);
+        ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
         var_stmt.local.type = var_stmt.value.get_type();
     }
 
@@ -74,8 +82,17 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 }
 
 void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
-    ExprAnalyzer(analyzer).analyze(assign_stmt.lhs);
-    ExprAnalyzer(analyzer).analyze(assign_stmt.rhs, ExprConstraints::expect_type(assign_stmt.lhs.get_type()));
+    Result partial_result;
+
+    partial_result = ExprAnalyzer(analyzer).analyze_value(assign_stmt.lhs);
+
+    ExprConstraints constraints;
+
+    if (partial_result == Result::SUCCESS) {
+        constraints = ExprConstraints::expect_type(assign_stmt.lhs.get_type());
+    }
+
+    ExprAnalyzer(analyzer).analyze_value(assign_stmt.rhs, constraints);
 }
 
 void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
@@ -101,13 +118,13 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     if (return_stmt.value) {
         sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
         sir::Expr return_type = func_def.type.return_type;
-        ExprAnalyzer(analyzer).analyze(return_stmt.value, ExprConstraints::expect_type(return_type));
+        ExprAnalyzer(analyzer).analyze_value(return_stmt.value, ExprConstraints::expect_type(return_type));
     }
 }
 
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     for (sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
-        Result result = ExprAnalyzer(analyzer).analyze(cond_branch.condition);
+        Result result = ExprAnalyzer(analyzer).analyze_value(cond_branch.condition);
 
         if (result == Result::SUCCESS) {
             if (!cond_branch.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
@@ -126,14 +143,14 @@ void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
 void StmtAnalyzer::analyze_switch_stmt(sir::SwitchStmt &switch_stmt) {
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze(switch_stmt.value);
+    partial_result = ExprAnalyzer(analyzer).analyze_value(switch_stmt.value);
     if (partial_result != Result::SUCCESS) {
         return;
     }
 
     for (sir::SwitchCaseBranch &case_branch : switch_stmt.case_branches) {
         insert_symbol(*case_branch.block.symbol_table, case_branch.local.name, &case_branch.local);
-        ExprAnalyzer(analyzer).analyze(case_branch.local.type);
+        ExprAnalyzer(analyzer).analyze_type(case_branch.local.type);
         analyze_block(case_branch.block);
     }
 }
@@ -141,7 +158,7 @@ void StmtAnalyzer::analyze_switch_stmt(sir::SwitchStmt &switch_stmt) {
 void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt) {
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze(try_stmt.success_branch.expr);
+    partial_result = ExprAnalyzer(analyzer).analyze_value(try_stmt.success_branch.expr);
     if (partial_result != Result::SUCCESS) {
         return;
     }
@@ -236,7 +253,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
 
     if (try_stmt.except_branch) {
         if (unwrap_error_func) {
-            ExprAnalyzer(analyzer).analyze(try_stmt.except_branch->type);
+            ExprAnalyzer(analyzer).analyze_type(try_stmt.except_branch->type);
 
             sir::Block except_block{
                 .ast_node = nullptr,
@@ -306,7 +323,7 @@ void StmtAnalyzer::analyze_for_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt)
 }
 
 void StmtAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
-    Result result = ExprAnalyzer(analyzer).analyze(loop_stmt.condition);
+    Result result = ExprAnalyzer(analyzer).analyze_value(loop_stmt.condition);
 
     if (result == Result::SUCCESS) {
         if (!loop_stmt.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
@@ -356,7 +373,7 @@ void StmtAnalyzer::insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ide
 void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
     sir::RangeExpr &range = for_stmt.range.as<sir::RangeExpr>();
 
-    ExprAnalyzer(analyzer).analyze(for_stmt.range);
+    ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
 
     sir::Block *block = analyzer.create_stmt(sir::Block{
         .ast_node = nullptr,
@@ -442,7 +459,7 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze(for_stmt.range);
+    partial_result = ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
     if (partial_result != Result::SUCCESS) {
         return;
     }

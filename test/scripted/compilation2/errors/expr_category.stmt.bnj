@@ -1,0 +1,86 @@
+# test:subtest
+# test:error 7:13 "expected value, got type"
+# test:error 8:12 "expected type, got value"
+# test:error 9:18 "expected value, got type"
+
+func main() {
+    var a = i32;
+    var b: 0 = 0;
+    var c: i32 = i32;
+}
+
+# test:subtest
+# test:error 18:5 "expected value, got type"
+# test:error 19:9 "expected value, got type"
+
+func main() {
+    var a = 0;
+    i32 = a;
+    a = i32;
+}
+
+# test:subtest
+# test:error 28:5 "expected value, got type"
+# test:error 29:10 "expected value, got type"
+
+func main() {
+    var a = 0;
+    i32 += a;
+    a += i32;
+}
+
+# test:subtest
+# test:error 36:12 "expected value, got type"
+
+func test() -> i32 {
+    return i32;
+}
+
+# test:subtest
+# test:error 45:8 "expected value, got type"
+# test:error 45:23 "expected value, got type"
+
+func main() {
+    # TODO: The error message should probably be something like "expected 'bool', got type"
+    if i32 {} else if f32 {}
+}
+
+# test:subtest
+# test:error 53:12 "expected value, got type"
+# test:error 56:21 "expected type, got value"
+
+func main() {
+    switch i32 {}
+
+    switch 0 {
+        case value: 0 {}
+    }
+}
+
+# test:subtest
+# test:error 67:18 "expected value, got type"
+# test:error 68:42 "expected type, got value"
+
+func main() {
+    var result: i32 except bool = 0;
+
+    try value in i32 {}
+    try value in result {} except error: 0 {}
+}
+
+# test:subtest
+# test:error 75:11 "expected value, got type"
+
+func main() {
+    while i32 {}
+}
+
+# test:subtest
+# test:error 84:14 "expected value, got type"
+# test:error 85:15 "expected value, got type"
+
+func main() {
+    # TODO: The error message should probably be something like "expected range, got type"
+    for i in i32 {}
+    for *i in i32 {}
+}

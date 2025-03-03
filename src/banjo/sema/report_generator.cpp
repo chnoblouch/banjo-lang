@@ -72,6 +72,10 @@ void ReportGenerator::report_error(std::string_view format_str, ASTNode *node, F
     build_error(format_str, node, format_args...).report();
 }
 
+void ReportGenerator::report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected) {
+    report_error("expected $, got $", expr.get_ast_node(), expected, expr.get_category());
+}
+
 void ReportGenerator::report_err_symbol_not_found(const sir::IdentExpr &ident_expr) {
     report_error("cannot find '$'", ident_expr.ast_node, ident_expr.value);
 }

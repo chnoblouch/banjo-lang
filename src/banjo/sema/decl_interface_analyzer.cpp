@@ -29,7 +29,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         analyze_param(i, param);
     }
 
-    ExprAnalyzer(analyzer).analyze(func_def.type.return_type);
+    ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
     return Result::SUCCESS;
 }
 
@@ -38,7 +38,7 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
         analyze_param(i, func_decl.type.params[i]);
     }
 
-    ExprAnalyzer(analyzer).analyze(func_decl.type.return_type);
+    ExprAnalyzer(analyzer).analyze_type(func_decl.type.return_type);
 
     if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_decl.is_method())) {
         analyzer.report_generator.report_err_func_decl_outside_proto(func_decl);
@@ -49,15 +49,15 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
 
 Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
     for (sir::Param &param : native_func_decl.type.params) {
-        ExprAnalyzer(analyzer).analyze(param.type);
+        ExprAnalyzer(analyzer).analyze_type(param.type);
     }
 
-    ExprAnalyzer(analyzer).analyze(native_func_decl.type.return_type);
+    ExprAnalyzer(analyzer).analyze_type(native_func_decl.type.return_type);
     return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
-    return ExprAnalyzer(analyzer).analyze(const_def.type);
+    return ExprAnalyzer(analyzer).analyze_type(const_def.type);
 }
 
 Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
@@ -66,7 +66,7 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     analyzer.push_scope().decl = &struct_def;
 
     for (sir::Expr &impl : struct_def.impls) {
-        partial_result = ExprAnalyzer(analyzer).analyze(impl);
+        partial_result = ExprAnalyzer(analyzer).analyze_type(impl);
 
         if (partial_result != Result::SUCCESS) {
             continue;
@@ -115,7 +115,7 @@ void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir:
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
-    ExprAnalyzer(analyzer).analyze(var_decl.type);
+    ExprAnalyzer(analyzer).analyze_type(var_decl.type);
 
     if (auto struct_def = analyzer.get_scope().decl.match<sir::StructDef>()) {
         out_decl = analyzer.create_decl(sir::StructField{
@@ -135,12 +135,12 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
 }
 
 Result DeclInterfaceAnalyzer::analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) {
-    return ExprAnalyzer(analyzer).analyze(native_var_decl.type);
+    return ExprAnalyzer(analyzer).analyze_type(native_var_decl.type);
 }
 
 Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant) {
     if (enum_variant.value) {
-        ExprAnalyzer(analyzer).analyze(enum_variant.value);
+        ExprAnalyzer(analyzer).analyze_value(enum_variant.value);
     }
 
     sir::EnumDef &enum_def = analyzer.get_scope().decl.as<sir::EnumDef>();
@@ -157,7 +157,7 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
 
 Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
     for (sir::UnionCaseField &field : union_case.fields) {
-        ExprAnalyzer(analyzer).analyze(field.type);
+        ExprAnalyzer(analyzer).analyze_type(field.type);
     }
 
     if (auto union_def = analyzer.get_scope().decl.match<sir::UnionDef>()) {
@@ -197,7 +197,7 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             .base_type = base_type,
         });
     } else {
-        ExprAnalyzer(analyzer).analyze(param.type);
+        ExprAnalyzer(analyzer).analyze_type(param.type);
     }
 }
 

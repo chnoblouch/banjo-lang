@@ -45,6 +45,7 @@ private:
 public:
     ReportGenerator(SemanticAnalyzer &analyzer);
 
+    void report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected);
     void report_err_symbol_not_found(const sir::IdentExpr &ident_expr);
     void report_err_symbol_not_found(const sir::Ident &ident);
     void report_err_symbol_not_found_in(const sir::Ident &member_ident, const std::string &base_name);
