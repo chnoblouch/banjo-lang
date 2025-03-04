@@ -99,7 +99,7 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
             return Result::ERROR;
         }
 
-        sir::Expr evaluated = ConstEvaluator(analyzer, false).evaluate(var_decl.value);
+        sir::Expr evaluated = ConstEvaluator(analyzer).evaluate(var_decl.value);
         if (evaluated) {
             var_decl.value = evaluated;
         } else {
@@ -132,7 +132,7 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
                 continue;
             }
 
-            variant->value = ConstEvaluator(analyzer, false).evaluate(variant->value);
+            variant->value = ConstEvaluator(analyzer).evaluate(variant->value);
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprFinalizer(analyzer).finalize(variant->value);
         } else {

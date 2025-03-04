@@ -292,7 +292,17 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
         return Result::ERROR;
     }
 
-    if (map_literal.entries.size() == 1 && map_literal.entries[0].key.is_type()) {
+    sir::ExprCategory first_key_category = map_literal.entries[0].key.get_category();
+    sir::ExprCategory first_value_category = map_literal.entries[0].value.get_category();
+
+    if (first_key_category == sir::ExprCategory::VALUE && first_value_category == sir::ExprCategory::VALUE) {
+        map_literal.type = analyzer.create_expr(sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::MAP_LITERAL,
+        });
+
+        return Result::SUCCESS;
+    } else if (first_key_category == sir::ExprCategory::TYPE && first_value_category == sir::ExprCategory::TYPE) {
         out_expr = analyzer.create_expr(sir::MapType{
             .ast_node = map_literal.ast_node,
             .key_type = map_literal.entries[0].key,
@@ -301,13 +311,9 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
 
         return analyze_map_type(out_expr.as<sir::MapType>(), out_expr);
     } else {
-        map_literal.type = analyzer.create_expr(sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::MAP_LITERAL,
-        });
+        // TODO: Report error
+        return Result::ERROR;
     }
-
-    return result;
 }
 
 Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr) {
@@ -507,7 +513,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (binary_expr.lhs.is_type() ||
         (binary_expr.lhs.is<sir::BoolLiteral>() && binary_expr.rhs.is<sir::BoolLiteral>())) {
-        out_expr = ConstEvaluator(analyzer, false).evaluate_binary_expr(binary_expr);
+        out_expr = ConstEvaluator(analyzer).evaluate_binary_expr(binary_expr);
         return analyze_uncoerced(out_expr);
     }
 
@@ -977,7 +983,7 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
         return Result::ERROR;
     }
 
-    sir::Expr length_evaluated = ConstEvaluator(analyzer, false).evaluate(static_array_type.length);
+    sir::Expr length_evaluated = ConstEvaluator(analyzer).evaluate(static_array_type.length);
     if (!length_evaluated) {
         return Result::ERROR;
     }

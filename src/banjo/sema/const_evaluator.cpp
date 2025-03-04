@@ -12,9 +12,7 @@ namespace lang {
 
 namespace sema {
 
-ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer, bool use_owned_arena /* = true */)
-  : analyzer(analyzer),
-    use_owned_arena(use_owned_arena) {}
+ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
     sir::Expr result = evaluate(expr);
@@ -219,7 +217,7 @@ sir::Expr ConstEvaluator::create_int_literal(LargeInt value, ASTNode *ast_node /
         .value = value,
     };
 
-    return use_owned_arena ? int_arena.create(int_literal) : analyzer.create_expr(int_literal);
+    return analyzer.create_expr(int_literal);
 }
 
 sir::Expr ConstEvaluator::create_fp_literal(double value, ASTNode *ast_node /*= nullptr*/) {
@@ -229,7 +227,7 @@ sir::Expr ConstEvaluator::create_fp_literal(double value, ASTNode *ast_node /*= 
         .value = value,
     };
 
-    return use_owned_arena ? fp_arena.create(fp_literal) : analyzer.create_expr(fp_literal);
+    return analyzer.create_expr(fp_literal);
 }
 
 sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= nullptr*/) {
@@ -239,7 +237,7 @@ sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= 
         .value = value,
     };
 
-    return use_owned_arena ? bool_arena.create(bool_literal) : analyzer.create_expr(bool_literal);
+    return analyzer.create_expr(bool_literal);
 }
 
 sir::Expr ConstEvaluator::clone(sir::Expr expr) {

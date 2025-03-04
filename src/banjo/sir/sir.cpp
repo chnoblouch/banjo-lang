@@ -124,7 +124,7 @@ Expr Expr::get_type() const {
 
 ExprCategory Expr::get_category() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
-        if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, ProtoDef>()) {
+        if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef>()) {
             return ExprCategory::TYPE;
         } else if (symbol_expr->symbol.is<Module>()) {
             return ExprCategory::MODULE;
@@ -149,7 +149,7 @@ ExprCategory Expr::get_category() const {
 
 bool Expr::is_type() const {
     if (auto symbol_expr = match<SymbolExpr>()) {
-        return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, ProtoDef>();
+        return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef>();
     } else if (auto tuple_expr = match<TupleExpr>()) {
         return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
     } else if (auto star_expr = match<StarExpr>()) {

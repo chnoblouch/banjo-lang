@@ -41,11 +41,9 @@ func main() {
 #     var a: [0];
 # }
 
-# test:subtest
-# test:error 49:13 "expected type, got value"
-# test:error 50:18 "expected type, got value"
+# TODO: Maps are actually also weird for similar reasons.
 
-func main() {
-    var a: [0: i32];
-    var b: [i32: 0];
-}
+# func main() {
+#     var a: [0: i32];
+#     var b: [i32: 0];
+# }

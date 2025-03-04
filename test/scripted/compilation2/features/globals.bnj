@@ -79,26 +79,26 @@ func main() {
 # test:subtest
 # test:output "1,48,127,true,false,false,true,1003847,-23791283"
 
-# var a: [i32; 3] = [1, 48, 127];
-# var b: [bool; 4] = [true, false, false, true];
-# var c: [i64; 2] = [1003847, -23791283];
+var a: [i32; 3] = [1, 48, 127];
+var b: [bool; 4] = [true, false, false, true];
+var c: [i64; 2] = [1003847, -23791283];
 
 func main() {
-#     print(a[0]);
-#     print(',');
-#     print(a[1]);
-#     print(',');
-#     print(a[2]);
-#     print(',');
-#     print(b[0]);
-#     print(',');
-#     print(b[1]);
-#     print(',');
-#     print(b[2]);
-#     print(',');
-#     print(b[3]);
-#     print(',');
-#     print(c[0]);
-#     print(',');
-#     print(c[1]);
+    print(a[0]);
+    print(',');
+    print(a[1]);
+    print(',');
+    print(a[2]);
+    print(',');
+    print(b[0]);
+    print(',');
+    print(b[1]);
+    print(',');
+    print(b[2]);
+    print(',');
+    print(b[3]);
+    print(',');
+    print(c[0]);
+    print(',');
+    print(c[1]);
 }
