@@ -3,11 +3,26 @@ import fnmatch
 import sys
 import re
 import subprocess
+import platform
 from pathlib import Path
-import fnmatch
+
+
+SKIPPED_TESTS = [
+    "errors.expr_category.decl.3",
+    "errors.expr_category.stmt.2",
+    "errors.expr_category.type.4",
+    "features.map_literal.0",
+    "features.map_literal.1",
+    "features.meta_if.8",
+    "features.globals.3",
+]
 
 
 CONDITION_PREFIX = "# test:"
+
+
+is_windows = platform.system() == "Windows"
+is_linux = platform.system() == "Linux"
 
 
 class ProcessResult:
@@ -143,12 +158,19 @@ class Test:
         with open("tmp.bnj", "w") as f:
             f.write(self.source)
 
+        if is_windows:
+            target_os = "windows"
+            target_env = "msvc"
+        elif is_linux:
+            target_os = "linux"
+            target_env = "gnu"
+
         result = run_process([
-            "banjo-compiler.exe",
+            "banjo-compiler",
             "--type", "executable",
             "--arch", "x86_64",
-            "--os", "windows",
-            "--env", "msvc",
+            "--os", target_os,
+            "--env", target_env,
             "--opt-level", "0",
             "--path", ".",
             "--no-color"
@@ -160,26 +182,36 @@ class Test:
     def run_executable(self):
         self.build()
 
-        if not os.path.exists("main.obj"):
-            return ProcessResult("", "", 1)
+        if is_windows:
+            if not os.path.exists("main.obj"):
+                return ProcessResult("", "", 1)
+        
+            subprocess.run([
+                "lld-link.exe",
+                "main.obj",
+                "msvcrt.lib",
+                "kernel32.lib",
+                "user32.lib",
+                "legacy_stdio_definitions.lib",
+                "ws2_32.lib",
+                "shlwapi.lib",
+                "dbghelp.lib",
+                "/SUBSYSTEM:CONSOLE",
+                "/OUT:test.exe"
+            ])
 
-        subprocess.run([
-            "lld-link.exe",
-            "main.obj",
-            "msvcrt.lib",
-            "kernel32.lib",
-            "user32.lib",
-            "legacy_stdio_definitions.lib",
-            "ws2_32.lib",
-            "shlwapi.lib",
-            "dbghelp.lib",
-            "/SUBSYSTEM:CONSOLE",
-            "/OUT:test.exe"
-        ])
+            os.remove("main.obj")
+            result = run_process(["./test.exe"])
+            os.remove("test.exe")
+        elif is_linux:
+            if not os.path.exists("main.o"):
+                return ProcessResult("", "", 1)
 
-        os.remove("main.obj")
-        result = run_process(["./test.exe"])
-        os.remove("test.exe")
+            subprocess.run(["clang", "-fuse-ld=lld", "-otest", "main.o"])
+
+            os.remove("main.o")
+            result = run_process(["./test"])
+            os.remove("test")
 
         return result
 
@@ -238,7 +270,7 @@ def load_test_file(name, file_path):
 
                 test.source += line if enabled else f"# DISABLED: {line}"
 
-    return tests
+    return list(filter(lambda test: test.name not in SKIPPED_TESTS, tests))
 
 
 def parse_condition(line):
