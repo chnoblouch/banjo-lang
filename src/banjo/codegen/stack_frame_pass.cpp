@@ -4,8 +4,7 @@
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_regions.hpp"
 #include "banjo/utils/timing.hpp"
-
-#include <algorithm>
+#include "banjo/utils/utils.hpp"
 
 namespace banjo {
 
@@ -97,7 +96,7 @@ void StackFramePass::create_generic_region(
     for (int i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
         if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::GENERIC) {
-            generic_slot_offset -= slot.get_size();
+            generic_slot_offset -= Utils::align(slot.get_size(), 8);
             pre_alloca_offsets.insert({i, generic_slot_offset});
         }
     }
