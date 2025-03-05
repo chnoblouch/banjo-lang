@@ -94,6 +94,7 @@ add_library(banjo STATIC
     ssa/operand.cpp
     ssa/validator.cpp
     ssa/type.cpp
+    ssa/utils.cpp
     ssa/writer.cpp
     ssa_gen/block_ssa_generator.cpp
     ssa_gen/expr_ssa_generator.cpp

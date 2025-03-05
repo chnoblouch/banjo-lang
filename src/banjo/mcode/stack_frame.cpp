@@ -15,6 +15,16 @@ StackSlotID StackFrame::new_stack_slot(StackSlot slot) {
     return index;
 }
 
+StackSlotID StackFrame::create_call_arg_slot(unsigned index, unsigned size, unsigned alignment) {
+    if (call_arg_slot_indices.size() <= index) {
+        mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, size, alignment);
+        stack_slot.set_call_arg_index(index);
+        return new_stack_slot(stack_slot);
+    } else {
+        return call_arg_slot_indices[index];
+    }
+}
+
 } // namespace mcode
 
 } // namespace banjo

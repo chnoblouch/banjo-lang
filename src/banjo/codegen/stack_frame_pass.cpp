@@ -63,12 +63,16 @@ void StackFramePass::run(mcode::Function *func) {
         }
     }
 
-    std::vector<ssa::Type> types;
-    for (mcode::Parameter &param : func->get_parameters()) {
-        types.push_back(param.type);
+    std::vector<ssa::Type> params(func->get_parameters().size());
+    for (unsigned i = 0; i < func->get_parameters().size(); i++) {
+        params[i] = func->get_parameters()[i].type;
     }
 
-    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(types);
+    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage({
+        .params = params,
+        .return_type = {},
+        .calling_conv = {},
+    });
 
     for (unsigned int i = 0; i < func->get_parameters().size(); i++) {
         mcode::Parameter &param = func->get_parameters()[i];

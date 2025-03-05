@@ -276,6 +276,7 @@ void SSAGenerator::generate_runtime() {
         };
 
         call.set_attr(ssa::Instruction::Attribute::VARIADIC);
+        call.set_attrs_data(3);
 
         func->get_entry_block().append(call);
         func->get_entry_block().append({ssa::Opcode::RET});

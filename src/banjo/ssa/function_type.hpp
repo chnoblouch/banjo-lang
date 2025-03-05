@@ -21,6 +21,8 @@ struct FunctionType {
     std::vector<Type> params;
     Type return_type;
     CallingConv calling_conv;
+    bool variadic;
+    unsigned first_variadic_index;
 };
 
 } // namespace ssa

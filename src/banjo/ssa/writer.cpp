@@ -207,7 +207,7 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
         } else if (instr.get_attr() == ssa::Instruction::Attribute::SAVE_ARG) {
             stream << " !save_arg";
         } else if (instr.get_attr() == ssa::Instruction::Attribute::VARIADIC) {
-            stream << " !variadic";
+            stream << " !variadic(" << instr.get_attr_data() << ")";
         }
 
         stream << "\n";

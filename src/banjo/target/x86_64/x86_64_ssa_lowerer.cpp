@@ -192,7 +192,7 @@ void X8664SSALowerer::lower_loadarg(ssa::Instruction& instr) {
     unsigned size = get_size(type);
 
     mcode::CallingConvention* calling_conv = get_machine_func()->get_calling_conv();
-    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type.params);
+    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type);
     mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
 
     mcode::Operand m_src;
@@ -629,7 +629,20 @@ mcode::Operand X8664SSALowerer::read_symbol_addr(const mcode::Symbol &symbol) {
 
 mcode::Operand X8664SSALowerer::deref_symbol_addr(const mcode::Symbol &symbol, unsigned size) {
     if (target->get_code_model() == CodeModel::SMALL) {
-        return mcode::Operand::from_symbol_deref(symbol, 8);
+        if (symbol.reloc == mcode::Relocation::PLT || symbol.reloc == mcode::Relocation::GOT) {
+            mcode::Register m_tmp_reg = create_reg();
+            
+            mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, 8);
+            mcode::Operand m_tmp = mcode::Operand::from_register(m_tmp_reg, 8);
+            emit({X8664Opcode::MOV, {m_tmp, m_src}});
+
+            mcode::Operand m_tmp_deref = mcode::Operand::from_addr({m_tmp_reg}, 8);
+            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
+            emit({X8664Opcode::MOV, {m_dst, m_tmp_deref}});
+            return m_dst;
+        } else {
+            return mcode::Operand::from_symbol_deref(symbol, 8);
+        }
     } else if (target->get_code_model() == CodeModel::LARGE) {
         mcode::Register addr_reg = create_reg();
         mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
@@ -994,12 +1007,23 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
     }
 
     if (target->get_code_model() == CodeModel::SMALL) {
-        mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, size);
-        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), PTR_SIZE);
-        emit({X8664Opcode::LEA, {m_dst, m_src}});
-        return m_dst;
+        if (reloc == mcode::Relocation::PLT || reloc == mcode::Relocation::GOT) {
+            mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, 8);
+            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
+            emit({X8664Opcode::MOV, {m_dst, m_src}});
+            return m_dst;
+        } else {
+            mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, size);
+            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), PTR_SIZE);
+            emit({X8664Opcode::LEA, {m_dst, m_src}});
+            return m_dst;
+        }
     } else if (target->get_code_model() == CodeModel::LARGE) {
-        return read_symbol_addr(symbol);
+        mcode::Register addr_reg = create_reg();
+        mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
+        mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
+        emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
+        return dst;
     } else {
         ASSERT_UNREACHABLE;
     }

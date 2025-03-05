@@ -30,6 +30,7 @@ private:
     std::optional<VirtualRegister> dest;
     std::vector<Operand> operands;
     Attribute attr = Attribute::NONE;
+    unsigned attr_data;
 
 public:
     Instruction() {}
@@ -53,10 +54,12 @@ public:
     std::vector<Operand> &get_operands() { return operands; }
     Operand &get_operand(int index) { return operands[index]; }
     Attribute get_attr() const { return attr; }
+    unsigned get_attr_data() const { return attr_data; }
 
     void set_opcode(ssa::Opcode opcode) { this->opcode = opcode; }
     void set_dest(VirtualRegister dest) { this->dest = std::optional{dest}; }
     void set_attr(Attribute attr) { this->attr = attr; }
+    void set_attrs_data(unsigned attr_data) { this->attr_data = attr_data; }
 
     bool is_branching() const {
         return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;

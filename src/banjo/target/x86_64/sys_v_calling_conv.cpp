@@ -4,6 +4,7 @@
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/ssa/utils.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
@@ -30,17 +31,14 @@ SysVCallingConv::SysVCallingConv() {
 void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
-    std::vector<ssa::Type> types;
-    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
-        types.push_back(instr.get_operand(i).get_type());
-    }
-    std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(types);
+    ssa::FunctionType func_type = ssa::get_call_func_type(instr);
+    std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(func_type);
 
     for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
         unsigned size = x86_64_lowerer.get_size(operand.get_type());
 
-        mcode::Operand dst = get_arg_dst(instr, i - 1, lowerer).with_size(size);
+        mcode::Operand dst = get_arg_dst(arg_storage[i - 1], lowerer).with_size(size);
         x86_64_lowerer.lower_as_move(dst, operand);
     }
 
@@ -65,15 +63,9 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
     }
 }
 
-mcode::Operand SysVCallingConv::get_arg_dst(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer) {
+mcode::Operand SysVCallingConv::get_arg_dst(mcode::ArgStorage &storage, codegen::SSALowerer &lowerer) {
     mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
 
-    std::vector<ssa::Type> types;
-    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
-        types.push_back(instr.get_operand(i).get_type());
-    }
-
-    mcode::ArgStorage storage = get_arg_storage(types)[index];
     if (storage.in_reg) {
         return mcode::Operand::from_register(mcode::Register::from_physical(storage.reg));
     } else if (stack_frame.get_call_arg_slot_indices().size() <= storage.arg_slot_index) {
@@ -301,17 +293,16 @@ bool SysVCallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == X8664Opcode::RET;
 }
 
-std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const std::vector<ssa::Type> &types) {
-    std::vector<mcode::ArgStorage> result;
-    result.resize(types.size());
+std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const ssa::FunctionType &func_type) {
+    std::vector<mcode::ArgStorage> result(func_type.params.size());
 
-    unsigned int general_reg_index = 0;
-    unsigned int float_reg_index = 0;
-    unsigned int arg_slot_index = 0;
+    unsigned general_reg_index = 0;
+    unsigned float_reg_index = 0;
+    unsigned arg_slot_index = 0;
 
-    for (unsigned int i = 0; i < types.size(); i++) {
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
         mcode::ArgStorage storage;
-        bool is_fp = types[i].is_floating_point();
+        bool is_fp = func_type.params[i].is_floating_point();
 
         if (is_fp && float_reg_index < ARG_REGS_FLOAT.size()) {
             storage.in_reg = true;

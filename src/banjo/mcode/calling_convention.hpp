@@ -5,8 +5,8 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_regions.hpp"
+#include "banjo/ssa/function_type.hpp"
 #include "banjo/ssa/instruction.hpp"
-#include "banjo/ssa/type.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -64,7 +64,7 @@ public:
     }
 
     virtual bool is_func_exit(Opcode opcode) = 0;
-    virtual std::vector<ArgStorage> get_arg_storage(const std::vector<ssa::Type> &types) = 0;
+    virtual std::vector<ArgStorage> get_arg_storage(const ssa::FunctionType &func_type) = 0;
     virtual int get_implicit_stack_bytes(Function *func) = 0;
 };
 

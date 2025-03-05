@@ -53,7 +53,7 @@ void SSALowerer::lower_funcs() {
 
         context = {};
 
-        std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func->type.params);
+        std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func->type);
 
         for (unsigned i = 0; i < func->type.params.size(); i++) {
             mcode::Parameter param = lower_param(storage[i], machine_func);

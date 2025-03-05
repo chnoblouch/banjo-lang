@@ -33,6 +33,8 @@ public:
     StackSlotID new_stack_slot(StackSlot slot);
     void set_size(int size) { this->size = size; }
     void set_total_size(int total_size) { this->total_size = total_size; }
+
+    StackSlotID create_call_arg_slot(unsigned index, unsigned size, unsigned alignment);
 };
 
 } // namespace mcode

@@ -354,16 +354,15 @@ bool MSABICallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == X8664Opcode::RET;
 }
 
-std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const std::vector<ssa::Type> &types) {
-    std::vector<mcode::ArgStorage> result;
-    result.resize(types.size());
+std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const ssa::FunctionType &func_type) {
+    std::vector<mcode::ArgStorage> result(func_type.params.size());
 
-    for (unsigned int i = 0; i < types.size(); i++) {
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
         mcode::ArgStorage storage;
 
         if (i < ARG_REGS_INT.size()) {
             storage.in_reg = true;
-            storage.reg = types[i].is_floating_point() ? ARG_REGS_FP[i] : ARG_REGS_INT[i];
+            storage.reg = func_type.params[i].is_floating_point() ? ARG_REGS_FP[i] : ARG_REGS_INT[i];
         } else {
             storage.in_reg = false;
             storage.stack_offset = 8 * i;

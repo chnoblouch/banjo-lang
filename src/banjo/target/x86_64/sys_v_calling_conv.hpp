@@ -34,11 +34,11 @@ public:
     std::vector<mcode::Instruction> get_epilog(mcode::Function *func);
     bool is_func_exit(mcode::Opcode opcode);
 
-    std::vector<mcode::ArgStorage> get_arg_storage(const std::vector<ssa::Type> &types);
+    std::vector<mcode::ArgStorage> get_arg_storage(const ssa::FunctionType &func_type);
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:
-    mcode::Operand get_arg_dst(ssa::Instruction &instr, unsigned index, codegen::SSALowerer &lowerer);
+    mcode::Operand get_arg_dst(mcode::ArgStorage &storage, codegen::SSALowerer &lowerer);
     void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
     void append_ret_val_move(codegen::SSALowerer &lowerer);
 };

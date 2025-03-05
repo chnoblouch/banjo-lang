@@ -76,9 +76,12 @@ mcode::Operand AArch64SSALowerer::lower_address(const ssa::Operand &operand) {
 }
 
 mcode::CallingConvention *AArch64SSALowerer::get_calling_convention(ssa::CallingConv calling_conv) {
-    switch (calling_conv) {
-        case ssa::CallingConv::AARCH64_AAPCS: return (mcode::CallingConvention *)&AAPCSCallingConv::INSTANCE;
-        default: return nullptr;
+    ASSERT(calling_conv == ssa::CallingConv::AARCH64_AAPCS);
+
+    if (target->get_descr().is_darwin()) {
+        return &AAPCSCallingConv::INSTANCE_APPLE;
+    } else {
+        return &AAPCSCallingConv::INSTANCE_STANDARD;
     }
 }
 
@@ -137,7 +140,7 @@ void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     unsigned size = get_size(type);
 
     mcode::CallingConvention *calling_conv = get_machine_func()->get_calling_conv();
-    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type.params);
+    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type);
     mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
 
     mcode::Operand m_src;
@@ -690,6 +693,18 @@ void AArch64SSALowerer::move_branch_args(ssa::BranchTarget &target) {
 
         emit(mcode::Instruction(opcode, {dst, lower_value(arg)}, mcode::Instruction::FLAG_CALL_ARG));
     }
+}
+
+mcode::Operand AArch64SSALowerer::lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value) {
+    unsigned size = get_size(value.get_type());
+    bool is_fp = value.get_type().is_floating_point();
+
+    mcode::Opcode opcode = is_fp ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+    mcode::Operand m_dst = mcode::Operand::from_register(reg, size);
+    mcode::Operand m_src = lower_value(value);
+
+    emit({opcode, {m_dst, m_src}});
+    return m_dst;
 }
 
 } // namespace target

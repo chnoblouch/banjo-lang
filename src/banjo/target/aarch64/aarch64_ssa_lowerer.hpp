@@ -69,7 +69,6 @@ public:
     void lower_offsetptr(ssa::Instruction &instr);
     void lower_memberptr(ssa::Instruction &instr);
 
-private:
     void lower_fp_operation(mcode::Opcode opcode, ssa::Instruction &instr);
     mcode::Operand lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size);
     mcode::Value move_const_into_register(const ssa::Value &value, ssa::Type type);
@@ -81,6 +80,8 @@ private:
     mcode::Value create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);
+
+    mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
 };
 
 } // namespace target

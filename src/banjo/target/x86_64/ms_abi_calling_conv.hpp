@@ -34,7 +34,7 @@ public:
     std::vector<mcode::Instruction> get_epilog(mcode::Function *func);
     bool is_func_exit(mcode::Opcode opcode);
 
-    std::vector<mcode::ArgStorage> get_arg_storage(const std::vector<ssa::Type> &types);
+    std::vector<mcode::ArgStorage> get_arg_storage(const ssa::FunctionType &func_type);
     int get_implicit_stack_bytes(mcode::Function *func);
 
 private:

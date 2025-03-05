@@ -6,6 +6,7 @@
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/ssa/utils.hpp"
 #include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
@@ -20,11 +21,13 @@ namespace target {
 
 using namespace AArch64Register;
 
-AAPCSCallingConv const AAPCSCallingConv::INSTANCE = AAPCSCallingConv();
-std::vector<int> const AAPCSCallingConv::GENERAL_ARG_REGS = {R0, R1, R2, R3, R4, R5, R6, R7};
-std::vector<int> const AAPCSCallingConv::FLOAT_ARG_REGS = {V0, V1, V2, V3, V4, V5, V6, V7};
+AAPCSCallingConv AAPCSCallingConv::INSTANCE_STANDARD(AAPCSCallingConv::Variant::STANDARD);
+AAPCSCallingConv AAPCSCallingConv::INSTANCE_APPLE(AAPCSCallingConv::Variant::APPLE);
 
-AAPCSCallingConv::AAPCSCallingConv() {
+std::vector<int> const AAPCSCallingConv::ARG_REGS_INT = {R0, R1, R2, R3, R4, R5, R6, R7};
+std::vector<int> const AAPCSCallingConv::ARG_REGS_FP = {V0, V1, V2, V3, V4, V5, V6, V7};
+
+AAPCSCallingConv::AAPCSCallingConv(Variant variant) : variant(variant) {
     volatile_regs = {
         R0,  R1,  R2,  R3,  R4,  R5, R6, R7, R8, R9, R10, R11, R12, R13,
         R14, R15, R16, R17, R18, V0, V1, V2, V3, V4, V5,  V6,  V7,  SP,
@@ -33,43 +36,67 @@ AAPCSCallingConv::AAPCSCallingConv() {
 
 void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
     AArch64SSALowerer &aarch64_ssa_lowerer = static_cast<AArch64SSALowerer &>(lowerer);
+    ssa::FunctionType func_type = ssa::get_call_func_type(instr);
 
-    ssa::Operand &func_operand = instr.get_operand(0);
+    emit_arg_moves(aarch64_ssa_lowerer, func_type, instr);
+    emit_call_instr(aarch64_ssa_lowerer, instr);
 
-    std::vector<ssa::Type> types;
-    for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
-        types.push_back(instr.get_operand(i).get_type());
+    if (instr.get_dest()) {
+        emit_ret_val_move(aarch64_ssa_lowerer, instr);
     }
+}
 
-    std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(types);
+void AAPCSCallingConv::emit_arg_moves(
+    AArch64SSALowerer &lowerer,
+    ssa::FunctionType &func_type,
+    ssa::Instruction &call_instr
+) {
+    unsigned gp_reg_index = 0;
+    unsigned fp_reg_index = 0;
 
-    for (unsigned int i = 1; i < instr.get_operands().size(); i++) {
-        ssa::Operand &operand = instr.get_operand(i);
-        int size = lowerer.get_size(operand.get_type());
-        bool is_float = operand.get_type().is_floating_point();
-        mcode::ArgStorage cur_arg_storage = arg_storage[i - 1];
+    for (unsigned i = 1; i < call_instr.get_operands().size(); i++) {
+        unsigned index = i - 1;
+        ssa::Operand &operand = call_instr.get_operand(i);
 
-        mcode::Register reg;
-
-        if (cur_arg_storage.in_reg) {
-            reg = mcode::Register::from_physical(cur_arg_storage.reg);
+        if (variant == Variant::APPLE && func_type.variadic && index >= func_type.first_variadic_index) {
+            unsigned arg_slot_index = index - func_type.first_variadic_index;
+            emit_stack_arg_move(lowerer, operand, arg_slot_index);
+        } else if (index < 8) {
+            if (operand.get_type().is_floating_point()) {
+                emit_reg_arg_move(lowerer, operand, fp_reg_index);
+                fp_reg_index += 1;
+            } else {
+                emit_reg_arg_move(lowerer, operand, gp_reg_index);
+                gp_reg_index += 1;
+            }
         } else {
-            reg = mcode::Register::from_virtual(lowerer.get_func().next_virtual_reg());
-        }
-
-        // TODO: Try moving immediately so the register allocator doesn't have to clean this up.
-        lowerer.emit(mcode::Instruction(
-            is_float ? AArch64Opcode::FMOV : AArch64Opcode::MOV,
-            {mcode::Operand::from_register(reg, size), aarch64_ssa_lowerer.lower_value(operand)},
-            mcode::Instruction::FLAG_CALL_ARG
-        ));
-
-        if (!cur_arg_storage.in_reg) {
-            unsigned size = lowerer.get_size(operand.get_type());
-            mcode::Operand dst = get_arg_dst(operand, i - 1, lowerer).with_size(size);
-            lowerer.emit(mcode::Instruction(AArch64Opcode::STR, {mcode::Operand::from_register(reg, size), dst}));
+            unsigned arg_slot_index = index - 8;
+            emit_stack_arg_move(lowerer, operand, arg_slot_index);
         }
     }
+}
+
+void AAPCSCallingConv::emit_reg_arg_move(AArch64SSALowerer &lowerer, ssa::Operand &operand, unsigned index) {
+    bool is_fp = operand.get_type().is_floating_point();
+    mcode::PhysicalReg m_reg = is_fp ? ARG_REGS_FP[index] : ARG_REGS_INT[index];
+    mcode::Register m_dst_reg = mcode::Register::from_physical(m_reg);
+
+    lowerer.lower_as_move_into_reg(m_dst_reg, operand);
+}
+
+void AAPCSCallingConv::emit_stack_arg_move(AArch64SSALowerer &lowerer, ssa::Operand &operand, unsigned arg_slot_index) {
+    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
+    mcode::StackSlotID slot_index = stack_frame.create_call_arg_slot(arg_slot_index, 8, 1);
+
+    unsigned size = lowerer.get_size(operand.get_type());
+    mcode::Operand m_dst = mcode::Operand::from_stack_slot(slot_index, size);
+
+    mcode::Operand m_src = lowerer.lower_value(operand);
+    lowerer.emit({AArch64Opcode::STR, {m_src, m_dst}});
+}
+
+void AAPCSCallingConv::emit_call_instr(AArch64SSALowerer &lowerer, ssa::Instruction &call_instr) {
+    ssa::Operand &func_operand = call_instr.get_operand(0);
 
     mcode::Opcode call_opcode;
     mcode::Operand call_operand;
@@ -88,38 +115,21 @@ void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
     }
 
     lowerer.emit(mcode::Instruction(call_opcode, {call_operand}, mcode::Instruction::FLAG_CALL));
-
-    if (instr.get_dest()) {
-        bool is_fp = instr.get_operand(0).get_type().is_floating_point();
-        mcode::Opcode opcode = is_fp ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
-        mcode::PhysicalReg return_reg = is_fp ? AArch64Register::V0 : AArch64Register::R0;
-        unsigned return_size = lowerer.get_size(instr.get_operand(0).get_type());
-
-        lowerer.emit(mcode::Instruction(
-            opcode,
-            {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
-             mcode::Operand::from_register(mcode::Register::from_physical(return_reg), return_size)}
-        ));
-    }
 }
 
-mcode::Operand AAPCSCallingConv::get_arg_dst(ssa::Operand &operand, int index, codegen::SSALowerer &lowerer) {
-    if (index < GENERAL_ARG_REGS.size()) {
-        long id = operand.get_type().is_floating_point() ? FLOAT_ARG_REGS[index] : GENERAL_ARG_REGS[index];
-        return mcode::Operand::from_register(mcode::Register::from_physical(id));
-    } else {
-        int arg_slot_index = index - GENERAL_ARG_REGS.size();
-        mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
+void AAPCSCallingConv::emit_ret_val_move(AArch64SSALowerer &lowerer, ssa::Instruction &call_instr) {
+    bool is_fp = call_instr.get_operand(0).get_type().is_floating_point();
+    mcode::Opcode opcode = is_fp ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+    mcode::PhysicalReg return_reg = is_fp ? AArch64Register::V0 : AArch64Register::R0;
+    unsigned return_size = lowerer.get_size(call_instr.get_operand(0).get_type());
 
-        if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
-            mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
-            stack_slot.set_call_arg_index(arg_slot_index);
-            return mcode::Operand::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
-        } else {
-            int slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
-            return mcode::Operand::from_stack_slot(slot_index);
-        }
-    }
+    mcode::Register m_dst_reg = mcode::Register::from_virtual(*call_instr.get_dest());
+    mcode::Operand m_dst = mcode::Operand::from_register(m_dst_reg, return_size);
+
+    mcode::Register m_src_reg = mcode::Register::from_physical(return_reg);
+    mcode::Operand m_src = mcode::Operand::from_register(m_src_reg, return_size);
+
+    lowerer.emit(mcode::Instruction(opcode, {m_dst, m_src}));
 }
 
 void AAPCSCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions) {
@@ -401,24 +411,27 @@ bool AAPCSCallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == AArch64Opcode::RET;
 }
 
-std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const std::vector<ssa::Type> &types) {
-    std::vector<mcode::ArgStorage> result;
-    result.resize(types.size());
+std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const ssa::FunctionType &func_type) {
+    std::vector<mcode::ArgStorage> result(func_type.params.size());
 
-    unsigned int general_reg_index = 0;
-    unsigned int float_reg_index = 0;
-    unsigned int stack_offset = 0;
+    unsigned general_reg_index = 0;
+    unsigned float_reg_index = 0;
+    unsigned stack_offset = 0;
 
-    for (unsigned int i = 0; i < types.size(); i++) {
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
         mcode::ArgStorage storage;
-        bool is_fp = types[i].is_floating_point();
+        bool is_fp = func_type.params[i].is_floating_point();
 
-        if (is_fp && float_reg_index < FLOAT_ARG_REGS.size()) {
+        if (variant == Variant::APPLE && func_type.variadic && i >= func_type.first_variadic_index) {
+            storage.in_reg = false;
+            storage.stack_offset = stack_offset;
+            stack_offset += 8;
+        } else if (is_fp && float_reg_index < ARG_REGS_FP.size()) {
             storage.in_reg = true;
-            storage.reg = FLOAT_ARG_REGS[float_reg_index++];
-        } else if (!is_fp && general_reg_index < GENERAL_ARG_REGS.size()) {
+            storage.reg = ARG_REGS_FP[float_reg_index++];
+        } else if (!is_fp && general_reg_index < ARG_REGS_INT.size()) {
             storage.in_reg = true;
-            storage.reg = GENERAL_ARG_REGS[general_reg_index++];
+            storage.reg = ARG_REGS_INT[general_reg_index++];
         } else {
             storage.in_reg = false;
             storage.stack_offset = stack_offset;
