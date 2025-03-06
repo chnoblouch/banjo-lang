@@ -1,6 +1,9 @@
 #include "uri.hpp"
 
+#include "banjo/utils/platform.hpp"
+
 #include <sstream>
+#include <string_view>
 
 namespace banjo {
 
@@ -9,7 +12,7 @@ namespace lsp {
 std::string URI::decode(std::string uri) {
     std::string result;
 
-    for (int i = 0; i < uri.size(); i++) {
+    for (unsigned i = 0; i < uri.size(); i++) {
         if (uri[i] != '%') {
             result += uri[i];
         } else {
@@ -39,10 +42,16 @@ std::string URI::encode(std::string uri) {
 
 std::filesystem::path URI::decode_to_path(std::string uri) {
     std::string decoded = decode(uri);
-    std::string prefix = "file:///";
-    int prefix_len = prefix.size();
+    std::string_view prefix = "file://";
+    unsigned prefix_len = prefix.size();
 
     if (decoded.size() >= prefix_len && decoded.substr(0, prefix_len) == prefix) {
+#if OS_WINDOWS
+        if (decoded[prefix_len] == '/') {
+            prefix_len += 1;
+        }
+#endif
+
         return decoded.substr(prefix_len);
     } else {
         return "";
@@ -55,7 +64,7 @@ std::string URI::encode_from_path(std::filesystem::path path) {
     std::string lsp_path_str;
     lsp_path_str.resize(path_str.size());
 
-    for (unsigned int i = 0; i < path_str.size(); i++) {
+    for (unsigned i = 0; i < path_str.size(); i++) {
         char c = path_str[i];
 
         if (c == std::filesystem::path::preferred_separator) {
