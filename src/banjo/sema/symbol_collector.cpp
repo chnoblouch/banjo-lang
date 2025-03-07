@@ -219,7 +219,7 @@ void SymbolCollector::collect_use_list(sir::UseList &use_list) {
 }
 
 void SymbolCollector::add_symbol(std::string_view name, sir::Symbol symbol) {
-    get_symbol_table().symbols.insert({name, symbol});
+    get_symbol_table().insert_decl(name, symbol);
 }
 
 sir::SymbolTable &SymbolCollector::get_symbol_table() {

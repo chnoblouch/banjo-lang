@@ -427,6 +427,19 @@ DeclBlock *Symbol::get_decl_block() {
     return const_cast<DeclBlock *>(std::as_const(*this).get_decl_block());
 }
 
+void SymbolTable::insert_decl(std::string_view name, Symbol symbol) {
+    ASSERT(!(symbol.is_one_of<Local, Param>()));
+
+    symbols.insert({name, symbol});
+}
+
+void SymbolTable::insert_local(std::string_view name, Symbol symbol) {
+    ASSERT((symbol.is_one_of<Local, Param>()));
+
+    symbols.insert({name, symbol});
+    local_symbols_ordered.push_back(symbol);
+}
+
 Symbol SymbolTable::look_up(std::string_view name) const {
     auto iter = symbols.find(name);
     if (iter == symbols.end()) {

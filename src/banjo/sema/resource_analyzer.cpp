@@ -31,7 +31,7 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
         .move_states{},
     });
 
-    for (const auto &[name, symbol] : block.symbol_table->symbols) {
+    for (sir::Symbol symbol : block.symbol_table->local_symbols_ordered) {
         sir::Expr type;
 
         if (auto local = symbol.match<sir::Local>()) {

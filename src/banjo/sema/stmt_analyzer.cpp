@@ -208,7 +208,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
             .symbols = {},
         }),
     };
-    wrapper_block.symbol_table->symbols.insert({result_var_stmt->local.name.value, &result_var_stmt->local});
+    wrapper_block.symbol_table->insert_local(result_var_stmt->local.name.value, &result_var_stmt->local);
 
     sir::IfStmt *if_stmt = analyzer.create_stmt(sir::IfStmt{
         .ast_node = nullptr,
@@ -367,7 +367,7 @@ void StmtAnalyzer::insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ide
         return;
     }
 
-    symbols.insert({ident.value, symbol});
+    symbol_table.insert_local(ident.value, symbol);
 }
 
 void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
@@ -447,7 +447,7 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
     });
 
     block->stmts = {var_stmt, loop_stmt};
-    block->symbol_table->symbols.insert({var_stmt->local.name.value, &var_stmt->local});
+    block->symbol_table->insert_local(var_stmt->local.name.value, &var_stmt->local);
 
     analyzer.push_scope().block = block;
     analyze_loop_stmt(*loop_stmt);

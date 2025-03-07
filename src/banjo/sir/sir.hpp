@@ -483,6 +483,10 @@ struct Block {
 struct SymbolTable {
     SymbolTable *parent;
     std::unordered_map<std::string_view, Symbol> symbols;
+    std::vector<Symbol> local_symbols_ordered;
+
+    void insert_decl(std::string_view name, Symbol symbol);
+    void insert_local(std::string_view name, Symbol symbol);
 
     Symbol look_up(std::string_view name) const;
     Symbol look_up_local(std::string_view name) const;

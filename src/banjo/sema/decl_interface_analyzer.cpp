@@ -19,7 +19,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         analyzer.add_symbol_def(&param);
 
         if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_def.is_method())) {
-            func_def.block.symbol_table->symbols.insert({param.name.value, &param});
+            func_def.block.symbol_table->insert_local(param.name.value, &param);
         }
 
         if (analyzer.get_scope().closure_ctx && i == 0) {
