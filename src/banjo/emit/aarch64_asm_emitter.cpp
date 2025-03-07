@@ -65,7 +65,11 @@ const std::unordered_map<mcode::Opcode, std::string> AArch64AsmEmitter::OPCODE_N
     {target::AArch64Opcode::BLR, "blr"},
     {target::AArch64Opcode::RET, "ret"},
     {target::AArch64Opcode::ADRP, "adrp"},
-    {target::AArch64Opcode::SXTW, "sxtw"}
+    {target::AArch64Opcode::UXTB, "uxtb"},
+    {target::AArch64Opcode::UXTH, "uxth"},
+    {target::AArch64Opcode::SXTB, "sxtb"},
+    {target::AArch64Opcode::SXTH, "sxth"},
+    {target::AArch64Opcode::SXTW, "sxtw"},
 };
 // clang-format on
 

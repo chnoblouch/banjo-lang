@@ -59,6 +59,10 @@ enum {
     BLR,
     RET,
     ADRP,
+    UXTB,
+    UXTH,
+    SXTB,
+    SXTH,
     SXTW,
 };
 

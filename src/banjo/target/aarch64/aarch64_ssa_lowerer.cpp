@@ -367,17 +367,35 @@ void AArch64SSALowerer::lower_ret(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_uextend(ssa::Instruction &instr) {
-    // FIXME
+    mcode::Opcode opcode;
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
+
+    switch (src_size) {
+        case 1: opcode = AArch64Opcode::UXTB; break;
+        case 2: opcode = AArch64Opcode::UXTH; break;
+        case 4: opcode = AArch64Opcode::MOV; break;
+        default: ASSERT_UNREACHABLE;
+    }
 
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    emit(mcode::Instruction(AArch64Opcode::MOV, {m_dst, m_src}));
+    emit(mcode::Instruction(opcode, {m_dst, m_src}));
 }
 
 void AArch64SSALowerer::lower_sextend(ssa::Instruction &instr) {
+    mcode::Opcode opcode;
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
+
+    switch (src_size) {
+        case 1: opcode = AArch64Opcode::SXTB; break;
+        case 2: opcode = AArch64Opcode::SXTH; break;
+        case 4: opcode = AArch64Opcode::SXTW; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, 8);
-    emit(mcode::Instruction(AArch64Opcode::SXTW, {m_dst, m_src}));
+    emit(mcode::Instruction(opcode, {m_dst, m_src}));
 }
 
 void AArch64SSALowerer::lower_truncate(ssa::Instruction &instr) {

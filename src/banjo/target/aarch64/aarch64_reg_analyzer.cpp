@@ -115,6 +115,10 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
         case FCVTZS:
         case FCVTZU:
         case ADRP:
+        case UXTB:
+        case UXTH:
+        case SXTB:
+        case SXTH:
         case SXTW:
             collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands);
             collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
