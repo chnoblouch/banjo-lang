@@ -26,6 +26,73 @@ func main() {
 }
 
 # test:subtest
+# test:output "f"
+
+proto P {
+    func f(self);
+}
+
+struct S: P {
+    func f(self) {
+        print("f");
+    }
+}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    p.f();
+}
+
+# test:subtest
+# test:output "8"
+
+proto P {
+    func f(self, a: i32, b: i32) -> i32;
+}
+
+struct S: P {
+    func f(self, a: i32, b: i32) -> i32 {
+        return a + b;
+    }
+}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    print(p.f(1, 7));
+}
+
+# test:subtest
+# test:output "a,8"
+
+proto P {
+    func a(self);
+    func b(self, a: i32, b: i32) -> i32;
+}
+
+struct S: P {
+    func a(self) {
+        print("a");
+    }
+
+    func b(self, a: i32, b: i32) -> i32 {
+        return a + b;
+    }
+}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    
+    p.a();
+    print(',');
+    print(p.b(1, 7));
+}
+
+# test:subtest
 # test:output "40,10"
 
 proto Shape {
