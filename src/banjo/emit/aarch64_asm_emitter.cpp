@@ -118,7 +118,7 @@ void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
 
         stream << " " << value->to_string();
     } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
-        stream << (global.size == 4 ? ".float " : ".double ") << value;
+        stream << (global.size == 4 ? ".float " : ".double ") << *value;
     } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
         stream << ".ascii \"" << std::hex;
 
