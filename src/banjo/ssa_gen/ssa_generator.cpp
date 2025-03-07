@@ -104,7 +104,11 @@ void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) 
         .calling_conv = ctx.target->get_default_calling_conv(),
     };
 
-    ssa::FunctionDecl *ssa_func = new ssa::FunctionDecl(ssa_name, ssa_func_type);
+    ssa::FunctionDecl *ssa_func = new ssa::FunctionDecl{
+        .name = ssa_name,
+        .type = ssa_func_type,
+    };
+
     ssa_mod.add(ssa_func);
     ctx.ssa_native_funcs.insert({&sir_func, ssa_func});
 }
