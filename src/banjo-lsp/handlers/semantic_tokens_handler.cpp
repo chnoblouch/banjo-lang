@@ -106,7 +106,13 @@ void SemanticTokensHandler::add_symbol_token(
         tokens.push_back({range, SemanticTokenType::FUNCTION, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::ConstDef>()) {
         tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::READONLY});
-    } else if (symbol.is_one_of<sir::StructDef, sir::EnumDef, sir::UnionDef, sir::UnionCase, sir::TypeAlias>()) {
+    } else if (symbol.is_one_of<
+                   sir::StructDef,
+                   sir::EnumDef,
+                   sir::UnionDef,
+                   sir::UnionCase,
+                   sir::ProtoDef,
+                   sir::TypeAlias>()) {
         tokens.push_back({range, SemanticTokenType::STRUCT, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::StructField>()) {
         tokens.push_back({range, SemanticTokenType::PROPERTY, SemanticTokenModifiers::NONE});
