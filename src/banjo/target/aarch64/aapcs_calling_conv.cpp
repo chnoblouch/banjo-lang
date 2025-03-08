@@ -444,9 +444,9 @@ std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const ssa::Func
     return result;
 }
 
-int AAPCSCallingConv::get_implicit_stack_bytes(mcode::Function *func) {
-    // TODO
-    return 0;
+int AAPCSCallingConv::get_implicit_stack_bytes(mcode::Function * /*func*/) {
+    // Frame pointer (x29) + link register (x30)
+    return 16;
 }
 
 } // namespace target

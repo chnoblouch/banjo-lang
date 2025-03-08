@@ -1,0 +1,27 @@
+# test:output "48,-1238,91,-851,-471,59,1719,5273,-182,-1670"
+
+func test(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32, g: i32, h: i32, i: i32, j: i32) {
+    print(a);
+    print(',');
+    print(b);
+    print(',');
+    print(c);
+    print(',');
+    print(d);
+    print(',');
+    print(e);
+    print(',');
+    print(f);
+    print(',');
+    print(g);
+    print(',');
+    print(h);
+    print(',');
+    print(i);
+    print(',');
+    print(j);
+} 
+
+func main() {
+    test(48, -1238, 91, -851, -471, 59, 1719, 5273, -182, -1670);
+}

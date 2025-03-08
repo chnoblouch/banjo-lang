@@ -143,22 +143,28 @@ void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type);
     mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
 
-    mcode::Operand m_src;
-
-    if (cur_arg_storage.in_reg) {
-        m_src = mcode::Operand::from_register(mcode::Register::from_physical(cur_arg_storage.reg), size);
-    } else {
-        mcode::Parameter &param = get_machine_func()->get_parameters()[param_index];
-        mcode::StackSlotID slot_index = std::get<mcode::StackSlotID>(param.storage);
-        m_src = mcode::Operand::from_stack_slot(slot_index, size);
-    }
-
-    mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
     mcode::Operand m_dst = map_vreg_dst(instr, size);
 
-    mcode::Instruction m_instr(opcode, {m_dst, m_src});
-    m_instr.set_flag(mcode::Instruction::FLAG_ARG_STORE);
-    emit(m_instr);
+    if (cur_arg_storage.in_reg) {
+        mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+        mcode::Operand m_src = mcode::Operand::from_register(mcode::Register::from_physical(cur_arg_storage.reg), size);
+        emit({opcode, {m_dst, m_src}, mcode::Instruction::FLAG_ARG_STORE});
+    } else {
+        mcode::Opcode opcode;
+
+        switch (size) {
+            case 1: opcode = AArch64Opcode::LDRB; break;
+            case 2: opcode = AArch64Opcode::LDRH; break;
+            case 4:
+            case 8: opcode = AArch64Opcode::LDR; break;
+            default: ASSERT_UNREACHABLE;
+        }
+
+        mcode::Parameter &param = get_machine_func()->get_parameters()[param_index];
+        mcode::StackSlotID slot_index = std::get<mcode::StackSlotID>(param.storage);
+        mcode::Operand m_src = mcode::Operand::from_stack_slot(slot_index, size);
+        emit({opcode, {m_dst, m_src}});
+    }
 }
 
 void AArch64SSALowerer::lower_add(ssa::Instruction &instr) {
