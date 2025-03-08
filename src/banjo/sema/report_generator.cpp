@@ -263,6 +263,10 @@ void ReportGenerator::report_err_iter_no_next(const sir::Expr &expr, const sir::
         .report();
 }
 
+void ReportGenerator::report_err_expected_integer(const sir::Expr &expr) {
+    report_error("expected integer, got '$'", expr.get_ast_node(), expr.get_type());
+}
+
 void ReportGenerator::report_err_expected_bool(const sir::Expr &expr) {
     // TODO: Maybe add notes e.g. for ints that have to be converted to bools first?
 

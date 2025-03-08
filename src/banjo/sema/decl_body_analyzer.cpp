@@ -127,12 +127,12 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
                 continue;
             }
 
+            variant->value = ConstEvaluator(analyzer).evaluate(variant->value);
             if (!variant->value.is<sir::IntLiteral>()) {
-                // FIXME: ERROR
+                analyzer.report_generator.report_err_expected_integer(variant->value);
                 continue;
             }
 
-            variant->value = ConstEvaluator(analyzer).evaluate(variant->value);
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprFinalizer(analyzer).finalize(variant->value);
         } else {

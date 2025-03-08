@@ -1,0 +1,15 @@
+# test:subtest
+# test:error 5:9 "expected integer, got 'float literal'"
+
+enum E {
+    A = 0.5,
+}
+
+# test:subtest
+# test:error 14:9 "expected integer, got 'bool'"
+
+const C: bool = true;
+
+enum E {
+    A = C,
+}
