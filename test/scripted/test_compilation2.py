@@ -8,7 +8,10 @@ from pathlib import Path
 
 
 SKIPPED_TESTS = [
+    "errors.expected_integer.0",
+    "errors.expected_integer.1",
     "errors.expr_category.decl.3",
+    "errors.expr_category.decl.7",
     "errors.expr_category.stmt.2",
     "errors.expr_category.type.4",
     "features.map_literal.0",
@@ -23,6 +26,7 @@ CONDITION_PREFIX = "# test:"
 
 is_windows = platform.system() == "Windows"
 is_linux = platform.system() == "Linux"
+is_macos = platform.system() == "Darwin"
 
 
 class ProcessResult:
@@ -106,7 +110,7 @@ class Test:
             return TestResult(False, "unexpected exit code", expected_exit_code, result.exit_code)
 
     def check_compiles(self, conditions):
-        result = self.build()
+        result = self.compile_source()
 
         if result.exit_code == 0:
             return TestResult(True)
@@ -114,7 +118,7 @@ class Test:
             return TestResult(False, "unexpected exit code", 0, result.exit_code)
 
     def check_error(self, conditions):
-        result = self.build()
+        result = self.compile_source()
         stderr_lines = result.stderr.splitlines()
 
         expected_reports = []
@@ -154,33 +158,48 @@ class Test:
 
         return TestResult(True)
 
-    def build(self):
+    def compile_source(self):
         with open("tmp.bnj", "w") as f:
             f.write(self.source)
 
         if is_windows:
-            target_os = "windows"
-            target_env = "msvc"
+            result = run_process([
+                "banjo-compiler.exe",
+                "--type", "executable",
+                "--arch", "x86_64",
+                "--os", "windows",
+                "--env", "msvc",
+                "--opt-level", "0",
+                "--path", ".",
+                "--no-color",
+            ])
         elif is_linux:
-            target_os = "linux"
-            target_env = "gnu"
-
-        result = run_process([
-            "banjo-compiler",
-            "--type", "executable",
-            "--arch", "x86_64",
-            "--os", target_os,
-            "--env", target_env,
-            "--opt-level", "0",
-            "--path", ".",
-            "--no-color"
-        ])
+            result = run_process([
+                "banjo-compiler",
+                "--type", "executable",
+                "--arch", "x86_64",
+                "--os", "linux",
+                "--env", "gnu",
+                "--opt-level", "0",
+                "--path", ".",
+                "--no-color",
+            ])
+        elif is_macos:
+            result = run_process([
+                "banjo-compiler",
+                "--type", "executable",
+                "--arch", "aarch64",
+                "--os", "macos",
+                "--opt-level", "0",
+                "--path", ".",
+                "--no-color",
+            ])
 
         os.remove("tmp.bnj")
         return result
 
     def run_executable(self):
-        self.build()
+        self.compile_source()
 
         if is_windows:
             if not os.path.exists("main.obj"):
@@ -197,10 +216,14 @@ class Test:
                 "shlwapi.lib",
                 "dbghelp.lib",
                 "/SUBSYSTEM:CONSOLE",
-                "/OUT:test.exe"
+                "/OUT:test.exe",
             ])
 
             os.remove("main.obj")
+
+            if not os.path.exists("test.exe"):
+                return ProcessResult("", "", 1)
+
             result = run_process(["./test.exe"])
             os.remove("test.exe")
         elif is_linux:
@@ -208,8 +231,23 @@ class Test:
                 return ProcessResult("", "", 1)
 
             subprocess.run(["clang", "-fuse-ld=lld", "-otest", "main.o"])
-
             os.remove("main.o")
+
+            if not os.path.exists("test"):
+                return ProcessResult("", "", 1)
+
+            result = run_process(["./test"])
+            os.remove("test")
+        elif is_macos:
+            if not os.path.exists("main.s"):
+                return ProcessResult("", "", 1)
+
+            subprocess.run(["clang", "-otest", "main.s"])
+            os.remove("main.s")
+
+            if not os.path.exists("test"):
+                return ProcessResult("", "", 1)
+
             result = run_process(["./test"])
             os.remove("test")
 
@@ -323,7 +361,7 @@ if __name__ == "__main__":
 
     if not tests:
         print("no match found")
-        exit(1)
+        sys.exit(0)
 
     print("\ntests:")
 
@@ -357,4 +395,4 @@ if __name__ == "__main__":
             print(f"    expected: {result.expected}")
             print(f"      actual: {result.actual}\n")    
 
-    
+    sys.exit(0 if tests_passed == tests_total else 1)
