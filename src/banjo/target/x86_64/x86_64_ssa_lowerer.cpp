@@ -37,6 +37,7 @@ void X8664SSALowerer::init_module(ssa::Module &mod) {
     get_machine_module().add(mcode::Global{
         .name = "const.neg_zero",
         .size = 4,
+        .alignment = 16,
         .value = const_neg_zero,
     });
 }

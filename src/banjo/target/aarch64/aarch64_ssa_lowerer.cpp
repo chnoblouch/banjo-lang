@@ -547,6 +547,7 @@ mcode::Value AArch64SSALowerer::move_float_into_register(double value, unsigned 
         mcode::Global global{
             .name = "double." + std::to_string(next_const_index++),
             .size = 8,
+            .alignment = 8,
             .value = value,
         };
 

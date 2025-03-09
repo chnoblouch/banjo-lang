@@ -152,40 +152,48 @@ void BinaryBuilder::compute_slice_offsets() {
 void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
     data_slices.push_back(SectionSlice{});
 
+    WriteBuffer &buffer = data_slices.back().buffer;
+
     for (const mcode::Global &global : m_mod.get_globals()) {
+        ASSERT(global.alignment != 0);
+
+        while (buffer.get_size() % global.alignment != 0) {
+            buffer.write_u8(0);
+        }
+
         add_symbol_def(SymbolDef{
             .name = global.name,
             .kind = BinSymbolKind::DATA_LABEL,
             .global = m_mod.get_global_symbols().contains(global.name),
             .slice_index = (std::uint32_t)data_slices.size() - 1,
-            .local_offset = (std::uint32_t)data_slices.back().buffer.get_size(),
+            .local_offset = (std::uint32_t)buffer.get_size(),
         });
 
         if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
             switch (global.size) {
-                case 1: data_slices.back().buffer.write_u8(value->to_bits()); break;
-                case 2: data_slices.back().buffer.write_u16(value->to_bits()); break;
-                case 4: data_slices.back().buffer.write_u32(value->to_bits()); break;
-                case 8: data_slices.back().buffer.write_u64(value->to_bits()); break;
+                case 1: buffer.write_u8(value->to_bits()); break;
+                case 2: buffer.write_u16(value->to_bits()); break;
+                case 4: buffer.write_u32(value->to_bits()); break;
+                case 8: buffer.write_u64(value->to_bits()); break;
                 default: ASSERT_UNREACHABLE;
             }
         } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
             switch (global.size) {
-                case 4: data_slices.back().buffer.write_f32(*value); break;
-                case 8: data_slices.back().buffer.write_f64(*value); break;
+                case 4: buffer.write_f32(*value); break;
+                case 8: buffer.write_f64(*value); break;
                 default: ASSERT_UNREACHABLE;
             }
         } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
-            data_slices.back().buffer.write_data(value->data(), value->size());
+            buffer.write_data(value->data(), value->size());
         } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
-            data_slices.back().buffer.write_data(value->data(), value->size());
+            buffer.write_data(value->data(), value->size());
         } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
             add_data_symbol_use(value->name);
 
             // FIXME: sizes other than 64 bits?
-            data_slices.back().buffer.write_i64(0);
+            buffer.write_i64(0);
         } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
-            data_slices.back().buffer.write_zeroes(global.size);
+            buffer.write_zeroes(global.size);
         } else {
             ASSERT_UNREACHABLE;
         }

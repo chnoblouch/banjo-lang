@@ -8,10 +8,8 @@ namespace banjo {
 ELFFile ELFBuilder::build(BinModule module_) {
     file.machine = ELFMachine::X86_64;
 
-    /*
-    TODO: Where do these alignment values come from?
-    We currently just use the ones that Clang and NASM emit...
-    */
+    // TODO: Calculate these alignments dynamically. Also, where do these alignment values come
+    // from? We currently just use the ones that Clang and NASM emit...
 
     shstrtab_section = ELFSection{
         .type = ELFSectionType::STRTAB,
@@ -32,7 +30,7 @@ ELFFile ELFBuilder::build(BinModule module_) {
         .name_offset = add_string(shstrtab_section, ".data"),
         .type = ELFSectionType::PROGBITS,
         .flags = ELFSectionFlags::ALLOC | ELFSectionFlags::WRITE,
-        .alignment = 16, // FIXME: This is usually 4, but required to be 16 for aligning SSE constants.
+        .alignment = 16,
         .data = module_.data.move_data(),
     };
 

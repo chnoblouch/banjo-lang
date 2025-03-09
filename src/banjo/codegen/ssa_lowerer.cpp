@@ -218,6 +218,7 @@ void SSALowerer::lower_globals() {
         mcode::Global m_global{
             .name = global->name,
             .size = get_size(global->type),
+            .alignment = get_alignment(global->type),
             .value = {},
         };
 

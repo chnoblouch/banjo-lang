@@ -25,6 +25,8 @@ PEFile PEBuilder::build(BinModule module_) {
 void PEBuilder::create_sections(BinModule &module_) {
     using namespace PESectionFlags;
 
+    // TODO: Calculate these alignments dynamically.
+
     file.sections = {
         PESection{
             .name = {'.', 't', 'e', 'x', 't', '\0', '\0', '\0'},
@@ -36,7 +38,7 @@ void PEBuilder::create_sections(BinModule &module_) {
             .name = {'.', 'd', 'a', 't', 'a', '\0', '\0', '\0'},
             .data = {},
             .relocations = {},
-            .flags = INITIALIZED_DATA | ALIGN_4BYTES | READ | WRITE,
+            .flags = INITIALIZED_DATA | ALIGN_16BYTES | READ | WRITE,
         },
         PESection{
             .name = {'.', 'p', 'd', 'a', 't', 'a', '\0', '\0'},

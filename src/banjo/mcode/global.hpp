@@ -27,6 +27,7 @@ struct Global {
 
     std::string name;
     unsigned size;
+    unsigned alignment = 0;
     Value value;
 };
 

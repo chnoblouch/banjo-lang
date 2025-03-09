@@ -141,6 +141,7 @@ void NASMEmitter::generate() {
     stream << "section .data\n";
 
     for (mcode::Global &global : module.get_globals()) {
+        stream << "align " << global.alignment << ", db 0\n";
         stream << global.name << " ";
 
         if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {

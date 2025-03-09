@@ -106,9 +106,7 @@ void AArch64AsmEmitter::generate() {
 }
 
 void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
-    // FIXME: Alignment is not always equal to size!
-    stream << ".balign " << global.size << "\n";
-
+    stream << ".balign " << global.alignment << ", 0\n";
     stream << symbol_prefix << global.name << ": ";
 
     if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {

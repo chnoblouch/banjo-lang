@@ -40,6 +40,7 @@ mcode::Value X8664ConstLowering::load_f64(double value) {
     mcode::Global global{
         .name = "float." + std::to_string(cur_id++),
         .size = 8,
+        .alignment = 8,
         .value = value,
     };
 
@@ -76,6 +77,7 @@ void X8664ConstLowering::process_block() {
                 mcode::Global global{
                     .name = float_label,
                     .size = 4,
+                    .alignment = 4,
                     .value = val,
                 };
 
@@ -104,7 +106,7 @@ void X8664ConstLowering::process_block() {
 bool X8664ConstLowering::is_f32_used_later_on(float value, ssa::InstrIter user) {
     // Buggy and therefore disabled for now.
     return false;
-    
+
     for (ssa::InstrIter iter = user; iter != lowerer.get_block().end(); ++iter) {
         if (is_discarding_instr(iter->get_opcode())) {
             return false;
