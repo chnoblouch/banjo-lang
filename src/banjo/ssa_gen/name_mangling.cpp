@@ -134,7 +134,7 @@ std::string mangle_func_name(const sir::FuncDef &func) {
         }
     }
 
-    string += std::to_string(std::rand());
+    // string += std::to_string(std::rand());
 
     return string;
 }

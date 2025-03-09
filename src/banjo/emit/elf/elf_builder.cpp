@@ -191,7 +191,7 @@ void ELFBuilder::process_def(const BinSymbolDef &def) {
             break;
         case BinSymbolKind::ADDR_TABLE:
             type = ELFSymbolType::NOTYPE;
-            section_index = 7;
+            section_index = 8;
             break;
         case BinSymbolKind::UNKNOWN:
             type = ELFSymbolType::NOTYPE;

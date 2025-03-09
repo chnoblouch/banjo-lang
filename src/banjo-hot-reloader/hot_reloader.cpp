@@ -96,7 +96,7 @@ void HotReloader::run(const std::string &executable, const std::filesystem::path
         // still opened by the process that modified it.
 
         for (const std::filesystem::path &path : *paths) {
-            if (has_changed(path)) {
+            if (path.extension() == ".bnj" && has_changed(path)) {
                 reload_file(path);
             }
         }
