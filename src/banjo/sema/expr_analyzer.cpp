@@ -742,6 +742,13 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             if (call_expr.args.size() == native_func_decl->type.params.size()) {
                 constraints = ExprConstraints::expect_type(native_func_decl->type.params[i].type);
             }
+        } else {
+            sir::Expr callee_type = call_expr.callee.get_type();
+            if (auto func_type = callee_type.match<sir::FuncType>()) {
+                if (call_expr.args.size() == func_type->params.size()) {
+                    constraints = ExprConstraints::expect_type(func_type->params[i].type);
+                }
+            }
         }
 
         partial_result = ExprAnalyzer(analyzer).analyze_value(arg, constraints);

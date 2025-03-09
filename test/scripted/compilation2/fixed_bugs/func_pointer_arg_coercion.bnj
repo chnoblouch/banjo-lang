@@ -1,0 +1,9 @@
+# test:subtest
+# test:compiles
+
+func f(a: *u8) {}
+
+func main() {
+    var pointer = f;
+    pointer("Test");
+}
