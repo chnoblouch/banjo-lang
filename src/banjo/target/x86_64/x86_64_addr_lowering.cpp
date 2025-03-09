@@ -52,9 +52,14 @@ mcode::Operand X8664AddrLowering::lower_vreg_addr(mcode::Register reg) {
 
 mcode::Operand X8664AddrLowering::lower_symbol_addr(const ssa::Operand &operand) {
     mcode::Relocation reloc = mcode::Relocation::NONE;
-    if (lang::Config::instance().pic && lowerer.get_target()->get_descr().is_unix()) {
-        if (operand.is_extern_func()) reloc = mcode::Relocation::PLT;
-        else if (operand.is_extern_global()) reloc = mcode::Relocation::GOT;
+    if (lowerer.get_target()->get_descr().is_unix()) {
+        if (operand.is_extern_func()) {
+            // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to skip
+            // it? Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592
+            reloc = mcode::Relocation::PLT;
+        } else if (operand.is_extern_global()) {
+            reloc = mcode::Relocation::GOT;
+        }
     }
 
     mcode::Symbol symbol(operand.get_symbol_name(), reloc);
