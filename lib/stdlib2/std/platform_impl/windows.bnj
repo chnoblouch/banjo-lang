@@ -14,7 +14,7 @@ meta if IS_WINDOWS {
     const SOCKET_PROTOCOL_TCP: i32 = winapi.IPPROTO_TCP;
     const SOCKET_PROTOCOL_UDP: i32 = winapi.IPPROTO_UDP;
     
-    var wsa_intialized: bool = false;
+    var wsa_initialized: bool = false;
 
     pub func error_last() -> Error {
         return winapi.get_last_error();
@@ -124,12 +124,12 @@ meta if IS_WINDOWS {
     }
 
     pub func socket_create(address_family: i32, socket_type: i32, protocol: i32) -> Socket {
-        if !wsa_intialized {            
+        if !wsa_initialized {            
             var wsa_version: u16 = 514;  # MAKEWORD(2, 2)
             var wsa_data: [u8; 512] = undefined;
             winapi.wsa_startup(wsa_version, &wsa_data);
         
-            wsa_intialized = true;
+            wsa_initialized = true;
         }
 
         return winapi.socket(address_family, socket_type, protocol);
