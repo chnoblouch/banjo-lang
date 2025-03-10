@@ -5,7 +5,7 @@ namespace ssa {
 
 ssa::FunctionType get_call_func_type(ssa::Instruction &call_instr) {
     ssa::FunctionType type{
-        .params{call_instr.get_operands().size() - 1},
+        .params = std::vector<ssa::Type>{call_instr.get_operands().size() - 1},
         .return_type = call_instr.get_operand(0).get_type(),
         .calling_conv = {},
         .variadic = false,
