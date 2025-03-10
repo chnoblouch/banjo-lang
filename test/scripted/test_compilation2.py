@@ -4,6 +4,7 @@ import sys
 import re
 import subprocess
 import platform
+import argparse
 from pathlib import Path
 
 
@@ -27,6 +28,8 @@ CONDITION_PREFIX = "# test:"
 is_windows = platform.system() == "Windows"
 is_linux = platform.system() == "Linux"
 is_macos = platform.system() == "Darwin"
+
+install_dir = None
 
 
 class ProcessResult:
@@ -162,9 +165,14 @@ class Test:
         with open("tmp.bnj", "w") as f:
             f.write(self.source)
 
+        if install_dir is None:
+            compiler_executable = "banjo-compiler"
+        else:
+            compiler_executable = f"{install_dir}/bin/banjo-compiler"
+
         if is_windows:
             result = run_process([
-                "banjo-compiler.exe",
+                f"{compiler_executable}.exe",
                 "--type", "executable",
                 "--arch", "x86_64",
                 "--os", "windows",
@@ -175,7 +183,7 @@ class Test:
             ])
         elif is_linux:
             result = run_process([
-                "banjo-compiler",
+                compiler_executable,
                 "--type", "executable",
                 "--arch", "x86_64",
                 "--os", "linux",
@@ -186,7 +194,7 @@ class Test:
             ])
         elif is_macos:
             result = run_process([
-                "banjo-compiler",
+                compiler_executable,
                 "--type", "executable",
                 "--arch", "aarch64",
                 "--os", "macos",
@@ -350,14 +358,20 @@ def parse_condition(line):
 
 
 if __name__ == "__main__":
-    pattern = sys.argv[1] if len(sys.argv) >= 2 else "*"
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("pattern", nargs="?", default="*")
+    parser.add_argument("--install-dir")
+    args = parser.parse_args()
+
+    install_dir = os.path.abspath(args.install_dir)
+    os.chdir(os.path.dirname(__file__))
+
     tests = []
 
     for dir in os.listdir("compilation2"):
         tests += load_tests("compilation2/" + dir, dir)
 
-    tests = [test for test in tests if fnmatch.fnmatch(test.name, pattern)]
+    tests = [test for test in tests if fnmatch.fnmatch(test.name, args.pattern)]
 
     if not tests:
         print("no match found")

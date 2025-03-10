@@ -27,6 +27,9 @@ jobs:
     - name: Build
       run: cmake --build build --target install -j4
 
+    - name: Run tests
+      run: python test/scripted/test_compilation2.py --install-dir banjo-x86_64-windows
+
     - name: Archive
       run: 7z a banjo-x86_64-windows.zip banjo-x86_64-windows
 
@@ -51,6 +54,9 @@ jobs:
       
     - name: Build
       run: cmake --build build --target install -j4
+
+    - name: Run tests
+      run: python3 test/scripted/test_compilation2.py --install-dir banjo-x86_64-linux
 
     - name: Archive
       run: zip -r banjo-x86_64-linux.zip banjo-x86_64-linux
@@ -79,6 +85,9 @@ jobs:
       
     - name: Build
       run: cmake --build build --target install -j4
+
+    - name: Run tests
+      run: python3 test/scripted/test_compilation2.py --install-dir banjo-aarch64-macos
 
     - name: Archive
       run: zip -r banjo-aarch64-macos.zip banjo-aarch64-macos
