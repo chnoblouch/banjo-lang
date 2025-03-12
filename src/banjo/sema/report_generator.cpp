@@ -68,8 +68,18 @@ ReportBuilder ReportGenerator::build_error(std::string_view format_str, ASTNode 
 }
 
 template <typename... FormatArgs>
+ReportBuilder ReportGenerator::build_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
+    return ReportBuilder(analyzer, Report::Type::WARNING).set_message(format_str, node, format_args...);
+}
+
+template <typename... FormatArgs>
 void ReportGenerator::report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
     build_error(format_str, node, format_args...).report();
+}
+
+template <typename... FormatArgs>
+void ReportGenerator::report_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
+    build_warning(format_str, node, format_args...).report();
 }
 
 void ReportGenerator::report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected) {
@@ -544,6 +554,14 @@ void ReportGenerator::report_err_invalid_global_value(const sir::Expr &value) {
     report_error("globals cannot be initialized with this type of value", value.get_ast_node());
 }
 
+void ReportGenerator::report_err_does_not_return(const sir::Ident &func_ident) {
+    report_error("function does not return a value", func_ident.ast_node);
+}
+
+void ReportGenerator::report_err_does_not_always_return(const sir::Ident &func_ident) {
+    report_error("function does not return a value in all control paths", func_ident.ast_node);
+}
+
 void ReportGenerator::report_err_use_after_move(
     const sir::Expr &use,
     const sir::Expr &move,
@@ -614,6 +632,10 @@ void ReportGenerator::report_err_unexpected_generic_arg_count(
             generic_params
         )
         .report();
+}
+
+void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
+    report_warning("unreachable code", stmt.get_ast_node());
 }
 
 } // namespace sema

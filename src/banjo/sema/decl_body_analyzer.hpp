@@ -13,6 +13,13 @@ namespace sema {
 
 class DeclBodyAnalyzer final : public DeclVisitor {
 
+private:
+    enum class ReturnAnalysis {
+        ALWAYS,
+        SOMETIMES,
+        NEVER,
+    };
+
 public:
     DeclBodyAnalyzer(SemanticAnalyzer &analyzer);
     Result analyze_func_def(sir::FuncDef &func_def) override;

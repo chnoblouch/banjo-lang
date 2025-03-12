@@ -25,5 +25,7 @@ struct S: Stream {
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {
-    func write(self, data: *u8, size: usize) -> bool {}
+    func write(self, data: *u8, size: usize) -> bool {
+        return false;
+    }
 }

@@ -1,0 +1,34 @@
+# test:subtest
+# test:error 4:6 "function does not return a value"
+
+func test() -> i32 {}
+
+# test:subtest
+# test:error 9:6 "function does not return a value"
+
+func test() -> i32 {
+    print("test");
+}
+
+# test:subtest
+# test:error 16:6 "function does not return a value"
+
+func test(a: i32) -> i32 {
+    if a == 0 {}
+}
+
+# test:subtest
+# test:error 23:6 "function does not return a value"
+
+func test(a: i32) -> i32 {
+    if a == 0 {} else {}
+}
+
+# test:subtest
+# test:error 30:6 "function does not return a value"
+
+func test(a: i32, b: i32) -> i32 {
+    if a == 0 {
+        if b == 1 {}
+    } else {}
+}

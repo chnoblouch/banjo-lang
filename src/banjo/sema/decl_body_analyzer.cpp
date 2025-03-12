@@ -3,6 +3,7 @@
 #include "banjo/sema/const_evaluator.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/expr_finalizer.hpp"
+#include "banjo/sema/return_checker.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
@@ -23,7 +24,21 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
     analyzer.pop_scope();
 
-    return Result::SUCCESS;
+    ReturnChecker::Result return_checker_result = ReturnChecker(analyzer).check(func_def.block);
+
+    if (return_checker_result == ReturnChecker::Result::RETURNS_ALWAYS) {
+        return Result::SUCCESS;
+    } else if (func_def.type.return_type.is_primitive_type(sir::Primitive::VOID)) {
+        return Result::SUCCESS;
+    } else {
+        if (return_checker_result == ReturnChecker::Result::RETURNS_SOMETIMES) {
+            analyzer.report_generator.report_err_does_not_always_return(func_def.ident);
+        } else if (return_checker_result == ReturnChecker::Result::RETURNS_NEVER) {
+            analyzer.report_generator.report_err_does_not_return(func_def.ident);
+        }
+
+        return Result::ERROR;
+    }
 }
 
 Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {

@@ -83,8 +83,8 @@ class Test:
                 return self.check_exit_code(conditions)
             elif condition == "compiles":
                 return self.check_compiles(conditions)
-            elif condition == "error":
-                return self.check_error(conditions)
+            elif condition in ("error", "warning"):
+                return self.check_reports(conditions)
 
     def check_output(self, conditions):
         for condition, args in conditions:
@@ -120,7 +120,7 @@ class Test:
         else:
             return TestResult(False, "unexpected exit code", 0, result.exit_code)
 
-    def check_error(self, conditions):
+    def check_reports(self, conditions):
         result = self.compile_source()
         stderr_lines = result.stderr.splitlines()
 
@@ -129,6 +129,8 @@ class Test:
         for condition, args in conditions:
             if condition == "error":
                 expected_reports.append(("error", args[1], args[0]))
+            elif condition == "warning":
+                expected_reports.append(("warning", args[1], args[0]))
             elif condition == "note":
                 expected_reports.append(("note", args[1], args[0]))
 
@@ -142,6 +144,8 @@ class Test:
         for i, line in enumerate(stderr_lines):
             if line.startswith("error: "):
                 add_report("error", line)
+            if line.startswith("warning: "):
+                add_report("warning", line)
             elif line.startswith("note: "):
                 add_report("note", line)
 
@@ -363,7 +367,7 @@ if __name__ == "__main__":
     parser.add_argument("--install-dir")
     args = parser.parse_args()
 
-    install_dir = os.path.abspath(args.install_dir)
+    install_dir = os.path.abspath(args.install_dir) if args.install_dir else None
     os.chdir(os.path.dirname(__file__))
 
     tests = []

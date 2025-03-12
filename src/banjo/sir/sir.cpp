@@ -327,6 +327,31 @@ DeclBlock *Expr::get_decl_block() {
     }
 }
 
+ASTNode *Stmt::get_ast_node() const {
+    SIR_VISIT_STMT(
+        *this,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        return inner->ast_node,
+        SIR_VISIT_IMPOSSIBLE,
+        return inner->get_ast_node(),
+        return inner->ast_node,
+        return inner->ast_node
+    );
+}
+
 const Ident &Symbol::get_ident() const {
     SIR_VISIT_SYMBOL(
         *this,

@@ -8,6 +8,7 @@ struct Resource {
 
 func f(resource: *Resource) -> i32 {
     print('a');
+    return 0;
 }
 
 func g() -> i32 {

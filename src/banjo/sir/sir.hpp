@@ -308,6 +308,8 @@ public:
     }
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
+    
+    ASTNode *get_ast_node() const;
 };
 
 class Decl {

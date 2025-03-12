@@ -108,6 +108,10 @@ class Compiler:
 
             print(self.stderr, file=sys.stderr, end="")
             exit(1)
+        elif len(self.stderr) > 0:
+            print("\x1b[2m\x1b[2K\r")
+            print(self.stderr, file=sys.stderr, end="")
+            print()
 
 
 class Assembler(Program):

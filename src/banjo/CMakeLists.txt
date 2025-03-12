@@ -67,6 +67,7 @@ add_library(banjo STATIC
     sema/meta_expr_evaluator.cpp
     sema/report_generator.cpp
     sema/resource_analyzer.cpp
+    sema/return_checker.cpp
     sema/semantic_analyzer.cpp
     sema/stmt_analyzer.cpp
     sema/symbol_collector.cpp

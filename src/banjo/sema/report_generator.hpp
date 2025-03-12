@@ -133,17 +133,27 @@ public:
     void report_err_func_decl_outside_proto(const sir::FuncDecl &func_decl);
     void report_err_struct_overlapping_no_fields(const sir::StructDef &struct_def);
     void report_err_invalid_global_value(const sir::Expr &value);
+    void report_err_does_not_return(const sir::Ident &func_ident);
+    void report_err_does_not_always_return(const sir::Ident &func_ident);
 
     void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
     void report_err_move_out_pointer(const sir::Expr &move);
     void report_err_move_out_deinit(const sir::Expr &move);
+
+    void report_warn_unreachable_code(const sir::Stmt &stmt);
 
 private:
     template <typename... FormatArgs>
     ReportBuilder build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
+    ReportBuilder build_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+
+    template <typename... FormatArgs>
     void report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+
+    template <typename... FormatArgs>
+    void report_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     void report_err_operator_overload_not_found(
         ASTNode *ast_node,
