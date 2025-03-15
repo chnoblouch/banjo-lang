@@ -133,8 +133,10 @@ public:
     void report_err_func_decl_outside_proto(const sir::FuncDecl &func_decl);
     void report_err_struct_overlapping_no_fields(const sir::StructDef &struct_def);
     void report_err_invalid_global_value(const sir::Expr &value);
+
     void report_err_does_not_return(const sir::Ident &func_ident);
     void report_err_does_not_always_return(const sir::Ident &func_ident);
+    void report_err_pointer_to_local_escapes(const sir::Stmt &stmt, const sir::UnaryExpr &ref_expr);
 
     void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
     void report_err_move_out_pointer(const sir::Expr &move);

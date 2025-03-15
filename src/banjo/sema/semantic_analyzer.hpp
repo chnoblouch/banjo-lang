@@ -61,6 +61,7 @@ class SemanticAnalyzer {
     friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;
     friend class ReturnChecker;
+    friend class PointerEscapeChecker;
     friend class ResourceAnalyzer;
     friend class ExprAnalyzer;
     friend class ExprFinalizer;

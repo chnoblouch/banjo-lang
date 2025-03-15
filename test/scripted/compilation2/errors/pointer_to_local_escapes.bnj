@@ -1,0 +1,45 @@
+# test:subtest
+# test:error 7:5 "pointer to local value escapes function"
+# test:note 7:12 "value is referenced here"
+
+func test() -> *i32 {
+    var a = 0;
+    return &a;
+}
+
+# test:subtest
+# test:error 16:5 "pointer to local value escapes function"
+# test:note 16:19 "value is referenced here"
+
+func test() -> (bool, *i32) {
+    var a = 0;
+    return (true, &a);
+}
+
+# test:subtest
+# test:error 30:5 "pointer to local value escapes function"
+# test:note 30:37 "value is referenced here"
+
+struct S {
+    var value: f32;
+    var pointer: *i32;
+}
+
+func test() -> S {
+    var a = 0;
+    return S { value: 0.5, pointer: &a };
+}
+
+# test:subtest
+# test:error 44:5 "pointer to local value escapes function"
+# test:note 44:45 "value is referenced here"
+
+struct S {
+    var flag: bool;
+    var tuple: (i32, f32, *i32);
+}
+
+func test() -> S {
+    var a = 0;
+    return S { flag: false, tuple: (0, 0.5, &a) };
+}

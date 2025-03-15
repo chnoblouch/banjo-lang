@@ -562,6 +562,12 @@ void ReportGenerator::report_err_does_not_always_return(const sir::Ident &func_i
     report_error("function does not return a value in all control paths", func_ident.ast_node);
 }
 
+void ReportGenerator::report_err_pointer_to_local_escapes(const sir::Stmt &stmt, const sir::UnaryExpr &ref_expr) {
+    build_error("pointer to local value escapes function", stmt.get_ast_node())
+        .add_note("value is referenced here", ref_expr.ast_node)
+        .report();
+}
+
 void ReportGenerator::report_err_use_after_move(
     const sir::Expr &use,
     const sir::Expr &move,

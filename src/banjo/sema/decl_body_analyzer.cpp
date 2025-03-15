@@ -25,10 +25,9 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     analyzer.pop_scope();
 
     ReturnChecker::Result return_checker_result = ReturnChecker(analyzer).check(func_def.block);
+    bool has_return_value = !func_def.type.return_type.is_primitive_type(sir::Primitive::VOID);
 
-    if (return_checker_result == ReturnChecker::Result::RETURNS_ALWAYS) {
-        return Result::SUCCESS;
-    } else if (func_def.type.return_type.is_primitive_type(sir::Primitive::VOID)) {
+    if (!has_return_value || return_checker_result == ReturnChecker::Result::RETURNS_ALWAYS) {
         return Result::SUCCESS;
     } else {
         if (return_checker_result == ReturnChecker::Result::RETURNS_SOMETIMES) {
@@ -151,11 +150,13 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprFinalizer(analyzer).finalize(variant->value);
         } else {
-            variant->value = analyzer.create_expr(sir::IntLiteral{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .value = next_value,
-            });
+            variant->value = analyzer.create_expr(
+                sir::IntLiteral{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .value = next_value,
+                }
+            );
 
             ExprAnalyzer(analyzer).analyze_value(variant->value);
 

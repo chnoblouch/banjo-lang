@@ -2,10 +2,12 @@
 
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/meta_expansion.hpp"
+#include "banjo/sema/pointer_escape_checker.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+
 
 namespace banjo {
 
@@ -98,17 +100,21 @@ void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
 void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
     // FIXME: error handling for overloaded operators with a bad return type
 
-    sir::AssignStmt *assign_stmt = analyzer.create_stmt(sir::AssignStmt{
-        .ast_node = comp_assign_stmt.ast_node,
-        .lhs = comp_assign_stmt.lhs,
-        .rhs = analyzer.create_expr(sir::BinaryExpr{
+    sir::AssignStmt *assign_stmt = analyzer.create_stmt(
+        sir::AssignStmt{
             .ast_node = comp_assign_stmt.ast_node,
-            .type = nullptr,
-            .op = comp_assign_stmt.op,
             .lhs = comp_assign_stmt.lhs,
-            .rhs = comp_assign_stmt.rhs,
-        }),
-    });
+            .rhs = analyzer.create_expr(
+                sir::BinaryExpr{
+                    .ast_node = comp_assign_stmt.ast_node,
+                    .type = nullptr,
+                    .op = comp_assign_stmt.op,
+                    .lhs = comp_assign_stmt.lhs,
+                    .rhs = comp_assign_stmt.rhs,
+                }
+            ),
+        }
+    );
 
     analyze_assign_stmt(*assign_stmt);
     out_stmt = assign_stmt;
@@ -120,6 +126,8 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
         sir::Expr return_type = func_def.type.return_type;
         ExprAnalyzer(analyzer).analyze_value(return_stmt.value, ExprConstraints::expect_type(return_type));
     }
+
+    PointerEscapeChecker(analyzer).check_return_stmt(return_stmt);
 }
 
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
@@ -182,57 +190,69 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
         return;
     }
 
-    sir::VarStmt *result_var_stmt = analyzer.create_stmt(sir::VarStmt{
-        .ast_node = nullptr,
-        .local{
-            .name{
-                .ast_node = nullptr,
-                .value = ".result",
+    sir::VarStmt *result_var_stmt = analyzer.create_stmt(
+        sir::VarStmt{
+            .ast_node = nullptr,
+            .local{
+                .name{
+                    .ast_node = nullptr,
+                    .value = ".result",
+                },
+                .type = type,
             },
-            .type = type,
-        },
-        .value = try_stmt.success_branch.expr,
-    });
+            .value = try_stmt.success_branch.expr,
+        }
+    );
 
-    sir::SymbolExpr *result_ref_expr = analyzer.create_expr(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = type,
-        .symbol = &result_var_stmt->local,
-    });
+    sir::SymbolExpr *result_ref_expr = analyzer.create_expr(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = type,
+            .symbol = &result_var_stmt->local,
+        }
+    );
 
     sir::Block wrapper_block{
         .ast_node = nullptr,
         .stmts{result_var_stmt},
-        .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
-            .parent = &analyzer.get_symbol_table(),
-            .symbols = {},
-        }),
+        .symbol_table = analyzer.create_symbol_table(
+            sir::SymbolTable{
+                .parent = &analyzer.get_symbol_table(),
+                .symbols = {},
+            }
+        ),
     };
     wrapper_block.symbol_table->insert_local(result_var_stmt->local.name.value, &result_var_stmt->local);
 
-    sir::IfStmt *if_stmt = analyzer.create_stmt(sir::IfStmt{
-        .ast_node = nullptr,
-        .cond_branches = {},
-    });
+    sir::IfStmt *if_stmt = analyzer.create_stmt(
+        sir::IfStmt{
+            .ast_node = nullptr,
+            .cond_branches = {},
+        }
+    );
     wrapper_block.stmts.push_back(if_stmt);
 
     sir::Block success_block{
         .ast_node = nullptr,
         .stmts{
-            analyzer.create_stmt(sir::VarStmt{
-                .ast_node = nullptr,
-                .local{
-                    .name = try_stmt.success_branch.ident,
-                    .type = unwrap_func->type.return_type,
-                },
-                .value = sir::create_call(*analyzer.cur_sir_mod, *unwrap_func, {result_ref_expr}),
-            }),
+            analyzer.create_stmt(
+                sir::VarStmt{
+                    .ast_node = nullptr,
+                    .local{
+                        .name = try_stmt.success_branch.ident,
+                        .type = unwrap_func->type.return_type,
+                    },
+                    .value = sir::create_call(*analyzer.cur_sir_mod, *unwrap_func, {result_ref_expr}),
+                }
+            ),
             analyzer.create_stmt(try_stmt.success_branch.block),
         },
-        .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
-            .parent = wrapper_block.symbol_table,
-            .symbols = {},
-        }),
+        .symbol_table = analyzer.create_symbol_table(
+            sir::SymbolTable{
+                .parent = wrapper_block.symbol_table,
+                .symbols = {},
+            }
+        ),
     };
 
     try_stmt.success_branch.block.symbol_table->parent = success_block.symbol_table;
@@ -241,12 +261,14 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     if_stmt->cond_branches = {
         sir::IfCondBranch{
             .ast_node = nullptr,
-            .condition = analyzer.create_expr(sir::FieldExpr{
-                .ast_node = nullptr,
-                .type = successful_field->type,
-                .base = result_ref_expr,
-                .field_index = successful_field->index,
-            }),
+            .condition = analyzer.create_expr(
+                sir::FieldExpr{
+                    .ast_node = nullptr,
+                    .type = successful_field->type,
+                    .base = result_ref_expr,
+                    .field_index = successful_field->index,
+                }
+            ),
             .block = success_block,
         },
     };
@@ -258,20 +280,24 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
             sir::Block except_block{
                 .ast_node = nullptr,
                 .stmts{
-                    analyzer.create_stmt(sir::VarStmt{
-                        .ast_node = nullptr,
-                        .local{
-                            .name = try_stmt.except_branch->ident,
-                            .type = nullptr,
-                        },
-                        .value = sir::create_call(*analyzer.cur_sir_mod, *unwrap_error_func, {result_ref_expr}),
-                    }),
+                    analyzer.create_stmt(
+                        sir::VarStmt{
+                            .ast_node = nullptr,
+                            .local{
+                                .name = try_stmt.except_branch->ident,
+                                .type = nullptr,
+                            },
+                            .value = sir::create_call(*analyzer.cur_sir_mod, *unwrap_error_func, {result_ref_expr}),
+                        }
+                    ),
                     analyzer.create_stmt(try_stmt.except_branch->block),
                 },
-                .symbol_table = analyzer.create_symbol_table(sir::SymbolTable{
-                    .parent = wrapper_block.symbol_table,
-                    .symbols = {},
-                }),
+                .symbol_table = analyzer.create_symbol_table(
+                    sir::SymbolTable{
+                        .parent = wrapper_block.symbol_table,
+                        .symbols = {},
+                    }
+                ),
             };
 
             try_stmt.except_branch->block.symbol_table->parent = except_block.symbol_table;
@@ -303,12 +329,14 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
 }
 
 void StmtAnalyzer::analyze_while_stmt(sir::WhileStmt &while_stmt, sir::Stmt &out_stmt) {
-    sir::LoopStmt *loop_stmt = analyzer.create_stmt(sir::LoopStmt{
-        .ast_node = nullptr,
-        .condition = while_stmt.condition,
-        .block = std::move(while_stmt.block),
-        .latch = {},
-    });
+    sir::LoopStmt *loop_stmt = analyzer.create_stmt(
+        sir::LoopStmt{
+            .ast_node = nullptr,
+            .condition = while_stmt.condition,
+            .block = std::move(while_stmt.block),
+            .latch = {},
+        }
+    );
 
     analyze_loop_stmt(*loop_stmt);
     out_stmt = loop_stmt;
@@ -375,36 +403,44 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 
     ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
 
-    sir::Block *block = analyzer.create_stmt(sir::Block{
-        .ast_node = nullptr,
-        .stmts = {},
-        .symbol_table = analyzer.create_symbol_table({
-            .parent = &analyzer.get_symbol_table(),
-            .symbols = {},
-        }),
-    });
+    sir::Block *block = analyzer.create_stmt(
+        sir::Block{
+            .ast_node = nullptr,
+            .stmts = {},
+            .symbol_table = analyzer.create_symbol_table({
+                .parent = &analyzer.get_symbol_table(),
+                .symbols = {},
+            }),
+        }
+    );
 
-    sir::VarStmt *var_stmt = analyzer.create_stmt(sir::VarStmt{
-        .ast_node = nullptr,
-        .local{
-            .name = for_stmt.ident,
-            .type = range.lhs.get_type(),
-        },
-        .value = range.lhs,
-    });
+    sir::VarStmt *var_stmt = analyzer.create_stmt(
+        sir::VarStmt{
+            .ast_node = nullptr,
+            .local{
+                .name = for_stmt.ident,
+                .type = range.lhs.get_type(),
+            },
+            .value = range.lhs,
+        }
+    );
 
-    sir::IdentExpr *var_ref_expr = analyzer.create_expr(sir::IdentExpr{
-        .ast_node = nullptr,
-        .value = for_stmt.ident.value,
-    });
+    sir::IdentExpr *var_ref_expr = analyzer.create_expr(
+        sir::IdentExpr{
+            .ast_node = nullptr,
+            .value = for_stmt.ident.value,
+        }
+    );
 
-    sir::BinaryExpr *loop_condition = analyzer.create_expr(sir::BinaryExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .op = sir::BinaryOp::LT,
-        .lhs = var_ref_expr,
-        .rhs = range.rhs,
-    });
+    sir::BinaryExpr *loop_condition = analyzer.create_expr(
+        sir::BinaryExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .op = sir::BinaryOp::LT,
+            .lhs = var_ref_expr,
+            .rhs = range.rhs,
+        }
+    );
 
     sir::Block loop_block{
         .ast_node = for_stmt.block.ast_node,
@@ -414,21 +450,27 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 
     loop_block.symbol_table->parent = block->symbol_table;
 
-    sir::AssignStmt *inc_stmt = analyzer.create_stmt(sir::AssignStmt{
-        .ast_node = nullptr,
-        .lhs = var_ref_expr,
-        .rhs = analyzer.create_expr(sir::BinaryExpr{
+    sir::AssignStmt *inc_stmt = analyzer.create_stmt(
+        sir::AssignStmt{
             .ast_node = nullptr,
-            .type = nullptr,
-            .op = sir::BinaryOp::ADD,
             .lhs = var_ref_expr,
-            .rhs = analyzer.create_expr(sir::IntLiteral{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .value = 1,
-            }),
-        }),
-    });
+            .rhs = analyzer.create_expr(
+                sir::BinaryExpr{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .op = sir::BinaryOp::ADD,
+                    .lhs = var_ref_expr,
+                    .rhs = analyzer.create_expr(
+                        sir::IntLiteral{
+                            .ast_node = nullptr,
+                            .type = nullptr,
+                            .value = 1,
+                        }
+                    ),
+                }
+            ),
+        }
+    );
 
     sir::Block loop_latch{
         .ast_node = nullptr,
@@ -439,12 +481,14 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
         }),
     };
 
-    sir::LoopStmt *loop_stmt = analyzer.create_stmt(sir::LoopStmt{
-        .ast_node = nullptr,
-        .condition = loop_condition,
-        .block = loop_block,
-        .latch = loop_latch,
-    });
+    sir::LoopStmt *loop_stmt = analyzer.create_stmt(
+        sir::LoopStmt{
+            .ast_node = nullptr,
+            .condition = loop_condition,
+            .block = loop_block,
+            .latch = loop_latch,
+        }
+    );
 
     block->stmts = {var_stmt, loop_stmt};
     block->symbol_table->insert_local(var_stmt->local.name.value, &var_stmt->local);
@@ -490,69 +534,87 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     // FIXME: error if it's not a method
     sir::FuncDef &next_func_def = next_symbol.as<sir::FuncDef>();
 
-    sir::Block *block = analyzer.create_stmt(sir::Block{
-        .ast_node = nullptr,
-        .stmts = {},
-        .symbol_table = analyzer.create_symbol_table({
-            .parent = &analyzer.get_symbol_table(),
-            .symbols = {},
-        }),
-    });
+    sir::Block *block = analyzer.create_stmt(
+        sir::Block{
+            .ast_node = nullptr,
+            .stmts = {},
+            .symbol_table = analyzer.create_symbol_table({
+                .parent = &analyzer.get_symbol_table(),
+                .symbols = {},
+            }),
+        }
+    );
 
-    sir::VarStmt *iter_var_stmt = analyzer.create_stmt(sir::VarStmt{
-        .ast_node = nullptr,
-        .local{
-            .name = create_ident(".iter"),
-            .type = nullptr,
-        },
-        .value = create_method_call(for_stmt.range, iter_func_def),
-    });
+    sir::VarStmt *iter_var_stmt = analyzer.create_stmt(
+        sir::VarStmt{
+            .ast_node = nullptr,
+            .local{
+                .name = create_ident(".iter"),
+                .type = nullptr,
+            },
+            .value = create_method_call(for_stmt.range, iter_func_def),
+        }
+    );
 
-    sir::SymbolExpr *iter_ref_expr = analyzer.create_expr(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = iter_func_def.type.return_type,
-        .symbol = &iter_var_stmt->local,
-    });
+    sir::SymbolExpr *iter_ref_expr = analyzer.create_expr(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = iter_func_def.type.return_type,
+            .symbol = &iter_var_stmt->local,
+        }
+    );
 
-    sir::VarStmt *next_var_stmt = analyzer.create_stmt(sir::VarStmt{
-        .ast_node = nullptr,
-        .local{
-            .name = create_ident(".next"),
-            .type = nullptr,
-        },
-        .value = create_method_call(iter_ref_expr, next_func_def),
-    });
+    sir::VarStmt *next_var_stmt = analyzer.create_stmt(
+        sir::VarStmt{
+            .ast_node = nullptr,
+            .local{
+                .name = create_ident(".next"),
+                .type = nullptr,
+            },
+            .value = create_method_call(iter_ref_expr, next_func_def),
+        }
+    );
 
-    sir::SymbolExpr *next_ref_expr = analyzer.create_expr(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = next_func_def.type.return_type,
-        .symbol = &next_var_stmt->local,
-    });
+    sir::SymbolExpr *next_ref_expr = analyzer.create_expr(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = next_func_def.type.return_type,
+            .symbol = &next_var_stmt->local,
+        }
+    );
 
-    sir::DotExpr *loop_condition = analyzer.create_expr(sir::DotExpr{
-        .ast_node = nullptr,
-        .lhs = next_ref_expr,
-        .rhs = create_ident("has_value"),
-    });
-
-    sir::Block *inner_loop_block = analyzer.create_stmt(sir::Block{
-        .ast_node = for_stmt.block.ast_node,
-        .stmts = std::move(for_stmt.block.stmts),
-        .symbol_table = for_stmt.block.symbol_table,
-    });
-
-    sir::VarStmt *value_var_stmt = analyzer.create_stmt(sir::VarStmt{
-        .ast_node = nullptr,
-        .local{
-            .name = for_stmt.ident,
-            .type = nullptr,
-        },
-        .value = analyzer.create_expr(sir::DotExpr{
+    sir::DotExpr *loop_condition = analyzer.create_expr(
+        sir::DotExpr{
             .ast_node = nullptr,
             .lhs = next_ref_expr,
-            .rhs = create_ident("value"),
-        }),
-    });
+            .rhs = create_ident("has_value"),
+        }
+    );
+
+    sir::Block *inner_loop_block = analyzer.create_stmt(
+        sir::Block{
+            .ast_node = for_stmt.block.ast_node,
+            .stmts = std::move(for_stmt.block.stmts),
+            .symbol_table = for_stmt.block.symbol_table,
+        }
+    );
+
+    sir::VarStmt *value_var_stmt = analyzer.create_stmt(
+        sir::VarStmt{
+            .ast_node = nullptr,
+            .local{
+                .name = for_stmt.ident,
+                .type = nullptr,
+            },
+            .value = analyzer.create_expr(
+                sir::DotExpr{
+                    .ast_node = nullptr,
+                    .lhs = next_ref_expr,
+                    .rhs = create_ident("value"),
+                }
+            ),
+        }
+    );
 
     sir::Block outer_loop_block{
         .ast_node = nullptr,
@@ -565,11 +627,13 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
 
     inner_loop_block->symbol_table->parent = outer_loop_block.symbol_table;
 
-    sir::AssignStmt *latch_next_stmt = analyzer.create_stmt(sir::AssignStmt{
-        .ast_node = nullptr,
-        .lhs = next_ref_expr,
-        .rhs = create_method_call(iter_ref_expr, next_func_def),
-    });
+    sir::AssignStmt *latch_next_stmt = analyzer.create_stmt(
+        sir::AssignStmt{
+            .ast_node = nullptr,
+            .lhs = next_ref_expr,
+            .rhs = create_method_call(iter_ref_expr, next_func_def),
+        }
+    );
 
     sir::Block loop_latch{
         .ast_node = nullptr,
@@ -580,12 +644,14 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         }),
     };
 
-    sir::LoopStmt *loop_stmt = analyzer.create_stmt(sir::LoopStmt{
-        .ast_node = nullptr,
-        .condition = loop_condition,
-        .block = outer_loop_block,
-        .latch = loop_latch,
-    });
+    sir::LoopStmt *loop_stmt = analyzer.create_stmt(
+        sir::LoopStmt{
+            .ast_node = nullptr,
+            .condition = loop_condition,
+            .block = outer_loop_block,
+            .latch = loop_latch,
+        }
+    );
 
     block->stmts = {iter_var_stmt, next_var_stmt, loop_stmt};
 
@@ -594,23 +660,29 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
 }
 
 sir::Expr StmtAnalyzer::create_method_call(sir::Expr self, sir::FuncDef &method) {
-    return analyzer.create_expr(sir::CallExpr{
-        .ast_node = nullptr,
-        .callee = analyzer.create_expr(sir::DotExpr{
+    return analyzer.create_expr(
+        sir::CallExpr{
             .ast_node = nullptr,
-            .lhs = self,
-            .rhs = method.ident,
-        }),
-        .args = {},
-    });
+            .callee = analyzer.create_expr(
+                sir::DotExpr{
+                    .ast_node = nullptr,
+                    .lhs = self,
+                    .rhs = method.ident,
+                }
+            ),
+            .args = {},
+        }
+    );
 }
 
 sir::Expr StmtAnalyzer::create_expr(sir::FuncDef &func_def) {
-    return analyzer.create_expr(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = &func_def.type,
-        .symbol = &func_def,
-    });
+    return analyzer.create_expr(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = &func_def.type,
+            .symbol = &func_def,
+        }
+    );
 }
 
 sir::Ident StmtAnalyzer::create_ident(std::string value) {
