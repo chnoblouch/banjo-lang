@@ -1,10 +1,13 @@
 #include "macho_emitter.hpp"
 
+#include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/macho/macho_builder.hpp"
 #include "banjo/emit/macho/macho_format.hpp"
+#include "banjo/target/aarch64/aarch64_encoder.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cstdint>
+#include <utility>
 #include <variant>
 
 namespace banjo {
@@ -14,7 +17,8 @@ void MachOEmitter::generate() {
     markers.clear();
     marker_index = 0;
 
-    MachOFile file = MachOBuilder().build();
+    BinModule bin_mod = target::AArch64Encoder().encode(module);
+    MachOFile file = MachOBuilder().build(std::move(bin_mod));
     emit_file(file);
 }
 
@@ -81,20 +85,20 @@ void MachOEmitter::emit_segment_header(const MachOSegment &segment) {
     for (const MachOSection &section : segment.sections) {
         emit_name_padded(section.name);         // section name
         emit_name_padded(section.segment_name); // segment name
-        
+
         // TODO: I'm not sure how this address is usually calculated, but does
         // it even matter since the linker throws it away anyway?
-        emit_u64(total_size);                   // address in memory
-        
-        emit_u64(section.data.size());          // size in memory
-        emit_placeholder_u32();                 // offset in file (placeholder)
-        emit_u32(0);                            // alignment
-        emit_u32(0);                            // offset in file of relocation entries
-        emit_u32(0);                            // number of relocation entries
-        emit_u32(section.flags);                // flags
-        emit_u32(0);                            // reserved 1
-        emit_u32(0);                            // reserved 2
-        emit_u32(0);                            // reserved 3
+        emit_u64(total_size); // address in memory
+
+        emit_u64(section.data.size()); // size in memory
+        emit_placeholder_u32();        // offset in file (placeholder)
+        emit_u32(0);                   // alignment
+        emit_u32(0);                   // offset in file of relocation entries
+        emit_u32(0);                   // number of relocation entries
+        emit_u32(section.flags);       // flags
+        emit_u32(0);                   // reserved 1
+        emit_u32(0);                   // reserved 2
+        emit_u32(0);                   // reserved 3
 
         total_size += section.data.size();
     }

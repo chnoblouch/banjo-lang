@@ -114,6 +114,7 @@ add_library(banjo STATIC
     target/target_description.cpp
     target/target.cpp
     target/aarch64/aapcs_calling_conv.cpp
+    target/aarch64/aarch64_encoder.cpp
     target/aarch64/aarch64_encoding_info.cpp
     target/aarch64/aarch64_immediate.cpp
     target/aarch64/aarch64_instr_merge_pass.cpp
