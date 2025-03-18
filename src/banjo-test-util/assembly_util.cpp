@@ -57,7 +57,7 @@ std::optional<mcode::Instruction> AssemblyUtil::parse_line() {
 mcode::Opcode AssemblyUtil::parse_opcode() {
     std::string string;
 
-    while (!is_whitespace()) {
+    while (!is_whitespace(line[char_index])) {
         string += line[char_index];
         char_index += 1;
     }
@@ -69,23 +69,54 @@ mcode::Opcode AssemblyUtil::parse_opcode() {
 mcode::Operand AssemblyUtil::parse_operand() {
     std::string string;
 
-    while (!is_whitespace() && line[char_index] != ',') {
+    while (line[char_index] != '\0') {
         string += line[char_index];
         char_index += 1;
+
+        if (line[char_index] == ',') {
+            char_index += 1;
+            break;
+        }
     }
 
-    skip_whitespace();
+    unsigned trimmed_start = 0;
+    unsigned trimmed_end = 0;
 
-    if (line[char_index] == ',') {
-        char_index += 1;
+    for (int i = 0; i < string.size(); i++) {
+        if (!is_whitespace(string[i])) {
+            trimmed_start = i;
+            break;
+        }
     }
 
-    skip_whitespace();
+    for (int i = string.size() - 1; i >= 0; i--) {
+        if (!is_whitespace(string[i])) {
+            trimmed_end = i;
+            break;
+        }
+    }
+
+    string = string.substr(trimmed_start, trimmed_end - trimmed_start + 1);
 
     if (string[0] == 'w') {
         unsigned n = std::stoul(string.substr(1));
         mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
         return mcode::Operand::from_register(mcode::Register::from_physical(m_reg), 4);
+    } else if (string[0] == 'x') {
+        unsigned n = std::stoul(string.substr(1));
+        mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
+        return mcode::Operand::from_register(mcode::Register::from_physical(m_reg), 8);
+    } else if ((string[0] >= '0' && string[0] <= '9') || string[0] == '-') {
+        return mcode::Operand::from_int_immediate(LargeInt(string));
+    } else if (string.starts_with("lsl")) {
+        unsigned shift_start = 0;
+
+        while (!(string[shift_start] >= '0' && string[shift_start] <= '9')) {
+            shift_start += 1;
+        }
+
+        std::string shift_string = string.substr(shift_start);
+        return mcode::Operand::from_aarch64_left_shift(std::stoul(shift_string));
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -111,8 +142,7 @@ void AssemblyUtil::skip_whitespace() {
     }
 }
 
-bool AssemblyUtil::is_whitespace() {
-    char c = line[char_index];
+bool AssemblyUtil::is_whitespace(char c) {
     return c == ' ' || c == '\t' || c == '\0';
 }
 

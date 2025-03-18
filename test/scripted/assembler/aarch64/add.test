@@ -2,3 +2,28 @@
 # test:encoding "C501160B"
 
 add w5, w14, w22
+
+# test:subtest
+# test:encoding "C501168B"
+
+add x5, x14, x22
+
+# test:subtest
+# test:encoding "A2910111"
+
+add w2, w13, 100
+
+# test:subtest
+# test:encoding "A2495311"
+
+add w2, w13, 1234, lsl 12
+
+# test:subtest
+# test:encoding "A2910191"
+
+add x2, x13, 100
+
+# test:subtest
+# test:encoding "A2495391"
+
+add x2, x13, 1234, lsl 12

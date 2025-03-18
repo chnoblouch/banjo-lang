@@ -27,7 +27,7 @@ private:
     mcode::Opcode convert_opcode(const std::string &string);
     void skip_whitespace();
 
-    bool is_whitespace();
+    bool is_whitespace(char c);
 };
 
 } // namespace test

@@ -2,6 +2,8 @@
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <cstdint>
 
@@ -42,15 +44,33 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_add(mcode::Instruction &instr) {
     WriteBuffer &buf = bin_mod.text;
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
 
-    if (!instr.get_operand(1).is_register() || !instr.get_operand(2).is_register()) {
-        return;
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_reg(m_lhs.get_physical_reg());
+
+    if (m_rhs.is_register()) {
+        std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
+        buf.write_u32(0x0B000000 | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+    } else if (m_rhs.is_int_immediate()) {
+        bool shifted = false;
+
+        if (instr.get_operands().get_size() == 4) {
+            mcode::Operand &m_shift = instr.get_operand(3);
+            unsigned shift = m_shift.get_aarch64_left_shift();
+            ASSERT(shift == 0 || shift == 12);
+            shifted = shift == 12;
+        }
+
+        std::uint32_t imm = m_rhs.get_int_immediate().to_bits();
+        ASSERT(imm <= 0xFFF);
+        buf.write_u32(0x11000000 | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
+    } else {
+        ASSERT_UNREACHABLE;
     }
-
-    std::uint32_t r_dst = instr.get_operand(0).get_physical_reg();
-    std::uint32_t r_lhs = instr.get_operand(1).get_physical_reg();
-    std::uint32_t r_rhs = instr.get_operand(2).get_physical_reg();
-    buf.write_u32(0x0B000000 | (r_rhs << 16) | (r_lhs << 5) | r_dst);
 }
 
 void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {
@@ -58,6 +78,18 @@ void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {
 
     std::uint32_t r_target = 30;
     buf.write_u32(0xD65F0000 | (r_target << 5));
+}
+
+std::uint32_t AArch64Encoder::encode_reg(mcode::PhysicalReg reg) {
+    if (reg >= AArch64Register::R0 && reg <= AArch64Register::R30) {
+        return reg;
+    } else if (reg >= AArch64Register::V0 && reg <= AArch64Register::V30) {
+        return reg - AArch64Register::V0;
+    } else if (reg == AArch64Register::SP) {
+        return 31;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 } // namespace target

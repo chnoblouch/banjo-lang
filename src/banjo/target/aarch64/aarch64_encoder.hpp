@@ -21,6 +21,8 @@ private:
 
     void encode_add(mcode::Instruction &instr);
     void encode_ret(mcode::Instruction &instr);
+
+    std::uint32_t encode_reg(mcode::PhysicalReg reg);
 };
 
 } // namespace target
