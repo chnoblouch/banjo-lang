@@ -20,7 +20,7 @@ private:
     std::size_t size;
 
 public:
-    FixedVector() : elements(nullptr), size(0) {}
+    FixedVector() : elements(new T[Capacity]), size(0) {}
 
     FixedVector(std::initializer_list<T> elements) : elements(new T[Capacity]), size(0) {
         for (const T &element : elements) {

@@ -3,6 +3,7 @@ import argparse
 import os
 import fnmatch
 import sys
+import platform
 from pathlib import Path
 
 
@@ -34,20 +35,6 @@ class TestResult:
         self.actual = actual
 
 
-def run_process(command):
-    def decode_stream(stream, default):
-        try:
-            return stream.decode("utf-8").strip()
-        except UnicodeDecodeError:
-            return default
-
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = decode_stream(result.stdout, "<<no output>>")
-    err = decode_stream(result.stderr, "<<no error>>")
-
-    return ProcessResult(out, err, result.returncode)
-
-
 def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
     global install_dir
 
@@ -66,7 +53,7 @@ def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
             if file_path.suffix != file_name_extension:
                 continue
             
-            tests.extend(load_test_file(f"{sub_directory}.{file_path.stem}", file_path))
+            tests.extend(load_test_file(f"{sub_directory.stem}.{file_path.stem}", file_path))
 
     tests = [test for test in tests if test.name not in skipped_tests]
     tests = [test for test in tests if fnmatch.fnmatch(test.name, args.pattern)]
@@ -195,3 +182,26 @@ def parse_condition(line):
         skip_whitespace()
 
     return name, tuple(args)
+
+
+def run_process(command):
+    def decode_stream(stream, default):
+        try:
+            return stream.decode("utf-8").strip()
+        except UnicodeDecodeError:
+            return default
+
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = decode_stream(result.stdout, "<<no output>>")
+    err = decode_stream(result.stderr, "<<no error>>")
+
+    return ProcessResult(out, err, result.returncode)
+
+
+def find_executable(name):
+    path = name if install_dir is None else f"{install_dir}/bin/{name}"
+    
+    if platform.system() == "Windows":
+        path = path + ".exe"
+    
+    return path

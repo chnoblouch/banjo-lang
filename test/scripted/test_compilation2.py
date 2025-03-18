@@ -2,7 +2,7 @@ import os
 import subprocess
 import platform
 
-from framework import ProcessResult, TestResult, run_process, run_tests, install_dir
+from framework import ProcessResult, TestResult, run_process, run_tests, find_executable
 
 
 SKIPPED_TESTS = [
@@ -123,14 +123,11 @@ def compile_source(test):
     with open("tmp.bnj", "w") as f:
         f.write(test.source)
 
-    if install_dir is None:
-        compiler_executable = "banjo-compiler"
-    else:
-        compiler_executable = f"{install_dir}/bin/banjo-compiler"
+    compiler_path = find_executable("banjo-compiler")
 
     if is_windows:
         result = run_process([
-            f"{compiler_executable}.exe",
+            compiler_path,
             "--type", "executable",
             "--arch", "x86_64",
             "--os", "windows",
@@ -141,7 +138,7 @@ def compile_source(test):
         ])
     elif is_linux:
         result = run_process([
-            compiler_executable,
+            compiler_path,
             "--type", "executable",
             "--arch", "x86_64",
             "--os", "linux",
@@ -152,7 +149,7 @@ def compile_source(test):
         ])
     elif is_macos:
         result = run_process([
-            compiler_executable,
+            compiler_path,
             "--type", "executable",
             "--arch", "aarch64",
             "--os", "macos",

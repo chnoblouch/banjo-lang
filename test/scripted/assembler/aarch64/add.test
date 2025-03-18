@@ -1,0 +1,4 @@
+# test:subtest
+# test:encoding "C501160B"
+
+add w5, w14, w22

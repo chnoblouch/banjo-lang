@@ -4,6 +4,7 @@ add_subdirectory(banjo)
 add_subdirectory(banjo-compiler)
 add_subdirectory(banjo-lsp)
 add_subdirectory(banjo-format)
+add_subdirectory(banjo-test-util)
 add_subdirectory(cli)
 
 if(BUILD_HOT_RELOADER)
