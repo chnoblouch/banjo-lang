@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "41021B4B"
+
+sub w1, w18, w27
+
+# test:subtest
+# test:encoding "41021BCB"
+
+sub x1, x18, x27
+
+# test:subtest
+# test:encoding "47910151"
+
+sub w7, w10, 100
+
+# test:subtest
+# test:encoding "47495351"
+
+sub w7, w10, 1234, lsl 12
+
+# test:subtest
+# test:encoding "479101D1"
+
+sub x7, x10, 100
+
+# test:subtest
+# test:encoding "474953D1"
+
+sub x7, x10, 1234, lsl 12

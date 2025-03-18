@@ -124,6 +124,7 @@ mcode::Operand AssemblyUtil::parse_operand() {
 
 mcode::Opcode AssemblyUtil::convert_opcode(const std::string &string) {
     if (string == "add") return target::AArch64Opcode::ADD;
+    else if (string == "sub") return target::AArch64Opcode::SUB;
     else if (string == "ret") return target::AArch64Opcode::RET;
     else ASSERT_UNREACHABLE;
 }

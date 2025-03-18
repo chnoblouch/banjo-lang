@@ -38,11 +38,27 @@ void AArch64Encoder::encode_func(mcode::Function &func) {
 void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
         case AArch64Opcode::ADD: encode_add(instr); break;
+        case AArch64Opcode::SUB: encode_sub(instr); break;
         case AArch64Opcode::RET: encode_ret(instr); break;
     }
 }
 
 void AArch64Encoder::encode_add(mcode::Instruction &instr) {
+    encode_add_family(instr, {0x0B000000, 0x11000000});
+}
+
+void AArch64Encoder::encode_sub(mcode::Instruction &instr) {
+    encode_add_family(instr, {0x4B000000, 0x51000000});
+}
+
+void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {
+    WriteBuffer &buf = bin_mod.text;
+
+    std::uint32_t r_target = 30;
+    buf.write_u32(0xD65F0000 | (r_target << 5));
+}
+
+void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
     WriteBuffer &buf = bin_mod.text;
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
@@ -54,7 +70,7 @@ void AArch64Encoder::encode_add(mcode::Instruction &instr) {
 
     if (m_rhs.is_register()) {
         std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
-        buf.write_u32(0x0B000000 | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+        buf.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
     } else if (m_rhs.is_int_immediate()) {
         bool shifted = false;
 
@@ -67,17 +83,10 @@ void AArch64Encoder::encode_add(mcode::Instruction &instr) {
 
         std::uint32_t imm = m_rhs.get_int_immediate().to_bits();
         ASSERT(imm <= 0xFFF);
-        buf.write_u32(0x11000000 | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
+        buf.write_u32(params[1] | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
     } else {
         ASSERT_UNREACHABLE;
     }
-}
-
-void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {
-    WriteBuffer &buf = bin_mod.text;
-
-    std::uint32_t r_target = 30;
-    buf.write_u32(0xD65F0000 | (r_target << 5));
 }
 
 std::uint32_t AArch64Encoder::encode_reg(mcode::PhysicalReg reg) {
