@@ -1,12 +1,13 @@
 # Magic Methods
 
-Magic methods are struct methods with a special name. These are not supposed to be called directly by the programmer but
-rather by the compiler.
+Magic methods are struct methods with a special name. These are not supposed to be called directly
+by the programmer but rather by the compiler.
 
 ## Destructors
 
-The destructor is called when an object goes out of scope. It is commonly used to clean up resources associated with the
-object. See [Moving Values](moving.rst) for info about moving objects.
+The destructor (`__deinit__`) is called when an object goes out of scope. This can for example be
+used to automatically deallocate memory owned by the object when it is no longer needed. Adding a
+destructor to a struct turns it into a [resource](resources.md).
 
 ```banjo
 use std.memory;
@@ -26,13 +27,12 @@ struct SmartPtr {
 func main() {
     var ptr1 = SmartPtr.new(100);
 
-    var a = 10;
-    if a == 10 {
+    {
         var ptr2 = SmartPtr.new(20);
-        # Destructor of 'ptr2' is called here
+        # Destructor of 'ptr2' is called here.
     }
 
-    # Destructor of 'ptr1' is called here
+    # Destructor of 'ptr1' is called here.
 }
 ```
 
