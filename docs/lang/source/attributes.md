@@ -9,25 +9,24 @@ want to a method to consume the struct it's called on. Example:
 
 ```banjo
 struct Asset {
-    pub func open() -> Asset {
+    pub func open(path: String) -> Asset {
         # ...
     }
     
-    pub func read() -> Array[u8] {
+    pub func read(@byval self) -> Array[u8] {
         # ...
     }
 
-    pub func close(@byval self) {
+    pub func __deinit__(self) {
         # ...
     }
 }
 
 func main() {
-    var asset = Asset.open();
+    var asset = Asset.open("image.png");
     var data = asset.read();
-    asset.close();
 
-    # `asset` is consumed by `close` and can no longer be used from this point onwards.
+    # `asset` is consumed by `read` and can no longer be used from this point onwards.
 }
 ```
 
