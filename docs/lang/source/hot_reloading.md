@@ -36,7 +36,7 @@ The output should look something like this:
 (hot reloader) platform: x86_64-windows
 (hot reloader) executable loaded
 (hot reloader) found address table in target process
-(hot reloader) address table layout loaded (19 symbols)
+(hot reloader) address table layout loaded (25 symbols)
 (hot reloader) watching directory 'C:\dev\banjo\projects\testing\src'
 Hello, World!
 Hello, World!
@@ -57,13 +57,12 @@ The hot reloader detects this edit and the output of the program changes:
 ...
 Hello, World!
 Hello, World!
-(hot reloader) file 'main.bnj' has changed
-(hot reloader) updated function 'func.main.print_something$'
-(hot reloader) updated function 'main'
+(hot reloader) reloading file 'src\main.bnj'...
+(hot reloader) updated function 'main.print_something'
 Hello, Hot Reloader!
 Hello, Hot Reloader!
 ```
 
-Keep in mind that the changes are only visible when the function is called again. Changing `main` for example
-would appear to have no effect because this function is only called once and then enters a loop. It is also
-not possible to update data structures.
+Keep in mind that the changes are only visible when the function is called again. Changing `main`
+for example would appear to have no effect because this function is only called once and then enters
+a loop. It is also not possible to update data structures.
