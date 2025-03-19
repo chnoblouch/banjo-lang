@@ -47,7 +47,6 @@ The compiler is written completely from scratch and emits either object files or
 - `x86_64-windows-msvc`: 64-bit Windows using MSVC (Microsoft Visual C++) libraries
 - `x86_64-windows-gnu`: 64-bit Windows using MinGW (GNU) libraries
 - `x86_64-linux-gnu`: x86-64/AMD64 Linux using GNU libraries 
-- `x86_64-macos`: Intel macOS
 - `aarch64-linux-gnu`: AArch64/ARM64 Linux using GNU libraries
 - `aarch64-macos`: Apple Silicon macOS
 
@@ -95,8 +94,8 @@ The hot reloader is a tool that watches source files for changes, recompiles the
         - `ssa`: SSA intermediate representation
         - `ssa_gen`: SSA IR generator
         - `target`: Backends for the different target architectures
-            - `aarch64`: AArch64/arm64 backend
-            - `x86_64`: x86-64/amd64 backend
+            - `aarch64`: AArch64/ARM64 backend
+            - `x86_64`: x86-64/AMD64 backend
         - `utils`: Utility functions and classes
     - `banjo-compiler`: The compiler
     - `banjo-lsp`: The language server
