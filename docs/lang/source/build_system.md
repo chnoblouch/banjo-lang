@@ -104,3 +104,17 @@ The stored toolchains can be listed using the `toolchain list` command:
 ```sh
 banjo toolchain list
 ```
+
+### Packages
+
+There are some pre-built packages available that bind to native libraries. These can be
+automatically downloaded by adding them to the `packages` list of `banjo.json`. Here's the current
+list of available packages:
+
+| Name      | Description                                                                                  | Platforms             |
+| --------- | -------------------------------------------------------------------------------------------- | --------------------- |
+| `windows` | Bindings to pretty much the entire [Windows API](https://github.com/microsoft/win32metadata) | Windows               |
+| `glfw`    | Bindings to [GLFW](https://www.glfw.org/)                                                    | Windows, Linux, macOS |
+| `vulkan`  | Bindings to [Vulkan](https://en.wikipedia.org/wiki/Vulkan)                                   | Windows, Linux        |
+| `webgpu`  | Bindings to [`wgpu-native`](https://github.com/gfx-rs/wgpu-native)                           | Windows, Linux, macOS |
+| `stbi`    | Bindings to [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h)           | Windows, Linux, macOS |
