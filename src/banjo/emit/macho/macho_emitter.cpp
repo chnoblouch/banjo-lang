@@ -4,6 +4,7 @@
 #include "banjo/emit/macho/macho_builder.hpp"
 #include "banjo/emit/macho/macho_format.hpp"
 #include "banjo/target/aarch64/aarch64_encoder.hpp"
+#include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cstdint>
@@ -90,15 +91,15 @@ void MachOEmitter::emit_segment_header(const MachOSegment &segment) {
         // it even matter since the linker throws it away anyway?
         emit_u64(total_size); // address in memory
 
-        emit_u64(section.data.size()); // size in memory
-        emit_placeholder_u32();        // offset in file (placeholder)
-        emit_u32(0);                   // alignment
-        emit_u32(0);                   // offset in file of relocation entries
-        emit_u32(0);                   // number of relocation entries
-        emit_u32(section.flags);       // flags
-        emit_u32(0);                   // reserved 1
-        emit_u32(0);                   // reserved 2
-        emit_u32(0);                   // reserved 3
+        emit_u64(section.data.size());        // size in memory
+        emit_placeholder_u32();               // offset in file (placeholder)
+        emit_u32(0);                          // alignment
+        emit_placeholder_u32();               // offset in file of relocation entries (placeholder)
+        emit_u32(section.relocations.size()); // number of relocation entries
+        emit_u32(section.flags);              // flags
+        emit_u32(0);                          // reserved 1
+        emit_u32(0);                          // reserved 2
+        emit_u32(0);                          // reserved 3
 
         total_size += section.data.size();
     }
@@ -154,8 +155,21 @@ void MachOEmitter::emit_segment_data(const MachOSegment &segment) {
     patch_u64(consume_marker(), tell());
 
     for (const MachOSection &section : segment.sections) {
-        patch_u64(consume_marker(), tell());
+        patch_u32(consume_marker(), tell());
         stream.write((char *)section.data.data(), section.data.size());
+
+        patch_u32(consume_marker(), tell());
+
+        for (const MachORelocation &relocation : section.relocations) {
+            emit_i32(relocation.address);
+
+            std::uint32_t value_bits = relocation.value;
+            std::uint32_t pc_rel_bits = relocation.pc_rel << 24;
+            std::uint32_t length_bits = (BitOperations::get_first_bit_set(relocation.length)) << 25;
+            std::uint32_t external_bits = relocation.external << 27;
+            std::uint32_t type_bits = relocation.type << 28;
+            emit_u32(value_bits | pc_rel_bits | length_bits | external_bits | type_bits);
+        }
     }
 }
 

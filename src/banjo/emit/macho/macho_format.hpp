@@ -2,9 +2,9 @@
 #define BANJO_EMIT_MACHO_MACHO_FORMAT_H
 
 #include <cstdint>
+#include <string>
 #include <variant>
 #include <vector>
-#include <string>
 
 namespace banjo {
 
@@ -15,10 +15,31 @@ enum : std::uint32_t {
 };
 }
 
+namespace MachORelocationType {
+enum : std::uint8_t {
+    ARM64_UNSIGNED = 0,
+    ARM64_BRANCH26 = 2,
+    ARM64_PAGE21 = 3,
+    ARM64_PAGEOFF12 = 4,
+    ARM64_GOT_LOAD_PAGE21 = 5,
+    ARM64_GOT_LOAD_PAGEOFF12 = 6,
+};
+}
+
+struct MachORelocation {
+    std::int32_t address;
+    std::uint32_t value;
+    bool pc_rel;
+    std::uint8_t length;
+    bool external;
+    std::uint8_t type;
+};
+
 struct MachOSection {
     std::string name;
     std::string segment_name;
     std::vector<std::uint8_t> data;
+    std::vector<MachORelocation> relocations;
     std::uint32_t flags;
 };
 
