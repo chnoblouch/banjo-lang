@@ -11,10 +11,23 @@ namespace banjo {
 namespace target {
 
 BinModule AArch64Encoder::encode(mcode::Module &m_mod) {
+    for (const std::string &external_symbol : m_mod.get_external_symbols()) {
+        symbol_indices.insert({external_symbol, bin_mod.symbol_defs.size()});
+
+        bin_mod.symbol_defs.push_back(
+            BinSymbolDef{
+                .name = "_" + external_symbol,
+                .kind = BinSymbolKind::UNKNOWN,
+                .offset = 0,
+                .global = true,
+            }
+        );
+    }
+
     for (mcode::Function *func : m_mod.get_functions()) {
         bin_mod.symbol_defs.push_back(
             BinSymbolDef{
-                .name = func->get_name(),
+                .name = "_" + func->get_name(),
                 .kind = BinSymbolKind::TEXT_FUNC,
                 .offset = static_cast<std::uint32_t>(bin_mod.text.get_size()),
                 .global = true,
@@ -39,6 +52,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
         case AArch64Opcode::ADD: encode_add(instr); break;
         case AArch64Opcode::SUB: encode_sub(instr); break;
+        case AArch64Opcode::BL: encode_bl(instr); break;
         case AArch64Opcode::RET: encode_ret(instr); break;
     }
 }
@@ -49,6 +63,23 @@ void AArch64Encoder::encode_add(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_sub(mcode::Instruction &instr) {
     encode_add_family(instr, {0x4B000000, 0x51000000});
+}
+
+void AArch64Encoder::encode_bl(mcode::Instruction &instr) {
+    WriteBuffer &buf = bin_mod.text;
+    mcode::Operand &m_callee = instr.get_operand(0);
+
+    bin_mod.symbol_uses.push_back(
+        BinSymbolUse{
+            .address = static_cast<std::uint32_t>(buf.get_size()),
+            .addend = 0,
+            .symbol_index = symbol_indices[m_callee.get_symbol().name],
+            .kind = BinSymbolUseKind::BRANCH26,
+            .section = BinSectionKind::TEXT,
+        }
+    );
+
+    buf.write_u32(0x94000000);
 }
 
 void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {

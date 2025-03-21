@@ -29,6 +29,13 @@ enum class BinSymbolUseKind {
     REL32,
     GOTPCREL32,
     PLT32,
+
+    // Relocations for AArch64 Mach-O
+    BRANCH26,
+    PAGE21,
+    PAGEOFF12,
+    GOT_LOAD_PAGE21,
+    GOT_LOAD_PAGEOFF12,
 };
 
 enum class BinSectionKind {

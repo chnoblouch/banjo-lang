@@ -59,8 +59,16 @@ struct MachOSegment {
     std::vector<MachOSection> sections;
 };
 
+namespace MachOSymbolType {
+enum : std::uint8_t {
+    UNDEFINED = 0x00,
+    SECTION = 0x0E,
+};
+};
+
 struct MachOSymbol {
     std::string name;
+    std::uint8_t type;
     bool external;
     std::uint8_t section_number;
     std::uint64_t value;

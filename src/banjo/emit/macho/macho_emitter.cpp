@@ -179,11 +179,11 @@ void MachOEmitter::emit_symtab_data(const MachOSymtabCommand &command) {
     std::size_t string_table_index = 1;
 
     for (const MachOSymbol &symbol : command.symbols) {
-        emit_u32(string_table_index);    // index of the name in the string table
-        emit_u8(0x0E | symbol.external); // type
-        emit_u8(symbol.section_number);  // section number
-        emit_u16(0);                     // stab description
-        emit_u64(symbol.value);          // value
+        emit_u32(string_table_index);           // index of the name in the string table
+        emit_u8(symbol.type | symbol.external); // type
+        emit_u8(symbol.section_number);         // section number
+        emit_u16(0);                            // stab description
+        emit_u64(symbol.value);                 // value
 
         string_table_index += symbol.name.size() + 1;
     }
