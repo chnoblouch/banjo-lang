@@ -8,13 +8,6 @@
 
 namespace banjo {
 
-namespace MachOSectionFlags {
-enum : std::uint32_t {
-    SOME_INSTRUCTIONS = 0x00000400,
-    PURE_INSTRUCTIONS = 0x80000000,
-};
-}
-
 namespace MachORelocationType {
 enum : std::uint8_t {
     ARM64_UNSIGNED = 0,
@@ -35,11 +28,27 @@ struct MachORelocation {
     std::uint8_t type;
 };
 
+namespace MachOSectionType {
+enum : std::uint32_t {
+    REGULAR = 0x00,
+};
+}
+
+namespace MachOSectionFlags {
+enum : std::uint32_t {
+    SOME_INSTRUCTIONS = 0x00000400,
+    PURE_INSTRUCTIONS = 0x80000000,
+};
+}
+
 struct MachOSection {
     std::string name;
     std::string segment_name;
+    std::uint64_t address;
     std::vector<std::uint8_t> data;
+    std::uint32_t alignment;
     std::vector<MachORelocation> relocations;
+    std::uint32_t type;
     std::uint32_t flags;
 };
 

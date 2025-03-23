@@ -2,6 +2,7 @@
 #define BANJO_TARGET_AARCH64_ENCODER_H
 
 #include "banjo/emit/binary_module.hpp"
+#include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/module.hpp"
 
 #include <array>
@@ -30,6 +31,7 @@ private:
     void encode_sub(mcode::Instruction &instr);
     void encode_bl(mcode::Instruction &instr);
     void encode_ret(mcode::Instruction &instr);
+    void encode_adrp(mcode::Instruction &instr);
 
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
 

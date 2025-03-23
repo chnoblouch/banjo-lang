@@ -84,22 +84,18 @@ void MachOEmitter::emit_segment_header(const MachOSegment &segment) {
     std::uint64_t total_size = 0;
 
     for (const MachOSection &section : segment.sections) {
-        emit_name_padded(section.name);         // section name
-        emit_name_padded(section.segment_name); // segment name
-
-        // TODO: I'm not sure how this address is usually calculated, but does
-        // it even matter since the linker throws it away anyway?
-        emit_u64(total_size); // address in memory
-
-        emit_u64(section.data.size());        // size in memory
-        emit_placeholder_u32();               // offset in file (placeholder)
-        emit_u32(0);                          // alignment
-        emit_placeholder_u32();               // offset in file of relocation entries (placeholder)
-        emit_u32(section.relocations.size()); // number of relocation entries
-        emit_u32(section.flags);              // flags
-        emit_u32(0);                          // reserved 1
-        emit_u32(0);                          // reserved 2
-        emit_u32(0);                          // reserved 3
+        emit_name_padded(section.name);                                // section name
+        emit_name_padded(section.segment_name);                        // segment name
+        emit_u64(section.address);                                     // address in memory
+        emit_u64(section.data.size());                                 // size in memory
+        emit_placeholder_u32();                                        // offset in file (placeholder)
+        emit_u32(BitOperations::get_first_bit_set(section.alignment)); // alignment
+        emit_placeholder_u32();                 // offset in file of relocation entries (placeholder)
+        emit_u32(section.relocations.size());   // number of relocation entries
+        emit_u32(section.type | section.flags); // type + flags
+        emit_u32(0);                            // reserved 1
+        emit_u32(0);                            // reserved 2
+        emit_u32(0);                            // reserved 3
 
         total_size += section.data.size();
     }

@@ -24,6 +24,43 @@ BinModule AArch64Encoder::encode(mcode::Module &m_mod) {
         );
     }
 
+    for (const mcode::Global &global : m_mod.get_globals()) {
+        symbol_indices.insert({global.name, bin_mod.symbol_defs.size()});
+
+        bin_mod.symbol_defs.push_back(
+            BinSymbolDef{
+                .name = "_" + global.name,
+                .kind = BinSymbolKind::DATA_LABEL,
+                .offset = static_cast<std::uint32_t>(bin_mod.data.get_size()),
+                .global = m_mod.get_global_symbols().contains(global.name),
+            }
+        );
+
+        if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
+            switch (global.size) {
+                case 1: bin_mod.data.write_u8(value->to_bits()); break;
+                case 2: bin_mod.data.write_u16(value->to_bits()); break;
+                case 4: bin_mod.data.write_u32(value->to_bits()); break;
+                case 8: bin_mod.data.write_u64(value->to_bits()); break;
+                default: ASSERT_UNREACHABLE;
+            }
+        } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
+            switch (global.size) {
+                case 4: bin_mod.data.write_f32(*value); break;
+                case 8: bin_mod.data.write_f64(*value); break;
+                default: ASSERT_UNREACHABLE;
+            }
+        } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
+            bin_mod.data.write_data(value->data(), value->size());
+        } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
+            bin_mod.data.write_data(value->data(), value->size());
+        } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
+            bin_mod.data.write_zeroes(global.size);
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+
     for (mcode::Function *func : m_mod.get_functions()) {
         bin_mod.symbol_defs.push_back(
             BinSymbolDef{
@@ -54,6 +91,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
         case AArch64Opcode::SUB: encode_sub(instr); break;
         case AArch64Opcode::BL: encode_bl(instr); break;
         case AArch64Opcode::RET: encode_ret(instr); break;
+        case AArch64Opcode::ADRP: encode_adrp(instr); break;
     }
 }
 
@@ -89,6 +127,26 @@ void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {
     buf.write_u32(0xD65F0000 | (r_target << 5));
 }
 
+void AArch64Encoder::encode_adrp(mcode::Instruction &instr) {
+    WriteBuffer &buf = bin_mod.text;
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_symbol = instr.get_operand(1);
+
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+
+    bin_mod.symbol_uses.push_back(
+        BinSymbolUse{
+            .address = static_cast<std::uint32_t>(buf.get_size()),
+            .addend = 0,
+            .symbol_index = symbol_indices[m_symbol.get_symbol().name],
+            .kind = BinSymbolUseKind::PAGE21,
+            .section = BinSectionKind::TEXT,
+        }
+    );
+
+    buf.write_u32(0x90000000 | r_dst);
+}
+
 void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
     WriteBuffer &buf = bin_mod.text;
     mcode::Operand &m_dst = instr.get_operand(0);
@@ -115,6 +173,22 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
         std::uint32_t imm = m_rhs.get_int_immediate().to_bits();
         ASSERT(imm <= 0xFFF);
         buf.write_u32(params[1] | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
+    } else if (m_rhs.is_symbol()) {
+        // TODO: This is only allowed with `add` instructions!
+
+        ASSERT(sf == 1);
+
+        bin_mod.symbol_uses.push_back(
+            BinSymbolUse{
+                .address = static_cast<std::uint32_t>(bin_mod.text.get_size()),
+                .addend = 0,
+                .symbol_index = symbol_indices[m_rhs.get_symbol().name],
+                .kind = BinSymbolUseKind::PAGEOFF12,
+                .section = BinSectionKind::TEXT,
+            }
+        );
+
+        buf.write_u32(params[1] | (1 << 31) | (r_lhs << 5) | r_dst);
     } else {
         ASSERT_UNREACHABLE;
     }
