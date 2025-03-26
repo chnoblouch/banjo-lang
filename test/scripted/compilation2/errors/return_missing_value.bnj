@@ -1,0 +1,5 @@
+# test:error 4:5 "'return' statement without a value (expected 'i32')"
+
+func f() -> i32 {
+    return;
+}

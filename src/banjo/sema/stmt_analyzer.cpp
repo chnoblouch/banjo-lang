@@ -8,7 +8,6 @@
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
-
 namespace banjo {
 
 namespace lang {
@@ -121,10 +120,14 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 }
 
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
+    sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
+    sir::Expr return_type = func_def.type.return_type;
+
     if (return_stmt.value) {
-        sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
-        sir::Expr return_type = func_def.type.return_type;
+        // TODO: Also generate an appropriate error if the function returns `void`.
         ExprAnalyzer(analyzer).analyze_value(return_stmt.value, ExprConstraints::expect_type(return_type));
+    } else if (!return_type.is_primitive_type(sir::Primitive::VOID)) {
+        analyzer.report_generator.report_err_return_missing_value(return_stmt, return_type);
     }
 
     PointerEscapeChecker(analyzer).check_return_stmt(return_stmt);
