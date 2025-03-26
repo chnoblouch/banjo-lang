@@ -11,8 +11,8 @@ constexpr unsigned MAX_PRINTED_REPORTS = 256;
 ReportPrinter::ReportPrinter(ModuleManager &module_manager) : stream(std::cerr), module_manager(module_manager) {}
 
 void ReportPrinter::print_reports(const std::vector<Report> &reports) {
-    unsigned int num_errors = 0;
-    unsigned int num_warnings = 0;
+    unsigned num_errors = 0;
+    unsigned num_warnings = 0;
 
     unsigned num_reports_printed = 0;
 
@@ -33,15 +33,15 @@ void ReportPrinter::print_reports(const std::vector<Report> &reports) {
     }
 
     if (num_errors > 1) {
-        std::cerr << num_errors << " errors generated." << std::endl;
+        std::cerr << num_errors << " errors generated.\n";
     } else if (num_errors == 1) {
-        std::cerr << "1 error generated." << std::endl;
+        std::cerr << "1 error generated.\n";
     }
 
     if (num_warnings > 1) {
-        std::cerr << num_warnings << " warnings generated." << std::endl;
+        std::cerr << num_warnings << " warnings generated.\n";
     } else if (num_warnings == 1) {
-        std::cerr << "1 warning generated." << std::endl;
+        std::cerr << "1 warning generated.\n";
     }
 }
 
@@ -88,69 +88,127 @@ void ReportPrinter::print_message_location(const SourceLocation &location) {
     file_path.make_preferred();
     std::ifstream file(file_path, std::ios::binary);
 
-    LinePosition line_position = find_line(location, file);
-    unsigned int line_number = line_position.number;
-    unsigned int column_number = location.range.start - line_position.offset + 1;
+    LinePosition start_position = find_line(file, location.range.start);
+    LinePosition end_position = find_line(file, location.range.end);
 
-    PrintableLine printable_line = get_printable_line(location, file);
-    std::string line_prefix = std::to_string(line_position.number) + " | ";
-
+    unsigned line_number = start_position.number;
+    unsigned column_number = location.range.start - start_position.offset + 1;
     std::cerr << "at " << file_path.string() << ":" << line_number << ":" << column_number << "\n";
-    std::cerr << line_prefix << printable_line.line << '\n';
-    std::cerr << std::string(line_prefix.length() + printable_line.underline_start, ' ');
-    std::cerr << std::string(printable_line.underline_length, '~');
-    std::cerr << "\n";
+
+    if (start_position.number == end_position.number) {
+        std::string prefix = std::to_string(start_position.number);
+        file.seekg(start_position.offset, std::ios::beg);
+        print_decorated_line(file, location.range, prefix);
+    } else {
+        std::string start_prefix = std::to_string(start_position.number);
+        std::string end_prefix = std::to_string(end_position.number);
+
+        if (end_position.number > start_position.number) {
+            start_prefix = std::string(end_prefix.size() - start_prefix.size(), ' ') + start_prefix;
+        }
+
+        file.seekg(start_position.offset, std::ios::beg);
+        print_decorated_line(file, start_prefix);
+        std::cerr << "...\n\n";
+        file.seekg(end_position.offset, std::ios::beg);
+        print_decorated_line(file, end_prefix);
+    }
 }
 
-ReportPrinter::LinePosition ReportPrinter::find_line(const SourceLocation &location, std::ifstream &file) {
+ReportPrinter::LinePosition ReportPrinter::find_line(std::ifstream &file, TextPosition position) {
     file.seekg(0, std::ios::beg);
 
-    LinePosition position{.number = 1, .offset = 0};
+    LinePosition line_position{.number = 1, .offset = 0};
 
     for (int c = file.get(); c != EOF; c = file.get()) {
         if (c == '\n') {
-            position.number++;
-            position.offset = file.tellg();
+            line_position.number++;
+            line_position.offset = file.tellg();
         }
 
-        if (file.tellg() == location.range.start) {
-            file.seekg(position.offset, std::ios::beg);
-            return position;
+        if (file.tellg() == position) {
+            return line_position;
         }
     }
 
-    return position;
+    return line_position;
 }
 
-ReportPrinter::PrintableLine ReportPrinter::get_printable_line(const SourceLocation &location, std::ifstream &file) {
-    PrintableLine printable_line{.line = "", .underline_start = 0, .underline_length = 0};
+void ReportPrinter::print_decorated_line(std::ifstream &file, TextRange range, std::string_view prefix) {
+    unsigned printed_offset = 0;
+    unsigned underline_start = 0;
+    unsigned underline_length = 0;
 
-    int printed_offset = 0;
+    std::cerr << prefix << " | ";
 
-    for (char c = (char)file.get(); c != EOF && c != '\n'; c = (char)file.get()) {
-        if (c == '\t') {
-            printable_line.line += "    ";
-            printed_offset += 4;
-        } else {
-            printable_line.line += c;
-            if (UTF8Encoding::is_first_byte_of_char(c)) {
-                printed_offset += 1;
+    for (int c = file.get(); c != EOF && c != '\n'; c = file.get()) {
+        print_char(c);
+        printed_offset += char_width(c);
+
+        if (file.tellg() == range.start) {
+            underline_start = printed_offset;
+        }
+
+        if (file.tellg() == range.end) {
+            underline_length = printed_offset - underline_start;
+        }
+    }
+
+    std::cerr << '\n';
+    std::cerr << std::string(prefix.length() + 3 + underline_start, ' ');
+    std::cerr << std::string(underline_length, '~');
+    std::cerr << '\n';
+}
+
+void ReportPrinter::print_decorated_line(std::ifstream &file, std::string_view prefix) {
+    unsigned printed_offset = 0;
+    std::optional<unsigned> underline_start;
+    unsigned underline_length = 0;
+
+    std::cerr << prefix << " | ";
+
+    for (int c = file.get(); c != EOF && c != '\n'; c = file.get()) {
+        unsigned width = char_width(c);
+        print_char(c);
+
+        if (c != ' ' && c != '\t') {
+            if (underline_start) {
+                underline_length = printed_offset - *underline_start;
+            } else {
+                underline_start = printed_offset;
             }
         }
 
-        if (file.tellg() == location.range.start) {
-            printable_line.underline_start = printed_offset;
-        }
-
-        if (file.tellg() == location.range.end) {
-            printable_line.underline_length = printed_offset - printable_line.underline_start;
-        }
+        printed_offset += width;
     }
 
-    return printable_line;
+    std::cerr << '\n';
+
+    if (underline_start) {
+        std::cerr << std::string(prefix.length() + 3 + *underline_start, ' ');
+        std::cerr << std::string(underline_length, '~');
+    }
+
+    std::cerr << '\n';
 }
 
-void ReportPrinter::set_color(std::string color) {
+void ReportPrinter::print_char(int c) {
+    if (c == '\t') {
+        std::cerr << "    ";
+    } else {
+        std::cerr << static_cast<char>(c);
+    }
+}
+
+unsigned ReportPrinter::char_width(int c) {
+    if (c == '\t') {
+        return 4;
+    } else {
+        return UTF8Encoding::is_first_byte_of_char(c) ? 1 : 0;
+    }
+}
+
+void ReportPrinter::set_color(std::string_view color) {
     if (color_enabled) {
         stream << '\u001b' << color;
     }

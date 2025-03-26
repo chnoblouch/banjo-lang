@@ -7,7 +7,7 @@
 
 #include <fstream>
 #include <iostream>
-#include <string>
+#include <string_view>
 #include <vector>
 
 namespace banjo {
@@ -18,14 +18,8 @@ class ReportPrinter {
 
 private:
     struct LinePosition {
-        unsigned int number;
-        unsigned int offset;
-    };
-
-    struct PrintableLine {
-        std::string line;
-        unsigned int underline_start;
-        unsigned int underline_length;
+        unsigned number;
+        unsigned offset;
     };
 
     std::ostream &stream;
@@ -40,10 +34,16 @@ public:
 
 private:
     void print_message_location(const SourceLocation &location);
-    LinePosition find_line(const SourceLocation &location, std::ifstream &file);
-    unsigned int find_column(const ReportMessage &message, std::ifstream &file, LinePosition line_position);
-    PrintableLine get_printable_line(const SourceLocation &location, std::ifstream &file);
-    void set_color(std::string color);
+
+    LinePosition find_line(std::ifstream &file, TextPosition position);
+    unsigned find_column(std::ifstream &file, const ReportMessage &message, LinePosition line_position);
+
+    void print_decorated_line(std::ifstream &file, TextRange range, std::string_view prefix);
+    void print_decorated_line(std::ifstream &file, std::string_view prefix);
+
+    void print_char(int c);
+    unsigned char_width(int c);
+    void set_color(std::string_view color);
 };
 
 } // namespace lang
