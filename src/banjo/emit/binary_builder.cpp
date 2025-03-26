@@ -1,19 +1,81 @@
 #include "binary_builder.hpp"
+
 #include "banjo/emit/binary_module.hpp"
 
 #include <utility>
 
 namespace banjo {
 
+BinaryBuilder::BinaryBuilder() : text(*this, BinSectionKind::TEXT), data(*this, BinSectionKind::DATA) {}
+
+BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
+    generate_external_symbols(m_mod);
+
+    std::uint32_t first_text_symbol_index = defs.size();
+
+    for (mcode::Function *func : m_mod.get_functions()) {
+        add_func_symbol(func->get_name(), m_mod);
+
+        for (mcode::BasicBlock &block : func->get_basic_blocks()) {
+            if (!block.get_label().empty()) {
+                add_label_symbol(block.get_label());
+            }
+        }
+
+        add_empty_label();
+    }
+
+    generate_data_slices(m_mod);
+    generate_addr_table_slices(m_mod);
+
+    std::uint32_t symbol_index = first_text_symbol_index;
+
+    for (mcode::Function *func : m_mod.get_functions()) {
+        UnwindInfo frame_info{
+            .start_symbol_index = symbol_index,
+            .alloca_size = func->get_unwind_info().alloc_size,
+        };
+
+        text.attach_symbol_def(symbol_index++);
+
+        for (mcode::BasicBlock &block : func->get_basic_blocks()) {
+            if (!block.get_label().empty()) {
+                text.attach_symbol_def(symbol_index++);
+            }
+
+            for (mcode::Instruction &instr : block) {
+                encode_instr(instr, func, frame_info);
+            }
+        }
+
+        frame_info.end_symbol_index = symbol_index;
+        text.attach_symbol_def(symbol_index++);
+
+        unwind_info.push_back(frame_info);
+    }
+
+    compute_slice_offsets();
+    apply_relaxation();
+    resolve_internal_symbols();
+
+    return create_module();
+}
+
 BinModule BinaryBuilder::create_module() {
-    BinModule module_;
+    BinModule bin_mod;
     bake_symbol_locations();
-    merge_text_slices(module_);
-    merge_data_slices(module_);
-    bake_symbol_defs(module_);
-    bake_unwind_info(module_);
-    bake_addr_table(module_);
-    return module_;
+
+    bin_mod.text = text.bake(bin_mod.symbol_uses, {BinSymbolKind::TEXT_FUNC, BinSymbolKind::TEXT_LABEL});
+    bin_mod.data = data.bake(bin_mod.symbol_uses, {});
+
+    if (addr_table) {
+        bin_mod.bnjatbl_data = addr_table->bake(bin_mod.symbol_uses, {});
+    }
+
+    bake_symbol_defs(bin_mod);
+    bake_unwind_info(bin_mod);
+
+    return bin_mod;
 }
 
 void BinaryBuilder::bake_symbol_locations() {
@@ -23,54 +85,14 @@ void BinaryBuilder::bake_symbol_locations() {
         if (def.kind == BinSymbolKind::UNKNOWN) {
             def.bin_offset = 0;
         } else {
-            const std::vector<SectionSlice> &slice_list =
-                def.kind == BinSymbolKind::DATA_LABEL ? data_slices : text_slices;
-            const SectionSlice &slice = slice_list[def.slice_index];
+            SectionBuilder &section = def.kind == BinSymbolKind::DATA_LABEL ? data : text;
+            std::vector<SectionBuilder::SectionSlice> &slice_list = section.get_slices();
+            SectionBuilder::SectionSlice &slice = slice_list[def.slice_index];
             def.bin_offset = slice.offset + def.local_offset;
         }
 
         if (def.kind != BinSymbolKind::TEXT_LABEL) {
             def.bin_index = bin_index++;
-        }
-    }
-}
-
-void BinaryBuilder::merge_text_slices(BinModule &module_) {
-    for (SectionSlice &text_slice : text_slices) {
-        module_.text.write_data(text_slice.buffer);
-
-        for (SymbolUse &use : text_slice.uses) {
-            SymbolDef &def = defs[use.index];
-
-            if (def.kind == BinSymbolKind::TEXT_LABEL || def.kind == BinSymbolKind::TEXT_FUNC) {
-                continue;
-            }
-
-            module_.symbol_uses.push_back(BinSymbolUse{
-                .address = text_slice.offset + use.local_offset,
-                .addend = use.addend,
-                .symbol_index = def.bin_index,
-                .kind = use.kind,
-                .section = BinSectionKind::TEXT,
-            });
-        }
-    }
-}
-
-void BinaryBuilder::merge_data_slices(BinModule &module_) {
-    for (SectionSlice &data_slice : data_slices) {
-        module_.data.write_data(data_slice.buffer);
-
-        for (SymbolUse &use : data_slice.uses) {
-            SymbolDef &def = defs[use.index];
-
-            module_.symbol_uses.push_back(BinSymbolUse{
-                .address = data_slice.offset + use.local_offset,
-                .addend = use.addend,
-                .symbol_index = def.bin_index,
-                .kind = use.kind,
-                .section = BinSectionKind::DATA,
-            });
         }
     }
 }
@@ -81,12 +103,14 @@ void BinaryBuilder::bake_symbol_defs(BinModule &module_) {
             continue;
         }
 
-        module_.symbol_defs.push_back(BinSymbolDef{
-            .name = std::move(def.name),
-            .kind = def.kind,
-            .offset = def.bin_offset,
-            .global = def.global,
-        });
+        module_.symbol_defs.push_back(
+            BinSymbolDef{
+                .name = std::move(def.name),
+                .kind = def.kind,
+                .offset = def.bin_offset,
+                .global = def.global,
+            }
+        );
     }
 }
 
@@ -104,96 +128,76 @@ void BinaryBuilder::bake_unwind_info(BinModule &module_) {
             );
         }
 
-        module_.unwind_info.push_back(BinUnwindInfo{
-            .start_addr = defs[frame_info.start_symbol_index].bin_offset,
-            .end_addr = defs[frame_info.end_symbol_index].bin_offset,
-            .alloca_size = frame_info.alloca_size,
-            .alloca_instr_start = defs[frame_info.alloca_start_label].bin_offset,
-            .alloca_instr_end = defs[frame_info.alloca_end_label].bin_offset,
-            .pushed_regs = std::move(bin_pushed_regs),
-        });
-    }
-}
-
-void BinaryBuilder::bake_addr_table(BinModule &module_) {
-    if (!addr_table_slice) {
-        return;
-    }
-
-    module_.bnjatbl_data = std::move(addr_table_slice->buffer);
-
-    for (SymbolUse &use : addr_table_slice->uses) {
-        SymbolDef &def = defs[use.index];
-
-        module_.symbol_uses.push_back(BinSymbolUse{
-            .address = addr_table_slice->offset + use.local_offset,
-            .addend = use.addend,
-            .symbol_index = def.bin_index,
-            .kind = use.kind,
-            .section = BinSectionKind::BNJATBL,
-        });
+        module_.unwind_info.push_back(
+            BinUnwindInfo{
+                .start_addr = defs[frame_info.start_symbol_index].bin_offset,
+                .end_addr = defs[frame_info.end_symbol_index].bin_offset,
+                .alloca_size = frame_info.alloca_size,
+                .alloca_instr_start = defs[frame_info.alloca_start_label].bin_offset,
+                .alloca_instr_end = defs[frame_info.alloca_end_label].bin_offset,
+                .pushed_regs = std::move(bin_pushed_regs),
+            }
+        );
     }
 }
 
 void BinaryBuilder::compute_slice_offsets() {
-    std::uint32_t address = 0;
-    for (SectionSlice &slice : text_slices) {
-        slice.offset = address;
-        address += slice.buffer.get_size();
-    }
+    text.compute_slice_offsets();
+    data.compute_slice_offsets();
 
-    address = 0;
-    for (SectionSlice &slice : data_slices) {
-        slice.offset = address;
-        address += slice.buffer.get_size();
+    if (addr_table) {
+        addr_table->compute_slice_offsets();
+    }
+}
+
+void BinaryBuilder::generate_external_symbols(mcode::Module &m_mod) {
+    for (const std::string &external : m_mod.get_external_symbols()) {
+        add_symbol_def(
+            SymbolDef{
+                .name = external,
+                .kind = BinSymbolKind::UNKNOWN,
+                .global = true,
+            }
+        );
     }
 }
 
 void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
-    data_slices.push_back(SectionSlice{});
-
-    WriteBuffer &buffer = data_slices.back().buffer;
-
     for (const mcode::Global &global : m_mod.get_globals()) {
         ASSERT(global.alignment != 0);
 
-        while (buffer.get_size() % global.alignment != 0) {
-            buffer.write_u8(0);
+        // Careful here: This alignment calculation will stop working if the data section is split
+        // up into multiple slices!
+        while (data.cur_buffer().get_size() % global.alignment != 0) {
+            data.write_u8(0);
         }
 
-        add_symbol_def(SymbolDef{
-            .name = global.name,
-            .kind = BinSymbolKind::DATA_LABEL,
-            .global = m_mod.get_global_symbols().contains(global.name),
-            .slice_index = (std::uint32_t)data_slices.size() - 1,
-            .local_offset = (std::uint32_t)buffer.get_size(),
-        });
+        bool is_global = m_mod.get_global_symbols().contains(global.name);
+        data.add_symbol_def(global.name, BinSymbolKind::DATA_LABEL, is_global);
 
         if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
             switch (global.size) {
-                case 1: buffer.write_u8(value->to_bits()); break;
-                case 2: buffer.write_u16(value->to_bits()); break;
-                case 4: buffer.write_u32(value->to_bits()); break;
-                case 8: buffer.write_u64(value->to_bits()); break;
+                case 1: data.write_u8(value->to_bits()); break;
+                case 2: data.write_u16(value->to_bits()); break;
+                case 4: data.write_u32(value->to_bits()); break;
+                case 8: data.write_u64(value->to_bits()); break;
                 default: ASSERT_UNREACHABLE;
             }
         } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
             switch (global.size) {
-                case 4: buffer.write_f32(*value); break;
-                case 8: buffer.write_f64(*value); break;
+                case 4: data.write_f32(*value); break;
+                case 8: data.write_f64(*value); break;
                 default: ASSERT_UNREACHABLE;
             }
         } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
-            buffer.write_data(value->data(), value->size());
+            data.write_data(value->data(), value->size());
         } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
-            buffer.write_data(value->data(), value->size());
+            data.write_data(value->data(), value->size());
         } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
-            add_data_symbol_use(value->name);
-
-            // FIXME: sizes other than 64 bits?
-            buffer.write_i64(0);
+            data.add_symbol_use(value->name, BinSymbolUseKind::ABS64, 0);
+            data.write_i64(0);
         } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
-            buffer.write_zeroes(global.size);
+            data.write_zeroes(global.size);
         } else {
             ASSERT_UNREACHABLE;
         }
@@ -205,53 +209,29 @@ void BinaryBuilder::generate_addr_table_slices(mcode::Module &m_mod) {
         return;
     }
 
-    addr_table_slice = SectionSlice{};
-    WriteBuffer &buffer = addr_table_slice->buffer;
+    addr_table.emplace(*this, BinSectionKind::BNJATBL);
 
-    add_symbol_def(SymbolDef{
-        .name = "addr_table",
-        .kind = BinSymbolKind::ADDR_TABLE,
-        .global = true,
-        .slice_index = 0,
-        .local_offset = 0,
-    });
-
-    buffer.write_u32(m_mod.get_addr_table()->entries.size());
+    addr_table->add_symbol_def("addr_table", BinSymbolKind::ADDR_TABLE, true);
+    addr_table->write_u32(m_mod.get_addr_table()->entries.size());
 
     for (const std::string &symbol : m_mod.get_addr_table()->entries) {
-        buffer.write_u32(symbol.size());
-        buffer.write_cstr(symbol.c_str());
+        addr_table->write_u32(symbol.size());
+        addr_table->write_cstr(symbol.c_str());
     }
 
     for (const std::string &symbol : m_mod.get_addr_table()->entries) {
-        addr_table_slice->uses.push_back(SymbolUse{
-            .index = symbol_indices.at(symbol),
-            .local_offset = static_cast<std::uint32_t>(buffer.get_size()),
-        });
-
-        buffer.write_zeroes(8);
+        addr_table->add_symbol_use(symbol_indices.at(symbol), BinSymbolUseKind::ABS64, 0);
+        addr_table->write_zeroes(8);
     }
 }
 
-void BinaryBuilder::create_text_slice() {
-    text_slices.push_back(SectionSlice{});
-}
-
-void BinaryBuilder::add_func_symbol(std::string name, mcode::Module & /* machine_module */) {
-    add_symbol_def(SymbolDef{
-        .name = std::move(name),
-        .kind = BinSymbolKind::TEXT_FUNC,
-        //.global = machine_module.get_global_symbols().contains(name)
-        .global = true
-    });
+void BinaryBuilder::add_func_symbol(std::string name, mcode::Module & /*m_mod*/) {
+    // bool is_global = m_mod.get_global_symbols().contains(name);
+    text.add_symbol_def(std::move(name), BinSymbolKind::TEXT_FUNC, true);
 }
 
 void BinaryBuilder::add_label_symbol(std::string name) {
-    add_symbol_def(SymbolDef{
-        .name = std::move(name),
-        .kind = BinSymbolKind::TEXT_LABEL,
-        .global = false,
-    });
+    text.add_symbol_def(std::move(name), BinSymbolKind::TEXT_LABEL, false);
 }
 
 void BinaryBuilder::add_symbol_def(const SymbolDef &def) {
@@ -259,42 +239,9 @@ void BinaryBuilder::add_symbol_def(const SymbolDef &def) {
     defs.push_back(def);
 }
 
-void BinaryBuilder::attach_symbol_def(std::uint32_t index) {
-    SymbolDef &def = defs[index];
-    def.slice_index = (std::uint32_t)text_slices.size() - 1;
-    def.local_offset = (std::uint32_t)text_slices.back().buffer.get_size();
-}
-
-void BinaryBuilder::add_text_symbol_use(const std::string &symbol, BinSymbolUseKind kind, std::int32_t addend) {
-    add_text_symbol_use(symbol_indices[symbol], kind, addend);
-}
-
-void BinaryBuilder::add_text_symbol_use(std::uint32_t symbol_index, BinSymbolUseKind kind, std::int32_t addend) {
-    text_slices.back().uses.push_back(SymbolUse{
-        .index = symbol_index,
-        .local_offset = (std::uint32_t)text_slices.back().buffer.get_size(),
-        .kind = kind,
-        .addend = addend,
-    });
-}
-
-void BinaryBuilder::add_data_symbol_use(const std::string &symbol) {
-    data_slices.back().uses.push_back(SymbolUse{
-        .index = symbol_indices[symbol],
-        .local_offset = (std::uint32_t)data_slices.back().buffer.get_size(),
-    });
-}
-
 std::uint32_t BinaryBuilder::add_empty_label() {
     add_label_symbol("");
-    attach_symbol_def(defs.size() - 1);
     return defs.size() - 1;
-}
-
-void BinaryBuilder::push_out_slices(std::uint32_t starting_index, std::uint8_t offset) {
-    for (std::uint32_t i = starting_index; i < text_slices.size(); i++) {
-        text_slices[i].offset += offset;
-    }
 }
 
 } // namespace banjo

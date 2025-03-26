@@ -13,7 +13,7 @@ namespace banjo {
 
 namespace target {
 
-class X8664Encoder : public BinaryBuilder {
+class X8664Encoder final : public BinaryBuilder {
 
 private:
     enum RegCode : std::uint8_t {
@@ -106,13 +106,10 @@ private:
         std::uint8_t r16_rm16;
     };
 
-public:
-    BinModule encode(mcode::Module &machine_module);
-
 private:
-    void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info);
-    void apply_relaxation();
-    void remove_internal_symbols();
+    void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
+    void apply_relaxation() override;
+    void resolve_internal_symbols() override;
 
     void encode_mov(mcode::Instruction &instr, mcode::Function *func);
     void encode_movsx(mcode::Instruction &instr, mcode::Function *func);
@@ -255,7 +252,6 @@ private:
     void emit_sib(std::uint8_t scale, std::uint8_t index, std::uint8_t base);
     void emit_16bit_prefix();
     void emit_rex(bool w, bool r, bool x, bool b);
-    WriteBuffer &get_back_text_buffer() { return text_slices.back().buffer; }
 
     RegCode reg(mcode::Operand &operand);
     Immediate imm(mcode::Operand &operand);
@@ -272,7 +268,7 @@ private:
 
     void relax_jmp(std::uint32_t slice_index);
     void relax_jcc(SymbolUse &use, std::uint32_t slice_index);
-    std::int32_t compute_branch_displacement(SectionSlice &branch_slice);
+    std::int32_t compute_branch_displacement(SectionBuilder::SectionSlice &branch_slice);
 
     bool fits_in_i8(std::int64_t value);
     bool fits_in_32_bits(Immediate imm);

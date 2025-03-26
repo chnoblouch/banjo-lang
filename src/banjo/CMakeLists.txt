@@ -17,6 +17,7 @@ add_library(banjo STATIC
     emit/binary_builder.cpp
     emit/debug_emitter.cpp
     emit/nasm_emitter.cpp
+    emit/section_builder.cpp
     emit/elf/elf_builder.cpp
     emit/elf/elf_emitter.cpp
     emit/elf/elf_format.cpp
