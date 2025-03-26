@@ -27,6 +27,7 @@ private:
     void encode_func(mcode::Function &func);
     void encode_instr(mcode::Instruction &instr);
 
+    void encode_mov(mcode::Instruction &instr);
     void encode_ldp(mcode::Instruction &instr);
     void encode_stp(mcode::Instruction &instr);
     void encode_add(mcode::Instruction &instr);

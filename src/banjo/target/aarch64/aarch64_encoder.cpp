@@ -88,6 +88,7 @@ void AArch64Encoder::encode_func(mcode::Function &func) {
 
 void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
+        case AArch64Opcode::MOV: encode_mov(instr); break;
         case AArch64Opcode::LDP: encode_ldp(instr); break;
         case AArch64Opcode::STP: encode_stp(instr); break;
         case AArch64Opcode::ADD: encode_add(instr); break;
@@ -96,6 +97,20 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
         case AArch64Opcode::RET: encode_ret(instr); break;
         case AArch64Opcode::ADRP: encode_adrp(instr); break;
     }
+}
+
+void AArch64Encoder::encode_mov(mcode::Instruction &instr) {
+    WriteBuffer &buf = bin_mod.text;
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t imm = encode_imm(m_src.get_int_immediate(), 16, 0);
+
+    // TODO: Shifting
+
+    buf.write_u32(0x52800000 | (sf << 31) | (imm << 5) | r_dst);
 }
 
 void AArch64Encoder::encode_ldp(mcode::Instruction &instr) {
