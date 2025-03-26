@@ -46,8 +46,8 @@ public:
 
 private:
     virtual void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) = 0;
-    virtual void apply_relaxation() = 0;
-    virtual void resolve_internal_symbols() = 0;
+    virtual void apply_relaxation() {}
+    virtual void resolve_internal_symbols() {}
 
 protected:
     BinModule create_module();

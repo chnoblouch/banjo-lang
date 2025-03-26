@@ -1,5 +1,6 @@
 #include "binary_builder.hpp"
 
+#include "banjo/config/config.hpp"
 #include "banjo/emit/binary_module.hpp"
 
 #include <utility>
@@ -103,9 +104,18 @@ void BinaryBuilder::bake_symbol_defs(BinModule &module_) {
             continue;
         }
 
+        std::string name;
+
+        if (lang::Config::instance().target.is_darwin()) {
+            // TODO: Move this somewhere else!
+            name = "_" + std::move(def.name);
+        } else {
+            name = std::move(def.name);
+        }
+
         module_.symbol_defs.push_back(
             BinSymbolDef{
-                .name = std::move(def.name),
+                .name = name,
                 .kind = def.kind,
                 .offset = def.bin_offset,
                 .global = def.global,

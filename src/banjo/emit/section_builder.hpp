@@ -52,8 +52,8 @@ public:
 
     void add_symbol_def(std::string name, BinSymbolKind kind, bool global);
     void attach_symbol_def(std::uint32_t index);
-    void add_symbol_use(std::uint32_t index, BinSymbolUseKind kind, std::int32_t addend);
-    void add_symbol_use(const std::string &name, BinSymbolUseKind kind, std::int32_t addend);
+    void add_symbol_use(std::uint32_t index, BinSymbolUseKind kind, std::int32_t addend = 0);
+    void add_symbol_use(const std::string &name, BinSymbolUseKind kind, std::int32_t addend = 0);
 
     void create_relaxable_slice();
     void end_relaxable_slice();

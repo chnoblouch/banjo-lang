@@ -41,7 +41,7 @@ void SectionBuilder::add_symbol_use(std::uint32_t index, BinSymbolUseKind kind, 
     );
 }
 
-void SectionBuilder::add_symbol_use(const std::string &name, BinSymbolUseKind kind, std::int32_t addend) {
+void SectionBuilder::add_symbol_use(const std::string &name, BinSymbolUseKind kind, std::int32_t addend /*= 0*/) {
     add_symbol_use(bin_builder.symbol_indices.at(name), kind, addend);
 }
 
@@ -57,7 +57,7 @@ void SectionBuilder::end_relaxable_slice() {
     slices.push_back(SectionSlice{});
 }
 
-void SectionBuilder::push_out_slices(std::uint32_t starting_index, std::uint8_t offset) {
+void SectionBuilder::push_out_slices(std::uint32_t starting_index, std::uint8_t offset /*= 0 */) {
     for (std::uint32_t i = starting_index; i < slices.size(); i++) {
         slices[i].offset += offset;
     }

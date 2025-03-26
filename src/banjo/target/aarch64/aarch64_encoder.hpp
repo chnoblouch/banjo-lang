@@ -1,31 +1,19 @@
 #ifndef BANJO_TARGET_AARCH64_ENCODER_H
 #define BANJO_TARGET_AARCH64_ENCODER_H
 
-#include "banjo/emit/binary_module.hpp"
+#include "banjo/emit/binary_builder.hpp"
 #include "banjo/mcode/instruction.hpp"
-#include "banjo/mcode/module.hpp"
 
 #include <array>
 #include <cstdint>
-#include <string>
-#include <unordered_map>
 
 namespace banjo {
 namespace target {
 
-class AArch64Encoder {
+class AArch64Encoder final : public BinaryBuilder {
 
 private:
-    BinModule bin_mod;
-
-    std::unordered_map<std::string, std::uint32_t> symbol_indices;
-
-public:
-    BinModule encode(mcode::Module &m_mod);
-
-private:
-    void encode_func(mcode::Function &func);
-    void encode_instr(mcode::Instruction &instr);
+    void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
 
     void encode_mov(mcode::Instruction &instr);
     void encode_ldp(mcode::Instruction &instr);
