@@ -1,6 +1,7 @@
 #include "aarch64_encoder.hpp"
 
 #include "banjo/emit/binary_module.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/macros.hpp"
@@ -87,12 +88,22 @@ void AArch64Encoder::encode_func(mcode::Function &func) {
 
 void AArch64Encoder::encode_instr(mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
+        case AArch64Opcode::LDP: encode_ldp(instr); break;
+        case AArch64Opcode::STP: encode_stp(instr); break;
         case AArch64Opcode::ADD: encode_add(instr); break;
         case AArch64Opcode::SUB: encode_sub(instr); break;
         case AArch64Opcode::BL: encode_bl(instr); break;
         case AArch64Opcode::RET: encode_ret(instr); break;
         case AArch64Opcode::ADRP: encode_adrp(instr); break;
     }
+}
+
+void AArch64Encoder::encode_ldp(mcode::Instruction &instr) {
+    encode_ldp_family(instr, {0x28C00000, 0x29C00000});
+}
+
+void AArch64Encoder::encode_stp(mcode::Instruction &instr) {
+    encode_ldp_family(instr, {0x28800000, 0x29800000});
 }
 
 void AArch64Encoder::encode_add(mcode::Instruction &instr) {
@@ -145,6 +156,35 @@ void AArch64Encoder::encode_adrp(mcode::Instruction &instr) {
     );
 
     buf.write_u32(0x90000000 | r_dst);
+}
+
+void AArch64Encoder::encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
+    WriteBuffer &buf = bin_mod.text;
+    mcode::Operand &m_reg1 = instr.get_operand(0);
+    mcode::Operand &m_reg2 = instr.get_operand(1);
+    mcode::Operand &m_addr = instr.get_operand(2);
+
+    const AArch64Address &addr = m_addr.get_aarch64_addr();
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    unsigned imm_shift = sf ? 3 : 2;
+    std::uint32_t r_reg1 = encode_reg(m_reg1.get_physical_reg());
+    std::uint32_t r_reg2 = encode_reg(m_reg2.get_physical_reg());
+
+    if (addr.get_type() == AArch64Address::Type::BASE) {
+        mcode::Operand &m_imm = instr.get_operand(3);
+
+        std::uint32_t r_base = encode_reg(addr.get_base().get_physical_reg());
+        std::uint32_t imm = encode_imm(m_imm.get_int_immediate(), 7, imm_shift);
+        buf.write_u32(params[0] | (sf << 31) | (imm << 15) | (r_reg2 << 10) | (r_base << 5) | r_reg1);
+    } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_IMM_WRITE) {
+        std::uint32_t r_base = encode_reg(addr.get_base().get_physical_reg());
+        std::uint32_t imm = encode_imm(addr.get_offset_imm(), 7, imm_shift);
+        buf.write_u32(params[1] | (sf << 31) | (imm << 15) | (r_reg2 << 10) | (r_base << 5) | r_reg1);
+    } else {
+        // There are other addressing modes, but the compiler currently never generates them.
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
@@ -204,6 +244,12 @@ std::uint32_t AArch64Encoder::encode_reg(mcode::PhysicalReg reg) {
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+std::uint32_t AArch64Encoder::encode_imm(LargeInt imm, unsigned num_bits, unsigned shift) {
+    std::uint32_t bits = static_cast<std::uint32_t>(imm.to_bits());
+    std::uint32_t mask = (1 << num_bits) - 1;
+    return (bits >> shift) & mask;
 }
 
 } // namespace target
