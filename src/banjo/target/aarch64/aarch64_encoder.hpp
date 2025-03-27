@@ -20,15 +20,33 @@ private:
     void encode_stp(mcode::Instruction &instr);
     void encode_add(mcode::Instruction &instr);
     void encode_sub(mcode::Instruction &instr);
+    void encode_b(mcode::Instruction &instr);
+    void encode_br(mcode::Instruction &instr);
+    void encode_b_eq(mcode::Instruction &instr);
+    void encode_b_ne(mcode::Instruction &instr);
+    void encode_b_hs(mcode::Instruction &instr);
+    void encode_b_lo(mcode::Instruction &instr);
+    void encode_b_hi(mcode::Instruction &instr);
+    void encode_b_ls(mcode::Instruction &instr);
+    void encode_b_ge(mcode::Instruction &instr);
+    void encode_b_lt(mcode::Instruction &instr);
+    void encode_b_gt(mcode::Instruction &instr);
+    void encode_b_le(mcode::Instruction &instr);
     void encode_bl(mcode::Instruction &instr);
+    void encode_blr(mcode::Instruction &instr);
     void encode_ret(mcode::Instruction &instr);
     void encode_adrp(mcode::Instruction &instr);
 
     void encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
+    void encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
 
     std::uint32_t encode_reg(mcode::PhysicalReg reg);
     std::uint32_t encode_imm(LargeInt imm, unsigned num_bits, unsigned shift);
+
+    void resolve_internal_symbols() override;
+    void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);
+    std::uint32_t compute_branch_displacement();
 };
 
 } // namespace target

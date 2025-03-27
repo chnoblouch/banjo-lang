@@ -32,6 +32,10 @@ public:
     void write_data(const WriteBuffer &buffer);
     void write_zeroes(std::size_t size);
     void write_cstr(const char *cstr);
+
+    void read_data(void *data, std::size_t size);
+    std::uint32_t read_u32();
+
     std::uint32_t tell() { return position; }
     void seek(std::uint32_t position) { this->position = position; }
 

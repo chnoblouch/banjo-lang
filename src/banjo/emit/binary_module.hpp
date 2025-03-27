@@ -25,6 +25,8 @@ struct BinSymbolDef {
 };
 
 enum class BinSymbolUseKind {
+    INTERNAL,
+
     ABS64,
     REL32,
     GOTPCREL32,

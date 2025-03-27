@@ -160,6 +160,13 @@ void BinaryBuilder::compute_slice_offsets() {
     }
 }
 
+std::uint32_t BinaryBuilder::compute_displacement(SectionBuilder::SectionSlice &slice, SymbolUse &use) {
+    SymbolDef &def = defs[use.index];
+    std::uint32_t use_offset = slice.offset + use.local_offset;
+    std::uint32_t def_offset = text.get_slices()[def.slice_index].offset + def.local_offset;
+    return def_offset - use_offset;
+}
+
 void BinaryBuilder::generate_external_symbols(mcode::Module &m_mod) {
     for (const std::string &external : m_mod.get_external_symbols()) {
         add_symbol_def(

@@ -115,6 +115,17 @@ void WriteBuffer::write_cstr(const char *cstr) {
     }
 }
 
+void WriteBuffer::read_data(void *data, std::size_t size) {
+    std::memcpy(data, &this->data[position], size);
+    position += size;
+}
+
+std::uint32_t WriteBuffer::read_u32() {
+    std::uint8_t bytes[4];
+    read_data(bytes, 4);
+    return bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+}
+
 void WriteBuffer::ensure_size(std::uint32_t size) {
     if (data.size() < size) {
         data.resize(size);

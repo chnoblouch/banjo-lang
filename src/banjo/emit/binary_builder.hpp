@@ -47,11 +47,12 @@ public:
 private:
     virtual void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) = 0;
     virtual void apply_relaxation() {}
-    virtual void resolve_internal_symbols() {}
+    virtual void resolve_internal_symbols() = 0;
 
 protected:
     BinModule create_module();
     void compute_slice_offsets();
+    std::uint32_t compute_displacement(SectionBuilder::SectionSlice &slice, SymbolUse &use);
 
     void generate_external_symbols(mcode::Module &m_mod);
     void generate_data_slices(mcode::Module &m_mod);
