@@ -25,6 +25,9 @@ private:
     mcode::Operand parse_operand();
 
     mcode::Opcode convert_opcode(const std::string &string);
+    mcode::Register convert_register(const std::string &string);
+
+    std::string read_operand();
     void skip_whitespace();
 
     bool is_whitespace(char c);

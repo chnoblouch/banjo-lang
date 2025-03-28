@@ -4,6 +4,7 @@
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/module.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_encoder.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
@@ -11,10 +12,43 @@
 
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace banjo {
 namespace test {
+
+std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
+    {"mov", target::AArch64Opcode::MOV},       {"movz", target::AArch64Opcode::MOVZ},
+    {"movk", target::AArch64Opcode::MOVK},     {"ldr", target::AArch64Opcode::LDR},
+    {"ldrb", target::AArch64Opcode::LDRB},     {"ldrh", target::AArch64Opcode::LDRH},
+    {"str", target::AArch64Opcode::STR},       {"strb", target::AArch64Opcode::STRB},
+    {"strh", target::AArch64Opcode::STRH},     {"ldp", target::AArch64Opcode::LDP},
+    {"stp", target::AArch64Opcode::STP},       {"add", target::AArch64Opcode::ADD},
+    {"sub", target::AArch64Opcode::SUB},       {"mul", target::AArch64Opcode::MUL},
+    {"sdiv", target::AArch64Opcode::SDIV},     {"udiv", target::AArch64Opcode::UDIV},
+    {"and", target::AArch64Opcode::AND},       {"orr", target::AArch64Opcode::ORR},
+    {"eor", target::AArch64Opcode::EOR},       {"lsl", target::AArch64Opcode::LSL},
+    {"asr", target::AArch64Opcode::ASR},       {"csel", target::AArch64Opcode::CSEL},
+    {"fmov", target::AArch64Opcode::FMOV},     {"fadd", target::AArch64Opcode::FADD},
+    {"fsub", target::AArch64Opcode::FSUB},     {"fmul", target::AArch64Opcode::FMUL},
+    {"fdiv", target::AArch64Opcode::FDIV},     {"fcvt", target::AArch64Opcode::FCVT},
+    {"scvtf", target::AArch64Opcode::SCVTF},   {"ucvtf", target::AArch64Opcode::UCVTF},
+    {"fcvtzs", target::AArch64Opcode::FCVTZS}, {"fcvtzu", target::AArch64Opcode::FCVTZU},
+    {"fcsel", target::AArch64Opcode::FCSEL},   {"cmp", target::AArch64Opcode::CMP},
+    {"fcmp", target::AArch64Opcode::FCMP},     {"b", target::AArch64Opcode::B},
+    {"br", target::AArch64Opcode::BR},         {"b.eq", target::AArch64Opcode::B_EQ},
+    {"b.ne", target::AArch64Opcode::B_NE},     {"b.hs", target::AArch64Opcode::B_HS},
+    {"b.lo", target::AArch64Opcode::B_LO},     {"b.hi", target::AArch64Opcode::B_HI},
+    {"b.ls", target::AArch64Opcode::B_LS},     {"b.ge", target::AArch64Opcode::B_GE},
+    {"b.lt", target::AArch64Opcode::B_LT},     {"b.gt", target::AArch64Opcode::B_GT},
+    {"b.le", target::AArch64Opcode::B_LE},     {"bl", target::AArch64Opcode::BL},
+    {"blr", target::AArch64Opcode::BLR},       {"ret", target::AArch64Opcode::RET},
+    {"adrp", target::AArch64Opcode::ADRP},     {"uxtb", target::AArch64Opcode::UXTB},
+    {"uxth", target::AArch64Opcode::UXTH},     {"sxtb", target::AArch64Opcode::SXTB},
+    {"sxth", target::AArch64Opcode::SXTH},     {"sxtw", target::AArch64Opcode::SXTW},
+};
 
 WriteBuffer AssemblyUtil::assemble(std::string source) {
     std::stringstream stream(std::move(source));
@@ -67,66 +101,132 @@ mcode::Opcode AssemblyUtil::parse_opcode() {
 }
 
 mcode::Operand AssemblyUtil::parse_operand() {
-    std::string string;
-
-    while (line[char_index] != '\0') {
-        string += line[char_index];
-        char_index += 1;
-
-        if (line[char_index] == ',') {
-            char_index += 1;
-            break;
-        }
-    }
-
-    unsigned trimmed_start = 0;
-    unsigned trimmed_end = 0;
-
-    for (int i = 0; i < string.size(); i++) {
-        if (!is_whitespace(string[i])) {
-            trimmed_start = i;
-            break;
-        }
-    }
-
-    for (int i = string.size() - 1; i >= 0; i--) {
-        if (!is_whitespace(string[i])) {
-            trimmed_end = i;
-            break;
-        }
-    }
-
-    string = string.substr(trimmed_start, trimmed_end - trimmed_start + 1);
+    std::string string = read_operand();
 
     if (string[0] == 'w') {
-        unsigned n = std::stoul(string.substr(1));
-        mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
-        return mcode::Operand::from_register(mcode::Register::from_physical(m_reg), 4);
+        return mcode::Operand::from_register(convert_register(string), 4);
     } else if (string[0] == 'x') {
-        unsigned n = std::stoul(string.substr(1));
-        mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
-        return mcode::Operand::from_register(mcode::Register::from_physical(m_reg), 8);
-    } else if ((string[0] >= '0' && string[0] <= '9') || string[0] == '-') {
-        return mcode::Operand::from_int_immediate(LargeInt(string));
+        return mcode::Operand::from_register(convert_register(string), 8);
+    } else if (string[0] == 's') {
+        return mcode::Operand::from_register(convert_register(string), 8);
+    } else if (string[0] == '#') {
+        return mcode::Operand::from_int_immediate(LargeInt(string.substr(1)));
     } else if (string.starts_with("lsl")) {
         unsigned shift_start = 0;
 
-        while (!(string[shift_start] >= '0' && string[shift_start] <= '9')) {
+        while (string[shift_start] != '#') {
             shift_start += 1;
         }
 
-        std::string shift_string = string.substr(shift_start);
+        std::string shift_string = string.substr(shift_start + 1);
         return mcode::Operand::from_aarch64_left_shift(std::stoul(shift_string));
+    } else if (string[0] == '[') {
+        unsigned index = 1;
+
+        while (is_whitespace(string[index])) {
+            index += 1;
+        }
+        unsigned reg_start = index;
+
+        index += 1;
+        while (!is_whitespace(string[index]) && string[index] != ']' && string[index] != ',') {
+            index += 1;
+        }
+        unsigned reg_end = index;
+
+        while (is_whitespace(string[index])) {
+            index += 1;
+        }
+
+        target::AArch64Address addr;
+        mcode::Register base = convert_register(string.substr(reg_start, reg_end - reg_start));
+
+        if (string[index] == ']') {
+            addr = target::AArch64Address::new_base(base);
+        } else if (string[index] == ',') {
+            index += 1;
+            while (is_whitespace(string[index])) {
+                index += 1;
+            }
+            unsigned offset_start = index;
+
+            ASSERT(string[index] == '#');
+            index += 1;
+
+            while (string[index] == '-' || (string[index] >= '0' && string[index] <= '9')) {
+                index += 1;
+            }
+            unsigned offset_end = index;
+
+            while (is_whitespace(string[index])) {
+                index += 1;
+            }
+
+            ASSERT(string[index] == ']');
+            index += 1;
+
+            int offset = std::stol(string.substr(offset_start + 1, offset_end - offset_start - 1));
+
+            if (string[index] == '!') {
+                addr = target::AArch64Address::new_base_offset_write(base, offset);
+            } else {
+                addr = target::AArch64Address::new_base_offset(base, offset);
+            }
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+
+        return mcode::Operand::from_aarch64_addr(addr);
     } else {
         ASSERT_UNREACHABLE;
     }
 }
 
 mcode::Opcode AssemblyUtil::convert_opcode(const std::string &string) {
-    if (string == "add") return target::AArch64Opcode::ADD;
-    else if (string == "sub") return target::AArch64Opcode::SUB;
-    else if (string == "ret") return target::AArch64Opcode::RET;
-    else ASSERT_UNREACHABLE;
+    return AARCH64_OPCODE_MAP.at(string);
+}
+
+mcode::Register AssemblyUtil::convert_register(const std::string &string) {
+    if (string[0] == 'w' || string[0] == 'x') {
+        unsigned n = std::stoul(string.substr(1));
+        mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
+        return mcode::Register::from_physical(m_reg);
+    } else if (string == "sp") {
+        return mcode::Register::from_physical(target::AArch64Register::SP);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+std::string AssemblyUtil::read_operand() {
+    skip_whitespace();
+
+    std::string string;
+    bool in_brackets = false;
+
+    while (line[char_index] != '\0') {
+        if (line[char_index] == '[') {
+            in_brackets = true;
+        } else if (line[char_index] == ']') {
+            in_brackets = false;
+        }
+
+        string += line[char_index];
+        char_index += 1;
+
+        if (line[char_index] == ',' && !in_brackets) {
+            char_index += 1;
+            break;
+        }
+    }
+
+    unsigned length = string.size();
+
+    while (length > 0 && is_whitespace(string[length - 1])) {
+        length -= 1;
+    }
+
+    return string.substr(0, length);
 }
 
 void AssemblyUtil::skip_whitespace() {
