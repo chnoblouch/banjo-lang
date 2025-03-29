@@ -1,6 +1,7 @@
 #include "aarch64_encoder.hpp"
 
 #include "banjo/emit/binary_module.hpp"
+#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
@@ -11,9 +12,15 @@
 namespace banjo {
 namespace target {
 
-void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function * /*func*/, UnwindInfo & /*frame_info*/) {
+void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo & /*frame_info*/) {
+    cur_func = func;
+
     switch (instr.get_opcode()) {
         case AArch64Opcode::MOV: encode_mov(instr); break;
+        case AArch64Opcode::MOVZ: encode_movz(instr); break;
+        case AArch64Opcode::MOVK: encode_movk(instr); break;
+        case AArch64Opcode::LDR: encode_ldr(instr); break;
+        case AArch64Opcode::STR: encode_str(instr); break;
         case AArch64Opcode::LDP: encode_ldp(instr); break;
         case AArch64Opcode::STP: encode_stp(instr); break;
         case AArch64Opcode::ADD: encode_add(instr); break;
@@ -44,13 +51,58 @@ void AArch64Encoder::encode_mov(mcode::Instruction &instr) {
     bool sf = instr.get_operand(0).get_size() == 8;
     std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
 
-    if (m_src.is_int_immediate()) {
-        std::uint32_t imm = encode_imm(m_src.get_int_immediate(), 16, 0);
+    if (m_src.is_register()) {
+        // TODO: Move to/from SP.
 
-        // TODO: Shifting
+        std::uint32_t r_src = encode_reg(m_src.get_physical_reg());
+        std::uint32_t r_wzr = 31;
+        text.write_u32(0x2A000000 | (sf << 31) | (r_src << 16) | (r_wzr << 5) | r_dst);
+    } else if (m_src.is_int_immediate()) {
+        std::uint64_t bits = m_src.get_int_immediate().to_bits();
 
-        text.write_u32(0x52800000 | (sf << 31) | (imm << 5) | r_dst);
+        // TODO: Support `MOVN` instructions and use them in the SSA lowerer.
+
+        bool inverted = false;
+        if (m_src.get_int_immediate().is_negative()) {
+            inverted = true;
+            bits = ~bits;
+        }
+
+        unsigned shift = 0;
+        if (bits >= (1ull << 48)) {
+            shift = 48;
+        } else if (bits >= (1ull << 32)) {
+            shift = 32;
+        } else if (bits >= (1ull << 16)) {
+            shift = 16;
+        } else {
+            shift = 0;
+        }
+
+        std::uint32_t instr_template = inverted ? 0x12800000 : 0x52800000;
+        std::uint32_t imm = encode_imm(bits, 16, shift);
+        std::uint32_t hw = encode_imm(shift, 2, 4);
+        text.write_u32(instr_template | (sf << 31) | (hw << 21) | (imm << 5) | r_dst);
+    } else {
+        ASSERT_UNREACHABLE;
     }
+}
+
+void AArch64Encoder::encode_movz(mcode::Instruction &instr) {
+    // TODO: This should probably merged with `mov`.
+    encode_movz_family(instr, {0x52800000});
+}
+
+void AArch64Encoder::encode_movk(mcode::Instruction &instr) {
+    encode_movz_family(instr, {0x72800000});
+}
+
+void AArch64Encoder::encode_ldr(mcode::Instruction &instr) {
+    encode_ldr_family(instr, {0xB9400000, 0xB8400000});
+}
+
+void AArch64Encoder::encode_str(mcode::Instruction &instr) {
+    encode_ldr_family(instr, {0xB9000000, 0xB8000000});
 }
 
 void AArch64Encoder::encode_ldp(mcode::Instruction &instr) {
@@ -138,8 +190,8 @@ void AArch64Encoder::encode_blr(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_ret(mcode::Instruction & /*instr*/) {
-    std::uint32_t r_target = 30;
-    text.write_u32(0xD65F0000 | (r_target << 5));
+    std::uint32_t r_x30 = 30;
+    text.write_u32(0xD65F0000 | (r_x30 << 5));
 }
 
 void AArch64Encoder::encode_adrp(mcode::Instruction &instr) {
@@ -152,27 +204,66 @@ void AArch64Encoder::encode_adrp(mcode::Instruction &instr) {
     text.write_u32(0x90000000 | r_dst);
 }
 
+void AArch64Encoder::encode_movz_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    mcode::Operand *m_shift = instr.try_get_operand(2);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    unsigned shift = m_shift ? m_shift->get_aarch64_left_shift() : 0;
+
+    std::uint32_t imm = encode_imm(m_src.get_int_immediate(), 16, 0);
+    std::uint32_t hw = encode_imm(shift, 2, 4);
+    text.write_u32(params[0] | (sf << 31) | (hw << 21) | (imm << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    mcode::Operand *m_post_offset = instr.try_get_operand(2);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    unsigned imm_shift = sf ? 3 : 2;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    Address addr = lower_addr(m_src, m_post_offset);
+
+    if (addr.mode == AddressingMode::OFFSET_CONST) {
+        std::uint32_t r_base = encode_reg(addr.base.get_physical_reg());
+
+        if ((addr.offset_const & ((1 << imm_shift) - 1)) == 0) {
+            std::uint32_t imm = encode_imm(addr.offset_const, 12, imm_shift);
+            text.write_u32(params[0] | (sf << 30) | (imm << 10) | (r_base << 5) | r_dst);
+        } else {
+            // TODO: Move `ldur` and `stur` into separate instructions.
+            std::uint32_t imm = encode_imm(addr.offset_const, 9, 0);
+            text.write_u32(params[1] | (sf << 30) | (imm << 12) | (r_base << 5) | (r_dst));
+        }
+    } else {
+        // There are other addressing modes, but the compiler currently never generates them.
+        ASSERT_UNREACHABLE;
+    }
+}
+
 void AArch64Encoder::encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
     mcode::Operand &m_reg1 = instr.get_operand(0);
     mcode::Operand &m_reg2 = instr.get_operand(1);
-    mcode::Operand &m_addr = instr.get_operand(2);
-
-    const AArch64Address &addr = m_addr.get_aarch64_addr();
+    mcode::Operand &m_dst = instr.get_operand(2);
+    mcode::Operand *m_post_offset = instr.try_get_operand(3);
 
     bool sf = instr.get_operand(0).get_size() == 8;
     unsigned imm_shift = sf ? 3 : 2;
     std::uint32_t r_reg1 = encode_reg(m_reg1.get_physical_reg());
     std::uint32_t r_reg2 = encode_reg(m_reg2.get_physical_reg());
+    Address addr = lower_addr(m_dst, m_post_offset);
 
-    if (addr.get_type() == AArch64Address::Type::BASE) {
-        mcode::Operand &m_imm = instr.get_operand(3);
-
-        std::uint32_t r_base = encode_reg(addr.get_base().get_physical_reg());
-        std::uint32_t imm = encode_imm(m_imm.get_int_immediate(), 7, imm_shift);
+    if (addr.mode == AddressingMode::POST_INDEX) {
+        std::uint32_t r_base = encode_reg(addr.base.get_physical_reg());
+        std::uint32_t imm = encode_imm(addr.offset_const, 7, imm_shift);
         text.write_u32(params[0] | (sf << 31) | (imm << 15) | (r_reg2 << 10) | (r_base << 5) | r_reg1);
-    } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_IMM_WRITE) {
-        std::uint32_t r_base = encode_reg(addr.get_base().get_physical_reg());
-        std::uint32_t imm = encode_imm(addr.get_offset_imm(), 7, imm_shift);
+    } else if (addr.mode == AddressingMode::PRE_INDEX) {
+        std::uint32_t r_base = encode_reg(addr.base.get_physical_reg());
+        std::uint32_t imm = encode_imm(addr.offset_const, 7, imm_shift);
         text.write_u32(params[1] | (sf << 31) | (imm << 15) | (r_reg2 << 10) | (r_base << 5) | r_reg1);
     } else {
         // There are other addressing modes, but the compiler currently never generates them.
@@ -237,9 +328,75 @@ std::uint32_t AArch64Encoder::encode_reg(mcode::PhysicalReg reg) {
 }
 
 std::uint32_t AArch64Encoder::encode_imm(LargeInt imm, unsigned num_bits, unsigned shift) {
-    std::uint32_t bits = static_cast<std::uint32_t>(imm.to_bits());
-    std::uint32_t mask = (1 << num_bits) - 1;
-    return (bits >> shift) & mask;
+    std::uint64_t bits = imm.to_bits();
+    ASSERT((bits & ((1ull << shift) - 1)) == 0);
+    std::uint32_t mask = (1ull << num_bits) - 1;
+    return static_cast<std::uint32_t>(bits >> shift) & mask;
+}
+
+AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcode::Operand *post_operand) {
+    if (operand.is_stack_slot()) {
+        mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
+        mcode::StackSlot &slot = stack_frame.get_stack_slot(operand.get_stack_slot());
+
+        return Address{
+            .mode = AddressingMode::OFFSET_CONST,
+            .base = mcode::Register::from_physical(AArch64Register::SP),
+            .offset_const = slot.get_offset(),
+        };
+    } else if (operand.is_aarch64_addr()) {
+        const target::AArch64Address &addr = operand.get_aarch64_addr();
+
+        if (addr.get_type() == AArch64Address::Type::BASE) {
+            if (post_operand) {
+                LargeInt offset = post_operand->get_int_immediate();
+
+                return Address{
+                    .mode = AddressingMode::POST_INDEX,
+                    .base = addr.get_base(),
+                    .offset_const = offset,
+                };
+            } else {
+                return Address{
+                    .mode = AddressingMode::OFFSET_CONST,
+                    .base = addr.get_base(),
+                    .offset_const = 0,
+                };
+            }
+        } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_IMM) {
+            LargeInt offset = addr.get_offset_imm();
+
+            ASSERT(!post_operand);
+
+            return Address{
+                .mode = AddressingMode::OFFSET_CONST,
+                .base = addr.get_base(),
+                .offset_const = offset,
+            };
+        } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_IMM_WRITE) {
+            LargeInt offset = addr.get_offset_imm();
+
+            ASSERT(!post_operand);
+
+            return Address{
+                .mode = AddressingMode::PRE_INDEX,
+                .base = addr.get_base(),
+                .offset_const = offset,
+            };
+        } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_REG) {
+            return Address{
+                .mode = AddressingMode::OFFSET_CONST,
+                .base = addr.get_base(),
+                .offset_reg = addr.get_offset_reg(),
+            };
+        } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_SYMBOL) {
+            ASSERT_UNREACHABLE;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void AArch64Encoder::resolve_internal_symbols() {

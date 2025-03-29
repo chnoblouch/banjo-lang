@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "5B0100F9"
+
+str x27, [x10]
+
+# test:subtest
+# test:encoding "5B0100B9"
+
+str w27, [x10]
+
+# test:subtest
+# test:encoding "5BE903F9"
+
+str x27, [x10, #2000]
+
+# test:subtest
+# test:encoding "5B5102F8"
+
+str x27, [x10, #37]
+
+# test:subtest
+# test:encoding "5BF118F8"
+
+str x27, [x10, #-113]
+
+# test:subtest
+# test:encoding "FB0300B9"
+
+str w27, [sp]

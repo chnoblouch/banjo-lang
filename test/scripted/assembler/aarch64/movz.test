@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "6A0C86D2"
+
+movz x10, #12387
+
+# test:subtest
+# test:encoding "6A0C8652"
+
+movz w10, #12387
+
+# test:subtest
+# test:encoding "6AE6A1D2"
+
+movz x10, #3891, lsl #16
+
+# test:subtest
+# test:encoding "6AE6A152"
+
+movz w10, #3891, lsl #16
+
+# test:subtest
+# test:encoding "6AFCC3D2"
+
+movz x10, #8163, lsl #32
+
+# test:subtest
+# test:encoding "4AECE0D2"
+
+movz x10, #1890, lsl #48

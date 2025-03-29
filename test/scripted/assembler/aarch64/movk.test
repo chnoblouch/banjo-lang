@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "6A0C86F2"
+
+movk x10, #12387
+
+# test:subtest
+# test:encoding "6A0C8672"
+
+movk w10, #12387
+
+# test:subtest
+# test:encoding "6AE6A1F2"
+
+movk x10, #3891, lsl #16
+
+# test:subtest
+# test:encoding "6AE6A172"
+
+movk w10, #3891, lsl #16
+
+# test:subtest
+# test:encoding "6AFCC3F2"
+
+movk x10, #8163, lsl #32
+
+# test:subtest
+# test:encoding "4AECE0F2"
+
+movk x10, #1890, lsl #48

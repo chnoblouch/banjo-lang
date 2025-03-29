@@ -1,0 +1,34 @@
+# test:subtest
+# test:encoding "E3E783A8"
+
+stp x3, x25, [sp], #56
+
+# test:subtest
+# test:encoding "E3678728"
+
+stp w3, w25, [sp], #56
+
+# test:subtest
+# test:encoding "83E583A8"
+
+stp x3, x25, [x12], #56
+
+# test:subtest
+# test:encoding "E3E7BAA8"
+
+stp x3, x25, [sp], #-88
+
+# test:subtest
+# test:encoding "E36788A9"
+
+stp x3, x25, [sp, #128]!
+
+# test:subtest
+# test:encoding "E3E7B9A9"
+
+stp x3, x25, [sp, #-104]!
+
+# test:subtest
+# test:encoding "436688A9"
+
+stp x3, x25, [x18, #128]!

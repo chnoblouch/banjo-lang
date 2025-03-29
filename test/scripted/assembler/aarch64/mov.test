@@ -1,0 +1,74 @@
+# test:subtest
+# test:encoding "EA0314AA"
+
+mov x10, x20
+
+# test:subtest
+# test:encoding "EA03142A"
+
+mov w10, w20
+
+# test:subtest
+# test:encoding "6A0C86D2"
+
+mov x10, #12387
+
+# test:subtest
+# test:encoding "6A0C8652"
+
+mov w10, #12387
+
+# test:subtest
+# test:encoding "6AE6A1D2"
+
+mov x10, #255000576
+
+# test:subtest
+# test:encoding "6AE6A152"
+
+mov w10, #255000576
+
+# test:subtest
+# test:encoding "6AFCC3D2"
+
+mov x10, #35059818037248
+
+# test:subtest
+# test:encoding "4AECE0D2"
+
+mov x10, #531987705983139840
+
+# test:subtest
+# test:encoding "EAFF9FD2"
+
+mov x10, #65535
+
+# test:subtest
+# test:encoding "2A00A0D2"
+
+mov x10, #65536
+
+# test:subtest
+# test:encoding "EAFFBFD2"
+
+mov x10, #4294901760
+
+# test:subtest
+# test:encoding "2A00C0D2"
+
+mov x10, #4294967296
+
+# test:subtest
+# test:encoding "EAFFDFD2"
+
+mov x10, #281470681743360
+
+# test:subtest
+# test:encoding "2A00E0D2"
+
+mov x10, #281474976710656
+
+# test:subtest
+# test:encoding "2AB58492"
+
+mov x10, #-9642
