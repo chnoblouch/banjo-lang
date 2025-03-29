@@ -410,26 +410,27 @@ void AArch64Encoder::resolve_internal_symbols() {
 void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use) {
     SymbolDef &def = defs[use.index];
 
-    if (def.kind == BinSymbolKind::TEXT_LABEL) {
-        std::uint32_t displacement = compute_displacement(slice, use);
+    if (def.kind != BinSymbolKind::TEXT_LABEL && def.kind != BinSymbolKind::TEXT_FUNC) {
+        return;
+    }
 
-        slice.buffer.seek(use.local_offset);
-        std::uint32_t instr_template = slice.buffer.read_u32();
-        slice.buffer.seek(use.local_offset);
+    slice.buffer.seek(use.local_offset);
+    std::uint32_t instr_template = slice.buffer.read_u32();
+    slice.buffer.seek(use.local_offset);
 
-        std::uint8_t first_byte = instr_template >> 24;
+    std::uint8_t first_byte = instr_template >> 24;
+    std::uint32_t displacement = compute_displacement(slice, use);
 
-        if (first_byte == 0x14) {
-            // `B` instructions encode displacements with 26 bits.
-            std::uint32_t imm = encode_imm(displacement, 26, 2);
-            slice.buffer.write_u32(instr_template | imm);
-        } else if (first_byte == 0x54) {
-            // `B.cond` instructions encode displacements with 19 bits.
-            std::uint32_t imm = encode_imm(displacement, 19, 2);
-            slice.buffer.write_u32(instr_template | (imm << 5));
-        } else {
-            ASSERT_UNREACHABLE;
-        }
+    if (first_byte == 0x14 || first_byte == 0x94) {
+        // `B` and `BL` instructions encode displacements with 26 bits.
+        std::uint32_t imm = encode_imm(displacement, 26, 2);
+        slice.buffer.write_u32(instr_template | imm);
+    } else if (first_byte == 0x54) {
+        // `B.cond` instructions encode displacements with 19 bits.
+        std::uint32_t imm = encode_imm(displacement, 19, 2);
+        slice.buffer.write_u32(instr_template | (imm << 5));
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 

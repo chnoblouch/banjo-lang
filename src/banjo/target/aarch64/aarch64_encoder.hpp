@@ -72,7 +72,6 @@ private:
 
     void resolve_internal_symbols() override;
     void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);
-    std::uint32_t compute_branch_displacement();
 };
 
 } // namespace target
