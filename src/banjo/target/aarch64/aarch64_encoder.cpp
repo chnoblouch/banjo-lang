@@ -52,7 +52,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::FCVTZS: WARN_UNIMPLEMENTED("fcvtzs"); break;
         case AArch64Opcode::FCVTZU: WARN_UNIMPLEMENTED("fcvtzu"); break;
         case AArch64Opcode::FCSEL: WARN_UNIMPLEMENTED("fcsel"); break;
-        case AArch64Opcode::CMP: WARN_UNIMPLEMENTED("cmp"); break;
+        case AArch64Opcode::CMP: encode_cmp(instr); break;
         case AArch64Opcode::FCMP: WARN_UNIMPLEMENTED("fcmp"); break;
         case AArch64Opcode::B: encode_b(instr); break;
         case AArch64Opcode::BR: encode_br(instr); break;
@@ -180,6 +180,24 @@ void AArch64Encoder::encode_sdiv(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_udiv(mcode::Instruction &instr) {
     encode_mul_family(instr, {0x1AC00800});
+}
+
+void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
+    mcode::Operand &m_lhs = instr.get_operand(0);
+    mcode::Operand &m_rhs = instr.get_operand(1);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_lhs = encode_reg(m_lhs.get_physical_reg());
+    
+    if (m_rhs.is_register()) {
+        std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
+        text.write_u32(0x6B00001F | (sf << 31) | (r_rhs << 16) | (r_lhs << 5));
+    } else if (m_rhs.is_int_immediate()) {
+        std::uint32_t imm = encode_imm(m_rhs.get_int_immediate(), 12, 0);
+        text.write_u32(0x7100001F | (sf << 31) | (imm << 10) | (r_lhs) << 5);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void AArch64Encoder::encode_b(mcode::Instruction &instr) {

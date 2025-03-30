@@ -1,0 +1,19 @@
+# test:subtest
+# test:encoding "FF0010EB"
+
+cmp x7, x16
+
+# test:subtest
+# test:encoding "FF00106B"
+
+cmp w7, w16
+
+# test:subtest
+# test:encoding "FFC82AF1"
+
+cmp x7, #2738
+
+# test:subtest
+# test:encoding "FFC82A71"
+
+cmp w7, #2738

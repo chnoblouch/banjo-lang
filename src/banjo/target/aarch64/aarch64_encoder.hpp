@@ -50,6 +50,7 @@ private:
     void encode_mul(mcode::Instruction &instr);
     void encode_sdiv(mcode::Instruction &instr);
     void encode_udiv(mcode::Instruction &instr);
+    void encode_cmp(mcode::Instruction &instr);
     void encode_b(mcode::Instruction &instr);
     void encode_br(mcode::Instruction &instr);
     void encode_b_eq(mcode::Instruction &instr);
