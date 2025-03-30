@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "5B28D39A"
+
+asr x27, x2, x19
+
+# test:subtest
+# test:encoding "5B28D31A"
+
+asr w27, w2, w19

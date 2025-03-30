@@ -36,11 +36,11 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::MUL: encode_mul(instr); break;
         case AArch64Opcode::SDIV: encode_sdiv(instr); break;
         case AArch64Opcode::UDIV: encode_udiv(instr); break;
-        case AArch64Opcode::AND: WARN_UNIMPLEMENTED("and"); break;
-        case AArch64Opcode::ORR: WARN_UNIMPLEMENTED("orr"); break;
-        case AArch64Opcode::EOR: WARN_UNIMPLEMENTED("eor"); break;
-        case AArch64Opcode::LSL: WARN_UNIMPLEMENTED("lsl"); break;
-        case AArch64Opcode::ASR: WARN_UNIMPLEMENTED("asr"); break;
+        case AArch64Opcode::AND: encode_and(instr); break;
+        case AArch64Opcode::ORR: encode_orr(instr); break;
+        case AArch64Opcode::EOR: encode_eor(instr); break;
+        case AArch64Opcode::LSL: encode_lsl(instr); break;
+        case AArch64Opcode::ASR: encode_asr(instr); break;
         case AArch64Opcode::CSEL: WARN_UNIMPLEMENTED("csel"); break;
         case AArch64Opcode::FMOV: WARN_UNIMPLEMENTED("fmov"); break;
         case AArch64Opcode::FADD: WARN_UNIMPLEMENTED("fadd"); break;
@@ -181,6 +181,26 @@ void AArch64Encoder::encode_sdiv(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_udiv(mcode::Instruction &instr) {
     encode_mul_family(instr, {0x1AC00800});
+}
+
+void AArch64Encoder::encode_and(mcode::Instruction &instr) {
+    encode_and_family(instr, {0x0A000000});
+}
+
+void AArch64Encoder::encode_orr(mcode::Instruction &instr) {
+    encode_and_family(instr, {0x2A000000});
+}
+
+void AArch64Encoder::encode_eor(mcode::Instruction &instr) {
+    encode_and_family(instr, {0x4A000000});
+}
+
+void AArch64Encoder::encode_lsl(mcode::Instruction &instr) {
+    encode_lsl_family(instr, {0x1AC02000});
+}
+
+void AArch64Encoder::encode_asr(mcode::Instruction &instr) {
+    encode_lsl_family(instr, {0x1AC02800});
 }
 
 void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
@@ -473,6 +493,50 @@ void AArch64Encoder::encode_mul_family(mcode::Instruction &instr, std::array<std
     std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
 
     text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_and_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    ASSERT(instr.get_operands().get_size() == 3);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_reg(m_lhs.get_physical_reg());
+
+    if (m_rhs.is_register()) {
+        std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
+        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+    } else if (m_rhs.is_int_immediate()) {
+        // TODO: Bitmask immediates
+        ASSERT_MESSAGE(false, "cannot encode bitmask immediates");
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void AArch64Encoder::encode_lsl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    ASSERT(instr.get_operands().get_size() == 3);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_reg(m_lhs.get_physical_reg());
+
+    if (m_rhs.is_register()) {
+        std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
+        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+    } else if (m_rhs.is_int_immediate()) {
+        // TODO: Bitmask immediates
+        ASSERT_MESSAGE(false, "cannot encode bitmask immediates");
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "5B20D39A"
+
+lsl x27, x2, x19
+
+# test:subtest
+# test:encoding "5B20D31A"
+
+lsl w27, w2, w19

@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "EF0206AA"
+
+orr x15, x23, x6
+
+# test:subtest
+# test:encoding "EF02062A"
+
+orr w15, w23, w6

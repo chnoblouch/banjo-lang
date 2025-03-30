@@ -50,6 +50,11 @@ private:
     void encode_mul(mcode::Instruction &instr);
     void encode_sdiv(mcode::Instruction &instr);
     void encode_udiv(mcode::Instruction &instr);
+    void encode_and(mcode::Instruction &instr);
+    void encode_orr(mcode::Instruction &instr);
+    void encode_eor(mcode::Instruction &instr);
+    void encode_lsl(mcode::Instruction &instr);
+    void encode_asr(mcode::Instruction &instr);
     void encode_cmp(mcode::Instruction &instr);
     void encode_b(mcode::Instruction &instr);
     void encode_br(mcode::Instruction &instr);
@@ -79,6 +84,8 @@ private:
     void encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_and_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_lsl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_ubfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_sbfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
