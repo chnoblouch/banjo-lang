@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "763C4093"
+
+sxth x22, w3
+
+# test:subtest
+# test:encoding "763C0013"
+
+sxth w22, w3

@@ -62,6 +62,11 @@ private:
     void encode_blr(mcode::Instruction &instr);
     void encode_ret(mcode::Instruction &instr);
     void encode_adrp(mcode::Instruction &instr);
+    void encode_uxtb(mcode::Instruction &instr);
+    void encode_uxth(mcode::Instruction &instr);
+    void encode_sxtb(mcode::Instruction &instr);
+    void encode_sxth(mcode::Instruction &instr);
+    void encode_sxtw(mcode::Instruction &instr);
 
     void encode_movz_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
@@ -69,6 +74,8 @@ private:
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_ubfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_sbfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
 
     std::uint32_t encode_reg(mcode::PhysicalReg reg);
     std::uint32_t encode_imm(LargeInt imm, unsigned num_bits, unsigned shift);

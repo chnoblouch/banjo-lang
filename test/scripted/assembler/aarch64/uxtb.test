@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "131D0053"
+
+uxtb w19, w8
+
+# test:subtest
+# test:encoding "131D0053"
+
+uxtb x19, w8

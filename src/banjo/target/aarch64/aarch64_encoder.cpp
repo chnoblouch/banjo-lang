@@ -70,11 +70,11 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::BLR: encode_blr(instr); break;
         case AArch64Opcode::RET: encode_ret(instr); break;
         case AArch64Opcode::ADRP: encode_adrp(instr); break;
-        case AArch64Opcode::UXTB: WARN_UNIMPLEMENTED("uxtb"); break;
-        case AArch64Opcode::UXTH: WARN_UNIMPLEMENTED("uxth"); break;
-        case AArch64Opcode::SXTB: WARN_UNIMPLEMENTED("sxtb"); break;
-        case AArch64Opcode::SXTH: WARN_UNIMPLEMENTED("sxth"); break;
-        case AArch64Opcode::SXTW: WARN_UNIMPLEMENTED("sxtw"); break;
+        case AArch64Opcode::UXTB: encode_uxtb(instr); break;
+        case AArch64Opcode::UXTH: encode_uxth(instr); break;
+        case AArch64Opcode::SXTB: encode_sxtb(instr); break;
+        case AArch64Opcode::SXTH: encode_sxth(instr); break;
+        case AArch64Opcode::SXTW: encode_sxtw(instr); break;
     }
 }
 
@@ -249,6 +249,26 @@ void AArch64Encoder::encode_adrp(mcode::Instruction &instr) {
     text.write_u32(0x90000000 | r_dst);
 }
 
+void AArch64Encoder::encode_uxtb(mcode::Instruction &instr) {
+    encode_ubfm_family(instr, {0x53001C00});
+}
+
+void AArch64Encoder::encode_uxth(mcode::Instruction &instr) {
+    encode_ubfm_family(instr, {0x53003C00});
+}
+
+void AArch64Encoder::encode_sxtb(mcode::Instruction &instr) {
+    encode_sbfm_family(instr, {0x13001C00});
+}
+
+void AArch64Encoder::encode_sxth(mcode::Instruction &instr) {
+    encode_sbfm_family(instr, {0x13003C00});
+}
+
+void AArch64Encoder::encode_sxtw(mcode::Instruction &instr) {
+    encode_sbfm_family(instr, {0x13007C00});
+}
+
 void AArch64Encoder::encode_movz_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
@@ -371,6 +391,27 @@ void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, std::array<
 
     text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::INTERNAL);
     text.write_u32(0x54000000 | params[0]);
+}
+
+void AArch64Encoder::encode_ubfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t r_src = encode_reg(m_src.get_physical_reg());
+
+    text.write_u32(params[0] | (r_src << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_sbfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t r_src = encode_reg(m_src.get_physical_reg());
+
+    text.write_u32(params[0] | (sf << 31) | (sf << 22) | (r_src << 5) | r_dst);
 }
 
 std::uint32_t AArch64Encoder::encode_reg(mcode::PhysicalReg reg) {
