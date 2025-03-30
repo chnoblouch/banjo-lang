@@ -8,6 +8,9 @@
 #include "banjo/utils/macros.hpp"
 
 #include <cstdint>
+#include <iostream>
+
+#define WARN_UNIMPLEMENTED(name) std::cout << "warning: " << name << " is unimplemented\n";
 
 namespace banjo {
 namespace target {
@@ -20,11 +23,37 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::MOVZ: encode_movz(instr); break;
         case AArch64Opcode::MOVK: encode_movk(instr); break;
         case AArch64Opcode::LDR: encode_ldr(instr); break;
+        case AArch64Opcode::LDRB: WARN_UNIMPLEMENTED("ldrb"); break;
+        case AArch64Opcode::LDRH: WARN_UNIMPLEMENTED("ldrh"); break;
         case AArch64Opcode::STR: encode_str(instr); break;
+        case AArch64Opcode::STRB: WARN_UNIMPLEMENTED("strb"); break;
+        case AArch64Opcode::STRH: WARN_UNIMPLEMENTED("strh"); break;
         case AArch64Opcode::LDP: encode_ldp(instr); break;
         case AArch64Opcode::STP: encode_stp(instr); break;
         case AArch64Opcode::ADD: encode_add(instr); break;
         case AArch64Opcode::SUB: encode_sub(instr); break;
+        case AArch64Opcode::MUL: encode_mul(instr); break;
+        case AArch64Opcode::SDIV: encode_sdiv(instr); break;
+        case AArch64Opcode::UDIV: encode_udiv(instr); break;
+        case AArch64Opcode::AND: WARN_UNIMPLEMENTED("and"); break;
+        case AArch64Opcode::ORR: WARN_UNIMPLEMENTED("orr"); break;
+        case AArch64Opcode::EOR: WARN_UNIMPLEMENTED("eor"); break;
+        case AArch64Opcode::LSL: WARN_UNIMPLEMENTED("lsl"); break;
+        case AArch64Opcode::ASR: WARN_UNIMPLEMENTED("asr"); break;
+        case AArch64Opcode::CSEL: WARN_UNIMPLEMENTED("csel"); break;
+        case AArch64Opcode::FMOV: WARN_UNIMPLEMENTED("fmov"); break;
+        case AArch64Opcode::FADD: WARN_UNIMPLEMENTED("fadd"); break;
+        case AArch64Opcode::FSUB: WARN_UNIMPLEMENTED("fsub"); break;
+        case AArch64Opcode::FMUL: WARN_UNIMPLEMENTED("fmul"); break;
+        case AArch64Opcode::FDIV: WARN_UNIMPLEMENTED("fdiv"); break;
+        case AArch64Opcode::FCVT: WARN_UNIMPLEMENTED("fcvt"); break;
+        case AArch64Opcode::SCVTF: WARN_UNIMPLEMENTED("scvtf"); break;
+        case AArch64Opcode::UCVTF: WARN_UNIMPLEMENTED("ucvtf"); break;
+        case AArch64Opcode::FCVTZS: WARN_UNIMPLEMENTED("fcvtzs"); break;
+        case AArch64Opcode::FCVTZU: WARN_UNIMPLEMENTED("fcvtzu"); break;
+        case AArch64Opcode::FCSEL: WARN_UNIMPLEMENTED("fcsel"); break;
+        case AArch64Opcode::CMP: WARN_UNIMPLEMENTED("cmp"); break;
+        case AArch64Opcode::FCMP: WARN_UNIMPLEMENTED("fcmp"); break;
         case AArch64Opcode::B: encode_b(instr); break;
         case AArch64Opcode::BR: encode_br(instr); break;
         case AArch64Opcode::B_EQ: encode_b_eq(instr); break;
@@ -41,6 +70,11 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::BLR: encode_blr(instr); break;
         case AArch64Opcode::RET: encode_ret(instr); break;
         case AArch64Opcode::ADRP: encode_adrp(instr); break;
+        case AArch64Opcode::UXTB: WARN_UNIMPLEMENTED("uxtb"); break;
+        case AArch64Opcode::UXTH: WARN_UNIMPLEMENTED("uxth"); break;
+        case AArch64Opcode::SXTB: WARN_UNIMPLEMENTED("sxtb"); break;
+        case AArch64Opcode::SXTH: WARN_UNIMPLEMENTED("sxth"); break;
+        case AArch64Opcode::SXTW: WARN_UNIMPLEMENTED("sxtw"); break;
     }
 }
 
@@ -55,8 +89,7 @@ void AArch64Encoder::encode_mov(mcode::Instruction &instr) {
         // TODO: Move to/from SP.
 
         std::uint32_t r_src = encode_reg(m_src.get_physical_reg());
-        std::uint32_t r_wzr = 31;
-        text.write_u32(0x2A000000 | (sf << 31) | (r_src << 16) | (r_wzr << 5) | r_dst);
+        text.write_u32(0x2A0003E0 | (sf << 31) | (r_src << 16) | r_dst);
     } else if (m_src.is_int_immediate()) {
         std::uint64_t bits = m_src.get_int_immediate().to_bits();
 
@@ -119,6 +152,18 @@ void AArch64Encoder::encode_add(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_sub(mcode::Instruction &instr) {
     encode_add_family(instr, {0x4B000000, 0x51000000});
+}
+
+void AArch64Encoder::encode_mul(mcode::Instruction &instr) {
+    encode_mul_family(instr, {0x1B007C00});
+}
+
+void AArch64Encoder::encode_sdiv(mcode::Instruction &instr) {
+    encode_mul_family(instr, {0x1AC00C00});
+}
+
+void AArch64Encoder::encode_udiv(mcode::Instruction &instr) {
+    encode_mul_family(instr, {0x1AC00800});
 }
 
 void AArch64Encoder::encode_b(mcode::Instruction &instr) {
@@ -306,6 +351,19 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void AArch64Encoder::encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_reg(m_lhs.get_physical_reg());
+    std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
+
+    text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
 }
 
 void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

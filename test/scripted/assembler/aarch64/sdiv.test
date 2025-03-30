@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "B20CD49A"
+
+sdiv x18, x5, x20
+
+# test:subtest
+# test:encoding "B20CD41A"
+
+sdiv w18, w5, w20

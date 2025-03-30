@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "B208D49A"
+
+udiv x18, x5, x20
+
+# test:subtest
+# test:encoding "B208D41A"
+
+udiv w18, w5, w20

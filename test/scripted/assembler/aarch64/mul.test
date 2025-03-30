@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "F77C0E9B"
+
+mul x23, x7, x14
+
+# test:subtest
+# test:encoding "F77C0E1B"
+
+mul w23, w7, w14

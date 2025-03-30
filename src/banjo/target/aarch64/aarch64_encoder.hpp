@@ -43,6 +43,9 @@ private:
     void encode_stp(mcode::Instruction &instr);
     void encode_add(mcode::Instruction &instr);
     void encode_sub(mcode::Instruction &instr);
+    void encode_mul(mcode::Instruction &instr);
+    void encode_sdiv(mcode::Instruction &instr);
+    void encode_udiv(mcode::Instruction &instr);
     void encode_b(mcode::Instruction &instr);
     void encode_br(mcode::Instruction &instr);
     void encode_b_eq(mcode::Instruction &instr);
@@ -64,6 +67,7 @@ private:
     void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
+    void encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
 
     std::uint32_t encode_reg(mcode::PhysicalReg reg);
