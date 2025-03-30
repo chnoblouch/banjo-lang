@@ -27,3 +27,33 @@ ldr x27, [x10, #-113]
 # test:encoding "FB0340B9"
 
 ldr w27, [sp]
+
+# test:subtest
+# test:encoding "5B7543F8"
+
+ldr x27, [x10], #55
+
+# test:subtest
+# test:encoding "5B7543B8"
+
+ldr w27, [x10], #55
+
+# test:subtest
+# test:encoding "5B455FF8"
+
+ldr x27, [x10], #-12
+
+# test:subtest
+# test:encoding "5B7D43F8"
+
+ldr x27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B7D43B8"
+
+ldr w27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B4D5FF8"
+
+ldr x27, [x10, #-12]!

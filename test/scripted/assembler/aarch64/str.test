@@ -27,3 +27,33 @@ str x27, [x10, #-113]
 # test:encoding "FB0300B9"
 
 str w27, [sp]
+
+# test:subtest
+# test:encoding "5B7503F8"
+
+str x27, [x10], #55
+
+# test:subtest
+# test:encoding "5B7503B8"
+
+str w27, [x10], #55
+
+# test:subtest
+# test:encoding "5B451FF8"
+
+str x27, [x10], #-12
+
+# test:subtest
+# test:encoding "5B7D03F8"
+
+str x27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B7D03B8"
+
+str w27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B4D1FF8"
+
+str x27, [x10, #-12]!

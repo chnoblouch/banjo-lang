@@ -1,0 +1,44 @@
+# test:subtest
+# test:encoding "5B014079"
+
+ldrh w27, [x10]
+
+# test:subtest
+# test:encoding "5BA14F79"
+
+ldrh w27, [x10, #2000]
+
+# test:subtest
+# test:encoding "5B514278"
+
+ldrh w27, [x10, #37]
+
+# test:subtest
+# test:encoding "5BF15878"
+
+ldrh w27, [x10, #-113]
+
+# test:subtest
+# test:encoding "FB034079"
+
+ldrh w27, [sp]
+
+# test:subtest
+# test:encoding "5B754378"
+
+ldrh w27, [x10], #55
+
+# test:subtest
+# test:encoding "5B455F78"
+
+ldrh w27, [x10], #-12
+
+# test:subtest
+# test:encoding "5B7D4378"
+
+ldrh w27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B4D5F78"
+
+ldrh w27, [x10, #-12]!

@@ -38,7 +38,11 @@ private:
     void encode_movz(mcode::Instruction &instr);
     void encode_movk(mcode::Instruction &instr);
     void encode_ldr(mcode::Instruction &instr);
+    void encode_ldrb(mcode::Instruction &instr);
+    void encode_ldrh(mcode::Instruction &instr);
     void encode_str(mcode::Instruction &instr);
+    void encode_strb(mcode::Instruction &instr);
+    void encode_strh(mcode::Instruction &instr);
     void encode_ldp(mcode::Instruction &instr);
     void encode_stp(mcode::Instruction &instr);
     void encode_add(mcode::Instruction &instr);
@@ -69,7 +73,8 @@ private:
     void encode_sxtw(mcode::Instruction &instr);
 
     void encode_movz_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
-    void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
+    void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 4> params);
+    void encode_ldrb_family(mcode::Instruction &instr, std::array<std::uint32_t, 5> params);
     void encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
