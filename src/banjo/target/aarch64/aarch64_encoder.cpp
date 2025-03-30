@@ -1,6 +1,7 @@
 #include "aarch64_encoder.hpp"
 
 #include "banjo/emit/binary_module.hpp"
+#include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
@@ -188,7 +189,7 @@ void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
 
     bool sf = instr.get_operand(0).get_size() == 8;
     std::uint32_t r_lhs = encode_reg(m_lhs.get_physical_reg());
-    
+
     if (m_rhs.is_register()) {
         std::uint32_t r_rhs = encode_reg(m_rhs.get_physical_reg());
         text.write_u32(0x6B00001F | (sf << 31) | (r_rhs << 16) | (r_lhs << 5));
@@ -277,9 +278,10 @@ void AArch64Encoder::encode_adrp(mcode::Instruction &instr) {
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_symbol = instr.get_operand(1);
 
+    const mcode::Symbol &symbol = m_symbol.get_symbol();
     std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
 
-    text.add_symbol_use(m_symbol.get_symbol().name, BinSymbolUseKind::PAGE21);
+    text.add_symbol_use(symbol.name, lower_reloc(symbol.reloc));
     text.write_u32(0x90000000 | r_dst);
 }
 
@@ -339,6 +341,9 @@ void AArch64Encoder::encode_ldr_family(mcode::Instruction &instr, std::array<std
             std::uint32_t imm = encode_imm(addr.offset_const, 9, 0);
             text.write_u32(params[1] | (sf << 30) | (imm << 12) | (r_base << 5) | (r_dst));
         }
+    } else if (addr.mode == AddressingMode::OFFSET_SYMBOL) {
+        text.add_symbol_use(addr.offset_symbol.name, lower_reloc(addr.offset_symbol.reloc));
+        text.write_u32(params[0] | (sf << 30) | (r_base << 5) | r_dst);
     } else if (addr.mode == AddressingMode::POST_INDEX) {
         std::uint32_t imm = encode_imm(addr.offset_const, 9, 0);
         text.write_u32(params[2] | (sf << 30) | (imm << 12) | (r_base << 5) | (r_dst));
@@ -371,6 +376,9 @@ void AArch64Encoder::encode_ldrb_family(mcode::Instruction &instr, std::array<st
             std::uint32_t imm = encode_imm(addr.offset_const, 9, 0);
             text.write_u32(params[2] | (imm << 12) | (r_base << 5) | (r_dst));
         }
+    } else if (addr.mode == AddressingMode::OFFSET_SYMBOL) {
+        text.add_symbol_use(addr.offset_symbol.name, lower_reloc(addr.offset_symbol.reloc));
+        text.write_u32(params[1] | (r_base << 5) | r_dst);
     } else if (addr.mode == AddressingMode::POST_INDEX) {
         std::uint32_t imm = encode_imm(addr.offset_const, 9, 0);
         text.write_u32(params[3] | (imm << 12) | (r_base << 5) | (r_dst));
@@ -412,6 +420,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
     mcode::Operand &m_rhs = instr.get_operand(2);
+    mcode::Operand *m_shift = instr.try_get_operand(3);
 
     bool sf = instr.get_operand(0).get_size() == 8;
     std::uint32_t r_dst = encode_reg(m_dst.get_physical_reg());
@@ -423,23 +432,31 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
     } else if (m_rhs.is_int_immediate()) {
         bool shifted = false;
 
-        if (instr.get_operands().get_size() == 4) {
-            mcode::Operand &m_shift = instr.get_operand(3);
-            unsigned shift = m_shift.get_aarch64_left_shift();
+        if (m_shift) {
+            unsigned shift = m_shift->get_aarch64_left_shift();
             ASSERT(shift == 0 || shift == 12);
             shifted = shift == 12;
         }
 
-        std::uint32_t imm = m_rhs.get_int_immediate().to_bits();
-        ASSERT(imm <= 0xFFF);
+        std::uint32_t imm = encode_imm(m_rhs.get_int_immediate(), 12, 0);
         text.write_u32(params[1] | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
     } else if (m_rhs.is_symbol()) {
         // TODO: This is only allowed with `add` instructions!
 
+        const mcode::Symbol &symbol = m_rhs.get_symbol();
         ASSERT(sf == 1);
 
-        text.add_symbol_use(m_rhs.get_symbol().name, BinSymbolUseKind::PAGEOFF12);
+        text.add_symbol_use(symbol.name, lower_reloc(symbol.reloc));
         text.write_u32(params[1] | (1 << 31) | (r_lhs << 5) | r_dst);
+    } else if (m_rhs.is_stack_slot_offset()) {
+        mcode::Operand::StackSlotOffset offset = m_rhs.get_stack_slot_offset();
+
+        mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
+        mcode::StackSlot &slot = stack_frame.get_stack_slot(offset.slot_index);
+        std::uint64_t total_offset = slot.get_offset() + offset.additional_offset;
+
+        std::uint32_t imm = encode_imm(total_offset, 12, 0);
+        text.write_u32(params[1] | (sf << 31) | (imm << 10) | (r_lhs << 5) | r_dst);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -561,12 +578,26 @@ AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcod
                 .offset_reg = addr.get_offset_reg(),
             };
         } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_SYMBOL) {
-            ASSERT_UNREACHABLE;
+            return Address{
+                .mode = AddressingMode::OFFSET_SYMBOL,
+                .base = addr.get_base(),
+                .offset_symbol = addr.get_offset_symbol(),
+            };
         } else {
             ASSERT_UNREACHABLE;
         }
     } else {
         ASSERT_UNREACHABLE;
+    }
+}
+
+BinSymbolUseKind AArch64Encoder::lower_reloc(mcode::Relocation reloc) {
+    switch (reloc) {
+        case mcode::Relocation::PAGE21: return BinSymbolUseKind::PAGE21;
+        case mcode::Relocation::PAGEOFF12: return BinSymbolUseKind::PAGEOFF12;
+        case mcode::Relocation::GOT_LOAD_PAGE21: return BinSymbolUseKind::GOT_LOAD_PAGE21;
+        case mcode::Relocation::GOT_LOAD_PAGEOFF12: return BinSymbolUseKind::GOT_LOAD_PAGEOFF12;
+        default: ASSERT_UNREACHABLE;
     }
 }
 

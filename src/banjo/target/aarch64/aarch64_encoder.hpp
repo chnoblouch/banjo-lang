@@ -16,6 +16,7 @@ private:
     enum class AddressingMode : std::uint8_t {
         OFFSET_CONST,
         OFFSET_REG,
+        OFFSET_SYMBOL,
         POST_INDEX,
         PRE_INDEX,
     };
@@ -24,10 +25,9 @@ private:
         AddressingMode mode;
         mcode::Register base;
 
-        union {
-            LargeInt offset_const;
-            mcode::Register offset_reg;
-        };
+        LargeInt offset_const{0};
+        mcode::Register offset_reg;
+        mcode::Symbol offset_symbol{""};
     };
 
     mcode::Function *cur_func;
@@ -86,6 +86,7 @@ private:
     std::uint32_t encode_reg(mcode::PhysicalReg reg);
     std::uint32_t encode_imm(LargeInt imm, unsigned num_bits, unsigned shift);
     Address lower_addr(mcode::Operand &operand, mcode::Operand *post_operand);
+    BinSymbolUseKind lower_reloc(mcode::Relocation reloc);
 
     void resolve_internal_symbols() override;
     void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);

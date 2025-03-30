@@ -8,6 +8,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <cstdint>
+#include <ranges>
 #include <utility>
 #include <variant>
 
@@ -156,7 +157,10 @@ void MachOEmitter::emit_segment_data(const MachOSegment &segment) {
 
         patch_u32(consume_marker(), tell());
 
-        for (const MachORelocation &relocation : section.relocations) {
+        // Apparently we have to emit relocations in reverse order because
+        // otherwise Xcode's linker complains? See this note in LLVM:
+        // https://github.com/llvm/llvm-project/blob/4dbcefe3806f9970c0e4f4b08d98df5253517f14/llvm/lib/MC/MachObjectWriter.cpp#L1045
+        for (const MachORelocation &relocation : std::ranges::reverse_view(section.relocations)) {
             emit_i32(relocation.address);
 
             std::uint32_t value_bits = relocation.value;
