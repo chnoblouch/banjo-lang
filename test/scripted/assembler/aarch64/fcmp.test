@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "4023311E"
+
+fcmp s26, s17
+
+# test:subtest
+# test:encoding "4023711E"
+
+fcmp d26, d17

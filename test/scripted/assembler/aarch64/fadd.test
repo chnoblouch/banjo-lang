@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "E82A2B1E"
+
+fadd s8, s23, s11
+
+# test:subtest
+# test:encoding "E82A6B1E"
+
+fadd d8, d23, d11

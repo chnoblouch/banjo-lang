@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "E80A2B1E"
+
+fmul s8, s23, s11
+
+# test:subtest
+# test:encoding "E80A6B1E"
+
+fmul d8, d23, d11

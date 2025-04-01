@@ -45,18 +45,18 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::ASR: encode_asr(instr); break;
         case AArch64Opcode::CSEL: WARN_UNIMPLEMENTED("csel"); break;
         case AArch64Opcode::FMOV: encode_fmov(instr); break;
-        case AArch64Opcode::FADD: WARN_UNIMPLEMENTED("fadd"); break;
-        case AArch64Opcode::FSUB: WARN_UNIMPLEMENTED("fsub"); break;
-        case AArch64Opcode::FMUL: WARN_UNIMPLEMENTED("fmul"); break;
-        case AArch64Opcode::FDIV: WARN_UNIMPLEMENTED("fdiv"); break;
-        case AArch64Opcode::FCVT: WARN_UNIMPLEMENTED("fcvt"); break;
+        case AArch64Opcode::FADD: encode_fadd(instr); break;
+        case AArch64Opcode::FSUB: encode_fsub(instr); break;
+        case AArch64Opcode::FMUL: encode_fmul(instr); break;
+        case AArch64Opcode::FDIV: encode_fdiv(instr); break;
+        case AArch64Opcode::FCVT: encode_fcvt(instr); break;
         case AArch64Opcode::SCVTF: WARN_UNIMPLEMENTED("scvtf"); break;
         case AArch64Opcode::UCVTF: WARN_UNIMPLEMENTED("ucvtf"); break;
         case AArch64Opcode::FCVTZS: WARN_UNIMPLEMENTED("fcvtzs"); break;
         case AArch64Opcode::FCVTZU: WARN_UNIMPLEMENTED("fcvtzu"); break;
         case AArch64Opcode::FCSEL: WARN_UNIMPLEMENTED("fcsel"); break;
         case AArch64Opcode::CMP: encode_cmp(instr); break;
-        case AArch64Opcode::FCMP: WARN_UNIMPLEMENTED("fcmp"); break;
+        case AArch64Opcode::FCMP: encode_fcmp(instr); break;
         case AArch64Opcode::B: encode_b(instr); break;
         case AArch64Opcode::BR: encode_br(instr); break;
         case AArch64Opcode::B_EQ: encode_b_eq(instr); break;
@@ -254,6 +254,36 @@ void AArch64Encoder::encode_fmov(mcode::Instruction &instr) {
     }
 }
 
+void AArch64Encoder::encode_fadd(mcode::Instruction &instr) {
+    encode_fadd_family(instr, {0x1E202800});
+}
+
+void AArch64Encoder::encode_fsub(mcode::Instruction &instr) {
+    encode_fadd_family(instr, {0x1E203800});
+}
+
+void AArch64Encoder::encode_fmul(mcode::Instruction &instr) {
+    encode_fadd_family(instr, {0x1E200800});
+}
+
+void AArch64Encoder::encode_fdiv(mcode::Instruction &instr) {
+    encode_fadd_family(instr, {0x1E201800});
+}
+
+void AArch64Encoder::encode_fcvt(mcode::Instruction &instr) {
+    ASSERT(instr.get_operands().get_size() == 2);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    bool ftype = m_src.get_size() == 8;
+    bool opc = m_dst.get_size() == 8;
+    std::uint32_t r_dst = encode_fp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_src = encode_fp_reg(m_src.get_physical_reg());
+
+    text.write_u32(0x1E224000 | (ftype << 22) | (opc << 15) | (r_src << 5) | r_dst);
+}
+
 void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
     mcode::Operand &m_lhs = instr.get_operand(0);
     mcode::Operand &m_rhs = instr.get_operand(1);
@@ -270,6 +300,22 @@ void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void AArch64Encoder::encode_fcmp(mcode::Instruction &instr) {
+    // TODO: There is a variant for comparing with zero, use this in the SSA
+    // lowerer!
+
+    ASSERT(instr.get_operands().get_size() == 2);
+
+    mcode::Operand &m_lhs = instr.get_operand(0);
+    mcode::Operand &m_rhs = instr.get_operand(1);
+
+    bool ftype = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_lhs = encode_fp_reg(m_lhs.get_physical_reg());
+    std::uint32_t r_rhs = encode_fp_reg(m_rhs.get_physical_reg());
+
+    text.write_u32(0x1E202000 | (ftype << 22) | (r_rhs << 16) | (r_lhs << 5));
 }
 
 void AArch64Encoder::encode_b(mcode::Instruction &instr) {
@@ -553,6 +599,21 @@ void AArch64Encoder::encode_lsl_family(mcode::Instruction &instr, std::array<std
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void AArch64Encoder::encode_fadd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    ASSERT(instr.get_operands().get_size() == 3);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
+
+    bool ftype = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_fp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_fp_reg(m_lhs.get_physical_reg());
+    std::uint32_t r_rhs = encode_fp_reg(m_rhs.get_physical_reg());
+
+    text.write_u32(params[0] | (ftype << 22) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
 }
 
 void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

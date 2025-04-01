@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "E83A2B1E"
+
+fsub s8, s23, s11
+
+# test:subtest
+# test:encoding "E83A6B1E"
+
+fsub d8, d23, d11

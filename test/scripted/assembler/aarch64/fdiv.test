@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "E81A2B1E"
+
+fdiv s8, s23, s11
+
+# test:subtest
+# test:encoding "E81A6B1E"
+
+fdiv d8, d23, d11

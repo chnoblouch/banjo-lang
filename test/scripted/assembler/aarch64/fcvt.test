@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "8641621E"
+
+fcvt s6, d12
+
+# test:subtest
+# test:encoding "86C1221E"
+
+fcvt d6, s12
