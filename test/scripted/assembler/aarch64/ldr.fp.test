@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "5B0140BD"
+
+ldr s27, [x10]
+
+# test:subtest
+# test:encoding "5B0140FD"
+
+ldr d27, [x10]
+
+# test:subtest
+# test:encoding "5BD147BD"
+
+ldr s27, [x10, #2000]
+
+# test:subtest
+# test:encoding "5B5142BC"
+
+ldr s27, [x10, #37]
+
+# test:subtest
+# test:encoding "5BF158BC"
+
+ldr s27, [x10, #-113]
+
+# test:subtest
+# test:encoding "FB0340BD"
+
+ldr s27, [sp]
+
+# test:subtest
+# test:encoding "5B7543BC"
+
+ldr s27, [x10], #55
+
+# test:subtest
+# test:encoding "5B7543FC"
+
+ldr d27, [x10], #55
+
+# test:subtest
+# test:encoding "5B455FBC"
+
+ldr s27, [x10], #-12
+
+# test:subtest
+# test:encoding "5B7D43BC"
+
+ldr s27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B7D43FC"
+
+ldr d27, [x10, #55]!
+
+# test:subtest
+# test:encoding "5B4D5FBC"
+
+ldr s27, [x10, #-12]!

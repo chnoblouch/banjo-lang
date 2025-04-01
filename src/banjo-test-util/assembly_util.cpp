@@ -103,14 +103,20 @@ mcode::Opcode AssemblyUtil::parse_opcode() {
 mcode::Operand AssemblyUtil::parse_operand() {
     std::string string = read_operand();
 
-    if (string[0] == 'w') {
-        return mcode::Operand::from_register(convert_register(string), 4);
-    } else if (string[0] == 'x') {
+    if (string == "sp") {
         return mcode::Operand::from_register(convert_register(string), 8);
-    } else if (string[0] == 's') {
+    } else if (string[0] == 'w' || string[0] == 's') {
+        return mcode::Operand::from_register(convert_register(string), 4);
+    } else if (string[0] == 'x' || string[0] == 'd') {
         return mcode::Operand::from_register(convert_register(string), 8);
     } else if (string[0] == '#') {
-        return mcode::Operand::from_int_immediate(LargeInt(string.substr(1)));
+        std::string value = string.substr(1);
+
+        if (value.find('.') == std::string::npos) {
+            return mcode::Operand::from_int_immediate(LargeInt(value));
+        } else {
+            return mcode::Operand::from_fp_immediate(std::stod(value));
+        }
     } else if (string.starts_with("lsl")) {
         unsigned shift_start = 0;
 
@@ -187,12 +193,16 @@ mcode::Opcode AssemblyUtil::convert_opcode(const std::string &string) {
 }
 
 mcode::Register AssemblyUtil::convert_register(const std::string &string) {
-    if (string[0] == 'w' || string[0] == 'x') {
+    if (string == "sp") {
+        return mcode::Register::from_physical(target::AArch64Register::SP);
+    } else if (string[0] == 'w' || string[0] == 'x') {
         unsigned n = std::stoul(string.substr(1));
         mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
         return mcode::Register::from_physical(m_reg);
-    } else if (string == "sp") {
-        return mcode::Register::from_physical(target::AArch64Register::SP);
+    } else if (string[0] == 's' || string[0] == 'd') {
+        unsigned n = std::stoul(string.substr(1));
+        mcode::PhysicalReg m_reg = target::AArch64Register::V0 + n;
+        return mcode::Register::from_physical(m_reg);
     } else {
         ASSERT_UNREACHABLE;
     }

@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "F841201E"
+
+fmov s24, s15
+
+# test:subtest
+# test:encoding "F841601E"
+
+fmov d24, d15
+
+# test:subtest
+# test:encoding "8401261E"
+
+fmov w4, s12
+
+# test:subtest
+# test:encoding "8401669E"
+
+fmov x4, d12
+
+# test:subtest
+# test:encoding "8C00271E"
+
+fmov s12, w4
+
+# test:subtest
+# test:encoding "8C00679E"
+
+fmov d12, x4
+
+# test:subtest
+# test:encoding "18D0201E"
+
+fmov s24, #2.75
+
+# test:subtest
+# test:encoding "18702A1E"
+
+fmov s24, #0.296875
+
+# test:subtest
+# test:encoding "18703D1E"
+
+fmov s24, #-0.84375
+
+# test:subtest
+# test:encoding "18D0601E"
+
+fmov d24, #2.75
+
+# test:subtest
+# test:encoding "18706A1E"
+
+fmov d24, #0.296875
+
+# test:subtest
+# test:encoding "18707D1E"
+
+fmov d24, #-0.84375

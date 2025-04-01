@@ -55,6 +55,7 @@ private:
     void encode_eor(mcode::Instruction &instr);
     void encode_lsl(mcode::Instruction &instr);
     void encode_asr(mcode::Instruction &instr);
+    void encode_fmov(mcode::Instruction &instr);
     void encode_cmp(mcode::Instruction &instr);
     void encode_b(mcode::Instruction &instr);
     void encode_br(mcode::Instruction &instr);
@@ -79,8 +80,8 @@ private:
     void encode_sxtw(mcode::Instruction &instr);
 
     void encode_movz_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
-    void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 4> params);
-    void encode_ldrb_family(mcode::Instruction &instr, std::array<std::uint32_t, 5> params);
+    void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
+    void encode_ldrb_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
@@ -90,10 +91,18 @@ private:
     void encode_ubfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_sbfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
 
-    std::uint32_t encode_reg(mcode::PhysicalReg reg);
+    std::uint32_t encode_gp_reg(mcode::PhysicalReg reg);
+    std::uint32_t encode_fp_reg(mcode::PhysicalReg reg);
     std::uint32_t encode_imm(LargeInt imm, unsigned num_bits, unsigned shift);
+    std::uint32_t encode_f32_imm(float value);
+    std::uint32_t encode_f64_imm(double value);
+    std::uint32_t encode_addr(Address &addr, unsigned imm_shift);
+
     Address lower_addr(mcode::Operand &operand, mcode::Operand *post_operand);
     BinSymbolUseKind lower_reloc(mcode::Relocation reloc);
+
+    bool is_gp_reg(mcode::PhysicalReg reg);
+    bool is_fp_reg(mcode::PhysicalReg reg);
 
     void resolve_internal_symbols() override;
     void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);

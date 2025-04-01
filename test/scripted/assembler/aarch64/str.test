@@ -24,9 +24,9 @@ str x27, [x10, #37]
 str x27, [x10, #-113]
 
 # test:subtest
-# test:encoding "FB0300B9"
+# test:encoding "FB0300F9"
 
-str w27, [sp]
+str x27, [sp]
 
 # test:subtest
 # test:encoding "5B7503F8"
