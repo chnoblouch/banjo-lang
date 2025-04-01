@@ -1,0 +1,19 @@
+# test:subtest
+# test:encoding "C301381E"
+
+fcvtzs w3, s14
+
+# test:subtest
+# test:encoding "C301389E"
+
+fcvtzs x3, s14
+
+# test:subtest
+# test:encoding "C301781E"
+
+fcvtzs w3, d14
+
+# test:subtest
+# test:encoding "C301789E"
+
+fcvtzs x3, d14

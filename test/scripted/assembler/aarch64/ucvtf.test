@@ -1,0 +1,19 @@
+# test:subtest
+# test:encoding "6E00231E"
+
+ucvtf s14, w3
+
+# test:subtest
+# test:encoding "6E00631E"
+
+ucvtf d14, w3
+
+# test:subtest
+# test:encoding "6E00239E"
+
+ucvtf s14, x3
+
+# test:subtest
+# test:encoding "6E00639E"
+
+ucvtf d14, x3

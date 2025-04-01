@@ -50,10 +50,10 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::FMUL: encode_fmul(instr); break;
         case AArch64Opcode::FDIV: encode_fdiv(instr); break;
         case AArch64Opcode::FCVT: encode_fcvt(instr); break;
-        case AArch64Opcode::SCVTF: WARN_UNIMPLEMENTED("scvtf"); break;
-        case AArch64Opcode::UCVTF: WARN_UNIMPLEMENTED("ucvtf"); break;
-        case AArch64Opcode::FCVTZS: WARN_UNIMPLEMENTED("fcvtzs"); break;
-        case AArch64Opcode::FCVTZU: WARN_UNIMPLEMENTED("fcvtzu"); break;
+        case AArch64Opcode::SCVTF: encode_scvtf(instr); break;
+        case AArch64Opcode::UCVTF: encode_ucvtf(instr); break;
+        case AArch64Opcode::FCVTZS: encode_fcvtzs(instr); break;
+        case AArch64Opcode::FCVTZU: encode_fcvtzu(instr); break;
         case AArch64Opcode::FCSEL: WARN_UNIMPLEMENTED("fcsel"); break;
         case AArch64Opcode::CMP: encode_cmp(instr); break;
         case AArch64Opcode::FCMP: encode_fcmp(instr); break;
@@ -282,6 +282,22 @@ void AArch64Encoder::encode_fcvt(mcode::Instruction &instr) {
     std::uint32_t r_src = encode_fp_reg(m_src.get_physical_reg());
 
     text.write_u32(0x1E224000 | (ftype << 22) | (opc << 15) | (r_src << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_scvtf(mcode::Instruction &instr) {
+    encode_scvtf_family(instr, {0x1E220000});
+}
+
+void AArch64Encoder::encode_ucvtf(mcode::Instruction &instr) {
+    encode_scvtf_family(instr, {0x1E230000});
+}
+
+void AArch64Encoder::encode_fcvtzs(mcode::Instruction &instr) {
+    encode_fcvtzs_family(instr, {0x1E380000});
+}
+
+void AArch64Encoder::encode_fcvtzu(mcode::Instruction &instr) {
+    encode_fcvtzs_family(instr, {0x1E390000});
 }
 
 void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
@@ -614,6 +630,34 @@ void AArch64Encoder::encode_fadd_family(mcode::Instruction &instr, std::array<st
     std::uint32_t r_rhs = encode_fp_reg(m_rhs.get_physical_reg());
 
     text.write_u32(params[0] | (ftype << 22) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_scvtf_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    ASSERT(instr.get_operands().get_size() == 2);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    bool sf = m_src.get_size() == 8;
+    bool ftype = m_dst.get_size() == 8;
+    std::uint32_t r_dst = encode_fp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_src = encode_gp_reg(m_src.get_physical_reg());
+
+    text.write_u32(params[0] | (sf << 31) | (ftype << 22) | (r_src << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_fcvtzs_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    ASSERT(instr.get_operands().get_size() == 2);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    bool sf = m_dst.get_size() == 8;
+    bool ftype = m_src.get_size() == 8;
+    std::uint32_t r_dst = encode_gp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_src = encode_fp_reg(m_src.get_physical_reg());
+
+    text.write_u32(params[0] | (sf << 31) | (ftype << 22) | (r_src << 5) | r_dst);
 }
 
 void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
