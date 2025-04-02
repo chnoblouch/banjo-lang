@@ -1,12 +1,17 @@
 # test:subtest
+# test:encoding "41021BCB"
+
+sub x1, x18, x27
+
+# test:subtest
 # test:encoding "41021B4B"
 
 sub w1, w18, w27
 
 # test:subtest
-# test:encoding "41021BCB"
+# test:encoding "C53D16CB"
 
-sub x1, x18, x27
+sub x5, x14, x22, lsl #15
 
 # test:subtest
 # test:encoding "47910151"

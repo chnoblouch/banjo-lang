@@ -1,12 +1,17 @@
 # test:subtest
+# test:encoding "C501168B"
+
+add x5, x14, x22
+
+# test:subtest
 # test:encoding "C501160B"
 
 add w5, w14, w22
 
 # test:subtest
-# test:encoding "C501168B"
+# test:encoding "C53D168B"
 
-add x5, x14, x22
+add x5, x14, x22, lsl #15
 
 # test:subtest
 # test:encoding "A2910111"

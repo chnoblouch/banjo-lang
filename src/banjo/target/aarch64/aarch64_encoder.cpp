@@ -548,6 +548,8 @@ void AArch64Encoder::encode_ldp_family(mcode::Instruction &instr, std::array<std
 }
 
 void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
+    ASSERT(instr.get_operands().get_size() == 3 || instr.get_operands().get_size() == 4);
+
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
     mcode::Operand &m_rhs = instr.get_operand(2);
@@ -559,7 +561,8 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
 
     if (m_rhs.is_register()) {
         std::uint32_t r_rhs = encode_gp_reg(m_rhs.get_physical_reg());
-        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+        std::uint32_t shift = m_shift ? encode_imm(m_shift->get_aarch64_left_shift(), 6, 0) : 0;
+        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (shift << 10) | (r_lhs << 5) | r_dst);
     } else if (m_rhs.is_int_immediate()) {
         bool shifted = false;
 
