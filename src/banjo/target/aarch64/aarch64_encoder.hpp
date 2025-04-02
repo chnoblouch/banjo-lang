@@ -3,6 +3,7 @@
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/target/aarch64/aarch64_condition.hpp"
 
 #include <array>
 #include <cstdint>
@@ -55,6 +56,7 @@ private:
     void encode_eor(mcode::Instruction &instr);
     void encode_lsl(mcode::Instruction &instr);
     void encode_asr(mcode::Instruction &instr);
+    void encode_csel(mcode::Instruction &instr);
     void encode_fmov(mcode::Instruction &instr);
     void encode_fadd(mcode::Instruction &instr);
     void encode_fsub(mcode::Instruction &instr);
@@ -65,6 +67,7 @@ private:
     void encode_ucvtf(mcode::Instruction &instr);
     void encode_fcvtzs(mcode::Instruction &instr);
     void encode_fcvtzu(mcode::Instruction &instr);
+    void encode_fcsel(mcode::Instruction &instr);
     void encode_cmp(mcode::Instruction &instr);
     void encode_fcmp(mcode::Instruction &instr);
     void encode_b(mcode::Instruction &instr);
@@ -100,7 +103,7 @@ private:
     void encode_fadd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_scvtf_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_fcvtzs_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
-    void encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_b_cond_family(mcode::Instruction &instr, AArch64Condition cond);
     void encode_ubfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_sbfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
 
@@ -110,6 +113,7 @@ private:
     std::uint32_t encode_f32_imm(float value);
     std::uint32_t encode_f64_imm(double value);
     std::uint32_t encode_addr(Address &addr, unsigned imm_shift);
+    std::uint32_t encode_cond(AArch64Condition cond);
 
     Address lower_addr(mcode::Operand &operand, mcode::Operand *post_operand);
     BinSymbolUseKind lower_reloc(mcode::Relocation reloc);

@@ -5,15 +5,13 @@
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
+#include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cstdint>
-#include <iostream>
-
-#define WARN_UNIMPLEMENTED(name) std::cout << "warning: " << name << " is unimplemented\n";
 
 namespace banjo {
 namespace target {
@@ -43,7 +41,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::EOR: encode_eor(instr); break;
         case AArch64Opcode::LSL: encode_lsl(instr); break;
         case AArch64Opcode::ASR: encode_asr(instr); break;
-        case AArch64Opcode::CSEL: WARN_UNIMPLEMENTED("csel"); break;
+        case AArch64Opcode::CSEL: encode_csel(instr); break;
         case AArch64Opcode::FMOV: encode_fmov(instr); break;
         case AArch64Opcode::FADD: encode_fadd(instr); break;
         case AArch64Opcode::FSUB: encode_fsub(instr); break;
@@ -54,7 +52,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::UCVTF: encode_ucvtf(instr); break;
         case AArch64Opcode::FCVTZS: encode_fcvtzs(instr); break;
         case AArch64Opcode::FCVTZU: encode_fcvtzu(instr); break;
-        case AArch64Opcode::FCSEL: WARN_UNIMPLEMENTED("fcsel"); break;
+        case AArch64Opcode::FCSEL: encode_fcsel(instr); break;
         case AArch64Opcode::CMP: encode_cmp(instr); break;
         case AArch64Opcode::FCMP: encode_fcmp(instr); break;
         case AArch64Opcode::B: encode_b(instr); break;
@@ -78,6 +76,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::SXTB: encode_sxtb(instr); break;
         case AArch64Opcode::SXTH: encode_sxth(instr); break;
         case AArch64Opcode::SXTW: encode_sxtw(instr); break;
+        default: ASSERT_UNREACHABLE;
     }
 }
 
@@ -205,6 +204,23 @@ void AArch64Encoder::encode_asr(mcode::Instruction &instr) {
     encode_lsl_family(instr, {0x1AC02800});
 }
 
+void AArch64Encoder::encode_csel(mcode::Instruction &instr) {
+    ASSERT(instr.get_operands().get_size() == 4);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
+    mcode::Operand &m_cond = instr.get_operand(3);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_gp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_gp_reg(m_lhs.get_physical_reg());
+    std::uint32_t r_rhs = encode_gp_reg(m_rhs.get_physical_reg());
+    std::uint32_t cond = encode_cond(m_cond.get_aarch64_condition());
+
+    text.write_u32(0x1A800000 | (sf << 31) | (r_rhs << 16) | (cond << 12) | (r_lhs << 5) | r_dst);
+}
+
 void AArch64Encoder::encode_fmov(mcode::Instruction &instr) {
     ASSERT(instr.get_operands().get_size() == 2);
 
@@ -300,6 +316,23 @@ void AArch64Encoder::encode_fcvtzu(mcode::Instruction &instr) {
     encode_fcvtzs_family(instr, {0x1E390000});
 }
 
+void AArch64Encoder::encode_fcsel(mcode::Instruction &instr) {
+    ASSERT(instr.get_operands().get_size() == 4);
+
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_lhs = instr.get_operand(1);
+    mcode::Operand &m_rhs = instr.get_operand(2);
+    mcode::Operand &m_cond = instr.get_operand(3);
+
+    bool ftype = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_fp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_lhs = encode_fp_reg(m_lhs.get_physical_reg());
+    std::uint32_t r_rhs = encode_fp_reg(m_rhs.get_physical_reg());
+    std::uint32_t cond = encode_cond(m_cond.get_aarch64_condition());
+
+    text.write_u32(0x1E200C00 | (ftype << 22) | (r_rhs << 16) | (cond << 12) | (r_lhs << 5) | r_dst);
+}
+
 void AArch64Encoder::encode_cmp(mcode::Instruction &instr) {
     mcode::Operand &m_lhs = instr.get_operand(0);
     mcode::Operand &m_rhs = instr.get_operand(1);
@@ -349,43 +382,43 @@ void AArch64Encoder::encode_br(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_b_eq(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x00});
+    encode_b_cond_family(instr, AArch64Condition::EQ);
 }
 
 void AArch64Encoder::encode_b_ne(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x01});
+    encode_b_cond_family(instr, AArch64Condition::NE);
 }
 
 void AArch64Encoder::encode_b_hs(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x02});
+    encode_b_cond_family(instr, AArch64Condition::HS);
 }
 
 void AArch64Encoder::encode_b_lo(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x03});
+    encode_b_cond_family(instr, AArch64Condition::LO);
 }
 
 void AArch64Encoder::encode_b_hi(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x08});
+    encode_b_cond_family(instr, AArch64Condition::HI);
 }
 
 void AArch64Encoder::encode_b_ls(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x09});
+    encode_b_cond_family(instr, AArch64Condition::LS);
 }
 
 void AArch64Encoder::encode_b_ge(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x0A});
+    encode_b_cond_family(instr, AArch64Condition::GE);
 }
 
 void AArch64Encoder::encode_b_lt(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x0B});
+    encode_b_cond_family(instr, AArch64Condition::LT);
 }
 
 void AArch64Encoder::encode_b_gt(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x0C});
+    encode_b_cond_family(instr, AArch64Condition::GT);
 }
 
 void AArch64Encoder::encode_b_le(mcode::Instruction &instr) {
-    encode_b_cond_family(instr, {0x0D});
+    encode_b_cond_family(instr, AArch64Condition::LE);
 }
 
 void AArch64Encoder::encode_bl(mcode::Instruction &instr) {
@@ -660,11 +693,13 @@ void AArch64Encoder::encode_fcvtzs_family(mcode::Instruction &instr, std::array<
     text.write_u32(params[0] | (sf << 31) | (ftype << 22) | (r_src << 5) | r_dst);
 }
 
-void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, AArch64Condition cond) {
     mcode::Operand &m_target = instr.get_operand(0);
 
+    std::uint32_t cond_bits = encode_cond(cond);
+
     text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::INTERNAL);
-    text.write_u32(0x54000000 | params[0]);
+    text.write_u32(0x54000000 | cond_bits);
 }
 
 void AArch64Encoder::encode_ubfm_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
@@ -756,6 +791,21 @@ std::uint32_t AArch64Encoder::encode_addr(Address &addr, unsigned imm_shift) {
         return 0x00000C00 | (imm << 12) | (r_base << 5);
     } else {
         ASSERT_UNREACHABLE;
+    }
+}
+
+std::uint32_t AArch64Encoder::encode_cond(AArch64Condition cond) {
+    switch (cond) {
+        case AArch64Condition::EQ: return 0x00000000;
+        case AArch64Condition::NE: return 0x00000001;
+        case AArch64Condition::HS: return 0x00000002;
+        case AArch64Condition::LO: return 0x00000003;
+        case AArch64Condition::HI: return 0x00000008;
+        case AArch64Condition::LS: return 0x00000009;
+        case AArch64Condition::GE: return 0x0000000A;
+        case AArch64Condition::LT: return 0x0000000B;
+        case AArch64Condition::GT: return 0x0000000C;
+        case AArch64Condition::LE: return 0x0000000D;
     }
 }
 

@@ -5,6 +5,7 @@
 #include "banjo/mcode/module.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
+#include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/target/aarch64/aarch64_encoder.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
@@ -19,7 +20,7 @@
 namespace banjo {
 namespace test {
 
-std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
+const std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
     {"mov", target::AArch64Opcode::MOV},       {"movz", target::AArch64Opcode::MOVZ},
     {"movk", target::AArch64Opcode::MOVK},     {"ldr", target::AArch64Opcode::LDR},
     {"ldrb", target::AArch64Opcode::LDRB},     {"ldrh", target::AArch64Opcode::LDRH},
@@ -48,6 +49,19 @@ std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
     {"adrp", target::AArch64Opcode::ADRP},     {"uxtb", target::AArch64Opcode::UXTB},
     {"uxth", target::AArch64Opcode::UXTH},     {"sxtb", target::AArch64Opcode::SXTB},
     {"sxth", target::AArch64Opcode::SXTH},     {"sxtw", target::AArch64Opcode::SXTW},
+};
+
+const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_COND_MAP = {
+    {"eq", target::AArch64Condition::EQ},
+    {"ne", target::AArch64Condition::NE},
+    {"hs", target::AArch64Condition::HS},
+    {"lo", target::AArch64Condition::LO},
+    {"hi", target::AArch64Condition::HI},
+    {"ls", target::AArch64Condition::LS},
+    {"ge", target::AArch64Condition::GE},
+    {"lt", target::AArch64Condition::LT},
+    {"gt", target::AArch64Condition::GT},
+    {"le", target::AArch64Condition::LE},
 };
 
 WriteBuffer AssemblyUtil::assemble(std::string source) {
@@ -103,7 +117,9 @@ mcode::Opcode AssemblyUtil::parse_opcode() {
 mcode::Operand AssemblyUtil::parse_operand() {
     std::string string = read_operand();
 
-    if (string == "sp") {
+    if (AARCH64_COND_MAP.contains(string)) {
+        return mcode::Operand::from_aarch64_condition(AARCH64_COND_MAP.at(string));
+    } else if (string == "sp") {
         return mcode::Operand::from_register(convert_register(string), 8);
     } else if (string[0] == 'w' || string[0] == 's') {
         return mcode::Operand::from_register(convert_register(string), 4);

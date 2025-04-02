@@ -1,0 +1,54 @@
+# test:subtest
+# test:encoding "3203869A"
+
+csel x18, x25, x6, eq
+
+# test:subtest
+# test:encoding "3203861A"
+
+csel w18, w25, w6, eq
+
+# test:subtest
+# test:encoding "3213869A"
+
+csel x18, x25, x6, ne
+
+# test:subtest
+# test:encoding "3223869A"
+
+csel x18, x25, x6, hs
+
+# test:subtest
+# test:encoding "3233869A"
+
+csel x18, x25, x6, lo
+
+# test:subtest
+# test:encoding "3283869A"
+
+csel x18, x25, x6, hi
+
+# test:subtest
+# test:encoding "3293869A"
+
+csel x18, x25, x6, ls
+
+# test:subtest
+# test:encoding "32A3869A"
+
+csel x18, x25, x6, ge
+
+# test:subtest
+# test:encoding "32B3869A"
+
+csel x18, x25, x6, lt
+
+# test:subtest
+# test:encoding "32C3869A"
+
+csel x18, x25, x6, gt
+
+# test:subtest
+# test:encoding "32D3869A"
+
+csel x18, x25, x6, le

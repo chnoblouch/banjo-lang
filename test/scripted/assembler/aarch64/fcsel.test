@@ -1,0 +1,54 @@
+# test:subtest
+# test:encoding "970D271E"
+
+fcsel s23, s12, s7, eq
+
+# test:subtest
+# test:encoding "970D671E"
+
+fcsel d23, d12, d7, eq
+
+# test:subtest
+# test:encoding "971D271E"
+
+fcsel s23, s12, s7, ne
+
+# test:subtest
+# test:encoding "972D271E"
+
+fcsel s23, s12, s7, hs
+
+# test:subtest
+# test:encoding "973D271E"
+
+fcsel s23, s12, s7, lo
+
+# test:subtest
+# test:encoding "978D271E"
+
+fcsel s23, s12, s7, hi
+
+# test:subtest
+# test:encoding "979D271E"
+
+fcsel s23, s12, s7, ls
+
+# test:subtest
+# test:encoding "97AD271E"
+
+fcsel s23, s12, s7, ge
+
+# test:subtest
+# test:encoding "97BD271E"
+
+fcsel s23, s12, s7, lt
+
+# test:subtest
+# test:encoding "97CD271E"
+
+fcsel s23, s12, s7, gt
+
+# test:subtest
+# test:encoding "97DD271E"
+
+fcsel s23, s12, s7, le
