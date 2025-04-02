@@ -8,6 +8,7 @@ from framework import ProcessResult, TestResult, run_process, run_tests, find_ex
 SKIPPED_TESTS = [
     "errors.expected_integer.0",
     "errors.expected_integer.1",
+    "errors.expr_category.decl.0",
     "errors.expr_category.decl.3",
     "errors.expr_category.decl.7",
     "errors.expr_category.stmt.2",

@@ -2,7 +2,6 @@
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/emit/binary_builder_symbol.hpp"
-#include "banjo/utils/utils.hpp"
 
 #include <utility>
 
@@ -72,10 +71,7 @@ void SectionBuilder::compute_slice_offsets() {
     }
 }
 
-WriteBuffer SectionBuilder::bake(
-    std::vector<BinSymbolUse> &out_uses,
-    std::initializer_list<BinSymbolKind> skipped_kinds
-) {
+WriteBuffer SectionBuilder::bake(std::vector<BinSymbolUse> &out_uses) {
     WriteBuffer buffer;
 
     for (SectionSlice &slice : slices) {
@@ -84,7 +80,7 @@ WriteBuffer SectionBuilder::bake(
         for (SymbolUse &use : slice.uses) {
             SymbolDef &def = bin_builder.defs[use.index];
 
-            if (Utils::is_one_of(def.kind, skipped_kinds)) {
+            if (def.kind == BinSymbolKind::TEXT_LABEL) {
                 continue;
             }
 

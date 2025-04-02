@@ -66,11 +66,11 @@ BinModule BinaryBuilder::create_module() {
     BinModule bin_mod;
     bake_symbol_locations();
 
-    bin_mod.text = text.bake(bin_mod.symbol_uses, {BinSymbolKind::TEXT_FUNC, BinSymbolKind::TEXT_LABEL});
-    bin_mod.data = data.bake(bin_mod.symbol_uses, {});
+    bin_mod.text = text.bake(bin_mod.symbol_uses);
+    bin_mod.data = data.bake(bin_mod.symbol_uses);
 
     if (addr_table) {
-        bin_mod.bnjatbl_data = addr_table->bake(bin_mod.symbol_uses, {});
+        bin_mod.bnjatbl_data = addr_table->bake(bin_mod.symbol_uses);
     }
 
     bake_symbol_defs(bin_mod);

@@ -910,7 +910,7 @@ void AArch64Encoder::resolve_internal_symbols() {
 void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use) {
     SymbolDef &def = defs[use.index];
 
-    if (def.kind != BinSymbolKind::TEXT_LABEL && def.kind != BinSymbolKind::TEXT_FUNC) {
+    if (def.kind != BinSymbolKind::TEXT_LABEL) {
         return;
     }
 
@@ -921,8 +921,8 @@ void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolU
     std::uint8_t first_byte = instr_template >> 24;
     std::uint32_t displacement = compute_displacement(slice, use);
 
-    if (first_byte == 0x14 || first_byte == 0x94) {
-        // `B` and `BL` instructions encode displacements with 26 bits.
+    if (first_byte == 0x14) {
+        // `B` instructions encode displacements with 26 bits.
         std::uint32_t imm = encode_imm(displacement, 26, 2);
         slice.buffer.write_u32(instr_template | imm);
     } else if (first_byte == 0x54) {

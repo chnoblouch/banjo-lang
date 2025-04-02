@@ -1283,22 +1283,6 @@ void X8664Encoder::resolve_internal_symbols() {
             slice.buffer.write_i32(displacement);
         }
     }
-
-    for (SectionBuilder::SectionSlice &slice : text.get_slices()) {
-        for (SymbolUse &use : slice.uses) {
-            SymbolDef &def = defs[use.index];
-            if (def.kind != BinSymbolKind::TEXT_FUNC) {
-                continue;
-            }
-
-            std::uint32_t use_offset = slice.offset + use.local_offset + 4;
-            std::uint32_t def_offset = text.get_slices()[def.slice_index].offset + def.local_offset;
-            std::int32_t displacement = def_offset - use_offset;
-
-            slice.buffer.seek(use.local_offset);
-            slice.buffer.write_i32(displacement);
-        }
-    }
 }
 
 std::int32_t X8664Encoder::compute_branch_displacement(SectionBuilder::SectionSlice &branch_slice) {

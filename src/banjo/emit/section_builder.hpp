@@ -5,7 +5,6 @@
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/utils/write_buffer.hpp"
 
-#include <initializer_list>
 #include <vector>
 
 namespace banjo {
@@ -60,7 +59,7 @@ public:
     void push_out_slices(unsigned starting_index, std::uint8_t offset);
 
     void compute_slice_offsets();
-    WriteBuffer bake(std::vector<BinSymbolUse> &out_uses, std::initializer_list<BinSymbolKind> skipped_kinds);
+    WriteBuffer bake(std::vector<BinSymbolUse> &out_uses);
 };
 
 }; // namespace banjo
