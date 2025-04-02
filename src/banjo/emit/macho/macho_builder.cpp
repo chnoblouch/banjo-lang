@@ -158,7 +158,7 @@ void MachOBuilder::process_use(const BinSymbolUse &use) {
         .address = static_cast<std::int32_t>(use.address),
         .value = symbol_index_map[use.symbol_index],
         .pc_rel = pc_rel,
-        .length = 4,
+        .length = static_cast<std::uint8_t>(use.kind == BinSymbolUseKind::ABS64 ? 8 : 4),
         .external = true,
         .type = to_relocation_type(use.kind),
     };
@@ -174,6 +174,7 @@ void MachOBuilder::process_use(const BinSymbolUse &use) {
 
 std::uint8_t MachOBuilder::to_relocation_type(BinSymbolUseKind use_kind) {
     switch (use_kind) {
+        case BinSymbolUseKind::ABS64: return MachORelocationType::ARM64_UNSIGNED;
         case BinSymbolUseKind::BRANCH26: return MachORelocationType::ARM64_BRANCH26;
         case BinSymbolUseKind::PAGE21: return MachORelocationType::ARM64_PAGE21;
         case BinSymbolUseKind::PAGEOFF12: return MachORelocationType::ARM64_PAGEOFF12;
