@@ -79,6 +79,14 @@ class Target:
 
     def __eq__(self, other):
         return self.arch == other.arch and self.os == other.os and self.env == other.env
+    
+    def requires_assembler(self):
+        return self not in (
+            Target("x86_64", "windows", "msvc"),
+            Target("x86_64", "windows", "gnu"),
+            Target("x86_64", "linux", "gnu"),
+            Target("aarch64", "macos"),
+        )
 
 
 def get_toolchains_dir():

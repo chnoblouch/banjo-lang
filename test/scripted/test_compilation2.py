@@ -191,24 +191,12 @@ def run_executable(test):
 
         result = run_process(["./test.exe"])
         os.remove("test.exe")
-    elif is_linux:
+    elif is_linux or is_macos:
         if not os.path.exists("main.o"):
             return ProcessResult("", "", 1)
 
         subprocess.run(["clang", "-fuse-ld=lld", "-otest", "main.o"])
         os.remove("main.o")
-
-        if not os.path.exists("test"):
-            return ProcessResult("", "", 1)
-
-        result = run_process(["./test"])
-        os.remove("test")
-    elif is_macos:
-        if not os.path.exists("main.s"):
-            return ProcessResult("", "", 1)
-
-        subprocess.run(["clang", "-otest", "main.s"])
-        os.remove("main.s")
 
         if not os.path.exists("test"):
             return ProcessResult("", "", 1)

@@ -69,13 +69,6 @@ def create_linker_input(config, toolchain):
 def do_build(config, toolchain, args):
     time_before = time.perf_counter()
 
-    if config.force_asm:
-        use_assembler = True
-    else:
-        target = toolchain.target
-        target_str = str(target)
-        use_assembler = not (target.arch == "x86_64" and target.os == "windows") and target_str != "x86_64-linux-gnu"
-
     if config.build_script:
         python_executable = "python" if platform.system() == "Windows" else "python3"
         command = [python_executable, config.build_script]
@@ -94,6 +87,8 @@ def do_build(config, toolchain, args):
     compiler = Compiler()
     compiler.extra_args = extra_args
     compiler.run(config, toolchain)
+
+    use_assembler = config.force_asm or toolchain.target.requires_assembler()
 
     if use_assembler:
         Assembler().run(toolchain)
