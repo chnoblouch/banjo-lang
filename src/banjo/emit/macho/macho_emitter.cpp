@@ -40,6 +40,8 @@ void MachOEmitter::emit_headers(const MachOFile &file) {
             emit_symtab_header(*symtab_command);
         } else if (const auto *dysymtab_command = std::get_if<MachODysymtabCommand>(&command)) {
             emit_dysymtab_header(*dysymtab_command);
+        } else if (const auto *build_version_command = std::get_if<MachOBuildVersionCommand>(&command)) {
+            emit_build_version_header(*build_version_command);
         } else {
             ASSERT_UNREACHABLE;
         }
@@ -136,6 +138,21 @@ void MachOEmitter::emit_dysymtab_header(const MachODysymtabCommand &command) {
     emit_u32(0);                               // number of external relocation entries
     emit_u32(0);                               // file offset of local relocation entries
     emit_u32(0);                               // number of local relocation entries
+}
+
+void MachOEmitter::emit_build_version_header(const MachOBuildVersionCommand &command) {
+    const MachOVersion &os_version = command.os_version;
+    const MachOVersion &sdk_version = command.sdk_version;
+
+    std::uint32_t os_version_bits = (os_version.major << 16) | (os_version.minor << 8) | os_version.patch;
+    std::uint32_t sdk_version_bits = (sdk_version.major << 16) | (sdk_version.minor << 8) | sdk_version.patch;
+
+    emit_u32(0x32);              // command (LC_BUILD_VERSION)
+    emit_u32(24);                // command size
+    emit_u32(command.platform);  // platform
+    emit_u32((os_version_bits)); // os version
+    emit_u32(sdk_version_bits);  // sdk version
+    emit_u32(0);                 // number of tool entries
 }
 
 void MachOEmitter::emit_data(const MachOFile &file) {

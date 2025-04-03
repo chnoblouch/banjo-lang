@@ -211,7 +211,7 @@ class DarwinLinker(Linker):
         elif arch == "aarch64":
             command.extend(["-arch", "arm64"])
 
-        command.extend(["-platform_version", "macos", "11.0.0", "11.0.0"])
+        command.extend(["-platform_version", "macos", "14.0.0", "14.0.0"])
         command.extend(["-syslibroot", self.sysroot])
         command.extend(["-lSystem.B", "-lobjc.A"])
 

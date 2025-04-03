@@ -98,6 +98,25 @@ struct MachODysymtabCommand {
     Group undefined_symbols;
 };
 
+namespace MachOPlatform {
+enum {
+    MACOS = 1,
+    IOS = 2,
+};
+}
+
+struct MachOVersion {
+    std::uint16_t major;
+    std::uint8_t minor;
+    std::uint8_t patch;
+};
+
+struct MachOBuildVersionCommand {
+    std::uint32_t platform;
+    MachOVersion os_version;
+    MachOVersion sdk_version;
+};
+
 namespace MachOCPUType {
 enum {
     ARM64 = 0x0100000C,
@@ -110,7 +129,7 @@ enum {
 };
 }
 
-typedef std::variant<MachOSegment, MachOSymtabCommand, MachODysymtabCommand> MachOCommand;
+typedef std::variant<MachOSegment, MachOSymtabCommand, MachODysymtabCommand, MachOBuildVersionCommand> MachOCommand;
 
 struct MachOFile {
     std::uint32_t cpu_type;

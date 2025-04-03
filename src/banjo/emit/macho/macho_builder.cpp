@@ -10,6 +10,14 @@ namespace banjo {
 MachOFile MachOBuilder::build(BinModule mod) {
     // TODO: Calculate these alignments dynamically.
 
+    // TODO: It looks like sections have to be manually aligned by the compiler.
+    // The way clang seems to do this is by adjusting the memory address of the
+    // section, but this complicates other calculations in the emitter, so for
+    // now we'll just add some padding to the data in the __text section.
+    while (mod.text.get_data().size() % 16 != 0) {
+        mod.text.write_u8(0);
+    }
+
     text_section = MachOSection{
         .name = "__text",
         .segment_name = "__TEXT",
@@ -63,6 +71,19 @@ MachOFile MachOBuilder::build(BinModule mod) {
                 .undefined_symbols{
                     .index = num_local_symbols + num_external_symbols,
                     .count = num_undefined_symbols,
+                },
+            },
+            MachOBuildVersionCommand{
+                .platform = MachOPlatform::MACOS,
+                .os_version{
+                    .major = 14,
+                    .minor = 0,
+                    .patch = 0,
+                },
+                .sdk_version{
+                    .major = 14,
+                    .minor = 0,
+                    .patch = 0,
                 },
             },
         },

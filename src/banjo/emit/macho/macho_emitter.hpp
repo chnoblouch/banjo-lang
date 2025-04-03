@@ -25,6 +25,7 @@ private:
     void emit_segment_header(const MachOSegment &segment);
     void emit_symtab_header(const MachOSymtabCommand &command);
     void emit_dysymtab_header(const MachODysymtabCommand &command);
+    void emit_build_version_header(const MachOBuildVersionCommand &command);
 
     void emit_data(const MachOFile &file);
     void emit_segment_data(const MachOSegment &segment);
