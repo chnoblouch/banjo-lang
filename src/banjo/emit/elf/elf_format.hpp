@@ -56,6 +56,10 @@ enum : std::uint32_t {
     X86_64_GOT32 = 3,
     X86_64_PLT32 = 4,
     X86_64_GOTPCREL = 9,
+
+    AARCH64_ADR_PREL_PG_HI21 = 275,
+    AARCH64_ADD_ABS_LO12_NC = 277,
+    AARCH64_CALL26 = 283,
 };
 }
 

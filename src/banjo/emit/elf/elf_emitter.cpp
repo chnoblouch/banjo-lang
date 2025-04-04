@@ -1,7 +1,10 @@
 #include "elf_emitter.hpp"
 
 #include "banjo/emit/elf/elf_builder.hpp"
+#include "banjo/target/aarch64/aarch64_encoder.hpp"
+#include "banjo/target/target_description.hpp"
 #include "banjo/target/x86_64/x86_64_encoder.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
 namespace banjo {
@@ -9,20 +12,31 @@ namespace banjo {
 namespace codegen {
 
 void ELFEmitter::generate() {
-    PROFILE_SCOPE_BEGIN("x86-64 encoder");
-    BinModule module_ = target::X8664Encoder().encode(module);
-    PROFILE_SCOPE_END("x86-64 encoder");
-
-    PROFILE_SCOPE_BEGIN("ELF builder");
-    ELFFile file = ELFBuilder().build(std::move(module_));
-    PROFILE_SCOPE_END("ELF builder");
-
-    PROFILE_SCOPE_BEGIN("ELF emitter");
+    BinModule bin_mod = generate_bin_mod();
+    ELFFile file = build_file(bin_mod);
     emit_file(file);
-    PROFILE_SCOPE_END("ELF emitter");
+}
+
+BinModule ELFEmitter::generate_bin_mod() {
+    if (target.get_architecture() == target::Architecture::X86_64) {
+        PROFILE_SCOPE("x86-64 encoder");
+        return target::X8664Encoder().encode(module);
+    } else if (target.get_architecture() == target::Architecture::AARCH64) {
+        PROFILE_SCOPE("aarch64 encoder");
+        return target::AArch64Encoder(target).encode(module);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+ELFFile ELFEmitter::build_file(BinModule &bin_mod) {
+    PROFILE_SCOPE("ELF builder");
+    return ELFBuilder(target).build(std::move(bin_mod));
 }
 
 void ELFEmitter::emit_file(const ELFFile &file) {
+    PROFILE_SCOPE("ELF emitter");
+
     emit_header(file);
     emit_sections(file.sections);
 }
@@ -44,7 +58,7 @@ void ELFEmitter::emit_header(const ELFFile &file) {
     }
 
     emit_u16(1);                        // type (relocatable object file)
-    emit_u16(file.machine);             // machine (x86_64)
+    emit_u16(file.machine);             // machine
     emit_u32(1);                        // version (current)
     emit_u64(0);                        // entry point address
     emit_u64(0);                        // program header table offset

@@ -16,6 +16,8 @@ namespace banjo {
 
 namespace target {
 
+// FIXME: Relocations for loads and stores are not generated correctly!
+
 AArch64SSALowerer::AArch64SSALowerer(Target *target) : SSALowerer(target) {}
 
 mcode::Operand AArch64SSALowerer::lower_value(const ssa::Operand &operand) {
@@ -424,6 +426,8 @@ void AArch64SSALowerer::lower_fdemote(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_utof(ssa::Instruction &instr) {
+    // FIXME: Conversion from 8-bit and 16-bit values.
+
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);

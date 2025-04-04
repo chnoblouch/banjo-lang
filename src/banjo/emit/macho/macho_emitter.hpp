@@ -3,6 +3,7 @@
 
 #include "banjo/emit/binary_emitter.hpp"
 #include "banjo/emit/macho/macho_format.hpp"
+#include "banjo/target/target_description.hpp"
 
 namespace banjo {
 namespace codegen {
@@ -10,11 +11,16 @@ namespace codegen {
 class MachOEmitter : public codegen::BinaryEmitter {
 
 private:
+    target::TargetDescription target;
+
     std::vector<std::size_t> markers;
     unsigned marker_index = 0;
 
 public:
-    MachOEmitter(mcode::Module &module, std::ostream &stream) : BinaryEmitter(module, stream) {}
+    MachOEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
+      : BinaryEmitter(module, stream),
+        target(target) {}
+
     void generate();
 
 private:

@@ -32,6 +32,11 @@ enum class BinSymbolUseKind {
     GOTPCREL32,
     PLT32,
 
+    // Relocations for AArch64 ELF
+    ADR_PREL_PG_HI21,
+    ADD_ABS_LO12_NC,
+    CALL26,
+
     // Relocations for AArch64 Mach-O
     BRANCH26,
     PAGE21,

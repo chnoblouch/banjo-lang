@@ -2,7 +2,9 @@
 #define ELF_EMITTER_H
 
 #include "banjo/emit/binary_emitter.hpp"
+#include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/elf/elf_format.hpp"
+#include "banjo/target/target_description.hpp"
 
 namespace banjo {
 
@@ -15,11 +17,19 @@ private:
         std::size_t data;
     };
 
+    target::TargetDescription target;
+
 public:
-    ELFEmitter(mcode::Module &module, std::ostream &stream) : BinaryEmitter(module, stream) {}
+    ELFEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
+      : BinaryEmitter(module, stream),
+        target(target) {}
+
     void generate();
 
 private:
+    BinModule generate_bin_mod();
+    ELFFile build_file(BinModule &bin_mod);
+
     void emit_file(const ELFFile &file);
     void emit_header(const ELFFile &file);
     void emit_sections(const std::vector<ELFSection> &sections);

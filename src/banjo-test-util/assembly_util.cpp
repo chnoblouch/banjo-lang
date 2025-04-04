@@ -9,6 +9,7 @@
 #include "banjo/target/aarch64/aarch64_encoder.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <sstream>
@@ -80,7 +81,14 @@ WriteBuffer AssemblyUtil::assemble(std::string source) {
 
     mcode::Module m_mod;
     m_mod.add(m_func);
-    BinModule bin_mod = target::AArch64Encoder().encode(m_mod);
+
+    target::TargetDescription target{
+        target::Architecture::AARCH64,
+        target::OperatingSystem::LINUX,
+        target::Environment::GNU,
+    };
+
+    BinModule bin_mod = target::AArch64Encoder(target).encode(m_mod);
 
     return std::move(bin_mod.text);
 }

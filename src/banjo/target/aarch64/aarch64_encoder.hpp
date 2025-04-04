@@ -4,6 +4,7 @@
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
+#include "banjo/target/target_description.hpp"
 
 #include <array>
 #include <cstdint>
@@ -31,10 +32,14 @@ private:
         mcode::Symbol offset_symbol{""};
     };
 
+    target::TargetDescription target;
     mcode::Function *cur_func;
 
-    void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
+public:
+    AArch64Encoder(target::TargetDescription target);
 
+private:
+    void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
     void encode_mov(mcode::Instruction &instr);
     void encode_movz(mcode::Instruction &instr);
     void encode_movk(mcode::Instruction &instr);

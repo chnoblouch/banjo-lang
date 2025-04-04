@@ -16,6 +16,8 @@
 namespace banjo {
 namespace target {
 
+AArch64Encoder::AArch64Encoder(target::TargetDescription target) : target(target) {}
+
 void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo & /*frame_info*/) {
     cur_func = func;
 
@@ -424,7 +426,16 @@ void AArch64Encoder::encode_b_le(mcode::Instruction &instr) {
 void AArch64Encoder::encode_bl(mcode::Instruction &instr) {
     mcode::Operand &m_callee = instr.get_operand(0);
 
-    text.add_symbol_use(m_callee.get_symbol().name, BinSymbolUseKind::BRANCH26);
+    // TODO: This relocation should be set by the SSA lowerer.
+
+    if (target.is_unix()) {
+        text.add_symbol_use(m_callee.get_symbol().name, BinSymbolUseKind::CALL26);
+    } else if (target.is_darwin()) {
+        text.add_symbol_use(m_callee.get_symbol().name, BinSymbolUseKind::BRANCH26);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
     text.write_u32(0x94000000);
 }
 
@@ -883,6 +894,8 @@ AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcod
 
 BinSymbolUseKind AArch64Encoder::lower_reloc(mcode::Relocation reloc) {
     switch (reloc) {
+        case mcode::Relocation::ADR_PREL_PG_HI21: return BinSymbolUseKind::ADR_PREL_PG_HI21;
+        case mcode::Relocation::ADD_ABS_LO12_NC: return BinSymbolUseKind::ADD_ABS_LO12_NC;
         case mcode::Relocation::PAGE21: return BinSymbolUseKind::PAGE21;
         case mcode::Relocation::PAGEOFF12: return BinSymbolUseKind::PAGEOFF12;
         case mcode::Relocation::GOT_LOAD_PAGE21: return BinSymbolUseKind::GOT_LOAD_PAGE21;

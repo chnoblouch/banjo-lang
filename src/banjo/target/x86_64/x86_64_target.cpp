@@ -47,7 +47,7 @@ codegen::Emitter *X8664Target::create_emitter(mcode::Module &module, std::ostrea
 
     switch (descr.get_operating_system()) {
         case OperatingSystem::WINDOWS: return new codegen::PEEmitter(module, stream);
-        case OperatingSystem::LINUX: return new codegen::ELFEmitter(module, stream);
+        case OperatingSystem::LINUX: return new codegen::ELFEmitter(module, stream, descr);
         default: return new codegen::NASMEmitter(module, stream, descr);
     }
 }

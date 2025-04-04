@@ -19,7 +19,7 @@ void MachOEmitter::generate() {
     markers.clear();
     marker_index = 0;
 
-    BinModule bin_mod = target::AArch64Encoder().encode(module);
+    BinModule bin_mod = target::AArch64Encoder(target).encode(module);
     MachOFile file = MachOBuilder().build(std::move(bin_mod));
     emit_file(file);
 }

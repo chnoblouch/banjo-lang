@@ -1,12 +1,19 @@
 #include "elf_builder.hpp"
 
 #include "banjo/emit/elf/elf_format.hpp"
+#include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
+ELFBuilder::ELFBuilder(target::TargetDescription target) : target(target) {}
+
 ELFFile ELFBuilder::build(BinModule module_) {
-    file.machine = ELFMachine::X86_64;
+    switch (target.get_architecture()) {
+        case target::Architecture::X86_64: file.machine = ELFMachine::X86_64; break;
+        case target::Architecture::AARCH64: file.machine = ELFMachine::AARCH64; break;
+        default: ASSERT_UNREACHABLE;
+    }
 
     // TODO: Calculate these alignments dynamically. Also, where do these alignment values come
     // from? We currently just use the ones that Clang and NASM emit...
@@ -50,33 +57,32 @@ ELFFile ELFBuilder::build(BinModule module_) {
         .link = 4,
         .alignment = 8,
         .entry_size = 24,
-        .data =
-            ELFSection::SymbolList{
-                ELFSymbol{
-                    .name_offset = 0,
-                    .binding = 0,
-                    .type = ELFSymbolType::NOTYPE,
-                    .section_index = 0,
-                    .value = 0,
-                    .size = 0,
-                },
-                ELFSymbol{
-                    .name_offset = 0,
-                    .binding = 0,
-                    .type = ELFSymbolType::SECTION,
-                    .section_index = 1,
-                    .value = 0,
-                    .size = 0,
-                },
-                ELFSymbol{
-                    .name_offset = 0,
-                    .binding = 0,
-                    .type = ELFSymbolType::SECTION,
-                    .section_index = 2,
-                    .value = 0,
-                    .size = 0,
-                },
+        .data = ELFSection::SymbolList{
+            ELFSymbol{
+                .name_offset = 0,
+                .binding = 0,
+                .type = ELFSymbolType::NOTYPE,
+                .section_index = 0,
+                .value = 0,
+                .size = 0,
             },
+            ELFSymbol{
+                .name_offset = 0,
+                .binding = 0,
+                .type = ELFSymbolType::SECTION,
+                .section_index = 1,
+                .value = 0,
+                .size = 0,
+            },
+            ELFSymbol{
+                .name_offset = 0,
+                .binding = 0,
+                .type = ELFSymbolType::SECTION,
+                .section_index = 2,
+                .value = 0,
+                .size = 0,
+            },
+        },
     };
 
     text_rela_section = ELFSection{
@@ -197,14 +203,16 @@ void ELFBuilder::process_def(const BinSymbolDef &def) {
             break;
     }
 
-    symbols.push_back(ELFSymbol{
-        .name_offset = add_string(strtab_section, def.name),
-        .binding = def.global ? ELFSymbolBinding::GLOBAL : ELFSymbolBinding::LOCAL,
-        .type = type,
-        .section_index = section_index,
-        .value = def.offset,
-        .size = 0,
-    });
+    symbols.push_back(
+        ELFSymbol{
+            .name_offset = add_string(strtab_section, def.name),
+            .binding = def.global ? ELFSymbolBinding::GLOBAL : ELFSymbolBinding::LOCAL,
+            .type = type,
+            .section_index = section_index,
+            .value = def.offset,
+            .size = 0,
+        }
+    );
 }
 
 void ELFBuilder::process_uses(const std::vector<BinSymbolUse> &uses) {
@@ -220,33 +228,57 @@ void ELFBuilder::process_uses(const std::vector<BinSymbolUse> &uses) {
         int address_offset;
         std::uint32_t type;
 
-        switch (use.kind) {
-            case BinSymbolUseKind::ABS64:
-                address_offset = 0;
-                type = ELFRelocationType::X86_64_64;
-                break;
-            case BinSymbolUseKind::REL32:
-                address_offset = -4;
-                type = ELFRelocationType::X86_64_PC32;
-                break;
-            case BinSymbolUseKind::GOTPCREL32:
-                address_offset = -4;
-                type = ELFRelocationType::X86_64_GOTPCREL;
-                break;
-            case BinSymbolUseKind::PLT32:
-                address_offset = -4;
-                type = ELFRelocationType::X86_64_PLT32;
-                break;
+        switch (target.get_architecture()) {
+            case target::Architecture::X86_64: process_x86_64_relocation(use, address_offset, type); break;
+            case target::Architecture::AARCH64: process_aarch64_relocation(use, address_offset, type); break;
+            default: ASSERT_UNREACHABLE;
         }
 
         ELFSection::RelocationList &relocations = std::get<ELFSection::RelocationList>(section->data);
 
-        relocations.push_back(ELFRelocation{
-            .offset = use.address,
-            .symbol_index = elf_symbol_indices[use.symbol_index],
-            .type = type,
-            .addend = use.addend + address_offset,
-        });
+        relocations.push_back(
+            ELFRelocation{
+                .offset = use.address,
+                .symbol_index = elf_symbol_indices[use.symbol_index],
+                .type = type,
+                .addend = use.addend + address_offset,
+            }
+        );
+    }
+}
+
+void ELFBuilder::process_x86_64_relocation(const BinSymbolUse &use, int &address_offset, std::uint32_t &type) {
+    switch (use.kind) {
+        case BinSymbolUseKind::ABS64:
+            address_offset = 0;
+            type = ELFRelocationType::X86_64_64;
+            break;
+        case BinSymbolUseKind::REL32:
+            address_offset = -4;
+            type = ELFRelocationType::X86_64_PC32;
+            break;
+        case BinSymbolUseKind::GOTPCREL32:
+            address_offset = -4;
+            type = ELFRelocationType::X86_64_GOTPCREL;
+            break;
+        case BinSymbolUseKind::PLT32:
+            address_offset = -4;
+            type = ELFRelocationType::X86_64_PLT32;
+            break;
+        default: ASSERT_UNREACHABLE;
+    }
+}
+
+void ELFBuilder::process_aarch64_relocation(const BinSymbolUse &use, int &address_offset, std::uint32_t &type) {
+    address_offset = 0;
+
+    switch (use.kind) {
+        case BinSymbolUseKind::ABS64: type = ELFRelocationType::X86_64_64; break;
+        case BinSymbolUseKind::REL32: type = ELFRelocationType::X86_64_PC32; break;
+        case BinSymbolUseKind::ADR_PREL_PG_HI21: type = ELFRelocationType::AARCH64_ADR_PREL_PG_HI21; break;
+        case BinSymbolUseKind::ADD_ABS_LO12_NC: type = ELFRelocationType::AARCH64_ADD_ABS_LO12_NC; break;
+        case BinSymbolUseKind::CALL26: type = ELFRelocationType::AARCH64_CALL26; break;
+        default: ASSERT_UNREACHABLE;
     }
 }
 

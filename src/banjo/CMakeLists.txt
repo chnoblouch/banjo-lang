@@ -20,7 +20,6 @@ add_library(banjo STATIC
     emit/section_builder.cpp
     emit/elf/elf_builder.cpp
     emit/elf/elf_emitter.cpp
-    emit/elf/elf_format.cpp
     emit/macho/macho_builder.cpp
     emit/macho/macho_emitter.cpp
     emit/pe/pe_builder.cpp
