@@ -273,8 +273,7 @@ void ELFBuilder::process_aarch64_relocation(const BinSymbolUse &use, int &addres
     address_offset = 0;
 
     switch (use.kind) {
-        case BinSymbolUseKind::ABS64: type = ELFRelocationType::X86_64_64; break;
-        case BinSymbolUseKind::REL32: type = ELFRelocationType::X86_64_PC32; break;
+        case BinSymbolUseKind::ABS64: type = ELFRelocationType::AARCH64_ABS64; break;
         case BinSymbolUseKind::ADR_PREL_PG_HI21: type = ELFRelocationType::AARCH64_ADR_PREL_PG_HI21; break;
         case BinSymbolUseKind::ADD_ABS_LO12_NC: type = ELFRelocationType::AARCH64_ADD_ABS_LO12_NC; break;
         case BinSymbolUseKind::CALL26: type = ELFRelocationType::AARCH64_CALL26; break;
