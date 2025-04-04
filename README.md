@@ -82,6 +82,7 @@ The hot reloader is a tool that watches source files for changes, recompiles the
         - `config`: Compiler configuration
         - `emit`: Generating assembly and machine code
             - `elf`: Generating ELF binaries (the binary format of Linux)
+            - `macho`: Generating Mach-O binaries (the binary format of macOS)
             - `pe`: Generating PE binaries (the binary format of Windows)
         - `lexer`: Tokenizing source code
         - `mcode`: Intermediate representation for target machine instructions
