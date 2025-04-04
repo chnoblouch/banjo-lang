@@ -2,6 +2,7 @@
 
 #include "banjo/config/config.hpp"
 #include "banjo/emit/aarch64_asm_emitter.hpp"
+#include "banjo/emit/elf/elf_emitter.hpp"
 #include "banjo/emit/macho/macho_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 #include "banjo/target/aarch64/aarch64_stack_offset_fixup_pass.hpp"
@@ -29,7 +30,9 @@ std::string AArch64Target::get_output_file_ext() {
         return "s";
     }
 
-    if (descr.get_operating_system() == OperatingSystem::MACOS) {
+    if (descr.get_operating_system() == OperatingSystem::LINUX) {
+        return "o";
+    } else if (descr.get_operating_system() == OperatingSystem::MACOS) {
         return "o";
     } else {
         return "s";
@@ -42,7 +45,8 @@ codegen::Emitter *AArch64Target::create_emitter(mcode::Module &module, std::ostr
     }
 
     switch (descr.get_operating_system()) {
-        case OperatingSystem::MACOS: return new codegen::MachOEmitter(module, stream);
+        case OperatingSystem::LINUX: return new codegen::ELFEmitter(module, stream, descr);
+        case OperatingSystem::MACOS: return new codegen::MachOEmitter(module, stream, descr);
         default: return new codegen::AArch64AsmEmitter(module, stream, descr);
     }
 }

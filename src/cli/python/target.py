@@ -85,6 +85,7 @@ class Target:
             Target("x86_64", "windows", "msvc"),
             Target("x86_64", "windows", "gnu"),
             Target("x86_64", "linux", "gnu"),
+            Target("aarch64", "linux", "gnu"),
             Target("aarch64", "macos"),
         )
 
