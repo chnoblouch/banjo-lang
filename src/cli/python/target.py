@@ -45,13 +45,8 @@ class Target:
             Target("x86_64", "windows", "msvc"),
             Target("x86_64", "windows", "gnu"),
             Target("x86_64", "linux", "gnu"),
-            Target("x86_64", "macos"),
-            Target("x86_64", "android"),
-            Target("aarch64", "windows", "msvc"),
             Target("aarch64", "linux", "gnu"),
             Target("aarch64", "macos"),
-            Target("aarch64", "android"),
-            Target("aarch64", "ios")
         ]
 
     @property
