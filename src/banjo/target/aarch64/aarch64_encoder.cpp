@@ -10,6 +10,7 @@
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cstdint>
 
@@ -372,7 +373,7 @@ void AArch64Encoder::encode_fcmp(mcode::Instruction &instr) {
 void AArch64Encoder::encode_b(mcode::Instruction &instr) {
     mcode::Operand &m_target = instr.get_operand(0);
 
-    text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::INTERNAL);
+    text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::LABEL_BRANCH);
     text.write_u32(0x14000000);
 }
 
@@ -712,7 +713,7 @@ void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, AArch64Cond
 
     std::uint32_t cond_bits = encode_cond(cond);
 
-    text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::INTERNAL);
+    text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::LABEL_BRANCH);
     text.write_u32(0x54000000 | cond_bits);
 }
 
@@ -921,9 +922,13 @@ void AArch64Encoder::resolve_internal_symbols() {
 }
 
 void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use) {
-    SymbolDef &def = defs[use.index];
+    std::initializer_list resolvable_kinds{
+        BinSymbolUseKind::LABEL_BRANCH,
+        BinSymbolUseKind::CALL26,
+        BinSymbolUseKind::BRANCH26,
+    };
 
-    if (def.kind != BinSymbolKind::TEXT_LABEL) {
+    if (!Utils::is_one_of(use.kind, resolvable_kinds)) {
         return;
     }
 
@@ -931,20 +936,31 @@ void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolU
     std::uint32_t instr_template = slice.buffer.read_u32();
     slice.buffer.seek(use.local_offset);
 
-    std::uint8_t first_byte = instr_template >> 24;
     std::uint32_t displacement = compute_displacement(slice, use);
 
-    if (first_byte == 0x14) {
-        // `B` instructions encode displacements with 26 bits.
+    if (use.kind == BinSymbolUseKind::LABEL_BRANCH) {
+        std::uint8_t first_byte = instr_template >> 24;
+
+        if (first_byte == 0x14) {
+            // `B` instructions encode displacements with 26 bits.
+            std::uint32_t imm = encode_imm(displacement, 26, 2);
+            slice.buffer.write_u32(instr_template | imm);
+        } else if (first_byte == 0x54) {
+            // `B.cond` instructions encode displacements with 19 bits.
+            std::uint32_t imm = encode_imm(displacement, 19, 2);
+            slice.buffer.write_u32(instr_template | (imm << 5));
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else if (use.kind == BinSymbolUseKind::CALL26 || use.kind == BinSymbolUseKind::BRANCH26) {
+        // `BL` instructions encode displacements with 26 bits.
         std::uint32_t imm = encode_imm(displacement, 26, 2);
         slice.buffer.write_u32(instr_template | imm);
-    } else if (first_byte == 0x54) {
-        // `B.cond` instructions encode displacements with 19 bits.
-        std::uint32_t imm = encode_imm(displacement, 19, 2);
-        slice.buffer.write_u32(instr_template | (imm << 5));
     } else {
         ASSERT_UNREACHABLE;
     }
+
+    use.is_resolved = true;
 }
 
 } // namespace target

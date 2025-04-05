@@ -1269,32 +1269,51 @@ void X8664Encoder::apply_relaxation() {
 void X8664Encoder::resolve_internal_symbols() {
     for (unsigned i = 0; i < text.get_slices().size(); i++) {
         SectionBuilder::SectionSlice &slice = text.get_slices()[i];
-        if (!slice.relaxable_branch) {
-            continue;
-        }
 
-        SymbolUse &use = slice.uses[0];
-        std::int32_t displacement = compute_branch_displacement(slice);
-        slice.buffer.seek(use.local_offset);
-
-        if (fits_in_i8(displacement)) {
-            slice.buffer.write_i8(displacement);
+        if (slice.relaxable_branch) {
+            resolve_relaxable_slice(slice);
         } else {
-            slice.buffer.write_i32(displacement);
+            for (SymbolUse &use : slice.uses) {
+                resolve_symbol(slice, use);
+            }
         }
     }
 }
 
-std::int32_t X8664Encoder::compute_branch_displacement(SectionBuilder::SectionSlice &branch_slice) {
-    SymbolUse &use = branch_slice.uses[0];
+void X8664Encoder::resolve_relaxable_slice(SectionBuilder::SectionSlice &slice) {
+    SymbolUse &use = slice.uses[0];
+    std::int32_t displacement = compute_branch_displacement(slice);
+    slice.buffer.seek(use.local_offset);
+
+    if (fits_in_i8(displacement)) {
+        slice.buffer.write_i8(displacement);
+    } else {
+        slice.buffer.write_i32(displacement);
+    }
+
+    use.is_resolved = true;
+}
+
+void X8664Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use) {
     SymbolDef &def = defs[use.index];
 
+    if (def.kind != BinSymbolKind::TEXT_FUNC) {
+        return;
+    }
+
+    std::int32_t displacement = compute_displacement(slice, use) - 4;
+
+    slice.buffer.seek(use.local_offset);
+    slice.buffer.write_i32(displacement);
+
+    use.is_resolved = true;
+}
+
+std::int32_t X8664Encoder::compute_branch_displacement(SectionBuilder::SectionSlice &branch_slice) {
+    SymbolUse &use = branch_slice.uses[0];
     std::uint8_t opcode = branch_slice.buffer.get_data()[0];
     std::uint32_t size = opcode == 0x0F || opcode == 0xE9 ? 4 : 1;
-
-    std::uint32_t use_offset = branch_slice.offset + use.local_offset + size;
-    std::uint32_t def_offset = text.get_slices()[def.slice_index].offset + def.local_offset;
-    return def_offset - use_offset;
+    return compute_displacement(branch_slice, use) - size;
 }
 
 void X8664Encoder::process_eh_pushreg(mcode::Instruction &instr, UnwindInfo &frame_info) {

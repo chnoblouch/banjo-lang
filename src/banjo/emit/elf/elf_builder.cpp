@@ -185,10 +185,6 @@ void ELFBuilder::process_def(const BinSymbolDef &def) {
             type = ELFSymbolType::FUNC;
             section_index = 1;
             break;
-        case BinSymbolKind::TEXT_LABEL:
-            type = ELFSymbolType::NOTYPE;
-            section_index = 1;
-            break;
         case BinSymbolKind::DATA_LABEL:
             type = ELFSymbolType::OBJECT;
             section_index = 2;
@@ -201,6 +197,7 @@ void ELFBuilder::process_def(const BinSymbolDef &def) {
             type = ELFSymbolType::NOTYPE;
             section_index = 0;
             break;
+        default: ASSERT_UNREACHABLE;
     }
 
     symbols.push_back(

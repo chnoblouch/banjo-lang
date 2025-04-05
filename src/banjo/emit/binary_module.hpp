@@ -25,12 +25,11 @@ struct BinSymbolDef {
 };
 
 enum class BinSymbolUseKind {
-    INTERNAL,
-
     ABS64,
     REL32,
     GOTPCREL32,
     PLT32,
+    LABEL_BRANCH,
 
     // Relocations for AArch64 ELF
     ADR_PREL_PG_HI21,

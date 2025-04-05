@@ -1,5 +1,8 @@
 #include "pe_builder.hpp"
+
 #include "banjo/emit/pe/pe_format.hpp"
+#include "banjo/utils/macros.hpp"
+
 #include <cstring>
 
 namespace banjo {
@@ -57,23 +60,27 @@ void PEBuilder::create_sections(BinModule &module_) {
     if (module_.drectve_data) {
         drectve_section_index = file.sections.size();
 
-        file.sections.push_back(PESection{
-            .name = {'.', 'd', 'r', 'e', 'c', 't', 'v', 'e'},
-            .data = {},
-            .relocations = {},
-            .flags = LNK_INFO | LNK_REMOVE | ALIGN_1BYTES,
-        });
+        file.sections.push_back(
+            PESection{
+                .name = {'.', 'd', 'r', 'e', 'c', 't', 'v', 'e'},
+                .data = {},
+                .relocations = {},
+                .flags = LNK_INFO | LNK_REMOVE | ALIGN_1BYTES,
+            }
+        );
     }
 
     if (module_.bnjatbl_data) {
         bnjatbl_section_index = file.sections.size();
 
-        file.sections.push_back(PESection{
-            .name = {'.', 'b', 'n', 'j', 'a', 't', 'b', 'l'},
-            .data = {},
-            .relocations = {},
-            .flags = INITIALIZED_DATA | ALIGN_16BYTES | READ | WRITE,
-        });
+        file.sections.push_back(
+            PESection{
+                .name = {'.', 'b', 'n', 'j', 'a', 't', 'b', 'l'},
+                .data = {},
+                .relocations = {},
+                .flags = INITIALIZED_DATA | ALIGN_16BYTES | READ | WRITE,
+            }
+        );
     }
 }
 
@@ -99,18 +106,20 @@ void PEBuilder::process_x86_64_symbol_def(const BinSymbolDef &def) {
     std::int16_t section_number;
     switch (def.kind) {
         case BinSymbolKind::TEXT_FUNC: section_number = get_section_number(TEXT_SECTION_INDEX); break;
-        case BinSymbolKind::TEXT_LABEL: section_number = get_section_number(TEXT_SECTION_INDEX); break;
         case BinSymbolKind::DATA_LABEL: section_number = get_section_number(DATA_SECTION_INDEX); break;
         case BinSymbolKind::ADDR_TABLE: section_number = get_section_number(bnjatbl_section_index); break;
         case BinSymbolKind::UNKNOWN: section_number = 0; break;
+        default: ASSERT_UNREACHABLE;
     }
 
-    file.add_symbol(PESymbolBlueprint{
-        .name = def.name,
-        .value = def.offset,
-        .section_number = section_number,
-        .storage_class = def.global ? PEStorageClass::EXTERNAL : PEStorageClass::STATIC
-    });
+    file.add_symbol(
+        PESymbolBlueprint{
+            .name = def.name,
+            .value = def.offset,
+            .section_number = section_number,
+            .storage_class = def.global ? PEStorageClass::EXTERNAL : PEStorageClass::STATIC
+        }
+    );
 }
 
 void PEBuilder::process_x86_64_symbol_use(const BinSymbolUse &use, BinModule &module_) {
@@ -121,36 +130,44 @@ void PEBuilder::process_x86_64_symbol_use(const BinSymbolUse &use, BinModule &mo
             module_.text.seek(use.address);
             module_.text.write_i32(def.offset + use.addend);
 
-            file.sections[TEXT_SECTION_INDEX].relocations.push_back(PERelocation{
-                .virt_addr = use.address,
-                .symbol_index = get_section_symbol_index(DATA_SECTION_INDEX),
-                .type = PERelocationType::AMD64_REL32
-            });
+            file.sections[TEXT_SECTION_INDEX].relocations.push_back(
+                PERelocation{
+                    .virt_addr = use.address,
+                    .symbol_index = get_section_symbol_index(DATA_SECTION_INDEX),
+                    .type = PERelocationType::AMD64_REL32
+                }
+            );
         } else {
-            file.sections[TEXT_SECTION_INDEX].relocations.push_back(PERelocation{
-                .virt_addr = use.address,
-                .symbol_index = use.symbol_index + num_section_symbols,
-                .type = PERelocationType::AMD64_REL32
-            });
+            file.sections[TEXT_SECTION_INDEX].relocations.push_back(
+                PERelocation{
+                    .virt_addr = use.address,
+                    .symbol_index = use.symbol_index + num_section_symbols,
+                    .type = PERelocationType::AMD64_REL32
+                }
+            );
         }
     } else if (use.section == BinSectionKind::DATA) {
         module_.data.seek(use.address);
         module_.data.write_i64(0);
 
-        file.sections[DATA_SECTION_INDEX].relocations.push_back(PERelocation{
-            .virt_addr = use.address,
-            .symbol_index = use.symbol_index + num_section_symbols,
-            .type = PERelocationType::AMD64_ADDR64
-        });
+        file.sections[DATA_SECTION_INDEX].relocations.push_back(
+            PERelocation{
+                .virt_addr = use.address,
+                .symbol_index = use.symbol_index + num_section_symbols,
+                .type = PERelocationType::AMD64_ADDR64
+            }
+        );
     } else if (use.section == BinSectionKind::BNJATBL) {
         module_.bnjatbl_data->seek(use.address);
         module_.bnjatbl_data->write_i64(0);
 
-        file.sections[bnjatbl_section_index].relocations.push_back(PERelocation{
-            .virt_addr = use.address,
-            .symbol_index = use.symbol_index + num_section_symbols,
-            .type = PERelocationType::AMD64_ADDR64
-        });
+        file.sections[bnjatbl_section_index].relocations.push_back(
+            PERelocation{
+                .virt_addr = use.address,
+                .symbol_index = use.symbol_index + num_section_symbols,
+                .type = PERelocationType::AMD64_ADDR64
+            }
+        );
     }
 }
 
@@ -163,27 +180,33 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
 
     for (const BinUnwindInfo &frame_info : unwind_info) {
         // function start address
-        pdata.relocations.push_back(PERelocation{
-            .virt_addr = (std::uint32_t)pdata_buf.get_size(),
-            .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
-            .type = PERelocationType::AMD64_ADDR32NB
-        });
+        pdata.relocations.push_back(
+            PERelocation{
+                .virt_addr = (std::uint32_t)pdata_buf.get_size(),
+                .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
+                .type = PERelocationType::AMD64_ADDR32NB
+            }
+        );
         pdata_buf.write_i32(frame_info.start_addr);
 
         // function end address
-        pdata.relocations.push_back(PERelocation{
-            .virt_addr = (std::uint32_t)pdata_buf.get_size(),
-            .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
-            .type = PERelocationType::AMD64_ADDR32NB
-        });
+        pdata.relocations.push_back(
+            PERelocation{
+                .virt_addr = (std::uint32_t)pdata_buf.get_size(),
+                .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
+                .type = PERelocationType::AMD64_ADDR32NB
+            }
+        );
         pdata_buf.write_i32(frame_info.end_addr);
 
         // unwind info address
-        pdata.relocations.push_back(PERelocation{
-            .virt_addr = (std::uint32_t)pdata_buf.get_size(),
-            .symbol_index = get_section_symbol_index(XDATA_SECTION_INDEX),
-            .type = PERelocationType::AMD64_ADDR32NB
-        });
+        pdata.relocations.push_back(
+            PERelocation{
+                .virt_addr = (std::uint32_t)pdata_buf.get_size(),
+                .symbol_index = get_section_symbol_index(XDATA_SECTION_INDEX),
+                .type = PERelocationType::AMD64_ADDR32NB
+            }
+        );
         pdata_buf.write_i32(xdata_buf.get_size());
 
         std::uint32_t alloca_offset = frame_info.alloca_instr_end - frame_info.start_addr;

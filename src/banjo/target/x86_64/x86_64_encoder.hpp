@@ -108,8 +108,6 @@ private:
 
 private:
     void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
-    void apply_relaxation() override;
-    void resolve_internal_symbols() override;
 
     void encode_mov(mcode::Instruction &instr, mcode::Function *func);
     void encode_movsx(mcode::Instruction &instr, mcode::Function *func);
@@ -266,6 +264,10 @@ private:
 
     void process_eh_pushreg(mcode::Instruction &instr, UnwindInfo &frame_info);
 
+    void apply_relaxation() override;
+    void resolve_internal_symbols() override;
+    void resolve_relaxable_slice(SectionBuilder::SectionSlice &slice);
+    void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);
     void relax_jmp(std::uint32_t slice_index);
     void relax_jcc(SymbolUse &use, std::uint32_t slice_index);
     std::int32_t compute_branch_displacement(SectionBuilder::SectionSlice &branch_slice);

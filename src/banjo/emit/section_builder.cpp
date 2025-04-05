@@ -78,11 +78,11 @@ WriteBuffer SectionBuilder::bake(std::vector<BinSymbolUse> &out_uses) {
         buffer.write_data(slice.buffer);
 
         for (SymbolUse &use : slice.uses) {
-            SymbolDef &def = bin_builder.defs[use.index];
-
-            if (def.kind == BinSymbolKind::TEXT_LABEL) {
+            if (use.is_resolved) {
                 continue;
             }
+
+            SymbolDef &def = bin_builder.defs[use.index];
 
             out_uses.push_back(
                 BinSymbolUse{

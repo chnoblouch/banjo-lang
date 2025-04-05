@@ -24,6 +24,7 @@ struct SymbolUse {
     std::uint32_t local_offset;
     BinSymbolUseKind kind;
     std::int32_t addend;
+    bool is_resolved = false;
 };
 
 } // namespace banjo
