@@ -142,6 +142,7 @@ public:
     void report_err_use_after_move(const sir::Expr &use, const sir::Expr &move, bool partial, bool conditional);
     void report_err_move_out_pointer(const sir::Expr &move);
     void report_err_move_out_deinit(const sir::Expr &move);
+    void report_err_move_in_loop(const sir::Expr &move);
 
     void report_warn_unreachable_code(const sir::Stmt &stmt);
 

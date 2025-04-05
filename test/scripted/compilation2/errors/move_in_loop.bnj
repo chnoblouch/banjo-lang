@@ -1,0 +1,64 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {}
+}
+
+# test:subtest
+# test:error 17:17 "resource moved in every iteration of a loop"
+
+func consume(r: Resource) {}
+
+func main() {
+    var r = Resource {};
+    var i = 0;
+
+    while i < 10 {
+        consume(r);
+        i += 1;
+    }
+}
+
+# test:subtest
+# test:error 31:17 "resource moved in every iteration of a loop"
+
+func consume(r: Resource) {}
+
+func main() {
+    var r = Resource {};
+    
+    for i in 0..100 {
+        consume(r);
+    }
+}
+
+# test:subtest
+# test:error 48:25 "resource moved in every iteration of a loop"
+
+func consume(r: Resource) {}
+
+func main() {
+    var r = Resource {};
+    var a = 10;
+    var b = 20;
+
+    if a == 10 {
+        for i in 0..100 {
+            if b == 20 {
+                consume(r);
+            }
+        }
+    }
+}
+
+# test:subtest
+# test:compiles
+
+func consume(r: Resource) {}
+
+func main() {
+    while true {
+        var r = Resource {};
+        consume(r);
+    }
+}

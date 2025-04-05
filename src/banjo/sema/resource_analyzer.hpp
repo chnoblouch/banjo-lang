@@ -52,9 +52,14 @@ private:
         sir::Resource *cur_resource;
     };
 
+    struct ResourceLocation {
+        sir::Block *block = nullptr;
+        sir::Resource *super_resource = nullptr;
+    };
+
     std::vector<Scope> scopes;
+    std::unordered_map<sir::Resource *, ResourceLocation> resource_locations;
     std::unordered_map<sir::Symbol, sir::Resource *> resources_by_symbols;
-    std::unordered_map<sir::Resource *, sir::Resource *> super_resources;
 
 public:
     ResourceAnalyzer(SemanticAnalyzer &analyzer);
@@ -68,7 +73,7 @@ private:
     std::optional<sir::Resource> create_struct_resource(sir::StructDef &struct_def, sir::Expr type);
     std::optional<sir::Resource> create_tuple_resource(sir::TupleExpr &tuple_type, sir::Expr type);
 
-    void insert_states(sir::Resource *resource, InitState init_state);
+    void insert_states(sir::Resource *resource, InitState init_state, ResourceLocation location);
 
     void analyze_var_stmt(sir::VarStmt &var_stmt);
     void analyze_assign_stmt(sir::AssignStmt &assign_stmt);
@@ -94,7 +99,9 @@ private:
 
     Result analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx);
     MoveState *find_move_state(sir::Resource *resource);
+    Result check_for_move_in_loop(sir::Resource *resource, sir::Expr move_expr);
     void move_sub_resources(sir::Resource *resource, sir::Expr move_expr);
+    void partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr);
     void update_init_state(Scope &scope, sir::Resource *resource, InitState value);
     void analyze_loop_jump();
     void mark_uninit_as_cond_init(Scope &scope);

@@ -5,6 +5,9 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <algorithm>
+#include <ranges>
+
 namespace banjo {
 
 namespace lang {
@@ -14,8 +17,8 @@ namespace sema {
 ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    resource_locations.clear();
     resources_by_symbols.clear();
-    super_resources.clear();
 
     analyze_block(func_def.block);
     return Result::SUCCESS;
@@ -64,7 +67,12 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
             ASSERT_UNREACHABLE;
         }
 
-        insert_states(&resource, init_state);
+        ResourceLocation location{
+            .block = &block,
+            .super_resource = nullptr,
+        };
+
+        insert_states(&resource, init_state, location);
         resources_by_symbols.insert({symbol, &resource});
     }
 
@@ -190,7 +198,9 @@ std::optional<sir::Resource> ResourceAnalyzer::create_tuple_resource(sir::TupleE
     return resource;
 }
 
-void ResourceAnalyzer::insert_states(sir::Resource *resource, InitState init_state) {
+void ResourceAnalyzer::insert_states(sir::Resource *resource, InitState init_state, ResourceLocation location) {
+    resource_locations.insert({resource, location});
+
     scopes.back().init_states.insert({resource, init_state});
 
     MoveState move_state{
@@ -201,9 +211,13 @@ void ResourceAnalyzer::insert_states(sir::Resource *resource, InitState init_sta
 
     scopes.back().move_states.insert({resource, move_state});
 
+    ResourceLocation sub_location{
+        .block = location.block,
+        .super_resource = resource,
+    };
+
     for (sir::Resource &sub_resource : resource->sub_resources) {
-        insert_states(&sub_resource, init_state);
-        super_resources.insert({&sub_resource, resource});
+        insert_states(&sub_resource, init_state, sub_location);
     }
 }
 
@@ -227,12 +241,14 @@ void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         update_init_state(scopes.back(), resource, InitState::INITIALIZED);
     }
 
-    value = analyzer.create_expr(sir::InitExpr{
-        .ast_node = value.get_ast_node(),
-        .type = value.get_type(),
-        .value = value,
-        .resource = resource,
-    });
+    value = analyzer.create_expr(
+        sir::InitExpr{
+            .ast_node = value.get_ast_node(),
+            .type = value.get_type(),
+            .value = value,
+            .resource = resource,
+        }
+    );
 }
 
 void ResourceAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
@@ -390,15 +406,17 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         if (auto resource = create_resource(type)) {
             sir::Resource *temporary_resource = analyzer.cur_sir_mod->create_resource(*resource);
 
-            expr = analyzer.create_expr(sir::DeinitExpr{
-                .ast_node = expr.get_ast_node(),
-                .type = type,
-                .value = expr,
-                .resource = temporary_resource,
-            });
+            expr = analyzer.create_expr(
+                sir::DeinitExpr{
+                    .ast_node = expr.get_ast_node(),
+                    .type = type,
+                    .value = expr,
+                    .resource = temporary_resource,
+                }
+            );
 
             ctx.cur_resource = temporary_resource;
-            insert_states(temporary_resource, InitState::INITIALIZED);
+            insert_states(temporary_resource, InitState::INITIALIZED, {});
         }
     }
 
@@ -566,6 +584,11 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
     }
 
     if (ctx.moving) {
+        Result in_loop_result = check_for_move_in_loop(resource, inout_expr);
+        if (in_loop_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
         scopes.back().move_states[resource] = MoveState{
             .moved = true,
             .conditional = false,
@@ -573,38 +596,24 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
             .move_expr = inout_expr,
         };
 
-        auto super_resource_iter = super_resources.find(resource);
-
-        while (super_resource_iter != super_resources.end()) {
-            sir::Resource *super_resource = super_resource_iter->second;
-
-            scopes.back().move_states[super_resource] = MoveState{
-                .moved = true,
-                .conditional = false,
-                .partial = true,
-                .move_expr = inout_expr,
-            };
-
-            super_resource_iter = super_resources.find(super_resource);
-        }
-
         move_sub_resources(resource, inout_expr);
+        partially_move_super_resources(resource, inout_expr);
 
-        inout_expr = analyzer.create_expr(sir::MoveExpr{
-            .ast_node = inout_expr.get_ast_node(),
-            .type = inout_expr.get_type(),
-            .value = inout_expr,
-            .resource = resource,
-        });
+        inout_expr = analyzer.create_expr(
+            sir::MoveExpr{
+                .ast_node = inout_expr.get_ast_node(),
+                .type = inout_expr.get_type(),
+                .value = inout_expr,
+                .resource = resource,
+            }
+        );
     }
 
     return Result::SUCCESS;
 }
 
 ResourceAnalyzer::MoveState *ResourceAnalyzer::find_move_state(sir::Resource *resource) {
-    for (auto scope_iter = scopes.rbegin(); scope_iter != scopes.rend(); scope_iter++) {
-        Scope &scope = *scope_iter;
-
+    for (Scope &scope : std::ranges::reverse_view(scopes)) {
         auto state_iter = scope.move_states.find(resource);
         if (state_iter != scope.move_states.end()) {
             return &state_iter->second;
@@ -612,6 +621,33 @@ ResourceAnalyzer::MoveState *ResourceAnalyzer::find_move_state(sir::Resource *re
     }
 
     return nullptr;
+}
+
+Result ResourceAnalyzer::check_for_move_in_loop(sir::Resource *resource, sir::Expr move_expr) {
+    auto location_iter = resource_locations.find(resource);
+    if (location_iter == resource_locations.end()) {
+        return Result::SUCCESS;
+    }
+
+    std::optional<Scope *> loop;
+
+    for (Scope &scope : std::ranges::reverse_view(scopes)) {
+        if (scope.type == ScopeType::LOOP) {
+            loop = &scope;
+            continue;
+        }
+
+        if (scope.block == location_iter->second.block) {
+            if (loop) {
+                analyzer.report_generator.report_err_move_in_loop(move_expr);
+                return Result::ERROR;
+            }
+
+            break;
+        }
+    }
+
+    return Result::SUCCESS;
 }
 
 void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr move_expr) {
@@ -624,6 +660,31 @@ void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr mov
         };
 
         move_sub_resources(&sub_resource, move_expr);
+    }
+}
+
+void ResourceAnalyzer::partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr) {
+    sir::Resource *current_resource = resource;
+
+    while (true) {
+        auto iter = resource_locations.find(current_resource);
+        if (iter == resource_locations.end()) {
+            break;
+        }
+
+        sir::Resource *super_resource = iter->second.super_resource;
+        if (!super_resource) {
+            break;
+        }
+
+        scopes.back().move_states[super_resource] = MoveState{
+            .moved = true,
+            .conditional = false,
+            .partial = true,
+            .move_expr = move_expr,
+        };
+
+        current_resource = super_resource;
     }
 }
 

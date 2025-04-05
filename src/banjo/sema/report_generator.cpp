@@ -606,6 +606,11 @@ void ReportGenerator::report_err_move_out_deinit(const sir::Expr &move) {
     report_error("cannot move out of resource implementing '__deinit__'", move.get_ast_node());
 }
 
+void ReportGenerator::report_err_move_in_loop(const sir::Expr &move) {
+    // TODO: Maybe highlight the loop and resource in question.
+    report_error("resource moved in every iteration of a loop", move.get_ast_node());
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,
