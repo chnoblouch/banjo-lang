@@ -209,7 +209,7 @@ def run_executable(test):
 
 if __name__ == "__main__":
     run_tests(
-        directory="compilation2",
+        directory="compilation",
         file_name_extension=".bnj",
         runner=run_test,
         skipped_tests=SKIPPED_TESTS,
