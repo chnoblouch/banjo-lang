@@ -12,3 +12,23 @@ func main() {
     var float_f32: f32 = 0.5;
     var float_f64: f64 = 0.5;
 }
+
+# test:subtest
+# test:output "0.5,-1.8,1490.29,-1884.28"
+
+func main() {
+    var a: f32 = 0.5;
+    print(a);
+	print(',');
+
+    var b: f32 = -1.8;
+    print(b);
+	print(',');
+
+    var c: f64 = 1490.29;
+    print(c);
+	print(',');
+
+    var d: f64 = -1884.28;
+    print(d);
+}

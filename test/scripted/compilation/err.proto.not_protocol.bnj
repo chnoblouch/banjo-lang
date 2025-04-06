@@ -1,9 +1,0 @@
-#! error: 'A' is not a protocol
-
-struct A {}
-struct B: A {}
-
-#! error: 'i32' is not a protocol
-
-struct A: i32 {
-}

@@ -1,0 +1,20 @@
+# test:output "10"
+
+struct Int {
+	const TEN: i32 = 10;
+	
+    var value: i32;
+	
+	func new(value: i32) -> Int {
+		return Int { value: value };
+	}
+
+	func output(self) {
+		print(self.value);
+	}
+}
+
+func main() {
+	var int = Int.new(Int.TEN);
+	int.output();
+}

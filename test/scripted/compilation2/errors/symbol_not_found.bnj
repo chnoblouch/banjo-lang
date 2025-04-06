@@ -9,3 +9,24 @@ func main() {
 # test:error 11:16 "cannot find 'B'"
 
 const A: i32 = B;
+
+# test:subtest
+# test:error 17:5 "cannot find 'f'"
+
+func main() {
+    f();
+}
+
+# test:subtest
+# test:error 24:12 "cannot find 'S'"
+
+func main() {
+    var a: S = 100;
+}
+
+# test:subtest
+# test:error 31:13 "cannot find 'Point'"
+
+func main() {
+    var a = Point { x: 0, y: 0 };
+}

@@ -1,5 +1,0 @@
-#! error: type mismatch (expected 'f32', got 'bool')
-
-func test() -> f32 {
-	return true;
-}

@@ -1,5 +1,0 @@
-#! error: missing value in return
-
-func test() -> i32 {
-	return;
-}

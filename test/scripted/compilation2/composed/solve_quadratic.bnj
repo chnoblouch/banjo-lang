@@ -1,0 +1,26 @@
+# test:output "-1,-0.2;n/a;-1,4;"
+
+use std.math;
+
+func solve_quadratic(a: f32, b: f32, c: f32) {
+    var discriminant = b * b - 4.0 * a * c;
+    
+    if discriminant < 0.0 {
+        print("n/a");
+    } else {
+        var x1 = (-b - math.sqrt(discriminant)) / (2.0 * a);
+        var x2 = (-b + math.sqrt(discriminant)) / (2.0 * a);
+        
+        print(x1);
+        print(',');
+        print(x2);
+    }
+    
+    print(';');
+}
+
+func main() {
+    solve_quadratic(5.0, 6.0, 1.0);
+    solve_quadratic(1.0, 2.0, 3.0);
+    solve_quadratic(1.0, -3.0, -4.0);
+}

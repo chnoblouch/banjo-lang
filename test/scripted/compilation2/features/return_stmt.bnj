@@ -1,0 +1,40 @@
+# test:subtest
+# test:output "13"
+
+func add(a: i32, b: i32) -> i32 {
+	return a + b;
+}
+
+func main() -> void {
+	var result = add(5, 8);
+	print(result);
+}
+
+# test:subtest
+# test:output "8.5"
+
+func add(a: f32, b: f32) -> f32 {
+	return a + b;
+}
+
+func main() -> void {
+	var result = add(6.0, 2.5);
+	print(result);
+}
+
+# test:subtest
+# test:output "FirstSecond"
+
+func print_optional_str(string: *u8) {
+	if string == null {
+		return;
+	}
+	
+	print(string);
+}
+
+func main() {
+	print_optional_str("First");
+	print_optional_str(null);
+	print_optional_str("Second");
+}

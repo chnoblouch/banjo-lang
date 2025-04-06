@@ -1,0 +1,102 @@
+# test:subtest
+# test:output "12"
+
+struct Room {
+	var tables: u32;
+	var chairs: u32;
+	var lamps: u32;
+
+	func print_objects(self) {
+		print(self.get_objects());
+	}
+	
+	func get_objects(self) -> u32 {
+		return self.lamps + self.get_furniture();
+	}
+	
+	func get_furniture(self) -> u32 {
+		return self.tables + self.chairs;
+	}
+}
+
+func main() {
+	var room = Room { tables: 3, chairs: 7, lamps: 2 };
+	room.print_objects();
+}
+
+# test:subtest
+# test:output "125"
+
+struct Calculator {
+	var value: i32;
+	
+	pub func new(value: i32) -> Calculator {
+		return Calculator { value };
+	}
+	
+	pub func add(self, value: i32) -> *Calculator {
+		self.value += value;
+		return self;
+	}
+}
+
+func main() {
+	println(Calculator.new(20).add(100).add(5).value);
+}
+
+# test:subtest
+# test:output "38"
+
+struct SumBuilder {
+	var a: i32;
+	var b: i32;
+	var c: i32;
+	var d: i32;
+	
+	pub func new() -> SumBuilder {
+		return SumBuilder {
+			a: 0,
+			b: 0,
+			c: 0,
+			d: 0,
+		};
+	}
+	
+	pub func set_a(self, value: i32) -> *SumBuilder {
+		self.a = value;
+		return self;
+	}
+	
+	pub func set_b(self, value: i32) -> *SumBuilder {
+		self.b = value;
+		return self;
+	}
+	
+	pub func set_c(self, value: i32) -> *SumBuilder {
+		self.c = value;
+		return self;
+	}
+	
+	pub func set_d(self, value: i32) -> *SumBuilder {
+		self.d = value;
+		return self;
+	}
+	
+	pub func build(self) -> Sum {
+		return Sum {
+			value: self.a + self.b + self.c + self.d,
+		};
+	}
+}
+
+struct Sum {
+	var value: i32;
+	
+	pub func output(self) {
+		print(self.value);
+	}
+}
+
+func main() {
+	SumBuilder.new().set_a(10).set_b(5).set_c(3).set_d(20).build().output();
+}

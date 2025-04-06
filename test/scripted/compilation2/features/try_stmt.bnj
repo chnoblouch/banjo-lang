@@ -80,3 +80,102 @@ func main() {
         print("none");
     }
 }
+
+# test:subtest
+# test:output "5,19,,,"
+
+enum MathError {
+    DIVISION_BY_ZERO,
+}
+
+func divide(a: i32, b: i32) -> i32 except MathError {
+    if b != 0 {
+        return a / b;
+    } else {
+        return MathError.DIVISION_BY_ZERO;
+    }
+}
+
+func run_division(a: i32, b: i32) {
+    try value in divide(a, b) {
+        print(value);
+    }
+
+    print(',');
+}
+
+func main() {
+    run_division(10, 2);
+    run_division(58, 3);
+    run_division(3, 0);
+    run_division(43, 0);
+}
+
+# test:subtest
+# test:output "5,19,failed,failed,"
+
+enum MathError {
+    DIVISION_BY_ZERO,
+}
+
+func divide(a: i32, b: i32) -> i32 except MathError {
+    if b != 0 {
+        return a / b;
+    } else {
+        return MathError.DIVISION_BY_ZERO;
+    }
+}
+
+func run_division(a: i32, b: i32) {
+    try value in divide(a, b) {
+        print(value);
+    } else {
+        print("failed");
+    }
+
+    print(',');
+}
+
+func main() {
+    run_division(10, 2);
+    run_division(58, 3);
+    run_division(3, 0);
+    run_division(43, 0);
+}
+
+# test:subtest
+# test:output "success: 583, failure: Error.ACCESS_DENIED, failure: Error.NOT_FOUND, failure: Error.NOT_FOUND,"
+
+enum Error {
+    NOT_FOUND,
+    ACCESS_DENIED,
+}
+
+func load_value(id: u32) -> i32 except Error {
+    if id == 0 {
+        return 583;
+    } else if id == 1 {
+        return Error.ACCESS_DENIED;
+    } else {
+        return Error.NOT_FOUND;
+    }
+}
+
+func load_and_print(id: u32) {
+    try value in load_value(id) {
+        print("success: ");
+        print(value);
+    } except error: Error {
+        print("failure: ");
+        print(error);
+    }
+
+    print(", ");
+}
+
+func main() {
+    load_and_print(0);
+    load_and_print(1);
+    load_and_print(2);
+    load_and_print(593);
+}

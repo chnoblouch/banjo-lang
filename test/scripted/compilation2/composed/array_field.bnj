@@ -1,0 +1,15 @@
+# test:output "Test"
+
+struct Object {
+	var strings: [*u8];
+}
+
+func get() -> *u8 {
+	return "Test";
+}
+
+func main() {
+	var object = Object { strings: [] };
+	object.strings.append(get());
+	println(object.strings[0]);
+}

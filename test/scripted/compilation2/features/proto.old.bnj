@@ -1,0 +1,220 @@
+# test:subtest
+# test:compiles
+
+proto Stream {
+    func write(self, value: i32);
+    func read(self) -> i32;
+}
+
+struct File: Stream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+struct Socket: Stream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+func main() {
+    var file = File {};
+    var socket = Socket {};
+
+    var file_stream: *Stream = &file;
+    var socket_stream: *Stream = &socket;
+}
+
+# test:subtest
+# test:compiles
+
+proto Stream {
+    func write(self, value: i32);
+    func read(self) -> i32;
+}
+
+struct File: Stream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+struct Socket: Stream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+# test:subtest
+# test:compiles
+
+proto OutStream {
+    func write(self, value: i32);
+}
+
+proto InStream {
+    func read(self) -> i32;
+}
+
+struct File: OutStream, InStream {
+    func write(self, value: i32) {}
+    func read(self) -> i32 { return 0; }
+}
+
+# test:subtest
+# test:output "write,file;write,socket;read,file;read,socket;"
+
+proto Stream {
+    func write(self);
+    func read(self);
+}
+
+struct File: Stream {
+    func write(self) {
+        print("write,file;");
+    }
+
+    func read(self) {
+        print("read,file;");
+    }
+}
+
+struct Socket: Stream {
+    func write(self) {
+        print("write,socket;");
+    }
+
+    func read(self) {
+        print("read,socket;");
+    }
+}
+
+func write_to(stream: *Stream) {
+    stream.write();
+}
+
+func read_from(stream: *Stream) {
+    stream.read();
+}
+
+func main() {
+    var file = File {};
+    var socket = Socket {};
+
+    write_to(&file);
+    write_to(&socket);
+    read_from(&file);
+    read_from(&socket);
+}
+
+# test:subtest
+# test:output "file,10;file,-482;socket,-28;"
+
+proto Stream {
+    func write(self, value: i32);
+}
+
+struct File: Stream {
+    func write(self, value: i32) {
+        print("file,");
+        print(value);
+        print(";");
+    }
+}
+
+struct Socket: Stream {
+    func write(self, value: i32) {
+        print("socket,");
+        print(value);
+        print(";");
+    }
+}
+
+func write_to(stream: *Stream, value: i32) {
+    stream.write(value);
+}
+
+func main() {
+    var file = File {};
+    var socket = Socket {};
+
+    write_to(&file, 10);
+    write_to(&file, -482);
+    write_to(&socket, -28);
+}
+
+# test:subtest
+# test:output "0,39;0,-295;1,10;1,33;"
+
+proto Stream {
+    func read(self) -> (i32, i32);
+}
+
+struct File: Stream {
+    var value: i32;
+
+    func read(self) -> (i32, i32) {
+        return (0, self.value);
+    }
+}
+
+struct Socket: Stream {
+    var value: i32;
+
+    func read(self) -> (i32, i32) {
+        return (1, self.value);
+    }
+}
+
+func read_from(stream: *Stream) {
+    var value = stream.read();
+    print(value.0);
+    print(",");
+    print(value.1);
+    print(";");
+}
+
+func main() {
+    var file0 = File { value: 39 };
+    var file1 = File { value: -295 };
+    var socket0 = Socket { value: 10 };
+    var socket1 = Socket { value: 33 };
+
+    read_from(&file0);
+    read_from(&file1);
+    read_from(&socket0);
+    read_from(&socket1);
+}
+
+# test:subtest
+# test:output "socket,-4;file,27;socket,-4;"
+
+proto Stream {
+    func read(self) -> i32;
+}
+
+struct File: Stream {
+    func read(self) -> i32 {
+        print("file,");
+        return 27;
+    }
+}
+
+struct Socket: Stream {
+    func read(self) -> i32 {
+        print("socket,");
+        return -4;
+    }
+}
+
+func read_from(stream: *Stream) {
+    var value = stream.read();
+    print(value);
+    print(";");
+}
+
+func main() {
+    var file = File {};
+    var socket = Socket {};
+
+    read_from(&socket);
+    read_from(&file);
+    read_from(&socket);
+}

@@ -1,0 +1,48 @@
+# test:output "54,-82,2,-103,"
+
+use std.memory;
+
+struct Iter {
+	var pointer: *i32;
+	var end: *i32;
+	
+	func __next__(self) -> ?i32 {
+		if self.pointer == self.end {
+			return none;
+		}
+	
+		var pointer = self.pointer;
+		self.pointer += 1;
+		return *pointer;
+	}
+}
+
+struct Sequence {
+	var items: *i32;
+	
+	func new() -> Sequence {
+		var items = memory.alloc(16) as *i32;
+		items[0] = 54;
+		items[1] = -82;
+		items[2] = 2;
+		items[3] = -103;
+		
+		return { items };
+	}
+	
+	pub func __iter__(self) -> Iter {	
+		return {
+			pointer: self.items,
+			end: &self.items[4]
+		};
+	}
+}
+
+func main() {
+	var sequence = Sequence.new();
+
+	for item in sequence {
+        print(item);
+        print(',');
+	}
+}

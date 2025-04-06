@@ -1,4 +1,0 @@
-#! error: redefinition of 'a'
-
-func test(a: i32, a: i32) {
-}

@@ -44,7 +44,7 @@ struct Point {
 func main() {
     var point = Point {
         a: 2,
-        b: 3
+        b: 3,
     };
 }
 

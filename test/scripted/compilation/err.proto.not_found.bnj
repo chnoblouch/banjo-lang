@@ -1,3 +1,0 @@
-#! error: cannot find type 'B' in this scope
-
-struct A: B {}

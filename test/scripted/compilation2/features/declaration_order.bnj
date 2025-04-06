@@ -1,0 +1,27 @@
+# test:output "27,Cube,3"
+
+func main() {
+	var object = Object {
+		id: ObjectID {
+			index: 27,
+			name: "Cube",
+		},
+		value: 3,
+	};
+	
+	print(object.id.index);
+	print(',');
+	print(object.id.name);
+	print(',');
+	print(object.value);
+}
+
+struct Object {
+	var id: ObjectID;
+	var value: i32;
+}
+
+struct ObjectID {
+	var index: i32;
+	var name: *u8;
+}

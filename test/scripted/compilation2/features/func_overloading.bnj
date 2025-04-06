@@ -1,0 +1,82 @@
+# test:subtest
+# test:output "50,4.5"
+
+func half(value: i32) -> i32 {
+    return value / 2;
+}
+
+func half(value: f32) -> f32 {
+    return value / 2.0;
+}
+
+func main() {
+    var a = 100;
+    var b = 9.0;
+    
+    print(half(a));
+    print(',');
+    print(half(b));
+}
+
+# test:subtest
+# test:output "Test;100;true;5,10;"
+
+func display(value: String) {
+	print(value);
+	print(';');
+}
+
+func display(value: i32) {
+	print(value);
+	print(';');
+}
+
+func display(value: bool) {
+	print(value);
+	print(';');
+}
+
+struct Point {
+	var x: u32;
+	var y: u32;
+}
+
+func display(point: Point) {
+	print(point.x);
+	print(',');
+	print(point.y);
+	print(';');
+}
+
+func main() {
+	display("Test");
+	display(100);
+	display(true);
+	display(Point { x: 5, y: 10 });
+}
+
+# test:subtest
+# test:output "10.2,18.2"
+
+struct Float {
+    var value: f32;
+    
+    pub func add(self, value: f32) {
+        self.value += value;
+    }
+    
+    pub func add(self, value: i32) {
+        self.value += value as f32;
+    }
+}
+
+func main() {
+    var float = Float { value: 4.0 };
+    
+    float.add(6.2);
+    print(float.value);
+    print(',');
+    
+    float.add(8);
+    print(float.value);
+}

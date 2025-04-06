@@ -15,8 +15,20 @@ func main() {
 }
 
 # test:subtest
-# test:error 29:13 "resource used after move"
-# test:note 26:17 "previously moved in conditional branch here"
+# test:error 26:13 "resource used after move"
+# test:note 25:13 "previously moved here"
+
+func consume(resource: Resource) {}
+
+func main() {
+    var a = Resource {};
+    consume(a);
+    var b = a;
+}
+
+# test:subtest
+# test:error 41:13 "resource used after move"
+# test:note 38:17 "previously moved in conditional branch here"
 
 func main() {
     var a = Resource {};
@@ -30,8 +42,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 42:17 "resource used after move"
-# test:note 41:17 "previously moved here"
+# test:error 54:17 "resource used after move"
+# test:note 53:17 "previously moved here"
 
 func main() {
     var a = Resource {};
@@ -44,8 +56,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 57:13 "resource used after move"
-# test:note 56:13 "previously moved partially here"
+# test:error 69:13 "resource used after move"
+# test:note 68:13 "previously moved partially here"
 
 func main() {
     var a = (
@@ -58,8 +70,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 77:13 "resource used after move"
-# test:note 74:17 "previously moved partially in conditional branch here"
+# test:error 89:13 "resource used after move"
+# test:note 86:17 "previously moved partially in conditional branch here"
 
 func main() {
     var a = (
@@ -78,8 +90,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 99:13 "resource used after move"
-# test:note 98:13 "previously moved partially here"
+# test:error 111:13 "resource used after move"
+# test:note 110:13 "previously moved partially here"
 
 struct Pair {
     var a: i32;

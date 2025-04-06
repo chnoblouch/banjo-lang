@@ -1,8 +1,0 @@
-#! error: missing type ascription for field 'name'
-
-struct Person {
-	var name = null as *u8;
-}
-
-func main() {
-}

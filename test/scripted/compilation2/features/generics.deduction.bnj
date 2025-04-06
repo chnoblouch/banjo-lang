@@ -1,0 +1,46 @@
+# test:subtest
+# test:output "10"
+
+func test[T](value: T) {
+	print(value);
+}
+
+func main() {
+	test(10);
+}
+
+# test:subtest
+# test:output "30"
+
+func test[T](a: T, b: T) {
+	print(a + b);
+}
+
+func main() {
+	test(10, 20);
+}
+
+# test:subtest
+# test:output "100,true"
+
+func test[A, B](a: A, b: B) {
+	print(a);
+	print(',');
+	print(b);
+}
+
+func main() {
+	test(100, true);
+}
+
+# test:subtest
+# test:output "100"
+
+func deref[T](ptr: *T) {
+	print(*ptr);
+}
+
+func main() {
+	var value = 100;
+	deref(&value);
+}

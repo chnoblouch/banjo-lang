@@ -1,7 +1,0 @@
-#! output: 3
-
-func main() {
-	var array: [i32; 3] = [2, 3, 8];
-	var ptr = &array as *i32;
-	println(ptr[1]);
-}

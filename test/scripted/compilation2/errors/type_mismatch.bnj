@@ -7,19 +7,27 @@ func main() {
 }
 
 # test:subtest
-# test:error 12:16 "type mismatch (expected 'i32', got 'bool')"
+# test:error 14:9 "type mismatch (expected 'i32', got 'bool')"
+
+func main() {
+    var a = 5;
+    a = false;
+}
+
+# test:subtest
+# test:error 20:16 "type mismatch (expected 'i32', got 'bool')"
 
 const A: i32 = false;
 
 # test:subtest
-# test:error 18:12 "type mismatch (expected 'f32', got 'bool')" 
+# test:error 26:12 "type mismatch (expected 'f32', got 'bool')" 
 
 func get() -> f32 {
     return true;
 }
 
 # test:subtest
-# test:error 30:16 "type mismatch (expected 'f32', got 'bool')"
+# test:error 38:16 "type mismatch (expected 'f32', got 'bool')"
 
 struct Object {
     var value: f32;

@@ -1,0 +1,31 @@
+# test:subtest
+# test:output "Point,Circle"
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+struct Circle {
+	var radius: i32;
+	var color: u32;
+}
+
+func main() {
+	print(meta(Point).name);
+	print(',');
+	print(meta(Circle).name);
+}
+
+# test:subtest
+# test:output "Color"
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE,
+}
+
+func main() {
+	print(meta(Color).name);
+}

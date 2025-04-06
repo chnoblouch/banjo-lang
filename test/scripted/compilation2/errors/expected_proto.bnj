@@ -1,3 +1,10 @@
-# test:error 3:11 "expected proto"
+# test:subtest
+# test:error 4:11 "expected proto"
 
 struct S: i32 {}
+
+# test:subtest
+# test:error 10:11 "expected proto" 
+
+struct A {}
+struct B: A {}

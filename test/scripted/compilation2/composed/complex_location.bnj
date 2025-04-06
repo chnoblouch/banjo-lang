@@ -1,0 +1,27 @@
+# test:output "ad"
+
+struct String {
+	var data: *u8;
+}
+
+struct Tag {
+	var value: String;
+}
+
+struct Object {
+	var tags: [Tag];
+}
+
+func main() {
+	var tag_val_1 = String { data: "Chair" };
+	var tag_val_2 = String { data: "Wood" };
+
+	var tag_1 = Tag { value: tag_val_1 };
+	var tag_2 = Tag { value: tag_val_2 };
+	var tags = [tag_1, tag_2];
+	
+	var object = Object { tags: tags };
+	
+	print(object.tags[0].value.data[2]);
+	print(object.tags[1].value.data[3]);
+}

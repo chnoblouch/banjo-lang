@@ -1,0 +1,13 @@
+# test:output "24"
+
+struct Integer {
+	var value: i32;
+
+	pub func new(value: i32) -> Integer {
+		return Integer { value };
+	}
+}
+
+func main() {
+	println(Integer.new(24).value);
+}

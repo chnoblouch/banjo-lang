@@ -1,7 +1,0 @@
-#! error: type 'i32' has no members
-
-func main() {
-	var f = 20;
-	var p = &f;
-	var m = f.member;
-}

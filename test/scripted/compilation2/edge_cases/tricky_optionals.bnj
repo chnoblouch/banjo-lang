@@ -121,3 +121,28 @@ func main() {
 func main() {
     var string: ?i32 = "test";
 }
+
+# test:subtest
+# test:output "true,i,100"
+
+union Number {
+	case Float(value: f32);
+	case Integer(value: i32);
+}
+
+func main() {
+	var number: ?Number = Number.Integer(100);
+	
+	print(number.has_value);
+    print(",");
+	
+	switch number.value {
+		case float: Number.Float {
+            print("f,");
+			print(float.value);
+		} case integer: Number.Integer {
+            print("i,");
+			print(integer.value);
+		}
+	}
+}

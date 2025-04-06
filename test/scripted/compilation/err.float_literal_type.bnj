@@ -1,5 +1,0 @@
-#! error: cannot convert floating-point literal to type 'i32'
-
-func main() {
-	var a: i32 = -5.2;
-}

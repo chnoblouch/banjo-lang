@@ -1,0 +1,64 @@
+# test:common
+
+struct Resource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print('r');
+        print(self.value);
+    }
+}
+
+struct Pair {
+    var a: Resource;
+    var b: Resource;
+}
+
+func consume(resource: Resource) {}
+
+# test:subtest
+# test:output "ar4bcr9"
+
+func main() {
+    var pair = Pair {
+        a: Resource { value: 4, },
+        b: Resource { value: 9, },
+    };
+
+    var move_a = true;
+
+    if move_a {
+        print('a');
+        consume(pair.a);
+        print('b');
+    }
+
+    print('c');
+}
+
+# test:subtest
+# test:output "ar9bcr4de"
+
+func main() {
+    var pair = Pair {
+        a: Resource { value: 4, },
+        b: Resource { value: 9, },
+    };
+
+    var move_a = true;
+    var move_b = true;
+
+    if move_a {
+        if move_b {
+            print('a');
+            consume(pair.b);
+            print('b');
+        }
+        
+        print('c');
+        consume(pair.a);
+        print('d');
+    }
+
+    print('e');
+}

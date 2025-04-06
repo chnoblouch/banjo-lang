@@ -1,0 +1,169 @@
+# test:output "5,12,9,120"
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+func main() {
+	var a: Point;
+	var b: Point;
+	
+	a.x = 5;
+	a.y = 12;
+	b.x = a.x + 4;
+	b.y = a.y * a.x * 2;
+	
+	print(a.x);
+	print(',');
+	print(a.y);
+	print(',');
+	print(b.x);
+	print(',');
+	print(b.y);
+}
+
+# test:subtest
+# test:output "5,15"
+
+struct GameObject {
+	var id: i32;
+	var position: Point;
+}
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+func main() {
+	var object: GameObject;
+	object.position.x = 5;
+	object.position.y = object.position.x + 10;
+	
+	print(object.position.x);
+	print(',');
+	print(object.position.y);
+}
+
+# test:subtest
+# test:output "51"
+
+struct Vector {
+	var x: i32;
+	var y: i32;
+	var z: i32;
+}
+
+func dot(a: Vector, b: Vector) -> i32 {
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+func main() {
+	var a: Vector;
+	a.x = 5;
+	a.y = 2;
+	a.z = 3;
+	
+	var b: Vector;
+	b.x = 8;
+	b.y = 4;
+	b.z = 1;
+	
+	print(dot(a, b));
+}
+
+# test:subtest
+# test:output "5,8,12"
+
+struct Point {
+	var x: i32;
+	var y: i32;
+	var z: i32;
+}
+
+func create(x: i32, y: i32, z: i32) -> Point {
+	var point: Point;
+	point.x = x;
+	point.y = y;
+	point.z = z;
+	return point;
+}
+
+func main() {
+	var point = create(5, 8, 12);
+	print(point.x);
+	print(',');
+	print(point.y);
+	print(',');
+	print(point.z);
+}
+
+# test:subtest
+# test:output "4,3,7;8,6,14"
+
+struct Vec3 {
+	var x: f32;
+	var y: f32;
+	var z: f32;
+}
+
+func scale(scalar: f32, vector: Vec3) -> Vec3 {
+	var result: Vec3;
+	result.x = scalar * vector.x;
+	result.y = scalar * vector.y;
+	result.z = scalar * vector.z;
+	return result;
+}
+
+func main() {
+	var vector: Vec3;
+	vector.x = 4.0;
+	vector.y = 3.0;
+	vector.z = 7.0;
+	
+	var scaled = scale(2.0, vector);
+	
+	print(vector.x);
+    print(',');
+    print(vector.y);
+    print(',');
+    print(vector.z);
+	print(';');
+	print(scaled.x);
+    print(',');
+    print(scaled.y);
+    print(',');
+    print(scaled.z);
+}
+
+# test:subtest
+# test:output "20,4,80"
+
+struct Rect {
+	var width: i32;
+	var height: i32;
+	var area: i32;
+}
+
+func print_width_height(rect: *Rect) {
+	print((*rect).width);
+	print(',');
+	print((*rect).height);
+}
+
+func update_area(rect: *Rect) {
+	var area = (*rect).width * (*rect).height;
+	(*rect).area = area;
+}
+
+func main() {
+	var rect: Rect;
+	rect.width = 20;
+	rect.height = 4;
+	
+	print_width_height(&rect);
+	update_area(&rect);
+	print(',');
+	print(rect.area);
+}

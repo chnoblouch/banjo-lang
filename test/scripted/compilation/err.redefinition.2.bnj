@@ -1,5 +1,0 @@
-#! error: redefinition of 'a'
-
-func test(a: i32) {
-	var a = true;
-}

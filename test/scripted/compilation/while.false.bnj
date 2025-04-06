@@ -1,7 +1,0 @@
-#! output: 
-
-func main() {
-	while false {
-		print("never");
-	}
-}

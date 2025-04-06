@@ -118,13 +118,17 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
     ExprAnalyzer(analyzer).analyze_type(var_decl.type);
 
     if (auto struct_def = analyzer.get_scope().decl.match<sir::StructDef>()) {
-        out_decl = analyzer.create_decl(sir::StructField{
-            .ast_node = var_decl.ast_node,
-            .ident = var_decl.ident,
-            .type = var_decl.type,
-            .attrs = var_decl.attrs,
-            .index = static_cast<unsigned>(struct_def->fields.size()),
-        });
+        // TODO: Error handling for missing type.
+
+        out_decl = analyzer.create_decl(
+            sir::StructField{
+                .ast_node = var_decl.ast_node,
+                .ident = var_decl.ident,
+                .type = var_decl.type,
+                .attrs = var_decl.attrs,
+                .index = static_cast<unsigned>(struct_def->fields.size()),
+            }
+        );
 
         struct_def->fields.push_back(&out_decl.as<sir::StructField>());
 
@@ -146,11 +150,13 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
     sir::EnumDef &enum_def = analyzer.get_scope().decl.as<sir::EnumDef>();
     enum_def.variants.push_back(&enum_variant);
 
-    enum_variant.type = analyzer.create_expr(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .symbol = &enum_def,
-    });
+    enum_variant.type = analyzer.create_expr(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .symbol = &enum_def,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -170,6 +176,8 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
 }
 
 void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
+    // TODO: Check for duplicate parameter names.
+
     if (param.is_self()) {
         if (!analyzer.get_scope().decl.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
             analyzer.report_generator.report_err_self_not_allowed(param);
@@ -181,21 +189,25 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             return;
         }
 
-        sir::Expr base_type = analyzer.create_expr(sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .symbol = analyzer.get_scope().decl,
-        });
+        sir::Expr base_type = analyzer.create_expr(
+            sir::SymbolExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .symbol = analyzer.get_scope().decl,
+            }
+        );
 
         if (param.attrs && param.attrs->byval) {
             param.type = base_type;
             return;
         }
 
-        param.type = analyzer.create_expr(sir::PointerType{
-            .ast_node = nullptr,
-            .base_type = base_type,
-        });
+        param.type = analyzer.create_expr(
+            sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = base_type,
+            }
+        );
     } else {
         ExprAnalyzer(analyzer).analyze_type(param.type);
     }

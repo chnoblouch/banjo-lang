@@ -1,6 +1,0 @@
-#! error: redefinition of 'self'
-
-struct Structure {
-	func test(self, self) {
-	}
-}

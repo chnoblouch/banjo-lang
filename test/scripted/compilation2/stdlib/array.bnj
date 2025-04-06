@@ -1,0 +1,84 @@
+# test:subtest
+# test:output "2,8,10,3,-3,4,10,10,20,0"
+
+func main() {
+	var array = [2, 8, 10];
+	print(array[0]);
+	print(',');
+	print(array[1]);
+	print(',');
+	print(array[2]);
+	print(',');
+	print(array.length);
+	
+	array.append(-3);
+	print(',');
+	print(array[3]);
+	print(',');
+	print(array.length);
+	
+	var ref = &array[2];
+	print(',');
+	print(array[2]);
+	print(',');
+	print(*ref);
+	
+	*ref = 20;
+	print(',');
+	print(array[2]);
+	
+	array.clear();
+	print(',');
+	print(array.length);
+}
+
+# test:subtest
+# test:output "10,20;50,40;3,4;"
+
+struct Point {
+	var x: i64;
+	var y: i64;
+	
+	func output(self) {
+		print(self.x);
+		print(',');
+		print(self.y);
+		print(';');
+	}
+}
+
+func main() {
+	var points = [
+		Point { x: 10 as i64, y: 20 as i64 },
+		Point { x: 50 as i64, y: 40 as i64 },
+	];
+	
+	points[0].output();
+	points[1].output();
+	
+	points.append(Point { x: 3 as i64, y: 4 as i64 });
+	points[2].output();
+}
+
+# test:subtest
+# test:output "0.5,true;2.1,false;-1.8,false;"
+
+func print_tuple(tuple: (f32, bool)) {
+	print(tuple.0);
+	print(',');
+	print(tuple.1);
+	print(';');
+}
+
+func main() {
+	var array = [
+		(0.5, true),
+		(2.1, false)
+	];
+	
+	print_tuple(array[0]);
+	print_tuple(array[1]);
+	
+	array.append((-1.8, false));
+	print_tuple(array[2]);
+}

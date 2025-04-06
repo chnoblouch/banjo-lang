@@ -1,5 +1,0 @@
-#! error: empty character literal
-
-func main() {
-	var a = '';
-}

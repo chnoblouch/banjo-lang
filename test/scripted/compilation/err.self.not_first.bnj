@@ -1,6 +1,0 @@
-#! error: 'self' must be the first parameter
-
-struct Structure {
-	func test(value: i32, self) {
-	}
-}

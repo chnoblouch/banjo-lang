@@ -1,0 +1,19 @@
+# test:output "true,false,true,false,true,true"
+
+func main() {
+	var a = 3;
+	var b = 8;
+	var c = 5;
+	
+	print(a == 3);
+	print(',');
+	print(b == 5);
+	print(',');
+	print(a == 3 && b == 8);
+	print(',');
+	print(a == 4 && c == 5);
+	print(',');
+	print(a == 4 || c == 5);
+	print(',');
+	print(a == 8 || (b == 8 && c == 5));
+}

@@ -1,4 +1,0 @@
-#! error: 'self' parameter is only allowed in methods
-
-func test(self) {
-}

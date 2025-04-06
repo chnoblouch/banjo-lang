@@ -23,3 +23,77 @@ func f(arg: u8) {
 func main() {
     f('a');
 }
+
+# test:subtest
+# test:output "054"
+
+func add(a: i32, b: i32) -> i32 {
+	return a + b;
+}
+
+func inc(a: i32) -> i32 {
+	return a + 1;
+}
+
+func main() {
+	print(0);
+	print(add(2, 3));
+	print(inc(add(1, 2)));
+}
+
+# test:subtest
+# test:output "a123456b"
+
+func testy(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) {
+	print(a);
+	print(b);
+	print(c);
+	print(d);
+	print(e);
+	print(f);
+}
+
+func main() {
+	print("a");
+	testy(1, 2, 3, 4, 5, 6);
+	print("b");
+}
+
+# test:subtest
+# test:output "Hello World"
+
+func get_word0() -> *u8 {
+	return "Hello";
+}
+
+func get_word1() -> *u8 {
+	return "World";
+}
+
+func print_words(word0: *u8, word1: *u8) {
+	print(word0);
+	print(" ");
+	print(word1);
+}
+
+func main() {
+	print_words(get_word0(), get_word1());
+}
+
+# test:subtest
+# test:output "HelloWorld"
+
+func hello() {
+	print("Hello");
+}
+
+func world() {
+	print("World");
+}
+
+func main() {
+	var f = hello;
+	f();
+	f = world;
+	f();
+}

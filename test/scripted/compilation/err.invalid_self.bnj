@@ -1,5 +1,0 @@
-#! error: 'self' is only allowed in methods
-
-func main() {
-	self.field = 100;
-}

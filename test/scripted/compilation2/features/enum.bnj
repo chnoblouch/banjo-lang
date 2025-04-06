@@ -1,0 +1,97 @@
+# test:subtest
+# test:output "0,1,2"
+
+enum Fruit {
+	APPLE,
+	PEAR,
+	BANANA,
+}
+
+func main() {
+	var fruit = Fruit.APPLE;
+	print(fruit as u32);
+	print(',');
+	
+	fruit = Fruit.PEAR;
+	print(fruit as u32);
+	print(',');
+	
+	fruit = Fruit.BANANA;
+	print(fruit as u32);
+}
+
+# test:subtest
+# test:output "218,-49,12838"
+
+enum Color {
+	RED = 218,
+	GREEN = -49,
+	BLUE = 12838,
+}
+
+func main() {
+	var color = Color.RED;
+	print(color as i32);
+	print(',');
+	
+	color = Color.GREEN;
+	print(color as i32);
+	print(',');
+	
+	color = Color.BLUE;
+	print(color as i32);
+}
+
+# test:subtest
+# test:output "0,100,101,200,201,500,"
+
+enum Command {
+	CONNECT,
+	UPLOAD = 100,
+	DOWNLOAD,
+	RENAME = 200,
+	MOVE,
+	DISCONNECT = 500,
+}
+
+func print_command(command: Command) {
+	print(command as u32);
+	print(',');
+}
+
+func main() {
+	print_command(Command.CONNECT);
+	print_command(Command.UPLOAD);
+	print_command(Command.DOWNLOAD);
+	print_command(Command.RENAME);
+	print_command(Command.MOVE);
+	print_command(Command.DISCONNECT);
+}
+
+# test:subtest
+# test:output "false,true,true,false"
+
+enum Direction {
+	NORTH,
+	EAST,
+	SOUTH,
+	WEST,
+}
+
+func main() {
+	var north = Direction.NORTH;
+	var east = Direction.EAST;
+	var south = Direction.SOUTH;
+	var west = Direction.WEST;
+
+	print(north == south);
+	print(',');
+	
+	print(north == north);
+	print(',');
+	
+	print(west == west);
+	print(',');
+	
+	print(west == east);
+}

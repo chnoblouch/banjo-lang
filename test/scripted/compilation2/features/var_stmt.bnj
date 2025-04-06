@@ -1,0 +1,15 @@
+# test:subtest
+# test:output "7"
+
+func main() {
+	var a: i32 = 7;
+	println(a);
+}
+
+# test:subtest
+# test:output "7"
+
+func main() {
+	var a = 7;
+	println(a);
+}

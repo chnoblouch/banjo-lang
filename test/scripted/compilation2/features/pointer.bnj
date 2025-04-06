@@ -1,0 +1,69 @@
+# test:subtest
+# test:output "5,8"
+
+func print_ptr(ptr: *i32) {
+	print(*ptr);
+}
+
+func set_ptr(ptr: *i32, val: i32) {
+	*ptr = val;
+}
+
+func main() {
+	var a = 5;
+	print_ptr(&a);
+	set_ptr(&a, 8);
+	print(',');
+	print_ptr(&a);
+}
+
+# test:subtest
+# test:output "48,12"
+
+func set_1(src: *i32, dst: *i32) {
+	*dst = *src;
+}
+
+func set_indirect(src: *i32, dst: *i32) {
+	set_2(&src, &dst);
+}
+
+func set_2(src: **i32, dst: **i32) {
+	**dst = **src;
+}
+
+func main() {
+	var src: i32;
+	var dst: i32;
+	
+	src = 48;
+	set_1(&src, &dst);
+	print(dst);
+	
+	print(',');
+	
+	src = 12;
+	set_indirect(&src, &dst);
+	print(dst);
+}
+
+# test:subtest
+# test:output "7,18"
+
+# TODO: Test dereferencing more than once.
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+func main() {
+	var point: Point;
+	point.x = 7;
+	point.y = 18;
+	
+	var pointer = &point;
+	print(pointer.x);
+	print(',');
+	print(pointer.y);
+}

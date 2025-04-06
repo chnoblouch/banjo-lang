@@ -1,0 +1,138 @@
+# test:subtest
+# test:output "1,2,4,8,1,2,4,8,8,4,8,1,8"
+
+func main() {
+    print(meta(i8).size);
+    print(',');
+    print(meta(i16).size);
+    print(',');
+    print(meta(i32).size);
+    print(',');
+    print(meta(i64).size);
+    print(',');
+    print(meta(u8).size);
+    print(',');
+    print(meta(u16).size);
+    print(',');
+    print(meta(u32).size);
+    print(',');
+    print(meta(u64).size);
+    print(',');
+    print(meta(usize).size);
+    print(',');
+    print(meta(f32).size);
+    print(',');
+    print(meta(f64).size);
+    print(',');
+    print(meta(bool).size);
+    print(',');
+    print(meta(addr).size);
+}
+
+# test:subtest
+# test:output "8,8,8"
+
+func main() {
+    print(meta(*i32).size);
+    print(',');
+    print(meta(*bool).size);
+    print(',');
+    print(meta(func(i32, bool) -> f32).size);
+}
+
+# test:subtest
+# test:output "24"
+
+struct Object {
+    var id: u32;
+    var name: *u8;
+    var x: f32;
+    var y: f32;
+}
+
+func main() {
+    print(meta(Object).size);
+}
+
+# test:subtest
+# test:output "8,24"
+
+func main() {
+    print(meta((i64,)).size);
+    print(',');
+    print(meta((i8, usize, f32)).size);
+}
+
+# test:subtest
+# test:output "4"
+
+enum Fruit {
+    APPLE,
+    PEAR,
+    BANANA
+}
+
+func main() {
+    print(meta(Fruit).size);
+}
+
+# test:subtest
+# test:output "16,8,24,32,56,"
+
+struct S0 {
+	var m0: f32;
+	var m1: i32;
+	var m2: i64;
+}
+
+struct S1 {
+	var m0: i16;
+	var m1: i32;
+}
+
+struct S2 {
+	var m0: u64;
+	var m1: i64;
+	var m2: i8;
+}
+
+struct S3 {
+	var m0: u32;
+	var m1: S2;
+}
+
+struct S4 {
+	var m0: u8;
+	var m1: S1;
+	var m2: S3;
+	var m3: u16;
+}
+
+func print_size[T]() {
+	print(meta(T).size);
+	print(',');
+}
+
+func main() {
+	print_size[S0]();
+	print_size[S1]();
+	print_size[S2]();
+	print_size[S3]();
+	print_size[S4]();
+}
+
+# test:subtest
+# test:output "16,8,24,32,56,"
+
+func print_size[T]() {
+	print(meta(T).size);
+	print(',');
+}
+
+func main() {
+	print_size[(f32, i32, i64)]();
+	print_size[(i16, i32)]();
+	print_size[(u64, i64, i8)]();
+	print_size[(u32, (u64, i64, i8))]();
+	print_size[(u8, (i16, i32), (u32, (u64, i64, i8)), u16)]();
+}

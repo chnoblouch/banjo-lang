@@ -1,0 +1,16 @@
+# test:output "ab"
+
+struct Printer {
+	func print_a() {
+		print("a");
+	}
+	
+	func print_ab() {
+		print_a();
+		print("b");
+	}
+}
+
+func main() {
+	Printer.print_ab();
+}

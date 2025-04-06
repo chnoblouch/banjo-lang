@@ -1,0 +1,94 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('r');
+    }
+}
+
+struct ValueResource {
+    var value: i32;
+    
+    func __deinit__(self) {
+        print('v');
+        print(self.value);
+    }
+}
+
+# test:subtest
+# test:output "arb"
+
+func consume(resource: Resource) {
+    print('a');
+}
+
+func main() {
+    var resource = Resource {};
+    var flag = true;
+    
+    if flag {
+        consume(resource);
+    }
+    
+    print('b');
+}
+
+# test:subtest
+# test:output "ar"
+
+func consume(resource: Resource) {
+    print('?');
+}
+
+func main() {
+    var resource = Resource {};
+    var flag = false;
+    
+    if flag {
+        consume(resource);
+    }
+    
+    print('a');
+}
+
+# test:subtest
+# test:output "av3bv8"
+
+func consume(resource: ValueResource) {
+    print('a');
+}
+
+func main() {
+    var a = ValueResource { value: 3 };
+    var b = ValueResource { value: 8 };
+    var deinit_a = true;
+
+    if deinit_a {
+        consume(a);
+    } else {
+        consume(b);
+    }
+
+    print('b');
+}
+
+# test:subtest
+# test:output "av8bv3"
+
+func consume(resource: ValueResource) {
+    print('a');
+}
+
+func main() {
+    var a = ValueResource { value: 3 };
+    var b = ValueResource { value: 8 };
+    var deinit_a = false;
+
+    if deinit_a {
+        consume(a);
+    } else {
+        consume(b);
+    }
+
+    print('b');
+}

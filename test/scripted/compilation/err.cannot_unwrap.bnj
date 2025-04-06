@@ -1,9 +1,0 @@
-#! error: cannot unwrap value of type 'i32'
-
-func main() {
-    var value: i32 = 100;
-    
-    try inner in value {
-        println(inner);
-    }
-}
