@@ -126,11 +126,17 @@ def compile_source(test):
 
     compiler_path = find_executable("banjo-compiler")
 
+    machine = platform.machine().lower()
+    if machine in ("x86_64", "amd64"):
+        arch = "x86_64"
+    elif machine in ("aarch64", "arm64"):
+        arch = "aarch64"
+
     if is_windows:
         result = run_process([
             compiler_path,
             "--type", "executable",
-            "--arch", "x86_64",
+            "--arch", arch,
             "--os", "windows",
             "--env", "msvc",
             "--opt-level", "0",
@@ -141,7 +147,7 @@ def compile_source(test):
         result = run_process([
             compiler_path,
             "--type", "executable",
-            "--arch", "x86_64",
+            "--arch", arch,
             "--os", "linux",
             "--env", "gnu",
             "--opt-level", "0",
@@ -152,7 +158,7 @@ def compile_source(test):
         result = run_process([
             compiler_path,
             "--type", "executable",
-            "--arch", "aarch64",
+            "--arch", arch,
             "--os", "macos",
             "--opt-level", "0",
             "--path", ".",
@@ -195,7 +201,11 @@ def run_executable(test):
         if not os.path.exists("main.o"):
             return ProcessResult("", "", 1)
 
-        subprocess.run(["clang", "-fuse-ld=lld", "-otest", "main.o"])
+        if is_linux:
+            subprocess.run(["clang", "-fuse-ld=lld", "-lm", "-otest", "main.o"])
+        else:
+            subprocess.run(["clang", "-fuse-ld=lld", "-otest", "main.o"])
+
         os.remove("main.o")
 
         if not os.path.exists("test"):
