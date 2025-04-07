@@ -922,7 +922,7 @@ void AArch64Encoder::resolve_internal_symbols() {
 }
 
 void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use) {
-    std::initializer_list resolvable_kinds{
+    std::initializer_list<BinSymbolUseKind> resolvable_kinds{
         BinSymbolUseKind::LABEL_BRANCH,
         BinSymbolUseKind::CALL26,
         BinSymbolUseKind::BRANCH26,
