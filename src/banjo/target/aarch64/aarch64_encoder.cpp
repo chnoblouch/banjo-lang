@@ -767,7 +767,7 @@ std::uint32_t AArch64Encoder::encode_f32_imm(float value) {
     std::uint32_t bits = BitOperations::get_bits_32(value);
 
     ASSERT((bits & 0x0007FFFF) == 0);
-    std::uint32_t b_bits = (bits & 0x7E000000) >> 25;
+    [[maybe_unused]] std::uint32_t b_bits = (bits & 0x7E000000) >> 25;
     ASSERT(b_bits == 0b100000 || b_bits == 0b011111);
 
     return ((bits & 0x80000000) >> 24) | ((bits & 0x03F80000) >> 19);
@@ -777,7 +777,7 @@ std::uint32_t AArch64Encoder::encode_f64_imm(double value) {
     std::uint64_t bits = BitOperations::get_bits_64(value);
 
     ASSERT((bits & 0x0000FFFFFFFFFFFF) == 0);
-    std::uint32_t b_bits = (bits & 0x7FC0000000000000) >> 54;
+    [[maybe_unused]] std::uint32_t b_bits = (bits & 0x7FC0000000000000) >> 54;
     ASSERT(b_bits == 0b100000000 || b_bits == 0b011111111);
 
     return ((bits & 0x8000000000000000) >> 56) | ((bits & 0x007F000000000000) >> 48);
@@ -936,6 +936,7 @@ void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolU
     std::uint32_t instr_template = slice.buffer.read_u32();
     slice.buffer.seek(use.local_offset);
 
+    SymbolDef &def = defs[use.index];
     std::uint32_t displacement = compute_displacement(slice, use);
 
     if (use.kind == BinSymbolUseKind::LABEL_BRANCH) {
@@ -952,15 +953,18 @@ void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolU
         } else {
             ASSERT_UNREACHABLE;
         }
+
+        use.is_resolved = true;
     } else if (use.kind == BinSymbolUseKind::CALL26 || use.kind == BinSymbolUseKind::BRANCH26) {
-        // `BL` instructions encode displacements with 26 bits.
-        std::uint32_t imm = encode_imm(displacement, 26, 2);
-        slice.buffer.write_u32(instr_template | imm);
+        if (def.kind == BinSymbolKind::TEXT_FUNC) {
+            // `BL` instructions encode displacements with 26 bits.
+            std::uint32_t imm = encode_imm(displacement, 26, 2);
+            slice.buffer.write_u32(instr_template | imm);
+            use.is_resolved = true;
+        }
     } else {
         ASSERT_UNREACHABLE;
     }
-
-    use.is_resolved = true;
 }
 
 } // namespace target
