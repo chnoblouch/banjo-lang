@@ -1,0 +1,23 @@
+# test:subtest
+# test:output "3,8,1293,-32"
+
+func main() {
+    var array: [i32; 3] = [8, 1293, -32];
+    var slice = Slice[i32].new(&array[0], 3);
+
+    print(slice.length);
+    print(',');
+    print(slice.elements[0]);
+    print(',');
+    print(slice.elements[1]);
+    print(',');
+    print(slice.elements[2]);
+}
+
+# test:subtest
+# test:output "0"
+
+func main() {
+    var slice = Slice[bool].new_empty();
+    print(slice.length);
+}

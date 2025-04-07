@@ -89,6 +89,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
         {"Optional", find_std_symbol({"std", "optional"}, "Optional")},
         {"Result", find_std_symbol({"std", "result"}, "Result")},
         {"Array", find_std_symbol({"std", "array"}, "Array")},
+        {"Slice", find_std_symbol({"std", "slice"}, "Slice")},
         {"String", find_std_symbol({"std", "string"}, "String")},
         {"StringSlice", find_std_symbol({"std", "string_slice"}, "StringSlice")},
         {"Map", find_std_symbol({"std", "map"}, "Map")},

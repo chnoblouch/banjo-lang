@@ -1,0 +1,15 @@
+struct Slice[T] {
+    var elements: *T;
+    var length: usize;
+
+    pub func new(elements: *T, length: usize) -> Slice[T] {
+        return Slice[T] { elements, length };
+    }
+
+    pub func new_empty() -> Slice[T] {
+        return Slice[T] {
+            elements: null,
+            length: 0,
+        };
+    }
+}
