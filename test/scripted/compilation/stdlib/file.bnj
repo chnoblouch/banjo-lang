@@ -1,0 +1,46 @@
+# test:common
+
+use std.{file.File, path.Path};
+
+# test:subtest
+# test:write_file "test.txt" "Content"
+# test:output "Content"
+
+func main() {
+    var path = Path.from("test.txt");
+    var file = File.open(path, File.Mode.READ).unwrap();
+    var data = Array[u8].sized(7);
+    file.read(data.slice());
+    
+    for char in data {
+        print(char);
+    }
+}
+
+# test:subtest
+# test:write_file "test.txt" "Content"
+# test:output "7,Content"
+
+func main() {
+    var path = Path.from("test.txt");
+    var file = File.open(path, File.Mode.READ).unwrap();
+    var data = Array[u8].sized(100);
+    var result = file.read(data.slice());
+
+    print(result);
+    print(',');
+
+    for i in 0..7 {
+        print(data[i]);
+    }
+}
+
+# test:subtest
+# test:file "test.txt" "File"
+
+func main() {
+    var path = Path.from("test.txt");
+    var file = File.open(path, File.Mode.WRITE).unwrap();
+    var data = ['F', 'i', 'l', 'e'];
+    file.write(data.slice());
+}

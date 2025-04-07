@@ -7,11 +7,12 @@ native func fopen(filename: *u8, mode: *u8) -> addr;
 native func fclose(stream: addr) -> addr;
 native func fflush(stream: addr) -> i32;
 native func fread(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
-native func fwrite(ptr: addr, size: usize, nmemb: usize, stream: addr) -> addr;
+native func fwrite(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
 native func fgetc(stream: addr) -> i32;
 native func fputc(ch: i32, stream: addr) -> i32;
 native func fseek(stream: addr, offset: i32, whence: i32) -> i32;
 native func ftell(stream: addr) -> i32;
+native func feof(stream: addr) -> i32;
 native func ferror(stream: addr) -> i32;
 
 const SEEK_SET: i32 = 0;

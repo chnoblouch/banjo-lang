@@ -42,6 +42,13 @@ struct Array[T] {
         
         memory.free(self.data);
     }
+
+    pub func slice(self) -> Slice[T] {
+        return Slice[T] {
+            elements: self.data,
+            length: self.length,
+        };
+    }
     
     pub func append(self, value: T) {    
         self.ensure_capacity(self.length + 1);

@@ -2,32 +2,32 @@ use std.{
     platform,
     memory,
     path.Path,
-    io.{Reader, Writer, CFileReader, CFileWriter, Error},
+    io.{Reader, Writer, Read, Write, Error},
 };
 
-use c.lib.stdio.{fopen, fseek, ftell, fread, fclose, SEEK_END, SEEK_SET};
+use c.lib.stdio.{fopen, fseek, ftell, fread, fwrite, feof, fclose, SEEK_END, SEEK_SET};
 
-enum FileMode {
-    READ,
-    WRITE,
-    APPEND,
-    READ_WRITE,
-    READ_WRITE_ERASE,
-    READ_APPEND
-}
+struct File: Read, Write {
+    enum Mode {
+        READ,
+        WRITE,
+        APPEND,
+        READ_WRITE,
+        READ_WRITE_ERASE,
+        READ_APPEND,
+    }
 
-struct File {
     var stream: addr;
     
-    pub func open(path: Path, mode: FileMode) -> File except Error {
+    pub func open(path: Path, mode: Mode) -> File except Error {
         var c_mode: *u8;
         
-        if mode == FileMode.READ { c_mode = "rb"; }
-        else if mode == FileMode.WRITE { c_mode = "wb"; }
-        else if mode == FileMode.APPEND { c_mode = "ab"; }
-        else if mode == FileMode.READ_WRITE { c_mode = "r+b"; }
-        else if mode == FileMode.READ_WRITE_ERASE { c_mode = "w+b"; }
-        else if mode == FileMode.READ_APPEND { c_mode = "a+b"; }
+        if mode == Mode.READ { c_mode = "rb"; }
+        else if mode == Mode.WRITE { c_mode = "wb"; }
+        else if mode == Mode.APPEND { c_mode = "ab"; }
+        else if mode == Mode.READ_WRITE { c_mode = "r+b"; }
+        else if mode == Mode.READ_WRITE_ERASE { c_mode = "w+b"; }
+        else if mode == Mode.READ_APPEND { c_mode = "a+b"; }
     
         var path_cstring = path.str().to_cstring();
         var stream = fopen(path_cstring.data, c_mode);
@@ -36,32 +36,34 @@ struct File {
             return Error.last();
         }
 
-        return File {
-            stream
-        };
+        return File { stream };
     }
     
     pub func open(path: String) -> File except Error {
-        return open(Path.from(path), FileMode.READ);
+        return open(Path.from(path), Mode.READ);
     }
     
-    pub func reader(self) -> Reader[CFileReader] {
-        return Reader[CFileReader] {
-            impl: CFileReader {
-                stream: self.stream,
-            }
-        };
+    pub func read(self, data: Slice[u8]) -> usize except Error {
+        var result = fread(data.elements, 1, data.length, self.stream);
+
+        if result == data.length || feof(self.stream) != 0 {
+            return result;
+        } else {
+            return Error.last();
+        }
     }
     
-    pub func writer(self) -> Writer[CFileWriter] {
-        return Writer[CFileWriter] {
-            impl: CFileWriter {
-                stream: self.stream,
-            }
-        };
+    pub func write(self, data: Slice[u8]) -> usize except Error {
+        var result = fwrite(data.elements, 1, data.length, self.stream);
+
+        if result == data.length {
+            return result;
+        } else {
+            return Error.last();
+        }
     }
-    
-    pub func read(self) -> (*u8, usize) {    
+
+    pub func read_all(self) -> (*u8, usize) {    
         fseek(self.stream, 0, SEEK_END);
         var size = ftell(self.stream) as usize;
         fseek(self.stream, 0, SEEK_SET);

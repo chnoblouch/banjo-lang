@@ -1,6 +1,15 @@
 use std.platform;
 use c.lib.stdio.{fread, ferror, fgetc, fputc, fwrite, fflush};
 
+proto Read {
+    pub func read(self, data: Slice[u8]) -> usize except Error;
+}
+
+proto Write {
+    pub func write(self, data: Slice[u8]) -> usize except Error;
+    pub func flush(self) {}
+}
+
 struct Error {
     var handle: platform.Error;
     

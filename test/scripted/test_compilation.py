@@ -1,6 +1,7 @@
 import os
 import subprocess
 import platform
+from pathlib import Path
 
 from framework import ProcessResult, TestResult, run_process, run_tests, find_executable
 
@@ -26,15 +27,39 @@ is_macos = platform.system() == "Darwin"
 
 
 def run_test(test, conditions):
+    files_to_delete = []
+
+    for condition, args in conditions:
+        if condition == "write_file":
+            path = Path(args[0])
+            content = args[1]
+
+            with open(path, "wb") as f:
+                f.write(content.encode("utf-8"))
+
+            files_to_delete.append(path)
+
     for condition, _ in conditions:
         if condition == "output":
-            return check_output(test, conditions)
+            result = check_output(test, conditions)
+            break
         elif condition == "exitcode":
-            return check_exit_code(test, conditions)
+            result = check_exit_code(test, conditions)
+            break
         elif condition == "compiles":
-            return check_compiles(test, conditions)
+            result = check_compiles(test, conditions)
+            break
+        elif condition == "file":
+            result = check_file(test, conditions)
+            break
         elif condition in ("error", "warning"):
-            return check_reports(test, conditions)
+            result = check_reports(test, conditions)
+            break
+    
+    for path in files_to_delete:
+        path.unlink()
+
+    return result
 
 
 def check_output(test, conditions):
@@ -72,6 +97,29 @@ def check_compiles(test, conditions):
         return TestResult(True)
     else:
         return TestResult(False, "unexpected exit code", 0, result.exit_code)
+
+
+def check_file(test, conditions):
+    for condition, args in conditions:
+        if condition == "file":
+            path = Path(args[0])
+            expected_content = args[1]
+            break
+
+    run_executable(test)
+
+    if not path.exists():
+        return TestResult(False, "file does not exist")
+    
+    with open(path, "rb") as f:
+        content = f.read().decode("utf-8")
+
+    path.unlink()
+
+    if content == expected_content:
+        return TestResult(True)
+    else:
+        return TestResult(False, "unexpected file content", expected_content, content)
 
 
 def check_reports(test, conditions):
