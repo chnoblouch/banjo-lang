@@ -55,10 +55,10 @@ private:
     void finish_line();
     void try_insert_completion_token();
 
-    bool is_whitespace_char(char c);
-    bool is_identifier_char(char c);
-    bool is_number_char(char c);
-    bool read_if(char c);
+    bool is_whitespace_char(int c);
+    bool is_identifier_char(int c);
+    bool is_number_char(int c);
+    bool read_if(int c);
 };
 
 } // namespace lang

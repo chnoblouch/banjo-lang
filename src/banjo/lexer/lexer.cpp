@@ -51,7 +51,7 @@ std::vector<Token> Lexer::tokenize() {
 }
 
 void Lexer::read_token() {
-    char c = reader.get();
+    int c = reader.get();
 
     if (c == '\n') read_newline();
     else if (is_whitespace_char(c)) read_whitespace();
@@ -76,7 +76,7 @@ void Lexer::read_whitespace() {
 
 void Lexer::read_identifier() {
     while (is_identifier_char(reader.get())) {
-        token_builder += reader.consume();
+        token_builder += static_cast<char>(reader.consume());
     }
 
     auto iter = KEYWORDS.find(token_builder);
@@ -89,61 +89,61 @@ void Lexer::read_number() {
             break;
         }
 
-        token_builder += reader.consume();
+        token_builder += static_cast<char>(reader.consume());
     }
 
     finish_token(TKN_LITERAL);
 }
 
 void Lexer::read_character() {
-    token_builder += reader.consume();
+    token_builder += static_cast<char>(reader.consume());
 
-    char c = (char)reader.consume();
+    int c = reader.consume();
     while (c != EOF) {
-        token_builder += c;
+        token_builder += static_cast<char>(c);
         if (c == '\'') {
             break;
         }
 
-        c = (char)reader.consume();
+        c = reader.consume();
     }
 
     finish_token(TKN_CHARACTER);
 }
 
 void Lexer::read_string() {
-    token_builder += reader.consume();
+    token_builder += static_cast<char>(reader.consume());
 
-    char c = (char)reader.consume();
+    int c = reader.consume();
     while (c != EOF) {
         if (c == '\\') {
-            c = (char)reader.consume();
+            c = reader.consume();
             if (c == EOF) break;
             else if (c == '\"') token_builder += '\"';
-            else token_builder += std::string("\\") + c;
+            else token_builder += std::string("\\") + static_cast<char>(c);
         } else {
-            token_builder += c;
+            token_builder += static_cast<char>(c);
             if (c == '\"') {
                 break;
             }
         }
 
-        c = (char)reader.consume();
+        c = reader.consume();
     }
 
     finish_token(TKN_STRING);
 }
 
 void Lexer::skip_comment() {
-    char c = (char)reader.consume();
+    int c = reader.consume();
     while (c != '\n' && c != EOF) {
-        c = (char)reader.consume();
+        c = reader.consume();
     }
 }
 
 void Lexer::read_punctuation() {
-    char c = reader.consume();
-    token_builder += c;
+    int c = reader.consume();
+    token_builder += static_cast<char>(c);
 
     TokenType type;
 
@@ -245,20 +245,20 @@ void Lexer::try_insert_completion_token() {
     }
 }
 
-bool Lexer::is_whitespace_char(char c) {
+bool Lexer::is_whitespace_char(int c) {
     return c == ' ' || c == '\r' || c == '\t';
 }
 
-bool Lexer::is_identifier_char(char c) {
+bool Lexer::is_identifier_char(int c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 
-bool Lexer::is_number_char(char c) {
+bool Lexer::is_number_char(int c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'x' || c == 'b' ||
            c == '.';
 }
 
-bool Lexer::read_if(char c) {
+bool Lexer::read_if(int c) {
     if (reader.get() == c) {
         reader.consume();
         token_builder.push_back(c);
