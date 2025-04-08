@@ -16,4 +16,5 @@ native func feof(stream: addr) -> i32;
 native func ferror(stream: addr) -> i32;
 
 const SEEK_SET: i32 = 0;
+const SEEK_CUR: i32 = 1;
 const SEEK_END: i32 = 2;

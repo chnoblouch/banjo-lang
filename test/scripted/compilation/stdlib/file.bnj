@@ -44,3 +44,50 @@ func main() {
     var data = ['F', 'i', 'l', 'e'];
     file.write(data.slice());
 }
+
+# test:subtest
+# test:write_file "test.txt" "This file contains text!"
+# test:output "5,13"
+
+func main() {
+    var path = Path.from("test.txt");
+    var file = File.open(path, File.Mode.READ).unwrap();
+
+    file.read(Array[u8].sized(5).slice());
+    print(file.position());
+    print(',');
+
+    file.read(Array[u8].sized(8).slice());
+    print(file.position());
+}
+
+# test:subtest
+# test:write_file "test.txt" "This file contains some text!"
+# test:output "5,file,19,some,10,contains"
+
+func main() {
+    var path = Path.from("test.txt");
+    var file = File.open(path, File.Mode.READ).unwrap();
+
+    file.seek(5, File.SeekOrigin.START);
+    read_string(&file, 4);
+    print(',');
+
+    file.seek(-10, File.SeekOrigin.END);
+    read_string(&file, 4);
+    print(',');
+
+    file.seek(-13, File.SeekOrigin.CURRENT);
+    read_string(&file, 8);
+}
+
+func read_string(file: *File, length: usize) {
+    print(file.position());
+    print(',');
+
+    var data = Array[u8].sized(length);
+    file.read(data.slice());
+
+    var string = StringSlice.new(&data[0], length);
+    print(string);
+}

@@ -5,7 +5,18 @@ use std.{
     io.{Reader, Writer, Read, Write, Error},
 };
 
-use c.lib.stdio.{fopen, fseek, ftell, fread, fwrite, feof, fclose, SEEK_END, SEEK_SET};
+use c.lib.stdio.{
+    fopen,
+    fseek,
+    ftell,
+    fread,
+    fwrite,
+    feof,
+    fclose,
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END,
+};
 
 struct File: Read, Write {
     enum Mode {
@@ -15,6 +26,12 @@ struct File: Read, Write {
         READ_WRITE,
         READ_WRITE_ERASE,
         READ_APPEND,
+    }
+
+    enum SeekOrigin {
+        START,
+        END,
+        CURRENT,
     }
 
     var stream: addr;
@@ -58,6 +75,40 @@ struct File: Read, Write {
 
         if result == data.length {
             return result;
+        } else {
+            return Error.last();
+        }
+    }
+
+    pub func position(self) -> u64 except Error {
+        # TODO: Actually support 64-bit offsets.
+
+        var result = ftell(self.stream);
+
+        if result != 0xFFFFFFFF {
+            return result as u64;
+        } else {
+            return Error.last();
+        }
+    }
+
+    pub func seek(self, offset: i64, origin: SeekOrigin) -> void except Error {
+        # TODO: Actually support 64-bit offsets.
+
+        var libc_origin: i32 = 0;
+
+        if origin == SeekOrigin.START {
+            libc_origin = SEEK_SET;
+        } else if origin == SeekOrigin.END {
+            libc_origin = SEEK_END;
+        } else if origin == SeekOrigin.CURRENT {
+            libc_origin = SEEK_CUR;
+        }
+
+        var result = fseek(self.stream, offset as i32, libc_origin);
+
+        if result == 0 {
+            return undefined;
         } else {
             return Error.last();
         }
