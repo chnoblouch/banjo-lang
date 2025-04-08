@@ -559,7 +559,8 @@ mcode::Value AArch64SSALowerer::move_float_into_register(double value, unsigned 
 
         mcode::Value symbol_addr = move_symbol_into_register(global.name);
         AArch64Address addr = AArch64Address::new_base(symbol_addr.get_register());
-        emit(mcode::Instruction(AArch64Opcode::LDR, {result, mcode::Value::from_aarch64_addr(addr)}));
+        mcode::Value m_addr = mcode::Value::from_aarch64_addr(addr);
+        emit(mcode::Instruction(AArch64Opcode::LDR, {result, m_addr}, mcode::Instruction::FLAG_FLOAT));
     }
 
     return result;
