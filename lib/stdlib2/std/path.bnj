@@ -1,3 +1,5 @@
+use std.platform;
+
 struct Path {
     var path: String;
     
@@ -27,9 +29,10 @@ struct Path {
         self.path.append(component);
     }
     
-    # pub func exists(self) -> bool {
-    #     return os.path.exists(self.path.cstr());
-    # }
+    pub func exists(self) -> bool {
+        # TODO: Error handling
+        return platform.path_exists(&self.path);
+    }
     
     pub func parent(self) -> Path {
         var index = self.path.rfind('/').unwrap();

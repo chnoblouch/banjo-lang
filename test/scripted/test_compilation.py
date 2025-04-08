@@ -28,6 +28,7 @@ is_macos = platform.system() == "Darwin"
 
 def run_test(test, conditions):
     files_to_delete = []
+    dirs_to_delete = []
 
     for condition, args in conditions:
         if condition == "write_file":
@@ -38,6 +39,10 @@ def run_test(test, conditions):
                 f.write(content.encode("utf-8"))
 
             files_to_delete.append(path)
+        elif condition == "create_dir":
+            path = Path(args[0])
+            path.mkdir()
+            dirs_to_delete.append(path)
 
     for condition, _ in conditions:
         if condition == "output":
@@ -58,6 +63,9 @@ def run_test(test, conditions):
     
     for path in files_to_delete:
         path.unlink()
+
+    for path in dirs_to_delete:
+        path.rmdir()
 
     return result
 

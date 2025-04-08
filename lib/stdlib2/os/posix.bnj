@@ -27,6 +27,8 @@ meta if os.IS_UNIX {
         # TODO: This size is definitely only 40 on x86-64.
         type PthreadMutex = [u8; 40];
 
+        const F_OK: i32 = 0;
+
         const CLOCK_REALTIME: u64 = 0;
         const CLOCK_MONOTONIC: u64 = 1;
 
@@ -68,6 +70,8 @@ meta if os.IS_UNIX {
             var opaque: [u8; 56];
         }
 
+        const F_OK: i32 = 0;
+
         const CLOCK_REALTIME: u64 = 0;
         const CLOCK_MONOTONIC: u64 = 6;
 
@@ -91,6 +95,7 @@ meta if os.IS_UNIX {
         native var stderr: addr;
     }
 
+    native func access(pathname: *u8, mode: i32) -> i32;
     native func close(fd: i32) -> i32;
     native func strerror(errnum: i32) -> *u8;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;

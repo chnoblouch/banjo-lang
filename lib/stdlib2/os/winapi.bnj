@@ -77,6 +77,11 @@ native func write_file(
     overlapped: addr
 ) -> Bool;
 
+# --- shlwapi.h ---
+
+@[link_name=PathFileExistsA]
+native func path_file_exists(path: *u8) -> Bool;
+
 # --- processenv.h ---
 
 const STD_INPUT_HANDLE: Dword = 0xFFFFFFF6;

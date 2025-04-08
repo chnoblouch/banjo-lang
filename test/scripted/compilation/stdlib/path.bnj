@@ -1,0 +1,16 @@
+# test:common
+
+use std.path.Path;
+
+# test:subtest
+# test:write_file "test.txt" "."
+# test:create_dir "directory"
+# test:output "true,true,false"
+
+func main() {
+    print(Path.from("test.txt").exists());
+    print(',');
+    print(Path.from("directory").exists());
+    print(',');
+    print(Path.from("abc.txt").exists());
+}

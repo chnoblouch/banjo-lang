@@ -52,6 +52,10 @@ meta if IS_WINDOWS {
         return msvcrt.acrt_iob_func(2);
     }
 
+    pub func path_exists(path: *String) -> bool {
+        return winapi.path_file_exists(path.to_cstring().data) != 0;
+    }
+
     pub func thread_spawn(function: func(addr), argument: addr) -> usize {
         var handle = winapi.create_thread(null, 0, function, argument, 0, null);
         return handle as usize;
