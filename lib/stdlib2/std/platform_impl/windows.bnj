@@ -53,19 +53,54 @@ meta if IS_WINDOWS {
     }
 
     pub func path_exists(path: *String) -> bool {
+        # TODO: Error handling
+
         return winapi.path_file_exists(path.to_cstring().data) != 0;
     }
 
-    # For reference: https://github.com/microsoft/STL/blob/6d253467512d9a4295fdf25fa6fc92f898c9d52c/stl/inc/filesystem#L1992
-
     pub func path_is_file(path: *String) -> bool {
+        # For reference: https://github.com/microsoft/STL/blob/6d253467512d9a4295fdf25fa6fc92f898c9d52c/stl/inc/filesystem#L1992
+        # TODO: Error handling
+
         var attributes = winapi.get_file_attributes(path.to_cstring().data);
         return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) == 0;
     }
 
     pub func path_is_dir(path: *String) -> bool {
+        # For reference: https://github.com/microsoft/STL/blob/6d253467512d9a4295fdf25fa6fc92f898c9d52c/stl/inc/filesystem#L1992
+        # TODO: Error handling
+
         var attributes = winapi.get_file_attributes(path.to_cstring().data);
         return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) != 0;
+    }
+
+    pub func path_list_dir(path: *String) -> Array[String] {
+        # For reference: https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
+        # TODO: Error handling
+
+        var pattern = path.copy() + "\\*";
+        var find_data: winapi.Win32FindData;
+
+        var handle = winapi.find_first_file(pattern.to_cstring().data, &find_data);
+        if handle == winapi.INVALID_HANDLE_VALUE {
+            return [];
+        }
+
+        var file_names: Array[String] = [];
+        var more_paths = true;
+
+        while more_paths {
+            var file_name_string = String.from(&find_data.file_name[0]);
+
+            if file_name_string != "." && file_name_string != ".." {
+                file_names.append(file_name_string);
+            }
+
+            more_paths = winapi.find_next_file(handle, &find_data) != 0;
+        }
+
+        winapi.find_close(handle);
+        return file_names;
     }
 
     pub func thread_spawn(function: func(addr), argument: addr) -> usize {

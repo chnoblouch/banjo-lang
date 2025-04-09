@@ -1,6 +1,7 @@
 import os
 import subprocess
 import platform
+import shutil
 from pathlib import Path
 
 from framework import ProcessResult, TestResult, run_process, run_tests, find_executable
@@ -27,8 +28,17 @@ is_macos = platform.system() == "Darwin"
 
 
 def run_test(test, conditions):
-    files_to_delete = []
-    dirs_to_delete = []
+    uses_fs = False
+
+    for condition, args in conditions:
+        if condition in ("write_file", "create_dir"):
+            uses_fs = True
+            break
+
+    if uses_fs:
+        working_dir = Path("_tmp").absolute()
+        working_dir.mkdir()
+        os.chdir(working_dir)
 
     for condition, args in conditions:
         if condition == "write_file":
@@ -37,12 +47,9 @@ def run_test(test, conditions):
 
             with open(path, "wb") as f:
                 f.write(content.encode("utf-8"))
-
-            files_to_delete.append(path)
         elif condition == "create_dir":
             path = Path(args[0])
             path.mkdir()
-            dirs_to_delete.append(path)
 
     for condition, _ in conditions:
         if condition == "output":
@@ -61,11 +68,9 @@ def run_test(test, conditions):
             result = check_reports(test, conditions)
             break
     
-    for path in files_to_delete:
-        path.unlink()
-
-    for path in dirs_to_delete:
-        path.rmdir()
+    if uses_fs:
+        os.chdir(os.pardir)
+        shutil.rmtree(working_dir)
 
     return result
 

@@ -62,10 +62,6 @@ def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
         print("no match found")
         return True
 
-    working_dir = Path("_tmp").absolute()
-    working_dir.mkdir(exist_ok=True)
-    os.chdir(working_dir)
-
     print("\ntests:")
 
     max_len = max([len(test.name) for test in tests])
@@ -87,9 +83,6 @@ def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
         else:
             print(f"\u001b[31mfailed\u001b[0m")
             failures.append((test, result))
-
-    os.chdir(os.pardir)
-    working_dir.rmdir()
 
     tests_total = len(tests)
     tests_passed = len(tests) - len(failures)

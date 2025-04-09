@@ -61,7 +61,12 @@ struct PointerIter[T] {
         }
         
         var value: T;
-        copy(self.pointer, &value, meta(T).size);
+        
+        meta if meta(T).is_resource {
+            value = self.pointer.copy();
+        } else {
+            copy(self.pointer, &value, meta(T).size);
+        }
 
         self.pointer += 1;
         return value;

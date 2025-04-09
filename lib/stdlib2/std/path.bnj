@@ -4,20 +4,14 @@ struct Path {
     var path: String;
     
     pub func new() -> Path {
-        return Path {
-            path: ""
-        };
+        return Path { path: "" };
     }
     
     pub func from[T](value: T) -> Path {
         meta if T == String {            
-            var path = Path {
-                path: value,
-            };
+            var path = Path { path: value };
         } else if T == *u8 {
-            var path = Path {
-                path: String.from(value),
-            };
+            var path = Path { path: String.from(value) };
         }
         
         path.normalize();
@@ -49,16 +43,36 @@ struct Path {
         return platform.path_is_dir(&self.path);
     }
     
-    # pub func list_dir(self) -> Array[Path] {
-    #     return os.path.list_dir(self);
-    # }
+    pub func list_dir(self) -> Array[Path] {
+        var file_names = platform.path_list_dir(&self.path);
+        var paths = Array[Path].sized(file_names.length);
+
+        var prefix = self.path.copy();
+        if prefix.bytes()[prefix.length() - 1] != '/' {
+            prefix += '/';
+        }
+
+        for i in 0..file_names.length {
+            paths[i] = Path.from(prefix.copy() + file_names[i].copy());
+        }
+
+        return paths;
+    }
     
+    pub func copy(self) -> Path {
+        return Path { path: self.path.copy() };
+    }
+
     pub func str(self) -> String {    
         return self.path.copy();
     }
     
     pub func __str__(self) -> String {
         return self.path.copy();
+    }
+
+    pub func __repr__(self) -> String {
+        return self.path.__repr__();
     }
     
     func normalize(self) {

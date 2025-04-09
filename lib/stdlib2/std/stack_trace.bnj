@@ -10,6 +10,13 @@ meta if config.OS == config.WINDOWS {
 struct StackFrame {
     var address: addr;
     var symbol: String;
+
+    pub func copy(self) -> StackFrame {
+        return StackFrame {
+            address: self.address,
+            symbol: self.symbol.copy(),
+        };
+    }
 }
 
 const MAX_SYMBOL_LENGTH: usize = 255;

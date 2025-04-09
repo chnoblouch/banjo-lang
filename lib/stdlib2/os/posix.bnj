@@ -35,6 +35,14 @@ meta if os.IS_UNIX {
             var reserved: [i64; 3];
         }
 
+        struct Dirent {
+            var ino: u64;
+            var off: i64;
+            var reclen: u16;
+            var type_: u8;
+            var name: [u8; 256];
+        }
+
         struct Sockaddr {
             var family: u16;
             var data: [u8; 14];
@@ -125,6 +133,9 @@ meta if os.IS_UNIX {
     native func stat(pathname: *u8, statbuf: *Stat) -> i32;
     native func access(pathname: *u8, mode: i32) -> i32;
     native func close(fd: i32) -> i32;
+    native func opendir(name: *u8) -> addr;
+    native func readdir(dirp: addr) -> *Dirent;
+    native func closedir(dirp: addr) -> i32;
     native func strerror(errnum: i32) -> *u8;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
     native func pthread_join(thread: usize, retval: *addr) -> i32;

@@ -3,36 +3,59 @@
 use std.path.Path;
 
 # test:subtest
-# test:write_file "test.txt" "."
+# test:write_file "file" "."
 # test:create_dir "directory"
 # test:output "true,true,false"
 
 func main() {
-    print(Path.from("test.txt").exists());
+    print(Path.from("file").exists());
     print(',');
     print(Path.from("directory").exists());
     print(',');
-    print(Path.from("abc.txt").exists());
+    print(Path.from("thisfiledoesntexist").exists());
 }
 
 # test:subtest
-# test:write_file "test.txt" ""
+# test:write_file "file" ""
 # test:output "true,false"
 
 func main() {
-    var path = Path.from("test.txt");
+    var path = Path.from("file");
     print(path.is_file());
     print(',');
     print(path.is_dir());
 }
 
 # test:subtest
-# test:create_dir "test"
+# test:create_dir "directory"
 # test:output "false,true"
 
 func main() {
-    var path = Path.from("test");
+    var path = Path.from("directory");
     print(path.is_file());
     print(',');
     print(path.is_dir());
+}
+
+# test:subtest
+# test:create_dir "root"
+# test:write_file "root/file_a" ""
+# test:write_file "root/file_b" ""
+# test:create_dir "root/sub_dir" ""
+# test:write_file "root/sub_dir/file_c" ""
+# test:output "3,root/file_a,root/file_b,root/sub_dir,1,root/sub_dir/file_c,"
+
+func main() {
+    print_paths(Path.from("root").list_dir());
+    print_paths(Path.from("root/sub_dir").list_dir());
+}
+
+func print_paths(paths: Array[Path]) {
+    print(paths.length);
+    print(',');
+    
+    for path in paths {
+        print(path);
+        print(',');
+    }
 }

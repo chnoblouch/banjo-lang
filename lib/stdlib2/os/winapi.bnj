@@ -45,14 +45,31 @@ native func format_message(
     language_id: Dword,
     buffer: **u8,
     size: Dword,
-    arguments: addr
+    arguments: addr,
 ) -> u32;
+
+# --- minwindef.h ---
+
+const MAX_PATH: usize = 260;
 
 # --- minwinbase.h ---
 
 struct Filetime {
-    var low_date_time: u32;
-    var high_date_time: u32;
+    var low_date_time: Dword;
+    var high_date_time: Dword;
+}
+
+struct Win32FindData {
+    var file_attributes: Dword;
+    var creation_time: Filetime;
+    var last_access_time: Filetime;
+    var last_write_time: Filetime;
+    var file_size_high: Dword;
+    var file_size_low: Dword;
+    var reserved0: Dword;
+    var reserved1: Dword;
+    var file_name: [u8; MAX_PATH];
+    var alternate_file_name: [u8; 14];
 }
 
 # --- fileapi.h ---
@@ -81,6 +98,21 @@ native func write_file(
 
 @[link_name=GetFileAttributesA]
 native func get_file_attributes(file_name: *u8) -> Dword;
+
+@[link_name=FindFirstFileA]
+native func find_first_file(
+    file_name: *u8,
+    find_file_data: *Win32FindData,
+) -> Handle;
+
+@[link_name=FindNextFileA]
+native func find_next_file(
+    find_file: Handle,
+    find_file_data: *Win32FindData,
+) -> Bool;
+
+@[link_name=FindClose]
+native func find_close(find_file: Handle) -> Bool;
 
 # --- shlwapi.h ---
 
