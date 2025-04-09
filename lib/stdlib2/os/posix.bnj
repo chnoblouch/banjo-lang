@@ -7,7 +7,34 @@ meta if os.IS_UNIX {
         var tv_nsec: u64;
     }
 
+    const S_IFMT: u32 = 0o170000;
+    const S_IFSOCK: u32 = 0o140000;
+    const S_IFLNK: u32 = 0o120000;
+    const S_IFREG: u32 = 0o100000;
+    const S_IFBLK: u32 = 0o600000;
+    const S_IFDIR: u32 = 0o040000;
+    const S_IFCHR: u32 = 0o020000;
+    const S_IFIFO: u32 = 0o010000;
+
     meta if config.OS == config.LINUX {
+        struct Stat {
+            var dev: u64;
+            var ino: u64;
+            var nlink: u64;
+            var mode: u32;
+            var uid: u32;
+            var gid: u32;
+            var pad0: i32;
+            var rdev: u64;
+            var size: i64;
+            var blksize: i64;
+            var blocks: i64;
+            var atim: Timespec;
+            var mtim: Timespec;
+            var ctim: Timespec;
+            var reserved: [i64; 3];
+        }
+
         struct Sockaddr {
             var family: u16;
             var data: [u8; 14];
@@ -95,6 +122,7 @@ meta if os.IS_UNIX {
         native var stderr: addr;
     }
 
+    native func stat(pathname: *u8, statbuf: *Stat) -> i32;
     native func access(pathname: *u8, mode: i32) -> i32;
     native func close(fd: i32) -> i32;
     native func strerror(errnum: i32) -> *u8;

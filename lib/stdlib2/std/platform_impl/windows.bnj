@@ -56,6 +56,18 @@ meta if IS_WINDOWS {
         return winapi.path_file_exists(path.to_cstring().data) != 0;
     }
 
+    # For reference: https://github.com/microsoft/STL/blob/6d253467512d9a4295fdf25fa6fc92f898c9d52c/stl/inc/filesystem#L1992
+
+    pub func path_is_file(path: *String) -> bool {
+        var attributes = winapi.get_file_attributes(path.to_cstring().data);
+        return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) == 0;
+    }
+
+    pub func path_is_dir(path: *String) -> bool {
+        var attributes = winapi.get_file_attributes(path.to_cstring().data);
+        return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) != 0;
+    }
+
     pub func thread_spawn(function: func(addr), argument: addr) -> usize {
         var handle = winapi.create_thread(null, 0, function, argument, 0, null);
         return handle as usize;

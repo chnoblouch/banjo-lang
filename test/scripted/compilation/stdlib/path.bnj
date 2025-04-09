@@ -14,3 +14,25 @@ func main() {
     print(',');
     print(Path.from("abc.txt").exists());
 }
+
+# test:subtest
+# test:write_file "test.txt" ""
+# test:output "true,false"
+
+func main() {
+    var path = Path.from("test.txt");
+    print(path.is_file());
+    print(',');
+    print(path.is_dir());
+}
+
+# test:subtest
+# test:create_dir "test"
+# test:output "false,true"
+
+func main() {
+    var path = Path.from("test");
+    print(path.is_file());
+    print(',');
+    print(path.is_dir());
+}
