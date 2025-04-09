@@ -274,6 +274,8 @@ void ELFBuilder::process_aarch64_relocation(const BinSymbolUse &use, int &addres
         case BinSymbolUseKind::ADR_PREL_PG_HI21: type = ELFRelocationType::AARCH64_ADR_PREL_PG_HI21; break;
         case BinSymbolUseKind::ADD_ABS_LO12_NC: type = ELFRelocationType::AARCH64_ADD_ABS_LO12_NC; break;
         case BinSymbolUseKind::CALL26: type = ELFRelocationType::AARCH64_CALL26; break;
+        case BinSymbolUseKind::ADR_GOT_PAGE: type = ELFRelocationType::AARCH64_ADR_GOT_PAGE; break;
+        case BinSymbolUseKind::LD64_GOT_LO12_NC: type = ELFRelocationType::AARCH64_LD64_GOT_LO12_NC; break;
         default: ASSERT_UNREACHABLE;
     }
 }

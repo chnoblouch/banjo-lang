@@ -901,6 +901,8 @@ BinSymbolUseKind AArch64Encoder::lower_reloc(mcode::Relocation reloc) {
         case mcode::Relocation::PAGEOFF12: return BinSymbolUseKind::PAGEOFF12;
         case mcode::Relocation::GOT_LOAD_PAGE21: return BinSymbolUseKind::GOT_LOAD_PAGE21;
         case mcode::Relocation::GOT_LOAD_PAGEOFF12: return BinSymbolUseKind::GOT_LOAD_PAGEOFF12;
+        case mcode::Relocation::ADR_GOT_PAGE: return BinSymbolUseKind::ADR_GOT_PAGE;
+        case mcode::Relocation::LD64_GOT_LO12_NC: return BinSymbolUseKind::LD64_GOT_LO12_NC;
         default: ASSERT_UNREACHABLE;
     }
 }

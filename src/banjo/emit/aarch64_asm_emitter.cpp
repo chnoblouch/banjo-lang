@@ -248,6 +248,8 @@ void AArch64AsmEmitter::emit_symbol(const mcode::Symbol &symbol) {
         case mcode::Relocation::NONE: stream << full_name; break;
         case mcode::Relocation::ADR_PREL_PG_HI21: stream << full_name; break;
         case mcode::Relocation::ADD_ABS_LO12_NC: stream << ":lo12:" << full_name; break;
+        case mcode::Relocation::ADR_GOT_PAGE: stream << ":got:" << full_name; break;
+        case mcode::Relocation::LD64_GOT_LO12_NC: stream << ":got_lo12:" << full_name; break;
         case mcode::Relocation::PAGE21: stream << full_name << "@PAGE"; break;
         case mcode::Relocation::PAGEOFF12: stream << full_name << "@PAGEOFF"; break;
         case mcode::Relocation::GOT_LOAD_PAGE21: stream << full_name << "@GOTPAGE"; break;

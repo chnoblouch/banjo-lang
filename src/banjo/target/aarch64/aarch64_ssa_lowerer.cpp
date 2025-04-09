@@ -618,26 +618,35 @@ void AArch64SSALowerer::move_elements_into_register(mcode::Value value, std::uin
 mcode::Value AArch64SSALowerer::move_symbol_into_register(const std::string &symbol) {
     mcode::Value m_dst = create_temp_value(8);
 
+    mcode::Relocation adrp_reloc;
+    mcode::Relocation add_reloc;
+    mcode::Relocation adrp_got_reloc;
+    mcode::Relocation ldr_got_reloc;
+
     if (target->get_descr().is_darwin()) {
-        if (get_machine_module().get_external_symbols().contains(symbol)) {
-            mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::GOT_LOAD_PAGE21});
-
-            mcode::Symbol offset_symbol = mcode::Symbol(symbol, mcode::Relocation::GOT_LOAD_PAGEOFF12);
-            AArch64Address ldr_addr = AArch64Address::new_base_offset(m_dst.get_register(), offset_symbol);
-            mcode::Operand m_ldr_addr = mcode::Operand::from_aarch64_addr(ldr_addr, 8);
-
-            emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
-            emit(mcode::Instruction(AArch64Opcode::LDR, {m_dst, m_ldr_addr}));
-        } else {
-            mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::PAGE21});
-            mcode::Operand m_add_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::PAGEOFF12});
-
-            emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
-            emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, m_dst, m_add_addr}));
-        }
+        adrp_reloc = mcode::Relocation::PAGE21;
+        add_reloc = mcode::Relocation::PAGEOFF12;
+        adrp_got_reloc = mcode::Relocation::GOT_LOAD_PAGE21;
+        ldr_got_reloc = mcode::Relocation::GOT_LOAD_PAGEOFF12;
     } else {
-        mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::ADR_PREL_PG_HI21});
-        mcode::Operand m_add_addr = mcode::Operand::from_symbol({symbol, mcode::Relocation::ADD_ABS_LO12_NC});
+        adrp_reloc = mcode::Relocation::ADR_PREL_PG_HI21;
+        add_reloc = mcode::Relocation::ADD_ABS_LO12_NC;
+        adrp_got_reloc = mcode::Relocation::ADR_GOT_PAGE;
+        ldr_got_reloc = mcode::Relocation::LD64_GOT_LO12_NC;
+    }
+
+    if (get_machine_module().get_external_symbols().contains(symbol)) {
+        mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, adrp_got_reloc});
+
+        mcode::Symbol offset_symbol = mcode::Symbol(symbol, ldr_got_reloc);
+        AArch64Address ldr_addr = AArch64Address::new_base_offset(m_dst.get_register(), offset_symbol);
+        mcode::Operand m_ldr_addr = mcode::Operand::from_aarch64_addr(ldr_addr, 8);
+
+        emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
+        emit(mcode::Instruction(AArch64Opcode::LDR, {m_dst, m_ldr_addr}));
+    } else {
+        mcode::Operand m_adrp_addr = mcode::Operand::from_symbol({symbol, adrp_reloc});
+        mcode::Operand m_add_addr = mcode::Operand::from_symbol({symbol, add_reloc});
 
         emit(mcode::Instruction(AArch64Opcode::ADRP, {m_dst, m_adrp_addr}));
         emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, m_dst, m_add_addr}));

@@ -35,6 +35,8 @@ enum class BinSymbolUseKind {
     ADR_PREL_PG_HI21,
     ADD_ABS_LO12_NC,
     CALL26,
+    ADR_GOT_PAGE,
+    LD64_GOT_LO12_NC,
 
     // Relocations for AArch64 Mach-O
     BRANCH26,
