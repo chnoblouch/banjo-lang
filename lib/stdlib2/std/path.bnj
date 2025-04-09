@@ -22,10 +22,22 @@ struct Path {
         self.path.append('/');
         self.path.append(component);
     }
+
+    pub func file_name(self) -> String {
+        # TODO: Error handling
+
+        try last_separator in self.path.rfind('/') {
+            return self.path.substring(last_separator + 1, self.path.length());
+        } else {
+            return self.path.copy();
+        }
+    }
     
     pub func parent(self) -> Path {
-        var index = self.path.rfind('/').unwrap();
-        return from(self.path.substring(0, index));
+        # TODO: Error handling
+
+        var last_separator = self.path.rfind('/').unwrap();
+        return from(self.path.substring(0, last_separator));
     }
 
     pub func exists(self) -> bool {
@@ -44,13 +56,12 @@ struct Path {
     }
     
     pub func list_dir(self) -> Array[Path] {
+        # TODO: Error handling
+
         var file_names = platform.path_list_dir(&self.path);
         var paths = Array[Path].sized(file_names.length);
 
-        var prefix = self.path.copy();
-        if prefix.bytes()[prefix.length() - 1] != '/' {
-            prefix += '/';
-        }
+        var prefix = self.path.copy() + '/';
 
         for i in 0..file_names.length {
             paths[i] = Path.from(prefix.copy() + file_names[i].copy());
@@ -80,6 +91,10 @@ struct Path {
             if self.path.bytes()[i] == '\\' {
                 self.path.bytes()[i] = '/';
             }
+        }
+
+        if self.path.bytes()[self.path.length() - 1] == '/' {
+            self.path = self.path.substring(0, self.path.length() - 1);
         }
     }
 }

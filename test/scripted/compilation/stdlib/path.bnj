@@ -3,6 +3,48 @@
 use std.path.Path;
 
 # test:subtest
+# test:output "file.txt,desktop,desktop,.,..,file.txt,.,..,file.txt,user"
+
+func main() {
+    print(Path.from("/home/user/desktop/file.txt").file_name());
+    print(',');
+    print(Path.from("/home/user/desktop").file_name());
+    print(',');
+    print(Path.from("/home/user/desktop/").file_name());
+    print(',');
+    print(Path.from("/home/user/.").file_name());
+    print(',');
+    print(Path.from("/home/user/..").file_name());
+    print(',');
+    print(Path.from("file.txt").file_name());
+    print(',');
+    print(Path.from(".").file_name());
+    print(',');
+    print(Path.from("..").file_name());
+    print(',');
+    print(Path.from("C:\\Users\\user\\file.txt").file_name());
+    print(',');
+    print(Path.from("C:\\Users\\user").file_name());
+}
+
+# test:subtest
+# test:output "/home/user/desktop,/home/user,/home/user,C:/Users/user,C:/Users,C:/Users"
+
+func main() {
+    print(Path.from("/home/user/desktop/file.txt").parent());
+    print(',');
+    print(Path.from("/home/user/desktop").parent());
+    print(',');
+    print(Path.from("/home/user/desktop/").parent());
+    print(',');
+    print(Path.from("C:\\Users\\user\\file.txt").parent());
+    print(',');
+    print(Path.from("C:\\Users\\user\\").parent());
+    print(',');
+    print(Path.from("C:\\Users\\user").parent());
+}
+
+# test:subtest
 # test:write_file "file" "."
 # test:create_dir "directory"
 # test:output "true,true,false"
