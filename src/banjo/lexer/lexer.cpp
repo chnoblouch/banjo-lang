@@ -255,7 +255,7 @@ bool Lexer::is_identifier_char(int c) {
 
 bool Lexer::is_number_char(int c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'x' || c == 'b' ||
-           c == '.';
+           c == 'o' || c == '.';
 }
 
 bool Lexer::read_if(int c) {

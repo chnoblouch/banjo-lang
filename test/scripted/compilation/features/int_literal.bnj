@@ -18,3 +18,18 @@ func main() {
     var int_u32: u32 = 10;
     var int_u64: u64 = 10;
 }
+
+# test:subtest
+# test:output "248,-12951,193066945,1373,3535735"
+
+func main() {
+    print(248);
+    print(',');
+    print(-12951);
+    print(',');
+    print(0xB81F7C1);
+    print(',');
+    print(0b10101011101);
+    print(',');
+    print(0o15371567);
+}

@@ -73,6 +73,9 @@ LargeInt::LargeInt(std::string_view string) {
         } else if (c == 'b' || c == 'B') {
             base = 2;
             start_index += 2;
+        } else if (c == 'o' || c == 'O') {
+            base = 8;
+            start_index += 2;
         }
     }
 
