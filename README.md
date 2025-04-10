@@ -103,8 +103,8 @@ The hot reloader is a tool that watches source files for changes, recompiles the
     - `banjo-hot-reloader`: The hot reloader
     - `bindgen`: Tool for generating bindings for C libraries
     - `cli`: CLI tool that wraps all other tools
-- `lib`: Libraries used by the compiler and linker
-    - `stdlib2`: The standard library
+- `lib`: Libraries used by the compiler
+    - `stdlib`: The standard library
 - `test`: Test cases
     - `compiled`: Tests written in C++ that have to be compiled first
     - `scripted`: Tests written in Python that invoke the compiler with some input and an expected output 

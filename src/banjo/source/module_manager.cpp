@@ -30,7 +30,7 @@ void ModuleManager::add_search_path(std::filesystem::path path) {
 }
 
 void ModuleManager::add_standard_stdlib_search_path() {
-    std::filesystem::path stdlib_path = Paths::executable().parent_path().parent_path() / "lib" / "stdlib2";
+    std::filesystem::path stdlib_path = Paths::executable().parent_path().parent_path() / "lib" / "stdlib";
     add_search_path(stdlib_path);
 }
 
