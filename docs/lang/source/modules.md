@@ -133,7 +133,6 @@ Here are the most important modules of the standard library:
     - `mutex`: OS mutexes and locks
     - `optional`: Implementation of optionals in the language
     - `path`: Access to filesystem paths
-    - `process`: Spawning processes
     - `result`: Implementation of results in the language
     - `set`: Sets
     - `slice`: A type combining a pointer to some data and a length
