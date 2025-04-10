@@ -1,13 +1,32 @@
-use std.platform;
+use std.{platform, file.File};
 use c.lib.stdio.{fread, ferror, fgetc, fputc, fwrite, fflush};
 
 proto Read {
     pub func read(self, data: Slice[u8]) -> usize except Error;
+
+    pub func read_line(self) -> String {
+        # TODO: Buffering, error handling
+
+        var line = "";
+        
+        var char: u8;
+        self.read(Slice[u8].new(&char, 1)).unwrap();
+
+        while char != '\r' && char != '\n' {            
+            line += char;
+            self.read(Slice[u8].new(&char, 1)).unwrap();
+        }
+
+        return line;
+    }
 }
 
 proto Write {
     pub func write(self, data: Slice[u8]) -> usize except Error;
-    pub func flush(self) {}
+    
+    pub func write_string(self, string: StringSlice) -> usize except Error {
+        return self.write(Slice[u8].new(string.data, string.length));
+    }
 }
 
 struct Error {
@@ -24,105 +43,42 @@ struct Error {
     }
 }
 
-struct Reader[T] {
-    var impl: T;
+struct StandardInStream: Read {
+    var file: File;
 
-    pub func new(impl: T) -> Reader[T] {
-        return Reader[T] { impl };
+    pub func from(stream: addr) -> StandardInStream {
+        return StandardInStream {
+            file: File { stream },
+        };
     }
 
-    pub func read_u8(self) -> ?u8 {
-        var value: u8;
-        if self.impl.read(&value as *u8, 1) != 0 {
-            return value;
-        } else {
-            return none;
-        }
-    }
-
-    pub func read_line(self) -> ?String {
-        var string = "";
-        var char = self.read_u8();
-        
-        if !char.has_value {
-            return none;
-        }
-        
-        while char.value != '\n' && char.value != '\r' {
-            string.append(char.value);
-            char = self.read_u8();
-            
-            if !char.has_value {
-                return none;
-            }
-        }
-        
-        return string;
+    pub func read(self, data: Slice[u8]) -> usize except Error {
+        return self.file.read(data);
     }
 }
 
-struct Writer[T] {
-    var impl: T;
+struct StandardOutStream: Write {
+    var file: File;
 
-    pub func new(impl: T) -> Writer[T] {
-        return Writer[T] { impl };
+    pub func from(stream: addr) -> StandardOutStream {
+        return StandardOutStream {
+            file: File { stream },
+        };
     }
 
-    pub func write(self, buffer: *u8, size: usize) {
-        self.impl.write(buffer, size);
-    }
-
-    pub func write(self, byte: u8) {
-        self.impl.write(byte);
-    }
-
-    pub func write(self, string: String) {
-        self.impl.write(string.bytes(), string.length());
-    }
-
-    pub func flush(self) {
-        self.impl.flush();
+    pub func write(self, data: Slice[u8]) -> usize except Error {
+        return self.file.write(data);
     }
 }
 
-struct CFileReader {
-    var stream: addr;
-
-    pub func new(stream: addr) -> CFileReader {
-        return CFileReader { stream };
-    }
-
-    pub func read(self, buffer: *u8, size: usize) -> usize {
-        return fread(buffer, 1, size, self.stream);
-    }
+pub func stdin() -> StandardInStream {
+    return StandardInStream.from(platform.io_get_stdin_stream());
 }
 
-struct CFileWriter {
-    var stream: addr;
-
-    pub func new(stream: addr) -> CFileWriter {
-        return CFileWriter { stream };
-    }
-
-    pub func write(self, buffer: *u8, size: usize) {
-        fwrite(buffer, size, 1, self.stream);
-    }
-
-    pub func write(self, byte: u8) {
-        fputc(byte as i32, self.stream);
-    }
-
-    pub func flush(self) {
-        fflush(self.stream);
-    }
+pub func stdout() -> StandardOutStream {
+    return StandardOutStream.from(platform.io_get_stdout_stream());
 }
 
-pub func stdin() -> Reader[CFileReader] {
-    var stream = platform.io_get_stdin_stream();
-    return Reader[CFileReader].new(CFileReader.new(stream));
-}
-
-pub func stdout() -> Writer[CFileWriter] {
-    var stream = platform.io_get_stdout_stream();
-    return Writer[CFileWriter].new(CFileWriter.new(stream));
+pub func stderr() -> StandardOutStream {
+    return StandardOutStream.from(platform.io_get_stderr_stream());
 }

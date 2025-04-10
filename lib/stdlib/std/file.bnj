@@ -2,7 +2,7 @@ use std.{
     platform,
     memory,
     path.Path,
-    io.{Reader, Writer, Read, Write, Error},
+    io.{Read, Write, Error},
 };
 
 use c.lib.stdio.{
