@@ -34,6 +34,12 @@ Function *Module::get_function(const std::string &name) {
     return it == functions.end() ? nullptr : *it;
 }
 
+FunctionDecl *Module::get_external_function(const std::string &name) {
+    auto predicate = [&name](const FunctionDecl *func) { return func->name == name; };
+    auto it = std::find_if(external_functions.begin(), external_functions.end(), predicate);
+    return it == external_functions.end() ? nullptr : *it;
+}
+
 Structure *Module::get_structure(const std::string &name) {
     auto predicate = [&name](const Structure *struct_) { return struct_->name == name; };
     auto it = std::find_if(structures.begin(), structures.end(), predicate);

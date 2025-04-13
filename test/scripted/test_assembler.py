@@ -4,7 +4,13 @@ from framework import TestResult, run_tests, find_executable
 
 def run_test(test, conditions):
     util_path = find_executable("banjo-test-util")
-    result = subprocess.run([util_path, test.source], stdout=subprocess.PIPE, text=True)
+    
+    result = subprocess.run(
+        [util_path, "assemble"],
+        stdout=subprocess.PIPE,
+        text=True,
+        input=test.source,
+    )
 
     for condition, args in conditions:
         if condition != "encoding":

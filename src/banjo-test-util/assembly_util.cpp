@@ -12,7 +12,9 @@
 #include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <sstream>
+#include "line_based_reader.hpp"
+
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -65,15 +67,13 @@ const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_CON
     {"le", target::AArch64Condition::LE},
 };
 
-WriteBuffer AssemblyUtil::assemble(std::string source) {
-    std::stringstream stream(std::move(source));
+AssemblyUtil::AssemblyUtil() : reader(std::cin) {}
 
+WriteBuffer AssemblyUtil::assemble() {
     mcode::Function *m_func = new mcode::Function("f", nullptr);
     mcode::BasicBlockIter m_block = m_func->get_basic_blocks().append({"b", m_func});
 
-    while (std::getline(stream, line)) {
-        char_index = 0;
-
+    while (reader.next_line()) {
         if (std::optional<mcode::Instruction> instr = parse_line()) {
             m_block->append(*instr);
         }
@@ -94,16 +94,16 @@ WriteBuffer AssemblyUtil::assemble(std::string source) {
 }
 
 std::optional<mcode::Instruction> AssemblyUtil::parse_line() {
-    skip_whitespace();
+    reader.skip_whitespace();
 
-    if (line[char_index] == '\0' || line[char_index] == '#') {
+    if (reader.get() == '\0' || reader.get() == '#') {
         return {};
     }
 
     mcode::Opcode opcode = parse_opcode();
     mcode::Instruction::OperandList operands;
 
-    while (line[char_index] != '\0') {
+    while (reader.get() != '\0') {
         operands.append(parse_operand());
     }
 
@@ -113,12 +113,11 @@ std::optional<mcode::Instruction> AssemblyUtil::parse_line() {
 mcode::Opcode AssemblyUtil::parse_opcode() {
     std::string string;
 
-    while (!is_whitespace(line[char_index])) {
-        string += line[char_index];
-        char_index += 1;
+    while (!LineBasedReader::is_whitespace(reader.get())) {
+        string += reader.consume();
     }
 
-    skip_whitespace();
+    reader.skip_whitespace();
     return convert_opcode(string);
 }
 
@@ -153,18 +152,18 @@ mcode::Operand AssemblyUtil::parse_operand() {
     } else if (string[0] == '[') {
         unsigned index = 1;
 
-        while (is_whitespace(string[index])) {
+        while (LineBasedReader::is_whitespace(string[index])) {
             index += 1;
         }
         unsigned reg_start = index;
 
         index += 1;
-        while (!is_whitespace(string[index]) && string[index] != ']' && string[index] != ',') {
+        while (!LineBasedReader::is_whitespace(string[index]) && string[index] != ']' && string[index] != ',') {
             index += 1;
         }
         unsigned reg_end = index;
 
-        while (is_whitespace(string[index])) {
+        while (LineBasedReader::is_whitespace(string[index])) {
             index += 1;
         }
 
@@ -175,7 +174,7 @@ mcode::Operand AssemblyUtil::parse_operand() {
             addr = target::AArch64Address::new_base(base);
         } else if (string[index] == ',') {
             index += 1;
-            while (is_whitespace(string[index])) {
+            while (LineBasedReader::is_whitespace(string[index])) {
                 index += 1;
             }
             unsigned offset_start = index;
@@ -188,7 +187,7 @@ mcode::Operand AssemblyUtil::parse_operand() {
             }
             unsigned offset_end = index;
 
-            while (is_whitespace(string[index])) {
+            while (LineBasedReader::is_whitespace(string[index])) {
                 index += 1;
             }
 
@@ -233,52 +232,33 @@ mcode::Register AssemblyUtil::convert_register(const std::string &string) {
 }
 
 std::string AssemblyUtil::read_operand() {
-    skip_whitespace();
+    reader.skip_whitespace();
 
     std::string string;
     bool in_brackets = false;
 
-    while (line[char_index] != '\0') {
-        if (line[char_index] == '[') {
+    while (reader.get() != '\0') {
+        if (reader.get() == '[') {
             in_brackets = true;
-        } else if (line[char_index] == ']') {
+        } else if (reader.get() == ']') {
             in_brackets = false;
         }
 
-        string += line[char_index];
-        char_index += 1;
+        string += reader.consume();
 
-        if (line[char_index] == ',' && !in_brackets) {
-            char_index += 1;
+        if (reader.get() == ',' && !in_brackets) {
+            reader.consume();
             break;
         }
     }
 
     unsigned length = string.size();
 
-    while (length > 0 && is_whitespace(string[length - 1])) {
+    while (length > 0 && LineBasedReader::is_whitespace(string[length - 1])) {
         length -= 1;
     }
 
     return string.substr(0, length);
-}
-
-void AssemblyUtil::skip_whitespace() {
-    if (line[char_index] == '\0') {
-        return;
-    }
-
-    while (line[char_index] == ' ' || line[char_index] == '\t') {
-        char_index += 1;
-
-        if (line[char_index] == '\0') {
-            return;
-        }
-    }
-}
-
-bool AssemblyUtil::is_whitespace(char c) {
-    return c == ' ' || c == '\t' || c == '\0';
 }
 
 } // namespace test

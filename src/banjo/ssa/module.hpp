@@ -43,6 +43,7 @@ public:
     std::optional<AddrTable> &get_addr_table() { return addr_table; }
 
     Function *get_function(const std::string &name);
+    FunctionDecl *get_external_function(const std::string &name);
     Structure *get_structure(const std::string &name);
 
     void set_functions(std::vector<Function *> functions) { this->functions = std::move(functions); }

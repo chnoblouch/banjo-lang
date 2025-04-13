@@ -3,6 +3,7 @@
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/utils/write_buffer.hpp"
+#include "line_based_reader.hpp"
 
 #include <optional>
 #include <string>
@@ -13,11 +14,11 @@ namespace test {
 class AssemblyUtil {
 
 private:
-    std::string line;
-    unsigned char_index;
+    LineBasedReader reader;
 
 public:
-    WriteBuffer assemble(std::string source);
+    AssemblyUtil();
+    WriteBuffer assemble();
 
 private:
     std::optional<mcode::Instruction> parse_line();
@@ -28,9 +29,6 @@ private:
     mcode::Register convert_register(const std::string &string);
 
     std::string read_operand();
-    void skip_whitespace();
-
-    bool is_whitespace(char c);
 };
 
 } // namespace test
