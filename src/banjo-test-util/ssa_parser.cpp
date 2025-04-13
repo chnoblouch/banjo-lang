@@ -99,6 +99,10 @@ SSAParser::SSAParser() : reader(std::cin) {}
 ssa::Module SSAParser::parse() {
     while (reader.next_line()) {
         reader.skip_whitespace();
+        if (reader.get() == '#') {
+            continue;
+        }
+
         std::string_view start = reader.read_until_whitespace();
 
         if (start == "func") {

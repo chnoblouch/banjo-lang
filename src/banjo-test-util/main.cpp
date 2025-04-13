@@ -1,8 +1,8 @@
-#include "banjo/ssa/writer.hpp"
+
 #include "banjo/utils/write_buffer.hpp"
 
 #include "assembly_util.hpp"
-#include "ssa_parser.hpp"
+#include "ssa_util.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -25,9 +25,7 @@ int main(int argc, const char *argv[]) {
 
         std::cout.flush();
     } else if (strcmp(argv[1], "ssa") == 0) {
-        banjo::ssa::Module ssa_mod = banjo::test::SSAParser().parse();
-        std::ofstream out_stream("out.cryoir");
-        banjo::ssa::Writer(out_stream).write(ssa_mod);
+        banjo::test::SSAUtil().optimize();
     }
 
     return 0;

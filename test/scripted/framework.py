@@ -25,6 +25,7 @@ class Test:
     def __init__(self, name, source):
         self.name = name
         self.source = source
+        self.sections = {}
 
 
 class TestResult:
@@ -121,6 +122,7 @@ def load_test_file(name, file_path):
         f.seek(0)
 
         subtest_index = None
+        section_name = None
         common = False
 
         for i, line in enumerate(f.readlines()):
@@ -136,12 +138,20 @@ def load_test_file(name, file_path):
                 common = False
 
             for j, test in enumerate(tests):
+                if line.startswith(CONDITION_PREFIX + "section"):
+                    section_name = line.strip().split(" ")[2]
+                    test.sections[section_name] = ""
+                    continue
+
                 if has_subtests:
                     enabled = common or j == subtest_index
                 else:
                     enabled = True
 
-                test.source += line if enabled else f"# DISABLED: {line}"
+                if section_name is None:
+                    test.source += line if enabled else f"# DISABLED: {line}"
+                else:
+                    test.sections[section_name] += line
 
     return tests
 

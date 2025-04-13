@@ -6,6 +6,8 @@ add_executable(banjo-test-util
     line_based_reader.hpp
     ssa_parser.cpp
     ssa_parser.hpp
+    ssa_util.cpp
+    ssa_util.hpp
 )
 
 target_include_directories(banjo-test-util PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

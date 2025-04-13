@@ -1,0 +1,12 @@
+# test:section input
+
+func ms_abi i32 @test():
+    %0 = alloca i32
+    store i32 100, addr %0
+    %1 = load i32, addr %0
+    ret i32 %1
+
+# test:section output
+
+func ms_abi i32 @test():
+    ret i32 100
