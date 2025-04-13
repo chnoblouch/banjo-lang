@@ -10,6 +10,8 @@
 
 #include "ssa_parser.hpp"
 
+#include <iostream>
+
 namespace banjo {
 namespace test {
 

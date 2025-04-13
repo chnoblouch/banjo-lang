@@ -10,8 +10,8 @@ native func fread(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
 native func fwrite(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
 native func fgetc(stream: addr) -> i32;
 native func fputc(ch: i32, stream: addr) -> i32;
-native func fseek(stream: addr, offset: i32, whence: i32) -> i32;
-native func ftell(stream: addr) -> i32;
+native func fseek(stream: addr, offset: i64, whence: i32) -> i32;
+native func ftell(stream: addr) -> i64;
 native func feof(stream: addr) -> i32;
 native func ferror(stream: addr) -> i32;
 

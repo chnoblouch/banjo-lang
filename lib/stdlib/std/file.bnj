@@ -105,7 +105,7 @@ struct File: Read, Write {
             libc_origin = SEEK_CUR;
         }
 
-        var result = fseek(self.stream, offset as i32, libc_origin);
+        var result = fseek(self.stream, offset as i64, libc_origin);
 
         if result == 0 {
             return undefined;

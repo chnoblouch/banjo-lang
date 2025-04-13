@@ -85,19 +85,39 @@ func main() {
 # test:write_file "root/file_b" ""
 # test:create_dir "root/sub_dir" ""
 # test:write_file "root/sub_dir/file_c" ""
-# test:output "3,root/file_a,root/file_b,root/sub_dir,1,root/sub_dir/file_c,"
+# test:output "3,ok,ok,ok,1,ok"
 
 func main() {
-    print_paths(Path.from("root").list_dir());
-    print_paths(Path.from("root/sub_dir").list_dir());
+    var paths_root = Path.from("root").list_dir();
+    var paths_sub_dir = Path.from("root/sub_dir").list_dir();
+
+    print(paths_root.length);
+    print(',');
+    check_contains(&paths_root, "root/file_a");
+    print(',');
+    check_contains(&paths_root, "root/file_b");
+    print(',');
+    check_contains(&paths_root, "root/sub_dir");
+    print(',');
+    print(paths_sub_dir.length);
+    print(',');
+    check_contains(&paths_sub_dir, "root/sub_dir/file_c");
 }
 
-func print_paths(paths: Array[Path]) {
-    print(paths.length);
-    print(',');
+func check_contains(paths: *Array[Path], path: StringSlice) {
+    var found = false;
     
-    for path in paths {
-        print(path);
-        print(',');
+    # FIXME: Iterating over dereferenced pointers to arrays.
+    for i in 0..paths.length {
+        if (*paths)[i].str() == path {
+            found = true;
+            break;
+        }
+    }
+
+    if found {
+        print("ok");
+    } else {
+        print("missing");
     }
 }

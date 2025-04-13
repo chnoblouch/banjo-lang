@@ -3,6 +3,13 @@
 struct Node {
 	var value: u32;
 	var children: [Node];
+
+	func copy(self) -> Node {
+		return Node {
+			value: self.value,
+			children: self.children.copy(),
+		};
+	}
 }
 
 struct TreeBuilder {
