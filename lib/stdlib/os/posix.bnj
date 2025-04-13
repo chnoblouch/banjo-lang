@@ -7,15 +7,6 @@ meta if os.IS_UNIX {
         var tv_nsec: u64;
     }
 
-    const S_IFMT: u32 = 0o170000;
-    const S_IFSOCK: u32 = 0o140000;
-    const S_IFLNK: u32 = 0o120000;
-    const S_IFREG: u32 = 0o100000;
-    const S_IFBLK: u32 = 0o600000;
-    const S_IFDIR: u32 = 0o040000;
-    const S_IFCHR: u32 = 0o020000;
-    const S_IFIFO: u32 = 0o010000;
-
     meta if config.OS == config.LINUX {
         struct Stat {
             var dev: u64;
@@ -64,6 +55,15 @@ meta if os.IS_UNIX {
 
         const F_OK: i32 = 0;
 
+        const S_IFMT: u32 = 0o170000;
+        const S_IFSOCK: u32 = 0o140000;
+        const S_IFLNK: u32 = 0o120000;
+        const S_IFREG: u32 = 0o100000;
+        const S_IFBLK: u32 = 0o600000;
+        const S_IFDIR: u32 = 0o040000;
+        const S_IFCHR: u32 = 0o020000;
+        const S_IFIFO: u32 = 0o010000;
+
         const CLOCK_REALTIME: u64 = 0;
         const CLOCK_MONOTONIC: u64 = 1;
 
@@ -81,6 +81,36 @@ meta if os.IS_UNIX {
         native var stdout: addr;
         native var stderr: addr;
     } else if os.IS_DARWIN {
+        struct Stat {
+            var dev: i32;
+            var mode: u16;
+            var nlink: u16;
+            var ino: u64;
+            var uid: u32;
+            var gid: u32;
+            var rdev: i32;
+            var atimespec: Timespec;
+            var mtimespec: Timespec;
+            var ctimespec: Timespec;
+            var birthtimespec: Timespec;
+            var size: i64;
+            var blocks: i64;
+            var blksize: i32;
+            var flags: u32;
+            var gen: u32;
+            var lspare: i32;
+            var qspare: [i64; 2];
+        }
+
+        struct Dirent {
+            var ino: u64;
+            var seekoff: u64;
+            var reclen: u16;
+            var namlen: u16;
+            var type_: u8;
+            var name: [u8; 1024];
+        }
+
         struct Sockaddr {
             var len: u8;
             var family: u8;
@@ -106,6 +136,15 @@ meta if os.IS_UNIX {
         }
 
         const F_OK: i32 = 0;
+
+        const S_IFMT: u16 = 0o170000;
+        const S_IFSOCK: u16 = 0o140000;
+        const S_IFLNK: u16 = 0o120000;
+        const S_IFREG: u16 = 0o100000;
+        const S_IFBLK: u16 = 0o600000;
+        const S_IFDIR: u16 = 0o040000;
+        const S_IFCHR: u16 = 0o020000;
+        const S_IFIFO: u16 = 0o010000;
 
         const CLOCK_REALTIME: u64 = 0;
         const CLOCK_MONOTONIC: u64 = 6;
