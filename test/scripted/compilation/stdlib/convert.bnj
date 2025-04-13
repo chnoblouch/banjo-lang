@@ -1,0 +1,137 @@
+# test:common
+
+use std.convert;
+
+func check[T](a: T, b: String) {
+    # FIXME: `b.copy` is only necessary due to a compiler bug where `b` is not moved into `__eq__`
+    if convert.to_string(&a) == b.copy() {
+        print('e');
+    } else {
+        print('n');
+    }
+}
+
+# test:subtest
+# test:output "eeeeee"
+
+func main() {
+    var a: i8 = 120;
+	var b: i8 = -57;
+    var c: i16 = 3248;
+    var d: i16 = -489;
+    var e: i32 = 708389;
+	var f: i32 = -123894;
+
+	check(a, "120");
+	check(b, "-57");
+    check(c, "3248");
+    check(d, "-489");
+	check(e, "708389");
+	check(f, "-123894");
+}
+
+# test:subtest
+# test:output "ee"
+
+func main() {
+    var a: u16 = 50172;
+    var b: u32 = 3678983983;
+
+	check(a, "50172");
+	check(b, "3678983983");
+}
+
+# test:subtest
+# test:output "eeee"
+
+func main() {
+    var a: f32 = 38.5123;
+	var b: f32 = -0.5737;
+    var c: f64 = 58.4893;
+	var d: f64 = -238.924;
+
+	check(a, "38.5123");
+	check(b, "-0.5737");
+	check(c, "58.4893");
+	check(d, "-238.924");
+}
+
+# test:subtest
+# test:output "eee"
+
+func main() {
+    var a: u8 = 'c';
+    var b: u8 = '0';
+    var c: u8 = '.';
+
+    check(a, "c");
+	check(b, "0");
+	check(c, ".");
+}
+
+# test:subtest
+# test:output "e"
+
+func main() {
+    var a: *u8 = "abcABC123!.";
+    check(a, "abcABC123!.");
+}
+
+# test:subtest
+# test:output "ee"
+
+func main() {
+    var a = false;
+    var b = true;
+
+    check(a, "false");
+	check(b, "true");
+}
+
+# test:subtest
+# test:output "ee"
+
+struct Point {
+	var x: i32;
+	var y: i32;
+}
+
+struct Object {
+	var name: String;
+	var position: Point;
+	var age: u32;
+}
+
+func main() {
+	var point = Point {
+		x: 100,
+		y: -20,
+	};
+	
+	check(point, "Point {\n    x: 100,\n    y: -20,\n}");
+
+	var object = Object {
+		name: "Tree",
+		position: point,
+		age: 48,
+	};
+	
+	check(object, "Object {\n    name: \"Tree\",\n    position: Point {\n        x: 100,\n        y: -20,\n    },\n    age: 48,\n}");
+}
+
+# test:subtest
+# test:output "eeee"
+
+enum Fruit {
+	APPLE = 0,
+	BANANA = 1,
+	ORANGE = 2,
+	PEAR = 3,
+}
+
+func main() {
+    check(Fruit.APPLE, "Fruit.APPLE");
+	check(Fruit.BANANA, "Fruit.BANANA");
+	check(Fruit.ORANGE, "Fruit.ORANGE");
+	check(Fruit.PEAR, "Fruit.PEAR");
+}

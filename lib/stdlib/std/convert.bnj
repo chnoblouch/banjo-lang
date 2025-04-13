@@ -166,5 +166,6 @@ func enum_to_repr[T](enum_: T) -> String {
         }
     }
 
+    # TODO: Maybe don't include the enum name.
     return meta(T).name + "." + variant_name;
 }
