@@ -1,0 +1,39 @@
+# test:pass "sroa"
+# test:section input
+
+struct @Vec3:
+    field f32 @x
+    field f32 @y
+    field f32 @z
+
+struct @Line:
+    field @Vec3 @a
+    field @Vec3 @b
+
+func ms_abi void @use(addr)
+
+func ms_abi void @test():
+    %0 = alloca @Line
+    %1 = memberptr @Line, addr %0, void 0
+    call void @use, addr %1
+    %2 = memberptr @Line, addr %0, void 1
+    call void @use, addr %2
+
+# test:section output
+
+struct @Vec3:
+    field f32 @x
+    field f32 @y
+    field f32 @z
+
+struct @Line:
+    field @Vec3 @a
+    field @Vec3 @b
+
+func ms_abi void @use(addr)
+
+func ms_abi void @test():
+    %0 = alloca @Vec3
+    %1 = alloca @Vec3
+    call void @use, addr %0
+    call void @use, addr %1

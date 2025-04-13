@@ -1,0 +1,41 @@
+# test:pass "sroa"
+# test:section input
+
+struct @Vec3:
+    field f32 @x
+    field f32 @y
+    field f32 @z
+
+struct @Sphere:
+    field @Vec3 @position
+    field f32 @radius
+
+func ms_abi i32 @test():
+    %0 = alloca @Sphere
+    %1 = memberptr @Sphere, addr %0, void 0
+    %2 = memberptr @Vec3, addr %1, void 2
+    store f32 8.0, addr %2
+    %3 = memberptr @Sphere, addr %0, void 0
+    %4 = memberptr @Vec3, addr %3, void 2
+    %5 = load f32, addr %4
+    ret i32 %5
+
+# test:section output
+
+struct @Vec3:
+    field f32 @x
+    field f32 @y
+    field f32 @z
+
+struct @Sphere:
+    field @Vec3 @position
+    field f32 @radius
+
+func ms_abi i32 @test():
+    %0 = alloca f32
+    %1 = alloca f32
+    %2 = alloca f32
+    %3 = alloca f32
+    store f32 8.0, addr %2
+    %4 = load f32, addr %2
+    ret i32 %4

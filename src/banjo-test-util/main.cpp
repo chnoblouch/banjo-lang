@@ -25,7 +25,7 @@ int main(int argc, const char *argv[]) {
 
         std::cout.flush();
     } else if (strcmp(argv[1], "ssa") == 0) {
-        banjo::test::SSAUtil().optimize();
+        banjo::test::SSAUtil().optimize(argv[2]);
     }
 
     return 0;

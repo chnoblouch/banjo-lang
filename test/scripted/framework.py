@@ -98,8 +98,13 @@ def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
 
         for test, result in failures:
             print(f"  {test.name}: {result.failure_reason}")
-            print(f"    expected: {result.expected}")
-            print(f"      actual: {result.actual}\n")
+            
+            if "\n" in result.expected or "\n" in result.actual:
+                print(f"\n=== expected:\n\n{result.expected}\n")
+                print(f"=== actual:\n\n{result.actual}\n")
+            else:
+                print(f"    expected: {result.expected}")
+                print(f"      actual: {result.actual}")
 
     successful = tests_passed == tests_total
     sys.exit(0 if successful else 1)

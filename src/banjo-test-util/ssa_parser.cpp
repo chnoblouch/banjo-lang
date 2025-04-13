@@ -122,6 +122,7 @@ ssa::Module SSAParser::parse() {
 
             if (reader.get() == ':') {
                 ssa::Function *func = new ssa::Function(name, type);
+                func->set_next_reg(10000);
                 funcs.insert({func->name, func});
                 mod.add(func);
             } else if (reader.get() == '\0') {

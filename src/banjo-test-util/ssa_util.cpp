@@ -1,17 +1,19 @@
 #include "ssa_util.hpp"
 
-#include "banjo/passes/pass_utils.hpp"
+#include "banjo/passes/inlining_pass.hpp"
+#include "banjo/passes/sroa_pass.hpp"
 #include "banjo/passes/stack_to_reg_pass.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa/writer.hpp"
 #include "banjo/target/target_description.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include "ssa_parser.hpp"
 
 namespace banjo {
 namespace test {
 
-void SSAUtil::optimize() {
+void SSAUtil::optimize(std::string_view pass_name) {
     target::TargetDescription target_descr(
         target::Architecture::X86_64,
         target::OperatingSystem::LINUX,
@@ -21,7 +23,17 @@ void SSAUtil::optimize() {
     target::Target *target = target::Target::create(target_descr, target::CodeModel::LARGE);
 
     ssa::Module ssa_mod = SSAParser().parse();
-    passes::StackToRegPass(target).run(ssa_mod);
+
+    if (pass_name == "sroa") {
+        passes::SROAPass(target).run(ssa_mod);
+    } else if (pass_name == "stack_to_reg") {
+        passes::StackToRegPass(target).run(ssa_mod);
+    } else if (pass_name == "inlining") {
+        passes::InliningPass(target).run(ssa_mod);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
     renumber_regs(ssa_mod);
     ssa::Writer(std::cout).write(ssa_mod);
 

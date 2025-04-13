@@ -54,7 +54,7 @@ void SROAPass::run(ssa::Function *func) {
 
     apply_splits(*func);
 
-    dump(*func);
+    // dump(*func);
 }
 
 void SROAPass::collect_stack_values(ssa::BasicBlockIter block_iter) {

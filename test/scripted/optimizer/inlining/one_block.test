@@ -1,0 +1,17 @@
+# test:pass "inlining"
+# test:section input
+
+func ms_abi i32 @f():
+    ret i32 100
+
+func ms_abi i32 @test():
+    %0 = call i32 @f
+    ret i32 %0
+
+# test:section output
+
+func ms_abi i32 @f():
+    ret i32 100
+
+func ms_abi i32 @test():
+    ret i32 100

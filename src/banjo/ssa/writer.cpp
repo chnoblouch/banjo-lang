@@ -1,5 +1,7 @@
 #include "writer.hpp"
 
+#include <sstream>
+
 namespace banjo {
 
 namespace ssa {
@@ -50,7 +52,6 @@ void Writer::write(Module &mod) {
     if (!mod.get_functions().empty()) {
         for (Function *function : mod.get_functions()) {
             write_func_def(function);
-            stream << "\n";
         }
     }
 
@@ -188,10 +189,10 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             Operand &operand = instr.get_operands()[i];
 
             // if (operand.get_type() != Type(Primitive::VOID)) {
-                stream << type_to_str(operand.get_type());
-                if (!operand.is_type()) {
-                    stream << " ";
-                }
+            stream << type_to_str(operand.get_type());
+            if (!operand.is_type()) {
+                stream << " ";
+            }
             // }
 
             stream.flush();
@@ -247,8 +248,12 @@ std::string Writer::type_to_str(Type type) {
 
 std::string Writer::value_to_str(Value value) {
     if (value.is_int_immediate()) return value.get_int_immediate().to_string();
-    else if (value.is_fp_immediate()) return std::to_string(value.get_fp_immediate());
-    else if (value.is_register()) return reg_to_str(value.get_register());
+    else if (value.is_fp_immediate()) {
+        std::stringstream stream;
+        stream << value.get_fp_immediate();
+        std::string string = stream.str();
+        return string.find('.') == std::string::npos ? string + ".0" : string;
+    } else if (value.is_register()) return reg_to_str(value.get_register());
     else if (value.is_symbol()) return "@" + value.get_symbol_name();
     else if (value.is_branch_target()) {
         std::string str = "@" + value.get_branch_target().block->get_label();

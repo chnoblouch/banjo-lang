@@ -8,8 +8,12 @@ def run_test(test, conditions):
     input_source = test.sections["input"].strip()
     output_source = test.sections["output"].strip()
 
+    for name, args in conditions:
+        if name == "pass":
+            pass_name = args[0]
+
     result = subprocess.run(
-        [util_path, "ssa"],
+        [util_path, "ssa", pass_name],
         stdout=subprocess.PIPE,
         text=True,
         input=input_source,
@@ -24,10 +28,12 @@ def run_test(test, conditions):
     # with open("output.actual", "w") as f:
     #     f.write(result.stdout.strip())
 
-    if result.stdout.strip() == output_source:
+    actual_output_source = result.stdout.strip()
+
+    if actual_output_source == output_source:
         return TestResult(True)
     else:
-        return TestResult(False, "ssa does not match")
+        return TestResult(False, "ssa mismatch", output_source, actual_output_source)
 
 
 if __name__ == "__main__":
