@@ -1,0 +1,25 @@
+# test:subtest
+# test:output "15"
+
+func f() -> f32 {
+    return 10.0;
+}
+
+func main() {
+    var a = 5.0;
+    var b = a + f();
+    println(b);
+}
+
+# test:subtest
+# test:output "-15"
+
+func f() -> f32 {
+    return 10.0;
+}
+
+func main() {
+    var a = 5.0;
+    var b = -a - f();
+    println(b);
+}

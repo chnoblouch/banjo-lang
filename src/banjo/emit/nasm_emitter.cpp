@@ -304,7 +304,7 @@ std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode:
         } else {
             return "[" + base + "]";
         }
-    } else return "???";
+    } else ASSERT_UNREACHABLE;
 }
 
 std::string NASMEmitter::get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size) {
@@ -332,6 +332,7 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
             case 2: return std::string(1, letter) + "x";
             case 4: return "e" + std::string(1, letter) + "x";
             case 8: return "r" + std::string(1, letter) + "x";
+            default: ASSERT_UNREACHABLE;
         }
     } else if (reg == target::X8664Register::RSP || reg == target::X8664Register::RBP) {
         char letter;
@@ -345,6 +346,7 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
             case 2: return std::string(1, letter) + "p";
             case 4: return "e" + std::string(1, letter) + "p";
             case 8: return "r" + std::string(1, letter) + "p";
+            default: ASSERT_UNREACHABLE;
         }
     } else if (reg == target::X8664Register::RSI || reg == target::X8664Register::RDI) {
         char letter;
@@ -358,6 +360,7 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
             case 2: return std::string(1, letter) + "i";
             case 4: return "e" + std::string(1, letter) + "i";
             case 8: return "r" + std::string(1, letter) + "i";
+            default: ASSERT_UNREACHABLE;
         }
     } else if (reg >= target::X8664Register::R8 && reg <= target::X8664Register::R15) {
         std::string number;
@@ -377,6 +380,7 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
             case 2: return "r" + number + "w";
             case 4: return "r" + number + "d";
             case 8: return "r" + number;
+            default: ASSERT_UNREACHABLE;
         }
     } else if (reg >= target::X8664Register::XMM0 && reg <= target::X8664Register::XMM15) {
         switch (reg) {
@@ -396,10 +400,11 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
             case target::X8664Register::XMM13: return "xmm13";
             case target::X8664Register::XMM14: return "xmm14";
             case target::X8664Register::XMM15: return "xmm15";
+            default: ASSERT_UNREACHABLE;
         }
+    } else {
+        ASSERT_UNREACHABLE;
     }
-
-    return "???";
 }
 
 std::string NASMEmitter::
@@ -429,7 +434,7 @@ std::string NASMEmitter::get_size_specifier(int size) {
         case 4: return "dword";
         case 8: return "qword";
         case 16: return "oword";
-        default: return "???";
+        default: ASSERT_UNREACHABLE;
     }
 }
 

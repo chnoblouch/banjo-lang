@@ -165,11 +165,11 @@ std::vector<Bundle> RegAllocPass::create_bundles(Context &ctx) {
         }
 
         Bundle bundle{
-            .reg_class = ctx.reg_classes[reg.get_virtual_reg()],
+            .reg_class = ctx.reg_classes.at(reg.get_virtual_reg()),
         };
 
         for (const LiveRange &range : ranges) {
-            bundle.segments.push_back({
+            bundle.segments.push_back(Segment{
                 .reg = reg.get_virtual_reg(),
                 .range = range,
             });
@@ -361,8 +361,9 @@ void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
                     LiveRange instr_range{.block = range.range.block, .start{instr, 1}, .end{instr, 1}};
                     Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
 
-                    ctx.bundles.push({
+                    ctx.bundles.push(Bundle{
                         .segments = {instr_segment},
+                        .reg_class = bundle.reg_class,
                         .evictable = false,
                         .src_stack_slot = {},
                         .dst_stack_slot = stack_slot,
@@ -371,8 +372,9 @@ void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
                     LiveRange instr_range{.block = range.range.block, .start{instr, 0}, .end{instr, 0}};
                     Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
 
-                    ctx.bundles.push({
+                    ctx.bundles.push(Bundle{
                         .segments = {instr_segment},
+                        .reg_class = bundle.reg_class,
                         .evictable = false,
                         .src_stack_slot = stack_slot,
                         .dst_stack_slot = {},
@@ -381,8 +383,9 @@ void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
                     LiveRange instr_range{.block = range.range.block, .start{instr, 0}, .end{instr, 1}};
                     Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
 
-                    ctx.bundles.push({
+                    ctx.bundles.push(Bundle{
                         .segments = {instr_segment},
+                        .reg_class = bundle.reg_class,
                         .evictable = false,
                         .src_stack_slot = stack_slot,
                         .dst_stack_slot = stack_slot,
