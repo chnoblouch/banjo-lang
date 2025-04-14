@@ -66,7 +66,7 @@ void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_it
 
     if (!is_inlining_beneficial(func, callee)) {
         if (is_logging()) {
-            get_logging_stream() << "not inlining " << callee->name << " into " << func->name << std::endl;
+            log() << "not inlining " << callee->name << " into " << func->name << std::endl;
         }
 
         return;
@@ -74,14 +74,14 @@ void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_it
 
     if (!is_inlining_legal(func, callee)) {
         if (is_logging()) {
-            get_logging_stream() << callee->name << " -> " << func->name << " is illegal\n";
+            log() << callee->name << " -> " << func->name << " is illegal\n";
         }
 
         return;
     }
 
     if (is_logging()) {
-        get_logging_stream() << "inlining " << callee->name << " into " << func->name << std::endl;
+        log() << "inlining " << callee->name << " into " << func->name << std::endl;
     }
 
     bool single_block = callee->get_basic_blocks().get_size() == 1;

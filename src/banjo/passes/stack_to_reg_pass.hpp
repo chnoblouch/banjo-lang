@@ -1,8 +1,8 @@
 #ifndef PASSES_STACK_TO_REG_PASS_H
 #define PASSES_STACK_TO_REG_PASS_H
 
-#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/passes/pass.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 
 #include <list>
 #include <unordered_map>
@@ -17,8 +17,8 @@ class StackToRegPass : public Pass {
 private:
     struct StackSlotInfo {
         ssa::Type type;
-        std::list<ssa::BasicBlockIter> def_blocks;
-        std::unordered_set<ssa::BasicBlockIter> use_blocks;
+        std::list<ssa::BasicBlockIter> store_blocks;
+        std::unordered_set<ssa::BasicBlockIter> load_blocks;
         bool promotable;
         ssa::Value cur_replacement;
         std::unordered_set<ssa::BasicBlockIter> blocks_having_val_as_param;
@@ -41,19 +41,23 @@ public:
     void run(ssa::Module &mod);
 
 private:
-    void run(ssa::Function *func, ssa::Module &mod);
+    void run(ssa::Function *func);
     StackSlotMap find_stack_slots(ssa::Function *func);
+    void find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter block, ssa::Instruction &instr);
+    void analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, ssa::BasicBlockIter block, ssa::Opcode opcode);
 
-    bool is_stack_slot_used(
-        StackSlotInfo &stack_slot,
+    bool is_slot_loaded(
+        StackSlotInfo &slot,
         ssa::ControlFlowGraph &cfg,
         unsigned node_index,
         std::unordered_set<unsigned> &nodes_visited
     );
 
+    ssa::Value create_undefined(ssa::Type type);
+
     void rename(
         ssa::BasicBlockIter block_iter,
-        StackSlotMap &stack_slots,
+        StackSlotMap &slots,
         BlockMap &blocks,
         std::unordered_map<long, ssa::Value> cur_replacements,
         ssa::DominatorTree &dominator_tree

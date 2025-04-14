@@ -30,7 +30,7 @@ public:
 protected:
     target::Target *get_target() { return target; }
     bool is_logging() { return logging_stream; }
-    std::ostream &get_logging_stream() { return *logging_stream; }
+    std::ostream &log() { return *logging_stream; }
 };
 
 } // namespace passes

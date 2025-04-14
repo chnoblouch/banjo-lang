@@ -35,7 +35,7 @@ void LoopInversionPass::run(ssa::Function *func) {
         std::vector<ssa::LoopAnalysis> loops = analyzer.analyze();
 
         if (is_logging()) {
-            analyzer.dump(get_logging_stream());
+            analyzer.dump(log());
         }
 
         for (const ssa::LoopAnalysis &loop : loops) {
@@ -68,7 +68,7 @@ bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph
 
     if (is_logging()) {
         const std::string &label = cfg.get_node(loop.header).block->get_debug_label();
-        get_logging_stream() << func->name << ": inverting " << label << "\n";
+        log() << func->name << ": inverting " << label << "\n";
     }
 
     ssa::BranchTarget true_target = cond_jump_iter->get_operand(3).get_branch_target();
