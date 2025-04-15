@@ -946,6 +946,7 @@ Local Cloner::clone_local(const Local &local) {
     return Local{
         .name = local.name,
         .type = clone_expr(local.type),
+        .attrs = clone_attrs(local.attrs),
     };
 }
 

@@ -1044,6 +1044,12 @@ void Printer::print_local(const Local &local) {
     BEGIN_OBJECT("Local");
     PRINT_FIELD("name", local.name.value);
     PRINT_EXPR_FIELD("type", local.type);
+
+    if (local.attrs) {
+        PRINT_FIELD_NAME("attrs");
+        print_attrs(*local.attrs);
+    }
+
     END_OBJECT();
 }
 

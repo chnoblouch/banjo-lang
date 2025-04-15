@@ -69,8 +69,8 @@ private:
     sir::MetaBlock generate_meta_block(ASTNode *node, MetaBlockKind kind);
 
     sir::Stmt generate_stmt(ASTNode *node);
-    sir::Stmt generate_var_stmt(ASTNode *node);
-    sir::Stmt generate_typeless_var_stmt(ASTNode *node);
+    sir::Stmt generate_var_stmt(ASTNode *node, sir::Attributes *attrs);
+    sir::Stmt generate_typeless_var_stmt(ASTNode *node, sir::Attributes *attrs);
     sir::Stmt generate_assign_stmt(ASTNode *node);
     sir::Stmt generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op);
     sir::Stmt generate_return_stmt(ASTNode *node);
@@ -122,7 +122,7 @@ private:
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     sir::Param generate_param(ASTNode *node);
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
-    sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node);
+    sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node, sir::Attributes *attrs);
     std::vector<sir::Expr> generate_expr_list(ASTNode *node);
     std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
     std::vector<sir::MapLiteralEntry> generate_map_literal_entries(ASTNode *node);

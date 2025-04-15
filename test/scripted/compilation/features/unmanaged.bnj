@@ -1,0 +1,57 @@
+# test:subtest
+# test:output "m"
+
+struct Resource {
+    func __deinit__(self) {
+        print('!');
+    }
+}
+
+func main() {
+    @unmanaged var a = Resource {};
+    @unmanaged var b: Resource = Resource {};
+
+    print('m');
+}
+
+# test:subtest
+# test:output "ccm"
+
+struct Resource {
+    func __deinit__(self) {
+        print('!');
+    }
+}
+
+func consume(@unmanaged resource: Resource) {
+    print('c');
+}
+
+func main() {
+    consume(Resource {});
+
+    var resource = Resource {};
+    consume(resource);
+
+    print('m');
+}
+
+# test:subtest
+# test:output "cm"
+
+struct Resource {
+    pub func consume(@[byval, unmanaged] self) {
+        print('c');
+    }
+ 
+    func __deinit__(self) {
+        print('!');
+    }
+}
+
+func main() {
+    var resource = Resource {};
+    resource.consume();
+
+    print('m');
+}

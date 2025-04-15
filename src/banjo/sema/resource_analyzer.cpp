@@ -38,7 +38,9 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
         sir::Expr type;
 
         if (auto local = symbol.match<sir::Local>()) {
-            // TODO: unmanaged attribute
+            if (local->attrs && local->attrs->unmanaged) {
+                continue;
+            }
 
             type = local->type;
         } else if (auto param = symbol.match<sir::Param>()) {

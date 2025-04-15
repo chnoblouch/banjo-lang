@@ -308,7 +308,7 @@ public:
     }
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
-    
+
     ASTNode *get_ast_node() const;
 };
 
@@ -565,6 +565,7 @@ struct FuncType {
 struct Local {
     Ident name;
     Expr type;
+    Attributes *attrs = nullptr;
 };
 
 struct IntLiteral {
