@@ -1,0 +1,169 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('r');
+    }
+}
+
+struct ValueResource {
+    var value: i32;
+    
+    func __deinit__(self) {
+        print('v');
+        print(self.value);
+    }
+}
+
+# test:subtest
+# test:output "abrcd"
+
+func consume(resource: Resource) -> bool {
+    print('b');
+    return true;
+}
+
+func main() {
+    var resource = Resource {};
+
+    print('a');
+
+    if consume(resource) {
+        print('c');
+    }
+
+    print('d');
+}
+
+# test:subtest
+# test:output "abrcd"
+
+func consume(resource: Resource) -> bool {
+    print('b');
+    return true;
+}
+
+func main() {
+    var resource = Resource {};
+
+    print('a');
+
+    if false {
+        print('!');
+    } else if false {
+        print('!');
+    } else if consume(resource) {
+        print('c');
+    }
+
+    print('d');
+}
+
+# test:subtest
+# test:output "abcr"
+
+func consume(resource: Resource) -> bool {
+    print('!');
+    return true;
+}
+
+func main() {
+    var resource = Resource {};
+
+    print('a');
+
+    if true {
+        print('b');
+    } else if consume(resource) {
+        print('!');
+    }
+
+    print('c');
+}
+
+# test:subtest
+# test:output "av0bcv1"
+
+func consume(resource: ValueResource) -> bool {
+    return true;
+}
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+
+    if false {
+        print('!');
+    } else if consume(a) {
+        print('b');
+    } else if consume(b) {
+        print('!');
+    }
+
+    print('c');
+}
+
+# test:subtest
+# test:output "abrcd"
+
+func consume(resource: Resource) -> bool {
+    print('b');
+    return true;
+}
+
+func main() {
+    var resource = Resource {};
+
+    print('a');
+
+    while consume(resource) {
+        print('c');
+        break;
+    }
+
+    print('d');
+}
+
+# test:subtest
+# test:output "abrcd"
+
+func consume(resource: Resource) -> Array[i32] {
+    print('b');
+    return [0];
+}
+
+func main() {
+    var resource = Resource {};
+
+    print('a');
+
+    for _ in consume(resource) {
+        print('c');
+    }
+
+    print('d');
+}
+
+# test:subtest
+# test:output "abrcd"
+
+func consume(resource: Resource) -> i32 except bool {
+    print('b');
+    return 0;
+}
+
+func main() {
+    var resource = Resource {};
+
+    print('a');
+
+    try _ in consume(resource) {
+        print('c');
+    } else {
+        print('!');
+    }
+
+    print('d');
+}

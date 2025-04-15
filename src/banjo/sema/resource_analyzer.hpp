@@ -46,6 +46,7 @@ private:
 
     struct Context {
         bool moving;
+        bool conditional;
         bool field_expr_lhs;
         bool in_resource_with_deinit;
         bool in_pointer;
@@ -86,7 +87,7 @@ private:
     void analyze_break_stmt(sir::BreakStmt &break_stmt);
     void analyze_block_stmt(sir::Block &block);
 
-    Result analyze_expr(sir::Expr &expr, bool moving);
+    Result analyze_expr(sir::Expr &expr, bool moving, bool conditional);
     Result analyze_expr(sir::Expr &expr, Context &ctx);
     Result analyze_array_literal(sir::ArrayLiteral &array_literal, Context &ctx);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx);
@@ -94,14 +95,14 @@ private:
     Result analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_call_expr(sir::CallExpr &call_expr, Context &ctx);
     Result analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx);
-    Result analyze_tuple_expr(sir::TupleExpr &tuple_expr);
+    Result analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx);
     Result analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr);
 
     Result analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx);
     MoveState *find_move_state(sir::Resource *resource);
     Result check_for_move_in_loop(sir::Resource *resource, sir::Expr move_expr);
-    void move_sub_resources(sir::Resource *resource, sir::Expr move_expr);
-    void partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr);
+    void move_sub_resources(sir::Resource *resource, sir::Expr move_expr, Context &ctx);
+    void partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr, Context &ctx);
     void update_init_state(Scope &scope, sir::Resource *resource, InitState value);
     void analyze_loop_jump();
     void mark_uninit_as_cond_init(Scope &scope);

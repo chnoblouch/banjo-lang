@@ -79,25 +79,25 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
     for (sir::Stmt &stmt : block.stmts) {
         SIR_VISIT_STMT(
             stmt,
-            SIR_VISIT_IGNORE,                 // empty
-            analyze_var_stmt(*inner),         // var_stmt
-            analyze_assign_stmt(*inner),      // assign_stmt
-            analyze_comp_assign_stmt(*inner), // comp_assign_stmt
-            analyze_return_stmt(*inner),      // return_stmt
-            analyze_if_stmt(*inner),          // if_stmt
-            SIR_VISIT_IGNORE,                 // switch_stmt
-            analyze_try_stmt(*inner),         // try_stmt
-            SIR_VISIT_IGNORE,                 // while_stmt
-            SIR_VISIT_IGNORE,                 // for_stmt
-            analyze_loop_stmt(*inner),        // loop_stmt
-            analyze_continue_stmt(*inner),    // continue_stmt
-            analyze_break_stmt(*inner),       // break_stmt
-            SIR_VISIT_IGNORE,                 // meta_if_stmt
-            SIR_VISIT_IGNORE,                 // meta_for_stmt
-            SIR_VISIT_IGNORE,                 // expanded_meta_stmt
-            analyze_expr(*inner, false),      // expr_stmt
-            analyze_block_stmt(*inner),       // block_stmt
-            SIR_VISIT_IGNORE                  // error
+            SIR_VISIT_IGNORE,                  // empty
+            analyze_var_stmt(*inner),          // var_stmt
+            analyze_assign_stmt(*inner),       // assign_stmt
+            analyze_comp_assign_stmt(*inner),  // comp_assign_stmt
+            analyze_return_stmt(*inner),       // return_stmt
+            analyze_if_stmt(*inner),           // if_stmt
+            SIR_VISIT_IGNORE,                  // switch_stmt (TODO!)
+            analyze_try_stmt(*inner),          // try_stmt
+            SIR_VISIT_IGNORE,                  // while_stmt
+            SIR_VISIT_IGNORE,                  // for_stmt
+            analyze_loop_stmt(*inner),         // loop_stmt
+            analyze_continue_stmt(*inner),     // continue_stmt
+            analyze_break_stmt(*inner),        // break_stmt
+            SIR_VISIT_IGNORE,                  // meta_if_stmt
+            SIR_VISIT_IGNORE,                  // meta_for_stmt
+            SIR_VISIT_IGNORE,                  // expanded_meta_stmt
+            analyze_expr(*inner, true, false), // expr_stmt
+            analyze_block_stmt(*inner),        // block_stmt
+            SIR_VISIT_IGNORE                   // error
         );
     }
 
@@ -227,7 +227,7 @@ void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         return;
     }
 
-    analyze_expr(value, true);
+    analyze_expr(value, true, false);
 
     auto iter = resources_by_symbols.find(&var_stmt.local);
     if (iter == resources_by_symbols.end()) {
@@ -252,17 +252,17 @@ void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 }
 
 void ResourceAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
-    analyze_expr(assign_stmt.lhs, false);
-    analyze_expr(assign_stmt.rhs, true);
+    analyze_expr(assign_stmt.lhs, false, false);
+    analyze_expr(assign_stmt.rhs, true, false);
 }
 
 void ResourceAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt) {
-    analyze_expr(comp_assign_stmt.lhs, false);
-    analyze_expr(comp_assign_stmt.rhs, true);
+    analyze_expr(comp_assign_stmt.lhs, false, false);
+    analyze_expr(comp_assign_stmt.rhs, true, false);
 }
 
 void ResourceAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
-    analyze_expr(return_stmt.value, true);
+    analyze_expr(return_stmt.value, true, false);
 
     for (auto scope_iter = scopes.rbegin(); scope_iter != scopes.rend(); scope_iter++) {
         mark_uninit_as_cond_init(*scope_iter);
@@ -273,7 +273,12 @@ void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     std::vector<Scope> child_scopes(if_stmt.cond_branches.size());
 
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
-        child_scopes[i] = analyze_block(if_stmt.cond_branches[i].block);
+        sir::IfCondBranch &cond_branch = if_stmt.cond_branches[i];
+        
+        bool conditional = i != 0;
+        analyze_expr(cond_branch.condition, true, conditional);
+        
+        child_scopes[i] = analyze_block(cond_branch.block);
     }
 
     if (if_stmt.else_branch) {
@@ -289,6 +294,8 @@ void ResourceAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt) {
     std::vector<Scope> child_scopes{
         analyze_block(try_stmt.success_branch.block),
     };
+
+    analyze_expr(try_stmt.success_branch.expr, false, false);
 
     if (try_stmt.except_branch) {
         child_scopes.push_back(analyze_block(try_stmt.except_branch->block));
@@ -307,6 +314,8 @@ void ResourceAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
     std::vector<Scope> child_scopes{
         analyze_block(loop_stmt.block, ScopeType::LOOP),
     };
+    
+    analyze_expr(loop_stmt.condition, false, false);
 
     if (loop_stmt.latch) {
         child_scopes.push_back(analyze_block(*loop_stmt.latch, ScopeType::LOOP));
@@ -330,9 +339,10 @@ void ResourceAnalyzer::analyze_block_stmt(sir::Block &block) {
     merge_move_states(scopes.back(), child_scope, false);
 }
 
-Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, bool moving) {
+Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, bool moving, bool conditional) {
     Context ctx{
         .moving = moving,
+        .conditional = conditional,
         .field_expr_lhs = false,
         .in_resource_with_deinit = false,
         .in_pointer = false,
@@ -370,7 +380,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_call_expr(*inner, ctx),         // call_expr
         result = analyze_field_expr(*inner, expr, ctx),  // field_expr
         SIR_VISIT_IGNORE,                                // range_expr
-        result = analyze_tuple_expr(*inner),             // tuple_expr
+        result = analyze_tuple_expr(*inner, ctx),        // tuple_expr
         SIR_VISIT_IGNORE,                                // coercion_expr
         SIR_VISIT_IGNORE,                                // primitive_type
         SIR_VISIT_IGNORE,                                // pointer_type
@@ -423,12 +433,12 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
     return result;
 }
 
-Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, Context & /*ctx*/) {
+Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, Context &ctx) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
     for (sir::Expr &value : array_literal.values) {
-        partial_result = analyze_expr(value, true);
+        partial_result = analyze_expr(value, true, ctx.conditional);
 
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
@@ -438,12 +448,12 @@ Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal,
     return result;
 }
 
-Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal, Context & /*ctx*/) {
+Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
-        partial_result = analyze_expr(entry.value, true);
+        partial_result = analyze_expr(entry.value, true, ctx.conditional);
 
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
@@ -467,7 +477,7 @@ Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, Context 
         ctx.in_pointer = true;
         return result;
     } else if (unary_expr.op == sir::UnaryOp::REF) {
-        return analyze_expr(unary_expr.value, false);
+        return analyze_expr(unary_expr.value, false, ctx.conditional);
     } else {
         return analyze_expr(unary_expr.value, ctx);
     }
@@ -483,12 +493,12 @@ Result ResourceAnalyzer::analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::
     return analyze_resource_use(resource, out_expr, ctx);
 }
 
-Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, Context & /*ctx*/) {
+Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, Context &ctx) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
     for (sir::Expr &arg : call_expr.args) {
-        partial_result = analyze_expr(arg, true);
+        partial_result = analyze_expr(arg, true, ctx.conditional);
 
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
@@ -501,6 +511,7 @@ Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, Context & /
 Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx) {
     Context lhs_ctx{
         .moving = false,
+        .conditional = ctx.conditional,
         .field_expr_lhs = true,
         .in_resource_with_deinit = false,
         .in_pointer = false,
@@ -542,12 +553,12 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     return Result::SUCCESS;
 }
 
-Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
+Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
     for (sir::Expr &expr : tuple_expr.exprs) {
-        partial_result = analyze_expr(expr, true);
+        partial_result = analyze_expr(expr, true, ctx.conditional);
 
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
@@ -591,13 +602,13 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
 
         scopes.back().move_states[resource] = MoveState{
             .moved = true,
-            .conditional = false,
+            .conditional = ctx.conditional,
             .partial = false,
             .move_expr = inout_expr,
         };
 
-        move_sub_resources(resource, inout_expr);
-        partially_move_super_resources(resource, inout_expr);
+        move_sub_resources(resource, inout_expr, ctx);
+        partially_move_super_resources(resource, inout_expr, ctx);
 
         inout_expr = analyzer.create_expr(
             sir::MoveExpr{
@@ -650,20 +661,20 @@ Result ResourceAnalyzer::check_for_move_in_loop(sir::Resource *resource, sir::Ex
     return Result::SUCCESS;
 }
 
-void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr move_expr) {
+void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr move_expr, Context &ctx) {
     for (sir::Resource &sub_resource : resource->sub_resources) {
         scopes.back().move_states[&sub_resource] = MoveState{
             .moved = true,
-            .conditional = false,
+            .conditional = ctx.conditional,
             .partial = true,
             .move_expr = move_expr,
         };
 
-        move_sub_resources(&sub_resource, move_expr);
+        move_sub_resources(&sub_resource, move_expr, ctx);
     }
 }
 
-void ResourceAnalyzer::partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr) {
+void ResourceAnalyzer::partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr, Context &ctx) {
     sir::Resource *current_resource = resource;
 
     while (true) {
@@ -679,7 +690,7 @@ void ResourceAnalyzer::partially_move_super_resources(sir::Resource *resource, s
 
         scopes.back().move_states[super_resource] = MoveState{
             .moved = true,
-            .conditional = false,
+            .conditional = ctx.conditional,
             .partial = true,
             .move_expr = move_expr,
         };
