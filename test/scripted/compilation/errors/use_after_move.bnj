@@ -173,3 +173,17 @@ func main() {
     try _ in consume(a) {}
     var b = a;
 }
+
+# test:subtest
+# test:error 188:11 "resource used after move"
+# test:note 187:17 "previously moved here"
+
+struct Resource {
+    func __deinit__(self) {}
+}
+
+func main() {
+    var array = [Resource {}, Resource {}, Resource {}];
+    for item in array {}
+    print(array);
+}

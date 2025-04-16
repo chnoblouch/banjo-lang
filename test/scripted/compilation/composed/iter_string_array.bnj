@@ -1,0 +1,27 @@
+# test:common
+
+func get() -> Array[String] {
+    return ["a", "list", "of", "strings"];
+}
+
+# test:subtest
+# test:output "a,list,of,strings,"
+
+func main() {
+    for item in get() {
+        print(item);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "a,list,of,strings,"
+
+func main() {
+    var array = get();
+
+    for *item in array {
+        print(item.copy());
+        print(',');
+    }
+}

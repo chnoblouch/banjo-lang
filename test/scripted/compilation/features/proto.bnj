@@ -159,8 +159,8 @@ struct IntSet: IntCollection, DebugPrint {
     }
     
     func add(self, value: i32) {
-        for i in self.array {
-            if i == value {
+        for *element in self.array {
+            if *element == value {
                 return;
             }
         }
@@ -173,8 +173,8 @@ struct IntSet: IntCollection, DebugPrint {
     }
     
     func debug_print(self) {
-        for value in self.array {
-            print(value);
+        for *value in self.array {
+            print(*value);
             print(",");
         }
     }

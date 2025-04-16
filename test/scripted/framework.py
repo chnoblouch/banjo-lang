@@ -97,14 +97,16 @@ def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
         print("failures:\n")
 
         for test, result in failures:
+            is_string = type(result.expected) is str and type(result.actual) is str
+            
             print(f"  {test.name}: {result.failure_reason}")
             
-            if "\n" in result.expected or "\n" in result.actual:
+            if is_string and ("\n" in result.expected or "\n" in result.actual):
                 print(f"\n=== expected:\n\n{result.expected}\n")
                 print(f"=== actual:\n\n{result.actual}\n")
             else:
                 print(f"    expected: {result.expected}")
-                print(f"      actual: {result.actual}")
+                print(f"      actual: {result.actual}\n")
 
     successful = tests_passed == tests_total
     sys.exit(0 if successful else 1)

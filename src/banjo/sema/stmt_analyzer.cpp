@@ -5,6 +5,7 @@
 #include "banjo/sema/pointer_escape_checker.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
@@ -506,6 +507,8 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
     Result partial_result;
 
+    sir::Expr iterable_unanalyzed = sir::Cloner(*analyzer.cur_sir_mod).clone_expr(for_stmt.range);
+
     partial_result = ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
     if (partial_result != Result::SUCCESS) {
         return;
@@ -555,7 +558,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
                 .name = create_ident(".iter"),
                 .type = nullptr,
             },
-            .value = create_method_call(for_stmt.range, iter_func_def),
+            .value = create_method_call(iterable_unanalyzed, iter_func_def),
         }
     );
 
@@ -573,6 +576,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
             .local{
                 .name = create_ident(".next"),
                 .type = nullptr,
+                .attrs = analyzer.cur_sir_mod->create_attrs(sir::Attributes{.unmanaged = true}),
             },
             .value = create_method_call(iter_ref_expr, next_func_def),
         }

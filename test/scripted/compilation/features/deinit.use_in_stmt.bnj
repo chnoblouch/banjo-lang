@@ -167,3 +167,52 @@ func main() {
 
     print('d');
 }
+
+# test:subtest
+# test:output "abv8v1v5c"
+
+func main() {
+    print('a');
+
+    var array = [
+        ValueResource { value: 8 },
+        ValueResource { value: 1 },
+        ValueResource { value: 5 },
+    ];
+
+    print('b');
+    for item in array {}
+    print('c');
+}
+
+# test:subtest
+# test:output "abcv8v1v5"
+
+func main() {
+    print('a');
+
+    var array = [
+        ValueResource { value: 8 },
+        ValueResource { value: 1 },
+        ValueResource { value: 5 },
+    ];
+
+    print('b');
+    for *item in array {}
+    print('c');
+}
+
+# test:subtest
+# test:output "av8v1v5b"
+
+func main() {
+    print('a');
+
+	for *value in [
+        ValueResource { value: 8 },
+        ValueResource { value: 1 },
+        ValueResource { value: 5 },
+    ] {}
+
+    print('b');
+}

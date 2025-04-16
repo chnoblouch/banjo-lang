@@ -47,12 +47,12 @@ pub func zero[T]() -> T {
     return value;
 }
 
-struct PointerIter[T] {
+struct PointerMoveIter[T] {
     var pointer: *T;
     var end: *T;
     
-    pub func new(pointer: *T, end: *T) -> PointerIter[T] {
-        return PointerIter[T] { pointer, end };
+    pub func new(pointer: *T, end: *T) -> PointerMoveIter[T] {
+        return PointerMoveIter[T] { pointer, end };
     }
     
     func __next__(self) -> ?T {
@@ -61,13 +61,7 @@ struct PointerIter[T] {
         }
         
         var value: T;
-        
-        meta if meta(T).is_resource {
-            value = self.pointer.copy();
-        } else {
-            copy(self.pointer, &value, meta(T).size);
-        }
-
+        copy(self.pointer, &value, meta(T).size);
         self.pointer += 1;
         return value;
     }
