@@ -105,9 +105,8 @@ void DeclInterfaceAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::
 }
 
 void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def) {
-    sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
-
-    sir::FuncDef *clone = sir::Cloner(*analyzer.cur_sir_mod, symbol_table).clone_func_def(func_def);
+    sir::SymbolTable &parent_symbol_table = *func_def.block.symbol_table->parent;
+    sir::FuncDef *clone = sir::Cloner(*analyzer.cur_sir_mod, parent_symbol_table).clone_func_def(func_def);
     struct_def.block.decls.push_back(clone);
 
     SymbolCollector(analyzer).collect_func_def(*clone);
