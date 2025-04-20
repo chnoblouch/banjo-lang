@@ -1,5 +1,9 @@
 use std.{platform, file.File};
-use c.lib.stdio.{fread, ferror, fgetc, fputc, fwrite, fflush};
+
+use c.lib.{
+    string.strlen,
+    stdio.{fread, ferror, fgetc, fputc, fwrite, fflush},
+};
 
 proto Read {
     pub func read(self, data: Slice[u8]) -> usize except Error;
@@ -26,6 +30,11 @@ proto Write {
     
     pub func write_string(self, string: StringSlice) -> usize except Error {
         return self.write(Slice[u8].new(string.data, string.length));
+    }
+
+    pub func write_cstring(self, data: *u8) -> usize except Error {
+        var length = strlen(data);
+        return self.write(Slice[u8].new(data, length));
     }
 }
 
