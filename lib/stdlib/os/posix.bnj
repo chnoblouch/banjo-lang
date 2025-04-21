@@ -8,30 +8,59 @@ meta if os.IS_UNIX {
     }
 
     meta if config.OS == config.LINUX {
-        struct Stat {
-            var dev: u64;
-            var ino: u64;
-            var nlink: u64;
-            var mode: u32;
-            var uid: u32;
-            var gid: u32;
-            var pad0: i32;
-            var rdev: u64;
-            var size: i64;
-            var blksize: i64;
-            var blocks: i64;
-            var atim: Timespec;
-            var mtim: Timespec;
-            var ctim: Timespec;
-            var reserved: [i64; 3];
-        }
+        meta if config.ARCH == config.X86_64 {
+            struct Stat {
+                var dev: u64;
+                var ino: u64;
+                var nlink: u64;
+                var mode: u32;
+                var uid: u32;
+                var gid: u32;
+                var pad0: i32;
+                var rdev: u64;
+                var size: i64;
+                var blksize: i64;
+                var blocks: i64;
+                var atim: Timespec;
+                var mtim: Timespec;
+                var ctim: Timespec;
+                var reserved: [i64; 3];
+            }
 
-        struct Dirent {
-            var ino: u64;
-            var off: i64;
-            var reclen: u16;
-            var type_: u8;
-            var name: [u8; 256];
+            struct Dirent {
+                var ino: u64;
+                var off: i64;
+                var reclen: u16;
+                var type_: u8;
+                var name: [u8; 256];
+            }
+        } else if config.ARCH == config.AARCH64 {
+            struct Stat {
+                var dev: u64;
+                var ino: u64;
+                var mode: u32;
+                var nlink: u32;
+                var uid: u32;
+                var gid: u32;
+                var rdev: u64;
+                var pad1: u64;
+                var size: i64;
+                var blksize: i32;
+                var pad2: i32;
+                var blocks: i64;
+                var atim: Timespec;
+                var mtim: Timespec;
+                var ctim: Timespec;
+                var reserved: [i32; 2];
+            }
+
+            struct Dirent {
+                var ino: u64;
+                var off: i64;
+                var reclen: u16;
+                var type_: u8;
+                var name: [u8; 256];
+            }
         }
 
         struct Sockaddr {
