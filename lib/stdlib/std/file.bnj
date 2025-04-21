@@ -13,6 +13,7 @@ use c.lib.stdio.{
     fwrite,
     feof,
     fclose,
+    fflush,
     SEEK_SET,
     SEEK_CUR,
     SEEK_END,
@@ -112,6 +113,12 @@ struct File: Read, Write {
         } else {
             return Error.last();
         }
+    }
+
+    pub func flush(self) {
+        # TODO: Error handling
+
+        fflush(self.stream);
     }
 
     pub func read_all(self) -> (*u8, usize) {    
