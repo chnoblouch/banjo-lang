@@ -40,7 +40,7 @@ void StackToRegPass::run(ssa::Function *func) {
     StackSlotMap slots = find_stack_slots(func);
     BlockMap blocks;
 
-    std::unordered_map<long, ssa::Value> init_replacements;
+    std::unordered_map<ssa::VirtualRegister, ssa::Value> init_replacements;
 
     for (auto &[reg, slot] : slots) {
         if (slot.store_blocks.empty()) {
@@ -69,7 +69,7 @@ void StackToRegPass::run(ssa::Function *func) {
                 }
 
                 blocks[cfg_node.block].new_params.push_back({
-                    .param_index = (unsigned)cfg_node.block->get_param_regs().size(),
+                    .param_index = static_cast<unsigned>(cfg_node.block->get_param_regs().size()),
                     .stack_slot = reg,
                 });
 
@@ -237,7 +237,7 @@ void StackToRegPass::rename(
     ssa::BasicBlockIter block_iter,
     StackSlotMap &slots,
     BlockMap &blocks,
-    std::unordered_map<long, ssa::Value> cur_replacements,
+    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements,
     ssa::DominatorTree &dominator_tree
 ) {
     ssa::BasicBlock &block = *block_iter;
@@ -304,7 +304,7 @@ void StackToRegPass::rename(
 
 void StackToRegPass::replace_regs(
     std::vector<ssa::Operand> &operands,
-    std::unordered_map<long, ssa::Value> cur_replacements
+    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
 ) {
     PassUtils::iter_values(operands, [&cur_replacements](ssa::Value &value) {
         if (value.is_register() && cur_replacements.count(value.get_register())) {
@@ -316,7 +316,7 @@ void StackToRegPass::replace_regs(
 void StackToRegPass::update_branch_target(
     ssa::Operand &operand,
     BlockMap &blocks,
-    std::unordered_map<long, ssa::Value> cur_replacements
+    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
 ) {
     ssa::BranchTarget &target = operand.get_branch_target();
 

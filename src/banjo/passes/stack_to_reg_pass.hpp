@@ -33,7 +33,7 @@ private:
         std::vector<ParamInfo> new_params;
     };
 
-    typedef std::unordered_map<long, StackSlotInfo> StackSlotMap;
+    typedef std::unordered_map<ssa::VirtualRegister, StackSlotInfo> StackSlotMap;
     typedef std::unordered_map<ssa::BasicBlockIter, BlockInfo> BlockMap;
 
 public:
@@ -59,16 +59,19 @@ private:
         ssa::BasicBlockIter block_iter,
         StackSlotMap &slots,
         BlockMap &blocks,
-        std::unordered_map<long, ssa::Value> cur_replacements,
+        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements,
         ssa::DominatorTree &dominator_tree
     );
 
-    void replace_regs(std::vector<ssa::Operand> &operands, std::unordered_map<long, ssa::Value> cur_replacements);
+    void replace_regs(
+        std::vector<ssa::Operand> &operands,
+        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
+    );
 
     void update_branch_target(
         ssa::Operand &operand,
         BlockMap &blocks,
-        std::unordered_map<long, ssa::Value> cur_replacements
+        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
     );
 };
 
