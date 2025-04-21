@@ -74,56 +74,58 @@ bool Expr::is_value() const {
 Expr Expr::get_type() const {
     SIR_VISIT_EXPR(
         *this,
-        return nullptr,       // empty
-        return inner->type,   // int_literal
-        return inner->type,   // fp_literal
-        return inner->type,   // bool_literal
-        return inner->type,   // char_literal
-        return inner->type,   // null_literal
-        return inner->type,   // none_literal
-        return inner->type,   // undefined_literal
-        return inner->type,   // array_literal
-        return inner->type,   // string_literal
-        return inner->type,   // struct_literal
-        return inner->type,   // union_case_literal
-        return inner->type,   // map_literal
-        return inner->type,   // closure_literal
-        return inner->type,   // symbol_expr
-        return inner->type,   // binary_expr
-        return inner->type,   // unary_expr
-        return inner->type,   // cast_expr
-        return inner->type,   // index_expr
-        return inner->type,   // call_expr
-        return inner->type,   // field_expr
-        return nullptr,       // range_expr
-        return inner->type,   // tuple_expr
-        return inner->type,   // coercion_type
-        return nullptr,       // primitive_type
-        return nullptr,       // pointer_type
-        return nullptr,       // static_array_type
-        return nullptr,       // func_type
-        return nullptr,       // optional_type
-        return nullptr,       // result_type
-        return nullptr,       // array_type
-        return nullptr,       // map_type
-        return nullptr,       // closure_type
-        return nullptr,       // ident_expr
-        return nullptr,       // star_expr
-        return nullptr,       // bracket_expr
-        return nullptr,       // dot_expr
-        return nullptr,       // pseudo_type
-        SIR_VISIT_IMPOSSIBLE, // meta_access
-        SIR_VISIT_IMPOSSIBLE, // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE, // meta_call_expr
-        return inner->type,   // init_expr
-        return inner->type,   // move_expr
-        return inner->type,   // deinit_expr
-        return nullptr        // error
+        return nullptr,     // empty
+        return inner->type, // int_literal
+        return inner->type, // fp_literal
+        return inner->type, // bool_literal
+        return inner->type, // char_literal
+        return inner->type, // null_literal
+        return inner->type, // none_literal
+        return inner->type, // undefined_literal
+        return inner->type, // array_literal
+        return inner->type, // string_literal
+        return inner->type, // struct_literal
+        return inner->type, // union_case_literal
+        return inner->type, // map_literal
+        return inner->type, // closure_literal
+        return inner->type, // symbol_expr
+        return inner->type, // binary_expr
+        return inner->type, // unary_expr
+        return inner->type, // cast_expr
+        return inner->type, // index_expr
+        return inner->type, // call_expr
+        return inner->type, // field_expr
+        return nullptr,     // range_expr
+        return inner->type, // tuple_expr
+        return inner->type, // coercion_type
+        return nullptr,     // primitive_type
+        return nullptr,     // pointer_type
+        return nullptr,     // static_array_type
+        return nullptr,     // func_type
+        return nullptr,     // optional_type
+        return nullptr,     // result_type
+        return nullptr,     // array_type
+        return nullptr,     // map_type
+        return nullptr,     // closure_type
+        return nullptr,     // ident_expr
+        return nullptr,     // star_expr
+        return nullptr,     // bracket_expr
+        return nullptr,     // dot_expr
+        return nullptr,     // pseudo_type
+        return nullptr,     // meta_access
+        return nullptr,     // meta_field_expr
+        return nullptr,     // meta_call_expr
+        return inner->type, // init_expr
+        return inner->type, // move_expr
+        return inner->type, // deinit_expr
+        return nullptr      // error
     );
 }
 
 ExprCategory Expr::get_category() const {
-    if (auto symbol_expr = match<SymbolExpr>()) {
+    if (is<MetaAccess>()) {
+        return ExprCategory::META_ACCESS;
+    } else if (auto symbol_expr = match<SymbolExpr>()) {
         if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef>()) {
             return ExprCategory::TYPE;
         } else if (symbol_expr->symbol.is<Module>()) {

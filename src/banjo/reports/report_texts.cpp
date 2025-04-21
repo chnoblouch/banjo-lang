@@ -76,6 +76,7 @@ ReportText &ReportText::format(sir::ExprCategory expr_category) {
         case sir::ExprCategory::TYPE: string = "type"; break;
         case sir::ExprCategory::VALUE_OR_TYPE: string = "value or type"; break;
         case sir::ExprCategory::MODULE: string = "module"; break;
+        case sir::ExprCategory::META_ACCESS: string = "meta expression"; break;
     }
 
     return format(string);

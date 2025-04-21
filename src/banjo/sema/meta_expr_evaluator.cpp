@@ -28,11 +28,13 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     }
 
     if (field_name == "size") {
-        out_expr = analyzer.create_expr(sir::IntLiteral{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .value = analyzer.compute_size(base_expr),
-        });
+        out_expr = analyzer.create_expr(
+            sir::IntLiteral{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .value = analyzer.compute_size(base_expr),
+            }
+        );
     } else if (field_name == "name") {
         out_expr = compute_name(base_expr);
     } else if (field_name == "is_pointer") {
@@ -48,7 +50,8 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     } else if (field_name == "variants") {
         out_expr = compute_variants(base_expr);
     } else {
-        ASSERT_UNREACHABLE;
+        analyzer.report_generator.report_err_invalid_meta_field(meta_field_expr);
+        return Result::ERROR;
     }
 
     ExprAnalyzer(analyzer).analyze_uncoerced(out_expr);
@@ -71,7 +74,8 @@ Result MetaExprEvaluator::evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr 
     } else if (callee_name == "field") {
         out_expr = compute_field(base_expr, meta_call_expr.args);
     } else {
-        ASSERT_UNREACHABLE;
+        analyzer.report_generator.report_err_invalid_meta_method(meta_call_expr);
+        return Result::ERROR;
     }
 
     ExprAnalyzer(analyzer).analyze(out_expr);
@@ -102,6 +106,11 @@ sir::Expr MetaExprEvaluator::compute_fields(sir::Expr &type) {
     return create_array_literal(fields);
 }
 
+sir::Expr MetaExprEvaluator::compute_is_resource(sir::Expr &type) {
+    bool is_resource = ResourceAnalyzer(analyzer).create_resource(type).has_value();
+    return create_bool_literal(is_resource);
+}
+
 sir::Expr MetaExprEvaluator::compute_variants(sir::Expr &type) {
     sir::EnumDef *enum_def = type.match_symbol<sir::EnumDef>();
     if (!enum_def) {
@@ -113,20 +122,28 @@ sir::Expr MetaExprEvaluator::compute_variants(sir::Expr &type) {
     for (unsigned i = 0; i < enum_def->variants.size(); i++) {
         sir::EnumVariant *variant = enum_def->variants[i];
 
-        variants[i] = analyzer.create_expr(sir::TupleExpr{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .exprs{
-                create_string_literal(variant->ident.value),
-                variant->value,
-            },
-        });
+        variants[i] = analyzer.create_expr(
+            sir::TupleExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .exprs{
+                    create_string_literal(variant->ident.value),
+                    variant->value,
+                },
+            }
+        );
     }
 
     return create_array_literal(variants);
 }
 
 sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, const std::vector<sir::Expr> &args) {
+    // TODO: Proper error reporting
+
+    if (args.size() != 1 || !args[0].is<sir::StringLiteral>()) {
+        return create_bool_literal(false);
+    }
+
     const std::string &name = args[0].as<sir::StringLiteral>().value;
 
     if (auto struct_def = type.match_symbol<sir::StructDef>()) {
@@ -140,46 +157,55 @@ sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, const std::vect
     return create_bool_literal(false);
 }
 
-sir::Expr MetaExprEvaluator::compute_is_resource(sir::Expr &type) {
-    bool is_resource = ResourceAnalyzer(analyzer).create_resource(type).has_value();
-    return create_bool_literal(is_resource);
-}
-
 sir::Expr MetaExprEvaluator::compute_field(sir::Expr &base, const std::vector<sir::Expr> &args) {
+    // TODO: Proper error reporting
+
+    if (args.size() != 1 || !args[0].is<sir::StringLiteral>()) {
+        return create_bool_literal(false);
+    }
+
     std::string name = args[0].as<sir::StringLiteral>().value;
 
-    return analyzer.create_expr(sir::DotExpr{
-        .ast_node = nullptr,
-        .lhs = base,
-        .rhs{
+    return analyzer.create_expr(
+        sir::DotExpr{
             .ast_node = nullptr,
-            .value = name,
-        },
-    });
+            .lhs = base,
+            .rhs{
+                .ast_node = nullptr,
+                .value = name,
+            },
+        }
+    );
 }
 
 sir::Expr MetaExprEvaluator::create_bool_literal(bool value) {
-    return analyzer.create_expr(sir::BoolLiteral{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .value = value,
-    });
+    return analyzer.create_expr(
+        sir::BoolLiteral{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .value = value,
+        }
+    );
 }
 
 sir::Expr MetaExprEvaluator::create_array_literal(std::vector<sir::Expr> values) {
-    return analyzer.create_expr(sir::ArrayLiteral{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .values = std::move(values),
-    });
+    return analyzer.create_expr(
+        sir::ArrayLiteral{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .values = std::move(values),
+        }
+    );
 }
 
 sir::Expr MetaExprEvaluator::create_string_literal(std::string value) {
-    return analyzer.create_expr(sir::StringLiteral{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .value = std::move(value),
-    });
+    return analyzer.create_expr(
+        sir::StringLiteral{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .value = std::move(value),
+        }
+    );
 }
 
 } // namespace sema

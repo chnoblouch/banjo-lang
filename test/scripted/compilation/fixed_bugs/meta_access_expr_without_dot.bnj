@@ -1,0 +1,5 @@
+# test:error 4:13 "expected value, got meta expression"
+
+func main() {
+    var a = meta(i32);
+}

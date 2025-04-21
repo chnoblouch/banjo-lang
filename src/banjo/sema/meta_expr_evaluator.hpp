@@ -25,9 +25,9 @@ public:
 private:
     sir::Expr compute_name(sir::Expr &type);
     sir::Expr compute_fields(sir::Expr &type);
+    sir::Expr compute_is_resource(sir::Expr &type);
     sir::Expr compute_variants(sir::Expr &type);
     sir::Expr compute_has_method(sir::Expr &type, const std::vector<sir::Expr> &args);
-    sir::Expr compute_is_resource(sir::Expr &type);
     sir::Expr compute_field(sir::Expr &base, const std::vector<sir::Expr> &args);
 
     sir::Expr create_bool_literal(bool value);

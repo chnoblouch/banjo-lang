@@ -130,6 +130,7 @@ enum class ExprCategory : std::uint8_t {
     TYPE,
     VALUE_OR_TYPE,
     MODULE,
+    META_ACCESS,
 };
 
 class Expr {

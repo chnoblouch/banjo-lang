@@ -146,6 +146,9 @@ public:
     void report_err_move_out_deinit(const sir::Expr &move);
     void report_err_move_in_loop(const sir::Expr &move);
 
+    void report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr);
+    void report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr);
+
     void report_warn_unreachable_code(const sir::Stmt &stmt);
 
 private:

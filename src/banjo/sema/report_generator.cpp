@@ -660,6 +660,16 @@ void ReportGenerator::report_err_unexpected_generic_arg_count(
         .report();
 }
 
+void ReportGenerator::report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr) {
+    const sir::Ident &ident = meta_field_expr.field;
+    report_error("invalid meta field '$'", ident.ast_node, ident.value);
+}
+
+void ReportGenerator::report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr) {
+    const sir::Ident &ident = meta_call_expr.callee.as<sir::MetaFieldExpr>().field;
+    report_error("invalid meta method '$'", ident.ast_node, ident.value);
+}
+
 void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
     report_warning("unreachable code", stmt.get_ast_node());
 }

@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 6:23 "invalid meta field 'test'"
+# test:error 7:23 "invalid meta field 'abc'"
+
+func main() {
+    var a = meta(i32).test;
+    var b = meta(i32).abc;
+}
+
+# test:subtest
+# test:error 15:23 "invalid meta method 'test'"
+# test:error 16:23 "invalid meta method 'abc'"
+
+func main() {
+    var a = meta(i32).test();
+    var b = meta(i32).abc();
+}
