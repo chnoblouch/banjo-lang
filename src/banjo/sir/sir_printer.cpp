@@ -970,6 +970,9 @@ void Printer::print_pseudo_type(const PseudoType &pseudo_type) {
     switch (pseudo_type.kind) {
         case PseudoTypeKind::INT_LITERAL: PRINT_FIELD("kind", "INT_LITERAL"); break;
         case PseudoTypeKind::FP_LITERAL: PRINT_FIELD("kind", "FP_LITERAL"); break;
+        case PseudoTypeKind::NULL_LITERAL: PRINT_FIELD("kind", "NULL_LITERAL"); break;
+        case PseudoTypeKind::NONE_LITERAL: PRINT_FIELD("kind", "NONE_LITERAL"); break;
+        case PseudoTypeKind::UNDEFINED_LITERAL: PRINT_FIELD("kind", "UNDEFINED_LITERAL"); break;
         case PseudoTypeKind::STRING_LITERAL: PRINT_FIELD("kind", "STRING_LITERAL"); break;
         case PseudoTypeKind::ARRAY_LITERAL: PRINT_FIELD("kind", "ARRAY_LITERAL"); break;
         case PseudoTypeKind::MAP_LITERAL: PRINT_FIELD("kind", "MAP_LITERAL"); break;

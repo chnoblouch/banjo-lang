@@ -873,6 +873,9 @@ struct DotExpr {
 enum class PseudoTypeKind {
     INT_LITERAL,
     FP_LITERAL,
+    NULL_LITERAL,
+    NONE_LITERAL,
+    UNDEFINED_LITERAL,
     STRING_LITERAL,
     ARRAY_LITERAL,
     MAP_LITERAL,

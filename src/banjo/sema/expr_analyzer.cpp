@@ -110,9 +110,9 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_fp_literal(*inner),                         // fp_literal
         result = analyze_bool_literal(*inner),                       // bool_literal
         result = analyze_char_literal(*inner),                       // char_literal
-        result = Result::SUCCESS,                                    // null_literal
-        result = Result::SUCCESS,                                    // none_literal
-        result = Result::SUCCESS,                                    // undefined_literal
+        result = analyze_null_literal(*inner),                       // null_literal
+        result = analyze_none_literal(*inner),                       // none_literal
+        result = analyze_undefined_literal(*inner),                  // undefined_literal
         result = analyze_array_literal(*inner, expr),                // array_literal
         result = analyze_string_literal(*inner),                     // string_literal
         result = analyze_struct_literal(*inner),                     // struct_literal
@@ -203,6 +203,39 @@ Result ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
         sir::PrimitiveType{
             .ast_node = nullptr,
             .primitive = sir::Primitive::U8,
+        }
+    );
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
+    null_literal.type = analyzer.create_expr(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::NULL_LITERAL,
+        }
+    );
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_none_literal(sir::NoneLiteral &none_literal) {
+    none_literal.type = analyzer.create_expr(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::NONE_LITERAL,
+        }
+    );
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_undefined_literal(sir::UndefinedLiteral &undefined_literal) {
+    undefined_literal.type = analyzer.create_expr(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::UNDEFINED_LITERAL,
         }
     );
 
@@ -645,20 +678,22 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         return Result::ERROR;
     }
 
+    sir::Expr value_type = unary_expr.value.get_type();
+
     if (unary_expr.op == sir::UnaryOp::REF) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         unary_expr.type = analyzer.create_expr(
             sir::PointerType{
                 .ast_node = nullptr,
-                .base_type = unary_expr.value.get_type(),
+                .base_type = value_type,
             }
         );
 
         return Result::SUCCESS;
     }
 
-    if (auto struct_def = unary_expr.value.get_type().match_symbol<sir::StructDef>()) {
+    if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
@@ -673,9 +708,17 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     }
 
     if (unary_expr.op == sir::UnaryOp::NEG) {
-        // TODO: Error handlin for negating unsigned types.
-
-        unary_expr.type = unary_expr.value.get_type();
+        if (value_type.is_signed_type() || value_type.is_fp_type() ||
+            value_type.is_pseudo_type(sir::PseudoTypeKind::INT_LITERAL) ||
+            value_type.is_pseudo_type(sir::PseudoTypeKind::FP_LITERAL)) {
+            unary_expr.type = unary_expr.value.get_type();
+        } else if (value_type.is_unsigned_type()) {
+            analyzer.report_generator.report_err_cannot_negate_unsigned(unary_expr);
+            return Result::ERROR;
+        } else {
+            analyzer.report_generator.report_err_cannot_negate(unary_expr);
+            return Result::ERROR;
+        }
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
         partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
         if (partial_result != Result::SUCCESS) {

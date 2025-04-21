@@ -1,0 +1,27 @@
+# test:subtest
+# test:error 8:13 "cannot negate type 'bool'"
+# test:error 9:13 "cannot negate type 'null'"
+# test:error 10:13 "cannot negate type 'string literal'"
+# test:error 11:13 "cannot negate type '(float literal, bool)'"
+
+func main() {
+    var a = -true;
+    var b = -null;
+    var c = -"Test";
+    var d = -(0.5, false);
+}
+
+# test:subtest
+# test:error 22:13 "cannot negate unsigned type 'u8'"
+# test:error 23:13 "cannot negate unsigned type 'u16'"
+# test:error 24:13 "cannot negate unsigned type 'u32'"
+# test:error 25:13 "cannot negate unsigned type 'u64'"
+# test:error 26:13 "cannot negate unsigned type 'usize'"
+
+func main() {
+    var a = -(42 as u8);
+    var b = -(42 as u16);
+    var c = -(42 as u32);
+    var d = -(42 as u64);
+    var e = -(42 as usize);
+}

@@ -442,6 +442,14 @@ void ReportGenerator::report_err_unexpected_array_length(
     report_error(format_str, array_literal.ast_node, expected_count, array_literal.values.size());
 }
 
+void ReportGenerator::report_err_cannot_negate(const sir::UnaryExpr &unary_expr) {
+    report_error("cannot negate type '$'", unary_expr.ast_node, unary_expr.value.get_type());
+}
+
+void ReportGenerator::report_err_cannot_negate_unsigned(const sir::UnaryExpr &unary_expr) {
+    report_error("cannot negate unsigned type '$'", unary_expr.ast_node, unary_expr.value.get_type());
+}
+
 void ReportGenerator::report_err_expected_index(const sir::BracketExpr &bracket_expr) {
     // TODO: Range could be just brackets...
     report_error("expected an index", bracket_expr.ast_node);

@@ -35,6 +35,9 @@ private:
     Result analyze_fp_literal(sir::FPLiteral &fp_literal);
     Result analyze_bool_literal(sir::BoolLiteral &bool_literal);
     Result analyze_char_literal(sir::CharLiteral &char_literal);
+    Result analyze_null_literal(sir::NullLiteral &null_literal);
+    Result analyze_none_literal(sir::NoneLiteral &none_literal);
+    Result analyze_undefined_literal(sir::UndefinedLiteral &undefined_literal);
     Result analyze_array_literal(sir::ArrayLiteral &array_literal, sir::Expr &out_expr);
     Result analyze_string_literal(sir::StringLiteral &string_literal);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);

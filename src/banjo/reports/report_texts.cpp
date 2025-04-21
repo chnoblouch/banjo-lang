@@ -172,6 +172,9 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         switch (pseudo_type->kind) {
             case sir::PseudoTypeKind::INT_LITERAL: return "integer literal";
             case sir::PseudoTypeKind::FP_LITERAL: return "float literal";
+            case sir::PseudoTypeKind::NULL_LITERAL: return "null";
+            case sir::PseudoTypeKind::NONE_LITERAL: return "none";
+            case sir::PseudoTypeKind::UNDEFINED_LITERAL: return "undefined";
             case sir::PseudoTypeKind::STRING_LITERAL: return "string literal";
             case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
             case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
