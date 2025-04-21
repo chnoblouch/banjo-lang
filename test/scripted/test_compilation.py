@@ -265,7 +265,7 @@ def run_executable(test):
         if is_linux:
             subprocess.run(["clang", "-fuse-ld=lld", "-lm", "-otest", "main.o"])
         else:
-            subprocess.run(["clang", "-fuse-ld=lld", "-otest", "main.o"])
+            subprocess.run(["clang", "-otest", "main.o"])
 
         os.remove("main.o")
 
