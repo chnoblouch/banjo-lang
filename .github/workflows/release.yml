@@ -4,134 +4,149 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-x86_64-windows:
+  build-windows:
     runs-on: windows-2022
-    
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: ilammy/msvc-dev-cmd@v1
-    
-    - name: Install LLVM
-      run: choco install llvm
-    
-    - name: Install Ninja
-      run: choco install ninja
-    
-    - name: Configure
-      run: |
-        cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=banjo-x86_64-windows `
-          -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" `
-          -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" `
-          -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe"
-      
-    - name: Build
-      run: cmake --build build --target install -j4
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Run tests
-      run: python test/scripted/test_compilation.py --install-dir banjo-x86_64-windows
+      - name: Install LLVM
+        run: choco install llvm
 
-    - name: Archive
-      run: 7z a banjo-x86_64-windows.zip banjo-x86_64-windows
+      - name: Install Ninja
+        run: choco install ninja
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-x86_64-windows
-        path: banjo-x86_64-windows.zip
-        
-  build-x86_64-linux:
-    runs-on: ubuntu-22.04
-    
+      - name: Configure
+        run: |
+          cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=banjo-x86_64-windows `
+            -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" `
+            -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" `
+            -DCMAKE_LINKER="C:/Program Files/LLVM/bin/lld-link.exe"
+
+      - name: Build
+        run: cmake --build build --target install -j4
+
+      - name: Run tests
+        run: python test/scripted/test_compilation.py --install-dir banjo-x86_64-windows
+
+      - name: Archive
+        run: 7z a banjo-x86_64-windows.zip banjo-x86_64-windows
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-x86_64-windows
+          path: banjo-x86_64-windows.zip
+
+  build-linux:
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.runner }}
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Ninja
-      run: sudo apt-get install -y ninja-build
-    
-    - name: Configure
-      run: |
-        cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=banjo-x86_64-linux
-      
-    - name: Build
-      run: cmake --build build --target install -j4
+      - name: Install Ninja
+        run: sudo apt-get install -y ninja-build
 
-    - name: Run tests
-      run: python3 test/scripted/test_compilation.py --install-dir banjo-x86_64-linux
+      - name: Configure
+        run: |
+          cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=banjo-${{ matrix.arch }}-linux
 
-    - name: Archive
-      run: zip -r banjo-x86_64-linux.zip banjo-x86_64-linux
+      - name: Build
+        run: cmake --build build --target install -j4
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-x86_64-linux
-        path: banjo-x86_64-linux.zip
-  
-  build-aarch64-macos:
-    runs-on: macos-14
-    
+      - name: Run tests
+        run: python3 test/scripted/test_compilation.py --install-dir banjo-${{ matrix.arch }}-linux
+
+      - name: Archive
+        run: zip -r banjo-${{ matrix.arch }}-linux.zip banjo-${{ matrix.arch }}-linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-linux
+          path: banjo-${{ matrix.arch }}-linux.zip
+
+  build-macos:
+    runs-on: macos-15
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Ninja
-      run: brew install ninja
-    
-    - name: Configure
-      run: |
-        cmake -Bbuild -GNinja \
-          -DCMAKE_OSX_ARCHITECTURES=arm64 \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=banjo-aarch64-macos
-      
-    - name: Build
-      run: cmake --build build --target install -j4
+      - name: Install Ninja
+        run: brew install ninja
 
-    - name: Run tests
-      run: python3 test/scripted/test_compilation.py --install-dir banjo-aarch64-macos
+      - name: Configure
+        run: |
+          cmake -Bbuild -GNinja \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=banjo-aarch64-macos
 
-    - name: Archive
-      run: zip -r banjo-aarch64-macos.zip banjo-aarch64-macos
+      - name: Build
+        run: cmake --build build --target install -j4
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-aarch64-macos
-        path: banjo-aarch64-macos.zip
-  
+      - name: Run tests
+        run: python3 test/scripted/test_compilation.py --install-dir banjo-aarch64-macos
+
+      - name: Archive
+        run: zip -r banjo-aarch64-macos.zip banjo-aarch64-macos
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-aarch64-macos
+          path: banjo-aarch64-macos.zip
+
   release:
-    runs-on: ubuntu-22.04
-    
+    runs-on: ubuntu-24.04
+
     needs:
-      - build-x86_64-windows
-      - build-x86_64-linux
-      - build-aarch64-macos
-    
+      - build-windows
+      - build-linux
+      - build-macos
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Download build for x86_64-windows
-      uses: actions/download-artifact@v4
-      with:
-        name: build-x86_64-windows
+      - name: Download build for x86_64-windows
+        uses: actions/download-artifact@v4
+        with:
+          name: build-x86_64-windows
 
-    - name: Download build for x86_64-linux
-      uses: actions/download-artifact@v4
-      with:
-        name: build-x86_64-linux
+      - name: Download build for x86_64-linux
+        uses: actions/download-artifact@v4
+        with:
+          name: build-x86_64-linux
 
-    - name: Download build for aarch64-macos
-      uses: actions/download-artifact@v4
-      with:
-        name: build-aarch64-macos
+      - name: Download build for aarch64-linux
+        uses: actions/download-artifact@v4
+        with:
+          name: build-aarch64-linux
 
-    - name: Release
-      run: |
-        gh release create \
-          -t "Banjo $(date -Idate)" \
-          -n "Banjo Release $(date -Idate)" \
-          "$(date -Idate)" \
-          banjo-x86_64-windows.zip \
-          banjo-x86_64-linux.zip \
-          banjo-aarch64-macos.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download build for aarch64-macos
+        uses: actions/download-artifact@v4
+        with:
+          name: build-aarch64-macos
+
+      - name: Release
+        run: |
+          gh release create \
+            -t "Banjo $(date -Idate)" \
+            -n "Banjo Release $(date -Idate)" \
+            "$(date -Idate)" \
+            banjo-x86_64-windows.zip \
+            banjo-x86_64-linux.zip \
+            banjo-aarch64-linux.zip \
+            banjo-aarch64-macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
