@@ -93,6 +93,14 @@ void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned flag = type.is_floating_point() ? mcode::Instruction::FLAG_FLOAT : 0;
 
     if (size == 0) {
+        // HACK: When the size is zero, we zero the register to make sure the register allocator has
+        // a def for that register so it can assign a register class. Maybe we should instead just
+        // remove all uses of that register?
+
+        mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+        mcode::Operand m_dst = map_vreg_dst(instr, size);
+        mcode::Operand m_zero = mcode::Operand::from_int_immediate(0, 4);
+        emit(mcode::Instruction(opcode, {m_dst, m_zero}));
         return;
     }
 
