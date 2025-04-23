@@ -4,7 +4,7 @@
 func ms_abi i32 @f():
     ret i32 100
 
-func ms_abi i32 @test():
+func ms_abi i32 @test() global:
     %0 = call i32 @f
     ret i32 %0
 
@@ -13,5 +13,5 @@ func ms_abi i32 @test():
 func ms_abi i32 @f():
     ret i32 100
 
-func ms_abi i32 @test():
+func ms_abi i32 @test() global:
     ret i32 100

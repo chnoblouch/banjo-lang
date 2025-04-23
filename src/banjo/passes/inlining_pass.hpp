@@ -1,15 +1,13 @@
 #ifndef PASSES_INLINING_PASS_H
 #define PASSES_INLINING_PASS_H
 
-#include "banjo/ssa/call_graph.hpp"
 #include "banjo/passes/pass.hpp"
+#include "banjo/ssa/call_graph.hpp"
 
-#include <optional>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-#include <vector>
 
 namespace banjo {
 
@@ -27,7 +25,7 @@ private:
 
     struct Context {
         ssa::InstrIter call_instr;
-        bool single_block;
+        bool is_single_block;
         std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> reg2reg;
         std::unordered_map<ssa::VirtualRegister, ssa::Value> reg2val;
         std::unordered_map<ssa::BasicBlockIter, ssa::BasicBlockIter> block_map;
@@ -48,8 +46,11 @@ private:
     void run(ssa::Function *func);
     void try_inline(ssa::Function *func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter);
     CalleeInfo collect_info(ssa::Function *callee);
+
+    void inline_func(ssa::Function &func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter);
     void inline_instr(ssa::InstrIter instr_iter, ssa::BasicBlock &block, Context &ctx);
     ssa::Value get_inlined_value(ssa::Value &value, Context &ctx);
+
     int estimate_cost(ssa::Function &func);
     int estimate_gain(ssa::Function &func);
     bool is_inlining_beneficial(ssa::Function *caller, ssa::Function *callee);

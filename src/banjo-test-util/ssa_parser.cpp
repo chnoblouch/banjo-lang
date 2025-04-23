@@ -120,8 +120,26 @@ ssa::Module SSAParser::parse() {
                 .first_variadic_index = 0,
             };
 
+            bool global = false;
+
+            if (reader.get() == 'g') {
+                std::string attribute;
+
+                while (LineBasedReader::is_alpha(reader.get())) {
+                    attribute += reader.consume();
+                }
+
+                if (attribute == "global") {
+                    global = true;
+                    reader.skip_whitespace();
+                } else {
+                    ASSERT_UNREACHABLE;
+                }
+            }
+
             if (reader.get() == ':') {
                 ssa::Function *func = new ssa::Function(name, type);
+                func->global = global;
                 func->set_next_reg(10000);
                 funcs.insert({func->name, func});
                 mod.add(func);
@@ -379,7 +397,7 @@ std::optional<ssa::Operand> SSAParser::parse_operand() {
         }
 
         std::cout << name << "\n";
-        
+
         return {};
     } else if (COMPARISONS.contains(string)) {
         return ssa::Operand::from_comparison(COMPARISONS.at(string), type);

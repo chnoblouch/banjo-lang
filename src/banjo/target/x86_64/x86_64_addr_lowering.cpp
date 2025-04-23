@@ -75,7 +75,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &
     mcode::IndirectAddress addr(lowerer.map_vreg(base), 0, 1);
 
     if (operand.is_int_immediate()) {
-        unsigned int_offset = operand.get_int_immediate().to_u64();
+        unsigned int_offset = operand.get_int_immediate().to_s32();
         addr.set_int_offset(int_offset * lowerer.get_size(base_type));
     } else if (operand.is_register()) {
         addr.set_reg_offset(lowerer.map_vreg_as_reg(operand.get_register()));

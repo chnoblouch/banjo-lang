@@ -97,7 +97,13 @@ void Writer::write_func_def(Function *func_def) {
         }
     }
 
-    stream << "):" << "\n";
+    stream << ")";
+
+    if (func_def->global) {
+        stream << " global";
+    }
+
+    stream << ":\n";
 
     for (BasicBlock &basic_block : func_def->get_basic_blocks()) {
         write_basic_block(basic_block);

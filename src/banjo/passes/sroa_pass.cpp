@@ -80,11 +80,9 @@ void SROAPass::collect_stack_values(ssa::BasicBlockIter block_iter) {
         stack_ptr_defs.insert({*iter->get_dest(), index});
 
         // Disable splitting if there is an array member.
-        if (type.is_struct()) {
-            for (const ssa::StructureMember &member : type.get_struct()->members) {
-                if (member.type.get_array_length() != 1) {
-                    continue;
-                }
+        for (const ssa::StructureMember &member : type.get_struct()->members) {
+            if (member.type.get_array_length() != 1) {
+                continue;
             }
         }
 
@@ -246,18 +244,19 @@ void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ssa::
             continue;
         }
 
-        ssa::VirtualRegister tmp_reg = ctx.func->next_virtual_reg();
+        ssa::Operand src_operand = ssa::Operand::from_register(*member_src.ptr, ssa::Primitive::ADDR);
+        ssa::Operand dst_operand = ssa::Operand::from_register(*member_dst.ptr, ssa::Primitive::ADDR);
+        ssa::Operand type_operand = ssa::Operand::from_type(member_type);
 
-        // clang-format off
-        ctx.block.insert_before(ctx.instr, ssa::Instruction(ssa::Opcode::LOAD, tmp_reg, {
-            ssa::Operand::from_type(member_type),
-            ssa::Operand::from_register(*member_src.ptr, ssa::Primitive::ADDR)
-        }));
-        ctx.block.insert_before(ctx.instr, ssa::Instruction(ssa::Opcode::STORE, {
-            ssa::Operand::from_register(tmp_reg, member_type),
-            ssa::Operand::from_register(*member_dst.ptr, ssa::Primitive::ADDR)
-        }));
-        // clang-format on
+        if (get_target()->get_data_layout().fits_in_register(member_type)) {
+            ssa::VirtualRegister tmp_reg = ctx.func->next_virtual_reg();
+            ssa::Operand tmp_operand = ssa::Operand::from_register(tmp_reg, member_type);
+
+            ctx.block.insert_before(ctx.instr, {ssa::Opcode::LOAD, tmp_reg, {type_operand, src_operand}});
+            ctx.block.insert_before(ctx.instr, ssa::Instruction(ssa::Opcode::STORE, {tmp_operand, dst_operand}));
+        } else {
+            ctx.block.insert_before(ctx.instr, {ssa::Opcode::COPY, {dst_operand, src_operand, type_operand}});
+        }
     }
 }
 
