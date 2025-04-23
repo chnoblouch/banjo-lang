@@ -32,7 +32,7 @@ func main() {
 }
 
 # test:subtest
-# test:output 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+# test:output 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
 
 struct S {
     var i: i32;
@@ -54,13 +54,14 @@ struct S {
     func __ge__(self, rhs: i32) -> i32 { return 14; }
     func __le__(self, rhs: i32) -> i32 { return 15; }
     func __neg__(self, rhs: i32) -> i32 { return 16; }
-    func __deref__(self, rhs: i32) -> i32 { return 17; }
+    func __bitnot__(self, rhs: i32) -> i32 { return 17; }
+    func __deref__(self, rhs: i32) -> i32 { return 18; }
     func __index__(self, rhs: i32) -> *i32 { return &self.i; }
 }
 
 func main() {
     var s = S {
-        i: 18,
+        i: 19,
     };
     
     print(s + 1);
@@ -96,6 +97,8 @@ func main() {
     print(s <= 1);
     print(",");
     print(-s);
+    print(",");
+    print(~s);
     print(",");
     print(*s);
     print(",");

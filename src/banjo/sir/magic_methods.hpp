@@ -30,6 +30,7 @@ const std::string_view OP_LT = "__lt__";
 const std::string_view OP_GE = "__ge__";
 const std::string_view OP_LE = "__le__";
 const std::string_view OP_NEG = "__neg__";
+const std::string_view OP_BIT_NOT = "__bitnot__";
 const std::string_view OP_DEREF = "__deref__";
 const std::string_view OP_INDEX = "__index__";
 

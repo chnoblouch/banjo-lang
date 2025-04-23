@@ -346,6 +346,7 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
 StoredValue ExprSSAGenerator::generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr) {
     switch (unary_expr.op) {
         case sir::UnaryOp::NEG: return generate_neg(unary_expr);
+        case sir::UnaryOp::BIT_NOT: return generate_bit_not(unary_expr);
         case sir::UnaryOp::REF: return generate_ref(unary_expr);
         case sir::UnaryOp::DEREF: return generate_deref(unary_expr);
         case sir::UnaryOp::NOT: return generate_bool_expr(expr);
@@ -367,6 +368,29 @@ StoredValue ExprSSAGenerator::generate_neg(const sir::UnaryExpr &unary_expr) {
     }
 
     ssa::Value ssa_out_val = ssa::Value::from_register(ssa_out_reg, ssa_val.get_type());
+    return StoredValue::create_value(ssa_out_val);
+}
+
+StoredValue ExprSSAGenerator::generate_bit_not(const sir::UnaryExpr &unary_expr) {
+    ssa::Value ssa_val = generate(unary_expr.value).turn_into_value(ctx).get_value();
+    unsigned size = ctx.target->get_data_layout().get_size(ssa_val.get_type());
+
+    std::uint64_t immediate;
+
+    switch (size) {
+        case 0: immediate = 0; break; // TODO
+        case 1: immediate = 0xFF; break;
+        case 2: immediate = 0xFFFF; break;
+        case 4: immediate = 0xFFFFFFFF; break;
+        case 8: immediate = 0xFFFFFFFFFFFFFFFF; break;
+    }
+
+    ssa::Value ssa_imm = ssa::Value::from_int_immediate(immediate, ssa_val.get_type());
+
+    ssa::VirtualRegister ssa_out_reg = ctx.next_vreg();
+    ctx.get_ssa_block()->append(ssa::Instruction(ssa::Opcode::XOR, ssa_out_reg, {ssa_imm, ssa_val}));
+    ssa::Value ssa_out_val = ssa::Value::from_register(ssa_out_reg, ssa_val.get_type());
+
     return StoredValue::create_value(ssa_out_val);
 }
 

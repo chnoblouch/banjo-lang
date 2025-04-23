@@ -696,6 +696,7 @@ struct BinaryExpr {
 
 enum class UnaryOp {
     NEG,
+    BIT_NOT,
     REF,
     DEREF,
     NOT,

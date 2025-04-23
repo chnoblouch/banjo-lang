@@ -50,6 +50,7 @@ private:
     StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr);
     StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr);
     StoredValue generate_neg(const sir::UnaryExpr &unary_expr);
+    StoredValue generate_bit_not(const sir::UnaryExpr &unary_expr);
     StoredValue generate_ref(const sir::UnaryExpr &unary_expr);
     StoredValue generate_deref(const sir::UnaryExpr &unary_expr);
     StoredValue generate_cast_expr(const sir::CastExpr &cast_expr);

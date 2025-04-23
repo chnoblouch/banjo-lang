@@ -1,4 +1,4 @@
-# test:output "5,13,3,40,9"
+# test:output "5,13,3,40,9,53803"
 
 func main() {
 	var and1 = 13;
@@ -29,4 +29,9 @@ func main() {
 	var shr2 = 2;
 	var shr3 = shr1 >> shr2;
 	print(shr3);
+	print(',');
+	
+	var not1: u16 = 11732;
+	var not2 = ~not1;
+	print(not2);
 }

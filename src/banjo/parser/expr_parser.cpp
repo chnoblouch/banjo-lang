@@ -157,6 +157,7 @@ ParseResult ExprParser::parse_unary_level() {
     ASTNodeType type;
     switch (token->type) {
         case TKN_MINUS: type = AST_OPERATOR_NEG; break;
+        case TKN_TILDE: type = AST_OPERATOR_BIT_NOT; break;
         case TKN_AND: type = AST_OPERATOR_REF; break;
         case TKN_STAR: type = AST_STAR_EXPR; break;
         case TKN_NOT: type = AST_OPERATOR_NOT; break;

@@ -184,6 +184,8 @@ bool Expr::is_int_type() const {
             case Primitive::USIZE: return true;
             default: return false;
         }
+    } else if (is_pseudo_type(sir::PseudoTypeKind::INT_LITERAL)) {
+        return true;
     } else {
         return false;
     }

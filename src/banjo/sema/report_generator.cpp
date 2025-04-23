@@ -215,9 +215,16 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryEx
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr) {
-    ASSUME(unary_expr.op == sir::UnaryOp::NEG);
+    std::string_view operator_name;
+
+    switch (unary_expr.op) {
+        case sir::UnaryOp::NEG: operator_name = "-"; break;
+        case sir::UnaryOp::BIT_NOT: operator_name = "~"; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
     std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
-    report_err_operator_overload_not_found(unary_expr.ast_node, unary_expr.value.get_type(), "-", impl_name);
+    report_err_operator_overload_not_found(unary_expr.ast_node, unary_expr.value.get_type(), operator_name, impl_name);
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(const sir::StarExpr &star_expr) {

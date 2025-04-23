@@ -719,6 +719,13 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             analyzer.report_generator.report_err_cannot_negate(unary_expr);
             return Result::ERROR;
         }
+    } else if (unary_expr.op == sir::UnaryOp::BIT_NOT) {
+        if (!unary_expr.value.get_type().is_int_type()) {
+            analyzer.report_generator.report_err_expected_integer(unary_expr.value);
+            return Result::ERROR;
+        }
+
+        unary_expr.type = unary_expr.value.get_type();
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
         partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
         if (partial_result != Result::SUCCESS) {

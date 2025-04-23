@@ -320,7 +320,7 @@ Result ExprFinalizer::finalize_coercion(sir::MapLiteral &map_literal, sir::Expr 
 Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr type) {
     Result partial_result;
 
-    if (unary_expr.op == sir::UnaryOp::NEG) {
+    if (unary_expr.op == sir::UnaryOp::NEG || unary_expr.op == sir::UnaryOp::BIT_NOT) {
         partial_result = finalize_by_coercion(unary_expr.value, type);
     } else {
         partial_result = finalize(unary_expr.value);

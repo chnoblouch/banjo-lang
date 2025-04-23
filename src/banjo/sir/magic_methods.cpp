@@ -37,6 +37,7 @@ std::string_view look_up(sir::BinaryOp op) {
 std::string_view look_up(sir::UnaryOp op) {
     switch (op) {
         case sir::UnaryOp::NEG: return OP_NEG;
+        case sir::UnaryOp::BIT_NOT: return OP_BIT_NOT;
         case sir::UnaryOp::REF: ASSERT_UNREACHABLE;
         case sir::UnaryOp::DEREF: return OP_DEREF;
         case sir::UnaryOp::NOT: ASSERT_UNREACHABLE;

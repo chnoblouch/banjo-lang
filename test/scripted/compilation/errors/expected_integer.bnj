@@ -1,12 +1,21 @@
 # test:subtest
-# test:error 5:9 "expected integer, got 'float literal'"
+# test:error 6:14 "expected integer, got 'float literal'"
+# test:error 7:14 "expected integer, got 'bool'"
+
+func main() {
+    var a = ~0.5;
+    var b = ~true;
+}
+
+# test:subtest
+# test:error 14:9 "expected integer, got 'float literal'"
 
 enum E {
     A = 0.5,
 }
 
 # test:subtest
-# test:error 14:9 "expected integer, got 'bool'"
+# test:error 23:9 "expected integer, got 'bool'"
 
 const C: bool = true;
 
