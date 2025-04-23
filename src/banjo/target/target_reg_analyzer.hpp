@@ -24,7 +24,6 @@ class TargetRegAnalyzer {
 
 public:
     virtual ~TargetRegAnalyzer() = default;
-    virtual std::vector<mcode::PhysicalReg> get_all_registers() = 0;
     virtual const std::vector<mcode::PhysicalReg> &get_candidates(codegen::RegClass reg_class) = 0;
 
     virtual std::vector<mcode::PhysicalReg> suggest_regs(

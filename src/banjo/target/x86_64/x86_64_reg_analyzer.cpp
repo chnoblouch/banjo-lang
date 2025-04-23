@@ -49,14 +49,6 @@ X8664RegAnalyzer::X8664RegAnalyzer() {
     };
 }
 
-std::vector<mcode::PhysicalReg> X8664RegAnalyzer::get_all_registers() {
-    std::vector<mcode::PhysicalReg> regs;
-    for (mcode::PhysicalReg i = 0; i < NUM_REGS; i++) {
-        regs.push_back(i);
-    }
-    return regs;
-}
-
 const std::vector<mcode::PhysicalReg> &X8664RegAnalyzer::get_candidates(codegen::RegClass reg_class) {
     switch (reg_class) {
         case X8664RegClass::GENERAL_PURPOSE: return general_purpose_regs;

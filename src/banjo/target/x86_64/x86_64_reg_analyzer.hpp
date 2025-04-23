@@ -27,7 +27,6 @@ class X8664RegAnalyzer : public TargetRegAnalyzer {
 public:
     X8664RegAnalyzer();
 
-    std::vector<mcode::PhysicalReg> get_all_registers() override;
     const std::vector<mcode::PhysicalReg> &get_candidates(codegen::RegClass reg_class) override;
     std::vector<mcode::PhysicalReg> suggest_regs(codegen::RegAllocFunc &func, const codegen::Bundle &bundle) override;
     bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, mcode::PhysicalReg reg) override;

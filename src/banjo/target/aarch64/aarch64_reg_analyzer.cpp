@@ -20,14 +20,6 @@ AArch64RegAnalyzer::AArch64RegAnalyzer() {
     }
 }
 
-std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::get_all_registers() {
-    std::vector<mcode::PhysicalReg> regs;
-    for (mcode::PhysicalReg i = 0; i < NUM_REGS; i++) {
-        regs.push_back(i);
-    }
-    return regs;
-}
-
 const std::vector<mcode::PhysicalReg> &AArch64RegAnalyzer::get_candidates(codegen::RegClass reg_class) {
     switch (reg_class) {
         case AArch64RegClass::GENERAL_PURPOSE: return general_purpose_regs;
