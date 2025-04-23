@@ -42,8 +42,6 @@ private:
     bool is_float_operand(mcode::Opcode opcode, mcode::RegUsage usage);
     bool is_memory_operand_allowed(mcode::Instruction &instr);
 
-    void add_du_ops(mcode::Instruction &instr, std::vector<mcode::RegOp> &dst);
-    void add_udu_ops(mcode::Instruction &instr, std::vector<mcode::RegOp> &dst);
     void collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst);
     void collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst);
 };

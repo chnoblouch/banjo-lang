@@ -110,8 +110,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
     std::vector<mcode::RegOp> operands;
 
     if (instr.get_opcode() == CALL) {
-        std::vector<mcode::PhysicalReg> physical_regs = block.get_func()->get_calling_conv()->get_volatile_regs();
-        for (mcode::PhysicalReg physical_reg : physical_regs) {
+        for (mcode::PhysicalReg physical_reg : block.get_func()->get_calling_conv()->get_volatile_regs()) {
             operands.push_back({mcode::Register::from_physical(physical_reg), mcode::RegUsage::KILL});
         }
 
@@ -131,21 +130,35 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
 
     switch (instr.get_opcode()) {
         case MOV:
-        case MOVSX:
-        case MOVZX:
         case MOVSS:
         case MOVSD:
         case MOVAPS:
         case MOVUPS:
         case MOVD:
-        case MOVQ:
+        case MOVQ: {
+            mcode::Operand &dst = instr.get_operand(0);
+            mcode::Operand &src = instr.get_operand(1);
+
+            if (!(dst.is_register() && src.is_register() && src.get_register() == dst.get_register())) {
+                collect_regs(dst, mcode::RegUsage::DEF, operands);
+                collect_regs(src, mcode::RegUsage::USE, operands);
+            }
+
+            break;
+        }
+
+        case MOVSX:
+        case MOVZX:
         case LEA:
         case CVTSS2SD:
         case CVTSD2SS:
         case CVTSI2SS:
         case CVTSI2SD:
         case CVTSS2SI:
-        case CVTSD2SI: add_du_ops(instr, operands); break;
+        case CVTSD2SI:
+            collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands);
+            collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
+            break;
 
         case PUSH:
         case CALL:
@@ -190,7 +203,10 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
         case MAXSS:
         case MAXSD:
         case SQRTSS:
-        case SQRTSD: add_udu_ops(instr, operands); break;
+        case SQRTSD:
+            collect_regs(instr.get_operand(0), mcode::RegUsage::USE_DEF, operands);
+            collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
+            break;
 
         case CDQ:
         case CQO:
@@ -219,7 +235,8 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
                 // and is handled as if it doesn't read its inputs.
                 operands.push_back({instr.get_operand(0).get_register(), mcode::RegUsage::DEF});
             } else {
-                add_udu_ops(instr, operands);
+                collect_regs(instr.get_operand(0), mcode::RegUsage::USE_DEF, operands);
+                collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
             }
 
             break;
@@ -344,16 +361,6 @@ bool X8664RegAnalyzer::is_memory_operand_allowed(mcode::Instruction &instr) {
         case X8664Opcode::ADD: return true;
         default: return false;
     }
-}
-
-void X8664RegAnalyzer::add_du_ops(mcode::Instruction &instr, std::vector<mcode::RegOp> &dst) {
-    collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, dst);
-    collect_regs(instr.get_operand(1), mcode::RegUsage::USE, dst);
-}
-
-void X8664RegAnalyzer::add_udu_ops(mcode::Instruction &instr, std::vector<mcode::RegOp> &dst) {
-    collect_regs(instr.get_operand(0), mcode::RegUsage::USE_DEF, dst);
-    collect_regs(instr.get_operand(1), mcode::RegUsage::USE, dst);
 }
 
 void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
