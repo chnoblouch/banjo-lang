@@ -108,7 +108,9 @@ ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPositi
         return nullptr;
     }
 
-    Lexer lexer(*stream);
+    SourceReader reader = SourceReader::read(*stream);
+
+    Lexer lexer(reader);
     lexer.enable_completion(completion_point);
     std::vector<Token> tokens = lexer.tokenize();
 
@@ -175,7 +177,8 @@ ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
         };
     }
 
-    std::vector<Token> tokens = Lexer(*stream).tokenize();
+    SourceReader reader = SourceReader::read(*stream);
+    std::vector<Token> tokens = Lexer(reader).tokenize();
     return Parser(tokens, module_file.path).parse_module();
 }
 

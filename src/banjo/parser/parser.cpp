@@ -351,8 +351,8 @@ void Parser::report_unexpected_token(ReportTextType report_text_type, std::strin
 
 std::string Parser::token_to_str(Token *token) {
     if (token->is(TKN_EOF)) return "end of file";
-    else if (token->is(TKN_STRING)) return token->value;
-    else return "'" + token->value + "'";
+    else if (token->is(TKN_STRING)) return std::string{token->value};
+    else return "'" + std::string{token->value} + "'";
 }
 
 void Parser::recover() {

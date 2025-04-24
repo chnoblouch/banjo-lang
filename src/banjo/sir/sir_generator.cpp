@@ -1441,7 +1441,7 @@ sir::IdentExpr *SIRGenerator::generate_completion_token(ASTNode *node) {
     );
 }
 
-char SIRGenerator::decode_char(const std::string &value, unsigned &index) {
+char SIRGenerator::decode_char(std::string_view value, unsigned &index) {
     char c = value[index++];
 
     if (c == '\\') {
@@ -1454,7 +1454,7 @@ char SIRGenerator::decode_char(const std::string &value, unsigned &index) {
         else if (c == '\\') return '\\';
         else if (c == 'x') {
             index += 2;
-            return (char)std::stoi(value.substr(index - 2, 2), nullptr, 16);
+            return (char)std::stoi(std::string(value.substr(index - 2, 2)), nullptr, 16);
         }
     }
 

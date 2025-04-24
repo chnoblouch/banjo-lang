@@ -30,7 +30,8 @@ static const std::initializer_list<lang::ASTNodeType> NODES_WITH_BLOCKS{
 
 void Formatter::format(const std::filesystem::path &file_path) {
     std::ifstream stream(file_path);
-    lang::Lexer lexer(stream, lang::Lexer::Mode::FORMATTING);
+    lang::SourceReader reader = lang::SourceReader::read(stream);
+    lang::Lexer lexer(reader, lang::Lexer::Mode::FORMATTING);
     std::vector<lang::Token> tokens = lexer.tokenize();
 
     lang::Parser parser(tokens, {}, lang::Parser::Mode::FORMATTING);

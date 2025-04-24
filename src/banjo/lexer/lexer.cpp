@@ -4,7 +4,6 @@
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <iostream>
 #include <map>
 #include <string_view>
 
@@ -27,7 +26,7 @@ const std::map<std::string_view, TokenType> KEYWORDS{
     {"type", TKN_TYPE},
 };
 
-Lexer::Lexer(std::istream &input_stream, Mode mode /*= Mode::COMPILATION*/) : reader(input_stream), mode(mode) {}
+Lexer::Lexer(SourceReader &reader, Mode mode /*= Mode::COMPILATION*/) : reader(reader), mode(mode) {}
 
 void Lexer::enable_completion(TextPosition completion_point) {
     completion_enabled = true;
@@ -76,10 +75,11 @@ void Lexer::read_whitespace() {
 
 void Lexer::read_identifier() {
     while (is_identifier_char(reader.get())) {
-        token_builder += static_cast<char>(reader.consume());
+        reader.consume();
     }
 
-    auto iter = KEYWORDS.find(token_builder);
+    std::string_view value = reader.value(start_position);
+    auto iter = KEYWORDS.find(value);
     finish_token(iter == KEYWORDS.end() ? TKN_IDENTIFIER : iter->second);
 }
 
@@ -89,18 +89,17 @@ void Lexer::read_number() {
             break;
         }
 
-        token_builder += static_cast<char>(reader.consume());
+        reader.consume();
     }
 
     finish_token(TKN_LITERAL);
 }
 
 void Lexer::read_character() {
-    token_builder += static_cast<char>(reader.consume());
+    reader.consume();
 
     int c = reader.consume();
     while (c != EOF) {
-        token_builder += static_cast<char>(c);
         if (c == '\'') {
             break;
         }
@@ -112,20 +111,15 @@ void Lexer::read_character() {
 }
 
 void Lexer::read_string() {
-    token_builder += static_cast<char>(reader.consume());
+    reader.consume();
 
     int c = reader.consume();
     while (c != EOF) {
         if (c == '\\') {
             c = reader.consume();
             if (c == EOF) break;
-            else if (c == '\"') token_builder += '\"';
-            else token_builder += std::string("\\") + static_cast<char>(c);
-        } else {
-            token_builder += static_cast<char>(c);
-            if (c == '\"') {
-                break;
-            }
+        } else if (c == '\"') {
+            break;
         }
 
         c = reader.consume();
@@ -142,12 +136,9 @@ void Lexer::skip_comment() {
 }
 
 void Lexer::read_punctuation() {
-    int c = reader.consume();
-    token_builder += static_cast<char>(c);
-
     TokenType type;
 
-    switch (c) {
+    switch (reader.consume()) {
         case '+': type = read_if('=') ? TKN_PLUS_EQ : TKN_PLUS; break;
         case '-':
             if (read_if('>')) type = TKN_ARROW;
@@ -203,8 +194,7 @@ void Lexer::read_punctuation() {
 }
 
 void Lexer::finish_token(TokenType type) {
-    tokens.push_back({type, token_builder, start_position});
-    token_builder.clear();
+    tokens.push_back(Token{type, reader.value(start_position), start_position});
 
     if (mode == Mode::FORMATTING) {
         current_line_empty = false;
@@ -240,7 +230,7 @@ void Lexer::try_insert_completion_token() {
             }
         }
 
-        tokens.emplace_back(TKN_COMPLETION, "", reader.get_position());
+        tokens.push_back(Token{TKN_COMPLETION, "", reader.get_position()});
         completion_token_inserted = true;
     }
 }
@@ -261,7 +251,6 @@ bool Lexer::is_number_char(int c) {
 bool Lexer::read_if(int c) {
     if (reader.get() == c) {
         reader.consume();
-        token_builder.push_back(c);
         return true;
     }
 

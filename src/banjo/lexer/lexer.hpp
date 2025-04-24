@@ -1,10 +1,9 @@
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef BANJO_LEXER_H
+#define BANJO_LEXER_H
 
-#include "banjo/lexer/buffered_reader.hpp"
+#include "banjo/lexer/source_reader.hpp"
 #include "banjo/lexer/token.hpp"
 
-#include <istream>
 #include <vector>
 
 namespace banjo {
@@ -20,7 +19,7 @@ public:
     };
 
 private:
-    BufferedReader reader;
+    SourceReader &reader;
     Mode mode;
 
     bool current_line_empty = true;
@@ -32,11 +31,10 @@ private:
 
     std::vector<Token> tokens;
 
-    std::string token_builder;
     TextPosition start_position;
 
 public:
-    Lexer(std::istream &input_stream, Mode mode = Mode::COMPILATION);
+    Lexer(SourceReader &reader, Mode mode = Mode::COMPILATION);
     void enable_completion(TextPosition completion_point);
     std::vector<Token> tokenize();
 

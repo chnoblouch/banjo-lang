@@ -1,10 +1,10 @@
-#ifndef TOKEN_H
-#define TOKEN_H
+#ifndef BANJO_LEXER_TOKEN_H
+#define BANJO_LEXER_TOKEN_H
 
 #include "banjo/source/text_range.hpp"
 
 #include <cstdint>
-#include <string>
+#include <string_view>
 
 namespace banjo {
 
@@ -114,14 +114,14 @@ enum TokenType : std::uint8_t {
 
 struct Token {
     TokenType type;
-    std::string value;
+    std::string_view value;
     TextPosition position;
     bool end_of_line = false;
     bool after_empty_line = false;
 
-    Token(TokenType type, std::string value, TextPosition position)
+    Token(TokenType type, std::string_view value, TextPosition position)
       : type(type),
-        value(std::move(value)),
+        value(value),
         position(position) {}
 
     TextPosition end() { return position + value.size(); }

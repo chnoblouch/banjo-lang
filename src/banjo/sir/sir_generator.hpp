@@ -7,7 +7,7 @@
 
 #include <stack>
 #include <vector>
-
+#include <string_view>
 
 namespace banjo {
 
@@ -128,7 +128,7 @@ private:
     std::vector<sir::MapLiteralEntry> generate_map_literal_entries(ASTNode *node);
     std::vector<sir::UnionCaseField> generate_union_case_fields(ASTNode *node);
     sir::Attributes *generate_attrs(ASTNode *node);
-    char decode_char(const std::string &value, unsigned &index);
+    char decode_char(std::string_view value, unsigned &index);
 
     sir::UseItem generate_use_item(ASTNode *node);
     sir::UseItem generate_use_ident(ASTNode *node);

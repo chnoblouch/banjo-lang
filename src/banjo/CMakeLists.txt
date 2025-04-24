@@ -25,8 +25,8 @@ add_library(banjo STATIC
     emit/pe/pe_builder.cpp
     emit/pe/pe_emitter.cpp
     emit/pe/pe_format.cpp
-    lexer/buffered_reader.cpp
     lexer/lexer.cpp
+    lexer/source_reader.cpp
     mcode/basic_block.cpp
     mcode/function.cpp
     mcode/module.cpp
