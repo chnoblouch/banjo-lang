@@ -39,11 +39,12 @@ public:
 
 private:
     bool is_move_opcode(mcode::Opcode opcode);
-    bool is_float_operand(mcode::Opcode opcode, mcode::RegUsage usage);
     bool is_memory_operand_allowed(mcode::Instruction &instr);
+    mcode::Opcode get_move_opcode(codegen::RegClass reg_class, unsigned size);
 
     void collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst);
     void collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst);
+
 };
 
 } // namespace target

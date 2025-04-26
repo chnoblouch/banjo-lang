@@ -406,6 +406,7 @@ void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
             .block = *block.m_block,
             .stack_slot = *alloc.bundle.src_stack_slot,
             .reg = alloc.physical_reg,
+            .reg_class = alloc.bundle.reg_class,
         });
     }
 
@@ -431,6 +432,7 @@ void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
             .block = *block.m_block,
             .stack_slot = *alloc.bundle.dst_stack_slot,
             .reg = alloc.physical_reg,
+            .reg_class = alloc.bundle.reg_class,
         });
     }
 }

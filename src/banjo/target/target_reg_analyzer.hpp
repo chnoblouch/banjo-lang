@@ -18,6 +18,7 @@ struct SpilledRegUse {
     mcode::BasicBlock &block;
     mcode::StackSlotID stack_slot;
     mcode::PhysicalReg reg;
+    codegen::RegClass reg_class;
 };
 
 class TargetRegAnalyzer {

@@ -285,13 +285,7 @@ void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
         return;
     }
 
-    mcode::Opcode move_opcode;
-    if (is_float_operand(use.instr_iter->get_opcode(), mcode::RegUsage::DEF)) {
-        move_opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
-    } else {
-        move_opcode = target::X8664Opcode::MOV;
-    }
-
+    mcode::Opcode move_opcode = get_move_opcode(use.reg_class, size);
     use.block.insert_before(use.instr_iter, mcode::Instruction(move_opcode, {dst, src}));
 }
 
@@ -305,13 +299,7 @@ void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
         return;
     }
 
-    mcode::Opcode move_opcode;
-    if (is_float_operand(use.instr_iter->get_opcode(), mcode::RegUsage::USE)) {
-        move_opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
-    } else {
-        move_opcode = target::X8664Opcode::MOV;
-    }
-
+    mcode::Opcode move_opcode = get_move_opcode(use.reg_class, size);
     use.block.insert_after(use.instr_iter, mcode::Instruction(move_opcode, {dst, src}));
 }
 
@@ -330,23 +318,6 @@ bool X8664RegAnalyzer::is_move_opcode(mcode::Opcode opcode) {
     return opcode == MOV || (opcode >= MOVSS && opcode <= MOVUPS);
 }
 
-bool X8664RegAnalyzer::is_float_operand(mcode::Opcode opcode, mcode::RegUsage usage) {
-    using namespace X8664Opcode;
-
-    if ((opcode >= MOVSS && opcode <= MOVUPS) || (opcode >= ADDSS && opcode <= UCOMISD) || opcode == CVTSS2SD ||
-        opcode == CVTSD2SS) {
-        return true;
-    }
-
-    if (usage == mcode::RegUsage::DEF || usage == mcode::RegUsage::USE_DEF) {
-        return opcode == CVTSI2SS || opcode == CVTSI2SD;
-    } else if (usage == mcode::RegUsage::USE) {
-        return opcode == CVTSS2SI || opcode == CVTSD2SI;
-    }
-
-    return false;
-}
-
 bool X8664RegAnalyzer::is_memory_operand_allowed(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
@@ -360,6 +331,16 @@ bool X8664RegAnalyzer::is_memory_operand_allowed(mcode::Instruction &instr) {
         case X8664Opcode::MOVSS:
         case X8664Opcode::ADD: return true;
         default: return false;
+    }
+}
+
+mcode::Opcode X8664RegAnalyzer::get_move_opcode(codegen::RegClass reg_class, unsigned size) {
+    if (reg_class == X8664RegClass::GENERAL_PURPOSE) {
+        return target::X8664Opcode::MOV;
+    } else if (reg_class == X8664RegClass::SSE) {
+        return size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
