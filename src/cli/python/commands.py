@@ -44,9 +44,9 @@ def load_setup(args):
         error.report_fatal(f"Toolchain error: {validation}")
 
     config = configuration.load(toolchain.target)
-    config.build_config = args.config
-    config.opt_level = args.opt_level
-    config.force_asm = args.force_asm
+    config.build_config = getattr(args, "config", "debug")
+    config.opt_level = getattr(args, "opt_level", "0")
+    config.force_asm = getattr(args, "force_asm", False)
     return config, toolchain
 
 
@@ -279,6 +279,28 @@ def targets(args):
         print("  - " + string)
 
     print()
+
+
+def lsp(args):
+    config, toolchain = load_setup(args)
+
+    command = [
+        "banjo-lsp",
+        "--arch", toolchain.target.arch,
+        "--os", toolchain.target.os,
+    ]
+
+    if toolchain.target.env:
+        command += ["--env", toolchain.target.env]
+
+    command += ["--path", "src/"]
+
+    for path in config.paths:
+        command.extend(["--path", path])
+
+    command += config.arguments
+
+    subprocess.run(command, text=False)
 
 
 def bindgen(args):

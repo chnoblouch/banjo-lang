@@ -83,6 +83,9 @@ new_parser.add_argument("name")
 
 targets_parser = subparsers.add_parser("targets")
 
+lsp_parser = subparsers.add_parser("lsp")
+lsp_parser.add_argument("--target", default=None)
+
 bindgen_parser = subparsers.add_parser("bindgen")
 bindgen_parser.add_argument("file")
 bindgen_parser.add_argument("--generator", default=None)
@@ -117,6 +120,8 @@ try:
         commands.new(args)
     elif command == "targets":
         commands.targets(args)
+    elif command == "lsp":
+        commands.lsp(args)
     elif command == "bindgen":
         commands.bindgen(args)
 except KeyboardInterrupt:
