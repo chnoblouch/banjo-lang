@@ -1,0 +1,48 @@
+# test:pass "sroa"
+# test:section input
+
+struct @S:
+    field @A @a
+    field @B @b
+
+struct @A:
+    field i64 @f0
+    field i32 @f1
+    field i32 @f1
+
+struct @B:
+    field i64 @f0
+    field i32 @f1
+    field f32 @f2
+
+func ms_abi f32 @test():
+    %0 = alloca @S
+    %1 = memberptr @A, addr %0, void 2
+    store i64 100, addr %0
+    %2 = memberptr @B, addr %0, void 2
+    %3 = load f32 %0
+    ret f32 %3
+
+# test:section output
+
+struct @S:
+    field @A @a
+    field @B @b
+
+struct @A:
+    field i64 @f0
+    field i32 @f1
+    field i32 @f1
+
+struct @B:
+    field i64 @f0
+    field i32 @f1
+    field f32 @f2
+
+func ms_abi f32 @test():
+    %0 = alloca @S
+    %1 = memberptr @A, addr %0, void 2
+    store i64 100, addr %0
+    %2 = memberptr @B, addr %0, void 2
+    %3 = load f32 %0
+    ret f32 %3

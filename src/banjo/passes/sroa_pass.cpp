@@ -37,8 +37,8 @@ void SROAPass::run(ssa::Function *func) {
         disable_invalid_splits(block);
     }
 
-    // Recollect member pointers because some of them might have been invalidated
-    // during the previous step.
+    // Recollect member pointers because some of them might have been invalidated during the
+    // previous step.
     stack_ptr_defs = root_ptr_defs;
     collect_stack_ptr_defs(*func);
 
@@ -114,8 +114,8 @@ void SROAPass::collect_members(unsigned val_index) {
 
 void SROAPass::disable_invalid_splits(ssa::BasicBlock &block) {
     for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
-        // Memberptr instructions can be removed. Their destination register will be replaced
-        // by the new replaced by the allocation during splitting.
+        // Memberptr instructions can be removed. Their destination register will be replaced by the
+        // new replaced by the allocation during splitting.
         if (iter->get_opcode() == ssa::Opcode::MEMBERPTR && iter->get_operand(1).is_register()) {
             continue;
         }
@@ -180,7 +180,16 @@ void SROAPass::collect_member_ptr_defs(PassUtils::UseMap &use_map, ssa::VirtualR
         }
 
         ssa::VirtualRegister dst = *use->get_dest();
+        ssa::Type type = use->get_operand(0).get_type();
         unsigned index = use->get_operand(2).get_int_immediate().to_u64();
+
+        if (type != value.type) {
+            // Disable splitting if the memberptr instruction uses a different base type
+            // than allocated because that breaks some assumptions about field indices.
+            // TODO: Fix this.
+            value.members = {};
+            return;
+        }
 
         unsigned member_value_index = (*value.members)[index];
         StackValue &member = stack_values[member_value_index];
