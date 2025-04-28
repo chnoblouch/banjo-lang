@@ -283,6 +283,7 @@ def targets(args):
 
 def lsp(args):
     config, toolchain = load_setup(args)
+    packages.load(config, toolchain)
 
     command = [
         "banjo-lsp",
