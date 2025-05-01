@@ -83,7 +83,9 @@ def check_output(test, conditions):
 
     result = run_executable(test)
 
-    if result.stdout == expected_output:
+    if result.exit_code != 0:
+        return TestResult(False, "unexpected exit code", 0, result.exit_code) 
+    elif result.stdout == expected_output:
         return TestResult(True)
     else:
         return TestResult(False, "unexpected output", expected_output, result.stdout)

@@ -1,0 +1,172 @@
+# test:subtest
+# test:output "18,-43,951,1238,78,-384"
+
+func main() {
+    var a: [[i32; 3]; 2] = undefined;
+    
+    a[0][0] = 18;
+    a[0][1] = -43;
+    a[0][2] = 951;
+    a[1][0] = 1238;
+    a[1][1] = 78;
+    a[1][2] = -384;
+
+    print(a[0][0]);
+    print(',');
+    print(a[0][1]);
+    print(',');
+    print(a[0][2]);
+    print(',');
+    print(a[1][0]);
+    print(',');
+    print(a[1][1]);
+    print(',');
+    print(a[1][2]);
+}
+
+# test:subtest
+# test:output "18,-43,951,1238,78,-384"
+
+func main() {
+    var a: [[i32; 3]; 2] = [[18, -43, 951], [1238, 78, -384]];
+    
+    print(a[0][0]);
+    print(',');
+    print(a[0][1]);
+    print(',');
+    print(a[0][2]);
+    print(',');
+    print(a[1][0]);
+    print(',');
+    print(a[1][1]);
+    print(',');
+    print(a[1][2]);
+}
+
+# test:subtest
+# test:output "-42.3,59.2,28.19,-1.29,3.2,-248.32,85.291,0.59,-0.59,-582.1,499.2,4.52"
+
+func main() {
+    var a: [[[f32; 3]; 2]; 2] = [
+        [[-42.3, 59.2, 28.19], [-1.29, 3.2, -248.32]],
+        [[85.291, 0.59, -0.59], [-582.1, 499.2, 4.52]],
+    ];
+
+    print(a[0][0][0]);
+    print(',');
+    print(a[0][0][1]);
+    print(',');
+    print(a[0][0][2]);
+    print(',');
+    print(a[0][1][0]);
+    print(',');
+    print(a[0][1][1]);
+    print(',');
+    print(a[0][1][2]);
+    print(',');
+    print(a[1][0][0]);
+    print(',');
+    print(a[1][0][1]);
+    print(',');
+    print(a[1][0][2]);
+    print(',');
+    print(a[1][1][0]);
+    print(',');
+    print(a[1][1][1]);
+    print(',');
+    print(a[1][1][2]);
+}
+
+# test:subtest
+# test:output "38,-482,5792,-591,-3950,148"
+
+func main() {
+    var a: [[i16; 3]; 4] = undefined;
+    a[0] = [38, -482, 5792];
+    a[3] = [-591, -3950, 148];
+
+    print(a[0][0]);
+    print(',');
+    print(a[0][1]);
+    print(',');
+    print(a[0][2]);
+    print(',');
+    print(a[3][0]);
+    print(',');
+    print(a[3][1]);
+    print(',');
+    print(a[3][2]);
+}
+
+# test:subtest
+# test:output "47,4,58,-105,-18,853,47,4,198,-782,-18,853"
+
+func main() {
+    var a: [[[i32; 2]; 3]; 4] = undefined;
+
+    a[1] = [[47, 4], [58, -105], [-18, 853]];
+
+    print(a[1][0][0]);
+    print(',');
+    print(a[1][0][1]);
+    print(',');
+    print(a[1][1][0]);
+    print(',');
+    print(a[1][1][1]);
+    print(',');
+    print(a[1][2][0]);
+    print(',');
+    print(a[1][2][1]);
+    print(',');
+
+    a[1][1] = [198, -782];
+
+    print(a[1][0][0]);
+    print(',');
+    print(a[1][0][1]);
+    print(',');
+    print(a[1][1][0]);
+    print(',');
+    print(a[1][1][1]);
+    print(',');
+    print(a[1][2][0]);
+    print(',');
+    print(a[1][2][1]);
+}
+
+# test:subtest
+# test:output "true,true,true"
+
+func main() {
+    var a: [[i32; 5]; 8] = undefined;
+
+    print(&a[1][4] as addr == &(&a as *u8)[36] as addr);
+    print(',');
+    print(&a[4][3] as addr == &(&a as *u8)[92] as addr);
+    print(',');
+    print(&a[6][2] as addr == &(&a as *u8)[128] as addr);
+}
+
+# test:subtest
+# test:output "true,true,true"
+
+func main() {
+    var a: [[[i16; 5]; 7]; 4] = undefined;
+
+    print(&a[2][4][3] as addr == &(&a as *u8)[186] as addr);
+    print(',');
+    print(&a[1][5][4] as addr == &(&a as *u8)[128] as addr);
+    print(',');
+    print(&a[3][0][2] as addr == &(&a as *u8)[214] as addr);
+}
+
+# test:subtest
+# test:output "160,560,6"
+
+func main() {
+    print(meta([[i32; 5]; 8]).size);
+    print(',');
+    print(meta([[[i32; 5]; 7]; 4]).size);
+    print(',');
+    print(meta([[bool; 3]; 2]).size);
+}

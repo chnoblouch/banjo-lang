@@ -90,8 +90,10 @@ ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr
 }
 
 ssa::Type TypeSSAGenerator::generate_static_array_type(const sir::StaticArrayType &static_array_type) {
+    unsigned length = static_array_type.length.as<sir::IntLiteral>().value.to_u64();
+    
     ssa::Type type = generate(static_array_type.base_type);
-    type.set_array_length(static_array_type.length.as<sir::IntLiteral>().value.to_u64());
+    type.set_array_length(type.get_array_length() * length);
     return type;
 }
 
