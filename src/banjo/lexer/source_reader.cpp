@@ -6,7 +6,7 @@ namespace banjo {
 
 namespace lang {
 
-constexpr unsigned EOF_ZONE_SIZE = 2;
+static constexpr unsigned EOF_ZONE_SIZE = 2;
 
 SourceReader SourceReader::read(std::istream &stream) {
     PROFILE_SCOPE("file loading");
@@ -22,7 +22,7 @@ SourceReader SourceReader::read(std::istream &stream) {
     stream.read(buffer.data(), file_size);
 
     for (unsigned i = 0; i < EOF_ZONE_SIZE; i++) {
-        buffer[file_size + i] = EOF;
+        buffer[file_size + i] = EOF_CHAR;
     }
 
     return SourceReader{std::move(buffer)};

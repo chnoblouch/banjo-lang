@@ -10,6 +10,9 @@ namespace lang {
 
 class SourceReader {
 
+public:
+    static constexpr char EOF_CHAR = '\0';
+
 private:
     std::string buffer;
     unsigned position = 0;
@@ -21,9 +24,9 @@ private:
     SourceReader(std::string buffer);
 
 public:
-    int consume() { return buffer[position++]; }
-    int get() { return buffer[position]; }
-    int peek() { return buffer[position + 1]; }
+    char consume() { return buffer[position++]; }
+    char get() { return buffer[position]; }
+    char peek() { return buffer[position + 1]; }
 
     unsigned get_position() { return position; }
     std::string_view value(unsigned start) { return std::string_view{&buffer[start], &buffer[position]}; }

@@ -39,7 +39,7 @@ std::vector<Token> Lexer::tokenize() {
     tokens.clear();
     start_position = reader.get_position();
 
-    while (reader.get() != EOF) {
+    while (reader.get() != SourceReader::EOF_CHAR) {
         read_token();
         start_position = reader.get_position();
         try_insert_completion_token();
@@ -50,7 +50,7 @@ std::vector<Token> Lexer::tokenize() {
 }
 
 void Lexer::read_token() {
-    int c = reader.get();
+    char c = reader.get();
 
     if (c == '\n') read_newline();
     else if (is_whitespace_char(c)) read_whitespace();
@@ -98,8 +98,8 @@ void Lexer::read_number() {
 void Lexer::read_character() {
     reader.consume();
 
-    int c = reader.consume();
-    while (c != EOF) {
+    char c = reader.consume();
+    while (c != SourceReader::EOF_CHAR) {
         if (c == '\'') {
             break;
         }
@@ -113,11 +113,11 @@ void Lexer::read_character() {
 void Lexer::read_string() {
     reader.consume();
 
-    int c = reader.consume();
-    while (c != EOF) {
+    char c = reader.consume();
+    while (c != SourceReader::EOF_CHAR) {
         if (c == '\\') {
             c = reader.consume();
-            if (c == EOF) break;
+            if (c == SourceReader::EOF_CHAR) break;
         } else if (c == '\"') {
             break;
         }
@@ -129,8 +129,8 @@ void Lexer::read_string() {
 }
 
 void Lexer::skip_comment() {
-    int c = reader.consume();
-    while (c != '\n' && c != EOF) {
+    char c = reader.consume();
+    while (c != '\n' && c != SourceReader::EOF_CHAR) {
         c = reader.consume();
     }
 }
@@ -235,20 +235,20 @@ void Lexer::try_insert_completion_token() {
     }
 }
 
-bool Lexer::is_whitespace_char(int c) {
+bool Lexer::is_whitespace_char(char c) {
     return c == ' ' || c == '\r' || c == '\t';
 }
 
-bool Lexer::is_identifier_char(int c) {
+bool Lexer::is_identifier_char(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 
-bool Lexer::is_number_char(int c) {
+bool Lexer::is_number_char(char c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'x' || c == 'b' ||
            c == 'o' || c == '.';
 }
 
-bool Lexer::read_if(int c) {
+bool Lexer::read_if(char c) {
     if (reader.get() == c) {
         reader.consume();
         return true;
