@@ -92,7 +92,7 @@ public:
 
 private:
     void lower_funcs();
-    mcode::Parameter lower_param(mcode::ArgStorage storage, mcode::Function *machine_func);
+    mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
     mcode::BasicBlock lower_basic_block(ssa::BasicBlock &basic_block);
     void store_graphs(ssa::Function &ir_func, mcode::Function *machine_func, const BlockMap &block_map);
     void lower_instr(ssa::Instruction &instr);

@@ -175,11 +175,13 @@ void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer) {
         src_reg = X8664Register::XMM0;
     }
 
-    lowerer.emit(mcode::Instruction(
-        opcode,
-        {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
-         mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
-    ));
+    lowerer.emit(
+        mcode::Instruction(
+            opcode,
+            {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
+             mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
+        )
+    );
 }
 
 void MSABICallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions) {
@@ -280,14 +282,16 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
 
     // Allocate stack frame.
     if (func->get_stack_frame().get_size() > 0) {
-        prolog.push_back(mcode::Instruction(
-            X8664Opcode::SUB,
-            {
-                mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-                mcode::Operand::from_int_immediate(func->get_stack_frame().get_size()),
-            },
-            mcode::Instruction::FLAG_ALLOCA
-        ));
+        prolog.push_back(
+            mcode::Instruction(
+                X8664Opcode::SUB,
+                {
+                    mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
+                    mcode::Operand::from_int_immediate(func->get_stack_frame().get_size()),
+                },
+                mcode::Instruction::FLAG_ALLOCA
+            )
+        );
     }
 
     // Push modified non-volatile SSE registers.
@@ -325,25 +329,29 @@ std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *fu
 
     // Deallocate stack frame.
     if (func->get_stack_frame().get_size() > 0) {
-        epilog.push_back(mcode::Instruction(
-            X8664Opcode::ADD,
-            {
-                mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-                mcode::Operand::from_int_immediate(func->get_stack_frame().get_size()),
-            }
-        ));
+        epilog.push_back(
+            mcode::Instruction(
+                X8664Opcode::ADD,
+                {
+                    mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
+                    mcode::Operand::from_int_immediate(func->get_stack_frame().get_size()),
+                }
+            )
+        );
     }
 
     // Pop modified non-volatile general-purpose registers.
     for (int i = modified_volatile_regs.size() - 1; i >= 0; i--) {
         mcode::PhysicalReg reg = modified_volatile_regs[i];
         if (reg >= RAX && reg <= R15) {
-            epilog.push_back(mcode::Instruction(
-                X8664Opcode::POP,
-                {
-                    mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                }
-            ));
+            epilog.push_back(
+                mcode::Instruction(
+                    X8664Opcode::POP,
+                    {
+                        mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
+                    }
+                )
+            );
         }
     }
 
@@ -358,7 +366,7 @@ std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const ssa::Func
     std::vector<mcode::ArgStorage> result(func_type.params.size());
 
     for (unsigned i = 0; i < func_type.params.size(); i++) {
-        mcode::ArgStorage storage;
+        mcode::ArgStorage &storage = result[i];
 
         if (i < ARG_REGS_INT.size()) {
             storage.in_reg = true;
@@ -367,8 +375,6 @@ std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const ssa::Func
             storage.in_reg = false;
             storage.stack_offset = 8 * i;
         }
-
-        result[i] = storage;
     }
 
     return result;

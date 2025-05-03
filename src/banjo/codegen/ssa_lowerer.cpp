@@ -21,9 +21,11 @@ mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
     init_module(module_);
 
     if (module_.get_addr_table()) {
-        machine_module.set_addr_table(mcode::AddrTable{
-            .entries = module_.get_addr_table()->get_entries(),
-        });
+        machine_module.set_addr_table(
+            mcode::AddrTable{
+                .entries = module_.get_addr_table()->get_entries(),
+            }
+        );
     }
 
     for (ssa::FunctionDecl *external_func : module_.get_external_functions()) {
@@ -56,7 +58,7 @@ void SSALowerer::lower_funcs() {
         std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func->type);
 
         for (unsigned i = 0; i < func->type.params.size(); i++) {
-            mcode::Parameter param = lower_param(storage[i], machine_func);
+            mcode::Parameter param = lower_param(func->type.params[i], storage[i], *machine_func);
             machine_func->get_parameters().push_back(param);
         }
 
@@ -104,13 +106,19 @@ void SSALowerer::lower_funcs() {
     }
 }
 
-mcode::Parameter SSALowerer::lower_param(mcode::ArgStorage storage, mcode::Function *machine_func) {
+mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func) {
     if (storage.in_reg) {
-        return mcode::Parameter{mcode::Register::from_physical(storage.reg)};
+        return mcode::Parameter{
+            .type = type,
+            .storage = mcode::Register::from_physical(storage.reg),
+        };
     } else {
         mcode::StackSlot slot(mcode::StackSlot::Type::GENERIC, 8, 1);
-        mcode::StackSlotID slot_index = machine_func->get_stack_frame().new_stack_slot(slot);
-        return mcode::Parameter{slot_index};
+
+        return mcode::Parameter{
+            .type = type,
+            .storage = m_func.get_stack_frame().new_stack_slot(slot),
+        };
     }
 }
 

@@ -14,15 +14,13 @@ namespace mcode {
 
 class CallingConvention;
 
-class Parameter {
-
-public:
-    std::variant<Register, StackSlotID> storage;
+struct Parameter {
     ssa::Type type;
+    std::variant<Register, StackSlotID> storage;
 };
 
 struct UnwindInfo {
-    unsigned int alloc_size;
+    unsigned alloc_size;
 };
 
 class Function {

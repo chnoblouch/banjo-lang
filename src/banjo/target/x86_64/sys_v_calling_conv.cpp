@@ -123,11 +123,13 @@ void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {
         src_reg = X8664Register::XMM0;
     }
 
-    lowerer.emit(mcode::Instruction(
-        opcode,
-        {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
-         mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
-    ));
+    lowerer.emit(
+        mcode::Instruction(
+            opcode,
+            {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
+             mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
+        )
+    );
 }
 
 void SysVCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions) {
@@ -201,25 +203,31 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
     }
 
     // Push frame pointer.
-    prolog.push_back(mcode::Instruction(
-        X8664Opcode::PUSH,
-        {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8)}
-    ));
+    prolog.push_back(
+        mcode::Instruction(
+            X8664Opcode::PUSH,
+            {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8)}
+        )
+    );
 
     // Set frame pointer to stack pointer.
-    prolog.push_back(mcode::Instruction(
-        X8664Opcode::MOV,
-        {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8),
-         mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8)}
-    ));
+    prolog.push_back(
+        mcode::Instruction(
+            X8664Opcode::MOV,
+            {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8),
+             mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8)}
+        )
+    );
 
     // Allocate stack frame.
-    prolog.push_back(mcode::Instruction(
-        X8664Opcode::SUB,
-        {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-         mcode::Operand::from_int_immediate(func->get_stack_frame().get_size())},
-        mcode::Instruction::FLAG_ALLOCA
-    ));
+    prolog.push_back(
+        mcode::Instruction(
+            X8664Opcode::SUB,
+            {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
+             mcode::Operand::from_int_immediate(func->get_stack_frame().get_size())},
+            mcode::Instruction::FLAG_ALLOCA
+        )
+    );
 
     // Push modified non-volatile SSE registers.
     unsigned sse_slot_index = 0;
@@ -227,13 +235,15 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
         if (reg >= XMM0 && reg <= XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
-            prolog.push_back(mcode::Instruction(
-                X8664Opcode::MOVSD,
-                {
-                    mcode::Operand::from_stack_slot(slot_index, 8),
-                    mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                }
-            ));
+            prolog.push_back(
+                mcode::Instruction(
+                    X8664Opcode::MOVSD,
+                    {
+                        mcode::Operand::from_stack_slot(slot_index, 8),
+                        mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
+                    }
+                )
+            );
         }
     }
 
@@ -252,37 +262,45 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
         if (reg >= XMM0 && reg <= XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
-            epilog.push_back(mcode::Instruction(
-                X8664Opcode::MOVSD,
-                {
-                    mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                    mcode::Operand::from_stack_slot(slot_index, 8),
-                }
-            ));
+            epilog.push_back(
+                mcode::Instruction(
+                    X8664Opcode::MOVSD,
+                    {
+                        mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
+                        mcode::Operand::from_stack_slot(slot_index, 8),
+                    }
+                )
+            );
         }
     }
 
     // Deallocate stack frame.
-    epilog.push_back(mcode::Instruction(
-        X8664Opcode::ADD,
-        {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-         mcode::Operand::from_int_immediate(func->get_stack_frame().get_size())}
-    ));
+    epilog.push_back(
+        mcode::Instruction(
+            X8664Opcode::ADD,
+            {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
+             mcode::Operand::from_int_immediate(func->get_stack_frame().get_size())}
+        )
+    );
 
     // Pop frame pointer.
-    epilog.push_back(mcode::Instruction(
-        X8664Opcode::POP,
-        {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8)}
-    ));
+    epilog.push_back(
+        mcode::Instruction(
+            X8664Opcode::POP,
+            {mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8)}
+        )
+    );
 
     // Pop modified non-volatile general-purpose registers.
     for (int i = modified_volatile_regs.size() - 1; i >= 0; i--) {
         mcode::PhysicalReg reg = modified_volatile_regs[i];
         if (reg >= RAX && reg <= R15) {
-            epilog.push_back(mcode::Instruction(
-                X8664Opcode::POP,
-                {mcode::Operand::from_register(mcode::Register::from_physical(reg), 8)}
-            ));
+            epilog.push_back(
+                mcode::Instruction(
+                    X8664Opcode::POP,
+                    {mcode::Operand::from_register(mcode::Register::from_physical(reg), 8)}
+                )
+            );
         }
     }
 
@@ -301,7 +319,7 @@ std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const ssa::Funct
     unsigned arg_slot_index = 0;
 
     for (unsigned i = 0; i < func_type.params.size(); i++) {
-        mcode::ArgStorage storage;
+        mcode::ArgStorage &storage = result[i];
         bool is_fp = func_type.params[i].is_floating_point();
 
         if (is_fp && float_reg_index < ARG_REGS_FLOAT.size()) {
@@ -315,8 +333,6 @@ std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const ssa::Funct
             storage.arg_slot_index = arg_slot_index++;
             storage.stack_offset = 8 * storage.arg_slot_index;
         }
-
-        result[i] = storage;
     }
 
     return result;

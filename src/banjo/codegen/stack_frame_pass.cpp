@@ -74,7 +74,7 @@ void StackFramePass::run(mcode::Function *func) {
         .calling_conv = {},
     });
 
-    for (unsigned int i = 0; i < func->get_parameters().size(); i++) {
+    for (unsigned i = 0; i < func->get_parameters().size(); i++) {
         mcode::Parameter &param = func->get_parameters()[i];
         if (arg_storage[i].in_reg) {
             continue;

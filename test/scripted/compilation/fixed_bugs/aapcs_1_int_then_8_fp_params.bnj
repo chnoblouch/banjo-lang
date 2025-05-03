@@ -1,0 +1,25 @@
+# test:output "0,1,2,3,4,5,6,7,8"
+
+func f(a: i32, b: f32, c: f32, d: f32, e: f32, f: f32, g: f32, h: f32, i: f32) {
+    print(a);
+    print(',');
+    print(b);
+    print(',');
+    print(c);
+    print(',');
+    print(d);
+    print(',');
+    print(e);
+    print(',');
+    print(f);
+    print(',');
+    print(g);
+    print(',');
+    print(h);
+    print(',');
+    print(i);
+}
+
+func main() {
+    f(0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
+}

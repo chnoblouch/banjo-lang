@@ -193,19 +193,23 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
             continue;
         }
 
-        prolog.push_back(mcode::Instruction(
-            AArch64Opcode::STR,
-            {mcode::Operand::from_register(mcode::Register::from_physical(modified_reg), 8),
-             mcode::Operand::from_aarch64_addr(AArch64Address::new_base_offset_write(sp, -16))}
-        ));
+        prolog.push_back(
+            mcode::Instruction(
+                AArch64Opcode::STR,
+                {mcode::Operand::from_register(mcode::Register::from_physical(modified_reg), 8),
+                 mcode::Operand::from_aarch64_addr(AArch64Address::new_base_offset_write(sp, -16))}
+            )
+        );
     }
 
-    prolog.push_back(mcode::Instruction(
-        AArch64Opcode::STP,
-        {mcode::Operand::from_register(fp, 8),
-         mcode::Operand::from_register(lr, 8),
-         mcode::Operand::from_aarch64_addr(AArch64Address::new_base_offset_write(sp, -16))}
-    ));
+    prolog.push_back(
+        mcode::Instruction(
+            AArch64Opcode::STP,
+            {mcode::Operand::from_register(fp, 8),
+             mcode::Operand::from_register(lr, 8),
+             mcode::Operand::from_aarch64_addr(AArch64Address::new_base_offset_write(sp, -16))}
+        )
+    );
 
     modify_sp(AArch64Opcode::SUB, size, [&prolog](mcode::Instruction instr) {
         instr.set_flag(mcode::Instruction::FLAG_ALLOCA);
@@ -268,13 +272,15 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
 
     modify_sp(AArch64Opcode::ADD, size, [&epilog](mcode::Instruction instr) { epilog.push_back(std::move(instr)); });
 
-    epilog.push_back(mcode::Instruction(
-        AArch64Opcode::LDP,
-        {mcode::Operand::from_register(fp, 8),
-         mcode::Operand::from_register(lr, 8),
-         mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
-         mcode::Operand::from_int_immediate(16)}
-    ));
+    epilog.push_back(
+        mcode::Instruction(
+            AArch64Opcode::LDP,
+            {mcode::Operand::from_register(fp, 8),
+             mcode::Operand::from_register(lr, 8),
+             mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
+             mcode::Operand::from_int_immediate(16)}
+        )
+    );
 
     std::vector<long> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
     for (auto it = modified_regs.rbegin(); it != modified_regs.rend(); it++) {
@@ -284,12 +290,14 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
             continue;
         }
 
-        epilog.push_back(mcode::Instruction(
-            AArch64Opcode::LDR,
-            {mcode::Operand::from_register(mcode::Register::from_physical(modified_reg), 8),
-             mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
-             mcode::Operand::from_int_immediate(16)}
-        ));
+        epilog.push_back(
+            mcode::Instruction(
+                AArch64Opcode::LDR,
+                {mcode::Operand::from_register(mcode::Register::from_physical(modified_reg), 8),
+                 mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
+                 mcode::Operand::from_int_immediate(16)}
+            )
+        );
     }
 
     return epilog;
@@ -399,10 +407,12 @@ mcode::InstrIter AAPCSCallingConv::fix_up_instr(
     mcode::PhysicalReg new_reg = AArch64Register::R20;
 
     iter->get_operand(0).set_to_register(mcode::Register::from_physical(new_reg));
-    iter.get_next()->get_operand(1).set_to_aarch64_addr(target::AArch64Address::new_base_offset(
-        mcode::Register::from_physical(target::AArch64Register::SP),
-        mcode::Register::from_physical(new_reg)
-    ));
+    iter.get_next()->get_operand(1).set_to_aarch64_addr(
+        target::AArch64Address::new_base_offset(
+            mcode::Register::from_physical(target::AArch64Register::SP),
+            mcode::Register::from_physical(new_reg)
+        )
+    );
 
     return iter.get_next();
 }
@@ -419,7 +429,7 @@ std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const ssa::Func
     unsigned stack_offset = 0;
 
     for (unsigned i = 0; i < func_type.params.size(); i++) {
-        mcode::ArgStorage storage;
+        mcode::ArgStorage &storage = result[i];
         bool is_fp = func_type.params[i].is_floating_point();
 
         if (variant == Variant::APPLE && func_type.variadic && i >= func_type.first_variadic_index) {
@@ -437,8 +447,6 @@ std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const ssa::Func
             storage.stack_offset = stack_offset;
             stack_offset += 8;
         }
-
-        result[i] = storage;
     }
 
     return result;
