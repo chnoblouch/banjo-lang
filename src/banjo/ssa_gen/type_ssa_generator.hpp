@@ -30,6 +30,7 @@ private:
     ssa::Type generate_static_array_type(const sir::StaticArrayType &static_array_type);
     ssa::Type generate_func_type();
     ssa::Type generate_closure_type(const sir::ClosureType &closure_type);
+    ssa::Type generate_reference_type();
 };
 
 } // namespace lang

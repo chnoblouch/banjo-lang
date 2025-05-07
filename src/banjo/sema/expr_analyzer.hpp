@@ -58,6 +58,7 @@ private:
     Result analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr);
     Result analyze_map_type(sir::MapType &map_type, sir::Expr &out_expr);
     Result analyze_closure_type(sir::ClosureType &closure_type);
+    Result analyze_reference_type(sir::ReferenceType &reference_type);
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
     Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);

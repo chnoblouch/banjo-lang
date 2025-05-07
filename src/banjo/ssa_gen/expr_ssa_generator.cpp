@@ -75,6 +75,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // array_type
         SIR_VISIT_IMPOSSIBLE,                              // map_type
         SIR_VISIT_IMPOSSIBLE,                              // closure_type
+        SIR_VISIT_IMPOSSIBLE,                              // reference_type
         SIR_VISIT_IMPOSSIBLE,                              // ident_expr
         SIR_VISIT_IMPOSSIBLE,                              // star_expr
         SIR_VISIT_IMPOSSIBLE,                              // bracket_expr
@@ -592,7 +593,10 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
 ) {
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(coercion_expr.type);
 
-    if (auto union_def = coercion_expr.type.match_symbol<sir::UnionDef>()) {
+    if (coercion_expr.type.is<sir::ReferenceType>()) {
+        StoredValue ssa_val = generate_as_reference(coercion_expr.value);
+        return StoredValue::create_value(ssa_val.get_ptr());
+    } else if (auto union_def = coercion_expr.type.match_symbol<sir::UnionDef>()) {
         sir::UnionCase &union_case = coercion_expr.value.get_type().as_symbol<sir::UnionCase>();
         StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);
 

@@ -101,6 +101,7 @@ private:
     void print_array_type(const ArrayType &array_type);
     void print_map_type(const MapType &map_type);
     void print_closure_type(const ClosureType &closure_type);
+    void print_reference_type(const ReferenceType &reference_type);
     void print_ident_expr(const IdentExpr &ident_expr);
     void print_star_expr(const StarExpr &star_expr);
     void print_bracket_expr(const BracketExpr &bracket_expr);

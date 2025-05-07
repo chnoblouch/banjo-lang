@@ -138,6 +138,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_array_type(*inner, expr),                   // array_type
         result = analyze_map_type(*inner, expr),                     // map_type
         result = analyze_closure_type(*inner),                       // closure_type
+        result = analyze_reference_type(*inner),                     // reference_type
         result = analyze_ident_expr(*inner, expr),                   // ident_expr
         result = analyze_star_expr(*inner, expr),                    // star_expr
         result = analyze_bracket_expr(*inner, expr),                 // bracket_expr
@@ -1001,6 +1002,19 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         lhs_type = pointer_type->base_type;
     }
 
+    if (auto reference_type = lhs_type.match<sir::ReferenceType>()) {
+        lhs = analyzer.create_expr(
+            sir::UnaryExpr{
+                .ast_node = nullptr,
+                .type = reference_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = lhs,
+            }
+        );
+
+        lhs_type = reference_type->base_type;
+    }
+
     if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
         sir::Symbol method = struct_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
@@ -1215,6 +1229,10 @@ Result ExprAnalyzer::analyze_closure_type(sir::ClosureType &closure_type) {
     sir::StructDef &std_closure_def = analyzer.find_std_closure().as<sir::StructDef>();
     closure_type.underlying_struct = &std_closure_def;
     return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_reference_type(sir::ReferenceType &reference_type) {
+    return analyze_type(reference_type.base_type);
 }
 
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
@@ -1460,6 +1478,15 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
                     .value = star_expr.value,
                 }
             );
+        } else if (auto reference_type = value_type.match<sir::ReferenceType>()) {
+            out_expr = analyzer.create_expr(
+                sir::UnaryExpr{
+                    .ast_node = star_expr.ast_node,
+                    .type = reference_type->base_type,
+                    .op = sir::UnaryOp::DEREF,
+                    .value = star_expr.value,
+                }
+            );
         } else {
             analyzer.report_generator.report_err_cannot_deref(star_expr.value);
             return Result::ERROR;
@@ -1684,6 +1711,19 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         );
 
         lhs_type = pointer_type->base_type;
+    }
+
+    if (auto reference_type = lhs_type.match<sir::ReferenceType>()) {
+        lhs = analyzer.create_expr(
+            sir::UnaryExpr{
+                .ast_node = nullptr,
+                .type = reference_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = lhs,
+            }
+        );
+
+        lhs_type = reference_type->base_type;
     }
 
     if (!lhs_type) {

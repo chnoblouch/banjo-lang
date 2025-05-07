@@ -3,7 +3,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "completion_context.hpp"
+#include "banjo/sema/completion_context.hpp"
 
 namespace banjo {
 

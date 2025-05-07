@@ -266,6 +266,7 @@ ParseResult Parser::parse_param_list(TokenType terminator /* = TKN_RPAREN */) {
 
 ParseResult Parser::parse_param() {
     NodeBuilder node = build_node();
+    ASTNodeType type = AST_PARAM;
 
     if (stream.get()->is(TKN_AT)) {
         return parse_attribute_wrapper(std::bind(&Parser::parse_param, this));
@@ -274,7 +275,13 @@ ParseResult Parser::parse_param() {
     if (stream.get()->is(TKN_SELF)) {
         node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
     } else {
-        if (stream.peek(1)->is(TKN_COLON)) {
+        if (stream.get()->is(TKN_AND)) {
+            type = AST_REF_PARAM;
+
+            stream.consume(); // Consume '&'
+            node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
+            stream.consume(); // Consume ':'
+        } else if (stream.peek(1)->is(TKN_COLON)) {
             node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
             stream.consume(); // Consume ':'
         } else {
@@ -289,11 +296,11 @@ ParseResult Parser::parse_param() {
                 stream.consume();
             }
 
-            return {node.build(AST_PARAM), false};
+            return {node.build(type), false};
         }
     }
 
-    return node.build(AST_PARAM);
+    return node.build(type);
 }
 
 ParseResult Parser::check_stmt_terminator(ASTNode *node) {

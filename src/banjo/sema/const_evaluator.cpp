@@ -68,6 +68,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // array_type
         return expr,                             // map_type
         return expr,                             // closure_type
+        return expr,                             // reference_type
         SIR_VISIT_IMPOSSIBLE,                    // ident_expr
         SIR_VISIT_IMPOSSIBLE,                    // star_expr
         SIR_VISIT_IMPOSSIBLE,                    // bracket_expr

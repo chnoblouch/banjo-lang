@@ -1,0 +1,55 @@
+# test:subtest
+# test:output "-204,83"
+
+func f(&i: i32) {
+    print(*i);
+}
+
+func main() {
+    var a = 83;
+ 
+    f(-204);
+    print(',');
+    f(a);
+}
+
+# test:subtest
+# test:output "42,true"
+
+struct S {
+    var a: i32;
+    var b: bool;
+}
+
+func f(&s: S) {
+    s.a = 42;
+    s.b = true;
+}
+
+func main() {
+    var s = S {
+        a: 0,
+        b: false,
+    };
+
+    f(s);
+
+    print(s.a);
+    print(',');
+    print(s.b);
+}
+
+# test:subtest
+# test:output "42,0.25,true"
+
+func f[T](&value: T) {
+    print(*value);
+}
+
+func main() {
+    f(42);
+    print(',');
+    f(0.25);
+    print(',');
+    f(true);
+}

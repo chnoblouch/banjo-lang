@@ -638,6 +638,7 @@ void Printer::print_expr(const Expr &expr) {
         print_array_type(*inner),
         print_map_type(*inner),
         print_closure_type(*inner),
+        print_reference_type(*inner),
         print_ident_expr(*inner),
         print_star_expr(*inner),
         print_bracket_expr(*inner),
@@ -936,6 +937,12 @@ void Printer::print_closure_type(const ClosureType &closure_type) {
     BEGIN_OBJECT("ClosureType");
     PRINT_FIELD_NAME("type");
     print_func_type(closure_type.func_type);
+    END_OBJECT();
+}
+
+void Printer::print_reference_type(const ReferenceType &reference_type) {
+    BEGIN_OBJECT("ReferenceType");
+    PRINT_EXPR_FIELD("base_type", reference_type.base_type);
     END_OBJECT();
 }
 

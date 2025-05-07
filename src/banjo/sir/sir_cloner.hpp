@@ -99,6 +99,7 @@ public:
     ArrayType *clone_array_type(const ArrayType &array_type);
     MapType *clone_map_type(const MapType &map_type);
     ClosureType *clone_closure_type(const ClosureType &closure_type);
+    ReferenceType *clone_reference_type(const ReferenceType &reference_type);
     IdentExpr *clone_ident_expr(const IdentExpr &ident_expr);
     StarExpr *clone_star_expr(const StarExpr &star_expr);
     BracketExpr *clone_bracket_expr(const BracketExpr &bracket_expr);

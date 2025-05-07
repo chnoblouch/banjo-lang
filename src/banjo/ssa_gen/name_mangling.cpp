@@ -59,6 +59,9 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
     } else if (auto pointer_type = type.match<sir::PointerType>()) {
         string += 'a';
         mangle_type(string, pointer_type->base_type);
+    }  else if (auto reference_type = type.match<sir::ReferenceType>()) {
+        string += 'r';
+        mangle_type(string, reference_type->base_type);
     } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
         string += 't';
         string += std::to_string(tuple_type->exprs.size());

@@ -393,6 +393,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // array_type
         SIR_VISIT_IGNORE,                                // map_type
         SIR_VISIT_IGNORE,                                // closure_type
+        SIR_VISIT_IGNORE,                                // reference_type
         SIR_VISIT_IGNORE,                                // ident_expr
         SIR_VISIT_IGNORE,                                // star_expr
         SIR_VISIT_IGNORE,                                // bracket_expr

@@ -52,6 +52,7 @@ bool Expr::operator==(const Expr &other) const {
         return *inner == other.as<ArrayType>(),                   // array_type
         return *inner == other.as<MapType>(),                     // map_type
         return *inner == other.as<ClosureType>(),                 // closure_type
+        return *inner == other.as<ReferenceType>(),               // reference_type
         return false,                                             // ident_expr
         return false,                                             // star_expr
         return false,                                             // bracket_expr
@@ -107,6 +108,7 @@ Expr Expr::get_type() const {
         return nullptr,     // array_type
         return nullptr,     // map_type
         return nullptr,     // closure_type
+        return nullptr,     // reference_type
         return nullptr,     // ident_expr
         return nullptr,     // star_expr
         return nullptr,     // bracket_expr
@@ -142,7 +144,7 @@ ExprCategory Expr::get_category() const {
     } else if (auto star_expr = match<StarExpr>()) {
         return star_expr->value.get_category();
     } else if (is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
-               is<sir::ClosureType>()) {
+               is<sir::ClosureType>() || is<sir::ReferenceType>()) {
         return ExprCategory::TYPE;
     } else {
         return ExprCategory::VALUE;
@@ -158,7 +160,7 @@ bool Expr::is_type() const {
         return star_expr->value.is_type();
     } else {
         return is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
-               is<sir::ClosureType>();
+               is<sir::ClosureType>() || is<sir::ReferenceType>();
     }
 }
 
@@ -276,6 +278,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

@@ -1248,11 +1248,21 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
 
     if (name_node->type == AST_IDENTIFIER) {
         ASTNode *type_node = name_node->next_sibling;
+        sir::Expr sir_type = generate_expr(type_node);
 
-        return {
+        if (node->type == AST_REF_PARAM) {
+            sir_type = create_expr(
+                sir::ReferenceType{
+                    .ast_node = type_node,
+                    .base_type = sir_type,
+                }
+            );
+        }
+
+        return sir::Param{
             .ast_node = node,
             .name = generate_ident(name_node),
-            .type = generate_expr(type_node),
+            .type = sir_type,
             .attrs = attrs,
         };
     } else if (name_node->type == AST_SELF) {
@@ -1261,7 +1271,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             .value = "self",
         };
 
-        return {
+        return sir::Param{
             .ast_node = node,
             .name = sir_ident,
             .type = nullptr,

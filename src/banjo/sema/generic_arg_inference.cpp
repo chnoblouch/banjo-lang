@@ -66,11 +66,13 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
             sequence_types[i] = args[non_sequence_end + i].get_type();
         }
 
-        generic_args.back() = analyzer.create_expr(sir::TupleExpr{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .exprs = sequence_types,
-        });
+        generic_args.back() = analyzer.create_expr(
+            sir::TupleExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .exprs = sequence_types,
+            }
+        );
     }
 
     for (unsigned i = 0; i < generic_args.size(); i++) {
@@ -89,6 +91,8 @@ Result GenericArgInference::infer(const sir::Expr &param_type, const sir::Expr &
         return infer_on_ident(*ident_expr, arg_type);
     } else if (auto star_expr = param_type.match<sir::StarExpr>()) {
         return infer_on_pointer_type(*star_expr, arg_type);
+    } else if (auto reference_type = param_type.match<sir::ReferenceType>()) {
+        return infer_on_reference_type(*reference_type, arg_type);
     } else {
         return Result::SUCCESS;
     }
@@ -121,6 +125,13 @@ Result GenericArgInference::infer_on_pointer_type(const sir::StarExpr &star_expr
     } else {
         return Result::SUCCESS;
     }
+}
+
+Result GenericArgInference::infer_on_reference_type(
+    const sir::ReferenceType &reference_type,
+    const sir::Expr &arg_type
+) {
+    return infer(reference_type.base_type, arg_type);
 }
 
 } // namespace sema

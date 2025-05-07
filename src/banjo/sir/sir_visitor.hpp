@@ -42,6 +42,7 @@
     array_type_visitor,                                                                                                \
     map_type_visitor,                                                                                                  \
     closure_type_visitor,                                                                                              \
+    reference_type_visitor,                                                                                            \
     ident_expr_visitor,                                                                                                \
     star_expr_visitor,                                                                                                 \
     bracket_expr_visitor,                                                                                              \
@@ -53,7 +54,7 @@
     init_expr_visitor,                                                                                                 \
     move_expr_visitor,                                                                                                 \
     deinit_expr_visitor,                                                                                               \
-    error_visitor                                                                                                     \
+    error_visitor                                                                                                      \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
         empty_visitor;                                                                                                 \
@@ -121,6 +122,8 @@
         map_type_visitor;                                                                                              \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                          \
         closure_type_visitor;                                                                                          \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ReferenceType>()) {                        \
+        reference_type_visitor;                                                                                        \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::IdentExpr>()) {                            \
         ident_expr_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StarExpr>()) {                             \
@@ -145,7 +148,7 @@
         deinit_expr_visitor;                                                                                           \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::Error>()) {                                \
         error_visitor;                                                                                                 \
-    }else {                                                                                                           \
+    } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }
 
@@ -159,6 +162,7 @@
     static_array_type_visitor,                                                                                         \
     func_type_visitor,                                                                                                 \
     closure_type_visitor,                                                                                              \
+    reference_type_visitor,                                                                                            \
     other_visitor                                                                                                      \
 )                                                                                                                      \
     if (!(expr)) {                                                                                                     \
@@ -177,6 +181,8 @@
         func_type_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                          \
         closure_type_visitor;                                                                                          \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ReferenceType>()) {                        \
+        reference_type_visitor;                                                                                        \
     } else {                                                                                                           \
         other_visitor;                                                                                                 \
     }
@@ -265,7 +271,7 @@
     use_decl_visitor,                                                                                                  \
     meta_if_stmt_visitor,                                                                                              \
     expanded_meta_stmt_visitor,                                                                                        \
-    error_visitor                                                                                                     \
+    error_visitor                                                                                                      \
 )                                                                                                                      \
     if (!(decl)) {                                                                                                     \
         empty_visitor;                                                                                                 \

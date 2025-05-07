@@ -21,6 +21,7 @@ public:
     Result finalize_by_coercion(sir::Expr &expr, sir::Expr expected_type);
     Result finalize(sir::Expr &expr);
 
+    Result coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type);
     Result coerce_to_union(sir::Expr &inout_expr, sir::Expr union_type);
     Result coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &proto_def, sir::Expr proto_ptr_type);
     Result coerce_to_std_optional(sir::Expr &inout_expr, sir::Specialization<sir::StructDef> &specialization);

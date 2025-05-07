@@ -1,8 +1,8 @@
 #include "type_ssa_generator.hpp"
 
-#include "banjo/ssa/primitive.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -22,6 +22,7 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
         return generate_static_array_type(*inner),
         return generate_func_type(),
         return generate_closure_type(*inner),
+        return generate_reference_type(),
         return ssa::Primitive::VOID
     );
 }
@@ -91,7 +92,7 @@ ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr
 
 ssa::Type TypeSSAGenerator::generate_static_array_type(const sir::StaticArrayType &static_array_type) {
     unsigned length = static_array_type.length.as<sir::IntLiteral>().value.to_u64();
-    
+
     ssa::Type type = generate(static_array_type.base_type);
     type.set_array_length(type.get_array_length() * length);
     return type;
@@ -103,6 +104,10 @@ ssa::Type TypeSSAGenerator::generate_func_type() {
 
 ssa::Type TypeSSAGenerator::generate_closure_type(const sir::ClosureType &closure_type) {
     return generate_struct_type(*closure_type.underlying_struct);
+}
+
+ssa::Type TypeSSAGenerator::generate_reference_type() {
+    return ssa::Primitive::ADDR;
 }
 
 } // namespace lang
