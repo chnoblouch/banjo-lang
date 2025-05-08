@@ -1,7 +1,7 @@
 # test:subtest
 # test:output "-204,83"
 
-func f(&i: i32) {
+func f(ref i: i32) {
     print(*i);
 }
 
@@ -21,7 +21,7 @@ struct S {
     var b: bool;
 }
 
-func f(&s: S) {
+func f(ref s: S) {
     s.a = 42;
     s.b = true;
 }
@@ -42,7 +42,7 @@ func main() {
 # test:subtest
 # test:output "42,0.25,true"
 
-func f[T](&value: T) {
+func f[T](ref value: T) {
     print(*value);
 }
 

@@ -275,10 +275,10 @@ ParseResult Parser::parse_param() {
     if (stream.get()->is(TKN_SELF)) {
         node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
     } else {
-        if (stream.get()->is(TKN_AND)) {
+        if (stream.get()->is(TKN_REF)) {
             type = AST_REF_PARAM;
 
-            stream.consume(); // Consume '&'
+            stream.consume(); // Consume 'ref'
             node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
             stream.consume(); // Consume ':'
         } else if (stream.peek(1)->is(TKN_COLON)) {
