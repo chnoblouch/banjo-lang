@@ -1002,19 +1002,6 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         lhs_type = pointer_type->base_type;
     }
 
-    if (auto reference_type = lhs_type.match<sir::ReferenceType>()) {
-        lhs = analyzer.create_expr(
-            sir::UnaryExpr{
-                .ast_node = nullptr,
-                .type = reference_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = lhs,
-            }
-        );
-
-        lhs_type = reference_type->base_type;
-    }
-
     if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
         sir::Symbol method = struct_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
@@ -1428,10 +1415,16 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         analyzer.add_symbol_use(ident_expr.ast_node, symbol);
     }
 
+    sir::Expr type = symbol.get_type();
+
+    if (auto reference_type = type.match<sir::ReferenceType>()) {
+        type = reference_type->base_type;
+    }
+
     out_expr = analyzer.create_expr(
         sir::SymbolExpr{
             .ast_node = ident_expr.ast_node,
-            .type = symbol.get_type(),
+            .type = type,
             .symbol = symbol,
         }
     );
@@ -1711,19 +1704,6 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         );
 
         lhs_type = pointer_type->base_type;
-    }
-
-    if (auto reference_type = lhs_type.match<sir::ReferenceType>()) {
-        lhs = analyzer.create_expr(
-            sir::UnaryExpr{
-                .ast_node = nullptr,
-                .type = reference_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = lhs,
-            }
-        );
-
-        lhs_type = reference_type->base_type;
     }
 
     if (!lhs_type) {

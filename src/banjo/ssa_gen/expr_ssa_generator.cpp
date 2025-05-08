@@ -274,11 +274,21 @@ StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param.type);
     ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
 
+    StoredValue ssa_value;
+
     if (ctx.target->get_data_layout().fits_in_register(ssa_type)) {
-        return StoredValue::create_reference(ssa_ptr, ssa_type);
+        ssa_value = StoredValue::create_reference(ssa_ptr, ssa_type);
     } else {
         ssa::Value ssa_loaded_ptr = ctx.append_load(ssa::Primitive::ADDR, ssa_ptr);
-        return StoredValue::create_reference(ssa_loaded_ptr, ssa_type);
+        ssa_value = StoredValue::create_reference(ssa_loaded_ptr, ssa_type);
+    }
+
+    if (auto reference_type = param.type.match<sir::ReferenceType>()) {
+        ssa_value = ssa_value.try_turn_into_value(ctx);
+        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(reference_type->base_type);
+        return StoredValue::create_reference(ssa_value.value_or_ptr, ssa_type);
+    } else {
+        return ssa_value;
     }
 }
 
