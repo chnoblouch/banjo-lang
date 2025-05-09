@@ -36,6 +36,11 @@ public:
     void remove(InstrIter iter);
     InstrIter replace(InstrIter iter, Instruction instr);
 
+    const Instruction &get_entry() const { return instrs.get_first(); }
+    InstrIter get_entry_iter() const { return instrs.get_first_iter(); }
+    const Instruction &get_exit() const { return instrs.get_last(); }
+    InstrIter get_exit_iter() const { return instrs.get_last_iter(); }
+
     InstrIter get_header() const { return instrs.get_header(); }
     InstrIter get_trailer() const { return instrs.get_trailer(); }
     unsigned get_size() const { return instrs.get_size(); }

@@ -6,6 +6,8 @@ namespace banjo {
 
 namespace ssa {
 
+ControlFlowGraph::ControlFlowGraph() {}
+
 ControlFlowGraph::ControlFlowGraph(ssa::Function *func) {
     create_nodes(func->get_entry_block_iter());
     entry_index = 0;

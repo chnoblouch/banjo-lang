@@ -36,7 +36,9 @@ private:
     std::unordered_map<ssa::BasicBlockIter, int> blocks2nodes;
 
 public:
+    ControlFlowGraph();
     ControlFlowGraph(ssa::Function *func);
+    
     std::vector<Node> &get_nodes() { return nodes; }
     unsigned get_node_index(ssa::BasicBlockIter iter) { return blocks2nodes[iter]; }
     Node &get_node(unsigned index) { return nodes[index]; }

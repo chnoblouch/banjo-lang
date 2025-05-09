@@ -67,9 +67,9 @@ std::vector<Pass *> PassRunner::create_opt_passes(target::Target *target) {
 
     if (opt_level >= 1) {
         passes.push_back(new PeepholeOptimizer(target));
+        passes.push_back(new ControlFlowOptPass(target));
         passes.push_back(new HeapToStackPass(target));
         // passes.push_back(new StackSlotMergePass(target));
-        passes.push_back(new ControlFlowOptPass(target));
     }
 
     return passes;
