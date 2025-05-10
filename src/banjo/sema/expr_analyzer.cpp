@@ -526,27 +526,18 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (auto pseudo_type = binary_expr.lhs.get_type().match<sir::PseudoType>()) {
         if (pseudo_type->is_struct_by_default()) {
-            lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-            rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
-
-            if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
-                return Result::ERROR;
-            }
-
             is_operator_overload = true;
         }
     } else if (binary_expr.lhs.get_type().is_symbol<sir::StructDef>()) {
-        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-        rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
-
-        if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
-
         is_operator_overload = true;
     }
 
     if (is_operator_overload) {
+        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+        if (lhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
         sir::StructDef &struct_def = binary_expr.lhs.get_type().as_symbol<sir::StructDef>();
         std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
         sir::Symbol symbol = struct_def.block.symbol_table->look_up_local(impl_name);
@@ -671,7 +662,13 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr) {
     Result partial_result;
 
+    if (unary_expr.op == sir::UnaryOp::DEREF) {
+        return Result::SUCCESS;
+    }
+
     // Deref unary operations are handled by `analyze_star_expr`.
+    // FIXME: This assumption can currently fail due to the meta expression evaulator analyzing
+    // expressions twice.
     ASSUME(unary_expr.op != sir::UnaryOp::DEREF);
 
     partial_result = ExprAnalyzer(analyzer).analyze_value_uncoerced(unary_expr.value);
@@ -1417,10 +1414,6 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 
     sir::Expr type = symbol.get_type();
 
-    if (auto reference_type = type.match<sir::ReferenceType>()) {
-        type = reference_type->base_type;
-    }
-
     out_expr = analyzer.create_expr(
         sir::SymbolExpr{
             .ast_node = ident_expr.ast_node,
@@ -1428,6 +1421,17 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
             .symbol = symbol,
         }
     );
+
+    if (auto reference_type = type.match<sir::ReferenceType>()) {
+        out_expr = analyzer.create_expr(
+            sir::UnaryExpr{
+                .ast_node = ident_expr.ast_node,
+                .type = reference_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = out_expr,
+            }
+        );
+    }
 
     return Result::SUCCESS;
 }
@@ -1816,8 +1820,9 @@ bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, const std::vecto
         sir::Expr arg_type = args[i].get_type();
         sir::Expr param_type = func_def.type.params[i].type;
 
-        if (arg_type.is_symbol(analyzer.find_std_string_slice())) {
-            if (param_type.is_pseudo_type(sir::PseudoTypeKind::STRING_LITERAL)) {
+        if (arg_type.is_pseudo_type(sir::PseudoTypeKind::STRING_LITERAL)) {
+            if (param_type.is_symbol(analyzer.find_std_string()) ||
+                param_type.is_symbol(analyzer.find_std_string_slice()) || param_type.is_u8_ptr()) {
                 continue;
             }
         }
@@ -1843,6 +1848,8 @@ Result ExprAnalyzer::analyze_operator_overload_call(
     sir::Expr arg,
     sir::Expr &inout_expr
 ) {
+    Result partial_result;
+
     sir::Expr self_ref = analyzer.create_expr(
         sir::UnaryExpr{
             .ast_node = nullptr,
@@ -1880,6 +1887,15 @@ Result ExprAnalyzer::analyze_operator_overload_call(
     }
 
     ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
+
+    if (args.size() == 2) {
+        sir::Expr expected_arg_type = impl->type.params[1].type;
+
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(args[1], expected_arg_type);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+    }
 
     sir::Expr callee = analyzer.create_expr(
         sir::SymbolExpr{

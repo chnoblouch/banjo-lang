@@ -1,0 +1,46 @@
+# test:subtest
+# test:output "false,true"
+
+struct S {
+    pub func __eq__(self, ref value: i32) -> bool {
+        return value == 42;
+    }
+}
+
+func main() {
+    var s = S {};
+
+    print(s == 0);
+    print(',');
+    print(s == 42);
+}
+
+# test:subtest
+# test:output "false,false,true,dd"
+
+struct Resource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+struct S {
+    pub func __eq__(self, ref r: Resource) -> bool {
+        return r.value == 42;
+    }
+}
+
+func main() {
+    var s = S {};
+    var r0 = Resource { value: 0 };
+    var r1 = Resource { value: 42 };
+
+    print(s == r0);
+    print(',');
+    print(s == r0);
+    print(',');
+    print(s == r1);
+    print(',');
+}

@@ -276,10 +276,10 @@ void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
 
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
         sir::IfCondBranch &cond_branch = if_stmt.cond_branches[i];
-        
+
         bool conditional = i != 0;
         analyze_expr(cond_branch.condition, true, conditional);
-        
+
         child_scopes[i] = analyze_block(cond_branch.block);
     }
 
@@ -316,7 +316,7 @@ void ResourceAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
     std::vector<Scope> child_scopes{
         analyze_block(loop_stmt.block, ScopeType::LOOP),
     };
-    
+
     analyze_expr(loop_stmt.condition, false, false);
 
     if (loop_stmt.latch) {

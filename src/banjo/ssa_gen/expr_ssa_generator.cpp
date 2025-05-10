@@ -283,13 +283,7 @@ StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
         ssa_value = StoredValue::create_reference(ssa_loaded_ptr, ssa_type);
     }
 
-    if (auto reference_type = param.type.match<sir::ReferenceType>()) {
-        ssa_value = ssa_value.try_turn_into_value(ctx);
-        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(reference_type->base_type);
-        return StoredValue::create_reference(ssa_value.value_or_ptr, ssa_type);
-    } else {
-        return ssa_value;
-    }
+    return ssa_value;
 }
 
 StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr) {

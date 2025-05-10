@@ -612,6 +612,7 @@ void ReportGenerator::report_err_use_after_move(
 }
 
 void ReportGenerator::report_err_move_out_pointer(const sir::Expr &move) {
+    // TODO: Different error message for references
     // TODO: Maybe change the location where the error is highlighted.
     report_error("cannot move resource out of pointer", move.get_ast_node());
 }
