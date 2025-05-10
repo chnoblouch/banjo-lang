@@ -85,3 +85,19 @@ func main() {
     var a = 42;
     f0(0, 1, 42);
 }
+
+# test:subtest
+# test:output "b"
+
+func f(a: i32) {
+    print("i");
+}
+
+func f(ref a: bool) {
+    print("b");
+}
+
+func main() {
+    var a = true;
+    f(a);
+}

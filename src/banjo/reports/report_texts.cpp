@@ -170,7 +170,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         str += ")";
         return str;
     } else if (auto reference_type = expr.match<sir::ReferenceType>()) {
-        return "reference to " + to_string(reference_type->base_type);
+        return to_string(reference_type->base_type);
     } else if (auto pseudo_type = expr.match<sir::PseudoType>()) {
         switch (pseudo_type->kind) {
             case sir::PseudoTypeKind::INT_LITERAL: return "integer literal";

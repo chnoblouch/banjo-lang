@@ -27,6 +27,8 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
         return Result::ERROR;
     }
 
+    base_expr = unwrap_expr(base_expr);
+
     if (field_name == "size") {
         out_expr = analyzer.create_expr(
             sir::IntLiteral{
@@ -64,9 +66,11 @@ Result MetaExprEvaluator::evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr 
     const std::string &callee_name = field_expr.field.value;
 
     ExprAnalyzer(analyzer).analyze(base_expr);
+    base_expr = unwrap_expr(base_expr);
 
     for (sir::Expr &arg : meta_call_expr.args) {
         ExprAnalyzer(analyzer).analyze_uncoerced(arg);
+        arg = unwrap_expr(arg);
     }
 
     if (callee_name == "has_method") {
@@ -206,6 +210,14 @@ sir::Expr MetaExprEvaluator::create_string_literal(std::string value) {
             .value = std::move(value),
         }
     );
+}
+
+sir::Expr MetaExprEvaluator::unwrap_expr(sir::Expr expr) {
+    if (auto reference_type = expr.match<sir::ReferenceType>()) {
+        return reference_type->base_type;
+    } else {
+        return expr;
+    }
 }
 
 } // namespace sema

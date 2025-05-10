@@ -33,6 +33,8 @@ private:
     sir::Expr create_bool_literal(bool value);
     sir::Expr create_array_literal(std::vector<sir::Expr> values);
     sir::Expr create_string_literal(std::string value);
+
+    sir::Expr unwrap_expr(sir::Expr expr);
 };
 
 } // namespace sema

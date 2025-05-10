@@ -1813,14 +1813,24 @@ bool ExprAnalyzer::is_matching_overload(sir::FuncDef &func_def, const std::vecto
     }
 
     for (unsigned i = 0; i < args.size(); i++) {
-        if (args[i].get_type().is_symbol(analyzer.find_std_string_slice())) {
-            if (func_def.type.params[i].type.is_pseudo_type(sir::PseudoTypeKind::STRING_LITERAL)) {
+        sir::Expr arg_type = args[i].get_type();
+        sir::Expr param_type = func_def.type.params[i].type;
+
+        if (arg_type.is_symbol(analyzer.find_std_string_slice())) {
+            if (param_type.is_pseudo_type(sir::PseudoTypeKind::STRING_LITERAL)) {
                 continue;
             }
         }
 
-        if (args[i].get_type() != func_def.type.params[i].type) {
-            return false;
+        // FIXME: Prioritize overloads that use references.
+        if (auto reference_type = param_type.match<sir::ReferenceType>()) {
+            if (arg_type != reference_type->base_type) {
+                return false;
+            }
+        } else {
+            if (arg_type != param_type) {
+                return false;
+            }
         }
     }
 
