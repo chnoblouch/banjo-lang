@@ -1,0 +1,99 @@
+# test:subtest
+# test:compiles
+
+func f(value: i32) {}
+func f() {}
+
+func main() {
+    f(42);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: i8) {}
+func f() {}
+
+func main() {
+    f(42);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: usize) {}
+func f() {}
+
+func main() {
+    f(42);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: f32) {}
+func f() {}
+
+func main() {
+    f(0.25);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: f64) {}
+func f() {}
+
+func main() {
+    f(0.25);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: addr) {}
+func f() {}
+
+func main() {
+    f(null);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: *i32) {}
+func f() {}
+
+func main() {
+    f(null);
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: *u8) {}
+func f() {}
+
+func main() {
+    f("Test");
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: String) {}
+func f() {}
+
+func main() {
+    f("Test");
+}
+
+# test:subtest
+# test:compiles
+
+func f(value: StringSlice) {}
+func f() {}
+
+func main() {
+    f("Test");
+}

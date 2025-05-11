@@ -67,6 +67,7 @@ add_library(banjo STATIC
     sema/generics_specializer.cpp
     sema/meta_expansion.cpp
     sema/meta_expr_evaluator.cpp
+    sema/overload_resolver.cpp
     sema/pointer_escape_checker.cpp
     sema/report_generator.cpp
     sema/resource_analyzer.cpp
