@@ -277,8 +277,13 @@ ParseResult Parser::parse_param() {
     } else {
         if (stream.get()->is(TKN_REF)) {
             type = AST_REF_PARAM;
-
             stream.consume(); // Consume 'ref'
+
+            if (stream.get()->is(TKN_MUT)) {
+                type = AST_REF_MUT_PARAM;
+                stream.consume(); // Consume 'mut'
+            }
+
             node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
             stream.consume(); // Consume ':'
         } else if (stream.peek(1)->is(TKN_COLON)) {

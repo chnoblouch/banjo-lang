@@ -1254,6 +1254,15 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             sir_type = create_expr(
                 sir::ReferenceType{
                     .ast_node = type_node,
+                    .mut = false,
+                    .base_type = sir_type,
+                }
+            );
+        } else if (node->type == AST_REF_MUT_PARAM) {
+            sir_type = create_expr(
+                sir::ReferenceType{
+                    .ast_node = type_node,
+                    .mut = true,
                     .base_type = sir_type,
                 }
             );

@@ -975,6 +975,7 @@ ReferenceType *Cloner::clone_reference_type(const ReferenceType &reference_type)
     return mod.create_expr(
         ReferenceType{
             .ast_node = reference_type.ast_node,
+            .mut = reference_type.mut,
             .base_type = clone_expr(reference_type.base_type),
         }
     );

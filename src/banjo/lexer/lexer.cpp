@@ -31,6 +31,7 @@ const std::map<std::string_view, TokenType> KEYWORDS{
     {"void", TKN_VOID},
     {"except", TKN_EXCEPT},
     {"ref", TKN_REF},
+    {"mut", TKN_MUT},
     {"as", TKN_AS},
     {"if", TKN_IF},
     {"else", TKN_ELSE},

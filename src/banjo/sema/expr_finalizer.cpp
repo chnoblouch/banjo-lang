@@ -3,6 +3,7 @@
 #include "banjo/sema/generics_specializer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
+#include "mutability_checker.hpp"
 
 #include <unordered_map>
 
@@ -84,10 +85,12 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
 Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type) {
     Result partial_result;
 
-    partial_result = finalize_by_coercion(inout_expr, reference_type.base_type);
+    partial_result = ExprFinalizer(analyzer).finalize_by_coercion(inout_expr, reference_type.base_type);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
+
+    sir::Expr base_expr = inout_expr;
 
     inout_expr = analyzer.create_expr(
         sir::CoercionExpr{
@@ -97,13 +100,22 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
         }
     );
 
+    if (reference_type.mut) {
+        MutabilityChecker::Result mut_result = MutabilityChecker().check(base_expr);
+
+        if (mut_result.kind == MutabilityChecker::Kind::IMMUTABLE_REF) {
+            analyzer.report_generator.report_err_ref_immut_to_mut(base_expr, mut_result.immut_expr);
+            return Result::ERROR;
+        }
+    }
+
     return Result::SUCCESS;
 }
 
 Result ExprFinalizer::coerce_to_union(sir::Expr &inout_expr, sir::Expr union_type) {
     Result partial_result;
 
-    partial_result = finalize(inout_expr);
+    partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -124,7 +136,7 @@ Result ExprFinalizer::coerce_to_union(sir::Expr &inout_expr, sir::Expr union_typ
 Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &proto_def, sir::Expr proto_ptr_type) {
     Result partial_result;
 
-    partial_result = finalize(inout_expr);
+    partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -169,7 +181,7 @@ Result ExprFinalizer::coerce_to_std_optional(
         return Result::SUCCESS;
     }
 
-    partial_result = finalize_by_coercion(inout_expr, specialization.args[0]);
+    partial_result = ExprFinalizer(analyzer).finalize_by_coercion(inout_expr, specialization.args[0]);
     if (partial_result != Result::SUCCESS) {
         return partial_result;
     }
@@ -181,7 +193,7 @@ Result ExprFinalizer::coerce_to_std_optional(
 Result ExprFinalizer::coerce_to_std_result(sir::Expr &inout_expr, sir::Specialization<sir::StructDef> &specialization) {
     Result partial_result;
 
-    partial_result = finalize(inout_expr);
+    partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
     if (partial_result != Result::SUCCESS) {
         return partial_result;
     }
@@ -307,7 +319,7 @@ Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr
             for (unsigned i = 0; i < tuple_literal.exprs.size(); i++) {
                 sir::Expr &value = tuple_literal.exprs[i];
 
-                partial_result = finalize_by_coercion(value, tuple_type->exprs[i]);
+                partial_result = ExprFinalizer(analyzer).finalize_by_coercion(value, tuple_type->exprs[i]);
                 if (partial_result != Result::SUCCESS) {
                     result = Result::ERROR;
                 }
@@ -348,9 +360,9 @@ Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr ty
     Result partial_result;
 
     if (unary_expr.op == sir::UnaryOp::NEG || unary_expr.op == sir::UnaryOp::BIT_NOT) {
-        partial_result = finalize_by_coercion(unary_expr.value, type);
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(unary_expr.value, type);
     } else {
-        partial_result = finalize(unary_expr.value);
+        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
     }
 
     if (unary_expr.type.is<sir::PseudoType>()) {
@@ -462,7 +474,7 @@ Result ExprFinalizer::finalize_default(sir::TupleExpr &tuple_literal) {
 
     for (unsigned i = 0; i < tuple_literal.exprs.size(); i++) {
         sir::Expr &value = tuple_literal.exprs[i];
-        finalize(value);
+        ExprFinalizer(analyzer).finalize(value);
         tuple_type.exprs[i] = value.get_type();
     }
 
@@ -476,7 +488,7 @@ Result ExprFinalizer::finalize_default(sir::MapLiteral &map_literal, sir::Expr &
 }
 
 Result ExprFinalizer::finalize_default(sir::UnaryExpr &unary_expr) {
-    finalize(unary_expr.value);
+    ExprFinalizer(analyzer).finalize(unary_expr.value);
 
     if (unary_expr.type.is<sir::PseudoType>()) {
         unary_expr.type = unary_expr.value.get_type();
@@ -754,9 +766,9 @@ Result ExprFinalizer::finalize_array_literal_elements(sir::ArrayLiteral &array_l
 
     for (sir::Expr &value : array_literal.values) {
         if (element_type) {
-            partial_result = finalize_by_coercion(value, element_type);
+            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(value, element_type);
         } else {
-            partial_result = finalize(value);
+            partial_result = ExprFinalizer(analyzer).finalize(value);
             element_type = value.get_type();
         }
 
@@ -803,7 +815,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
             initialized_fields.insert({entry.field, &entry});
         }
 
-        partial_result = finalize_by_coercion(entry.value, entry.field->type);
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, entry.field->type);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -832,9 +844,9 @@ Result ExprFinalizer::finalize_map_literal_elements(
 
     for (sir::MapLiteralEntry &entry : map_literal.entries) {
         if (key_type) {
-            partial_result = finalize_by_coercion(entry.key, key_type);
+            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.key, key_type);
         } else {
-            partial_result = finalize(entry.key);
+            partial_result = ExprFinalizer(analyzer).finalize(entry.key);
         }
 
         if (partial_result != Result::SUCCESS) {
@@ -842,9 +854,9 @@ Result ExprFinalizer::finalize_map_literal_elements(
         }
 
         if (value_type) {
-            partial_result = finalize_by_coercion(entry.value, value_type);
+            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, value_type);
         } else {
-            partial_result = finalize(entry.value);
+            partial_result = ExprFinalizer(analyzer).finalize(entry.value);
         }
 
         if (partial_result != Result::SUCCESS) {

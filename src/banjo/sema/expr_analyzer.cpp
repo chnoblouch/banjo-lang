@@ -19,10 +19,10 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
+#include "mutability_checker.hpp"
 
 #include <optional>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 namespace banjo {
@@ -31,27 +31,24 @@ namespace lang {
 
 namespace sema {
 
-ExprConstraints ExprConstraints::expect_type(sir::Expr type) {
-    return {
-        .expected_type = type,
-    };
-}
-
 ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-Result ExprAnalyzer::analyze_value(sir::Expr &expr, ExprConstraints constraints /*= {}*/) {
+Result ExprAnalyzer::analyze_value(sir::Expr &expr) {
     Result result = analyze_value_uncoerced(expr);
     if (result != Result::SUCCESS) {
         return result;
     }
 
-    if (constraints.expected_type) {
-        return ExprFinalizer(analyzer).finalize_by_coercion(expr, constraints.expected_type);
-    } else {
-        return ExprFinalizer(analyzer).finalize(expr);
+    return ExprFinalizer(analyzer).finalize(expr);
+}
+
+Result ExprAnalyzer::analyze_value(sir::Expr &expr, sir::Expr expected_type) {
+    Result result = analyze_value_uncoerced(expr);
+    if (result != Result::SUCCESS) {
+        return result;
     }
 
-    return Result::SUCCESS;
+    return ExprFinalizer(analyzer).finalize_by_coercion(expr, expected_type);
 }
 
 Result ExprAnalyzer::analyze_value_uncoerced(sir::Expr &expr) {
@@ -86,19 +83,22 @@ Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
     return Result::SUCCESS;
 }
 
-Result ExprAnalyzer::analyze(sir::Expr &expr, ExprConstraints constraints /*= {}*/) {
-    Result result;
-
-    result = analyze_uncoerced(expr);
+Result ExprAnalyzer::analyze(sir::Expr &expr) {
+    Result result = analyze_uncoerced(expr);
     if (result != Result::SUCCESS) {
         return result;
     }
 
-    if (constraints.expected_type) {
-        return ExprFinalizer(analyzer).finalize_by_coercion(expr, constraints.expected_type);
-    } else {
-        return ExprFinalizer(analyzer).finalize(expr);
+    return ExprFinalizer(analyzer).finalize(expr);
+}
+
+Result ExprAnalyzer::analyze(sir::Expr &expr, sir::Expr expected_type) {
+    Result result = analyze_uncoerced(expr);
+    if (result != Result::SUCCESS) {
+        return result;
     }
+
+    return ExprFinalizer(analyzer).finalize_by_coercion(expr, expected_type);
 }
 
 Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
@@ -689,6 +689,13 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             }
         );
 
+        MutabilityChecker::Result mut_result = MutabilityChecker().check(unary_expr.value);
+
+        if (mut_result.kind == MutabilityChecker::Kind::IMMUTABLE_REF) {
+            analyzer.report_generator.report_err_cannot_create_pointer_to_immut(&unary_expr, mut_result.immut_expr);
+            return Result::ERROR;
+        }
+
         return Result::SUCCESS;
     }
 
@@ -1062,9 +1069,8 @@ Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::E
 
     for (unsigned i = 0; i < call_expr.args.size(); i++) {
         sir::Expr expected_type = union_case.fields[i].type;
-        ExprConstraints constraints = ExprConstraints::expect_type(expected_type);
 
-        partial_result = ExprAnalyzer(analyzer).analyze_value(call_expr.args[i], constraints);
+        partial_result = ExprAnalyzer(analyzer).analyze_value(call_expr.args[i], expected_type);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -1411,7 +1417,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 
     sir::Expr type = symbol.get_type();
 
-    out_expr = analyzer.create_expr(
+    sir::Expr symbol_expr = analyzer.create_expr(
         sir::SymbolExpr{
             .ast_node = ident_expr.ast_node,
             .type = type,
@@ -1425,9 +1431,11 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
                 .ast_node = ident_expr.ast_node,
                 .type = reference_type->base_type,
                 .op = sir::UnaryOp::DEREF,
-                .value = out_expr,
+                .value = symbol_expr,
             }
         );
+    } else {
+        out_expr = symbol_expr;
     }
 
     return Result::SUCCESS;

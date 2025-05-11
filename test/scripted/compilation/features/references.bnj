@@ -21,7 +21,7 @@ struct S {
     var b: bool;
 }
 
-func f(ref s: S) {
+func f(ref mut s: S) {
     s.a = 42;
     s.b = true;
 }
@@ -57,7 +57,7 @@ func main() {
 # test:subtest
 # test:output "true"
 
-func addrof(ref value: i32) -> addr {
+func addrof(ref mut value: i32) -> addr {
     return &value;
 }
 

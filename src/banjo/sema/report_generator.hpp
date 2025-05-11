@@ -67,6 +67,7 @@ public:
         sir::Specialization<sir::StructDef> &result_specialization
     );
 
+    void report_err_ref_immut_to_mut(const sir::Expr &expr, const sir::Expr &immut_sub_expr);
     void report_err_cannot_infer_type(const sir::NoneLiteral &none_literal);
     void report_err_cannot_infer_type(const sir::UndefinedLiteral &undefined_literal);
     void report_err_cannot_infer_type(const sir::ArrayLiteral &array_literal);
@@ -78,6 +79,8 @@ public:
     void report_err_cannot_cast(const sir::CastExpr &cast_expr);
     void report_err_cannot_call(const sir::Expr &expr);
     void report_err_cannot_deref(const sir::Expr &expr);
+    void report_err_cannot_assign_immut(const sir::Expr &expr, const sir::Expr &immut_sub_expr);
+    void report_err_cannot_create_pointer_to_immut(const sir::Expr &expr, const sir::Expr &immut_sub_expr);
     void report_err_cannot_iter(const sir::Expr &expr);
     void report_err_cannot_iter_struct(const sir::Expr &expr, bool by_ref);
     void report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, bool by_ref);
@@ -177,6 +180,8 @@ private:
         sir::Ident &decl_ident,
         std::string_view decl_kind
     );
+
+    void add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr);
 };
 
 } // namespace sema

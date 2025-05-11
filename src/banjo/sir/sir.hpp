@@ -852,6 +852,7 @@ struct ClosureType {
 
 struct ReferenceType {
     ASTNode *ast_node;
+    bool mut;
     Expr base_type;
 
     bool operator==(const ReferenceType &other) const { return base_type == other.base_type; }

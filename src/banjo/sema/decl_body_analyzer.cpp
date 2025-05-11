@@ -45,7 +45,7 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
         return Result::ERROR;
     }
 
-    return ExprAnalyzer(analyzer).analyze_value(const_def.value, ExprConstraints::expect_type(const_def.type));
+    return ExprAnalyzer(analyzer).analyze_value(const_def.value, const_def.type);
 }
 
 Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {

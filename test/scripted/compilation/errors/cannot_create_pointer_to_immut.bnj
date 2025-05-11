@@ -1,0 +1,19 @@
+# test:subtest
+# test:error 6:19 "cannot create pointer to immutable"
+# test:note 6:20 "'a' is an immutable reference ('ref i32')"
+
+func f(ref a: i32) {
+    var pointer = &a;
+}
+
+# test:subtest
+# test:error 18:19 "cannot create pointer to immutable"
+# test:note 18:20 "'s' is an immutable reference ('ref S')"
+
+struct S {
+    var a: i32;
+}
+
+func f(ref s: S) {
+    var pointer = &s.a;
+}

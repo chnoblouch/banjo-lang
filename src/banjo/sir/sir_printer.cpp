@@ -942,6 +942,7 @@ void Printer::print_closure_type(const ClosureType &closure_type) {
 
 void Printer::print_reference_type(const ReferenceType &reference_type) {
     BEGIN_OBJECT("ReferenceType");
+    PRINT_FIELD("mut", reference_type.mut ? "true" : "false");
     PRINT_EXPR_FIELD("base_type", reference_type.base_type);
     END_OBJECT();
 }

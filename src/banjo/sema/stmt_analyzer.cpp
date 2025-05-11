@@ -2,6 +2,7 @@
 
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/meta_expansion.hpp"
+#include "banjo/sema/mutability_checker.hpp"
 #include "banjo/sema/pointer_escape_checker.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
@@ -67,13 +68,11 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         partial_result = ExprAnalyzer(analyzer).analyze_type(var_stmt.local.type);
 
         if (var_stmt.value) {
-            ExprConstraints constraints;
-
             if (partial_result == Result::SUCCESS) {
-                constraints = ExprConstraints::expect_type(var_stmt.local.type);
+                ExprAnalyzer(analyzer).analyze_value(var_stmt.value, var_stmt.local.type);
+            } else {
+                ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
             }
-
-            ExprAnalyzer(analyzer).analyze_value(var_stmt.value, constraints);
         }
     } else {
         ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
@@ -84,17 +83,20 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 }
 
 void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
-    Result partial_result;
+    Result lhs_result = ExprAnalyzer(analyzer).analyze_value(assign_stmt.lhs);
 
-    partial_result = ExprAnalyzer(analyzer).analyze_value(assign_stmt.lhs);
+    if (lhs_result == Result::SUCCESS) {
+        MutabilityChecker::Result mut_result = MutabilityChecker().check(assign_stmt.lhs);
 
-    ExprConstraints constraints;
+        if (mut_result.kind == MutabilityChecker::Kind::IMMUTABLE_REF) {
+            analyzer.report_generator.report_err_cannot_assign_immut(assign_stmt.lhs, mut_result.immut_expr);
+            return;
+        }
 
-    if (partial_result == Result::SUCCESS) {
-        constraints = ExprConstraints::expect_type(assign_stmt.lhs.get_type());
+        ExprAnalyzer(analyzer).analyze_value(assign_stmt.rhs, assign_stmt.lhs.get_type());
+    } else {
+        ExprAnalyzer(analyzer).analyze_value(assign_stmt.rhs);
     }
-
-    ExprAnalyzer(analyzer).analyze_value(assign_stmt.rhs, constraints);
 }
 
 void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt) {
@@ -126,7 +128,7 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
 
     if (return_stmt.value) {
         // TODO: Also generate an appropriate error if the function returns `void`.
-        ExprAnalyzer(analyzer).analyze_value(return_stmt.value, ExprConstraints::expect_type(return_type));
+        ExprAnalyzer(analyzer).analyze_value(return_stmt.value, return_type);
     } else if (!return_type.is_primitive_type(sir::Primitive::VOID)) {
         analyzer.report_generator.report_err_return_missing_value(return_stmt, return_type);
     }

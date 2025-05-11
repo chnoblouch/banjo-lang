@@ -10,12 +10,6 @@ namespace lang {
 
 namespace sema {
 
-struct ExprConstraints {
-    sir::Expr expected_type = nullptr;
-
-    static ExprConstraints expect_type(sir::Expr type);
-};
-
 class ExprAnalyzer {
 
 private:
@@ -23,11 +17,13 @@ private:
 
 public:
     ExprAnalyzer(SemanticAnalyzer &analyzer);
-    Result analyze_value(sir::Expr &expr, ExprConstraints constraints = {});
+    Result analyze_value(sir::Expr &expr);
+    Result analyze_value(sir::Expr &expr, sir::Expr expected_type);
     Result analyze_value_uncoerced(sir::Expr &expr);
     Result analyze_type(sir::Expr &expr);
 
-    Result analyze(sir::Expr &expr, ExprConstraints constraints = {});
+    Result analyze(sir::Expr &expr);
+    Result analyze(sir::Expr &expr, sir::Expr expected_type);
     Result analyze_uncoerced(sir::Expr &expr);
 
 private:

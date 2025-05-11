@@ -171,6 +171,17 @@ void ReportGenerator::report_err_cannot_coerce_result(
     );
 }
 
+void ReportGenerator::report_err_ref_immut_to_mut(const sir::Expr &expr, const sir::Expr &immut_sub_expr) {
+    ReportBuilder builder = build_error(
+        "cannot pass immutable by mutable reference ('ref mut $')",
+        expr.get_ast_node(),
+        expr.get_type()
+    );
+
+    add_immut_sub_expr_note(builder, immut_sub_expr);
+    builder.report();
+}
+
 void ReportGenerator::report_err_cannot_infer_type(const sir::NoneLiteral &none_literal) {
     report_error("cannot infer type of `none`", none_literal.ast_node);
 }
@@ -251,6 +262,21 @@ void ReportGenerator::report_err_cannot_call(const sir::Expr &expr) {
 
 void ReportGenerator::report_err_cannot_deref(const sir::Expr &expr) {
     report_error("cannot dereference value with type '$'", expr.get_ast_node(), expr.get_type());
+}
+
+void ReportGenerator::report_err_cannot_assign_immut(const sir::Expr &expr, const sir::Expr &immut_sub_expr) {
+    ReportBuilder builder = build_error("cannot assign to immutable", expr.get_ast_node());
+    add_immut_sub_expr_note(builder, immut_sub_expr);
+    builder.report();
+}
+
+void ReportGenerator::report_err_cannot_create_pointer_to_immut(
+    const sir::Expr &expr,
+    const sir::Expr &immut_sub_expr
+) {
+    ReportBuilder builder = build_error("cannot create pointer to immutable", expr.get_ast_node());
+    add_immut_sub_expr_note(builder, immut_sub_expr);
+    builder.report();
 }
 
 void ReportGenerator::report_err_cannot_iter(const sir::Expr &expr) {
@@ -627,6 +653,20 @@ void ReportGenerator::report_err_move_in_loop(const sir::Expr &move) {
     report_error("resource moved in every iteration of a loop", move.get_ast_node());
 }
 
+void ReportGenerator::report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr) {
+    const sir::Ident &ident = meta_field_expr.field;
+    report_error("invalid meta field '$'", ident.ast_node, ident.value);
+}
+
+void ReportGenerator::report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr) {
+    const sir::Ident &ident = meta_call_expr.callee.as<sir::MetaFieldExpr>().field;
+    report_error("invalid meta method '$'", ident.ast_node, ident.value);
+}
+
+void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
+    report_warning("unreachable code", stmt.get_ast_node());
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,
@@ -668,18 +708,15 @@ void ReportGenerator::report_err_unexpected_generic_arg_count(
         .report();
 }
 
-void ReportGenerator::report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr) {
-    const sir::Ident &ident = meta_field_expr.field;
-    report_error("invalid meta field '$'", ident.ast_node, ident.value);
-}
-
-void ReportGenerator::report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr) {
-    const sir::Ident &ident = meta_call_expr.callee.as<sir::MetaFieldExpr>().field;
-    report_error("invalid meta method '$'", ident.ast_node, ident.value);
-}
-
-void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
-    report_warning("unreachable code", stmt.get_ast_node());
+void ReportGenerator::add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr) {
+    if (auto param = immut_sub_expr.match_symbol<sir::Param>()) {
+        builder.add_note(
+            "'$' is an immutable reference ('ref $')",
+            immut_sub_expr.get_ast_node(),
+            param->name.value,
+            param->type.as<sir::ReferenceType>().base_type
+        );
+    }
 }
 
 } // namespace sema
