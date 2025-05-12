@@ -17,13 +17,13 @@ func main() {
 	print(',');
 	print(array.length);
 	
-	var ref = &array[2];
+	var pointer = &array[2];
 	print(',');
 	print(array[2]);
 	print(',');
-	print(*ref);
+	print(*pointer);
 	
-	*ref = 20;
+	*pointer = 20;
 	print(',');
 	print(array[2]);
 	

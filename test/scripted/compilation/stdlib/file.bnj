@@ -30,7 +30,7 @@ func main() {
     print(result);
     print(',');
 
-    for i in 0..7 {
+    for i in 0..7 as usize {
         print(data[i]);
     }
 }

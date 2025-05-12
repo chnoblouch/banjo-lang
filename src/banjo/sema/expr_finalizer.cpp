@@ -93,9 +93,10 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
     sir::Expr base_expr = inout_expr;
 
     inout_expr = analyzer.create_expr(
-        sir::CoercionExpr{
+        sir::UnaryExpr{
             .ast_node = nullptr,
             .type = &reference_type,
+            .op = sir::UnaryOp::REF,
             .value = inout_expr,
         }
     );
