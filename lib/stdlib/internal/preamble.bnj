@@ -8,13 +8,13 @@ meta if os.IS_WINDOWS {
     use c.lib.stdio.fwrite;
 }
 
-pub func print[T](value: T) {
-    var string = convert.to_string(&value);
+pub func print[T](ref value: T) {
+    var string = convert.to_string(value);
     write_to_stdout(string.bytes(), string.length());
 }
 
-pub func println[T](value: T) {
-    var string = convert.to_string(&value);
+pub func println[T](ref value: T) {
+    var string = convert.to_string(value);
     write_to_stdout(string.bytes(), string.length());
     
     var line_ending: u8 = '\n';

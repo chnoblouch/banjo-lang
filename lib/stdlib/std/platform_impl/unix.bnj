@@ -184,7 +184,7 @@ meta if IS_UNIX {
         };
 
         var host_cstring = host.to_cstring();
-        var port_cstring = to_string(&port).to_cstring();
+        var port_cstring = to_string(port).to_cstring();
 
         var addr_info: *posix.Addrinfo;
         result = posix.getaddrinfo(host_cstring.data, port_cstring.data, &addr_hints, &addr_info);

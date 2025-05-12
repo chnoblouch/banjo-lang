@@ -4,7 +4,7 @@ use std.convert;
 
 func check[T](a: T, b: String) {
     # FIXME: `b.copy` is only necessary due to a compiler bug where `b` is not moved into `__eq__`
-    if convert.to_string(&a) == b.copy() {
+    if convert.to_string(a) == b.copy() {
         print('e');
     } else {
         print('n');

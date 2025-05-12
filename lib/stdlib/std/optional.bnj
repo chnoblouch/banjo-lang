@@ -29,7 +29,7 @@ struct Optional[T] {
     
     pub func __str__(self) -> String {
         if self.has_value {
-            return to_string(&self.value);
+            return to_string(self.value);
         } else {
             return "none";
         }

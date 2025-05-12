@@ -1,37 +1,37 @@
 use std.memory;
 use internal.runtime;
 
-pub func to_string[T](value: *T) -> String {
+pub func to_string[T](ref value: T) -> String {
     meta if T == String {
         return value.copy();
     } else if T == *u8 {
-        return String.from(*value);
+        return String.from(value);
     } else if T == i8 || T == i16 || T == i32 || T == i64 {
-        return i64_to_string(*value as i64);
+        return i64_to_string(value as i64);
     } else if T == u16 || T == u32 || T == u64 || T == usize {
-        return u64_to_string(*value as u64);
+        return u64_to_string(value as u64);
     } else if T == f32 || T == f64 {
-        return f64_to_string(*value as f64);
+        return f64_to_string(value as f64);
     } else if T == u8 {
-        return char_to_string(*value);
+        return char_to_string(value);
     } else if T == bool {
-        return bool_to_string(*value);
+        return bool_to_string(value);
     } else if meta(T).has_method("__str__") {
         return value.__str__();
     } else if meta(T).is_struct {
         return struct_to_repr(value, 0);
     } else if meta(T).is_enum {
-        return enum_to_repr(*value);
+        return enum_to_repr(value);
     } else {
         return "<?>";
     }
 }
 
-pub func to_repr[T](value: *T) -> String {
+pub func to_repr[T](ref value: T) -> String {
     return to_repr_indent(value, 0);
 }
 
-pub func to_repr_indent[T](value: *T, indent: u32) -> String {
+pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     meta if T == String {
         return "\"" + value.copy() + "\"";
     } else if meta(T).has_method("__repr__") {
@@ -45,7 +45,7 @@ pub func to_repr_indent[T](value: *T, indent: u32) -> String {
 
 func i64_to_string(value: i64) -> String {
     var capacity: usize = 32;
-    var data = memory.alloc(capacity) as *u8;
+    var buffer: [u8; 32];
     var length: usize = 0;
     
     var remainder: u64;
@@ -60,53 +60,43 @@ func i64_to_string(value: i64) -> String {
     }
     
     while true {
-        data[length] = (remainder % 10) as u8 + '0';
         length += 1;
+        buffer[capacity - length] = (remainder % 10) as u8 + '0';
         remainder /= 10;
         
-        if remainder == 0 { break; }
+        if remainder == 0 {
+            break;
+        }
     }
     
     if negative {
-        data[length] = '-';
         length += 1;
+        buffer[capacity - length] = '-';
     }
     
-    data[length] = 0;
-    
-    var string = String {
-        slice: StringSlice.new(data, length),
-        capacity,
-    };
-
-    string.reverse_in_place();
-    return string;
+    var slice = StringSlice.new(&buffer[capacity - length], length);
+    return String.from(slice);
 }
 
 func u64_to_string(value: u64) -> String {
     var capacity: usize = 32;
-    var data = memory.alloc(capacity) as *u8;
+    var buffer: [u8; 32];
     var length: usize = 0;
     
     var remainder = value;
     
     while true {
-        data[length] = (remainder % 10) as u8 + '0';
         length += 1;
+        buffer[capacity - length] = (remainder % 10) as u8 + '0';
         remainder /= 10;
         
-        if remainder == 0 { break; }
+        if remainder == 0 {
+            break;
+        }
     }
     
-    data[length] = 0;
-    
-    var string = String {
-        slice: StringSlice.new(data, length),
-        capacity,
-    };
-
-    string.reverse_in_place();
-    return string;
+    var slice = StringSlice.new(&buffer[capacity - length], length);
+    return String.from(slice);
 }
 
 func f64_to_string(value: f64) -> String {
@@ -129,7 +119,7 @@ func bool_to_string(value: bool) -> String {
     }
 }
 
-func struct_to_repr[T](struct_: *T, indent: u32) -> String {
+func struct_to_repr[T](ref struct_: T, indent: u32) -> String {
     var string = meta(T).name + " {\n";
 
     meta for field_name in meta(T).fields {    
@@ -139,12 +129,7 @@ func struct_to_repr[T](struct_: *T, indent: u32) -> String {
 
         string += field_name;
         string += ": ";
-        
-        {
-            var field = &meta(struct_).field(field_name);
-            string += to_repr_indent(field, indent + 1);
-        }
-
+        string += to_repr_indent(meta(struct_).field(field_name), indent + 1);
         string += ",\n";
     }
 

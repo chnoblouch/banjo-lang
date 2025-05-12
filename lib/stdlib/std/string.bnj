@@ -132,7 +132,7 @@ struct String {
         return self.slice == rhs;
     }
 
-    pub func __eq__(self, rhs: String) -> bool {
+    pub func __eq__(self, ref rhs: String) -> bool {
         return self.slice == rhs.slice;
     }
 
@@ -140,7 +140,7 @@ struct String {
         return self.slice != rhs;
     }
 
-    pub func __ne__(self, rhs: String) -> bool {
+    pub func __ne__(self, ref rhs: String) -> bool {
         return self.slice != rhs.slice;
     }
 
