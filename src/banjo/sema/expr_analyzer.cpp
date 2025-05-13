@@ -814,6 +814,24 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             );
 
             return Result::SUCCESS;
+        } else if (ident_expr->value == "__builtin_pointer_to") {
+            ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
+
+            out_expr = analyzer.create_expr(
+                sir::UnaryExpr{
+                    .ast_node = nullptr,
+                    .type = analyzer.create_expr(
+                        sir::PointerType{
+                            .ast_node = nullptr,
+                            .base_type = call_expr.args[0].get_type(),
+                        }
+                    ),
+                    .op = sir::UnaryOp::REF,
+                    .value = call_expr.args[0],
+                }
+            );
+
+            return Result::SUCCESS;
         }
     }
 
