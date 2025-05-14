@@ -55,7 +55,7 @@ struct PointerMoveIter[T] {
         return PointerMoveIter[T] { pointer, end };
     }
     
-    func __next__(self) -> ?T {
+    func __next__(mut self) -> ?T {
         if self.pointer == self.end {
             return none;
         }
@@ -75,7 +75,7 @@ struct PointerRefIter[T] {
         return PointerRefIter[T] { pointer, end };
     }
     
-    func __next__(self) -> ?*T {
+    func __next__(mut self) -> ?*T {
         if self.pointer == self.end {
             return none;
         }

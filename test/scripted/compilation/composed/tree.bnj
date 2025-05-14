@@ -15,7 +15,7 @@ struct Node {
 struct TreeBuilder {
 	var root: Node;
 	
-	func build(self) {
+	func build(mut self) {
 		self.root.children.append(self.create_node(1));
 		self.root.children.append(self.create_node(2));
 	}

@@ -273,6 +273,13 @@ ParseResult Parser::parse_param() {
     }
 
     if (stream.get()->is(TKN_SELF)) {
+        type = AST_REF_PARAM;
+        node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
+    } else if (stream.get()->is(TKN_MUT)) {
+        // FIXME: Error handling
+
+        type = AST_REF_MUT_PARAM;
+        stream.consume(); // Consume 'mut'
         node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
     } else {
         if (stream.get()->is(TKN_REF)) {

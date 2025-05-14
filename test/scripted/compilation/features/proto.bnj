@@ -141,12 +141,12 @@ func main() {
 # test:output "3;4,-3,8,"
 
 proto IntCollection {
-    func add(self, value: i32);
+    func add(mut self, value: i32);
     func count(self) -> usize;
 }
 
 proto DebugPrint {
-    func debug_print(self);
+    func debug_print(mut self);
 }
 
 struct IntSet: IntCollection, DebugPrint {
@@ -158,7 +158,7 @@ struct IntSet: IntCollection, DebugPrint {
         };
     }
     
-    func add(self, value: i32) {
+    func add(mut self, value: i32) {
         for *element in self.array {
             if *element == value {
                 return;
@@ -172,7 +172,7 @@ struct IntSet: IntCollection, DebugPrint {
         return self.array.length;
     }
     
-    func debug_print(self) {
+    func debug_print(mut self) {
         for *value in self.array {
             print(*value);
             print(",");

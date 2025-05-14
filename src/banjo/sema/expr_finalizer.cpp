@@ -85,6 +85,23 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
 Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type) {
     Result partial_result;
 
+    if (inout_expr.get_type().match_proto_ptr()) {
+        partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        inout_expr = analyzer.create_expr(
+            sir::CoercionExpr{
+                .ast_node = nullptr,
+                .type = &reference_type,
+                .value = inout_expr,
+            }
+        );
+
+        return Result::SUCCESS;
+    }
+
     partial_result = ExprFinalizer(analyzer).finalize_by_coercion(inout_expr, reference_type.base_type);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;

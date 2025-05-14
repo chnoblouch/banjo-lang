@@ -5,7 +5,7 @@ proto Stream {
 }
 
 # test:subtest
-# test:error 12:10 "method type does not match declaration (expected 'func(*Stream, *u8, usize)', got 'func(*S)')"
+# test:error 12:10 "method type does not match declaration (expected 'func(Stream, *u8, usize)', got 'func(S)')"
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {
@@ -13,7 +13,7 @@ struct S: Stream {
 }
 
 # test:subtest
-# test:error 20:10 "method type does not match declaration (expected 'func(*Stream, *u8, usize)', got 'func(*S, *u8, i32)')"
+# test:error 20:10 "method type does not match declaration (expected 'func(Stream, *u8, usize)', got 'func(S, *u8, i32)')"
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {
@@ -21,7 +21,7 @@ struct S: Stream {
 }
 
 # test:subtest
-# test:error 28:10 "method type does not match declaration (expected 'func(*Stream, *u8, usize)', got 'func(*S, *u8, usize) -> bool')"
+# test:error 28:10 "method type does not match declaration (expected 'func(Stream, *u8, usize)', got 'func(S, *u8, usize) -> bool')"
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {

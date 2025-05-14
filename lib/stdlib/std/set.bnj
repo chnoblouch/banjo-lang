@@ -17,7 +17,7 @@ struct Set[T] {
         return set;
     }
     
-    pub func insert(self, element: T) {
+    pub func insert(mut self, element: T) {
         for i in 0..self.elements.length {
             if self.elements[i] == element {
                 return;
@@ -27,7 +27,7 @@ struct Set[T] {
         self.elements.append(element);
     }
 
-    pub func contains(self, element: T) -> bool {
+    pub func contains(mut self, element: T) -> bool {
         for i in 0..self.elements.length {
             if self.elements[i] == element {
                 return true;

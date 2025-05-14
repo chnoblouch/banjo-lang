@@ -56,7 +56,7 @@ struct S {
     func __neg__(self, rhs: i32) -> i32 { return 16; }
     func __bitnot__(self, rhs: i32) -> i32 { return 17; }
     func __deref__(self, rhs: i32) -> i32 { return 18; }
-    func __index__(self, rhs: i32) -> *i32 { return &self.i; }
+    func __index__(mut self, rhs: i32) -> *i32 { return &self.i; }
 }
 
 func main() {

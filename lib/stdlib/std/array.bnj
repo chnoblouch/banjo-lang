@@ -50,18 +50,18 @@ struct Array[T] {
         };
     }
     
-    pub func append(self, value: T) {    
+    pub func append(mut self, value: T) {    
         self.ensure_capacity(self.length + 1);
         self.data[self.length] = value;
         self.length += 1;
     }
     
-    pub func resize(self, length: usize) {
+    pub func resize(mut self, length: usize) {
         self.length = length;
         self.ensure_capacity(length);
     }
     
-    pub func clear(self) {
+    pub func clear(mut self) {
         self.length = 0;
     }
 
@@ -77,7 +77,7 @@ struct Array[T] {
         };
     }
     
-    pub func __index__(self, index: usize) -> *T {
+    pub func __index__(mut self, index: usize) -> *T {
         meta if config.BUILD_CONFIG == config.DEBUG {
             self.check_bounds(index);
         }
@@ -89,11 +89,11 @@ struct Array[T] {
         return PointerMoveIter[T].new(self.data, self.data + self.length);
     }
 
-    pub func __refiter__(self) -> PointerRefIter[T] {
+    pub func __refiter__(mut self) -> PointerRefIter[T] {
         return PointerRefIter[T].new(self.data, self.data + self.length);
     }
     
-    pub func __add__(self, value: T) -> Array[T] {
+    pub func __add__(mut self, value: T) -> Array[T] {
         var length = self.length + 1;
         var data = memory.alloc(length * meta(T).size) as *T;
         
@@ -107,7 +107,7 @@ struct Array[T] {
         };
     }
 
-    pub func __add__(self, other: Array[T]) -> Array[T] {
+    pub func __add__(mut self, other: Array[T]) -> Array[T] {
         var length = self.length + other.length;
         var data = memory.alloc(length * meta(T).size) as *T;
         
@@ -142,7 +142,7 @@ struct Array[T] {
         }
     }
     
-    func ensure_capacity(self, capacity: usize) {
+    func ensure_capacity(mut self, capacity: usize) {
         if self.capacity >= capacity {
             return;
         }

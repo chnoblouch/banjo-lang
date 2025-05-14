@@ -34,9 +34,9 @@ struct Calculator {
 		return Calculator { value };
 	}
 	
-	pub func add(self, value: i32) -> *Calculator {
+	pub func add(mut self, value: i32) -> *Calculator {
 		self.value += value;
-		return self;
+		return &self;
 	}
 }
 
@@ -62,24 +62,24 @@ struct SumBuilder {
 		};
 	}
 	
-	pub func set_a(self, value: i32) -> *SumBuilder {
+	pub func set_a(mut self, value: i32) -> *SumBuilder {
 		self.a = value;
-		return self;
+		return &self;
 	}
 	
-	pub func set_b(self, value: i32) -> *SumBuilder {
+	pub func set_b(mut self, value: i32) -> *SumBuilder {
 		self.b = value;
-		return self;
+		return &self;
 	}
 	
-	pub func set_c(self, value: i32) -> *SumBuilder {
+	pub func set_c(mut self, value: i32) -> *SumBuilder {
 		self.c = value;
-		return self;
+		return &self;
 	}
 	
-	pub func set_d(self, value: i32) -> *SumBuilder {
+	pub func set_d(mut self, value: i32) -> *SumBuilder {
 		self.d = value;
-		return self;
+		return &self;
 	}
 	
 	pub func build(self) -> Sum {

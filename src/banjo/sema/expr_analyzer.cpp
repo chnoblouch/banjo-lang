@@ -104,6 +104,11 @@ Result ExprAnalyzer::analyze(sir::Expr &expr, sir::Expr expected_type) {
 Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     Result result = Result::SUCCESS;
 
+    // FIXME: Hack because range expressions get analyzed twice.
+    if (expr.get_type().is<sir::ReferenceType>()) {
+        return Result::SUCCESS;
+    }
+
     SIR_VISIT_EXPR(
         expr,
         SIR_VISIT_IMPOSSIBLE,                                        // empty
@@ -1632,34 +1637,16 @@ void ExprAnalyzer::create_method_call(
         }
     );
 
-    if (lhs_is_already_pointer) {
-        call_expr.args.insert(call_expr.args.begin(), lhs);
-    } else {
-        if (auto func_type = callee_type.match<sir::FuncType>()) {
-            sir::Param &self_param = func_type->params[0];
+    if (auto func_type = callee_type.match<sir::FuncType>()) {
+        sir::Param &self_param = func_type->params[0];
 
-            if (self_param.attrs && self_param.attrs->byval) {
-                call_expr.args.insert(call_expr.args.begin(), lhs);
-                return;
-            }
+        if (self_param.attrs && self_param.attrs->byval) {
+            call_expr.args.insert(call_expr.args.begin(), lhs);
+            return;
         }
-
-        sir::Expr self_arg = analyzer.create_expr(
-            sir::UnaryExpr{
-                .ast_node = nullptr,
-                .type = analyzer.create_expr(
-                    sir::PointerType{
-                        .ast_node = nullptr,
-                        .base_type = lhs.get_type(),
-                    }
-                ),
-                .op = sir::UnaryOp::REF,
-                .value = lhs,
-            }
-        );
-
-        call_expr.args.insert(call_expr.args.begin(), self_arg);
     }
+
+    call_expr.args.insert(call_expr.args.begin(), lhs);
 }
 
 Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
@@ -1832,25 +1819,11 @@ Result ExprAnalyzer::analyze_operator_overload_call(
 ) {
     Result partial_result;
 
-    sir::Expr self_ref = analyzer.create_expr(
-        sir::UnaryExpr{
-            .ast_node = nullptr,
-            .type = analyzer.create_expr(
-                sir::PointerType{
-                    .ast_node = nullptr,
-                    .base_type = self.get_type(),
-                }
-            ),
-            .op = sir::UnaryOp::REF,
-            .value = self,
-        }
-    );
-
     std::vector<sir::Expr> args;
     if (arg) {
-        args = {self_ref, arg};
+        args = {self, arg};
     } else {
-        args = {self_ref};
+        args = {self};
     }
 
     sir::FuncDef *impl;
@@ -1870,10 +1843,11 @@ Result ExprAnalyzer::analyze_operator_overload_call(
 
     ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
 
-    if (args.size() == 2) {
-        sir::Expr expected_arg_type = impl->type.params[1].type;
+    for (unsigned i = 0; i < args.size(); i++) {
+        sir::Expr &arg = args[i];
+        sir::Expr expected_arg_type = impl->type.params[i].type;
 
-        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(args[1], expected_arg_type);
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(arg, expected_arg_type);
         if (partial_result != Result::SUCCESS) {
             return Result::ERROR;
         }

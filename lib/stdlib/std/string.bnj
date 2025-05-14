@@ -33,9 +33,9 @@ struct String {
         return from(StringSlice.of_cstring(cstr));
     }
 
-    pub func concat(a: String, b: String) -> String {
+    pub func concat(ref a: String, ref b: String) -> String {
         var copy = a.copy();
-        copy.append(b);
+        copy.append(b.copy());
         return copy;
     }
 
@@ -59,21 +59,21 @@ struct String {
         return String.from(self.slice);
     }
 
-    pub func append(self, char: u8) {
+    pub func append(mut self, char: u8) {
         var new_length = self.slice.length + 1;
         self.ensure_capacity(new_length);
         self.slice.data[self.slice.length] = char;
         self.slice.length = new_length;
     }
 
-    pub func append(self, slice: StringSlice) {
+    pub func append(mut self, slice: StringSlice) {
         var new_length = self.slice.length + slice.length;
         self.ensure_capacity(new_length);
         memory.copy(slice.data, &self.slice.data[self.slice.length], slice.length);
         self.slice.length = new_length;
     }
 
-    pub func append(self, other: String) {
+    pub func append(mut self, other: String) {
         self.append(other.slice);
     }
 
@@ -118,8 +118,8 @@ struct String {
         return self.slice.to_i64();
     }
 
-    pub func __add__(self, rhs: String) -> String {
-        return concat(self.copy(), rhs);
+    pub func __add__(self, ref rhs: String) -> String {
+        return concat(self, rhs);
     }
 
     pub func __add__(self, rhs: u8) -> String {
@@ -156,7 +156,7 @@ struct String {
         return self.slice.__hash__();
     }
 
-    func ensure_capacity(self, required: usize) {
+    func ensure_capacity(mut self, required: usize) {
         if self.capacity >= required {
             return;
         }
@@ -172,7 +172,7 @@ struct String {
         self.slice.data = memory.realloc(self.slice.data, self.capacity) as *u8;
     }
 
-    func reverse_in_place(self) {
+    func reverse_in_place(mut self) {
         for i1 in 0..self.slice.length / 2 {
             var i2 = self.slice.length - 1 - i1;
 

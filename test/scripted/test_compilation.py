@@ -228,7 +228,11 @@ def compile_source(test):
             "--no-color",
         ])
 
-    os.remove("tmp.bnj")
+    try:
+        os.remove("tmp.bnj")
+    except OSError:
+        pass
+
     return result
 
 
@@ -253,13 +257,20 @@ def run_executable(test):
             "/OUT:test.exe",
         ])
 
-        os.remove("main.obj")
+        try:
+            os.remove("main.obj")
+        except OSError:
+            pass
 
         if not os.path.exists("test.exe"):
             return ProcessResult("", "", 1)
 
         result = run_process(["./test.exe"])
-        os.remove("test.exe")
+        
+        try:
+            os.remove("test.exe")
+        except OSError:
+            pass
     elif is_linux or is_macos:
         if not os.path.exists("main.o"):
             return ProcessResult("", "", 1)
@@ -269,13 +280,20 @@ def run_executable(test):
         else:
             subprocess.run(["clang", "-otest", "main.o"])
 
-        os.remove("main.o")
+        try:
+            os.remove("main.o")
+        except OSError:
+            pass
 
         if not os.path.exists("test"):
             return ProcessResult("", "", 1)
 
         result = run_process(["./test"])
-        os.remove("test")
+        
+        try:
+            os.remove("test")
+        except OSError:
+            pass
 
     return result
 

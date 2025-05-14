@@ -6,7 +6,7 @@ struct Iter {
 	var pointer: *i32;
 	var end: *i32;
 	
-	func __next__(self) -> ?i32 {
+	func __next__(mut self) -> ?i32 {
 		if self.pointer == self.end {
 			return none;
 		}
@@ -30,10 +30,10 @@ struct Sequence {
 		return { items };
 	}
 	
-	pub func __iter__(self) -> Iter {	
+	pub func __iter__(mut self) -> Iter {	
 		return {
 			pointer: self.items,
-			end: &self.items[4]
+			end: &self.items[4],
 		};
 	}
 }

@@ -39,7 +39,7 @@ struct SystemTime {
     }
     
     pub func elapsed(self) -> Duration {
-        return now().since(*self);
+        return now().since(self);
     }
     
     pub func __sub__(self, rhs: SystemTime) -> Duration {
@@ -80,7 +80,7 @@ struct MonotonicTime {
     }
     
     pub func elapsed(self) -> Duration {
-        return now().since(*self);
+        return now().since(self);
     }
     
     pub func __sub__(self, rhs: MonotonicTime) -> Duration {

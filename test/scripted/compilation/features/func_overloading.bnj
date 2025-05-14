@@ -61,11 +61,11 @@ func main() {
 struct Float {
     var value: f32;
     
-    pub func add(self, value: f32) {
+    pub func add(mut self, value: f32) {
         self.value += value;
     }
     
-    pub func add(self, value: i32) {
+    pub func add(mut self, value: i32) {
         self.value += value as f32;
     }
 }

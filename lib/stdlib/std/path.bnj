@@ -18,7 +18,7 @@ struct Path {
         return path;
     }
     
-    pub func append(self, component: String) {
+    pub func append(mut self, component: String) {
         self.path.append('/');
         self.path.append(component);
     }
@@ -42,23 +42,23 @@ struct Path {
 
     pub func exists(self) -> bool {
         # TODO: Error handling
-        return platform.path_exists(&self.path);
+        return platform.path_exists(__builtin_pointer_to(self.path));
     }
 
     pub func is_file(self) -> bool {
         # TODO: Types other than regular files and directories, error handling
-        return platform.path_is_file(&self.path);
+        return platform.path_is_file(__builtin_pointer_to(self.path));
     }
 
     pub func is_dir(self) -> bool {
         # TODO: Error handling
-        return platform.path_is_dir(&self.path);
+        return platform.path_is_dir(__builtin_pointer_to(self.path));
     }
     
     pub func list_dir(self) -> Array[Path] {
         # TODO: Error handling
 
-        var file_names = platform.path_list_dir(&self.path);
+        var file_names = platform.path_list_dir(__builtin_pointer_to(self.path));
         var paths = Array[Path].sized(file_names.length);
 
         var prefix = self.path.copy() + '/';
@@ -86,7 +86,7 @@ struct Path {
         return self.path.__repr__();
     }
     
-    func normalize(self) {
+    func normalize(mut self) {
         for i in 0..self.path.length() {
             if self.path.bytes()[i] == '\\' {
                 self.path.bytes()[i] = '/';

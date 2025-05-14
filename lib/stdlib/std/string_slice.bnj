@@ -25,7 +25,7 @@ struct StringSlice {
 
     pub func substring(self, start: usize, end: usize) -> StringSlice {
         return StringSlice {
-            data: &self.data[start],
+            data: self.pointer(start),
             length: end - start,
         };
     }
@@ -43,7 +43,7 @@ struct StringSlice {
             return false;
         }
 
-        return memory.compare(&self.data[self.length - other.length], other.data, other.length); 
+        return memory.compare(self.pointer(self.length - other.length), other.data, other.length); 
     }
 
     pub func find(self, char: u8) -> ?usize {
@@ -130,11 +130,11 @@ struct StringSlice {
     }
 
     pub func __ne__(self, rhs: StringSlice) -> bool {
-        return !(*self == rhs);
+        return !(self == rhs);
     }
 
     pub func __str__(self) -> String {
-        return String.from(*self);
+        return String.from(self);
     }
 
     pub func __repr__(self) -> String {
@@ -172,5 +172,9 @@ struct StringSlice {
         }
 
         return hash;
+    }
+
+    func pointer(self, index: usize) -> *u8 {
+        return __builtin_pointer_to(self.data[index]);
     }
 }

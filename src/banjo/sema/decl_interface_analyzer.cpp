@@ -201,12 +201,7 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             return;
         }
 
-        param.type = analyzer.create_expr(
-            sir::PointerType{
-                .ast_node = nullptr,
-                .base_type = base_type,
-            }
-        );
+        param.type.as<sir::ReferenceType>().base_type = base_type;
     } else {
         ExprAnalyzer(analyzer).analyze_type(param.type);
     }

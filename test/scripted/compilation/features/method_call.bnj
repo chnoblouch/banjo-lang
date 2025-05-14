@@ -78,7 +78,7 @@ union Char {
     case Upper(value: u8);
 
     func out(self, arg: u8) {
-        switch *self {
+        switch self {
             case char: Lower { putchar(char.value); }
             case char: Upper { putchar(char.value); }
         }
@@ -102,7 +102,7 @@ union Char {
     case Upper(value: u8);
 
     func out(self) {
-        switch *self {
+        switch self {
             case char: Lower { putchar(char.value); }
             case char: Upper { putchar(char.value); }
         }
@@ -181,7 +181,7 @@ struct Point {
     var x: i32;
     var y: i32;
 
-	func set(self, x: i32, y: i32) {
+	func set(mut self, x: i32, y: i32) {
 		self.x = x;
 		self.y = y;
 	}

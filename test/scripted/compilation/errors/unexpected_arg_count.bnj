@@ -30,7 +30,7 @@ func main() {
 
 # test:subtest
 # test:error 41:5 "too few arguments (expected 2, got 1)"
-# test:note 36:10 "function declared with type 'func(*S, f32)'"
+# test:note 36:10 "function declared with type 'func(S, f32)'"
 
 struct S {
     func f(self, a: f32) {}
