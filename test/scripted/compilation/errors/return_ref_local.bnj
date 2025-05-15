@@ -1,0 +1,61 @@
+# test:subtest
+# test:error 7:12 "cannot return reference to local" 
+# test:note 6:9 "'a' is a local variable"
+
+func test() -> ref i32 {
+    var a = 0;
+    return a;
+}
+
+# test:subtest
+# test:error 16:12 "cannot return reference to local" 
+# test:note 15:9 "'a' is a local variable"
+
+func test() -> ref mut i32 {
+    var a = 0;
+    return a;
+}
+
+# test:subtest
+# test:error 24:12 "cannot return reference to local" 
+# test:note 23:11 "'a' is a non-reference parameter"
+
+func test(a: i32) -> ref i32 {
+    return a;
+}
+
+# test:subtest
+# test:error 38:12 "cannot return reference to local" 
+# test:note 37:9 "'s' is a local variable"
+
+struct S {
+    var a: i32;
+    var b: f32;
+}
+
+func test() -> ref f32 {
+    var s = S { a: 0, b: 0.0 };
+    return s.b;
+}
+
+# test:subtest
+# test:error 47:12 "cannot return reference to local"
+# test:note 46:9 "'a' is a local variable"
+
+func test() -> ref i32 {
+    var a: [i32; 3] = [1, 2, 3];
+    return a[2];
+}
+
+# test:subtest
+# test:error 60:12 "cannot return reference to local"
+# test:note 59:11 "'s' is a non-reference parameter"
+
+struct S {
+    var a: i32;
+    var b: (f32, [bool; 3]);
+}
+
+func test(s: S) -> ref bool {
+    return (s.b).1[2];  # TODO: Fix lexer
+}

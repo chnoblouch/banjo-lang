@@ -1,9 +1,9 @@
 #include "expr_finalizer.hpp"
 
+#include "banjo/sema/expr_property_analyzer.hpp"
 #include "banjo/sema/generics_specializer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
-#include "mutability_checker.hpp"
 
 #include <unordered_map>
 
@@ -93,7 +93,7 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
 
         inout_expr = analyzer.create_expr(
             sir::CoercionExpr{
-                .ast_node = nullptr,
+                .ast_node = inout_expr.get_ast_node(),
                 .type = &reference_type,
                 .value = inout_expr,
             }
@@ -111,7 +111,7 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
 
     inout_expr = analyzer.create_expr(
         sir::UnaryExpr{
-            .ast_node = nullptr,
+            .ast_node = inout_expr.get_ast_node(),
             .type = &reference_type,
             .op = sir::UnaryOp::REF,
             .value = inout_expr,
@@ -119,10 +119,10 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
     );
 
     if (reference_type.mut) {
-        MutabilityChecker::Result mut_result = MutabilityChecker().check(base_expr);
+        ExprProperties props = ExprPropertyAnalyzer().analyze(base_expr);
 
-        if (mut_result.kind == MutabilityChecker::Kind::IMMUTABLE_REF) {
-            analyzer.report_generator.report_err_ref_immut_to_mut(base_expr, mut_result.immut_expr);
+        if (props.mutability == Mutability::IMMUTABLE_REF) {
+            analyzer.report_generator.report_err_ref_immut_to_mut(base_expr, props.base_value);
             return Result::ERROR;
         }
     }

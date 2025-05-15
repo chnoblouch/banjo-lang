@@ -1,0 +1,34 @@
+# test:subtest
+# test:error 5:12 "cannot return reference to temporary"
+
+func test() -> ref i32 {
+    return 0;
+}
+
+# test:subtest
+# test:error 17:12 "cannot return reference to temporary"
+
+struct S {
+    var a: i32;
+    var b: i32;
+}
+
+func test() -> ref S {
+    return S { a: 0, b: 0 };
+}
+
+# test:subtest
+# test:error 33:12 "cannot return reference to temporary"
+
+struct S {
+    var a: i32;
+    var b: i32;
+}
+
+func get() -> i32 {
+    return 0;
+}
+
+func test() -> ref i32 {
+    return get();
+}

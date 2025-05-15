@@ -4,6 +4,7 @@
 #include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/decl_interface_analyzer.hpp"
 #include "banjo/sema/expr_finalizer.hpp"
+#include "banjo/sema/expr_property_analyzer.hpp"
 #include "banjo/sema/generic_arg_inference.hpp"
 #include "banjo/sema/generics_specializer.hpp"
 #include "banjo/sema/meta_expansion.hpp"
@@ -19,7 +20,6 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
-#include "mutability_checker.hpp"
 
 #include <optional>
 #include <string_view>
@@ -705,10 +705,10 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             }
         );
 
-        MutabilityChecker::Result mut_result = MutabilityChecker().check(unary_expr.value);
+        ExprProperties props = ExprPropertyAnalyzer().analyze(unary_expr.value);
 
-        if (mut_result.kind == MutabilityChecker::Kind::IMMUTABLE_REF) {
-            analyzer.report_generator.report_err_cannot_create_pointer_to_immut(&unary_expr, mut_result.immut_expr);
+        if (props.mutability == Mutability::IMMUTABLE_REF) {
+            analyzer.report_generator.report_err_cannot_create_pointer_to_immut(&unary_expr, props.base_value);
             return Result::ERROR;
         }
 

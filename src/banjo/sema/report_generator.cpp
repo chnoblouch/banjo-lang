@@ -41,13 +41,13 @@ SourceLocation ReportBuilder::find_location(ASTNode *node) {
 }
 
 void ReportBuilder::report() {
-    std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
+    // std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
 
-    if (!generic_args.empty()) {
-        for (auto &[name, value] : generic_args) {
-            add_note("generic argument '$' = '$'", value.get_ast_node(), name, value);
-        }
-    }
+    // if (!generic_args.empty()) {
+    //     for (auto &[name, value] : generic_args) {
+    //         add_note("generic argument '$' = '$'", value.get_ast_node(), name, value);
+    //     }
+    // }
 
     analyzer.report_manager.insert(partial_report);
 }
@@ -172,11 +172,8 @@ void ReportGenerator::report_err_cannot_coerce_result(
 }
 
 void ReportGenerator::report_err_ref_immut_to_mut(const sir::Expr &expr, const sir::Expr &immut_sub_expr) {
-    ReportBuilder builder = build_error(
-        "cannot pass immutable by mutable reference ('ref mut $')",
-        expr.get_ast_node(),
-        expr.get_type()
-    );
+    ReportBuilder builder =
+        build_error("cannot pass immutable by mutable reference ('ref mut $')", expr.get_ast_node(), expr.get_type());
 
     add_immut_sub_expr_note(builder, immut_sub_expr);
     builder.report();
@@ -616,6 +613,22 @@ void ReportGenerator::report_err_pointer_to_local_escapes(const sir::Stmt &stmt,
         .report();
 }
 
+void ReportGenerator::report_err_return_ref_tmp(const sir::Expr &value) {
+    report_error("cannot return reference to temporary", value.get_ast_node());
+}
+
+void ReportGenerator::report_err_return_ref_local(const sir::Expr &value, const sir::Symbol &symbol) {
+    ReportBuilder builder = build_error("cannot return reference to local", value.get_ast_node());
+
+    if (auto local = symbol.match<sir::Local>()) {
+        builder.add_note("'$' is a local variable", local->name.ast_node, local->name.value);
+    } else if (auto param = symbol.match<sir::Param>()) {
+        builder.add_note("'$' is a non-reference parameter", param->name.ast_node, param->name.value);
+    }
+
+    builder.report();
+}
+
 void ReportGenerator::report_err_use_after_move(
     const sir::Expr &use,
     const sir::Expr &move,
@@ -712,7 +725,7 @@ void ReportGenerator::add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr 
     if (auto param = immut_sub_expr.match_symbol<sir::Param>()) {
         builder.add_note(
             "'$' is an immutable reference ('ref $')",
-            immut_sub_expr.get_ast_node(),
+            param->name.ast_node,
             param->name.value,
             param->type.as<sir::ReferenceType>().base_type
         );

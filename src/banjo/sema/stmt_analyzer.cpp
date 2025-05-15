@@ -1,8 +1,8 @@
 #include "stmt_analyzer.hpp"
 
 #include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/expr_property_analyzer.hpp"
 #include "banjo/sema/meta_expansion.hpp"
-#include "banjo/sema/mutability_checker.hpp"
 #include "banjo/sema/pointer_escape_checker.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
@@ -86,10 +86,10 @@ void StmtAnalyzer::analyze_assign_stmt(sir::AssignStmt &assign_stmt) {
     Result lhs_result = ExprAnalyzer(analyzer).analyze_value(assign_stmt.lhs);
 
     if (lhs_result == Result::SUCCESS) {
-        MutabilityChecker::Result mut_result = MutabilityChecker().check(assign_stmt.lhs);
+        ExprProperties props = ExprPropertyAnalyzer().analyze(assign_stmt.lhs);
 
-        if (mut_result.kind == MutabilityChecker::Kind::IMMUTABLE_REF) {
-            analyzer.report_generator.report_err_cannot_assign_immut(assign_stmt.lhs, mut_result.immut_expr);
+        if (props.mutability == Mutability::IMMUTABLE_REF) {
+            analyzer.report_generator.report_err_cannot_assign_immut(assign_stmt.lhs, props.base_value);
             return;
         }
 
@@ -133,7 +133,31 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
         analyzer.report_generator.report_err_return_missing_value(return_stmt, return_type);
     }
 
-    PointerEscapeChecker(analyzer).check_return_stmt(return_stmt);
+    if (auto unary_expr = return_stmt.value.match<sir::UnaryExpr>()) {
+        if (unary_expr->op != sir::UnaryOp::REF || !unary_expr->type.is<sir::ReferenceType>()) {
+            return;
+        }
+
+        ExprProperties props = ExprPropertyAnalyzer().analyze(unary_expr->value);
+
+        if (props.is_temporary) {
+            analyzer.report_generator.report_err_return_ref_tmp(unary_expr->value);
+        } else if (auto symbol_expr = props.base_value.match<sir::SymbolExpr>()) {
+            bool is_local = false;
+
+            if (symbol_expr->symbol.is<sir::Local>()) {
+                is_local = true;
+            } else if (auto param = symbol_expr->symbol.match<sir::Param>()) {
+                is_local = !param->type.is<sir::ReferenceType>();
+            }
+
+            if (is_local) {
+                analyzer.report_generator.report_err_return_ref_local(unary_expr->value, symbol_expr->symbol);
+            }
+        }
+    }
+
+    // PointerEscapeChecker(analyzer).check_return_stmt(return_stmt);
 }
 
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {

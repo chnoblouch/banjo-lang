@@ -63,11 +63,11 @@ add_library(banjo STATIC
     sema/decl_visitor.cpp
     sema/expr_analyzer.cpp
     sema/expr_finalizer.cpp
+    sema/expr_property_analyzer.cpp
     sema/generic_arg_inference.cpp
     sema/generics_specializer.cpp
     sema/meta_expansion.cpp
     sema/meta_expr_evaluator.cpp
-    sema/mutability_checker.cpp
     sema/overload_resolver.cpp
     sema/pointer_escape_checker.cpp
     sema/report_generator.cpp
