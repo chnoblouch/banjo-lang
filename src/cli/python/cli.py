@@ -101,6 +101,7 @@ command = args.command
 
 output.verbose = hasattr(args, "verbose") and args.verbose
 output.quiet = hasattr(args, "quiet") and args.quiet
+output.single_line = not output.verbose
 
 if command not in ["toolchain", "new", "targets", "bindgen"] and not os.path.isfile(configuration.FILENAME):
     error.report_fatal("not a Banjo project")

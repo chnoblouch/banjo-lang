@@ -1228,9 +1228,27 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
         index += 1;
     }
 
+    sir::Expr return_type;
+
+    if (return_node->type == AST_REF_RETURN) {
+        return_type = create_expr(sir::ReferenceType{
+            .ast_node = return_node,
+            .mut = false,
+            .base_type = generate_expr(return_node->first_child),
+        });
+    } else if (return_node->type == AST_REF_MUT_RETURN) {
+        return_type = create_expr(sir::ReferenceType{
+            .ast_node = return_node,
+            .mut = true,
+            .base_type = generate_expr(return_node->first_child),
+        });
+    } else {
+        return_type = generate_expr(return_node);
+    }
+
     return {
         .params = sir_params,
-        .return_type = generate_expr(return_node),
+        .return_type = return_type,
     };
 }
 

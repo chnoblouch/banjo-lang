@@ -272,25 +272,30 @@ ParseResult Parser::parse_param() {
         return parse_attribute_wrapper(std::bind(&Parser::parse_param, this));
     }
 
-    if (stream.get()->is(TKN_SELF)) {
-        type = AST_REF_PARAM;
-        node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
-    } else if (stream.get()->is(TKN_MUT)) {
-        // FIXME: Error handling
+    bool is_mut = false;
 
-        type = AST_REF_MUT_PARAM;
+    if (stream.get()->is(TKN_MUT)) {
+        is_mut = true;
         stream.consume(); // Consume 'mut'
+    }
+
+    if (stream.get()->is(TKN_SELF)) {
+        type = is_mut ? AST_REF_MUT_PARAM : AST_REF_PARAM;
         node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
     } else {
+        if (is_mut) {
+            report_unexpected_token();
+        }
+
         if (stream.get()->is(TKN_REF)) {
-            type = AST_REF_PARAM;
             stream.consume(); // Consume 'ref'
 
             if (stream.get()->is(TKN_MUT)) {
-                type = AST_REF_MUT_PARAM;
+                is_mut = true;
                 stream.consume(); // Consume 'mut'
             }
 
+            type = is_mut ? AST_REF_MUT_PARAM : AST_REF_PARAM;
             node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
             stream.consume(); // Consume ':'
         } else if (stream.peek(1)->is(TKN_COLON)) {
@@ -313,6 +318,28 @@ ParseResult Parser::parse_param() {
     }
 
     return node.build(type);
+}
+
+ParseResult Parser::parse_return_type() {
+    if (stream.get()->is(TKN_REF)) {
+        stream.consume(); // Consume 'ref'
+
+        bool is_mut = false;
+
+        if (stream.get()->is(TKN_MUT)) {
+            is_mut = true;
+            stream.consume(); // Consume 'mut'
+        }
+
+        ParseResult result = parse_type();
+
+        ASTNode *ref_node = create_node(is_mut ? AST_REF_MUT_RETURN : AST_REF_RETURN);
+        ref_node->append_child(result.node);
+        ref_node->set_range_from_children();
+        return ref_node;
+    } else {
+        return parse_type();
+    }
 }
 
 ParseResult Parser::check_stmt_terminator(ASTNode *node) {

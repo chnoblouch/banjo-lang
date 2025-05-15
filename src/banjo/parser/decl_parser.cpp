@@ -420,7 +420,8 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
 
     if (stream.get()->is(TKN_ARROW)) {
         stream.consume(); // Consume '->'
-        result = parser.parse_type();
+
+        ParseResult result = parser.parse_return_type();
         node.append_child(result.node);
 
         if (!result.is_valid) {

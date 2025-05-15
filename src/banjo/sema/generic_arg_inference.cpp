@@ -131,7 +131,13 @@ Result GenericArgInference::infer_on_reference_type(
     const sir::ReferenceType &reference_type,
     const sir::Expr &arg_type
 ) {
-    return infer(reference_type.base_type, arg_type);
+    if (auto arg_reference_type = arg_type.match<sir::ReferenceType>()) {
+        // If the argument is already a reference, unwrap both reference types.
+        return infer(reference_type.base_type, arg_reference_type->base_type);
+    } else {
+        // If the argument isn't a reference, unwrap the reference type to infer from the base type.
+        return infer(reference_type.base_type, arg_type);
+    }
 }
 
 } // namespace sema

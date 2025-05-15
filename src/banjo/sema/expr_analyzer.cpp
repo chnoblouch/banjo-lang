@@ -167,6 +167,17 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         expr = type_alias->type;
     }
 
+    if (auto reference_type = expr.get_type().match<sir::ReferenceType>()) {
+        expr = analyzer.create_expr(
+            sir::UnaryExpr{
+                .ast_node = expr.get_ast_node(),
+                .type = reference_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = expr,
+            }
+        );
+    }
+
     return Result::SUCCESS;
 }
 
@@ -1438,28 +1449,13 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         analyzer.add_symbol_use(ident_expr.ast_node, symbol);
     }
 
-    sir::Expr type = symbol.get_type();
-
-    sir::Expr symbol_expr = analyzer.create_expr(
+    out_expr = analyzer.create_expr(
         sir::SymbolExpr{
             .ast_node = ident_expr.ast_node,
-            .type = type,
+            .type = symbol.get_type(),
             .symbol = symbol,
         }
     );
-
-    if (auto reference_type = type.match<sir::ReferenceType>()) {
-        out_expr = analyzer.create_expr(
-            sir::UnaryExpr{
-                .ast_node = ident_expr.ast_node,
-                .type = reference_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = symbol_expr,
-            }
-        );
-    } else {
-        out_expr = symbol_expr;
-    }
 
     return Result::SUCCESS;
 }

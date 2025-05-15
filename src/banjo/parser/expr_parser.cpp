@@ -405,7 +405,7 @@ ParseResult ExprParser::parse_closure() {
 
     if (stream.get()->is(TKN_ARROW)) {
         stream.consume(); // Consume '->'
-        node.append_child(parser.parse_type().node);
+        node.append_child(parser.parse_return_type().node);
     } else {
         node.append_child(parser.create_node(AST_VOID));
     }
@@ -441,7 +441,7 @@ ParseResult ExprParser::parse_func_type() {
 
     if (stream.get()->is(TKN_ARROW)) {
         stream.consume(); // Consume '->'
-        node.append_child(parser.parse_type().node);
+        node.append_child(parser.parse_return_type().node);
     } else {
         node.append_child(parser.create_node(AST_VOID));
     }
