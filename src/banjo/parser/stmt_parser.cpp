@@ -4,6 +4,7 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/expr_parser.hpp"
 #include "banjo/parser/node_builder.hpp"
+#include "banjo/source/text_range.hpp"
 
 namespace banjo {
 
@@ -29,8 +30,24 @@ ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
 }
 
 ParseResult StmtParser::parse_var() {
+    TextPosition start = stream.consume()->position; // Consume 'var'
+    return parse_var_or_ref(start, AST_VAR, AST_IMPLICIT_TYPE_VAR);
+}
+
+ParseResult StmtParser::parse_ref() {
+    TextPosition start = stream.consume()->position; // Consume 'ref'
+
+    if (stream.get()->is(TKN_MUT)) {
+        stream.consume(); // Consume 'mut'
+        return parse_var_or_ref(start, AST_REF_MUT_VAR, AST_IMPLICIT_TYPE_REF_MUT_VAR);
+    } else {
+        return parse_var_or_ref(start, AST_REF_VAR, AST_IMPLICIT_TYPE_REF_VAR);
+    }
+}
+
+ParseResult StmtParser::parse_var_or_ref(TextPosition start, ASTNodeType type, ASTNodeType type_typeless) {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'var'
+    node.set_start_position(start);
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
@@ -40,16 +57,16 @@ ParseResult StmtParser::parse_var() {
     node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
 
     if (stream.get()->is(TKN_COLON)) {
-        return parse_var_with_type(node);
+        return parse_var_with_type(node, type);
     } else if (stream.get()->is(TKN_EQ)) {
-        return parse_var_without_type(node);
+        return parse_var_without_type(node, type_typeless);
     } else {
         parser.report_unexpected_token();
         return node.build_error();
     }
 }
 
-ParseResult StmtParser::parse_var_with_type(NodeBuilder &node) {
+ParseResult StmtParser::parse_var_with_type(NodeBuilder &node, ASTNodeType type) {
     stream.consume(); // Consume ':'
 
     ParseResult result = parser.parse_type();
@@ -70,10 +87,10 @@ ParseResult StmtParser::parse_var_with_type(NodeBuilder &node) {
         }
     }
 
-    return parser.check_stmt_terminator(node.build(AST_VAR));
+    return parser.check_stmt_terminator(node.build(type));
 }
 
-ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
+ParseResult StmtParser::parse_var_without_type(NodeBuilder &node, ASTNodeType type) {
     stream.consume(); // Consume '='
 
     ParseResult result = ExprParser(parser, true).parse();
@@ -83,7 +100,7 @@ ParseResult StmtParser::parse_var_without_type(NodeBuilder &node) {
         return node.build_error();
     }
 
-    return parser.check_stmt_terminator(node.build(AST_IMPLICIT_TYPE_VAR));
+    return parser.check_stmt_terminator(node.build(type));
 }
 
 ParseResult StmtParser::parse_if_chain() {

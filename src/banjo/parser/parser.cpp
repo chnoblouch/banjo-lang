@@ -111,6 +111,7 @@ ParseResult Parser::parse_block_child() {
 
     switch (stream.get()->type) {
         case TKN_VAR: return StmtParser(*this).parse_var();
+        case TKN_REF: return StmtParser(*this).parse_ref();
         case TKN_CONST: return DeclParser(*this).parse_const();
         case TKN_FUNC: return DeclParser(*this).parse_func(nullptr);
         case TKN_IF: return StmtParser(*this).parse_if_chain();

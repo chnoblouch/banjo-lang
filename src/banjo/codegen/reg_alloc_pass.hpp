@@ -29,7 +29,7 @@ private:
     typedef std::priority_queue<Bundle, std::vector<Bundle>, BundleComparator> Queue;
 
     struct Alloc {
-        mcode::PhysicalReg physical_reg;
+        mcode::PhysicalReg physical_reg{};
         Bundle bundle;
     };
 

@@ -18,6 +18,7 @@ public:
 
     ParseResult parse_assign(ASTNode *lhs_node, ASTNodeType type);
     ParseResult parse_var();
+    ParseResult parse_ref();
     ParseResult parse_if_chain();
     ParseResult parse_switch();
     ParseResult parse_try();
@@ -29,8 +30,9 @@ public:
     ParseResult parse_meta_stmt();
 
 private:
-    ParseResult parse_var_with_type(NodeBuilder &node);
-    ParseResult parse_var_without_type(NodeBuilder &node);
+    ParseResult parse_var_or_ref(TextPosition start, ASTNodeType type, ASTNodeType type_typeless);
+    ParseResult parse_var_with_type(NodeBuilder &node, ASTNodeType type);
+    ParseResult parse_var_without_type(NodeBuilder &node, ASTNodeType type);
     ParseResult parse_meta_if(NodeBuilder &node);
     ParseResult parse_meta_for(NodeBuilder &node);
 };

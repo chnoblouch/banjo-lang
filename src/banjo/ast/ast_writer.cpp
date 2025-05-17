@@ -45,6 +45,10 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_BLOCK: return "BLOCK";
         case AST_IDENTIFIER: return "IDENTIFIER";
         case AST_VAR: return "VAR";
+        case AST_REF_VAR: return "REF_VAR";
+        case AST_IMPLICIT_TYPE_REF_VAR: return "IMPLICIT_TYPE_REF_VAR";
+        case AST_REF_MUT_VAR: return "REF_MUT_VAR";
+        case AST_IMPLICIT_TYPE_REF_MUT_VAR: return "IMPLICIT_TYPE_REF_MUT_VAR";
         case AST_IMPLICIT_TYPE_VAR: return "IMPLICIT_TYPE_VAR";
         case AST_CONSTANT: return "CONSTANT";
         case AST_ASSIGNMENT: return "ASSIGNMENT";

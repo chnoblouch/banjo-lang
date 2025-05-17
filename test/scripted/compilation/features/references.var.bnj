@@ -1,0 +1,82 @@
+# test:subtest
+# test:output "10"
+
+func main() {
+    var a = 10;
+    ref r: i32 = a;
+    print(r);
+}
+
+# test:subtest
+# test:output "10"
+
+func main() {
+    var a = 10;
+    ref r = a;
+    print(r);
+}
+
+# test:subtest
+# test:output "20"
+
+func main() {
+    var a = 10;
+    ref r = a;
+    a = 20;
+
+    print(r);
+}
+
+# test:subtest
+# test:output "20,20"
+
+func main() {
+    var a = 10;
+    ref mut r: i32 = a;
+    r = 20;
+
+    print(r);
+    print(',');
+    print(a);
+}
+
+# test:subtest
+# test:output "20,20"
+
+func main() {
+    var a = 10;
+    ref mut r = a;
+    r = 20;
+
+    print(r);
+    print(',');
+    print(a);
+}
+
+# test:subtest
+# test:output "10"
+
+func f(ref a: i32) -> ref i32 {
+    return a;
+}
+
+func main() {
+    var a = 10;
+    ref r = f(a);
+    print(r);
+}
+
+# test:subtest
+# test:output "20"
+
+func f(ref mut a: i32) {
+    a = 20;
+}
+
+func main() {
+    var a = 10;
+    ref mut r = a;
+    f(r);
+
+    print(a);
+}

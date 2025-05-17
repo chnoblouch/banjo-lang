@@ -65,13 +65,36 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
     }
 
     if (var_stmt.local.type) {
-        partial_result = ExprAnalyzer(analyzer).analyze_type(var_stmt.local.type);
+        bool is_typeless_ref = false;
 
-        if (var_stmt.value) {
-            if (partial_result == Result::SUCCESS) {
-                ExprAnalyzer(analyzer).analyze_value(var_stmt.value, var_stmt.local.type);
-            } else {
+        if (auto reference_type = var_stmt.local.type.match<sir::ReferenceType>()) {
+            if (!reference_type->base_type) {
                 ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
+                reference_type->base_type = var_stmt.value.get_type();
+
+                // TODO: Clean this up somehow.
+                var_stmt.value = analyzer.create_expr(
+                    sir::UnaryExpr{
+                        .ast_node = var_stmt.value.get_ast_node(),
+                        .type = var_stmt.local.type,
+                        .op = sir::UnaryOp::REF,
+                        .value = var_stmt.value,
+                    }
+                );
+
+                is_typeless_ref = true;
+            }
+        }
+
+        if (!is_typeless_ref) {
+            partial_result = ExprAnalyzer(analyzer).analyze_type(var_stmt.local.type);
+
+            if (var_stmt.value) {
+                if (partial_result == Result::SUCCESS) {
+                    ExprAnalyzer(analyzer).analyze_value(var_stmt.value, var_stmt.local.type);
+                } else {
+                    ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
+                }
             }
         }
     } else {
@@ -145,8 +168,8 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
         } else if (auto symbol_expr = props.base_value.match<sir::SymbolExpr>()) {
             bool is_local = false;
 
-            if (symbol_expr->symbol.is<sir::Local>()) {
-                is_local = true;
+            if (auto local = symbol_expr->symbol.match<sir::Local>()) {
+                is_local = !local->type.is<sir::ReferenceType>();
             } else if (auto param = symbol_expr->symbol.match<sir::Param>()) {
                 is_local = !param->type.is<sir::ReferenceType>();
             }

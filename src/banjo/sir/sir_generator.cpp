@@ -432,6 +432,10 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
     switch (node->type) {
         case AST_VAR: return generate_var_stmt(node, attrs);
         case AST_IMPLICIT_TYPE_VAR: return generate_typeless_var_stmt(node, attrs);
+        case AST_REF_VAR: return generate_ref_stmt(node, attrs, false);
+        case AST_IMPLICIT_TYPE_REF_VAR: return generate_typeless_ref_stmt(node, attrs, false);
+        case AST_REF_MUT_VAR: return generate_ref_stmt(node, attrs, true);
+        case AST_IMPLICIT_TYPE_REF_MUT_VAR: return generate_typeless_ref_stmt(node, attrs, true);
         case AST_ASSIGNMENT: return generate_assign_stmt(node);
         case AST_ADD_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::ADD);
         case AST_SUB_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SUB);
@@ -485,6 +489,53 @@ sir::Stmt SIRGenerator::generate_typeless_var_stmt(ASTNode *node, sir::Attribute
             .ast_node = node,
             .local = generate_local(name_node, nullptr, attrs),
             .value = generate_expr(value_node),
+        }
+    );
+}
+
+sir::Stmt SIRGenerator::generate_ref_stmt(ASTNode *node, sir::Attributes *attrs, bool mut) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+    ASTNode *value_node = type_node->next_sibling;
+
+    sir::Local local = generate_local(name_node, type_node, attrs);
+
+    local.type = create_expr(
+        sir::ReferenceType{
+            .ast_node = local.type.get_ast_node(),
+            .mut = mut,
+            .base_type = local.type,
+        }
+    );
+
+    return create_stmt(
+        sir::VarStmt{
+            .ast_node = node,
+            .local = local,
+            .value = value_node ? generate_expr(value_node) : nullptr,
+        }
+    );
+}
+
+sir::Stmt SIRGenerator::generate_typeless_ref_stmt(ASTNode *node, sir::Attributes *attrs, bool mut) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *value_node = name_node->next_sibling;
+
+    sir::Local local = generate_local(name_node, nullptr, attrs);
+
+    local.type = create_expr(
+        sir::ReferenceType{
+            .ast_node = nullptr,
+            .mut = mut,
+            .base_type = nullptr,
+        }
+    );
+
+    return create_stmt(
+        sir::VarStmt{
+            .ast_node = node,
+            .local = local,
+            .value = value_node ? generate_expr(value_node) : nullptr,
         }
     );
 }
@@ -1231,17 +1282,21 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
     sir::Expr return_type;
 
     if (return_node->type == AST_REF_RETURN) {
-        return_type = create_expr(sir::ReferenceType{
-            .ast_node = return_node,
-            .mut = false,
-            .base_type = generate_expr(return_node->first_child),
-        });
+        return_type = create_expr(
+            sir::ReferenceType{
+                .ast_node = return_node,
+                .mut = false,
+                .base_type = generate_expr(return_node->first_child),
+            }
+        );
     } else if (return_node->type == AST_REF_MUT_RETURN) {
-        return_type = create_expr(sir::ReferenceType{
-            .ast_node = return_node,
-            .mut = true,
-            .base_type = generate_expr(return_node->first_child),
-        });
+        return_type = create_expr(
+            sir::ReferenceType{
+                .ast_node = return_node,
+                .mut = true,
+                .base_type = generate_expr(return_node->first_child),
+            }
+        );
     } else {
         return_type = generate_expr(return_node);
     }
