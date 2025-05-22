@@ -1,6 +1,6 @@
 # test:subtest
 # test:error 6:5 "cannot assign to immutable"
-# test:note 6:5 "'a' is an immutable reference ('ref i32')"
+# test:note 5:12 "'a' is an immutable reference ('ref i32')"
 
 func f(ref a: i32) {
     a = 0;
@@ -8,7 +8,7 @@ func f(ref a: i32) {
 
 # test:subtest
 # test:error 18:5 "cannot assign to immutable"
-# test:note 18:5 "'s' is an immutable reference ('ref S')"
+# test:note 17:12 "'s' is an immutable reference ('ref S')"
 
 struct S {
     var a: i32;
@@ -20,7 +20,7 @@ func f(ref s: S) {
 
 # test:subtest
 # test:error 26:5 "cannot assign to immutable"
-# test:note 26:5 "'a' is an immutable reference ('ref (f32, i32)')"
+# test:note 25:12 "'a' is an immutable reference ('ref (f32, i32)')"
 
 func f(ref a: (f32, i32)) {
     a.1 = 0; 
@@ -28,7 +28,7 @@ func f(ref a: (f32, i32)) {
 
 # test:subtest
 # test:error 34:5 "cannot assign to immutable"
-# test:note 34:5 "'a' is an immutable reference ('ref [i32; 3]')"
+# test:note 33:12 "'a' is an immutable reference ('ref [i32; 3]')"
 
 func f(ref a: [i32; 3]) {
     a[2] = 0; 
@@ -36,7 +36,7 @@ func f(ref a: [i32; 3]) {
 
 # test:subtest
 # test:error 46:5 "cannot assign to immutable"
-# test:note 46:6 "'s' is an immutable reference ('ref S')"
+# test:note 45:12 "'s' is an immutable reference ('ref S')"
 
 struct S {
     var a: (bool, [i32; 5]);

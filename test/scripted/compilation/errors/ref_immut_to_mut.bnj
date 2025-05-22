@@ -1,6 +1,6 @@
 # test:subtest
 # test:error 6:11 "cannot pass immutable by mutable reference ('ref mut i32')"
-# test:note 6:11 "'a' is an immutable reference ('ref i32')"
+# test:note 5:12 "'a' is an immutable reference ('ref i32')"
 
 func f(ref a: i32) {
     f_mut(a);
@@ -10,7 +10,7 @@ func f_mut(ref mut a: i32) {}
 
 # test:subtest
 # test:error 20:11 "cannot pass immutable by mutable reference ('ref mut i32')"
-# test:note 20:11 "'s' is an immutable reference ('ref S')"
+# test:note 19:12 "'s' is an immutable reference ('ref S')"
 
 struct S {
     var a: i32;
