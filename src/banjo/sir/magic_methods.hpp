@@ -36,13 +36,14 @@ const std::string_view OP_INDEX = "__index__";
 
 const std::string_view ITER = "__iter__";
 const std::string_view REF_ITER = "__refiter__";
+const std::string_view MUT_ITER = "__mutiter__";
 const std::string_view NEXT = "__next__";
 
 const std::string_view DEINIT = "__deinit__";
 
 std::string_view look_up(sir::BinaryOp op);
 std::string_view look_up(sir::UnaryOp op);
-std::string_view look_up_iter(bool by_ref);
+std::string_view look_up_iter(sir::IterKind kind);
 
 } // namespace MagicMethods
 

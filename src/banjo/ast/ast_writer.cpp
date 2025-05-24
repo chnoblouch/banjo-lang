@@ -137,7 +137,8 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_TRY_ELSE_CASE: return "TRY_ELSE_CASE";
         case AST_WHILE: return "WHILE";
         case AST_FOR: return "FOR";
-        case AST_FOR_ITER_TYPE: return "FOR_ITER_TYPE";
+        case AST_FOR_REF: return "FOR_REF";
+        case AST_FOR_REF_MUT: return "FOR_REF_MUT";
         case AST_BREAK: return "BREAK";
         case AST_CONTINUE: return "CONTINUE";
         case AST_FUNCTION_DEFINITION: return "FUNCTION_DEFINITION";

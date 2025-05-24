@@ -453,6 +453,8 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_TRY: return generate_try_stmt(node);
         case AST_WHILE: return generate_while_stmt(node);
         case AST_FOR: return generate_for_stmt(node);
+        case AST_FOR_REF: return generate_for_stmt(node);
+        case AST_FOR_REF_MUT: return generate_for_stmt(node);
         case AST_CONTINUE: return generate_continue_stmt(node);
         case AST_BREAK: return generate_break_stmt(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::STMT);
@@ -694,15 +696,23 @@ sir::Stmt SIRGenerator::generate_while_stmt(ASTNode *node) {
 }
 
 sir::Stmt SIRGenerator::generate_for_stmt(ASTNode *node) {
-    ASTNode *iter_type_node = node->first_child;
-    ASTNode *name_node = iter_type_node->next_sibling;
+    ASTNode *name_node = node->first_child;
     ASTNode *range_node = name_node->next_sibling;
     ASTNode *block_node = range_node->next_sibling;
+
+    sir::IterKind iter_kind;
+
+    switch (node->type) {
+        case AST_FOR: iter_kind = sir::IterKind::MOVE; break;
+        case AST_FOR_REF: iter_kind = sir::IterKind::REF; break;
+        case AST_FOR_REF_MUT: iter_kind = sir::IterKind::MUT; break;
+        default: ASSERT_UNREACHABLE;
+    }
 
     return create_stmt(
         sir::ForStmt{
             .ast_node = node,
-            .by_ref = iter_type_node->value == "*",
+            .iter_kind = iter_kind,
             .ident = generate_ident(name_node),
             .range = generate_expr(range_node),
             .block = generate_block(block_node),

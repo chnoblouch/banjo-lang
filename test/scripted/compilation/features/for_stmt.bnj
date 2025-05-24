@@ -32,8 +32,8 @@ func main() {
 	}
 	print(';');
 	
-	for *value in array {
-		*value = *value / 2;
+	for ref mut value in array {
+		value = value / 2;
 	}
 	
 	for value in array {
@@ -80,8 +80,8 @@ struct Object {
 
 func main() {
 	var ints = [95, 12, 35, 86];
-	for *int in ints {
-		print(*int);
+	for ref int in ints {
+		print(int);
 		print(',');
 	}
 	
@@ -90,10 +90,10 @@ func main() {
 		Object { id: 27, name: "Lamp" },
 	];
 	
-	for *object in objects {
-		print((*object).id);
+	for ref object in objects {
+		print(object.id);
 		print(':');
-		print((*object).name);
+		print(object.name);
 		print(',');
 	}
 }

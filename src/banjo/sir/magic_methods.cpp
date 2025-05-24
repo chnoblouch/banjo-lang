@@ -1,5 +1,6 @@
 #include "magic_methods.hpp"
 
+#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -44,8 +45,12 @@ std::string_view look_up(sir::UnaryOp op) {
     }
 }
 
-std::string_view look_up_iter(bool by_ref) {
-    return by_ref ? REF_ITER : ITER;
+std::string_view look_up_iter(sir::IterKind kind) {
+    switch (kind) {
+        case sir::IterKind::MOVE: return ITER;
+        case sir::IterKind::REF: return REF_ITER;
+        case sir::IterKind::MUT: return MUT_ITER;
+    }
 }
 
 } // namespace MagicMethods

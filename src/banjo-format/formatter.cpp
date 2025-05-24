@@ -95,7 +95,6 @@ void Formatter::print_node(lang::ASTNode *node) {
         case lang::ASTNodeType::AST_TRY_ELSE_CASE: break;
         case lang::ASTNodeType::AST_WHILE: print_while_stmt(node); break;
         case lang::ASTNodeType::AST_FOR: print_for_stmt(node); break;
-        case lang::ASTNodeType::AST_FOR_ITER_TYPE: break;
         case lang::ASTNodeType::AST_CONTINUE: emit("continue"); break;
         case lang::ASTNodeType::AST_BREAK: emit("break"); break;
         case lang::ASTNodeType::AST_BLOCK: print_block(node); break;

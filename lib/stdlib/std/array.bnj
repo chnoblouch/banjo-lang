@@ -89,7 +89,11 @@ struct Array[T] {
         return PointerMoveIter[T].new(self.data, self.data + self.length);
     }
 
-    pub func __refiter__(mut self) -> PointerRefIter[T] {
+    pub func __refiter__(self) -> PointerRefIter[T] {
+        return PointerRefIter[T].new(self.data, self.data + self.length);
+    }
+
+    pub func __mutiter__(mut self) -> PointerRefIter[T] {
         return PointerRefIter[T].new(self.data, self.data + self.length);
     }
     

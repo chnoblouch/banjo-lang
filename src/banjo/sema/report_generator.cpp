@@ -280,22 +280,37 @@ void ReportGenerator::report_err_cannot_iter(const sir::Expr &expr) {
     report_error("cannot iterate over value with type '$'", expr.get_ast_node(), expr.get_type());
 }
 
-void ReportGenerator::report_err_cannot_iter_struct(const sir::Expr &expr, bool by_ref) {
+void ReportGenerator::report_err_cannot_iter_struct(const sir::Expr &expr, sir::IterKind kind) {
     std::string note_format_str = "implement '$' for this type to support ";
-    note_format_str += by_ref ? "reference iterating" : "iterating";
+
+    switch (kind) {
+        case sir::IterKind::MOVE: note_format_str += "iteration"; break;
+        case sir::IterKind::REF: note_format_str += "reference iteration"; break;
+        case sir::IterKind::MUT: note_format_str += "mutating iteration"; break;
+    }
 
     sir::StructDef &struct_def = expr.get_type().as_symbol<sir::StructDef>();
 
     build_error("cannot iterate over value with type '$'", expr.get_ast_node(), expr.get_type())
-        .add_note(note_format_str, struct_def.ident.ast_node, sir::MagicMethods::look_up_iter(by_ref))
+        .add_note(note_format_str, struct_def.ident.ast_node, sir::MagicMethods::look_up_iter(kind))
         .report();
 }
 
-void ReportGenerator::report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, bool by_ref) {
+void ReportGenerator::report_err_iter_no_next(
+    const sir::Expr &expr,
+    const sir::FuncDef &iter_func_def,
+    sir::IterKind kind
+) {
     sir::Expr iter_type = iter_func_def.type.return_type;
 
     std::string note_format_str = "iterator type for ";
-    note_format_str += by_ref ? "reference iterating" : "iterating";
+
+    switch (kind) {
+        case sir::IterKind::MOVE: note_format_str += "iteration"; break;
+        case sir::IterKind::REF: note_format_str += "reference iteration"; break;
+        case sir::IterKind::MUT: note_format_str += "mutating iteration"; break;
+    }
+
     note_format_str += " over '$' defined here";
 
     build_error("iterator type '$' does not implement '$'", expr.get_ast_node(), iter_type, sir::MagicMethods::NEXT)
@@ -722,13 +737,11 @@ void ReportGenerator::report_err_unexpected_generic_arg_count(
 }
 
 void ReportGenerator::add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr) {
-    if (auto param = immut_sub_expr.match_symbol<sir::Param>()) {
-        builder.add_note(
-            "'$' is an immutable reference ('ref $')",
-            param->name.ast_node,
-            param->name.value,
-            param->type.as<sir::ReferenceType>().base_type
-        );
+    if (auto symbol_expr = immut_sub_expr.match<sir::SymbolExpr>()) {
+        sir::Ident &ident = symbol_expr->symbol.get_ident();
+        sir::Expr type = immut_sub_expr.get_type();
+
+        builder.add_note("'$' is an immutable reference ('$')", ident.ast_node, ident.value, type);
     }
 }
 

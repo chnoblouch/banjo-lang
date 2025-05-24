@@ -45,3 +45,25 @@ struct S {
 func f(ref s: S) {
     (s.a).1[3] = 0;  # TODO: Fix lexer
 }
+
+# test:subtest
+# test:error 56:5 "cannot assign to immutable"
+# test:note 55:9 "'r' is an immutable reference ('ref i32')"
+
+func main() {
+    var a = 10;
+    ref r = a;
+    r = 0;
+}
+
+# test:subtest
+# test:error 67:9 "cannot assign to immutable"
+# test:note 66:13 "'value' is an immutable reference ('ref i32')"
+
+func main() {
+    var array = [0, 1, 2];
+
+    for ref value in array {
+        value = 42;
+    }
+}

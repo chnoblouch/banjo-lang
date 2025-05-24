@@ -82,8 +82,8 @@ public:
     void report_err_cannot_assign_immut(const sir::Expr &expr, const sir::Expr &immut_sub_expr);
     void report_err_cannot_create_pointer_to_immut(const sir::Expr &expr, const sir::Expr &immut_sub_expr);
     void report_err_cannot_iter(const sir::Expr &expr);
-    void report_err_cannot_iter_struct(const sir::Expr &expr, bool by_ref);
-    void report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, bool by_ref);
+    void report_err_cannot_iter_struct(const sir::Expr &expr, sir::IterKind kind);
+    void report_err_iter_no_next(const sir::Expr &expr, const sir::FuncDef &iter_func_def, sir::IterKind kind);
     void report_err_expected_integer(const sir::Expr &expr);
     void report_err_expected_bool(const sir::Expr &expr);
     void report_err_expected_generic_or_indexable(sir::Expr &expr);

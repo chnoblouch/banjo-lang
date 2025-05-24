@@ -198,7 +198,7 @@ func main() {
     ];
 
     print('b');
-    for *item in array {}
+    for ref item in array {}
     print('c');
 }
 
@@ -208,7 +208,7 @@ func main() {
 func main() {
     print('a');
 
-	for *value in [
+	for ref value in [
         ValueResource { value: 8 },
         ValueResource { value: 1 },
         ValueResource { value: 5 },

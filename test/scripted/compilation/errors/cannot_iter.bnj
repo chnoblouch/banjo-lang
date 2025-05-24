@@ -7,7 +7,7 @@ func main() {
 
 # test:subtest
 # test:error 16:18 "cannot iterate over value with type 'S'"
-# test:note 12:8 "implement '__iter__' for this type to support iterating"
+# test:note 12:8 "implement '__iter__' for this type to support iteration"
 
 struct S {}
 
@@ -17,18 +17,29 @@ func main() {
 }
 
 # test:subtest
-# test:error 27:19 "cannot iterate over value with type 'S'"
-# test:note 23:8 "implement '__refiter__' for this type to support reference iterating"
+# test:error 27:22 "cannot iterate over value with type 'S'"
+# test:note 23:8 "implement '__refiter__' for this type to support reference iteration"
 
 struct S {}
 
 func main() {
     var s = S {};
-    for *value in s {}
+    for ref value in s {}
 }
 
 # test:subtest
-# test:error 34:23 "cannot iterate over value with type 'integer literal'"
+# test:error 38:26 "cannot iterate over value with type 'S'"
+# test:note 34:8 "implement '__mutiter__' for this type to support mutating iteration"
+
+struct S {}
+
+func main() {
+    var s = S {};
+    for ref mut value in s {}
+}
+
+# test:subtest
+# test:error 45:23 "cannot iterate over value with type 'integer literal'"
 
 func main() {
     meta for value in 42 {}

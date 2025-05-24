@@ -525,7 +525,7 @@ ForStmt *Cloner::clone_for_stmt(const ForStmt &for_stmt) {
     return mod.create_stmt(
         ForStmt{
             .ast_node = for_stmt.ast_node,
-            .by_ref = for_stmt.by_ref,
+            .iter_kind = for_stmt.iter_kind,
             .ident = for_stmt.ident,
             .range = clone_expr(for_stmt.range),
             .block = clone_block(for_stmt.block),

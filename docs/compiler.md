@@ -124,7 +124,7 @@ FuncDef
       primitive: VOID
   block: 
     ForStmt
-      by_ref: false
+      iter_kind: MOVE
       ident: i
       range: RangeExpr
         lhs: IntLiteral

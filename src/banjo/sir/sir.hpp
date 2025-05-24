@@ -1030,9 +1030,15 @@ struct WhileStmt {
     Block block;
 };
 
+enum class IterKind {
+    MOVE,
+    REF,
+    MUT,
+};
+
 struct ForStmt {
     ASTNode *ast_node;
-    bool by_ref;
+    IterKind iter_kind;
     Ident ident;
     Expr range;
     Block block;

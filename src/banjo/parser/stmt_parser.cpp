@@ -279,10 +279,16 @@ ParseResult StmtParser::parse_for() {
     NodeBuilder node = parser.build_node();
     stream.consume(); // Consume 'for'
 
-    if (stream.get()->is(TKN_STAR)) {
-        node.append_child(parser.create_node(AST_FOR_ITER_TYPE, stream.consume()));
-    } else {
-        node.append_child(parser.create_node(AST_FOR_ITER_TYPE, ""));
+    ASTNodeType type = AST_FOR;
+
+    if (stream.get()->is(TKN_REF)) {
+        stream.consume(); // Consume 'ref'
+        type = AST_FOR_REF;
+
+        if (stream.get()->is(TKN_MUT)) {
+            stream.consume(); // Consume 'mut'
+            type = AST_FOR_REF_MUT;
+        }
     }
 
     if (stream.get()->is(TKN_IDENTIFIER)) {
@@ -307,7 +313,7 @@ ParseResult StmtParser::parse_for() {
 
     node.append_child(parser.parse_block().node);
 
-    return node.build(AST_FOR);
+    return node.build(type);
 }
 
 ParseResult StmtParser::parse_break() {

@@ -40,7 +40,7 @@ struct Map[K, V] {
     }
     
     pub func contains(self, ref key: K) -> bool {
-        var index = self.get_index(&key);
+        var index = self.get_index(key);
         var entry = self.entries[index];
         
         while entry != null as EntryPtr {
@@ -54,8 +54,8 @@ struct Map[K, V] {
         return false;
     }
 
-    pub func insert(self, key: K, value: V) {
-        var index = self.get_index(&key);
+    pub func insert(mut self, key: K, value: V) {
+        var index = self.get_index(key);
         var dst = &self.entries[index];
     
         while *dst != null as EntryPtr {
@@ -72,7 +72,7 @@ struct Map[K, V] {
     }
 
     pub func try_get(self, ref key: K) -> ?V {
-        var index = self.get_index(&key);
+        var index = self.get_index(key);
         var entry = self.entries[index];
         
         while entry != null as EntryPtr {
@@ -87,7 +87,7 @@ struct Map[K, V] {
     }
 
     pub func __index__(self, ref key: K) -> *V {
-        var index = self.get_index(&key);
+        var index = self.get_index(key);
         var entry = self.entries[index];
         
         while entry != null {
@@ -105,7 +105,7 @@ struct Map[K, V] {
         return null;
     }
     
-    pub func __refiter__(self) -> MapIter[K, V] {
+    pub func __refiter__(mut self) -> MapIter[K, V] {
         return MapIter[K, V] {
             cur_bucket: self.entries,
             cur_item: self.entries[0],
@@ -117,9 +117,7 @@ struct Map[K, V] {
         var string = "[";
         var index: u32 = 0;
 
-        var value = *self;
-
-        for *entry in value {
+        for ref entry in self {
             string.append(to_repr(entry.key));
             string.append(": ");
             string.append(to_repr(entry.value));
@@ -135,15 +133,15 @@ struct Map[K, V] {
         return string;
     }
     
-    func get_index(self, key: *K) -> u32 {
+    func get_index(self, ref key: K) -> u32 {
         var hash_code = hash(key);
         var index = hash_code as u32 % self.capacity;
         return 0;
     }
     
-    func hash(key: *K) -> u64 {
+    func hash(ref key: K) -> u64 {
         meta if K == i32 {
-            return *key as u64;
+            return key as u64;
         } else if meta(K).has_method("__hash__") {
             return key.__hash__();
         } else {
@@ -156,8 +154,8 @@ struct MapIter[K, V] {
     var cur_bucket: **Entry[K, V];
     var cur_item: *Entry[K, V];
     var end: **Entry[K, V];
-    
-    pub func __next__(self) -> ?*Entry[K, V] {
+
+    pub func __next__(mut self) -> ?*Entry[K, V] {
         while self.cur_item == null {
             self.cur_bucket += 1;            
             if self.cur_bucket == self.end {

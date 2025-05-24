@@ -76,11 +76,13 @@ func main() {
 }
 
 # test:subtest
-# test:error 84:14 "expected value, got type"
-# test:error 85:15 "expected value, got type"
+# test:error 85:14 "expected value, got type"
+# test:error 86:18 "expected value, got type"
+# test:error 87:22 "expected value, got type"
 
 func main() {
     # TODO: The error message should probably be something like "expected range, got type"
     for i in i32 {}
-    for *i in i32 {}
+    for ref i in i32 {}
+    for ref mut i in i32 {}
 }

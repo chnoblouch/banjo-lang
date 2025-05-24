@@ -570,9 +570,9 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     }
 
     sir::SymbolTable *iterable_symbol_table = iterable_type.as_symbol<sir::StructDef>().block.symbol_table;
-    sir::Symbol iter_symbol = iterable_symbol_table->look_up_local(sir::MagicMethods::look_up_iter(for_stmt.by_ref));
+    sir::Symbol iter_symbol = iterable_symbol_table->look_up_local(sir::MagicMethods::look_up_iter(for_stmt.iter_kind));
     if (!iter_symbol) {
-        analyzer.report_generator.report_err_cannot_iter_struct(for_stmt.range, for_stmt.by_ref);
+        analyzer.report_generator.report_err_cannot_iter_struct(for_stmt.range, for_stmt.iter_kind);
         return;
     }
 
@@ -582,7 +582,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     sir::SymbolTable *iter_symbol_table = iter_func_def.type.return_type.as_symbol<sir::StructDef>().block.symbol_table;
     sir::Symbol next_symbol = iter_symbol_table->look_up_local(sir::MagicMethods::NEXT);
     if (!next_symbol) {
-        analyzer.report_generator.report_err_iter_no_next(for_stmt.range, iter_func_def, for_stmt.by_ref);
+        analyzer.report_generator.report_err_iter_no_next(for_stmt.range, iter_func_def, for_stmt.iter_kind);
         return;
     }
 
@@ -655,22 +655,54 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         }
     );
 
-    sir::VarStmt *value_var_stmt = analyzer.create_stmt(
-        sir::VarStmt{
-            .ast_node = nullptr,
-            .local{
-                .name = for_stmt.ident,
-                .type = nullptr,
-            },
-            .value = analyzer.create_expr(
-                sir::DotExpr{
-                    .ast_node = nullptr,
-                    .lhs = next_ref_expr,
-                    .rhs = create_ident("value"),
-                }
-            ),
-        }
-    );
+    sir::VarStmt *value_var_stmt;
+
+    if (for_stmt.iter_kind == sir::IterKind::MOVE) {
+        value_var_stmt = analyzer.create_stmt(
+            sir::VarStmt{
+                .ast_node = nullptr,
+                .local{
+                    .name = for_stmt.ident,
+                    .type = nullptr,
+                },
+                .value = analyzer.create_expr(
+                    sir::DotExpr{
+                        .ast_node = nullptr,
+                        .lhs = next_ref_expr,
+                        .rhs = create_ident("value"),
+                    }
+                ),
+            }
+        );
+    } else {
+        value_var_stmt = analyzer.create_stmt(
+            sir::VarStmt{
+                .ast_node = nullptr,
+                .local{
+                    .name = for_stmt.ident,
+                    .type = analyzer.create_expr(
+                        sir::ReferenceType{
+                            .ast_node = nullptr,
+                            .mut = for_stmt.iter_kind == sir::IterKind::MUT,
+                            .base_type = nullptr,
+                        }
+                    ),
+                },
+                .value = analyzer.create_expr(
+                    sir::StarExpr{
+                        .ast_node = nullptr,
+                        .value = analyzer.create_expr(
+                            sir::DotExpr{
+                                .ast_node = nullptr,
+                                .lhs = next_ref_expr,
+                                .rhs = create_ident("value"),
+                            }
+                        ),
+                    }
+                ),
+            }
+        );
+    }
 
     sir::Block outer_loop_block{
         .ast_node = nullptr,
