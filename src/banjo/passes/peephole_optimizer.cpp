@@ -115,7 +115,26 @@ void PeepholeOptimizer::optimize_call(
         return;
     }
 
-    if (callee.get_extern_func()->name == "sqrtf") {
+    if (callee.get_extern_func()->name == "memcpy") {
+        if (iter->get_operands().size() == 4 && !iter->get_dest()) {
+            ssa::Operand dst = iter->get_operand(1);
+            ssa::Operand src = iter->get_operand(2);
+            ssa::Operand size = iter->get_operand(3);
+
+            if (!dst.is_register() || !src.is_register() || !size.is_int_immediate()) {
+                return;
+            }
+
+            ssa::Operand size_as_type = ssa::Operand::from_type({
+                ssa::Primitive::I8,
+                static_cast<unsigned>(size.get_int_immediate().to_u64()),
+            });
+
+            ssa::InstrIter prev = iter.get_prev();
+            block.replace(iter, {ssa::Opcode::COPY, {dst, src, size_as_type}});
+            iter = prev;
+        }
+    } else if (callee.get_extern_func()->name == "sqrtf") {
         if (iter->get_dest() && iter->get_operands().size() == 2) {
             ssa::InstrIter prev = iter.get_prev();
             block.replace(iter, ssa::Instruction(ssa::Opcode::SQRT, iter->get_dest(), {iter->get_operand(1)}));
