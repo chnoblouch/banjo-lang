@@ -75,7 +75,7 @@ public:
     void report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr);
     void report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr);
     void report_err_operator_overload_not_found(const sir::StarExpr &star_expr);
-    void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr);
+    void report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr, bool is_mutable);
     void report_err_cannot_cast(const sir::CastExpr &cast_expr);
     void report_err_cannot_call(const sir::Expr &expr);
     void report_err_cannot_deref(const sir::Expr &expr);
@@ -174,7 +174,8 @@ private:
         ASTNode *ast_node,
         sir::Expr type,
         std::string_view operator_name,
-        std::string_view impl_name
+        std::string_view impl_name,
+        std::optional<std::string_view> second_impl_name = {}
     );
 
     void report_err_unexpected_generic_arg_count(

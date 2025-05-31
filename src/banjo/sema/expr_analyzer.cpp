@@ -564,7 +564,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        return analyze_operator_overload_call(symbol, binary_expr.lhs, binary_expr.rhs, out_expr);
+        return analyze_operator_overload_call(symbol, {binary_expr.lhs, binary_expr.rhs}, out_expr);
     }
 
     bool can_lhs_be_coerced = can_be_coerced(binary_expr.lhs);
@@ -726,7 +726,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             return Result::ERROR;
         }
 
-        return analyze_operator_overload_call(symbol, unary_expr.value, nullptr, out_expr);
+        return analyze_operator_overload_call(symbol, {unary_expr.value}, out_expr);
     }
 
     if (unary_expr.op == sir::UnaryOp::NEG) {
@@ -964,14 +964,9 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         return Result::ERROR;
     }
 
-    if (call_expr.args.size() != callee_func_type->params.size()) {
-        analyzer.report_generator
-            .report_err_unexpected_arg_count(call_expr, callee_func_type->params.size(), callee_func_def);
+    partial_result = finalize_call_expr_args(call_expr, *callee_func_type, callee_func_def);
+    if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
-    }
-
-    for (unsigned i = 0; i < call_expr.args.size(); i++) {
-        ExprFinalizer(analyzer).finalize_by_coercion(call_expr.args[i], callee_func_type->params[i].type);
     }
 
     call_expr.type = callee_func_type->return_type;
@@ -1041,7 +1036,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::Symbol method = struct_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method, false);
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
             is_method = true;
             return Result::SUCCESS;
         }
@@ -1069,7 +1064,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::Symbol method = union_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method, false);
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
             is_method = true;
             return Result::SUCCESS;
         }
@@ -1080,7 +1075,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method, true);
+            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
             is_method = true;
             return Result::SUCCESS;
         }
@@ -1487,7 +1482,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
                 return Result::ERROR;
             }
 
-            return analyze_operator_overload_call(symbol, star_expr.value, nullptr, out_expr);
+            return analyze_operator_overload_call(symbol, {star_expr.value}, out_expr);
         }
 
         if (auto pointer_type = value_type.match<sir::PointerType>()) {
@@ -1564,29 +1559,26 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     } else if (auto static_array_type = lhs_type.match<sir::StaticArrayType>()) {
         return analyze_index_expr(bracket_expr, static_array_type->base_type, out_expr);
     } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
-        // FIXME: error handling
-        ASSERT(bracket_expr.rhs.size() == 1);
+        ExprProperties properties = ExprPropertyAnalyzer().analyze(bracket_expr.lhs);
+        bool is_mutable = properties.mutability == Mutability::MUTABLE;
 
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up(sir::MagicMethods::OP_INDEX);
+        std::string_view symbol_name = is_mutable ? sir::MagicMethods::OP_MUT_INDEX : sir::MagicMethods::OP_INDEX;
+        sir::Symbol symbol = struct_def->block.symbol_table->look_up(symbol_name);
+
+        // If the value is mutable, also try the operator overload for immutable indexing.
+        if (!symbol && is_mutable) {
+            symbol = struct_def->block.symbol_table->look_up(sir::MagicMethods::OP_INDEX);
+        }
 
         if (!symbol) {
-            analyzer.report_generator.report_err_operator_overload_not_found(bracket_expr);
+            analyzer.report_generator.report_err_operator_overload_not_found(bracket_expr, is_mutable);
             return Result::ERROR;
         }
 
-        result = analyze_operator_overload_call(symbol, bracket_expr.lhs, bracket_expr.rhs[0], out_expr);
+        std::vector<sir::Expr> args{bracket_expr.lhs};
+        args.insert(args.end(), bracket_expr.rhs.begin(), bracket_expr.rhs.end());
 
-        if (result == Result::SUCCESS) {
-            out_expr = analyzer.create_expr(
-                sir::UnaryExpr{
-                    .ast_node = nullptr,
-                    .type = out_expr.get_type().as<sir::PointerType>().base_type,
-                    .op = sir::UnaryOp::DEREF,
-                    .value = out_expr,
-                }
-            );
-        }
-
+        result = analyze_operator_overload_call(symbol, args, out_expr);
         return result;
     } else {
         analyzer.report_generator.report_err_expected_generic_or_indexable(bracket_expr.lhs);
@@ -1612,37 +1604,6 @@ Result ExprAnalyzer::analyze_completion_token() {
     // Return an error so as not to continue analysing expressions that contain
     // a completion token and cannot be valid anyway.
     return Result::ERROR;
-}
-
-void ExprAnalyzer::create_method_call(
-    sir::CallExpr &call_expr,
-    sir::Expr lhs,
-    sir::Ident rhs,
-    sir::Symbol method,
-    bool lhs_is_already_pointer
-) {
-    analyzer.add_symbol_use(rhs.ast_node, method);
-
-    sir::Expr callee_type = method.get_type();
-
-    call_expr.callee = analyzer.create_expr(
-        sir::SymbolExpr{
-            .ast_node = rhs.ast_node,
-            .type = callee_type,
-            .symbol = method,
-        }
-    );
-
-    if (auto func_type = callee_type.match<sir::FuncType>()) {
-        sir::Param &self_param = func_type->params[0];
-
-        if (self_param.attrs && self_param.attrs->byval) {
-            call_expr.args.insert(call_expr.args.begin(), lhs);
-            return;
-        }
-    }
-
-    call_expr.args.insert(call_expr.args.begin(), lhs);
 }
 
 Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
@@ -1809,18 +1770,10 @@ Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Exp
 
 Result ExprAnalyzer::analyze_operator_overload_call(
     sir::Symbol symbol,
-    sir::Expr self,
-    sir::Expr arg,
+    std::vector<sir::Expr> args,
     sir::Expr &inout_expr
 ) {
     Result partial_result;
-
-    std::vector<sir::Expr> args;
-    if (arg) {
-        args = {self, arg};
-    } else {
-        args = {self};
-    }
 
     sir::FuncDef *impl;
 
@@ -1839,16 +1792,6 @@ Result ExprAnalyzer::analyze_operator_overload_call(
 
     ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
 
-    for (unsigned i = 0; i < args.size(); i++) {
-        sir::Expr &arg = args[i];
-        sir::Expr expected_arg_type = impl->type.params[i].type;
-
-        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(arg, expected_arg_type);
-        if (partial_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
-    }
-
     sir::Expr callee = analyzer.create_expr(
         sir::SymbolExpr{
             .ast_node = nullptr,
@@ -1857,18 +1800,50 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         }
     );
 
-    analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
-
-    inout_expr = analyzer.create_expr(
+    sir::CallExpr *call_expr = analyzer.create_expr(
         sir::CallExpr{
-            .ast_node = nullptr,
+            .ast_node = inout_expr.get_ast_node(),
             .type = impl->type.return_type,
             .callee = callee,
-            .args = args,
+            .args = std::move(args),
         }
     );
 
+    analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
+
+    partial_result = finalize_call_expr_args(*call_expr, impl->type, impl);
+    if (partial_result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    inout_expr = call_expr;
     return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::finalize_call_expr_args(
+    sir::CallExpr &call_expr,
+    sir::FuncType &func_type,
+    sir::FuncDef *func_def
+) {
+    Result result = Result::SUCCESS;
+    Result partial_result;
+
+    if (call_expr.args.size() != func_type.params.size()) {
+        analyzer.report_generator.report_err_unexpected_arg_count(call_expr, func_type.params.size(), func_def);
+        return Result::ERROR;
+    }
+
+    for (unsigned i = 0; i < call_expr.args.size(); i++) {
+        sir::Expr &arg = call_expr.args[i];
+        sir::Expr expected_type = func_type.params[i].type;
+
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(arg, expected_type);
+        if (partial_result != Result::SUCCESS) {
+            result = Result::ERROR;
+        }
+    }
+
+    return result;
 }
 
 Result ExprAnalyzer::specialize(
@@ -1905,6 +1880,36 @@ Result ExprAnalyzer::specialize(
     );
 
     return Result::SUCCESS;
+}
+
+void ExprAnalyzer::create_method_call(
+    sir::CallExpr &call_expr,
+    sir::Expr lhs,
+    const sir::Ident &rhs,
+    sir::Symbol method
+) {
+    analyzer.add_symbol_use(rhs.ast_node, method);
+
+    sir::Expr callee_type = method.get_type();
+
+    call_expr.callee = analyzer.create_expr(
+        sir::SymbolExpr{
+            .ast_node = rhs.ast_node,
+            .type = callee_type,
+            .symbol = method,
+        }
+    );
+
+    if (auto func_type = callee_type.match<sir::FuncType>()) {
+        sir::Param &self_param = func_type->params[0];
+
+        if (self_param.attrs && self_param.attrs->byval) {
+            call_expr.args.insert(call_expr.args.begin(), lhs);
+            return;
+        }
+    }
+
+    call_expr.args.insert(call_expr.args.begin(), lhs);
 }
 
 sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {

@@ -6,8 +6,6 @@ namespace banjo {
 namespace lang {
 namespace sema {
 
-ExprPropertyAnalyzer::ExprPropertyAnalyzer() {}
-
 ExprProperties ExprPropertyAnalyzer::analyze(sir::Expr expr) {
     if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         return analyze_unary_expr(*unary_expr);
@@ -15,6 +13,8 @@ ExprProperties ExprPropertyAnalyzer::analyze(sir::Expr expr) {
         return analyze_index_expr(*index_expr);
     } else if (auto field_expr = expr.match<sir::FieldExpr>()) {
         return analyze_field_expr(*field_expr);
+    } else if (auto coercion_expr = expr.match<sir::CoercionExpr>()) {
+        return analyze(coercion_expr->value);
     } else if (expr.is<sir::SymbolExpr>()) {
         return ExprProperties{
             .base_value = expr,

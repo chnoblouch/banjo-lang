@@ -33,6 +33,7 @@ const std::string_view OP_NEG = "__neg__";
 const std::string_view OP_BIT_NOT = "__bitnot__";
 const std::string_view OP_DEREF = "__deref__";
 const std::string_view OP_INDEX = "__index__";
+const std::string_view OP_MUT_INDEX = "__mutindex__";
 
 const std::string_view ITER = "__iter__";
 const std::string_view REF_ITER = "__refiter__";

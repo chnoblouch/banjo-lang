@@ -1,0 +1,6 @@
+# test:compiles
+
+func main() {
+    var array: Array[addr] = [null, null, null];
+    var pointer = array[1];
+}

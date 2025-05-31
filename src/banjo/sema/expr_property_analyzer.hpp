@@ -21,7 +21,6 @@ struct ExprProperties {
 class ExprPropertyAnalyzer {
 
 public:
-    ExprPropertyAnalyzer();
     ExprProperties analyze(sir::Expr expr);
 
 private:

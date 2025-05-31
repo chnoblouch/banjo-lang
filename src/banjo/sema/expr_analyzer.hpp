@@ -62,20 +62,14 @@ private:
 
     Result analyze_completion_token();
 
-    void create_method_call(
-        sir::CallExpr &call_expr,
-        sir::Expr lhs,
-        sir::Ident rhs,
-        sir::Symbol method,
-        bool lhs_is_already_pointer
-    );
-
     Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr);
-    Result analyze_operator_overload_call(sir::Symbol symbol, sir::Expr self, sir::Expr arg, sir::Expr &inout_expr);
+    Result analyze_operator_overload_call(sir::Symbol symbol, std::vector<sir::Expr> args, sir::Expr &inout_expr);
+    Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
     Result specialize(sir::FuncDef &func_def, const std::vector<sir::Expr> &generic_args, sir::Expr &inout_expr);
     Result specialize(sir::StructDef &struct_def, const std::vector<sir::Expr> &generic_args, sir::Expr &inout_expr);
 
+    void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, const sir::Ident &rhs, sir::Symbol method);
     sir::Expr create_isize_cast(sir::Expr value);
     bool can_be_coerced(sir::Expr value);
 };

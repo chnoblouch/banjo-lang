@@ -240,12 +240,19 @@ void ReportGenerator::report_err_operator_overload_not_found(const sir::StarExpr
     report_err_operator_overload_not_found(star_expr.ast_node, star_expr.value.get_type(), "*", impl_name);
 }
 
-void ReportGenerator::report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr) {
+void ReportGenerator::report_err_operator_overload_not_found(const sir::BracketExpr &bracket_expr, bool is_mutable) {
+    std::optional<std::string_view> second_impl_name;
+
+    if (is_mutable) {
+        second_impl_name = sir::MagicMethods::OP_MUT_INDEX;
+    }
+
     report_err_operator_overload_not_found(
         bracket_expr.ast_node,
         bracket_expr.lhs.get_type(),
         "[]",
-        sir::MagicMethods::OP_INDEX
+        sir::MagicMethods::OP_INDEX,
+        second_impl_name
     );
 }
 
@@ -699,13 +706,27 @@ void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,
     std::string_view operator_name,
-    std::string_view impl_name
+    std::string_view impl_name,
+    std::optional<std::string_view> second_impl_name /*= {}*/
 ) {
     ReportBuilder builder =
         build_error("no implementation of operator '$' for type '$'", ast_node, operator_name, type);
 
     if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        builder.add_note("implement '$' for this type to support this operator", struct_def->ident.ast_node, impl_name);
+        if (second_impl_name) {
+            builder.add_note(
+                "implement '$' or '$' for this type to support this operator",
+                struct_def->ident.ast_node,
+                impl_name,
+                *second_impl_name
+            );
+        } else {
+            builder.add_note(
+                "implement '$' for this type to support this operator",
+                struct_def->ident.ast_node,
+                impl_name
+            );
+        }
     }
 
     builder.report();

@@ -32,11 +32,9 @@ func main() {
 }
 
 # test:subtest
-# test:output 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+# test:output 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
 
 struct S {
-    var i: i32;
-
     func __add__(self, rhs: i32) -> i32 { return 0; }
     func __sub__(self, rhs: i32) -> i32 { return 1; }
     func __mul__(self, rhs: i32) -> i32 { return 2; }
@@ -53,17 +51,14 @@ struct S {
     func __lt__(self, rhs: i32) -> i32 { return 13; }
     func __ge__(self, rhs: i32) -> i32 { return 14; }
     func __le__(self, rhs: i32) -> i32 { return 15; }
-    func __neg__(self, rhs: i32) -> i32 { return 16; }
-    func __bitnot__(self, rhs: i32) -> i32 { return 17; }
-    func __deref__(self, rhs: i32) -> i32 { return 18; }
-    func __index__(mut self, rhs: i32) -> *i32 { return &self.i; }
+    func __neg__(self) -> i32 { return 16; }
+    func __bitnot__(self) -> i32 { return 17; }
+    func __deref__(self) -> i32 { return 18; }
 }
 
 func main() {
-    var s = S {
-        i: 19,
-    };
-    
+    var s = S {};
+
     print(s + 1);
     print(",");
     print(s - 1);
@@ -101,8 +96,6 @@ func main() {
     print(~s);
     print(",");
     print(*s);
-    print(",");
-    print(s[1]);
 }
 
 # test:subtest
@@ -186,4 +179,93 @@ func main() {
 
     s >>= 1;
     print(s.value);
+}
+
+# test:subtest
+# test:output "mim"
+
+struct S {
+    var a: u8;
+    var b: u8;
+
+    pub func __index__(self, index: i32) -> ref u8 {
+        return self.a;
+    }
+
+    pub func __mutindex__(self, index: i32) -> ref u8 {
+        return self.b;
+    }
+}
+
+func index(ref s: S) {
+    print(s[0]);
+}
+
+func mutindex(ref mut s: S) {
+    print(s[0]);
+}
+
+func main() {
+    var s = S {
+        a: 'i',
+        b: 'm',
+    };
+
+    print(s[0]);
+    index(s);
+    mutindex(s);
+}
+
+# test:subtest
+# test:output "42"
+
+struct S {
+    var f: i32;
+
+    pub func __index__(self, index: i32) -> ref i32 {
+        return self.f;
+    }
+}
+
+func main() {
+    var a = S { f: 42 };
+    print(a[0]);
+}
+
+# test:subtest
+# test:output "4,true,0.125"
+
+struct S {
+    var f: i32;
+
+    pub func __index__(self, a: i32, b: bool, c: f32) -> ref i32 {
+        print(a);
+        print(',');
+        print(b);
+        print(',');
+        print(c);
+
+        return self.f;
+    }
+}
+
+func main() {
+    var a = S { f: 42 };
+    var b = a[4, true, 0.125];
+}
+
+# test:subtest
+# test:output "42"
+
+struct S {
+    var f: i32;
+
+    pub func __index__(self) -> ref i32 {
+        return self.f;
+    }
+}
+
+func main() {
+    var a = S { f: 42 };
+    print(a[]);
 }

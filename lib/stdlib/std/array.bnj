@@ -77,12 +77,20 @@ struct Array[T] {
         };
     }
     
-    pub func __index__(mut self, index: usize) -> *T {
+    pub func __index__(self, index: usize) -> ref T {
         meta if config.BUILD_CONFIG == config.DEBUG {
             self.check_bounds(index);
         }
     
-        return &self.data[index];
+        return self.data[index];
+    }
+
+    pub func __mutindex__(mut self, index: usize) -> ref mut T {
+        meta if config.BUILD_CONFIG == config.DEBUG {
+            self.check_bounds(index);
+        }
+    
+        return self.data[index];
     }
     
     pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
