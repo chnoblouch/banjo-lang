@@ -1,6 +1,7 @@
 use std.{
     platform,
     memory,
+    convert,
     path.Path,
     io.{Read, Write, Error},
 };
@@ -37,7 +38,7 @@ struct File: Read, Write {
 
     var stream: addr;
     
-    pub func open(path: Path, mode: Mode) -> File except Error {
+    pub func open[P](path: P, mode: Mode) -> File except Error {
         var c_mode: *u8;
         
         if mode == Mode.READ { c_mode = "rb"; }
@@ -47,7 +48,7 @@ struct File: Read, Write {
         else if mode == Mode.READ_WRITE_ERASE { c_mode = "w+b"; }
         else if mode == Mode.READ_APPEND { c_mode = "a+b"; }
     
-        var path_cstring = path.str().to_cstring();
+        var path_cstring = Path.from(path).str().to_cstring();
         var stream = fopen(path_cstring.data, c_mode);
     
         if stream == null {
@@ -56,11 +57,39 @@ struct File: Read, Write {
 
         return File { stream };
     }
-    
-    pub func open(path: String) -> File except Error {
-        return open(Path.from(path), Mode.READ);
+
+    pub func read_all[P](path: P) -> Array[u8] except Error {
+        # TODO: Error handling
+
+        var file = open(path, File.Mode.READ).unwrap();
+        file.seek(0, SeekOrigin.END);
+        var size = file.position().unwrap() as usize;
+        file.seek(0, SeekOrigin.START);
+
+        var buffer = Array[u8].sized(size);
+        file.read(buffer.slice());
+        return buffer;
     }
     
+    pub func read_all_string[P](path: P) -> String except Error {
+        var file = open(path, File.Mode.READ).unwrap();
+        file.seek(0, SeekOrigin.END);
+        var size = file.position().unwrap() as usize;
+        file.seek(0, SeekOrigin.START);
+
+        var string = String {
+            slice: StringSlice {
+                data: memory.alloc(size) as *u8,
+                length: size,
+            },
+            capacity: size,
+        };
+
+        # TODO: Error handling
+        file.read(Slice[u8].new(string.bytes(), string.length()));
+        return string;
+    }
+
     pub func read(self, data: Slice[u8]) -> usize except Error {
         var result = fread(data.elements, 1, data.length, self.stream);
 
@@ -119,31 +148,6 @@ struct File: Read, Write {
         # TODO: Error handling
 
         fflush(self.stream);
-    }
-
-    pub func read_all(self) -> (*u8, usize) {    
-        fseek(self.stream, 0, SEEK_END);
-        var size = ftell(self.stream) as usize;
-        fseek(self.stream, 0, SEEK_SET);
-        
-        var data = memory.alloc(size) as *u8;
-        fread(data, 1, size, self.stream);
-        
-        return (data, size);
-    }
-
-    pub func read_as_string(self) -> String {
-        fseek(self.stream, 0, SEEK_END);
-        var size = ftell(self.stream) as usize;
-        fseek(self.stream, 0, SEEK_SET);
-        
-        var data = memory.alloc(size) as *u8;
-        fread(data, 1, size, self.stream);
-
-        return String {
-            slice: StringSlice.new(data, size),
-            capacity: size + 1,
-        };
     }
     
     func __deinit__(self) {

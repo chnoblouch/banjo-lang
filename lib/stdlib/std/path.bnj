@@ -7,9 +7,11 @@ struct Path {
         return Path { path: "" };
     }
     
-    pub func from[T](value: T) -> Path {
-        meta if T == String {            
-            var path = Path { path: value };
+    pub func from[T](ref value: T) -> Path {
+        meta if T == Path {
+            var path = value.copy();
+        } else if T == String {            
+            var path = Path { path: value.copy() };
         } else if T == *u8 {
             var path = Path { path: String.from(value) };
         }
