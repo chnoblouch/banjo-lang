@@ -122,7 +122,7 @@ private:
     }
 
     Scope &push_empty_scope() {
-        scopes.push({});
+        scopes.push(Scope{});
         return get_scope();
     }
 

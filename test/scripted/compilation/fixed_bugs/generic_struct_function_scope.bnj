@@ -1,0 +1,13 @@
+# test:compiles
+
+struct S {
+    enum E { A, B }
+
+    pub func f[T](e: E) -> S {
+        return S {};
+    }
+}
+
+func main() {
+    var a = S.f[i32](S.E.A);
+}

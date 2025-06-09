@@ -46,27 +46,31 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
     sir::Module &def_mod = generic_func_def.find_mod();
     sir::Cloner cloner(def_mod);
 
-    sir::FuncDef *clone = def_mod.create_decl(sir::FuncDef{
-        .ast_node = generic_func_def.ast_node,
-        .ident = generic_func_def.ident,
-        .type = *cloner.clone_func_type(generic_func_def.type),
-        .block = cloner.clone_block(generic_func_def.block),
-        .generic_params = {},
-        .specializations = {},
-        .parent_specialization = nullptr,
-    });
+    sir::FuncDef *clone = def_mod.create_decl(
+        sir::FuncDef{
+            .ast_node = generic_func_def.ast_node,
+            .ident = generic_func_def.ident,
+            .type = *cloner.clone_func_type(generic_func_def.type),
+            .block = cloner.clone_block(generic_func_def.block),
+            .generic_params = {},
+            .specializations = {},
+            .parent_specialization = nullptr,
+        }
+    );
 
-    generic_func_def.specializations.push_back(sir::Specialization<sir::FuncDef>{
-        .args = args,
-        .def = clone,
-    });
+    generic_func_def.specializations.push_back(
+        sir::Specialization<sir::FuncDef>{
+            .args = args,
+            .def = clone,
+        }
+    );
 
     clone->parent_specialization = &generic_func_def.specializations.back();
 
     sir::Module *prev_mod = analyzer.cur_sir_mod;
 
     analyzer.cur_sir_mod = &def_mod;
-    analyzer.push_scope().decl = clone;
+    analyzer.push_empty_scope();
     analyzer.get_scope().closure_ctx = nullptr;
     analyzer.get_scope().generic_args.clear();
 
@@ -75,7 +79,10 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
         analyzer.get_scope().generic_args.insert({param_name, args[i]});
     }
 
+    analyzer.get_scope().decl = generic_func_def.parent;
     DeclInterfaceAnalyzer(analyzer).process_func_def(*clone);
+
+    analyzer.get_scope().decl = clone;
     analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});
 
     analyzer.pop_scope();
@@ -95,19 +102,23 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     sir::Module &def_mod = generic_struct_def.find_mod();
     sir::Cloner cloner(def_mod);
 
-    sir::StructDef *clone = def_mod.create_decl(sir::StructDef{
-        .ast_node = generic_struct_def.ast_node,
-        .ident = generic_struct_def.ident,
-        .block = cloner.clone_decl_block(generic_struct_def.block),
-        .generic_params = {},
-        .specializations = {},
-        .parent_specialization = nullptr,
-    });
+    sir::StructDef *clone = def_mod.create_decl(
+        sir::StructDef{
+            .ast_node = generic_struct_def.ast_node,
+            .ident = generic_struct_def.ident,
+            .block = cloner.clone_decl_block(generic_struct_def.block),
+            .generic_params = {},
+            .specializations = {},
+            .parent_specialization = nullptr,
+        }
+    );
 
-    generic_struct_def.specializations.push_back(sir::Specialization<sir::StructDef>{
-        .args = args,
-        .def = clone,
-    });
+    generic_struct_def.specializations.push_back(
+        sir::Specialization<sir::StructDef>{
+            .args = args,
+            .def = clone,
+        }
+    );
 
     clone->parent_specialization = &generic_struct_def.specializations.back();
 

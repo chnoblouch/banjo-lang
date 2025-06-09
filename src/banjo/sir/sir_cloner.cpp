@@ -338,9 +338,7 @@ Block Cloner::clone_block(const Block &block) {
     assert(block.symbol_table->symbols.empty());
 
     SymbolTable *symbol_table = push_symbol_table(block.symbol_table->parent);
-
-    std::vector<Stmt> stmts;
-    stmts.resize(block.stmts.size());
+    std::vector<Stmt> stmts(block.stmts.size());
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
         stmts[i] = clone_stmt(block.stmts[i]);
