@@ -64,7 +64,7 @@ std::vector<Target> Target::list_available() {
     };
 }
 
-std::optional<std::string> Target::get_default_env(std::string os) {
+std::optional<std::string> Target::get_default_env(const std::string &os) {
     if (os == "windows") {
         return "msvc";
     } else if (os == "linux") {

@@ -13,6 +13,7 @@ elseif(TARGET_OS STREQUAL "linux" OR TARGET_OS STREQUAL "macos")
 endif()
 
 add_executable(cli2
+    argument_parser.cpp
     cli.cpp
     cli.hpp
     common.cpp

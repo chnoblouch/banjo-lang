@@ -24,7 +24,7 @@ struct Target {
 
     static Target host();
     static std::vector<Target> list_available();
-    static std::optional<std::string> get_default_env(std::string os);
+    static std::optional<std::string> get_default_env(const std::string &os);
 };
 
 } // namespace cli

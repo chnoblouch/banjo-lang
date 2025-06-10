@@ -2,6 +2,8 @@
 #define BANJO_CLI_H
 
 #include "banjo/utils/json.hpp"
+
+#include "argument_parser.hpp"
 #include "manifest.hpp"
 #include "target.hpp"
 
@@ -16,6 +18,8 @@ namespace cli {
 class CLI {
 
 private:
+    ArgumentParser arg_parser;
+
     Manifest manifest;
     Target target;
 

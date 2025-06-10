@@ -1,7 +1,7 @@
 #include "cli.hpp"
 
+#include "argument_parser.hpp"
 #include "banjo/utils/json_parser.hpp"
-#include "banjo/utils/paths.hpp"
 
 #include "common.hpp"
 #include "process.hpp"
@@ -17,30 +17,48 @@
 namespace banjo {
 namespace cli {
 
-static constexpr std::string_view HELP_TEXT =
-    R"(
-Usage: banjo [options] command
-
-Options:
-  -v, --version   Print version and exit
-  -h, --help      Print help and exit
-
-Commands:
-  build     Build the current package
-  run       Build and run the current package
-  targets   Print the list of supported targets
-  help      Print help and exit
-  version   Print version and exit
-)";
-
 void CLI::run(int argc, const char *argv[]) {
-    if (argc < 2) {
-        execute_help();
-        return;
-    }
+    arg_parser = ArgumentParser{
+        .name = "banjo",
+        .options{
+            {"version", 'v', "Print version and exit"},
+            {"help", 'h', "Print help and exit"},
+            {"quiet", 'q', "Don't print status messages"},
+            {"verbose", 'V', "Print commands before execution"},
+        },
+        .commands{
+            {
+                "build",
+                "Build the current package",
+                {},
+            },
+            {
+                "run",
+                "Build and run the current package",
+                {},
+            },
+            {
+                "targets",
+                "Print the list of supported targets",
+                {},
+            },
+            {
+                "help",
+                "Print help and exit",
+                {},
+            },
+            {
+                "version",
+                "Print version and exit",
+                {},
+            }
+        },
+    };
 
-    for (int i = 1; i < argc; i++) {
-        std::string_view arg = argv[i];
+    int arg_index = 1;
+
+    while (arg_index < argc) {
+        std::string_view arg = argv[arg_index];
 
         if (arg == "-h" || arg == "--help") {
             execute_help();
@@ -48,38 +66,80 @@ void CLI::run(int argc, const char *argv[]) {
         } else if (arg == "-v" || arg == "--version") {
             execute_version();
             return;
+        } else if (arg == "-q" || arg == "--quiet") {
+            quiet = true;
+        } else if (arg == "-V" || arg == "--verbose") {
+            verbose = true;
+        } else if (!arg.starts_with('-')) {
+            break;
+        }
+
+        arg_index += 1;
+    }
+
+    if (arg_index == argc) {
+        execute_help();
+        return;
+    }
+
+    std::string command_name = argv[arg_index];
+    ArgumentParser::Command *command = nullptr;
+
+    for (ArgumentParser::Command &candidate : arg_parser.commands) {
+        if (candidate.name == command_name) {
+            command = &candidate;
+            break;
         }
     }
 
-    if (argc >= 3 && std::string(argv[2]) == "-q") {
-        quiet = true;
+    if (!command) {
+        error("unknown command '" + command_name + "'");
+    }
+
+    while (arg_index < argc) {
+        std::string_view arg = argv[arg_index];
+
+        if (arg == "-h" || arg == "--help") {
+            arg_parser.print_command_help(*command);
+            return;
+        } else if (arg == "-q" || arg == "--quiet") {
+            quiet = true;
+        } else if (arg == "-V" || arg == "--verbose") {
+            verbose = true;
+        }
+
+        arg_index += 1;
     }
 
     load_config();
 
-    std::string sub_command = argv[1];
-
-    if (sub_command == "targets") {
+    if (command->name == "targets") {
         execute_targets();
-    } else if (sub_command == "build") {
+    } else if (command->name == "build") {
         execute_build();
-    } else if (sub_command == "run") {
+    } else if (command->name == "run") {
         execute_run();
-    } else if (sub_command == "help") {
+    } else if (command->name == "help") {
         execute_help();
-    } else if (sub_command == "version") {
+    } else if (command->name == "version") {
         execute_version();
-    } else {
-        error("unknown command '" + sub_command + "'");
     }
 }
 
 void CLI::execute_targets() {
+    Target host = Target::host();
+
     std::cout << "\n";
     std::cout << "Available targets:\n";
 
     for (const Target &target : Target::list_available()) {
-        std::cout << "  " << target.to_string() << "\n";
+        std::cout << "  - " << target.to_string();
+
+        if (target == host) {
+            std::cout << " (host)";
+        }
+
+        std::cout << "\n";
     }
 
     std::cout << "\n";
@@ -100,7 +160,7 @@ void CLI::execute_run() {
 }
 
 void CLI::execute_help() {
-    std::cout << HELP_TEXT << "\n";
+    arg_parser.print_help();
 }
 
 void CLI::load_config() {
@@ -244,13 +304,14 @@ void CLI::invoke_compiler() {
 
     args.push_back("--optional-semicolons");
 
-    std::optional<Process> process = Process::spawn(
-        Command{
-            .executable = "banjo-compiler",
-            .args = args,
-        }
-    );
+    Command command{
+        .executable = "banjo-compiler",
+        .args = args,
+    };
 
+    print_command("compiler", command);
+
+    std::optional<Process> process = Process::spawn(command);
     ProcessResult result = process->wait();
 
     if (result.exit_code != 0) {
@@ -296,43 +357,55 @@ void CLI::invoke_windows_linker() {
         args.push_back(library + ".lib");
     }
 
-    std::optional<Process> process = Process::spawn(
-        Command{
-            .executable = "lld-link",
-            .args = args,
-        }
-    );
+    Command command{
+        .executable = "lld-link",
+        .args = args,
+    };
 
+    print_command("linker", command);
+
+    std::optional<Process> process = Process::spawn(command);
     process->wait();
 }
 
 void CLI::invoke_unix_linker() {
-    std::optional<Process> process = Process::spawn(
-        Command{
-            .executable = "ld.lld",
-            .args{
-                "-L/usr/lib",
-                "-L/usr/lib/x86_64-linux-gnu",
-                "-L/usr/lib/gcc/x86_64-linux-gnu/13",
-                "-L/usr/lib64",
-                "-L/usr/lib/llvm-18/lib/clang/18",
-                "-lc",
-                "-lgcc_s",
-                "-lm",
-                "-ldl",
-                "-lpthread",
-                "--dynamic-linker",
-                "/lib64/ld-linux-x86-64.so.2",
-                "main.o",
-                "-o",
-                get_output_path(),
-                "/usr/lib/x86_64-linux-gnu/crt1.o",
-                "/usr/lib/x86_64-linux-gnu/crti.o",
-                "/usr/lib/x86_64-linux-gnu/crtn.o",
-            },
-        }
-    );
+    std::vector<std::string> args{
+        "main.o",
+        "-o",
+        get_output_path(),
+        "-L/usr/lib",
+        "-L/usr/lib/x86_64-linux-gnu",
+        "-L/usr/lib/gcc/x86_64-linux-gnu/13",
+        "-L/usr/lib64",
+        "-L/usr/lib/llvm-18/lib/clang/18",
+        "-lc",
+        "-lgcc_s",
+        "-lm",
+        "-ldl",
+        "-lpthread",
+        "--dynamic-linker",
+        "/lib64/ld-linux-x86-64.so.2",
+        "/usr/lib/x86_64-linux-gnu/crt1.o",
+        "/usr/lib/x86_64-linux-gnu/crti.o",
+        "/usr/lib/x86_64-linux-gnu/crtn.o",
+    };
 
+    for (const std::string &library_path : library_paths) {
+        args.push_back("-L" + library_path);
+    }
+
+    for (const std::string &library : libraries) {
+        args.push_back("-l" + library);
+    }
+
+    Command command{
+        .executable = "ld.lld",
+        .args = args,
+    };
+
+    print_command("linker", command);
+
+    std::optional<Process> process = Process::spawn(command);
     process->wait();
 }
 

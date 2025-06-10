@@ -7,8 +7,14 @@ namespace banjo {
 namespace cli {
 
 bool quiet = false;
+bool verbose = false;
 
 void print_step(std::string_view message) {
+    if (verbose) {
+        std::cout << message << "\n" << std::flush;
+        return;
+    }
+
     if (quiet) {
         return;
     }
@@ -16,8 +22,22 @@ void print_step(std::string_view message) {
     std::cout << "\x1b[2m\x1b[2K\r" << message << "\x1b[0m\r" << std::flush;
 }
 
+void print_command(std::string_view name, const Command &command) {
+    if (!verbose) {
+        return;
+    }
+
+    std::cout << "[" << name << "] " << command.executable;
+
+    for (const std::string &arg : command.args) {
+        std::cout << " " << arg;
+    }
+
+    std::cout << "\n";
+}
+
 void print_clear_line() {
-    if (quiet) {
+    if (quiet || verbose) {
         return;
     }
 
