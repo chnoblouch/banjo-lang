@@ -42,6 +42,46 @@ const JSONArray &JSONObject::get_array(std::string key) const {
     return get(key).as_array();
 }
 
+const JSONValue *JSONObject::try_get(const std::string &key) const {
+    auto iter = values.find(key);
+    return iter == values.end() ? nullptr : &iter->second;
+}
+
+const JSONString *JSONObject::try_get_string(const std::string &key) const {
+    const JSONValue *value = try_get(key);
+    return value ? &value->as_string() : nullptr;
+}
+
+std::optional<JSONInt> JSONObject::try_get_int(const std::string &key) const {
+    const JSONValue *value = try_get(key);
+    return value ? value->as_int() : std::optional<JSONInt>{};
+}
+
+std::optional<JSONFloat> JSONObject::try_get_float(const std::string &key) const {
+    const JSONValue *value = try_get(key);
+    return value ? value->as_float() : std::optional<JSONFloat>{};
+}
+
+std::optional<JSONBool> JSONObject::try_get_bool(const std::string &key) const {
+    const JSONValue *value = try_get(key);
+    return value ? value->as_bool() : std::optional<JSONBool>{};
+}
+
+const JSONObject *JSONObject::try_get_object(const std::string &key) const {
+    const JSONValue *value = try_get(key);
+    return value ? &value->as_object() : nullptr;
+}
+
+const JSONArray *JSONObject::try_get_array(const std::string &key) const {
+    const JSONValue *value = try_get(key);
+    return value ? &value->as_array() : nullptr;
+}
+
+std::string JSONObject::get_string_or(const std::string &key, const std::string &default_value) const {
+    const std::string *string = try_get_string(key);
+    return string ? *string : default_value;
+}
+
 bool JSONObject::contains(std::string key) const {
     return values.count(key);
 }

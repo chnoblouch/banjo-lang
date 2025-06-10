@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -74,8 +75,21 @@ public:
     const JSONObject &get_object(std::string key) const;
     const JSONArray &get_array(std::string key) const;
 
+    const JSONValue *try_get(const std::string &key) const;
+    const JSONString *try_get_string(const std::string &key) const;
+    std::optional<JSONInt> try_get_int(const std::string &key) const;
+    std::optional<JSONFloat> try_get_float(const std::string &key) const;
+    std::optional<JSONBool> try_get_bool(const std::string &key) const;
+    const JSONObject *try_get_object(const std::string &key) const;
+    const JSONArray *try_get_array(const std::string &key) const;
+
+    std::string get_string_or(const std::string &key, const std::string &default_value) const;
+
     bool contains(std::string key) const;
     void add(std::string key, JSONValue value);
+
+    std::unordered_map<std::string, JSONValue>::const_iterator begin() const { return values.begin(); }
+    std::unordered_map<std::string, JSONValue>::const_iterator end() const { return values.end(); }
 };
 
 class JSONArray {
@@ -99,6 +113,9 @@ public:
 
     int length() const;
     void add(JSONValue value);
+
+    std::vector<JSONValue>::const_iterator begin() const { return values.begin(); }
+    std::vector<JSONValue>::const_iterator end() const { return values.end(); }
 };
 
 } // namespace banjo

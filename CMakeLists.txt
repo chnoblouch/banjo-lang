@@ -77,6 +77,7 @@ install(TARGETS banjo-lsp RUNTIME DESTINATION bin)
 install(TARGETS banjo-format RUNTIME DESTINATION bin)
 install(TARGETS banjo-test-util RUNTIME DESTINATION bin)
 install(TARGETS cli RUNTIME DESTINATION bin)
+install(TARGETS cli2 RUNTIME DESTINATION bin)
 
 if(BUILD_HOT_RELOADER)
     install(TARGETS banjo-hot-reloader RUNTIME DESTINATION bin)

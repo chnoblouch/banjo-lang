@@ -5,3 +5,26 @@ add_executable(cli
 target_include_directories(cli PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(cli PUBLIC banjo)
 set_target_properties(cli PROPERTIES OUTPUT_NAME "banjo")
+
+if(TARGET_OS STREQUAL "windows")
+    set(PLATFORM_SOURCES process_windows.cpp)
+elseif(TARGET_OS STREQUAL "linux" OR TARGET_OS STREQUAL "macos")
+    set(PLATFORM_SOURCES process_unix.cpp)
+endif()
+
+add_executable(cli2
+    cli.cpp
+    cli.hpp
+    common.cpp
+    common.hpp
+    main2.cpp
+    manifest.hpp
+    process.hpp
+    target.cpp
+    target.hpp
+    ${PLATFORM_SOURCES}
+)
+
+target_include_directories(cli2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(cli2 PUBLIC banjo)
+set_target_properties(cli2 PROPERTIES OUTPUT_NAME "banjo2")

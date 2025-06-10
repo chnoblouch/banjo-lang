@@ -7,6 +7,7 @@ JSONParser::JSONParser(std::string string) : stream(string) {}
 JSONObject JSONParser::parse_object() {
     JSONObject object;
 
+    skip_whitespace();
     stream.get(); // Consume '{'
     skip_whitespace();
 
@@ -35,6 +36,7 @@ JSONObject JSONParser::parse_object() {
 JSONArray JSONParser::parse_array() {
     JSONArray array;
 
+    skip_whitespace();
     stream.get(); // Consume '['
     skip_whitespace();
 
@@ -126,7 +128,7 @@ JSONValue JSONParser::parse_value() {
 
 void JSONParser::skip_whitespace() {
     char c = stream.peek();
-    while (c == ' ' || c == '\r' || c == '\n' || c == '\r') {
+    while (c == ' ' || c == '\r' || c == '\n' || c == '\t') {
         stream.get();
         c = stream.peek();
     }
