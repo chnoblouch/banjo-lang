@@ -12,6 +12,7 @@ namespace cli {
 
 struct Manifest {
     std::string name;
+    std::string type;
     std::vector<std::string> packages;
     std::vector<std::string> libraries;
     std::vector<std::pair<Target, Manifest>> target_manifests;

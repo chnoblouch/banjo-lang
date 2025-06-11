@@ -7,7 +7,7 @@ namespace cli {
 
 void ArgumentParser::print_help() {
     std::cout << "\n";
-    std::cout << "Usage: " + name + " command [options]\n";
+    std::cout << "Usage: " + name + " [command] [options]\n";
 
     if (!options.empty()) {
         std::cout << "\n";
@@ -43,7 +43,13 @@ void ArgumentParser::print_options(const std::vector<Option> &options) {
     bool has_letter_option = false;
 
     for (const Option &option : options) {
-        longest_option_length = std::max(longest_option_length, static_cast<unsigned>(option.name.size()));
+        unsigned option_length = 2 + static_cast<unsigned>(option.name.size());
+
+        if (option.value_placeholder) {
+            option_length += 1 + static_cast<unsigned>(option.value_placeholder->size());
+        }
+
+        longest_option_length = std::max(longest_option_length, option_length);
 
         if (option.letter) {
             has_letter_option = true;
@@ -61,8 +67,14 @@ void ArgumentParser::print_options(const std::vector<Option> &options) {
             }
         }
 
-        std::cout << "--" << option.name;
-        std::cout << std::string(longest_option_length + 3 - option.name.length(), ' ');
+        std::string name_column = "--" + option.name;
+
+        if (option.value_placeholder) {
+            name_column += " " + *option.value_placeholder;
+        }
+
+        std::cout << name_column;
+        std::cout << std::string(longest_option_length + 3 - name_column.length(), ' ');
         std::cout << option.description;
         std::cout << "\n";
     }

@@ -1,56 +1,98 @@
 #include "cli.hpp"
 
-#include "argument_parser.hpp"
 #include "banjo/utils/json_parser.hpp"
 
+#include "argument_parser.hpp"
 #include "common.hpp"
 #include "process.hpp"
 #include "target.hpp"
 
+#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string_view>
 #include <vector>
 
 namespace banjo {
 namespace cli {
 
+static const ArgumentParser::Option OPTION_HELP{
+    "help",
+    'h',
+    "Print help and exit",
+};
+
+static const ArgumentParser::Option OPTION_VERSION{
+    "version",
+    'v',
+    "Print version and exit",
+};
+
+static const ArgumentParser::Option OPTION_QUIET{
+    "quiet",
+    'q',
+    "Don't print status messages",
+};
+
+static const ArgumentParser::Option OPTION_VERBOSE{
+    "verbose",
+    'V',
+    "Print commands before execution",
+};
+
 void CLI::run(int argc, const char *argv[]) {
     arg_parser = ArgumentParser{
         .name = "banjo",
-        .options{
-            {"version", 'v', "Print version and exit"},
-            {"help", 'h', "Print help and exit"},
-            {"quiet", 'q', "Don't print status messages"},
-            {"verbose", 'V', "Print commands before execution"},
-        },
+        .options{OPTION_HELP, OPTION_VERSION, OPTION_QUIET, OPTION_VERBOSE},
         .commands{
             {
                 "build",
                 "Build the current package",
-                {},
+                {
+                    OPTION_HELP,
+                    OPTION_QUIET,
+                    OPTION_VERBOSE,
+                },
             },
             {
                 "run",
                 "Build and run the current package",
-                {},
+                {
+                    OPTION_HELP,
+                    OPTION_QUIET,
+                    OPTION_VERBOSE,
+                },
             },
             {
                 "targets",
                 "Print the list of supported targets",
-                {},
+                {
+                    OPTION_HELP,
+                    OPTION_QUIET,
+                    OPTION_VERBOSE,
+                },
             },
             {
                 "help",
                 "Print help and exit",
-                {},
+                {
+                    OPTION_HELP,
+                    OPTION_QUIET,
+                    OPTION_VERBOSE,
+                },
             },
             {
                 "version",
                 "Print version and exit",
-                {},
+                {
+                    OPTION_HELP,
+                    OPTION_QUIET,
+                    OPTION_VERBOSE,
+                },
             }
         },
     };
@@ -111,6 +153,10 @@ void CLI::run(int argc, const char *argv[]) {
         arg_index += 1;
     }
 
+    if (command->name == "build" || command->name == "run") {
+        start_time = std::chrono::steady_clock::now();
+    }
+
     load_config();
 
     if (command->name == "targets") {
@@ -165,35 +211,58 @@ void CLI::execute_help() {
 
 void CLI::load_config() {
     target = Target::host();
-    manifest = load_manifest("banjo.json");
+    source_paths.push_back("src");
+
+    manifest = parse_manifest("banjo.json");
+    load_root_manifest(manifest);
+}
+
+void CLI::load_root_manifest(const Manifest &manifest) {
+    load_manifest(manifest);
+
+    if (manifest.type == "executable") {
+        package_type = PackageType::EXECUTABLE;
+    } else if (manifest.type == "static_library") {
+        package_type = PackageType::STATIC_LIBRARY;
+    } else if (manifest.type == "shared_library") {
+        package_type = PackageType::SHARED_LIBRARY;
+    }
+}
+
+void CLI::load_manifest(const Manifest &manifest) {
+    libraries.insert(libraries.end(), manifest.libraries.begin(), manifest.libraries.end());
 
     for (std::string_view package : manifest.packages) {
         load_package(package);
     }
-}
-
-Manifest CLI::load_manifest(const std::filesystem::path &path) {
-    Manifest manifest = parse_manifest(path);
-    libraries.insert(libraries.end(), manifest.libraries.begin(), manifest.libraries.end());
 
     for (const auto &[manifest_target, sub_manifest] : manifest.target_manifests) {
         if (manifest_target == target) {
-            libraries.insert(libraries.end(), sub_manifest.libraries.begin(), sub_manifest.libraries.end());
+            load_manifest(sub_manifest);
         }
     }
-
-    return manifest;
 }
 
 void CLI::load_package(std::string_view name) {
     std::filesystem::path path = std::filesystem::path("packages") / name;
-    load_manifest(path / "banjo.json");
+    Manifest manifest = parse_manifest(path / "banjo.json");
+    load_manifest(manifest);
 
+    std::filesystem::path src_path = path / "src";
     std::filesystem::path lib_path = path / "lib";
     std::filesystem::path target_lib_path = lib_path / target.to_string();
 
-    library_paths.push_back(lib_path.string());
-    library_paths.push_back(target_lib_path.string());
+    if (std::filesystem::is_directory(src_path)) {
+        source_paths.push_back(src_path.string());
+    }
+
+    if (std::filesystem::is_directory(lib_path)) {
+        library_paths.push_back(lib_path.string());
+    }
+
+    if (std::filesystem::is_directory(target_lib_path)) {
+        library_paths.push_back(target_lib_path.string());
+    }
 }
 
 Manifest CLI::parse_manifest(const std::filesystem::path &path) {
@@ -213,6 +282,7 @@ Manifest CLI::parse_manifest(const std::filesystem::path &path) {
 Manifest CLI::parse_manifest(const JSONObject &json) {
     Manifest manifest;
     manifest.name = json.get_string_or("name", "");
+    manifest.type = json.get_string_or("type", "executable");
 
     if (auto json_libraries = json.try_get_array("libraries")) {
         for (const JSONValue &json_library : *json_libraries) {
@@ -270,15 +340,30 @@ void CLI::build() {
     std::filesystem::create_directories(get_output_dir());
     invoke_compiler();
     invoke_linker();
+
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+    std::chrono::duration duration = end_time - start_time;
+    unsigned duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    float duration_s = static_cast<float>(duration_ms) / 1000.0f;
+
+    if (verbose) {
+        std::ostringstream string_stream;
+        string_stream << std::fixed << std::setprecision(2) << duration_s;
+        print_step("Build finished (" + string_stream.str() + " seconds)");
+    }
 }
 
 void CLI::invoke_compiler() {
     print_step("Compiling...");
 
     std::vector<std::string> args;
-
     args.push_back("--type");
-    args.push_back("executable");
+
+    switch (package_type) {
+        case PackageType::EXECUTABLE: args.push_back("executable"); break;
+        case PackageType::STATIC_LIBRARY: args.push_back("static_library"); break;
+        case PackageType::SHARED_LIBRARY: args.push_back("shared_library"); break;
+    }
 
     args.push_back("--arch");
     args.push_back(target.arch);
@@ -294,12 +379,9 @@ void CLI::invoke_compiler() {
     args.push_back("--opt-level");
     args.push_back("0");
 
-    args.push_back("--path");
-    args.push_back("src/");
-
-    for (const std::string &package : manifest.packages) {
+    for (const std::string &path : source_paths) {
         args.push_back("--path");
-        args.push_back("packages/" + package + "/src");
+        args.push_back(path);
     }
 
     args.push_back("--optional-semicolons");
@@ -345,6 +427,10 @@ void CLI::invoke_windows_linker() {
         "/DEBUG:FULL",
     };
 
+    if (package_type == PackageType::SHARED_LIBRARY) {
+        args.push_back("/DLL");
+    }
+
     for (const std::string &library_path : library_paths) {
         args.push_back("/LIBPATH:" + library_path);
     }
@@ -366,6 +452,8 @@ void CLI::invoke_windows_linker() {
 
     std::optional<Process> process = Process::spawn(command);
     process->wait();
+
+    std::filesystem::remove("main.obj");
 }
 
 void CLI::invoke_unix_linker() {
@@ -385,10 +473,15 @@ void CLI::invoke_unix_linker() {
         "-lpthread",
         "--dynamic-linker",
         "/lib64/ld-linux-x86-64.so.2",
-        "/usr/lib/x86_64-linux-gnu/crt1.o",
-        "/usr/lib/x86_64-linux-gnu/crti.o",
-        "/usr/lib/x86_64-linux-gnu/crtn.o",
     };
+
+    if (package_type == PackageType::EXECUTABLE) {
+        args.push_back("/usr/lib/x86_64-linux-gnu/crt1.o");
+        args.push_back("/usr/lib/x86_64-linux-gnu/crti.o");
+        args.push_back("/usr/lib/x86_64-linux-gnu/crtn.o");
+    } else if (package_type == PackageType::SHARED_LIBRARY) {
+        args.push_back("-shared");
+    }
 
     for (const std::string &library_path : library_paths) {
         args.push_back("-L" + library_path);
@@ -407,6 +500,8 @@ void CLI::invoke_unix_linker() {
 
     std::optional<Process> process = Process::spawn(command);
     process->wait();
+
+    std::filesystem::remove("main.o");
 }
 
 void CLI::run_build() {
@@ -423,11 +518,35 @@ void CLI::run_build() {
 }
 
 std::string CLI::get_output_path() {
-    return (get_output_dir() / (manifest.name + ".exe")).string();
+    std::string file_name;
+
+    if (package_type == PackageType::EXECUTABLE) {
+        if (target.os == "windows") {
+            file_name = manifest.name + ".exe";
+        } else {
+            file_name = manifest.name;
+        }
+    } else if (package_type == PackageType::STATIC_LIBRARY) {
+        if (target.os == "windows" && target.env == "msvc") {
+            file_name = manifest.name + ".lib";
+        } else {
+            file_name = manifest.name + ".a";
+        }
+    } else if (package_type == PackageType::SHARED_LIBRARY) {
+        if (target.os == "windows") {
+            file_name = manifest.name + ".dll";
+        } else if (target.os == "macos") {
+            file_name = "lib" + manifest.name + ".dylib";
+        } else {
+            file_name = "lib" + manifest.name + ".so";
+        }
+    }
+
+    return (get_output_dir() / file_name).string();
 }
 
 std::filesystem::path CLI::get_output_dir() {
-    return std::filesystem::path(".") / "out" / (target.to_string() + "-debug");
+    return std::filesystem::path("out") / (target.to_string() + "-debug");
 }
 
 } // namespace cli

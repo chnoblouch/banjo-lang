@@ -7,6 +7,7 @@
 #include "manifest.hpp"
 #include "target.hpp"
 
+#include <chrono>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -18,14 +19,24 @@ namespace cli {
 class CLI {
 
 private:
+    enum class PackageType {
+        EXECUTABLE,
+        STATIC_LIBRARY,
+        SHARED_LIBRARY,
+    };
+
     ArgumentParser arg_parser;
 
-    Manifest manifest;
     Target target;
+    Manifest manifest;
 
+    PackageType package_type;
+    std::vector<std::string> source_paths;
     std::vector<std::string> libraries;
     std::vector<std::string> library_paths;
     std::vector<std::string> object_files;
+
+    std::chrono::steady_clock::time_point start_time;
 
 public:
     void run(int argc, const char *argv[]);
@@ -38,7 +49,8 @@ private:
     void execute_help();
 
     void load_config();
-    Manifest load_manifest(const std::filesystem::path &path);
+    void load_root_manifest(const Manifest &manifest);
+    void load_manifest(const Manifest &manifest);
     void load_package(std::string_view name);
 
     Manifest parse_manifest(const std::filesystem::path &path);

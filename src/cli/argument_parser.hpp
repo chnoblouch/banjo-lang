@@ -15,6 +15,7 @@ public:
         std::string name;
         std::optional<char> letter;
         std::string description;
+        std::optional<std::string> value_placeholder;
 
         Option(std::string name, char letter, std::string description)
           : name(std::move(name)),
@@ -25,6 +26,12 @@ public:
           : name(std::move(name)),
             letter{},
             description(std::move(description)) {}
+
+        Option(std::string name, std::string value_placeholder, std::string description)
+          : name(std::move(name)),
+            letter{},
+            description(std::move(description)),
+            value_placeholder(std::move(value_placeholder)) {}
     };
 
     struct Command {
