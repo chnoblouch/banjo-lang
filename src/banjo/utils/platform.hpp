@@ -3,6 +3,14 @@
 
 #include <limits>
 
+#if __x86_64__ || _M_AMD64
+#    define ARCH_X86_64 1
+#elif __aarch64__ || _M_ARM64
+#    define ARCH_AARCH64 1
+#else
+#    define ARCH_UNKNOWN 1
+#endif
+
 #if defined(_WIN32)
 #    define OS_WINDOWS 1
 #elif __linux__

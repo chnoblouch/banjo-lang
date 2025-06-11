@@ -19,8 +19,6 @@ Target::Target(std::string arch, std::string os, std::optional<std::string> env)
 Target Target::host() {
     std::string arch;
 
-#define ARCH_X86_64 1
-
 #if ARCH_X86_64
     arch = "x86_64";
 #elif ARCH_AARCH64

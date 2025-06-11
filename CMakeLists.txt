@@ -35,9 +35,9 @@ else ()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_definitions(DEBUG=1)
+    add_compile_definitions(BANJO_DEBUG=1)
 else ()
-    add_compile_definitions(DEBUG=0)
+    add_compile_definitions(BANJO_DEBUG=0)
 
     if(MSVC)
         string(REGEX REPLACE "/EH[a-z]+|/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

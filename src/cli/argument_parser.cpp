@@ -1,9 +1,106 @@
 #include "argument_parser.hpp"
+#include "common.hpp"
 
 #include <iostream>
 
 namespace banjo {
 namespace cli {
+
+ArgumentParser::Result ArgumentParser::parse() {
+    Result result;
+    result.global_options = parse_options(options);
+    result.command = parse_command();
+
+    if (result.command) {
+        result.command_options = parse_options(result.command->options);
+    }
+
+    return result;
+}
+
+std::vector<ArgumentParser::OptionValue> ArgumentParser::parse_options(const std::vector<Option> &options) {
+    std::vector<OptionValue> result;
+
+    while (arg_index < argc) {
+        std::string_view arg = argv[arg_index];
+
+        const Option *option = nullptr;
+
+        if (arg.starts_with("--")) {
+            option = find_option(arg.substr(2), options);
+        } else if (arg.size() == 2 && arg[0] == '-') {
+            option = find_option(arg[1], options);
+        } else {
+            break;
+        }
+
+        arg_index += 1;
+
+        if (!option) {
+            error("unknown option '" + std::string(arg) + "'");
+        }
+
+        if (option->type == Option::Type::FLAG) {
+            result.push_back(OptionValue{.option = option, .value = {}});
+        } else if (option->type == Option::Type::VALUE) {
+            if (arg_index == argc || std::string_view(argv[arg_index]).starts_with("-")) {
+                error("missing value for option '--" + option->name + "'");
+            }
+
+            std::string value = argv[arg_index];
+            result.push_back(OptionValue{.option = option, .value = value});
+            arg_index += 1;
+        }
+    }
+
+    return result;
+}
+
+const ArgumentParser::Command *ArgumentParser::parse_command() {
+    if (arg_index == argc) {
+        return nullptr;
+    }
+
+    std::string_view arg = argv[arg_index];
+    const Command *command = find_command(arg);
+    arg_index += 1;
+
+    if (!command) {
+        error("unknown command '" + std::string(arg) + "'");
+    }
+
+    return command;
+}
+
+const ArgumentParser::Option *ArgumentParser::find_option(std::string_view name, const std::vector<Option> &options) {
+    for (const Option &option : options) {
+        if (option.name == name) {
+            return &option;
+        }
+    }
+
+    return nullptr;
+}
+
+const ArgumentParser::Option *ArgumentParser::find_option(char letter, const std::vector<Option> &options) {
+    for (const Option &option : options) {
+        if (option.letter == letter) {
+            return &option;
+        }
+    }
+
+    return nullptr;
+}
+
+const ArgumentParser::Command *ArgumentParser::find_command(std::string_view name) {
+    for (const Command &command : commands) {
+        if (command.name == name) {
+            return &command;
+        }
+    }
+
+    return nullptr;
+}
 
 void ArgumentParser::print_help() {
     std::cout << "\n";

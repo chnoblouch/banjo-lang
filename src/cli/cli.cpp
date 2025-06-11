@@ -21,153 +21,187 @@ namespace banjo {
 namespace cli {
 
 static const ArgumentParser::Option OPTION_HELP{
+    ArgumentParser::Option::Type::FLAG,
     "help",
     'h',
     "Print help and exit",
 };
 
 static const ArgumentParser::Option OPTION_VERSION{
+    ArgumentParser::Option::Type::FLAG,
     "version",
     'v',
     "Print version and exit",
 };
 
 static const ArgumentParser::Option OPTION_QUIET{
+    ArgumentParser::Option::Type::FLAG,
     "quiet",
     'q',
     "Don't print status messages",
 };
 
 static const ArgumentParser::Option OPTION_VERBOSE{
+    ArgumentParser::Option::Type::FLAG,
     "verbose",
     'V',
     "Print commands before execution",
 };
 
+static const ArgumentParser::Option OPTION_CONFIG{
+    ArgumentParser::Option::Type::VALUE,
+    "config",
+    "{debug,release}",
+    "Build configuration (default: debug)",
+};
+
+static const ArgumentParser::Option OPTION_OPT_LEVEL{
+    ArgumentParser::Option::Type::VALUE,
+    "opt-level",
+    "{0,1,2}",
+    "Compiler optimization level",
+};
+
+static const ArgumentParser::Option OPTION_FORCE_ASM{
+    ArgumentParser::Option::Type::FLAG,
+    "force-asm",
+    "Force the use of an external assembler",
+};
+
+static const ArgumentParser::Command COMMAND_BUILD{
+    "build",
+    "Build the current package",
+    {
+        OPTION_HELP,
+        OPTION_CONFIG,
+        OPTION_OPT_LEVEL,
+        OPTION_FORCE_ASM,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
+static const ArgumentParser::Command COMMAND_RUN{
+    "run",
+    "Build and run the current package",
+    {
+        OPTION_HELP,
+        OPTION_CONFIG,
+        OPTION_OPT_LEVEL,
+        OPTION_FORCE_ASM,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
+static const ArgumentParser::Command COMMAND_TARGETS{
+    "targets",
+    "Print the list of supported targets",
+    {
+        OPTION_HELP,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
+static const ArgumentParser::Command COMMAND_HELP{
+    "help",
+    "Print help and exit",
+    {
+        OPTION_HELP,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
+static const ArgumentParser::Command COMMAND_VERSION{
+    "version",
+    "Print version and exit",
+    {
+        OPTION_HELP,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
 void CLI::run(int argc, const char *argv[]) {
     arg_parser = ArgumentParser{
+        .argc = argc,
+        .argv = argv,
         .name = "banjo",
         .options{OPTION_HELP, OPTION_VERSION, OPTION_QUIET, OPTION_VERBOSE},
-        .commands{
-            {
-                "build",
-                "Build the current package",
-                {
-                    OPTION_HELP,
-                    OPTION_QUIET,
-                    OPTION_VERBOSE,
-                },
-            },
-            {
-                "run",
-                "Build and run the current package",
-                {
-                    OPTION_HELP,
-                    OPTION_QUIET,
-                    OPTION_VERBOSE,
-                },
-            },
-            {
-                "targets",
-                "Print the list of supported targets",
-                {
-                    OPTION_HELP,
-                    OPTION_QUIET,
-                    OPTION_VERBOSE,
-                },
-            },
-            {
-                "help",
-                "Print help and exit",
-                {
-                    OPTION_HELP,
-                    OPTION_QUIET,
-                    OPTION_VERBOSE,
-                },
-            },
-            {
-                "version",
-                "Print version and exit",
-                {
-                    OPTION_HELP,
-                    OPTION_QUIET,
-                    OPTION_VERBOSE,
-                },
-            }
-        },
+        .commands{COMMAND_BUILD, COMMAND_RUN, COMMAND_TARGETS, COMMAND_HELP, COMMAND_VERSION},
     };
 
-    int arg_index = 1;
+    ArgumentParser::Result args = arg_parser.parse();
 
-    while (arg_index < argc) {
-        std::string_view arg = argv[arg_index];
-
-        if (arg == "-h" || arg == "--help") {
+    for (const ArgumentParser::OptionValue &option_value : args.global_options) {
+        if (option_value.option->name == OPTION_HELP.name) {
             execute_help();
             return;
-        } else if (arg == "-v" || arg == "--version") {
+        } else if (option_value.option->name == OPTION_VERSION.name) {
             execute_version();
             return;
-        } else if (arg == "-q" || arg == "--quiet") {
+        } else if (option_value.option->name == OPTION_QUIET.name) {
             quiet = true;
-        } else if (arg == "-V" || arg == "--verbose") {
+        } else if (option_value.option->name == OPTION_VERBOSE.name) {
             verbose = true;
-        } else if (!arg.starts_with('-')) {
-            break;
         }
-
-        arg_index += 1;
     }
 
-    if (arg_index == argc) {
+    if (!args.command) {
         execute_help();
         return;
     }
 
-    std::string command_name = argv[arg_index];
-    ArgumentParser::Command *command = nullptr;
+    for (const ArgumentParser::OptionValue &option_value : args.command_options) {
+        std::string_view name = option_value.option->name;
 
-    for (ArgumentParser::Command &candidate : arg_parser.commands) {
-        if (candidate.name == command_name) {
-            command = &candidate;
-            break;
-        }
-    }
-
-    if (!command) {
-        error("unknown command '" + command_name + "'");
-    }
-
-    while (arg_index < argc) {
-        std::string_view arg = argv[arg_index];
-
-        if (arg == "-h" || arg == "--help") {
-            arg_parser.print_command_help(*command);
+        if (name == OPTION_CONFIG.name) {
+            if (option_value.value == "debug") {
+                build_config = BuildConfig::DEBUG;
+            } else if (option_value.value == "release") {
+                build_config = BuildConfig::RELEASE;
+            } else {
+                error("unexpected build config '" + *option_value.value + "'");
+            }
+        } else if (name == OPTION_OPT_LEVEL.name) {
+            if (option_value.value == "0") {
+                opt_level = 0;
+            } else if (option_value.value == "1") {
+                opt_level = 1;
+            } else if (option_value.value == "2") {
+                opt_level = 2;
+            } else {
+                error("unexpected optimization level '" + *option_value.value + "'");
+            }
+        } else if (name == OPTION_FORCE_ASM.name) {
+            force_assembler = true;
+        } else if (name == OPTION_HELP.name) {
+            arg_parser.print_command_help(*args.command);
             return;
-        } else if (arg == "-q" || arg == "--quiet") {
+        } else if (name == OPTION_QUIET.name) {
             quiet = true;
-        } else if (arg == "-V" || arg == "--verbose") {
+        } else if (name == OPTION_VERBOSE.name) {
             verbose = true;
         }
-
-        arg_index += 1;
     }
 
-    if (command->name == "build" || command->name == "run") {
+    if (args.command->name == COMMAND_BUILD.name || args.command->name == COMMAND_RUN.name) {
         start_time = std::chrono::steady_clock::now();
     }
 
     load_config();
 
-    if (command->name == "targets") {
+    if (args.command->name == COMMAND_TARGETS.name) {
         execute_targets();
-    } else if (command->name == "build") {
+    } else if (args.command->name == COMMAND_BUILD.name) {
         execute_build();
-    } else if (command->name == "run") {
+    } else if (args.command->name == COMMAND_RUN.name) {
         execute_run();
-    } else if (command->name == "help") {
+    } else if (args.command->name == COMMAND_HELP.name) {
         execute_help();
-    } else if (command->name == "version") {
+    } else if (args.command->name == COMMAND_VERSION.name) {
         execute_version();
     }
 }
@@ -339,6 +373,11 @@ Target CLI::parse_target(std::string_view string) {
 void CLI::build() {
     std::filesystem::create_directories(get_output_dir());
     invoke_compiler();
+
+    if (force_assembler) {
+        invoke_assembler();
+    }
+
     invoke_linker();
 
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
@@ -377,7 +416,18 @@ void CLI::invoke_compiler() {
     }
 
     args.push_back("--opt-level");
-    args.push_back("0");
+    
+    if (opt_level) {
+        args.push_back(std::to_string(*opt_level));
+    } else if (build_config == BuildConfig::DEBUG) {
+        args.push_back("0");
+    } else if (build_config == BuildConfig::RELEASE) {
+        args.push_back("1");
+    }
+
+    if (force_assembler) {
+        args.push_back("--force-asm");
+    }
 
     for (const std::string &path : source_paths) {
         args.push_back("--path");
@@ -399,6 +449,66 @@ void CLI::invoke_compiler() {
     if (result.exit_code != 0) {
         std::exit(1);
     }
+}
+
+void CLI::invoke_assembler() {
+    print_step("Assembling...");
+
+    if (target.arch == "x86_64") {
+        invoke_nasm_assembler();
+    } else if (target.arch == "aarch64") {
+        invoke_aarch64_assembler();
+    }
+}
+
+void CLI::invoke_nasm_assembler() {
+    std::vector<std::string> args;
+
+    if (target.os == "windows") {
+        args.push_back("-fwin64");
+    } else if (target.os == "linux") {
+        args.push_back("-felf64");
+    }
+
+    args.push_back("main.asm");
+
+    Command command{
+        .executable = "nasm",
+        .args = args,
+    };
+
+    print_command("assembler", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
+
+    std::filesystem::remove("main.asm");
+}
+
+void CLI::invoke_aarch64_assembler() {
+    std::vector<std::string> args;
+    args.push_back("-c");
+    args.push_back("-target");
+
+    if (target.os == "linux") {
+        args.push_back("aarch64-linux");
+    } else if (target.os == "macos") {
+        args.push_back("aarch64-darwin");
+    }
+
+    args.push_back("main.s");
+
+    Command command{
+        .executable = "clang",
+        .args = args,
+    };
+
+    print_command("assembler", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
+
+    std::filesystem::remove("main.s");
 }
 
 void CLI::invoke_linker() {

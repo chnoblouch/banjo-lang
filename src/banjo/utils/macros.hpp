@@ -1,7 +1,7 @@
 #ifndef MACROS_H
 #define MACROS_H
 
-#if DEBUG
+#if BANJO_DEBUG
 #    include <cstdlib>  // IWYU pragma: export
 #    include <iostream> // IWYU pragma: export
 

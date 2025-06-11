@@ -3,6 +3,9 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace banjo {
@@ -12,23 +15,32 @@ class ArgumentParser {
 
 public:
     struct Option {
+        enum class Type {
+            FLAG,
+            VALUE,
+        };
+
+        Type type;
         std::string name;
         std::optional<char> letter;
         std::string description;
         std::optional<std::string> value_placeholder;
 
-        Option(std::string name, char letter, std::string description)
-          : name(std::move(name)),
+        Option(Type type, std::string name, char letter, std::string description)
+          : type(type),
+            name(std::move(name)),
             letter(letter),
             description(std::move(description)) {}
 
-        Option(std::string name, std::string description)
-          : name(std::move(name)),
+        Option(Type type, std::string name, std::string description)
+          : type(type),
+            name(std::move(name)),
             letter{},
             description(std::move(description)) {}
 
-        Option(std::string name, std::string value_placeholder, std::string description)
-          : name(std::move(name)),
+        Option(Type type, std::string name, std::string value_placeholder, std::string description)
+          : type(type),
+            name(std::move(name)),
             letter{},
             description(std::move(description)),
             value_placeholder(std::move(value_placeholder)) {}
@@ -45,16 +57,36 @@ public:
             options(std::move(options)) {}
     };
 
-    struct Result {};
+    struct OptionValue {
+        const Option *option;
+        std::optional<std::string> value;
+    };
 
+    struct Result {
+        std::vector<OptionValue> global_options;
+        const Command *command;
+        std::vector<OptionValue> command_options;
+    };
+
+    int argc;
+    const char **argv;
+    int arg_index = 1;
     std::string name;
     std::vector<Option> options;
     std::vector<Command> commands;
 
+    Result parse();
     void print_help();
     void print_command_help(const Command &command);
 
 private:
+    std::vector<OptionValue> parse_options(const std::vector<Option> &options);
+    const Command *parse_command();
+
+    const Option *find_option(std::string_view name, const std::vector<Option> &options);
+    const Option *find_option(char letter, const std::vector<Option> &options);
+    const Command *find_command(std::string_view name);
+
     void print_options(const std::vector<Option> &options);
     void print_commands(const std::vector<Command> &commands);
 };

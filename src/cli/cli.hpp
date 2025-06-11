@@ -19,6 +19,11 @@ namespace cli {
 class CLI {
 
 private:
+    enum class BuildConfig {
+        DEBUG,
+        RELEASE,
+    };
+
     enum class PackageType {
         EXECUTABLE,
         STATIC_LIBRARY,
@@ -29,6 +34,10 @@ private:
 
     Target target;
     Manifest manifest;
+
+    BuildConfig build_config = BuildConfig::DEBUG;
+    std::optional<unsigned> opt_level = {};
+    bool force_assembler = false;
 
     PackageType package_type;
     std::vector<std::string> source_paths;
@@ -59,6 +68,9 @@ private:
 
     void build();
     void invoke_compiler();
+    void invoke_assembler();
+    void invoke_nasm_assembler();
+    void invoke_aarch64_assembler();
     void invoke_linker();
     void invoke_windows_linker();
     void invoke_unix_linker();
