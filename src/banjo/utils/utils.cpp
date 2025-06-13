@@ -1,5 +1,7 @@
 #include "utils.hpp"
 
+#include <fstream>
+
 namespace banjo {
 
 namespace Utils {
@@ -28,6 +30,21 @@ std::optional<std::uint64_t> parse_u64(std::string_view string) {
     }
 
     return value;
+}
+
+std::optional<std::string> read_string_file(const std::filesystem::path &path) {
+    std::ifstream stream(path, std::ios::binary | std::ios::ate);
+
+    if (!stream) {
+        return {};
+    }
+
+    std::size_t size = stream.tellg();
+    stream.seekg(0);
+
+    std::string buffer(size, '\0');
+    stream.read(buffer.data(), size);
+    return buffer;
 }
 
 } // namespace Utils

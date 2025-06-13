@@ -83,6 +83,7 @@ public:
     const JSONObject *try_get_object(const std::string &key) const;
     const JSONArray *try_get_array(const std::string &key) const;
 
+    std::vector<std::string> get_string_array(const std::string &key) const;
     std::string get_string_or(const std::string &key, const std::string &default_value) const;
 
     bool contains(std::string key) const;

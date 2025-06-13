@@ -5,6 +5,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <iostream>
+
 namespace banjo {
 namespace cli {
 
@@ -16,26 +18,34 @@ std::optional<Process> Process::spawn(const Command &command) {
     PROCESS_INFORMATION process_info;
     ZeroMemory(&process_info, sizeof(process_info));
 
-    std::string command_line = command.executable;
+    std::vector<std::string> command_components;
+    command_components.push_back(command.executable);
+    command_components.insert(command_components.end(), command.args.begin(), command.args.end());
 
-    for (unsigned i = 0; i < command.args.size(); i++) {
-        command_line += " " + command.args[i];
+    std::string command_line;
+
+    for (unsigned i = 0; i < command_components.size(); i++) {
+        if (i != 0) {
+            command_line += " ";
+        }
+
+        command_line += "\"";
+
+        for (char c : command_components[i]) {
+            if (c == '\\') {
+                command_line += "\\\\";
+            } else if (c == '\"') {
+                command_line += "\"";
+            } else {
+                command_line += c;
+            }
+        }
+
+        command_line += "\"";
     }
 
-    // std::cout << command_line << std::endl;
-
-    BOOL result = CreateProcess(
-        NULL,
-        command_line.data(),
-        NULL,
-        NULL,
-        FALSE,
-        0,
-        NULL,
-        NULL,
-        &startup_info,
-        &process_info
-    );
+    BOOL result =
+        CreateProcess(NULL, command_line.data(), NULL, NULL, FALSE, 0, NULL, NULL, &startup_info, &process_info);
 
     if (!result) {
         DWORD winapi_error = GetLastError();

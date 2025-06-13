@@ -19,6 +19,10 @@ namespace cli {
 class CLI {
 
 private:
+    struct Toolchain {
+        JSONObject properties;
+    };
+
     enum class BuildConfig {
         DEBUG,
         RELEASE,
@@ -33,8 +37,10 @@ private:
     ArgumentParser arg_parser;
 
     Target target;
+    Toolchain toolchain;
     Manifest manifest;
 
+    std::optional<Target> target_override;
     BuildConfig build_config = BuildConfig::DEBUG;
     std::optional<unsigned> opt_level = {};
     bool force_assembler = false;
@@ -52,12 +58,14 @@ public:
 
 private:
     void execute_targets();
+    void execute_toolchains();
     void execute_version();
     void execute_build();
     void execute_run();
     void execute_help();
 
     void load_config();
+    void load_toolchain();
     void load_root_manifest(const Manifest &manifest);
     void load_manifest(const Manifest &manifest);
     void load_package(std::string_view name);
@@ -76,6 +84,7 @@ private:
     void invoke_unix_linker();
     void run_build();
 
+    std::filesystem::path get_toolchains_dir();
     std::string get_output_path();
     std::filesystem::path get_output_dir();
 };

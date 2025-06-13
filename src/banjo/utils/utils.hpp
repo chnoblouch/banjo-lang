@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <cstdint>
+#include <filesystem>
 #include <initializer_list>
 #include <optional>
 #include <string_view>
@@ -24,6 +25,8 @@ bool is_one_of(T value, std::initializer_list<T> candidates) {
 }
 
 std::optional<std::uint64_t> parse_u64(std::string_view string);
+
+std::optional<std::string> read_string_file(const std::filesystem::path &path);
 
 } // namespace Utils
 

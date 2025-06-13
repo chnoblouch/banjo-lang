@@ -1,6 +1,9 @@
 #include "cli.hpp"
 
+#include "banjo/utils/json.hpp"
 #include "banjo/utils/json_parser.hpp"
+#include "banjo/utils/paths.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include "argument_parser.hpp"
 #include "common.hpp"
@@ -48,6 +51,13 @@ static const ArgumentParser::Option OPTION_VERBOSE{
     "Print commands before execution",
 };
 
+static const ArgumentParser::Option OPTION_TARGET{
+    ArgumentParser::Option::Type::VALUE,
+    "target",
+    "{target}",
+    "Target to build for (default: host)",
+};
+
 static const ArgumentParser::Option OPTION_CONFIG{
     ArgumentParser::Option::Type::VALUE,
     "config",
@@ -73,6 +83,7 @@ static const ArgumentParser::Command COMMAND_BUILD{
     "Build the current package",
     {
         OPTION_HELP,
+        OPTION_TARGET,
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
         OPTION_FORCE_ASM,
@@ -94,9 +105,15 @@ static const ArgumentParser::Command COMMAND_RUN{
     },
 };
 
+static const ArgumentParser::Command COMMAND_TOOLCHAINS{
+    "toolchains",
+    "Print the cached toolchains",
+    {},
+};
+
 static const ArgumentParser::Command COMMAND_TARGETS{
     "targets",
-    "Print the list of supported targets",
+    "Print the supported targets",
     {
         OPTION_HELP,
         OPTION_QUIET,
@@ -130,7 +147,7 @@ void CLI::run(int argc, const char *argv[]) {
         .argv = argv,
         .name = "banjo",
         .options{OPTION_HELP, OPTION_VERSION, OPTION_QUIET, OPTION_VERBOSE},
-        .commands{COMMAND_BUILD, COMMAND_RUN, COMMAND_TARGETS, COMMAND_HELP, COMMAND_VERSION},
+        .commands{COMMAND_BUILD, COMMAND_RUN, COMMAND_TARGETS, COMMAND_TOOLCHAINS, COMMAND_HELP, COMMAND_VERSION},
     };
 
     ArgumentParser::Result args = arg_parser.parse();
@@ -157,7 +174,9 @@ void CLI::run(int argc, const char *argv[]) {
     for (const ArgumentParser::OptionValue &option_value : args.command_options) {
         std::string_view name = option_value.option->name;
 
-        if (name == OPTION_CONFIG.name) {
+        if (name == OPTION_TARGET.name) {
+            target_override = parse_target(*option_value.value);
+        } else if (name == OPTION_CONFIG.name) {
             if (option_value.value == "debug") {
                 build_config = BuildConfig::DEBUG;
             } else if (option_value.value == "release") {
@@ -195,6 +214,8 @@ void CLI::run(int argc, const char *argv[]) {
 
     if (args.command->name == COMMAND_TARGETS.name) {
         execute_targets();
+    } else if (args.command->name == COMMAND_TOOLCHAINS.name) {
+        execute_toolchains();
     } else if (args.command->name == COMMAND_BUILD.name) {
         execute_build();
     } else if (args.command->name == COMMAND_RUN.name) {
@@ -225,6 +246,19 @@ void CLI::execute_targets() {
     std::cout << "\n";
 }
 
+void CLI::execute_toolchains() {
+    std::cout << "\n";
+    std::cout << "Available toolchains:\n";
+
+    for (std::filesystem::path path : std::filesystem::directory_iterator(get_toolchains_dir())) {
+        if (std::filesystem::is_regular_file(path) && path.extension() == ".json") {
+            std::cout << "  - " << path.filename().string() << "\n";
+        }
+    }
+
+    std::cout << "\n";
+}
+
 void CLI::execute_version() {
     std::cout << BANJO_VERSION << "\n";
 }
@@ -244,11 +278,26 @@ void CLI::execute_help() {
 }
 
 void CLI::load_config() {
-    target = Target::host();
+    target = target_override ? *target_override : Target::host();
+    load_toolchain();
+
     source_paths.push_back("src");
 
     manifest = parse_manifest("banjo.json");
     load_root_manifest(manifest);
+}
+
+void CLI::load_toolchain() {
+    std::filesystem::path toolchain_path = get_toolchains_dir() / (target.to_string() + ".json");
+    std::optional<std::string> toolchain_string = Utils::read_string_file(toolchain_path);
+
+    if (!toolchain_string) {
+        error("failed to load cached toolchain file for target " + target.to_string());
+    }
+
+    toolchain = Toolchain{
+        .properties = JSONParser(*toolchain_string).parse_object(),
+    };
 }
 
 void CLI::load_root_manifest(const Manifest &manifest) {
@@ -416,7 +465,7 @@ void CLI::invoke_compiler() {
     }
 
     args.push_back("--opt-level");
-    
+
     if (opt_level) {
         args.push_back(std::to_string(*opt_level));
     } else if (build_config == BuildConfig::DEBUG) {
@@ -522,9 +571,20 @@ void CLI::invoke_linker() {
 }
 
 void CLI::invoke_windows_linker() {
+    std::filesystem::path msvc_tools_root_path(toolchain.properties.get_string("tools"));
+    std::filesystem::path msvc_lib_root_path(toolchain.properties.get_string("lib"));
+
+    std::filesystem::path msvc_tools_path = msvc_tools_root_path / "bin" / "Hostx64" / "x64";
+    std::filesystem::path msvc_lib_path = msvc_tools_root_path / "lib" / "x64";
+    std::filesystem::path msvc_um_lib_path = msvc_lib_root_path / "um" / "x64";
+    std::filesystem::path msvc_ucrt_lib_path = msvc_lib_root_path / "ucrt" / "x64";
+
     std::vector<std::string> args{
         "main.obj",
         "/OUT:" + get_output_path(),
+        "/LIBPATH:" + msvc_lib_path.string(),
+        "/LIBPATH:" + msvc_um_lib_path.string(),
+        "/LIBPATH:" + msvc_ucrt_lib_path.string(),
         "msvcrt.lib",
         "kernel32.lib",
         "user32.lib",
@@ -554,7 +614,7 @@ void CLI::invoke_windows_linker() {
     }
 
     Command command{
-        .executable = "lld-link",
+        .executable = (msvc_tools_path / "link").string(),
         .args = args,
     };
 
@@ -567,28 +627,44 @@ void CLI::invoke_windows_linker() {
 }
 
 void CLI::invoke_unix_linker() {
-    std::vector<std::string> args{
-        "main.o",
-        "-o",
-        get_output_path(),
-        "-L/usr/lib",
-        "-L/usr/lib/x86_64-linux-gnu",
-        "-L/usr/lib/gcc/x86_64-linux-gnu/13",
-        "-L/usr/lib64",
-        "-L/usr/lib/llvm-18/lib/clang/18",
-        "-lc",
-        "-lgcc_s",
-        "-lm",
-        "-ldl",
-        "-lpthread",
-        "--dynamic-linker",
-        "/lib64/ld-linux-x86-64.so.2",
-    };
+    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
+    std::vector<std::string> linker_args = toolchain.properties.get_string_array("linker_args");
+    std::vector<std::string> additional_libraries = toolchain.properties.get_string_array("additional_libraries");
+    std::vector<std::string> lib_dirs = toolchain.properties.get_string_array("lib_dirs");
+    std::filesystem::path crt_dir(toolchain.properties.get_string("crt_dir"));
+
+    std::vector<std::string> args;
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
+    args.push_back("main.o");
+    args.push_back("-o");
+    args.push_back(get_output_path());
+
+    for (const std::string &lib_dir : lib_dirs) {
+        args.push_back("-L" + lib_dir);
+    }
+
+    args.push_back("-lc");
+    args.push_back("-lgcc_s");
+    args.push_back("-lm");
+    args.push_back("-ldl");
+    args.push_back("-lpthread");
+
+    for (const std::string &lib : additional_libraries) {
+        args.push_back("-l" + lib);
+    }
+
+    args.push_back("--dynamic-linker");
+
+    if (target.arch == "x86_64") {
+        args.push_back("/lib64/ld-linux-x86-64.so.2");
+    } else if (target.arch == "aarch64") {
+        args.push_back("/lib/ld-linux-aarch64.so.1");
+    }
 
     if (package_type == PackageType::EXECUTABLE) {
-        args.push_back("/usr/lib/x86_64-linux-gnu/crt1.o");
-        args.push_back("/usr/lib/x86_64-linux-gnu/crti.o");
-        args.push_back("/usr/lib/x86_64-linux-gnu/crtn.o");
+        args.push_back((crt_dir / "crt1.o").string());
+        args.push_back((crt_dir / "crti.o").string());
+        args.push_back((crt_dir / "crtn.o").string());
     } else if (package_type == PackageType::SHARED_LIBRARY) {
         args.push_back("-shared");
     }
@@ -602,7 +678,7 @@ void CLI::invoke_unix_linker() {
     }
 
     Command command{
-        .executable = "ld.lld",
+        .executable = linker_path.string(),
         .args = args,
     };
 
@@ -625,6 +701,10 @@ void CLI::run_build() {
     );
 
     process->wait();
+}
+
+std::filesystem::path CLI::get_toolchains_dir() {
+    return Paths::executable().parent_path().parent_path() / "toolchains";
 }
 
 std::string CLI::get_output_path() {

@@ -77,6 +77,18 @@ const JSONArray *JSONObject::try_get_array(const std::string &key) const {
     return value ? &value->as_array() : nullptr;
 }
 
+std::vector<std::string> JSONObject::get_string_array(const std::string &key) const {
+    const JSONArray &json_array = get_array(key);
+
+    std::vector<std::string> array(json_array.length());
+
+    for (unsigned i = 0; i < json_array.length(); i++) {
+        array[i] = json_array.get_string(i);
+    }
+
+    return array;
+}
+
 std::string JSONObject::get_string_or(const std::string &key, const std::string &default_value) const {
     const std::string *string = try_get_string(key);
     return string ? *string : default_value;
