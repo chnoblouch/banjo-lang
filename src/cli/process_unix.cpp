@@ -22,21 +22,21 @@ std::optional<Process> Process::spawn(const Command &command) {
         return {};
     }
 
+    char **argv = new char *[command.args.size() + 2];
+
+    std::string executable = command.executable;
+    std::vector<std::string> args = command.args;
+
+    argv[0] = executable.data();
+
+    for (unsigned i = 0; i < args.size(); i++) {
+        argv[i + 1] = args[i].data();
+    }
+
+    argv[command.args.size() + 1] = NULL;
+
     if (pid == 0) {
-        char **argv = new char *[command.args.size() + 2];
-
-        std::string executable = command.executable;
-        std::vector<std::string> args = command.args;
-
-        argv[0] = executable.data();
-
-        for (unsigned i = 0; i < args.size(); i++) {
-            argv[i + 1] = args[i].data();
-        }
-
-        argv[command.args.size() + 1] = NULL;
-
-        if (execvpe(executable.data(), argv, environ) == -1) {
+        if (execvp(executable.data(), argv) == -1) {
             std::string message(strerror(errno));
             error("failed to spawn process: " + message);
         }

@@ -82,6 +82,7 @@ private:
     void invoke_linker();
     void invoke_windows_linker();
     void invoke_unix_linker();
+    void invoke_darwin_linker();
     void run_build();
 
     std::filesystem::path get_toolchains_dir();

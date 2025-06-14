@@ -30,7 +30,7 @@ private:
 #if OS_WINDOWS
     HANDLE process;
     HANDLE thread;
-#elif OS_LINUX
+#elif OS_LINUX || OS_MACOS
     int pid;
 #endif
 
@@ -40,7 +40,7 @@ public:
 private:
 #if OS_WINDOWS
     Process(HANDLE process, HANDLE thread);
-#elif OS_LINUX
+#elif OS_LINUX || OS_MACOS
     Process(int pid);
 #endif
 

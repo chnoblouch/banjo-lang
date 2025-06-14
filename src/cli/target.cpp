@@ -22,7 +22,7 @@ Target Target::host() {
 #if ARCH_X86_64
     arch = "x86_64";
 #elif ARCH_AARCH64
-    arch = "aarch64"
+    arch = "aarch64";
 #else
     arch = "unknown";
 #endif

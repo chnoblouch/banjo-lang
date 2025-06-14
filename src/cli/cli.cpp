@@ -210,8 +210,6 @@ void CLI::run(int argc, const char *argv[]) {
         start_time = std::chrono::steady_clock::now();
     }
 
-    load_config();
-
     if (args.command->name == COMMAND_TARGETS.name) {
         execute_targets();
     } else if (args.command->name == COMMAND_TOOLCHAINS.name) {
@@ -264,11 +262,13 @@ void CLI::execute_version() {
 }
 
 void CLI::execute_build() {
+    load_config();
     build();
     print_clear_line();
 }
 
 void CLI::execute_run() {
+    load_config();
     build();
     run_build();
 }
@@ -567,6 +567,8 @@ void CLI::invoke_linker() {
         invoke_windows_linker();
     } else if (target.os == "linux") {
         invoke_unix_linker();
+    } else if (target.os == "macos") {
+        invoke_darwin_linker();
     }
 }
 
@@ -667,6 +669,52 @@ void CLI::invoke_unix_linker() {
         args.push_back((crt_dir / "crtn.o").string());
     } else if (package_type == PackageType::SHARED_LIBRARY) {
         args.push_back("-shared");
+    }
+
+    for (const std::string &library_path : library_paths) {
+        args.push_back("-L" + library_path);
+    }
+
+    for (const std::string &library : libraries) {
+        args.push_back("-l" + library);
+    }
+
+    Command command{
+        .executable = linker_path.string(),
+        .args = args,
+    };
+
+    print_command("linker", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
+
+    std::filesystem::remove("main.o");
+}
+
+void CLI::invoke_darwin_linker() {
+    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
+    std::vector<std::string> linker_args = toolchain.properties.get_string_array("extra_args");
+    std::filesystem::path sysroot_path(toolchain.properties.get_string("sysroot"));
+
+    std::vector<std::string> args;
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
+    args.push_back("main.o");
+    args.push_back("-o");
+    args.push_back(get_output_path());
+    args.push_back("-arch");
+    args.push_back("arm64");
+    args.push_back("-platform_version");
+    args.push_back("macos");
+    args.push_back("14.0.0");
+    args.push_back("14.0.0");
+    args.push_back("-syslibroot");
+    args.push_back(sysroot_path.string());
+    args.push_back("-lSystem.B");
+    args.push_back("-lobjc.A");
+
+    if (package_type == PackageType::SHARED_LIBRARY) {
+        args.push_back("-dylib");
     }
 
     for (const std::string &library_path : library_paths) {
