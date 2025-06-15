@@ -44,9 +44,22 @@ void print_clear_line() {
     std::cout << "\x1b[2K\r" << std::flush;
 }
 
-void error(std::string_view message) {
+void print_empty_line() {
+    print_clear_line();
+    std::cout << "\n";
+}
+
+void print_error(std::string_view message) {
     std::cout << "\x1b[31;22merror\x1b[39;22m: " << message << "\n";
+}
+
+void exit_error() {
     std::exit(1);
+}
+
+void error(std::string_view message) {
+    print_error(message);
+    exit_error();
 }
 
 } // namespace cli

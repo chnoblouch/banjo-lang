@@ -5,6 +5,7 @@
 
 #include "argument_parser.hpp"
 #include "manifest.hpp"
+#include "process.hpp"
 #include "target.hpp"
 
 #include <chrono>
@@ -32,6 +33,11 @@ private:
         EXECUTABLE,
         STATIC_LIBRARY,
         SHARED_LIBRARY,
+    };
+
+    enum class ToolErrorMessageSource {
+        STDOUT,
+        STDERR,
     };
 
     ArgumentParser arg_parser;
@@ -84,6 +90,12 @@ private:
     void invoke_unix_linker();
     void invoke_darwin_linker();
     void run_build();
+
+    void process_tool_result(
+        const std::string &tool_name,
+        const ProcessResult &result,
+        ToolErrorMessageSource error_message_source = ToolErrorMessageSource::STDERR
+    );
 
     std::filesystem::path get_toolchains_dir();
     std::string get_output_path();

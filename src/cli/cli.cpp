@@ -496,6 +496,8 @@ void CLI::invoke_compiler() {
     ProcessResult result = process->wait();
 
     if (result.exit_code != 0) {
+        print_empty_line();
+        std::cout << result.stderr_buffer;
         std::exit(1);
     }
 }
@@ -529,7 +531,8 @@ void CLI::invoke_nasm_assembler() {
     print_command("assembler", command);
 
     std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    ProcessResult result = process->wait();
+    process_tool_result("assembler", result);
 
     std::filesystem::remove("main.asm");
 }
@@ -555,7 +558,8 @@ void CLI::invoke_aarch64_assembler() {
     print_command("assembler", command);
 
     std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    ProcessResult result = process->wait();
+    process_tool_result("assembler", result);
 
     std::filesystem::remove("main.s");
 }
@@ -623,7 +627,8 @@ void CLI::invoke_windows_linker() {
     print_command("linker", command);
 
     std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    ProcessResult result = process->wait();
+    process_tool_result("linker", result, ToolErrorMessageSource::STDOUT);
 
     std::filesystem::remove("main.obj");
 }
@@ -687,7 +692,8 @@ void CLI::invoke_unix_linker() {
     print_command("linker", command);
 
     std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    ProcessResult result = process->wait();
+    process_tool_result("linker", result);
 
     std::filesystem::remove("main.o");
 }
@@ -733,7 +739,8 @@ void CLI::invoke_darwin_linker() {
     print_command("linker", command);
 
     std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    ProcessResult result = process->wait();
+    process_tool_result("linker", result);
 
     std::filesystem::remove("main.o");
 }
@@ -745,10 +752,32 @@ void CLI::run_build() {
     std::optional<Process> process = Process::spawn(
         Command{
             .executable = get_output_path(),
+            .stdin_stream = Command::Stream::INHERIT,
+            .stdout_stream  = Command::Stream::INHERIT,
+            .stderr_stream  = Command::Stream::INHERIT,
         }
     );
 
     process->wait();
+}
+
+void CLI::process_tool_result(
+    const std::string &tool_name,
+    const ProcessResult &result,
+    ToolErrorMessageSource error_message_source /*= ToolErrorMessageSource::STDERR*/
+) {
+    if (result.exit_code != 0) {
+        print_error(tool_name + " returned with status code " + std::to_string(result.exit_code));
+        print_empty_line();
+
+        if (error_message_source == ToolErrorMessageSource::STDOUT) {
+            std::cout << result.stdout_buffer;
+        } else if (error_message_source == ToolErrorMessageSource::STDERR) {
+            std::cout << result.stderr_buffer;
+        }
+
+        exit_error();
+    }
 }
 
 std::filesystem::path CLI::get_toolchains_dir() {
