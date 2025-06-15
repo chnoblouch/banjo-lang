@@ -32,6 +32,34 @@ std::optional<std::uint64_t> parse_u64(std::string_view string) {
     return value;
 }
 
+std::vector<std::string_view> split_string(std::string_view string, char delimiter) {
+    std::vector<std::string_view> components;
+    unsigned start = 0;
+    unsigned index = 0;
+
+    while (true) {
+        if (string[index] == delimiter) {
+            if (index != start) {
+                components.push_back(string.substr(start, index - start));
+            }
+
+            start = index + 1;
+        }
+
+        index += 1;
+
+        if (index == string.size()) {
+            if (index += start) {
+                components.push_back(string.substr(start, index - start));
+            }
+
+            break;
+        }
+    }
+
+    return components;
+}
+
 std::optional<std::string> read_string_file(const std::filesystem::path &path) {
     std::ifstream stream(path, std::ios::binary | std::ios::ate);
 

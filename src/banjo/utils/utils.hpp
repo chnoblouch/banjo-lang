@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 namespace banjo {
 
@@ -25,6 +26,29 @@ bool is_one_of(T value, std::initializer_list<T> candidates) {
 }
 
 std::optional<std::uint64_t> parse_u64(std::string_view string);
+std::vector<std::string_view> split_string(std::string_view string, char delimiter);
+
+template <typename T>
+std::vector<T> remove_duplicates(const std::vector<T> &array) {
+    std::vector<T> result;
+
+    for (const T &element : array) {
+        bool is_duplicate = false;
+
+        for (const T &other : result) {
+            if (other == element) {
+                is_duplicate = true;
+                break;
+            }
+        }
+
+        if (!is_duplicate) {
+            result.push_back(element);
+        }
+    }
+
+    return result;
+}
 
 std::optional<std::string> read_string_file(const std::filesystem::path &path);
 

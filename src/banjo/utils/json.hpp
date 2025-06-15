@@ -104,6 +104,15 @@ public:
     JSONArray();
     JSONArray(std::initializer_list<JSONValue> values);
 
+    template <typename T>
+    JSONArray(std::vector<T> values) {
+        this->values.reserve(values.size());
+
+        for (T value : values) {
+            add(std::move(value));
+        }
+    }
+
     const JSONValue &get(int index) const;
     const JSONString &get_string(int index) const;
     JSONInt get_int(int index) const;

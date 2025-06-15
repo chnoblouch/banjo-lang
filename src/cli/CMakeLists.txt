@@ -23,6 +23,8 @@ add_executable(cli2
     process.hpp
     target.cpp
     target.hpp
+    toolchains.cpp
+    toolchains.hpp
     ${PLATFORM_SOURCES}
 )
 

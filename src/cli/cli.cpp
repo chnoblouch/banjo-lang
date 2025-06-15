@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "cli.hpp"
 
 #include "banjo/utils/json.hpp"
@@ -9,6 +11,7 @@
 #include "common.hpp"
 #include "process.hpp"
 #include "target.hpp"
+#include "toolchains.hpp"
 
 #include <chrono>
 #include <cstdlib>
@@ -163,6 +166,7 @@ void CLI::run(int argc, const char *argv[]) {
             quiet = true;
         } else if (option_value.option->name == OPTION_VERBOSE.name) {
             verbose = true;
+            single_line_output = false;
         }
     }
 
@@ -203,6 +207,7 @@ void CLI::run(int argc, const char *argv[]) {
             quiet = true;
         } else if (name == OPTION_VERBOSE.name) {
             verbose = true;
+            single_line_output = false;
         }
     }
 
@@ -289,15 +294,20 @@ void CLI::load_config() {
 
 void CLI::load_toolchain() {
     std::filesystem::path toolchain_path = get_toolchains_dir() / (target.to_string() + ".json");
-    std::optional<std::string> toolchain_string = Utils::read_string_file(toolchain_path);
 
-    if (!toolchain_string) {
-        error("failed to load cached toolchain file for target " + target.to_string());
+    if (std::filesystem::exists(toolchain_path)) {
+        std::optional<std::string> toolchain_string = Utils::read_string_file(toolchain_path);
+
+        if (!toolchain_string) {
+            error("failed to load cached toolchain file for target " + target.to_string());
+        }
+
+        toolchain = Toolchain{
+            .properties = JSONParser(*toolchain_string).parse_object(),
+        };
+    } else {
+        detect_toolchain();
     }
-
-    toolchain = Toolchain{
-        .properties = JSONParser(*toolchain_string).parse_object(),
-    };
 }
 
 void CLI::load_root_manifest(const Manifest &manifest) {
@@ -345,6 +355,14 @@ void CLI::load_package(std::string_view name) {
 
     if (std::filesystem::is_directory(target_lib_path)) {
         library_paths.push_back(target_lib_path.string());
+    }
+}
+
+void CLI::detect_toolchain() {
+    single_line_output = true;
+
+    if (target.os == "linux") {
+        toolchain.properties = UnixToolchain::detect().serialize();
     }
 }
 
@@ -497,7 +515,7 @@ void CLI::invoke_compiler() {
 
     if (result.exit_code != 0) {
         print_empty_line();
-        std::cout << result.stderr_buffer;
+        std::cerr << result.stderr_buffer;
         std::exit(1);
     }
 }
@@ -753,8 +771,8 @@ void CLI::run_build() {
         Command{
             .executable = get_output_path(),
             .stdin_stream = Command::Stream::INHERIT,
-            .stdout_stream  = Command::Stream::INHERIT,
-            .stderr_stream  = Command::Stream::INHERIT,
+            .stdout_stream = Command::Stream::INHERIT,
+            .stderr_stream = Command::Stream::INHERIT,
         }
     );
 
@@ -767,13 +785,13 @@ void CLI::process_tool_result(
     ToolErrorMessageSource error_message_source /*= ToolErrorMessageSource::STDERR*/
 ) {
     if (result.exit_code != 0) {
-        print_error(tool_name + " returned with status code " + std::to_string(result.exit_code));
+        print_error(tool_name + " returned with exit code " + std::to_string(result.exit_code));
         print_empty_line();
 
         if (error_message_source == ToolErrorMessageSource::STDOUT) {
-            std::cout << result.stdout_buffer;
+            std::cerr << result.stdout_buffer;
         } else if (error_message_source == ToolErrorMessageSource::STDERR) {
-            std::cout << result.stderr_buffer;
+            std::cerr << result.stderr_buffer;
         }
 
         exit_error();

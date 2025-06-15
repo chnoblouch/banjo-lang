@@ -76,6 +76,9 @@ private:
     void load_manifest(const Manifest &manifest);
     void load_package(std::string_view name);
 
+    void detect_toolchain();
+    void detect_unix_toolchain();
+
     Manifest parse_manifest(const std::filesystem::path &path);
     Manifest parse_manifest(const JSONObject &json);
     Target parse_target(std::string_view string);
