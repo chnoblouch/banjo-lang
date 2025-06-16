@@ -28,6 +28,16 @@ private:
     std::filesystem::path find_c_compiler();
 };
 
+struct MacOSToolchain {
+    std::string linker_path;
+    std::vector<std::string> linker_args;
+    std::string sysroot_path;
+
+    static MacOSToolchain detect();
+
+    JSONObject serialize();
+};
+
 } // namespace cli
 } // namespace banjo
 

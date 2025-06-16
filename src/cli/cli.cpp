@@ -4,6 +4,7 @@
 
 #include "banjo/utils/json.hpp"
 #include "banjo/utils/json_parser.hpp"
+#include "banjo/utils/json_serializer.hpp"
 #include "banjo/utils/paths.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -253,7 +254,14 @@ void CLI::execute_toolchains() {
     std::cout << "\n";
     std::cout << "Available toolchains:\n";
 
-    for (std::filesystem::path path : std::filesystem::directory_iterator(get_toolchains_dir())) {
+    std::filesystem::path toolchains_dir = get_toolchains_dir();
+
+    if (!std::filesystem::is_directory(toolchains_dir)) {
+        std::cout << "\n";
+        return;
+    }
+
+    for (std::filesystem::path path : std::filesystem::directory_iterator(toolchains_dir)) {
         if (std::filesystem::is_regular_file(path) && path.extension() == ".json") {
             std::cout << "  - " << path.filename().string() << "\n";
         }
@@ -293,7 +301,7 @@ void CLI::load_config() {
 }
 
 void CLI::load_toolchain() {
-    std::filesystem::path toolchain_path = get_toolchains_dir() / (target.to_string() + ".json");
+    std::filesystem::path toolchain_path = get_toolchain_path();
 
     if (std::filesystem::exists(toolchain_path)) {
         std::optional<std::string> toolchain_string = Utils::read_string_file(toolchain_path);
@@ -363,7 +371,17 @@ void CLI::detect_toolchain() {
 
     if (target.os == "linux") {
         toolchain.properties = UnixToolchain::detect().serialize();
+    } else if (target.os == "macos") {
+        toolchain.properties = MacOSToolchain::detect().serialize();
     }
+
+    print_step("Caching toolchain...");
+
+    std::filesystem::path toolchain_path = get_toolchain_path();
+    std::filesystem::create_directories(toolchain_path.parent_path());
+
+    std::ofstream toolchain_stream(toolchain_path, std::ios::binary);
+    JSONSerializer(toolchain_stream).serialize(toolchain.properties);
 }
 
 Manifest CLI::parse_manifest(const std::filesystem::path &path) {
@@ -796,6 +814,10 @@ void CLI::process_tool_result(
 
         exit_error();
     }
+}
+
+std::filesystem::path CLI::get_toolchain_path() {
+    return get_toolchains_dir() / (target.to_string() + ".json");
 }
 
 std::filesystem::path CLI::get_toolchains_dir() {

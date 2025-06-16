@@ -79,11 +79,14 @@ JSONValue JSONParser::parse_value() {
                 string += c;
             } else {
                 c = stream.get();
-                if (c == '\\') string += '\\';
+                if (c == '\"') string += '\"';
+                else if (c == '\\') string += '\\';
+                else if (c == '/') string += '/';
+                else if (c == 'b') string += '\b';
+                else if (c == 'f') string += '\f';
                 else if (c == 'n') string += '\n';
                 else if (c == 'r') string += '\r';
                 else if (c == 't') string += '\t';
-                else if (c == '\"') string += '\"';
             }
         }
         return JSONValue(string);

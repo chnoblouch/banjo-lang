@@ -77,7 +77,6 @@ private:
     void load_package(std::string_view name);
 
     void detect_toolchain();
-    void detect_unix_toolchain();
 
     Manifest parse_manifest(const std::filesystem::path &path);
     Manifest parse_manifest(const JSONObject &json);
@@ -100,6 +99,7 @@ private:
         ToolErrorMessageSource error_message_source = ToolErrorMessageSource::STDERR
     );
 
+    std::filesystem::path get_toolchain_path();
     std::filesystem::path get_toolchains_dir();
     std::string get_output_path();
     std::filesystem::path get_output_dir();

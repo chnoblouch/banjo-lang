@@ -20,7 +20,7 @@ void print_command(std::string_view name, const Command &command);
 void print_clear_line();
 void print_empty_line();
 void print_error(std::string_view message);
-void exit_error();
+[[noreturn]] void exit_error();
 [[noreturn]] void error(std::string_view message);
 
 std::optional<std::filesystem::path> find_tool(std::string_view name);

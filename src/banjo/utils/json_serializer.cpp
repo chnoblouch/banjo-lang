@@ -51,7 +51,6 @@ void JSONSerializer::serialize(const JSONValue &value, int indent) {
         for (char c : value.as_string()) {
             if (c == '\"') escaped_string += "\\\"";
             else if (c == '\\') escaped_string += "\\\\";
-            else if (c == '/') escaped_string += "\\/";
             else if (c == '\b') escaped_string += "\\b";
             else if (c == '\f') escaped_string += "\\f";
             else if (c == '\n') escaped_string += "\\n";
