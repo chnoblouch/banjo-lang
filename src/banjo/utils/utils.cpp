@@ -1,5 +1,10 @@
+#ifdef _WINDOWS
+#    define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "utils.hpp"
 
+#include <cstdlib>
 #include <fstream>
 
 namespace banjo {
@@ -73,6 +78,16 @@ std::optional<std::string> read_string_file(const std::filesystem::path &path) {
     std::string buffer(size, '\0');
     stream.read(buffer.data(), size);
     return buffer;
+}
+
+std::optional<std::string_view> get_env(const std::string &name) {
+    const char *result = std::getenv(name.c_str());
+
+    if (result) {
+        return result;
+    } else {
+        return {};
+    }
 }
 
 } // namespace Utils

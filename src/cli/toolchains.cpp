@@ -1,13 +1,213 @@
 #include "toolchains.hpp"
 
 #include "banjo/utils/json.hpp"
+#include "banjo/utils/json_parser.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include "common.hpp"
+
 #include <filesystem>
+#include <utility>
 
 namespace banjo {
 namespace cli {
+
+WindowsToolchain WindowsToolchain::detect() {
+    WindowsToolchain toolchain;
+
+    print_step("Locating MSVC toolchain...");
+    toolchain.find_msvc();
+    toolchain.find_winsdk();
+
+    return toolchain;
+}
+
+void WindowsToolchain::find_msvc() {
+    std::optional<std::filesystem::path> vswhere_path = find_vswhere();
+    if (!vswhere_path) {
+        error("failed to find vswhere");
+    }
+
+    print_step("  Found vswhere: " + vswhere_path->string());
+
+    std::optional<std::filesystem::path> vs_path = find_vs_installation(*vswhere_path);
+    if (!vs_path) {
+        error("failed to find visual studio installation");
+    }
+
+    print_step("  Found Visual Studio installation: " + vs_path->string());
+
+    std::filesystem::path msvc_versions_path = *vs_path / "VC" / "Tools" / "MSVC";
+    std::optional<std::string> msvc_version = find_latest_msvc_version(msvc_versions_path);
+
+    if (!msvc_version) {
+        error("failed to determine msvc version");
+    }
+
+    print_step("  Using MSVC version " + *msvc_version);
+    tools_path = (msvc_versions_path / *msvc_version).string();
+}
+
+std::optional<std::filesystem::path> WindowsToolchain::find_vswhere() {
+    std::filesystem::path program_files_path;
+
+    if (std::optional<std::string_view> env = Utils::get_env("ProgramFiles(x86)")) {
+        program_files_path = *env;
+    } else if (std::optional<std::string_view> env = Utils::get_env("ProgramFiles")) {
+        program_files_path = *env;
+    } else {
+        return {};
+    }
+
+    std::filesystem::path vswhere_path = program_files_path / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
+    vswhere_path = std::filesystem::canonical(vswhere_path);
+
+    if (std::filesystem::is_regular_file(vswhere_path)) {
+        return vswhere_path;
+    } else {
+        return {};
+    }
+}
+
+std::optional<std::filesystem::path> WindowsToolchain::find_vs_installation(const std::filesystem::path &vswhere_path) {
+    JSONArray result;
+
+    // Look for a full Visual Studio installation.
+    result = run_vswhere(vswhere_path, {"-latest"});
+
+    if (result.length() > 0) {
+        std::string path_raw = result.get_object(0).get_string("installationPath");
+        return std::filesystem::canonical(path_raw);
+    }
+
+    // Look for a Visual Studio Build Tools installation.
+    result = run_vswhere(vswhere_path, {"-latest", "-products", "Microsoft.VisualStudio.Product.BuildTools"});
+
+    if (result.length() > 0) {
+        std::string path_raw = result.get_object(0).get_string("installationPath");
+        return std::filesystem::canonical(path_raw);
+    }
+
+    return {};
+}
+
+JSONArray WindowsToolchain::run_vswhere(
+    const std::filesystem::path &vswhere_path,
+    const std::vector<std::string> &args
+) {
+    std::vector<std::string> full_args{"-format", "json"};
+    full_args.insert(full_args.end(), args.begin(), args.end());
+    std::string output = get_tool_output(vswhere_path, full_args);
+    return JSONParser(output).parse_array();
+}
+
+std::optional<std::string> WindowsToolchain::find_latest_msvc_version(const std::filesystem::path &versions_path) {
+    std::vector<std::string> versions;
+
+    for (std::filesystem::path version_dir : std::filesystem::directory_iterator(versions_path)) {
+        versions.push_back(version_dir.filename().string());
+    }
+
+    return get_max_version(versions, 3);
+}
+
+void WindowsToolchain::find_winsdk() {
+    std::optional<std::filesystem::path> winsdk_root_path = find_winsdk_root();
+    if (!winsdk_root_path) {
+        error("failed to find windows sdk");
+    }
+
+    print_step("  Found Windows SDK: " + winsdk_root_path->string());
+
+    std::filesystem::path winsdk_versions_path = *winsdk_root_path / "Lib";
+    std::optional<std::string> winsdk_version = find_latest_winsdk_version(winsdk_versions_path);
+
+    if (!winsdk_version) {
+        error("failed to determine windows sdk version");
+    }
+
+    print_step("  Using Windows SDK version " + *winsdk_version);
+    lib_path = (winsdk_versions_path / *winsdk_version).string();
+}
+
+std::optional<std::filesystem::path> WindowsToolchain::find_winsdk_root() {
+    for (const std::string &env_name : std::initializer_list<std::string>{"ProgramFiles(x86)", "ProgramFiles"}) {
+        std::optional<std::string_view> env = Utils::get_env(env_name);
+
+        if (!env) {
+            continue;
+        }
+
+        std::filesystem::path winsdk_root_path = std::filesystem::path(*env) / "Windows Kits" / "10";
+
+        if (std::filesystem::is_directory(winsdk_root_path)) {
+            return winsdk_root_path;
+        }
+    }
+
+    return {};
+}
+
+std::optional<std::string> WindowsToolchain::find_latest_winsdk_version(const std::filesystem::path &versions_path) {
+    std::vector<std::string> versions;
+
+    for (std::filesystem::path version_dir : std::filesystem::directory_iterator(versions_path)) {
+        versions.push_back(version_dir.filename().string());
+    }
+
+    return get_max_version(versions, 4);
+}
+
+std::optional<std::string> WindowsToolchain::get_max_version(
+    const std::vector<std::string> &versions,
+    unsigned num_components
+) {
+    if (versions.empty()) {
+        return {};
+    }
+
+    std::vector<std::pair<std::string_view, std::vector<std::uint64_t>>> parsed_versions;
+
+    for (const std::string &version : versions) {
+        std::vector<std::string_view> string_components = Utils::split_string(version, '.');
+
+        if (string_components.size() != num_components) {
+            return {};
+        }
+
+        std::vector<std::uint64_t> number_components(num_components);
+
+        for (unsigned i = 0; i < num_components; i++) {
+            if (auto number = Utils::parse_u64(string_components[i])) {
+                number_components.push_back(*number);
+            } else {
+                return {};
+            }
+        }
+
+        parsed_versions.push_back({version, number_components});
+    }
+
+    auto sort_comparison_func = [](const auto &lhs, const auto &rhs) {
+        for (unsigned i = 0; i < lhs.second.size(); i++) {
+            if (lhs.second[i] != rhs.second[i]) {
+                return lhs.second[i] < rhs.second[i];
+            }
+        }
+
+        return false;
+    };
+
+    std::sort(parsed_versions.begin(), parsed_versions.end(), sort_comparison_func);
+    return std::string(parsed_versions.back().first);
+}
+
+JSONObject WindowsToolchain::serialize() {
+    JSONObject object;
+    object.add("tools", tools_path);
+    object.add("lib", lib_path);
+    return object;
+}
 
 UnixToolchain UnixToolchain::detect() {
     UnixToolchain toolchain;

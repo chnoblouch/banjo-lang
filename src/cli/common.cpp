@@ -2,7 +2,6 @@
 
 #include "banjo/utils/utils.hpp"
 
-#include <cstdlib>
 #include <iostream>
 
 namespace banjo {
@@ -72,7 +71,10 @@ std::optional<std::filesystem::path> find_tool(std::string_view name) {
     file_name += ".exe";
 #endif
 
-    std::string path_env = std::getenv("PATH");
+    std::optional<std::string_view> path_env = Utils::get_env("PATH");
+    if (!path_env) {
+        return {};
+    }
 
 #if OS_WINDOWS
     char delimiter = ';';
@@ -80,7 +82,7 @@ std::optional<std::filesystem::path> find_tool(std::string_view name) {
     char delimiter = ':';
 #endif
 
-    std::vector<std::string_view> search_paths = Utils::split_string(path_env, delimiter);
+    std::vector<std::string_view> search_paths = Utils::split_string(*path_env, delimiter);
 
     for (std::string_view search_path : search_paths) {
         std::filesystem::path tool_path = std::filesystem::absolute(search_path) / file_name;

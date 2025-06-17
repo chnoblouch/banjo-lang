@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "cli.hpp"
 
 #include "banjo/utils/json.hpp"
@@ -369,7 +367,11 @@ void CLI::load_package(std::string_view name) {
 void CLI::detect_toolchain() {
     single_line_output = true;
 
-    if (target.os == "linux") {
+    print_step("Setting up toolchain for target " + target.to_string());
+
+    if (target.os == "windows") {
+        toolchain.properties = WindowsToolchain::detect().serialize();
+    } else if (target.os == "linux") {
         toolchain.properties = UnixToolchain::detect().serialize();
     } else if (target.os == "macos") {
         toolchain.properties = MacOSToolchain::detect().serialize();
