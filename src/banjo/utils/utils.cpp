@@ -77,7 +77,23 @@ std::optional<std::string> read_string_file(const std::filesystem::path &path) {
 
     std::string buffer(size, '\0');
     stream.read(buffer.data(), size);
+
+    if (!stream) {
+        return {};
+    }
+
     return buffer;
+}
+
+bool write_string_file(std::string_view contents, const std::filesystem::path &path) {
+    std::ofstream stream(path, std::ios::binary);
+
+    if (!stream) {
+        return false;
+    }
+
+    stream.write(contents.data(), contents.size());
+    return static_cast<bool>(stream);
 }
 
 std::optional<std::string_view> get_env(const std::string &name) {

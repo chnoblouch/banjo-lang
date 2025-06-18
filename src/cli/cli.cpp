@@ -80,8 +80,21 @@ static const ArgumentParser::Option OPTION_FORCE_ASM{
     "Force the use of an external assembler",
 };
 
+static const ArgumentParser::Positional POSITIONAL_NAME{
+    "name",
+};
+
 static const ArgumentParser::Positional POSITIONAL_TOOL{
     "tool",
+};
+
+static const ArgumentParser::Command COMMAND_NEW{
+    "new",
+    "Create a new package in the current working directory",
+    {},
+    {
+        POSITIONAL_NAME,
+    },
 };
 
 static const ArgumentParser::Command COMMAND_BUILD{
@@ -125,7 +138,7 @@ static const ArgumentParser::Command COMMAND_INVOKE{
     },
     {
         POSITIONAL_TOOL,
-    }
+    },
 };
 
 static const ArgumentParser::Command COMMAND_TOOLCHAINS{
@@ -171,6 +184,7 @@ void CLI::run(int argc, const char *argv[]) {
         .name = "banjo",
         .options{OPTION_HELP, OPTION_VERSION, OPTION_QUIET, OPTION_VERBOSE},
         .commands{
+            COMMAND_NEW,
             COMMAND_BUILD,
             COMMAND_RUN,
             COMMAND_INVOKE,
@@ -247,6 +261,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_targets();
     } else if (args.command->name == COMMAND_TOOLCHAINS.name) {
         execute_toolchains();
+    } else if (args.command->name == COMMAND_NEW.name) {
+        execute_new(args);
     } else if (args.command->name == COMMAND_BUILD.name) {
         execute_build();
     } else if (args.command->name == COMMAND_RUN.name) {
@@ -301,6 +317,27 @@ void CLI::execute_toolchains() {
 
 void CLI::execute_version() {
     std::cout << BANJO_VERSION << "\n";
+}
+
+void CLI::execute_new(const ArgumentParser::Result &args) {
+    if (args.command_positionals.empty()) {
+        error("missing positional argument 'new'");
+        return;
+    }
+
+    const std::string &name = args.command_positionals[0];
+    std::filesystem::path package_path = name;
+    std::filesystem::path src_path = package_path / "src";
+
+    std::filesystem::create_directory(package_path);
+    std::filesystem::create_directory(src_path);
+
+    Utils::write_string_file("func main() {\n    println(\"Hello, World!\");\n}\n", src_path / "main.bnj");
+
+    Utils::write_string_file(
+        "{\n  \"name\": \"" + name + "\",\n  \"type\": \"executable\"\n}\n",
+        package_path / "banjo.json"
+    );
 }
 
 void CLI::execute_build() {

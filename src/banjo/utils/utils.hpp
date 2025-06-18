@@ -51,6 +51,7 @@ std::vector<T> remove_duplicates(const std::vector<T> &array) {
 }
 
 std::optional<std::string> read_string_file(const std::filesystem::path &path);
+bool write_string_file(std::string_view contents, const std::filesystem::path &path);
 std::optional<std::string_view> get_env(const std::string &name);
 
 } // namespace Utils

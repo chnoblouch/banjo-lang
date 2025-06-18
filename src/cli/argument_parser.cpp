@@ -122,7 +122,13 @@ const ArgumentParser::Command *ArgumentParser::find_command(std::string_view nam
 
 void ArgumentParser::print_help() {
     std::cout << "\n";
-    std::cout << "Usage: " + name + " [command] [options]\n";
+    std::cout << "Usage: " + name + " [command]";
+
+    if (!options.empty()) {
+        std::cout << " [options]";
+    }
+
+    std::cout << "\n";
 
     if (!options.empty()) {
         std::cout << "\n";
@@ -141,7 +147,11 @@ void ArgumentParser::print_command_help(const Command &command) {
     std::cout << "\n";
     std::cout << "Description: " + command.description << "\n";
     std::cout << "\n";
-    std::cout << "Usage: " + name + " " + command.name + " [options]";
+    std::cout << "Usage: " << name << " " << command.name;
+
+    if (!command.options.empty()) {
+        std::cout << " [options]";
+    }
 
     if (!command.positionals.empty()) {
         for (const Positional &positional : command.positionals) {
