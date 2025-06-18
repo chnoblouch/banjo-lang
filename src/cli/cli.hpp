@@ -68,6 +68,7 @@ private:
     void execute_version();
     void execute_build();
     void execute_run();
+    void execute_invoke(const ArgumentParser::Result &args);
     void execute_help();
 
     void load_config();

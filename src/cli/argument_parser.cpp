@@ -1,4 +1,5 @@
 #include "argument_parser.hpp"
+#include "banjo/utils/macros.hpp"
 #include "common.hpp"
 
 #include <iostream>
@@ -8,52 +9,70 @@ namespace cli {
 
 ArgumentParser::Result ArgumentParser::parse() {
     Result result;
-    result.global_options = parse_options(options);
-    result.command = parse_command();
-
-    if (result.command) {
-        result.command_options = parse_options(result.command->options);
-    }
-
-    return result;
-}
-
-std::vector<ArgumentParser::OptionValue> ArgumentParser::parse_options(const std::vector<Option> &options) {
-    std::vector<OptionValue> result;
 
     while (arg_index < argc) {
         std::string_view arg = argv[arg_index];
 
-        const Option *option = nullptr;
-
-        if (arg.starts_with("--")) {
-            option = find_option(arg.substr(2), options);
-        } else if (arg.size() == 2 && arg[0] == '-') {
-            option = find_option(arg[1], options);
+        if (arg.starts_with('-')) {
+            result.global_options.push_back(parse_option(options));
         } else {
             break;
         }
 
         arg_index += 1;
+    }
 
-        if (!option) {
-            error("unknown option '" + std::string(arg) + "'");
+    result.command = parse_command();
+    arg_index += 1;
+
+    if (!result.command) {
+        return result;
+    }
+
+    while (arg_index < argc) {
+        std::string_view arg = argv[arg_index];
+
+        if (arg.starts_with('-')) {
+            result.command_options.push_back(parse_option(options));
+        } else {
+            result.command_positionals.push_back(std::string(arg));
         }
 
-        if (option->type == Option::Type::FLAG) {
-            result.push_back(OptionValue{.option = option, .value = {}});
-        } else if (option->type == Option::Type::VALUE) {
-            if (arg_index == argc || std::string_view(argv[arg_index]).starts_with("-")) {
-                error("missing value for option '--" + option->name + "'");
-            }
-
-            std::string value = argv[arg_index];
-            result.push_back(OptionValue{.option = option, .value = value});
-            arg_index += 1;
-        }
+        arg_index += 1;
     }
 
     return result;
+}
+
+ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Option> &options) {
+    std::string_view arg = argv[arg_index];
+
+    const Option *option = nullptr;
+
+    if (arg.starts_with("--")) {
+        option = find_option(arg.substr(2), options);
+    } else if (arg.size() == 2 && arg[0] == '-') {
+        option = find_option(arg[1], options);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    if (!option) {
+        error("unknown option '" + std::string(arg) + "'");
+    }
+
+    if (option->type == Option::Type::FLAG) {
+        return OptionValue{.option = option, .value = {}};
+    } else if (option->type == Option::Type::VALUE) {
+        if (arg_index == argc || std::string_view(argv[arg_index]).starts_with("-")) {
+            error("missing value for option '--" + option->name + "'");
+        }
+
+        std::string value = argv[arg_index];
+        return OptionValue{.option = option, .value = value};
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 const ArgumentParser::Command *ArgumentParser::parse_command() {
@@ -63,7 +82,6 @@ const ArgumentParser::Command *ArgumentParser::parse_command() {
 
     std::string_view arg = argv[arg_index];
     const Command *command = find_command(arg);
-    arg_index += 1;
 
     if (!command) {
         error("unknown command '" + std::string(arg) + "'");
@@ -123,7 +141,15 @@ void ArgumentParser::print_command_help(const Command &command) {
     std::cout << "\n";
     std::cout << "Description: " + command.description << "\n";
     std::cout << "\n";
-    std::cout << "Usage: " + name + " " + command.name + " [options]\n";
+    std::cout << "Usage: " + name + " " + command.name + " [options]";
+
+    if (!command.positionals.empty()) {
+        for (const Positional &positional : command.positionals) {
+            std::cout << " [" << positional.name << "]";
+        }
+    }
+
+    std::cout << "\n";
 
     if (!command.options.empty()) {
         std::cout << "\n";
@@ -171,7 +197,7 @@ void ArgumentParser::print_options(const std::vector<Option> &options) {
         }
 
         std::cout << name_column;
-        std::cout << std::string(longest_option_length + 3 - name_column.length(), ' ');
+        std::cout << std::string(longest_option_length + 3 - name_column.size(), ' ');
         std::cout << option.description;
         std::cout << "\n";
     }

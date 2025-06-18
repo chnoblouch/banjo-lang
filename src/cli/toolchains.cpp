@@ -8,6 +8,7 @@
 
 #include <filesystem>
 #include <utility>
+#include <algorithm>
 
 namespace banjo {
 namespace cli {

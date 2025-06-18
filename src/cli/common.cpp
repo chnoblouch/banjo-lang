@@ -9,14 +9,14 @@ namespace cli {
 
 bool quiet = false;
 bool verbose = false;
-bool single_line_output = false;
+bool single_line_output = true;
 
 void print_step(std::string_view message) {
     if (quiet) {
         return;
     }
 
-    if (single_line_output) {
+    if (!single_line_output) {
         std::cout << message << "\n" << std::flush;
         return;
     }

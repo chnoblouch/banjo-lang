@@ -46,15 +46,28 @@ public:
             value_placeholder(std::move(value_placeholder)) {}
     };
 
+    struct Positional {
+        std::string name;
+
+        Positional(std::string name) : name(std::move(name)) {}
+    };
+
     struct Command {
         std::string name;
         std::string description;
         std::vector<Option> options;
+        std::vector<Positional> positionals;
 
-        Command(std::string name, std::string description, std::vector<Option> options)
+        Command(
+            std::string name,
+            std::string description,
+            std::vector<Option> options,
+            std::vector<Positional> positionals = {}
+        )
           : name(std::move(name)),
             description(std::move(description)),
-            options(std::move(options)) {}
+            options(std::move(options)),
+            positionals(std::move(positionals)) {}
     };
 
     struct OptionValue {
@@ -66,6 +79,7 @@ public:
         std::vector<OptionValue> global_options;
         const Command *command;
         std::vector<OptionValue> command_options;
+        std::vector<std::string> command_positionals;
     };
 
     int argc;
@@ -80,7 +94,7 @@ public:
     void print_command_help(const Command &command);
 
 private:
-    std::vector<OptionValue> parse_options(const std::vector<Option> &options);
+    OptionValue parse_option(const std::vector<Option> &options);
     const Command *parse_command();
 
     const Option *find_option(std::string_view name, const std::vector<Option> &options);

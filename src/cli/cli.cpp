@@ -80,6 +80,10 @@ static const ArgumentParser::Option OPTION_FORCE_ASM{
     "Force the use of an external assembler",
 };
 
+static const ArgumentParser::Positional POSITIONAL_TOOL{
+    "tool",
+};
+
 static const ArgumentParser::Command COMMAND_BUILD{
     "build",
     "Build the current package",
@@ -105,6 +109,23 @@ static const ArgumentParser::Command COMMAND_RUN{
         OPTION_QUIET,
         OPTION_VERBOSE,
     },
+};
+
+static const ArgumentParser::Command COMMAND_INVOKE{
+    "invoke",
+    "Run a program from the toolchain (compiler, assembler, or linker)",
+    {
+        OPTION_HELP,
+        OPTION_TARGET,
+        OPTION_CONFIG,
+        OPTION_OPT_LEVEL,
+        OPTION_FORCE_ASM,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+    {
+        POSITIONAL_TOOL,
+    }
 };
 
 static const ArgumentParser::Command COMMAND_TOOLCHAINS{
@@ -149,7 +170,15 @@ void CLI::run(int argc, const char *argv[]) {
         .argv = argv,
         .name = "banjo",
         .options{OPTION_HELP, OPTION_VERSION, OPTION_QUIET, OPTION_VERBOSE},
-        .commands{COMMAND_BUILD, COMMAND_RUN, COMMAND_TARGETS, COMMAND_TOOLCHAINS, COMMAND_HELP, COMMAND_VERSION},
+        .commands{
+            COMMAND_BUILD,
+            COMMAND_RUN,
+            COMMAND_INVOKE,
+            COMMAND_TARGETS,
+            COMMAND_TOOLCHAINS,
+            COMMAND_HELP,
+            COMMAND_VERSION,
+        },
     };
 
     ArgumentParser::Result args = arg_parser.parse();
@@ -222,6 +251,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_build();
     } else if (args.command->name == COMMAND_RUN.name) {
         execute_run();
+    } else if (args.command->name == COMMAND_INVOKE.name) {
+        execute_invoke(args);
     } else if (args.command->name == COMMAND_HELP.name) {
         execute_help();
     } else if (args.command->name == COMMAND_VERSION.name) {
@@ -282,6 +313,28 @@ void CLI::execute_run() {
     load_config();
     build();
     run_build();
+}
+
+void CLI::execute_invoke(const ArgumentParser::Result &args) {
+    if (args.command_positionals.empty()) {
+        error("missing positional argument 'tool'");
+        return;
+    }
+
+    const std::string &tool = args.command_positionals[0];
+
+    if (tool == "compiler") {
+        load_config();
+        invoke_compiler();
+    } else if (tool == "assembler") {
+        load_config();
+        invoke_assembler();
+    } else if (tool == "linker") {
+        load_config();
+        invoke_linker();
+    } else {
+        error("unexpected tool '" + tool + "'");
+    }
 }
 
 void CLI::execute_help() {
@@ -365,7 +418,7 @@ void CLI::load_package(std::string_view name) {
 }
 
 void CLI::detect_toolchain() {
-    single_line_output = true;
+    single_line_output = false;
 
     print_step("Setting up toolchain for target " + target.to_string());
 
@@ -458,7 +511,6 @@ Target CLI::parse_target(std::string_view string) {
 }
 
 void CLI::build() {
-    std::filesystem::create_directories(get_output_dir());
     invoke_compiler();
 
     if (force_assembler) {
@@ -604,6 +656,7 @@ void CLI::invoke_aarch64_assembler() {
 
 void CLI::invoke_linker() {
     print_step("Linking...");
+    std::filesystem::create_directories(get_output_dir());
 
     if (target.os == "windows") {
         invoke_windows_linker();
@@ -805,8 +858,8 @@ void CLI::process_tool_result(
     ToolErrorMessageSource error_message_source /*= ToolErrorMessageSource::STDERR*/
 ) {
     if (result.exit_code != 0) {
-        print_error(tool_name + " returned with exit code " + std::to_string(result.exit_code));
         print_empty_line();
+        print_error(tool_name + " returned with exit code " + std::to_string(result.exit_code));
 
         if (error_message_source == ToolErrorMessageSource::STDOUT) {
             std::cerr << result.stdout_buffer;
@@ -814,6 +867,7 @@ void CLI::process_tool_result(
             std::cerr << result.stderr_buffer;
         }
 
+        print_empty_line();
         exit_error();
     }
 }
