@@ -18,8 +18,6 @@ ArgumentParser::Result ArgumentParser::parse() {
         } else {
             break;
         }
-
-        arg_index += 1;
     }
 
     result.command = parse_command();
@@ -33,12 +31,11 @@ ArgumentParser::Result ArgumentParser::parse() {
         std::string_view arg = argv[arg_index];
 
         if (arg.starts_with('-')) {
-            result.command_options.push_back(parse_option(options));
+            result.command_options.push_back(parse_option(result.command->options));
         } else {
             result.command_positionals.push_back(std::string(arg));
+            arg_index += 1;
         }
-
-        arg_index += 1;
     }
 
     return result;
@@ -61,6 +58,8 @@ ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Optio
         error("unknown option '" + std::string(arg) + "'");
     }
 
+    arg_index += 1;
+
     if (option->type == Option::Type::FLAG) {
         return OptionValue{.option = option, .value = {}};
     } else if (option->type == Option::Type::VALUE) {
@@ -69,6 +68,7 @@ ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Optio
         }
 
         std::string value = argv[arg_index];
+        arg_index += 1;
         return OptionValue{.option = option, .value = value};
     } else {
         ASSERT_UNREACHABLE;
@@ -176,31 +176,40 @@ void ArgumentParser::print_options(const std::vector<Option> &options) {
     bool has_letter_option = false;
 
     for (const Option &option : options) {
+        if (option.letter) {
+            has_letter_option = true;
+            break;
+        }
+    }
+
+    for (const Option &option : options) {
         unsigned option_length = 2 + static_cast<unsigned>(option.name.size());
 
         if (option.value_placeholder) {
             option_length += 1 + static_cast<unsigned>(option.value_placeholder->size());
         }
 
-        longest_option_length = std::max(longest_option_length, option_length);
-
-        if (option.letter) {
-            has_letter_option = true;
+        if (has_letter_option) {
+            option_length += 4;
         }
+
+        longest_option_length = std::max(longest_option_length, option_length);
     }
 
     for (const Option &option : options) {
         std::cout << "  ";
 
+        std::string name_column;
+
         if (has_letter_option) {
             if (option.letter) {
-                std::cout << "-" << *option.letter << ", ";
+                name_column = std::string("-") + *option.letter + ", ";
             } else {
-                std::cout << "    ";
+                name_column = "    ";
             }
         }
 
-        std::string name_column = "--" + option.name;
+        name_column += "--" + option.name;
 
         if (option.value_placeholder) {
             name_column += " " + *option.value_placeholder;

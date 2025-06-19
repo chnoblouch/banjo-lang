@@ -80,6 +80,22 @@ static const ArgumentParser::Option OPTION_FORCE_ASM{
     "Force the use of an external assembler",
 };
 
+static const ArgumentParser::Option OPTION_BINDGEN_GENERATOR{
+    ArgumentParser::Option::Type::VALUE,
+    "generator",
+    'g',
+    "{path}",
+    "Path to the generator Python script",
+};
+
+static const ArgumentParser::Option OPTION_BINDGEN_INCLUDE_PATH{
+    ArgumentParser::Option::Type::VALUE,
+    "include",
+    'I',
+    "{path}",
+    "Add a path as a C include directory",
+};
+
 static const ArgumentParser::Positional POSITIONAL_NAME{
     "name",
 };
@@ -88,10 +104,16 @@ static const ArgumentParser::Positional POSITIONAL_TOOL{
     "tool",
 };
 
+static const ArgumentParser::Positional POSITIONAL_BINDGEN_SOURCE{
+    "file",
+};
+
 static const ArgumentParser::Command COMMAND_NEW{
     "new",
     "Create a new package in the current working directory",
-    {},
+    {
+        OPTION_HELP,
+    },
     {
         POSITIONAL_NAME,
     },
@@ -157,6 +179,21 @@ static const ArgumentParser::Command COMMAND_TARGETS{
     },
 };
 
+static const ArgumentParser::Command COMMAND_BINDGEN{
+    "bindgen",
+    "Generate bindings to C libraries",
+    {
+        OPTION_HELP,
+        OPTION_BINDGEN_GENERATOR,
+        OPTION_BINDGEN_INCLUDE_PATH,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+    {
+        POSITIONAL_BINDGEN_SOURCE,
+    },
+};
+
 static const ArgumentParser::Command COMMAND_HELP{
     "help",
     "Print help and exit",
@@ -189,6 +226,7 @@ void CLI::run(int argc, const char *argv[]) {
             COMMAND_RUN,
             COMMAND_INVOKE,
             COMMAND_TARGETS,
+            COMMAND_BINDGEN,
             COMMAND_TOOLCHAINS,
             COMMAND_HELP,
             COMMAND_VERSION,
@@ -269,6 +307,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_run();
     } else if (args.command->name == COMMAND_INVOKE.name) {
         execute_invoke(args);
+    } else if (args.command->name == COMMAND_BINDGEN.name) {
+        execute_bindgen(args);
     } else if (args.command->name == COMMAND_HELP.name) {
         execute_help();
     } else if (args.command->name == COMMAND_VERSION.name) {
@@ -328,16 +368,14 @@ void CLI::execute_new(const ArgumentParser::Result &args) {
     const std::string &name = args.command_positionals[0];
     std::filesystem::path package_path = name;
     std::filesystem::path src_path = package_path / "src";
+    std::filesystem::path main_path = src_path / "main.bnj";
+    std::filesystem::path manifest_path = package_path / "banjo.json";
 
     std::filesystem::create_directory(package_path);
     std::filesystem::create_directory(src_path);
 
-    Utils::write_string_file("func main() {\n    println(\"Hello, World!\");\n}\n", src_path / "main.bnj");
-
-    Utils::write_string_file(
-        "{\n  \"name\": \"" + name + "\",\n  \"type\": \"executable\"\n}\n",
-        package_path / "banjo.json"
-    );
+    Utils::write_string_file("func main() {\n    println(\"Hello, World!\");\n}\n", main_path);
+    Utils::write_string_file("{\n  \"name\": \"" + name + "\",\n  \"type\": \"executable\"\n}\n", manifest_path);
 }
 
 void CLI::execute_build() {
@@ -372,6 +410,89 @@ void CLI::execute_invoke(const ArgumentParser::Result &args) {
     } else {
         error("unexpected tool '" + tool + "'");
     }
+}
+
+void CLI::execute_bindgen(const ArgumentParser::Result &args) {
+    single_line_output = false;
+
+    std::filesystem::path installation_path = Paths::executable().parent_path().parent_path();
+    std::filesystem::path bindgen_path = installation_path / "scripts" / "bindgen";
+    std::filesystem::path venv_path = bindgen_path / ".venv";
+
+    if (!std::filesystem::is_directory(venv_path)) {
+        print_step("Creating Python virtual environment...");
+
+#if OS_WINDOWS
+        std::string python_executable = "python";
+#else
+        std::string python_executable = "python3";
+#endif
+
+        Command venv_command{
+            .executable = python_executable,
+            .args{"-m", "venv", venv_path.string()},
+            .stdout_stream = Command::Stream::INHERIT,
+            .stderr_stream = Command::Stream::INHERIT,
+        };
+
+        print_command("python", venv_command);
+
+        std::optional<Process> venv_process = Process::spawn(venv_command);
+        venv_process->wait();
+
+        print_step("Installing libclang package...");
+
+#if OS_WINDOWS
+        std::filesystem::path pip_path = venv_path / "Scripts" / "pip";
+#else
+        std::filesystem::path pip_path = venv_path / "bin" / "pip";
+#endif
+
+        Command pip_command{
+            .executable = pip_path.string(),
+            .args{"install", "--disable-pip-version-check", "libclang"},
+            .stdout_stream = Command::Stream::INHERIT,
+            .stderr_stream = Command::Stream::INHERIT,
+        };
+
+        print_command("pip", venv_command);
+
+        std::optional<Process> pip_process = Process::spawn(pip_command);
+        pip_process->wait();
+    }
+
+#if OS_WINDOWS
+    std::filesystem::path python_path = venv_path / "Scripts" / "python";
+#else
+    std::filesystem::path python_path = venv_path / "bin" / "python";
+#endif
+
+    std::vector<std::string> bindgen_args;
+    bindgen_args.push_back((bindgen_path / "bindgen.py").string());
+
+    for (const ArgumentParser::OptionValue &value : args.command_options) {
+        if (value.option->name == OPTION_BINDGEN_GENERATOR.name) {
+            bindgen_args.push_back("--generator");
+            bindgen_args.push_back(*value.value);
+        } else if (value.option->name == OPTION_BINDGEN_INCLUDE_PATH.name) {
+            bindgen_args.push_back("-I");
+            bindgen_args.push_back(*value.value);
+        }
+    }
+
+    bindgen_args.push_back(args.command_positionals[0]);
+
+    Command bindgen_command{
+        .executable = python_path.string(),
+        .args = std::move(bindgen_args),
+        .stdout_stream = Command::Stream::INHERIT,
+        .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    print_command("bindgen", bindgen_command);
+
+    std::optional<Process> bindgen_process = Process::spawn(bindgen_command);
+    bindgen_process->wait();
 }
 
 void CLI::execute_help() {

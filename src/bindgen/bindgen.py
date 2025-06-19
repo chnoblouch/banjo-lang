@@ -3,8 +3,10 @@ import filtering
 import renaming
 from writer import Writer
 from generator import Generator
-import importlib
+
+import importlib.util
 import sys
+from argparse import ArgumentParser
 
 
 def generate(filename, generator, include_paths):
@@ -46,3 +48,13 @@ def run(source_file_path, generator_path, include_paths):
     generator.rename_symbol = symbols.get("rename_symbol", lambda symbol: symbol.name)
 
     generate(source_file_path, generator, include_paths)
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser("banjo-bindgen")
+    parser.add_argument("--generator")
+    parser.add_argument("-I", action="append", default=[], dest="include_paths")
+    parser.add_argument("file")
+    args = parser.parse_args()
+
+    run(args.file, args.generator, args.include_paths)

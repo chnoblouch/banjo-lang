@@ -44,6 +44,13 @@ public:
             letter{},
             description(std::move(description)),
             value_placeholder(std::move(value_placeholder)) {}
+
+        Option(Type type, std::string name, char letter, std::string value_placeholder, std::string description)
+          : type(type),
+            name(std::move(name)),
+            letter(letter),
+            description(std::move(description)),
+            value_placeholder(std::move(value_placeholder)) {}
     };
 
     struct Positional {
