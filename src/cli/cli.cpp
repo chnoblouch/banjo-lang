@@ -194,6 +194,16 @@ static const ArgumentParser::Command COMMAND_TARGETS{
     },
 };
 
+static const ArgumentParser::Command COMMAND_LSP{
+    "lsp",
+    "Launch the language server",
+    {
+        OPTION_HELP,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
 static const ArgumentParser::Command COMMAND_BINDGEN{
     "bindgen",
     "Generate bindings to C libraries",
@@ -242,6 +252,7 @@ void CLI::run(int argc, const char *argv[]) {
             COMMAND_TEST,
             COMMAND_INVOKE,
             COMMAND_TARGETS,
+            COMMAND_LSP,
             COMMAND_BINDGEN,
             COMMAND_TOOLCHAINS,
             COMMAND_HELP,
@@ -325,6 +336,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_test();
     } else if (args.command->name == COMMAND_INVOKE.name) {
         execute_invoke(args);
+    } else if (args.command->name == COMMAND_LSP.name) {
+        execute_lsp();
     } else if (args.command->name == COMMAND_BINDGEN.name) {
         execute_bindgen(args);
     } else if (args.command->name == COMMAND_HELP.name) {
@@ -466,7 +479,7 @@ void CLI::execute_test() {
                     std::cout << "    ";
                     indent = false;
                 }
-                
+
                 std::cout << c;
 
                 if (c == '\n') {
@@ -506,6 +519,45 @@ void CLI::execute_invoke(const ArgumentParser::Result &args) {
     } else {
         error("unexpected tool '" + tool + "'");
     }
+}
+
+void CLI::execute_lsp() {
+    quiet = true;
+    load_config();
+
+    std::vector<std::string> args;
+
+    args.push_back("--arch");
+    args.push_back(target.arch);
+    args.push_back("--os");
+    args.push_back(target.os);
+
+    if (target.env) {
+        args.push_back("--env");
+        args.push_back(*target.env);
+    }
+
+    for (const std::string &path : source_paths) {
+        args.push_back("--path");
+        args.push_back(path);
+    }
+
+    for (const std::string &arg : extra_compiler_args) {
+        args.push_back(arg);
+    }
+
+    args.push_back("--optional-semicolons");
+
+    Command command{
+        .executable = "banjo-lsp",
+        .args = args,
+        .stdin_stream = Command::Stream::INHERIT,
+        .stdout_stream = Command::Stream::INHERIT,
+        .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
 }
 
 void CLI::execute_bindgen(const ArgumentParser::Result &args) {

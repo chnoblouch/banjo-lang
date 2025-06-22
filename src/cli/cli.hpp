@@ -72,6 +72,7 @@ private:
     void execute_run();
     void execute_test();
     void execute_invoke(const ArgumentParser::Result &args);
+    void execute_lsp();
     void execute_bindgen(const ArgumentParser::Result &args);
     void execute_help();
 
