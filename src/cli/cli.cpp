@@ -546,8 +546,6 @@ void CLI::execute_lsp() {
         args.push_back(arg);
     }
 
-    args.push_back("--optional-semicolons");
-
     Command command{
         .executable = "banjo-lsp",
         .args = args,
@@ -688,6 +686,7 @@ void CLI::load_root_manifest(const Manifest &manifest) {
 }
 
 void CLI::load_manifest(const Manifest &manifest) {
+    extra_compiler_args.insert(extra_compiler_args.end(), manifest.args.begin(), manifest.args.end());
     libraries.insert(libraries.end(), manifest.libraries.begin(), manifest.libraries.end());
 
     for (std::string_view package : manifest.packages) {
@@ -760,31 +759,86 @@ Manifest CLI::parse_manifest(const std::filesystem::path &path) {
 }
 
 Manifest CLI::parse_manifest(const JSONObject &json) {
-    Manifest manifest;
-    manifest.name = json.get_string_or("name", "");
-    manifest.type = json.get_string_or("type", "executable");
+    std::optional<std::string> name;
+    std::string type = "executable";
+    std::vector<std::string> args;
+    std::vector<std::string> libraries;
+    std::vector<std::string> packages;
+    std::vector<std::pair<Target, Manifest>> target_manifests;
 
-    if (auto json_libraries = json.try_get_array("libraries")) {
-        for (const JSONValue &json_library : *json_libraries) {
-            manifest.libraries.push_back(json_library.as_string());
+    for (const auto &[member_name, member_value] : json) {
+        if (member_name == "name") {
+            name = unwrap_json_string(member_name, member_value);
+        } else if (member_name == "type") {
+            type = unwrap_json_string(member_name, member_value);
+        } else if (member_name == "args") {
+            args = unwrap_json_string_array(member_name, member_value);
+        } else if (member_name == "libraries") {
+            libraries = unwrap_json_string_array(member_name, member_value);
+        } else if (member_name == "library_paths") {
+            // TODO
+        } else if (member_name == "packages") {
+            packages = unwrap_json_string_array(member_name, member_value);
+        } else if (member_name == "targets") {
+            for (const auto &[target_string, json_properties] : member_value.as_object()) {
+                Target target = parse_target(target_string);
+                Manifest target_manifest = parse_manifest(json_properties.as_object());
+                target_manifests.push_back({target, target_manifest});
+            }
+        } else if (member_name == "windows.subsystem") {
+            // TODO
+        } else if (member_name == "windows.resources") {
+            // TODO
+        } else if (member_name == "macos.frameworks") {
+            // TODO
+        } else if (member_name == "build_script") {
+            // TODO
+        } else {
+            std::cout << "warning: unknown member " << member_name << "\n";
         }
     }
 
-    if (auto json_targets = json.try_get_object("targets")) {
-        for (const auto &[target_string, json_properties] : *json_targets) {
-            Target target = parse_target(target_string);
-            Manifest target_manifest = parse_manifest(json_properties.as_object());
-            manifest.target_manifests.push_back({target, target_manifest});
+    return Manifest{
+        .name = name.value_or(""),
+        .type = type,
+        .args = args,
+        .libraries = libraries,
+        .packages = packages,
+        .target_manifests = target_manifests,
+    };
+}
+
+std::string CLI::unwrap_json_string(const std::string &name, const JSONValue &value) {
+    if (value.is_string()) {
+        return value.as_string();
+    } else {
+        error("failed to parse manifest: '" + name + "' expected to be a string");
+    }
+}
+
+std::vector<std::string> CLI::unwrap_json_string_array(const std::string &name, const JSONValue &value) {
+    std::vector<std::string> values;
+    bool valid = true;
+
+    if (value.is_array()) {
+        for (const JSONValue &member : value.as_array()) {
+            if (member.is_string()) {
+                values.push_back(member.as_string());
+            } else {
+                valid = false;
+                break;
+            }
         }
+    } else {
+        valid = false;
     }
 
-    if (auto json_packages = json.try_get_array("packages")) {
-        for (const JSONValue &json_package : *json_packages) {
-            manifest.packages.push_back(json_package.as_string());
-        }
-    }
+    if (!valid) {
 
-    return manifest;
+        error("failed to parse manifest: '" + name + "' expected to be a string array");
+    } else {
+        return values;
+    }
 }
 
 Target CLI::parse_target(std::string_view string) {
@@ -882,8 +936,6 @@ ProcessResult CLI::invoke_compiler() {
     for (const std::string &arg : extra_compiler_args) {
         args.push_back(arg);
     }
-
-    args.push_back("--optional-semicolons");
 
     Command command{
         .executable = "banjo-compiler",
