@@ -117,17 +117,17 @@ struct Map[K, V] {
         var string = "[";
         var index: u32 = 0;
 
-        for ref entry in self {
-            string.append(to_repr(entry.key));
-            string.append(": ");
-            string.append(to_repr(entry.value));
+        # for ref entry in self {
+        #     string.append(to_repr(entry.key));
+        #     string.append(": ");
+        #     string.append(to_repr(entry.value));
             
-            if index != self.length - 1 {
-                string.append(", ");
-            }
+        #     if index != self.length - 1 {
+        #         string.append(", ");
+        #     }
 
-            index += 1;
-        }
+        #     index += 1;
+        # }
         
         string.append(']');
         return string;

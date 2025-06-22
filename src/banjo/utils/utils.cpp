@@ -43,6 +43,14 @@ std::vector<std::string_view> split_string(std::string_view string, char delimit
     unsigned index = 0;
 
     while (true) {
+        if (index == string.size()) {
+            if (index != start) {
+                components.push_back(string.substr(start, index - start));
+            }
+
+            break;
+        }
+
         if (string[index] == delimiter) {
             if (index != start) {
                 components.push_back(string.substr(start, index - start));
@@ -52,17 +60,24 @@ std::vector<std::string_view> split_string(std::string_view string, char delimit
         }
 
         index += 1;
-
-        if (index == string.size()) {
-            if (index += start) {
-                components.push_back(string.substr(start, index - start));
-            }
-
-            break;
-        }
     }
 
     return components;
+}
+
+std::string convert_eol_to_lf(std::string_view string) {
+    std::string result;
+    result.reserve(string.size());
+
+    for (unsigned i = 0; i < string.size(); i++) {
+        if (i <= string.size() - 2 && string[i] == '\r' && string[i + 1] == '\n') {
+            result.push_back('\n');
+        } else {
+            result.push_back(string[i]);
+        }
+    }
+
+    return result;
 }
 
 std::optional<std::string> read_string_file(const std::filesystem::path &path) {

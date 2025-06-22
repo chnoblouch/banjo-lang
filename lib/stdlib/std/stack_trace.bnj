@@ -2,9 +2,10 @@ use std.{memory, config};
 use c.lib.string.{strcmp, strncmp};
 
 meta if config.OS == config.WINDOWS {
-    use os.winapi;
+    use os.{winapi, msvcrt};
 
     native func printf(format: *u8, value: u64);
+    native func fflush(stream: addr);
 }
 
 struct StackFrame {
@@ -99,6 +100,7 @@ pub func print_stack_trace() {
             }
             
             print("\x1B[0;0m");
+            fflush(msvcrt.acrt_iob_func(1));
         }
     }
 }

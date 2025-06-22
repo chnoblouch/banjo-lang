@@ -12,6 +12,7 @@
 #include "target.hpp"
 #include "toolchains.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
@@ -20,6 +21,7 @@
 #include <iostream>
 #include <sstream>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -146,6 +148,19 @@ static const ArgumentParser::Command COMMAND_RUN{
     },
 };
 
+static const ArgumentParser::Command COMMAND_TEST{
+    "test",
+    "Build and run tests of the current package",
+    {
+        OPTION_HELP,
+        OPTION_CONFIG,
+        OPTION_OPT_LEVEL,
+        OPTION_FORCE_ASM,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+};
+
 static const ArgumentParser::Command COMMAND_INVOKE{
     "invoke",
     "Run a program from the toolchain (compiler, assembler, or linker)",
@@ -224,6 +239,7 @@ void CLI::run(int argc, const char *argv[]) {
             COMMAND_NEW,
             COMMAND_BUILD,
             COMMAND_RUN,
+            COMMAND_TEST,
             COMMAND_INVOKE,
             COMMAND_TARGETS,
             COMMAND_BINDGEN,
@@ -291,7 +307,7 @@ void CLI::run(int argc, const char *argv[]) {
         }
     }
 
-    if (args.command->name == COMMAND_BUILD.name || args.command->name == COMMAND_RUN.name) {
+    if (Utils::is_one_of(args.command->name, {COMMAND_BUILD.name, COMMAND_RUN.name})) {
         start_time = std::chrono::steady_clock::now();
     }
 
@@ -305,6 +321,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_build();
     } else if (args.command->name == COMMAND_RUN.name) {
         execute_run();
+    } else if (args.command->name == COMMAND_TEST.name) {
+        execute_test();
     } else if (args.command->name == COMMAND_INVOKE.name) {
         execute_invoke(args);
     } else if (args.command->name == COMMAND_BINDGEN.name) {
@@ -388,6 +406,84 @@ void CLI::execute_run() {
     load_config();
     build();
     run_build();
+}
+
+void CLI::execute_test() {
+    load_config();
+
+    extra_compiler_args.push_back("--testing");
+    package_type = PackageType::EXECUTABLE;
+
+    ProcessResult compiler_result = invoke_compiler();
+
+    if (force_assembler) {
+        invoke_assembler();
+    }
+
+    invoke_linker();
+    print_empty_line();
+
+    std::string tests_raw = Utils::convert_eol_to_lf(compiler_result.stdout_buffer);
+    std::vector<std::string_view> tests = Utils::split_string(tests_raw, '\n');
+
+    unsigned longest_name_length = 0;
+
+    for (std::string_view test : tests) {
+        longest_name_length = std::max(longest_name_length, static_cast<unsigned>(test.size()));
+    }
+
+    std::cout << "Tests:\n";
+    std::vector<std::pair<std::string_view, std::string>> failures;
+
+    for (std::string_view test : tests) {
+        std::cout << "  " << test << " " << std::string(longest_name_length - test.size() + 3, '.') << " ";
+
+        Command run_command{
+            .executable = get_output_path(),
+            .args{std::string(test)},
+        };
+
+        std::optional<Process> run_process = Process::spawn(run_command);
+        ProcessResult run_result = run_process->wait();
+
+        if (run_result.exit_code == 0) {
+            std::cout << "\x1b[1;32mok\x1b[1;0m\n";
+        } else {
+            failures.push_back({test, run_result.stdout_buffer});
+            std::cout << "\x1b[1;31mfailed\x1b[1;0m\n";
+        }
+    }
+
+    if (!failures.empty()) {
+        std::cout << "\nFailures:\n\n";
+        bool indent = true;
+
+        for (const auto &[test, stderr_buffer] : failures) {
+            std::cout << "  " << test << ":\n";
+
+            for (char c : stderr_buffer) {
+                if (indent) {
+                    std::cout << "    ";
+                    indent = false;
+                }
+                
+                std::cout << c;
+
+                if (c == '\n') {
+                    indent = true;
+                }
+            }
+
+            if (!stderr_buffer.ends_with("\n\n") && !stderr_buffer.ends_with("\r\n\r\n")) {
+                std::cout << "\n";
+            }
+        }
+    } else {
+        std::cout << "\n";
+    }
+
+    unsigned passed = tests.size() - failures.size();
+    std::cout << "Passed: " << passed << "/" << tests.size() << "\n\n";
 }
 
 void CLI::execute_invoke(const ArgumentParser::Result &args) {
@@ -689,7 +785,7 @@ void CLI::build() {
     }
 }
 
-void CLI::invoke_compiler() {
+ProcessResult CLI::invoke_compiler() {
     print_step("Compiling...");
 
     std::vector<std::string> args;
@@ -731,6 +827,10 @@ void CLI::invoke_compiler() {
         args.push_back(path);
     }
 
+    for (const std::string &arg : extra_compiler_args) {
+        args.push_back(arg);
+    }
+
     args.push_back("--optional-semicolons");
 
     Command command{
@@ -748,6 +848,8 @@ void CLI::invoke_compiler() {
         std::cerr << result.stderr_buffer;
         std::exit(1);
     }
+
+    return result;
 }
 
 void CLI::invoke_assembler() {

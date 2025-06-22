@@ -50,6 +50,7 @@ private:
     BuildConfig build_config = BuildConfig::DEBUG;
     std::optional<unsigned> opt_level = {};
     bool force_assembler = false;
+    std::vector<std::string> extra_compiler_args;
 
     PackageType package_type;
     std::vector<std::string> source_paths;
@@ -69,6 +70,7 @@ private:
     void execute_new(const ArgumentParser::Result &args);
     void execute_build();
     void execute_run();
+    void execute_test();
     void execute_invoke(const ArgumentParser::Result &args);
     void execute_bindgen(const ArgumentParser::Result &args);
     void execute_help();
@@ -86,7 +88,7 @@ private:
     Target parse_target(std::string_view string);
 
     void build();
-    void invoke_compiler();
+    ProcessResult invoke_compiler();
     void invoke_assembler();
     void invoke_nasm_assembler();
     void invoke_aarch64_assembler();

@@ -27,6 +27,7 @@ bool is_one_of(T value, std::initializer_list<T> candidates) {
 
 std::optional<std::uint64_t> parse_u64(std::string_view string);
 std::vector<std::string_view> split_string(std::string_view string, char delimiter);
+std::string convert_eol_to_lf(std::string_view string);
 
 template <typename T>
 std::vector<T> remove_duplicates(const std::vector<T> &array) {
