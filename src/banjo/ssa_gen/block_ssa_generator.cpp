@@ -10,6 +10,7 @@
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <utility>
 
@@ -304,7 +305,16 @@ void BlockSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa:
         return;
     }
 
-    sir::SymbolTable *symbol_table = resource.type.as_symbol<sir::StructDef>().block.symbol_table;
+    sir::SymbolTable *symbol_table;
+
+    if (auto struct_type = resource.type.match_symbol<sir::StructDef>()) {
+        symbol_table = struct_type->block.symbol_table;
+    } else if (auto closure_type = resource.type.match<sir::ClosureType>()) {
+        symbol_table = closure_type->underlying_struct->block.symbol_table;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
     sir::Symbol deinit_symbol = symbol_table->look_up_local(sir::MagicMethods::DEINIT);
 
     sir::SymbolExpr callee{

@@ -128,6 +128,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
         return create_struct_resource(*struct_def, type);
     } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
         return create_tuple_resource(*tuple_type, type);
+    } else if (auto closure_type = type.match<sir::ClosureType>()) {
+        return create_struct_resource(*closure_type->underlying_struct, type);
     } else {
         return {};
     }
