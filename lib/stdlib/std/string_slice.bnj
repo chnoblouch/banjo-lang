@@ -137,7 +137,7 @@ struct StringSlice {
         return String.from(self);
     }
 
-    pub func __repr__(self) -> String {
+    pub func __repr__(self, indent: u32) -> String {
         var result = "\"";
 
         for i in 0..self.length {

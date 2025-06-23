@@ -1,4 +1,4 @@
-use std.{memory, memory.{PointerMoveIter, PointerRefIter}, system.panic, config, convert.to_repr};
+use std.{memory, memory.{PointerMoveIter, PointerRefIter}, system.panic, config, convert};
 
 struct Array[T] {
     var data: *T;
@@ -134,16 +134,25 @@ struct Array[T] {
     }
 
     pub func __str__(self) -> String {
-        var string = "[";
-        
-        for i in 0..self.length as i32 {
-            string.append(to_repr(self.data[i]));
-            
-            if i != self.length as i32 - 1 {
-                string.append(", ");
+        return self.__repr__(0);
+    }
+
+    pub func __repr__(self, indent: u32) -> String {
+        var string = "[\n";
+
+        for i in 0..self.length {
+            for j in 0..indent + 1 {
+                string += "  ";
             }
+
+            string.append(convert.to_repr_indent(self.data[i], indent + 1));
+            string.append(",\n");
         }
-        
+
+        for i in 0..indent {
+            string += "  ";
+        }
+
         string.append(']');
         return string;
     }

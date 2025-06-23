@@ -35,7 +35,7 @@ pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     meta if T == String {
         return "\"" + value.copy() + "\"";
     } else if meta(T).has_method("__repr__") {
-        return value.__repr__();
+        return value.__repr__(indent);
     } else if meta(T).is_struct {
         return struct_to_repr(value, indent);
     } else {
@@ -124,7 +124,7 @@ func struct_to_repr[T](ref struct_: T, indent: u32) -> String {
 
     meta for field_name in meta(T).fields {    
         for i in 0..indent + 1 {
-            string += "    ";
+            string += "  ";
         }
 
         string += field_name;
@@ -134,7 +134,7 @@ func struct_to_repr[T](ref struct_: T, indent: u32) -> String {
     }
 
     for i in 0..indent {
-        string += "    ";
+        string += "  ";
     }
 
     string += '}';

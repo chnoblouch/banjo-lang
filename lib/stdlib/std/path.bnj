@@ -84,8 +84,8 @@ struct Path {
         return self.path.copy();
     }
 
-    pub func __repr__(self) -> String {
-        return self.path.__repr__();
+    pub func __repr__(self, indent: u32) -> String {
+        return self.path.__repr__(indent);
     }
     
     func normalize(mut self) {

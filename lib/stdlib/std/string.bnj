@@ -148,8 +148,8 @@ struct String {
         return self.slice.__str__();
     }
 
-    pub func __repr__(self) -> String {
-        return self.slice.__repr__();
+    pub func __repr__(self, indent: u32) -> String {
+        return self.slice.__repr__(indent);
     }
 
     pub func __hash__(self) -> u64 {
