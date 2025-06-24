@@ -96,6 +96,7 @@ if(WIN32)
 endif()
 
 install(DIRECTORY src/cli/python/ DESTINATION scripts/cli)
+install(DIRECTORY src/cli/python2/ DESTINATION scripts/cli2)
 install(DIRECTORY src/bindgen DESTINATION scripts)
 
 install(DIRECTORY lib/stdlib DESTINATION lib)

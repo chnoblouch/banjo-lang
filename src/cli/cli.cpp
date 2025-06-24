@@ -561,21 +561,14 @@ void CLI::execute_lsp() {
 void CLI::execute_bindgen(const ArgumentParser::Result &args) {
     single_line_output = false;
 
-    std::filesystem::path installation_path = Paths::executable().parent_path().parent_path();
-    std::filesystem::path bindgen_path = installation_path / "scripts" / "bindgen";
+    std::filesystem::path bindgen_path = get_installation_dir() / "scripts" / "bindgen";
     std::filesystem::path venv_path = bindgen_path / ".venv";
 
     if (!std::filesystem::is_directory(venv_path)) {
         print_step("Creating Python virtual environment...");
 
-#if OS_WINDOWS
-        std::string python_executable = "python";
-#else
-        std::string python_executable = "python3";
-#endif
-
         Command venv_command{
-            .executable = python_executable,
+            .executable = get_python_executable(),
             .args{"-m", "venv", venv_path.string()},
             .stdout_stream = Command::Stream::INHERIT,
             .stderr_stream = Command::Stream::INHERIT,
@@ -701,9 +694,13 @@ void CLI::load_manifest(const Manifest &manifest) {
 }
 
 void CLI::load_package(std::string_view name) {
+    install_package(name);
+
     std::filesystem::path path = std::filesystem::path("packages") / name;
     Manifest manifest = parse_manifest(path / "banjo.json");
     load_manifest(manifest);
+
+    packages.push_back(std::string(name));
 
     std::filesystem::path src_path = path / "src";
     std::filesystem::path lib_path = path / "lib";
@@ -745,7 +742,23 @@ void CLI::detect_toolchain() {
 }
 
 Manifest CLI::parse_manifest(const std::filesystem::path &path) {
+    if (!std::filesystem::exists(path)) {
+        error("could not find manifest at '" + path.string() + "'");
+    }
+
+    if (std::optional<Manifest> manifest = try_parse_manifest(path)) {
+        return *manifest;
+    } else {
+        error("could not open manifest at '" + path.string() + "'");
+    }
+}
+
+std::optional<Manifest> CLI::try_parse_manifest(const std::filesystem::path &path) {
     std::ifstream stream(path, std::ios::binary);
+    if (!stream) {
+        return {};
+    }
+
     stream.seekg(0, std::ios::end);
     std::size_t file_size = static_cast<std::size_t>(stream.tellg());
     stream.seekg(0, std::ios::beg);
@@ -753,6 +766,10 @@ Manifest CLI::parse_manifest(const std::filesystem::path &path) {
     std::string buffer;
     buffer.resize(file_size);
     stream.read(buffer.data(), file_size);
+
+    if (!stream) {
+        return {};
+    }
 
     JSONObject json = JSONParser(buffer).parse_object();
     return parse_manifest(json);
@@ -794,7 +811,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         } else if (member_name == "build_script") {
             // TODO
         } else {
-            std::cout << "warning: unknown member " << member_name << "\n";
+            error("failed to load manifest: unknown member " + member_name);
         }
     }
 
@@ -812,7 +829,7 @@ std::string CLI::unwrap_json_string(const std::string &name, const JSONValue &va
     if (value.is_string()) {
         return value.as_string();
     } else {
-        error("failed to parse manifest: '" + name + "' expected to be a string");
+        error("failed to load manifest: '" + name + "' expected to be a string");
     }
 }
 
@@ -835,7 +852,7 @@ std::vector<std::string> CLI::unwrap_json_string_array(const std::string &name, 
 
     if (!valid) {
 
-        error("failed to parse manifest: '" + name + "' expected to be a string array");
+        error("failed to load manifest: '" + name + "' expected to be a string array");
     } else {
         return values;
     }
@@ -868,6 +885,32 @@ Target CLI::parse_target(std::string_view string) {
     } else {
         return Target();
     }
+}
+
+void CLI::install_package(std::string_view package) {
+    single_line_output = false;
+
+    std::filesystem::path packages_path("packages");
+
+    if (std::filesystem::is_directory(packages_path / package)) {
+        return;
+    }
+
+    print_step("Installing package '" + std::string(package) + "'...");
+
+    std::filesystem::path script_path = get_installation_dir() / "scripts" / "cli2" / "install_package.py";
+
+    Command command{
+        .executable = get_python_executable(),
+        .args{script_path.string(), std::string(package), packages_path.string()},
+        .stdout_stream = Command::Stream::INHERIT,
+        .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    print_command("package download", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
 }
 
 void CLI::build() {
@@ -1236,12 +1279,16 @@ void CLI::process_tool_result(
     }
 }
 
+std::filesystem::path CLI::get_installation_dir() {
+    return Paths::executable().parent_path().parent_path();
+}
+
 std::filesystem::path CLI::get_toolchain_path() {
     return get_toolchains_dir() / (target.to_string() + ".json");
 }
 
 std::filesystem::path CLI::get_toolchains_dir() {
-    return Paths::executable().parent_path().parent_path() / "toolchains";
+    return get_installation_dir() / "toolchains";
 }
 
 std::string CLI::get_output_path() {
@@ -1274,6 +1321,14 @@ std::string CLI::get_output_path() {
 
 std::filesystem::path CLI::get_output_dir() {
     return std::filesystem::path("out") / (target.to_string() + "-debug");
+}
+
+std::string CLI::get_python_executable() {
+#if OS_WINDOWS
+    return "python";
+#else
+    return "python3";
+#endif
 }
 
 } // namespace cli

@@ -53,6 +53,7 @@ private:
     std::vector<std::string> extra_compiler_args;
 
     PackageType package_type;
+    std::vector<std::string> packages;
     std::vector<std::string> source_paths;
     std::vector<std::string> libraries;
     std::vector<std::string> library_paths;
@@ -85,10 +86,13 @@ private:
     void detect_toolchain();
 
     Manifest parse_manifest(const std::filesystem::path &path);
+    std::optional<Manifest> try_parse_manifest(const std::filesystem::path &path);
     Manifest parse_manifest(const JSONObject &json);
     std::string unwrap_json_string(const std::string &name, const JSONValue &value);
     std::vector<std::string> unwrap_json_string_array(const std::string &name, const JSONValue &value);
     Target parse_target(std::string_view string);
+
+    void install_package(std::string_view package);
 
     void build();
     ProcessResult invoke_compiler();
@@ -107,10 +111,12 @@ private:
         ToolErrorMessageSource error_message_source = ToolErrorMessageSource::STDERR
     );
 
+    std::filesystem::path get_installation_dir();
     std::filesystem::path get_toolchain_path();
     std::filesystem::path get_toolchains_dir();
     std::string get_output_path();
     std::filesystem::path get_output_dir();
+    std::string get_python_executable();
 };
 
 } // namespace cli
