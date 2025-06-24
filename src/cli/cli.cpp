@@ -82,6 +82,12 @@ static const ArgumentParser::Option OPTION_FORCE_ASM{
     "Force the use of an external assembler",
 };
 
+static const ArgumentParser::Option OPTION_HOT_RELOAD{
+    ArgumentParser::Option::Type::FLAG,
+    "hot-reload",
+    "Enable hot reloading",
+};
+
 static const ArgumentParser::Option OPTION_BINDGEN_GENERATOR{
     ArgumentParser::Option::Type::VALUE,
     "generator",
@@ -140,6 +146,7 @@ static const ArgumentParser::Command COMMAND_RUN{
     "Build and run the current package",
     {
         OPTION_HELP,
+        OPTION_HOT_RELOAD,
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
         OPTION_FORCE_ASM,
@@ -307,6 +314,8 @@ void CLI::run(int argc, const char *argv[]) {
             }
         } else if (name == OPTION_FORCE_ASM.name) {
             force_assembler = true;
+        } else if (name == OPTION_HOT_RELOAD.name) {
+            hot_reloading_enabled = true;
         } else if (name == OPTION_HELP.name) {
             arg_parser.print_command_help(*args.command);
             return;
@@ -418,7 +427,12 @@ void CLI::execute_build() {
 void CLI::execute_run() {
     load_config();
     build();
-    run_build();
+
+    if (hot_reloading_enabled) {
+        run_hot_reloader();
+    } else {
+        run_build();
+    }
 }
 
 void CLI::execute_test() {
@@ -526,25 +540,7 @@ void CLI::execute_lsp() {
     load_config();
 
     std::vector<std::string> args;
-
-    args.push_back("--arch");
-    args.push_back(target.arch);
-    args.push_back("--os");
-    args.push_back(target.os);
-
-    if (target.env) {
-        args.push_back("--env");
-        args.push_back(*target.env);
-    }
-
-    for (const std::string &path : source_paths) {
-        args.push_back("--path");
-        args.push_back(path);
-    }
-
-    for (const std::string &arg : extra_compiler_args) {
-        args.push_back(arg);
-    }
+    append_compilation_args(args);
 
     Command command{
         .executable = "banjo-lsp",
@@ -959,46 +955,14 @@ ProcessResult CLI::invoke_compiler() {
     print_step("Compiling...");
 
     std::vector<std::string> args;
-    args.push_back("--type");
-
-    switch (package_type) {
-        case PackageType::EXECUTABLE: args.push_back("executable"); break;
-        case PackageType::STATIC_LIBRARY: args.push_back("static_library"); break;
-        case PackageType::SHARED_LIBRARY: args.push_back("shared_library"); break;
-    }
-
-    args.push_back("--arch");
-    args.push_back(target.arch);
-
-    args.push_back("--os");
-    args.push_back(target.os);
-
-    if (target.env) {
-        args.push_back("--env");
-        args.push_back(*target.env);
-    }
-
-    args.push_back("--opt-level");
-
-    if (opt_level) {
-        args.push_back(std::to_string(*opt_level));
-    } else if (build_config == BuildConfig::DEBUG) {
-        args.push_back("0");
-    } else if (build_config == BuildConfig::RELEASE) {
-        args.push_back("1");
-    }
+    append_compilation_args(args);
 
     if (force_assembler) {
         args.push_back("--force-asm");
     }
 
-    for (const std::string &path : source_paths) {
-        args.push_back("--path");
-        args.push_back(path);
-    }
-
-    for (const std::string &arg : extra_compiler_args) {
-        args.push_back(arg);
+    if (hot_reloading_enabled) {
+        args.push_back("--hot-reload");
     }
 
     Command command{
@@ -1280,6 +1244,74 @@ void CLI::run_build() {
     process->wait();
 }
 
+void CLI::run_hot_reloader() {
+    print_step("Running...");
+    print_clear_line();
+
+    std::vector<std::string> args;
+
+    args.push_back("--executable");
+    args.push_back(get_output_path());
+
+    args.push_back("--dir");
+    args.push_back("src");
+
+    append_compilation_args(args);
+
+    Command command{
+        .executable = "banjo-hot-reloader",
+        .args = args,
+        .stdin_stream = Command::Stream::INHERIT,
+        .stdout_stream = Command::Stream::INHERIT,
+        .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    print_command("hot reloader", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
+}
+
+void CLI::append_compilation_args(std::vector<std::string> &args) {
+    args.push_back("--type");
+
+    switch (package_type) {
+        case PackageType::EXECUTABLE: args.push_back("executable"); break;
+        case PackageType::STATIC_LIBRARY: args.push_back("static_library"); break;
+        case PackageType::SHARED_LIBRARY: args.push_back("shared_library"); break;
+    }
+
+    args.push_back("--arch");
+    args.push_back(target.arch);
+
+    args.push_back("--os");
+    args.push_back(target.os);
+
+    if (target.env) {
+        args.push_back("--env");
+        args.push_back(*target.env);
+    }
+
+    args.push_back("--opt-level");
+
+    if (opt_level) {
+        args.push_back(std::to_string(*opt_level));
+    } else if (build_config == BuildConfig::DEBUG) {
+        args.push_back("0");
+    } else if (build_config == BuildConfig::RELEASE) {
+        args.push_back("1");
+    }
+
+    for (const std::string &path : source_paths) {
+        args.push_back("--path");
+        args.push_back(path);
+    }
+
+    for (const std::string &arg : extra_compiler_args) {
+        args.push_back(arg);
+    }
+}
+
 void CLI::process_tool_result(
     const std::string &tool_name,
     const ProcessResult &result,
@@ -1316,10 +1348,16 @@ std::string CLI::get_output_path() {
     std::string file_name;
 
     if (package_type == PackageType::EXECUTABLE) {
+        std::string base = manifest.name;
+
+        if (hot_reloading_enabled) {
+            base += "-hot-reloadable";
+        }
+
         if (target.os == "windows") {
-            file_name = manifest.name + ".exe";
+            file_name = base + ".exe";
         } else {
-            file_name = manifest.name;
+            file_name = base;
         }
     } else if (package_type == PackageType::STATIC_LIBRARY) {
         if (target.os == "windows" && target.env == "msvc") {

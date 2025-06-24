@@ -1,4 +1,5 @@
 #include "argument_parser.hpp"
+
 #include "banjo/utils/macros.hpp"
 #include "common.hpp"
 

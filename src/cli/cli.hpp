@@ -50,6 +50,7 @@ private:
     BuildConfig build_config = BuildConfig::DEBUG;
     std::optional<unsigned> opt_level = {};
     bool force_assembler = false;
+    bool hot_reloading_enabled = false;
     std::vector<std::string> extra_compiler_args;
 
     PackageType package_type;
@@ -105,6 +106,9 @@ private:
     void invoke_unix_linker();
     void invoke_darwin_linker();
     void run_build();
+    void run_hot_reloader();
+
+    void append_compilation_args(std::vector<std::string> &args);
 
     void process_tool_result(
         const std::string &tool_name,
