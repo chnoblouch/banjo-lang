@@ -682,6 +682,11 @@ void CLI::load_manifest(const Manifest &manifest) {
     extra_compiler_args.insert(extra_compiler_args.end(), manifest.args.begin(), manifest.args.end());
     libraries.insert(libraries.end(), manifest.libraries.begin(), manifest.libraries.end());
 
+    if (manifest.build_script) {
+        // TODO: Use relative path for package build scripts.
+        run_build_script(*manifest.build_script);
+    }
+
     for (std::string_view package : manifest.packages) {
         load_package(package);
     }
@@ -782,6 +787,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
     std::vector<std::string> libraries;
     std::vector<std::string> packages;
     std::vector<std::pair<Target, Manifest>> target_manifests;
+    std::optional<std::string> build_script;
 
     for (const auto &[member_name, member_value] : json) {
         if (member_name == "name") {
@@ -809,7 +815,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         } else if (member_name == "macos.frameworks") {
             // TODO
         } else if (member_name == "build_script") {
-            // TODO
+            build_script = unwrap_json_string(member_name, member_value);
         } else {
             error("failed to load manifest: unknown member " + member_name);
         }
@@ -822,6 +828,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         .libraries = libraries,
         .packages = packages,
         .target_manifests = target_manifests,
+        .build_script = build_script,
     };
 }
 
@@ -888,14 +895,13 @@ Target CLI::parse_target(std::string_view string) {
 }
 
 void CLI::install_package(std::string_view package) {
-    single_line_output = false;
-
     std::filesystem::path packages_path("packages");
 
     if (std::filesystem::is_directory(packages_path / package)) {
         return;
     }
 
+    single_line_output = false;
     print_step("Installing package '" + std::string(package) + "'...");
 
     std::filesystem::path script_path = get_installation_dir() / "scripts" / "cli2" / "install_package.py";
@@ -908,6 +914,21 @@ void CLI::install_package(std::string_view package) {
     };
 
     print_command("package download", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
+}
+
+void CLI::run_build_script(const std::filesystem::path &path) {
+    Command command{
+        .executable = get_python_executable(),
+        .args{path.string()},
+        .stdin_stream = Command::Stream::INHERIT,
+        .stdout_stream = Command::Stream::INHERIT,
+        .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    print_command("build script", command);
 
     std::optional<Process> process = Process::spawn(command);
     process->wait();

@@ -17,6 +17,7 @@ struct Manifest {
     std::vector<std::string> libraries;
     std::vector<std::string> packages;
     std::vector<std::pair<Target, Manifest>> target_manifests;
+    std::optional<std::string> build_script;
 };
 
 } // namespace cli

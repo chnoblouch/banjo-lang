@@ -21,11 +21,11 @@ def install_package(package, destination):
     file_bytes = response.read()
     zip_file = zipfile.ZipFile(io.BytesIO(file_bytes), "r")
     zip_file.extractall(destination)
-        
+
 
 if __name__ == "__main__":
     assert len(sys.argv) == 3
-    
+
     try:
         install_package(sys.argv[1], sys.argv[2])
     except Exception:

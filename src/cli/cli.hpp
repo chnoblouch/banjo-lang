@@ -93,6 +93,7 @@ private:
     Target parse_target(std::string_view string);
 
     void install_package(std::string_view package);
+    void run_build_script(const std::filesystem::path &path);
 
     void build();
     ProcessResult invoke_compiler();
