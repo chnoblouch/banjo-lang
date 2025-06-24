@@ -38,24 +38,47 @@ ArgumentParser::Result ArgumentParser::parse() {
         }
     }
 
+    if (result.command_positionals.size() < result.command->positionals.size()) {
+        const std::string &name = result.command->positionals[result.command_positionals.size()].name;
+        error("missing positional argument '" + name + "'");
+    }
+
     return result;
 }
 
 ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Option> &options) {
     std::string_view arg = argv[arg_index];
 
+    if (arg == "-" || arg == "--") {
+        error("empty option");
+    }
+
     const Option *option = nullptr;
+    bool letter = false;
 
     if (arg.starts_with("--")) {
         option = find_option(arg.substr(2), options);
-    } else if (arg.size() == 2 && arg[0] == '-') {
+    } else if (arg.starts_with("-")) {
         option = find_option(arg[1], options);
+        letter = true;
     } else {
         ASSERT_UNREACHABLE;
     }
 
     if (!option) {
         error("unknown option '" + std::string(arg) + "'");
+    }
+
+    if (letter && arg.size() > 2) {
+        if (option->type == Option::Type::FLAG) {
+            error(std::string("unexpected value for flag '-") + *option->letter + "'");
+        } else if (option->type == Option::Type::VALUE) {
+            std::string value(arg.substr(2));
+            arg_index += 1;
+            return OptionValue{.option = option, .value = value};
+        } else {
+            ASSERT_UNREACHABLE;
+        }
     }
 
     arg_index += 1;

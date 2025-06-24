@@ -803,6 +803,8 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         } else if (member_name == "packages") {
             packages = unwrap_json_string_array(member_name, member_value);
         } else if (member_name == "targets") {
+            // TODO: Error handling
+
             for (const auto &[target_string, json_properties] : member_value.as_object()) {
                 Target target = parse_target(target_string);
                 Manifest target_manifest = parse_manifest(json_properties.as_object());
@@ -912,8 +914,6 @@ void CLI::install_package(std::string_view package) {
         .stdout_stream = Command::Stream::INHERIT,
         .stderr_stream = Command::Stream::INHERIT,
     };
-
-    print_command("package download", command);
 
     std::optional<Process> process = Process::spawn(command);
     process->wait();
