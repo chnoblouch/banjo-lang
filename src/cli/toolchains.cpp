@@ -5,10 +5,11 @@
 #include "banjo/utils/utils.hpp"
 
 #include "common.hpp"
+#include "paths.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <utility>
-#include <algorithm>
 
 namespace banjo {
 namespace cli {
@@ -309,6 +310,28 @@ std::filesystem::path UnixToolchain::find_c_compiler() {
     }
 
     error("failed to find system c compiler");
+}
+
+UnixToolchain UnixToolchain::install(std::string arch) {
+    UnixToolchain toolchain;
+    toolchain.find_linker();
+
+    std::filesystem::path toolchains_dir = paths::toolchains_dir();
+    std::filesystem::path toolchain_dir = toolchains_dir / ("sysroot-" + arch + "-linux-gnu");
+
+    if (std::filesystem::exists(toolchain_dir)) {
+        print_step("  Using existing Linux sysroot");
+    } else {
+        print_step("  Installing Linux sysroot...");
+        run_utility_script("install_sysroot_linux.py", {std::move(arch), toolchains_dir.string()});
+    }
+
+
+    toolchain.lib_dirs = {toolchain_dir.string()};
+    toolchain.crt_dir = {toolchain_dir.string()};
+    toolchain.extra_libs = {"c_nonshared", "gcc"};
+
+    return toolchain;
 }
 
 JSONObject UnixToolchain::serialize() {

@@ -42,6 +42,9 @@ ArgumentParser::Result ArgumentParser::parse() {
     if (result.command_positionals.size() < result.command->positionals.size()) {
         const std::string &name = result.command->positionals[result.command_positionals.size()].name;
         error("missing positional argument '" + name + "'");
+    } else if (result.command_positionals.size() > result.command->positionals.size()) {
+        const std::string &value = result.command_positionals[result.command->positionals.size()];
+        error("extra positional argument '" + value + "'");
     }
 
     return result;

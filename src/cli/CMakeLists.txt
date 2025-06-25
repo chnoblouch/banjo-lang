@@ -20,6 +20,8 @@ add_executable(cli2
     common.hpp
     main2.cpp
     manifest.hpp
+    paths.cpp
+    paths.hpp
     process.hpp
     target.cpp
     target.hpp

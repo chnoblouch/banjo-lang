@@ -2,6 +2,8 @@
 
 #include "banjo/utils/utils.hpp"
 
+#include "paths.hpp"
+
 #include <iostream>
 
 namespace banjo {
@@ -134,6 +136,37 @@ std::string get_tool_output(const std::filesystem::path &tool_path, std::vector<
     }
 
     return output;
+}
+
+std::string get_python_executable() {
+#if OS_WINDOWS
+    return "python";
+#else
+    return "python3";
+#endif
+}
+
+void run_utility_script(const std::string &name, const std::vector<std::string> &args) {
+    std::vector<std::string> full_args;
+
+    std::filesystem::path script_path = paths::installation_dir() / "scripts" / "cli2" / name;
+    full_args.push_back(script_path.string());
+
+    full_args.insert(full_args.end(), args.begin(), args.end());
+
+    Command command{
+        .executable = get_python_executable(),
+        .args = full_args,
+        .stdout_stream = Command::Stream::INHERIT,
+        .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    std::optional<Process> process = Process::spawn(command);
+    ProcessResult result = process->wait();
+
+    if (result.exit_code != 0) {
+        error("utility script " + name + " failed");
+    }
 }
 
 } // namespace cli

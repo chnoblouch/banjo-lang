@@ -26,6 +26,9 @@ void print_error(std::string_view message);
 std::optional<std::filesystem::path> find_tool(std::string_view name);
 std::string get_tool_output(const std::filesystem::path &tool_path, std::vector<std::string> args);
 
+std::string get_python_executable();
+void run_utility_script(const std::string &name, const std::vector<std::string> &args);
+
 } // namespace cli
 } // namespace banjo
 

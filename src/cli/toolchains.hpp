@@ -39,6 +39,7 @@ struct UnixToolchain {
     std::string crt_dir;
 
     static UnixToolchain detect();
+    static UnixToolchain install(std::string arch);
     JSONObject serialize();
 
 private:

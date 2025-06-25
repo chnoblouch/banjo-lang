@@ -3,11 +3,11 @@
 #include "banjo/utils/json.hpp"
 #include "banjo/utils/json_parser.hpp"
 #include "banjo/utils/json_serializer.hpp"
-#include "banjo/utils/paths.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include "argument_parser.hpp"
 #include "common.hpp"
+#include "paths.hpp"
 #include "process.hpp"
 #include "target.hpp"
 #include "toolchains.hpp"
@@ -379,7 +379,7 @@ void CLI::execute_toolchains() {
     std::cout << "\n";
     std::cout << "Available toolchains:\n";
 
-    std::filesystem::path toolchains_dir = get_toolchains_dir();
+    std::filesystem::path toolchains_dir = paths::toolchains_dir();
 
     if (!std::filesystem::is_directory(toolchains_dir)) {
         std::cout << "\n";
@@ -557,7 +557,7 @@ void CLI::execute_lsp() {
 void CLI::execute_bindgen(const ArgumentParser::Result &args) {
     single_line_output = false;
 
-    std::filesystem::path bindgen_path = get_installation_dir() / "scripts" / "bindgen";
+    std::filesystem::path bindgen_path = paths::installation_dir() / "scripts" / "bindgen";
     std::filesystem::path venv_path = bindgen_path / ".venv";
 
     if (!std::filesystem::is_directory(venv_path)) {
@@ -658,7 +658,7 @@ void CLI::load_toolchain() {
             .properties = JSONParser(*toolchain_string).parse_object(),
         };
     } else {
-        detect_toolchain();
+        set_up_toolchain();
     }
 }
 
@@ -720,20 +720,26 @@ void CLI::load_package(std::string_view name) {
     }
 }
 
-void CLI::detect_toolchain() {
+void CLI::set_up_toolchain() {
     single_line_output = false;
 
     print_step("Setting up toolchain for target " + target.to_string());
 
+    Target host = Target::host();
+
     if (target.os == "windows") {
         toolchain.properties = WindowsToolchain::detect().serialize();
     } else if (target.os == "linux") {
-        toolchain.properties = UnixToolchain::detect().serialize();
+        if (host.os == "linux") {
+            toolchain.properties = UnixToolchain::detect().serialize();
+        } else {
+            toolchain.properties = UnixToolchain::install(target.arch).serialize();
+        }
     } else if (target.os == "macos") {
         toolchain.properties = MacOSToolchain::detect().serialize();
     }
 
-    print_step("Caching toolchain...");
+    print_step("  Caching toolchain...");
 
     std::filesystem::path toolchain_path = get_toolchain_path();
     std::filesystem::create_directories(toolchain_path.parent_path());
@@ -884,9 +890,14 @@ Target CLI::parse_target(std::string_view string) {
     }
 
     if (components.size() == 2) {
-        return Target(components[0], components[1]);
+        const std::string &arch = components[0];
+        const std::string &os = components[1];
+        return Target(arch, os, Target::get_default_env(os));
     } else if (components.size() == 3) {
-        return Target(components[0], components[1], components[2]);
+        const std::string &arch = components[0];
+        const std::string &os = components[1];
+        const std::string &env = components[2];
+        return Target(arch, os, env);
     } else {
         return Target();
     }
@@ -902,17 +913,7 @@ void CLI::install_package(std::string_view package) {
     single_line_output = false;
     print_step("Installing package '" + std::string(package) + "'...");
 
-    std::filesystem::path script_path = get_installation_dir() / "scripts" / "cli2" / "install_package.py";
-
-    Command command{
-        .executable = get_python_executable(),
-        .args{script_path.string(), std::string(package), packages_path.string()},
-        .stdout_stream = Command::Stream::INHERIT,
-        .stderr_stream = Command::Stream::INHERIT,
-    };
-
-    std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    run_utility_script("install_package.py", {std::string(package), packages_path.string()});
 }
 
 void CLI::run_build_script(const std::filesystem::path &path) {
@@ -1332,16 +1333,8 @@ void CLI::process_tool_result(
     }
 }
 
-std::filesystem::path CLI::get_installation_dir() {
-    return Paths::executable().parent_path().parent_path();
-}
-
 std::filesystem::path CLI::get_toolchain_path() {
-    return get_toolchains_dir() / (target.to_string() + ".json");
-}
-
-std::filesystem::path CLI::get_toolchains_dir() {
-    return get_installation_dir() / "toolchains";
+    return paths::toolchains_dir() / (target.to_string() + ".json");
 }
 
 std::string CLI::get_output_path() {
@@ -1380,14 +1373,6 @@ std::string CLI::get_output_path() {
 
 std::filesystem::path CLI::get_output_dir() {
     return std::filesystem::path("out") / (target.to_string() + "-debug");
-}
-
-std::string CLI::get_python_executable() {
-#if OS_WINDOWS
-    return "python";
-#else
-    return "python3";
-#endif
 }
 
 } // namespace cli
