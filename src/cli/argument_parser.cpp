@@ -39,6 +39,10 @@ ArgumentParser::Result ArgumentParser::parse() {
         }
     }
 
+    if (contains_help_option(result.global_options) || contains_help_option(result.command_options)) {
+        return result;
+    }
+
     if (result.command_positionals.size() < result.command->positionals.size()) {
         const std::string &name = result.command->positionals[result.command_positionals.size()].name;
         error("missing positional argument '" + name + "'");
@@ -264,6 +268,16 @@ void ArgumentParser::print_commands(const std::vector<Command> &commands) {
         std::cout << command.description;
         std::cout << "\n";
     }
+}
+
+bool ArgumentParser::contains_help_option(const std::vector<OptionValue> &option_values) {
+    for (const OptionValue &option_value : option_values) {
+        if (option_value.option->name == "help") {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace cli

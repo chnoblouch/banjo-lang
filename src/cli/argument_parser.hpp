@@ -110,6 +110,8 @@ private:
 
     void print_options(const std::vector<Option> &options);
     void print_commands(const std::vector<Command> &commands);
+
+    static bool contains_help_option(const std::vector<OptionValue> &option_values);
 };
 
 } // namespace cli
