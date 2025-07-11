@@ -326,7 +326,6 @@ UnixToolchain UnixToolchain::install(std::string arch) {
         run_utility_script("install_sysroot_linux.py", {std::move(arch), toolchains_dir.string()});
     }
 
-
     toolchain.lib_dirs = {toolchain_dir.string()};
     toolchain.crt_dir = {toolchain_dir.string()};
     toolchain.extra_libs = {"c_nonshared", "gcc"};

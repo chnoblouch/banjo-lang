@@ -37,7 +37,7 @@ static const ArgumentParser::Option OPTION_HELP{
 static const ArgumentParser::Option OPTION_VERSION{
     ArgumentParser::Option::Type::FLAG,
     "version",
-    'v',
+    'V',
     "Print version and exit",
 };
 
@@ -51,7 +51,7 @@ static const ArgumentParser::Option OPTION_QUIET{
 static const ArgumentParser::Option OPTION_VERBOSE{
     ArgumentParser::Option::Type::FLAG,
     "verbose",
-    'V',
+    'v',
     "Print commands before execution",
 };
 
@@ -862,7 +862,6 @@ std::vector<std::string> CLI::unwrap_json_string_array(const std::string &name, 
     }
 
     if (!valid) {
-
         error("failed to load manifest: '" + name + "' expected to be a string array");
     } else {
         return values;
