@@ -1,9 +1,9 @@
 #include "stmt_analyzer.hpp"
 
 #include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/expr_finalizer.hpp"
 #include "banjo/sema/expr_property_analyzer.hpp"
 #include "banjo/sema/meta_expansion.hpp"
-#include "banjo/sema/pointer_escape_checker.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
@@ -69,19 +69,11 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
 
         if (auto reference_type = var_stmt.local.type.match<sir::ReferenceType>()) {
             if (!reference_type->base_type) {
+                // TODO: Better error handling.
+
                 ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
                 reference_type->base_type = var_stmt.value.get_type();
-
-                // TODO: Clean this up somehow.
-                var_stmt.value = analyzer.create_expr(
-                    sir::UnaryExpr{
-                        .ast_node = var_stmt.value.get_ast_node(),
-                        .type = var_stmt.local.type,
-                        .op = sir::UnaryOp::REF,
-                        .value = var_stmt.value,
-                    }
-                );
-
+                ExprFinalizer(analyzer).finalize_by_coercion(var_stmt.value, reference_type);
                 is_typeless_ref = true;
             }
         }

@@ -1,0 +1,8 @@
+# test:error 7:17 "cannot pass immutable by mutable reference ('ref mut i32')"
+# test:note 6:9 "'r' is an immutable reference ('ref i32')"
+
+func main() {
+    var a = 100;
+    ref r = a;
+    ref mut m = r;
+}
