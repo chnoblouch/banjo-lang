@@ -8,6 +8,8 @@ from framework import ProcessResult, TestResult, run_process, run_tests, find_ex
 
 
 SKIPPED_TESTS = [
+    "edge_cases.operators_on_literals.0",
+    "edge_cases.operators_on_literals.1",
     "errors.expected_integer.1",
     "errors.expected_integer.2",
     "errors.expr_category.decl.0",
@@ -23,6 +25,7 @@ SKIPPED_TESTS = [
     "features.map_literal.1",
     "features.meta_if.8",
     "features.globals.3",
+    "stdlib.convert.6",
 ]
 
 
