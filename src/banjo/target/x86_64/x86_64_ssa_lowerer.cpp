@@ -420,7 +420,6 @@ void X8664SSALowerer::lower_fcjmp(ssa::Instruction& instr) {
 }
 
 void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
-    ssa::VirtualRegister dst = *instr.get_dest();
     ssa::Operand &cmp_lhs = instr.get_operand(0);
     ssa::Comparison cmp = instr.get_operand(1).get_comparison();
     ssa::Operand &cmp_rhs = instr.get_operand(2);
