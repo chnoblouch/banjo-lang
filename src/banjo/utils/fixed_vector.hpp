@@ -46,13 +46,15 @@ public:
         return *this;
     }
 
+    T *get_data() { return &elements[0]; }
+    std::size_t get_size() { return size; }
+
     Iterator begin() { return &elements[0]; }
     ConstIterator begin() const { return &elements[0]; }
     Iterator end() { return &elements[size]; }
     ConstIterator end() const { return &elements[size]; }
 
     T &operator[](std::size_t index) { return elements[index]; }
-    std::size_t get_size() { return size; }
 
     void append(const T &element) {
         assert(size < Capacity && "fixed vector overflow");
