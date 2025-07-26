@@ -11,13 +11,13 @@
 
 namespace banjo::codegen {
 
-class WASMEmitter final : public BinaryEmitter {
+class WasmEmitter final : public BinaryEmitter {
 
 private:
     typedef FixedVector<unsigned char, 16> LEB128Buffer;
 
 public:
-    WASMEmitter(mcode::Module &module, std::ostream &stream) : BinaryEmitter(module, stream) {}
+    WasmEmitter(mcode::Module &module, std::ostream &stream) : BinaryEmitter(module, stream) {}
     void generate() override;
 
 private:

@@ -59,6 +59,7 @@ std::vector<Target> Target::list_available() {
         Target("x86_64", "linux", "gnu"),
         Target("aarch64", "linux", "gnu"),
         Target("aarch64", "macos"),
+        Target("wasm", "unknown"),
     };
 }
 

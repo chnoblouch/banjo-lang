@@ -8,7 +8,7 @@
 
 namespace banjo::codegen {
 
-void WASMEmitter::generate() {
+void WasmEmitter::generate() {
     WasmObjectFile file = WasmBuilder().build();
 
     emit_header();
@@ -19,7 +19,7 @@ void WASMEmitter::generate() {
     emit_linking_section(file);
 }
 
-void WASMEmitter::emit_header() {
+void WasmEmitter::emit_header() {
     // magic number
     emit_u8('\0');
     emit_u8('a');
@@ -33,7 +33,7 @@ void WASMEmitter::emit_header() {
     emit_u8(0x00);
 }
 
-void WASMEmitter::emit_type_section(const WasmObjectFile &file) {
+void WasmEmitter::emit_type_section(const WasmObjectFile &file) {
     WriteBuffer data;
     write_uleb128(data, file.types.size()); // number of types
 
@@ -56,7 +56,7 @@ void WASMEmitter::emit_type_section(const WasmObjectFile &file) {
     emit_section(1, data);
 }
 
-void WASMEmitter::emit_import_section(const WasmObjectFile &file) {
+void WasmEmitter::emit_import_section(const WasmObjectFile &file) {
     WriteBuffer data;
     write_uleb128(data, file.imports.size()); // number of imports
 
@@ -74,7 +74,7 @@ void WASMEmitter::emit_import_section(const WasmObjectFile &file) {
     emit_section(2, data);
 }
 
-void WASMEmitter::emit_function_section(const WasmObjectFile &file) {
+void WasmEmitter::emit_function_section(const WasmObjectFile &file) {
     WriteBuffer data;
     write_uleb128(data, file.functions.size()); // number of functions
 
@@ -85,7 +85,7 @@ void WASMEmitter::emit_function_section(const WasmObjectFile &file) {
     emit_section(3, data);
 }
 
-void WASMEmitter::emit_code_section(const WasmObjectFile &file) {
+void WasmEmitter::emit_code_section(const WasmObjectFile &file) {
     WriteBuffer data;
     write_uleb128(data, file.functions.size()); // number of functions
 
@@ -101,7 +101,7 @@ void WASMEmitter::emit_code_section(const WasmObjectFile &file) {
     emit_section(10, data);
 }
 
-void WASMEmitter::emit_linking_section(const WasmObjectFile &file) {
+void WasmEmitter::emit_linking_section(const WasmObjectFile &file) {
     WriteBuffer data;
     write_name(data, "linking"); // custom section name
     data.write_u8(0x02);         // linking metadata version (2)
@@ -111,7 +111,7 @@ void WASMEmitter::emit_linking_section(const WasmObjectFile &file) {
     emit_section(0, data);
 }
 
-void WASMEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::vector<WasmSymbol> &symbols) {
+void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::vector<WasmSymbol> &symbols) {
     WriteBuffer data;
     write_uleb128(data, symbols.size()); // number of symbols
 
@@ -127,28 +127,28 @@ void WASMEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
     buffer.write_data(data);                // section payload
 }
 
-void WASMEmitter::emit_section(std::uint8_t id, const WriteBuffer &data) {
+void WasmEmitter::emit_section(std::uint8_t id, const WriteBuffer &data) {
     emit_u8(id);                   // id
     emit_uleb128(data.get_size()); // size
     emit_data(data);               // payload
 }
 
-void WASMEmitter::emit_uleb128(std::uint64_t value) {
+void WasmEmitter::emit_uleb128(std::uint64_t value) {
     LEB128Buffer encoding = encode_uleb128(value);
     emit_data(encoding.get_data(), encoding.get_size());
 }
 
-void WASMEmitter::write_uleb128(WriteBuffer &buffer, std::uint64_t value) {
+void WasmEmitter::write_uleb128(WriteBuffer &buffer, std::uint64_t value) {
     LEB128Buffer encoding = encode_uleb128(value);
     buffer.write_data(encoding.get_data(), encoding.get_size());
 }
 
-void WASMEmitter::write_name(WriteBuffer &buffer, const std::string &name) {
+void WasmEmitter::write_name(WriteBuffer &buffer, const std::string &name) {
     buffer.write_u8(static_cast<std::uint8_t>(name.size()));
     buffer.write_data(name.data(), name.size());
 }
 
-WASMEmitter::LEB128Buffer WASMEmitter::encode_uleb128(std::uint64_t value) {
+WasmEmitter::LEB128Buffer WasmEmitter::encode_uleb128(std::uint64_t value) {
     ASSERT(value < 128);
 
     LEB128Buffer buffer;

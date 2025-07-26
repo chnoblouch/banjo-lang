@@ -23,6 +23,7 @@ std::string TargetDescription::to_string() const {
         case Architecture::INVALID: arch_name = "invalid"; break;
         case Architecture::X86_64: arch_name = "x86_64"; break;
         case Architecture::AARCH64: arch_name = "aarch64"; break;
+        case Architecture::WASM: arch_name = "wasm"; break;
     }
 
     std::string os_name;
@@ -33,6 +34,7 @@ std::string TargetDescription::to_string() const {
         case OperatingSystem::MACOS: os_name = "macos"; break;
         case OperatingSystem::ANDROID: os_name = "android"; break;
         case OperatingSystem::IOS: os_name = "ios"; break;
+        case OperatingSystem::UNKNOWN: os_name = "unknown"; break;
     }
 
     if (environment == Environment::NONE) {

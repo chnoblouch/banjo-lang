@@ -11,6 +11,7 @@ enum class Architecture {
     INVALID,
     X86_64,
     AARCH64,
+    WASM,
 };
 
 enum class OperatingSystem {
@@ -20,6 +21,7 @@ enum class OperatingSystem {
     MACOS,
     ANDROID,
     IOS,
+    UNKNOWN,
 };
 
 enum class Environment {

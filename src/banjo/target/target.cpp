@@ -1,6 +1,7 @@
 #include "target.hpp"
 
 #include "banjo/target/aarch64/aarch64_target.hpp"
+#include "banjo/target/wasm/wasm_target.hpp"
 #include "banjo/target/x86_64/x86_64_target.hpp"
 
 namespace banjo {
@@ -22,7 +23,9 @@ ssa::CallingConv Target::get_default_calling_conv() {
         }
     } else if (descr.get_architecture() == target::Architecture::AARCH64) {
         return ssa::CallingConv::AARCH64_AAPCS;
-    } else {
+    } else if (descr.get_architecture() == target::Architecture::WASM) {
+        return ssa::CallingConv::X86_64_MS_ABI;
+    }  else {
         return ssa::CallingConv::NONE;
     }
 }
@@ -34,6 +37,7 @@ Target *Target::create(TargetDescription descr, CodeModel code_model) {
         case Architecture::INVALID: return nullptr;
         case Architecture::X86_64: return new X8664Target(descr, code_model);
         case Architecture::AARCH64: return new AArch64Target(descr, code_model);
+        case Architecture::WASM: return new WasmTarget(descr, code_model);
     }
 }
 
