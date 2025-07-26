@@ -1,20 +1,38 @@
 add_executable(banjo-lsp
-    ast_navigation.cpp
-    base_message_stream.cpp
-    connection.cpp
-    diagnostics.cpp
-    main.cpp
-    protocol_structs.cpp
-    server.cpp
-    uri.cpp
-    workspace.cpp
-    handlers/completion_handler.cpp
-    handlers/definition_handler.cpp
-    handlers/initialize_handler.cpp
-    handlers/references_handler.cpp
-    handlers/rename_handler.cpp
-    handlers/semantic_tokens_handler.cpp
-    handlers/shutdown_handler.cpp
+    "ast_navigation.cpp"
+    "ast_navigation.hpp"
+    "base_message_stream.cpp"
+    "base_message_stream.hpp"
+    "CMakeLists.txt"
+    "connection.cpp"
+    "connection.hpp"
+    "diagnostics.cpp"
+    "diagnostics.hpp"
+    "index.hpp"
+    "main.cpp"
+    "message.hpp"
+    "protocol_structs.cpp"
+    "protocol_structs.hpp"
+    "server.cpp"
+    "server.hpp"
+    "uri.cpp"
+    "uri.hpp"
+    "workspace.cpp"
+    "workspace.hpp"
+    "handlers/completion_handler.cpp"
+    "handlers/completion_handler.hpp"
+    "handlers/definition_handler.cpp"
+    "handlers/definition_handler.hpp"
+    "handlers/initialize_handler.cpp"
+    "handlers/initialize_handler.hpp"
+    "handlers/references_handler.cpp"
+    "handlers/references_handler.hpp"
+    "handlers/rename_handler.cpp"
+    "handlers/rename_handler.hpp"
+    "handlers/semantic_tokens_handler.cpp"
+    "handlers/semantic_tokens_handler.hpp"
+    "handlers/shutdown_handler.cpp"
+    "handlers/shutdown_handler.hpp"
 )
 
 target_include_directories(banjo-lsp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

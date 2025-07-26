@@ -1,6 +1,7 @@
 add_executable(banjo-compiler
-    compiler.cpp
-    main.cpp
+    "compiler.cpp"
+    "compiler.hpp"
+    "main.cpp"
 )
 
 target_include_directories(banjo-compiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

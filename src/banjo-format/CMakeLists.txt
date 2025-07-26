@@ -1,7 +1,7 @@
 add_executable(banjo-format
-    formatter.cpp
-    formatter.hpp
-    main.cpp
+    "formatter.cpp"
+    "formatter.hpp"
+    "main.cpp"
 )
 
 target_include_directories(banjo-format PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

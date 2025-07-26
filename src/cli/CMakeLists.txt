@@ -7,26 +7,28 @@ target_link_libraries(cli PUBLIC banjo)
 set_target_properties(cli PROPERTIES OUTPUT_NAME "banjo")
 
 if(TARGET_OS STREQUAL "windows")
-    set(PLATFORM_SOURCES process_windows.cpp)
+    set(PLATFORM_SOURCES "process_windows.cpp")
 elseif(TARGET_OS STREQUAL "linux" OR TARGET_OS STREQUAL "macos")
-    set(PLATFORM_SOURCES process_unix.cpp)
+    set(PLATFORM_SOURCES "process_unix.cpp")
 endif()
 
 add_executable(cli2
-    argument_parser.cpp
-    cli.cpp
-    cli.hpp
-    common.cpp
-    common.hpp
-    main2.cpp
-    manifest.hpp
-    paths.cpp
-    paths.hpp
-    process.hpp
-    target.cpp
-    target.hpp
-    toolchains.cpp
-    toolchains.hpp
+    "argument_parser.cpp"
+    "argument_parser.hpp"
+    "cli.cpp"
+    "cli.hpp"
+    "CMakeLists.txt"
+    "common.cpp"
+    "common.hpp"
+    "main2.cpp"
+    "manifest.hpp"
+    "paths.cpp"
+    "paths.hpp"
+    "process.hpp"
+    "target.cpp"
+    "target.hpp"
+    "toolchains.cpp"
+    "toolchains.hpp"
     ${PLATFORM_SOURCES}
 )
 
