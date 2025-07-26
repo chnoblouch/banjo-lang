@@ -1,5 +1,5 @@
-#ifndef GENERICS_SPECIALIZER_H
-#define GENERICS_SPECIALIZER_H
+#ifndef BANJO_SEMA_GENERICS_SPECIALIZER_H
+#define BANJO_SEMA_GENERICS_SPECIALIZER_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

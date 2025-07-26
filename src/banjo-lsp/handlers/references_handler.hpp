@@ -1,5 +1,5 @@
-#ifndef LSP_REFERENCES_HANDLER_H
-#define LSP_REFERENCES_HANDLER_H
+#ifndef BANJO_LSP_HANDLERS_REFERENCES_HANDLER_H
+#define BANJO_LSP_HANDLERS_REFERENCES_HANDLER_H
 
 #include "connection.hpp"
 #include "workspace.hpp"

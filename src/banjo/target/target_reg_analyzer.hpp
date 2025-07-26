@@ -1,11 +1,11 @@
-#ifndef TARGET_REG_ANALYZER_H
-#define TARGET_REG_ANALYZER_H
+#ifndef BANJO_TARGET_REG_ANALYZER_H
+#define BANJO_TARGET_REG_ANALYZER_H
 
 #include "banjo/codegen/reg_alloc_func.hpp"
-#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 
 #include <vector>
 

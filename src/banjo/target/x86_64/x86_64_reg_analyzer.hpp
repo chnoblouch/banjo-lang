@@ -1,5 +1,5 @@
-#ifndef X86_64_REG_ANALYZER_H
-#define X86_64_REG_ANALYZER_H
+#ifndef BANJO_TARGET_X86_64_REG_ANALYZER_H
+#define BANJO_TARGET_X86_64_REG_ANALYZER_H
 
 #include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/instruction.hpp"

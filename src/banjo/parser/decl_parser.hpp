@@ -1,5 +1,5 @@
-#ifndef DECL_PARSER_H
-#define DECL_PARSER_H
+#ifndef BANJO_PARSER_DECL_PARSER_H
+#define BANJO_PARSER_DECL_PARSER_H
 
 #include "banjo/parser/parser.hpp"
 

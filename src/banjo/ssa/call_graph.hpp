@@ -1,5 +1,5 @@
-#ifndef IR_CALL_GRAPH_H
-#define IR_CALL_GRAPH_H
+#ifndef BANJO_SSA_CALL_GRAPH_H
+#define BANJO_SSA_CALL_GRAPH_H
 
 #include "banjo/ssa/module.hpp"
 #include <unordered_map>

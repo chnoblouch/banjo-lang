@@ -1,5 +1,5 @@
-#ifndef MCODE_REGISTER_H
-#define MCODE_REGISTER_H
+#ifndef BANJO_MCODE_REGISTER_H
+#define BANJO_MCODE_REGISTER_H
 
 #include "banjo/utils/bit_set.hpp"
 

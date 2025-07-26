@@ -1,5 +1,5 @@
-#ifndef CODEGEN_STACK_FRAME_PASS_H
-#define CODEGEN_STACK_FRAME_PASS_H
+#ifndef BANJO_CODEGEN_STACK_FRAME_PASS_H
+#define BANJO_CODEGEN_STACK_FRAME_PASS_H
 
 #include "banjo/codegen/machine_pass.hpp"
 #include "banjo/target/target_reg_analyzer.hpp"

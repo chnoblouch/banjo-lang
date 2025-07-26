@@ -1,5 +1,5 @@
-#ifndef EXPR_FINALIZER_H
-#define EXPR_FINALIZER_H
+#ifndef BANJO_SEMA_EXPR_FINALIZER_H
+#define BANJO_SEMA_EXPR_FINALIZER_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

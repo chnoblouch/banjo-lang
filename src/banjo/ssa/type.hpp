@@ -1,5 +1,5 @@
-#ifndef IR_TYPE_H
-#define IR_TYPE_H
+#ifndef BANJO_SSA_TYPE_H
+#define BANJO_SSA_TYPE_H
 
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/utils/macros.hpp"

@@ -1,5 +1,5 @@
-#ifndef SEMA_EXTRA_ANALYSIS_H
-#define SEMA_EXTRA_ANALYSIS_H
+#ifndef BANJO_SEMA_EXTRA_ANALYSIS_H
+#define BANJO_SEMA_EXTRA_ANALYSIS_H
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/text_range.hpp"

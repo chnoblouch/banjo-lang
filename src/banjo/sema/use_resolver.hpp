@@ -1,5 +1,5 @@
-#ifndef USE_RESOLVER_H
-#define USE_RESOLVER_H
+#ifndef BANJO_SEMA_USE_RESOLVER_H
+#define BANJO_SEMA_USE_RESOLVER_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

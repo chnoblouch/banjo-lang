@@ -1,5 +1,5 @@
-#ifndef BANJO_EMIT_MACHO_MACHO_EMITTER_H
-#define BANJO_EMIT_MACHO_MACHO_EMITTER_H
+#ifndef BANJO_EMIT_MACHO_EMITTER_H
+#define BANJO_EMIT_MACHO_EMITTER_H
 
 #include "banjo/emit/binary_emitter.hpp"
 #include "banjo/emit/macho/macho_format.hpp"

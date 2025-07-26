@@ -1,5 +1,5 @@
-#ifndef PE_EMITTER_H
-#define PE_EMITTER_H
+#ifndef BANJO_EMIT_PE_EMITTER_H
+#define BANJO_EMIT_PE_EMITTER_H
 
 #include "banjo/emit/binary_emitter.hpp"
 #include "banjo/emit/pe/pe_format.hpp"

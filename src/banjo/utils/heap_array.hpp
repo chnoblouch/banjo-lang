@@ -1,5 +1,5 @@
-#ifndef HEAP_ARRAY_H
-#define HEAP_ARRAY_H
+#ifndef BANJO_UTILS_HEAP_ARRAY_H
+#define BANJO_UTILS_HEAP_ARRAY_H
 
 #include <vector>
 

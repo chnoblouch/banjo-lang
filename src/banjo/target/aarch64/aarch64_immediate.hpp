@@ -1,5 +1,5 @@
-#ifndef AARCH64_IMMEDIATE_H
-#define AARCH64_IMMEDIATE_H
+#ifndef BANJO_TARGET_AARCH64_IMMEDIATE_H
+#define BANJO_TARGET_AARCH64_IMMEDIATE_H
 
 #include <cstdint>
 #include <string>

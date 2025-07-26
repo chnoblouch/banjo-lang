@@ -1,5 +1,5 @@
-#ifndef SSA_GENERATOR_H
-#define SSA_GENERATOR_H
+#ifndef BANJO_SSA_GENERATOR_H
+#define BANJO_SSA_GENERATOR_H
 
 #include "banjo/ssa/module.hpp"
 #include "banjo/sir/sir.hpp"

@@ -1,5 +1,5 @@
-#ifndef STD_CONFIG_MODULE_H
-#define STD_CONFIG_MODULE_H
+#ifndef BANJO_AST_STD_CONFIG_MODULE_H
+#define BANJO_AST_STD_CONFIG_MODULE_H
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"

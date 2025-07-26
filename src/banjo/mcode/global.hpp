@@ -1,5 +1,5 @@
-#ifndef MCODE_GLOBAL_H
-#define MCODE_GLOBAL_H
+#ifndef BANJO_MCODE_GLOBAL_H
+#define BANJO_MCODE_GLOBAL_H
 
 #include "banjo/utils/large_int.hpp"
 

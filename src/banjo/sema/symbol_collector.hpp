@@ -1,5 +1,5 @@
-#ifndef SYMBOL_COLLECTOR_H
-#define SYMBOL_COLLECTOR_H
+#ifndef BANJO_SEMA_SYMBOL_COLLECTOR_H
+#define BANJO_SEMA_SYMBOL_COLLECTOR_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

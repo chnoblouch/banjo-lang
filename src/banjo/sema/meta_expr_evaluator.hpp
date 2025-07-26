@@ -1,5 +1,5 @@
-#ifndef META_EXPR_EVALUATOR_H
-#define META_EXPR_EVALUATOR_H
+#ifndef BANJO_SEMA_META_EXPR_EVALUATOR_H
+#define BANJO_SEMA_META_EXPR_EVALUATOR_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

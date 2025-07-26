@@ -1,5 +1,5 @@
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef BANJO_COMPILER_H
+#define BANJO_COMPILER_H
 
 #include "banjo/config/config.hpp"
 #include "banjo/reports/report_manager.hpp"

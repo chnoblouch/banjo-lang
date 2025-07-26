@@ -1,5 +1,5 @@
-#ifndef SSA_GENERATOR_CONTEXT_H
-#define SSA_GENERATOR_CONTEXT_H
+#ifndef BANJO_SSA_GENERATOR_CONTEXT_H
+#define BANJO_SSA_GENERATOR_CONTEXT_H
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa/basic_block.hpp"

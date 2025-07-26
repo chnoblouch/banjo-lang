@@ -1,5 +1,5 @@
-#ifndef IR_VIRTUAL_REGISTER_H
-#define IR_VIRTUAL_REGISTER_H
+#ifndef BANJO_SSA_VIRTUAL_REGISTER_H
+#define BANJO_SSA_VIRTUAL_REGISTER_H
 
 namespace banjo {
 

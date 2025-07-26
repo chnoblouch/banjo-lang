@@ -1,5 +1,5 @@
-#ifndef WRITE_BUFFER_H
-#define WRITE_BUFFER_H
+#ifndef BANJO_UTILS_WRITE_BUFFER_H
+#define BANJO_UTILS_WRITE_BUFFER_H
 
 #include <cstdint>
 #include <utility>

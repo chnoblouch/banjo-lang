@@ -1,5 +1,5 @@
-#ifndef NASM_EMITTER_H
-#define NASM_EMITTER_H
+#ifndef BANJO_EMIT_NASM_EMITTER_H
+#define BANJO_EMIT_NASM_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
 #include "banjo/mcode/stack_frame.hpp"

@@ -1,5 +1,5 @@
-#ifndef PARALLEL_RUNNER_H
-#define PARALLEL_RUNNER_H
+#ifndef BANJO_UTILS_PARALLEL_RUNNER_H
+#define BANJO_UTILS_PARALLEL_RUNNER_H
 
 #include <condition_variable>
 #include <functional>

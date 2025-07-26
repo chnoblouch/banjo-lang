@@ -1,5 +1,5 @@
-#ifndef TEST_DRIVER_GENERATOR_H
-#define TEST_DRIVER_GENERATOR_H
+#ifndef BANJO_SIR_TEST_DRIVER_GENERATOR_H
+#define BANJO_SIR_TEST_DRIVER_GENERATOR_H
 
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sema/decl_visitor.hpp"

@@ -1,5 +1,5 @@
-#ifndef TARGET_DATA_LAYOUT_H
-#define TARGET_DATA_LAYOUT_H
+#ifndef BANJO_TARGET_TARGET_DATA_LAYOUT_H
+#define BANJO_TARGET_TARGET_DATA_LAYOUT_H
 
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/type.hpp"

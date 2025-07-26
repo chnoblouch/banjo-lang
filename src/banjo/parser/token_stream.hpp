@@ -1,5 +1,5 @@
-#ifndef TOKEN_STREAM_H
-#define TOKEN_STREAM_H
+#ifndef BANJO_PARSER_TOKEN_STREAM_H
+#define BANJO_PARSER_TOKEN_STREAM_H
 
 #include "banjo/lexer/token.hpp"
 #include <vector>

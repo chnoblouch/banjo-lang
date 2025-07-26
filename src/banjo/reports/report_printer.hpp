@@ -1,5 +1,5 @@
-#ifndef REPORT_PRINTER_H
-#define REPORT_PRINTER_H
+#ifndef BANJO_REPORTS_REPORT_PRINTER_H
+#define BANJO_REPORTS_REPORT_PRINTER_H
 
 #include "banjo/reports/report.hpp"
 #include "banjo/source/module_manager.hpp"

@@ -1,5 +1,5 @@
-#ifndef IR_GLOBAL_H
-#define IR_GLOBAL_H
+#ifndef BANJO_SSA_GLOBAL_H
+#define BANJO_SSA_GLOBAL_H
 
 #include "banjo/ssa/type.hpp"
 #include "banjo/utils/large_int.hpp"

@@ -1,5 +1,5 @@
-#ifndef AAPCS_CALLING_CONV_H
-#define AAPCS_CALLING_CONV_H
+#ifndef BANJO_TARGET_AARCH64_AAPCS_CALLING_CONV_H
+#define BANJO_TARGET_AARCH64_AAPCS_CALLING_CONV_H
 
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/register.hpp"

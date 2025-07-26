@@ -1,5 +1,5 @@
-#ifndef MODULE_DISCOVERY_H
-#define MODULE_DISCOVERY_H
+#ifndef BANJO_SOURCE_MODULE_DISCOVERY_H
+#define BANJO_SOURCE_MODULE_DISCOVERY_H
 
 #include "banjo/source/module_path.hpp"
 

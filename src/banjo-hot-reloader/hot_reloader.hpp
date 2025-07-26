@@ -1,5 +1,5 @@
-#ifndef HOT_RELOADER_H
-#define HOT_RELOADER_H
+#ifndef BANJO_HOT_RELOADER_H
+#define BANJO_HOT_RELOADER_H
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/ssa/addr_table.hpp"

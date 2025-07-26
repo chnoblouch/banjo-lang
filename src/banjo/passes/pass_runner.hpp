@@ -1,8 +1,8 @@
-#ifndef PASS_RUNNER_H
-#define PASS_RUNNER_H
+#ifndef BANJO_PASSES_PASS_RUNNER_H
+#define BANJO_PASSES_PASS_RUNNER_H
 
-#include "banjo/ssa/module.hpp"
 #include "banjo/passes/pass.hpp"
+#include "banjo/ssa/module.hpp"
 #include "banjo/target/target.hpp"
 
 #include <vector>

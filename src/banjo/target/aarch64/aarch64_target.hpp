@@ -1,5 +1,5 @@
-#ifndef AARCH64_TARGET_H
-#define AARCH64_TARGET_H
+#ifndef BANJO_TARGET_AARCH64_TARGET_H
+#define BANJO_TARGET_AARCH64_TARGET_H
 
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/standard_data_layout.hpp"

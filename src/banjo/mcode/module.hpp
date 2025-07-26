@@ -1,5 +1,5 @@
-#ifndef MCODE_MODULE_H
-#define MCODE_MODULE_H
+#ifndef BANJO_MCODE_MODULE_H
+#define BANJO_MCODE_MODULE_H
 
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/global.hpp"

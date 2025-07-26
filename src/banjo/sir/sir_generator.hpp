@@ -1,5 +1,5 @@
-#ifndef SIR_GENERATOR_H
-#define SIR_GENERATOR_H
+#ifndef BANJO_SIR_GENERATOR_H
+#define BANJO_SIR_GENERATOR_H
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/module_list.hpp"

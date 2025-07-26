@@ -1,5 +1,5 @@
-#ifndef PASSES_PASS_UTILS_H
-#define PASSES_PASS_UTILS_H
+#ifndef BANJO_PASSES_PASS_UTILS_H
+#define BANJO_PASSES_PASS_UTILS_H
 
 #include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/function.hpp"

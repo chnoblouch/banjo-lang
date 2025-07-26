@@ -1,5 +1,5 @@
-#ifndef META_EXPANSION_H
-#define META_EXPANSION_H
+#ifndef BANJO_SEMA_META_EXPANSION_H
+#define BANJO_SEMA_META_EXPANSION_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

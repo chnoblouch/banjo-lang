@@ -1,5 +1,5 @@
-#ifndef PASSES_HEAP_TO_STACK_PASS_H
-#define PASSES_HEAP_TO_STACK_PASS_H
+#ifndef BANJO_PASSES_HEAP_TO_STACK_PASS_H
+#define BANJO_PASSES_HEAP_TO_STACK_PASS_H
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/basic_block.hpp"

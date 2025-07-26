@@ -1,5 +1,5 @@
-#ifndef DECL_BODY_ANALYZER_H
-#define DECL_BODY_ANALYZER_H
+#ifndef BANJO_SEMA_DECL_BODY_ANALYZER_H
+#define BANJO_SEMA_DECL_BODY_ANALYZER_H
 
 #include "banjo/sema/decl_visitor.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"

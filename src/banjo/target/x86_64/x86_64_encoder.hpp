@@ -1,5 +1,5 @@
-#ifndef X86_64_ENCODER_H
-#define X86_64_ENCODER_H
+#ifndef BANJO_TARGET_X86_64_ENCODER_H
+#define BANJO_TARGET_X86_64_ENCODER_H
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/emit/binary_module.hpp"

@@ -1,5 +1,5 @@
-#ifndef TEXT_RANGE_H
-#define TEXT_RANGE_H
+#ifndef BANJO_SOURCE_TEXT_RANGE_H
+#define BANJO_SOURCE_TEXT_RANGE_H
 
 namespace banjo {
 

@@ -1,5 +1,5 @@
-#ifndef EXPR_PARSER_H
-#define EXPR_PARSER_H
+#ifndef BANJO_PARSER_EXPR_PARSER_H
+#define BANJO_PARSER_EXPR_PARSER_H
 
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"

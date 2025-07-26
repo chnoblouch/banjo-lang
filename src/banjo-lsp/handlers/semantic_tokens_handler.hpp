@@ -1,5 +1,5 @@
-#ifndef LSP_SEMANTIC_TOKENS_HANDLER_H
-#define LSP_SEMANTIC_TOKENS_HANDLER_H
+#ifndef BANJO_LSP_HANDLERS_SEMANTIC_TOKENS_HANDLER_H
+#define BANJO_LSP_HANDLERS_SEMANTIC_TOKENS_HANDLER_H
 
 #include "banjo/source/text_range.hpp"
 #include "connection.hpp"

@@ -1,5 +1,5 @@
-#ifndef CODEGEN_MACHINE_PASS_RUNNER_H
-#define CODEGEN_MACHINE_PASS_RUNNER_H
+#ifndef BANJO_CODEGEN_MACHINE_PASS_RUNNER_H
+#define BANJO_CODEGEN_MACHINE_PASS_RUNNER_H
 
 #include "banjo/codegen/machine_pass.hpp"
 #include "banjo/mcode/module.hpp"

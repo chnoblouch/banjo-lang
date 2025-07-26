@@ -1,5 +1,5 @@
-#ifndef AARCH64_ADDRESS_H
-#define AARCH64_ADDRESS_H
+#ifndef BANJO_TARGET_AARCH64_ADDRESS_H
+#define BANJO_TARGET_AARCH64_ADDRESS_H
 
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/symbol.hpp"

@@ -1,5 +1,5 @@
-#ifndef X86_64_OPCODE_H
-#define X86_64_OPCODE_H
+#ifndef BANJO_TARGET_X86_64_OPCODE_H
+#define BANJO_TARGET_X86_64_OPCODE_H
 
 namespace banjo {
 

@@ -1,5 +1,5 @@
-#ifndef X86_64_ADDR_LOWERING_H
-#define X86_64_ADDR_LOWERING_H
+#ifndef BANJO_TARGET_X86_64_ADDR_LOWERING_H
+#define BANJO_TARGET_X86_64_ADDR_LOWERING_H
 
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"

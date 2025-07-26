@@ -1,5 +1,5 @@
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#ifndef BANJO_UTILS_PLATFORM_H
+#define BANJO_UTILS_PLATFORM_H
 
 #include <limits>
 

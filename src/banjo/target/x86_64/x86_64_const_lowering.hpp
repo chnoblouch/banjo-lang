@@ -1,5 +1,5 @@
-#ifndef X86_64_CONST_LOWERING_H
-#define X86_64_CONST_LOWERING_H
+#ifndef BANJO_TARGET_X86_64_CONST_LOWERING_H
+#define BANJO_TARGET_X86_64_CONST_LOWERING_H
 
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/register.hpp"

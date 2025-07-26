@@ -1,5 +1,5 @@
-#ifndef UTF8_ENCODING_H
-#define UTF8_ENCODING_H
+#ifndef BANJO_UTILS_UTF8_ENCODING_H
+#define BANJO_UTILS_UTF8_ENCODING_H
 
 #include <cstdint>
 

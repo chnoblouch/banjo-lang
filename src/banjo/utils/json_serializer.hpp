@@ -1,5 +1,5 @@
-#ifndef LSP_JSON_SERIALIZER_H
-#define LSP_JSON_SERIALIZER_H
+#ifndef BANJO_UTILS_JSON_SERIALIZER_H
+#define BANJO_UTILS_JSON_SERIALIZER_H
 
 #include "banjo/utils/json.hpp"
 

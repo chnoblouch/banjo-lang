@@ -1,5 +1,5 @@
-#ifndef REPORT_TEXTS_H
-#define REPORT_TEXTS_H
+#ifndef BANJO_REPORTS_REPORT_TEXTS_H
+#define BANJO_REPORTS_REPORT_TEXTS_H
 
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/sir/sir.hpp"

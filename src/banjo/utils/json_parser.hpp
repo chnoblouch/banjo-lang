@@ -1,5 +1,5 @@
-#ifndef LSP_JSON_PARSER_H
-#define LSP_JSON_PARSER_H
+#ifndef BANJO_UTILS_JSON_PARSER_H
+#define BANJO_UTILS_JSON_PARSER_H
 
 #include "banjo/utils/json.hpp"
 

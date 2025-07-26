@@ -1,5 +1,5 @@
-#ifndef IR_STRUCTURE_H
-#define IR_STRUCTURE_H
+#ifndef BANJO_SSA_STRUCTURE_H
+#define BANJO_SSA_STRUCTURE_H
 
 #include "banjo/ssa/type.hpp"
 

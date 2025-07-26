@@ -1,5 +1,5 @@
-#ifndef GLOBAL_SSA_GENERATOR_H
-#define GLOBAL_SSA_GENERATOR_H
+#ifndef BANJO_SSA_GENERATOR_GLOBAL_SSA_GENERATOR_H
+#define BANJO_SSA_GENERATOR_GLOBAL_SSA_GENERATOR_H
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"

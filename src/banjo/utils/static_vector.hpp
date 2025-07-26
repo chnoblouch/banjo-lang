@@ -1,5 +1,5 @@
-#ifndef STATIC_VECTOR_H
-#define STATIC_VECTOR_H
+#ifndef BANJO_UTILS_STATIC_VECTOR_H
+#define BANJO_UTILS_STATIC_VECTOR_H
 
 #include <cassert>
 #include <cstddef>

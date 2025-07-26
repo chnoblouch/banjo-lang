@@ -1,5 +1,5 @@
-#ifndef TIMING_H
-#define TIMING_H
+#ifndef BANJO_UTILS_TIMING_H
+#define BANJO_UTILS_TIMING_H
 
 #include <chrono>
 #include <string>

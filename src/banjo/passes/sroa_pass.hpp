@@ -1,5 +1,5 @@
-#ifndef PASSES_SROA_PASS_H
-#define PASSES_SROA_PASS_H
+#ifndef BANJO_PASSES_SROA_PASS_H
+#define BANJO_PASSES_SROA_PASS_H
 
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/passes/pass.hpp"

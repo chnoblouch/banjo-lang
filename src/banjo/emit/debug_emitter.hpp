@@ -1,5 +1,5 @@
-#ifndef DEBUG_EMITTER_H
-#define DEBUG_EMITTER_H
+#ifndef BANJO_EMIT_DEBUG_EMITTER_H
+#define BANJO_EMIT_DEBUG_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
 #include "banjo/mcode/stack_frame.hpp"

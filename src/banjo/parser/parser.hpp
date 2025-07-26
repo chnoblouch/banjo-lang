@@ -1,5 +1,5 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef BANJO_PARSER_H
+#define BANJO_PARSER_H
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"

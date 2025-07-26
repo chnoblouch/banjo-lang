@@ -1,5 +1,5 @@
-#ifndef STMT_PARSER_H
-#define STMT_PARSER_H
+#ifndef BANJO_PARSER_STMT_PARSER_H
+#define BANJO_PARSER_STMT_PARSER_H
 
 #include "banjo/parser/parser.hpp"
 

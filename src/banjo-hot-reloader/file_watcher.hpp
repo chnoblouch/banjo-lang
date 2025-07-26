@@ -1,5 +1,5 @@
-#ifndef FILE_WATCHER_H
-#define FILE_WATCHER_H
+#ifndef BANJO_HOT_RELOADER_FILE_WATCHER_H
+#define BANJO_HOT_RELOADER_FILE_WATCHER_H
 
 #include <filesystem>
 #include <optional>

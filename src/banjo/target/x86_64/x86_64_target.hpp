@@ -1,5 +1,5 @@
-#ifndef X86_64_TARGET
-#define X86_64_TARGET
+#ifndef BANJO_TARGET_X86_64_TARGET
+#define BANJO_TARGET_X86_64_TARGET
 
 #include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target.hpp"

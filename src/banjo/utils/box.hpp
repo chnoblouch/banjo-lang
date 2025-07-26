@@ -1,5 +1,5 @@
-#ifndef BOX_H
-#define BOX_H
+#ifndef BANJO_UTILS_BOX_H
+#define BANJO_UTILS_BOX_H
 
 #include <utility>
 

@@ -1,5 +1,5 @@
-#ifndef LSP_AST_NAVIGATION_H
-#define LSP_AST_NAVIGATION_H
+#ifndef BANJO_LSP_AST_NAVIGATION_H
+#define BANJO_LSP_AST_NAVIGATION_H
 
 #include "banjo/ast/ast_node.hpp"
 

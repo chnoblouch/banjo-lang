@@ -1,5 +1,5 @@
-#ifndef MCODE_STACK_REGIONS_H
-#define MCODE_STACK_REGIONS_H
+#ifndef BANJO_MCODE_STACK_REGIONS_H
+#define BANJO_MCODE_STACK_REGIONS_H
 
 #include "banjo/mcode/stack_frame.hpp"
 

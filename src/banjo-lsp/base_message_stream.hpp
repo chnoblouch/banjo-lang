@@ -1,5 +1,5 @@
-#ifndef LSP_MESSAGE_STREAM_H
-#define LSP_MESSAGE_STREAM_H
+#ifndef BANJO_LSP_MESSAGE_STREAM_H
+#define BANJO_LSP_MESSAGE_STREAM_H
 
 #include "message.hpp"
 

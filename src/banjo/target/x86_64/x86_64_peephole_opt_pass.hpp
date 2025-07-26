@@ -1,5 +1,5 @@
-#ifndef X86_64_PEEPHOLE_OPT_PASS_H
-#define X86_64_PEEPHOLE_OPT_PASS_H
+#ifndef BANJO_TARGET_X86_64_PEEPHOLE_OPT_PASS_H
+#define BANJO_TARGET_X86_64_PEEPHOLE_OPT_PASS_H
 
 #include "banjo/codegen/machine_pass.hpp"
 

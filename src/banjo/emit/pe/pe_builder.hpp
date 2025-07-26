@@ -1,5 +1,5 @@
-#ifndef PE_BUILDER_H
-#define PE_BUILDER_H
+#ifndef BANJO_EMIT_PE_BUILDER_H
+#define BANJO_EMIT_PE_BUILDER_H
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/pe/pe_format.hpp"

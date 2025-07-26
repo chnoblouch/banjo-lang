@@ -1,5 +1,5 @@
-#ifndef JIT_COMPILER_H
-#define JIT_COMPILER_H
+#ifndef BANJO_HOT_RELOADER_JIT_COMPILER_H
+#define BANJO_HOT_RELOADER_JIT_COMPILER_H
 
 #include "banjo/config/config.hpp"
 #include "banjo/emit/binary_module.hpp"

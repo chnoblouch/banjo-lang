@@ -1,5 +1,5 @@
-#ifndef LSP_COMPLETION_HANDLER_H
-#define LSP_COMPLETION_HANDLER_H
+#ifndef BANJO_LSP_HANDLERS_COMPLETION_HANDLER_H
+#define BANJO_LSP_HANDLERS_COMPLETION_HANDLER_H
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/json.hpp"

@@ -1,5 +1,5 @@
-#ifndef GROWABLE_ARENA_H
-#define GROWABLE_ARENA_H
+#ifndef BANJO_UTILS_GROWABLE_ARENA_H
+#define BANJO_UTILS_GROWABLE_ARENA_H
 
 #include <utility>
 

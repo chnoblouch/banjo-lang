@@ -1,5 +1,5 @@
-#ifndef SIR_H
-#define SIR_H
+#ifndef BANJO_SIR_H
+#define BANJO_SIR_H
 
 #include "banjo/source/module_path.hpp"
 #include "banjo/utils/dynamic_pointer.hpp"

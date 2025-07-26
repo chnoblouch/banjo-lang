@@ -1,5 +1,5 @@
-#ifndef MCODE_OPERAND_H
-#define MCODE_OPERAND_H
+#ifndef BANJO_MCODE_OPERAND_H
+#define BANJO_MCODE_OPERAND_H
 
 #include "banjo/mcode/indirect_address.hpp"
 #include "banjo/mcode/register.hpp"

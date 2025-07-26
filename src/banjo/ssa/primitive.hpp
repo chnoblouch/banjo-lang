@@ -1,5 +1,5 @@
-#ifndef IR_PRIMITIVE_H
-#define IR_PRIMITIVE_H
+#ifndef BANJO_SSA_PRIMITIVE_H
+#define BANJO_SSA_PRIMITIVE_H
 
 namespace banjo {
 

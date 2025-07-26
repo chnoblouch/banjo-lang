@@ -1,5 +1,5 @@
-#ifndef PASSES_PRECOMPUTING_H
-#define PASSES_PRECOMPUTING_H
+#ifndef BANJO_PASSES_PRECOMPUTING_H
+#define BANJO_PASSES_PRECOMPUTING_H
 
 #include "banjo/ssa/module.hpp"
 

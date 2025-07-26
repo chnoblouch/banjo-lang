@@ -1,5 +1,5 @@
-#ifndef LSP_CONNECTION_H
-#define LSP_CONNECTION_H
+#ifndef BANJO_LSP_CONNECTION_H
+#define BANJO_LSP_CONNECTION_H
 
 #include "base_message_stream.hpp"
 #include "message.hpp"

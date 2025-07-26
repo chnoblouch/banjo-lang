@@ -1,5 +1,5 @@
-#ifndef MCODE_INDIRECT_ADDRESS_H
-#define MCODE_INDIRECT_ADDRESS_H
+#ifndef BANJO_MCODE_INDIRECT_ADDRESS_H
+#define BANJO_MCODE_INDIRECT_ADDRESS_H
 
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"

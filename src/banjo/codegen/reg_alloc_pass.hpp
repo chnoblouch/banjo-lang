@@ -1,5 +1,5 @@
-#ifndef CODEGEN_REG_ALLOC_PASS_H
-#define CODEGEN_REG_ALLOC_PASS_H
+#ifndef BANJO_CODEGEN_REG_ALLOC_PASS_H
+#define BANJO_CODEGEN_REG_ALLOC_PASS_H
 
 #include "banjo/codegen/liveness.hpp"
 #include "banjo/codegen/machine_pass.hpp"

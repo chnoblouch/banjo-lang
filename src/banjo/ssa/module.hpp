@@ -1,5 +1,5 @@
-#ifndef IR_MODULE_H
-#define IR_MODULE_H
+#ifndef BANJO_SSA_MODULE_H
+#define BANJO_SSA_MODULE_H
 
 #include "banjo/ssa/addr_table.hpp"
 #include "banjo/ssa/function.hpp"

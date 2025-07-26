@@ -1,5 +1,5 @@
-#ifndef EXPR_SSA_GENERATOR_H
-#define EXPR_SSA_GENERATOR_H
+#ifndef BANJO_SSA_GENERATOR_EXPR_SSA_GENERATOR_H
+#define BANJO_SSA_GENERATOR_EXPR_SSA_GENERATOR_H
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa/comparison.hpp"

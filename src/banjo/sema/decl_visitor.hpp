@@ -1,5 +1,5 @@
-#ifndef DECL_VISITOR_H
-#define DECL_VISITOR_H
+#ifndef BANJO_SEMA_DECL_VISITOR_H
+#define BANJO_SEMA_DECL_VISITOR_H
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"

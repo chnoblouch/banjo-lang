@@ -1,5 +1,5 @@
-#ifndef NAME_MANGLING_H
-#define NAME_MANGLING_H
+#ifndef BANJO_SSA_GENERATOR_NAME_MANGLING_H
+#define BANJO_SSA_GENERATOR_NAME_MANGLING_H
 
 #include "banjo/sir/sir.hpp"
 

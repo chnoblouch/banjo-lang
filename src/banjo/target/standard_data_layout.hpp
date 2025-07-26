@@ -1,5 +1,5 @@
-#ifndef STANDARD_DATA_LAYOUT_H
-#define STANDARD_DATA_LAYOUT_H
+#ifndef BANJO_TARGET_STANDARD_DATA_LAYOUT_H
+#define BANJO_TARGET_STANDARD_DATA_LAYOUT_H
 
 #include "banjo/target/target_data_layout.hpp"
 

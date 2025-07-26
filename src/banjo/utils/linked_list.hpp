@@ -1,5 +1,5 @@
-#ifndef LINKED_LIST_H
-#define LINKED_LIST_H
+#ifndef BANJO_UTILS_LINKED_LIST_H
+#define BANJO_UTILS_LINKED_LIST_H
 
 #include <cassert>
 #include <utility>

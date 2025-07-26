@@ -1,5 +1,5 @@
-#ifndef MCODE_STACK_FRAME_H
-#define MCODE_STACK_FRAME_H
+#ifndef BANJO_MCODE_STACK_FRAME_H
+#define BANJO_MCODE_STACK_FRAME_H
 
 #include "banjo/mcode/stack_slot.hpp"
 #include <vector>

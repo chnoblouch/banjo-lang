@@ -1,5 +1,5 @@
-#ifndef LSP_URI_H
-#define LSP_URI_H
+#ifndef BANJO_LSP_URI_H
+#define BANJO_LSP_URI_H
 
 #include <filesystem>
 #include <string>

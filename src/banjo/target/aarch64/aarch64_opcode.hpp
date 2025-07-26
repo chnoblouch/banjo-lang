@@ -1,5 +1,5 @@
-#ifndef AARCH64_OPCODE_H
-#define AARCH64_OPCODE_H
+#ifndef BANJO_TARGET_AARCH64_OPCODE_H
+#define BANJO_TARGET_AARCH64_OPCODE_H
 
 namespace banjo {
 

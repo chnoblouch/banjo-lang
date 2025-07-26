@@ -1,5 +1,5 @@
-#ifndef MODULE_PATH_H
-#define MODULE_PATH_H
+#ifndef BANJO_SOURCE_MODULE_PATH_H
+#define BANJO_SOURCE_MODULE_PATH_H
 
 #include <initializer_list>
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef BANJO_EMIT_MACHO_MACHO_FORMAT_H
-#define BANJO_EMIT_MACHO_MACHO_FORMAT_H
+#ifndef BANJO_EMIT_MACHO_FORMAT_H
+#define BANJO_EMIT_MACHO_FORMAT_H
 
 #include <cstdint>
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef CODEGEN_LIVENESS_H
-#define CODEGEN_LIVENESS_H
+#ifndef BANJO_CODEGEN_LIVENESS_H
+#define BANJO_CODEGEN_LIVENESS_H
 
 #include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/register.hpp"

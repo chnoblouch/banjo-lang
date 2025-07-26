@@ -1,5 +1,5 @@
-#ifndef REPORT_GENERATOR_H
-#define REPORT_GENERATOR_H
+#ifndef BANJO_SEMA_REPORT_GENERATOR_H
+#define BANJO_SEMA_REPORT_GENERATOR_H
 
 #include "banjo/reports/report.hpp"
 #include "banjo/sir/sir.hpp"

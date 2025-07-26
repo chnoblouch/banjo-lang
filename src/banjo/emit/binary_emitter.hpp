@@ -1,5 +1,5 @@
-#ifndef BINARY_EMITTER_H
-#define BINARY_EMITTER_H
+#ifndef BANJO_EMIT_BINARY_EMITTER_H
+#define BANJO_EMIT_BINARY_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
 #include "banjo/utils/write_buffer.hpp"

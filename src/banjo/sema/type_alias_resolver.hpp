@@ -1,5 +1,5 @@
-#ifndef TYPE_ALIAS_RESOLVER_H
-#define TYPE_ALIAS_RESOLVER_H
+#ifndef BANJO_SEMA_TYPE_ALIAS_RESOLVER_H
+#define BANJO_SEMA_TYPE_ALIAS_RESOLVER_H
 
 #include "banjo/sema/decl_visitor.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"

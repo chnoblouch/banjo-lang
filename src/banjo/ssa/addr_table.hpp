@@ -1,5 +1,5 @@
-#ifndef ADDR_TABLE_H
-#define ADDR_TABLE_H
+#ifndef BANJO_SSA_ADDR_TABLE_H
+#define BANJO_SSA_ADDR_TABLE_H
 
 #include "banjo/ssa/global.hpp"
 

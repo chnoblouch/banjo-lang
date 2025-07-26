@@ -1,5 +1,5 @@
-#ifndef EMITTER_H
-#define EMITTER_H
+#ifndef BANJO_EMIT_EMITTER_H
+#define BANJO_EMIT_EMITTER_H
 
 #include "banjo/mcode/module.hpp"
 #include <ostream>

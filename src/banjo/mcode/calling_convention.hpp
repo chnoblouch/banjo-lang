@@ -1,5 +1,5 @@
-#ifndef MCODE_CALLING_CONVENTION_H
-#define MCODE_CALLING_CONVENTION_H
+#ifndef BANJO_MCODE_CALLING_CONVENTION_H
+#define BANJO_MCODE_CALLING_CONVENTION_H
 
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/instruction.hpp"

@@ -1,5 +1,5 @@
-#ifndef AARCH64_INSTR_MERGE_PASS_H
-#define AARCH64_INSTR_MERGE_PASS_H
+#ifndef BANJO_TARGET_AARCH64_INSTR_MERGE_PASS_H
+#define BANJO_TARGET_AARCH64_INSTR_MERGE_PASS_H
 
 #include "banjo/codegen/machine_pass.hpp"
 

@@ -1,5 +1,5 @@
-#ifndef IR_WRITER_H
-#define IR_WRITER_H
+#ifndef BANJO_SSA_WRITER_H
+#define BANJO_SSA_WRITER_H
 
 #include "banjo/ssa/module.hpp"
 

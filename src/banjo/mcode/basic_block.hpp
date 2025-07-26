@@ -1,5 +1,5 @@
-#ifndef MCODE_BASIC_BLOCK_H
-#define MCODE_BASIC_BLOCK_H
+#ifndef BANJO_MCODE_BASIC_BLOCK_H
+#define BANJO_MCODE_BASIC_BLOCK_H
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/utils/linked_list.hpp"

@@ -1,5 +1,5 @@
-#ifndef NODE_BUILDER_H
-#define NODE_BUILDER_H
+#ifndef BANJO_PARSER_NODE_BUILDER_H
+#define BANJO_PARSER_NODE_BUILDER_H
 
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/parser/token_stream.hpp"

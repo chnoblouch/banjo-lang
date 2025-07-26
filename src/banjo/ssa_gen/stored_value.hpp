@@ -1,5 +1,5 @@
-#ifndef SSA_GEN_STORED_VALUE_H
-#define SSA_GEN_STORED_VALUE_H
+#ifndef BANJO_SSA_GENERATOR_STORED_VALUE_H
+#define BANJO_SSA_GENERATOR_STORED_VALUE_H
 
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"

@@ -1,5 +1,5 @@
-#ifndef PASSES_CSE_PASS_H
-#define PASSES_CSE_PASS_H
+#ifndef BANJO_PASSES_CSE_PASS_H
+#define BANJO_PASSES_CSE_PASS_H
 
 #include "banjo/passes/pass.hpp"
 

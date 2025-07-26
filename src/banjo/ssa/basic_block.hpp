@@ -1,5 +1,5 @@
-#ifndef IR_BASIC_BLOCK_H
-#define IR_BASIC_BLOCK_H
+#ifndef BANJO_SSA_BASIC_BLOCK_H
+#define BANJO_SSA_BASIC_BLOCK_H
 
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/utils/linked_list.hpp"

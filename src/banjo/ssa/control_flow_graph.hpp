@@ -1,5 +1,5 @@
-#ifndef CONTROL_FLOW_GRAPH_H
-#define CONTROL_FLOW_GRAPH_H
+#ifndef BANJO_SSA_CONTROL_FLOW_GRAPH_H
+#define BANJO_SSA_CONTROL_FLOW_GRAPH_H
 
 #include "banjo/ssa/function.hpp"
 

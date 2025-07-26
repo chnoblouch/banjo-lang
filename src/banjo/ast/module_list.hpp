@@ -1,5 +1,5 @@
-#ifndef MODULE_LIST_H
-#define MODULE_LIST_H
+#ifndef BANJO_AST_MODULE_LIST_H
+#define BANJO_AST_MODULE_LIST_H
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/utils/timing.hpp"

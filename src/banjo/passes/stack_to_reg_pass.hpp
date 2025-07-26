@@ -1,5 +1,5 @@
-#ifndef PASSES_STACK_TO_REG_PASS_H
-#define PASSES_STACK_TO_REG_PASS_H
+#ifndef BANJO_PASSES_STACK_TO_REG_PASS_H
+#define BANJO_PASSES_STACK_TO_REG_PASS_H
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"

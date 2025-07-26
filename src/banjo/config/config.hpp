@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef BANJO_CONFIG_H
+#define BANJO_CONFIG_H
 
 #include "banjo/target/target.hpp"
 #include "banjo/target/target_description.hpp"

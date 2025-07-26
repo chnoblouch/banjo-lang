@@ -1,5 +1,5 @@
-#ifndef SSA_GEN_STORAGE_HINTS_H
-#define SSA_GEN_STORAGE_HINTS_H
+#ifndef BANJO_SSA_GENERATOR_STORAGE_HINTS_H
+#define BANJO_SSA_GENERATOR_STORAGE_HINTS_H
 
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"

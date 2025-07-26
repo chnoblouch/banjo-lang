@@ -1,5 +1,5 @@
-#ifndef ELF_FORMAT_H
-#define ELF_FORMAT_H
+#ifndef BANJO_EMIT_ELF_FORMAT_H
+#define BANJO_EMIT_ELF_FORMAT_H
 
 #include <cstdint>
 #include <variant>

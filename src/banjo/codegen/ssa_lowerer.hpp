@@ -1,5 +1,5 @@
-#ifndef CODEGEN_SSA_LOWERER_H
-#define CODEGEN_SSA_LOWERER_H
+#ifndef BANJO_CODEGEN_SSA_LOWERER_H
+#define BANJO_CODEGEN_SSA_LOWERER_H
 
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/module.hpp"

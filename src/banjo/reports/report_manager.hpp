@@ -1,5 +1,5 @@
-#ifndef REPORT_MANAGER_H
-#define REPORT_MANAGER_H
+#ifndef BANJO_REPORTS_REPORT_MANAGER_H
+#define BANJO_REPORTS_REPORT_MANAGER_H
 
 #include "banjo/reports/report.hpp"
 

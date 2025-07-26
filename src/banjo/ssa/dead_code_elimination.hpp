@@ -1,5 +1,5 @@
-#ifndef IR_DEAD_CODE_ELIMINATION_H
-#define IR_DEAD_CODE_ELIMINATION_H
+#ifndef BANJO_SSA_DEAD_CODE_ELIMINATION_H
+#define BANJO_SSA_DEAD_CODE_ELIMINATION_H
 
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/function.hpp"

@@ -1,5 +1,5 @@
-#ifndef SIR_CLONER_H
-#define SIR_CLONER_H
+#ifndef BANJO_SIR_CLONER_H
+#define BANJO_SIR_CLONER_H
 
 #include "banjo/sir/sir.hpp"
 #include "sir.hpp"

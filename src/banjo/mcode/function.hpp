@@ -1,5 +1,5 @@
-#ifndef MCODE_FUNCTION_H
-#define MCODE_FUNCTION_H
+#ifndef BANJO_MCODE_FUNCTION_H
+#define BANJO_MCODE_FUNCTION_H
 
 #include "banjo/mcode/basic_block.hpp"
 #include "banjo/mcode/stack_frame.hpp"

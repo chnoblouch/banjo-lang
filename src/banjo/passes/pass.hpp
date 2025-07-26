@@ -1,5 +1,5 @@
-#ifndef PASSES_PASS_H
-#define PASSES_PASS_H
+#ifndef BANJO_PASSES_PASS_H
+#define BANJO_PASSES_PASS_H
 
 #include "banjo/ssa/module.hpp"
 #include "banjo/target/target.hpp"

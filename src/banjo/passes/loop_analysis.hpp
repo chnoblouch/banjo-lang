@@ -1,5 +1,5 @@
-#ifndef LOOP_ANALYSIS_H
-#define LOOP_ANALYSIS_H
+#ifndef BANJO_LOOP_ANALYSIS_H
+#define BANJO_LOOP_ANALYSIS_H
 
 #include "banjo/ssa/control_flow_graph.hpp"
 

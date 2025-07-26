@@ -1,5 +1,5 @@
-#ifndef AST_MODULE_H
-#define AST_MODULE_H
+#ifndef BANJO_AST_MODULE_H
+#define BANJO_AST_MODULE_H
 
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/source/module_path.hpp"

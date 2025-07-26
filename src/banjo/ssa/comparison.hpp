@@ -1,5 +1,5 @@
-#ifndef IR_COMPARISON_H
-#define IR_COMPARISON_H
+#ifndef BANJO_SSA_COMPARISON_H
+#define BANJO_SSA_COMPARISON_H
 
 namespace banjo {
 

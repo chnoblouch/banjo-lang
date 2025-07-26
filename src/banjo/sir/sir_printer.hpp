@@ -1,5 +1,5 @@
-#ifndef SIR_PRINTER_H
-#define SIR_PRINTER_H
+#ifndef BANJO_SIR_PRINTER_H
+#define BANJO_SIR_PRINTER_H
 
 #include "banjo/sir/sir.hpp"
 

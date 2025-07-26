@@ -1,5 +1,5 @@
-#ifndef PATHS_H
-#define PATHS_H
+#ifndef BANJO_UTILS_PATHS_H
+#define BANJO_UTILS_PATHS_H
 
 #include <filesystem>
 

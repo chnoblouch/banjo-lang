@@ -1,5 +1,5 @@
-#ifndef AARCH64_SSA_LOWERER_H
-#define AARCH64_SSA_LOWERER_H
+#ifndef BANJO_TARGET_AARCH64_SSA_LOWERER_H
+#define BANJO_TARGET_AARCH64_SSA_LOWERER_H
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 

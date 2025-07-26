@@ -1,5 +1,5 @@
-#ifndef X86_64_REGISTER
-#define X86_64_REGISTER
+#ifndef BANJO_TARGET_X86_64_REGISTER
+#define BANJO_TARGET_X86_64_REGISTER
 
 namespace banjo {
 

@@ -1,5 +1,5 @@
-#ifndef BINARY_MODULE
-#define BINARY_MODULE
+#ifndef BANJO_EMIT_BINARY_MODULE
+#define BANJO_EMIT_BINARY_MODULE
 
 #include "banjo/utils/write_buffer.hpp"
 

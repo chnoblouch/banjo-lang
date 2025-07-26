@@ -1,5 +1,5 @@
-#ifndef IR_VALIDATOR_H
-#define IR_VALIDATOR_H
+#ifndef BANJO_SSA_VALIDATOR_H
+#define BANJO_SSA_VALIDATOR_H
 
 #include "banjo/ssa/module.hpp"
 #include <ostream>

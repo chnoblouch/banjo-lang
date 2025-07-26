@@ -1,5 +1,5 @@
-#ifndef SOFT_INT_H
-#define SOFT_INT_H
+#ifndef BANJO_UTILS_SOFT_INT_H
+#define BANJO_UTILS_SOFT_INT_H
 
 #include <algorithm>
 #include <cstdint>

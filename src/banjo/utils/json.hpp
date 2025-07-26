@@ -1,5 +1,5 @@
-#ifndef LSP_JSON_H
-#define LSP_JSON_H
+#ifndef BANJO_UTILS_JSON_H
+#define BANJO_UTILS_JSON_H
 
 #include "banjo/utils/box.hpp"
 

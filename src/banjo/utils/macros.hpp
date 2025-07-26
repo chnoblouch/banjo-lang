@@ -1,5 +1,5 @@
-#ifndef MACROS_H
-#define MACROS_H
+#ifndef BANJO_UTILS_MACROS_H
+#define BANJO_UTILS_MACROS_H
 
 #if BANJO_DEBUG
 #    include <cstdlib>  // IWYU pragma: export

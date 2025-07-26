@@ -1,5 +1,5 @@
-#ifndef IR_OPERAND_H
-#define IR_OPERAND_H
+#ifndef BANJO_SSA_OPERAND_H
+#define BANJO_SSA_OPERAND_H
 
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/type.hpp"

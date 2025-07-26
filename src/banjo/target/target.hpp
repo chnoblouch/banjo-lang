@@ -1,5 +1,5 @@
-#ifndef TARGET_H
-#define TARGET_H
+#ifndef BANJO_TARGET_H
+#define BANJO_TARGET_H
 
 #include "banjo/codegen/machine_pass.hpp"
 #include "banjo/emit/emitter.hpp"

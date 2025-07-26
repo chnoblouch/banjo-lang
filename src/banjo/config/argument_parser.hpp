@@ -1,5 +1,5 @@
-#ifndef ARGUMENT_PARSER_H
-#define ARGUMENT_PARSER_H
+#ifndef BANJO_CONFIG_ARGUMENT_PARSER_H
+#define BANJO_CONFIG_ARGUMENT_PARSER_H
 
 #include "banjo/config/config.hpp"
 

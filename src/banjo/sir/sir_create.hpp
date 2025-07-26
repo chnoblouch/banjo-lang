@@ -1,5 +1,5 @@
-#ifndef SIR_CREATE_H
-#define SIR_CREATE_H
+#ifndef BANJO_SIR_CREATE_H
+#define BANJO_SIR_CREATE_H
 
 #include "banjo/sir/sir.hpp"
 

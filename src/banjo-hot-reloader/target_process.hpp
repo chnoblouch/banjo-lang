@@ -1,5 +1,5 @@
-#ifndef TARGET_PROCESS_H
-#define TARGET_PROCESS_H
+#ifndef BANJO_HOT_RELOADER_TARGET_PROCESS_H
+#define BANJO_HOT_RELOADER_TARGET_PROCESS_H
 
 #include "banjo/utils/platform.hpp"
 

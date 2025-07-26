@@ -1,5 +1,5 @@
-#ifndef CODEGEN_LATE_REG_ALLOC_H
-#define CODEGEN_LATE_REG_ALLOC_H
+#ifndef BANJO_CODEGEN_LATE_REG_ALLOC_H
+#define BANJO_CODEGEN_LATE_REG_ALLOC_H
 
 #include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/basic_block.hpp"

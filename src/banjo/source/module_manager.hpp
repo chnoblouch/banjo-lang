@@ -1,5 +1,5 @@
-#ifndef MODULE_MANAGER_H
-#define MODULE_MANAGER_H
+#ifndef BANJO_SOURCE_MODULE_MANAGER_H
+#define BANJO_SOURCE_MODULE_MANAGER_H
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/module_list.hpp"

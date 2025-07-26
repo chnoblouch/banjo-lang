@@ -1,5 +1,5 @@
-#ifndef BINARY_BUILDER_H
-#define BINARY_BUILDER_H
+#ifndef BANJO_EMIT_BINARY_BUILDER_H
+#define BANJO_EMIT_BINARY_BUILDER_H
 
 #include "banjo/emit/binary_builder_symbol.hpp"
 #include "banjo/emit/binary_module.hpp"

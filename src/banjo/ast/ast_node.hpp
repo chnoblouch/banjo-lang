@@ -1,5 +1,5 @@
-#ifndef AST_NODE_H
-#define AST_NODE_H
+#ifndef BANJO_AST_NODE_H
+#define BANJO_AST_NODE_H
 
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"

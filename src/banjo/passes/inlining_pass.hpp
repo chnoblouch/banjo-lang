@@ -1,5 +1,5 @@
-#ifndef PASSES_INLINING_PASS_H
-#define PASSES_INLINING_PASS_H
+#ifndef BANJO_PASSES_INLINING_PASS_H
+#define BANJO_PASSES_INLINING_PASS_H
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/call_graph.hpp"

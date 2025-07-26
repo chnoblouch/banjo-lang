@@ -1,5 +1,5 @@
-#ifndef SYSV_CALLING_CONV_H
-#define SYSV_CALLING_CONV_H
+#ifndef BANJO_TARGET_X86_64_SYSV_CALLING_CONV_H
+#define BANJO_TARGET_X86_64_SYSV_CALLING_CONV_H
 
 #include "banjo/mcode/calling_convention.hpp"
 

@@ -1,5 +1,5 @@
-#ifndef LARGE_INT_H
-#define LARGE_INT_H
+#ifndef BANJO_UTILS_LARGE_INT_H
+#define BANJO_UTILS_LARGE_INT_H
 
 #include <compare>
 #include <cstdint>

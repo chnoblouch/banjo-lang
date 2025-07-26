@@ -1,5 +1,5 @@
-#ifndef SIR_VISITOR_H
-#define SIR_VISITOR_H
+#ifndef BANJO_SIR_VISITOR_H
+#define BANJO_SIR_VISITOR_H
 
 #include "banjo/sir/sir.hpp" // IWYU pragma: export
 #include "banjo/utils/macros.hpp"

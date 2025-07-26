@@ -1,5 +1,5 @@
-#ifndef ELF_BUILDER_H
-#define ELF_BUILDER_H
+#ifndef BANJO_EMIT_ELF_BUILDER_H
+#define BANJO_EMIT_ELF_BUILDER_H
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/elf/elf_format.hpp"

@@ -1,5 +1,6 @@
 #include "ast_writer.hpp"
-#include "ast_node.hpp"
+
+#include "banjo/ast/ast_node.hpp"
 
 namespace banjo {
 

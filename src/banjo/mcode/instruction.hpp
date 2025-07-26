@@ -1,5 +1,5 @@
-#ifndef MCODE_INSTRUCTION_H
-#define MCODE_INSTRUCTION_H
+#ifndef BANJO_MCODE_INSTRUCTION_H
+#define BANJO_MCODE_INSTRUCTION_H
 
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/register.hpp"

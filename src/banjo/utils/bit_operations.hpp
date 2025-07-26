@@ -1,5 +1,5 @@
-#ifndef BIT_OPERATIONS_H
-#define BIT_OPERATIONS_H
+#ifndef BANJO_UTILS_BIT_OPERATIONS_H
+#define BANJO_UTILS_BIT_OPERATIONS_H
 
 #include <cassert>
 #include <cstdint>

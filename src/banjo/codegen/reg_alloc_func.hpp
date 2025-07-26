@@ -1,5 +1,5 @@
-#ifndef CODEGEN_REG_ALLOC_FUNC_H
-#define CODEGEN_REG_ALLOC_FUNC_H
+#ifndef BANJO_CODEGEN_REG_ALLOC_FUNC_H
+#define BANJO_CODEGEN_REG_ALLOC_FUNC_H
 
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/register.hpp"

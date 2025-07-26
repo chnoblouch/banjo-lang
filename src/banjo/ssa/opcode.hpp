@@ -1,5 +1,5 @@
-#ifndef IR_OPCODE_H
-#define IR_OPCODE_H
+#ifndef BANJO_SSA_OPCODE_H
+#define BANJO_SSA_OPCODE_H
 
 namespace banjo {
 

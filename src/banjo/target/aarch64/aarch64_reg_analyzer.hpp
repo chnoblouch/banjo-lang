@@ -1,5 +1,5 @@
-#ifndef AARCH64_REG_ANALYZER_H
-#define AARCH64_REG_ANALYZER_H
+#ifndef BANJO_TARGET_AARCH64_REG_ANALYZER_H
+#define BANJO_TARGET_AARCH64_REG_ANALYZER_H
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"

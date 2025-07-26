@@ -1,5 +1,5 @@
-#ifndef LSP_PROTOCOL_STRUCTS
-#define LSP_PROTOCOL_STRUCTS
+#ifndef BANJO_LSP_PROTOCOL_STRUCTS
+#define BANJO_LSP_PROTOCOL_STRUCTS
 
 #include "banjo/reports/report.hpp"
 #include "banjo/source/text_range.hpp"

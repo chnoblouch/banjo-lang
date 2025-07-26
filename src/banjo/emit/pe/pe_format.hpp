@@ -1,5 +1,5 @@
-#ifndef PE_FORMAT_H
-#define PE_FORMAT_H
+#ifndef BANJO_EMIT_PE_FORMAT_H
+#define BANJO_EMIT_PE_FORMAT_H
 
 #include <cstdint>
 #include <string>

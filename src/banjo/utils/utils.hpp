@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef BANJO_UTILS_H
+#define BANJO_UTILS_H
 
 #include "banjo/utils/fixed_vector.hpp"
 
