@@ -15,6 +15,11 @@ namespace codegen {
 MachinePassRunner::MachinePassRunner(target::Target *target) : target(target) {}
 
 void MachinePassRunner::create_and_run(mcode::Module &module) {
+    if (target->get_descr().get_architecture() == target::Architecture::WASM) {
+        run_all({}, module);
+        return;
+    }
+
     std::vector<MachinePass *> passes;
 
     std::vector<MachinePass *> pre_passes = target->create_pre_passes();

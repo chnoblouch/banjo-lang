@@ -25,7 +25,7 @@ private:
     void generate(mcode::Function *func);
     void gen_basic_block(mcode::BasicBlock &basic_block);
 
-    static std::string get_opcode_name(mcode::Opcode opcode);
+    static std::string_view get_opcode_name(mcode::Opcode opcode);
     static std::string get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand, int instr_index);
     static std::string get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size, int instr_index);
 

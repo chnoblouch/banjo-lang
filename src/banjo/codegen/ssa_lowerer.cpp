@@ -96,7 +96,7 @@ void SSALowerer::lower_funcs() {
             block_map.insert({iter, m_iter});
         }
 
-        store_graphs(*func, machine_func, block_map);
+        store_graphs(block_map);
 
         machine_module.add(machine_func);
 
@@ -137,20 +137,11 @@ mcode::BasicBlock SSALowerer::lower_basic_block(ssa::BasicBlock &basic_block) {
         .regs = {},
     };
 
-    for (ssa::InstrIter iter = basic_block.get_instrs().get_last_iter(); iter != basic_block.get_header(); --iter) {
-        if (iter->get_dest() && context.reg_use_counts[*iter->get_dest()] == 0) {
-            continue;
-        }
-
-        instr_iter = iter;
-        basic_block_context.insertion_iter = machine_basic_block.begin();
-        lower_instr(*iter);
-    }
-
+    lower_block_instrs(basic_block);
     return machine_basic_block;
 }
 
-void SSALowerer::store_graphs(ssa::Function &ir_func, mcode::Function *machine_func, const BlockMap &block_map) {
+void SSALowerer::store_graphs(const BlockMap &block_map) {
     ssa::ControlFlowGraph cfg(func);
     ssa::DominatorTree domtree(cfg);
 
@@ -337,6 +328,18 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
 
     long index = get_machine_func()->get_stack_frame().new_stack_slot(slot);
     context.stack_regs.insert({*instr.get_dest(), index});
+}
+
+void SSALowerer::lower_block_instrs(ssa::BasicBlock &block) {
+    for (ssa::InstrIter iter = block.get_instrs().get_last_iter(); iter != block.get_header(); --iter) {
+        if (iter->get_dest() && context.reg_use_counts[*iter->get_dest()] == 0) {
+            continue;
+        }
+
+        instr_iter = iter;
+        basic_block_context.insertion_iter = machine_basic_block->begin();
+        lower_instr(*iter);
+    }
 }
 
 void SSALowerer::lower_load(ssa::Instruction &) {

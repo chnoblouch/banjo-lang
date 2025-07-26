@@ -32,6 +32,7 @@ public:
     void write_data(const WriteBuffer &buffer);
     void write_zeroes(std::size_t size);
     void write_cstr(const char *cstr);
+    void write_uleb128(std::uint64_t value);
 
     void read_data(void *data, std::size_t size);
     std::uint32_t read_u32();

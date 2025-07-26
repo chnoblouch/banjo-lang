@@ -4,6 +4,8 @@
 
 #include "utils.hpp"
 
+#include "banjo/utils/macros.hpp"
+
 #include <cstdlib>
 #include <fstream>
 
@@ -78,6 +80,14 @@ std::string convert_eol_to_lf(std::string_view string) {
     }
 
     return result;
+}
+
+LEB128Buffer encode_uleb128(std::uint64_t value) {
+    ASSERT(value < 128);
+
+    LEB128Buffer buffer;
+    buffer.append(value);
+    return buffer;
 }
 
 std::optional<std::string> read_string_file(const std::filesystem::path &path) {

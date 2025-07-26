@@ -1,14 +1,14 @@
 #include "wasm_target.hpp"
 
 #include "banjo/emit/wasm/wasm_emitter.hpp"
-#include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
+#include "banjo/target/wasm/wasm_ssa_lowerer.hpp"
 
 namespace banjo::target {
 
 WasmTarget::WasmTarget(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
 
 codegen::SSALowerer *WasmTarget::create_ssa_lowerer() {
-    return new X8664SSALowerer(this);
+    return new WasmSSALowerer(this);
 }
 
 std::vector<codegen::MachinePass *> WasmTarget::create_pre_passes() {

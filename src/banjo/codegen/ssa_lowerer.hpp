@@ -44,7 +44,7 @@ protected:
     ssa::FunctionDecl *memcpy_func;
     ssa::FunctionDecl *sqrt_func;
 
-private:
+protected:
     ssa::Module *module_;
     ssa::Function *func;
     ssa::BasicBlockIter basic_block_iter;
@@ -94,7 +94,7 @@ private:
     void lower_funcs();
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
     mcode::BasicBlock lower_basic_block(ssa::BasicBlock &basic_block);
-    void store_graphs(ssa::Function &ir_func, mcode::Function *machine_func, const BlockMap &block_map);
+    void store_graphs(const BlockMap &block_map);
     void lower_instr(ssa::Instruction &instr);
     void lower_globals();
     void lower_external_funcs();
@@ -105,6 +105,7 @@ private:
 
     virtual void init_module(ssa::Module &mod) {}
 
+    virtual void lower_block_instrs(ssa::BasicBlock &block);
     virtual void lower_load(ssa::Instruction &instr);
     virtual void lower_store(ssa::Instruction &instr);
     virtual void lower_loadarg(ssa::Instruction &instr);

@@ -4,6 +4,8 @@
 #include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/target/target_description.hpp"
+#include "banjo/target/wasm/wasm_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
@@ -194,11 +196,15 @@ std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode:
     return string;
 }
 
-std::string DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
-    if (lang::Config::instance().target.get_architecture() == target::Architecture::X86_64) {
+std::string_view DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
+    target::Architecture arch = lang::Config::instance().target.get_architecture();
+
+    if (arch == target::Architecture::X86_64) {
         return NASMEmitter::OPCODE_NAMES.at(opcode);
-    } else if (lang::Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
+    } else if (arch == target::Architecture::AARCH64) {
         return AArch64AsmEmitter::OPCODE_NAMES.at(opcode);
+    } else if (arch == target::Architecture::WASM) {
+        return target::WasmOpcode::NAMES.at(opcode);
     }
 
     return "";

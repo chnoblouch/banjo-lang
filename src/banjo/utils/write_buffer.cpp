@@ -1,4 +1,5 @@
 #include "write_buffer.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cstring>
 
@@ -113,6 +114,11 @@ void WriteBuffer::write_cstr(const char *cstr) {
     for (const char *c = cstr; *c != '\0'; c++) {
         write_u8(*c);
     }
+}
+
+void WriteBuffer::write_uleb128(std::uint64_t value) {
+    Utils::LEB128Buffer encoding = Utils::encode_uleb128(value);
+    write_data(encoding.get_data(), encoding.get_size());
 }
 
 void WriteBuffer::read_data(void *data, std::size_t size) {

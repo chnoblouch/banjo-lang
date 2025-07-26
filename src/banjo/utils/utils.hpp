@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "banjo/utils/fixed_vector.hpp"
+
 #include <cstdint>
 #include <filesystem>
 #include <initializer_list>
@@ -11,6 +13,8 @@
 namespace banjo {
 
 namespace Utils {
+
+typedef FixedVector<unsigned char, 16> LEB128Buffer;
 
 int align(int value, int boundary);
 
@@ -28,6 +32,8 @@ bool is_one_of(T value, std::initializer_list<T> candidates) {
 std::optional<std::uint64_t> parse_u64(std::string_view string);
 std::vector<std::string_view> split_string(std::string_view string, char delimiter);
 std::string convert_eol_to_lf(std::string_view string);
+
+LEB128Buffer encode_uleb128(std::uint64_t value);
 
 template <typename T>
 std::vector<T> remove_duplicates(const std::vector<T> &array) {
@@ -54,6 +60,7 @@ std::vector<T> remove_duplicates(const std::vector<T> &array) {
 std::optional<std::string> read_string_file(const std::filesystem::path &path);
 bool write_string_file(std::string_view contents, const std::filesystem::path &path);
 std::optional<std::string_view> get_env(const std::string &name);
+
 
 } // namespace Utils
 
