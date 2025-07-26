@@ -1056,6 +1056,8 @@ void CLI::invoke_linker() {
         invoke_unix_linker();
     } else if (target.os == "macos") {
         invoke_darwin_linker();
+    } else if (target.arch == "wasm") {
+        invoke_wasm_linker();
     }
 }
 
@@ -1228,6 +1230,26 @@ void CLI::invoke_darwin_linker() {
     std::filesystem::remove("main.o");
 }
 
+void CLI::invoke_wasm_linker() {
+    Command command{
+        .executable = "wasm-ld",
+        .args{
+            "main.o",
+            "-o",
+            get_output_path(),
+            "--no-entry",
+        },
+    };
+
+    print_command("linker", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    ProcessResult result = process->wait();
+    process_tool_result("linker", result);
+
+    std::filesystem::remove("main.o");
+}
+
 void CLI::run_build() {
     print_step("Running...");
     print_clear_line();
@@ -1365,6 +1387,10 @@ std::string CLI::get_output_path() {
         } else {
             file_name = "lib" + manifest.name + ".so";
         }
+    }
+
+    if (target.arch == "wasm") {
+        file_name += ".wasm";
     }
 
     return (get_output_dir() / file_name).string();

@@ -105,6 +105,7 @@ private:
     void invoke_windows_linker();
     void invoke_unix_linker();
     void invoke_darwin_linker();
+    void invoke_wasm_linker();
     void run_build();
     void run_hot_reloader();
 
