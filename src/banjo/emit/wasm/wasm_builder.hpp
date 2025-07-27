@@ -3,6 +3,7 @@
 
 #include "banjo/emit/wasm/wasm_format.hpp"
 #include "banjo/mcode/module.hpp"
+#include "banjo/target/wasm/wasm_mcode.hpp"
 #include "banjo/utils/write_buffer.hpp"
 
 #include <cstdint>
@@ -20,7 +21,8 @@ private:
     void encode_instr(WriteBuffer &buffer, mcode::Instruction &instr);
 
     WasmFunctionType build_func_type(mcode::Function &func);
-    std::uint8_t build_value_type(ssa::Type type);
+    std::vector<WasmLocalGroup> build_local_groups(mcode::Function &func);
+    std::uint8_t build_value_type(target::WasmType type);
 };
 
 } // namespace banjo

@@ -91,7 +91,13 @@ void WasmEmitter::emit_code_section(const WasmObjectFile &file) {
 
     for (const WasmFunction &function : file.functions) {
         WriteBuffer buffer;
-        buffer.write_u8(0x00);                                         // number of locals
+        buffer.write_uleb128(function.local_groups.size()); // number of local groups
+
+        for (const WasmLocalGroup &local_group : function.local_groups) {
+            buffer.write_uleb128(local_group.count); // number of locals
+            buffer.write_u8(local_group.type);       // value type
+        }
+
         buffer.write_data(function.body.data(), function.body.size()); // body
 
         data.write_uleb128(buffer.get_size()); // function code size

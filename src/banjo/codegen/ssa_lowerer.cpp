@@ -38,71 +38,75 @@ mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
 
     lower_external_funcs();
     lower_external_globals();
-    lower_funcs();
+
+    for (ssa::Function *func : module_.get_functions()) {
+        lower_func(*func);
+    }
+
     lower_globals();
     lower_dll_exports();
 
     return std::move(machine_module);
 }
 
-void SSALowerer::lower_funcs() {
-    for (ssa::Function *func : module_->get_functions()) {
-        this->func = func;
+void SSALowerer::lower_func(ssa::Function &func) {
+    this->func = &func;
 
-        mcode::CallingConvention *calling_conv = get_calling_convention(func->type.calling_conv);
-        mcode::Function *machine_func = new mcode::Function(func->name, calling_conv);
-        this->machine_func = machine_func;
+    mcode::CallingConvention *calling_conv = get_calling_convention(func.type.calling_conv);
+    mcode::Function *machine_func = new mcode::Function(func.name, calling_conv);
+    this->machine_func = machine_func;
 
-        context = {};
+    context = {};
 
-        std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func->type);
+    std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func.type);
 
-        for (unsigned i = 0; i < func->type.params.size(); i++) {
-            mcode::Parameter param = lower_param(func->type.params[i], storage[i], *machine_func);
-            machine_func->get_parameters().push_back(param);
-        }
+    for (unsigned i = 0; i < func.type.params.size(); i++) {
+        mcode::Parameter param = lower_param(func.type.params[i], storage[i], *machine_func);
+        machine_func->get_parameters().push_back(param);
+    }
 
-        const LinkedList<ssa::BasicBlock> &basic_blocks = func->get_basic_blocks();
-        BlockMap block_map;
+    const LinkedList<ssa::BasicBlock> &basic_blocks = func.get_basic_blocks();
+    BlockMap block_map;
 
-        context.reg_use_counts.clear();
+    context.reg_use_counts.clear();
 
-        for (ssa::BasicBlock &basic_block : *func) {
-            for (ssa::Instruction &instr : basic_block.get_instrs()) {
-                for (ssa::Operand &operand : instr.get_operands()) {
-                    if (operand.is_register()) {
-                        context.reg_use_counts[operand.get_register()]++;
-                    }
+    for (ssa::BasicBlock &basic_block : func) {
+        for (ssa::Instruction &instr : basic_block.get_instrs()) {
+            for (ssa::Operand &operand : instr.get_operands()) {
+                if (operand.is_register()) {
+                    context.reg_use_counts[operand.get_register()]++;
+                }
 
-                    if (operand.is_branch_target()) {
-                        for (ssa::Operand &arg : operand.get_branch_target().args) {
-                            if (arg.is_register()) {
-                                context.reg_use_counts[arg.get_register()]++;
-                            }
+                if (operand.is_branch_target()) {
+                    for (ssa::Operand &arg : operand.get_branch_target().args) {
+                        if (arg.is_register()) {
+                            context.reg_use_counts[arg.get_register()]++;
                         }
                     }
                 }
+            }
 
-                if (instr.get_opcode() == ssa::Opcode::ALLOCA) {
-                    lower_alloca(instr);
-                }
+            if (instr.get_opcode() == ssa::Opcode::ALLOCA) {
+                lower_alloca(instr);
             }
         }
+    }
 
-        for (ssa::BasicBlockIter iter = basic_blocks.begin(); iter != basic_blocks.end(); ++iter) {
-            basic_block_iter = iter;
-            mcode::BasicBlock m_block = lower_basic_block(*iter);
-            mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
-            block_map.insert({iter, m_iter});
-        }
+    analyze_func(func);
 
-        store_graphs(block_map);
+    for (ssa::BasicBlockIter iter = basic_blocks.begin(); iter != basic_blocks.end(); ++iter) {
+        basic_block_iter = iter;
+        mcode::BasicBlock m_block = lower_basic_block(*iter);
+        mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
+        block_map.insert({iter, m_iter});
+    }
 
-        machine_module.add(machine_func);
+    store_graphs(block_map);
 
-        if (func->global) {
-            machine_module.add_global_symbol(func->name);
-        }
+    machine_module.add(machine_func);
+
+    if (func.global) {
+        machine_module.add_global_symbol(func.name);
     }
 }
 
@@ -137,7 +141,16 @@ mcode::BasicBlock SSALowerer::lower_basic_block(ssa::BasicBlock &basic_block) {
         .regs = {},
     };
 
-    lower_block_instrs(basic_block);
+    for (ssa::InstrIter iter = basic_block.get_instrs().get_last_iter(); iter != basic_block.get_header(); --iter) {
+        if (iter->get_dest() && context.reg_use_counts[*iter->get_dest()] == 0) {
+            continue;
+        }
+
+        instr_iter = iter;
+        basic_block_context.insertion_iter = machine_basic_block.begin();
+        lower_instr(*iter);
+    }
+
     return machine_basic_block;
 }
 
@@ -328,18 +341,6 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
 
     long index = get_machine_func()->get_stack_frame().new_stack_slot(slot);
     context.stack_regs.insert({*instr.get_dest(), index});
-}
-
-void SSALowerer::lower_block_instrs(ssa::BasicBlock &block) {
-    for (ssa::InstrIter iter = block.get_instrs().get_last_iter(); iter != block.get_header(); --iter) {
-        if (iter->get_dest() && context.reg_use_counts[*iter->get_dest()] == 0) {
-            continue;
-        }
-
-        instr_iter = iter;
-        basic_block_context.insertion_iter = machine_basic_block->begin();
-        lower_instr(*iter);
-    }
 }
 
 void SSALowerer::lower_load(ssa::Instruction &) {

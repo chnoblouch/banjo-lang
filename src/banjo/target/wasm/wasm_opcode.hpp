@@ -12,6 +12,7 @@ namespace WasmOpcode {
 enum {
     END,
     LOCAL_GET,
+    LOCAL_SET,
     I32_ADD,
     I32_SUB,
     I32_MUL,

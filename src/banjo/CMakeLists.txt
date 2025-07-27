@@ -290,6 +290,7 @@ add_library(banjo STATIC
     "target/aarch64/aarch64_stack_offset_fixup_pass.hpp"
     "target/aarch64/aarch64_target.cpp"
     "target/aarch64/aarch64_target.hpp"
+    "target/wasm/wasm_mcode.hpp"
     "target/wasm/wasm_opcode.cpp"
     "target/wasm/wasm_opcode.hpp"
     "target/wasm/wasm_ssa_lowerer.cpp"

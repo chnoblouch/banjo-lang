@@ -23,8 +23,6 @@ private:
     std::vector<std::string> dll_exports;
     std::optional<AddrTable> addr_table;
 
-    std::vector<std::vector<ssa::Type>> tuple_types;
-
 public:
     Module() {}
     Module(const Module &) = delete;

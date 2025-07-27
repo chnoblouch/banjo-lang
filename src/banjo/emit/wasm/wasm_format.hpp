@@ -32,8 +32,14 @@ struct WasmImport {
     std::variant<WasmMemory> type;
 };
 
+struct WasmLocalGroup {
+    unsigned count;
+    std::uint8_t type;
+};
+
 struct WasmFunction {
     std::uint32_t type_index;
+    std::vector<WasmLocalGroup> local_groups;
     std::vector<std::uint8_t> body;
 };
 
