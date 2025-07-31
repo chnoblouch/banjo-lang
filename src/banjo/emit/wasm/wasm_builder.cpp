@@ -81,6 +81,22 @@ void WasmBuilder::encode_instr(WriteBuffer &buffer, mcode::Instruction &instr) {
             buffer.write_u8(0x21);
             buffer.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
             break;
+        case target::WasmOpcode::I32_CONST:
+            buffer.write_u8(0x41);
+            buffer.write_sleb128(instr.get_operand(0).get_int_immediate());
+            break;
+        case target::WasmOpcode::I64_CONST:
+            buffer.write_u8(0x42);
+            buffer.write_sleb128(instr.get_operand(0).get_int_immediate());
+            break;
+        case target::WasmOpcode::F32_CONST:
+            buffer.write_u8(0x43);
+            buffer.write_f32(instr.get_operand(0).get_fp_immediate());
+            break;
+        case target::WasmOpcode::F64_CONST:
+            buffer.write_u8(0x44);
+            buffer.write_f64(instr.get_operand(0).get_fp_immediate());
+            break;
         case target::WasmOpcode::I32_ADD: buffer.write_u8(0x6A); break;
         case target::WasmOpcode::I32_SUB: buffer.write_u8(0x6B); break;
         case target::WasmOpcode::F32_ADD: buffer.write_u8(0x92); break;

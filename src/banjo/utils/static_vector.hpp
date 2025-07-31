@@ -1,6 +1,8 @@
 #ifndef BANJO_UTILS_STATIC_VECTOR_H
 #define BANJO_UTILS_STATIC_VECTOR_H
 
+#include "banjo/utils/macros.hpp"
+
 #include <cassert>
 #include <cstddef>
 #include <initializer_list>
@@ -34,7 +36,7 @@ public:
     std::size_t get_size() { return size; }
 
     void append(const T &element) {
-        assert(size < Capacity && "static vector overflow");
+        ASSERT_MESSAGE(size < Capacity, "static vector overflow");
         elements[size++] = element;
     }
 };

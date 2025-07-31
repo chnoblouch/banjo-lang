@@ -74,6 +74,16 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     if (operand.is_register()) {
         unsigned local_index = vregs2locals.at(operand.get_register());
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    } else if (operand.is_int_immediate()) {
+        LargeInt immediate = operand.get_int_immediate();
+        bool is_64_bit = operand.get_type() == ssa::Primitive::I64;
+        mcode::Opcode opcode = is_64_bit ? WasmOpcode::I64_CONST : WasmOpcode::I32_CONST;
+        emit({opcode, {mcode::Operand::from_int_immediate(immediate)}});
+    } else if (operand.is_fp_immediate()) {
+        double immediate = operand.get_fp_immediate();
+        bool is_64_bit = operand.get_type() == ssa::Primitive::F64;
+        mcode::Opcode opcode = is_64_bit ? WasmOpcode::F64_CONST : WasmOpcode::F32_CONST;
+        emit({opcode, {mcode::Operand::from_fp_immediate(immediate)}});
     } else {
         ASSERT_UNREACHABLE;
     }

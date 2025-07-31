@@ -60,6 +60,7 @@ public:
     friend LargeInt &operator^=(LargeInt &lhs, const LargeInt &rhs);
 
     friend std::ostream &operator<<(std::ostream &stream, const LargeInt &large_int);
+
 };
 
 } // namespace banjo

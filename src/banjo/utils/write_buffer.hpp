@@ -1,6 +1,8 @@
 #ifndef BANJO_UTILS_WRITE_BUFFER_H
 #define BANJO_UTILS_WRITE_BUFFER_H
 
+#include "banjo/utils/large_int.hpp"
+
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -33,6 +35,7 @@ public:
     void write_zeroes(std::size_t size);
     void write_cstr(const char *cstr);
     void write_uleb128(std::uint64_t value);
+    void write_sleb128(LargeInt value);
 
     void read_data(void *data, std::size_t size);
     std::uint32_t read_u32();

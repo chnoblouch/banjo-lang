@@ -1,7 +1,8 @@
 #ifndef BANJO_UTILS_FIXED_VECTOR_H
 #define BANJO_UTILS_FIXED_VECTOR_H
 
-#include <cassert>
+#include "banjo/utils/macros.hpp"
+
 #include <cstddef>
 #include <initializer_list>
 #include <utility>
@@ -57,7 +58,7 @@ public:
     T &operator[](std::size_t index) { return elements[index]; }
 
     void append(const T &element) {
-        assert(size < Capacity && "fixed vector overflow");
+        ASSERT_MESSAGE(size < Capacity, "fixed vector overflow");
         elements[size++] = element;
     }
 

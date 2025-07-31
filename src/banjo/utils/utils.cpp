@@ -2,10 +2,10 @@
 #    define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "utils.hpp"
-
+#include "banjo/utils/utils.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <climits>
 #include <cstdlib>
 #include <fstream>
 
@@ -83,10 +83,54 @@ std::string convert_eol_to_lf(std::string_view string) {
 }
 
 LEB128Buffer encode_uleb128(std::uint64_t value) {
-    ASSERT(value < 128);
+    // For reference: https://en.wikipedia.org/wiki/LEB128#Unsigned_LEB128
 
     LEB128Buffer buffer;
-    buffer.append(value);
+    std::uint64_t bits = value;
+    bool last = false;
+
+    while (!last) {
+        std::uint8_t byte = bits & 0x7F;
+        bits >>= 7;
+
+        if (bits == 0) {
+            last = true;
+        } else {
+            byte |= 0x80;
+        }
+
+        buffer.append(byte);
+    }
+
+    return buffer;
+}
+
+LEB128Buffer encode_sleb128(LargeInt value) {
+    // For reference: https://en.wikipedia.org/wiki/LEB128#Signed_LEB128
+
+    LEB128Buffer buffer;
+    std::uint64_t bits = value.to_bits();
+    bool last = false;
+
+    while (!last) {
+        std::uint8_t byte = bits & 0x7F;
+        bool sign_bit = byte & 0x40;
+
+        bits >>= 7;
+
+        if (value.is_negative()) {
+            bits |= 0x7Full << (sizeof(std::uint64_t) * CHAR_BIT - 7);
+        }
+
+        if ((bits == 0 && !sign_bit) || (bits == static_cast<std::uint64_t>(~0ull) && sign_bit)) {
+            last = true;
+        } else {
+            byte |= 0x80;
+        }
+
+        buffer.append(byte);
+    }
+
     return buffer;
 }
 

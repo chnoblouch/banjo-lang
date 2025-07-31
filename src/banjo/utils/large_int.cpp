@@ -1,8 +1,9 @@
 #include "large_int.hpp"
 
+#include "banjo/utils/macros.hpp"
+
 #include <algorithm>
 #include <cassert>
-#include <limits>
 
 namespace banjo {
 
@@ -133,7 +134,7 @@ std::int64_t LargeInt::to_s64() const {
 }
 
 std::int64_t LargeInt::to_u64() const {
-    assert(!negative);
+    ASSERT(!negative);
     return magnitude;
 }
 
@@ -145,7 +146,7 @@ std::uint64_t LargeInt::to_bits() const {
     if (!negative) {
         return magnitude;
     } else {
-        return std::numeric_limits<std::uint64_t>::max() - (magnitude - 1);
+        return ~magnitude + 1;
     }
 }
 

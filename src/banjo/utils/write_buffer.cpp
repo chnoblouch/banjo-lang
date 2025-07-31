@@ -121,6 +121,11 @@ void WriteBuffer::write_uleb128(std::uint64_t value) {
     write_data(encoding.get_data(), encoding.get_size());
 }
 
+void WriteBuffer::write_sleb128(LargeInt value) {
+    Utils::LEB128Buffer encoding = Utils::encode_sleb128(value);
+    write_data(encoding.get_data(), encoding.get_size());
+}
+
 void WriteBuffer::read_data(void *data, std::size_t size) {
     std::memcpy(data, &this->data[position], size);
     position += size;
