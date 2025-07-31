@@ -46,11 +46,38 @@ void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_add(ssa::Instruction &instr) {
-    lower_2_operand_numeric(instr, WasmOpcode::I32_ADD);
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_ADD : WasmOpcode::I32_ADD);
 }
 
 void WasmSSALowerer::lower_sub(ssa::Instruction &instr) {
-    lower_2_operand_numeric(instr, WasmOpcode::I32_SUB);
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SUB : WasmOpcode::I32_SUB);
+}
+
+void WasmSSALowerer::lower_mul(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_MUL : WasmOpcode::I32_MUL);
+}
+
+void WasmSSALowerer::lower_sdiv(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_DIV_S : WasmOpcode::I32_DIV_S);
+}
+
+void WasmSSALowerer::lower_srem(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_REM_S : WasmOpcode::I32_REM_S);
+}
+
+void WasmSSALowerer::lower_udiv(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_DIV_U : WasmOpcode::I32_DIV_U);
+}
+
+void WasmSSALowerer::lower_urem(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_REM_U : WasmOpcode::I32_REM_U);
 }
 
 void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {

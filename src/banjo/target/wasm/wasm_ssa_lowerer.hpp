@@ -24,6 +24,11 @@ private:
     void lower_loadarg(ssa::Instruction &instr) override;
     void lower_add(ssa::Instruction &instr) override;
     void lower_sub(ssa::Instruction &instr) override;
+    void lower_mul(ssa::Instruction &instr) override;
+    void lower_sdiv(ssa::Instruction &instr) override;
+    void lower_srem(ssa::Instruction &instr) override;
+    void lower_udiv(ssa::Instruction &instr) override;
+    void lower_urem(ssa::Instruction &instr) override;
     void lower_ret(ssa::Instruction &instr) override;
 
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);

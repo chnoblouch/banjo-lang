@@ -99,6 +99,18 @@ void WasmBuilder::encode_instr(WriteBuffer &buffer, mcode::Instruction &instr) {
             break;
         case target::WasmOpcode::I32_ADD: buffer.write_u8(0x6A); break;
         case target::WasmOpcode::I32_SUB: buffer.write_u8(0x6B); break;
+        case target::WasmOpcode::I32_MUL: buffer.write_u8(0x6C); break;
+        case target::WasmOpcode::I32_DIV_S: buffer.write_u8(0x6D); break;
+        case target::WasmOpcode::I32_DIV_U: buffer.write_u8(0x6E); break;
+        case target::WasmOpcode::I32_REM_S: buffer.write_u8(0x6F); break;
+        case target::WasmOpcode::I32_REM_U: buffer.write_u8(0x70); break;
+        case target::WasmOpcode::I64_ADD: buffer.write_u8(0x7C); break;
+        case target::WasmOpcode::I64_SUB: buffer.write_u8(0x7D); break;
+        case target::WasmOpcode::I64_MUL: buffer.write_u8(0x7E); break;
+        case target::WasmOpcode::I64_DIV_S: buffer.write_u8(0x7F); break;
+        case target::WasmOpcode::I64_DIV_U: buffer.write_u8(0x80); break;
+        case target::WasmOpcode::I64_REM_S: buffer.write_u8(0x81); break;
+        case target::WasmOpcode::I64_REM_U: buffer.write_u8(0x82); break;
         case target::WasmOpcode::F32_ADD: buffer.write_u8(0x92); break;
         default: ASSERT_UNREACHABLE;
     }
