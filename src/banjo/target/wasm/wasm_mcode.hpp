@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace banjo::target {
@@ -14,10 +15,24 @@ enum class WasmType : std::uint8_t {
     F64,
 };
 
-struct WasmFunctionData {
+struct WasmFuncType {
     std::vector<WasmType> params;
     std::optional<WasmType> result_type;
+};
+
+struct WasmFuncData {
+    WasmFuncType type;
     std::vector<WasmType> locals;
+};
+
+struct WasmFuncImport {
+    std::string mod;
+    std::string name;
+    WasmFuncType type;
+};
+
+struct WasmModData {
+    std::vector<WasmFuncImport> func_imports;
 };
 
 } // namespace banjo::target

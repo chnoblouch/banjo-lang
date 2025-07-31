@@ -5,6 +5,8 @@ namespace banjo::target {
 
 const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
     {END, "end"},
+    {CALL, "call"},
+    {DROP, "drop"},
     {LOCAL_GET, "local.get"},
     {LOCAL_SET, "local.set"},
     {I32_CONST, "i32.const"},

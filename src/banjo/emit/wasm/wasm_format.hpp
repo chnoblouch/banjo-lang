@@ -22,6 +22,10 @@ struct WasmFunctionType {
     std::vector<std::uint8_t> result_types;
 };
 
+struct WasmTypeIndex {
+    std::uint32_t value;
+};
+
 struct WasmMemory {
     std::uint32_t min_size;
 };
@@ -29,7 +33,7 @@ struct WasmMemory {
 struct WasmImport {
     std::string mod;
     std::string name;
-    std::variant<WasmMemory> type;
+    std::variant<WasmTypeIndex, WasmMemory> kind;
 };
 
 struct WasmLocalGroup {
@@ -37,10 +41,23 @@ struct WasmLocalGroup {
     std::uint8_t type;
 };
 
+namespace WasmRelocType {
+enum {
+    FUNCTION_INDEX_LEB = 0x00,
+};
+}
+
+struct WasmRelocation {
+    std::uint8_t type;
+    std::uint32_t offset;
+    std::uint32_t index;
+};
+
 struct WasmFunction {
     std::uint32_t type_index;
     std::vector<WasmLocalGroup> local_groups;
     std::vector<std::uint8_t> body;
+    std::vector<WasmRelocation> relocs;
 };
 
 namespace WasmSymbolType {
@@ -51,6 +68,7 @@ enum {
 
 namespace WasmSymbolFlags {
 enum {
+    UNDEFINED = 0x10,
     EXPORTED = 0x20,
 };
 };

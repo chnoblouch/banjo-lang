@@ -11,12 +11,22 @@ namespace banjo::codegen {
 void WasmEmitter::generate() {
     WasmObjectFile file = WasmBuilder().build(module);
 
+    code_reloc_section = RelocSection{
+        .name = "reloc.CODE",
+        .section_index = 3,
+        .relocs{},
+    };
+
     emit_header();
     emit_type_section(file);
     emit_import_section(file);
     emit_function_section(file);
     emit_code_section(file);
     emit_linking_section(file);
+
+    if (!code_reloc_section.relocs.empty()) {
+        emit_reloc_section(code_reloc_section);
+    }
 }
 
 void WasmEmitter::emit_header() {
@@ -64,7 +74,10 @@ void WasmEmitter::emit_import_section(const WasmObjectFile &file) {
         write_name(data, import.mod);  // import module
         write_name(data, import.name); // import name
 
-        if (const auto *memory = std::get_if<WasmMemory>(&import.type)) {
+        if (auto type_index = std::get_if<WasmTypeIndex>(&import.kind)) {
+            data.write_u8(0x00);                   // import type (type index)
+            data.write_uleb128(type_index->value); // function type index
+        } else if (auto memory = std::get_if<WasmMemory>(&import.kind)) {
             data.write_u8(0x02);                  // import type (memory)
             data.write_u8(0x00);                  // indicate that no maximum size is present
             data.write_uleb128(memory->min_size); // minimum memory size
@@ -101,10 +114,36 @@ void WasmEmitter::emit_code_section(const WasmObjectFile &file) {
         buffer.write_data(function.body.data(), function.body.size()); // body
 
         data.write_uleb128(buffer.get_size()); // function code size
-        data.write_data(buffer);               // function code
+        std::uint32_t relocs_base_offset = data.get_size() + buffer.get_size() - function.body.size();
+        data.write_data(buffer); // function code
+
+        for (const WasmRelocation &reloc : function.relocs) {
+            code_reloc_section.relocs.push_back(
+                WasmRelocation{
+                    .type = reloc.type,
+                    .offset = static_cast<std::uint32_t>(relocs_base_offset + reloc.offset),
+                    .index = reloc.index,
+                }
+            );
+        }
     }
 
     emit_section(10, data);
+}
+
+void WasmEmitter::emit_reloc_section(const RelocSection &section) {
+    WriteBuffer data;
+    write_name(data, section.name);            // custom section name
+    data.write_uleb128(section.section_index); // target section index
+    data.write_uleb128(section.relocs.size()); // number of relocations
+
+    for (const WasmRelocation &reloc : section.relocs) {
+        data.write_u8(reloc.type);        // relocation type
+        data.write_uleb128(reloc.offset); // relocation offset
+        data.write_uleb128(reloc.index);  // symbol index
+    }
+
+    emit_section(0, data);
 }
 
 void WasmEmitter::emit_linking_section(const WasmObjectFile &file) {
@@ -125,7 +164,10 @@ void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
         data.write_u8(symbol.type);       // symbol type
         data.write_uleb128(symbol.flags); // symbol flags
         data.write_uleb128(symbol.index); // object index
-        write_name(data, symbol.name);    // symbol name
+
+        if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
+            write_name(data, symbol.name); // symbol name
+        }
     }
 
     buffer.write_u8(0x08);                 // section type

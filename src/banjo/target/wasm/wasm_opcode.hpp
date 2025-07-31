@@ -11,6 +11,8 @@ namespace banjo::target {
 namespace WasmOpcode {
 enum {
     END,
+    CALL,
+    DROP,
     LOCAL_GET,
     LOCAL_SET,
     I32_CONST,

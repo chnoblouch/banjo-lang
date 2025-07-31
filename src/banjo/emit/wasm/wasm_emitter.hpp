@@ -13,6 +13,14 @@ namespace banjo::codegen {
 class WasmEmitter final : public BinaryEmitter {
 
 private:
+    struct RelocSection {
+        std::string name;
+        std::uint32_t section_index;
+        std::vector<WasmRelocation> relocs;
+    };
+
+    RelocSection code_reloc_section;
+
 public:
     WasmEmitter(mcode::Module &module, std::ostream &stream) : BinaryEmitter(module, stream) {}
     void generate() override;
@@ -23,6 +31,7 @@ private:
     void emit_import_section(const WasmObjectFile &file);
     void emit_function_section(const WasmObjectFile &file);
     void emit_code_section(const WasmObjectFile &file);
+    void emit_reloc_section(const RelocSection &section);
     void emit_linking_section(const WasmObjectFile &file);
 
     void emit_section(std::uint8_t id, const WriteBuffer &data);

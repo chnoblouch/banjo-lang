@@ -9,17 +9,27 @@ namespace banjo::target {
 
 WasmSSALowerer::WasmSSALowerer(target::Target *target) : codegen::SSALowerer(target) {}
 
+void WasmSSALowerer::init_module(ssa::Module &mod) {
+    WasmModData mod_data;
+
+    for (ssa::FunctionDecl *func_decl : mod.get_external_functions()) {
+        mod_data.func_imports.push_back(
+            WasmFuncImport{
+                .mod = "env",
+                .name = func_decl->name,
+                .type = lower_func_type(func_decl->type),
+            }
+        );
+
+        extern_func_indices.insert({func_decl, mod_data.func_imports.size()});
+    }
+
+    machine_module.set_target_data(std::move(mod_data));
+}
+
 void WasmSSALowerer::analyze_func(ssa::Function &func) {
-    WasmFunctionData func_data;
-    func_data.params.resize(func.type.params.size());
-
-    for (unsigned i = 0; i < func.type.params.size(); i++) {
-        func_data.params[i] = lower_type(func.type.params[i]);
-    }
-
-    if (!func.type.return_type.is_primitive(ssa::Primitive::VOID)) {
-        func_data.result_type = lower_type(func.type.return_type);
-    }
+    WasmFuncData func_data;
+    func_data.type = lower_func_type(func.type);
 
     for (ssa::BasicBlock &block : func) {
         for (ssa::Instruction &instr : block) {
@@ -88,6 +98,24 @@ void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
     emit({WasmOpcode::END});
 }
 
+void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
+    if (!instr.get_operand(0).is_extern_func()) {
+        return;
+    }
+
+    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
+        push_operand(instr.get_operand(i));
+    }
+
+    ssa::FunctionDecl *extern_func = instr.get_operand(0).get_extern_func();
+    unsigned index = extern_func_indices.at(extern_func);
+    emit({WasmOpcode::CALL, {mcode::Operand::from_int_immediate(index)}});
+
+    if (extern_func->type.return_type != ssa::Primitive::VOID) {
+        emit({WasmOpcode::DROP});
+    }
+}
+
 void WasmSSALowerer::lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
 
@@ -111,6 +139,8 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
         bool is_64_bit = operand.get_type() == ssa::Primitive::F64;
         mcode::Opcode opcode = is_64_bit ? WasmOpcode::F64_CONST : WasmOpcode::F32_CONST;
         emit({opcode, {mcode::Operand::from_fp_immediate(immediate)}});
+    } else if (operand.is_symbol()) {
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -118,6 +148,26 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
 
 mcode::CallingConvention *WasmSSALowerer::get_calling_convention(ssa::CallingConv /*calling_conv*/) {
     return (mcode::CallingConvention *)&MSABICallingConv::INSTANCE;
+}
+
+WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
+    std::vector<WasmType> m_params;
+    m_params.resize(type.params.size());
+
+    for (unsigned i = 0; i < type.params.size(); i++) {
+        m_params[i] = lower_type(type.params[i]);
+    }
+
+    std::optional<WasmType> m_result_type;
+
+    if (!type.return_type.is_primitive(ssa::Primitive::VOID)) {
+        m_result_type = lower_type(type.return_type);
+    }
+
+    return WasmFuncType{
+        .params = m_params,
+        .result_type = m_result_type,
+    };
 }
 
 WasmType WasmSSALowerer::lower_type(ssa::Type type) {

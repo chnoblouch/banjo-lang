@@ -26,6 +26,7 @@ private:
     std::unordered_set<std::string> global_symbols;
     std::vector<std::string> dll_exports;
     std::optional<AddrTable> addr_table;
+    std::any target_data;
 
     int last_float_label_id = 0;
 
@@ -44,6 +45,7 @@ public:
     std::unordered_set<std::string> &get_global_symbols() { return global_symbols; }
     std::vector<std::string> &get_dll_exports() { return dll_exports; }
     std::optional<AddrTable> &get_addr_table() { return addr_table; }
+    const std::any &get_target_data() { return target_data; }
 
     void add(Function *function) { functions.push_back(function); }
     void add(Global global) { globals.push_back(std::move(global)); }
@@ -51,6 +53,7 @@ public:
     void add_global_symbol(std::string global_symbol) { global_symbols.insert(std::move(global_symbol)); }
     void add_dll_export(std::string dll_export) { dll_exports.push_back(std::move(dll_export)); }
     void set_addr_table(AddrTable addr_table) { this->addr_table = std::move(addr_table); }
+    void set_target_data(std::any target_data) { this->target_data = std::move(target_data); }
 
     std::string next_float_label();
 };
