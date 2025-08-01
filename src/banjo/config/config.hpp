@@ -27,6 +27,8 @@ struct Config {
     std::optional<target::CodeModel> code_model;
 
     static Config &instance();
+
+    bool is_stdlib_enabled();
 };
 
 } // namespace lang

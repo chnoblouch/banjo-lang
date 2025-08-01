@@ -55,6 +55,7 @@ public:
     bool is_windows() const;
     bool is_unix() const;
     bool is_darwin() const;
+    bool is_wasm() const;
 };
 
 } // namespace target

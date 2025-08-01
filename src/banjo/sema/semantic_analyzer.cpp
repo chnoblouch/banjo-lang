@@ -1,5 +1,6 @@
 #include "semantic_analyzer.hpp"
 
+#include "banjo/config/config.hpp"
 #include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/decl_interface_analyzer.hpp"
 #include "banjo/sema/extra_analysis.hpp"
@@ -70,10 +71,12 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
 void SemanticAnalyzer::enter_mod(sir::Module *mod) {
     cur_sir_mod = mod;
 
-    scopes.push(Scope{
-        .decl = mod,
-        .block = nullptr,
-    });
+    scopes.push(
+        Scope{
+            .decl = mod,
+            .block = nullptr,
+        }
+    );
 }
 
 sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
@@ -82,6 +85,10 @@ sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
 }
 
 void SemanticAnalyzer::populate_preamble_symbols() {
+    if (!Config::instance().is_stdlib_enabled()) {
+        return;
+    }
+
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},
         {"println", find_std_symbol({"internal", "preamble"}, "println")},

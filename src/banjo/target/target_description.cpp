@@ -63,6 +63,10 @@ bool TargetDescription::is_darwin() const {
     return operating_system == OperatingSystem::MACOS || operating_system == OperatingSystem::IOS;
 }
 
+bool TargetDescription::is_wasm() const {
+    return architecture == Architecture::WASM;
+}
+
 } // namespace target
 
 } // namespace banjo
