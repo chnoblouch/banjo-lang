@@ -1,6 +1,7 @@
 #include "wasm_ssa_lowerer.hpp"
 
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/mcode/symbol.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
 #include "banjo/target/x86_64/ms_abi_calling_conv.hpp"
@@ -108,8 +109,8 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
     }
 
     ssa::FunctionDecl *extern_func = instr.get_operand(0).get_extern_func();
-    unsigned index = extern_func_indices.at(extern_func);
-    emit({WasmOpcode::CALL, {mcode::Operand::from_int_immediate(index)}});
+    mcode::Symbol symbol{extern_func->name};
+    emit({WasmOpcode::CALL, {mcode::Operand::from_symbol(symbol)}});
 
     if (extern_func->type.return_type != ssa::Primitive::VOID) {
         emit({WasmOpcode::DROP});
@@ -139,6 +140,9 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
         bool is_64_bit = operand.get_type() == ssa::Primitive::F64;
         mcode::Opcode opcode = is_64_bit ? WasmOpcode::F64_CONST : WasmOpcode::F32_CONST;
         emit({opcode, {mcode::Operand::from_fp_immediate(immediate)}});
+    } else if (operand.is_global()) {
+        mcode::Symbol symbol{operand.get_global()->name};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(symbol)}});
     } else if (operand.is_symbol()) {
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
     } else {

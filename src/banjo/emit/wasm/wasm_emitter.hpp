@@ -31,6 +31,8 @@ private:
     void emit_import_section(const WasmObjectFile &file);
     void emit_function_section(const WasmObjectFile &file);
     void emit_code_section(const WasmObjectFile &file);
+    void emit_data_section(const WasmObjectFile &file);
+    void emit_data_count_section(const WasmObjectFile &file);
     void emit_reloc_section(const RelocSection &section);
     void emit_linking_section(const WasmObjectFile &file);
 

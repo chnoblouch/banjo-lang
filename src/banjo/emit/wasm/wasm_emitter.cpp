@@ -13,7 +13,7 @@ void WasmEmitter::generate() {
 
     code_reloc_section = RelocSection{
         .name = "reloc.CODE",
-        .section_index = 3,
+        .section_index = 4,
         .relocs{},
     };
 
@@ -21,7 +21,9 @@ void WasmEmitter::generate() {
     emit_type_section(file);
     emit_import_section(file);
     emit_function_section(file);
+    emit_data_count_section(file);
     emit_code_section(file);
+    emit_data_section(file);
     emit_linking_section(file);
 
     if (!code_reloc_section.relocs.empty()) {
@@ -131,6 +133,26 @@ void WasmEmitter::emit_code_section(const WasmObjectFile &file) {
     emit_section(10, data);
 }
 
+void WasmEmitter::emit_data_section(const WasmObjectFile &file) {
+    WriteBuffer data;
+    data.write_uleb128(file.data_segments.size()); // number of data segments
+
+    for (const WasmDataSegment &segment : file.data_segments) {
+        data.write_u8(0x00); // kind (active data segment in memory 0)
+        data.write_data(segment.offset_expr.data(), segment.offset_expr.size()); // offset expression
+        data.write_uleb128(segment.init_bytes.size());                           // initial value size
+        data.write_data(segment.init_bytes.data(), segment.init_bytes.size());   // initial value
+    }
+
+    emit_section(11, data);
+}
+
+void WasmEmitter::emit_data_count_section(const WasmObjectFile &file) {
+    WriteBuffer data;
+    data.write_uleb128(file.data_segments.size()); // number of data segments
+    emit_section(12, data);
+}
+
 void WasmEmitter::emit_reloc_section(const RelocSection &section) {
     WriteBuffer data;
     write_name(data, section.name);            // custom section name
@@ -141,6 +163,10 @@ void WasmEmitter::emit_reloc_section(const RelocSection &section) {
         data.write_u8(reloc.type);        // relocation type
         data.write_uleb128(reloc.offset); // relocation offset
         data.write_uleb128(reloc.index);  // symbol index
+
+        if (reloc.type == WasmRelocType::MEMORY_ADDR_SLEB) {
+            data.write_uleb128(reloc.addend); // address addend
+        }
     }
 
     emit_section(0, data);
@@ -163,10 +189,18 @@ void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
     for (const WasmSymbol &symbol : symbols) {
         data.write_u8(symbol.type);       // symbol type
         data.write_uleb128(symbol.flags); // symbol flags
-        data.write_uleb128(symbol.index); // object index
 
-        if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
-            write_name(data, symbol.name); // symbol name
+        if (symbol.type == WasmSymbolType::FUNCTION) {
+            data.write_uleb128(symbol.index); // function index
+
+            if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
+                write_name(data, symbol.name); // symbol name
+            }
+        } else if (symbol.type == WasmSymbolType::DATA) {
+            write_name(data, symbol.name);     // symbol name
+            data.write_uleb128(symbol.index);  // data segment index
+            data.write_uleb128(symbol.offset); // offset within the segment
+            data.write_uleb128(symbol.size);   // data size
         }
     }
 
@@ -187,7 +221,7 @@ void WasmEmitter::emit_uleb128(std::uint64_t value) {
 }
 
 void WasmEmitter::write_name(WriteBuffer &buffer, const std::string &name) {
-    buffer.write_u8(static_cast<std::uint8_t>(name.size()));
+    buffer.write_uleb128(name.size());
     buffer.write_data(name.data(), name.size());
 }
 

@@ -51,10 +51,44 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
         );
 
         num_func_imports += 1;
+        symbol_indices.insert({func_import.name, file.symbols.size() - 1});
+    }
+
+    for (mcode::Global &global : mod.get_globals()) {
+        if (auto string = std::get_if<std::string>(&global.value)) {
+            WriteBuffer offset_buffer;
+            offset_buffer.write_u8(0x41);
+            offset_buffer.write_sleb128(data_offset);
+            offset_buffer.write_u8(0x0B);
+
+            WriteBuffer init_bytes;
+            init_bytes.write_data(string->data(), string->size());
+
+            file.data_segments.push_back(
+                WasmDataSegment{
+                    .offset_expr = offset_buffer.move_data(),
+                    .init_bytes = init_bytes.move_data(),
+                }
+            );
+
+            file.symbols.push_back(
+                WasmSymbol{
+                    .type = WasmSymbolType::DATA,
+                    .flags = WasmSymbolFlags::BINDING_LOCAL,
+                    .name = global.name,
+                    .index = static_cast<std::uint32_t>(file.data_segments.size() - 1),
+                    .offset = 0,
+                    .size = static_cast<std::uint32_t>(string->size()),
+                }
+            );
+
+            data_offset += string->size();
+            symbol_indices.insert({global.name, file.symbols.size() - 1});
+        }
     }
 
     for (mcode::Function *func : mod.get_functions()) {
-        if (func->get_name() != "add" && func->get_name() != "fadd") {
+        if (func->get_name() != "add" && func->get_name() != "fadd" && func->get_name() != "main") {
             continue;
         }
 
@@ -85,8 +119,8 @@ void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {
         WasmSymbol{
             .type = WasmSymbolType::FUNCTION,
             .flags = WasmSymbolFlags::EXPORTED,
-            .index = static_cast<std::uint32_t>(num_func_imports + file.functions.size() - 1),
             .name = func.get_name(),
+            .index = static_cast<std::uint32_t>(num_func_imports + file.functions.size() - 1),
         }
     );
 }
@@ -106,23 +140,7 @@ std::vector<std::uint8_t> WasmBuilder::encode_instrs(mcode::Function &func, std:
 void WasmBuilder::encode_instr(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs) {
     switch (instr.get_opcode()) {
         case target::WasmOpcode::END: buffer.write_u8(0x0B); break;
-        case target::WasmOpcode::CALL:
-            buffer.write_u8(0x10);
-
-            relocs.push_back(
-                WasmRelocation{
-                    .type = WasmRelocType::FUNCTION_INDEX_LEB,
-                    .offset = static_cast<std::uint32_t>(buffer.get_size()),
-                    .index = 0x00,
-                }
-            );
-
-            buffer.write_u8(0x80);
-            buffer.write_u8(0x80);
-            buffer.write_u8(0x80);
-            buffer.write_u8(0x80);
-            buffer.write_u8(0x00);
-            break;
+        case target::WasmOpcode::CALL: encode_call(buffer, instr, relocs); break;
         case target::WasmOpcode::DROP: buffer.write_u8(0x1A); break;
         case target::WasmOpcode::LOCAL_GET:
             buffer.write_u8(0x20);
@@ -132,10 +150,7 @@ void WasmBuilder::encode_instr(WriteBuffer &buffer, mcode::Instruction &instr, s
             buffer.write_u8(0x21);
             buffer.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
             break;
-        case target::WasmOpcode::I32_CONST:
-            buffer.write_u8(0x41);
-            buffer.write_sleb128(instr.get_operand(0).get_int_immediate());
-            break;
+        case target::WasmOpcode::I32_CONST: encode_i32_const(buffer, instr, relocs); break;
         case target::WasmOpcode::I64_CONST:
             buffer.write_u8(0x42);
             buffer.write_sleb128(instr.get_operand(0).get_int_immediate());
@@ -164,6 +179,47 @@ void WasmBuilder::encode_instr(WriteBuffer &buffer, mcode::Instruction &instr, s
         case target::WasmOpcode::I64_REM_U: buffer.write_u8(0x82); break;
         case target::WasmOpcode::F32_ADD: buffer.write_u8(0x92); break;
         default: ASSERT_UNREACHABLE;
+    }
+}
+
+void WasmBuilder::encode_call(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs) {
+    mcode::Operand &callee = instr.get_operand(0);
+
+    buffer.write_u8(0x10);
+
+    relocs.push_back(
+        WasmRelocation{
+            .type = WasmRelocType::FUNCTION_INDEX_LEB,
+            .offset = static_cast<std::uint32_t>(buffer.get_size()),
+            .index = symbol_indices.at(callee.get_symbol().name),
+        }
+    );
+
+    write_reloc_placeholder_32(buffer);
+}
+
+void WasmBuilder::encode_i32_const(
+    WriteBuffer &buffer,
+    mcode::Instruction &instr,
+    std::vector<WasmRelocation> &relocs
+) {
+    mcode::Operand &operand = instr.get_operand(0);
+
+    buffer.write_u8(0x41);
+
+    if (operand.is_int_immediate()) {
+        buffer.write_sleb128(operand.get_int_immediate());
+    } else if (operand.is_symbol()) {
+        relocs.push_back(
+            WasmRelocation{
+                .type = WasmRelocType::MEMORY_ADDR_SLEB,
+                .offset = static_cast<std::uint32_t>(buffer.get_size()),
+                .index = symbol_indices.at(operand.get_symbol().name),
+                .addend = 0,
+            }
+        );
+
+        write_reloc_placeholder_32(buffer);
     }
 }
 
@@ -211,6 +267,14 @@ std::uint8_t WasmBuilder::build_value_type(target::WasmType type) {
         case target::WasmType::F32: return WasmValueType::F32;
         case target::WasmType::F64: return WasmValueType::F64;
     }
+}
+
+void WasmBuilder::write_reloc_placeholder_32(WriteBuffer &buffer) {
+    buffer.write_u8(0x80);
+    buffer.write_u8(0x80);
+    buffer.write_u8(0x80);
+    buffer.write_u8(0x80);
+    buffer.write_u8(0x00);
 }
 
 } // namespace banjo

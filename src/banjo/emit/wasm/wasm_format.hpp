@@ -44,6 +44,7 @@ struct WasmLocalGroup {
 namespace WasmRelocType {
 enum {
     FUNCTION_INDEX_LEB = 0x00,
+    MEMORY_ADDR_SLEB = 0x04,
 };
 }
 
@@ -51,6 +52,7 @@ struct WasmRelocation {
     std::uint8_t type;
     std::uint32_t offset;
     std::uint32_t index;
+    std::uint32_t addend = 0;
 };
 
 struct WasmFunction {
@@ -60,14 +62,21 @@ struct WasmFunction {
     std::vector<WasmRelocation> relocs;
 };
 
+struct WasmDataSegment {
+    std::vector<std::uint8_t> offset_expr;
+    std::vector<std::uint8_t> init_bytes;
+};
+
 namespace WasmSymbolType {
 enum {
-    FUNCTION = 0,
+    FUNCTION = 0x00,
+    DATA = 0x01,
 };
 }
 
 namespace WasmSymbolFlags {
 enum {
+    BINDING_LOCAL = 0x02,
     UNDEFINED = 0x10,
     EXPORTED = 0x20,
 };
@@ -76,14 +85,18 @@ enum {
 struct WasmSymbol {
     std::uint8_t type;
     std::uint32_t flags;
-    std::uint32_t index;
-    std::string name;
+    std::string name = "";
+
+    std::uint32_t index = 0;
+    std::uint32_t offset = 0;
+    std::uint32_t size = 0;
 };
 
 struct WasmObjectFile {
     std::vector<WasmFunctionType> types;
     std::vector<WasmImport> imports;
     std::vector<WasmFunction> functions;
+    std::vector<WasmDataSegment> data_segments;
     std::vector<WasmSymbol> symbols;
 };
 
