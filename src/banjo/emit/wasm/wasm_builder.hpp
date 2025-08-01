@@ -23,6 +23,10 @@ public:
     WasmObjectFile build(mcode::Module &mod);
 
 private:
+    void collect_symbol_indices(mcode::Module &mod);
+
+    void build_func_import(WasmObjectFile &file, const target::WasmFuncImport &func_import);
+    void build_global(WasmObjectFile &file, mcode::Global &global);
     void build_func(WasmObjectFile &file, mcode::Function &func);
 
     std::vector<std::uint8_t> encode_instrs(mcode::Function &func, std::vector<WasmRelocation> &relocs);

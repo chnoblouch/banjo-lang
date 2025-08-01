@@ -14,7 +14,6 @@ class WasmSSALowerer final : public codegen::SSALowerer {
 
 private:
     std::unordered_map<ssa::VirtualRegister, unsigned> vregs2locals;
-    std::unordered_map<ssa::FunctionDecl *, unsigned> extern_func_indices;
 
 public:
     WasmSSALowerer(target::Target *target);

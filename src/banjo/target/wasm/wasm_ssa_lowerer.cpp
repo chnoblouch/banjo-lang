@@ -21,8 +21,6 @@ void WasmSSALowerer::init_module(ssa::Module &mod) {
                 .type = lower_func_type(func_decl->type),
             }
         );
-
-        extern_func_indices.insert({func_decl, mod_data.func_imports.size()});
     }
 
     machine_module.set_target_data(std::move(mod_data));
@@ -100,19 +98,25 @@ void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
-    if (!instr.get_operand(0).is_extern_func()) {
-        return;
-    }
+    ssa::Operand &callee = instr.get_operand(0);
 
     for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         push_operand(instr.get_operand(i));
     }
 
-    ssa::FunctionDecl *extern_func = instr.get_operand(0).get_extern_func();
-    mcode::Symbol symbol{extern_func->name};
-    emit({WasmOpcode::CALL, {mcode::Operand::from_symbol(symbol)}});
+    ssa::Type return_type;
 
-    if (extern_func->type.return_type != ssa::Primitive::VOID) {
+    if (callee.is_func()) {
+        ssa::Function &func = *callee.get_func();
+        return_type = func.type.return_type;
+        emit({WasmOpcode::CALL, {mcode::Operand::from_symbol(mcode::Symbol{func.name})}});
+    } else if (callee.is_extern_func()) {
+        ssa::FunctionDecl &extern_func = *callee.get_extern_func();
+        return_type = extern_func.type.return_type;
+        emit({WasmOpcode::CALL, {mcode::Operand::from_symbol(mcode::Symbol{extern_func.name})}});
+    }
+
+    if (return_type != ssa::Primitive::VOID) {
         emit({WasmOpcode::DROP});
     }
 }

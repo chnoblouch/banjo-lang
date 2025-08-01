@@ -39,7 +39,7 @@ private:
 public:
     Function(std::string name, CallingConvention *calling_conv);
 
-    std::string get_name() { return name; }
+    const std::string &get_name() { return name; }
     LinkedList<BasicBlock> &get_basic_blocks() { return basic_blocks; }
     std::vector<Parameter> &get_parameters() { return parameters; }
     CallingConvention *get_calling_conv() { return calling_conv; }

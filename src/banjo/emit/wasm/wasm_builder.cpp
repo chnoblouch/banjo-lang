@@ -11,7 +11,7 @@
 namespace banjo {
 
 WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
-    const target::WasmModData &mod_data = std::any_cast<target::WasmModData>(mod.get_target_data());
+    const target::WasmModData &mod_data = std::any_cast<const target::WasmModData &>(mod.get_target_data());
 
     WasmObjectFile file{
         .imports{
@@ -27,79 +27,106 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
         },
     };
 
+    collect_symbol_indices(mod);
+
     for (const target::WasmFuncImport &func_import : mod_data.func_imports) {
-        file.types.push_back(build_func_type(func_import.type));
-
-        file.imports.push_back(
-            WasmImport{
-                .mod = func_import.mod,
-                .name = func_import.name,
-                .kind{
-                    WasmTypeIndex{
-                        .value = static_cast<std::uint32_t>(file.types.size() - 1),
-                    },
-                },
-            }
-        );
-
-        file.symbols.push_back(
-            WasmSymbol{
-                .type = WasmSymbolType::FUNCTION,
-                .flags = WasmSymbolFlags::UNDEFINED,
-                .index = static_cast<std::uint32_t>(num_func_imports),
-            }
-        );
-
-        num_func_imports += 1;
-        symbol_indices.insert({func_import.name, file.symbols.size() - 1});
+        build_func_import(file, func_import);
     }
 
     for (mcode::Global &global : mod.get_globals()) {
-        if (auto string = std::get_if<std::string>(&global.value)) {
-            WriteBuffer offset_buffer;
-            offset_buffer.write_u8(0x41);
-            offset_buffer.write_sleb128(data_offset);
-            offset_buffer.write_u8(0x0B);
-
-            WriteBuffer init_bytes;
-            init_bytes.write_data(string->data(), string->size());
-
-            file.data_segments.push_back(
-                WasmDataSegment{
-                    .offset_expr = offset_buffer.move_data(),
-                    .init_bytes = init_bytes.move_data(),
-                }
-            );
-
-            file.symbols.push_back(
-                WasmSymbol{
-                    .type = WasmSymbolType::DATA,
-                    .flags = WasmSymbolFlags::BINDING_LOCAL,
-                    .name = global.name,
-                    .index = static_cast<std::uint32_t>(file.data_segments.size() - 1),
-                    .offset = 0,
-                    .size = static_cast<std::uint32_t>(string->size()),
-                }
-            );
-
-            data_offset += string->size();
-            symbol_indices.insert({global.name, file.symbols.size() - 1});
-        }
+        build_global(file, global);
     }
 
     for (mcode::Function *func : mod.get_functions()) {
-        if (func->get_name() != "add" && func->get_name() != "fadd" && func->get_name() != "main") {
-            continue;
-        }
-
         build_func(file, *func);
     }
 
     return file;
 }
 
+void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
+    const target::WasmModData &mod_data = std::any_cast<const target::WasmModData &>(mod.get_target_data());
+
+    unsigned index = 0;
+
+    for (const target::WasmFuncImport &func_import : mod_data.func_imports) {
+        symbol_indices.insert({func_import.name, index});
+        index += 1;
+    }
+
+    for (const mcode::Global &global : mod.get_globals()) {
+        if (std::holds_alternative<std::string>(global.value)) {
+            symbol_indices.insert({global.name, index});
+            index += 1;
+        }
+    }
+
+    for (mcode::Function *func : mod.get_functions()) {
+        symbol_indices.insert({func->get_name(), index});
+        index += 1;
+    }
+}
+
+void WasmBuilder::build_func_import(WasmObjectFile &file, const target::WasmFuncImport &func_import) {
+    file.types.push_back(build_func_type(func_import.type));
+
+    file.imports.push_back(
+        WasmImport{
+            .mod = func_import.mod,
+            .name = func_import.name,
+            .kind{
+                WasmTypeIndex{
+                    .value = static_cast<std::uint32_t>(file.types.size() - 1),
+                },
+            },
+        }
+    );
+
+    file.symbols.push_back(
+        WasmSymbol{
+            .type = WasmSymbolType::FUNCTION,
+            .flags = WasmSymbolFlags::UNDEFINED,
+            .index = static_cast<std::uint32_t>(num_func_imports),
+        }
+    );
+
+    num_func_imports += 1;
+}
+
+void WasmBuilder::build_global(WasmObjectFile &file, mcode::Global &global) {
+    if (auto string = std::get_if<std::string>(&global.value)) {
+        WriteBuffer offset_buffer;
+        offset_buffer.write_u8(0x41);
+        offset_buffer.write_sleb128(data_offset);
+        offset_buffer.write_u8(0x0B);
+
+        WriteBuffer init_bytes;
+        init_bytes.write_data(string->data(), string->size());
+
+        file.data_segments.push_back(
+            WasmDataSegment{
+                .offset_expr = offset_buffer.move_data(),
+                .init_bytes = init_bytes.move_data(),
+            }
+        );
+
+        file.symbols.push_back(
+            WasmSymbol{
+                .type = WasmSymbolType::DATA,
+                .flags = WasmSymbolFlags::BINDING_LOCAL,
+                .name = global.name,
+                .index = static_cast<std::uint32_t>(file.data_segments.size() - 1),
+                .offset = 0,
+                .size = static_cast<std::uint32_t>(string->size()),
+            }
+        );
+
+        data_offset += string->size();
+    }
+}
+
 void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {
-    const target::WasmFuncData &func_data = std::any_cast<target::WasmFuncData>(func.get_target_data());
+    const target::WasmFuncData &func_data = std::any_cast<const target::WasmFuncData &>(func.get_target_data());
 
     file.types.push_back(build_func_type(func_data.type));
 
@@ -243,7 +270,7 @@ WasmFunctionType WasmBuilder::build_func_type(const target::WasmFuncType &type) 
 }
 
 std::vector<WasmLocalGroup> WasmBuilder::build_local_groups(mcode::Function &func) {
-    const target::WasmFuncData &func_data = std::any_cast<target::WasmFuncData>(func.get_target_data());
+    const target::WasmFuncData &func_data = std::any_cast<const target::WasmFuncData &>(func.get_target_data());
 
     std::vector<WasmLocalGroup> local_groups;
     std::optional<target::WasmType> last_type;
