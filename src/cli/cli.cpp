@@ -1057,7 +1057,11 @@ void CLI::invoke_linker() {
     } else if (target.os == "macos") {
         invoke_darwin_linker();
     } else if (target.arch == "wasm") {
-        invoke_wasm_linker();
+        if (target.os == "emscripten") {
+            invoke_emscripten_linker();
+        } else {
+            invoke_wasm_linker();
+        }
     }
 }
 
@@ -1250,6 +1254,33 @@ void CLI::invoke_wasm_linker() {
     std::filesystem::remove("main.o");
 }
 
+void CLI::invoke_emscripten_linker() {
+    std::string emcc_executable;
+
+#if OS_WINDOWS
+    emcc_executable = "emcc.bat";
+#else
+    emcc_executable = "emcc";
+#endif
+
+    Command command{
+        .executable = emcc_executable,
+        .args{
+            "main.o",
+            "-o",
+            get_output_path(),
+        },
+    };
+
+    print_command("linker", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    ProcessResult result = process->wait();
+    process_tool_result("linker", result);
+
+    std::filesystem::remove("main.o");
+}
+
 void CLI::run_build() {
     print_step("Running...");
     print_clear_line();
@@ -1390,7 +1421,11 @@ std::string CLI::get_output_path() {
     }
 
     if (target.arch == "wasm") {
-        file_name += ".wasm";
+        if (target.os == "emscripten" && package_type == PackageType::EXECUTABLE) {
+            file_name += ".html";
+        } else {
+            file_name += ".wasm";
+        }
     }
 
     return (get_output_dir() / file_name).string();
