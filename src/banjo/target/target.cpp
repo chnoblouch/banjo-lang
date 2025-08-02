@@ -24,7 +24,7 @@ ssa::CallingConv Target::get_default_calling_conv() {
     } else if (descr.get_architecture() == target::Architecture::AARCH64) {
         return ssa::CallingConv::AARCH64_AAPCS;
     } else if (descr.get_architecture() == target::Architecture::WASM) {
-        return ssa::CallingConv::X86_64_MS_ABI;
+        return ssa::CallingConv::WASM;
     }  else {
         return ssa::CallingConv::NONE;
     }

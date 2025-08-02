@@ -5,6 +5,7 @@
 #include "banjo/codegen/stack_frame_pass.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/emit/debug_emitter.hpp"
+#include "banjo/target/target_description.hpp"
 
 #include <fstream>
 
@@ -15,17 +16,15 @@ namespace codegen {
 MachinePassRunner::MachinePassRunner(target::Target *target) : target(target) {}
 
 void MachinePassRunner::create_and_run(mcode::Module &module) {
-    if (target->get_descr().get_architecture() == target::Architecture::WASM) {
-        run_all({}, module);
-        return;
-    }
-
     std::vector<MachinePass *> passes;
 
     std::vector<MachinePass *> pre_passes = target->create_pre_passes();
     passes.insert(passes.end(), pre_passes.begin(), pre_passes.end());
 
-    passes.push_back(new RegAllocPass(target->get_reg_analyzer()));
+    if (target->get_descr().get_architecture() != target::Architecture::WASM) {
+        passes.push_back(new RegAllocPass(target->get_reg_analyzer()));
+    }
+
     passes.push_back(new StackFramePass(target->get_reg_analyzer()));
     passes.push_back(new PrologEpilogPass());
 

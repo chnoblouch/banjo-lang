@@ -15,6 +15,7 @@ enum class CallingConv : std::uint8_t {
     X86_64_SYS_V_ABI,
     X86_64_MS_ABI,
     AARCH64_AAPCS,
+    WASM,
 };
 
 struct FunctionType {

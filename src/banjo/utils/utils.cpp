@@ -13,15 +13,6 @@ namespace banjo {
 
 namespace Utils {
 
-int align(int value, int boundary) {
-    if (boundary == 0) {
-        return value;
-    }
-
-    int mod = value % boundary;
-    return mod == 0 ? value : value + boundary - mod;
-}
-
 std::optional<std::uint64_t> parse_u64(std::string_view string) {
     std::uint64_t value = 0;
     std::uint64_t multiplier = 1;

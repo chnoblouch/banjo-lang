@@ -354,6 +354,7 @@ std::string Writer::calling_conv_to_str(CallingConv calling_conv) {
         case CallingConv::X86_64_SYS_V_ABI: return "sysv_abi";
         case CallingConv::X86_64_MS_ABI: return "ms_abi";
         case CallingConv::AARCH64_AAPCS: return "aapcs";
+        case CallingConv::WASM: return "wasm";
         default: return "???";
     }
 }

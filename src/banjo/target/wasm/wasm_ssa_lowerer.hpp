@@ -23,6 +23,8 @@ public:
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 private:
+    void lower_load(ssa::Instruction &instr) override;
+    void lower_store(ssa::Instruction &instr) override;
     void lower_loadarg(ssa::Instruction &instr) override;
     void lower_add(ssa::Instruction &instr) override;
     void lower_sub(ssa::Instruction &instr) override;

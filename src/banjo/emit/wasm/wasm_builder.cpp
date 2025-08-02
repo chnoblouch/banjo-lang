@@ -24,6 +24,23 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
                     },
                 }
             },
+            WasmImport{
+                .mod = "env",
+                .name = "__stack_pointer",
+                .kind{
+                    WasmGlobalType{
+                        .type = WasmValueType::I32,
+                        .mut = true,
+                    },
+                },
+            },
+        },
+        .symbols{
+            WasmSymbol{
+                .type = WasmSymbolType::GLOBAL,
+                .flags = WasmSymbolFlags::UNDEFINED,
+                .name = "__stack_pointer",
+            },
         },
     };
 
@@ -48,6 +65,9 @@ void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
     const target::WasmModData &mod_data = std::any_cast<const target::WasmModData &>(mod.get_target_data());
 
     unsigned index = 0;
+
+    symbol_indices.insert({"__stack_pointer", index});
+    index += 1;
 
     for (const target::WasmFuncImport &func_import : mod_data.func_imports) {
         symbol_indices.insert({func_import.name, index});
@@ -130,15 +150,20 @@ void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {
 
     file.types.push_back(build_func_type(func_data.type));
 
-    std::vector<WasmRelocation> relocs;
-    std::vector<std::uint8_t> body = encode_instrs(func, relocs);
+    FuncContext ctx{
+        .func = func,
+        .body{},
+        .relocs{},
+    };
+
+    encode_instrs(ctx);
 
     file.functions.push_back(
         WasmFunction{
             .type_index = static_cast<std::uint32_t>(file.types.size() - 1),
             .local_groups = build_local_groups(func),
-            .body = std::move(body),
-            .relocs = std::move(relocs),
+            .body = ctx.body.move_data(),
+            .relocs = std::move(ctx.relocs),
         }
     );
 
@@ -152,101 +177,214 @@ void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {
     );
 }
 
-std::vector<std::uint8_t> WasmBuilder::encode_instrs(mcode::Function &func, std::vector<WasmRelocation> &relocs) {
-    WriteBuffer buffer;
-
-    for (mcode::BasicBlock &block : func) {
+void WasmBuilder::encode_instrs(FuncContext &ctx) {
+    for (mcode::BasicBlock &block : ctx.func) {
         for (mcode::Instruction &instr : block) {
-            encode_instr(buffer, instr, relocs);
+            encode_instr(ctx, instr);
         }
     }
-
-    return buffer.move_data();
 }
 
-void WasmBuilder::encode_instr(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs) {
+void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
-        case target::WasmOpcode::END: buffer.write_u8(0x0B); break;
-        case target::WasmOpcode::CALL: encode_call(buffer, instr, relocs); break;
-        case target::WasmOpcode::DROP: buffer.write_u8(0x1A); break;
-        case target::WasmOpcode::LOCAL_GET:
-            buffer.write_u8(0x20);
-            buffer.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
-            break;
-        case target::WasmOpcode::LOCAL_SET:
-            buffer.write_u8(0x21);
-            buffer.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
-            break;
-        case target::WasmOpcode::I32_CONST: encode_i32_const(buffer, instr, relocs); break;
+        case target::WasmOpcode::END: ctx.body.write_u8(0x0B); break;
+        case target::WasmOpcode::CALL: encode_call(ctx, instr); break;
+        case target::WasmOpcode::DROP: ctx.body.write_u8(0x1A); break;
+        case target::WasmOpcode::LOCAL_GET: encode_local_get(ctx, instr); break;
+        case target::WasmOpcode::LOCAL_SET: encode_local_set(ctx, instr); break;
+        case target::WasmOpcode::LOCAL_TEE: encode_local_tee(ctx, instr); break;
+        case target::WasmOpcode::GLOBAL_GET: encode_global_get(ctx, instr); break;
+        case target::WasmOpcode::GLOBAL_SET: encode_global_set(ctx, instr); break;
+        case target::WasmOpcode::I32_LOAD: encode_i32_load(ctx, instr); break;
+        case target::WasmOpcode::I64_LOAD: encode_i64_load(ctx, instr); break;
+        case target::WasmOpcode::F32_LOAD: encode_f32_load(ctx, instr); break;
+        case target::WasmOpcode::F64_LOAD: encode_f64_load(ctx, instr); break;
+        case target::WasmOpcode::I32_STORE: encode_i32_store(ctx, instr); break;
+        case target::WasmOpcode::I64_STORE: encode_i64_store(ctx, instr); break;
+        case target::WasmOpcode::F32_STORE: encode_f32_store(ctx, instr); break;
+        case target::WasmOpcode::F64_STORE: encode_f64_store(ctx, instr); break;
+        case target::WasmOpcode::I32_CONST: encode_i32_const(ctx, instr); break;
         case target::WasmOpcode::I64_CONST:
-            buffer.write_u8(0x42);
-            buffer.write_sleb128(instr.get_operand(0).get_int_immediate());
+            ctx.body.write_u8(0x42);
+            ctx.body.write_sleb128(instr.get_operand(0).get_int_immediate());
             break;
         case target::WasmOpcode::F32_CONST:
-            buffer.write_u8(0x43);
-            buffer.write_f32(instr.get_operand(0).get_fp_immediate());
+            ctx.body.write_u8(0x43);
+            ctx.body.write_f32(instr.get_operand(0).get_fp_immediate());
             break;
         case target::WasmOpcode::F64_CONST:
-            buffer.write_u8(0x44);
-            buffer.write_f64(instr.get_operand(0).get_fp_immediate());
+            ctx.body.write_u8(0x44);
+            ctx.body.write_f64(instr.get_operand(0).get_fp_immediate());
             break;
-        case target::WasmOpcode::I32_ADD: buffer.write_u8(0x6A); break;
-        case target::WasmOpcode::I32_SUB: buffer.write_u8(0x6B); break;
-        case target::WasmOpcode::I32_MUL: buffer.write_u8(0x6C); break;
-        case target::WasmOpcode::I32_DIV_S: buffer.write_u8(0x6D); break;
-        case target::WasmOpcode::I32_DIV_U: buffer.write_u8(0x6E); break;
-        case target::WasmOpcode::I32_REM_S: buffer.write_u8(0x6F); break;
-        case target::WasmOpcode::I32_REM_U: buffer.write_u8(0x70); break;
-        case target::WasmOpcode::I64_ADD: buffer.write_u8(0x7C); break;
-        case target::WasmOpcode::I64_SUB: buffer.write_u8(0x7D); break;
-        case target::WasmOpcode::I64_MUL: buffer.write_u8(0x7E); break;
-        case target::WasmOpcode::I64_DIV_S: buffer.write_u8(0x7F); break;
-        case target::WasmOpcode::I64_DIV_U: buffer.write_u8(0x80); break;
-        case target::WasmOpcode::I64_REM_S: buffer.write_u8(0x81); break;
-        case target::WasmOpcode::I64_REM_U: buffer.write_u8(0x82); break;
-        case target::WasmOpcode::F32_ADD: buffer.write_u8(0x92); break;
+        case target::WasmOpcode::I32_ADD: ctx.body.write_u8(0x6A); break;
+        case target::WasmOpcode::I32_SUB: ctx.body.write_u8(0x6B); break;
+        case target::WasmOpcode::I32_MUL: ctx.body.write_u8(0x6C); break;
+        case target::WasmOpcode::I32_DIV_S: ctx.body.write_u8(0x6D); break;
+        case target::WasmOpcode::I32_DIV_U: ctx.body.write_u8(0x6E); break;
+        case target::WasmOpcode::I32_REM_S: ctx.body.write_u8(0x6F); break;
+        case target::WasmOpcode::I32_REM_U: ctx.body.write_u8(0x70); break;
+        case target::WasmOpcode::I64_ADD: ctx.body.write_u8(0x7C); break;
+        case target::WasmOpcode::I64_SUB: ctx.body.write_u8(0x7D); break;
+        case target::WasmOpcode::I64_MUL: ctx.body.write_u8(0x7E); break;
+        case target::WasmOpcode::I64_DIV_S: ctx.body.write_u8(0x7F); break;
+        case target::WasmOpcode::I64_DIV_U: ctx.body.write_u8(0x80); break;
+        case target::WasmOpcode::I64_REM_S: ctx.body.write_u8(0x81); break;
+        case target::WasmOpcode::I64_REM_U: ctx.body.write_u8(0x82); break;
+        case target::WasmOpcode::F32_ADD: ctx.body.write_u8(0x92); break;
         default: ASSERT_UNREACHABLE;
     }
 }
 
-void WasmBuilder::encode_call(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs) {
+void WasmBuilder::encode_call(FuncContext &ctx, mcode::Instruction &instr) {
     mcode::Operand &callee = instr.get_operand(0);
 
-    buffer.write_u8(0x10);
+    ctx.body.write_u8(0x10);
 
-    relocs.push_back(
+    ctx.relocs.push_back(
         WasmRelocation{
             .type = WasmRelocType::FUNCTION_INDEX_LEB,
-            .offset = static_cast<std::uint32_t>(buffer.get_size()),
+            .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
             .index = symbol_indices.at(callee.get_symbol().name),
         }
     );
 
-    write_reloc_placeholder_32(buffer);
+    write_reloc_placeholder_32(ctx.body);
 }
 
-void WasmBuilder::encode_i32_const(
-    WriteBuffer &buffer,
-    mcode::Instruction &instr,
-    std::vector<WasmRelocation> &relocs
-) {
+void WasmBuilder::encode_local_get(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x20);
+    ctx.body.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
+}
+
+void WasmBuilder::encode_local_set(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x21);
+    ctx.body.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
+}
+
+void WasmBuilder::encode_local_tee(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x22);
+    ctx.body.write_uleb128(instr.get_operand(0).get_int_immediate().to_u64());
+}
+
+void WasmBuilder::encode_global_get(FuncContext &ctx, mcode::Instruction &instr) {
     mcode::Operand &operand = instr.get_operand(0);
 
-    buffer.write_u8(0x41);
+    ctx.body.write_u8(0x23);
 
     if (operand.is_int_immediate()) {
-        buffer.write_sleb128(operand.get_int_immediate());
+        ctx.body.write_sleb128(operand.get_int_immediate());
     } else if (operand.is_symbol()) {
-        relocs.push_back(
+        ctx.relocs.push_back(
             WasmRelocation{
-                .type = WasmRelocType::MEMORY_ADDR_SLEB,
-                .offset = static_cast<std::uint32_t>(buffer.get_size()),
+                .type = WasmRelocType::GLOBAL_INDEX_LEB,
+                .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
                 .index = symbol_indices.at(operand.get_symbol().name),
                 .addend = 0,
             }
         );
 
-        write_reloc_placeholder_32(buffer);
+        write_reloc_placeholder_32(ctx.body);
+    }
+}
+
+void WasmBuilder::encode_global_set(FuncContext &ctx, mcode::Instruction &instr) {
+    mcode::Operand &operand = instr.get_operand(0);
+
+    ctx.body.write_u8(0x24);
+
+    if (operand.is_int_immediate()) {
+        ctx.body.write_sleb128(operand.get_int_immediate());
+    } else if (operand.is_symbol()) {
+        ctx.relocs.push_back(
+            WasmRelocation{
+                .type = WasmRelocType::GLOBAL_INDEX_LEB,
+                .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
+                .index = symbol_indices.at(operand.get_symbol().name),
+                .addend = 0,
+            }
+        );
+
+        write_reloc_placeholder_32(ctx.body);
+    }
+}
+
+void WasmBuilder::encode_i32_load(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x28);
+    ctx.body.write_uleb128(0x02);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i64_load(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x29);
+    ctx.body.write_uleb128(0x03);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_f32_load(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x2A);
+    ctx.body.write_uleb128(0x02);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_f64_load(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x2B);
+    ctx.body.write_uleb128(0x03);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_store(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x36);
+    ctx.body.write_uleb128(0x02);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i64_store(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x37);
+    ctx.body.write_uleb128(0x03);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_f32_store(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x38);
+    ctx.body.write_uleb128(0x02);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_f64_store(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x39);
+    ctx.body.write_uleb128(0x03);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) {
+    mcode::Operand &operand = instr.get_operand(0);
+
+    ctx.body.write_u8(0x41);
+
+    if (operand.is_int_immediate()) {
+        ctx.body.write_sleb128(operand.get_int_immediate());
+    } else if (operand.is_symbol()) {
+        ctx.relocs.push_back(
+            WasmRelocation{
+                .type = WasmRelocType::MEMORY_ADDR_SLEB,
+                .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
+                .index = symbol_indices.at(operand.get_symbol().name),
+                .addend = 0,
+            }
+        );
+
+        write_reloc_placeholder_32(ctx.body);
+    }
+}
+
+void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr) {
+    if (addr.is_int_immediate()) {
+        ctx.body.write_uleb128(addr.get_int_immediate().to_u64());
+    } else if (addr.is_stack_slot()) {
+        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(addr.get_stack_slot());
+        ctx.body.write_uleb128(slot.get_offset());
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 

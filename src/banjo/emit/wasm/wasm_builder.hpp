@@ -19,6 +19,12 @@ private:
     std::uint32_t data_offset = 0;
     std::unordered_map<std::string_view, std::uint32_t> symbol_indices;
 
+    struct FuncContext {
+        mcode::Function &func;
+        WriteBuffer body;
+        std::vector<WasmRelocation> relocs;
+    };
+
 public:
     WasmObjectFile build(mcode::Module &mod);
 
@@ -29,10 +35,25 @@ private:
     void build_global(WasmObjectFile &file, mcode::Global &global);
     void build_func(WasmObjectFile &file, mcode::Function &func);
 
-    std::vector<std::uint8_t> encode_instrs(mcode::Function &func, std::vector<WasmRelocation> &relocs);
-    void encode_instr(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs);
-    void encode_call(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs);
-    void encode_i32_const(WriteBuffer &buffer, mcode::Instruction &instr, std::vector<WasmRelocation> &relocs);
+    void encode_instrs(FuncContext &ctx);
+    void encode_instr(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_call(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_local_get(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_local_set(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_local_tee(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_global_get(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_global_set(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_load(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i64_load(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_f32_load(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_f64_load(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_store(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i64_store(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_f32_store(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_f64_store(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_const(FuncContext &ctx, mcode::Instruction &instr);
+
+    void encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr);
 
     WasmFunctionType build_func_type(const target::WasmFuncType &type);
     std::vector<WasmLocalGroup> build_local_groups(mcode::Function &func);

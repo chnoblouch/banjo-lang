@@ -83,6 +83,10 @@ void WasmEmitter::emit_import_section(const WasmObjectFile &file) {
             data.write_u8(0x02);                  // import type (memory)
             data.write_u8(0x00);                  // indicate that no maximum size is present
             data.write_uleb128(memory->min_size); // minimum memory size
+        } else if (auto global_type = std::get_if<WasmGlobalType>(&import.kind)) {
+            data.write_u8(0x03);                           // import type (global)
+            data.write_u8(global_type->type);              // value type
+            data.write_u8(global_type->mut ? 0x01 : 0x00); // mutability
         }
     }
 
@@ -190,7 +194,7 @@ void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
         data.write_u8(symbol.type);       // symbol type
         data.write_uleb128(symbol.flags); // symbol flags
 
-        if (symbol.type == WasmSymbolType::FUNCTION) {
+        if (symbol.type == WasmSymbolType::FUNCTION || symbol.type == WasmSymbolType::GLOBAL) {
             data.write_uleb128(symbol.index); // function index
 
             if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {

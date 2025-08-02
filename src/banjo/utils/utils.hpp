@@ -17,7 +17,15 @@ namespace Utils {
 
 typedef FixedVector<unsigned char, 16> LEB128Buffer;
 
-int align(int value, int boundary);
+template <typename T>
+T align(T value, T boundary) {
+    if (boundary == 0) {
+        return value;
+    }
+
+    T mod = value % boundary;
+    return mod == 0 ? value : value + boundary - mod;
+}
 
 template <typename T>
 bool is_one_of(T value, std::initializer_list<T> candidates) {
