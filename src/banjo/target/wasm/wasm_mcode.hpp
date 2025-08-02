@@ -23,6 +23,7 @@ struct WasmFuncType {
 struct WasmFuncData {
     WasmFuncType type;
     std::vector<WasmType> locals;
+    unsigned stack_pointer_local;
 };
 
 struct WasmFuncImport {

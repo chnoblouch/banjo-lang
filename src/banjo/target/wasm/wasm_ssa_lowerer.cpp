@@ -30,8 +30,13 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
     WasmFuncData func_data;
     func_data.type = lower_func_type(func.type);
 
+    vregs2locals.clear();
+    stack_pointer_local = func_data.type.params.size();
+
     // Create a local for the stack pointer.
     func_data.locals.push_back(WasmType::I32);
+
+    func_data.stack_pointer_local = stack_pointer_local;
 
     for (ssa::BasicBlock &block : func) {
         for (ssa::Instruction &instr : block) {
@@ -53,7 +58,7 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     auto iter = context.stack_regs.find(instr.get_operand(1).get_register());
 
-    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(0)}});
+    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
     emit({WasmOpcode::I32_LOAD, {mcode::Operand::from_stack_slot(iter->second)}}); // TODO: Type
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
@@ -61,7 +66,7 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
 void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     auto iter = context.stack_regs.find(instr.get_operand(1).get_register());
 
-    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(0)}});
+    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
     push_operand(instr.get_operand(0));
     emit({WasmOpcode::I32_STORE, {mcode::Operand::from_stack_slot(iter->second)}}); // TODO: Type
 }
@@ -179,8 +184,7 @@ mcode::CallingConvention *WasmSSALowerer::get_calling_convention(ssa::CallingCon
 }
 
 WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
-    std::vector<WasmType> m_params;
-    m_params.resize(type.params.size());
+    std::vector<WasmType> m_params(type.params.size());
 
     for (unsigned i = 0; i < type.params.size(); i++) {
         m_params[i] = lower_type(type.params[i]);

@@ -14,6 +14,7 @@ class WasmSSALowerer final : public codegen::SSALowerer {
 
 private:
     std::unordered_map<ssa::VirtualRegister, unsigned> vregs2locals;
+    unsigned stack_pointer_local;
 
 public:
     WasmSSALowerer(target::Target *target);

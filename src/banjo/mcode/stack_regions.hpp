@@ -4,7 +4,6 @@
 #include "banjo/mcode/stack_frame.hpp"
 
 #include <unordered_map>
-#include <vector>
 
 namespace banjo {
 
