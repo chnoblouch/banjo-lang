@@ -2,9 +2,11 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/symbol.hpp"
+#include "banjo/ssa/utils.hpp"
 #include "banjo/target/wasm/wasm_calling_conv.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo::target {
 
@@ -45,7 +47,7 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
             }
 
             unsigned local_index = func.type.params.size() + func_data.locals.size();
-            ssa::Type type = ssa::Primitive::I32; // TODO
+            ssa::Type type = ssa::get_result_type(instr, ssa::Primitive::I32);
             func_data.locals.push_back(lower_type(type));
             vregs2locals.insert({*instr.get_dest(), local_index});
         }
@@ -56,19 +58,51 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
 
 void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Type type = instr.get_operand(0).get_type();
     auto iter = context.stack_regs.find(instr.get_operand(1).get_register());
 
+    ASSERT(type.is_primitive() && type.get_array_length() == 1);
+
+    mcode::Opcode load_opcode;
+
+    switch (type.get_primitive()) {
+        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I8: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I16: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I32: load_opcode = WasmOpcode::I32_LOAD; break;
+        case ssa::Primitive::I64: load_opcode = WasmOpcode::I64_LOAD; break;
+        case ssa::Primitive::F32: load_opcode = WasmOpcode::F32_LOAD; break;
+        case ssa::Primitive::F64: load_opcode = WasmOpcode::F64_LOAD; break;
+        case ssa::Primitive::ADDR: load_opcode = WasmOpcode::I32_LOAD; break;
+    }
+
     emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-    emit({WasmOpcode::I32_LOAD, {mcode::Operand::from_stack_slot(iter->second)}}); // TODO: Type
+    emit({load_opcode, {mcode::Operand::from_stack_slot(iter->second)}});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
 void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
+    ssa::Type type = instr.get_operand(0).get_type();
     auto iter = context.stack_regs.find(instr.get_operand(1).get_register());
+
+    ASSERT(type.is_primitive() && type.get_array_length() == 1);
+
+    mcode::Opcode store_opcode;
+
+    switch (type.get_primitive()) {
+        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I8: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I16: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I32: store_opcode = WasmOpcode::I32_STORE; break;
+        case ssa::Primitive::I64: store_opcode = WasmOpcode::I64_STORE; break;
+        case ssa::Primitive::F32: store_opcode = WasmOpcode::F32_STORE; break;
+        case ssa::Primitive::F64: store_opcode = WasmOpcode::F64_STORE; break;
+        case ssa::Primitive::ADDR: store_opcode = WasmOpcode::I32_STORE; break;
+    }
 
     emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
     push_operand(instr.get_operand(0));
-    emit({WasmOpcode::I32_STORE, {mcode::Operand::from_stack_slot(iter->second)}}); // TODO: Type
+    emit({store_opcode, {mcode::Operand::from_stack_slot(iter->second)}});
 }
 
 void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {

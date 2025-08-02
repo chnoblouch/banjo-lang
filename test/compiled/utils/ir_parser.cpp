@@ -157,8 +157,7 @@ ssa::Opcode IRParser::parse_opcode() {
     else if (str == "offsetptr") return ssa::Opcode::OFFSETPTR;
     else if (str == "copy") return ssa::Opcode::COPY;
     else if (str == "sqrt") return ssa::Opcode::SQRT;
-    else if (str == "asm") return ssa::Opcode::ASM;
-    else return ssa::Opcode::INVALID;
+    else ASSERT_UNREACHABLE;
 }
 
 ssa::Operand IRParser::parse_operand() {

@@ -6,7 +6,6 @@ namespace banjo {
 namespace ssa {
 
 enum class Opcode {
-    INVALID,
     ALLOCA,
     LOAD,
     STORE,
@@ -35,8 +34,8 @@ enum class Opcode {
     RET,
     UEXTEND,
     SEXTEND,
-    FPROMOTE,
     TRUNCATE,
+    FPROMOTE,
     FDEMOTE,
     UTOF,
     STOF,
@@ -46,7 +45,6 @@ enum class Opcode {
     OFFSETPTR,
     COPY,
     SQRT,
-    ASM
 };
 
 } // namespace ssa

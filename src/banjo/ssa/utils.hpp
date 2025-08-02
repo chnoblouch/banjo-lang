@@ -1,16 +1,14 @@
 #ifndef BANJO_SSA_UTILS_H
 #define BANJO_SSA_UTILS_H
 
-#include "banjo/ssa/function.hpp"
 #include "banjo/ssa/function_type.hpp"
 #include "banjo/ssa/instruction.hpp"
 
-namespace banjo {
-namespace ssa {
+namespace banjo::ssa {
 
-ssa::FunctionType get_call_func_type(ssa::Instruction &call_instr);
+Type get_result_type(Instruction &instr, Type addr_type);
+FunctionType get_call_func_type(Instruction &call_instr);
 
-} // namespace ssa
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

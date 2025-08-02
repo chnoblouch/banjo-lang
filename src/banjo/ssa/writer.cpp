@@ -141,7 +141,6 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
 
         std::string opcode;
         switch (instr.get_opcode()) {
-            case Opcode::INVALID: opcode = "invalid"; break;
             case Opcode::ALLOCA: opcode = "alloca"; break;
             case Opcode::LOAD: opcode = "load"; break;
             case Opcode::STORE: opcode = "store"; break;
@@ -181,8 +180,6 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::OFFSETPTR: opcode = "offsetptr"; break;
             case Opcode::COPY: opcode = "copy"; break;
             case Opcode::SQRT: opcode = "sqrt"; break;
-            case Opcode::ASM: opcode = "asm"; break;
-            default: opcode = "???"; break;
         }
 
         stream << opcode;
