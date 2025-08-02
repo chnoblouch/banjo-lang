@@ -59,7 +59,6 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
 void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Type type = instr.get_operand(0).get_type();
-    ssa::VirtualRegister src = instr.get_operand(1).get_register();
 
     ASSERT(type.is_primitive() && type.get_array_length() == 1);
 
@@ -76,13 +75,16 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
         case ssa::Primitive::ADDR: load_opcode = WasmOpcode::I32_LOAD; break;
     }
 
-    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(src)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot};
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+    ssa::VirtualRegister base = addr.base.get_register();
+
+    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset};
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
         emit({load_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
     } else {
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(src))}});
-        emit({load_opcode, {mcode::Operand::from_int_immediate(0)}});
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
+        emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
     }
 
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
@@ -91,7 +93,6 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
 void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     ssa::Operand &value = instr.get_operand(0);
     ssa::Type type = value.get_type();
-    ssa::VirtualRegister dst = instr.get_operand(1).get_register();
 
     ASSERT(type.is_primitive() && type.get_array_length() == 1);
 
@@ -108,15 +109,18 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
         case ssa::Primitive::ADDR: store_opcode = WasmOpcode::I32_STORE; break;
     }
 
-    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(dst)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot};
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+    ssa::VirtualRegister base = addr.base.get_register();
+
+    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset};
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
         push_operand(value);
         emit({store_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
     } else {
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(dst))}});
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
         push_operand(value);
-        emit({store_opcode, {mcode::Operand::from_int_immediate(0)}});
+        emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
     }
 }
 
@@ -195,6 +199,30 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
     }
 }
 
+void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Structure *struct_ = instr.get_operand(0).get_type().get_struct();
+    unsigned member_index = instr.get_operand(2).get_int_immediate().to_u64();
+
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+    ssa::VirtualRegister base = addr.base.get_register();
+    unsigned member_offset = get_member_offset(struct_, member_index);
+
+    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, member_offset};
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    } else {
+        unsigned local_index = vregs2locals.at(base);
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(member_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
 void WasmSSALowerer::lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
 
@@ -233,6 +261,35 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+WasmSSALowerer::AddrComponents WasmSSALowerer::collect_addr(ssa::Operand &addr) {
+    ssa::Operand *base = &addr;
+    unsigned const_offset = 0;
+
+    while (base->is_register()) {
+        ssa::InstrIter producer = get_producer_globally(base->get_register());
+        if (!producer) {
+            break;
+        }
+
+        if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
+            ssa::Structure *struct_ = producer->get_operand(0).get_type().get_struct();
+            unsigned member_index = producer->get_operand(2).get_int_immediate().to_u64();
+
+            base = &producer->get_operand(1);
+            const_offset += get_member_offset(struct_, member_index);
+
+            discard_use(*producer->get_dest());
+        } else {
+            break;
+        }
+    }
+
+    return AddrComponents{
+        .base = *base,
+        .const_offset = const_offset,
+    };
 }
 
 mcode::CallingConvention *WasmSSALowerer::get_calling_convention(ssa::CallingConv /*calling_conv*/) {

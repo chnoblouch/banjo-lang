@@ -13,6 +13,11 @@ namespace banjo::target {
 class WasmSSALowerer final : public codegen::SSALowerer {
 
 private:
+    struct AddrComponents {
+        ssa::Operand &base;
+        unsigned const_offset;
+    };
+
     std::unordered_map<ssa::VirtualRegister, unsigned> vregs2locals;
     unsigned stack_pointer_local;
 
@@ -36,9 +41,11 @@ private:
     void lower_urem(ssa::Instruction &instr) override;
     void lower_ret(ssa::Instruction &instr) override;
     void lower_call(ssa::Instruction &instr) override;
+    void lower_memberptr(ssa::Instruction &instr) override;
 
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);
     void push_operand(ssa::Operand &operand);
+    AddrComponents collect_addr(ssa::Operand &addr);
 
     WasmFuncType lower_func_type(ssa::FunctionType type);
     WasmType lower_type(ssa::Type type);

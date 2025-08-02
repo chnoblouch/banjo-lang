@@ -274,6 +274,10 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
         }
 
         return str;
+    } else if (operand.is_stack_slot_offset()) {
+        const mcode::Operand::StackSlotOffset &offset = operand.get_stack_slot_offset();
+        std::string slot_name = get_stack_slot_name(basic_block.get_func(), offset.slot_index, instr_index);
+        return slot_name + " + " + std::to_string(offset.addend);
     } else if (operand.is_aarch64_left_shift()) {
         return "lsl #" + std::to_string(operand.get_aarch64_left_shift());
     } else {
