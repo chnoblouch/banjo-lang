@@ -41,6 +41,7 @@ private:
     void lower_urem(ssa::Instruction &instr) override;
     void lower_ret(ssa::Instruction &instr) override;
     void lower_call(ssa::Instruction &instr) override;
+    void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
 
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);

@@ -199,24 +199,50 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
     }
 }
 
-void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
+void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
-    ssa::Structure *struct_ = instr.get_operand(0).get_type().get_struct();
-    unsigned member_index = instr.get_operand(2).get_int_immediate().to_u64();
+    ssa::Operand &offset = instr.get_operand(1);
+    const ssa::Type &base_type = instr.get_operand(2).get_type();
 
-    AddrComponents addr = collect_addr(instr.get_operand(1));
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+
     ssa::VirtualRegister base = addr.base.get_register();
-    unsigned member_offset = get_member_offset(struct_, member_index);
+    unsigned const_offset = addr.const_offset + get_size(base_type) * offset.get_int_immediate().to_s64();
 
     if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, member_offset};
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
         emit({WasmOpcode::I32_ADD});
     } else {
         unsigned local_index = vregs2locals.at(base);
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(member_offset)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(const_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Structure *struct_ = instr.get_operand(0).get_type().get_struct();
+    unsigned member_index = instr.get_operand(2).get_int_immediate().to_u64();
+
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+
+    ssa::VirtualRegister base = addr.base.get_register();
+    unsigned const_offset = addr.const_offset + get_member_offset(struct_, member_index);
+
+    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    } else {
+        unsigned local_index = vregs2locals.at(base);
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(const_offset)}});
         emit({WasmOpcode::I32_ADD});
     }
 
@@ -273,13 +299,23 @@ WasmSSALowerer::AddrComponents WasmSSALowerer::collect_addr(ssa::Operand &addr) 
             break;
         }
 
-        if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
+        if (producer->get_opcode() == ssa::Opcode::OFFSETPTR) {
+            ssa::Operand &offset = producer->get_operand(1);
+            const ssa::Type &base_type = producer->get_operand(2).get_type();
+
+            if (offset.is_int_immediate()) {
+                base = &producer->get_operand(0);
+                const_offset += get_size(base_type) * offset.get_int_immediate().to_s64();
+                discard_use(*producer->get_dest());
+            } else {
+                break;
+            }
+        } else if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
             ssa::Structure *struct_ = producer->get_operand(0).get_type().get_struct();
             unsigned member_index = producer->get_operand(2).get_int_immediate().to_u64();
 
             base = &producer->get_operand(1);
             const_offset += get_member_offset(struct_, member_index);
-
             discard_use(*producer->get_dest());
         } else {
             break;
