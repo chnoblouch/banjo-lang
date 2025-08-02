@@ -93,7 +93,7 @@ void AArch64InstrMergePass::try_merge_add(mcode::Instruction &instr, RegUsageMap
     }
 
     mcode::Operand::StackSlotOffset new_offset = producer.get_operand(2).get_stack_slot_offset();
-    new_offset.additional_offset += instr.get_operand(2).get_int_immediate().to_s32();
+    new_offset.addend += instr.get_operand(2).get_int_immediate().to_s32();
 
     int size = instr.get_operand(2).get_size();
     instr.get_operand(1) = producer.get_operand(1);

@@ -33,7 +33,7 @@ void AArch64StackOffsetFixupPass::run(mcode::BasicBlock &block) {
 
         mcode::Operand::StackSlotOffset offset = operand.get_stack_slot_offset();
         mcode::StackSlot &stack_slot = frame.get_stack_slot(offset.slot_index);
-        unsigned total_offset = stack_slot.get_offset() + offset.additional_offset;
+        unsigned total_offset = stack_slot.get_offset() + offset.addend;
 
         if (total_offset < 4096) {
             continue;

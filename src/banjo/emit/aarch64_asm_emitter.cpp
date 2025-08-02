@@ -292,7 +292,7 @@ void AArch64AsmEmitter::emit_addr(const target::AArch64Address &addr) {
 void AArch64AsmEmitter::emit_stack_slot_offset(mcode::Function *func, mcode::Operand::StackSlotOffset offset) {
     mcode::StackFrame &frame = func->get_stack_frame();
     mcode::StackSlot &stack_slot = frame.get_stack_slot(offset.slot_index);
-    int total_offset = stack_slot.get_offset() + offset.additional_offset;
+    int total_offset = stack_slot.get_offset() + offset.addend;
     stream << "#" << total_offset;
 }
 

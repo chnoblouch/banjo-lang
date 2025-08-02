@@ -21,13 +21,13 @@ class Operand {
 public:
     struct StackSlotOffset {
         StackSlotID slot_index;
-        unsigned additional_offset;
+        unsigned addend;
 
-        friend bool operator==(const StackSlotOffset &lhs, const StackSlotOffset &rhs) {
-            return lhs.slot_index == rhs.slot_index && lhs.additional_offset == rhs.additional_offset;
-        }
+        StackSlotOffset(StackSlotID slot_index) : slot_index(slot_index), addend(0) {}
+        StackSlotOffset(StackSlotID slot_index, unsigned addend) : slot_index(slot_index), addend(addend) {}
 
-        friend bool operator!=(const StackSlotOffset &lhs, const StackSlotOffset &rhs) { return !(lhs == rhs); }
+        friend bool operator==(const StackSlotOffset &lhs, const StackSlotOffset &rhs) = default;
+        friend bool operator!=(const StackSlotOffset &lhs, const StackSlotOffset &rhs) = default;
     };
 
 private:

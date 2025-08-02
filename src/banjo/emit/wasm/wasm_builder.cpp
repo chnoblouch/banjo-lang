@@ -374,15 +374,22 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
         );
 
         write_reloc_placeholder_32(ctx.body);
+    } else if (operand.is_stack_slot_offset()) {
+        const mcode::Operand::StackSlotOffset &offset = operand.get_stack_slot_offset();
+        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(offset.slot_index);
+        ctx.body.write_sleb128(slot.get_offset() + offset.addend);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
 void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr) {
     if (addr.is_int_immediate()) {
         ctx.body.write_uleb128(addr.get_int_immediate().to_u64());
-    } else if (addr.is_stack_slot()) {
-        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(addr.get_stack_slot());
-        ctx.body.write_uleb128(slot.get_offset());
+    } else if (addr.is_stack_slot_offset()) {
+        const mcode::Operand::StackSlotOffset &offset = addr.get_stack_slot_offset();
+        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(offset.slot_index);
+        ctx.body.write_uleb128(slot.get_offset() + offset.addend);
     } else {
         ASSERT_UNREACHABLE;
     }

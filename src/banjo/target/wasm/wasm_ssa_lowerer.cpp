@@ -59,7 +59,7 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
 void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Type type = instr.get_operand(0).get_type();
-    auto iter = context.stack_regs.find(instr.get_operand(1).get_register());
+    ssa::VirtualRegister src = instr.get_operand(1).get_register();
 
     ASSERT(type.is_primitive() && type.get_array_length() == 1);
 
@@ -76,14 +76,22 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
         case ssa::Primitive::ADDR: load_opcode = WasmOpcode::I32_LOAD; break;
     }
 
-    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-    emit({load_opcode, {mcode::Operand::from_stack_slot(iter->second)}});
+    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(src)) {
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot};
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+        emit({load_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+    } else {
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(src))}});
+        emit({load_opcode, {mcode::Operand::from_int_immediate(0)}});
+    }
+
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
 void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
-    ssa::Type type = instr.get_operand(0).get_type();
-    auto iter = context.stack_regs.find(instr.get_operand(1).get_register());
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = value.get_type();
+    ssa::VirtualRegister dst = instr.get_operand(1).get_register();
 
     ASSERT(type.is_primitive() && type.get_array_length() == 1);
 
@@ -100,9 +108,16 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
         case ssa::Primitive::ADDR: store_opcode = WasmOpcode::I32_STORE; break;
     }
 
-    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-    push_operand(instr.get_operand(0));
-    emit({store_opcode, {mcode::Operand::from_stack_slot(iter->second)}});
+    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(dst)) {
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot};
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+        push_operand(value);
+        emit({store_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+    } else {
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(dst))}});
+        push_operand(value);
+        emit({store_opcode, {mcode::Operand::from_int_immediate(0)}});
+    }
 }
 
 void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {
@@ -191,8 +206,15 @@ void WasmSSALowerer::lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opc
 
 void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     if (operand.is_register()) {
-        unsigned local_index = vregs2locals.at(operand.get_register());
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(operand.get_register())) {
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot};
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({WasmOpcode::I32_ADD});
+        } else {
+            unsigned local_index = vregs2locals.at(operand.get_register());
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+        }
     } else if (operand.is_int_immediate()) {
         LargeInt immediate = operand.get_int_immediate();
         bool is_64_bit = operand.get_type() == ssa::Primitive::I64;

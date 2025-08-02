@@ -288,6 +288,16 @@ mcode::InstrIter SSALowerer::emit(mcode::Instruction instr) {
     return basic_block_context.basic_block->insert_before(basic_block_context.insertion_iter, std::move(instr));
 }
 
+std::optional<mcode::StackSlotID> SSALowerer::find_stack_slot(ssa::VirtualRegister reg) {
+    auto iter = context.stack_regs.find(reg);
+
+    if (iter != context.stack_regs.end()) {
+        return iter->second;
+    } else {
+        return {};
+    }
+}
+
 std::variant<mcode::Register, mcode::StackSlotID> SSALowerer::map_vreg(ssa::VirtualRegister reg) {
     auto iter = context.stack_regs.find(reg);
 

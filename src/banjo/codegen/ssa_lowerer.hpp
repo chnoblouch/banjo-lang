@@ -73,6 +73,7 @@ public:
 
     mcode::InstrIter emit(mcode::Instruction instr);
 
+    std::optional<mcode::StackSlotID> find_stack_slot(ssa::VirtualRegister reg);
     std::variant<mcode::Register, mcode::StackSlotID> map_vreg(ssa::VirtualRegister reg);
     mcode::Register map_vreg_as_reg(ssa::VirtualRegister reg);
     mcode::Operand map_vreg_as_operand(ssa::VirtualRegister reg, unsigned size);

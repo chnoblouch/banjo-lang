@@ -599,7 +599,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
 
         mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
         mcode::StackSlot &slot = stack_frame.get_stack_slot(offset.slot_index);
-        std::uint64_t total_offset = slot.get_offset() + offset.additional_offset;
+        std::uint64_t total_offset = slot.get_offset() + offset.addend;
 
         std::uint32_t imm = encode_imm(total_offset, 12, 0);
         text.write_u32(params[1] | (sf << 31) | (imm << 10) | (r_lhs << 5) | r_dst);
