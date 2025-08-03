@@ -194,8 +194,13 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         emit({WasmOpcode::CALL, {mcode::Operand::from_symbol(mcode::Symbol{extern_func.name})}});
     }
 
-    if (return_type != ssa::Primitive::VOID) {
-        emit({WasmOpcode::DROP});
+    if (instr.get_dest()) {
+        unsigned local_index = vregs2locals.at(*instr.get_dest());
+        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+    } else {
+        if (return_type != ssa::Primitive::VOID) {
+            emit({WasmOpcode::DROP});
+        }
     }
 }
 
