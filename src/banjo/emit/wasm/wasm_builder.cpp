@@ -203,6 +203,8 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I64_STORE: encode_i64_store(ctx, instr); break;
         case target::WasmOpcode::F32_STORE: encode_f32_store(ctx, instr); break;
         case target::WasmOpcode::F64_STORE: encode_f64_store(ctx, instr); break;
+        case target::WasmOpcode::I32_STORE8: encode_i32_store8(ctx, instr); break;
+        case target::WasmOpcode::I32_STORE16: encode_i32_store16(ctx, instr); break;
         case target::WasmOpcode::I32_CONST: encode_i32_const(ctx, instr); break;
         case target::WasmOpcode::I64_CONST:
             ctx.body.write_u8(0x42);
@@ -353,6 +355,18 @@ void WasmBuilder::encode_f32_store(FuncContext &ctx, mcode::Instruction &instr) 
 void WasmBuilder::encode_f64_store(FuncContext &ctx, mcode::Instruction &instr) {
     ctx.body.write_u8(0x39);
     ctx.body.write_uleb128(0x03);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_store8(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x3A);
+    ctx.body.write_uleb128(0x00);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_store16(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x3B);
+    ctx.body.write_uleb128(0x01);
     encode_load_store_addr(ctx, instr.get_operand(0));
 }
 

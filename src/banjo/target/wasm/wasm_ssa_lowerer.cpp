@@ -100,8 +100,8 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
 
     switch (type.get_primitive()) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
-        case ssa::Primitive::I8: ASSERT_UNREACHABLE;
-        case ssa::Primitive::I16: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I8: store_opcode = WasmOpcode::I32_STORE8; break;
+        case ssa::Primitive::I16: store_opcode = WasmOpcode::I32_STORE16; break;
         case ssa::Primitive::I32: store_opcode = WasmOpcode::I32_STORE; break;
         case ssa::Primitive::I64: store_opcode = WasmOpcode::I64_STORE; break;
         case ssa::Primitive::F32: store_opcode = WasmOpcode::F32_STORE; break;

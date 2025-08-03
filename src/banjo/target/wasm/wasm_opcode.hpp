@@ -26,6 +26,8 @@ enum {
     I64_STORE,
     F32_STORE,
     F64_STORE,
+    I32_STORE8,
+    I32_STORE16,
     I32_CONST,
     I64_CONST,
     F32_CONST,
