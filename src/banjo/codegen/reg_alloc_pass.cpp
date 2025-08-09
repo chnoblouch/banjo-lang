@@ -88,12 +88,14 @@ RegAllocFunc RegAllocPass::create_reg_alloc_func(mcode::Function &func) {
             ra_succs.push_back(block_indices[succ]);
         }
 
-        ra_func.blocks.push_back(RegAllocBlock{
-            .m_block = iter,
-            .instrs = collect_instrs(*iter),
-            .preds = ra_preds,
-            .succs = ra_succs,
-        });
+        ra_func.blocks.push_back(
+            RegAllocBlock{
+                .m_block = iter,
+                .instrs = collect_instrs(*iter),
+                .preds = ra_preds,
+                .succs = ra_succs,
+            }
+        );
     }
 
     return ra_func;
@@ -169,10 +171,12 @@ std::vector<Bundle> RegAllocPass::create_bundles(Context &ctx) {
         };
 
         for (const LiveRange &range : ranges) {
-            bundle.segments.push_back(Segment{
-                .reg = reg.get_virtual_reg(),
-                .range = range,
-            });
+            bundle.segments.push_back(
+                Segment{
+                    .reg = reg.get_virtual_reg(),
+                    .range = range,
+                }
+            );
         }
 
         bundles.push_back(bundle);
@@ -361,35 +365,41 @@ void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
                     LiveRange instr_range{.block = range.range.block, .start{instr, 1}, .end{instr, 1}};
                     Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
 
-                    ctx.bundles.push(Bundle{
-                        .segments = {instr_segment},
-                        .reg_class = bundle.reg_class,
-                        .evictable = false,
-                        .src_stack_slot = {},
-                        .dst_stack_slot = stack_slot,
-                    });
+                    ctx.bundles.push(
+                        Bundle{
+                            .segments = {instr_segment},
+                            .reg_class = bundle.reg_class,
+                            .evictable = false,
+                            .src_stack_slot = {},
+                            .dst_stack_slot = stack_slot,
+                        }
+                    );
                 } else if (op.usage == mcode::RegUsage::USE) {
                     LiveRange instr_range{.block = range.range.block, .start{instr, 0}, .end{instr, 0}};
                     Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
 
-                    ctx.bundles.push(Bundle{
-                        .segments = {instr_segment},
-                        .reg_class = bundle.reg_class,
-                        .evictable = false,
-                        .src_stack_slot = stack_slot,
-                        .dst_stack_slot = {},
-                    });
+                    ctx.bundles.push(
+                        Bundle{
+                            .segments = {instr_segment},
+                            .reg_class = bundle.reg_class,
+                            .evictable = false,
+                            .src_stack_slot = stack_slot,
+                            .dst_stack_slot = {},
+                        }
+                    );
                 } else if (op.usage == mcode::RegUsage::USE_DEF) {
                     LiveRange instr_range{.block = range.range.block, .start{instr, 0}, .end{instr, 1}};
                     Segment instr_segment{.reg = op.reg.get_virtual_reg(), .range = instr_range};
 
-                    ctx.bundles.push(Bundle{
-                        .segments = {instr_segment},
-                        .reg_class = bundle.reg_class,
-                        .evictable = false,
-                        .src_stack_slot = stack_slot,
-                        .dst_stack_slot = stack_slot,
-                    });
+                    ctx.bundles.push(
+                        Bundle{
+                            .segments = {instr_segment},
+                            .reg_class = bundle.reg_class,
+                            .evictable = false,
+                            .src_stack_slot = stack_slot,
+                            .dst_stack_slot = stack_slot,
+                        }
+                    );
                 }
             }
         }
@@ -444,7 +454,7 @@ void RegAllocPass::try_replace(
 ) {
     if (operand.is_virtual_reg()) {
         if ((mcode::VirtualReg)operand.get_virtual_reg() == virtual_reg) {
-            operand.set_to_register(mcode::Register::from_physical(physical_reg));
+            operand = mcode::Operand::from_register(mcode::Register::from_physical(physical_reg), operand.get_size());
         }
     } else if (operand.is_addr()) {
         mcode::IndirectAddress &addr = operand.get_addr();
@@ -469,7 +479,7 @@ void RegAllocPass::try_replace(
             addr.set_offset_reg(mcode::Register::from_physical(physical_reg));
         }
 
-        operand.set_to_aarch64_addr(addr);
+        operand = mcode::Operand::from_aarch64_addr(addr, operand.get_size());
     }
 }
 

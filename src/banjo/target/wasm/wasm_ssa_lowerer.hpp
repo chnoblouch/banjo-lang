@@ -2,7 +2,9 @@
 #define BANJO_TARGET_WASM_SSA_LOWERER_H
 
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/function_type.hpp"
+#include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
 
@@ -19,13 +21,18 @@ private:
     };
 
     std::unordered_map<ssa::VirtualRegister, unsigned> vregs2locals;
+    std::unordered_map<ssa::BasicBlockIter, unsigned> block_indices;
     unsigned stack_pointer_local;
+    unsigned block_index_local;
+    unsigned return_value_local;
+    unsigned block_depth;
 
 public:
     WasmSSALowerer(target::Target *target);
 
     void init_module(ssa::Module &mod) override;
     void analyze_func(ssa::Function &func) override;
+    BlockMap generate_blocks(ssa::Function &func) override;
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 private:
@@ -39,8 +46,11 @@ private:
     void lower_srem(ssa::Instruction &instr) override;
     void lower_udiv(ssa::Instruction &instr) override;
     void lower_urem(ssa::Instruction &instr) override;
-    void lower_ret(ssa::Instruction &instr) override;
+    void lower_jmp(ssa::Instruction &instr) override;
+    void lower_cjmp(ssa::Instruction &instr) override;
+    void lower_fcjmp(ssa::Instruction &instr) override;
     void lower_call(ssa::Instruction &instr) override;
+    void lower_ret(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
 

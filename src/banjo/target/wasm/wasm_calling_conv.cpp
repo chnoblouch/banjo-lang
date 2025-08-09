@@ -77,7 +77,7 @@ std::vector<mcode::Instruction> WasmCallingConv::get_epilog(mcode::Function *fun
 }
 
 bool WasmCallingConv::is_func_exit(mcode::Opcode opcode) {
-    return opcode == WasmOpcode::END;
+    return opcode == WasmOpcode::END_FUNCTION;
 }
 
 std::vector<mcode::ArgStorage> WasmCallingConv::get_arg_storage(const ssa::FunctionType &func_type) {

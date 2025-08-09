@@ -4,7 +4,14 @@
 namespace banjo::target {
 
 const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
-    {END, "end"},
+    {BLOCK, "block"},
+    {END_BLOCK, "end_block"},
+    {LOOP, "loop"},
+    {END_LOOP, "end_loop"},
+    {BR, "br"},
+    {BR_IF, "br_if"},
+    {BR_TABLE, "br_table"},
+    {END_FUNCTION, "end_function"},
     {CALL, "call"},
     {DROP, "drop"},
     {LOCAL_GET, "local.get"},

@@ -9,21 +9,23 @@ namespace banjo {
 namespace codegen {
 
 void MachinePassUtils::replace_virtual_reg(mcode::BasicBlock &basic_block, long old_register, long new_register) {
+    mcode::Register m_reg = mcode::Register::from_virtual(new_register);
+
     for (mcode::Instruction &instr : basic_block) {
         for (mcode::Operand &operand : instr.get_operands()) {
             if (operand.is_virtual_reg() && operand.get_virtual_reg() == old_register) {
-                operand.set_to_register(mcode::Register::from_virtual(new_register));
+                operand = mcode::Operand::from_register(m_reg, operand.get_size());
             }
 
             if (operand.is_addr()) {
                 mcode::IndirectAddress &addr = operand.get_addr();
 
                 if (addr.is_base_reg() && addr.get_base_reg() == mcode::Register::from_virtual(old_register)) {
-                    addr.set_base(mcode::Register::from_virtual(new_register));
+                    addr.set_base(m_reg);
                 }
 
                 if (addr.has_reg_offset() && addr.get_reg_offset() == mcode::Register::from_virtual(old_register)) {
-                    addr.set_reg_offset(mcode::Register::from_virtual(new_register));
+                    addr.set_reg_offset(m_reg);
                 }
             }
         }
@@ -33,7 +35,7 @@ void MachinePassUtils::replace_virtual_reg(mcode::BasicBlock &basic_block, long 
 void MachinePassUtils::replace_reg(mcode::Instruction &instr, mcode::Register old_reg, mcode::Register new_reg) {
     for (mcode::Operand &operand : instr.get_operands()) {
         if (operand.is_register() && operand.get_register() == old_reg) {
-            operand.set_to_register(new_reg);
+            operand = mcode::Operand::from_register(new_reg, operand.get_size());
         }
 
         if (operand.is_addr()) {

@@ -21,7 +21,7 @@ void MachinePassRunner::create_and_run(mcode::Module &module) {
     std::vector<MachinePass *> pre_passes = target->create_pre_passes();
     passes.insert(passes.end(), pre_passes.begin(), pre_passes.end());
 
-    if (target->get_descr().get_architecture() != target::Architecture::WASM) {
+    if (!target->get_descr().is_wasm()) {
         passes.push_back(new RegAllocPass(target->get_reg_analyzer()));
     }
 

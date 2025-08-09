@@ -187,7 +187,14 @@ void WasmBuilder::encode_instrs(FuncContext &ctx) {
 
 void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
-        case target::WasmOpcode::END: ctx.body.write_u8(0x0B); break;
+        case target::WasmOpcode::BLOCK: encode_block(ctx); break;
+        case target::WasmOpcode::END_BLOCK: ctx.body.write_u8(0x0B); break;
+        case target::WasmOpcode::LOOP: encode_loop(ctx); break;
+        case target::WasmOpcode::END_LOOP: ctx.body.write_u8(0x0B); break;
+        case target::WasmOpcode::BR: encode_br(ctx, instr); break;
+        case target::WasmOpcode::BR_IF: encode_br_if(ctx, instr); break;
+        case target::WasmOpcode::BR_TABLE: encode_br_table(ctx, instr); break;
+        case target::WasmOpcode::END_FUNCTION: ctx.body.write_u8(0x0B); break;
         case target::WasmOpcode::CALL: encode_call(ctx, instr); break;
         case target::WasmOpcode::DROP: ctx.body.write_u8(0x1A); break;
         case target::WasmOpcode::LOCAL_GET: encode_local_get(ctx, instr); break;
@@ -235,6 +242,41 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::F32_ADD: ctx.body.write_u8(0x92); break;
         default: ASSERT_UNREACHABLE;
     }
+}
+
+void WasmBuilder::encode_block(FuncContext &ctx) {
+    ctx.body.write_u8(0x02);
+    ctx.body.write_u8(0x40);
+}
+
+void WasmBuilder::encode_loop(FuncContext &ctx) {
+    ctx.body.write_u8(0x03);
+    ctx.body.write_u8(0x40);
+}
+
+void WasmBuilder::encode_br(FuncContext &ctx, mcode::Instruction &instr) {
+    unsigned label_index = instr.get_operand(0).get_int_immediate().to_u64();
+
+    ctx.body.write_u8(0x0C);
+    ctx.body.write_uleb128(label_index);
+}
+
+void WasmBuilder::encode_br_if(FuncContext &ctx, mcode::Instruction &instr) {
+    unsigned label_index = instr.get_operand(0).get_int_immediate().to_u64();
+
+    ctx.body.write_u8(0x0D);
+    ctx.body.write_uleb128(label_index);
+}
+
+void WasmBuilder::encode_br_table(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x0E);
+    ctx.body.write_uleb128(instr.get_operands().get_size() - 1);
+
+    for (unsigned i = 0; i < instr.get_operands().get_size() - 1; i++) {
+        ctx.body.write_uleb128(instr.get_operand(i).get_int_immediate().to_u64());
+    }
+
+    ctx.body.write_uleb128(instr.get_operand(instr.get_operands().get_size() - 1).get_int_immediate().to_u64());
 }
 
 void WasmBuilder::encode_call(FuncContext &ctx, mcode::Instruction &instr) {

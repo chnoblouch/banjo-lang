@@ -406,12 +406,17 @@ mcode::InstrIter AAPCSCallingConv::fix_up_instr(
     codegen::LateRegAlloc alloc(range, AArch64RegClass::GENERAL_PURPOSE, analyzer);
     mcode::PhysicalReg new_reg = AArch64Register::R20;
 
-    iter->get_operand(0).set_to_register(mcode::Register::from_physical(new_reg));
-    iter.get_next()->get_operand(1).set_to_aarch64_addr(
+    mcode::Operand &m_dst = iter->get_operand(0);
+    m_dst = mcode::Operand::from_register(mcode::Register::from_physical(new_reg), m_dst.get_size());
+
+    mcode::Operand &m_after_dst = iter.get_next()->get_operand(1);
+
+    m_after_dst = mcode::Operand::from_aarch64_addr(
         target::AArch64Address::new_base_offset(
             mcode::Register::from_physical(target::AArch64Register::SP),
             mcode::Register::from_physical(new_reg)
-        )
+        ),
+        m_after_dst.get_size()
     );
 
     return iter.get_next();

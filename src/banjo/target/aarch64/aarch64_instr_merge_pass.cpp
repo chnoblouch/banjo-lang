@@ -75,9 +75,11 @@ void AArch64InstrMergePass::merge_instrs(mcode::BasicBlock &basic_block, RegUsag
 }
 
 void AArch64InstrMergePass::try_merge_str(mcode::Instruction &instr, RegUsageMap &usages) {
-    const AArch64Address &addr = instr.get_operand(1).get_aarch64_addr();
+    mcode::Operand &m_dst = instr.get_operand(1);
+
+    const AArch64Address &addr = m_dst.get_aarch64_addr();
     AArch64Address new_addr = try_merge_addr(addr, usages);
-    instr.get_operand(1).set_to_aarch64_addr(new_addr);
+    m_dst = mcode::Operand::from_aarch64_addr(new_addr, m_dst.get_size());
 }
 
 void AArch64InstrMergePass::try_merge_add(mcode::Instruction &instr, RegUsageMap &usages) {

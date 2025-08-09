@@ -10,7 +10,14 @@ namespace banjo::target {
 
 namespace WasmOpcode {
 enum {
-    END,
+    BLOCK,
+    END_BLOCK,
+    LOOP,
+    END_LOOP,
+    BR,
+    BR_IF,
+    BR_TABLE,
+    END_FUNCTION,
     CALL,
     DROP,
     LOCAL_GET,

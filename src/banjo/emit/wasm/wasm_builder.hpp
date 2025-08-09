@@ -37,6 +37,11 @@ private:
 
     void encode_instrs(FuncContext &ctx);
     void encode_instr(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_block(FuncContext &ctx);
+    void encode_loop(FuncContext &ctx);
+    void encode_br(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_br_if(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_br_table(FuncContext &ctx, mcode::Instruction &instr);
     void encode_call(FuncContext &ctx, mcode::Instruction &instr);
     void encode_local_get(FuncContext &ctx, mcode::Instruction &instr);
     void encode_local_set(FuncContext &ctx, mcode::Instruction &instr);

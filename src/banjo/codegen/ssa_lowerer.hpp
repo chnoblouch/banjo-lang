@@ -34,9 +34,9 @@ private:
         std::unordered_map<int, RegUsage> regs;
     };
 
+protected:
     typedef std::unordered_map<ssa::BasicBlockIter, mcode::BasicBlockIter> BlockMap;
 
-protected:
     target::Target *target;
     SSALoweringContext context;
     BasicBlockContext basic_block_context;
@@ -91,7 +91,7 @@ public:
 
     virtual mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) = 0;
 
-private:
+protected:
     void lower_func(ssa::Function &func);
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
     mcode::BasicBlock lower_basic_block(ssa::BasicBlock &basic_block);
@@ -107,6 +107,7 @@ private:
 
     virtual void init_module(ssa::Module &mod) {}
     virtual void analyze_func(ssa::Function &func) {}
+    virtual BlockMap generate_blocks(ssa::Function &func);
 
     virtual void lower_load(ssa::Instruction &instr);
     virtual void lower_store(ssa::Instruction &instr);

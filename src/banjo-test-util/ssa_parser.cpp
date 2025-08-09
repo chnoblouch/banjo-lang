@@ -144,7 +144,11 @@ ssa::Module SSAParser::parse() {
                 funcs.insert({func->name, func});
                 mod.add(func);
             } else if (reader.get() == '\0') {
-                ssa::FunctionDecl *func_decl = new ssa::FunctionDecl(name, type);
+                ssa::FunctionDecl *func_decl = new ssa::FunctionDecl{
+                    .name = name,
+                    .type = type,
+                };
+
                 mod.add(func_decl);
             } else {
                 ASSERT_UNREACHABLE;

@@ -1,7 +1,9 @@
 #include "wasm_ssa_lowerer.hpp"
 
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/symbol.hpp"
+#include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/utils.hpp"
 #include "banjo/target/wasm/wasm_calling_conv.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
@@ -33,12 +35,22 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
     func_data.type = lower_func_type(func.type);
 
     vregs2locals.clear();
-    stack_pointer_local = func_data.type.params.size();
+    block_indices.clear();
 
     // Create a local for the stack pointer.
+    stack_pointer_local = func_data.type.params.size();
+    func_data.locals.push_back(WasmType::I32);
+    func_data.stack_pointer_local = stack_pointer_local;
+
+    // Create a local for the next basic block index.
+    block_index_local = stack_pointer_local + 1;
     func_data.locals.push_back(WasmType::I32);
 
-    func_data.stack_pointer_local = stack_pointer_local;
+    // Create a local for the return value.
+    if (func_data.type.result_type) {
+        return_value_local = block_index_local + 1;
+        func_data.locals.push_back(func_data.type.result_type.value());
+    }
 
     for (ssa::BasicBlock &block : func) {
         for (ssa::Instruction &instr : block) {
@@ -53,7 +65,62 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
         }
     }
 
+    for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
+        block_indices.insert({iter, block_indices.size()});
+    }
+
     machine_func->set_target_data(func_data);
+}
+
+WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
+    mcode::BasicBlock entry_block{machine_func};
+    mcode::BasicBlock exit_block{machine_func};
+
+    entry_block.append({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
+    entry_block.append({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});
+    entry_block.append({WasmOpcode::BLOCK});
+    entry_block.append({WasmOpcode::LOOP});
+
+    for (unsigned i = 0; i < func.get_basic_blocks().get_size(); i++) {
+        entry_block.append({WasmOpcode::BLOCK});
+    }
+
+    entry_block.append({WasmOpcode::BLOCK});
+    entry_block.append({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(block_index_local)}});
+
+    mcode::Instruction::OperandList branch_targets;
+
+    for (unsigned i = 0; i < func.get_basic_blocks().get_size(); i++) {
+        branch_targets.append(mcode::Operand::from_int_immediate(i));
+    }
+
+    branch_targets.append(mcode::Operand::from_int_immediate(func.get_basic_blocks().get_size() + 2));
+
+    entry_block.append({WasmOpcode::BR_TABLE, std::move(branch_targets)});
+    entry_block.append({WasmOpcode::END_BLOCK});
+    machine_func->get_basic_blocks().append(std::move(entry_block));
+
+    BlockMap block_map;
+    block_depth = func.get_basic_blocks().get_size();
+
+    for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
+        basic_block_iter = iter;
+        mcode::BasicBlock m_block = lower_basic_block(*iter);
+        m_block.append({WasmOpcode::END_BLOCK});
+
+        mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
+        block_map.insert({iter, m_iter});
+
+        block_depth -= 1;
+    }
+
+    exit_block.append({WasmOpcode::END_LOOP});
+    exit_block.append({WasmOpcode::END_BLOCK});
+    exit_block.append({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(return_value_local)}});
+    exit_block.append({WasmOpcode::END_FUNCTION});
+    machine_func->get_basic_blocks().append(std::move(exit_block));
+
+    return block_map;
 }
 
 void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
@@ -167,12 +234,20 @@ void WasmSSALowerer::lower_urem(ssa::Instruction &instr) {
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_REM_U : WasmOpcode::I32_REM_U);
 }
 
-void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
-    if (!instr.get_operands().empty()) {
-        push_operand(instr.get_operand(0));
-    }
+void WasmSSALowerer::lower_jmp(ssa::Instruction &instr) {
+    unsigned block_index = block_indices.at(instr.get_operand(0).get_branch_target().block);
 
-    emit({WasmOpcode::END});
+    emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index)}});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});
+    emit({WasmOpcode::BR, {mcode::Operand::from_int_immediate(block_depth)}});
+}
+
+void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
+    //
+}
+
+void WasmSSALowerer::lower_fcjmp(ssa::Instruction &instr) {
+    //
 }
 
 void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
@@ -202,6 +277,17 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
             emit({WasmOpcode::DROP});
         }
     }
+}
+
+void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
+    if (!instr.get_operands().empty()) {
+        push_operand(instr.get_operand(0));
+        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(return_value_local)}});
+    }
+
+    emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(1)}});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});
+    emit({WasmOpcode::BR, {mcode::Operand::from_int_immediate(block_depth)}});
 }
 
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {

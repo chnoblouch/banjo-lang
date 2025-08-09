@@ -32,7 +32,7 @@ struct RegOp {
 class Instruction {
 
 public:
-    static constexpr unsigned MAX_NUM_OPERANDS = 4;
+    static constexpr unsigned MAX_NUM_OPERANDS = 8;
     typedef FixedVector<Operand, MAX_NUM_OPERANDS> OperandList;
 
     static constexpr unsigned FLAG_ARG_STORE = 1 << 0;

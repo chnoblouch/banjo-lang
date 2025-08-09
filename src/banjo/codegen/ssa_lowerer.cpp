@@ -65,9 +65,6 @@ void SSALowerer::lower_func(ssa::Function &func) {
         machine_func->get_parameters().push_back(param);
     }
 
-    const LinkedList<ssa::BasicBlock> &basic_blocks = func.get_basic_blocks();
-    BlockMap block_map;
-
     context.reg_use_counts.clear();
 
     for (ssa::BasicBlock &basic_block : func) {
@@ -93,14 +90,7 @@ void SSALowerer::lower_func(ssa::Function &func) {
     }
 
     analyze_func(func);
-
-    for (ssa::BasicBlockIter iter = basic_blocks.begin(); iter != basic_blocks.end(); ++iter) {
-        basic_block_iter = iter;
-        mcode::BasicBlock m_block = lower_basic_block(*iter);
-        mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
-        block_map.insert({iter, m_iter});
-    }
-
+    BlockMap block_map = generate_blocks(func);
     store_graphs(block_map);
 
     machine_module.add(machine_func);
@@ -108,6 +98,19 @@ void SSALowerer::lower_func(ssa::Function &func) {
     if (func.global) {
         machine_module.add_global_symbol(func.name);
     }
+}
+
+SSALowerer::BlockMap SSALowerer::generate_blocks(ssa::Function &func) {
+    BlockMap block_map;
+
+    for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
+        basic_block_iter = iter;
+        mcode::BasicBlock m_block = lower_basic_block(*iter);
+        mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
+        block_map.insert({iter, m_iter});
+    }
+
+    return block_map;
 }
 
 mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func) {

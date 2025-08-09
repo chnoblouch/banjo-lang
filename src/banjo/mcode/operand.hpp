@@ -10,6 +10,7 @@
 #include "banjo/utils/large_int.hpp"
 
 #include <string>
+#include <utility>
 #include <variant>
 
 namespace banjo {
@@ -31,7 +32,7 @@ public:
     };
 
 private:
-    std::variant<
+    typedef std::variant<
         LargeInt,
         double,
         Register,
@@ -44,96 +45,66 @@ private:
         StackSlotOffset,
         unsigned,
         target::AArch64Condition>
-        value;
+        InternalValue;
+
+    InternalValue value;
     int size;
 
 public:
     static Operand from_int_immediate(LargeInt immediate, int size = 0) {
-        Operand operand;
-        operand.set_to_int_immediate(immediate);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<0>, immediate}, size};
     }
 
     static Operand from_fp_immediate(double immediate, int size = 0) {
-        Operand operand;
-        operand.set_to_fp_immediate(immediate);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<1>, immediate}, size};
     }
 
     static Operand from_register(Register reg, int size = 0) {
-        Operand operand;
-        operand.set_to_register(reg);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<2>, reg}, size};
     }
 
     static Operand from_stack_slot(StackSlotID stack_slot, int size = 0) {
-        Operand operand;
-        operand.set_to_stack_slot(stack_slot);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<3>, stack_slot}, size};
     }
 
     static Operand from_symbol(Symbol symbol, int size = 0) {
-        Operand operand;
-        operand.set_to_symbol(symbol);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<4>, std::move(symbol)}, size};
     }
 
     static Operand from_label(std::string label, int size = 0) {
-        Operand operand;
-        operand.set_to_label(label);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<5>, std::move(label)}, size};
     }
 
     static Operand from_symbol_deref(Symbol symbol, int size = 0) {
-        Operand operand;
-        operand.set_to_symbol_deref(symbol);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<6>, std::move(symbol)}, size};
     }
 
     static Operand from_addr(IndirectAddress addr, int size = 0) {
-        Operand operand;
-        operand.set_to_addr(addr);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<7>, addr}, size};
     }
 
     static Operand from_aarch64_addr(target::AArch64Address addr, int size = 0) {
-        Operand operand;
-        operand.set_to_aarch64_addr(addr);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<8>, addr}, size};
     }
 
     static Operand from_stack_slot_offset(StackSlotOffset offset, int size = 0) {
-        Operand operand;
-        operand.set_to_stack_slot_offset(offset);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<9>, offset}, size};
     }
 
     static Operand from_aarch64_left_shift(unsigned left_shift, int size = 0) {
-        Operand operand;
-        operand.set_to_aarch64_left_shift(left_shift);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<10>, left_shift}, size};
     }
 
     static Operand from_aarch64_condition(target::AArch64Condition condition, int size = 0) {
-        Operand operand;
-        operand.set_to_aarch64_condition(condition);
-        operand.set_size(size);
-        return operand;
+        return Operand{InternalValue{std::in_place_index<11>, condition}, size};
     }
 
-    Operand() : value{std::in_place_index<0>, "???"}, size(0) {};
+    Operand() : value{std::in_place_index<0>, 0}, size(0) {};
 
+private:
+    Operand(InternalValue value, int size) : value(std::move(value)), size(size) {}
+
+public:
     bool is_int_immediate() const { return value.index() == 0; }
     bool is_fp_immediate() const { return value.index() == 1; }
     bool is_register() const { return value.index() == 2; }
@@ -165,22 +136,6 @@ public:
 
     VirtualReg get_virtual_reg() const { return get_register().get_virtual_reg(); }
     PhysicalReg get_physical_reg() const { return get_register().get_physical_reg(); }
-
-    void set_to_int_immediate(LargeInt immediate) { value.emplace<0>(immediate); }
-    void set_to_fp_immediate(double immediate) { value.emplace<1>(immediate); }
-    void set_to_register(Register reg) { value.emplace<2>(reg); }
-    void set_to_stack_slot(StackSlotID stack_slot) { value.emplace<3>(stack_slot); }
-    void set_to_symbol(Symbol symbol) { value.emplace<4>(symbol); }
-    void set_to_label(std::string label) { value.emplace<5>(label); }
-    void set_to_symbol_deref(Symbol symbol) { value.emplace<6>(symbol); }
-    void set_to_addr(IndirectAddress addr) { value.emplace<7>(addr); }
-    void set_to_aarch64_addr(target::AArch64Address addr) { value.emplace<8>(addr); }
-    void set_to_stack_slot_offset(StackSlotOffset offset) { value.emplace<9>(offset); }
-    void set_to_aarch64_left_shift(unsigned left_shift) { value.emplace<10>(left_shift); }
-    void set_to_aarch64_condition(target::AArch64Condition condition) { value.emplace<11>(condition); }
-
-    void set_to_virtual_reg(long virtual_reg) { set_to_register(Register::from_virtual(virtual_reg)); }
-    void set_to_physical_reg(long physical_reg) { set_to_register(Register::from_physical(physical_reg)); }
 
     int get_size() const { return size; }
     void set_size(int size) { this->size = size; }
