@@ -37,7 +37,7 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
         case sir::Primitive::U16: return ssa::Primitive::I16;
         case sir::Primitive::U32: return ssa::Primitive::I32;
         case sir::Primitive::U64: return ssa::Primitive::I64;
-        case sir::Primitive::USIZE: return ssa::Primitive::I64;
+        case sir::Primitive::USIZE: return ctx.target->get_data_layout().get_usize_type();
         case sir::Primitive::F32: return ssa::Primitive::F32;
         case sir::Primitive::F64: return ssa::Primitive::F64;
         case sir::Primitive::BOOL: return ssa::Primitive::I8;

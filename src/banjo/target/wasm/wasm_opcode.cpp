@@ -32,6 +32,8 @@ const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
     {I64_CONST, "i64.const"},
     {F32_CONST, "f32.const"},
     {F64_CONST, "f64.const"},
+    {I32_STORE8, "i32.store8"},
+    {I32_STORE16, "i32.store16"},
     {I32_EQ, "i32.eq"},
     {I32_NE, "i32.ne"},
     {I32_LT_S, "i32.lt_s"},
@@ -84,4 +86,4 @@ const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
     {F32_DIV, "f32.div"},
 };
 
-}
+} // namespace banjo::target

@@ -326,12 +326,16 @@ void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Operand &offset = instr.get_operand(1);
-    const ssa::Type &base_type = instr.get_operand(2).get_type();
+    unsigned base_type_size = get_size(instr.get_operand(2).get_type());
 
     AddrComponents addr = collect_addr(instr.get_operand(0));
-
     ssa::VirtualRegister base = addr.base.get_register();
-    unsigned const_offset = addr.const_offset + get_size(base_type) * offset.get_int_immediate().to_s64();
+
+    unsigned const_offset = addr.const_offset;
+
+    if (offset.is_int_immediate()) {
+        const_offset += base_type_size * offset.get_int_immediate().to_s64();
+    }
 
     if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
         mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
@@ -342,6 +346,14 @@ void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
         unsigned local_index = vregs2locals.at(base);
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(const_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    }
+
+    if (offset.is_register()) {
+        unsigned local_index = vregs2locals.at(offset.get_register());
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(base_type_size)}}); // TODO: Use shifts
+        emit({WasmOpcode::I32_MUL});
         emit({WasmOpcode::I32_ADD});
     }
 

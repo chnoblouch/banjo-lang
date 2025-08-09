@@ -1913,13 +1913,16 @@ void ExprAnalyzer::create_method_call(
 }
 
 sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
+    // TODO: Add isize primitive type
+    sir::Primitive target_type = analyzer.target->get_descr().is_wasm() ? sir::Primitive::I32 : sir::Primitive::I64;
+
     return analyzer.create_expr(
         sir::CastExpr{
             .ast_node = value.get_ast_node(),
             .type = analyzer.create_expr(
                 sir::PrimitiveType{
                     .ast_node = nullptr,
-                    .primitive = sir::Primitive::I64, // TODO: Add isize primitive type
+                    .primitive = target_type,
                 }
             ),
             .value = value,

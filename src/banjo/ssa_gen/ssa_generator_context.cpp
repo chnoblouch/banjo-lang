@@ -135,7 +135,8 @@ void SSAGeneratorContext::append_fcjmp(
 }
 
 ssa::VirtualRegister SSAGeneratorContext::append_offsetptr(ssa::Operand base, unsigned offset, ssa::Type type) {
-    ssa::Value offset_val = ssa::Value::from_int_immediate(offset, ssa::Primitive::I64);
+    ssa::Type usize_type = target->get_data_layout().get_usize_type();
+    ssa::Value offset_val = ssa::Value::from_int_immediate(offset, usize_type);
     return append_offsetptr(std::move(base), offset_val, type);
 }
 
