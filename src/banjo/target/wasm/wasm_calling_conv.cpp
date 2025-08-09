@@ -55,6 +55,10 @@ std::vector<mcode::Instruction> WasmCallingConv::get_prolog(mcode::Function *fun
     const WasmFuncData &func_data = std::any_cast<const WasmFuncData &>(func->get_target_data());
     unsigned alloca_size = func->get_stack_frame().get_size();
 
+    if (alloca_size == 0) {
+        return {};
+    }
+
     return {
         {WasmOpcode::GLOBAL_GET, {STACK_POINTER_GLOBAL}},
         {WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(alloca_size)}},
@@ -67,6 +71,10 @@ std::vector<mcode::Instruction> WasmCallingConv::get_prolog(mcode::Function *fun
 std::vector<mcode::Instruction> WasmCallingConv::get_epilog(mcode::Function *func) {
     const WasmFuncData &func_data = std::any_cast<const WasmFuncData &>(func->get_target_data());
     unsigned alloca_size = func->get_stack_frame().get_size();
+
+    if (alloca_size == 0) {
+        return {};
+    }
 
     return {
         {WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(func_data.stack_pointer_local)}},
