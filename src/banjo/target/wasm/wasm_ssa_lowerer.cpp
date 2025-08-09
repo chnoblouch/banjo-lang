@@ -118,7 +118,11 @@ WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     exit_block.append({WasmOpcode::END_LOOP});
     exit_block.append({WasmOpcode::END_BLOCK});
-    exit_block.append({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(return_value_local)}});
+
+    if (func.type.return_type != ssa::Primitive::VOID) {
+        exit_block.append({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(return_value_local)}});
+    }
+
     exit_block.append({WasmOpcode::END_FUNCTION});
     machine_func->get_basic_blocks().append(std::move(exit_block));
 
@@ -267,7 +271,7 @@ void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
 
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_true)}});
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_false)}});
-    
+
     push_operand(instr.get_operand(0));
     push_operand(instr.get_operand(2));
     emit({m_cmp_opcode});
