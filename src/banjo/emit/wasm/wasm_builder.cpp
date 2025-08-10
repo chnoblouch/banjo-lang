@@ -50,6 +50,10 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
         build_func_import(file, func_import);
     }
 
+    for (const std::string &extern_global : mod_data.extern_globals) {
+        build_extern_global(file, extern_global);
+    }
+
     for (mcode::Global &global : mod.get_globals()) {
         build_global(file, global);
     }
@@ -71,6 +75,11 @@ void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
 
     for (const target::WasmFuncImport &func_import : mod_data.func_imports) {
         symbol_indices.insert({func_import.name, index});
+        index += 1;
+    }
+
+    for (const std::string &extern_global : mod_data.extern_globals) {
+        symbol_indices.insert({extern_global, index});
         index += 1;
     }
 
@@ -111,6 +120,16 @@ void WasmBuilder::build_func_import(WasmObjectFile &file, const target::WasmFunc
     );
 
     num_func_imports += 1;
+}
+
+void WasmBuilder::build_extern_global(WasmObjectFile &file, const std::string &extern_global) {
+    file.symbols.push_back(
+        WasmSymbol{
+            .type = WasmSymbolType::DATA,
+            .flags = WasmSymbolFlags::UNDEFINED,
+            .name = extern_global,
+        }
+    );
 }
 
 void WasmBuilder::build_global(WasmObjectFile &file, mcode::Global &global) {
@@ -479,6 +498,17 @@ void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr)
         const mcode::Operand::StackSlotOffset &offset = addr.get_stack_slot_offset();
         mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(offset.slot_index);
         ctx.body.write_uleb128(slot.get_offset() + offset.addend);
+    } else if (addr.is_symbol()) {
+        ctx.relocs.push_back(
+            WasmRelocation{
+                .type = WasmRelocType::MEMORY_ADDR_LEB,
+                .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
+                .index = symbol_indices.at(addr.get_symbol().name),
+                .addend = 0,
+            }
+        );
+
+        write_reloc_placeholder_32(ctx.body);
     } else {
         ASSERT_UNREACHABLE;
     }

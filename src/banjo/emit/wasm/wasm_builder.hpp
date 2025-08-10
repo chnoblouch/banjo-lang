@@ -32,6 +32,7 @@ private:
     void collect_symbol_indices(mcode::Module &mod);
 
     void build_func_import(WasmObjectFile &file, const target::WasmFuncImport &func_import);
+    void build_extern_global(WasmObjectFile &file, const std::string &extern_global);
     void build_global(WasmObjectFile &file, mcode::Global &global);
     void build_func(WasmObjectFile &file, mcode::Function &func);
 

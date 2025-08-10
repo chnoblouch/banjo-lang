@@ -168,7 +168,7 @@ void WasmEmitter::emit_reloc_section(const RelocSection &section) {
         data.write_uleb128(reloc.offset); // relocation offset
         data.write_uleb128(reloc.index);  // symbol index
 
-        if (reloc.type == WasmRelocType::MEMORY_ADDR_SLEB) {
+        if (reloc.type == WasmRelocType::MEMORY_ADDR_LEB || reloc.type == WasmRelocType::MEMORY_ADDR_SLEB) {
             data.write_uleb128(reloc.addend); // address addend
         }
     }
@@ -202,9 +202,12 @@ void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
             }
         } else if (symbol.type == WasmSymbolType::DATA) {
             write_name(data, symbol.name);     // symbol name
-            data.write_uleb128(symbol.index);  // data segment index
-            data.write_uleb128(symbol.offset); // offset within the segment
-            data.write_uleb128(symbol.size);   // data size
+
+            if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
+                data.write_uleb128(symbol.index);  // data segment index
+                data.write_uleb128(symbol.offset); // offset within the segment
+                data.write_uleb128(symbol.size);   // data size
+            }
         }
     }
 

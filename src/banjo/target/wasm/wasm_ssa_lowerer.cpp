@@ -29,6 +29,10 @@ void WasmSSALowerer::init_module(ssa::Module &mod) {
         );
     }
 
+    for (ssa::GlobalDecl *global_decl : mod.get_external_globals()) {
+        mod_data.extern_globals.push_back(global_decl->name);
+    }
+
     machine_module.set_target_data(std::move(mod_data));
 }
 
@@ -149,15 +153,24 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     }
 
     AddrComponents addr = collect_addr(instr.get_operand(1));
-    ssa::VirtualRegister base = addr.base.get_register();
 
-    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset};
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-        emit({load_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+    if (addr.base.is_register()) {
+        ssa::VirtualRegister base = addr.base.get_register();
+
+        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset};
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            emit({load_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+        } else {
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
+            emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
+        }
+    } else if (addr.base.is_extern_global()) {
+        mcode::Symbol m_symbol{addr.base.get_extern_global()->name};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
+        emit({WasmOpcode::I32_LOAD, {mcode::Operand::from_symbol(m_symbol)}});
     } else {
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
-        emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
+        ASSERT_UNREACHABLE;
     }
 
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
@@ -420,8 +433,8 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
         mcode::Opcode opcode = is_64_bit ? WasmOpcode::F64_CONST : WasmOpcode::F32_CONST;
         emit({opcode, {mcode::Operand::from_fp_immediate(immediate)}});
     } else if (operand.is_global()) {
-        mcode::Symbol symbol{operand.get_global()->name};
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(symbol)}});
+        mcode::Symbol m_symbol{operand.get_global()->name};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
     } else if (operand.is_symbol()) {
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
     } else {

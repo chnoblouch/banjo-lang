@@ -49,6 +49,7 @@ struct WasmLocalGroup {
 namespace WasmRelocType {
 enum {
     FUNCTION_INDEX_LEB = 0x00,
+    MEMORY_ADDR_LEB = 0x03,
     MEMORY_ADDR_SLEB = 0x04,
     GLOBAL_INDEX_LEB = 0x07,
 };
