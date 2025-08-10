@@ -141,8 +141,8 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
 
     switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
-        case ssa::Primitive::I8: ASSERT_UNREACHABLE;
-        case ssa::Primitive::I16: ASSERT_UNREACHABLE;
+        case ssa::Primitive::I8: load_opcode = WasmOpcode::I32_LOAD8_U; break;   // TODO: Signedness
+        case ssa::Primitive::I16: load_opcode = WasmOpcode::I32_LOAD16_U; break; // TODO: Signedness
         case ssa::Primitive::I32: load_opcode = WasmOpcode::I32_LOAD; break;
         case ssa::Primitive::I64: load_opcode = WasmOpcode::I64_LOAD; break;
         case ssa::Primitive::F32: load_opcode = WasmOpcode::F32_LOAD; break;

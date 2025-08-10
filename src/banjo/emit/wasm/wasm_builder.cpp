@@ -226,6 +226,10 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I64_LOAD: encode_i64_load(ctx, instr); break;
         case target::WasmOpcode::F32_LOAD: encode_f32_load(ctx, instr); break;
         case target::WasmOpcode::F64_LOAD: encode_f64_load(ctx, instr); break;
+        case target::WasmOpcode::I32_LOAD8_S: encode_i32_load8_s(ctx, instr); break;
+        case target::WasmOpcode::I32_LOAD8_U: encode_i32_load8_u(ctx, instr); break;
+        case target::WasmOpcode::I32_LOAD16_S: encode_i32_load16_s(ctx, instr); break;
+        case target::WasmOpcode::I32_LOAD16_U: encode_i32_load16_u(ctx, instr); break;
         case target::WasmOpcode::I32_STORE: encode_i32_store(ctx, instr); break;
         case target::WasmOpcode::I64_STORE: encode_i64_store(ctx, instr); break;
         case target::WasmOpcode::F32_STORE: encode_f32_store(ctx, instr); break;
@@ -425,6 +429,30 @@ void WasmBuilder::encode_f32_load(FuncContext &ctx, mcode::Instruction &instr) {
 void WasmBuilder::encode_f64_load(FuncContext &ctx, mcode::Instruction &instr) {
     ctx.body.write_u8(0x2B);
     ctx.body.write_uleb128(0x03);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_load8_s(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x2C);
+    ctx.body.write_uleb128(0x00);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_load8_u(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x2D);
+    ctx.body.write_uleb128(0x00);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_load16_s(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x2E);
+    ctx.body.write_uleb128(0x01);
+    encode_load_store_addr(ctx, instr.get_operand(0));
+}
+
+void WasmBuilder::encode_i32_load16_u(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x2F);
+    ctx.body.write_uleb128(0x01);
     encode_load_store_addr(ctx, instr.get_operand(0));
 }
 

@@ -53,6 +53,10 @@ private:
     void encode_i64_load(FuncContext &ctx, mcode::Instruction &instr);
     void encode_f32_load(FuncContext &ctx, mcode::Instruction &instr);
     void encode_f64_load(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_load8_s(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_load8_u(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_load16_s(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i32_load16_u(FuncContext &ctx, mcode::Instruction &instr);
     void encode_i32_store(FuncContext &ctx, mcode::Instruction &instr);
     void encode_i64_store(FuncContext &ctx, mcode::Instruction &instr);
     void encode_f32_store(FuncContext &ctx, mcode::Instruction &instr);
