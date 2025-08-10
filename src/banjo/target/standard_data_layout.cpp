@@ -3,14 +3,10 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
-#include <utility>
+namespace banjo::target {
 
-namespace banjo {
-
-namespace target {
-
-StandardDataLayout::StandardDataLayout(unsigned usize, ssa::Type usize_type)
-  : TargetDataLayout(usize, std::move(usize_type)) {}
+StandardDataLayout::StandardDataLayout(unsigned register_size, ssa::Type usize_type)
+  : TargetDataLayout(register_size, usize_type) {}
 
 unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
     if (type.is_primitive()) {
@@ -22,7 +18,7 @@ unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
             case ssa::Primitive::I64: return 8 * type.get_array_length();
             case ssa::Primitive::F32: return 4 * type.get_array_length();
             case ssa::Primitive::F64: return 8 * type.get_array_length();
-            case ssa::Primitive::ADDR: return usize * type.get_array_length();
+            case ssa::Primitive::ADDR: return get_size(get_usize_type()) * type.get_array_length();
         }
     } else if (type.is_struct()) {
         ssa::Structure &struct_ = *type.get_struct();
@@ -74,6 +70,4 @@ unsigned StandardDataLayout::get_member_offset(ssa::Structure *struct_, unsigned
     return Utils::align(offset, alignment);
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

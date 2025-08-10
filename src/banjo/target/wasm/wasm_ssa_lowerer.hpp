@@ -60,6 +60,7 @@ private:
 
     WasmFuncType lower_func_type(ssa::FunctionType type);
     WasmType lower_type(ssa::Type type);
+    ssa::Primitive type_as_primitive(ssa::Type type);
 };
 
 } // namespace banjo::target

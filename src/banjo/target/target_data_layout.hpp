@@ -13,11 +13,11 @@ namespace target {
 class TargetDataLayout {
 
 protected:
-    unsigned usize;
+    unsigned register_size;
     ssa::Type usize_type;
 
 public:
-    TargetDataLayout(unsigned usize, ssa::Type usize_type);
+    TargetDataLayout(unsigned register_size, ssa::Type usize_type);
 
     virtual ~TargetDataLayout() = default;
     virtual unsigned get_size(const ssa::Type &type) const = 0;
@@ -25,8 +25,6 @@ public:
     virtual unsigned get_member_offset(ssa::Structure *struct_, unsigned index) const = 0;
 
     ssa::Type get_usize_type() const { return usize_type; }
-    bool is_pass_by_ref(const ssa::Type &type) const;
-    bool is_return_by_ref(const ssa::Type &type) const;
     bool fits_in_register(const ssa::Type &type) const;
 };
 

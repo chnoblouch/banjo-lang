@@ -137,11 +137,9 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Type type = instr.get_operand(0).get_type();
 
-    ASSERT(type.is_primitive() && type.get_array_length() == 1);
-
     mcode::Opcode load_opcode;
 
-    switch (type.get_primitive()) {
+    switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
         case ssa::Primitive::I8: ASSERT_UNREACHABLE;
         case ssa::Primitive::I16: ASSERT_UNREACHABLE;
@@ -180,11 +178,9 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     ssa::Operand &value = instr.get_operand(0);
     ssa::Type type = value.get_type();
 
-    ASSERT(type.is_primitive() && type.get_array_length() == 1);
-
     mcode::Opcode store_opcode;
 
-    switch (type.get_primitive()) {
+    switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
         case ssa::Primitive::I8: store_opcode = WasmOpcode::I32_STORE8; break;
         case ssa::Primitive::I16: store_opcode = WasmOpcode::I32_STORE16; break;
@@ -505,9 +501,7 @@ WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
 }
 
 WasmType WasmSSALowerer::lower_type(ssa::Type type) {
-    ASSERT(type.is_primitive() && type.get_array_length() == 1);
-
-    switch (type.get_primitive()) {
+    switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
         case ssa::Primitive::I8:
         case ssa::Primitive::I16:
@@ -516,6 +510,19 @@ WasmType WasmSSALowerer::lower_type(ssa::Type type) {
         case ssa::Primitive::F32: return WasmType::F32;
         case ssa::Primitive::F64: return WasmType::F64;
         case ssa::Primitive::ADDR: return WasmType::I32;
+    }
+}
+
+ssa::Primitive WasmSSALowerer::type_as_primitive(ssa::Type type) {
+    ASSERT(type.get_array_length() == 1);
+
+    if (type.is_primitive()) {
+        return type.get_primitive();
+    } else if (type.is_struct()) {
+        unsigned size = get_size(type);
+        return size == 8 ? ssa::Primitive::I64 : ssa::Primitive::I32;
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
