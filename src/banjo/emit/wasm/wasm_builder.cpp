@@ -296,6 +296,11 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I64_REM_S: ctx.body.write_u8(0x81); break;
         case target::WasmOpcode::I64_REM_U: ctx.body.write_u8(0x82); break;
         case target::WasmOpcode::F32_ADD: ctx.body.write_u8(0x92); break;
+        case target::WasmOpcode::I32_WRAP_I64: ctx.body.write_u8(0xA7); break;
+        case target::WasmOpcode::I64_EXTEND_I32_S: ctx.body.write_u8(0xAC); break;
+        case target::WasmOpcode::I64_EXTEND_I32_U: ctx.body.write_u8(0xAD); break;
+        case target::WasmOpcode::I32_EXTEND8_S: ctx.body.write_u8(0xC0); break;
+        case target::WasmOpcode::I32_EXTEND16_S: ctx.body.write_u8(0xC1); break;
         default: ASSERT_UNREACHABLE;
     }
 }

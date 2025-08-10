@@ -344,6 +344,48 @@ void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
     emit({WasmOpcode::BR, {mcode::Operand::from_int_immediate(block_depth)}});
 }
 
+void WasmSSALowerer::lower_uextend(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    unsigned dst_size = get_size(instr.get_operand(1).get_type());
+
+    push_operand(instr.get_operand(0));
+
+    if (dst_size == 8) {
+        emit({WasmOpcode::I64_EXTEND_I32_U});
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_sextend(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    unsigned dst_size = get_size(instr.get_operand(1).get_type());
+
+    push_operand(instr.get_operand(0));
+
+    if (dst_size == 8) {
+        emit({WasmOpcode::I64_EXTEND_I32_S});
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_truncate(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
+    unsigned dst_size = get_size(instr.get_operand(1).get_type());
+
+    push_operand(instr.get_operand(0));
+
+    if (src_size == 8) {
+        emit({WasmOpcode::I32_WRAP_I64});
+    }
+
+    // TODO: Actually truncate
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Operand &offset = instr.get_operand(1);

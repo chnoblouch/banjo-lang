@@ -94,6 +94,11 @@ enum {
     F32_SUB,
     F32_MUL,
     F32_DIV,
+    I32_WRAP_I64,
+    I64_EXTEND_I32_S,
+    I64_EXTEND_I32_U,
+    I32_EXTEND8_S,
+    I32_EXTEND16_S,
 };
 
 extern const std::unordered_map<mcode::Opcode, std::string_view> NAMES;

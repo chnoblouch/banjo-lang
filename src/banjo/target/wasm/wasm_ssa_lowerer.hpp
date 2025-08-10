@@ -51,6 +51,9 @@ private:
     void lower_fcjmp(ssa::Instruction &instr) override;
     void lower_call(ssa::Instruction &instr) override;
     void lower_ret(ssa::Instruction &instr) override;
+    void lower_uextend(ssa::Instruction &instr) override;
+    void lower_sextend(ssa::Instruction &instr) override;
+    void lower_truncate(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
 

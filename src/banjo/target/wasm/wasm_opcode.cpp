@@ -88,6 +88,11 @@ const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
     {F32_SUB, "f32.sub"},
     {F32_MUL, "f32.mul"},
     {F32_DIV, "f32.div"},
+    {I32_WRAP_I64, "i32.wrap_i64"},
+    {I64_EXTEND_I32_S, "i64.extend_i32_s"},
+    {I64_EXTEND_I32_U, "i64.extend_i32_u"},
+    {I32_EXTEND8_S, "i32.extend8_s"},
+    {I32_EXTEND16_S, "i32.extend16_s"},
 };
 
 } // namespace banjo::target
