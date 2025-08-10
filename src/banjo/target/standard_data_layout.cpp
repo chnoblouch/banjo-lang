@@ -12,6 +12,10 @@ unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
     if (type.is_primitive()) {
         switch (type.get_primitive()) {
             case ssa::Primitive::VOID: return 0;
+            case ssa::Primitive::U8: return 1 * type.get_array_length();
+            case ssa::Primitive::U16: return 2 * type.get_array_length();
+            case ssa::Primitive::U32: return 4 * type.get_array_length();
+            case ssa::Primitive::U64: return 8 * type.get_array_length();
             case ssa::Primitive::I8: return 1 * type.get_array_length();
             case ssa::Primitive::I16: return 2 * type.get_array_length();
             case ssa::Primitive::I32: return 4 * type.get_array_length();

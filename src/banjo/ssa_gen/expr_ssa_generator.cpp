@@ -339,7 +339,7 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
         ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(pointer_type->base_type);
         reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa_base_type);
     } else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
-        reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa::Primitive::I8);
+        reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa::Primitive::U8);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -605,7 +605,7 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         ssa::VirtualRegister ssa_tag_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 0);
         ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(stored_val.value_type, stored_val.get_ptr(), 1);
 
-        ctx.append_store(ssa::Operand::from_int_immediate(tag, ssa::Primitive::I32), ssa_tag_ptr_reg);
+        ctx.append_store(ssa::Operand::from_int_immediate(tag, ssa::Primitive::U32), ssa_tag_ptr_reg);
         ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
         return stored_val;
     } else if (auto proto_def = coercion_expr.type.match_proto_ptr()) {
@@ -700,18 +700,18 @@ StoredValue ExprSSAGenerator::generate_bool_expr(const sir::Expr &expr) {
 
     generate_branch(expr, {ssa_target_if_true, ssa_target_if_false});
 
-    ssa::VirtualRegister ssa_slot_reg = ctx.append_alloca(ssa::Primitive::I8);
+    ssa::VirtualRegister ssa_slot_reg = ctx.append_alloca(ssa::Primitive::U8);
     ssa::Value ssa_slot = ssa::Value::from_register(ssa_slot_reg, ssa::Primitive::ADDR);
 
     ctx.append_block(ssa_target_if_true);
-    ctx.append_store(ssa::Operand::from_int_immediate(1, ssa::Primitive::I8), ssa_slot);
+    ctx.append_store(ssa::Operand::from_int_immediate(1, ssa::Primitive::U8), ssa_slot);
     ctx.append_jmp(ssa_end);
     ctx.append_block(ssa_target_if_false);
-    ctx.append_store(ssa::Operand::from_int_immediate(0, ssa::Primitive::I8), ssa_slot);
+    ctx.append_store(ssa::Operand::from_int_immediate(0, ssa::Primitive::U8), ssa_slot);
     ctx.append_jmp(ssa_end);
     ctx.append_block(ssa_end);
 
-    return StoredValue::create_reference(ssa_slot, ssa::Primitive::I8);
+    return StoredValue::create_reference(ssa_slot, ssa::Primitive::U8);
 }
 
 void ExprSSAGenerator::generate_int_cmp_branch(

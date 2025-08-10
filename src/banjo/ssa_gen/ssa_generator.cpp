@@ -221,7 +221,7 @@ void SSAGenerator::generate_runtime() {
         .type{
             .params{
                 ssa::Primitive::ADDR,
-                ssa::Primitive::I64,
+                ssa::Primitive::U64,
                 ssa::Primitive::ADDR,
             },
             .return_type = ssa::Primitive::I32,
@@ -263,7 +263,7 @@ void SSAGenerator::generate_runtime() {
             ssa::Opcode::LOADARG,
             2,
             {
-                ssa::Operand::from_type(ssa::Primitive::I64),
+                ssa::Operand::from_type(ssa::Primitive::U64),
                 ssa::Operand::from_int_immediate(2),
             },
         });
@@ -273,7 +273,7 @@ void SSAGenerator::generate_runtime() {
             {
                 ssa::Operand::from_extern_func(func_snprintf, ssa::Primitive::VOID),
                 ssa::Operand::from_register(1, ssa::Primitive::ADDR),
-                ssa::Operand::from_register(2, ssa::Primitive::I64),
+                ssa::Operand::from_register(2, ssa::Primitive::U64),
                 ssa::Operand::from_global(global_format_string, ssa::Primitive::ADDR),
                 ssa::Operand::from_register(0, ssa::Primitive::F64),
             }

@@ -126,7 +126,7 @@ void PeepholeOptimizer::optimize_call(
             }
 
             ssa::Operand size_as_type = ssa::Operand::from_type({
-                ssa::Primitive::I8,
+                ssa::Primitive::U8,
                 static_cast<unsigned>(size.get_int_immediate().to_u64()),
             });
 
@@ -147,7 +147,7 @@ void PeepholeOptimizer::optimize_call(
 
         std::string string = std::get<std::string>(iter->get_operand(1).get_global()->initial_value);
         unsigned string_length = string.size() - 1;
-        ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::I64);
+        ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::U64);
         eliminate(iter, value, block, func);
     }
 }

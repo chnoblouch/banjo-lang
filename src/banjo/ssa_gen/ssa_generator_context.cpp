@@ -250,7 +250,7 @@ ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union
 
     ssa_struct->add({
         .name = "tag",
-        .type = ssa::Primitive::I32,
+        .type = ssa::Primitive::U32,
     });
 
     ssa::Type largest_case_type = ssa::Primitive::VOID;

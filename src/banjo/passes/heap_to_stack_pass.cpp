@@ -153,7 +153,7 @@ void HeapToStackPass::promote(ssa::Function &func, Allocation &alloc) {
 
     DEBUG_LOG << "  promoting %" << reg << "\n";
 
-    ssa::Operand alloca_arg = ssa::Operand::from_type({ssa::Primitive::I8, size});
+    ssa::Operand alloca_arg = ssa::Operand::from_type({ssa::Primitive::U8, size});
     ssa::Instruction alloca_instr{ssa::Opcode::ALLOCA, reg, {alloca_arg}};
     func.get_entry_block().insert_before(func.get_entry_block().get_entry_iter(), alloca_instr);
 

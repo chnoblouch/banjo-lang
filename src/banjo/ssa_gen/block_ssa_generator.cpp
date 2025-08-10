@@ -165,7 +165,7 @@ void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt)
 
     StoredValue ssa_value = ExprSSAGenerator(ctx).generate(switch_stmt.value);
     ssa::VirtualRegister ssa_tag_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 0);
-    ssa::Value ssa_tag = ctx.append_load(ssa::Primitive::I32, ssa_tag_ptr_reg);
+    ssa::Value ssa_tag = ctx.append_load(ssa::Primitive::U32, ssa_tag_ptr_reg);
 
     for (unsigned i = 0; i < switch_stmt.case_branches.size(); i++) {
         const sir::SwitchCaseBranch &sir_branch = switch_stmt.case_branches[i];
@@ -177,7 +177,7 @@ void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt)
         ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
         ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
 
-        ssa::Value ssa_tag_value = ssa::Value::from_int_immediate(tag, ssa::Primitive::I32);
+        ssa::Value ssa_tag_value = ssa::Value::from_int_immediate(tag, ssa::Primitive::U32);
         ctx.append_cjmp(ssa_tag, ssa::Comparison::EQ, ssa_tag_value, ssa_target_if_true, ssa_target_if_false);
         ctx.append_block(ssa_target_if_true);
 
@@ -243,7 +243,7 @@ void BlockSSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*
 }
 
 void BlockSSAGenerator::generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value) {
-    ssa::VirtualRegister flag_slot = ctx.append_alloca(ssa::Primitive::I8);
+    ssa::VirtualRegister flag_slot = ctx.append_alloca(ssa::Primitive::U8);
     ctx.append_store(std::move(initial_value), flag_slot);
     ctx.get_func_context().resource_deinit_flags.insert({&resource, flag_slot});
 }
@@ -282,7 +282,7 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
         ssa::BasicBlockIter end_block = ctx.create_block();
 
         ssa::VirtualRegister flag_slot = ctx.get_func_context().resource_deinit_flags.at(&resource);
-        ssa::Value flag_val = ctx.append_load(ssa::Primitive::I8, flag_slot);
+        ssa::Value flag_val = ctx.append_load(ssa::Primitive::U8, flag_slot);
         ctx.append_cjmp(flag_val, ssa::Comparison::NE, DEINIT_FLAG_FALSE, deinit_block, end_block);
 
         ctx.append_block(deinit_block);

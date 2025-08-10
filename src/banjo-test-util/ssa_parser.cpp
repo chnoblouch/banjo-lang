@@ -18,6 +18,10 @@ namespace test {
 
 const std::unordered_map<std::string_view, ssa::Primitive> PRIMITIVES = {
     {"void", ssa::Primitive::VOID},
+    {"u8", ssa::Primitive::U8},
+    {"u16", ssa::Primitive::U16},
+    {"u32", ssa::Primitive::U32},
+    {"u64", ssa::Primitive::U64},
     {"i8", ssa::Primitive::I8},
     {"i16", ssa::Primitive::I16},
     {"i32", ssa::Primitive::I32},

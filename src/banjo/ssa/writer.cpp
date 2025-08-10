@@ -230,6 +230,10 @@ std::string Writer::type_to_str(Type type) {
     if (type.is_primitive()) {
         switch (type.get_primitive()) {
             case Primitive::VOID: str = "void"; break;
+            case Primitive::U8: str = "u8"; break;
+            case Primitive::U16: str = "u16"; break;
+            case Primitive::U32: str = "u32"; break;
+            case Primitive::U64: str = "u64"; break;
             case Primitive::I8: str = "i8"; break;
             case Primitive::I16: str = "i16"; break;
             case Primitive::I32: str = "i32"; break;

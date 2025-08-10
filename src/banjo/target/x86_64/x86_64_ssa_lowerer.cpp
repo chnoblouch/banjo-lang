@@ -585,7 +585,7 @@ void X8664SSALowerer::lower_copy(ssa::Instruction& instr) {
         ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::VOID),
         instr.get_operand(0),
         instr.get_operand(1),
-        ssa::Operand::from_int_immediate(size, ssa::Primitive::I64)
+        ssa::Operand::from_int_immediate(size, ssa::Primitive::U64)
     });
 
     lower_call(call_instr);

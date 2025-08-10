@@ -28,7 +28,7 @@ void AddrTablePass::run(ssa::Module &mod) {
     } else {
         mod.add(new ssa::GlobalDecl{
             .name = "addr_table",
-            .type = ssa::Primitive::I64,
+            .type = ssa::Primitive::U64,
         });
     }
 
@@ -65,7 +65,7 @@ void AddrTablePass::replace_uses(ssa::Module &mod, ssa::Function *func, ssa::Bas
 
             ssa::GlobalDecl &ssa_global = ssa::AddrTable::DUMMY_GLOBAL;
             ssa::Operand ssa_base = ssa::Operand::from_extern_global(&ssa_global, ssa::Primitive::ADDR);
-            ssa::Operand ssa_offset = ssa::Operand::from_int_immediate(offset, ssa::Primitive::I64);
+            ssa::Operand ssa_offset = ssa::Operand::from_int_immediate(offset, ssa::Primitive::U64);
             basic_block.insert_before(iter, ssa::Instruction(ssa::Opcode::ADD, ptr_reg, {ssa_base, ssa_offset}));
 
             ssa::Operand ssa_type = ssa::Operand::from_type(ssa::Primitive::ADDR);

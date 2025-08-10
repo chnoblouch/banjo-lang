@@ -65,7 +65,7 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
             }
 
             unsigned local_index = func.type.params.size() + func_data.locals.size();
-            ssa::Type type = ssa::get_result_type(instr, ssa::Primitive::I32);
+            ssa::Type type = ssa::get_result_type(instr, ssa::Primitive::U32);
             func_data.locals.push_back(lower_type(type));
             vregs2locals.insert({*instr.get_dest(), local_index});
         }
@@ -141,8 +141,12 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
 
     switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
-        case ssa::Primitive::I8: load_opcode = WasmOpcode::I32_LOAD8_U; break;   // TODO: Signedness
-        case ssa::Primitive::I16: load_opcode = WasmOpcode::I32_LOAD16_U; break; // TODO: Signedness
+        case ssa::Primitive::U8: load_opcode = WasmOpcode::I32_LOAD8_U; break;
+        case ssa::Primitive::U16: load_opcode = WasmOpcode::I32_LOAD16_U; break;
+        case ssa::Primitive::U32: load_opcode = WasmOpcode::I32_LOAD; break;
+        case ssa::Primitive::U64: load_opcode = WasmOpcode::I64_LOAD; break;
+        case ssa::Primitive::I8: load_opcode = WasmOpcode::I32_LOAD8_S; break;
+        case ssa::Primitive::I16: load_opcode = WasmOpcode::I32_LOAD16_S; break;
         case ssa::Primitive::I32: load_opcode = WasmOpcode::I32_LOAD; break;
         case ssa::Primitive::I64: load_opcode = WasmOpcode::I64_LOAD; break;
         case ssa::Primitive::F32: load_opcode = WasmOpcode::F32_LOAD; break;
@@ -182,6 +186,10 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
 
     switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::U8: store_opcode = WasmOpcode::I32_STORE8; break;
+        case ssa::Primitive::U16: store_opcode = WasmOpcode::I32_STORE16; break;
+        case ssa::Primitive::U32: store_opcode = WasmOpcode::I32_STORE; break;
+        case ssa::Primitive::U64: store_opcode = WasmOpcode::I64_STORE; break;
         case ssa::Primitive::I8: store_opcode = WasmOpcode::I32_STORE8; break;
         case ssa::Primitive::I16: store_opcode = WasmOpcode::I32_STORE16; break;
         case ssa::Primitive::I32: store_opcode = WasmOpcode::I32_STORE; break;
@@ -215,37 +223,37 @@ void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_add(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_ADD : WasmOpcode::I32_ADD);
 }
 
 void WasmSSALowerer::lower_sub(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SUB : WasmOpcode::I32_SUB);
 }
 
 void WasmSSALowerer::lower_mul(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_MUL : WasmOpcode::I32_MUL);
 }
 
 void WasmSSALowerer::lower_sdiv(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_DIV_S : WasmOpcode::I32_DIV_S);
 }
 
 void WasmSSALowerer::lower_srem(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_REM_S : WasmOpcode::I32_REM_S);
 }
 
 void WasmSSALowerer::lower_udiv(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_DIV_U : WasmOpcode::I32_DIV_U);
 }
 
 void WasmSSALowerer::lower_urem(ssa::Instruction &instr) {
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_REM_U : WasmOpcode::I32_REM_U);
 }
 
@@ -261,7 +269,7 @@ void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
     unsigned block_index_true = block_indices.at(instr.get_operand(3).get_branch_target().block);
     unsigned block_index_false = block_indices.at(instr.get_operand(4).get_branch_target().block);
 
-    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::I64;
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     mcode::Opcode m_cmp_opcode;
 
     switch (instr.get_operand(1).get_comparison()) {
@@ -420,7 +428,7 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
         }
     } else if (operand.is_int_immediate()) {
         LargeInt immediate = operand.get_int_immediate();
-        bool is_64_bit = operand.get_type() == ssa::Primitive::I64;
+        bool is_64_bit = is_64_bit_int(operand.get_type());
         mcode::Opcode opcode = is_64_bit ? WasmOpcode::I64_CONST : WasmOpcode::I32_CONST;
         emit({opcode, {mcode::Operand::from_int_immediate(immediate)}});
     } else if (operand.is_fp_immediate()) {
@@ -503,8 +511,12 @@ WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
 WasmType WasmSSALowerer::lower_type(ssa::Type type) {
     switch (type_as_primitive(type)) {
         case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
-        case ssa::Primitive::I8:
-        case ssa::Primitive::I16:
+        case ssa::Primitive::U8: return WasmType::I32;
+        case ssa::Primitive::U16: return WasmType::I32;
+        case ssa::Primitive::U32: return WasmType::I32;
+        case ssa::Primitive::U64: return WasmType::I64;
+        case ssa::Primitive::I8: return WasmType::I32;
+        case ssa::Primitive::I16: return WasmType::I32;
         case ssa::Primitive::I32: return WasmType::I32;
         case ssa::Primitive::I64: return WasmType::I64;
         case ssa::Primitive::F32: return WasmType::F32;
@@ -520,10 +532,14 @@ ssa::Primitive WasmSSALowerer::type_as_primitive(ssa::Type type) {
         return type.get_primitive();
     } else if (type.is_struct()) {
         unsigned size = get_size(type);
-        return size == 8 ? ssa::Primitive::I64 : ssa::Primitive::I32;
+        return size == 8 ? ssa::Primitive::U64 : ssa::Primitive::U32;
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+bool WasmSSALowerer::is_64_bit_int(ssa::Type type) {
+    return type == ssa::Primitive::U64 || type == ssa::Primitive::I64;
 }
 
 } // namespace banjo::target
