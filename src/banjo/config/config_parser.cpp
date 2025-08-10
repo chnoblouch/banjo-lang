@@ -88,6 +88,7 @@ target::TargetDescription ConfigParser::create_target(const ParsedArgs &args) {
     else if (os_name == "macos") os = target::OperatingSystem::MACOS;
     else if (os_name == "android") os = target::OperatingSystem::ANDROID;
     else if (os_name == "ios") os = target::OperatingSystem::IOS;
+    else if (os_name == "emscripten") os = target::OperatingSystem::EMSCRIPTEN;
     else if (os_name == "unknown") os = target::OperatingSystem::UNKNOWN;
     else os = target::OperatingSystem::WINDOWS;
 

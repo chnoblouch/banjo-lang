@@ -34,6 +34,7 @@ std::string TargetDescription::to_string() const {
         case OperatingSystem::MACOS: os_name = "macos"; break;
         case OperatingSystem::ANDROID: os_name = "android"; break;
         case OperatingSystem::IOS: os_name = "ios"; break;
+        case OperatingSystem::EMSCRIPTEN: os_name = "emscripten"; break;
         case OperatingSystem::UNKNOWN: os_name = "unknown"; break;
     }
 
@@ -56,7 +57,7 @@ bool TargetDescription::is_windows() const {
 }
 
 bool TargetDescription::is_unix() const {
-    return operating_system == OperatingSystem::LINUX;
+    return operating_system == OperatingSystem::LINUX || operating_system == OperatingSystem::EMSCRIPTEN;
 }
 
 bool TargetDescription::is_darwin() const {

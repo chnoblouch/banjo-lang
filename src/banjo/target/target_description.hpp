@@ -21,6 +21,7 @@ enum class OperatingSystem {
     MACOS,
     ANDROID,
     IOS,
+    EMSCRIPTEN,
     UNKNOWN,
 };
 

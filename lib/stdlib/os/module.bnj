@@ -6,7 +6,11 @@ meta if config.OS == config.WINDOWS {
     const IS_WINDOWS: bool = false;
 }
 
-meta if config.OS == config.LINUX || config.OS == config.MACOS || config.OS == config.ANDROID {
+meta if
+    config.OS == config.LINUX ||
+    config.OS == config.MACOS ||
+    config.OS == config.ANDROID ||
+    config.OS == config.EMSCRIPTEN {
     const IS_UNIX: bool = true;
 } else {
     const IS_UNIX: bool = false;
@@ -16,4 +20,10 @@ meta if config.OS == config.MACOS {
     const IS_DARWIN: bool = true;
 } else {
     const IS_DARWIN: bool = false;
+}
+
+meta if config.OS == config.EMSCRIPTEN {
+    const IS_EMSCRIPTEN: bool = true;
+} else {
+    const IS_EMSCRIPTEN: bool = false;
 }
