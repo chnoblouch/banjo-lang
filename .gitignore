@@ -8,4 +8,7 @@ venv/
 
 *.exe
 *.obj
+*.o
+*.wasm
+
 tmp.bnj
