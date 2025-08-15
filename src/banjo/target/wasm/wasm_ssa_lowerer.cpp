@@ -408,7 +408,7 @@ void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     } else {
         unsigned local_index = vregs2locals.at(base);
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(const_offset)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
         emit({WasmOpcode::I32_ADD});
     }
 
@@ -441,7 +441,7 @@ void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
     } else {
         unsigned local_index = vregs2locals.at(base);
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(const_offset)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
         emit({WasmOpcode::I32_ADD});
     }
 
