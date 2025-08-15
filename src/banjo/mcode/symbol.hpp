@@ -25,6 +25,10 @@ enum class Relocation : std::uint8_t {
     PAGEOFF12,
     GOT_LOAD_PAGE21,
     GOT_LOAD_PAGEOFF12,
+
+    // Relocations for WebAssembly
+    MEMORY_ADDR_SLEB,
+    TABLE_INDEX_SLEB,
 };
 
 struct Symbol {

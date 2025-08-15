@@ -505,9 +505,17 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
     if (operand.is_int_immediate()) {
         ctx.body.write_sleb128(operand.get_int_immediate());
     } else if (operand.is_symbol()) {
+        std::uint8_t reloc_type;
+
+        switch (operand.get_symbol().reloc) {
+            case mcode::Relocation::MEMORY_ADDR_SLEB: reloc_type = WasmRelocType::MEMORY_ADDR_SLEB; break;
+            case mcode::Relocation::TABLE_INDEX_SLEB: reloc_type = WasmRelocType::TABLE_INDEX_SLEB; break;
+            default: ASSERT_UNREACHABLE;
+        }
+
         ctx.relocs.push_back(
             WasmRelocation{
-                .type = WasmRelocType::MEMORY_ADDR_SLEB,
+                .type = reloc_type,
                 .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
                 .index = symbol_indices.at(operand.get_symbol().name),
                 .addend = 0,

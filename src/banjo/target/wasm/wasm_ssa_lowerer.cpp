@@ -479,10 +479,11 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
         mcode::Opcode opcode = is_64_bit ? WasmOpcode::F64_CONST : WasmOpcode::F32_CONST;
         emit({opcode, {mcode::Operand::from_fp_immediate(immediate)}});
     } else if (operand.is_global()) {
-        mcode::Symbol m_symbol{operand.get_global()->name};
+        mcode::Symbol m_symbol{operand.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
-    } else if (operand.is_symbol()) {
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
+    } else if (operand.is_func()) {
+        mcode::Symbol m_symbol{operand.get_func()->name, mcode::Relocation::TABLE_INDEX_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
     } else {
         ASSERT_UNREACHABLE;
     }
