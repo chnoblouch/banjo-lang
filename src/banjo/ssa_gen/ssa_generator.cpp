@@ -20,6 +20,8 @@ namespace banjo {
 
 namespace lang {
 
+const ssa::Type SSA_MAIN_ARGC_TYPE = ssa::Primitive::I32;
+const ssa::Type ssa_MAIN_ARGV_TYPE = ssa::Primitive::ADDR;
 const ssa::Type SSA_MAIN_RETURN_TYPE = ssa::Primitive::I32;
 const ssa::Value SSA_MAIN_RETURN_VALUE = ssa::Value::from_int_immediate(0, SSA_MAIN_RETURN_TYPE);
 
@@ -80,8 +82,14 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
         .calling_conv = ctx.target->get_default_calling_conv(),
     };
 
-    if (sir_func.is_main() && ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
-        ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
+    if (sir_func.is_main()) {
+        if (ssa_func_type.params.empty()) {
+            ssa_func_type.params = {SSA_MAIN_ARGC_TYPE, ssa_MAIN_ARGV_TYPE};
+        }
+
+        if (ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
+            ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
+        }
     }
 
     ssa::Function *ssa_func = new ssa::Function(ssa_name, ssa_func_type);
