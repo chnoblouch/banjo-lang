@@ -689,6 +689,7 @@ void CLI::load_root_manifest(const Manifest &manifest) {
 void CLI::load_manifest(const Manifest &manifest) {
     extra_compiler_args.insert(extra_compiler_args.end(), manifest.args.begin(), manifest.args.end());
     libraries.insert(libraries.end(), manifest.libraries.begin(), manifest.libraries.end());
+    macos_frameworks.insert(macos_frameworks.end(), manifest.macos_frameworks.begin(), manifest.macos_frameworks.end());
 
     if (manifest.build_script) {
         // TODO: Use relative path for package build scripts.
@@ -799,6 +800,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
     std::string type = "executable";
     std::vector<std::string> args;
     std::vector<std::string> libraries;
+    std::vector<std::string> macos_frameworks;
     std::vector<std::string> packages;
     std::vector<std::pair<Target, Manifest>> target_manifests;
     std::optional<std::string> build_script;
@@ -829,7 +831,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         } else if (member_name == "windows.resources") {
             // TODO
         } else if (member_name == "macos.frameworks") {
-            // TODO
+            macos_frameworks = unwrap_json_string_array(member_name, member_value);
         } else if (member_name == "build_script") {
             build_script = unwrap_json_string(member_name, member_value);
         } else {
@@ -842,6 +844,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         .type = type,
         .args = args,
         .libraries = libraries,
+        .macos_frameworks = macos_frameworks,
         .packages = packages,
         .target_manifests = target_manifests,
         .build_script = build_script,
@@ -1230,6 +1233,11 @@ void CLI::invoke_darwin_linker() {
 
     for (const std::string &library : libraries) {
         args.push_back("-l" + library);
+    }
+
+    for (const std::string &framework : macos_frameworks) {
+        args.push_back("-framework");
+        args.push_back(framework);
     }
 
     Command command{
