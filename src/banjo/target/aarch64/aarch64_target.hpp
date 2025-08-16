@@ -12,7 +12,7 @@ namespace target {
 class AArch64Target : public Target {
 
 private:
-    StandardDataLayout data_layout = StandardDataLayout(8, ssa::Primitive::U64);
+    StandardDataLayout data_layout{8, ssa::Primitive::U64, true};
     AArch64RegAnalyzer reg_analyzer;
 
 public:

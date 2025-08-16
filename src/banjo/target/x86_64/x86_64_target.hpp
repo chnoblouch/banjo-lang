@@ -12,7 +12,7 @@ namespace target {
 class X8664Target : public Target {
 
 private:
-    StandardDataLayout data_layout = StandardDataLayout(8, ssa::Primitive::U64);
+    StandardDataLayout data_layout{8, ssa::Primitive::U64, true};
     X8664RegAnalyzer reg_analyzer;
 
 public:
