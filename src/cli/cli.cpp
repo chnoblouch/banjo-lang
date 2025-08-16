@@ -104,6 +104,12 @@ static const ArgumentParser::Option OPTION_BINDGEN_INCLUDE_PATH{
     "Add a path as a C include directory",
 };
 
+static const ArgumentParser::Option OPTION_DEBUG_COMPILER{
+    ArgumentParser::Option::Type::FLAG,
+    "debug-compiler",
+    "Emit internal data for debugging the compiler",
+};
+
 static const ArgumentParser::Positional POSITIONAL_NAME{
     "name",
 };
@@ -136,6 +142,7 @@ static const ArgumentParser::Command COMMAND_BUILD{
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
         OPTION_FORCE_ASM,
+        OPTION_DEBUG_COMPILER,
         OPTION_QUIET,
         OPTION_VERBOSE,
     },
@@ -150,6 +157,7 @@ static const ArgumentParser::Command COMMAND_RUN{
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
         OPTION_FORCE_ASM,
+        OPTION_DEBUG_COMPILER,
         OPTION_QUIET,
         OPTION_VERBOSE,
     },
@@ -163,6 +171,7 @@ static const ArgumentParser::Command COMMAND_TEST{
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
         OPTION_FORCE_ASM,
+        OPTION_DEBUG_COMPILER,
         OPTION_QUIET,
         OPTION_VERBOSE,
     },
@@ -177,6 +186,7 @@ static const ArgumentParser::Command COMMAND_INVOKE{
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
         OPTION_FORCE_ASM,
+        OPTION_DEBUG_COMPILER,
         OPTION_QUIET,
         OPTION_VERBOSE,
     },
@@ -316,6 +326,8 @@ void CLI::run(int argc, const char *argv[]) {
             force_assembler = true;
         } else if (name == OPTION_HOT_RELOAD.name) {
             hot_reloading_enabled = true;
+        } else if (name == OPTION_DEBUG_COMPILER.name) {
+            extra_compiler_args.push_back("--debug");
         } else if (name == OPTION_HELP.name) {
             arg_parser.print_command_help(*args.command);
             return;
