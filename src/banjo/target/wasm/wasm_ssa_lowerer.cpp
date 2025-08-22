@@ -155,12 +155,13 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     }
 
     AddrComponents addr = collect_addr(instr.get_operand(1));
+    ASSERT(!addr.reg_offset);
 
     if (addr.base.is_register()) {
         ssa::VirtualRegister base = addr.base.get_register();
 
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset};
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset.to_unsigned()};
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
             emit({load_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
         } else {
@@ -200,10 +201,11 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     }
 
     AddrComponents addr = collect_addr(instr.get_operand(1));
+    ASSERT(!addr.reg_offset);
     ssa::VirtualRegister base = addr.base.get_register();
 
     if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset};
+        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset.to_unsigned()};
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
         push_operand(value);
         emit({store_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
@@ -392,9 +394,10 @@ void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     unsigned base_type_size = get_size(instr.get_operand(2).get_type());
 
     AddrComponents addr = collect_addr(instr.get_operand(0));
+    ASSERT(!addr.reg_offset);
     ssa::VirtualRegister base = addr.base.get_register();
 
-    unsigned const_offset = addr.const_offset;
+    unsigned const_offset = addr.const_offset.to_unsigned();
 
     if (offset.is_int_immediate()) {
         const_offset += base_type_size * offset.get_int_immediate().to_s64();
@@ -429,9 +432,10 @@ void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
     unsigned member_index = instr.get_operand(2).get_int_immediate().to_u64();
 
     AddrComponents addr = collect_addr(instr.get_operand(1));
+    ASSERT(!addr.reg_offset);
 
     ssa::VirtualRegister base = addr.base.get_register();
-    unsigned const_offset = addr.const_offset + get_member_offset(struct_, member_index);
+    unsigned const_offset = addr.const_offset.to_unsigned() + get_member_offset(struct_, member_index);
 
     if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
         mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
@@ -487,45 +491,6 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     } else {
         ASSERT_UNREACHABLE;
     }
-}
-
-WasmSSALowerer::AddrComponents WasmSSALowerer::collect_addr(ssa::Operand &addr) {
-    ssa::Operand *base = &addr;
-    unsigned const_offset = 0;
-
-    while (base->is_register()) {
-        ssa::InstrIter producer = get_producer_globally(base->get_register());
-        if (!producer) {
-            break;
-        }
-
-        if (producer->get_opcode() == ssa::Opcode::OFFSETPTR) {
-            ssa::Operand &offset = producer->get_operand(1);
-            const ssa::Type &base_type = producer->get_operand(2).get_type();
-
-            if (offset.is_int_immediate()) {
-                base = &producer->get_operand(0);
-                const_offset += get_size(base_type) * offset.get_int_immediate().to_s64();
-                discard_use(*producer->get_dest());
-            } else {
-                break;
-            }
-        } else if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
-            ssa::Structure *struct_ = producer->get_operand(0).get_type().get_struct();
-            unsigned member_index = producer->get_operand(2).get_int_immediate().to_u64();
-
-            base = &producer->get_operand(1);
-            const_offset += get_member_offset(struct_, member_index);
-            discard_use(*producer->get_dest());
-        } else {
-            break;
-        }
-    }
-
-    return AddrComponents{
-        .base = *base,
-        .const_offset = const_offset,
-    };
 }
 
 mcode::CallingConvention *WasmSSALowerer::get_calling_convention(ssa::CallingConv /*calling_conv*/) {

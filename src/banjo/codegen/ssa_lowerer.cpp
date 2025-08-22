@@ -568,6 +568,45 @@ void SSALowerer::discard_use(ssa::VirtualRegister reg) {
     context.reg_use_counts[reg] -= 1;
 }
 
+SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
+    ssa::Operand *base = &addr;
+    unsigned const_offset = 0;
+
+    while (base->is_register()) {
+        ssa::InstrIter producer = get_producer_globally(base->get_register());
+        if (!producer) {
+            break;
+        }
+
+        if (producer->get_opcode() == ssa::Opcode::OFFSETPTR) {
+            ssa::Operand &offset = producer->get_operand(1);
+            const ssa::Type &base_type = producer->get_operand(2).get_type();
+
+            if (offset.is_int_immediate()) {
+                base = &producer->get_operand(0);
+                const_offset += get_size(base_type) * offset.get_int_immediate().to_s64();
+                discard_use(*producer->get_dest());
+            } else {
+                break;
+            }
+        } else if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
+            ssa::Structure *struct_ = producer->get_operand(0).get_type().get_struct();
+            unsigned member_index = producer->get_operand(2).get_int_immediate().to_u64();
+
+            base = &producer->get_operand(1);
+            const_offset += get_member_offset(struct_, member_index);
+            discard_use(*producer->get_dest());
+        } else {
+            break;
+        }
+    }
+
+    return AddrComponents{
+        .base = *base,
+        .const_offset = const_offset,
+    };
+}
+
 } // namespace codegen
 
 } // namespace banjo

@@ -3,8 +3,6 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 
-#include <variant>
-
 namespace banjo {
 
 namespace target {
@@ -12,16 +10,6 @@ namespace target {
 class AArch64SSALowerer : public codegen::SSALowerer {
 
 private:
-    struct RegOffset {
-        mcode::Register reg;
-        unsigned scale = 0;
-    };
-
-    struct Address {
-        mcode::Operand base;
-        std::variant<RegOffset, int> offset = 0;
-    };
-
     unsigned next_const_index = 0;
 
 public:
@@ -76,7 +64,7 @@ public:
     mcode::Value move_float_into_register(double fp, unsigned size);
     void move_elements_into_register(mcode::Value value, std::uint16_t *elements, unsigned count);
     mcode::Value move_symbol_into_register(const std::string &symbol);
-    void calculate_address(mcode::Operand m_dst, Address addr);
+    void build_address(const mcode::Operand &m_dst, AddrComponents addr);
     mcode::Value create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);

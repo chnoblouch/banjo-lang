@@ -2,6 +2,7 @@
 
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/stack_frame.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/aarch64/aapcs_calling_conv.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_immediate.hpp"
@@ -464,17 +465,16 @@ void AArch64SSALowerer::lower_ftos(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+    ASSERT(!addr.reg_offset);
+
     ssa::Operand &offset = instr.get_operand(1);
     const ssa::Type &base_type = instr.get_operand(2).get_type();
 
-    Address addr;
-    addr.base = lower_value(instr.get_operand(0));
-
     if (offset.is_immediate()) {
-        unsigned int_offset = offset.get_int_immediate().to_u64();
-        addr.offset = static_cast<int>(int_offset * get_size(base_type));
+        addr.const_offset += offset.get_int_immediate() * get_size(base_type);
     } else if (offset.is_register()) {
-        addr.offset = RegOffset{
+        addr.reg_offset = RegOffset{
             .reg = map_vreg_as_reg(offset.get_register()),
             .scale = get_size(base_type),
         };
@@ -482,18 +482,20 @@ void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
         ASSERT_UNREACHABLE;
     }
 
-    calculate_address(map_vreg_dst(instr, 8), addr);
+    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
+    build_address(m_dst, addr);
 }
 
 void AArch64SSALowerer::lower_memberptr(ssa::Instruction &instr) {
-    const ssa::Type &type = instr.get_operand(0).get_type();
-    unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+    ASSERT(!addr.reg_offset);
 
-    Address addr;
-    addr.base = lower_value(instr.get_operand(1));
-    addr.offset = static_cast<int>(get_member_offset(type.get_struct(), int_offset));
+    ssa::Structure &struct_ = *instr.get_operand(0).get_type().get_struct();
+    unsigned member_index = instr.get_operand(2).get_int_immediate().to_u64();
+    addr.const_offset += get_member_offset(&struct_, member_index);
 
-    calculate_address(map_vreg_dst(instr, 8), addr);
+    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
+    build_address(m_dst, addr);
 }
 
 mcode::Value AArch64SSALowerer::move_const_into_register(const ssa::Value &value, ssa::Type type) {
@@ -663,43 +665,74 @@ mcode::Value AArch64SSALowerer::move_symbol_into_register(const std::string &sym
     return m_dst;
 }
 
-void AArch64SSALowerer::calculate_address(mcode::Operand m_dst, Address addr) {
-    if (std::holds_alternative<RegOffset>(addr.offset)) {
-        RegOffset &reg_offset = std::get<RegOffset>(addr.offset);
+void AArch64SSALowerer::build_address(const mcode::Operand &m_dst, AddrComponents addr) {
+    LargeInt offset = addr.const_offset;
 
-        mcode::Operand m_offset = mcode::Operand::from_register(reg_offset.reg, 8);
-        unsigned shift = 0;
+    if (addr.const_offset == 0 && !addr.reg_offset) {
+        emit({AArch64Opcode::MOV, {m_dst, lower_value(addr.base)}});
+        return;
+    }
 
-        switch (reg_offset.scale) {
-            case 1: shift = 0; break;
-            case 2: shift = 1; break;
-            case 4: shift = 2; break;
-            case 8: shift = 3; break;
-            default:
-                mcode::Register scale_reg = create_tmp_reg();
-                mcode::Operand scale_val = mcode::Operand::from_register(scale_reg, 8);
-                mcode::Operand imm_val = mcode::Operand::from_int_immediate(reg_offset.scale, 8);
+    mcode::Operand m_tmp_dst;
 
-                emit(mcode::Instruction(AArch64Opcode::MOV, {scale_val, imm_val}));
-                emit(mcode::Instruction(AArch64Opcode::MUL, {m_offset, m_offset, scale_val}));
-                break;
+    if (addr.const_offset != 0) {
+        m_tmp_dst = addr.reg_offset ? create_temp_value(8) : m_dst;
+
+        std::optional<mcode::StackSlotID> stack_slot;
+
+        if (addr.base.is_register()) {
+            stack_slot = find_stack_slot(addr.base.get_register());
         }
 
-        mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(shift);
-        emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, addr.base, m_offset, m_shift}));
-    } else if (std::holds_alternative<int>(addr.offset)) {
-        unsigned imm_offset = std::get<int>(addr.offset);
+        if (stack_slot) {
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, offset.to_unsigned()};
 
-        if (imm_offset >= 0 && imm_offset < 4096) {
-            mcode::Operand m_offset = mcode::Operand::from_int_immediate(imm_offset, 8);
-            emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, addr.base, m_offset}));
+            mcode::Register m_sp_reg = mcode::Register::from_physical(AArch64Register::SP);
+            mcode::Operand m_sp = mcode::Operand::from_register(m_sp_reg, 8);
+            mcode::Operand m_offset = mcode::Operand::from_stack_slot_offset(stack_slot_offset, 0);
+
+            // Note: Offsets that end up outside the range [0; 4096) during stack frame building will get fixed in the
+            // stack offset fixup pass.
+            emit({AArch64Opcode::ADD, {m_tmp_dst, m_sp, m_offset}});
         } else {
-            mcode::Value m_offset = move_int_into_register(LargeInt{imm_offset}, 8);
-            emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, addr.base, m_offset}));
+            mcode::Operand m_base = lower_value(addr.base);
+
+            if (offset >= 0 && offset < 4096) {
+                mcode::Operand m_offset = mcode::Operand::from_int_immediate(offset, 8);
+                emit({AArch64Opcode::ADD, {m_tmp_dst, m_base, m_offset}});
+            } else {
+                mcode::Value m_offset = move_int_into_register(offset, 8);
+                emit({AArch64Opcode::ADD, {m_tmp_dst, m_base, m_offset}});
+            }
         }
     } else {
-        ASSERT_UNREACHABLE;
+        m_tmp_dst = lower_value(addr.base);
     }
+
+    if (!addr.reg_offset) {
+        return;
+    }
+
+    mcode::Operand m_offset = mcode::Operand::from_register(addr.reg_offset->reg, 8);
+    unsigned shift = 0;
+
+    switch (addr.reg_offset->scale) {
+        case 1: shift = 0; break;
+        case 2: shift = 1; break;
+        case 4: shift = 2; break;
+        case 8: shift = 3; break;
+        default:
+            mcode::Register scale_reg = create_tmp_reg();
+            mcode::Operand scale_val = mcode::Operand::from_register(scale_reg, 8);
+            mcode::Operand imm_val = mcode::Operand::from_int_immediate(addr.reg_offset->scale, 8);
+
+            emit(mcode::Instruction(AArch64Opcode::MOV, {scale_val, imm_val}));
+            emit(mcode::Instruction(AArch64Opcode::MUL, {m_offset, m_offset, scale_val}));
+            break;
+    }
+
+    mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(shift);
+    emit({AArch64Opcode::ADD, {m_dst, m_tmp_dst, m_offset, m_shift}});
 }
 
 mcode::Value AArch64SSALowerer::create_temp_value(int size) {

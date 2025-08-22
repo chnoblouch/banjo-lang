@@ -35,6 +35,17 @@ private:
     };
 
 protected:
+    struct RegOffset {
+        mcode::Register reg;
+        unsigned scale;
+    };
+
+    struct AddrComponents {
+        ssa::Operand &base;
+        LargeInt const_offset;
+        std::optional<RegOffset> reg_offset;
+    };
+
     typedef std::unordered_map<ssa::BasicBlockIter, mcode::BasicBlockIter> BlockMap;
 
     target::Target *target;
@@ -88,6 +99,7 @@ public:
     ssa::InstrIter get_producer_globally(ssa::VirtualRegister reg);
     unsigned get_num_uses(ssa::VirtualRegister reg);
     void discard_use(ssa::VirtualRegister reg);
+    AddrComponents collect_addr(ssa::Operand &addr);
 
     virtual mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) = 0;
 

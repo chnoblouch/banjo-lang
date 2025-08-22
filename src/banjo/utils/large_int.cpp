@@ -142,6 +142,10 @@ std::int32_t LargeInt::to_s32() const {
     return (std::int32_t)to_s64();
 }
 
+unsigned LargeInt::to_unsigned() const {
+    return static_cast<unsigned>(to_u64());
+}
+
 std::uint64_t LargeInt::to_bits() const {
     if (!negative) {
         return magnitude;
