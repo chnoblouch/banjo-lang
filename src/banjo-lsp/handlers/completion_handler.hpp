@@ -27,6 +27,7 @@ private:
     };
 
     struct CompletionConfig {
+        bool allow_values;
         bool include_parent_scopes;
         bool include_uses;
         bool append_func_parameters;
@@ -61,6 +62,7 @@ private:
 
     JSONObject build_item(std::string_view name, const lang::sir::FuncType &type, bool is_method);
     void build_item(JSONArray &items, std::string_view name, const lang::sir::OverloadSet &overload_set);
+    JSONObject build_struct_literal_item(const lang::sir::StructDef &struct_def);
 
     JSONObject create_simple_item(std::string_view name, LSPCompletionItemKind kind);
 };

@@ -63,6 +63,7 @@ void CompletionHandler::build_in_block(
     const CompletionInfo &completion_info
 ) {
     CompletionConfig config{
+        .allow_values = true,
         .include_parent_scopes = true,
         .include_uses = true,
         .append_func_parameters = true,
@@ -72,6 +73,7 @@ void CompletionHandler::build_in_block(
 
     for (const lang::sir::Symbol &symbol : completion_info.preamble_symbols) {
         CompletionConfig config{
+            .allow_values = true,
             .include_parent_scopes = false,
             .include_uses = false,
             .append_func_parameters = true,
@@ -94,6 +96,7 @@ void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) 
         }
     } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {
         CompletionConfig config{
+            .allow_values = true,
             .include_parent_scopes = false,
             .include_uses = false,
             .append_func_parameters = true,
@@ -113,6 +116,7 @@ void CompletionHandler::build_in_use(JSONArray &items) {
 
 void CompletionHandler::build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs) {
     CompletionConfig config{
+        .allow_values = false,
         .include_parent_scopes = false,
         .include_uses = false,
         .append_func_parameters = false,
@@ -142,18 +146,21 @@ void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::Str
 
             const std::string &name = field->ident.value;
 
-            items.add(JSONObject{
-                {"label", name},
-                {"kind", LSPCompletionItemKind::FIELD},
-                {"insertText", name + ": "},
-                {"insertTextFormat", 2},
-            });
+            items.add(
+                JSONObject{
+                    {"label", name},
+                    {"kind", LSPCompletionItemKind::FIELD},
+                    {"insertText", name + ": "},
+                    {"insertTextFormat", 2},
+                }
+            );
         }
     }
 }
 
 void CompletionHandler::build_value_members(JSONArray &items, lang::sir::StructDef &struct_def) {
     CompletionConfig config{
+        .allow_values = false,
         .include_parent_scopes = false,
         .include_uses = false,
         .append_func_parameters = true,
@@ -231,7 +238,13 @@ void CompletionHandler::build_item(
         }
     } else if (symbol.is<sir::ConstDef>()) {
         items.add(create_simple_item(name, LSPCompletionItemKind::CONSTANT));
-    } else if (symbol.is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::TypeAlias>()) {
+    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
+        items.add(create_simple_item(name, LSPCompletionItemKind::STRUCT));
+
+        if (config.allow_values && !struct_def->is_generic()) {
+            items.add(build_struct_literal_item(*struct_def));
+        }
+    } else if (symbol.is_one_of<sir::UnionDef, sir::UnionCase, sir::TypeAlias>()) {
         items.add(create_simple_item(name, LSPCompletionItemKind::STRUCT));
     } else if (symbol.is_one_of<sir::VarDecl, sir::NativeVarDecl, sir::Local, sir::Param>()) {
         items.add(create_simple_item(name, LSPCompletionItemKind::VARIABLE));
@@ -304,6 +317,33 @@ void CompletionHandler::build_item(JSONArray &items, std::string_view name, cons
     for (sir::FuncDef *func_def : overload_set.func_defs) {
         items.add(build_item(name, func_def->type, func_def->is_method()));
     }
+}
+
+JSONObject CompletionHandler::build_struct_literal_item(const lang::sir::StructDef &struct_def) {
+    std::string insert_text = std::string(struct_def.ident.value) + " {\n";
+    std::string detail = " { ";
+
+    for (unsigned i = 0; i < struct_def.fields.size(); i++) {
+        std::string field_name = struct_def.fields[i]->ident.value;
+        insert_text += "    " + field_name + ": ${" + std::to_string(i + 1) + ":},\n";
+
+        detail += field_name;
+
+        if (i != struct_def.fields.size() - 1) {
+            detail += ", ";
+        }
+    }
+
+    insert_text += "}";
+    detail += " }";
+
+    return JSONObject{
+        {"label", struct_def.ident.value},
+        {"labelDetails", JSONObject{{"detail", detail}}},
+        {"kind", LSPCompletionItemKind::STRUCT},
+        {"insertText", insert_text},
+        {"insertTextFormat", 2},
+    };
 }
 
 JSONObject CompletionHandler::create_simple_item(std::string_view name, LSPCompletionItemKind kind) {
