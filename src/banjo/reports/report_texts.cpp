@@ -156,7 +156,26 @@ std::string ReportText::to_string(const sir::Expr &expr) {
 
         return str;
     } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
-        return symbol->symbol.get_name();
+        std::string str = symbol->symbol.get_name();
+
+        if (auto struct_def = symbol->symbol.match<sir::StructDef>()) {
+            if (struct_def->parent_specialization) {
+                const std::vector<sir::Expr> &generic_args = struct_def->parent_specialization->args;
+
+                str += "[";
+
+                for (unsigned i = 0; i < generic_args.size(); i++) {
+                    str += to_string(generic_args[i]);
+                    if (i != generic_args.size() - 1) {
+                        str += ", ";
+                    }
+                }
+
+                str += "]";
+            }
+        }
+
+        return str;
     } else if (auto tuple_expr = expr.match<sir::TupleExpr>()) {
         std::string str = "(";
 
