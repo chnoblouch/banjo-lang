@@ -237,10 +237,7 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I32_STORE8: encode_i32_store8(ctx, instr); break;
         case target::WasmOpcode::I32_STORE16: encode_i32_store16(ctx, instr); break;
         case target::WasmOpcode::I32_CONST: encode_i32_const(ctx, instr); break;
-        case target::WasmOpcode::I64_CONST:
-            ctx.body.write_u8(0x42);
-            ctx.body.write_sleb128(instr.get_operand(0).get_int_immediate());
-            break;
+        case target::WasmOpcode::I64_CONST: encode_i64_const(ctx, instr); break;
         case target::WasmOpcode::F32_CONST:
             ctx.body.write_u8(0x43);
             ctx.body.write_f32(instr.get_operand(0).get_fp_immediate());
@@ -503,7 +500,13 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
     ctx.body.write_u8(0x41);
 
     if (operand.is_int_immediate()) {
-        ctx.body.write_sleb128(operand.get_int_immediate());
+        LargeInt value = operand.get_int_immediate();
+
+        if (value > 0x7FFFFFFF) {
+            value = value - 0xFFFFFFFF - 1;
+        }
+
+        ctx.body.write_sleb128(value);
     } else if (operand.is_symbol()) {
         std::uint8_t reloc_type;
 
@@ -530,6 +533,18 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void WasmBuilder::encode_i64_const(FuncContext &ctx, mcode::Instruction &instr) {
+    ctx.body.write_u8(0x42);
+
+    LargeInt value = instr.get_operand(0).get_int_immediate();
+
+    if (value > 0x7FFFFFFFFFFFFFFF) {
+        value = value - 0xFFFFFFFFFFFFFFFF - 1;
+    }
+
+    ctx.body.write_sleb128(value);
 }
 
 void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr) {

@@ -64,6 +64,7 @@ private:
     void encode_i32_store8(FuncContext &ctx, mcode::Instruction &instr);
     void encode_i32_store16(FuncContext &ctx, mcode::Instruction &instr);
     void encode_i32_const(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_i64_const(FuncContext &ctx, mcode::Instruction &instr);
 
     void encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr);
 

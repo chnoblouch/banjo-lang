@@ -1,0 +1,35 @@
+# test:subtest
+# test:output "4294967295,2147483646,2147483647,2147483648"
+
+func main() {
+    var a: u32 = 0xFFFFFFFF;
+    var b: u32 = 0x7FFFFFFE;
+    var c: u32 = 0x7FFFFFFF;
+    var d: u32 = 0x80000000;
+    
+    print(a);
+    print(',');
+    print(b);
+    print(',');
+    print(c);
+    print(',');
+    print(d);
+}
+
+# test:subtest
+# test:output "18446744073709551615,9223372036854775806,9223372036854775807,9223372036854775808"
+
+func main() {
+    var a: u64 = 0xFFFFFFFFFFFFFFFF;
+    var b: u64 = 0x7FFFFFFFFFFFFFFE;
+    var c: u64 = 0x7FFFFFFFFFFFFFFF;
+    var d: u64 = 0x8000000000000000;
+    
+    print(a);
+    print(',');
+    print(b);
+    print(',');
+    print(c);
+    print(',');
+    print(d);
+}
