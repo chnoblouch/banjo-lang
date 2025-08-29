@@ -1,4 +1,5 @@
 #include "wasm_opcode.hpp"
+
 #include <string_view>
 
 namespace banjo::target {
@@ -91,8 +92,26 @@ const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
     {I32_WRAP_I64, "i32.wrap_i64"},
     {I64_EXTEND_I32_S, "i64.extend_i32_s"},
     {I64_EXTEND_I32_U, "i64.extend_i32_u"},
+    {F32_CONVERT_I32_S, "f32.convert_i32_s"},
+    {F32_CONVERT_I32_U, "f32.convert_i32_u"},
+    {F32_CONVERT_I64_S, "f32.convert_i64_s"},
+    {F32_CONVERT_I64_U, "f32.convert_i64_u"},
+    {F32_DEMOTE_F64, "f32.demote_f64"},
+    {F64_CONVERT_I32_S, "f64.convert_i32_s"},
+    {F64_CONVERT_I32_U, "f64.convert_i32_u"},
+    {F64_CONVERT_I64_S, "f64.convert_i64_s"},
+    {F64_CONVERT_I64_U, "f64.convert_i64_u"},
+    {F64_PROMOTE_F32, "f64.promote_f32"},
     {I32_EXTEND8_S, "i32.extend8_s"},
     {I32_EXTEND16_S, "i32.extend16_s"},
+    {I32_TRUNC_SAT_F32_S, "i32.trunc_sat_f32_s"},
+    {I32_TRUNC_SAT_F32_U, "i32.trunc_sat_f32_u"},
+    {I32_TRUNC_SAT_F64_S, "i32.trunc_sat_f64_s"},
+    {I32_TRUNC_SAT_F64_U, "i32.trunc_sat_f64_u"},
+    {I64_TRUNC_SAT_F32_S, "i64.trunc_sat_f32_s"},
+    {I64_TRUNC_SAT_F32_U, "i64.trunc_sat_f32_u"},
+    {I64_TRUNC_SAT_F64_S, "i64.trunc_sat_f64_s"},
+    {I64_TRUNC_SAT_F64_U, "i64.trunc_sat_f64_u"},
 };
 
 } // namespace banjo::target

@@ -296,8 +296,26 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I32_WRAP_I64: ctx.body.write_u8(0xA7); break;
         case target::WasmOpcode::I64_EXTEND_I32_S: ctx.body.write_u8(0xAC); break;
         case target::WasmOpcode::I64_EXTEND_I32_U: ctx.body.write_u8(0xAD); break;
+        case target::WasmOpcode::F32_CONVERT_I32_S: ctx.body.write_u8(0xB2); break;
+        case target::WasmOpcode::F32_CONVERT_I32_U: ctx.body.write_u8(0xB3); break;
+        case target::WasmOpcode::F32_CONVERT_I64_S: ctx.body.write_u8(0xB4); break;
+        case target::WasmOpcode::F32_CONVERT_I64_U: ctx.body.write_u8(0xB5); break;
+        case target::WasmOpcode::F32_DEMOTE_F64: ctx.body.write_u8(0xB6); break;
+        case target::WasmOpcode::F64_CONVERT_I32_S: ctx.body.write_u8(0xB7); break;
+        case target::WasmOpcode::F64_CONVERT_I32_U: ctx.body.write_u8(0xB8); break;
+        case target::WasmOpcode::F64_CONVERT_I64_S: ctx.body.write_u8(0xB9); break;
+        case target::WasmOpcode::F64_CONVERT_I64_U: ctx.body.write_u8(0xBA); break;
+        case target::WasmOpcode::F64_PROMOTE_F32: ctx.body.write_u8(0xBB); break;
         case target::WasmOpcode::I32_EXTEND8_S: ctx.body.write_u8(0xC0); break;
         case target::WasmOpcode::I32_EXTEND16_S: ctx.body.write_u8(0xC1); break;
+        case target::WasmOpcode::I32_TRUNC_SAT_F32_S: ctx.body.write_u16(0x00FC); break;
+        case target::WasmOpcode::I32_TRUNC_SAT_F32_U: ctx.body.write_u16(0x01FC); break;
+        case target::WasmOpcode::I32_TRUNC_SAT_F64_S: ctx.body.write_u16(0x02FC); break;
+        case target::WasmOpcode::I32_TRUNC_SAT_F64_U: ctx.body.write_u16(0x03FC); break;
+        case target::WasmOpcode::I64_TRUNC_SAT_F32_S: ctx.body.write_u16(0x04FC); break;
+        case target::WasmOpcode::I64_TRUNC_SAT_F32_U: ctx.body.write_u16(0x05FC); break;
+        case target::WasmOpcode::I64_TRUNC_SAT_F64_S: ctx.body.write_u16(0x06FC); break;
+        case target::WasmOpcode::I64_TRUNC_SAT_F64_U: ctx.body.write_u16(0x07FC); break;
         default: ASSERT_UNREACHABLE;
     }
 }

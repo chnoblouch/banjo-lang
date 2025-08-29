@@ -49,6 +49,12 @@ private:
     void lower_uextend(ssa::Instruction &instr) override;
     void lower_sextend(ssa::Instruction &instr) override;
     void lower_truncate(ssa::Instruction &instr) override;
+    void lower_fpromote(ssa::Instruction &instr) override;
+    void lower_fdemote(ssa::Instruction &instr) override;
+    void lower_utof(ssa::Instruction &instr) override;
+    void lower_stof(ssa::Instruction &instr) override;
+    void lower_ftou(ssa::Instruction &instr) override;
+    void lower_ftos(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
 

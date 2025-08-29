@@ -388,6 +388,106 @@ void WasmSSALowerer::lower_truncate(ssa::Instruction &instr) {
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
+void WasmSSALowerer::lower_fpromote(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Type src_type = instr.get_operand(0).get_type();
+    ssa::Type dst_type = instr.get_operand(1).get_type();
+
+    ASSERT(src_type == ssa::Primitive::F32 && dst_type == ssa::Primitive::F64);
+
+    push_operand(instr.get_operand(0));
+    emit({WasmOpcode::F64_PROMOTE_F32});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_fdemote(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Type src_type = instr.get_operand(0).get_type();
+    ssa::Type dst_type = instr.get_operand(1).get_type();
+
+    ASSERT(src_type == ssa::Primitive::F64 && dst_type == ssa::Primitive::F32);
+
+    push_operand(instr.get_operand(0));
+    emit({WasmOpcode::F32_DEMOTE_F64});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_utof(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
+    ssa::Type dst_type = instr.get_operand(1).get_type();
+    bool is_to_64_bit = dst_type == ssa::Primitive::F64;
+
+    push_operand(instr.get_operand(0));
+
+    if (src_size == 1 || src_size == 2 || src_size == 4) {
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_S : WasmOpcode::F32_CONVERT_I32_S});
+    } else if (src_size == 8) {
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I64_S : WasmOpcode::F32_CONVERT_I64_S});
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_stof(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
+    ssa::Type dst_type = instr.get_operand(1).get_type();
+    bool is_to_64_bit = dst_type == ssa::Primitive::F64;
+
+    push_operand(instr.get_operand(0));
+
+    if (src_size == 1 || src_size == 2 || src_size == 4) {
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_U : WasmOpcode::F32_CONVERT_I32_U});
+    } else if (src_size == 8) {
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I64_U : WasmOpcode::F32_CONVERT_I64_U});
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_ftou(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Type src_type = instr.get_operand(0).get_type();
+    unsigned dst_size = get_size(instr.get_operand(1).get_type());
+    bool is_from_64_bit = src_type == ssa::Primitive::F64;
+
+    push_operand(instr.get_operand(0));
+
+    if (dst_size == 1 || dst_size == 2 || dst_size == 4) {
+        emit({is_from_64_bit ? WasmOpcode::I32_TRUNC_SAT_F64_U : WasmOpcode::I32_TRUNC_SAT_F32_U});
+    } else if (dst_size == 8) {
+        emit({is_from_64_bit ? WasmOpcode::I64_TRUNC_SAT_F64_U : WasmOpcode::I64_TRUNC_SAT_F32_U});
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_ftos(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Type src_type = instr.get_operand(0).get_type();
+    unsigned dst_size = get_size(instr.get_operand(1).get_type());
+    bool is_from_64_bit = src_type == ssa::Primitive::F64;
+
+    push_operand(instr.get_operand(0));
+
+    if (dst_size == 1 || dst_size == 2 || dst_size == 4) {
+        emit({is_from_64_bit ? WasmOpcode::I32_TRUNC_SAT_F64_S : WasmOpcode::I32_TRUNC_SAT_F32_S});
+    } else if (dst_size == 8) {
+        emit({is_from_64_bit ? WasmOpcode::I64_TRUNC_SAT_F64_S : WasmOpcode::I64_TRUNC_SAT_F32_S});
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Operand &offset = instr.get_operand(1);
