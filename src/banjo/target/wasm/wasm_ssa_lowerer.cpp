@@ -259,6 +259,26 @@ void WasmSSALowerer::lower_urem(ssa::Instruction &instr) {
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_REM_U : WasmOpcode::I32_REM_U);
 }
 
+void WasmSSALowerer::lower_fadd(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::F64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::F64_ADD : WasmOpcode::F32_ADD);
+}
+
+void WasmSSALowerer::lower_fsub(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::F64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::F64_SUB : WasmOpcode::F32_SUB);
+}
+
+void WasmSSALowerer::lower_fmul(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::F64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::F64_MUL : WasmOpcode::F32_MUL);
+}
+
+void WasmSSALowerer::lower_fdiv(ssa::Instruction &instr) {
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::F64;
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::F64_DIV : WasmOpcode::F32_DIV);
+}
+
 void WasmSSALowerer::lower_jmp(ssa::Instruction &instr) {
     unsigned block_index = block_indices.at(instr.get_operand(0).get_branch_target().block);
 

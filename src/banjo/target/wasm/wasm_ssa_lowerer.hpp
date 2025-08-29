@@ -41,6 +41,10 @@ private:
     void lower_srem(ssa::Instruction &instr) override;
     void lower_udiv(ssa::Instruction &instr) override;
     void lower_urem(ssa::Instruction &instr) override;
+    void lower_fadd(ssa::Instruction &instr) override;
+    void lower_fsub(ssa::Instruction &instr) override;
+    void lower_fmul(ssa::Instruction &instr) override;
+    void lower_fdiv(ssa::Instruction &instr) override;
     void lower_jmp(ssa::Instruction &instr) override;
     void lower_cjmp(ssa::Instruction &instr) override;
     void lower_fcjmp(ssa::Instruction &instr) override;

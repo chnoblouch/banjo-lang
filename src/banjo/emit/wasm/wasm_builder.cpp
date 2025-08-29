@@ -293,6 +293,13 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I64_REM_S: ctx.body.write_u8(0x81); break;
         case target::WasmOpcode::I64_REM_U: ctx.body.write_u8(0x82); break;
         case target::WasmOpcode::F32_ADD: ctx.body.write_u8(0x92); break;
+        case target::WasmOpcode::F32_SUB: ctx.body.write_u8(0x93); break;
+        case target::WasmOpcode::F32_MUL: ctx.body.write_u8(0x94); break;
+        case target::WasmOpcode::F32_DIV: ctx.body.write_u8(0x95); break;
+        case target::WasmOpcode::F64_ADD: ctx.body.write_u8(0xA0); break;
+        case target::WasmOpcode::F64_SUB: ctx.body.write_u8(0xA1); break;
+        case target::WasmOpcode::F64_MUL: ctx.body.write_u8(0xA2); break;
+        case target::WasmOpcode::F64_DIV: ctx.body.write_u8(0xA3); break;
         case target::WasmOpcode::I32_WRAP_I64: ctx.body.write_u8(0xA7); break;
         case target::WasmOpcode::I64_EXTEND_I32_S: ctx.body.write_u8(0xAC); break;
         case target::WasmOpcode::I64_EXTEND_I32_U: ctx.body.write_u8(0xAD); break;
