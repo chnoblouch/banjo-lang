@@ -351,9 +351,61 @@ void WasmSSALowerer::lower_fcjmp(ssa::Instruction &instr) {
 
 void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
     ssa::Operand &callee = instr.get_operand(0);
+    ssa::FunctionType func_type = ssa::get_call_func_type(instr);
 
-    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
-        push_operand(instr.get_operand(i));
+    if (!func_type.variadic) {
+        for (unsigned i = 1; i < instr.get_operands().size(); i++) {
+            push_operand(instr.get_operand(i));
+        }
+    } else {
+        mcode::StackFrame &stack_frame = machine_func->get_stack_frame();
+
+        for (unsigned i = 1 + func_type.first_variadic_index; i < instr.get_operands().size(); i++) {
+            unsigned arg_slot_index = i - 1 - func_type.first_variadic_index;
+            mcode::StackSlotID slot_index;
+
+            if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
+                mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
+                stack_slot.set_call_arg_index(arg_slot_index);
+                slot_index = stack_frame.new_stack_slot(stack_slot);
+            } else {
+                slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
+            }
+
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            push_operand(instr.get_operand(i));
+
+            ssa::Type type = instr.get_operand(i).get_type();
+            unsigned size = get_size(type);
+            mcode::Opcode store_opcode;
+
+            if (type.is_integer()) {
+                switch (size) {
+                    case 1: store_opcode = WasmOpcode::I32_STORE8; break;
+                    case 2: store_opcode = WasmOpcode::I32_STORE16; break;
+                    case 4: store_opcode = WasmOpcode::I32_STORE; break;
+                    case 8: store_opcode = WasmOpcode::I64_STORE; break;
+                    default: ASSERT_UNREACHABLE;
+                }
+            } else if (type.is_floating_point()) {
+                store_opcode = type == ssa::Primitive::F64 ? WasmOpcode::F64_STORE : WasmOpcode::F32_STORE;
+            } else {
+                ASSERT_UNREACHABLE;
+            }
+
+            emit({store_opcode, {mcode::Operand::from_stack_slot_offset(mcode::Operand::StackSlotOffset{slot_index})}});
+        }
+
+        for (unsigned i = 1; i < func_type.first_variadic_index + 1; i++) {
+            push_operand(instr.get_operand(i));
+        }
+
+        mcode::StackSlotID first_slot = stack_frame.get_call_arg_slot_indices()[0];
+        mcode::Operand::StackSlotOffset first_slot_offset{first_slot};
+
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(first_slot_offset)}});
+        emit({WasmOpcode::I32_ADD});
     }
 
     ssa::Type return_type;
@@ -647,6 +699,10 @@ WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
 
     for (unsigned i = 0; i < type.params.size(); i++) {
         m_params[i] = lower_type(type.params[i]);
+    }
+
+    if (type.variadic) {
+        m_params.push_back(WasmType::I32);
     }
 
     std::optional<WasmType> m_result_type;

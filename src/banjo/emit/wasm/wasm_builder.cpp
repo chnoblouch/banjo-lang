@@ -566,7 +566,13 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
     } else if (operand.is_stack_slot_offset()) {
         const mcode::Operand::StackSlotOffset &offset = operand.get_stack_slot_offset();
         mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(offset.slot_index);
-        ctx.body.write_sleb128(slot.get_offset() + offset.addend);
+        LargeInt value = slot.get_offset() + offset.addend;
+
+        if (value > 0x7FFFFFFF) {
+            value = value - 0xFFFFFFFF - 1;
+        }
+        
+        ctx.body.write_sleb128(value);
     } else {
         ASSERT_UNREACHABLE;
     }

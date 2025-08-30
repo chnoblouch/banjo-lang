@@ -77,6 +77,10 @@ void Writer::write_func_decl(FunctionDecl &func_decl) {
     }
 
     stream << ")";
+
+    if (func_type.variadic) {
+        stream << " !variadic";
+    }
 }
 
 void Writer::write_func_def(Function *func_def) {
@@ -98,6 +102,10 @@ void Writer::write_func_def(Function *func_def) {
     }
 
     stream << ")";
+
+    if (func_type.variadic) {
+        stream << " !variadic";
+    }
 
     if (func_def->global) {
         stream << " global";

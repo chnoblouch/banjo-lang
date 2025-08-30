@@ -31,10 +31,14 @@ void WasmCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::S
 
 void WasmCallingConv::create_call_arg_region(
     mcode::Function * /*func*/,
-    mcode::StackFrame & /*frame*/,
+    mcode::StackFrame & frame,
     mcode::StackRegions &regions
 ) {
-    regions.call_arg_region.size = 0;
+    for (unsigned index : frame.get_call_arg_slot_indices()) {
+        mcode::StackSlot &slot = frame.get_stack_slot(index);
+        slot.set_offset(8 * slot.get_call_arg_index());
+        regions.call_arg_region.size += 8;
+    }
 }
 
 void WasmCallingConv::create_implicit_region(
@@ -47,7 +51,7 @@ void WasmCallingConv::create_implicit_region(
 }
 
 int WasmCallingConv::get_alloca_size(mcode::StackRegions &regions) {
-    int size = regions.generic_region.size + regions.arg_store_region.size;
+    int size = regions.generic_region.size + regions.arg_store_region.size + regions.call_arg_region.size;
     return Utils::align(size, 16);
 }
 

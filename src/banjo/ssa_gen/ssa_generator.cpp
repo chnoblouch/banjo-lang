@@ -186,10 +186,12 @@ void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
     ssa::Structure *vtable_type = new ssa::Structure("vtable." + sir_proto_def.ident.value);
 
     for (unsigned i = 0; i < sir_proto_def.func_decls.size(); i++) {
-        vtable_type->add(ssa::StructureMember{
-            .name = "f" + std::to_string(i),
-            .type = ssa::Primitive::ADDR,
-        });
+        vtable_type->add(
+            ssa::StructureMember{
+                .name = "f" + std::to_string(i),
+                .type = ssa::Primitive::ADDR,
+            }
+        );
     }
 
     ssa_mod.add(vtable_type);
@@ -224,16 +226,15 @@ void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_v
 }
 
 void SSAGenerator::generate_runtime() {
+    ssa::Type usize_type = ctx.target->get_data_layout().get_usize_type();
+
     ssa::FunctionDecl *func_snprintf = new ssa::FunctionDecl{
         .name = "snprintf",
         .type{
-            .params{
-                ssa::Primitive::ADDR,
-                ssa::Primitive::U64,
-                ssa::Primitive::ADDR,
-            },
+            .params{ssa::Primitive::ADDR, usize_type, ssa::Primitive::ADDR},
             .return_type = ssa::Primitive::I32,
             .calling_conv = ctx.target->get_default_calling_conv(),
+            .variadic = true,
         },
     };
 
@@ -271,7 +272,7 @@ void SSAGenerator::generate_runtime() {
             ssa::Opcode::LOADARG,
             2,
             {
-                ssa::Operand::from_type(ssa::Primitive::U64),
+                ssa::Operand::from_type(usize_type),
                 ssa::Operand::from_int_immediate(2),
             },
         });
@@ -281,7 +282,7 @@ void SSAGenerator::generate_runtime() {
             {
                 ssa::Operand::from_extern_func(func_snprintf, ssa::Primitive::VOID),
                 ssa::Operand::from_register(1, ssa::Primitive::ADDR),
-                ssa::Operand::from_register(2, ssa::Primitive::U64),
+                ssa::Operand::from_register(2, usize_type),
                 ssa::Operand::from_global(global_format_string, ssa::Primitive::ADDR),
                 ssa::Operand::from_register(0, ssa::Primitive::F64),
             }
