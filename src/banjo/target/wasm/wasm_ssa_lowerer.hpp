@@ -45,6 +45,11 @@ private:
     void lower_fsub(ssa::Instruction &instr) override;
     void lower_fmul(ssa::Instruction &instr) override;
     void lower_fdiv(ssa::Instruction &instr) override;
+    void lower_and(ssa::Instruction &instr) override;
+    void lower_or(ssa::Instruction &instr) override;
+    void lower_xor(ssa::Instruction &instr) override;
+    void lower_shl(ssa::Instruction &instr) override;
+    void lower_shr(ssa::Instruction &instr) override;
     void lower_jmp(ssa::Instruction &instr) override;
     void lower_cjmp(ssa::Instruction &instr) override;
     void lower_fcjmp(ssa::Instruction &instr) override;

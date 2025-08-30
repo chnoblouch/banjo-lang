@@ -285,6 +285,12 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I32_DIV_U: ctx.body.write_u8(0x6E); break;
         case target::WasmOpcode::I32_REM_S: ctx.body.write_u8(0x6F); break;
         case target::WasmOpcode::I32_REM_U: ctx.body.write_u8(0x70); break;
+        case target::WasmOpcode::I32_AND: ctx.body.write_u8(0x71); break;
+        case target::WasmOpcode::I32_OR: ctx.body.write_u8(0x72); break;
+        case target::WasmOpcode::I32_XOR: ctx.body.write_u8(0x73); break;
+        case target::WasmOpcode::I32_SHL: ctx.body.write_u8(0x74); break;
+        case target::WasmOpcode::I32_SHR_S: ctx.body.write_u8(0x75); break;
+        case target::WasmOpcode::I32_SHR_U: ctx.body.write_u8(0x76); break;
         case target::WasmOpcode::I64_ADD: ctx.body.write_u8(0x7C); break;
         case target::WasmOpcode::I64_SUB: ctx.body.write_u8(0x7D); break;
         case target::WasmOpcode::I64_MUL: ctx.body.write_u8(0x7E); break;
@@ -292,6 +298,12 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::I64_DIV_U: ctx.body.write_u8(0x80); break;
         case target::WasmOpcode::I64_REM_S: ctx.body.write_u8(0x81); break;
         case target::WasmOpcode::I64_REM_U: ctx.body.write_u8(0x82); break;
+        case target::WasmOpcode::I64_AND: ctx.body.write_u8(0x83); break;
+        case target::WasmOpcode::I64_OR: ctx.body.write_u8(0x84); break;
+        case target::WasmOpcode::I64_XOR: ctx.body.write_u8(0x85); break;
+        case target::WasmOpcode::I64_SHL: ctx.body.write_u8(0x86); break;
+        case target::WasmOpcode::I64_SHR_S: ctx.body.write_u8(0x87); break;
+        case target::WasmOpcode::I64_SHR_U: ctx.body.write_u8(0x88); break;
         case target::WasmOpcode::F32_ADD: ctx.body.write_u8(0x92); break;
         case target::WasmOpcode::F32_SUB: ctx.body.write_u8(0x93); break;
         case target::WasmOpcode::F32_MUL: ctx.body.write_u8(0x94); break;

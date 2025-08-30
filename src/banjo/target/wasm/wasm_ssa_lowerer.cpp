@@ -279,6 +279,31 @@ void WasmSSALowerer::lower_fdiv(ssa::Instruction &instr) {
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::F64_DIV : WasmOpcode::F32_DIV);
 }
 
+void WasmSSALowerer::lower_and(ssa::Instruction &instr) {
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_AND : WasmOpcode::I32_AND);
+}
+
+void WasmSSALowerer::lower_or(ssa::Instruction &instr) {
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_OR : WasmOpcode::I32_OR);
+}
+
+void WasmSSALowerer::lower_xor(ssa::Instruction &instr) {
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_XOR : WasmOpcode::I32_XOR);
+}
+
+void WasmSSALowerer::lower_shl(ssa::Instruction &instr) {
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SHL : WasmOpcode::I32_SHL);
+}
+
+void WasmSSALowerer::lower_shr(ssa::Instruction &instr) {
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SHR_S : WasmOpcode::I32_SHR_S);
+}
+
 void WasmSSALowerer::lower_jmp(ssa::Instruction &instr) {
     unsigned block_index = block_indices.at(instr.get_operand(0).get_branch_target().block);
 
