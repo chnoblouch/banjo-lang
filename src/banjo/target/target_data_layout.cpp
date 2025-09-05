@@ -22,6 +22,10 @@ bool TargetDataLayout::is_single_member(const ssa::Structure &struct_) {
     if (struct_.members.size() == 1) {
         const ssa::Type &member_type = struct_.members[0].type;
 
+        if (member_type.get_array_length() > 1) {
+            return false;
+        }
+
         if (member_type.is_primitive()) {
             return true;
         } else if (member_type.is_struct()) {
