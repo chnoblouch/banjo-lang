@@ -1,0 +1,11 @@
+use c;
+
+type ClockId = u64;
+
+struct Timespec {
+    var tv_sec: c.LongLong;
+    var tv_nsec: c.Long;
+}
+
+const CLOCK_REALTIME: ClockId = 0;
+const CLOCK_MONOTONIC: ClockId = 6;

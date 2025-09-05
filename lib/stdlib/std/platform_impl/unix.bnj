@@ -1,4 +1,5 @@
 use os.{IS_UNIX, posix};
+use c;
 use std.{memory, convert.to_string, system.panic};
 
 meta if IS_UNIX {
@@ -95,8 +96,8 @@ meta if IS_UNIX {
 
     pub func thread_sleep(milliseconds: u32) {
         var time = posix.Timespec {
-            tv_sec: (milliseconds / 1000) as u64,
-            tv_nsec: (milliseconds % 1000) as u64 * 1000000
+            tv_sec: (milliseconds / 1000) as c.LongLong,
+            tv_nsec: (milliseconds % 1000) as c.Long * 1000000
         };
         
         posix.nanosleep(&time, null);
@@ -139,7 +140,7 @@ meta if IS_UNIX {
     pub func time_system_ticks() -> u64 {
         var time: posix.Timespec;
         posix.clock_gettime(posix.CLOCK_REALTIME, &time);
-        return 1000000000 * time.tv_sec + time.tv_nsec;
+        return 1000000000 * time.tv_sec as u64 + time.tv_nsec as u64;
     }
     
     pub func time_system_frequency() -> u64 {
@@ -153,7 +154,7 @@ meta if IS_UNIX {
     pub func time_monotonic_ticks() -> u64 {
         var time: posix.Timespec;
         posix.clock_gettime(posix.CLOCK_MONOTONIC, &time);
-        return 1000000000 * time.tv_sec + time.tv_nsec;
+        return 1000000000 * time.tv_sec as u64 + time.tv_nsec as u64;
     }
 
     pub func time_monotonic_frequency() -> u64 {
