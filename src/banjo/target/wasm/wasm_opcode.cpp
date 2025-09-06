@@ -14,6 +14,7 @@ const std::unordered_map<mcode::Opcode, std::string_view> WasmOpcode::NAMES{
     {BR_TABLE, "br_table"},
     {END_FUNCTION, "end_function"},
     {CALL, "call"},
+    {CALL_INDIRECT, "call_indirect"},
     {DROP, "drop"},
     {SELECT, "select"},
     {LOCAL_GET, "local.get"},

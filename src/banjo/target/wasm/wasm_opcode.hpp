@@ -19,6 +19,7 @@ enum {
     BR_TABLE,
     END_FUNCTION,
     CALL,
+    CALL_INDIRECT,
     DROP,
     SELECT,
     LOCAL_GET,

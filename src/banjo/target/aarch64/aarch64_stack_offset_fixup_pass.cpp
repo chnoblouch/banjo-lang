@@ -22,7 +22,7 @@ void AArch64StackOffsetFixupPass::run(mcode::BasicBlock &block) {
         mcode::Instruction &instr = *iter;
         mcode::Opcode opcode = instr.get_opcode();
 
-        if (!Utils::is_one_of<mcode::Opcode>(opcode, {AArch64Opcode::ADD, AArch64Opcode::SUB})) {
+        if (!Utils::is_one_of(opcode, {AArch64Opcode::ADD, AArch64Opcode::SUB})) {
             continue;
         }
 

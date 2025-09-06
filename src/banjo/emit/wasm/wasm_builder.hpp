@@ -18,6 +18,7 @@ private:
     unsigned num_func_imports = 0;
     std::uint32_t data_offset = 0;
     std::unordered_map<std::string_view, std::uint32_t> symbol_indices;
+    unsigned indirect_call_types_offset = 0;
 
     struct FuncContext {
         mcode::Function &func;
@@ -44,6 +45,7 @@ private:
     void encode_br_if(FuncContext &ctx, mcode::Instruction &instr);
     void encode_br_table(FuncContext &ctx, mcode::Instruction &instr);
     void encode_call(FuncContext &ctx, mcode::Instruction &instr);
+    void encode_call_indirect(FuncContext &ctx, mcode::Instruction &instr);
     void encode_local_get(FuncContext &ctx, mcode::Instruction &instr);
     void encode_local_set(FuncContext &ctx, mcode::Instruction &instr);
     void encode_local_tee(FuncContext &ctx, mcode::Instruction &instr);

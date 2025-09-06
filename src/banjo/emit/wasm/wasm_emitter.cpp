@@ -79,6 +79,11 @@ void WasmEmitter::emit_import_section(const WasmObjectFile &file) {
         if (auto type_index = std::get_if<WasmTypeIndex>(&import.kind)) {
             data.write_u8(0x00);                   // import type (type index)
             data.write_uleb128(type_index->value); // function type index
+        } else if (auto table = std::get_if<WasmTable>(&import.kind)) {
+            data.write_u8(0x01);                 // import type (table)
+            data.write_u8(table->element_type);  // element reference type
+            data.write_u8(0x00);                 // indicate that no maximum size is present
+            data.write_uleb128(table->min_size); // minimum memory size
         } else if (auto memory = std::get_if<WasmMemory>(&import.kind)) {
             data.write_u8(0x02);                  // import type (memory)
             data.write_u8(0x00);                  // indicate that no maximum size is present
@@ -194,14 +199,14 @@ void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
         data.write_u8(symbol.type);       // symbol type
         data.write_uleb128(symbol.flags); // symbol flags
 
-        if (symbol.type == WasmSymbolType::FUNCTION || symbol.type == WasmSymbolType::GLOBAL) {
-            data.write_uleb128(symbol.index); // function index
+        if (Utils::is_one_of(symbol.type, {WasmSymbolType::FUNCTION, WasmSymbolType::GLOBAL, WasmSymbolType::TABLE})) {
+            data.write_uleb128(symbol.index); // element index
 
             if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
                 write_name(data, symbol.name); // symbol name
             }
         } else if (symbol.type == WasmSymbolType::DATA) {
-            write_name(data, symbol.name);     // symbol name
+            write_name(data, symbol.name); // symbol name
 
             if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
                 data.write_uleb128(symbol.index);  // data segment index

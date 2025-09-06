@@ -34,12 +34,28 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
                     },
                 },
             },
+            WasmImport{
+                .mod = "env",
+                .name = "__indirect_function_table",
+                .kind{
+                    WasmTable{
+                        .element_type = WasmReferenceType::FUNCREF,
+                        .min_size = 1,
+                    },
+                },
+            },
         },
         .symbols{
             WasmSymbol{
                 .type = WasmSymbolType::GLOBAL,
                 .flags = WasmSymbolFlags::UNDEFINED,
                 .name = "__stack_pointer",
+            },
+            WasmSymbol{
+                .type = WasmSymbolType::TABLE,
+                .flags = WasmSymbolFlags::EXPORTED | WasmSymbolFlags::NO_STRIP | WasmSymbolFlags::UNDEFINED,
+                .name = "__indirect_function_table",
+                .index = 0,
             },
         },
     };
@@ -58,6 +74,12 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
         build_global(file, global);
     }
 
+    indirect_call_types_offset = file.types.size();
+
+    for (const target::WasmFuncType &type : mod_data.indirect_call_types) {
+        file.types.push_back(build_func_type(type));
+    }
+
     for (mcode::Function *func : mod.get_functions()) {
         build_func(file, *func);
     }
@@ -71,6 +93,9 @@ void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
     unsigned index = 0;
 
     symbol_indices.insert({"__stack_pointer", index});
+    index += 1;
+
+    symbol_indices.insert({"__indirect_function_table", index});
     index += 1;
 
     for (const target::WasmFuncImport &func_import : mod_data.func_imports) {
@@ -215,6 +240,7 @@ void WasmBuilder::encode_instr(FuncContext &ctx, mcode::Instruction &instr) {
         case target::WasmOpcode::BR_TABLE: encode_br_table(ctx, instr); break;
         case target::WasmOpcode::END_FUNCTION: ctx.body.write_u8(0x0B); break;
         case target::WasmOpcode::CALL: encode_call(ctx, instr); break;
+        case target::WasmOpcode::CALL_INDIRECT: encode_call_indirect(ctx, instr); break;
         case target::WasmOpcode::DROP: ctx.body.write_u8(0x1A); break;
         case target::WasmOpcode::SELECT: ctx.body.write_u8(0x1B); break;
         case target::WasmOpcode::LOCAL_GET: encode_local_get(ctx, instr); break;
@@ -384,6 +410,32 @@ void WasmBuilder::encode_call(FuncContext &ctx, mcode::Instruction &instr) {
             .type = WasmRelocType::FUNCTION_INDEX_LEB,
             .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
             .index = symbol_indices.at(callee.get_symbol().name),
+        }
+    );
+
+    write_reloc_placeholder_32(ctx.body);
+}
+
+void WasmBuilder::encode_call_indirect(FuncContext &ctx, mcode::Instruction &instr) {
+    unsigned type_offset = instr.get_operand(0).get_int_immediate().to_unsigned();
+
+    ctx.body.write_u8(0x11);
+
+    ctx.relocs.push_back(
+        WasmRelocation{
+            .type = WasmRelocType::TYPE_INDEX_LEB,
+            .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
+            .index = indirect_call_types_offset + type_offset,
+        }
+    );
+
+    write_reloc_placeholder_32(ctx.body);
+
+    ctx.relocs.push_back(
+        WasmRelocation{
+            .type = WasmRelocType::TABLE_NUMBER_LEB,
+            .offset = static_cast<std::uint32_t>(ctx.body.get_size()),
+            .index = symbol_indices.at("__indirect_function_table"),
         }
     );
 
@@ -571,7 +623,7 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
         if (value > 0x7FFFFFFF) {
             value = value - 0xFFFFFFFF - 1;
         }
-        
+
         ctx.body.write_sleb128(value);
     } else {
         ASSERT_UNREACHABLE;

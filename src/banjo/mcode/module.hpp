@@ -45,7 +45,7 @@ public:
     std::unordered_set<std::string> &get_global_symbols() { return global_symbols; }
     std::vector<std::string> &get_dll_exports() { return dll_exports; }
     std::optional<AddrTable> &get_addr_table() { return addr_table; }
-    const std::any &get_target_data() { return target_data; }
+    std::any &get_target_data() { return target_data; }
 
     void add(Function *function) { functions.push_back(function); }
     void add(Global global) { globals.push_back(std::move(global)); }

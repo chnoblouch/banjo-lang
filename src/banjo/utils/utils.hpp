@@ -27,9 +27,9 @@ T align(T value, T boundary) {
     return mod == 0 ? value : value + boundary - mod;
 }
 
-template <typename T>
-bool is_one_of(T value, std::initializer_list<T> candidates) {
-    for (T candidate : candidates) {
+template <typename T, typename C>
+bool is_one_of(T value, std::initializer_list<C> candidates) {
+    for (C candidate : candidates) {
         if (value == candidate) {
             return true;
         }

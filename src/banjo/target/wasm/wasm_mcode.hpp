@@ -35,6 +35,7 @@ struct WasmFuncImport {
 struct WasmModData {
     std::vector<WasmFuncImport> func_imports;
     std::vector<std::string> extern_globals; // TODO: Integrate directly into mcode
+    std::vector<WasmFuncType> indirect_call_types;
 };
 
 } // namespace banjo::target
