@@ -419,7 +419,8 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         return_type = extern_func.type.return_type;
         emit({WasmOpcode::CALL, {mcode::Operand::from_symbol(mcode::Symbol{extern_func.name})}});
     } else if (callee.is_register()) {
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(callee.get_register())}});
+        unsigned local_index = vregs2locals.at(callee.get_register());
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
         
         WasmModData &mod_data = std::any_cast<WasmModData &>(machine_module.get_target_data());
         unsigned type_index = mod_data.indirect_call_types.size();
