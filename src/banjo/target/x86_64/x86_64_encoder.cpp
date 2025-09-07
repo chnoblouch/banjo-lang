@@ -161,7 +161,7 @@ void X8664Encoder::encode_sub(mcode::Instruction &instr, mcode::Function *func) 
 }
 
 void X8664Encoder::encode_imul(mcode::Instruction &instr, mcode::Function *func) {
-    ASSERT_MESSAGE(instr.get_operands().get_size() == 2, "imul must have two operands");
+    ASSERT_MESSAGE(instr.get_operands().size() == 2, "imul must have two operands");
 
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);

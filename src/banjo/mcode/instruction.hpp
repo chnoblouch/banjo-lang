@@ -32,8 +32,7 @@ struct RegOp {
 class Instruction {
 
 public:
-    static constexpr unsigned MAX_NUM_OPERANDS = 8;
-    typedef FixedVector<Operand, MAX_NUM_OPERANDS> OperandList;
+    typedef std::vector<Operand> OperandList;
 
     static constexpr unsigned FLAG_ARG_STORE = 1 << 0;
     static constexpr unsigned FLAG_ALLOCA = 1 << 1;
@@ -61,10 +60,10 @@ public:
 
     OperandList &get_operands() { return operands; }
     Operand &get_operand(unsigned index) { return operands[index]; }
-    Operand *try_get_operand(unsigned index) { return operands.get_size() > index ? &operands[index] : nullptr; }
+    Operand *try_get_operand(unsigned index) { return operands.size() > index ? &operands[index] : nullptr; }
 
     Operand &get_dest() { return operands[0]; }
-    bool has_dest() { return operands.get_size() > 0; }
+    bool has_dest() { return operands.size() > 0; }
 
     unsigned get_flags() { return flags; }
     bool is_flag(unsigned flag) { return flags & flag; }

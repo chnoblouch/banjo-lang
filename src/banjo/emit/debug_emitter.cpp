@@ -175,7 +175,7 @@ std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode:
 
     string += get_opcode_name(instr.get_opcode());
 
-    for (unsigned int i = 0; i < instr.get_operands().get_size(); i++) {
+    for (unsigned int i = 0; i < instr.get_operands().size(); i++) {
         mcode::Operand &operand = instr.get_operands()[i];
 
         string += (i == 0 ? " " : ", ");

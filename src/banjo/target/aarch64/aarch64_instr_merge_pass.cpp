@@ -45,7 +45,7 @@ AArch64InstrMergePass::RegUsageMap AArch64InstrMergePass::analyze_usages(mcode::
         }
 
         // For each register operand, increase the consumer count of the producer.
-        for (unsigned i = 1; i < iter->get_operands().get_size(); i++) {
+        for (unsigned i = 1; i < iter->get_operands().size(); i++) {
             mcode::Operand &operand = iter->get_operand(i);
 
             if (operand.is_virtual_reg()) {

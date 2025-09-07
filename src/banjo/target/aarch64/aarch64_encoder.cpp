@@ -208,7 +208,7 @@ void AArch64Encoder::encode_asr(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_csel(mcode::Instruction &instr) {
-    ASSERT(instr.get_operands().get_size() == 4);
+    ASSERT(instr.get_operands().size() == 4);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
@@ -225,7 +225,7 @@ void AArch64Encoder::encode_csel(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_fmov(mcode::Instruction &instr) {
-    ASSERT(instr.get_operands().get_size() == 2);
+    ASSERT(instr.get_operands().size() == 2);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
@@ -290,7 +290,7 @@ void AArch64Encoder::encode_fdiv(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_fcvt(mcode::Instruction &instr) {
-    ASSERT(instr.get_operands().get_size() == 2);
+    ASSERT(instr.get_operands().size() == 2);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
@@ -320,8 +320,7 @@ void AArch64Encoder::encode_fcvtzu(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_fcsel(mcode::Instruction &instr) {
-    ASSERT(instr.get_operands().get_size() == 4);
-
+    ASSERT(instr.get_operands().size() == 4);
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
     mcode::Operand &m_rhs = instr.get_operand(2);
@@ -358,7 +357,7 @@ void AArch64Encoder::encode_fcmp(mcode::Instruction &instr) {
     // TODO: There is a variant for comparing with zero, use this in the SSA
     // lowerer!
 
-    ASSERT(instr.get_operands().get_size() == 2);
+    ASSERT(instr.get_operands().size() == 2);
 
     mcode::Operand &m_lhs = instr.get_operand(0);
     mcode::Operand &m_rhs = instr.get_operand(1);
@@ -560,7 +559,7 @@ void AArch64Encoder::encode_ldp_family(mcode::Instruction &instr, std::array<std
 }
 
 void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
-    ASSERT(instr.get_operands().get_size() == 3 || instr.get_operands().get_size() == 4);
+    ASSERT(instr.get_operands().size() == 3 || instr.get_operands().size() == 4);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
@@ -622,7 +621,7 @@ void AArch64Encoder::encode_mul_family(mcode::Instruction &instr, std::array<std
 }
 
 void AArch64Encoder::encode_and_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
-    ASSERT(instr.get_operands().get_size() == 3);
+    ASSERT(instr.get_operands().size() == 3);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
@@ -644,7 +643,7 @@ void AArch64Encoder::encode_and_family(mcode::Instruction &instr, std::array<std
 }
 
 void AArch64Encoder::encode_lsl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
-    ASSERT(instr.get_operands().get_size() == 3);
+    ASSERT(instr.get_operands().size() == 3);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
@@ -666,7 +665,7 @@ void AArch64Encoder::encode_lsl_family(mcode::Instruction &instr, std::array<std
 }
 
 void AArch64Encoder::encode_fadd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
-    ASSERT(instr.get_operands().get_size() == 3);
+    ASSERT(instr.get_operands().size() == 3);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
@@ -681,7 +680,7 @@ void AArch64Encoder::encode_fadd_family(mcode::Instruction &instr, std::array<st
 }
 
 void AArch64Encoder::encode_scvtf_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
-    ASSERT(instr.get_operands().get_size() == 2);
+    ASSERT(instr.get_operands().size() == 2);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
@@ -695,7 +694,7 @@ void AArch64Encoder::encode_scvtf_family(mcode::Instruction &instr, std::array<s
 }
 
 void AArch64Encoder::encode_fcvtzs_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
-    ASSERT(instr.get_operands().get_size() == 2);
+    ASSERT(instr.get_operands().size() == 2);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);

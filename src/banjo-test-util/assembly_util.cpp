@@ -104,7 +104,7 @@ std::optional<mcode::Instruction> AssemblyUtil::parse_line() {
     mcode::Instruction::OperandList operands;
 
     while (reader.get() != '\0') {
-        operands.append(parse_operand());
+        operands.push_back(parse_operand());
     }
 
     return mcode::Instruction(opcode, operands);

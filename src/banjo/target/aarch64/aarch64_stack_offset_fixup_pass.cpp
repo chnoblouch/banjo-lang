@@ -27,7 +27,7 @@ void AArch64StackOffsetFixupPass::run(mcode::BasicBlock &block) {
         }
 
         mcode::Operand &operand = instr.get_operand(2);
-        if (!operand.is_stack_slot_offset() || instr.get_operands().get_size() == 4) {
+        if (!operand.is_stack_slot_offset() || instr.get_operands().size() == 4) {
             continue;
         }
 
@@ -42,7 +42,7 @@ void AArch64StackOffsetFixupPass::run(mcode::BasicBlock &block) {
         ASSERT(total_offset < 4096 * 4096);
 
         operand = mcode::Operand::from_int_immediate(total_offset >> 12, operand.get_size());
-        instr.get_operands().append(mcode::Operand::from_aarch64_left_shift(12));
+        instr.get_operands().push_back(mcode::Operand::from_aarch64_left_shift(12));
 
         mcode::Operand m_imm_remainder = mcode::Operand::from_int_immediate(total_offset & 0xFFF);
         block.insert_after(

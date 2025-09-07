@@ -187,15 +187,15 @@ void AArch64AsmEmitter::emit_basic_block(mcode::BasicBlock &basic_block) {
 void AArch64AsmEmitter::emit_instr(mcode::Function *func, mcode::Instruction &instr) {
     stream << "  " << OPCODE_NAMES.find(instr.get_opcode())->second;
 
-    if (instr.get_operands().get_size() == 0) {
+    if (instr.get_operands().size() == 0) {
         return;
     }
 
     stream << " ";
 
-    for (int i = 0; i < (int)instr.get_operands().get_size(); i++) {
+    for (int i = 0; i < (int)instr.get_operands().size(); i++) {
         emit_operand(func, instr.get_operand(i));
-        if (i != (int)instr.get_operands().get_size() - 1) {
+        if (i != (int)instr.get_operands().size() - 1) {
             stream << ", ";
         }
     }

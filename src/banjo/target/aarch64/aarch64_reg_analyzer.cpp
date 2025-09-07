@@ -189,7 +189,7 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
 }
 
 void AArch64RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) {
-    if (instr.get_operands().get_size() == 0 || !instr.get_operand(0).is_virtual_reg()) {
+    if (instr.get_operands().size() == 0 || !instr.get_operand(0).is_virtual_reg()) {
         return;
     }
 

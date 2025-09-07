@@ -97,10 +97,10 @@ WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
     mcode::Instruction::OperandList branch_targets;
 
     for (unsigned i = 0; i < func.get_basic_blocks().get_size(); i++) {
-        branch_targets.append(mcode::Operand::from_int_immediate(i));
+        branch_targets.push_back(mcode::Operand::from_int_immediate(i));
     }
 
-    branch_targets.append(mcode::Operand::from_int_immediate(func.get_basic_blocks().get_size() + 2));
+    branch_targets.push_back(mcode::Operand::from_int_immediate(func.get_basic_blocks().get_size() + 2));
 
     entry_block.append({WasmOpcode::BR_TABLE, std::move(branch_targets)});
     entry_block.append({WasmOpcode::END_BLOCK});

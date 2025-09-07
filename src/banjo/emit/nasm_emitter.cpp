@@ -243,7 +243,7 @@ void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction 
     std::string line = OPCODE_NAMES.find(instr.get_opcode())->second;
 
     bool has_reg_operand = false;
-    for (int i = 0; i < instr.get_operands().get_size(); i++) {
+    for (int i = 0; i < instr.get_operands().size(); i++) {
         if (instr.get_operand(i).is_physical_reg()) {
             has_reg_operand = true;
             break;
@@ -259,7 +259,7 @@ void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction 
         instr.get_opcode() == target::X8664Opcode::SHL || instr.get_opcode() == target::X8664Opcode::SHR ||
         instr.get_opcode() == target::X8664Opcode::CVTSI2SS || instr.get_opcode() == target::X8664Opcode::CVTSI2SD;
 
-    for (int j = 0; j < instr.get_operands().get_size(); j++) {
+    for (int j = 0; j < instr.get_operands().size(); j++) {
         line += (j == 0 ? " " : ", ");
 
         mcode::Operand &operand = instr.get_operand(j);

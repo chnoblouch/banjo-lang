@@ -391,13 +391,13 @@ void WasmBuilder::encode_br_if(FuncContext &ctx, mcode::Instruction &instr) {
 
 void WasmBuilder::encode_br_table(FuncContext &ctx, mcode::Instruction &instr) {
     ctx.body.write_u8(0x0E);
-    ctx.body.write_uleb128(instr.get_operands().get_size() - 1);
+    ctx.body.write_uleb128(instr.get_operands().size() - 1);
 
-    for (unsigned i = 0; i < instr.get_operands().get_size() - 1; i++) {
+    for (unsigned i = 0; i < instr.get_operands().size() - 1; i++) {
         ctx.body.write_uleb128(instr.get_operand(i).get_int_immediate().to_u64());
     }
 
-    ctx.body.write_uleb128(instr.get_operand(instr.get_operands().get_size() - 1).get_int_immediate().to_u64());
+    ctx.body.write_uleb128(instr.get_operand(instr.get_operands().size() - 1).get_int_immediate().to_u64());
 }
 
 void WasmBuilder::encode_call(FuncContext &ctx, mcode::Instruction &instr) {
