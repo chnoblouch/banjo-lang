@@ -1,7 +1,9 @@
-use c.lib.stdlib.exit as cexit;
-use std.{config, stack_trace};
+use c.lib.{
+    stdlib.exit as cexit,
+    string.strerror,
+};
 
-native func strerror(errnum: i32) -> *u8;
+use std.{config, stack_trace};
 
 meta if config.OS == config.WINDOWS {
     native func _errno() -> *i32;

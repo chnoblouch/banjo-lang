@@ -20,7 +20,7 @@ meta if IS_UNIX {
     }
     
     pub func error_to_string(error: Error) -> String {
-        return String.from_cstr(posix.strerror(error));
+        return String.from_cstr(c.lib.string.strerror(error));
     }
 
     pub func io_get_stdin_stream() -> addr {

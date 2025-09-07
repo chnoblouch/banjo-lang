@@ -287,7 +287,6 @@ meta if os.IS_UNIX {
     native func opendir(name: *u8) -> addr;
     native func readdir(dirp: addr) -> *Dirent;
     native func closedir(dirp: addr) -> i32;
-    native func strerror(errnum: i32) -> *u8;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
     native func pthread_join(thread: usize, retval: *addr) -> i32;
     native func pthread_mutex_init(mutex: *PthreadMutex, attr: addr) -> i32;

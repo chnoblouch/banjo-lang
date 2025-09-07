@@ -32,3 +32,5 @@ native func memset(dest: addr, ch: i32, count: usize) -> addr;
 native func memcpy(dest: addr, src: addr, count: usize) -> addr;
 native func memmove(dest: addr, src: addr, count: usize) -> addr;
 # <-
+
+native func strerror(errnum: i32) -> *u8;
