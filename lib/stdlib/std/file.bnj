@@ -6,6 +6,8 @@ use std.{
     io.{Read, Write, Error},
 };
 
+use c;
+
 use c.lib.stdio.{
     fopen,
     fseek,
@@ -135,7 +137,7 @@ struct File: Read, Write {
             libc_origin = SEEK_CUR;
         }
 
-        var result = fseek(self.stream, offset as i64, libc_origin);
+        var result = fseek(self.stream, offset as c.Long, libc_origin);
 
         if result == 0 {
             return undefined;

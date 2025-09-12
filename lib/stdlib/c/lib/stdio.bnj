@@ -1,3 +1,5 @@
+use c;
+
 native func printf(format: *u8, value: i64) -> i32;
 native func scanf(format: *u8, address: addr) -> i32;
 native func puts(s: *u8) -> i32;
@@ -8,12 +10,12 @@ native func fclose(stream: addr) -> addr;
 native func fflush(stream: addr) -> i32;
 native func fread(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
 native func fwrite(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
-native func fgetc(stream: addr) -> i32;
-native func fputc(ch: i32, stream: addr) -> i32;
-native func fseek(stream: addr, offset: i64, whence: i32) -> i32;
-native func ftell(stream: addr) -> i64;
-native func feof(stream: addr) -> i32;
-native func ferror(stream: addr) -> i32;
+native func fgetc(stream: addr) -> c.Int;
+native func fputc(ch: c.Int, stream: addr) -> c.Int;
+native func fseek(stream: addr, offset: c.Long, whence: c.Int) -> c.Int;
+native func ftell(stream: addr) -> c.Long;
+native func feof(stream: addr) -> c.Int;
+native func ferror(stream: addr) -> c.Int;
 
 const SEEK_SET: i32 = 0;
 const SEEK_CUR: i32 = 1;
