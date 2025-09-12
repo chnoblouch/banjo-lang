@@ -12,7 +12,15 @@ Config &Config::instance() {
 }
 
 bool Config::is_stdlib_enabled() {
-    return !target.is_wasm() || target.get_operating_system() == target::OperatingSystem::EMSCRIPTEN;
+    if (disable_std) {
+        return false;
+    }
+
+    if (target.is_wasm()) {
+        return target.get_operating_system() == target::OperatingSystem::EMSCRIPTEN;
+    }
+
+    return true;
 }
 
 } // namespace lang

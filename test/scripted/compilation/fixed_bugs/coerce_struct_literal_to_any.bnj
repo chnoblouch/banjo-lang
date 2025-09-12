@@ -1,0 +1,25 @@
+# test:subtest
+# test:error 9:18 "type mismatch (expected 'i32', got 'S')"
+
+struct S {
+    var f: i32;
+}
+
+func main() {
+    var a: i32 = S { f: 0 };
+}
+
+# test:subtest
+# test:error 24:17 "type mismatch (expected 'S0', got 'S1')"
+
+struct S0 {
+    var f: i32;
+}
+
+struct S1 {
+    var f: i32;
+}
+
+func main() {
+    var a: S0 = S1 { f: 0 };
+}

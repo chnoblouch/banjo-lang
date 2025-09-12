@@ -325,6 +325,12 @@ Result ExprFinalizer::finalize_coercion(sir::StructLiteral &struct_literal, sir:
     }
 
     finalize_struct_literal_fields(struct_literal);
+    
+    if (struct_literal.type != type) {
+        analyzer.report_generator.report_err_type_mismatch(&struct_literal, type, struct_literal.type);
+        return Result::ERROR;
+    }
+    
     return Result::SUCCESS;
 }
 
