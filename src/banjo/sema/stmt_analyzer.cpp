@@ -121,7 +121,7 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
         sir::AssignStmt{
             .ast_node = comp_assign_stmt.ast_node,
             .lhs = comp_assign_stmt.lhs,
-            .rhs = analyzer.create_expr(
+            .rhs = analyzer.create_trivial(
                 sir::BinaryExpr{
                     .ast_node = comp_assign_stmt.ast_node,
                     .type = nullptr,
@@ -249,7 +249,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
         }
     );
 
-    sir::SymbolExpr *result_ref_expr = analyzer.create_expr(
+    sir::SymbolExpr *result_ref_expr = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = type,
@@ -306,7 +306,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     if_stmt->cond_branches = {
         sir::IfCondBranch{
             .ast_node = nullptr,
-            .condition = analyzer.create_expr(
+            .condition = analyzer.create_trivial(
                 sir::FieldExpr{
                     .ast_node = nullptr,
                     .type = successful_field->type,
@@ -477,7 +477,7 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
         }
     );
 
-    sir::BinaryExpr *loop_condition = analyzer.create_expr(
+    sir::BinaryExpr *loop_condition = analyzer.create_trivial(
         sir::BinaryExpr{
             .ast_node = nullptr,
             .type = nullptr,
@@ -499,13 +499,13 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
         sir::AssignStmt{
             .ast_node = nullptr,
             .lhs = var_ref_expr,
-            .rhs = analyzer.create_expr(
+            .rhs = analyzer.create_trivial(
                 sir::BinaryExpr{
                     .ast_node = nullptr,
                     .type = nullptr,
                     .op = sir::BinaryOp::ADD,
                     .lhs = var_ref_expr,
-                    .rhs = analyzer.create_expr(
+                    .rhs = analyzer.create_trivial(
                         sir::IntLiteral{
                             .ast_node = nullptr,
                             .type = nullptr,
@@ -603,7 +603,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         }
     );
 
-    sir::SymbolExpr *iter_ref_expr = analyzer.create_expr(
+    sir::SymbolExpr *iter_ref_expr = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = iter_func_def.type.return_type,
@@ -623,7 +623,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         }
     );
 
-    sir::SymbolExpr *next_ref_expr = analyzer.create_expr(
+    sir::SymbolExpr *next_ref_expr = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = next_func_def.type.return_type,
@@ -672,7 +672,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
                 .ast_node = nullptr,
                 .local{
                     .name = for_stmt.ident,
-                    .type = analyzer.create_expr(
+                    .type = analyzer.create_trivial(
                         sir::ReferenceType{
                             .ast_node = nullptr,
                             .mut = for_stmt.iter_kind == sir::IterKind::MUT,
@@ -680,7 +680,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
                         }
                     ),
                 },
-                .value = analyzer.create_expr(
+                .value = analyzer.create_trivial(
                     sir::StarExpr{
                         .ast_node = nullptr,
                         .value = analyzer.create_expr(
@@ -756,7 +756,7 @@ sir::Expr StmtAnalyzer::create_method_call(sir::Expr self, sir::FuncDef &method)
 }
 
 sir::Expr StmtAnalyzer::create_expr(sir::FuncDef &func_def) {
-    return analyzer.create_expr(
+    return analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = &func_def.type,

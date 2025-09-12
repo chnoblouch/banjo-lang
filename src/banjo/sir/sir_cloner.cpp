@@ -622,7 +622,7 @@ std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
 }
 
 IntLiteral *Cloner::clone_int_literal(const IntLiteral &int_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         IntLiteral{
             .ast_node = int_literal.ast_node,
             .type = clone_expr(int_literal.type),
@@ -632,7 +632,7 @@ IntLiteral *Cloner::clone_int_literal(const IntLiteral &int_literal) {
 }
 
 FPLiteral *Cloner::clone_fp_literal(const FPLiteral &fp_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         FPLiteral{
             .ast_node = fp_literal.ast_node,
             .type = clone_expr(fp_literal.type),
@@ -642,7 +642,7 @@ FPLiteral *Cloner::clone_fp_literal(const FPLiteral &fp_literal) {
 }
 
 BoolLiteral *Cloner::clone_bool_literal(const BoolLiteral &bool_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         BoolLiteral{
             .ast_node = bool_literal.ast_node,
             .type = clone_expr(bool_literal.type),
@@ -652,7 +652,7 @@ BoolLiteral *Cloner::clone_bool_literal(const BoolLiteral &bool_literal) {
 }
 
 CharLiteral *Cloner::clone_char_literal(const CharLiteral &char_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         CharLiteral{
             .ast_node = char_literal.ast_node,
             .type = clone_expr(char_literal.type),
@@ -662,7 +662,7 @@ CharLiteral *Cloner::clone_char_literal(const CharLiteral &char_literal) {
 }
 
 NullLiteral *Cloner::clone_null_literal(const NullLiteral &null_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         NullLiteral{
             .ast_node = null_literal.ast_node,
             .type = clone_expr(null_literal.type),
@@ -671,7 +671,7 @@ NullLiteral *Cloner::clone_null_literal(const NullLiteral &null_literal) {
 }
 
 NoneLiteral *Cloner::clone_none_literal(const NoneLiteral &none_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         NoneLiteral{
             .ast_node = none_literal.ast_node,
             .type = clone_expr(none_literal.type),
@@ -680,7 +680,7 @@ NoneLiteral *Cloner::clone_none_literal(const NoneLiteral &none_literal) {
 }
 
 UndefinedLiteral *Cloner::clone_undefined_literal(const UndefinedLiteral &undefined_literal) {
-    return mod.create_expr(
+    return mod.create_trivial(
         UndefinedLiteral{
             .ast_node = undefined_literal.ast_node,
             .type = clone_expr(undefined_literal.type),
@@ -773,7 +773,7 @@ ClosureLiteral *Cloner::clone_closure_literal(const ClosureLiteral &closure_lite
 }
 
 SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr &symbol_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         SymbolExpr{
             .ast_node = symbol_expr.ast_node,
             .type = clone_expr(symbol_expr.type),
@@ -783,7 +783,7 @@ SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr &symbol_expr) {
 }
 
 BinaryExpr *Cloner::clone_binary_expr(const BinaryExpr &binary_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         BinaryExpr{
             .ast_node = binary_expr.ast_node,
             .type = clone_expr(binary_expr.type),
@@ -795,7 +795,7 @@ BinaryExpr *Cloner::clone_binary_expr(const BinaryExpr &binary_expr) {
 }
 
 UnaryExpr *Cloner::clone_unary_expr(const UnaryExpr &unary_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         UnaryExpr{
             .ast_node = unary_expr.ast_node,
             .type = clone_expr(unary_expr.type),
@@ -806,7 +806,7 @@ UnaryExpr *Cloner::clone_unary_expr(const UnaryExpr &unary_expr) {
 }
 
 CastExpr *Cloner::clone_cast_expr(const CastExpr &cast_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         CastExpr{
             .ast_node = cast_expr.ast_node,
             .type = clone_expr(cast_expr.type),
@@ -816,7 +816,7 @@ CastExpr *Cloner::clone_cast_expr(const CastExpr &cast_expr) {
 }
 
 IndexExpr *Cloner::clone_index_expr(const IndexExpr &index_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         IndexExpr{
             .ast_node = index_expr.ast_node,
             .type = clone_expr(index_expr.type),
@@ -842,7 +842,7 @@ FieldExpr *Cloner::clone_field_expr(const FieldExpr & /*field_expr*/) {
 }
 
 RangeExpr *Cloner::clone_range_expr(const RangeExpr &range_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         RangeExpr{
             .ast_node = range_expr.ast_node,
             .lhs = clone_expr(range_expr.lhs),
@@ -862,7 +862,7 @@ TupleExpr *Cloner::clone_tuple_expr(const TupleExpr &tuple_expr) {
 }
 
 CoercionExpr *Cloner::clone_coercion_expr(const CoercionExpr &coercion_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         CoercionExpr{
             .ast_node = coercion_expr.ast_node,
             .type = clone_expr(coercion_expr.type),
@@ -872,7 +872,7 @@ CoercionExpr *Cloner::clone_coercion_expr(const CoercionExpr &coercion_expr) {
 }
 
 PrimitiveType *Cloner::clone_primitive_type(const PrimitiveType &primitive_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         PrimitiveType{
             .ast_node = primitive_type.ast_node,
             .primitive = primitive_type.primitive,
@@ -881,7 +881,7 @@ PrimitiveType *Cloner::clone_primitive_type(const PrimitiveType &primitive_type)
 }
 
 PointerType *Cloner::clone_pointer_type(const PointerType &pointer_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         PointerType{
             .ast_node = pointer_type.ast_node,
             .base_type = clone_expr(pointer_type.base_type),
@@ -890,7 +890,7 @@ PointerType *Cloner::clone_pointer_type(const PointerType &pointer_type) {
 }
 
 StaticArrayType *Cloner::clone_static_array_type(const StaticArrayType &static_array_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         StaticArrayType{
             .ast_node = static_array_type.ast_node,
             .base_type = clone_expr(static_array_type.base_type),
@@ -923,7 +923,7 @@ FuncType *Cloner::clone_func_type(const FuncType &func_type) {
 }
 
 OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         OptionalType{
             .ast_node = optional_type.ast_node,
             .base_type = clone_expr(optional_type.base_type),
@@ -932,7 +932,7 @@ OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
 }
 
 ResultType *Cloner::clone_result_type(const ResultType &result_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         ResultType{
             .ast_node = result_type.ast_node,
             .value_type = clone_expr(result_type.value_type),
@@ -942,7 +942,7 @@ ResultType *Cloner::clone_result_type(const ResultType &result_type) {
 }
 
 ArrayType *Cloner::clone_array_type(const ArrayType &array_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         ArrayType{
             .ast_node = array_type.ast_node,
             .base_type = clone_expr(array_type.base_type),
@@ -951,7 +951,7 @@ ArrayType *Cloner::clone_array_type(const ArrayType &array_type) {
 }
 
 MapType *Cloner::clone_map_type(const MapType &map_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         MapType{
             .ast_node = map_type.ast_node,
             .key_type = map_type.key_type,
@@ -970,7 +970,7 @@ ClosureType *Cloner::clone_closure_type(const ClosureType &closure_type) {
 }
 
 ReferenceType *Cloner::clone_reference_type(const ReferenceType &reference_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         ReferenceType{
             .ast_node = reference_type.ast_node,
             .mut = reference_type.mut,
@@ -989,7 +989,7 @@ IdentExpr *Cloner::clone_ident_expr(const IdentExpr &ident_expr) {
 }
 
 StarExpr *Cloner::clone_star_expr(const StarExpr &star_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         StarExpr{
             .ast_node = star_expr.ast_node,
             .value = clone_expr(star_expr.value),
@@ -1018,7 +1018,7 @@ DotExpr *Cloner::clone_dot_expr(const DotExpr &dot_expr) {
 }
 
 PseudoType *Cloner::clone_pseudo_type(const PseudoType &pseudo_type) {
-    return mod.create_expr(
+    return mod.create_trivial(
         sir::PseudoType{
             .kind = pseudo_type.kind,
         }
@@ -1026,7 +1026,7 @@ PseudoType *Cloner::clone_pseudo_type(const PseudoType &pseudo_type) {
 }
 
 MetaAccess *Cloner::clone_meta_access(const MetaAccess &meta_access) {
-    return mod.create_expr(
+    return mod.create_trivial(
         MetaAccess{
             .ast_node = meta_access.ast_node,
             .expr = clone_expr(meta_access.expr),
@@ -1055,7 +1055,7 @@ MetaCallExpr *Cloner::clone_meta_call_expr(const MetaCallExpr &meta_call_expr) {
 }
 
 InitExpr *Cloner::clone_init_expr(const InitExpr &init_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         InitExpr{
             .ast_node = init_expr.ast_node,
             .type = clone_expr(init_expr.type),
@@ -1066,7 +1066,7 @@ InitExpr *Cloner::clone_init_expr(const InitExpr &init_expr) {
 }
 
 MoveExpr *Cloner::clone_move_expr(const MoveExpr &move_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         MoveExpr{
             .ast_node = move_expr.ast_node,
             .type = clone_expr(move_expr.type),
@@ -1077,7 +1077,7 @@ MoveExpr *Cloner::clone_move_expr(const MoveExpr &move_expr) {
 }
 
 DeinitExpr *Cloner::clone_deinit_expr(const DeinitExpr &deinit_expr) {
-    return mod.create_expr(
+    return mod.create_trivial(
         DeinitExpr{
             .ast_node = deinit_expr.ast_node,
             .type = clone_expr(deinit_expr.type),
@@ -1129,7 +1129,7 @@ MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
 }
 
 Error *Cloner::clone_error(const Error &error) {
-    return mod.create_expr(
+    return mod.create_trivial(
         Error{
             .ast_node = error.ast_node,
         }

@@ -149,7 +149,7 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
     sir::EnumDef &enum_def = analyzer.get_scope().decl.as<sir::EnumDef>();
     enum_def.variants.push_back(&enum_variant);
 
-    enum_variant.type = analyzer.create_expr(
+    enum_variant.type = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = nullptr,
@@ -188,7 +188,7 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             return;
         }
 
-        sir::Expr base_type = analyzer.create_expr(
+        sir::Expr base_type = analyzer.create_trivial(
             sir::SymbolExpr{
                 .ast_node = nullptr,
                 .type = nullptr,

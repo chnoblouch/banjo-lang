@@ -158,6 +158,11 @@ private:
     void add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol);
 
     template <typename T>
+    T *create_trivial(T value) {
+        return cur_sir_mod->create_trivial(value);
+    }
+
+    template <typename T>
     T *create_expr(T value) {
         return cur_sir_mod->create_expr(value);
     }

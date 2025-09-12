@@ -2,9 +2,10 @@
 #define BANJO_SIR_H
 
 #include "banjo/source/module_path.hpp"
+#include "banjo/utils/arena.hpp"
 #include "banjo/utils/dynamic_pointer.hpp"
-#include "banjo/utils/growable_arena.hpp"
 #include "banjo/utils/large_int.hpp"
+#include "banjo/utils/typed_arena.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -12,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -576,6 +578,8 @@ struct IntLiteral {
     Expr type;
     LargeInt value;
 };
+
+static_assert(std::is_trivially_destructible<IntLiteral>(), "");
 
 struct FPLiteral {
     ASTNode *ast_node;
@@ -1358,17 +1362,23 @@ typedef std::variant<
 typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;
 
 struct Module {
-    utils::GrowableArena<ExprStorage> expr_arena;
-    utils::GrowableArena<StmtStorage> stmt_arena;
-    utils::GrowableArena<DeclStorage> decl_arena;
-    utils::GrowableArena<UseItemStorage> use_item_arena;
-    utils::GrowableArena<SymbolTable> symbol_table_arena;
-    utils::GrowableArena<OverloadSet> overload_set_arena;
-    utils::GrowableArena<Attributes> attributes_arena;
-    utils::GrowableArena<Resource> resource_arena;
+    utils::Arena<512> trivial_arena;
+    utils::TypedArena<ExprStorage> expr_arena;
+    utils::TypedArena<StmtStorage> stmt_arena;
+    utils::TypedArena<DeclStorage> decl_arena;
+    utils::TypedArena<UseItemStorage> use_item_arena;
+    utils::TypedArena<SymbolTable> symbol_table_arena;
+    utils::TypedArena<OverloadSet> overload_set_arena;
+    utils::TypedArena<Attributes> attributes_arena;
+    utils::TypedArena<Resource> resource_arena;
 
     ModulePath path;
     DeclBlock block;
+
+    template <typename T>
+    T *create_trivial(T value) {
+        return trivial_arena.create<T>(value);
+    }
 
     template <typename T>
     T *create_expr(T value) {
@@ -1397,7 +1407,7 @@ struct Module {
 };
 
 struct Unit {
-    utils::GrowableArena<Module> mod_arena;
+    utils::TypedArena<Module> mod_arena;
     std::vector<Module *> mods;
     std::unordered_map<ModulePath, Module *> mods_by_path;
 

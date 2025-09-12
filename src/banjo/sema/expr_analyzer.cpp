@@ -168,7 +168,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     }
 
     if (auto reference_type = expr.get_type().match<sir::ReferenceType>()) {
-        expr = analyzer.create_expr(
+        expr = analyzer.create_trivial(
             sir::UnaryExpr{
                 .ast_node = expr.get_ast_node(),
                 .type = reference_type->base_type,
@@ -182,7 +182,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
-    int_literal.type = analyzer.create_expr(
+    int_literal.type = analyzer.create_trivial(
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::INT_LITERAL,
@@ -193,7 +193,7 @@ Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
 }
 
 Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
-    fp_literal.type = analyzer.create_expr(
+    fp_literal.type = analyzer.create_trivial(
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::FP_LITERAL,
@@ -204,7 +204,7 @@ Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
 }
 
 Result ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
-    bool_literal.type = analyzer.create_expr(
+    bool_literal.type = analyzer.create_trivial(
         sir::PrimitiveType{
             .ast_node = nullptr,
             .primitive = sir::Primitive::BOOL,
@@ -217,7 +217,7 @@ Result ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
 Result ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
     // TODO: Error handling for characters with size != 1
 
-    char_literal.type = analyzer.create_expr(
+    char_literal.type = analyzer.create_trivial(
         sir::PrimitiveType{
             .ast_node = nullptr,
             .primitive = sir::Primitive::U8,
@@ -228,7 +228,7 @@ Result ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
 }
 
 Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
-    null_literal.type = analyzer.create_expr(
+    null_literal.type = analyzer.create_trivial(
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::NULL_LITERAL,
@@ -239,7 +239,7 @@ Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
 }
 
 Result ExprAnalyzer::analyze_none_literal(sir::NoneLiteral &none_literal) {
-    none_literal.type = analyzer.create_expr(
+    none_literal.type = analyzer.create_trivial(
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::NONE_LITERAL,
@@ -250,7 +250,7 @@ Result ExprAnalyzer::analyze_none_literal(sir::NoneLiteral &none_literal) {
 }
 
 Result ExprAnalyzer::analyze_undefined_literal(sir::UndefinedLiteral &undefined_literal) {
-    undefined_literal.type = analyzer.create_expr(
+    undefined_literal.type = analyzer.create_trivial(
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::UNDEFINED_LITERAL,
@@ -278,7 +278,7 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
     }
 
     if (array_literal.values.size() == 1 && array_literal.values[0].is_type()) {
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::ArrayType{
                 .ast_node = array_literal.ast_node,
                 .base_type = array_literal.values[0],
@@ -287,7 +287,7 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
 
         return analyze_array_type(out_expr.as<sir::ArrayType>(), out_expr);
     } else {
-        array_literal.type = analyzer.create_expr(
+        array_literal.type = analyzer.create_trivial(
             sir::PseudoType{
                 .ast_node = nullptr,
                 .kind = sir::PseudoTypeKind::ARRAY_LITERAL,
@@ -299,7 +299,7 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
 }
 
 Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
-    string_literal.type = analyzer.create_expr(
+    string_literal.type = analyzer.create_trivial(
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = sir::PseudoTypeKind::STRING_LITERAL,
@@ -363,7 +363,7 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
     sir::ExprCategory first_value_category = map_literal.entries[0].value.get_category();
 
     if (first_key_category == sir::ExprCategory::VALUE && first_value_category == sir::ExprCategory::VALUE) {
-        map_literal.type = analyzer.create_expr(
+        map_literal.type = analyzer.create_trivial(
             sir::PseudoType{
                 .ast_node = nullptr,
                 .kind = sir::PseudoTypeKind::MAP_LITERAL,
@@ -372,7 +372,7 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
 
         return Result::SUCCESS;
     } else if (first_key_category == sir::ExprCategory::TYPE && first_value_category == sir::ExprCategory::TYPE) {
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::MapType{
                 .ast_node = map_literal.ast_node,
                 .key_type = map_literal.entries[0].key,
@@ -399,7 +399,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
     sir::Param data_ptr_param{
         .ast_node = nullptr,
         .name = {},
-        .type = analyzer.create_expr(
+        .type = analyzer.create_trivial(
             sir::PrimitiveType{
                 .ast_node = nullptr,
                 .primitive = sir::Primitive::ADDR,
@@ -451,7 +451,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         sir::Symbol &captured_var = closure_ctx.captured_vars[i];
 
         sir::Expr type = captured_var.get_type();
-        sir::Expr value = analyzer.create_expr(
+        sir::Expr value = analyzer.create_trivial(
             sir::SymbolExpr{
                 .ast_node = nullptr,
                 .type = type,
@@ -476,7 +476,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
     sir::FuncDef &new_def_generic = std_closure_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>();
     sir::FuncDef &new_def = *GenericsSpecializer(analyzer).specialize(new_def_generic, {data_type});
 
-    sir::Expr callee = analyzer.create_expr(
+    sir::Expr callee = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = &new_def.type,
@@ -484,18 +484,18 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         }
     );
 
-    sir::Expr addr_type = analyzer.create_expr(
+    sir::Expr addr_type = analyzer.create_trivial(
         sir::PrimitiveType{
             .ast_node = nullptr,
             .primitive = sir::Primitive::ADDR,
         }
     );
 
-    sir::Expr func_ptr = analyzer.create_expr(
+    sir::Expr func_ptr = analyzer.create_trivial(
         sir::CastExpr{
             .ast_node = nullptr,
             .type = addr_type,
-            .value = analyzer.create_expr(
+            .value = analyzer.create_trivial(
                 sir::SymbolExpr{
                     .ast_node = nullptr,
                     .type = &generated_func->type,
@@ -698,7 +698,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (unary_expr.op == sir::UnaryOp::REF) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
-        unary_expr.type = analyzer.create_expr(
+        unary_expr.type = analyzer.create_trivial(
             sir::PointerType{
                 .ast_node = nullptr,
                 .base_type = value_type,
@@ -820,7 +820,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         if (ident_expr->value == "__builtin_deinit") {
             ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
 
-            out_expr = analyzer.create_expr(
+            out_expr = analyzer.create_trivial(
                 sir::DeinitExpr{
                     .ast_node = nullptr,
                     .type = call_expr.args[0].get_type(),
@@ -833,10 +833,10 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         } else if (ident_expr->value == "__builtin_pointer_to") {
             ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
 
-            out_expr = analyzer.create_expr(
+            out_expr = analyzer.create_trivial(
                 sir::UnaryExpr{
                     .ast_node = nullptr,
-                    .type = analyzer.create_expr(
+                    .type = analyzer.create_trivial(
                         sir::PointerType{
                             .ast_node = nullptr,
                             .base_type = call_expr.args[0].get_type(),
@@ -943,7 +943,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
         analyzer.add_symbol_use(call_expr.callee.as<sir::SymbolExpr>().ast_node, callee_func_def);
 
-        call_expr.callee = analyzer.create_expr(
+        call_expr.callee = analyzer.create_trivial(
             sir::SymbolExpr{
                 .ast_node = nullptr,
                 .type = &callee_func_def->type,
@@ -972,7 +972,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     call_expr.type = callee_func_type->return_type;
 
     if (auto closure_type = callee_type.match<sir::ClosureType>()) {
-        sir::Expr func_ptr = analyzer.create_expr(
+        sir::Expr func_ptr = analyzer.create_trivial(
             sir::FieldExpr{
                 .ast_node = nullptr,
                 .type = closure_type->underlying_struct->fields[0]->type,
@@ -981,7 +981,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             }
         );
 
-        sir::Expr data_ptr = analyzer.create_expr(
+        sir::Expr data_ptr = analyzer.create_trivial(
             sir::FieldExpr{
                 .ast_node = nullptr,
                 .type = closure_type->underlying_struct->fields[1]->type,
@@ -990,7 +990,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             }
         );
 
-        call_expr.callee = analyzer.create_expr(
+        call_expr.callee = analyzer.create_trivial(
             sir::CastExpr{
                 .ast_node = nullptr,
                 .type = &closure_type->func_type,
@@ -1020,7 +1020,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             break;
         }
 
-        lhs = analyzer.create_expr(
+        lhs = analyzer.create_trivial(
             sir::UnaryExpr{
                 .ast_node = nullptr,
                 .type = pointer_type->base_type,
@@ -1046,7 +1046,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         if (field) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
 
-            out_call_expr.callee = analyzer.create_expr(
+            out_call_expr.callee = analyzer.create_trivial(
                 sir::FieldExpr{
                     .ast_node = dot_expr.ast_node,
                     .type = field->type,
@@ -1392,25 +1392,25 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
             sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
             sir::Symbol data_ptr_param = &func_def.type.params[0];
 
-            out_expr = analyzer.create_expr(
+            out_expr = analyzer.create_trivial(
                 sir::FieldExpr{
                     .ast_node = nullptr,
                     .type = symbol.get_type(),
-                    .base = analyzer.create_expr(
+                    .base = analyzer.create_trivial(
                         sir::UnaryExpr{
                             .ast_node = nullptr,
                             .type = closure_ctx->data_type,
                             .op = sir::UnaryOp::DEREF,
-                            .value = analyzer.create_expr(
+                            .value = analyzer.create_trivial(
                                 sir::CastExpr{
                                     .ast_node = nullptr,
-                                    .type = analyzer.create_expr(
+                                    .type = analyzer.create_trivial(
                                         sir::PointerType{
                                             .ast_node = nullptr,
                                             .base_type = closure_ctx->data_type,
                                         }
                                     ),
-                                    .value = analyzer.create_expr(
+                                    .value = analyzer.create_trivial(
                                         sir::SymbolExpr{
                                             .ast_node = nullptr,
                                             .type = data_ptr_param.get_type(),
@@ -1444,7 +1444,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         analyzer.add_symbol_use(ident_expr.ast_node, symbol);
     }
 
-    out_expr = analyzer.create_expr(
+    out_expr = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = ident_expr.ast_node,
             .type = symbol.get_type(),
@@ -1464,7 +1464,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
     }
 
     if (star_expr.value.is_type()) {
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::PointerType{
                 .ast_node = star_expr.ast_node,
                 .base_type = star_expr.value,
@@ -1486,7 +1486,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
         }
 
         if (auto pointer_type = value_type.match<sir::PointerType>()) {
-            out_expr = analyzer.create_expr(
+            out_expr = analyzer.create_trivial(
                 sir::UnaryExpr{
                     .ast_node = star_expr.ast_node,
                     .type = pointer_type->base_type,
@@ -1495,7 +1495,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
                 }
             );
         } else if (auto reference_type = value_type.match<sir::ReferenceType>()) {
-            out_expr = analyzer.create_expr(
+            out_expr = analyzer.create_trivial(
                 sir::UnaryExpr{
                     .ast_node = star_expr.ast_node,
                     .type = reference_type->base_type,
@@ -1626,7 +1626,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         if (symbol) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, symbol);
 
-            out_expr = analyzer.create_expr(
+            out_expr = analyzer.create_trivial(
                 sir::SymbolExpr{
                     .ast_node = dot_expr.ast_node,
                     .type = symbol.get_type(),
@@ -1645,7 +1645,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             if (sub_mod) {
                 analyzer.add_symbol_use(dot_expr.rhs.ast_node, sub_mod);
 
-                out_expr = analyzer.create_expr(
+                out_expr = analyzer.create_trivial(
                     sir::SymbolExpr{
                         .ast_node = dot_expr.ast_node,
                         .type = nullptr,
@@ -1665,7 +1665,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     sir::Expr lhs_type = dot_expr.lhs.get_type();
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
-        lhs = analyzer.create_expr(
+        lhs = analyzer.create_trivial(
             sir::UnaryExpr{
                 .ast_node = nullptr,
                 .type = pointer_type->base_type,
@@ -1687,7 +1687,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::FieldExpr{
                 .ast_node = dot_expr.ast_node,
                 .type = field->type,
@@ -1707,7 +1707,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
 
         sir::UnionCaseField &field = union_case->fields[*field_index];
 
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::FieldExpr{
                 .ast_node = dot_expr.ast_node,
                 .type = field.type,
@@ -1732,7 +1732,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::FieldExpr{
                 .ast_node = dot_expr.ast_node,
                 .type = tuple_expr->exprs[field_index],
@@ -1756,7 +1756,7 @@ Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Exp
         return Result::ERROR;
     }
 
-    out_expr = analyzer.create_expr(
+    out_expr = analyzer.create_trivial(
         sir::IndexExpr{
             .ast_node = bracket_expr.ast_node,
             .type = base_type,
@@ -1792,7 +1792,7 @@ Result ExprAnalyzer::analyze_operator_overload_call(
 
     ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
 
-    sir::Expr callee = analyzer.create_expr(
+    sir::Expr callee = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = &impl->type,
@@ -1809,7 +1809,8 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         }
     );
 
-    analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
+    // FIXME
+    // analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
 
     partial_result = finalize_call_expr_args(*call_expr, impl->type, impl);
     if (partial_result != Result::SUCCESS) {
@@ -1853,7 +1854,7 @@ Result ExprAnalyzer::specialize(
 ) {
     sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(func_def, generic_args);
 
-    inout_expr = analyzer.create_expr(
+    inout_expr = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = inout_expr.get_ast_node(),
             .type = &specialization->type,
@@ -1871,7 +1872,7 @@ Result ExprAnalyzer::specialize(
 ) {
     sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
 
-    inout_expr = analyzer.create_expr(
+    inout_expr = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = inout_expr.get_ast_node(),
             .type = nullptr,
@@ -1892,7 +1893,7 @@ void ExprAnalyzer::create_method_call(
 
     sir::Expr callee_type = method.get_type();
 
-    call_expr.callee = analyzer.create_expr(
+    call_expr.callee = analyzer.create_trivial(
         sir::SymbolExpr{
             .ast_node = rhs.ast_node,
             .type = callee_type,
@@ -1916,10 +1917,10 @@ sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
     // TODO: Add isize primitive type
     sir::Primitive target_type = analyzer.target->get_descr().is_wasm() ? sir::Primitive::I32 : sir::Primitive::I64;
 
-    return analyzer.create_expr(
+    return analyzer.create_trivial(
         sir::CastExpr{
             .ast_node = value.get_ast_node(),
-            .type = analyzer.create_expr(
+            .type = analyzer.create_trivial(
                 sir::PrimitiveType{
                     .ast_node = nullptr,
                     .primitive = target_type,

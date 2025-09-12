@@ -165,12 +165,14 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
             out_values.resize(tuple_expr->exprs.size());
 
             for (unsigned i = 0; i < tuple_expr->exprs.size(); i++) {
-                out_values[i] = analyzer.create_expr(sir::FieldExpr{
-                    .ast_node = nullptr,
-                    .type = tuple_expr->exprs[i],
-                    .base = symbol_expr,
-                    .field_index = i,
-                });
+                out_values[i] = analyzer.create_trivial(
+                    sir::FieldExpr{
+                        .ast_node = nullptr,
+                        .type = tuple_expr->exprs[i],
+                        .base = symbol_expr,
+                        .field_index = i,
+                    }
+                );
             }
 
             return Result::SUCCESS;

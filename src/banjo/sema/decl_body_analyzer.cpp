@@ -150,7 +150,7 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprFinalizer(analyzer).finalize(variant->value);
         } else {
-            variant->value = analyzer.create_expr(
+            variant->value = analyzer.create_trivial(
                 sir::IntLiteral{
                     .ast_node = nullptr,
                     .type = nullptr,

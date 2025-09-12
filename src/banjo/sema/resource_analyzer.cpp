@@ -245,7 +245,7 @@ void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         update_init_state(scopes.back(), resource, InitState::INITIALIZED);
     }
 
-    value = analyzer.create_expr(
+    value = analyzer.create_trivial(
         sir::InitExpr{
             .ast_node = value.get_ast_node(),
             .type = value.get_type(),
@@ -421,7 +421,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         if (auto resource = create_resource(type)) {
             sir::Resource *temporary_resource = analyzer.cur_sir_mod->create_resource(*resource);
 
-            expr = analyzer.create_expr(
+            expr = analyzer.create_trivial(
                 sir::DeinitExpr{
                     .ast_node = expr.get_ast_node(),
                     .type = type,
@@ -615,7 +615,7 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
         move_sub_resources(resource, inout_expr, ctx);
         partially_move_super_resources(resource, inout_expr, ctx);
 
-        inout_expr = analyzer.create_expr(
+        inout_expr = analyzer.create_trivial(
             sir::MoveExpr{
                 .ast_node = inout_expr.get_ast_node(),
                 .type = inout_expr.get_type(),

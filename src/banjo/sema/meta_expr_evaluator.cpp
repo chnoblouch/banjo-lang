@@ -30,7 +30,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     base_expr = unwrap_expr(base_expr);
 
     if (field_name == "size") {
-        out_expr = analyzer.create_expr(
+        out_expr = analyzer.create_trivial(
             sir::IntLiteral{
                 .ast_node = nullptr,
                 .type = nullptr,
@@ -183,7 +183,7 @@ sir::Expr MetaExprEvaluator::compute_field(sir::Expr &base, const std::vector<si
 }
 
 sir::Expr MetaExprEvaluator::create_bool_literal(bool value) {
-    return analyzer.create_expr(
+    return analyzer.create_trivial(
         sir::BoolLiteral{
             .ast_node = nullptr,
             .type = nullptr,

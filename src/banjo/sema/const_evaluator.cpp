@@ -221,7 +221,7 @@ sir::Expr ConstEvaluator::create_int_literal(LargeInt value, ASTNode *ast_node /
         .value = value,
     };
 
-    return analyzer.create_expr(int_literal);
+    return analyzer.create_trivial(int_literal);
 }
 
 sir::Expr ConstEvaluator::create_fp_literal(double value, ASTNode *ast_node /*= nullptr*/) {
@@ -231,7 +231,7 @@ sir::Expr ConstEvaluator::create_fp_literal(double value, ASTNode *ast_node /*= 
         .value = value,
     };
 
-    return analyzer.create_expr(fp_literal);
+    return analyzer.create_trivial(fp_literal);
 }
 
 sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= nullptr*/) {
@@ -241,7 +241,7 @@ sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= 
         .value = value,
     };
 
-    return analyzer.create_expr(bool_literal);
+    return analyzer.create_trivial(bool_literal);
 }
 
 sir::Expr ConstEvaluator::clone(sir::Expr expr) {

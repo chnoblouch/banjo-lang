@@ -502,7 +502,7 @@ sir::Stmt SIRGenerator::generate_ref_stmt(ASTNode *node, sir::Attributes *attrs,
 
     sir::Local local = generate_local(name_node, type_node, attrs);
 
-    local.type = create_expr(
+    local.type = create_trivial(
         sir::ReferenceType{
             .ast_node = local.type.get_ast_node(),
             .mut = mut,
@@ -525,7 +525,7 @@ sir::Stmt SIRGenerator::generate_typeless_ref_stmt(ASTNode *node, sir::Attribute
 
     sir::Local local = generate_local(name_node, nullptr, attrs);
 
-    local.type = create_expr(
+    local.type = create_trivial(
         sir::ReferenceType{
             .ast_node = nullptr,
             .mut = mut,
@@ -864,7 +864,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::IntLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -874,7 +874,7 @@ sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_fp_literal(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::FPLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -884,7 +884,7 @@ sir::Expr SIRGenerator::generate_fp_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_bool_literal(ASTNode *node, bool value) {
-    return create_expr(
+    return create_trivial(
         sir::BoolLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -897,7 +897,7 @@ sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
     unsigned index = 0;
     char value = decode_char(node->value, index);
 
-    return create_expr(
+    return create_trivial(
         sir::CharLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -907,7 +907,7 @@ sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_null_literal(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::NullLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -916,7 +916,7 @@ sir::Expr SIRGenerator::generate_null_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_none_literal(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::NoneLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -925,7 +925,7 @@ sir::Expr SIRGenerator::generate_none_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_undefined_literal(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::UndefinedLiteral{
             .ast_node = node,
             .type = nullptr,
@@ -1040,7 +1040,7 @@ sir::Expr SIRGenerator::generate_binary_expr(ASTNode *node, sir::BinaryOp op) {
     ASTNode *lhs_node = node->first_child;
     ASTNode *rhs_node = lhs_node->next_sibling;
 
-    return create_expr(
+    return create_trivial(
         sir::BinaryExpr{
             .ast_node = node,
             .type = nullptr,
@@ -1054,7 +1054,7 @@ sir::Expr SIRGenerator::generate_binary_expr(ASTNode *node, sir::BinaryOp op) {
 sir::Expr SIRGenerator::generate_unary_expr(ASTNode *node, sir::UnaryOp op) {
     ASTNode *value_node = node->first_child;
 
-    return create_expr(
+    return create_trivial(
         sir::UnaryExpr{
             .ast_node = node,
             .type = nullptr,
@@ -1068,7 +1068,7 @@ sir::Expr SIRGenerator::generate_cast_expr(ASTNode *node) {
     ASTNode *value_node = node->first_child;
     ASTNode *type_node = value_node->next_sibling;
 
-    return create_expr(
+    return create_trivial(
         sir::CastExpr{
             .ast_node = node,
             .type = generate_expr(type_node),
@@ -1165,7 +1165,7 @@ sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
     ASTNode *lhs_node = node->first_child;
     ASTNode *rhs_node = lhs_node->next_sibling;
 
-    return create_expr(
+    return create_trivial(
         sir::RangeExpr{
             .ast_node = node,
             .lhs = generate_expr(lhs_node),
@@ -1187,7 +1187,7 @@ sir::Expr SIRGenerator::generate_tuple_expr(ASTNode *node) {
 sir::Expr SIRGenerator::generate_star_expr(ASTNode *node) {
     ASTNode *value_node = node->first_child;
 
-    return create_expr(
+    return create_trivial(
         sir::StarExpr{
             .ast_node = node,
             .value = generate_expr(value_node),
@@ -1196,7 +1196,7 @@ sir::Expr SIRGenerator::generate_star_expr(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_primitive_type(ASTNode *node, sir::Primitive primitive) {
-    return create_expr(
+    return create_trivial(
         sir::PrimitiveType{
             .ast_node = node,
             .primitive = primitive,
@@ -1208,7 +1208,7 @@ sir::Expr SIRGenerator::generate_static_array_type(ASTNode *node) {
     ASTNode *base_type_node = node->first_child;
     ASTNode *length_node = base_type_node->next_sibling;
 
-    return create_expr(
+    return create_trivial(
         sir::StaticArrayType{
             .ast_node = node,
             .base_type = generate_expr(base_type_node),
@@ -1227,7 +1227,7 @@ sir::Expr SIRGenerator::generate_func_type(ASTNode *node) {
 sir::Expr SIRGenerator::generate_optional_type(ASTNode *node) {
     ASTNode *base_type_node = node->first_child;
 
-    return create_expr(
+    return create_trivial(
         sir::OptionalType{
             .ast_node = node,
             .base_type = generate_expr(base_type_node),
@@ -1239,7 +1239,7 @@ sir::Expr SIRGenerator::generate_result_type(ASTNode *node) {
     ASTNode *value_type_node = node->first_child;
     ASTNode *error_type_node = value_type_node->next_sibling;
 
-    return create_expr(
+    return create_trivial(
         sir::ResultType{
             .ast_node = node,
             .value_type = generate_expr(value_type_node),
@@ -1264,7 +1264,7 @@ sir::Expr SIRGenerator::generate_closure_type(ASTNode *node) {
 sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {
     ASTNode *expr_node = node->first_child;
 
-    return create_expr(
+    return create_trivial(
         sir::MetaAccess{
             .ast_node = node,
             .expr = generate_expr(expr_node),
@@ -1273,7 +1273,7 @@ sir::Expr SIRGenerator::generate_meta_access(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_error_expr(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::Error{
             .ast_node = node,
         }
@@ -1292,7 +1292,7 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
     sir::Expr return_type;
 
     if (return_node->type == AST_REF_RETURN) {
-        return_type = create_expr(
+        return_type = create_trivial(
             sir::ReferenceType{
                 .ast_node = return_node,
                 .mut = false,
@@ -1300,7 +1300,7 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
             }
         );
     } else if (return_node->type == AST_REF_MUT_RETURN) {
-        return_type = create_expr(
+        return_type = create_trivial(
             sir::ReferenceType{
                 .ast_node = return_node,
                 .mut = true,
@@ -1334,7 +1334,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
         sir::Expr sir_type = generate_expr(type_node);
 
         if (node->type == AST_REF_PARAM) {
-            sir_type = create_expr(
+            sir_type = create_trivial(
                 sir::ReferenceType{
                     .ast_node = type_node,
                     .mut = false,
@@ -1342,7 +1342,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
                 }
             );
         } else if (node->type == AST_REF_MUT_PARAM) {
-            sir_type = create_expr(
+            sir_type = create_trivial(
                 sir::ReferenceType{
                     .ast_node = type_node,
                     .mut = true,
@@ -1367,7 +1367,7 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             .value = "self",
         };
 
-        sir::Expr sir_type = create_expr(
+        sir::Expr sir_type = create_trivial(
             sir::ReferenceType{
                 .ast_node = node,
                 .mut = node->type == AST_REF_MUT_PARAM,
@@ -1442,7 +1442,7 @@ std::vector<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entri
                     .ast_node = child,
                     .value = std::string(sir::COMPLETION_TOKEN_VALUE),
                 },
-                .value = create_expr(
+                .value = create_trivial(
                     sir::Error{
                         .ast_node = child,
                     }
@@ -1652,7 +1652,7 @@ sir::UseItem SIRGenerator::generate_use_completion_token(ASTNode *node) {
 }
 
 sir::UseItem SIRGenerator::generate_error_use_item(ASTNode *node) {
-    return create_expr(
+    return create_trivial(
         sir::Error{
             .ast_node = node,
         }

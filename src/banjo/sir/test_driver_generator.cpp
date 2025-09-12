@@ -41,7 +41,7 @@ sir::Module *TestDriverGenerator::generate() {
                         .type = nullptr,
                         .value = func_def->ident.value,
                     }),
-                    .value = mod->create_expr(sir::SymbolExpr{
+                    .value = mod->create_trivial(sir::SymbolExpr{
                         .ast_node = nullptr,
                         .type = &func_def->type,
                         .symbol = func_def,
@@ -94,7 +94,7 @@ sir::Module *TestDriverGenerator::generate() {
                         .value = "argv",
                     }),
                     .rhs{
-                        mod->create_expr(sir::IntLiteral{
+                        mod->create_trivial(sir::IntLiteral{
                             .ast_node = nullptr,
                             .type = nullptr,
                             .value = 1,
@@ -199,7 +199,7 @@ sir::Module *TestDriverGenerator::generate() {
                         .ast_node = nullptr,
                         .value = "argc",
                     },
-                    .type = mod->create_expr(sir::PrimitiveType{
+                    .type = mod->create_trivial(sir::PrimitiveType{
                         .ast_node = nullptr,
                         .primitive = sir::Primitive::I32,
                     }),
@@ -210,11 +210,11 @@ sir::Module *TestDriverGenerator::generate() {
                         .ast_node = nullptr,
                         .value = "argv",
                     },
-                    .type = mod->create_expr(sir::PointerType{
+                    .type = mod->create_trivial(sir::PointerType{
                         .ast_node = nullptr,
-                        .base_type = mod->create_expr(sir::PointerType{
+                        .base_type = mod->create_trivial(sir::PointerType{
                             .ast_node = nullptr,
-                            .base_type = mod->create_expr(sir::PrimitiveType{
+                            .base_type = mod->create_trivial(sir::PrimitiveType{
                                 .ast_node = nullptr,
                                 .primitive = sir::Primitive::U8,
                             }),
@@ -222,7 +222,7 @@ sir::Module *TestDriverGenerator::generate() {
                     }),
                 }
             },
-            .return_type = mod->create_expr(sir::PrimitiveType{
+            .return_type = mod->create_trivial(sir::PrimitiveType{
                 .ast_node = nullptr,
                 .primitive = sir::Primitive::VOID,
             }),

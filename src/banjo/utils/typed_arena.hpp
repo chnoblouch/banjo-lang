@@ -1,14 +1,12 @@
-#ifndef BANJO_UTILS_GROWABLE_ARENA_H
-#define BANJO_UTILS_GROWABLE_ARENA_H
+#ifndef BANJO_UTILS_TYPED_ARENA_H
+#define BANJO_UTILS_TYPED_ARENA_H
 
 #include <utility>
 
-namespace banjo {
-
-namespace utils {
+namespace banjo::utils {
 
 template <typename T, unsigned BLOCK_LENGTH = 64>
-class GrowableArena {
+class TypedArena {
 
 public:
     struct Block {
@@ -20,15 +18,15 @@ public:
     unsigned cur_index;
 
 public:
-    GrowableArena() : cur_block(nullptr), cur_index(0) {}
+    TypedArena() : cur_block(nullptr), cur_index(0) {}
 
-    GrowableArena(const GrowableArena &) = delete;
+    TypedArena(const TypedArena &) = delete;
 
-    GrowableArena(GrowableArena &&other) noexcept
+    TypedArena(TypedArena &&other) noexcept
       : cur_block(std::exchange(other.cur_block, nullptr)),
         cur_index(other.cur_index) {}
 
-    ~GrowableArena() {
+    ~TypedArena() {
         Block *block = cur_block;
 
         while (block) {
@@ -42,9 +40,9 @@ public:
         }
     }
 
-    GrowableArena &operator=(const GrowableArena &) = delete;
+    TypedArena &operator=(const TypedArena &) = delete;
 
-    GrowableArena &operator=(GrowableArena &&other) noexcept {
+    TypedArena &operator=(TypedArena &&other) noexcept {
         std::swap(cur_block, other.cur_block);
         cur_index = other.cur_index;
         return *this;
@@ -67,8 +65,6 @@ public:
     }
 };
 
-} // namespace utils
-
-} // namespace banjo
+} // namespace banjo::utils
 
 #endif
