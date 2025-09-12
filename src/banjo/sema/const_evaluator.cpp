@@ -170,6 +170,9 @@ sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
     } else if (auto fp_literal = value.match<sir::FPLiteral>()) {
         if (unary_expr.op == sir::UnaryOp::NEG) return create_fp_literal(-fp_literal->value, unary_expr.ast_node);
         else ASSERT_UNREACHABLE;
+    } else if (auto bool_literal = value.match<sir::BoolLiteral>()) {
+        if (unary_expr.op == sir::UnaryOp::NOT) return create_bool_literal(!bool_literal->value, unary_expr.ast_node);
+        else ASSERT_UNREACHABLE;
     } else {
         ASSERT_UNREACHABLE;
     }
