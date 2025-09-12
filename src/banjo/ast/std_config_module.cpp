@@ -10,6 +10,7 @@ namespace lang {
 enum ConfigArch {
     X86_64 = 0,
     AARCH64 = 1,
+    WASM = 2,
 };
 
 enum ConfigOS {
@@ -35,6 +36,7 @@ StdConfigModule::StdConfigModule() : ASTModule({"std", "config"}), config(Config
 
     add_const_u32("X86_64", X86_64);
     add_const_u32("AARCH64", AARCH64);
+    add_const_u32("WASM", WASM);
     add_const_u32("ARCH", get_arch());
 
     add_const_u32("WINDOWS", WINDOWS);
@@ -52,6 +54,7 @@ unsigned StdConfigModule::get_arch() {
     switch (config.target.get_architecture()) {
         case target::Architecture::X86_64: return X86_64;
         case target::Architecture::AARCH64: return AARCH64;
+        case target::Architecture::WASM: return WASM;
         default: return 0;
     }
 }
