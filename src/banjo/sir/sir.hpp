@@ -5,15 +5,17 @@
 #include "banjo/utils/arena.hpp"
 #include "banjo/utils/dynamic_pointer.hpp"
 #include "banjo/utils/large_int.hpp"
+#include "banjo/utils/string_arena.hpp"
 #include "banjo/utils/typed_arena.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <list>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
-#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -522,7 +524,7 @@ struct Attributes {
 
 struct Ident {
     ASTNode *ast_node;
-    std::string value;
+    std::string_view value;
 
     bool is_completion_token() const { return value == COMPLETION_TOKEN_VALUE; }
 };
@@ -552,18 +554,20 @@ struct GenericParam {
 
 template <typename T>
 struct Specialization {
-    std::vector<Expr> args;
+    std::span<Expr> args;
     T *def;
 };
 
 struct FuncType {
     ASTNode *ast_node;
-    std::vector<Param> params;
+    std::span<Param> params;
     Expr return_type;
 
     bool is_func_method() const { return params.size() > 0 && params[0].is_self(); }
 
-    bool operator==(const FuncType &other) const { return params == other.params && return_type == other.return_type; }
+    bool operator==(const FuncType &other) const {
+        return Utils::equal(params, other.params) && return_type == other.return_type;
+    }
     bool operator!=(const FuncType &other) const { return !(*this == other); }
 };
 
@@ -578,8 +582,6 @@ struct IntLiteral {
     Expr type;
     LargeInt value;
 };
-
-static_assert(std::is_trivially_destructible<IntLiteral>(), "");
 
 struct FPLiteral {
     ASTNode *ast_node;
@@ -617,13 +619,13 @@ struct UndefinedLiteral {
 struct ArrayLiteral {
     ASTNode *ast_node;
     Expr type;
-    std::vector<Expr> values;
+    std::span<Expr> values;
 };
 
 struct StringLiteral {
     ASTNode *ast_node;
     Expr type;
-    std::string value;
+    std::string_view value;
 };
 
 struct StructLiteralEntry {
@@ -635,13 +637,13 @@ struct StructLiteralEntry {
 struct StructLiteral {
     ASTNode *ast_node;
     Expr type;
-    std::vector<StructLiteralEntry> entries;
+    std::span<StructLiteralEntry> entries;
 };
 
 struct UnionCaseLiteral {
     ASTNode *ast_node;
     Expr type;
-    std::vector<Expr> args;
+    std::span<Expr> args;
 };
 
 struct MapLiteralEntry {
@@ -652,14 +654,14 @@ struct MapLiteralEntry {
 struct MapLiteral {
     ASTNode *ast_node;
     Expr type;
-    std::vector<MapLiteralEntry> entries;
+    std::span<MapLiteralEntry> entries;
 };
 
 struct ClosureLiteral {
     ASTNode *ast_node;
     Expr type;
     FuncType func_type;
-    Block block;
+    Block *block;
 };
 
 struct SymbolExpr {
@@ -732,7 +734,7 @@ struct CallExpr {
     ASTNode *ast_node;
     Expr type;
     Expr callee;
-    std::vector<Expr> args;
+    std::span<Expr> args;
 };
 
 struct FieldExpr {
@@ -751,9 +753,9 @@ struct RangeExpr {
 struct TupleExpr {
     ASTNode *ast_node;
     Expr type;
-    std::vector<Expr> exprs;
+    std::span<Expr> exprs;
 
-    bool operator==(const TupleExpr &other) const { return exprs == other.exprs; }
+    bool operator==(const TupleExpr &other) const { return Utils::equal(exprs, other.exprs); }
     bool operator!=(const TupleExpr &other) const { return !(*this == other); }
 };
 
@@ -865,7 +867,7 @@ struct ReferenceType {
 
 struct IdentExpr {
     ASTNode *ast_node;
-    std::string value;
+    std::string_view value;
 
     bool is_completion_token() const { return value == COMPLETION_TOKEN_VALUE; }
 };
@@ -878,7 +880,7 @@ struct StarExpr {
 struct BracketExpr {
     ASTNode *ast_node;
     Expr lhs;
-    std::vector<Expr> rhs;
+    std::span<Expr> rhs;
 };
 
 struct DotExpr {
@@ -919,7 +921,7 @@ struct MetaFieldExpr {
 struct MetaCallExpr {
     ASTNode *ast_node;
     Expr callee;
-    std::vector<Expr> args;
+    std::span<Expr> args;
 };
 
 struct InitExpr {
@@ -976,49 +978,49 @@ struct ReturnStmt {
 struct IfCondBranch {
     ASTNode *ast_node;
     Expr condition;
-    Block block;
+    Block *block;
 };
 
 struct IfElseBranch {
     ASTNode *ast_node;
-    Block block;
+    Block *block;
 };
 
 struct IfStmt {
     ASTNode *ast_node;
-    std::vector<IfCondBranch> cond_branches;
+    std::span<IfCondBranch> cond_branches;
     std::optional<IfElseBranch> else_branch;
 };
 
 struct SwitchCaseBranch {
     ASTNode *ast_node;
     Local local;
-    Block block;
+    Block *block;
 };
 
 struct SwitchStmt {
     ASTNode *ast_node;
     Expr value;
-    std::vector<SwitchCaseBranch> case_branches;
+    std::span<SwitchCaseBranch> case_branches;
 };
 
 struct TrySuccessBranch {
     ASTNode *ast_node;
     Ident ident;
     Expr expr;
-    Block block;
+    Block *block;
 };
 
 struct TryExceptBranch {
     ASTNode *ast_node;
     Ident ident;
     Expr type;
-    Block block;
+    Block *block;
 };
 
 struct TryElseBranch {
     ASTNode *ast_node;
-    Block block;
+    Block *block;
 };
 
 struct TryStmt {
@@ -1031,7 +1033,7 @@ struct TryStmt {
 struct WhileStmt {
     ASTNode *ast_node;
     Expr condition;
-    Block block;
+    Block *block;
 };
 
 enum class IterKind {
@@ -1045,14 +1047,14 @@ struct ForStmt {
     IterKind iter_kind;
     Ident ident;
     Expr range;
-    Block block;
+    Block *block;
 };
 
 struct LoopStmt {
     ASTNode *ast_node;
     Expr condition;
-    Block block;
-    std::optional<Block> latch;
+    Block *block;
+    Block *latch;
 };
 
 struct ContinueStmt {
@@ -1071,17 +1073,17 @@ struct MetaBlock {
 struct MetaIfCondBranch {
     ASTNode *ast_node;
     Expr condition;
-    MetaBlock block;
+    MetaBlock *block;
 };
 
 struct MetaIfElseBranch {
     ASTNode *ast_node;
-    MetaBlock block;
+    MetaBlock *block;
 };
 
 struct MetaIfStmt {
     ASTNode *ast_node;
-    std::vector<MetaIfCondBranch> cond_branches;
+    std::span<MetaIfCondBranch> cond_branches;
     std::optional<MetaIfElseBranch> else_branch;
 };
 
@@ -1089,7 +1091,7 @@ struct MetaForStmt {
     ASTNode *ast_node;
     Ident ident;
     Expr range;
-    MetaBlock block;
+    MetaBlock *block;
 };
 
 struct ExpandedMetaStmt {};
@@ -1264,109 +1266,25 @@ struct UseDotExpr {
 
 struct UseList {
     ASTNode *ast_node;
-    std::vector<UseItem> items;
+    std::span<UseItem> items;
 };
 
 struct Error {
     ASTNode *ast_node;
 };
 
-typedef std::variant<
-    IntLiteral,
-    FPLiteral,
-    BoolLiteral,
-    CharLiteral,
-    NullLiteral,
-    NoneLiteral,
-    UndefinedLiteral,
-    ArrayLiteral,
-    StringLiteral,
-    StructLiteral,
-    UnionCaseLiteral,
-    MapLiteral,
-    ClosureLiteral,
-    SymbolExpr,
-    BinaryExpr,
-    UnaryExpr,
-    CastExpr,
-    IndexExpr,
-    CallExpr,
-    FieldExpr,
-    RangeExpr,
-    TupleExpr,
-    CoercionExpr,
-    PrimitiveType,
-    PointerType,
-    StaticArrayType,
-    FuncType,
-    OptionalType,
-    ResultType,
-    ArrayType,
-    MapType,
-    ClosureType,
-    ReferenceType,
-    IdentExpr,
-    StarExpr,
-    BracketExpr,
-    DotExpr,
-    PseudoType,
-    MetaAccess,
-    MetaFieldExpr,
-    MetaCallExpr,
-    InitExpr,
-    MoveExpr,
-    DeinitExpr,
-    Error>
-    ExprStorage;
-
-typedef std::variant<
-    VarStmt,
-    AssignStmt,
-    CompAssignStmt,
-    ReturnStmt,
-    IfStmt,
-    SwitchStmt,
-    TryStmt,
-    WhileStmt,
-    ForStmt,
-    LoopStmt,
-    ContinueStmt,
-    BreakStmt,
-    MetaIfStmt,
-    MetaForStmt,
-    ExpandedMetaStmt,
-    Expr,
-    Block,
-    Error>
-    StmtStorage;
-
-typedef std::variant<
-    FuncDef,
-    FuncDecl,
-    NativeFuncDecl,
-    ConstDef,
-    StructDef,
-    StructField,
-    VarDecl,
-    NativeVarDecl,
-    EnumDef,
-    EnumVariant,
-    UnionDef,
-    UnionCase,
-    ProtoDef,
-    TypeAlias,
-    UseDecl,
-    Error>
-    DeclStorage;
-
-typedef std::variant<UseIdent, UseRebind, UseDotExpr, UseList> UseItemStorage;
-
 struct Module {
-    utils::Arena<512> trivial_arena;
-    utils::TypedArena<ExprStorage> expr_arena;
-    utils::TypedArena<StmtStorage> stmt_arena;
-    utils::TypedArena<DeclStorage> decl_arena;
-    utils::TypedArena<UseItemStorage> use_item_arena;
+    utils::Arena<2048> trivial_arena;
+    utils::StringArena<512> string_arena;
+
+    utils::TypedArena<FuncDef> func_def_arena;
+    utils::TypedArena<StructDef> struct_def_arena;
+    utils::TypedArena<EnumDef> enum_def_arena;
+    utils::TypedArena<UnionDef> union_def_arena;
+    utils::TypedArena<UnionCase> union_case_arena;
+    utils::TypedArena<ProtoDef> proto_def_arena;
+    utils::TypedArena<Block> block_arena;
+    utils::TypedArena<MetaBlock> meta_block_arena;
     utils::TypedArena<SymbolTable> symbol_table_arena;
     utils::TypedArena<OverloadSet> overload_set_arena;
     utils::TypedArena<Attributes> attributes_arena;
@@ -1376,34 +1294,86 @@ struct Module {
     DeclBlock block;
 
     template <typename T>
-    T *create_trivial(T value) {
+    T *create(T value) {
         return trivial_arena.create<T>(value);
     }
 
-    template <typename T>
-    T *create_expr(T value) {
-        return &std::get<T>(*expr_arena.create(value));
+    template <>
+    FuncDef *create(FuncDef value) {
+        return func_def_arena.create(std::move(value));
+    }
+
+    template <>
+    StructDef *create(StructDef value) {
+        return struct_def_arena.create(std::move(value));
+    }
+
+    template <>
+    EnumDef *create(EnumDef value) {
+        return enum_def_arena.create(std::move(value));
+    }
+
+    template <>
+    UnionDef *create(UnionDef value) {
+        return union_def_arena.create(std::move(value));
+    }
+
+    template <>
+    UnionCase *create(UnionCase value) {
+        return union_case_arena.create(std::move(value));
+    }
+
+    template <>
+    ProtoDef *create(ProtoDef value) {
+        return proto_def_arena.create(std::move(value));
+    }
+
+    template <>
+    Block *create(Block value) {
+        return block_arena.create(std::move(value));
+    }
+
+    template <>
+    MetaBlock *create(MetaBlock value) {
+        return meta_block_arena.create(std::move(value));
+    }
+
+    template <>
+    SymbolTable *create(SymbolTable value) {
+        return symbol_table_arena.create(std::move(value));
+    }
+
+    template <>
+    OverloadSet *create(OverloadSet value) {
+        return overload_set_arena.create(std::move(value));
+    }
+
+    template <>
+    Attributes *create(Attributes value) {
+        return attributes_arena.create(std::move(value));
+    }
+
+    template <>
+    Resource *create(Resource value) {
+        return resource_arena.create(std::move(value));
     }
 
     template <typename T>
-    T *create_stmt(T value) {
-        return &std::get<T>(*stmt_arena.create(std::move(value)));
+    std::span<T> allocate_array(unsigned length) {
+        return trivial_arena.allocate_array<T>(length);
     }
 
     template <typename T>
-    T *create_decl(T value) {
-        return &std::get<T>(*decl_arena.create(std::move(value)));
+    std::span<T> create_array(std::span<T> values) {
+        return trivial_arena.create_array<T>(std::move(values));
     }
 
     template <typename T>
-    T *create_use_item(T value) {
-        return &std::get<T>(*use_item_arena.create(std::move(value)));
+    std::span<T> create_array(std::initializer_list<T> values) {
+        return trivial_arena.create_array<T>(std::move(values));
     }
 
-    SymbolTable *create_symbol_table(SymbolTable value) { return symbol_table_arena.create(std::move(value)); }
-    OverloadSet *create_overload_set(OverloadSet value) { return overload_set_arena.create(std::move(value)); }
-    Attributes *create_attrs(Attributes value) { return attributes_arena.create(std::move(value)); }
-    Resource *create_resource(Resource value) { return resource_arena.create(std::move(value)); }
+    std::string_view create_string(std::string_view value) { return string_arena.store(value); }
 };
 
 struct Unit {

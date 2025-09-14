@@ -67,6 +67,7 @@ public:
 
     Expr clone_expr(const Expr &expr);
     std::vector<Expr> clone_expr_list(const std::vector<Expr> &exprs);
+    std::span<Expr> clone_expr_span(std::span<Expr> exprs);
     IntLiteral *clone_int_literal(const IntLiteral &int_literal);
     FPLiteral *clone_fp_literal(const FPLiteral &fp_literal);
     BoolLiteral *clone_bool_literal(const BoolLiteral &bool_literal);
@@ -115,9 +116,11 @@ public:
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
     void pop_symbol_table() { symbol_tables.pop(); }
 
+    FuncType clone_func_type_directly(const FuncType &func_type);
     Local clone_local(const Local &local);
     Attributes *clone_attrs(const Attributes *attrs);
-    MetaBlock clone_meta_block(const MetaBlock &meta_block);
+    MetaBlock *clone_meta_block(const MetaBlock *meta_block);
+    Ident clone_ident(const Ident &ident);
     Error *clone_error(const Error &error);
 };
 

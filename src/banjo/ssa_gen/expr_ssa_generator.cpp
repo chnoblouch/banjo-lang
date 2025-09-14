@@ -189,7 +189,7 @@ StoredValue ExprSSAGenerator::generate_string_literal(const sir::StringLiteral &
     ssa::Global *ssa_global = new ssa::Global{
         .name = ssa_name,
         .type = ssa_type,
-        .initial_value = string_literal.value + std::string(1, '\0'),
+        .initial_value = std::string{string_literal.value} + '\0',
         .external = false,
     };
 

@@ -100,7 +100,7 @@ ReportText &ReportText::format(const std::vector<sir::GenericParam> &generic_par
     std::string string;
 
     for (unsigned i = 0; i < generic_params.size(); i++) {
-        string += "'" + generic_params[i].ident.value + "'";
+        string += "'" + std::string{generic_params[i].ident.value} + "'";
 
         if (i != generic_params.size() - 1) {
             string += ", ";
@@ -160,7 +160,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
 
         if (auto struct_def = symbol->symbol.match<sir::StructDef>()) {
             if (struct_def->parent_specialization) {
-                const std::vector<sir::Expr> &generic_args = struct_def->parent_specialization->args;
+                std::span<sir::Expr> generic_args = struct_def->parent_specialization->args;
 
                 str += "[";
 
@@ -206,7 +206,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
             case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
         }
     } else if (auto ident_expr = expr.match<sir::IdentExpr>()) {
-        return ident_expr->value;
+        return std::string{ident_expr->value};
     } else {
         return "<unknown>";
     }

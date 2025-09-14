@@ -69,11 +69,11 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
     ASSERT(func_def.specializations.empty());
     ASSERT(!func_def.parent_specialization);
 
-    return mod.create_decl(
+    return mod.create(
         FuncDef{
             .ast_node = func_def.ast_node,
-            .ident = func_def.ident,
-            .type = *clone_func_type(func_def.type), // FIXME: unneccessary heap allocation
+            .ident = clone_ident(func_def.ident),
+            .type = clone_func_type_directly(func_def.type),
             .block = clone_block(func_def.block),
             .attrs = clone_attrs(func_def.attrs),
             .generic_params = func_def.generic_params,
@@ -84,31 +84,31 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
 }
 
 FuncDecl *Cloner::clone_func_decl(const FuncDecl &func_decl) {
-    return mod.create_decl(
+    return mod.create(
         FuncDecl{
             .ast_node = func_decl.ast_node,
-            .ident = func_decl.ident,
-            .type = *clone_func_type(func_decl.type), // FIXME: unneccessary heap allocation
+            .ident = clone_ident(func_decl.ident),
+            .type = clone_func_type_directly(func_decl.type),
         }
     );
 }
 
 NativeFuncDecl *Cloner::clone_native_func_decl(const NativeFuncDecl &native_func_decl) {
-    return mod.create_decl(
+    return mod.create(
         NativeFuncDecl{
             .ast_node = native_func_decl.ast_node,
-            .ident = native_func_decl.ident,
-            .type = *clone_func_type(native_func_decl.type), // FIXME: unneccessary heap allocation
+            .ident = clone_ident(native_func_decl.ident),
+            .type = clone_func_type_directly(native_func_decl.type),
             .attrs = clone_attrs(native_func_decl.attrs),
         }
     );
 }
 
 ConstDef *Cloner::clone_const_def(const ConstDef &const_def) {
-    return mod.create_decl(
+    return mod.create(
         ConstDef{
             .ast_node = const_def.ast_node,
-            .ident = const_def.ident,
+            .ident = clone_ident(const_def.ident),
             .type = clone_expr(const_def.type),
             .value = clone_expr(const_def.value),
         }
@@ -120,10 +120,10 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
     ASSERT(struct_def.specializations.empty());
     ASSERT(!struct_def.parent_specialization);
 
-    return mod.create_decl(
+    return mod.create(
         StructDef{
             .ast_node = struct_def.ast_node,
-            .ident = struct_def.ident,
+            .ident = clone_ident(struct_def.ident),
             .block = clone_decl_block(struct_def.block),
             .fields = {},
             .impls = clone_expr_list(struct_def.impls),
@@ -140,10 +140,10 @@ StructField *Cloner::clone_struct_field(const StructField & /*struct_field*/) {
 }
 
 VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
-    return mod.create_decl(
+    return mod.create(
         VarDecl{
             .ast_node = var_decl.ast_node,
-            .ident = var_decl.ident,
+            .ident = clone_ident(var_decl.ident),
             .type = clone_expr(var_decl.type),
             .value = clone_expr(var_decl.value),
             .attrs = clone_attrs(var_decl.attrs),
@@ -152,10 +152,10 @@ VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
 }
 
 NativeVarDecl *Cloner::clone_native_var_decl(const NativeVarDecl &native_var_decl) {
-    return mod.create_decl(
+    return mod.create(
         NativeVarDecl{
             .ast_node = native_var_decl.ast_node,
-            .ident = native_var_decl.ident,
+            .ident = clone_ident(native_var_decl.ident),
             .type = clone_expr(native_var_decl.type),
             .attrs = clone_attrs(native_var_decl.attrs),
         }
@@ -165,10 +165,10 @@ NativeVarDecl *Cloner::clone_native_var_decl(const NativeVarDecl &native_var_dec
 EnumDef *Cloner::clone_enum_def(const EnumDef &enum_def) {
     assert(enum_def.variants.empty());
 
-    return mod.create_decl(
+    return mod.create(
         EnumDef{
             .ast_node = enum_def.ast_node,
-            .ident = enum_def.ident,
+            .ident = clone_ident(enum_def.ident),
             .block = enum_def.block,
             .variants = {},
         }
@@ -176,10 +176,10 @@ EnumDef *Cloner::clone_enum_def(const EnumDef &enum_def) {
 }
 
 EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
-    return mod.create_decl(
+    return mod.create(
         EnumVariant{
             .ast_node = enum_variant.ast_node,
-            .ident = enum_variant.ident,
+            .ident = clone_ident(enum_variant.ident),
             .type = clone_expr(enum_variant.type),
             .value = clone_expr(enum_variant.value),
         }
@@ -187,10 +187,10 @@ EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
 }
 
 UnionDef *Cloner::clone_union_def(const UnionDef &union_def) {
-    return mod.create_decl(
+    return mod.create(
         UnionDef{
             .ast_node = union_def.ast_node,
-            .ident = union_def.ident,
+            .ident = clone_ident(union_def.ident),
             .block = clone_decl_block(union_def.block),
             .cases = {},
         }
@@ -198,20 +198,20 @@ UnionDef *Cloner::clone_union_def(const UnionDef &union_def) {
 }
 
 UnionCase *Cloner::clone_union_case(const UnionCase &union_case) {
-    return mod.create_decl(
+    return mod.create(
         UnionCase{
             .ast_node = union_case.ast_node,
-            .ident = union_case.ident,
+            .ident = clone_ident(union_case.ident),
             .fields = union_case.fields,
         }
     );
 }
 
 ProtoDef *Cloner::clone_proto_def(const ProtoDef &proto_def) {
-    return mod.create_decl(
+    return mod.create(
         ProtoDef{
             .ast_node = proto_def.ast_node,
-            .ident = proto_def.ident,
+            .ident = clone_ident(proto_def.ident),
             .block = clone_decl_block(proto_def.block),
             .func_decls = {},
         }
@@ -219,17 +219,17 @@ ProtoDef *Cloner::clone_proto_def(const ProtoDef &proto_def) {
 }
 
 TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
-    return mod.create_decl(
+    return mod.create(
         TypeAlias{
             .ast_node = type_alias.ast_node,
-            .ident = type_alias.ident,
+            .ident = clone_ident(type_alias.ident),
             .type = clone_expr(type_alias.type),
         }
     );
 }
 
 UseDecl *Cloner::clone_use_decl(const UseDecl &use_decl) {
-    return mod.create_decl(
+    return mod.create(
         UseDecl{
             .ast_node = use_decl.ast_node,
             .root_item = clone_use_item(use_decl.root_item),
@@ -238,8 +238,8 @@ UseDecl *Cloner::clone_use_decl(const UseDecl &use_decl) {
 }
 
 MetaIfStmt *Cloner::clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
-    std::vector<MetaIfCondBranch> cond_branches;
-    cond_branches.resize(meta_if_stmt.cond_branches.size());
+    std::span<MetaIfCondBranch> cond_branches =
+        mod.allocate_array<MetaIfCondBranch>(meta_if_stmt.cond_branches.size());
 
     for (unsigned i = 0; i < meta_if_stmt.cond_branches.size(); i++) {
         const MetaIfCondBranch &if_cond_branch = meta_if_stmt.cond_branches[i];
@@ -260,7 +260,7 @@ MetaIfStmt *Cloner::clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
         };
     }
 
-    return mod.create_stmt(
+    return mod.create(
         MetaIfStmt{
             .ast_node = meta_if_stmt.ast_node,
             .cond_branches = cond_branches,
@@ -270,10 +270,10 @@ MetaIfStmt *Cloner::clone_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
 }
 
 MetaForStmt *Cloner::clone_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         MetaForStmt{
             .ast_node = meta_for_stmt.ast_node,
-            .ident = meta_for_stmt.ident,
+            .ident = clone_ident(meta_for_stmt.ident),
             .range = clone_expr(meta_for_stmt.range),
             .block = clone_meta_block(meta_for_stmt.block),
         }
@@ -290,27 +290,27 @@ UseItem Cloner::clone_use_item(const UseItem &use_item) {
 }
 
 UseIdent *Cloner::clone_use_ident(const UseIdent &use_ident) {
-    return mod.create_use_item(
+    return mod.create(
         sir::UseIdent{
-            .ident = use_ident.ident,
+            .ident = clone_ident(use_ident.ident),
             .symbol = nullptr,
         }
     );
 }
 
 UseRebind *Cloner::clone_use_rebind(const UseRebind &use_rebind) {
-    return mod.create_use_item(
+    return mod.create(
         sir::UseRebind{
             .ast_node = use_rebind.ast_node,
-            .target_ident = use_rebind.target_ident,
-            .local_ident = use_rebind.local_ident,
+            .target_ident = clone_ident(use_rebind.target_ident),
+            .local_ident = clone_ident(use_rebind.local_ident),
             .symbol = nullptr,
         }
     );
 }
 
 UseDotExpr *Cloner::clone_use_dot_expr(const UseDotExpr &use_dot_expr) {
-    return mod.create_use_item(
+    return mod.create(
         sir::UseDotExpr{
             .ast_node = use_dot_expr.ast_node,
             .lhs = clone_use_item(use_dot_expr.lhs),
@@ -320,13 +320,13 @@ UseDotExpr *Cloner::clone_use_dot_expr(const UseDotExpr &use_dot_expr) {
 }
 
 UseList *Cloner::clone_use_list(const UseList &use_list) {
-    std::vector<sir::UseItem> items(use_list.items.size());
+    std::span<sir::UseItem> items = mod.allocate_array<sir::UseItem>(use_list.items.size());
 
     for (unsigned i = 0; i < use_list.items.size(); i++) {
         items[i] = clone_use_item(use_list.items[i]);
     }
 
-    return mod.create_use_item(
+    return mod.create(
         sir::UseList{
             .ast_node = use_list.ast_node,
             .items = items,
@@ -379,7 +379,7 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
 }
 
 VarStmt *Cloner::clone_var_stmt(const VarStmt &var_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         VarStmt{
             .ast_node = var_stmt.ast_node,
             .local = clone_local(var_stmt.local),
@@ -389,7 +389,7 @@ VarStmt *Cloner::clone_var_stmt(const VarStmt &var_stmt) {
 }
 
 AssignStmt *Cloner::clone_assign_stmt(const AssignStmt &assign_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         AssignStmt{
             .ast_node = assign_stmt.ast_node,
             .lhs = clone_expr(assign_stmt.lhs),
@@ -399,7 +399,7 @@ AssignStmt *Cloner::clone_assign_stmt(const AssignStmt &assign_stmt) {
 }
 
 CompAssignStmt *Cloner::clone_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         CompAssignStmt{
             .ast_node = comp_assign_stmt.ast_node,
             .op = comp_assign_stmt.op,
@@ -410,7 +410,7 @@ CompAssignStmt *Cloner::clone_comp_assign_stmt(const CompAssignStmt &comp_assign
 }
 
 ReturnStmt *Cloner::clone_return_stmt(const ReturnStmt &return_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         ReturnStmt{
             .ast_node = return_stmt.ast_node,
             .value = clone_expr(return_stmt.value),
@@ -419,7 +419,7 @@ ReturnStmt *Cloner::clone_return_stmt(const ReturnStmt &return_stmt) {
 }
 
 IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
-    std::vector<IfCondBranch> cond_branches(if_stmt.cond_branches.size());
+    std::span<IfCondBranch> cond_branches = mod.allocate_array<sir::IfCondBranch>(if_stmt.cond_branches.size());
 
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
         const IfCondBranch &if_cond_branch = if_stmt.cond_branches[i];
@@ -427,7 +427,7 @@ IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
         cond_branches[i] = IfCondBranch{
             .ast_node = if_cond_branch.ast_node,
             .condition = clone_expr(if_cond_branch.condition),
-            .block = clone_block(if_cond_branch.block),
+            .block = mod.create(clone_block(*if_cond_branch.block)),
         };
     }
 
@@ -436,11 +436,11 @@ IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
     if (if_stmt.else_branch) {
         else_branch = IfElseBranch{
             .ast_node = if_stmt.else_branch->ast_node,
-            .block = clone_block(if_stmt.else_branch->block),
+            .block = mod.create(clone_block(*if_stmt.else_branch->block)),
         };
     }
 
-    return mod.create_stmt(
+    return mod.create(
         IfStmt{
             .ast_node = if_stmt.ast_node,
             .cond_branches = cond_branches,
@@ -450,7 +450,8 @@ IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
 }
 
 SwitchStmt *Cloner::clone_switch_stmt(const SwitchStmt &switch_stmt) {
-    std::vector<SwitchCaseBranch> case_branches(switch_stmt.case_branches.size());
+    std::span<SwitchCaseBranch> case_branches =
+        mod.allocate_array<SwitchCaseBranch>(switch_stmt.case_branches.size());
 
     for (unsigned i = 0; i < switch_stmt.case_branches.size(); i++) {
         const SwitchCaseBranch &switch_cond_branch = switch_stmt.case_branches[i];
@@ -458,11 +459,11 @@ SwitchStmt *Cloner::clone_switch_stmt(const SwitchStmt &switch_stmt) {
         case_branches[i] = SwitchCaseBranch{
             .ast_node = switch_cond_branch.ast_node,
             .local = clone_local(switch_cond_branch.local),
-            .block = clone_block(switch_cond_branch.block),
+            .block = mod.create(clone_block(*switch_cond_branch.block)),
         };
     }
 
-    return mod.create_stmt(
+    return mod.create(
         SwitchStmt{
             .ast_node = switch_stmt.ast_node,
             .value = clone_expr(switch_stmt.value),
@@ -474,9 +475,9 @@ SwitchStmt *Cloner::clone_switch_stmt(const SwitchStmt &switch_stmt) {
 TryStmt *Cloner::clone_try_stmt(const TryStmt &try_stmt) {
     TrySuccessBranch success_branch{
         .ast_node = try_stmt.success_branch.ast_node,
-        .ident = try_stmt.success_branch.ident,
+        .ident = clone_ident(try_stmt.success_branch.ident),
         .expr = clone_expr(try_stmt.success_branch.expr),
-        .block = clone_block(try_stmt.success_branch.block),
+        .block = mod.create(clone_block(*try_stmt.success_branch.block)),
     };
 
     std::optional<TryExceptBranch> except_branch;
@@ -484,9 +485,9 @@ TryStmt *Cloner::clone_try_stmt(const TryStmt &try_stmt) {
     if (try_stmt.except_branch) {
         except_branch = TryExceptBranch{
             .ast_node = try_stmt.except_branch->ast_node,
-            .ident = try_stmt.except_branch->ident,
+            .ident = clone_ident(try_stmt.except_branch->ident),
             .type = clone_expr(try_stmt.except_branch->type),
-            .block = clone_block(try_stmt.except_branch->block),
+            .block = mod.create(clone_block(*try_stmt.except_branch->block)),
         };
     }
 
@@ -495,11 +496,11 @@ TryStmt *Cloner::clone_try_stmt(const TryStmt &try_stmt) {
     if (try_stmt.else_branch) {
         else_branch = TryElseBranch{
             .ast_node = try_stmt.else_branch->ast_node,
-            .block = clone_block(try_stmt.else_branch->block),
+            .block = mod.create(clone_block(*try_stmt.else_branch->block)),
         };
     }
 
-    return mod.create_stmt(
+    return mod.create(
         TryStmt{
             .ast_node = try_stmt.ast_node,
             .success_branch = success_branch,
@@ -510,23 +511,23 @@ TryStmt *Cloner::clone_try_stmt(const TryStmt &try_stmt) {
 }
 
 WhileStmt *Cloner::clone_while_stmt(const WhileStmt &while_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         WhileStmt{
             .ast_node = while_stmt.ast_node,
             .condition = clone_expr(while_stmt.condition),
-            .block = clone_block(while_stmt.block),
+            .block = mod.create(clone_block(*while_stmt.block)),
         }
     );
 }
 
 ForStmt *Cloner::clone_for_stmt(const ForStmt &for_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         ForStmt{
             .ast_node = for_stmt.ast_node,
             .iter_kind = for_stmt.iter_kind,
-            .ident = for_stmt.ident,
+            .ident = clone_ident(for_stmt.ident),
             .range = clone_expr(for_stmt.range),
-            .block = clone_block(for_stmt.block),
+            .block = mod.create(clone_block(*for_stmt.block)),
         }
     );
 }
@@ -536,7 +537,7 @@ LoopStmt *Cloner::clone_loop_stmt(const LoopStmt & /*loop_stmt*/) {
 }
 
 ContinueStmt *Cloner::clone_continue_stmt(const ContinueStmt &continue_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         ContinueStmt{
             .ast_node = continue_stmt.ast_node,
         }
@@ -544,7 +545,7 @@ ContinueStmt *Cloner::clone_continue_stmt(const ContinueStmt &continue_stmt) {
 }
 
 BreakStmt *Cloner::clone_break_stmt(const BreakStmt &break_stmt) {
-    return mod.create_stmt(
+    return mod.create(
         BreakStmt{
             .ast_node = break_stmt.ast_node,
         }
@@ -552,11 +553,11 @@ BreakStmt *Cloner::clone_break_stmt(const BreakStmt &break_stmt) {
 }
 
 Expr *Cloner::clone_expr_stmt(const Expr &expr) {
-    return mod.create_stmt(clone_expr(expr));
+    return mod.create(clone_expr(expr));
 }
 
 Block *Cloner::clone_block_stmt(const Block &block) {
-    return mod.create_stmt(clone_block(block));
+    return mod.create(clone_block(block));
 }
 
 Expr Cloner::clone_expr(const Expr &expr) {
@@ -621,8 +622,18 @@ std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
     return clone;
 }
 
+std::span<Expr> Cloner::clone_expr_span(std::span<Expr> exprs) {
+    std::span<Expr> clone = mod.allocate_array<sir::Expr>(exprs.size());
+
+    for (unsigned i = 0; i < exprs.size(); i++) {
+        clone[i] = clone_expr(exprs[i]);
+    }
+
+    return clone;
+}
+
 IntLiteral *Cloner::clone_int_literal(const IntLiteral &int_literal) {
-    return mod.create_trivial(
+    return mod.create(
         IntLiteral{
             .ast_node = int_literal.ast_node,
             .type = clone_expr(int_literal.type),
@@ -632,7 +643,7 @@ IntLiteral *Cloner::clone_int_literal(const IntLiteral &int_literal) {
 }
 
 FPLiteral *Cloner::clone_fp_literal(const FPLiteral &fp_literal) {
-    return mod.create_trivial(
+    return mod.create(
         FPLiteral{
             .ast_node = fp_literal.ast_node,
             .type = clone_expr(fp_literal.type),
@@ -642,7 +653,7 @@ FPLiteral *Cloner::clone_fp_literal(const FPLiteral &fp_literal) {
 }
 
 BoolLiteral *Cloner::clone_bool_literal(const BoolLiteral &bool_literal) {
-    return mod.create_trivial(
+    return mod.create(
         BoolLiteral{
             .ast_node = bool_literal.ast_node,
             .type = clone_expr(bool_literal.type),
@@ -652,7 +663,7 @@ BoolLiteral *Cloner::clone_bool_literal(const BoolLiteral &bool_literal) {
 }
 
 CharLiteral *Cloner::clone_char_literal(const CharLiteral &char_literal) {
-    return mod.create_trivial(
+    return mod.create(
         CharLiteral{
             .ast_node = char_literal.ast_node,
             .type = clone_expr(char_literal.type),
@@ -662,7 +673,7 @@ CharLiteral *Cloner::clone_char_literal(const CharLiteral &char_literal) {
 }
 
 NullLiteral *Cloner::clone_null_literal(const NullLiteral &null_literal) {
-    return mod.create_trivial(
+    return mod.create(
         NullLiteral{
             .ast_node = null_literal.ast_node,
             .type = clone_expr(null_literal.type),
@@ -671,7 +682,7 @@ NullLiteral *Cloner::clone_null_literal(const NullLiteral &null_literal) {
 }
 
 NoneLiteral *Cloner::clone_none_literal(const NoneLiteral &none_literal) {
-    return mod.create_trivial(
+    return mod.create(
         NoneLiteral{
             .ast_node = none_literal.ast_node,
             .type = clone_expr(none_literal.type),
@@ -680,7 +691,7 @@ NoneLiteral *Cloner::clone_none_literal(const NoneLiteral &none_literal) {
 }
 
 UndefinedLiteral *Cloner::clone_undefined_literal(const UndefinedLiteral &undefined_literal) {
-    return mod.create_trivial(
+    return mod.create(
         UndefinedLiteral{
             .ast_node = undefined_literal.ast_node,
             .type = clone_expr(undefined_literal.type),
@@ -689,39 +700,39 @@ UndefinedLiteral *Cloner::clone_undefined_literal(const UndefinedLiteral &undefi
 }
 
 ArrayLiteral *Cloner::clone_array_literal(const ArrayLiteral &array_literal) {
-    return mod.create_expr(
+    return mod.create(
         ArrayLiteral{
             .ast_node = array_literal.ast_node,
             .type = clone_expr(array_literal.type),
-            .values = clone_expr_list(array_literal.values),
+            .values = clone_expr_span(array_literal.values),
         }
     );
 }
 
 StringLiteral *Cloner::clone_string_literal(const StringLiteral &string_literal) {
-    return mod.create_expr(
+    return mod.create(
         StringLiteral{
             .ast_node = string_literal.ast_node,
             .type = clone_expr(string_literal.type),
-            .value = string_literal.value,
+            .value = mod.create_string(string_literal.value),
         }
     );
 }
 
 StructLiteral *Cloner::clone_struct_literal(const StructLiteral &struct_literal) {
-    std::vector<StructLiteralEntry> entries(struct_literal.entries.size());
+    std::span<StructLiteralEntry> entries = mod.allocate_array<StructLiteralEntry>(struct_literal.entries.size());
 
     for (unsigned i = 0; i < struct_literal.entries.size(); i++) {
         const StructLiteralEntry &entry = struct_literal.entries[i];
 
         entries[i] = StructLiteralEntry{
-            .ident = entry.ident,
+            .ident = clone_ident(entry.ident),
             .value = clone_expr(entry.value),
             .field = nullptr,
         };
     }
 
-    return mod.create_expr(
+    return mod.create(
         StructLiteral{
             .ast_node = struct_literal.ast_node,
             .type = clone_expr(struct_literal.type),
@@ -731,17 +742,17 @@ StructLiteral *Cloner::clone_struct_literal(const StructLiteral &struct_literal)
 }
 
 UnionCaseLiteral *Cloner::clone_union_case_literal(const UnionCaseLiteral &union_case_literal) {
-    return mod.create_expr(
+    return mod.create(
         UnionCaseLiteral{
             .ast_node = union_case_literal.ast_node,
             .type = clone_expr(union_case_literal.type),
-            .args = clone_expr_list(union_case_literal.args),
+            .args = clone_expr_span(union_case_literal.args),
         }
     );
 }
 
 MapLiteral *Cloner::clone_map_literal(const MapLiteral &map_literal) {
-    std::vector<MapLiteralEntry> entries(map_literal.entries.size());
+    std::span<MapLiteralEntry> entries = mod.allocate_array<MapLiteralEntry>(map_literal.entries.size());
 
     for (unsigned i = 0; i < map_literal.entries.size(); i++) {
         const MapLiteralEntry &entry = map_literal.entries[i];
@@ -752,7 +763,7 @@ MapLiteral *Cloner::clone_map_literal(const MapLiteral &map_literal) {
         };
     }
 
-    return mod.create_expr(
+    return mod.create(
         MapLiteral{
             .ast_node = map_literal.ast_node,
             .type = clone_expr(map_literal.type),
@@ -762,18 +773,18 @@ MapLiteral *Cloner::clone_map_literal(const MapLiteral &map_literal) {
 }
 
 ClosureLiteral *Cloner::clone_closure_literal(const ClosureLiteral &closure_literal) {
-    return mod.create_expr(
+    return mod.create(
         ClosureLiteral{
             .ast_node = closure_literal.ast_node,
             .type = clone_expr(closure_literal.type),
-            .func_type = *clone_func_type(closure_literal.func_type),
-            .block = clone_block(closure_literal.block),
+            .func_type = clone_func_type_directly(closure_literal.func_type),
+            .block = mod.create(clone_block(*closure_literal.block)),
         }
     );
 }
 
 SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr &symbol_expr) {
-    return mod.create_trivial(
+    return mod.create(
         SymbolExpr{
             .ast_node = symbol_expr.ast_node,
             .type = clone_expr(symbol_expr.type),
@@ -783,7 +794,7 @@ SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr &symbol_expr) {
 }
 
 BinaryExpr *Cloner::clone_binary_expr(const BinaryExpr &binary_expr) {
-    return mod.create_trivial(
+    return mod.create(
         BinaryExpr{
             .ast_node = binary_expr.ast_node,
             .type = clone_expr(binary_expr.type),
@@ -795,7 +806,7 @@ BinaryExpr *Cloner::clone_binary_expr(const BinaryExpr &binary_expr) {
 }
 
 UnaryExpr *Cloner::clone_unary_expr(const UnaryExpr &unary_expr) {
-    return mod.create_trivial(
+    return mod.create(
         UnaryExpr{
             .ast_node = unary_expr.ast_node,
             .type = clone_expr(unary_expr.type),
@@ -806,7 +817,7 @@ UnaryExpr *Cloner::clone_unary_expr(const UnaryExpr &unary_expr) {
 }
 
 CastExpr *Cloner::clone_cast_expr(const CastExpr &cast_expr) {
-    return mod.create_trivial(
+    return mod.create(
         CastExpr{
             .ast_node = cast_expr.ast_node,
             .type = clone_expr(cast_expr.type),
@@ -816,7 +827,7 @@ CastExpr *Cloner::clone_cast_expr(const CastExpr &cast_expr) {
 }
 
 IndexExpr *Cloner::clone_index_expr(const IndexExpr &index_expr) {
-    return mod.create_trivial(
+    return mod.create(
         IndexExpr{
             .ast_node = index_expr.ast_node,
             .type = clone_expr(index_expr.type),
@@ -827,12 +838,12 @@ IndexExpr *Cloner::clone_index_expr(const IndexExpr &index_expr) {
 }
 
 CallExpr *Cloner::clone_call_expr(const CallExpr &call_expr) {
-    return mod.create_expr(
+    return mod.create(
         CallExpr{
             .ast_node = call_expr.ast_node,
             .type = clone_expr(call_expr.type),
             .callee = clone_expr(call_expr.callee),
-            .args = clone_expr_list(call_expr.args),
+            .args = clone_expr_span(call_expr.args),
         }
     );
 }
@@ -842,7 +853,7 @@ FieldExpr *Cloner::clone_field_expr(const FieldExpr & /*field_expr*/) {
 }
 
 RangeExpr *Cloner::clone_range_expr(const RangeExpr &range_expr) {
-    return mod.create_trivial(
+    return mod.create(
         RangeExpr{
             .ast_node = range_expr.ast_node,
             .lhs = clone_expr(range_expr.lhs),
@@ -852,17 +863,17 @@ RangeExpr *Cloner::clone_range_expr(const RangeExpr &range_expr) {
 }
 
 TupleExpr *Cloner::clone_tuple_expr(const TupleExpr &tuple_expr) {
-    return mod.create_expr(
+    return mod.create(
         TupleExpr{
             .ast_node = tuple_expr.ast_node,
             .type = clone_expr(tuple_expr.type),
-            .exprs = clone_expr_list(tuple_expr.exprs),
+            .exprs = clone_expr_span(tuple_expr.exprs),
         }
     );
 }
 
 CoercionExpr *Cloner::clone_coercion_expr(const CoercionExpr &coercion_expr) {
-    return mod.create_trivial(
+    return mod.create(
         CoercionExpr{
             .ast_node = coercion_expr.ast_node,
             .type = clone_expr(coercion_expr.type),
@@ -872,7 +883,7 @@ CoercionExpr *Cloner::clone_coercion_expr(const CoercionExpr &coercion_expr) {
 }
 
 PrimitiveType *Cloner::clone_primitive_type(const PrimitiveType &primitive_type) {
-    return mod.create_trivial(
+    return mod.create(
         PrimitiveType{
             .ast_node = primitive_type.ast_node,
             .primitive = primitive_type.primitive,
@@ -881,7 +892,7 @@ PrimitiveType *Cloner::clone_primitive_type(const PrimitiveType &primitive_type)
 }
 
 PointerType *Cloner::clone_pointer_type(const PointerType &pointer_type) {
-    return mod.create_trivial(
+    return mod.create(
         PointerType{
             .ast_node = pointer_type.ast_node,
             .base_type = clone_expr(pointer_type.base_type),
@@ -890,7 +901,7 @@ PointerType *Cloner::clone_pointer_type(const PointerType &pointer_type) {
 }
 
 StaticArrayType *Cloner::clone_static_array_type(const StaticArrayType &static_array_type) {
-    return mod.create_trivial(
+    return mod.create(
         StaticArrayType{
             .ast_node = static_array_type.ast_node,
             .base_type = clone_expr(static_array_type.base_type),
@@ -900,7 +911,188 @@ StaticArrayType *Cloner::clone_static_array_type(const StaticArrayType &static_a
 }
 
 FuncType *Cloner::clone_func_type(const FuncType &func_type) {
-    std::vector<Param> params(func_type.params.size());
+    return mod.create(clone_func_type_directly(func_type));
+}
+
+OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
+    return mod.create(
+        OptionalType{
+            .ast_node = optional_type.ast_node,
+            .base_type = clone_expr(optional_type.base_type),
+        }
+    );
+}
+
+ResultType *Cloner::clone_result_type(const ResultType &result_type) {
+    return mod.create(
+        ResultType{
+            .ast_node = result_type.ast_node,
+            .value_type = clone_expr(result_type.value_type),
+            .error_type = clone_expr(result_type.error_type),
+        }
+    );
+}
+
+ArrayType *Cloner::clone_array_type(const ArrayType &array_type) {
+    return mod.create(
+        ArrayType{
+            .ast_node = array_type.ast_node,
+            .base_type = clone_expr(array_type.base_type),
+        }
+    );
+}
+
+MapType *Cloner::clone_map_type(const MapType &map_type) {
+    return mod.create(
+        MapType{
+            .ast_node = map_type.ast_node,
+            .key_type = map_type.key_type,
+            .value_type = map_type.value_type,
+        }
+    );
+}
+
+ClosureType *Cloner::clone_closure_type(const ClosureType &closure_type) {
+    return mod.create(
+        ClosureType{
+            .ast_node = closure_type.ast_node,
+            .func_type = clone_func_type_directly(closure_type.func_type),
+        }
+    );
+}
+
+ReferenceType *Cloner::clone_reference_type(const ReferenceType &reference_type) {
+    return mod.create(
+        ReferenceType{
+            .ast_node = reference_type.ast_node,
+            .mut = reference_type.mut,
+            .base_type = clone_expr(reference_type.base_type),
+        }
+    );
+}
+
+IdentExpr *Cloner::clone_ident_expr(const IdentExpr &ident_expr) {
+    return mod.create(
+        IdentExpr{
+            .ast_node = ident_expr.ast_node,
+            .value = mod.create_string(ident_expr.value),
+        }
+    );
+}
+
+StarExpr *Cloner::clone_star_expr(const StarExpr &star_expr) {
+    return mod.create(
+        StarExpr{
+            .ast_node = star_expr.ast_node,
+            .value = clone_expr(star_expr.value),
+        }
+    );
+}
+
+BracketExpr *Cloner::clone_bracket_expr(const BracketExpr &bracket_expr) {
+    return mod.create(
+        BracketExpr{
+            .ast_node = bracket_expr.ast_node,
+            .lhs = clone_expr(bracket_expr.lhs),
+            .rhs = clone_expr_span(bracket_expr.rhs),
+        }
+    );
+}
+
+DotExpr *Cloner::clone_dot_expr(const DotExpr &dot_expr) {
+    return mod.create(
+        DotExpr{
+            .ast_node = dot_expr.ast_node,
+            .lhs = clone_expr(dot_expr.lhs),
+            .rhs = dot_expr.rhs,
+        }
+    );
+}
+
+PseudoType *Cloner::clone_pseudo_type(const PseudoType &pseudo_type) {
+    return mod.create(
+        sir::PseudoType{
+            .kind = pseudo_type.kind,
+        }
+    );
+}
+
+MetaAccess *Cloner::clone_meta_access(const MetaAccess &meta_access) {
+    return mod.create(
+        MetaAccess{
+            .ast_node = meta_access.ast_node,
+            .expr = clone_expr(meta_access.expr),
+        }
+    );
+}
+
+MetaFieldExpr *Cloner::clone_meta_field_expr(const MetaFieldExpr &meta_field_expr) {
+    return mod.create(
+        MetaFieldExpr{
+            .ast_node = meta_field_expr.ast_node,
+            .base = clone_expr(meta_field_expr.base),
+            .field = meta_field_expr.field,
+        }
+    );
+}
+
+MetaCallExpr *Cloner::clone_meta_call_expr(const MetaCallExpr &meta_call_expr) {
+    return mod.create(
+        MetaCallExpr{
+            .ast_node = meta_call_expr.ast_node,
+            .callee = clone_expr(meta_call_expr.callee),
+            .args = clone_expr_span(meta_call_expr.args),
+        }
+    );
+}
+
+InitExpr *Cloner::clone_init_expr(const InitExpr &init_expr) {
+    return mod.create(
+        InitExpr{
+            .ast_node = init_expr.ast_node,
+            .type = clone_expr(init_expr.type),
+            .value = clone_expr(init_expr.value),
+            .resource = init_expr.resource,
+        }
+    );
+}
+
+MoveExpr *Cloner::clone_move_expr(const MoveExpr &move_expr) {
+    return mod.create(
+        MoveExpr{
+            .ast_node = move_expr.ast_node,
+            .type = clone_expr(move_expr.type),
+            .value = clone_expr(move_expr.value),
+            .resource = move_expr.resource,
+        }
+    );
+}
+
+DeinitExpr *Cloner::clone_deinit_expr(const DeinitExpr &deinit_expr) {
+    return mod.create(
+        DeinitExpr{
+            .ast_node = deinit_expr.ast_node,
+            .type = clone_expr(deinit_expr.type),
+            .value = clone_expr(deinit_expr.value),
+            .resource = deinit_expr.resource,
+        }
+    );
+}
+
+SymbolTable *Cloner::push_symbol_table(SymbolTable *parent_if_empty) {
+    SymbolTable *symbol_table = mod.create(
+        sir::SymbolTable{
+            .parent = symbol_tables.empty() ? parent_if_empty : symbol_tables.top(),
+            .symbols = {},
+        }
+    );
+
+    symbol_tables.push(symbol_table);
+    return symbol_table;
+}
+
+FuncType Cloner::clone_func_type_directly(const FuncType &func_type) {
+    std::span<Param> params = mod.allocate_array<Param>(func_type.params.size());
 
     for (unsigned i = 0; i < func_type.params.size(); i++) {
         const Param &param = func_type.params[i];
@@ -913,188 +1105,11 @@ FuncType *Cloner::clone_func_type(const FuncType &func_type) {
         };
     }
 
-    return mod.create_expr(
-        FuncType{
-            .ast_node = func_type.ast_node,
-            .params = params,
-            .return_type = clone_expr(func_type.return_type),
-        }
-    );
-}
-
-OptionalType *Cloner::clone_optional_type(const OptionalType &optional_type) {
-    return mod.create_trivial(
-        OptionalType{
-            .ast_node = optional_type.ast_node,
-            .base_type = clone_expr(optional_type.base_type),
-        }
-    );
-}
-
-ResultType *Cloner::clone_result_type(const ResultType &result_type) {
-    return mod.create_trivial(
-        ResultType{
-            .ast_node = result_type.ast_node,
-            .value_type = clone_expr(result_type.value_type),
-            .error_type = clone_expr(result_type.error_type),
-        }
-    );
-}
-
-ArrayType *Cloner::clone_array_type(const ArrayType &array_type) {
-    return mod.create_trivial(
-        ArrayType{
-            .ast_node = array_type.ast_node,
-            .base_type = clone_expr(array_type.base_type),
-        }
-    );
-}
-
-MapType *Cloner::clone_map_type(const MapType &map_type) {
-    return mod.create_trivial(
-        MapType{
-            .ast_node = map_type.ast_node,
-            .key_type = map_type.key_type,
-            .value_type = map_type.value_type,
-        }
-    );
-}
-
-ClosureType *Cloner::clone_closure_type(const ClosureType &closure_type) {
-    return mod.create_expr(
-        ClosureType{
-            .ast_node = closure_type.ast_node,
-            .func_type = *clone_func_type(closure_type.func_type),
-        }
-    );
-}
-
-ReferenceType *Cloner::clone_reference_type(const ReferenceType &reference_type) {
-    return mod.create_trivial(
-        ReferenceType{
-            .ast_node = reference_type.ast_node,
-            .mut = reference_type.mut,
-            .base_type = clone_expr(reference_type.base_type),
-        }
-    );
-}
-
-IdentExpr *Cloner::clone_ident_expr(const IdentExpr &ident_expr) {
-    return mod.create_expr(
-        IdentExpr{
-            .ast_node = ident_expr.ast_node,
-            .value = ident_expr.value,
-        }
-    );
-}
-
-StarExpr *Cloner::clone_star_expr(const StarExpr &star_expr) {
-    return mod.create_trivial(
-        StarExpr{
-            .ast_node = star_expr.ast_node,
-            .value = clone_expr(star_expr.value),
-        }
-    );
-}
-
-BracketExpr *Cloner::clone_bracket_expr(const BracketExpr &bracket_expr) {
-    return mod.create_expr(
-        BracketExpr{
-            .ast_node = bracket_expr.ast_node,
-            .lhs = clone_expr(bracket_expr.lhs),
-            .rhs = clone_expr_list(bracket_expr.rhs),
-        }
-    );
-}
-
-DotExpr *Cloner::clone_dot_expr(const DotExpr &dot_expr) {
-    return mod.create_expr(
-        DotExpr{
-            .ast_node = dot_expr.ast_node,
-            .lhs = clone_expr(dot_expr.lhs),
-            .rhs = dot_expr.rhs,
-        }
-    );
-}
-
-PseudoType *Cloner::clone_pseudo_type(const PseudoType &pseudo_type) {
-    return mod.create_trivial(
-        sir::PseudoType{
-            .kind = pseudo_type.kind,
-        }
-    );
-}
-
-MetaAccess *Cloner::clone_meta_access(const MetaAccess &meta_access) {
-    return mod.create_trivial(
-        MetaAccess{
-            .ast_node = meta_access.ast_node,
-            .expr = clone_expr(meta_access.expr),
-        }
-    );
-}
-
-MetaFieldExpr *Cloner::clone_meta_field_expr(const MetaFieldExpr &meta_field_expr) {
-    return mod.create_expr(
-        MetaFieldExpr{
-            .ast_node = meta_field_expr.ast_node,
-            .base = clone_expr(meta_field_expr.base),
-            .field = meta_field_expr.field,
-        }
-    );
-}
-
-MetaCallExpr *Cloner::clone_meta_call_expr(const MetaCallExpr &meta_call_expr) {
-    return mod.create_expr(
-        MetaCallExpr{
-            .ast_node = meta_call_expr.ast_node,
-            .callee = clone_expr(meta_call_expr.callee),
-            .args = clone_expr_list(meta_call_expr.args),
-        }
-    );
-}
-
-InitExpr *Cloner::clone_init_expr(const InitExpr &init_expr) {
-    return mod.create_trivial(
-        InitExpr{
-            .ast_node = init_expr.ast_node,
-            .type = clone_expr(init_expr.type),
-            .value = clone_expr(init_expr.value),
-            .resource = init_expr.resource,
-        }
-    );
-}
-
-MoveExpr *Cloner::clone_move_expr(const MoveExpr &move_expr) {
-    return mod.create_trivial(
-        MoveExpr{
-            .ast_node = move_expr.ast_node,
-            .type = clone_expr(move_expr.type),
-            .value = clone_expr(move_expr.value),
-            .resource = move_expr.resource,
-        }
-    );
-}
-
-DeinitExpr *Cloner::clone_deinit_expr(const DeinitExpr &deinit_expr) {
-    return mod.create_trivial(
-        DeinitExpr{
-            .ast_node = deinit_expr.ast_node,
-            .type = clone_expr(deinit_expr.type),
-            .value = clone_expr(deinit_expr.value),
-            .resource = deinit_expr.resource,
-        }
-    );
-}
-
-SymbolTable *Cloner::push_symbol_table(SymbolTable *parent_if_empty) {
-    SymbolTable *symbol_table = mod.create_symbol_table({
-        .parent = symbol_tables.empty() ? parent_if_empty : symbol_tables.top(),
-        .symbols = {},
-    });
-
-    symbol_tables.push(symbol_table);
-    return symbol_table;
+    return FuncType{
+        .ast_node = func_type.ast_node,
+        .params = params,
+        .return_type = clone_expr(func_type.return_type),
+    };
 }
 
 Local Cloner::clone_local(const Local &local) {
@@ -1106,15 +1121,14 @@ Local Cloner::clone_local(const Local &local) {
 }
 
 Attributes *Cloner::clone_attrs(const Attributes *attrs) {
-    return attrs ? mod.create_attrs(*attrs) : nullptr;
+    return attrs ? mod.create(*attrs) : nullptr;
 }
 
-MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
-    std::vector<Node> nodes;
-    nodes.resize(meta_block.nodes.size());
+MetaBlock *Cloner::clone_meta_block(const MetaBlock *meta_block) {
+    std::vector<Node> nodes(meta_block->nodes.size());
 
-    for (unsigned i = 0; i < meta_block.nodes.size(); i++) {
-        const Node &node = meta_block.nodes[i];
+    for (unsigned i = 0; i < meta_block->nodes.size(); i++) {
+        const Node &node = meta_block->nodes[i];
 
         if (auto expr = node.match<Expr>()) nodes[i] = clone_expr(*expr);
         else if (auto stmt = node.match<Stmt>()) nodes[i] = clone_stmt(*stmt);
@@ -1122,14 +1136,23 @@ MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
         else ASSERT_UNREACHABLE;
     }
 
-    return MetaBlock{
-        .ast_node = meta_block.ast_node,
-        .nodes = nodes,
+    return mod.create(
+        MetaBlock{
+            .ast_node = meta_block->ast_node,
+            .nodes = nodes,
+        }
+    );
+}
+
+Ident Cloner::clone_ident(const Ident &ident) {
+    return Ident{
+        .ast_node = ident.ast_node,
+        .value = mod.create_string(ident.value),
     };
 }
 
 Error *Cloner::clone_error(const Error &error) {
-    return mod.create_trivial(
+    return mod.create(
         Error{
             .ast_node = error.ast_node,
         }

@@ -345,6 +345,7 @@ add_library(banjo STATIC
     "utils/platform.hpp"
     "utils/soft_int.hpp"
     "utils/static_vector.hpp"
+    "utils/string_arena.hpp"
     "utils/timing.cpp"
     "utils/timing.hpp"
     "utils/typed_arena.hpp"

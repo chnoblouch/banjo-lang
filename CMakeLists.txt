@@ -58,6 +58,9 @@ endif()
 # add_compile_options(/fsanitize=address -fsanitize=undefined)
 # link_libraries(clang_rt.asan-x86_64.lib)
 
+# add_compile_options(-fsanitize=address,undefined)
+# add_link_options(-fsanitize=address,undefined)
+
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")
 

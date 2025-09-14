@@ -63,10 +63,6 @@ void Printer::print(const Unit &unit) {
     BEGIN_LIST_FIELD("mods");
 
     for (const Module *mod : unit.mods) {
-        if (mod->path != ModulePath{"main"}) {
-            continue;
-        }
-
         INDENT_LIST_ELEMENT();
         print_mod(*mod);
     }
@@ -440,7 +436,7 @@ void Printer::print_if_stmt(const IfStmt &if_stmt) {
         INDENT_LIST_ELEMENT();
         BEGIN_OBJECT("IfCondBranch");
         PRINT_EXPR_FIELD("condition", cond_branch.condition);
-        PRINT_BLOCK_FIELD("block", cond_branch.block);
+        PRINT_BLOCK_FIELD("block", *cond_branch.block);
         END_OBJECT();
     }
 
@@ -449,7 +445,7 @@ void Printer::print_if_stmt(const IfStmt &if_stmt) {
 
     if (if_stmt.else_branch) {
         BEGIN_OBJECT("IfElseBranch");
-        PRINT_BLOCK_FIELD("block", if_stmt.else_branch->block);
+        PRINT_BLOCK_FIELD("block", *if_stmt.else_branch->block);
         END_OBJECT();
     } else {
         stream << "none\n";
@@ -468,7 +464,7 @@ void Printer::print_switch_stmt(const SwitchStmt &switch_stmt) {
         BEGIN_OBJECT("SwitchCaseBranch");
         PRINT_FIELD_NAME("local");
         print_local(case_branch.local);
-        PRINT_BLOCK_FIELD("block", case_branch.block);
+        PRINT_BLOCK_FIELD("block", *case_branch.block);
         END_OBJECT();
     }
 
@@ -483,7 +479,7 @@ void Printer::print_try_stmt(const TryStmt &try_stmt) {
     BEGIN_OBJECT("TrySuccessBranch");
     PRINT_FIELD("ident", try_stmt.success_branch.ident.value);
     PRINT_EXPR_FIELD("expr", try_stmt.success_branch.expr);
-    PRINT_BLOCK_FIELD("block", try_stmt.success_branch.block);
+    PRINT_BLOCK_FIELD("block", *try_stmt.success_branch.block);
     END_OBJECT();
 
     PRINT_FIELD_NAME("except_branch");
@@ -492,7 +488,7 @@ void Printer::print_try_stmt(const TryStmt &try_stmt) {
         BEGIN_OBJECT("TryExceptBranch");
         PRINT_FIELD("ident", try_stmt.except_branch->ident.value);
         PRINT_EXPR_FIELD("type", try_stmt.except_branch->type);
-        PRINT_BLOCK_FIELD("block", try_stmt.except_branch->block);
+        PRINT_BLOCK_FIELD("block", *try_stmt.except_branch->block);
         END_OBJECT();
     } else {
         stream << "none\n";
@@ -502,7 +498,7 @@ void Printer::print_try_stmt(const TryStmt &try_stmt) {
 
     if (try_stmt.else_branch) {
         BEGIN_OBJECT("TryElseBranch");
-        PRINT_BLOCK_FIELD("block", try_stmt.else_branch->block);
+        PRINT_BLOCK_FIELD("block", *try_stmt.else_branch->block);
         END_OBJECT();
     } else {
         stream << "none\n";
@@ -514,7 +510,7 @@ void Printer::print_try_stmt(const TryStmt &try_stmt) {
 void Printer::print_while_stmt(const WhileStmt &while_stmt) {
     BEGIN_OBJECT("WhileStmt");
     PRINT_EXPR_FIELD("condition", while_stmt.condition);
-    PRINT_BLOCK_FIELD("block", while_stmt.block);
+    PRINT_BLOCK_FIELD("block", *while_stmt.block);
     END_OBJECT();
 }
 
@@ -529,14 +525,14 @@ void Printer::print_for_stmt(const ForStmt &for_stmt) {
 
     PRINT_FIELD("ident", for_stmt.ident.value);
     PRINT_EXPR_FIELD("range", for_stmt.range);
-    PRINT_BLOCK_FIELD("block", for_stmt.block);
+    PRINT_BLOCK_FIELD("block", *for_stmt.block);
     END_OBJECT();
 }
 
 void Printer::print_loop_stmt(const LoopStmt &loop_stmt) {
     BEGIN_OBJECT("LoopStmt");
     PRINT_EXPR_FIELD("condition", loop_stmt.condition);
-    PRINT_BLOCK_FIELD("block", loop_stmt.block);
+    PRINT_BLOCK_FIELD("block", *loop_stmt.block);
 
     if (loop_stmt.latch) {
         PRINT_BLOCK_FIELD("latch", *loop_stmt.latch);
@@ -565,7 +561,7 @@ void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
         INDENT_LIST_ELEMENT();
         BEGIN_OBJECT("MetaIfCondBranch");
         PRINT_EXPR_FIELD("condition", cond_branch.condition);
-        PRINT_META_BLOCK_FIELD("block", cond_branch.block);
+        PRINT_META_BLOCK_FIELD("block", *cond_branch.block);
         END_OBJECT();
     }
 
@@ -574,7 +570,7 @@ void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
 
     if (meta_if_stmt.else_branch) {
         BEGIN_OBJECT("MetaIfElseBranch");
-        PRINT_META_BLOCK_FIELD("block", meta_if_stmt.else_branch->block);
+        PRINT_META_BLOCK_FIELD("block", *meta_if_stmt.else_branch->block);
         END_OBJECT();
     } else {
         stream << "none\n";
@@ -587,7 +583,7 @@ void Printer::print_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
     BEGIN_OBJECT("MetaForStmt");
     PRINT_FIELD("ident", meta_for_stmt.ident.value);
     PRINT_EXPR_FIELD("range", meta_for_stmt.range);
-    PRINT_META_BLOCK_FIELD("block", meta_for_stmt.block);
+    PRINT_META_BLOCK_FIELD("block", *meta_for_stmt.block);
     END_OBJECT();
 }
 
@@ -766,7 +762,7 @@ void Printer::print_closure_literal(const ClosureLiteral &closure_literal) {
     PRINT_EXPR_FIELD("type", closure_literal.type);
     PRINT_FIELD_NAME("func_type");
     print_func_type(closure_literal.func_type);
-    PRINT_BLOCK_FIELD("block", closure_literal.block);
+    PRINT_BLOCK_FIELD("block", *closure_literal.block);
     END_OBJECT();
 }
 
@@ -955,7 +951,7 @@ void Printer::print_reference_type(const ReferenceType &reference_type) {
 
 void Printer::print_ident_expr(const IdentExpr &ident_expr) {
     BEGIN_OBJECT("IdentExpr");
-    PRINT_FIELD("value", "\"" + ident_expr.value + "\"");
+    PRINT_FIELD("value", "\"" + std::string{ident_expr.value} + "\"");
     END_OBJECT();
 }
 

@@ -40,8 +40,7 @@ private:
     void analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt);
 
     sir::Expr create_method_call(sir::Expr self, sir::FuncDef &method);
-    sir::Expr create_expr(sir::FuncDef &func_def);
-    sir::Ident create_ident(std::string value);
+    sir::Ident create_ident(std::string_view value);
 };
 
 } // namespace sema

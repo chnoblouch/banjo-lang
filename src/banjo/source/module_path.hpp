@@ -31,7 +31,9 @@ private:
 
 public:
     ModulePath();
+    ModulePath(std::initializer_list<std::string_view> elements);
     ModulePath(std::initializer_list<std::string> elements);
+    ModulePath(std::initializer_list<const char *> elements);
 
     void append(std::string_view element);
     unsigned get_size() const;

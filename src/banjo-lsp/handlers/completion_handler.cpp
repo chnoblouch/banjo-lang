@@ -144,13 +144,13 @@ void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::Str
                 continue;
             }
 
-            const std::string &name = field->ident.value;
+            std::string_view name = field->ident.value;
 
             items.add(
                 JSONObject{
                     {"label", name},
                     {"kind", LSPCompletionItemKind::FIELD},
-                    {"insertText", name + ": "},
+                    {"insertText", std::string{name} + ": "},
                     {"insertTextFormat", 2},
                 }
             );
@@ -324,7 +324,7 @@ JSONObject CompletionHandler::build_struct_literal_item(const lang::sir::StructD
     std::string detail = " { ";
 
     for (unsigned i = 0; i < struct_def.fields.size(); i++) {
-        std::string field_name = struct_def.fields[i]->ident.value;
+        std::string field_name{struct_def.fields[i]->ident.value};
         insert_text += "    " + field_name + ": ${" + std::to_string(i + 1) + ":},\n";
 
         detail += field_name;

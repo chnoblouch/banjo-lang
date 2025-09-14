@@ -27,7 +27,7 @@ private:
     void create_native_func_decl(const sir::NativeFuncDecl &sir_func);
     std::vector<ssa::Type> generate_params(const sir::FuncType &sir_func_type);
     ssa::Type generate_return_type(const sir::Expr &sir_return_type);
-    void create_struct_def(const sir::StructDef &sir_struct_def, const std::vector<sir::Expr> *generic_args = nullptr);
+    void create_struct_def(const sir::StructDef &sir_struct_def, const std::span<sir::Expr> *generic_args = nullptr);
     void create_union_def(const sir::UnionDef &sir_union_def);
     void create_proto_def(const sir::ProtoDef &sir_proto_def);
     void create_var_decl(const sir::VarDecl &sir_var_decl);

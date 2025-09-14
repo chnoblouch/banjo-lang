@@ -119,7 +119,7 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
     if (auto struct_def = analyzer.get_scope().decl.match<sir::StructDef>()) {
         // TODO: Error handling for missing type.
 
-        out_decl = analyzer.create_decl(
+        out_decl = analyzer.create(
             sir::StructField{
                 .ast_node = var_decl.ast_node,
                 .ident = var_decl.ident,
@@ -149,7 +149,7 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
     sir::EnumDef &enum_def = analyzer.get_scope().decl.as<sir::EnumDef>();
     enum_def.variants.push_back(&enum_variant);
 
-    enum_variant.type = analyzer.create_trivial(
+    enum_variant.type = analyzer.create(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = nullptr,
@@ -188,7 +188,7 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             return;
         }
 
-        sir::Expr base_type = analyzer.create_trivial(
+        sir::Expr base_type = analyzer.create(
             sir::SymbolExpr{
                 .ast_node = nullptr,
                 .type = nullptr,

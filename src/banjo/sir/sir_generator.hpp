@@ -6,8 +6,8 @@
 #include "banjo/sir/sir.hpp"
 
 #include <stack>
-#include <vector>
 #include <string_view>
+#include <vector>
 
 namespace banjo {
 
@@ -66,7 +66,7 @@ private:
 
     sir::Ident generate_ident(ASTNode *node);
     sir::Block generate_block(ASTNode *node);
-    sir::MetaBlock generate_meta_block(ASTNode *node, MetaBlockKind kind);
+    sir::MetaBlock *generate_meta_block(ASTNode *node, MetaBlockKind kind);
 
     sir::Stmt generate_stmt(ASTNode *node);
     sir::Stmt generate_var_stmt(ASTNode *node, sir::Attributes *attrs);
@@ -126,8 +126,9 @@ private:
     std::vector<sir::GenericParam> generate_generic_param_list(ASTNode *node);
     sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node, sir::Attributes *attrs);
     std::vector<sir::Expr> generate_expr_list(ASTNode *node);
-    std::vector<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
-    std::vector<sir::MapLiteralEntry> generate_map_literal_entries(ASTNode *node);
+    std::span<sir::Expr> generate_expr_span(ASTNode *node);
+    std::span<sir::StructLiteralEntry> generate_struct_literal_entries(ASTNode *node);
+    std::span<sir::MapLiteralEntry> generate_map_literal_entries(ASTNode *node);
     std::vector<sir::UnionCaseField> generate_union_case_fields(ASTNode *node);
     sir::Attributes *generate_attrs(ASTNode *node);
     char decode_char(std::string_view value, unsigned &index);
@@ -141,35 +142,26 @@ private:
     sir::UseItem generate_error_use_item(ASTNode *node);
 
     template <typename T>
-    T *create_trivial(T value) {
-        return cur_sir_mod->create_trivial(value);
+    T *create(T value) {
+        return cur_sir_mod->create(value);
     }
 
     template <typename T>
-    T *create_expr(T value) {
-        return cur_sir_mod->create_expr(value);
+    std::span<T> allocate_array(unsigned length) {
+        return cur_sir_mod->allocate_array<T>(length);
     }
 
     template <typename T>
-    T *create_stmt(T value) {
-        return cur_sir_mod->create_stmt(value);
+    std::span<T> create_array(std::span<T> values) {
+        return cur_sir_mod->create_array(std::move(values));
     }
 
     template <typename T>
-    T *create_decl(T value) {
-        return cur_sir_mod->create_decl(value);
+    std::span<T> create_array(std::initializer_list<T> values) {
+        return cur_sir_mod->create_array(std::move(values));
     }
 
-    template <typename T>
-    T *create_use_item(T value) {
-        return cur_sir_mod->create_use_item(value);
-    }
-
-    sir::SymbolTable *create_symbol_table(sir::SymbolTable value) {
-        return cur_sir_mod->create_symbol_table(std::move(value));
-    }
-
-    sir::Attributes *create_attrs(sir::Attributes value) { return cur_sir_mod->create_attrs(std::move(value)); }
+    std::string_view create_string(std::string_view value) { return cur_sir_mod->create_string(value); }
     sir::IdentExpr *generate_completion_token(ASTNode *node);
 };
 

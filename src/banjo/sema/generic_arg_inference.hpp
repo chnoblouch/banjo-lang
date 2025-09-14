@@ -4,6 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <span>
 #include <vector>
 
 namespace banjo {
@@ -18,7 +19,7 @@ private:
     SemanticAnalyzer &analyzer;
     const sir::Expr &expr;
     const std::vector<sir::GenericParam> &generic_params;
-    const std::vector<sir::Param> &params;
+    std::span<sir::Param> params;
 
     std::vector<sir::Expr> generic_args;
     std::vector<sir::Expr> inference_sources;
@@ -29,12 +30,12 @@ public:
         SemanticAnalyzer &analyzer,
         const sir::Expr &expr,
         const std::vector<sir::GenericParam> &generic_params,
-        const std::vector<sir::Param> &params
+        std::span<sir::Param> params
     );
 
     GenericArgInference(SemanticAnalyzer &analyzer, const sir::Expr &expr, const sir::FuncDef &func_def);
 
-    Result infer(const std::vector<sir::Expr> &args, std::vector<sir::Expr> &out_generic_args);
+    Result infer(std::span<sir::Expr> args, std::span<sir::Expr> &out_generic_args);
 
 private:
     Result infer(const sir::Expr &param_type, const sir::Expr &arg_type);

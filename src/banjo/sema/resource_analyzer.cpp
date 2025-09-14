@@ -245,7 +245,7 @@ void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         update_init_state(scopes.back(), resource, InitState::INITIALIZED);
     }
 
-    value = analyzer.create_trivial(
+    value = analyzer.create(
         sir::InitExpr{
             .ast_node = value.get_ast_node(),
             .type = value.get_type(),
@@ -282,11 +282,11 @@ void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
         bool conditional = i != 0;
         analyze_expr(cond_branch.condition, true, conditional);
 
-        child_scopes[i] = analyze_block(cond_branch.block);
+        child_scopes[i] = analyze_block(*cond_branch.block);
     }
 
     if (if_stmt.else_branch) {
-        child_scopes.push_back(analyze_block(if_stmt.else_branch->block));
+        child_scopes.push_back(analyze_block(*if_stmt.else_branch->block));
     }
 
     for (Scope &child_scope : child_scopes) {
@@ -296,17 +296,17 @@ void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
 
 void ResourceAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt) {
     std::vector<Scope> child_scopes{
-        analyze_block(try_stmt.success_branch.block),
+        analyze_block(*try_stmt.success_branch.block),
     };
 
     analyze_expr(try_stmt.success_branch.expr, false, false);
 
     if (try_stmt.except_branch) {
-        child_scopes.push_back(analyze_block(try_stmt.except_branch->block));
+        child_scopes.push_back(analyze_block(*try_stmt.except_branch->block));
     }
 
     if (try_stmt.else_branch) {
-        child_scopes.push_back(analyze_block(try_stmt.else_branch->block));
+        child_scopes.push_back(analyze_block(*try_stmt.else_branch->block));
     }
 
     for (Scope &child_scope : child_scopes) {
@@ -316,7 +316,7 @@ void ResourceAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt) {
 
 void ResourceAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
     std::vector<Scope> child_scopes{
-        analyze_block(loop_stmt.block, ScopeType::LOOP),
+        analyze_block(*loop_stmt.block, ScopeType::LOOP),
     };
 
     analyze_expr(loop_stmt.condition, false, false);
@@ -419,9 +419,9 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         sir::Expr type = expr.get_type();
 
         if (auto resource = create_resource(type)) {
-            sir::Resource *temporary_resource = analyzer.cur_sir_mod->create_resource(*resource);
+            sir::Resource *temporary_resource = analyzer.create(*resource);
 
-            expr = analyzer.create_trivial(
+            expr = analyzer.create(
                 sir::DeinitExpr{
                     .ast_node = expr.get_ast_node(),
                     .type = type,
@@ -576,7 +576,7 @@ Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context 
 Result ResourceAnalyzer::analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr) {
     if (!deinit_expr.resource) {
         if (std::optional<sir::Resource> resource = create_resource(deinit_expr.type)) {
-            deinit_expr.resource = analyzer.cur_sir_mod->create_resource(*resource);
+            deinit_expr.resource = analyzer.create(*resource);
         } else {
             out_expr = deinit_expr.value;
         }
@@ -615,7 +615,7 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
         move_sub_resources(resource, inout_expr, ctx);
         partially_move_super_resources(resource, inout_expr, ctx);
 
-        inout_expr = analyzer.create_trivial(
+        inout_expr = analyzer.create(
             sir::MoveExpr{
                 .ast_node = inout_expr.get_ast_node(),
                 .type = inout_expr.get_type(),

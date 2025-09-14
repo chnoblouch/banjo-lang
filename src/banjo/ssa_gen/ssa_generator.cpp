@@ -161,7 +161,7 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
 
 void SSAGenerator::create_struct_def(
     const sir::StructDef &sir_struct_def,
-    const std::vector<sir::Expr> *generic_args /* = nullptr */
+    const std::span<sir::Expr> *generic_args /* = nullptr */
 ) {
     if (sir_struct_def.is_generic()) {
         for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
@@ -183,7 +183,7 @@ void SSAGenerator::create_union_def(const sir::UnionDef &sir_union_def) {
 }
 
 void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
-    ssa::Structure *vtable_type = new ssa::Structure("vtable." + sir_proto_def.ident.value);
+    ssa::Structure *vtable_type = new ssa::Structure("vtable." + std::string{sir_proto_def.ident.value});
 
     for (unsigned i = 0; i < sir_proto_def.func_decls.size(); i++) {
         vtable_type->add(
@@ -204,7 +204,7 @@ void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
     ctx.ssa_globals.insert({&sir_var_decl, ssa_mod.get_globals().size()});
 
     ssa_mod.add(new ssa::Global{
-        .name = sir_var_decl.ident.value,
+        .name = std::string{sir_var_decl.ident.value},
         .type = {},
         .initial_value = {},
         .external = false,
@@ -214,7 +214,7 @@ void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
 void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
     ctx.ssa_extern_globals.insert({&sir_native_var_decl, ssa_mod.get_external_globals().size()});
 
-    std::string name = sir_native_var_decl.ident.value;
+    std::string name{sir_native_var_decl.ident.value};
     if (sir_native_var_decl.attrs && sir_native_var_decl.attrs->link_name) {
         name = *sir_native_var_decl.attrs->link_name;
     }

@@ -8,7 +8,7 @@ namespace sema {
 
 OverloadResolver::OverloadResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-sir::FuncDef *OverloadResolver::resolve(sir::OverloadSet &set, const std::vector<sir::Expr> &args) {
+sir::FuncDef *OverloadResolver::resolve(sir::OverloadSet &set, std::span<sir::Expr> args) {
     for (sir::FuncDef *func_def : set.func_defs) {
         if (is_matching_overload(*func_def, args)) {
             return func_def;
@@ -18,7 +18,7 @@ sir::FuncDef *OverloadResolver::resolve(sir::OverloadSet &set, const std::vector
     return nullptr;
 }
 
-bool OverloadResolver::is_matching_overload(sir::FuncDef &func_def, const std::vector<sir::Expr> &args) {
+bool OverloadResolver::is_matching_overload(sir::FuncDef &func_def, std::span<sir::Expr> args) {
     if (func_def.type.params.size() != args.size()) {
         return false;
     }

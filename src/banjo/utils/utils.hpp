@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <initializer_list>
 #include <optional>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -44,6 +45,21 @@ std::string convert_eol_to_lf(std::string_view string);
 
 LEB128Buffer encode_uleb128(std::uint64_t value);
 LEB128Buffer encode_sleb128(LargeInt value);
+
+template <typename T>
+bool equal(const std::span<T> &lhs, const std::span<T> &rhs) {
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+
+    for (unsigned i = 0; i < lhs.size(); i++) {
+        if (lhs[i] != rhs[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 template <typename T>
 std::vector<T> remove_duplicates(const std::vector<T> &array) {

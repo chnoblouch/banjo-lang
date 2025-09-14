@@ -3,6 +3,7 @@
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/utils.hpp"
 
 namespace banjo {
 
@@ -17,17 +18,17 @@ private:
 
 public:
     GenericsSpecializer(SemanticAnalyzer &analyzer);
-    sir::FuncDef *specialize(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args);
-    sir::StructDef *specialize(sir::StructDef &generic_struct_def, const std::vector<sir::Expr> &args);
+    sir::FuncDef *specialize(sir::FuncDef &generic_func_def, std::span<sir::Expr> args);
+    sir::StructDef *specialize(sir::StructDef &generic_struct_def, std::span<sir::Expr> args);
 
 private:
-    sir::FuncDef *create_specialized_clone(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args);
-    sir::StructDef *create_specialized_clone(sir::StructDef &generic_struct_def, const std::vector<sir::Expr> &args);
+    sir::FuncDef *create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args);
+    sir::StructDef *create_specialized_clone(sir::StructDef &generic_struct_def, std::span<sir::Expr> args);
 
     template <typename T>
-    T *find_existing_specialization(T &generic_def, const std::vector<sir::Expr> &args) {
+    T *find_existing_specialization(T &generic_def, std::span<sir::Expr> args) {
         for (sir::Specialization<T> &specialization : generic_def.specializations) {
-            if (specialization.args == args) {
+            if (Utils::equal(specialization.args, args)) {
                 return specialization.def;
             }
         }

@@ -158,33 +158,21 @@ private:
     void add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol);
 
     template <typename T>
-    T *create_trivial(T value) {
-        return cur_sir_mod->create_trivial(value);
+    T *create(T value) {
+        return cur_sir_mod->create(value);
     }
 
     template <typename T>
-    T *create_expr(T value) {
-        return cur_sir_mod->create_expr(value);
+    std::span<T> allocate_array(unsigned length) {
+        return cur_sir_mod->allocate_array<T>(length);
     }
 
     template <typename T>
-    T *create_stmt(T value) {
-        return cur_sir_mod->create_stmt(value);
+    std::span<T> create_array(std::initializer_list<T> values) {
+        return cur_sir_mod->create_array(std::move(values));
     }
 
-    template <typename T>
-    T *create_decl(T value) {
-        return cur_sir_mod->create_decl(value);
-    }
-
-    template <typename T>
-    T *create_use_item(T value) {
-        return cur_sir_mod->create_use_item(value);
-    }
-
-    sir::SymbolTable *create_symbol_table(sir::SymbolTable value) {
-        return cur_sir_mod->create_symbol_table(std::move(value));
-    }
+    std::string_view create_string(std::string_view value) { return cur_sir_mod->create_string(value); }
 };
 
 } // namespace sema

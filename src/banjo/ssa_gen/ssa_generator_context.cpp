@@ -205,13 +205,13 @@ ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_str
         return iter->second;
     }
 
-    ssa::Structure *ssa_struct = new ssa::Structure(sir_struct_def.ident.value);
+    ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_struct_def.ident.value});
     ssa_mod->add(ssa_struct);
 
     if (sir_struct_def.get_layout() == sir::Attributes::Layout::DEFAULT) {
         for (sir::StructField *sir_field : sir_struct_def.fields) {
             ssa_struct->add({
-                .name = sir_field->ident.value,
+                .name = std::string{sir_field->ident.value},
                 .type = TypeSSAGenerator(*this).generate(sir_field->type),
             });
         }
@@ -245,7 +245,7 @@ ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union
         return iter->second;
     }
 
-    ssa::Structure *ssa_struct = new ssa::Structure(sir_union_def.ident.value);
+    ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_union_def.ident.value});
     ssa_mod->add(ssa_struct);
 
     ssa_struct->add({
@@ -281,7 +281,7 @@ ssa::Structure *SSAGeneratorContext::create_union_case(const sir::UnionCase &sir
         return iter->second;
     }
 
-    ssa::Structure *ssa_struct = new ssa::Structure(sir_union_case.ident.value);
+    ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_union_case.ident.value});
     ssa_mod->add(ssa_struct);
 
     for (unsigned i = 0; i < sir_union_case.fields.size(); i++) {
@@ -341,7 +341,7 @@ const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::Stru
         const sir::Expr &impl = struct_def.impls[i];
         const sir::ProtoDef &proto_def = impl.as_symbol<sir::ProtoDef>();
 
-        std::string vtable_name = "vtable." + struct_def.ident.value + "." + std::to_string(i);
+        std::string vtable_name = "vtable." + std::string{struct_def.ident.value} + "." + std::to_string(i);
 
         for (unsigned j = 0; j < proto_def.func_decls.size(); j++) {
             sir::ProtoFuncDecl func_decl = proto_def.func_decls[j];

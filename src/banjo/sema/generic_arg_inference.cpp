@@ -15,7 +15,7 @@ GenericArgInference::GenericArgInference(
     SemanticAnalyzer &analyzer,
     const sir::Expr &expr,
     const std::vector<sir::GenericParam> &generic_params,
-    const std::vector<sir::Param> &params
+    std::span<sir::Param> params
 )
   : analyzer(analyzer),
     expr(expr),
@@ -33,7 +33,7 @@ GenericArgInference::GenericArgInference(
     ASSERT(func_def.is_generic());
 }
 
-Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vector<sir::Expr> &out_generic_args) {
+Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr> &out_generic_args) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
@@ -60,13 +60,13 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
     }
 
     if (has_sequence) {
-        std::vector<sir::Expr> sequence_types(num_sequence_args);
+        std::span<sir::Expr> sequence_types = analyzer.allocate_array<sir::Expr>(num_sequence_args);
 
         for (unsigned i = 0; i < num_sequence_args; i++) {
             sequence_types[i] = args[non_sequence_end + i].get_type();
         }
 
-        generic_args.back() = analyzer.create_expr(
+        generic_args.back() = analyzer.create(
             sir::TupleExpr{
                 .ast_node = nullptr,
                 .type = nullptr,
@@ -82,7 +82,8 @@ Result GenericArgInference::infer(const std::vector<sir::Expr> &args, std::vecto
         }
     }
 
-    out_generic_args = std::move(generic_args);
+    out_generic_args = analyzer.allocate_array<sir::Expr>(generic_args.size());
+    std::copy(generic_args.begin(), generic_args.end(), out_generic_args.begin());
     return result;
 }
 

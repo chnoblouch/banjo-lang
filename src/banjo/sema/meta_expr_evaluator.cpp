@@ -5,6 +5,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -20,7 +21,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     Result partial_result;
 
     sir::Expr base_expr = meta_field_expr.base.as<sir::MetaAccess>().expr;
-    const std::string &field_name = meta_field_expr.field.value;
+    std::string_view field_name = meta_field_expr.field.value;
 
     partial_result = ExprAnalyzer(analyzer).analyze(base_expr);
     if (partial_result != Result::SUCCESS) {
@@ -30,7 +31,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     base_expr = unwrap_expr(base_expr);
 
     if (field_name == "size") {
-        out_expr = analyzer.create_trivial(
+        out_expr = analyzer.create(
             sir::IntLiteral{
                 .ast_node = nullptr,
                 .type = nullptr,
@@ -63,7 +64,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
 Result MetaExprEvaluator::evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr) {
     sir::MetaFieldExpr field_expr = meta_call_expr.callee.as<sir::MetaFieldExpr>();
     sir::Expr base_expr = field_expr.base.as<sir::MetaAccess>().expr;
-    const std::string &callee_name = field_expr.field.value;
+    std::string_view callee_name = field_expr.field.value;
 
     ExprAnalyzer(analyzer).analyze(base_expr);
     base_expr = unwrap_expr(base_expr);
@@ -100,7 +101,7 @@ sir::Expr MetaExprEvaluator::compute_fields(sir::Expr &type) {
         return create_array_literal({});
     }
 
-    std::vector<sir::Expr> fields(struct_def->fields.size());
+    std::span<sir::Expr> fields = analyzer.allocate_array<sir::Expr>(struct_def->fields.size());
 
     for (unsigned i = 0; i < struct_def->fields.size(); i++) {
         sir::StructField *field = struct_def->fields[i];
@@ -121,19 +122,19 @@ sir::Expr MetaExprEvaluator::compute_variants(sir::Expr &type) {
         return create_array_literal({});
     }
 
-    std::vector<sir::Expr> variants(enum_def->variants.size());
+    std::span<sir::Expr> variants = analyzer.allocate_array<sir::Expr>(enum_def->variants.size());
 
     for (unsigned i = 0; i < enum_def->variants.size(); i++) {
         sir::EnumVariant *variant = enum_def->variants[i];
 
-        variants[i] = analyzer.create_expr(
+        variants[i] = analyzer.create(
             sir::TupleExpr{
                 .ast_node = nullptr,
                 .type = nullptr,
-                .exprs{
+                .exprs = analyzer.create_array<sir::Expr>({
                     create_string_literal(variant->ident.value),
                     variant->value,
-                },
+                }),
             }
         );
     }
@@ -141,14 +142,14 @@ sir::Expr MetaExprEvaluator::compute_variants(sir::Expr &type) {
     return create_array_literal(variants);
 }
 
-sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, const std::vector<sir::Expr> &args) {
+sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, std::span<sir::Expr> args) {
     // TODO: Proper error reporting
 
     if (args.size() != 1 || !args[0].is<sir::StringLiteral>()) {
         return create_bool_literal(false);
     }
 
-    const std::string &name = args[0].as<sir::StringLiteral>().value;
+    std::string_view name = args[0].as<sir::StringLiteral>().value;
 
     if (auto struct_def = type.match_symbol<sir::StructDef>()) {
         sir::Symbol symbol = struct_def->block.symbol_table->look_up_local(name);
@@ -161,29 +162,29 @@ sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, const std::vect
     return create_bool_literal(false);
 }
 
-sir::Expr MetaExprEvaluator::compute_field(sir::Expr &base, const std::vector<sir::Expr> &args) {
+sir::Expr MetaExprEvaluator::compute_field(sir::Expr &base, std::span<sir::Expr> args) {
     // TODO: Proper error reporting
 
     if (args.size() != 1 || !args[0].is<sir::StringLiteral>()) {
         return create_bool_literal(false);
     }
 
-    std::string name = args[0].as<sir::StringLiteral>().value;
+    std::string_view name = args[0].as<sir::StringLiteral>().value;
 
-    return analyzer.create_expr(
+    return analyzer.create(
         sir::DotExpr{
             .ast_node = nullptr,
             .lhs = base,
             .rhs{
                 .ast_node = nullptr,
-                .value = name,
+                .value = analyzer.create_string(name),
             },
         }
     );
 }
 
 sir::Expr MetaExprEvaluator::create_bool_literal(bool value) {
-    return analyzer.create_trivial(
+    return analyzer.create(
         sir::BoolLiteral{
             .ast_node = nullptr,
             .type = nullptr,
@@ -192,22 +193,22 @@ sir::Expr MetaExprEvaluator::create_bool_literal(bool value) {
     );
 }
 
-sir::Expr MetaExprEvaluator::create_array_literal(std::vector<sir::Expr> values) {
-    return analyzer.create_expr(
+sir::Expr MetaExprEvaluator::create_array_literal(std::span<sir::Expr> values) {
+    return analyzer.create(
         sir::ArrayLiteral{
             .ast_node = nullptr,
             .type = nullptr,
-            .values = std::move(values),
+            .values = values,
         }
     );
 }
 
-sir::Expr MetaExprEvaluator::create_string_literal(std::string value) {
-    return analyzer.create_expr(
+sir::Expr MetaExprEvaluator::create_string_literal(std::string_view value) {
+    return analyzer.create(
         sir::StringLiteral{
             .ast_node = nullptr,
             .type = nullptr,
-            .value = std::move(value),
+            .value = analyzer.create_string(value),
         }
     );
 }

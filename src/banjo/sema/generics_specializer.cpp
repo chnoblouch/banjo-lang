@@ -16,7 +16,7 @@ namespace sema {
 
 GenericsSpecializer::GenericsSpecializer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, const std::vector<sir::Expr> &args) {
+sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, std::span<sir::Expr> args) {
     ASSERT(args.size() == generic_func_def.generic_params.size());
 
     if (sir::FuncDef *existing_specialization = find_existing_specialization(generic_func_def, args)) {
@@ -26,10 +26,7 @@ sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, co
     }
 }
 
-sir::StructDef *GenericsSpecializer::specialize(
-    sir::StructDef &generic_struct_def,
-    const std::vector<sir::Expr> &args
-) {
+sir::StructDef *GenericsSpecializer::specialize(sir::StructDef &generic_struct_def, std::span<sir::Expr> args) {
     ASSERT(args.size() == generic_struct_def.generic_params.size());
 
     if (sir::StructDef *existing_specialization = find_existing_specialization(generic_struct_def, args)) {
@@ -39,17 +36,14 @@ sir::StructDef *GenericsSpecializer::specialize(
     }
 }
 
-sir::FuncDef *GenericsSpecializer::create_specialized_clone(
-    sir::FuncDef &generic_func_def,
-    const std::vector<sir::Expr> &args
-) {
+sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args) {
     sir::Module &def_mod = generic_func_def.find_mod();
     sir::Cloner cloner(def_mod);
 
-    sir::FuncDef *clone = def_mod.create_decl(
+    sir::FuncDef *clone = def_mod.create(
         sir::FuncDef{
             .ast_node = generic_func_def.ast_node,
-            .ident = generic_func_def.ident,
+            .ident = cloner.clone_ident(generic_func_def.ident),
             .type = *cloner.clone_func_type(generic_func_def.type),
             .block = cloner.clone_block(generic_func_def.block),
             .generic_params = {},
@@ -97,15 +91,15 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(
 
 sir::StructDef *GenericsSpecializer::create_specialized_clone(
     sir::StructDef &generic_struct_def,
-    const std::vector<sir::Expr> &args
+    std::span<sir::Expr> args
 ) {
     sir::Module &def_mod = generic_struct_def.find_mod();
     sir::Cloner cloner(def_mod);
 
-    sir::StructDef *clone = def_mod.create_decl(
+    sir::StructDef *clone = def_mod.create(
         sir::StructDef{
             .ast_node = generic_struct_def.ast_node,
-            .ident = generic_struct_def.ident,
+            .ident = cloner.clone_ident(generic_struct_def.ident),
             .block = cloner.clone_decl_block(generic_struct_def.block),
             .generic_params = {},
             .specializations = {},

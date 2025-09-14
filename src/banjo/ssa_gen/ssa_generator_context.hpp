@@ -39,7 +39,7 @@ public:
     struct DeclContext {
         const sir::Module *sir_mod = nullptr;
         const sir::StructDef *sir_struct_def = nullptr;
-        const std::vector<sir::Expr> *sir_generic_args = nullptr;
+        const std::span<sir::Expr> *sir_generic_args = nullptr;
     };
 
     struct FuncContext {

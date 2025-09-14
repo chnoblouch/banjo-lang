@@ -36,11 +36,11 @@ ReturnChecker::Result ReturnChecker::check_if_stmt(sir::IfStmt &if_stmt) {
     bool has_any_return = false;
 
     for (sir::IfCondBranch &branch : if_stmt.cond_branches) {
-        check_if_stmt_branch(branch.block, returns_always, has_any_return);
+        check_if_stmt_branch(*branch.block, returns_always, has_any_return);
     }
 
     if (if_stmt.else_branch) {
-        check_if_stmt_branch(if_stmt.else_branch->block, returns_always, has_any_return);
+        check_if_stmt_branch(*if_stmt.else_branch->block, returns_always, has_any_return);
     } else {
         returns_always = false;
     }

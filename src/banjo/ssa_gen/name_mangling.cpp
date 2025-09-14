@@ -19,17 +19,17 @@ std::string get_link_name(const sir::FuncDef &func) {
     } else if (func.is_main() && !Config::instance().testing) {
         return "main";
     } else if (func.attrs && (func.attrs->exposed || func.attrs->dllexport)) {
-        return func.ident.value;
+        return std::string{func.ident.value};
     } else {
         return mangle_func_name(func);
     }
 }
 
-const std::string &get_link_name(const sir::NativeFuncDecl &func) {
+std::string get_link_name(const sir::NativeFuncDecl &func) {
     if (func.attrs && func.attrs->link_name) {
         return *func.attrs->link_name;
     } else {
-        return func.ident.value;
+        return std::string{func.ident.value};
     }
 }
 
@@ -137,7 +137,7 @@ std::string mangle_func_name(const sir::FuncDef &func) {
         }
     }
 
-    // string += std::to_string(std::rand());
+    string += std::to_string(std::rand());
 
     return string;
 }

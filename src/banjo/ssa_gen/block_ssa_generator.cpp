@@ -142,7 +142,7 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
         ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
 
         ctx.append_block(ssa_target_if_true);
-        generate_block(sir_branch.block);
+        generate_block(*sir_branch.block);
         ctx.append_jmp(ssa_end_block);
 
         if (!is_final_branch) {
@@ -151,7 +151,7 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
     }
 
     if (if_stmt.else_branch) {
-        generate_block(if_stmt.else_branch->block);
+        generate_block(*if_stmt.else_branch->block);
         ctx.append_jmp(ssa_end_block);
     }
 
@@ -181,7 +181,7 @@ void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt)
         ctx.append_cjmp(ssa_tag, ssa::Comparison::EQ, ssa_tag_value, ssa_target_if_true, ssa_target_if_false);
         ctx.append_block(ssa_target_if_true);
 
-        generate_block_allocas(sir_branch.block);
+        generate_block_allocas(*sir_branch.block);
 
         ssa::Type ssa_case_type = TypeSSAGenerator(ctx).generate(sir_branch.local.type);
         ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 1);
@@ -189,7 +189,7 @@ void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt)
         ssa::VirtualRegister ssa_local_reg = ctx.ssa_local_regs[&sir_branch.local];
         ssa_data_ptr.copy_to(ssa_local_reg, ctx);
 
-        generate_block_body(sir_branch.block);
+        generate_block_body(*sir_branch.block);
         ctx.append_jmp(ssa_end_block);
 
         if (!is_final_branch) {
@@ -212,13 +212,13 @@ void BlockSSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
     ExprSSAGenerator(ctx).generate_branch(loop_stmt.condition, {ssa_body_entry_block, ssa_end_block});
 
     ctx.push_loop_context({
-        .sir_block = &loop_stmt.block,
+        .sir_block = loop_stmt.block,
         .ssa_continue_target = loop_stmt.latch ? ssa_latch_block : ssa_cond_block,
         .ssa_break_target = ssa_end_block,
     });
 
     ctx.append_block(ssa_body_entry_block);
-    generate_block(loop_stmt.block);
+    generate_block(*loop_stmt.block);
 
     ctx.pop_loop_context();
 

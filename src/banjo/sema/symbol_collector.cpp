@@ -1,9 +1,9 @@
 #include "symbol_collector.hpp"
 
+#include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/sema/completion_context.hpp"
 
 namespace banjo {
 
@@ -73,9 +73,11 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     if (!cur_entry) {
         cur_entry = &func_def;
     } else if (auto cur_func_def = cur_entry.match<sir::FuncDef>()) {
-        cur_entry = analyzer.cur_sir_mod->create_overload_set({
-            .func_defs = {cur_func_def, &func_def},
-        });
+        cur_entry = analyzer.create(
+            sir::OverloadSet{
+                .func_defs = {cur_func_def, &func_def},
+            }
+        );
     } else if (auto cur_overload_set = cur_entry.match<sir::OverloadSet>()) {
         cur_overload_set->func_defs.push_back(&func_def);
     }
@@ -84,9 +86,11 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
         if (func_def.is_method()) {
-            proto_def->func_decls.push_back(sir::ProtoFuncDecl{
-                .decl = &func_def,
-            });
+            proto_def->func_decls.push_back(
+                sir::ProtoFuncDecl{
+                    .decl = &func_def,
+                }
+            );
         }
     }
 }
@@ -97,9 +101,11 @@ void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
     analyzer.add_symbol_def(&func_decl);
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
-        proto_def->func_decls.push_back(sir::ProtoFuncDecl{
-            .decl = &func_decl,
-        });
+        proto_def->func_decls.push_back(
+            sir::ProtoFuncDecl{
+                .decl = &func_decl,
+            }
+        );
     }
 }
 

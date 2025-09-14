@@ -88,7 +88,7 @@ sir::Expr ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_litera
     sir::ArrayLiteral result{
         .ast_node = array_literal.ast_node,
         .type = clone(array_literal.type),
-        .values = std::vector<sir::Expr>(array_literal.values.size()),
+        .values = analyzer.allocate_array<sir::Expr>(array_literal.values.size()),
     };
 
     for (unsigned i = 0; i < array_literal.values.size(); i++) {
@@ -100,7 +100,7 @@ sir::Expr ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_litera
         result.values[i] = value;
     }
 
-    return analyzer.create_expr(result);
+    return analyzer.create(result);
 }
 
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
@@ -182,7 +182,7 @@ sir::Expr ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {
     sir::TupleExpr result{
         .ast_node = tuple_expr.ast_node,
         .type = clone(tuple_expr.type),
-        .exprs = std::vector<sir::Expr>(tuple_expr.exprs.size()),
+        .exprs = analyzer.allocate_array<sir::Expr>(tuple_expr.exprs.size()),
     };
 
     for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
@@ -194,7 +194,7 @@ sir::Expr ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {
         result.exprs[i] = value;
     }
 
-    return analyzer.create_expr(result);
+    return analyzer.create(result);
 }
 
 sir::Expr ConstEvaluator::evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
@@ -221,7 +221,7 @@ sir::Expr ConstEvaluator::create_int_literal(LargeInt value, ASTNode *ast_node /
         .value = value,
     };
 
-    return analyzer.create_trivial(int_literal);
+    return analyzer.create(int_literal);
 }
 
 sir::Expr ConstEvaluator::create_fp_literal(double value, ASTNode *ast_node /*= nullptr*/) {
@@ -231,7 +231,7 @@ sir::Expr ConstEvaluator::create_fp_literal(double value, ASTNode *ast_node /*= 
         .value = value,
     };
 
-    return analyzer.create_trivial(fp_literal);
+    return analyzer.create(fp_literal);
 }
 
 sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= nullptr*/) {
@@ -241,7 +241,7 @@ sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= 
         .value = value,
     };
 
-    return analyzer.create_trivial(bool_literal);
+    return analyzer.create(bool_literal);
 }
 
 sir::Expr ConstEvaluator::clone(sir::Expr expr) {

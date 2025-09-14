@@ -6,8 +6,20 @@ namespace lang {
 
 ModulePath::ModulePath() {}
 
+ModulePath::ModulePath(std::initializer_list<std::string_view> elements) {
+    for (std::string_view element : elements) {
+        append(element);
+    }
+}
+
 ModulePath::ModulePath(std::initializer_list<std::string> elements) {
     for (const std::string &element : elements) {
+        append(element);
+    }
+}
+
+ModulePath::ModulePath(std::initializer_list<const char *> elements) {
+    for (const char *element : elements) {
         append(element);
     }
 }
