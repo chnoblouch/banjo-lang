@@ -1464,7 +1464,7 @@ std::span<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries
             entries[index] = sir::StructLiteralEntry{
                 .ident{
                     .ast_node = child,
-                    .value = std::string(sir::COMPLETION_TOKEN_VALUE),
+                    .value = sir::COMPLETION_TOKEN_VALUE,
                 },
                 .value = create(
                     sir::Error{
@@ -1574,7 +1574,7 @@ sir::IdentExpr *SIRGenerator::generate_completion_token(ASTNode *node) {
     return create(
         sir::IdentExpr{
             .ast_node = node,
-            .value = std::string(sir::COMPLETION_TOKEN_VALUE),
+            .value = sir::COMPLETION_TOKEN_VALUE,
         }
     );
 }
