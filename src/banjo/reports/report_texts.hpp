@@ -38,8 +38,16 @@ public:
     ReportText &format(const std::vector<sir::Expr> &exprs);
     ReportText &format(const std::vector<sir::GenericParam> &generic_params);
 
-public:
     static std::string to_string(const sir::Expr &expr);
+
+private:
+    static std::string func_type_to_string(const sir::FuncType &func_type);
+    static std::string symbol_to_string(sir::Symbol symbol);
+    static std::string tuple_expr_to_string(const sir::TupleExpr &tuple_expr);
+    static std::string primitive_to_string(sir::Primitive primitive);
+    static std::string closure_type_to_string(const sir::ClosureType &closure_type);
+    static std::string reference_type_to_string(const sir::ReferenceType &reference_type);
+    static std::string pseudo_type_to_string(sir::PseudoTypeKind pseudo_type);
 };
 
 } // namespace lang

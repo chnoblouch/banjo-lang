@@ -1,6 +1,7 @@
 #include "report_texts.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 
 #include <string>
 
@@ -111,104 +112,174 @@ ReportText &ReportText::format(const std::vector<sir::GenericParam> &generic_par
 }
 
 std::string ReportText::to_string(const sir::Expr &expr) {
-    if (!expr || expr.is<sir::Error>()) {
-        return "invalid";
-    } else if (auto int_literal = expr.match<sir::IntLiteral>()) {
-        return int_literal->value.to_string();
-    } else if (auto fp_literal = expr.match<sir::FPLiteral>()) {
-        return std::to_string(fp_literal->value);
-    } else if (auto primitive_type = expr.match<sir::PrimitiveType>()) {
-        switch (primitive_type->primitive) {
-            case sir::Primitive::I8: return "i8";
-            case sir::Primitive::I16: return "i16";
-            case sir::Primitive::I32: return "i32";
-            case sir::Primitive::I64: return "i64";
-            case sir::Primitive::U8: return "u8";
-            case sir::Primitive::U16: return "u16";
-            case sir::Primitive::U32: return "u32";
-            case sir::Primitive::U64: return "u64";
-            case sir::Primitive::USIZE: return "usize";
-            case sir::Primitive::F32: return "f32";
-            case sir::Primitive::F64: return "f64";
-            case sir::Primitive::BOOL: return "bool";
-            case sir::Primitive::ADDR: return "addr";
-            case sir::Primitive::VOID: return "void";
+    SIR_VISIT_EXPR(
+        expr,
+        return "invalid",
+        return inner->value.to_string(),
+        return std::to_string(inner->value),
+        return inner->value ? "true" : "false",
+        return "<char literal>",
+        return "null",
+        return "none",
+        return "undefined",
+        return "<array literal>",
+        return "<string literal>",
+        return "<struct literal>",
+        return "<union case literal>",
+        return "<map literal>",
+        return "<closure literal>",
+        return symbol_to_string(inner->symbol),
+        return "<binary expr>",
+        return "<unary expr>",
+        return "<cast expr>",
+        return "<index expr>",
+        return "<call expr>",
+        return "<field expr>",
+        return "<range expr>",
+        return tuple_expr_to_string(*inner),
+        return "<coercion expr>",
+        return primitive_to_string(inner->primitive),
+        return "*" + to_string(inner->base_type),
+        return "[" + to_string(inner->base_type) + "; " + to_string(inner->length) + "]",
+        return func_type_to_string(*inner),
+        return "<optional type>",
+        return "<result type>",
+        return "<array type>",
+        return "<map type>",
+        return closure_type_to_string(*inner),
+        return reference_type_to_string(*inner),
+        return "<ident expr>",
+        return "<star expr>",
+        return "<bracket expr>",
+        return "<dot expr>",
+        return pseudo_type_to_string(inner->kind),
+        return "<meta access expr>",
+        return "<meta field expr>",
+        return "<meta call expr>",
+        return "<init expr>",
+        return "<move expr>",
+        return "<deinit expr>",
+        return "invalid"
+    );
+}
+
+std::string ReportText::func_type_to_string(const sir::FuncType &func_type) {
+    std::string str = "func(";
+
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
+        str += to_string(func_type.params[i].type);
+
+        if (i != func_type.params.size() - 1) {
+            str += ", ";
         }
-    } else if (auto pointer_type = expr.match<sir::PointerType>()) {
-        return "*" + to_string(pointer_type->base_type);
-    } else if (auto static_array_type = expr.match<sir::StaticArrayType>()) {
-        return "[" + to_string(static_array_type->base_type) + "; " + to_string(static_array_type->length) + "]";
-    } else if (auto func_type = expr.match<sir::FuncType>()) {
-        std::string params_str = "";
+    }
 
-        for (unsigned i = 0; i < func_type->params.size(); i++) {
-            params_str += to_string(func_type->params[i].type);
-            if (i != func_type->params.size() - 1) {
-                params_str += ", ";
-            }
-        }
+    str += ")";
 
-        std::string str = "func(" + params_str + ")";
+    if (!func_type.return_type.is_primitive_type(sir::Primitive::VOID)) {
+        str += " -> " + to_string(func_type.return_type);
+    }
 
-        if (!func_type->return_type.is_primitive_type(sir::Primitive::VOID)) {
-            str += " -> " + to_string(func_type->return_type);
-        }
+    return str;
+}
 
-        return str;
-    } else if (auto symbol = expr.match<sir::SymbolExpr>()) {
-        std::string str = symbol->symbol.get_name();
+std::string ReportText::symbol_to_string(sir::Symbol symbol) {
+    std::string str = symbol.get_name();
 
-        if (auto struct_def = symbol->symbol.match<sir::StructDef>()) {
-            if (struct_def->parent_specialization) {
-                std::span<sir::Expr> generic_args = struct_def->parent_specialization->args;
+    if (auto struct_def = symbol.match<sir::StructDef>()) {
+        if (struct_def->parent_specialization) {
+            std::span<sir::Expr> generic_args = struct_def->parent_specialization->args;
 
-                str += "[";
+            str += "[";
 
-                for (unsigned i = 0; i < generic_args.size(); i++) {
-                    str += to_string(generic_args[i]);
-                    if (i != generic_args.size() - 1) {
-                        str += ", ";
-                    }
+            for (unsigned i = 0; i < generic_args.size(); i++) {
+                str += to_string(generic_args[i]);
+                if (i != generic_args.size() - 1) {
+                    str += ", ";
                 }
-
-                str += "]";
             }
-        }
 
-        return str;
-    } else if (auto tuple_expr = expr.match<sir::TupleExpr>()) {
-        std::string str = "(";
+            str += "]";
+        }
+    }
 
-        for (unsigned i = 0; i < tuple_expr->exprs.size(); i++) {
-            str += to_string(tuple_expr->exprs[i]);
-            if (i != tuple_expr->exprs.size() - 1) {
-                str += ", ";
-            }
-        }
+    return str;
+}
 
-        str += ")";
-        return str;
-    } else if (auto reference_type = expr.match<sir::ReferenceType>()) {
-        if (reference_type->mut) {
-            return "ref mut " + to_string(reference_type->base_type);
-        } else {
-            return "ref " + to_string(reference_type->base_type);
+std::string ReportText::tuple_expr_to_string(const sir::TupleExpr &tuple_expr) {
+    std::string str = "(";
+
+    for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
+        str += to_string(tuple_expr.exprs[i]);
+
+        if (i != tuple_expr.exprs.size() - 1) {
+            str += ", ";
         }
-    } else if (auto pseudo_type = expr.match<sir::PseudoType>()) {
-        switch (pseudo_type->kind) {
-            case sir::PseudoTypeKind::INT_LITERAL: return "integer literal";
-            case sir::PseudoTypeKind::FP_LITERAL: return "float literal";
-            case sir::PseudoTypeKind::NULL_LITERAL: return "null";
-            case sir::PseudoTypeKind::NONE_LITERAL: return "none";
-            case sir::PseudoTypeKind::UNDEFINED_LITERAL: return "undefined";
-            case sir::PseudoTypeKind::STRING_LITERAL: return "string literal";
-            case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
-            case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
+    }
+
+    str += ")";
+    return str;
+}
+
+std::string ReportText::primitive_to_string(sir::Primitive primitive) {
+    switch (primitive) {
+        case sir::Primitive::I8: return "i8";
+        case sir::Primitive::I16: return "i16";
+        case sir::Primitive::I32: return "i32";
+        case sir::Primitive::I64: return "i64";
+        case sir::Primitive::U8: return "u8";
+        case sir::Primitive::U16: return "u16";
+        case sir::Primitive::U32: return "u32";
+        case sir::Primitive::U64: return "u64";
+        case sir::Primitive::USIZE: return "usize";
+        case sir::Primitive::F32: return "f32";
+        case sir::Primitive::F64: return "f64";
+        case sir::Primitive::BOOL: return "bool";
+        case sir::Primitive::ADDR: return "addr";
+        case sir::Primitive::VOID: return "void";
+    }
+}
+
+std::string ReportText::closure_type_to_string(const sir::ClosureType &closure_type) {
+    const sir::FuncType &func_type = closure_type.func_type;
+
+    std::string str = "|";
+
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
+        str += to_string(func_type.params[i].type);
+
+        if (i != func_type.params.size() - 1) {
+            str += ", ";
         }
-    } else if (auto ident_expr = expr.match<sir::IdentExpr>()) {
-        return std::string{ident_expr->value};
+    }
+
+    str += "|";
+
+    if (!func_type.return_type.is_primitive_type(sir::Primitive::VOID)) {
+        str += " -> " + to_string(func_type.return_type);
+    }
+
+    return str;
+}
+
+std::string ReportText::reference_type_to_string(const sir::ReferenceType &reference_type) {
+    if (reference_type.mut) {
+        return "ref mut " + to_string(reference_type.base_type);
     } else {
-        return "<unknown>";
+        return "ref " + to_string(reference_type.base_type);
+    }
+}
+
+std::string ReportText::pseudo_type_to_string(sir::PseudoTypeKind pseudo_type) {
+    switch (pseudo_type) {
+        case sir::PseudoTypeKind::INT_LITERAL: return "integer literal";
+        case sir::PseudoTypeKind::FP_LITERAL: return "float literal";
+        case sir::PseudoTypeKind::NULL_LITERAL: return "null";
+        case sir::PseudoTypeKind::NONE_LITERAL: return "none";
+        case sir::PseudoTypeKind::UNDEFINED_LITERAL: return "undefined";
+        case sir::PseudoTypeKind::STRING_LITERAL: return "string literal";
+        case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
+        case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
     }
 }
 

@@ -424,7 +424,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 
     sir::FuncDef *generated_func = analyzer.create(
         sir::FuncDef{
-            .ast_node = nullptr,
+            .ast_node = closure_literal.ast_node,
             .ident{
                 .ast_node = nullptr,
                 .value = "",
@@ -517,6 +517,8 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
             ),
         }
     );
+
+    analyze_func_type(closure_literal.func_type);
 
     out_expr = analyzer.create(
         sir::CallExpr{
@@ -1184,12 +1186,25 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
     return result;
 }
 
-void ExprAnalyzer::analyze_func_type(sir::FuncType &func_type) {
+Result ExprAnalyzer::analyze_func_type(sir::FuncType &func_type) {
+    Result result = Result::SUCCESS;
+    Result partial_result;
+    
     for (sir::Param &param : func_type.params) {
-        ExprAnalyzer(analyzer).analyze_type(param.type);
+        partial_result = ExprAnalyzer(analyzer).analyze_type(param.type);
+        
+        if (partial_result != Result::SUCCESS) {
+            result = Result::ERROR;
+        }
     }
 
-    ExprAnalyzer(analyzer).analyze_type(func_type.return_type);
+    partial_result = ExprAnalyzer(analyzer).analyze_type(func_type.return_type);
+
+    if (partial_result != Result::SUCCESS) {
+        result = Result::ERROR;
+    }
+
+    return result;
 }
 
 Result ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr) {
@@ -1275,7 +1290,7 @@ Result ExprAnalyzer::analyze_map_type(sir::MapType &map_type, sir::Expr &out_exp
 Result ExprAnalyzer::analyze_closure_type(sir::ClosureType &closure_type) {
     sir::StructDef &std_closure_def = analyzer.find_std_closure().as<sir::StructDef>();
     closure_type.underlying_struct = &std_closure_def;
-    return Result::SUCCESS;
+    return analyze_func_type(closure_type.func_type);
 }
 
 Result ExprAnalyzer::analyze_reference_type(sir::ReferenceType &reference_type) {
@@ -1403,7 +1418,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     if (!symbol && closure_ctx) {
         symbol = closure_ctx->parent_block->symbol_table->look_up(ident_expr.value);
 
-        if (symbol) {
+        if (symbol.is_one_of<sir::Local, sir::Param>()) {
             unsigned captured_var_index = 0;
             bool captured_var_exists = false;
 

@@ -1,0 +1,9 @@
+# test:compiles
+
+struct S {}
+
+func main() {
+    var c = || {
+        var s = S {};
+    };
+}

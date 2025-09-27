@@ -48,7 +48,7 @@ private:
     Result analyze_range_expr(sir::RangeExpr &range_expr);
     void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     Result analyze_static_array_type(sir::StaticArrayType &static_array_type);
-    void analyze_func_type(sir::FuncType &func_type);
+    Result analyze_func_type(sir::FuncType &func_type);
     Result analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr);
     Result analyze_result_type(sir::ResultType &result_type, sir::Expr &out_expr);
     Result analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr);
