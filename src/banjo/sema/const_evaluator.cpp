@@ -16,8 +16,8 @@ ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) 
 
 LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
     sir::Expr result = evaluate(expr);
-    if (result) {
-        return result.as<sir::IntLiteral>().value;
+    if (auto int_literal = result.match<sir::IntLiteral>()) {
+        return int_literal->value;
     } else {
         return 0;
     }
@@ -25,8 +25,8 @@ LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
 
 bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
     sir::Expr result = evaluate(expr);
-    if (result) {
-        return result.as<sir::BoolLiteral>().value;
+    if (auto bool_literal = result.match<sir::BoolLiteral>()) {
+        return bool_literal->value;
     } else {
         return false;
     };
@@ -69,17 +69,17 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // map_type
         return expr,                             // closure_type
         return expr,                             // reference_type
-        SIR_VISIT_IMPOSSIBLE,                    // ident_expr
-        SIR_VISIT_IMPOSSIBLE,                    // star_expr
-        SIR_VISIT_IMPOSSIBLE,                    // bracket_expr
-        SIR_VISIT_IMPOSSIBLE,                    // dot_expr
-        SIR_VISIT_IMPOSSIBLE,                    // pseudo_tpe
-        SIR_VISIT_IMPOSSIBLE,                    // meta_access
+        return expr,                             // ident_expr
+        return expr,                             // star_expr
+        return expr,                             // bracket_expr
+        return expr,                             // dot_expr
+        return expr,                             // pseudo_tpe
+        return expr,                             // meta_access
         return evaluate_meta_field_expr(*inner), // meta_field_expr
         return evaluate_meta_call_expr(*inner),  // meta_call_expr
-        SIR_VISIT_IMPOSSIBLE,                    // init_expr
-        SIR_VISIT_IMPOSSIBLE,                    // move_expr
-        SIR_VISIT_IMPOSSIBLE,                    // deinit_expr
+        return expr,                             // init_expr
+        return expr,                             // move_expr
+        return expr,                             // deinit_expr
         return nullptr                           // error
     );
 }

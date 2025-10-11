@@ -20,10 +20,9 @@ private:
 public:
     Printer(std::ostream &stream);
     void print(const Unit &unit);
-
-private:
     void print_mod(const Module &mod);
 
+private:
     void print_decl_block(const DeclBlock &decl_block);
     void print_decl(const Decl &decl);
     void print_func_def(const FuncDef &func_def);

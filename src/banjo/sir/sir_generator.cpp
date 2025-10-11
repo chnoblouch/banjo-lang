@@ -771,6 +771,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_CAST: return generate_cast_expr(node);
         case AST_FUNCTION_CALL: return generate_call_expr(node);
         case AST_DOT_OPERATOR: return generate_dot_expr(node);
+        case AST_IMPLICIT_DOT_OPERATOR: return generate_implicit_dot_expr(node);
         case AST_ARRAY_ACCESS: return generate_bracket_expr(node);
         case AST_RANGE: return generate_range_expr(node);
         case AST_TUPLE_EXPR: return generate_tuple_expr(node);
@@ -1040,6 +1041,27 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
             .rhs = rhs,
         });
     }
+}
+
+sir::Expr SIRGenerator::generate_implicit_dot_expr(ASTNode *node) {
+    ASTNode *rhs_node = node->first_child;
+
+    sir::Ident rhs;
+
+    if (rhs_node->type == AST_IDENTIFIER) {
+        rhs = generate_ident(rhs_node);
+    } else if (rhs_node->type == AST_COMPLETION_TOKEN) {
+        rhs = {
+            .ast_node = rhs_node,
+            .value = sir::COMPLETION_TOKEN_VALUE,
+        };
+    }
+
+    return create(sir::DotExpr{
+        .ast_node = node,
+        .lhs = nullptr,
+        .rhs = rhs,
+    });
 }
 
 sir::Expr SIRGenerator::generate_bracket_expr(ASTNode *node) {

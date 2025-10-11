@@ -23,6 +23,10 @@ struct CompleteAfterDot {
     sir::Expr lhs;
 };
 
+struct CompleteAfterImplicitDot {
+    sir::Expr type;
+};
+
 struct CompleteInUse {};
 
 struct CompleteAfterUseDot {
@@ -38,6 +42,7 @@ typedef std::variant<
     CompleteInDeclBlock,
     CompleteInBlock,
     CompleteAfterDot,
+    CompleteAfterImplicitDot,
     CompleteInUse,
     CompleteAfterUseDot,
     CompleteInStructLiteral>

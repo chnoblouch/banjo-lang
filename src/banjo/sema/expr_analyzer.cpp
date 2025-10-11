@@ -1526,6 +1526,10 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
 }
 
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
+    if (!dot_expr.lhs) {
+        return Result::SUCCESS;
+    }
+
     Result result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
     if (result != Result::SUCCESS) {
         return result;
@@ -1895,6 +1899,10 @@ sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
 }
 
 bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
+    if (auto dot_expr = value.match<sir::DotExpr>()) {
+        return !dot_expr->lhs;
+    }
+
     return value.is<sir::IntLiteral>() || value.is<sir::FPLiteral>() || value.is<sir::NullLiteral>();
 }
 

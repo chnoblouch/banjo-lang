@@ -1,0 +1,44 @@
+# test:common
+
+enum Fruit {
+	APPLE,
+	PEAR,
+	BANANA,
+}
+
+# test:subtest
+# test:output "0,2"
+
+func main() {
+    var a: Fruit = .APPLE;
+    var b: Fruit = .BANANA;
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+}
+
+# test:subtest
+# test:output "1,0"
+
+func output(fruit: Fruit) {
+    print(fruit as u32);
+}
+
+func main() {
+    output(.PEAR);
+    print(',');
+    output(.APPLE);
+}
+
+# test:subtest
+# test:output "false,true,false"
+
+func main() {
+    var a = Fruit.PEAR;
+    print(a == .APPLE);
+    print(',');
+    print(a == .PEAR);
+    print(',');
+    print(a == .BANANA);
+}

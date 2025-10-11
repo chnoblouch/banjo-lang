@@ -162,6 +162,7 @@ ParseResult ExprParser::parse_unary_level() {
         case TKN_STAR: type = AST_STAR_EXPR; break;
         case TKN_NOT: type = AST_OPERATOR_NOT; break;
         case TKN_QUESTION: type = AST_OPTIONAL_DATA_TYPE; break;
+        case TKN_DOT: type = AST_IMPLICIT_DOT_OPERATOR; break;
         default: return parse_post_operand();
     }
 

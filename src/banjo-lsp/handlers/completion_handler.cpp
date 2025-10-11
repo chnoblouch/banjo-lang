@@ -45,6 +45,8 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
         build_in_block(items, *in_block->block->symbol_table, completion_info);
     } else if (auto after_dot = std::get_if<sema::CompleteAfterDot>(&completion_info.context)) {
         build_after_dot(items, after_dot->lhs);
+    } else if (auto after_implicit_dot = std::get_if<sema::CompleteAfterImplicitDot>(&completion_info.context)) {
+        build_after_implicit_dot(items, after_implicit_dot->type);
     } else if (std::holds_alternative<sema::CompleteInUse>(completion_info.context)) {
         build_in_use(items);
     } else if (auto after_use_dot = std::get_if<sema::CompleteAfterUseDot>(&completion_info.context)) {
@@ -106,6 +108,19 @@ void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) 
     }
 }
 
+void CompletionHandler::build_after_implicit_dot(JSONArray &items, lang::sir::Expr &type) {
+    if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
+        CompletionConfig config{
+            .allow_values = true,
+            .include_parent_scopes = false,
+            .include_uses = false,
+            .append_func_parameters = true,
+        };
+
+        build_symbol_members(config, items, symbol_expr->symbol);
+    }
+}
+
 void CompletionHandler::build_in_use(JSONArray &items) {
     for (lang::ASTModule *mod : workspace.get_mod_list()) {
         if (mod->get_path().get_size() == 1) {
@@ -146,14 +161,12 @@ void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::Str
 
             std::string_view name = field->ident.value;
 
-            items.add(
-                JSONObject{
-                    {"label", name},
-                    {"kind", LSPCompletionItemKind::FIELD},
-                    {"insertText", std::string{name} + ": "},
-                    {"insertTextFormat", 2},
-                }
-            );
+            items.add(JSONObject{
+                {"label", name},
+                {"kind", LSPCompletionItemKind::FIELD},
+                {"insertText", std::string{name} + ": "},
+                {"insertTextFormat", 2},
+            });
         }
     }
 }

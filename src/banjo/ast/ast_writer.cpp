@@ -105,6 +105,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_OPERATOR_AND: return "OPERATOR_AND";
         case AST_OPERATOR_OR: return "OPERATOR_OR";
         case AST_DOT_OPERATOR: return "DOT_OPERATOR";
+        case AST_IMPLICIT_DOT_OPERATOR: return "IMPLICIT_DOT_OPERATOR";
         case AST_OPERATOR_NEG: return "OPERATOR_NEG";
         case AST_OPERATOR_REF: return "OPERATOR_REF";
         case AST_STAR_EXPR: return "STAR_EXPR";

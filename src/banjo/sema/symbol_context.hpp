@@ -41,6 +41,7 @@ public:
 
     SymbolLookupResult look_up(const sir::IdentExpr &ident_expr);
     SymbolLookupResult look_up_rhs_local(sir::DotExpr &dot_expr);
+    SymbolLookupResult look_up_rhs_local(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table);
 
     sir::GuardedSymbol::TruthTable get_meta_condition() { return meta_condition; }
     bool is_guarded() { return !sub_meta_conditions.empty(); }
