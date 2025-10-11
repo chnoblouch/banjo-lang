@@ -154,6 +154,7 @@ public:
 
     void report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr);
     void report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr);
+    void report_err_symbol_guarded(ASTNode *ast_node, const sir::GuardedSymbol &guarded_symbol);
 
     void report_warn_unreachable_code(const sir::Stmt &stmt);
 

@@ -68,24 +68,46 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index) {
     sir::MetaIfStmt &meta_if_stmt = decl_block.decls[index].as<sir::MetaIfStmt>();
 
+    // bool is_guard = analyzer.cur_sir_mod->path == ModulePath{"main"};
+    bool is_guard = false;
+
+    if (is_guard) {
+        analyzer.symbol_ctx.push_meta_condition();
+    }
+
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
-        if (ExprAnalyzer(analyzer).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+        if (ExprAnalyzer(analyzer, false).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
             return;
         }
 
         // Evaluating the expression may have already expanded this `meta if` statement.
-        if (!decl_block.decls[index].is<sir::MetaIfStmt>()) {
+        if (!decl_block.decls[index].is<sir::MetaIfStmt>() && !is_guard) {
             return;
         }
 
-        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition)) {
+        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition) || is_guard) {
+            if (is_guard) {
+                analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
+            }
+
             expand(decl_block, index, *cond_branch.block);
-            return;
+
+            if (!is_guard) {
+                return;
+            }
         }
     }
 
     if (meta_if_stmt.else_branch) {
+        if (is_guard) {
+            analyzer.symbol_ctx.add_else_meta_condition();
+        }
+
         expand(decl_block, index, *meta_if_stmt.else_branch->block);
+    }
+
+    if (is_guard) {
+        analyzer.symbol_ctx.pop_meta_condition();
     }
 }
 
@@ -104,19 +126,41 @@ void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::Met
 void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
     sir::MetaIfStmt &meta_if_stmt = block.stmts[index].as<sir::MetaIfStmt>();
 
+    // bool is_guard = analyzer.cur_sir_mod->path == ModulePath{"main"};
+    bool is_guard = false;
+
+    if (is_guard) {
+        analyzer.symbol_ctx.push_meta_condition();
+    }
+    
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
-        if (ExprAnalyzer(analyzer).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+        if (ExprAnalyzer(analyzer, false).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
             return;
         }
 
-        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition)) {
+        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition) || is_guard) {
+            if (is_guard) {
+                analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
+            }
+
             expand(block, index, *cond_branch.block);
-            return;
+
+            if (!is_guard) {
+                return;
+            }
         }
     }
 
     if (meta_if_stmt.else_branch) {
+        if (is_guard) {
+            analyzer.symbol_ctx.add_else_meta_condition();
+        }
+        
         expand(block, index, *meta_if_stmt.else_branch->block);
+    }
+
+    if (is_guard) {
+        analyzer.symbol_ctx.pop_meta_condition();
     }
 }
 
@@ -165,14 +209,12 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
             out_values.resize(tuple_expr->exprs.size());
 
             for (unsigned i = 0; i < tuple_expr->exprs.size(); i++) {
-                out_values[i] = analyzer.create(
-                    sir::FieldExpr{
-                        .ast_node = nullptr,
-                        .type = tuple_expr->exprs[i],
-                        .base = symbol_expr,
-                        .field_index = i,
-                    }
-                );
+                out_values[i] = analyzer.create(sir::FieldExpr{
+                    .ast_node = nullptr,
+                    .type = tuple_expr->exprs[i],
+                    .base = symbol_expr,
+                    .field_index = i,
+                });
             }
 
             return Result::SUCCESS;

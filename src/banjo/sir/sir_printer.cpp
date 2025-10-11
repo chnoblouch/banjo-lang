@@ -1000,6 +1000,7 @@ void Printer::print_meta_access(const MetaAccess &meta_access) {
 
 void Printer::print_meta_field_expr(const MetaFieldExpr &meta_field_expr) {
     BEGIN_OBJECT("MetaFieldExpr");
+    PRINT_EXPR_FIELD("type", meta_field_expr.type);
     PRINT_EXPR_FIELD("base", meta_field_expr.base);
     PRINT_FIELD("field", meta_field_expr.field.value);
     END_OBJECT();
@@ -1007,6 +1008,7 @@ void Printer::print_meta_field_expr(const MetaFieldExpr &meta_field_expr) {
 
 void Printer::print_meta_call_expr(const MetaCallExpr &meta_call_expr) {
     BEGIN_OBJECT("MetaCallExpr");
+    PRINT_EXPR_FIELD("type", meta_call_expr.type);
     PRINT_EXPR_FIELD("callee", meta_call_expr.callee);
     PRINT_EXPR_LIST_FIELD("args", meta_call_expr.args);
     END_OBJECT();

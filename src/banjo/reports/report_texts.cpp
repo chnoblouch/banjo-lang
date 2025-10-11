@@ -129,7 +129,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<map literal>",
         return "<closure literal>",
         return symbol_to_string(inner->symbol),
-        return "<binary expr>",
+        return binary_expr_to_string(*inner),
         return "<unary expr>",
         return "<cast expr>",
         return "<index expr>",
@@ -203,6 +203,34 @@ std::string ReportText::symbol_to_string(sir::Symbol symbol) {
         }
     }
 
+    return str;
+}
+
+std::string ReportText::binary_expr_to_string(const sir::BinaryExpr &binary_expr) {
+    std::string str = to_string(binary_expr.lhs) + " ";
+
+    switch (binary_expr.op) {
+        case sir::BinaryOp::ADD: str += "+"; break;
+        case sir::BinaryOp::SUB: str += "-"; break;
+        case sir::BinaryOp::MUL: str += "*"; break;
+        case sir::BinaryOp::DIV: str += "/"; break;
+        case sir::BinaryOp::MOD: str += "%"; break;
+        case sir::BinaryOp::BIT_AND: str += "&"; break;
+        case sir::BinaryOp::BIT_OR: str += "|"; break;
+        case sir::BinaryOp::BIT_XOR: str += "^"; break;
+        case sir::BinaryOp::SHL: str += "<<"; break;
+        case sir::BinaryOp::SHR: str += ">>"; break;
+        case sir::BinaryOp::EQ: str += "=="; break;
+        case sir::BinaryOp::NE: str += "!="; break;
+        case sir::BinaryOp::GT: str += ">"; break;
+        case sir::BinaryOp::LT: str += "<"; break;
+        case sir::BinaryOp::GE: str += ">="; break;
+        case sir::BinaryOp::LE: str += "<="; break;
+        case sir::BinaryOp::AND: str += "&&"; break;
+        case sir::BinaryOp::OR: str += "||"; break;
+    }
+
+    str += " " + to_string(binary_expr.rhs);
     return str;
 }
 

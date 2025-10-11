@@ -182,6 +182,8 @@ add_library(banjo STATIC
     "sema/stmt_analyzer.hpp"
     "sema/symbol_collector.cpp"
     "sema/symbol_collector.hpp"
+    "sema/symbol_context.cpp"
+    "sema/symbol_context.hpp"
     "sema/type_alias_resolver.cpp"
     "sema/type_alias_resolver.hpp"
     "sema/use_resolver.cpp"

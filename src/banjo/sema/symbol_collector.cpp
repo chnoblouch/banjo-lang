@@ -4,6 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -73,24 +74,32 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     if (!cur_entry) {
         cur_entry = &func_def;
     } else if (auto cur_func_def = cur_entry.match<sir::FuncDef>()) {
-        cur_entry = analyzer.create(
-            sir::OverloadSet{
-                .func_defs = {cur_func_def, &func_def},
-            }
-        );
+        cur_entry = analyzer.create(sir::OverloadSet{
+            .func_defs = {cur_func_def, &func_def},
+        });
     } else if (auto cur_overload_set = cur_entry.match<sir::OverloadSet>()) {
         cur_overload_set->func_defs.push_back(&func_def);
+    }
+
+    if (analyzer.symbol_ctx.is_guarded()) {
+        sir::GuardedSymbol::Variant variant{
+            .truth_table = analyzer.symbol_ctx.get_meta_condition(),
+            .symbol = cur_entry,
+        };
+
+        // TODO
+        cur_entry = analyzer.create(sir::GuardedSymbol{
+            .variants{variant},
+        });
     }
 
     analyzer.add_symbol_def(&func_def);
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
         if (func_def.is_method()) {
-            proto_def->func_decls.push_back(
-                sir::ProtoFuncDecl{
-                    .decl = &func_def,
-                }
-            );
+            proto_def->func_decls.push_back(sir::ProtoFuncDecl{
+                .decl = &func_def,
+            });
         }
     }
 }
@@ -101,11 +110,9 @@ void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
     analyzer.add_symbol_def(&func_decl);
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
-        proto_def->func_decls.push_back(
-            sir::ProtoFuncDecl{
-                .decl = &func_decl,
-            }
-        );
+        proto_def->func_decls.push_back(sir::ProtoFuncDecl{
+            .decl = &func_decl,
+        });
     }
 }
 
@@ -225,7 +232,29 @@ void SymbolCollector::collect_use_list(sir::UseList &use_list) {
 }
 
 void SymbolCollector::add_symbol(std::string_view name, sir::Symbol symbol) {
-    get_symbol_table().insert_decl(name, symbol);
+    sir::SymbolTable &symbol_table = get_symbol_table();
+
+    if (analyzer.symbol_ctx.is_guarded()) {
+        sir::Symbol &cur_entry = symbol_table.symbols[name];
+
+        sir::GuardedSymbol::Variant variant{
+            .truth_table = analyzer.symbol_ctx.get_meta_condition(),
+            .symbol = symbol,
+        };
+
+        if (!cur_entry) {
+            cur_entry = analyzer.create(sir::GuardedSymbol{
+                .variants{variant},
+            });
+        } else if (auto guarded_symbol = cur_entry.match<sir::GuardedSymbol>()) {
+            guarded_symbol->variants.push_back(variant);
+        } else {
+            // TODO
+            ASSERT_UNREACHABLE;
+        }
+    } else {
+        symbol_table.insert_decl(name, symbol);
+    }
 }
 
 sir::SymbolTable &SymbolCollector::get_symbol_table() {

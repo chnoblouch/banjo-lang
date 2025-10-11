@@ -5,6 +5,7 @@
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
 #include "banjo/sema/report_generator.hpp"
+#include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
 
@@ -75,6 +76,10 @@ class SemanticAnalyzer {
     friend class DeclVisitor;
     friend class ReportGenerator;
     friend class ReportBuilder;
+    friend class SymbolContext;
+
+public:
+    SymbolContext symbol_ctx;
 
 private:
     sir::Unit &sir_unit;
@@ -90,11 +95,15 @@ private:
     sir::Module *cur_sir_mod;
     std::stack<Scope> scopes;
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
+    std::unordered_map<std::string_view, sir::Expr> meta_field_types;
     std::set<const sir::Decl *> blocked_decls;
     std::vector<std::tuple<sir::Decl, Scope>> decls_awaiting_body_analysis;
     std::unordered_map<sir::DeclBlock *, Scope> incomplete_decl_blocks;
     bool in_meta_expansion = false;
     unsigned loop_depth = 0;
+
+public:
+    std::vector<sir::Expr> meta_conditions;
 
 public:
     SemanticAnalyzer(

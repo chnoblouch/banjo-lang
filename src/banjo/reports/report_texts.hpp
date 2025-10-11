@@ -43,6 +43,7 @@ public:
 private:
     static std::string func_type_to_string(const sir::FuncType &func_type);
     static std::string symbol_to_string(sir::Symbol symbol);
+    static std::string binary_expr_to_string(const sir::BinaryExpr &binary_expr);
     static std::string tuple_expr_to_string(const sir::TupleExpr &tuple_expr);
     static std::string primitive_to_string(sir::Primitive primitive);
     static std::string closure_type_to_string(const sir::ClosureType &closure_type);

@@ -6,6 +6,7 @@
 #include "banjo/utils/dynamic_pointer.hpp"
 #include "banjo/utils/large_int.hpp"
 #include "banjo/utils/string_arena.hpp"
+#include "banjo/utils/truth_table.hpp"
 #include "banjo/utils/typed_arena.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -116,6 +117,7 @@ struct DeclBlock;
 struct Block;
 struct SymbolTable;
 struct OverloadSet;
+struct GuardedSymbol;
 struct Ident;
 struct Module;
 struct Param;
@@ -235,6 +237,8 @@ public:
 
     template <typename T>
     const T *match_symbol() const;
+
+    bool is_same_kind(sir::Expr other) { return kind.index() == other.kind.index(); }
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
     bool operator==(const Expr &other) const;
@@ -400,7 +404,8 @@ class Symbol : public DynamicPointer<
                    UseRebind,
                    Local,
                    Param,
-                   OverloadSet> {
+                   OverloadSet,
+                   GuardedSymbol> {
 public:
     Symbol() : DynamicPointer() {}
 
@@ -505,6 +510,17 @@ struct OverloadSet {
     std::vector<FuncDef *> func_defs;
 };
 
+struct GuardedSymbol {
+    typedef utils::TruthTable<sir::Expr> TruthTable;
+
+    struct Variant {
+        TruthTable truth_table;
+        sir::Symbol symbol;
+    };
+
+    std::vector<Variant> variants;
+};
+
 struct Attributes {
     enum class Layout : std::uint8_t {
         DEFAULT,
@@ -527,6 +543,9 @@ struct Ident {
     std::string_view value;
 
     bool is_completion_token() const { return value == COMPLETION_TOKEN_VALUE; }
+
+    bool operator==(const Ident &other) const { return value == other.value; }
+    bool operator!=(const Ident &other) const { return !(*this == other); }
 };
 
 struct Param {
@@ -581,39 +600,60 @@ struct IntLiteral {
     ASTNode *ast_node;
     Expr type;
     LargeInt value;
+
+    bool operator==(const IntLiteral &other) const { return value == other.value; }
+    bool operator!=(const IntLiteral &other) const { return !(*this == other); }
 };
 
 struct FPLiteral {
     ASTNode *ast_node;
     Expr type;
     double value;
+
+    bool operator==(const FPLiteral &other) const { return value == other.value; }
+    bool operator!=(const FPLiteral &other) const { return !(*this == other); }
 };
 
 struct BoolLiteral {
     ASTNode *ast_node;
     Expr type;
     bool value;
+
+    bool operator==(const BoolLiteral &other) const { return value == other.value; }
+    bool operator!=(const BoolLiteral &other) const { return !(*this == other); }
 };
 
 struct CharLiteral {
     ASTNode *ast_node;
     Expr type;
     char value;
+
+    bool operator==(const CharLiteral &other) const { return value == other.value; }
+    bool operator!=(const CharLiteral &other) const { return !(*this == other); }
 };
 
 struct NullLiteral {
     ASTNode *ast_node;
     Expr type;
+
+    bool operator==(const NullLiteral &) const { return true; }
+    bool operator!=(const NullLiteral &other) const { return !(*this == other); }
 };
 
 struct NoneLiteral {
     ASTNode *ast_node;
     Expr type;
+
+    bool operator==(const NoneLiteral &) const { return true; }
+    bool operator!=(const NoneLiteral &other) const { return !(*this == other); }
 };
 
 struct UndefinedLiteral {
     ASTNode *ast_node;
     Expr type;
+
+    bool operator==(const UndefinedLiteral &) const { return true; }
+    bool operator!=(const UndefinedLiteral &other) const { return !(*this == other); }
 };
 
 struct ArrayLiteral {
@@ -626,6 +666,9 @@ struct StringLiteral {
     ASTNode *ast_node;
     Expr type;
     std::string_view value;
+
+    bool operator==(const StringLiteral &other) const { return value == other.value; }
+    bool operator!=(const StringLiteral &other) const { return !(*this == other); }
 };
 
 struct StructLiteralEntry {
@@ -700,6 +743,9 @@ struct BinaryExpr {
     BinaryOp op;
     Expr lhs;
     Expr rhs;
+
+    bool operator==(const BinaryExpr &other) const { return op == other.op && lhs == other.lhs && rhs == other.rhs; }
+    bool operator!=(const BinaryExpr &other) const { return !(*this == other); }
 };
 
 enum class UnaryOp {
@@ -715,6 +761,9 @@ struct UnaryExpr {
     Expr type;
     UnaryOp op;
     Expr value;
+
+    bool operator==(const UnaryExpr &other) const { return op == other.op && value == other.value; }
+    bool operator!=(const UnaryExpr &other) const { return !(*this == other); }
 };
 
 struct CastExpr {
@@ -910,18 +959,32 @@ struct PseudoType {
 struct MetaAccess {
     ASTNode *ast_node;
     Expr expr;
+
+    bool operator==(const MetaAccess &other) const { return expr == other.expr; }
+    bool operator!=(const MetaAccess &other) const { return !(*this == other); }
 };
 
 struct MetaFieldExpr {
     ASTNode *ast_node;
+    Expr type;
     Expr base;
     Ident field;
+
+    bool operator==(const MetaFieldExpr &other) const { return base == other.base && field == other.field; }
+    bool operator!=(const MetaFieldExpr &other) const { return !(*this == other); }
 };
 
 struct MetaCallExpr {
     ASTNode *ast_node;
+    Expr type;
     Expr callee;
     std::span<Expr> args;
+
+    bool operator==(const MetaCallExpr &other) const {
+        return callee == other.callee && Utils::equal(args, other.args);
+    }
+
+    bool operator!=(const MetaCallExpr &other) const { return !(*this == other); }
 };
 
 struct InitExpr {
@@ -1287,6 +1350,7 @@ struct Module {
     utils::TypedArena<MetaBlock> meta_block_arena;
     utils::TypedArena<SymbolTable> symbol_table_arena;
     utils::TypedArena<OverloadSet> overload_set_arena;
+    utils::TypedArena<GuardedSymbol> guarded_symbol_arena;
     utils::TypedArena<Attributes> attributes_arena;
     utils::TypedArena<Resource> resource_arena;
 
@@ -1346,6 +1410,11 @@ struct Module {
     template <>
     OverloadSet *create(OverloadSet value) {
         return overload_set_arena.create(std::move(value));
+    }
+
+    template <>
+    GuardedSymbol *create(GuardedSymbol value) {
+        return guarded_symbol_arena.create(std::move(value));
     }
 
     template <>

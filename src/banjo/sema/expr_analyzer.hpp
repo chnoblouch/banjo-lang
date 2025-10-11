@@ -14,9 +14,10 @@ class ExprAnalyzer {
 
 private:
     SemanticAnalyzer &analyzer;
+    bool eval_meta_exprs;
 
 public:
-    ExprAnalyzer(SemanticAnalyzer &analyzer);
+    ExprAnalyzer(SemanticAnalyzer &analyzer, bool eval_meta_exprs = true);
     Result analyze_value(sir::Expr &expr);
     Result analyze_value(sir::Expr &expr, sir::Expr expected_type);
     Result analyze_value_uncoerced(sir::Expr &expr);
@@ -55,10 +56,13 @@ private:
     Result analyze_map_type(sir::MapType &map_type, sir::Expr &out_expr);
     Result analyze_closure_type(sir::ClosureType &closure_type);
     Result analyze_reference_type(sir::ReferenceType &reference_type);
-    Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
     Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
+    Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
+    Result analyze_meta_access(sir::MetaAccess &meta_access);
+    Result analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr);
+    Result analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr);
 
     Result analyze_completion_token();
 

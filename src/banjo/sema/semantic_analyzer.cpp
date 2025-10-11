@@ -11,6 +11,7 @@
 #include "banjo/sema/type_alias_resolver.hpp"
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_create.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/timing.hpp"
@@ -29,11 +30,25 @@ SemanticAnalyzer::SemanticAnalyzer(
     ReportManager &report_manager,
     Mode mode /* = Mode::COMPILATION */
 )
-  : sir_unit(sir_unit),
+  : symbol_ctx(*this),
+    sir_unit(sir_unit),
     target(target),
     report_manager(report_manager),
     report_generator(*this),
-    mode(mode) {}
+    mode(mode) {
+
+    // HACK
+
+    sir::Module &mod = *sir_unit.mods[0];
+
+    meta_field_types = {
+        {"size", sir::create_pseudo_type(mod, sir::PseudoTypeKind::INT_LITERAL)},
+        {"name", sir::create_pseudo_type(mod, sir::PseudoTypeKind::STRING_LITERAL)},
+        {"is_pointer", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
+        {"is_struct", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
+        {"is_enum", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
+    };
+}
 
 void SemanticAnalyzer::analyze() {
     PROFILE_SCOPE("semantic analyzer");
@@ -71,12 +86,10 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
 void SemanticAnalyzer::enter_mod(sir::Module *mod) {
     cur_sir_mod = mod;
 
-    scopes.push(
-        Scope{
-            .decl = mod,
-            .block = nullptr,
-        }
-    );
+    scopes.push(Scope{
+        .decl = mod,
+        .block = nullptr,
+    });
 }
 
 sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {

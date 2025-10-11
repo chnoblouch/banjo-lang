@@ -19,52 +19,52 @@ bool Expr::operator==(const Expr &other) const {
 
     SIR_VISIT_EXPR(
         *this,
-        return true,                                              // empty
-        return inner->value == other.as<sir::IntLiteral>().value, // int_literal
-        return false,                                             // fp_literal
-        return false,                                             // bool_literal
-        return false,                                             // char_literal
-        return false,                                             // null_literal
-        return false,                                             // none_literal
-        return false,                                             // undefined_literal
-        return false,                                             // array_literal
-        return false,                                             // string_literal
-        return false,                                             // struct_literal
-        return false,                                             // union_case_literal
-        return false,                                             // map_literal
-        return false,                                             // closure_literal
-        return inner->symbol == other.as<SymbolExpr>().symbol,    // symbol_expr
-        return false,                                             // binary_expr
-        return false,                                             // unary_expr
-        return false,                                             // cast_expr
-        return false,                                             // index_expr
-        return false,                                             // call_expr
-        return false,                                             // field_expr
-        return false,                                             // range_expr
-        return *inner == other.as<TupleExpr>(),                   // tuple_expr
-        return false,                                             // coercion_expr
-        return *inner == other.as<PrimitiveType>(),               // primitive_type
-        return *inner == other.as<PointerType>(),                 // pointer_type
-        return *inner == other.as<StaticArrayType>(),             // static_array_type
-        return *inner == other.as<FuncType>(),                    // func_type
-        return *inner == other.as<OptionalType>(),                // optional_type
-        return *inner == other.as<ResultType>(),                  // result_type
-        return *inner == other.as<ArrayType>(),                   // array_type
-        return *inner == other.as<MapType>(),                     // map_type
-        return *inner == other.as<ClosureType>(),                 // closure_type
-        return *inner == other.as<ReferenceType>(),               // reference_type
-        return false,                                             // ident_expr
-        return false,                                             // star_expr
-        return false,                                             // bracket_expr
-        return false,                                             // dot_expr
-        return false,                                             // pseudo_type
-        return false,                                             // meta_access
-        return false,                                             // meta_field_expr
-        return false,                                             // meta_call_expr
-        return false,                                             // init_expr
-        return false,                                             // move_expr
-        return false,                                             // deinit_expr
-        return true                                               // error
+        return true,                                        // empty
+        return *inner == other.as<sir::IntLiteral>(),       // int_literal
+        return *inner == other.as<sir::FPLiteral>(),        // fp_literal
+        return *inner == other.as<sir::BoolLiteral>(),      // bool_literal
+        return *inner == other.as<sir::CharLiteral>(),      // char_literal
+        return *inner == other.as<sir::NullLiteral>(),      // null_literal
+        return *inner == other.as<sir::NoneLiteral>(),      // none_literal
+        return *inner == other.as<sir::UndefinedLiteral>(), // undefined_literal
+        return false,                                       // array_literal
+        return *inner == other.as<sir::StringLiteral>(),    // string_literal
+        return false,                                       // struct_literal
+        return false,                                       // union_case_literal
+        return false,                                       // map_literal
+        return false,                                       // closure_literal
+        return *inner == other.as<SymbolExpr>(),            // symbol_expr
+        return *inner == other.as<BinaryExpr>(),            // binary_expr
+        return *inner == other.as<UnaryExpr>(),             // unary_expr
+        return false,                                       // cast_expr
+        return false,                                       // index_expr
+        return false,                                       // call_expr
+        return false,                                       // field_expr
+        return false,                                       // range_expr
+        return *inner == other.as<TupleExpr>(),             // tuple_expr
+        return false,                                       // coercion_expr
+        return *inner == other.as<PrimitiveType>(),         // primitive_type
+        return *inner == other.as<PointerType>(),           // pointer_type
+        return *inner == other.as<StaticArrayType>(),       // static_array_type
+        return *inner == other.as<FuncType>(),              // func_type
+        return *inner == other.as<OptionalType>(),          // optional_type
+        return *inner == other.as<ResultType>(),            // result_type
+        return *inner == other.as<ArrayType>(),             // array_type
+        return *inner == other.as<MapType>(),               // map_type
+        return *inner == other.as<ClosureType>(),           // closure_type
+        return *inner == other.as<ReferenceType>(),         // reference_type
+        return false,                                       // ident_expr
+        return false,                                       // star_expr
+        return false,                                       // bracket_expr
+        return false,                                       // dot_expr
+        return false,                                       // pseudo_type
+        return *inner == other.as<MetaAccess>(),            // meta_access
+        return *inner == other.as<MetaFieldExpr>(),         // meta_field_expr
+        return *inner == other.as<MetaCallExpr>(),          // meta_call_expr
+        return false,                                       // init_expr
+        return false,                                       // move_expr
+        return false,                                       // deinit_expr
+        return true                                         // error
     );
 }
 
@@ -115,8 +115,8 @@ Expr Expr::get_type() const {
         return nullptr,     // dot_expr
         return nullptr,     // pseudo_type
         return nullptr,     // meta_access
-        return nullptr,     // meta_field_expr
-        return nullptr,     // meta_call_expr
+        return inner->type, // meta_field_expr
+        return inner->type, // meta_call_expr
         return inner->type, // init_expr
         return inner->type, // move_expr
         return inner->type, // deinit_expr

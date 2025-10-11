@@ -698,6 +698,14 @@ void ReportGenerator::report_err_invalid_meta_method(const sir::MetaCallExpr &me
     report_error("invalid meta method '$'", ident.ast_node, ident.value);
 }
 
+void ReportGenerator::report_err_symbol_guarded(ASTNode *ast_node, const sir::GuardedSymbol &guarded_symbol) {
+    report_error(
+        "definition of '$' is guarded by different condition than usage",
+        ast_node,
+        guarded_symbol.variants[0].symbol.get_name()
+    );
+}
+
 void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
     report_warning("unreachable code", stmt.get_ast_node());
 }
