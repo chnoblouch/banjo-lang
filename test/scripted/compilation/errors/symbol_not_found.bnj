@@ -30,3 +30,15 @@ func main() {
 func main() {
     var a = Point { x: 0, y: 0 };
 }
+
+# test:subtest
+# test:error 43:20 "cannot find 'CENTIMETERS'"
+
+enum Unit {
+    METERS,
+    MILLIMETERS,
+}
+
+func main() {
+    var a: Unit = .CENTIMETERS;
+}

@@ -1,0 +1,33 @@
+# test:subtest
+# test:error 5:13 "cannot infer left-hand side"
+
+func main() {
+    var a = .TEST;
+}
+
+# test:subtest
+# test:error 12:18 "cannot infer left-hand side (type is 'i32' instead of an enum)"
+
+func main() {
+    var a: i32 = .A;
+}
+
+# test:subtest
+# test:error 21:16 "cannot infer left-hand side (type is 'S' instead of an enum)"
+
+struct S {}
+
+func main() {
+    var a: S = .A;
+}
+
+# test:subtest
+# test:error 32:16 "cannot infer left-hand side (type is 'S' instead of an enum)"
+
+struct S {
+    const A: i32 = 0;
+}
+
+func main() {
+    var a: S = .A;
+}

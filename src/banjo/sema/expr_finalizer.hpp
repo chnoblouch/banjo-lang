@@ -21,6 +21,8 @@ public:
     Result finalize_by_coercion(sir::Expr &expr, sir::Expr expected_type);
     Result finalize(sir::Expr &expr);
 
+    Result infer_dot_expr_lhs(sir::DotExpr &dot_expr, sir::Expr type, sir::Expr &out_expr);
+
     Result coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type);
     Result coerce_to_union(sir::Expr &inout_expr, sir::Expr union_type);
     Result coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &proto_def, sir::Expr proto_ptr_type);
@@ -48,6 +50,7 @@ public:
     Result finalize_default(sir::TupleExpr &tuple_literal);
     Result finalize_default(sir::MapLiteral &map_literal, sir::Expr &out_expr);
     Result finalize_default(sir::UnaryExpr &unary_expr);
+    Result finalize_default(sir::DotExpr &dot_expr);
 
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void create_std_string_slice(sir::StringLiteral &string_literal, sir::Expr &out_expr);

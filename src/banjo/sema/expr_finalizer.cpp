@@ -24,27 +24,7 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
 
     if (auto dot_expr = expr.match<sir::DotExpr>()) {
         if (!dot_expr->lhs) {
-            if (analyzer.mode == Mode::COMPLETION && dot_expr->rhs.is_completion_token()) {
-                analyzer.completion_context = CompleteAfterImplicitDot{
-                    .type = expected_type,
-                };
-
-                return Result::SUCCESS;
-            }
-
-            sir::DeclBlock *decl_block = expected_type.as<sir::SymbolExpr>().symbol.get_decl_block();
-            SymbolLookupResult lookup_result =
-                analyzer.symbol_ctx.look_up_rhs_local(*dot_expr, *decl_block->symbol_table);
-
-            analyzer.add_symbol_use(dot_expr->rhs.ast_node, lookup_result.symbol);
-
-            expr = analyzer.create(sir::SymbolExpr{
-                .ast_node = dot_expr->ast_node,
-                .type = lookup_result.symbol.get_type(),
-                .symbol = lookup_result.symbol,
-            });
-
-            return Result::SUCCESS;
+            return infer_dot_expr_lhs(*dot_expr, expected_type, expr);
         }
     }
 
@@ -105,6 +85,37 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
         analyzer.report_generator.report_err_type_mismatch(expr, expected_type, type);
         return Result::ERROR;
     }
+}
+
+Result ExprFinalizer::infer_dot_expr_lhs(sir::DotExpr &dot_expr, sir::Expr type, sir::Expr &out_expr) {
+    if (analyzer.mode == Mode::COMPLETION && dot_expr.rhs.is_completion_token()) {
+        analyzer.completion_context = CompleteAfterImplicitDot{.type = type};
+        return Result::SUCCESS;
+    }
+
+    if (!type.is_symbol<sir::EnumDef>()) {
+        analyzer.report_generator.report_err_cannot_infer_lhs(dot_expr, type);
+        return Result::ERROR;
+    }
+
+    sir::DeclBlock *decl_block = type.as<sir::SymbolExpr>().symbol.get_decl_block();
+    SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up_rhs_local(dot_expr, *decl_block->symbol_table);
+
+    if (!lookup_result.symbol) {
+        out_expr = sir::create_error_value(*analyzer.cur_sir_mod, dot_expr.ast_node);
+        analyzer.report_generator.report_err_symbol_not_found(dot_expr.rhs);
+        return Result::ERROR;
+    }
+
+    analyzer.add_symbol_use(dot_expr.rhs.ast_node, lookup_result.symbol);
+
+    out_expr = analyzer.create(sir::SymbolExpr{
+        .ast_node = dot_expr.ast_node,
+        .type = lookup_result.symbol.get_type(),
+        .symbol = lookup_result.symbol,
+    });
+
+    return Result::SUCCESS;
 }
 
 Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type) {
@@ -434,6 +445,7 @@ Result ExprFinalizer::finalize(sir::Expr &expr) {
     else if (auto tuple_literal = expr.match<sir::TupleExpr>()) return finalize_default(*tuple_literal);
     else if (auto unary_expr = expr.match<sir::UnaryExpr>()) return finalize_default(*unary_expr);
     else if (auto map_literal = expr.match<sir::MapLiteral>()) return finalize_default(*map_literal, expr);
+    else if (auto dot_expr = expr.match<sir::DotExpr>()) return finalize_default(*dot_expr);
     else return Result::SUCCESS;
 }
 
@@ -527,6 +539,15 @@ Result ExprFinalizer::finalize_default(sir::UnaryExpr &unary_expr) {
 
     if (unary_expr.type.is<sir::PseudoType>()) {
         unary_expr.type = unary_expr.value.get_type();
+    }
+
+    return Result::SUCCESS;
+}
+
+Result ExprFinalizer::finalize_default(sir::DotExpr &dot_expr) {
+    if (!dot_expr.lhs) {
+        analyzer.report_generator.report_err_cannot_infer_lhs(dot_expr);
+        return Result::ERROR;
     }
 
     return Result::SUCCESS;

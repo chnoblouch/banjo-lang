@@ -195,6 +195,14 @@ void ReportGenerator::report_err_cannot_infer_type(const sir::StructLiteral &str
     report_error("cannot infer type of struct literal", struct_literal.ast_node);
 }
 
+void ReportGenerator::report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr) {
+    report_error("cannot infer left-hand side", dot_expr.ast_node);
+}
+
+void ReportGenerator::report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr, sir::Expr type) {
+    report_error("cannot infer left-hand side (type is '$' instead of an enum)", dot_expr.ast_node, type);
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr) {
     std::string_view operator_name;
 
