@@ -66,7 +66,13 @@ class ASTConverter:
                 symbol = self.gen_enum(child)
                 symbols[symbol.name] = symbol
             elif child.kind == cindex.CursorKind.TYPEDEF_DECL:
-                pass
+                if child.underlying_typedef_type.kind == cindex.TypeKind.ELABORATED:
+                    decl = child.underlying_typedef_type.get_declaration()
+
+                    if decl.kind == cindex.CursorKind.ENUM_DECL:
+                        symbol = self.gen_enum(decl)
+                        symbols[symbol.name] = symbol
+
                 # symbol = self.gen_type_alias(child)
                 # if symbol:
                 #     symbols[symbol.name] = symbol

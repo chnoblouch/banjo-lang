@@ -80,7 +80,7 @@ class Writer:
                 self.write_type_alias(symbol)
 
     def write_func(self, func: Function):
-        self.file.write(f"@[link_name={func.original_name}] native func ")
+        self.file.write(f"@[link_name={func.original_name}]\nnative func ")
         self.write_identifier(utils.to_snake_case(func.name))
 
         self.file.write("(")
@@ -91,7 +91,7 @@ class Writer:
             self.file.write(" -> ")
             self.write_type(func.result)
 
-        self.file.write(";\n")
+        self.file.write(";\n\n")
 
     def write_const(self, const: Constant):
         self.file.write("const ")
