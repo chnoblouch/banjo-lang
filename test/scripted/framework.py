@@ -37,7 +37,7 @@ class TestResult:
         self.actual = actual
 
 
-def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
+def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
     global install_dir, test_wasm
 
     parser = argparse.ArgumentParser()
@@ -64,7 +64,7 @@ def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
             
             tests.extend(load_test_file(f"{sub_directory.stem}.{file_path.stem}", file_path))
 
-    tests = [test for test in tests if test.name not in skipped_tests]
+    tests = filter(filter_fn, tests)
     tests = [test for test in tests if fnmatch.fnmatch(test.name, args.pattern)]
 
     if not tests:

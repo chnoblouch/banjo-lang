@@ -3,24 +3,33 @@ use os;
 
 meta if config.OS == config.LINUX {
     use os.posix_linux.{
+        Sockaddr,
+        Addrinfo,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,
+        errno,
     };
 } else if config.OS == config.MACOS {
     use os.posix_macos.{
+        Sockaddr,
+        Addrinfo,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,
+        errno,
     };
 } else if config.OS == config.EMSCRIPTEN {
     use os.posix_emscripten.{
+        Sockaddr,
+        Addrinfo,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,
+        errno,
     };
 }
 
@@ -81,22 +90,6 @@ meta if os.IS_UNIX {
             }
         }
 
-        struct Sockaddr {
-            var family: u16;
-            var data: [u8; 14];
-        }
-
-        struct Addrinfo {
-            var flags: i32;
-            var family: i32;
-            var socktype: i32;
-            var protocol: i32;
-            var addrlen: u32;
-            var addr_: *Sockaddr;
-            var canonname: *u8;
-            var next: *Addrinfo;
-        }
-
         # TODO: This size is definitely only 40 on x86-64.
         type PthreadMutex = [u8; 40];
 
@@ -155,23 +148,6 @@ meta if os.IS_UNIX {
             var name: [u8; 1024];
         }
 
-        struct Sockaddr {
-            var len: u8;
-            var family: u8;
-            var data: [u8; 14];
-        }
-
-        struct Addrinfo {
-            var flags: i32;
-            var family: i32;
-            var socktype: i32;
-            var protocol: i32;
-            var addrlen: u32;
-            var canonname: *u8;
-            var addr_: *Sockaddr;
-            var next: *Addrinfo;
-        }
-
         struct PthreadMutex {
             var sig: u64;
 
@@ -209,24 +185,20 @@ meta if os.IS_UNIX {
         @[link_name=__stderrp]
         native var stderr: addr;
     } else if os.IS_EMSCRIPTEN {
-        # TODO: Stubs
-
         struct Stat {
-            var dev: u64;
-            var ino: u64;
-            var nlink: u64;
+            var dev: u32;
             var mode: u32;
+            var nlink: u32;
             var uid: u32;
             var gid: u32;
-            var pad0: i32;
-            var rdev: u64;
+            var rdev: u32;
             var size: i64;
-            var blksize: i64;
-            var blocks: i64;
+            var blksize: i32;
+            var blocks: i32;
             var atim: Timespec;
             var mtim: Timespec;
             var ctim: Timespec;
-            var reserved: [i64; 3];
+            var ino: u64;
         }
 
         struct Dirent {
@@ -237,21 +209,7 @@ meta if os.IS_UNIX {
             var name: [u8; 256];
         }
 
-        struct Sockaddr {
-            var family: u16;
-            var data: [u8; 14];
-        }
-
-        struct Addrinfo {
-            var flags: i32;
-            var family: i32;
-            var socktype: i32;
-            var protocol: i32;
-            var addrlen: u32;
-            var addr_: *Sockaddr;
-            var canonname: *u8;
-            var next: *Addrinfo;
-        }
+        # TODO: Stubs
 
         type PthreadMutex = [u8; 40];
 
@@ -303,24 +261,4 @@ meta if os.IS_UNIX {
     native func shutdown(sockfd: i32, how: i32) -> i32;
     native func getaddrinfo(node: *u8, service: *u8, hints: *Addrinfo, res: **Addrinfo) -> i32;
     native func freeaddrinfo(res: *Addrinfo);
-
-    meta if config.OS == config.LINUX {
-        native func __errno_location() -> *i32;
-
-        pub func errno() -> i32 {
-            return *__errno_location();
-        }
-    } else if os.IS_DARWIN {
-        native func __error() -> *i32;
-
-        pub func errno() -> i32 {
-            return *__error();
-        }
-    } else if os.IS_EMSCRIPTEN {
-        native func __errno_location() -> *i32;
-
-        pub func errno() -> i32 {
-            return *__errno_location();
-        }
-    }
 }

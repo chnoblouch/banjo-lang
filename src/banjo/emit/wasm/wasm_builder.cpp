@@ -7,6 +7,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <any>
+#include <utility>
 
 namespace banjo {
 
@@ -74,6 +75,19 @@ WasmObjectFile WasmBuilder::build(mcode::Module &mod) {
         build_global(file, global);
     }
 
+    WriteBuffer data_offset_buffer;
+    data_offset_buffer.write_u8(0x41);
+    data_offset_buffer.write_sleb128(0);
+    data_offset_buffer.write_u8(0x0B);
+
+    file.data_segments.push_back(
+        WasmDataSegment{
+            .offset_expr = data_offset_buffer.move_data(),
+            .init_bytes = data_buffer.move_data(),
+            .relocs = std::move(data_relocs),
+        }
+    );
+
     indirect_call_types_offset = file.types.size();
 
     for (const target::WasmFuncType &type : mod_data.indirect_call_types) {
@@ -100,6 +114,7 @@ void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
 
     for (const target::WasmFuncImport &func_import : mod_data.func_imports) {
         symbol_indices.insert({func_import.name, index});
+        func_symbols.insert(func_import.name);
         index += 1;
     }
 
@@ -109,14 +124,13 @@ void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
     }
 
     for (const mcode::Global &global : mod.get_globals()) {
-        if (std::holds_alternative<std::string>(global.value)) {
-            symbol_indices.insert({global.name, index});
-            index += 1;
-        }
+        symbol_indices.insert({global.name, index});
+        index += 1;
     }
 
     for (mcode::Function *func : mod.get_functions()) {
         symbol_indices.insert({func->get_name(), index});
+        func_symbols.insert(func->get_name());
         index += 1;
     }
 }
@@ -158,35 +172,56 @@ void WasmBuilder::build_extern_global(WasmObjectFile &file, const std::string &e
 }
 
 void WasmBuilder::build_global(WasmObjectFile &file, mcode::Global &global) {
-    if (auto string = std::get_if<std::string>(&global.value)) {
-        WriteBuffer offset_buffer;
-        offset_buffer.write_u8(0x41);
-        offset_buffer.write_sleb128(data_offset);
-        offset_buffer.write_u8(0x0B);
+    // TODO: Deduplicate data encoding logic
 
-        WriteBuffer init_bytes;
-        init_bytes.write_data(string->data(), string->size());
+    std::size_t size_before = data_buffer.get_size();
 
-        file.data_segments.push_back(
-            WasmDataSegment{
-                .offset_expr = offset_buffer.move_data(),
-                .init_bytes = init_bytes.move_data(),
+    if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
+        switch (global.size) {
+            case 1: data_buffer.write_u8(value->to_bits()); break;
+            case 2: data_buffer.write_u16(value->to_bits()); break;
+            case 4: data_buffer.write_u32(value->to_bits()); break;
+            case 8: data_buffer.write_u64(value->to_bits()); break;
+            default: ASSERT_UNREACHABLE;
+        }
+    } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
+        switch (global.size) {
+            case 4: data_buffer.write_f32(*value); break;
+            case 8: data_buffer.write_f64(*value); break;
+            default: ASSERT_UNREACHABLE;
+        }
+    } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
+        data_buffer.write_data(value->data(), value->size());
+    } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
+        data_buffer.write_data(value->data(), value->size());
+    } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
+        bool is_func = func_symbols.contains(value->name);
+
+        data_relocs.push_back(
+            WasmRelocation{
+                .type = is_func ? WasmRelocType::TABLE_INDEX_I32 : WasmRelocType::MEMORY_ADDR_I32,
+                .offset = static_cast<std::uint32_t>(size_before),
+                .index = symbol_indices.at(value->name),
             }
         );
 
-        file.symbols.push_back(
-            WasmSymbol{
-                .type = WasmSymbolType::DATA,
-                .flags = WasmSymbolFlags::BINDING_LOCAL,
-                .name = global.name,
-                .index = static_cast<std::uint32_t>(file.data_segments.size() - 1),
-                .offset = 0,
-                .size = static_cast<std::uint32_t>(string->size()),
-            }
-        );
-
-        data_offset += string->size();
+        data_buffer.write_u32(0);
+    } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
+        data_buffer.write_zeroes(global.size);
+    } else {
+        ASSERT_UNREACHABLE;
     }
+
+    file.symbols.push_back(
+        WasmSymbol{
+            .type = WasmSymbolType::DATA,
+            .flags = WasmSymbolFlags::BINDING_LOCAL,
+            .name = global.name,
+            .index = 0,
+            .offset = static_cast<std::uint32_t>(size_before),
+            .size = static_cast<std::uint32_t>(data_buffer.get_size() - size_before),
+        }
+    );
 }
 
 void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {

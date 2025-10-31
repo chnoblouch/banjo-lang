@@ -1,14 +1,16 @@
+# test:common
+
+native func putchar(i32) -> i32;
+
 # test:subtest
 # test:output "fg"
-
-native func putchar(u8);
 
 struct Char {
     var field: u8;
 
     func out(self, arg: u8) {
-        putchar(self.field);
-        putchar(arg);
+        putchar(self.field as i32);
+        putchar(arg as i32);
     }
 }
 
@@ -23,14 +25,12 @@ func main() {
 # test:subtest
 # test:output "fg"
 
-native func putchar(u8);
-
 struct Char {
     var field: u8;
 
     func out(self, arg: u8) {
-        putchar(self.field);
-        putchar(arg);
+        putchar(self.field as i32);
+        putchar(arg as i32);
     }
 }
 
@@ -46,14 +46,12 @@ func main() {
 # test:subtest
 # test:output "fg"
 
-native func putchar(u8);
-
 struct Char {
     var field: u8;
 
     func out(self, arg: u8) {
-        putchar(self.field);
-        putchar(arg);
+        putchar(self.field as i32);
+        putchar(arg as i32);
     }
 }
 
@@ -71,19 +69,17 @@ func main() {
 # test:subtest
 # test:output "Ab"
 
-native func putchar(u8);
-
 union Char {
     case Lower(value: u8);
     case Upper(value: u8);
 
     func out(self, arg: u8) {
         switch self {
-            case char: Lower { putchar(char.value); }
-            case char: Upper { putchar(char.value); }
+            case char: Lower { putchar(char.value as i32); }
+            case char: Upper { putchar(char.value as i32); }
         }
         
-        putchar(arg);
+        putchar(arg as i32);
     }
 }
 
@@ -95,16 +91,14 @@ func main() {
 # test:subtest
 # test:output "a"
 
-native func putchar(u8);
-
 union Char {
     case Lower(value: u8);
     case Upper(value: u8);
 
     func out(self) {
         switch self {
-            case char: Lower { putchar(char.value); }
-            case char: Upper { putchar(char.value); }
+            case char: Lower { putchar(char.value as i32); }
+            case char: Upper { putchar(char.value as i32); }
         }
     }
 }

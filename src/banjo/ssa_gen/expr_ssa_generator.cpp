@@ -532,39 +532,36 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     StoredValue return_value_ptr;
 
     if (return_method == ReturnMethod::VIA_POINTER_ARG) {
-        ssa_operands.push_back(ssa_callee.with_type(ssa::Primitive::ADDR));
+        ssa_operands.push_back(ssa_callee.with_type(ssa::Primitive::VOID));
         return_value_ptr = StoredValue::alloc(ssa_type, hints, ctx);
         ssa_operands.push_back(return_value_ptr.get_ptr());
     } else {
         ssa_operands.push_back(ssa_callee.with_type(ssa_type));
     }
 
-    if (!ssa_proto_self) {
-        for (const sir::Expr &arg : call_expr.args) {
-            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(arg.get_type());
-            target::ArgPassMethod pass_method = ctx.target->get_data_layout().get_arg_pass_method(ssa_type);
-
-            if (pass_method.num_args == 1) {
-                ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
-            } else {
-                StoredValue ssa_arg = generate(arg).turn_into_value_or_copy(ctx);
-                ASSERT(ssa_arg.kind == StoredValue::Kind::REFERENCE);
-
-                for (unsigned i = 0; i < pass_method.num_args; i++) {
-                    ssa::VirtualRegister ptr = ctx.append_offsetptr(ssa_arg.get_ptr(), i, ssa::Primitive::U64);
-                    ssa::Type type = i == pass_method.num_args - 1 ? pass_method.last_arg_type : ssa::Primitive::U64;
-                    ssa::Value value = ctx.append_load(type, ptr);
-                    ssa_operands.push_back(value);
-                }
-            }
-        }
-    } else {
+    if (ssa_proto_self) {
         ssa::Value data_ptr_ptr = ctx.append_memberptr_val(ctx.get_fat_pointer_type(), *ssa_proto_self, 0);
         ssa::Value data_ptr = ctx.append_load(ssa::Primitive::ADDR, data_ptr_ptr);
         ssa_operands.push_back(data_ptr);
+    }
 
-        for (unsigned i = 1; i < call_expr.args.size(); i++) {
-            ssa_operands.push_back(generate(call_expr.args[i]).turn_into_value_or_copy(ctx).value_or_ptr);
+    for (unsigned i = ssa_proto_self ? 1 : 0; i < call_expr.args.size(); i++) {
+        const sir::Expr &arg = call_expr.args[i];
+        ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(arg.get_type());
+        target::ArgPassMethod pass_method = ctx.target->get_data_layout().get_arg_pass_method(ssa_type);
+
+        if (pass_method.num_args == 1) {
+            ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
+        } else {
+            StoredValue ssa_arg = generate(arg).turn_into_value_or_copy(ctx);
+            ASSERT(ssa_arg.kind == StoredValue::Kind::REFERENCE);
+
+            for (unsigned i = 0; i < pass_method.num_args; i++) {
+                ssa::VirtualRegister ptr = ctx.append_offsetptr(ssa_arg.get_ptr(), i, ssa::Primitive::U64);
+                ssa::Type type = i == pass_method.num_args - 1 ? pass_method.last_arg_type : ssa::Primitive::U64;
+                ssa::Value value = ctx.append_load(type, ptr);
+                ssa_operands.push_back(value);
+            }
         }
     }
 

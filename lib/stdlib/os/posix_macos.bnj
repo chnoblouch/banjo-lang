@@ -1,11 +1,37 @@
+use std.config;
 use c;
 
-type ClockId = u64;
+meta if config.OS == config.MACOS {
+    struct Sockaddr {
+        var len: u8;
+        var family: u8;
+        var data: [u8; 14];
+    }
 
-struct Timespec {
-    var tv_sec: c.LongLong;
-    var tv_nsec: c.Long;
+    struct Addrinfo {
+        var flags: i32;
+        var family: i32;
+        var socktype: i32;
+        var protocol: i32;
+        var addrlen: u32;
+        var canonname: *u8;
+        var addr_: *Sockaddr;
+        var next: *Addrinfo;
+    }
+
+    type ClockId = u64;
+
+    struct Timespec {
+        var tv_sec: c.LongLong;
+        var tv_nsec: c.Long;
+    }
+
+    const CLOCK_REALTIME: ClockId = 0;
+    const CLOCK_MONOTONIC: ClockId = 6;
+
+    native func __error() -> *i32;
+
+    pub func errno() -> i32 {
+        return *__error();
+    }
 }
-
-const CLOCK_REALTIME: ClockId = 0;
-const CLOCK_MONOTONIC: ClockId = 6;

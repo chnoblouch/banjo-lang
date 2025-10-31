@@ -20,6 +20,7 @@ private:
     };
 
     RelocSection code_reloc_section;
+    RelocSection data_reloc_section;
 
 public:
     WasmEmitter(mcode::Module &module, std::ostream &stream) : BinaryEmitter(module, stream) {}

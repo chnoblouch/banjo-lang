@@ -17,6 +17,12 @@ void WasmEmitter::generate() {
         .relocs{},
     };
 
+    data_reloc_section = RelocSection{
+        .name = "reloc.DATA",
+        .section_index = 5,
+        .relocs{},
+    };
+
     emit_header();
     emit_type_section(file);
     emit_import_section(file);
@@ -28,6 +34,10 @@ void WasmEmitter::generate() {
 
     if (!code_reloc_section.relocs.empty()) {
         emit_reloc_section(code_reloc_section);
+    }
+
+    if (!data_reloc_section.relocs.empty()) {
+        emit_reloc_section(data_reloc_section);
     }
 }
 
@@ -150,7 +160,19 @@ void WasmEmitter::emit_data_section(const WasmObjectFile &file) {
         data.write_u8(0x00); // kind (active data segment in memory 0)
         data.write_data(segment.offset_expr.data(), segment.offset_expr.size()); // offset expression
         data.write_uleb128(segment.init_bytes.size());                           // initial value size
-        data.write_data(segment.init_bytes.data(), segment.init_bytes.size());   // initial value
+
+        std::uint32_t relocs_base_offset = data.get_size();
+        data.write_data(segment.init_bytes.data(), segment.init_bytes.size()); // initial value
+
+        for (const WasmRelocation &reloc : segment.relocs) {
+            data_reloc_section.relocs.push_back(
+                WasmRelocation{
+                    .type = reloc.type,
+                    .offset = static_cast<std::uint32_t>(relocs_base_offset + reloc.offset),
+                    .index = reloc.index,
+                }
+            );
+        }
     }
 
     emit_section(11, data);
@@ -173,7 +195,14 @@ void WasmEmitter::emit_reloc_section(const RelocSection &section) {
         data.write_uleb128(reloc.offset); // relocation offset
         data.write_uleb128(reloc.index);  // symbol index
 
-        if (reloc.type == WasmRelocType::MEMORY_ADDR_LEB || reloc.type == WasmRelocType::MEMORY_ADDR_SLEB) {
+        if (Utils::is_one_of(
+                reloc.type,
+                {
+                    WasmRelocType::MEMORY_ADDR_LEB,
+                    WasmRelocType::MEMORY_ADDR_SLEB,
+                    WasmRelocType::MEMORY_ADDR_I32,
+                }
+            )) {
             data.write_uleb128(reloc.addend); // address addend
         }
     }

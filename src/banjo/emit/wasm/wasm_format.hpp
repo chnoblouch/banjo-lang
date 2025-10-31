@@ -9,7 +9,7 @@
 namespace banjo {
 
 namespace WasmValueType {
-enum {
+enum : std::uint8_t {
     I32 = 0x7F,
     I64 = 0x7E,
     F32 = 0x7D,
@@ -23,7 +23,7 @@ struct WasmFunctionType {
 };
 
 namespace WasmReferenceType {
-enum {
+enum : std::uint8_t {
     FUNCREF = 0x70,
 };
 }
@@ -58,11 +58,13 @@ struct WasmLocalGroup {
 };
 
 namespace WasmRelocType {
-enum {
+enum : std::uint8_t {
     FUNCTION_INDEX_LEB = 0x00,
     TABLE_INDEX_SLEB = 0x01,
+    TABLE_INDEX_I32 = 0x02,
     MEMORY_ADDR_LEB = 0x03,
     MEMORY_ADDR_SLEB = 0x04,
+    MEMORY_ADDR_I32 = 0x05,
     TYPE_INDEX_LEB = 0x06,
     GLOBAL_INDEX_LEB = 0x07,
     TABLE_NUMBER_LEB = 0x14,
@@ -86,10 +88,11 @@ struct WasmFunction {
 struct WasmDataSegment {
     std::vector<std::uint8_t> offset_expr;
     std::vector<std::uint8_t> init_bytes;
+    std::vector<WasmRelocation> relocs;
 };
 
 namespace WasmSymbolType {
-enum {
+enum : std::uint8_t {
     FUNCTION = 0x00,
     DATA = 0x01,
     GLOBAL = 0x02,
@@ -98,7 +101,7 @@ enum {
 }
 
 namespace WasmSymbolFlags {
-enum {
+enum : std::uint8_t {
     BINDING_LOCAL = 0x02,
     UNDEFINED = 0x10,
     EXPORTED = 0x20,

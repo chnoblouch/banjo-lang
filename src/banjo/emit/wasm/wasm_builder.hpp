@@ -16,9 +16,11 @@ class WasmBuilder {
 
 private:
     unsigned num_func_imports = 0;
-    std::uint32_t data_offset = 0;
     std::unordered_map<std::string_view, std::uint32_t> symbol_indices;
+    std::unordered_set<std::string_view> func_symbols;
     unsigned indirect_call_types_offset = 0;
+    WriteBuffer data_buffer;
+    std::vector<WasmRelocation> data_relocs;
 
     struct FuncContext {
         mcode::Function &func;

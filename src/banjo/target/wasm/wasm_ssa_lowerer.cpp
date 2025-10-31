@@ -168,10 +168,14 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
             emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
         }
+    } else if (addr.base.is_global()) {
+        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+        emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
     } else if (addr.base.is_extern_global()) {
-        mcode::Symbol m_symbol{addr.base.get_extern_global()->name};
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
-        emit({WasmOpcode::I32_LOAD, {mcode::Operand::from_symbol(m_symbol)}});
+        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+        emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -202,17 +206,32 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
 
     AddrComponents addr = collect_addr(instr.get_operand(1));
     ASSERT(!addr.reg_offset);
-    ssa::VirtualRegister base = addr.base.get_register();
 
-    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset.to_unsigned()};
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-        push_operand(value);
-        emit({store_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
-    } else {
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
+    if (addr.base.is_register()) {
+        ssa::VirtualRegister base = addr.base.get_register();
+
+        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset.to_unsigned()};
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            push_operand(value);
+            emit({store_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+        } else {
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
+            push_operand(value);
+            emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
+        }
+    } else if (addr.base.is_global()) {
+        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
         push_operand(value);
         emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
+    } else if (addr.base.is_extern_global()) {
+        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+        push_operand(value);
+        emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
@@ -628,7 +647,6 @@ void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
 
     AddrComponents addr = collect_addr(instr.get_operand(0));
     ASSERT(!addr.reg_offset);
-    ssa::VirtualRegister base = addr.base.get_register();
 
     unsigned const_offset = addr.const_offset.to_unsigned();
 
@@ -636,16 +654,36 @@ void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
         const_offset += base_type_size * offset.get_int_immediate().to_s64();
     }
 
-    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
-        emit({WasmOpcode::I32_ADD});
-    } else {
-        unsigned local_index = vregs2locals.at(base);
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    if (addr.base.is_register()) {
+        ssa::VirtualRegister base = addr.base.get_register();
+
+        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({WasmOpcode::I32_ADD});
+        } else {
+            unsigned local_index = vregs2locals.at(base);
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
+            emit({WasmOpcode::I32_ADD});
+        }
+    } else if (addr.base.is_global()) {
+        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+
+        // TODO: Encode this addition in the relocation
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
         emit({WasmOpcode::I32_ADD});
+    } else if (addr.base.is_extern_global()) {
+        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+
+        // TODO: Encode this addition in the relocation
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     if (offset.is_register()) {
@@ -667,19 +705,38 @@ void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(1));
     ASSERT(!addr.reg_offset);
 
-    ssa::VirtualRegister base = addr.base.get_register();
     unsigned const_offset = addr.const_offset.to_unsigned() + get_member_offset(struct_, member_index);
 
-    if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-        mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
-        emit({WasmOpcode::I32_ADD});
-    } else {
-        unsigned local_index = vregs2locals.at(base);
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    if (addr.base.is_register()) {
+        ssa::VirtualRegister base = addr.base.get_register();
+
+        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({WasmOpcode::I32_ADD});
+        } else {
+            unsigned local_index = vregs2locals.at(base);
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
+            emit({WasmOpcode::I32_ADD});
+        }
+    } else if (addr.base.is_global()) {
+        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+
+        // TODO: Encode this addition in the relocation
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
         emit({WasmOpcode::I32_ADD});
+    } else if (addr.base.is_extern_global()) {
+        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+
+        // TODO: Encode this addition in the relocation
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(const_offset)}});
+        emit({WasmOpcode::I32_ADD});
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});

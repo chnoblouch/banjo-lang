@@ -1,11 +1,36 @@
+use std.config;
 use c;
 
-type ClockId = u32;
+meta if config.OS == config.EMSCRIPTEN {
+    struct Sockaddr {
+        var family: u16;
+        var data: [u8; 14];
+    }
 
-struct Timespec {
-    var tv_sec: c.LongLong;
-    var tv_nsec: c.Long;
+    struct Addrinfo {
+        var flags: i32;
+        var family: i32;
+        var socktype: i32;
+        var protocol: i32;
+        var addrlen: u32;
+        var addr_: *Sockaddr;
+        var canonname: *u8;
+        var next: *Addrinfo;
+    }
+
+    type ClockId = u32;
+
+    struct Timespec {
+        var tv_sec: c.LongLong;
+        var tv_nsec: c.Long;
+    }
+
+    const CLOCK_REALTIME: ClockId = 0;
+    const CLOCK_MONOTONIC: ClockId = 1;
+
+    native func __errno_location() -> *i32;
+
+    pub func errno() -> i32 {
+        return *__errno_location();
+    }
 }
-
-const CLOCK_REALTIME: ClockId = 0;
-const CLOCK_MONOTONIC: ClockId = 1;

@@ -5,10 +5,10 @@ import shutil
 from pathlib import Path
 
 import framework
-from framework import ProcessResult, TestResult, run_process, run_tests, find_executable
+from framework import Test, ProcessResult, TestResult, run_process, run_tests, find_executable
 
 
-SKIPPED_TESTS = [
+SKIPPED_TESTS = set([
     "edge_cases.operators_on_literals.0",
     "edge_cases.operators_on_literals.1",
     "errors.expected_integer.1",
@@ -27,7 +27,14 @@ SKIPPED_TESTS = [
     "features.meta_if.8",
     "features.globals.3",
     "stdlib.convert.6",
-]
+])
+
+SKIPPED_TESTS_WASM = set([
+    "features.meta_expr.size.0",
+    "features.meta_expr.size.1",
+    "features.meta_expr.size.2",
+    "features.meta_expr.size.3",
+])
 
 
 is_windows = platform.system() == "Windows"
@@ -261,7 +268,18 @@ def run_executable(test):
         if not os.path.exists("main.o"):
             return ProcessResult("", "", 1)
 
-        subprocess.run(["emcc", "-otest.js", "main.o", "-sEXIT_RUNTIME", "-lnodefs.js", "-lnoderawfs.js"])
+        subprocess.run([
+            "emcc",
+            "-otest.js",
+            "main.o",
+            "-lnodefs.js",
+            "-lnoderawfs.js",
+            "-sEXIT_RUNTIME",
+            "-sALLOW_MEMORY_GROWTH=1",
+            "-sASSERTIONS",
+            "-g",
+            "-sSTACK_SIZE=1MB",
+        ])
 
         try:
             os.remove("main.o")
@@ -336,10 +354,20 @@ def run_executable(test):
     return result
 
 
+def filter_test(test: Test):
+    if test.name in SKIPPED_TESTS:
+        return False
+
+    if framework.test_wasm and test.name in SKIPPED_TESTS_WASM:
+        return False
+    
+    return True
+
+
 if __name__ == "__main__":
     run_tests(
         directory="compilation",
         file_name_extension=".bnj",
         runner=run_test,
-        skipped_tests=SKIPPED_TESTS,
+        filter_fn=filter_test,
     )

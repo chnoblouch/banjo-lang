@@ -1,10 +1,12 @@
+# test:common
+
+native func putchar(i32) -> i32;
+
 # test:subtest
 # test:output "a"
 
-native func putchar(u8);
-
 func f() {
-    putchar('a');
+    putchar('a' as i32);
 }
 
 func main() {
@@ -14,10 +16,8 @@ func main() {
 # test:subtest
 # test:output "a"
 
-native func putchar(u8);
-
 func f(arg: u8) {
-    putchar(arg);
+    putchar(arg as i32);
 }
 
 func main() {

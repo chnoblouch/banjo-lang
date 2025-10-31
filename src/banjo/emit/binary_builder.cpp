@@ -212,7 +212,7 @@ void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
             data.write_data(value->data(), value->size());
         } else if (auto value = std::get_if<mcode::Global::SymbolRef>(&global.value)) {
             data.add_symbol_use(value->name, BinSymbolUseKind::ABS64, 0);
-            data.write_i64(0);
+            data.write_u64(0);
         } else if (std::holds_alternative<mcode::Global::None>(global.value)) {
             data.write_zeroes(global.size);
         } else {

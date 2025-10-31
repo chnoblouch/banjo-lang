@@ -1,0 +1,19 @@
+# test:output "42,0.5"
+
+struct S {
+    var a: i64;
+    var b: f32;
+}
+
+func get() -> S {
+    return S { a: 42, b: 0.5 };
+}
+
+func main() {
+    var f = get;
+    var r = f();
+
+    print(r.a);
+    print(',');
+    print(r.b);
+}
