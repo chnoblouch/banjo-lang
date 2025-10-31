@@ -29,7 +29,13 @@ ArgPassMethod TargetDataLayout::get_arg_pass_method(const ssa::Type &type) const
     unsigned size = get_size(type);
     unsigned num_args = std::max(utils::div_ceil(size, params.register_size), 1u);
 
-    if (num_args <= params.max_regs_per_arg) {
+    if (num_args == 1) {
+        return ArgPassMethod{
+            .via_pointer = false,
+            .num_args = 1,
+            .last_arg_type = type,
+        };
+    } else if (num_args <= params.max_regs_per_arg) {
         unsigned last_arg_size = size % params.register_size;
 
         if (last_arg_size == 0) {
