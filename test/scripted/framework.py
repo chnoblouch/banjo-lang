@@ -11,6 +11,7 @@ CONDITION_PREFIX = "# test:"
 
 
 install_dir = None
+test_wasm = False
 
 
 class ProcessResult:
@@ -37,14 +38,21 @@ class TestResult:
 
 
 def run_tests(directory, file_name_extension, runner, skipped_tests=[]):
-    global install_dir
+    global install_dir, test_wasm
 
     parser = argparse.ArgumentParser()
     parser.add_argument("pattern", nargs="?", default="*")
     parser.add_argument("--install-dir")
+    parser.add_argument("--wasm", action="store_true")
     args = parser.parse_args()
 
     install_dir = os.path.abspath(args.install_dir) if args.install_dir else None
+    test_wasm = args.wasm
+
+    print("\nconfig:")
+    print(f"  install dir: {install_dir}")
+    print(f"  wasm: {test_wasm}")
+
     os.chdir(os.path.dirname(__file__))
 
     tests = []

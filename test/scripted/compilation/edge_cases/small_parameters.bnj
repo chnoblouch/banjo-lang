@@ -1,0 +1,30 @@
+# test:subtest
+# test:output "438,185"
+
+struct S {
+    var a: i32;
+    var b: i32;
+}
+
+func f(a: S) {
+    print(a.a);
+    print(',');
+    print(a.b);
+}
+
+func main() {
+    f(S { a: 438, b: 185 });
+}
+
+# test:subtest
+# test:output "438,185"
+
+func f(a: [i32; 2]) {
+    print(a[0]);
+    print(',');
+    print(a[1]);
+}
+
+func main() {
+    f([438, 185]);
+}

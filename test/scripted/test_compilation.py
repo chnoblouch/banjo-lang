@@ -4,6 +4,7 @@ import platform
 import shutil
 from pathlib import Path
 
+import framework
 from framework import ProcessResult, TestResult, run_process, run_tests, find_executable
 
 
@@ -32,7 +33,6 @@ SKIPPED_TESTS = [
 is_windows = platform.system() == "Windows"
 is_linux = platform.system() == "Linux"
 is_macos = platform.system() == "Darwin"
-test_wasm = False
 
 
 def run_test(test, conditions):
@@ -203,7 +203,7 @@ def compile_source(test):
     elif machine in ("aarch64", "arm64"):
         arch = "aarch64"
 
-    if test_wasm:
+    if framework.test_wasm:
         result = run_process([
             compiler_path,
             "--type", "executable",
@@ -257,7 +257,7 @@ def compile_source(test):
 def run_executable(test):
     compile_source(test)
 
-    if test_wasm:
+    if framework.test_wasm:
         if not os.path.exists("main.o"):
             return ProcessResult("", "", 1)
 

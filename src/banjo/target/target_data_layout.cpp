@@ -10,19 +10,27 @@ namespace banjo::target {
 TargetDataLayout::TargetDataLayout(Params params) : params(params) {}
 
 bool TargetDataLayout::fits_in_register(const ssa::Type &type) const {
-    if (type.is_struct() && !params.supports_structs_in_regs) {
-        return is_single_member(*type.get_struct());
+    if (!params.supports_structs_in_regs) {
+        if (type.get_array_length() != 1) {
+            return false;
+        } else if (type.is_struct()) {
+            return is_single_member(*type.get_struct());
+        }
     }
 
     return get_size(type) <= params.register_size;
 }
 
 ArgPassMethod TargetDataLayout::get_arg_pass_method(const ssa::Type &type) const {
-    if (type.is_struct() && !params.supports_structs_in_regs) {
-        if (is_single_member(*type.get_struct())) {
-            return ArgPassMethod{.via_pointer = false, .num_args = 1, .last_arg_type = type};
-        } else {
+    if (!params.supports_structs_in_regs) {
+        if (type.get_array_length() != 1) {
             return ArgPassMethod{.via_pointer = true, .num_args = 1, .last_arg_type = get_usize_type()};
+        } else if (type.is_struct()) {
+            if (is_single_member(*type.get_struct())) {
+                return ArgPassMethod{.via_pointer = false, .num_args = 1, .last_arg_type = type};
+            } else {
+                return ArgPassMethod{.via_pointer = true, .num_args = 1, .last_arg_type = get_usize_type()};
+            }
         }
     }
 
