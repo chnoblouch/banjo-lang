@@ -11,6 +11,7 @@
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -21,7 +22,7 @@ namespace banjo {
 namespace lang {
 
 const ssa::Type SSA_MAIN_ARGC_TYPE = ssa::Primitive::I32;
-const ssa::Type ssa_MAIN_ARGV_TYPE = ssa::Primitive::ADDR;
+const ssa::Type SSA_MAIN_ARGV_TYPE = ssa::Primitive::ADDR;
 const ssa::Type SSA_MAIN_RETURN_TYPE = ssa::Primitive::I32;
 const ssa::Value SSA_MAIN_RETURN_VALUE = ssa::Value::from_int_immediate(0, SSA_MAIN_RETURN_TYPE);
 
@@ -84,7 +85,7 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
 
     if (sir_func.is_main()) {
         if (ssa_func_type.params.empty()) {
-            ssa_func_type.params = {SSA_MAIN_ARGC_TYPE, ssa_MAIN_ARGV_TYPE};
+            ssa_func_type.params = {SSA_MAIN_ARGC_TYPE, SSA_MAIN_ARGV_TYPE};
         }
 
         if (ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
@@ -122,6 +123,8 @@ void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) 
 }
 
 std::vector<ssa::Type> SSAGenerator::generate_params(const sir::FuncType &sir_func_type) {
+    target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+
     unsigned sir_num_params = sir_func_type.params.size();
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func_type.return_type);
@@ -137,11 +140,16 @@ std::vector<ssa::Type> SSAGenerator::generate_params(const sir::FuncType &sir_fu
 
     for (const sir::Param &sir_param : sir_func_type.params) {
         ssa::Type ssa_param_type = TypeSSAGenerator(ctx).generate(sir_param.type);
+        target::ArgPassMethod pass_method = data_layout.get_arg_pass_method(ssa_param_type);
 
-        if (ctx.target->get_data_layout().fits_in_register(ssa_param_type)) {
-            ssa_params.push_back(ssa_param_type);
-        } else {
+        if (pass_method.via_pointer) {
             ssa_params.push_back(ssa::Primitive::ADDR);
+        } else {
+            for (unsigned i = 0; i < pass_method.num_args - 1; i++) {
+                ssa_params.push_back(data_layout.get_usize_type());
+            }
+
+            ssa_params.push_back(pass_method.last_arg_type);
         }
     }
 
@@ -186,12 +194,10 @@ void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
     ssa::Structure *vtable_type = new ssa::Structure("vtable." + std::string{sir_proto_def.ident.value});
 
     for (unsigned i = 0; i < sir_proto_def.func_decls.size(); i++) {
-        vtable_type->add(
-            ssa::StructureMember{
-                .name = "f" + std::to_string(i),
-                .type = ssa::Primitive::ADDR,
-            }
-        );
+        vtable_type->add(ssa::StructureMember{
+            .name = "f" + std::to_string(i),
+            .type = ssa::Primitive::ADDR,
+        });
     }
 
     ssa_mod.add(vtable_type);
@@ -313,6 +319,8 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
+    target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+
     if (sir_func.parent.is<sir::ProtoDef>() && sir_func.is_method()) {
         return;
     }
@@ -333,37 +341,70 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     ctx.push_func_context(ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
 
-    for (unsigned i = 0; i < ssa_func->type.params.size(); i++) {
-        const ssa::Type &ssa_param_type = ssa_func->type.params[i];
+    ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
+    ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
+
+    unsigned ssa_arg_index = 0;
+
+    if (return_method == ReturnMethod::VIA_POINTER_ARG) {
         ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
-        ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_param_type);
+
+        ssa::Type ssa_arg_type = return_method == ReturnMethod::VIA_POINTER_ARG ? ssa::Primitive::ADDR : ssa_return_type;
+        ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_arg_type);
         alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
 
         ssa::VirtualRegister ssa_arg_val = ssa_func->next_virtual_reg();
-        ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_val, ssa_param_type, i);
+        ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_val, ssa_arg_type, ssa_arg_index);
         loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
 
         ssa::Instruction &store_instr = ctx.append_store(
-            ssa::Operand::from_register(ssa_arg_val, ssa_param_type),
+            ssa::Operand::from_register(ssa_arg_val, ssa_arg_type),
             ssa::Operand::from_register(ssa_slot, ssa::Primitive::ADDR)
         );
         store_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
 
-        ctx.get_func_context().arg_regs.push_back(ssa_slot);
+        ctx.get_func_context().ssa_return_arg_slot = ssa_slot;
+        ssa_arg_index += 1;
     }
 
-    ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
-    ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
-    unsigned param_mapping_offset = return_method == ReturnMethod::VIA_POINTER_ARG ? 1 : 0;
+    for (const sir::Param &sir_param : sir_func.type.params) {
+        const ssa::Type &ssa_param_type = TypeSSAGenerator(ctx).generate(sir_param.type);
+        target::ArgPassMethod pass_method = data_layout.get_arg_pass_method(ssa_param_type);
+
+        ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
+
+        ssa::Type alloca_type = pass_method.via_pointer ? ssa::Primitive::ADDR : ssa_param_type;
+        ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, alloca_type);
+        alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
+
+        for (unsigned i = 0; i < pass_method.num_args; i++) {
+            ssa::VirtualRegister ssa_arg_reg = ssa_func->next_virtual_reg();
+
+            ssa::Type copy_type =
+                i == pass_method.num_args - 1 ? pass_method.last_arg_type : data_layout.get_usize_type();
+
+            ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_reg, copy_type, ssa_arg_index);
+            loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
+
+            ssa::Operand store_dst = ssa::Operand::from_register(ssa_slot, ssa::Primitive::ADDR);
+
+            if (i != 0) {
+                ssa::VirtualRegister dst_reg = ctx.append_offsetptr(store_dst, 1, data_layout.get_usize_type());
+                store_dst = ssa::Operand::from_register(dst_reg, ssa::Primitive::ADDR);
+            }
+
+            ssa::Instruction &store_instr =
+                ctx.append_store(ssa::Operand::from_register(ssa_arg_reg, copy_type), store_dst);
+            store_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
+
+            ssa_arg_index += 1;
+        }
+
+        ctx.ssa_param_slots.insert({&sir_param, ssa_slot});
+    }
 
     if (return_method != ReturnMethod::NO_RETURN_VALUE) {
         ctx.get_func_context().ssa_return_slot = ctx.append_alloca(ssa_return_type);
-    }
-
-    for (unsigned i = 0; i < sir_func.type.params.size(); i++) {
-        const sir::Param &sir_param = sir_func.type.params[i];
-        ssa::VirtualRegister ssa_slot = ctx.get_func_context().arg_regs[i + param_mapping_offset];
-        ctx.ssa_param_slots.insert({&sir_param, ssa_slot});
     }
 
     BlockSSAGenerator(ctx).generate_block(sir_func.block);
@@ -385,7 +426,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         ssa::Value ssa_return_val = ctx.append_load(ssa_return_type, ssa_return_slot);
         ctx.append_ret(ssa_return_val);
     } else if (return_method == ReturnMethod::VIA_POINTER_ARG) {
-        ssa::Value ssa_copy_dst = ctx.append_load(ssa::Primitive::ADDR, ctx.get_func_context().arg_regs[0]);
+        ssa::Value ssa_copy_dst = ctx.append_load(ssa::Primitive::ADDR, ctx.get_func_context().ssa_return_arg_slot);
         ssa::VirtualRegister ssa_return_slot = ctx.get_func_context().ssa_return_slot;
         ssa::Value ssa_copy_src = ssa::Value::from_register(ssa_return_slot, ssa::Primitive::ADDR);
         ctx.append_copy(ssa_copy_dst, ssa_copy_src, ssa_return_type);

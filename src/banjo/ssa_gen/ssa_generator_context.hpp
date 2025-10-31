@@ -47,8 +47,8 @@ public:
         ssa::BasicBlockIter ssa_block;
         ssa::BasicBlockIter ssa_func_exit;
         ssa::VirtualRegister ssa_return_slot;
+        ssa::VirtualRegister ssa_return_arg_slot;
         ssa::InstrIter ssa_last_alloca;
-        std::vector<ssa::VirtualRegister> arg_regs;
         std::map<const sir::Resource *, ssa::VirtualRegister> resource_deinit_flags;
         std::vector<DeferredDeinit> cur_deferred_deinits;
         std::vector<const sir::Block *> sir_scopes;

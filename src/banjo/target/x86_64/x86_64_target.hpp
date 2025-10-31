@@ -3,6 +3,7 @@
 
 #include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target.hpp"
+#include "banjo/target/target_data_layout.hpp"
 #include "banjo/target/x86_64/x86_64_reg_analyzer.hpp"
 
 namespace banjo {
@@ -12,7 +13,7 @@ namespace target {
 class X8664Target : public Target {
 
 private:
-    StandardDataLayout data_layout{8, ssa::Primitive::U64, true};
+    StandardDataLayout data_layout;
     X8664RegAnalyzer reg_analyzer;
 
 public:

@@ -24,6 +24,8 @@ private:
     unsigned array_length;
 
 public:
+    static Type sized(unsigned size);
+
     Type(Primitive primitive, unsigned array_length = 1) : primitive(primitive), kind(0), array_length(array_length) {}
 
     Type(Structure *struct_, unsigned array_length = 1) : struct_(struct_), kind(1), array_length(array_length) {

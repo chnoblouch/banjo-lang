@@ -4,6 +4,7 @@
 #include "banjo/emit/elf/elf_emitter.hpp"
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/emit/pe/pe_emitter.hpp"
+#include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/target/x86_64/x86_64_peephole_opt_pass.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
@@ -12,7 +13,14 @@ namespace banjo {
 
 namespace target {
 
-X8664Target::X8664Target(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
+X8664Target::X8664Target(TargetDescription descr, CodeModel code_model)
+  : Target(descr, code_model),
+    data_layout{TargetDataLayout::Params{
+        .register_size = 8,
+        .usize_type = ssa::Primitive::U64,
+        .max_regs_per_arg = descr.is_windows() ? 1u : 2u,
+        .supports_structs_in_regs = true,
+    }} {}
 
 codegen::SSALowerer *X8664Target::create_ssa_lowerer() {
     return new X8664SSALowerer(this);

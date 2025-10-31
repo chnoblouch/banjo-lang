@@ -11,7 +11,14 @@ namespace banjo {
 
 namespace target {
 
-AArch64Target::AArch64Target(TargetDescription descr, CodeModel code_model) : Target(descr, code_model) {}
+AArch64Target::AArch64Target(TargetDescription descr, CodeModel code_model)
+  : Target(descr, code_model),
+    data_layout{TargetDataLayout::Params{
+        .register_size = 8,
+        .usize_type = ssa::Primitive::U64,
+        .max_regs_per_arg = 2,
+        .supports_structs_in_regs = true,
+    }} {}
 
 codegen::SSALowerer *AArch64Target::create_ssa_lowerer() {
     return new AArch64SSALowerer(this);

@@ -14,6 +14,15 @@
 
 namespace banjo {
 
+namespace utils {
+
+template <typename T>
+T div_ceil(T divident, T divisor) {
+    return (divident + divisor - 1) / divisor;
+}
+
+} // namespace utils
+
 namespace Utils {
 
 typedef FixedVector<unsigned char, 16> LEB128Buffer;

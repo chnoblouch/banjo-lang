@@ -20,7 +20,6 @@ void SSAGeneratorContext::push_func_context(ssa::Function *ssa_func) {
         .ssa_func = ssa_func,
         .ssa_block = ssa_func->get_entry_block_iter(),
         .ssa_last_alloca = ssa_func->get_entry_block().get_instrs().get_header(),
-        .arg_regs = {},
     });
 }
 

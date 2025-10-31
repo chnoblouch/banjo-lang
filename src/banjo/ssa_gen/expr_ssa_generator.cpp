@@ -12,6 +12,7 @@
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
@@ -274,13 +275,14 @@ StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param.type);
     ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
 
+    target::ArgPassMethod pass_method = ctx.target->get_data_layout().get_arg_pass_method(ssa_type);
     StoredValue ssa_value;
 
-    if (ctx.target->get_data_layout().fits_in_register(ssa_type)) {
-        ssa_value = StoredValue::create_reference(ssa_ptr, ssa_type);
-    } else {
+    if (pass_method.via_pointer) {
         ssa::Value ssa_loaded_ptr = ctx.append_load(ssa::Primitive::ADDR, ssa_ptr);
         ssa_value = StoredValue::create_reference(ssa_loaded_ptr, ssa_type);
+    } else {
+        ssa_value = StoredValue::create_reference(ssa_ptr, ssa_type);
     }
 
     return ssa_value;
@@ -539,7 +541,22 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 
     if (!ssa_proto_self) {
         for (const sir::Expr &arg : call_expr.args) {
-            ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
+            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(arg.get_type());
+            target::ArgPassMethod pass_method = ctx.target->get_data_layout().get_arg_pass_method(ssa_type);
+
+            if (pass_method.num_args == 1) {
+                ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
+            } else {
+                StoredValue ssa_arg = generate(arg).turn_into_value_or_copy(ctx);
+                ASSERT(ssa_arg.kind == StoredValue::Kind::REFERENCE);
+
+                for (unsigned i = 0; i < pass_method.num_args; i++) {
+                    ssa::VirtualRegister ptr = ctx.append_offsetptr(ssa_arg.get_ptr(), i, ssa::Primitive::U64);
+                    ssa::Type type = i == pass_method.num_args - 1 ? pass_method.last_arg_type : ssa::Primitive::U64;
+                    ssa::Value value = ctx.append_load(type, ptr);
+                    ssa_operands.push_back(value);
+                }
+            }
         }
     } else {
         ssa::Value data_ptr_ptr = ctx.append_memberptr_val(ctx.get_fat_pointer_type(), *ssa_proto_self, 0);

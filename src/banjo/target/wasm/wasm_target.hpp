@@ -10,7 +10,7 @@ namespace banjo::target {
 class WasmTarget : public Target {
 
 private:
-    StandardDataLayout data_layout{8, ssa::Primitive::U32, false};
+    StandardDataLayout data_layout;
     X8664RegAnalyzer reg_analyzer;
 
 public:

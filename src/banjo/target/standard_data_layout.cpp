@@ -5,8 +5,7 @@
 
 namespace banjo::target {
 
-StandardDataLayout::StandardDataLayout(unsigned register_size, ssa::Type usize_type, bool supports_structs_in_regs)
-  : TargetDataLayout(register_size, usize_type, supports_structs_in_regs) {}
+StandardDataLayout::StandardDataLayout(Params params) : TargetDataLayout(params) {}
 
 unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
     if (type.is_primitive()) {

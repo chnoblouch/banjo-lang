@@ -4,6 +4,7 @@
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target.hpp"
+#include "banjo/target/target_data_layout.hpp"
 
 namespace banjo {
 
@@ -12,7 +13,7 @@ namespace target {
 class AArch64Target : public Target {
 
 private:
-    StandardDataLayout data_layout{8, ssa::Primitive::U64, true};
+    StandardDataLayout data_layout;
     AArch64RegAnalyzer reg_analyzer;
 
 public:

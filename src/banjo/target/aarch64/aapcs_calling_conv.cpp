@@ -139,7 +139,7 @@ void AAPCSCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::
     for (int i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
         if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::ARG_STORE) {
-            region.size -= 8;
+            region.size -= slot.get_size();
             region.offsets.insert({i, region.size});
         }
     }
