@@ -909,18 +909,26 @@ Target CLI::parse_target(std::string_view string) {
         }
     }
 
+    Target target;
+
     if (components.size() == 2) {
         const std::string &arch = components[0];
         const std::string &os = components[1];
-        return Target(arch, os, Target::get_default_env(os));
+        target = Target{arch, os, Target::get_default_env(os)};
     } else if (components.size() == 3) {
         const std::string &arch = components[0];
         const std::string &os = components[1];
         const std::string &env = components[2];
-        return Target(arch, os, env);
+        target = Target{arch, os, env};
     } else {
-        return Target();
+        error("invalid target '" + std::string(string) + "'");
     }
+
+    if (!Utils::contains(Target::list_available(), target)) {
+        error("target '" + std::string(string) + "' is not supported");
+    }
+
+    return target;
 }
 
 void CLI::install_package(std::string_view package) {
@@ -1263,14 +1271,23 @@ void CLI::invoke_darwin_linker() {
 void CLI::invoke_wasm_linker() {
     std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
 
+    std::vector<std::string> args;
+    args.push_back("main.o");
+    args.push_back("-o");
+    args.push_back(get_output_path());
+    args.push_back("--no-entry");
+
+    for (const std::string &library_path : library_paths) {
+        args.push_back("-L" + library_path);
+    }
+
+    for (const std::string &library : libraries) {
+        args.push_back("-l" + library);
+    }
+
     Command command{
         .executable = linker_path,
-        .args{
-            "main.o",
-            "-o",
-            get_output_path(),
-            "--no-entry",
-        },
+        .args = args,
     };
 
     print_command("linker", command);
@@ -1285,15 +1302,13 @@ void CLI::invoke_wasm_linker() {
 void CLI::invoke_emscripten_linker() {
     std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
 
-    std::vector<std::string> args{
-        "main.o",
-        "-o",
-        get_output_path(),
-        "-sSTACK_SIZE=1024*1024",
-        "-sALLOW_MEMORY_GROWTH=1",
-        "-sASSERTIONS",
-        "-g",
-    };
+    std::vector<std::string> args;
+    args.push_back("main.o");
+    args.push_back("-o");
+    args.push_back(get_output_path());
+    args.push_back("-sSTACK_SIZE=1024*1024");
+    args.push_back("-sALLOW_MEMORY_GROWTH=1");
+    args.push_back("-sASSERTIONS");
 
     for (const std::string &library_path : library_paths) {
         args.push_back("-L" + library_path);

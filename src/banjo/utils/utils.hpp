@@ -70,6 +70,11 @@ bool equal(const std::span<T> &lhs, const std::span<T> &rhs) {
     return true;
 }
 
+template <typename Iterable, typename T>
+bool contains(const Iterable &iterable, const T &value) {
+    return std::find(iterable.begin(), iterable.end(), value) != iterable.end();
+}
+
 template <typename T>
 std::vector<T> remove_duplicates(const std::vector<T> &array) {
     std::vector<T> result;

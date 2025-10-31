@@ -58,7 +58,6 @@ private:
     std::vector<std::string> source_paths;
     std::vector<std::string> libraries;
     std::vector<std::string> library_paths;
-    std::vector<std::string> object_files;
     std::vector<std::string> macos_frameworks;
 
     std::chrono::steady_clock::time_point start_time;
