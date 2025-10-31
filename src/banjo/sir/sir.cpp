@@ -362,27 +362,27 @@ ASTNode *Stmt::get_ast_node() const {
 const Ident &Symbol::get_ident() const {
     SIR_VISIT_SYMBOL(
         *this,
-        SIR_VISIT_IMPOSSIBLE, // empty
-        SIR_VISIT_IMPOSSIBLE, // module
-        return inner->ident,  // func_def
-        return inner->ident,  // func_decl
-        return inner->ident,  // native_func_decl
-        return inner->ident,  // const_def
-        return inner->ident,  // struct_def
-        return inner->ident,  // struct_field
-        return inner->ident,  // var_decl
-        return inner->ident,  // native_var_decl
-        return inner->ident,  // enum_def
-        return inner->ident,  // enum_variant
-        return inner->ident,  // union_def
-        return inner->ident,  // union_case
-        return inner->ident,  // proto_def
-        return inner->ident,  // type_alias
-        return inner->ident,  // use_ident
-        SIR_VISIT_IMPOSSIBLE, // use_rebind
-        return inner->name,   // local
-        return inner->name,   // param
-        SIR_VISIT_IMPOSSIBLE  // overload_set
+        SIR_VISIT_IMPOSSIBLE,             // empty
+        SIR_VISIT_IMPOSSIBLE,             // module
+        return inner->ident,              // func_def
+        return inner->ident,              // func_decl
+        return inner->ident,              // native_func_decl
+        return inner->ident,              // const_def
+        return inner->ident,              // struct_def
+        return inner->ident,              // struct_field
+        return inner->ident,              // var_decl
+        return inner->ident,              // native_var_decl
+        return inner->ident,              // enum_def
+        return inner->ident,              // enum_variant
+        return inner->ident,              // union_def
+        return inner->ident,              // union_case
+        return inner->ident,              // proto_def
+        return inner->ident,              // type_alias
+        return inner->ident,              // use_ident
+        SIR_VISIT_IMPOSSIBLE,             // use_rebind
+        return inner->name,               // local
+        return inner->name,               // param
+        return inner->func_defs[0]->ident // overload_set
     );
 }
 

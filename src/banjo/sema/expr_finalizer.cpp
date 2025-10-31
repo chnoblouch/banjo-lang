@@ -379,6 +379,10 @@ Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr
                 tuple_literal.type.as<sir::TupleExpr>().exprs[i] = value.get_type();
             }
 
+            if (result != Result::SUCCESS) {
+                return Result::ERROR;
+            }
+
             if (tuple_literal.type != type) {
                 analyzer.report_generator.report_err_type_mismatch(&tuple_literal, type, tuple_literal.type);
                 return Result::ERROR;

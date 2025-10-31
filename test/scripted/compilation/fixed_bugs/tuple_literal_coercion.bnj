@@ -25,7 +25,7 @@ func main() {
 
 
 # test:subtest
-# test:error 31:31 "type mismatch (expected '(Point, i32)', got '(Point, Point)')"
+# test:error 36:9 "type mismatch (expected 'i32', got 'Point')"
 
 func main() {
     var tuple: (Point, i32) = (

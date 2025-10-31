@@ -49,10 +49,6 @@ def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
     install_dir = os.path.abspath(args.install_dir) if args.install_dir else None
     test_wasm = args.wasm
 
-    print("\nconfig:")
-    print(f"  install dir: {install_dir}")
-    print(f"  wasm: {test_wasm}")
-
     os.chdir(os.path.dirname(__file__))
 
     tests = []
