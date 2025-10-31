@@ -58,6 +58,20 @@ struct MacOSToolchain {
     JSONObject serialize();
 };
 
+struct WasmToolchain {
+    std::string linker_path;
+
+    static WasmToolchain detect();
+    JSONObject serialize();
+};
+
+struct EmscriptenToolchain {
+    std::string linker_path;
+
+    static EmscriptenToolchain detect();
+    JSONObject serialize();
+};
+
 } // namespace cli
 } // namespace banjo
 

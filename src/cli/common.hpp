@@ -23,7 +23,7 @@ void print_error(std::string_view message);
 [[noreturn]] void exit_error();
 [[noreturn]] void error(std::string_view message);
 
-std::optional<std::filesystem::path> find_tool(std::string_view name);
+std::optional<std::filesystem::path> find_tool(std::string_view name, std::string_view windows_ext = ".exe");
 std::string get_tool_output(const std::filesystem::path &tool_path, std::vector<std::string> args);
 
 std::string get_python_executable();

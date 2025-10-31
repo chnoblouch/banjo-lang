@@ -66,11 +66,11 @@ void error(std::string_view message) {
     exit_error();
 }
 
-std::optional<std::filesystem::path> find_tool(std::string_view name) {
+std::optional<std::filesystem::path> find_tool(std::string_view name, std::string_view windows_ext /* = ".exe" */) {
     std::string file_name(name);
 
 #if OS_WINDOWS
-    file_name += ".exe";
+    file_name += windows_ext;
 #endif
 
     std::optional<std::string_view> path_env = Utils::get_env("PATH");

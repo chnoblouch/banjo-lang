@@ -750,6 +750,12 @@ void CLI::set_up_toolchain() {
         }
     } else if (target.os == "macos") {
         toolchain.properties = MacOSToolchain::detect().serialize();
+    } else if (target.arch == "wasm") {
+        if (target.os == "emscripten") {
+            toolchain.properties = EmscriptenToolchain::detect().serialize();
+        } else {
+            toolchain.properties = WasmToolchain::detect().serialize();
+        }
     }
 
     print_step("  Caching toolchain...");
@@ -959,7 +965,7 @@ void CLI::build() {
     unsigned duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
     float duration_s = static_cast<float>(duration_ms) / 1000.0f;
 
-    if (verbose) {
+    if (!single_line_output) {
         std::ostringstream string_stream;
         string_stream << std::fixed << std::setprecision(2) << duration_s;
         print_step("Build finished (" + string_stream.str() + " seconds)");
@@ -1255,8 +1261,10 @@ void CLI::invoke_darwin_linker() {
 }
 
 void CLI::invoke_wasm_linker() {
+    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
+
     Command command{
-        .executable = "wasm-ld",
+        .executable = linker_path,
         .args{
             "main.o",
             "-o",
@@ -1275,21 +1283,29 @@ void CLI::invoke_wasm_linker() {
 }
 
 void CLI::invoke_emscripten_linker() {
-    std::string emcc_executable;
+    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
 
-#if OS_WINDOWS
-    emcc_executable = "emcc.bat";
-#else
-    emcc_executable = "emcc";
-#endif
+    std::vector<std::string> args{
+        "main.o",
+        "-o",
+        get_output_path(),
+        "-sSTACK_SIZE=1024*1024",
+        "-sALLOW_MEMORY_GROWTH=1",
+        "-sASSERTIONS",
+        "-g",
+    };
+
+    for (const std::string &library_path : library_paths) {
+        args.push_back("-L" + library_path);
+    }
+
+    for (const std::string &library : libraries) {
+        args.push_back("-l" + library);
+    }
 
     Command command{
-        .executable = emcc_executable,
-        .args{
-            "main.o",
-            "-o",
-            get_output_path(),
-        },
+        .executable = linker_path,
+        .args = args,
     };
 
     print_command("linker", command);

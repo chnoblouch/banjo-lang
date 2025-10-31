@@ -296,14 +296,12 @@ void UnixToolchain::find_crt_dir() {
 
 std::filesystem::path UnixToolchain::find_c_compiler() {
     std::optional<std::filesystem::path> clang_path = find_tool("clang");
-
     if (clang_path) {
         print_step("  Found Clang: " + clang_path->string());
         return *clang_path;
     }
 
     std::optional<std::filesystem::path> gcc_path = find_tool("gcc");
-
     if (gcc_path) {
         print_step("  Found GCC: " + gcc_path->string());
         return *gcc_path;
@@ -380,6 +378,50 @@ JSONObject MacOSToolchain::serialize() {
     object.add("linker_path", linker_path);
     object.add("extra_args", JSONArray{linker_args});
     object.add("sysroot", sysroot_path);
+    return object;
+}
+
+WasmToolchain WasmToolchain::detect() {
+    WasmToolchain toolchain;
+
+    print_step("Locating WebAssembly linker...");
+
+    std::optional<std::filesystem::path> wasm_ld_path = find_tool("wasm-ld");
+    if (!wasm_ld_path) {
+        error("failed to find wasm linker");
+    }
+
+    print_step("  Found WebAssembly linker: " + wasm_ld_path->string());
+    toolchain.linker_path = wasm_ld_path->string();
+
+    return toolchain;
+}
+
+JSONObject WasmToolchain::serialize() {
+    JSONObject object;
+    object.add("linker_path", linker_path);
+    return object;
+}
+
+EmscriptenToolchain EmscriptenToolchain::detect() {
+    EmscriptenToolchain toolchain;
+
+    print_step("Locating Emscripten linker...");
+
+    std::optional<std::filesystem::path> emcc_path = find_tool("emcc", ".bat");
+    if (!emcc_path) {
+        error("failed to find emscripten linker");
+    }
+
+    print_step("  Found Emscripten linker: " + emcc_path->string());
+    toolchain.linker_path = emcc_path->string();
+
+    return toolchain;
+}
+
+JSONObject EmscriptenToolchain::serialize() {
+    JSONObject object;
+    object.add("linker_path", linker_path);
     return object;
 }
 
