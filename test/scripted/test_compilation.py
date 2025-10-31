@@ -261,7 +261,7 @@ def run_executable(test):
         if not os.path.exists("main.o"):
             return ProcessResult("", "", 1)
 
-        subprocess.run(["emcc", "-otest.js", "main.o", "-sEXIT_RUNTIME"])
+        subprocess.run(["emcc", "-otest.js", "main.o", "-sEXIT_RUNTIME", "-lnodefs.js", "-lnoderawfs.js"])
 
         try:
             os.remove("main.o")

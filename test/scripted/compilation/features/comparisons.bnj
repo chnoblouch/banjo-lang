@@ -1,0 +1,83 @@
+# test:subtest
+# test:output "true,false,true,false,true,false,false,true,false,false,true,true,false,true,true,false"
+
+func main() {
+    print(42 == 42);
+    print(',');
+    print(42 == 43);
+    print(',');
+
+    print(42 != 43);
+    print(',');
+    print(42 != 42);
+    print(',');
+
+    print(42 > 41);
+    print(',');
+    print(42 > 42);
+    print(',');
+    print(42 > 43);
+    print(',');
+
+    print(42 < 43);
+    print(',');
+    print(42 < 42);
+    print(',');
+    print(42 < 41);
+    print(',');
+
+    print(42 >= 41);
+    print(',');
+    print(42 >= 42);
+    print(',');
+    print(42 >= 43);
+    print(',');
+
+    print(42 <= 43);
+    print(',');
+    print(42 <= 42);
+    print(',');
+    print(42 <= 41);
+}
+
+# test:subtest
+# test:output "true,false,true,false,true,false,false,true,false,false,true,true,false,true,true,false"
+
+func main() {
+    print(0.5 == 0.5);
+    print(',');
+    print(0.5 == 1.0);
+    print(',');
+
+    print(0.5 != 1.0);
+    print(',');
+    print(0.5 != 0.5);
+    print(',');
+
+    print(0.5 > 0.25);
+    print(',');
+    print(0.5 > 0.5);
+    print(',');
+    print(0.5 > 1.0);
+    print(',');
+
+    print(0.5 < 1.0);
+    print(',');
+    print(0.5 < 0.5);
+    print(',');
+    print(0.5 < 0.25);
+    print(',');
+
+    print(0.5 >= 0.25);
+    print(',');
+    print(0.5 >= 0.5);
+    print(',');
+    print(0.5 >= 1.0);
+    print(',');
+
+    print(0.5 <= 1.0);
+    print(',');
+    print(0.5 <= 0.5);
+    print(',');
+    print(0.5 <= 0.25);
+}

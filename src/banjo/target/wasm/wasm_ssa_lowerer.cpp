@@ -346,7 +346,32 @@ void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_fcjmp(ssa::Instruction &instr) {
-    //
+    unsigned block_index_true = block_indices.at(instr.get_operand(3).get_branch_target().block);
+    unsigned block_index_false = block_indices.at(instr.get_operand(4).get_branch_target().block);
+
+    bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::F64;
+    mcode::Opcode m_cmp_opcode;
+
+    switch (instr.get_operand(1).get_comparison()) {
+        case ssa::Comparison::FEQ: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_EQ : WasmOpcode::F32_EQ; break;
+        case ssa::Comparison::FNE: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_NE : WasmOpcode::F32_NE; break;
+        case ssa::Comparison::FGT: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_GT : WasmOpcode::F32_GT; break;
+        case ssa::Comparison::FGE: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_GE : WasmOpcode::F32_GE; break;
+        case ssa::Comparison::FLT: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_LT : WasmOpcode::F32_LT; break;
+        case ssa::Comparison::FLE: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_LE : WasmOpcode::F32_LE; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_true)}});
+    emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_false)}});
+
+    push_operand(instr.get_operand(0));
+    push_operand(instr.get_operand(2));
+    emit({m_cmp_opcode});
+    emit({WasmOpcode::SELECT});
+
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});
+    emit({WasmOpcode::BR, {mcode::Operand::from_int_immediate(block_depth)}});
 }
 
 void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
@@ -421,7 +446,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
     } else if (callee.is_register()) {
         unsigned local_index = vregs2locals.at(callee.get_register());
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
-        
+
         WasmModData &mod_data = std::any_cast<WasmModData &>(machine_module.get_target_data());
         unsigned type_index = mod_data.indirect_call_types.size();
         mod_data.indirect_call_types.push_back(lower_func_type(ssa::get_call_func_type(instr)));
