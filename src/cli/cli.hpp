@@ -102,7 +102,8 @@ private:
     void invoke_nasm_assembler();
     void invoke_aarch64_assembler();
     void invoke_linker();
-    void invoke_windows_linker();
+    void invoke_msvc_linker();
+    void invoke_mingw_linker();
     void invoke_unix_linker();
     void invoke_darwin_linker();
     void invoke_wasm_linker();

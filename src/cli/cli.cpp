@@ -3,6 +3,7 @@
 #include "banjo/utils/json.hpp"
 #include "banjo/utils/json_parser.hpp"
 #include "banjo/utils/json_serializer.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include "argument_parser.hpp"
@@ -741,7 +742,13 @@ void CLI::set_up_toolchain() {
     Target host = Target::host();
 
     if (target.os == "windows") {
-        toolchain.properties = WindowsToolchain::detect().serialize();
+        if (target.env == "msvc") {
+            toolchain.properties = MSVCToolchain::detect().serialize();
+        } else if (target.env == "gnu") {
+            toolchain.properties = MinGWToolchain::detect().serialize();
+        } else {
+            ASSERT_UNREACHABLE;
+        }
     } else if (target.os == "linux") {
         if (host.os == "linux") {
             toolchain.properties = UnixToolchain::detect().serialize();
@@ -756,6 +763,8 @@ void CLI::set_up_toolchain() {
         } else {
             toolchain.properties = WasmToolchain::detect().serialize();
         }
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     print_step("  Caching toolchain...");
@@ -1080,7 +1089,13 @@ void CLI::invoke_linker() {
     std::filesystem::create_directories(get_output_dir());
 
     if (target.os == "windows") {
-        invoke_windows_linker();
+        if (target.env == "msvc") {
+            invoke_msvc_linker();
+        } else if (target.env == "gnu") {
+            invoke_mingw_linker();
+        } else {
+            ASSERT_UNREACHABLE;
+        }
     } else if (target.os == "linux") {
         invoke_unix_linker();
     } else if (target.os == "macos") {
@@ -1091,10 +1106,12 @@ void CLI::invoke_linker() {
         } else {
             invoke_wasm_linker();
         }
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
-void CLI::invoke_windows_linker() {
+void CLI::invoke_msvc_linker() {
     std::filesystem::path msvc_tools_root_path(toolchain.properties.get_string("tools"));
     std::filesystem::path msvc_lib_root_path(toolchain.properties.get_string("lib"));
 
@@ -1103,23 +1120,24 @@ void CLI::invoke_windows_linker() {
     std::filesystem::path msvc_um_lib_path = msvc_lib_root_path / "um" / "x64";
     std::filesystem::path msvc_ucrt_lib_path = msvc_lib_root_path / "ucrt" / "x64";
 
-    std::vector<std::string> args{
-        "main.obj",
-        "/OUT:" + get_output_path(),
-        "/LIBPATH:" + msvc_lib_path.string(),
-        "/LIBPATH:" + msvc_um_lib_path.string(),
-        "/LIBPATH:" + msvc_ucrt_lib_path.string(),
-        "msvcrt.lib",
-        "kernel32.lib",
-        "user32.lib",
-        "legacy_stdio_definitions.lib",
-        "ws2_32.lib",
-        "shlwapi.lib",
-        "dbghelp.lib",
-        "/SUBSYSTEM:CONSOLE",
-        "/MACHINE:x64",
-        "/DEBUG:FULL",
-    };
+    std::vector<std::string> args;
+    args.push_back("main.obj");
+    args.push_back("/OUT:" + get_output_path());
+    args.push_back("/LIBPATH:" + msvc_lib_path.string());
+    args.push_back("/LIBPATH:" + msvc_um_lib_path.string());
+    args.push_back("/LIBPATH:" + msvc_ucrt_lib_path.string());
+    args.push_back("msvcrt.lib");
+    args.push_back("kernel32.lib");
+    args.push_back("user32.lib");
+    args.push_back("gdi32.lib");
+    args.push_back("shell32.lib");
+    args.push_back("ws2_32.lib");
+    args.push_back("shlwapi.lib");
+    args.push_back("dbghelp.lib");
+    args.push_back("legacy_stdio_definitions.lib");
+    args.push_back("/SUBSYSTEM:CONSOLE");
+    args.push_back("/MACHINE:x64");
+    args.push_back("/DEBUG:FULL");
 
     if (package_type == PackageType::SHARED_LIBRARY) {
         args.push_back("/DLL");
@@ -1129,9 +1147,6 @@ void CLI::invoke_windows_linker() {
         args.push_back("/LIBPATH:" + library_path);
     }
 
-    args.push_back("user32.lib");
-    args.push_back("gdi32.lib");
-    args.push_back("shell32.lib");
 
     for (const std::string &library : libraries) {
         args.push_back(library + ".lib");
@@ -1149,6 +1164,56 @@ void CLI::invoke_windows_linker() {
     process_tool_result("linker", result, ToolErrorMessageSource::STDOUT);
 
     std::filesystem::remove("main.obj");
+}
+
+void CLI::invoke_mingw_linker() {
+    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
+    std::vector<std::string> lib_dirs = toolchain.properties.get_string_array("lib_dirs");
+
+    std::vector<std::string> args;
+    args.push_back("main.o");
+    args.push_back("-o");
+    args.push_back(get_output_path());
+    args.push_back("--subsystem");
+    args.push_back("console");
+
+    if (package_type == PackageType::SHARED_LIBRARY) {
+        args.push_back("-shared");
+    }
+
+    for (const std::string &lib_dir : lib_dirs) {
+        args.push_back("-L" + lib_dir);
+    }
+
+    args.push_back("-lmsvcrt");
+    args.push_back("-lkernel32");
+    args.push_back("-luser32");
+    args.push_back("-lgdi32");
+    args.push_back("-lshell32");
+    args.push_back("-lws2_32");
+    args.push_back("-lshlwapi");
+    args.push_back("-ldbghelp");
+
+    for (const std::string &library_path : library_paths) {
+        args.push_back("-L" + library_path);
+    }
+
+    for (const std::string &library : libraries) {
+        args.push_back("-l" + library);
+    }
+
+    Command command{
+        .executable = linker_path,
+        .args = args,
+    };
+
+    print_command("linker", command);
+
+    std::optional<Process> process = Process::spawn(command);
+    ProcessResult result = process->wait();
+    process_tool_result("linker", result, ToolErrorMessageSource::STDERR);
+
+    std::filesystem::remove("main.o");
 }
 
 void CLI::invoke_unix_linker() {

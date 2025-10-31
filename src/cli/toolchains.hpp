@@ -10,11 +10,11 @@
 namespace banjo {
 namespace cli {
 
-struct WindowsToolchain {
+struct MSVCToolchain {
     std::string tools_path;
     std::string lib_path;
 
-    static WindowsToolchain detect();
+    static MSVCToolchain detect();
     JSONObject serialize();
 
 private:
@@ -29,6 +29,19 @@ private:
     std::optional<std::string> find_latest_winsdk_version(const std::filesystem::path &versions_path);
 
     std::optional<std::string> get_max_version(const std::vector<std::string> &versions, unsigned num_components);
+};
+
+struct MinGWToolchain {
+    std::string linker_path;
+    std::vector<std::string> lib_dirs;
+
+    static MinGWToolchain detect();
+    JSONObject serialize();
+
+private:
+    void find_linker();
+    void find_lib_dirs();
+    std::filesystem::path find_c_compiler();
 };
 
 struct UnixToolchain {
@@ -71,6 +84,8 @@ struct EmscriptenToolchain {
     static EmscriptenToolchain detect();
     JSONObject serialize();
 };
+
+std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output);
 
 } // namespace cli
 } // namespace banjo

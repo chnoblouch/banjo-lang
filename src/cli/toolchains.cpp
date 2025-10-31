@@ -14,8 +14,8 @@
 namespace banjo {
 namespace cli {
 
-WindowsToolchain WindowsToolchain::detect() {
-    WindowsToolchain toolchain;
+MSVCToolchain MSVCToolchain::detect() {
+    MSVCToolchain toolchain;
 
     print_step("Locating MSVC toolchain...");
     toolchain.find_msvc();
@@ -24,7 +24,7 @@ WindowsToolchain WindowsToolchain::detect() {
     return toolchain;
 }
 
-void WindowsToolchain::find_msvc() {
+void MSVCToolchain::find_msvc() {
     std::optional<std::filesystem::path> vswhere_path = find_vswhere();
     if (!vswhere_path) {
         error("failed to find vswhere");
@@ -50,7 +50,7 @@ void WindowsToolchain::find_msvc() {
     tools_path = (msvc_versions_path / *msvc_version).string();
 }
 
-std::optional<std::filesystem::path> WindowsToolchain::find_vswhere() {
+std::optional<std::filesystem::path> MSVCToolchain::find_vswhere() {
     std::filesystem::path program_files_path;
 
     if (std::optional<std::string_view> env = Utils::get_env("ProgramFiles(x86)")) {
@@ -71,7 +71,7 @@ std::optional<std::filesystem::path> WindowsToolchain::find_vswhere() {
     }
 }
 
-std::optional<std::filesystem::path> WindowsToolchain::find_vs_installation(const std::filesystem::path &vswhere_path) {
+std::optional<std::filesystem::path> MSVCToolchain::find_vs_installation(const std::filesystem::path &vswhere_path) {
     JSONArray result;
 
     // Look for a full Visual Studio installation.
@@ -93,17 +93,14 @@ std::optional<std::filesystem::path> WindowsToolchain::find_vs_installation(cons
     return {};
 }
 
-JSONArray WindowsToolchain::run_vswhere(
-    const std::filesystem::path &vswhere_path,
-    const std::vector<std::string> &args
-) {
+JSONArray MSVCToolchain::run_vswhere(const std::filesystem::path &vswhere_path, const std::vector<std::string> &args) {
     std::vector<std::string> full_args{"-format", "json"};
     full_args.insert(full_args.end(), args.begin(), args.end());
     std::string output = get_tool_output(vswhere_path, full_args);
     return JSONParser(output).parse_array();
 }
 
-std::optional<std::string> WindowsToolchain::find_latest_msvc_version(const std::filesystem::path &versions_path) {
+std::optional<std::string> MSVCToolchain::find_latest_msvc_version(const std::filesystem::path &versions_path) {
     std::vector<std::string> versions;
 
     for (std::filesystem::path version_dir : std::filesystem::directory_iterator(versions_path)) {
@@ -113,7 +110,7 @@ std::optional<std::string> WindowsToolchain::find_latest_msvc_version(const std:
     return get_max_version(versions, 3);
 }
 
-void WindowsToolchain::find_winsdk() {
+void MSVCToolchain::find_winsdk() {
     std::optional<std::filesystem::path> winsdk_root_path = find_winsdk_root();
     if (!winsdk_root_path) {
         error("failed to find windows sdk");
@@ -132,7 +129,7 @@ void WindowsToolchain::find_winsdk() {
     lib_path = (winsdk_versions_path / *winsdk_version).string();
 }
 
-std::optional<std::filesystem::path> WindowsToolchain::find_winsdk_root() {
+std::optional<std::filesystem::path> MSVCToolchain::find_winsdk_root() {
     for (const std::string &env_name : std::initializer_list<std::string>{"ProgramFiles(x86)", "ProgramFiles"}) {
         std::optional<std::string_view> env = Utils::get_env(env_name);
 
@@ -150,7 +147,7 @@ std::optional<std::filesystem::path> WindowsToolchain::find_winsdk_root() {
     return {};
 }
 
-std::optional<std::string> WindowsToolchain::find_latest_winsdk_version(const std::filesystem::path &versions_path) {
+std::optional<std::string> MSVCToolchain::find_latest_winsdk_version(const std::filesystem::path &versions_path) {
     std::vector<std::string> versions;
 
     for (std::filesystem::path version_dir : std::filesystem::directory_iterator(versions_path)) {
@@ -160,7 +157,7 @@ std::optional<std::string> WindowsToolchain::find_latest_winsdk_version(const st
     return get_max_version(versions, 4);
 }
 
-std::optional<std::string> WindowsToolchain::get_max_version(
+std::optional<std::string> MSVCToolchain::get_max_version(
     const std::vector<std::string> &versions,
     unsigned num_components
 ) {
@@ -204,10 +201,62 @@ std::optional<std::string> WindowsToolchain::get_max_version(
     return std::string(parsed_versions.back().first);
 }
 
-JSONObject WindowsToolchain::serialize() {
+JSONObject MSVCToolchain::serialize() {
     JSONObject object;
     object.add("tools", tools_path);
     object.add("lib", lib_path);
+    return object;
+}
+
+MinGWToolchain MinGWToolchain::detect() {
+    MinGWToolchain toolchain;
+
+    print_step("Locating MinGW toolchain...");
+    toolchain.find_linker();
+    toolchain.find_lib_dirs();
+
+    return toolchain;
+}
+
+void MinGWToolchain::find_linker() {
+    std::optional<std::filesystem::path> ld_path = find_tool("x86_64-w64-mingw32-ld");
+    if (ld_path) {
+        print_step("  Found MinGW LD: " + ld_path->string());
+        print_step("    Version: " + get_tool_output(*ld_path, {"-v"}));
+
+        linker_path = ld_path->string();
+        return;
+    }
+
+    error("failed to find mingw linker");
+}
+
+void MinGWToolchain::find_lib_dirs() {
+    std::filesystem::path c_compiler_path = find_c_compiler();
+    std::string search_dirs_output = get_tool_output(c_compiler_path, {"--print-search-dirs"});
+    lib_dirs = parse_gcc_lib_dirs(search_dirs_output);
+
+    print_step("  Library directories:");
+
+    for (const std::string &search_dir : lib_dirs) {
+        print_step("    - " + search_dir);
+    }
+}
+
+std::filesystem::path MinGWToolchain::find_c_compiler() {
+    std::optional<std::filesystem::path> gcc_path = find_tool("x86_64-w64-mingw32-gcc");
+    if (gcc_path) {
+        print_step("  Found MinGW GCC: " + gcc_path->string());
+        return *gcc_path;
+    }
+
+    error("failed to find mingw c compiler");
+}
+
+JSONObject MinGWToolchain::serialize() {
+    JSONObject object;
+    object.add("linker_path", linker_path);
+    object.add("lib_dirs", JSONArray{lib_dirs});
     return object;
 }
 
@@ -224,10 +273,9 @@ UnixToolchain UnixToolchain::detect() {
 
 void UnixToolchain::find_linker() {
     std::optional<std::filesystem::path> lld_path = find_tool("lld");
-
     if (lld_path) {
         print_step("  Found LLD: " + lld_path->string());
-        print_step("  Version: " + get_tool_output(*lld_path, {"-flavor", "gnu", "-v"}));
+        print_step("    Version: " + get_tool_output(*lld_path, {"-flavor", "gnu", "-v"}));
 
         linker_path = lld_path->string();
         linker_args = {"-flavor", "gnu"};
@@ -235,10 +283,9 @@ void UnixToolchain::find_linker() {
     }
 
     std::optional<std::filesystem::path> ld_path = find_tool("ld");
-
     if (ld_path) {
         print_step("  Found LD: " + ld_path->string());
-        print_step("  Version: " + get_tool_output(*ld_path, {"-v"}));
+        print_step("    Version: " + get_tool_output(*ld_path, {"-v"}));
 
         linker_path = ld_path->string();
         return;
@@ -250,30 +297,7 @@ void UnixToolchain::find_linker() {
 void UnixToolchain::find_lib_dirs() {
     std::filesystem::path c_compiler_path = find_c_compiler();
     std::string search_dirs_output = get_tool_output(c_compiler_path, {"--print-search-dirs"});
-    std::vector<std::string_view> search_dirs_lines = Utils::split_string(search_dirs_output, '\n');
-    std::vector<std::string_view> raw_lib_search_dirs;
-
-    for (std::string_view line : search_dirs_lines) {
-        if (!line.starts_with("libraries: ")) {
-            continue;
-        }
-
-        line = line.substr(11);
-
-        if (line.starts_with("=")) {
-            line = line.substr(1);
-        }
-
-        raw_lib_search_dirs = Utils::split_string(line, ':');
-    }
-
-    lib_dirs.reserve(raw_lib_search_dirs.size());
-
-    for (std::string_view raw_lib_search_dir : raw_lib_search_dirs) {
-        lib_dirs.push_back(std::filesystem::canonical(raw_lib_search_dir).string());
-    }
-
-    lib_dirs = Utils::remove_duplicates(lib_dirs);
+    lib_dirs = parse_gcc_lib_dirs(search_dirs_output);
 
     print_step("  Library directories:");
 
@@ -423,6 +447,38 @@ JSONObject EmscriptenToolchain::serialize() {
     JSONObject object;
     object.add("linker_path", linker_path);
     return object;
+}
+
+std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output) {
+    std::vector<std::string_view> search_dirs_lines = Utils::split_string(search_dirs_output, '\n');
+    std::vector<std::string_view> raw_lib_search_dirs;
+
+    for (std::string_view line : search_dirs_lines) {
+        if (!line.starts_with("libraries: ")) {
+            continue;
+        }
+
+        line = line.substr(11);
+
+        if (line.starts_with("=")) {
+            line = line.substr(1);
+        }
+
+        raw_lib_search_dirs = Utils::split_string(line, ':');
+    }
+
+    std::vector<std::string> lib_dirs;
+    lib_dirs.reserve(raw_lib_search_dirs.size());
+
+    for (std::string_view raw_lib_search_dir : raw_lib_search_dirs) {
+        if (!std::filesystem::exists(raw_lib_search_dir)) {
+            continue;
+        }
+
+        lib_dirs.push_back(std::filesystem::canonical(raw_lib_search_dir).string());
+    }
+
+    return Utils::remove_duplicates(lib_dirs);
 }
 
 } // namespace cli
