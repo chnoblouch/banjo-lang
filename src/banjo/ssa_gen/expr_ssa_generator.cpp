@@ -305,15 +305,21 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
     ssa::Value ssa_rhs = generate(binary_expr.rhs).turn_into_value(ctx).get_value();
     ssa::VirtualRegister reg;
 
-    if (binary_expr.lhs.get_type().is_int_type()) {
+    sir::Expr lhs_type = binary_expr.lhs.get_type();
+
+    if (lhs_type.is_int_type()) {
         ssa::Opcode ssa_op;
 
         switch (binary_expr.op) {
             case sir::BinaryOp::ADD: ssa_op = ssa::Opcode::ADD; break;
             case sir::BinaryOp::SUB: ssa_op = ssa::Opcode::SUB; break;
             case sir::BinaryOp::MUL: ssa_op = ssa::Opcode::MUL; break;
-            case sir::BinaryOp::DIV: ssa_op = ssa::Opcode::SDIV; break;
-            case sir::BinaryOp::MOD: ssa_op = ssa::Opcode::SREM; break;
+            case sir::BinaryOp::DIV:
+                ssa_op = lhs_type.is_unsigned_type() ? ssa::Opcode::UDIV : ssa::Opcode::SDIV;
+                break;
+            case sir::BinaryOp::MOD:
+                ssa_op = lhs_type.is_unsigned_type() ? ssa::Opcode::UREM : ssa::Opcode::SREM;
+                break;
             case sir::BinaryOp::BIT_AND: ssa_op = ssa::Opcode::AND; break;
             case sir::BinaryOp::BIT_OR: ssa_op = ssa::Opcode::OR; break;
             case sir::BinaryOp::BIT_XOR: ssa_op = ssa::Opcode::XOR; break;
@@ -324,7 +330,7 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
 
         reg = ctx.next_vreg();
         ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
-    } else if (binary_expr.lhs.get_type().is_fp_type()) {
+    } else if (lhs_type.is_fp_type()) {
         ssa::Opcode ssa_op;
 
         switch (binary_expr.op) {
@@ -337,10 +343,10 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
 
         reg = ctx.next_vreg();
         ctx.get_ssa_block()->append({ssa_op, reg, {ssa_lhs, ssa_rhs}});
-    } else if (auto pointer_type = binary_expr.lhs.get_type().match<sir::PointerType>()) {
+    } else if (auto pointer_type = lhs_type.match<sir::PointerType>()) {
         ssa::Type ssa_base_type = TypeSSAGenerator(ctx).generate(pointer_type->base_type);
         reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa_base_type);
-    } else if (binary_expr.lhs.get_type().is_primitive_type(sir::Primitive::ADDR)) {
+    } else if (lhs_type.is_primitive_type(sir::Primitive::ADDR)) {
         reg = generate_pointer_expr(binary_expr.op, ssa_lhs, ssa_rhs, ssa::Primitive::U8);
     } else {
         ASSERT_UNREACHABLE;
