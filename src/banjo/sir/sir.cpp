@@ -614,6 +614,71 @@ FuncType &ProtoFuncDecl::get_type() {
     }
 }
 
+template <>
+FuncDef *Module::create(FuncDef value) {
+    return func_def_arena.create(std::move(value));
+}
+
+template <>
+StructDef *Module::create(StructDef value) {
+    return struct_def_arena.create(std::move(value));
+}
+
+template <>
+EnumDef *Module::create(EnumDef value) {
+    return enum_def_arena.create(std::move(value));
+}
+
+template <>
+UnionDef *Module::create(UnionDef value) {
+    return union_def_arena.create(std::move(value));
+}
+
+template <>
+UnionCase *Module::create(UnionCase value) {
+    return union_case_arena.create(std::move(value));
+}
+
+template <>
+ProtoDef *Module::create(ProtoDef value) {
+    return proto_def_arena.create(std::move(value));
+}
+
+template <>
+Block *Module::create(Block value) {
+    return block_arena.create(std::move(value));
+}
+
+template <>
+MetaBlock *Module::create(MetaBlock value) {
+    return meta_block_arena.create(std::move(value));
+}
+
+template <>
+SymbolTable *Module::create(SymbolTable value) {
+    return symbol_table_arena.create(std::move(value));
+}
+
+template <>
+OverloadSet *Module::create(OverloadSet value) {
+    return overload_set_arena.create(std::move(value));
+}
+
+template <>
+GuardedSymbol *Module::create(GuardedSymbol value) {
+    return guarded_symbol_arena.create(std::move(value));
+}
+
+template <>
+Attributes *Module::create(Attributes value) {
+    return attributes_arena.create(std::move(value));
+}
+
+template <>
+Resource *Module::create(Resource value) {
+    return resource_arena.create(std::move(value));
+}
+
 } // namespace sir
 
 } // namespace lang

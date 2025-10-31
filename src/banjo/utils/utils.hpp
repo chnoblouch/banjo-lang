@@ -27,13 +27,13 @@ namespace Utils {
 
 typedef FixedVector<unsigned char, 16> LEB128Buffer;
 
-template <typename T>
-T align(T value, T boundary) {
+template <typename T, typename B>
+T align(T value, B boundary) {
     if (boundary == 0) {
         return value;
     }
 
-    T mod = value % boundary;
+    T mod = value % static_cast<T>(boundary);
     return mod == 0 ? value : value + boundary - mod;
 }
 

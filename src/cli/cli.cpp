@@ -1203,7 +1203,7 @@ void CLI::invoke_mingw_linker() {
     }
 
     Command command{
-        .executable = linker_path,
+        .executable = linker_path.string(),
         .args = args,
     };
 
@@ -1351,7 +1351,7 @@ void CLI::invoke_wasm_linker() {
     }
 
     Command command{
-        .executable = linker_path,
+        .executable = linker_path.string(),
         .args = args,
     };
 
@@ -1384,7 +1384,7 @@ void CLI::invoke_emscripten_linker() {
     }
 
     Command command{
-        .executable = linker_path,
+        .executable = linker_path.string(),
         .args = args,
     };
 

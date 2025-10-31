@@ -1362,71 +1362,6 @@ struct Module {
         return trivial_arena.create<T>(value);
     }
 
-    template <>
-    FuncDef *create(FuncDef value) {
-        return func_def_arena.create(std::move(value));
-    }
-
-    template <>
-    StructDef *create(StructDef value) {
-        return struct_def_arena.create(std::move(value));
-    }
-
-    template <>
-    EnumDef *create(EnumDef value) {
-        return enum_def_arena.create(std::move(value));
-    }
-
-    template <>
-    UnionDef *create(UnionDef value) {
-        return union_def_arena.create(std::move(value));
-    }
-
-    template <>
-    UnionCase *create(UnionCase value) {
-        return union_case_arena.create(std::move(value));
-    }
-
-    template <>
-    ProtoDef *create(ProtoDef value) {
-        return proto_def_arena.create(std::move(value));
-    }
-
-    template <>
-    Block *create(Block value) {
-        return block_arena.create(std::move(value));
-    }
-
-    template <>
-    MetaBlock *create(MetaBlock value) {
-        return meta_block_arena.create(std::move(value));
-    }
-
-    template <>
-    SymbolTable *create(SymbolTable value) {
-        return symbol_table_arena.create(std::move(value));
-    }
-
-    template <>
-    OverloadSet *create(OverloadSet value) {
-        return overload_set_arena.create(std::move(value));
-    }
-
-    template <>
-    GuardedSymbol *create(GuardedSymbol value) {
-        return guarded_symbol_arena.create(std::move(value));
-    }
-
-    template <>
-    Attributes *create(Attributes value) {
-        return attributes_arena.create(std::move(value));
-    }
-
-    template <>
-    Resource *create(Resource value) {
-        return resource_arena.create(std::move(value));
-    }
-
     template <typename T>
     std::span<T> allocate_array(unsigned length) {
         return trivial_arena.allocate_array<T>(length);
@@ -1444,6 +1379,45 @@ struct Module {
 
     std::string_view create_string(std::string_view value) { return string_arena.store(value); }
 };
+
+template <>
+FuncDef *Module::create(FuncDef value);
+
+template <>
+StructDef *Module::create(StructDef value);
+
+template <>
+EnumDef *Module::create(EnumDef value);
+
+template <>
+UnionDef *Module::create(UnionDef value);
+
+template <>
+UnionCase *Module::create(UnionCase value);
+
+template <>
+ProtoDef *Module::create(ProtoDef value);
+
+template <>
+Block *Module::create(Block value);
+
+template <>
+MetaBlock *Module::create(MetaBlock value);
+
+template <>
+SymbolTable *Module::create(SymbolTable value);
+
+template <>
+OverloadSet *Module::create(OverloadSet value);
+
+template <>
+GuardedSymbol *Module::create(GuardedSymbol value);
+
+template <>
+Attributes *Module::create(Attributes value);
+
+template <>
+Resource *Module::create(Resource value);
 
 struct Unit {
     utils::TypedArena<Module> mod_arena;
