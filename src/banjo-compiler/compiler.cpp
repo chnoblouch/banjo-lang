@@ -97,7 +97,7 @@ void Compiler::compile() {
 
     codegen::MachinePassRunner(target).create_and_run(machine_module);
 
-    std::ofstream stream("main." + target->get_output_file_ext(), std::ios::binary);
+    std::ofstream stream("output." + target->get_output_file_ext(), std::ios::binary);
     codegen::Emitter *emitter = target->create_emitter(machine_module, stream);
     emitter->generate();
     delete emitter;

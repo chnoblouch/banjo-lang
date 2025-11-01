@@ -1033,6 +1033,10 @@ void CLI::invoke_assembler() {
 }
 
 void CLI::invoke_nasm_assembler() {
+    bool is_msvc = target.env == "msvc";
+    std::string asm_file_name = is_msvc ? "output.asm" : "output.s";
+    std::string obj_file_name = is_msvc ? "output.obj" : "output.o";
+
     std::vector<std::string> args;
 
     if (target.os == "windows") {
@@ -1041,7 +1045,9 @@ void CLI::invoke_nasm_assembler() {
         args.push_back("-felf64");
     }
 
-    args.push_back("main.asm");
+    args.push_back(asm_file_name);
+    args.push_back("-o");
+    args.push_back(obj_file_name);
 
     Command command{
         .executable = "nasm",
@@ -1054,7 +1060,7 @@ void CLI::invoke_nasm_assembler() {
     ProcessResult result = process->wait();
     process_tool_result("assembler", result);
 
-    std::filesystem::remove("main.asm");
+    std::filesystem::remove(asm_file_name);
 }
 
 void CLI::invoke_aarch64_assembler() {
@@ -1068,7 +1074,7 @@ void CLI::invoke_aarch64_assembler() {
         args.push_back("aarch64-darwin");
     }
 
-    args.push_back("main.s");
+    args.push_back("output.s");
 
     Command command{
         .executable = "clang",
@@ -1081,7 +1087,7 @@ void CLI::invoke_aarch64_assembler() {
     ProcessResult result = process->wait();
     process_tool_result("assembler", result);
 
-    std::filesystem::remove("main.s");
+    std::filesystem::remove("output.s");
 }
 
 void CLI::invoke_linker() {
@@ -1121,7 +1127,7 @@ void CLI::invoke_msvc_linker() {
     std::filesystem::path msvc_ucrt_lib_path = msvc_lib_root_path / "ucrt" / "x64";
 
     std::vector<std::string> args;
-    args.push_back("main.obj");
+    args.push_back("output.obj");
     args.push_back("/OUT:" + get_output_path());
     args.push_back("/LIBPATH:" + msvc_lib_path.string());
     args.push_back("/LIBPATH:" + msvc_um_lib_path.string());
@@ -1147,7 +1153,6 @@ void CLI::invoke_msvc_linker() {
         args.push_back("/LIBPATH:" + library_path);
     }
 
-
     for (const std::string &library : libraries) {
         args.push_back(library + ".lib");
     }
@@ -1163,7 +1168,7 @@ void CLI::invoke_msvc_linker() {
     ProcessResult result = process->wait();
     process_tool_result("linker", result, ToolErrorMessageSource::STDOUT);
 
-    std::filesystem::remove("main.obj");
+    std::filesystem::remove("output.obj");
 }
 
 void CLI::invoke_mingw_linker() {
@@ -1171,7 +1176,7 @@ void CLI::invoke_mingw_linker() {
     std::vector<std::string> lib_dirs = toolchain.properties.get_string_array("lib_dirs");
 
     std::vector<std::string> args;
-    args.push_back("main.o");
+    args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
     args.push_back("--subsystem");
@@ -1213,7 +1218,7 @@ void CLI::invoke_mingw_linker() {
     ProcessResult result = process->wait();
     process_tool_result("linker", result, ToolErrorMessageSource::STDERR);
 
-    std::filesystem::remove("main.o");
+    std::filesystem::remove("output.o");
 }
 
 void CLI::invoke_unix_linker() {
@@ -1225,7 +1230,7 @@ void CLI::invoke_unix_linker() {
 
     std::vector<std::string> args;
     args.insert(args.end(), linker_args.begin(), linker_args.end());
-    args.push_back("main.o");
+    args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
 
@@ -1278,7 +1283,7 @@ void CLI::invoke_unix_linker() {
     ProcessResult result = process->wait();
     process_tool_result("linker", result);
 
-    std::filesystem::remove("main.o");
+    std::filesystem::remove("output.o");
 }
 
 void CLI::invoke_darwin_linker() {
@@ -1288,7 +1293,7 @@ void CLI::invoke_darwin_linker() {
 
     std::vector<std::string> args;
     args.insert(args.end(), linker_args.begin(), linker_args.end());
-    args.push_back("main.o");
+    args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
     args.push_back("-arch");
@@ -1320,7 +1325,7 @@ void CLI::invoke_darwin_linker() {
     }
 
     Command command{
-        .executable = linker_path.string(),
+        .executable = "ld64.lld",
         .args = args,
     };
 
@@ -1330,14 +1335,14 @@ void CLI::invoke_darwin_linker() {
     ProcessResult result = process->wait();
     process_tool_result("linker", result);
 
-    std::filesystem::remove("main.o");
+    std::filesystem::remove("output.o");
 }
 
 void CLI::invoke_wasm_linker() {
     std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
 
     std::vector<std::string> args;
-    args.push_back("main.o");
+    args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
     args.push_back("--no-entry");
@@ -1361,14 +1366,14 @@ void CLI::invoke_wasm_linker() {
     ProcessResult result = process->wait();
     process_tool_result("linker", result);
 
-    std::filesystem::remove("main.o");
+    std::filesystem::remove("output.o");
 }
 
 void CLI::invoke_emscripten_linker() {
     std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
 
     std::vector<std::string> args;
-    args.push_back("main.o");
+    args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
     args.push_back("-sSTACK_SIZE=1024*1024");
@@ -1394,7 +1399,7 @@ void CLI::invoke_emscripten_linker() {
     ProcessResult result = process->wait();
     process_tool_result("linker", result);
 
-    std::filesystem::remove("main.o");
+    std::filesystem::remove("output.o");
 }
 
 void CLI::run_build() {

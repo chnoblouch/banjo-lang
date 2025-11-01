@@ -135,18 +135,18 @@ class Assembler(Program):
         elif toolchain.target.os == "macos":
             nasm_format = "macho64"
 
-        self.run_command(["nasm", "-f", nasm_format, "main.asm"])
+        self.run_command(["nasm", "-f", nasm_format, "output.asm"])
 
     def run_clang(self, toolchain):
         clang_target = f"{toolchain.target.arch}-{toolchain.target.os}"
-        self.run_command(["clang", "-c", "-target", clang_target, "main.s"])
+        self.run_command(["clang", "-c", "-target", clang_target, "output.s"])
 
     @staticmethod
     def cleanup(toolchain):
         if toolchain.target.arch == "x86_64":
-            os.remove("main.asm")
+            os.remove("output.asm")
         elif toolchain.target.arch == "aarch64":
-            os.remove("main.s")
+            os.remove("output.s")
 
 
 class Linker(Program):
@@ -167,9 +167,9 @@ class Archiver(Program):
         super().__init__("archiver")
 
     def run(self, toolchain):
-        command = ["lib", "main.obj", "/OUT:build.lib"]
+        command = ["lib", "output.obj", "/OUT:build.lib"]
         self.run_command(command)
-        os.remove("main.obj")
+        os.remove("output.obj")
 
 
 class HotReloader(Program):

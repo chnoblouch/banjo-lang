@@ -36,16 +36,10 @@ std::vector<codegen::MachinePass *> X8664Target::create_post_passes() {
 
 std::string X8664Target::get_output_file_ext() {
     if (lang::Config::instance().force_asm) {
-        return "asm";
+        return descr.get_environment() == Environment::MSVC ? "asm" : "s";
     }
 
-    if (descr.get_operating_system() == OperatingSystem::WINDOWS) {
-        return descr.get_environment() == Environment::MSVC ? "obj" : "o";
-    } else if (descr.get_operating_system() == OperatingSystem::LINUX) {
-        return "o";
-    } else {
-        return "asm";
-    }
+    return descr.get_environment() == Environment::MSVC ? "obj" : "o";
 }
 
 codegen::Emitter *X8664Target::create_emitter(mcode::Module &module, std::ostream &stream) {

@@ -265,13 +265,13 @@ def run_executable(test):
     compile_source(test)
 
     if framework.test_wasm:
-        if not os.path.exists("main.o"):
+        if not os.path.exists("output.o"):
             return ProcessResult("", "", 1)
 
         subprocess.run([
             "emcc",
             "-otest.js",
-            "main.o",
+            "output.o",
             "-lnodefs.js",
             "-lnoderawfs.js",
             "-sEXIT_RUNTIME",
@@ -282,7 +282,7 @@ def run_executable(test):
         ])
 
         try:
-            os.remove("main.o")
+            os.remove("output.o")
         except OSError:
             pass
 
@@ -296,12 +296,12 @@ def run_executable(test):
         except OSError:
             pass
     elif is_windows:
-        if not os.path.exists("main.obj"):
+        if not os.path.exists("output.obj"):
             return ProcessResult("", "", 1)
     
         subprocess.run([
             "lld-link.exe",
-            "main.obj",
+            "output.obj",
             "msvcrt.lib",
             "kernel32.lib",
             "user32.lib",
@@ -314,7 +314,7 @@ def run_executable(test):
         ])
 
         try:
-            os.remove("main.obj")
+            os.remove("output.obj")
         except OSError:
             pass
 
@@ -328,16 +328,16 @@ def run_executable(test):
         except OSError:
             pass
     elif is_linux or is_macos:
-        if not os.path.exists("main.o"):
+        if not os.path.exists("output.o"):
             return ProcessResult("", "", 1)
 
         if is_linux:
-            subprocess.run(["clang", "-fuse-ld=lld", "-lm", "-otest", "main.o"])
+            subprocess.run(["clang", "-fuse-ld=lld", "-lm", "-otest", "output.o"])
         else:
-            subprocess.run(["clang", "-otest", "main.o"])
+            subprocess.run(["clang", "-otest", "output.o"])
 
         try:
-            os.remove("main.o")
+            os.remove("output.o")
         except OSError:
             pass
 

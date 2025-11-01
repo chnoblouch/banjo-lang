@@ -72,9 +72,9 @@ class WindowsLinker(Linker):
 
     def get_object_file(self, arch):        
         if arch == "x86_64":
-            return "main.obj"
+            return "output.obj"
         elif arch == "aarch64":
-            return "main.o"
+            return "output.o"
         else:
             return None
 
@@ -91,7 +91,7 @@ class MinGWLinker(Linker):
         self.runtime_path = runtime_path
     
     def build_command(self, input: LinkerInput):
-        command = [self.executable] + self.args + ["main.o"]
+        command = [self.executable] + self.args + ["output.o"]
 
         if input.config.type == "executable":
             output_file = f"{input.config.name}.exe"
@@ -145,7 +145,7 @@ class MinGWLinker(Linker):
         return command
 
     def cleanup(self, input: LinkerInput):
-        os.remove("main.o")
+        os.remove("output.o")
 
 
 class UnixLinker(Linker):
@@ -156,7 +156,7 @@ class UnixLinker(Linker):
         self.crt_files = crt_files
 
     def build_command(self, input: LinkerInput):
-        command = [self.executable] + self.args + ["main.o"]
+        command = [self.executable] + self.args + ["output.o"]
 
         output_file = input.config.name
         if input.config.type == "shared_library":
@@ -182,7 +182,7 @@ class UnixLinker(Linker):
         return command
 
     def cleanup(self, input: LinkerInput):
-        os.remove("main.o")
+        os.remove("output.o")
 
 
 class DarwinLinker(Linker):
@@ -197,7 +197,7 @@ class DarwinLinker(Linker):
 
         command = [self.executable]
         command.extend(self.extra_args)
-        command.extend(["main.o"])
+        command.extend(["output.o"])
 
         output_file = input.config.name
         if input.config.type == "shared_library":
@@ -230,4 +230,4 @@ class DarwinLinker(Linker):
         return command
 
     def cleanup(self, input: LinkerInput):
-        os.remove("main.o")
+        os.remove("output.o")
