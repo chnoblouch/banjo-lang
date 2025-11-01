@@ -31,6 +31,7 @@ enum {
     ADD,
     SUB,
     IMUL,
+    DIV,
     IDIV,
     AND,
     OR,

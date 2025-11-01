@@ -1,15 +1,11 @@
 #include "nasm_emitter.hpp"
 
-#include "banjo/config/config.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <algorithm>
-#include <sstream>
 #include <unordered_map>
-#include <unordered_set>
 #include <variant>
 
 namespace banjo {
@@ -23,6 +19,7 @@ const std::unordered_map<mcode::Opcode, std::string> NASMEmitter::OPCODE_NAMES =
     {target::X8664Opcode::ADD, "add"},
     {target::X8664Opcode::SUB, "sub"},
     {target::X8664Opcode::IMUL, "imul"},
+    {target::X8664Opcode::DIV, "div"},
     {target::X8664Opcode::IDIV, "idiv"},
     {target::X8664Opcode::AND, "and"},
     {target::X8664Opcode::OR, "or"},

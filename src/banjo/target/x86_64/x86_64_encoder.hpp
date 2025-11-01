@@ -115,6 +115,7 @@ private:
     void encode_add(mcode::Instruction &instr, mcode::Function *func);
     void encode_sub(mcode::Instruction &instr, mcode::Function *func);
     void encode_imul(mcode::Instruction &instr, mcode::Function *func);
+    void encode_div(mcode::Instruction &instr, mcode::Function *func);
     void encode_idiv(mcode::Instruction &instr, mcode::Function *func);
     void encode_and(mcode::Instruction &instr, mcode::Function *func);
     void encode_or(mcode::Instruction &instr, mcode::Function *func);

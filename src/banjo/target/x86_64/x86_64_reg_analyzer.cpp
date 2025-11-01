@@ -90,7 +90,7 @@ bool X8664RegAnalyzer::is_reg_overridden(
         return basic_block.get_func()->get_calling_conv()->is_volatile(reg);
     }
 
-    if (instr.get_opcode() == X8664Opcode::IDIV) {
+    if (instr.get_opcode() == X8664Opcode::DIV || instr.get_opcode() == X8664Opcode::IDIV) {
         return reg == X8664Register::RAX || reg == X8664Register::RDX;
     }
 
@@ -213,6 +213,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
             operands.push_back({mcode::Register::from_physical(X8664Register::RDX), mcode::RegUsage::DEF});
             break;
 
+        case DIV:
         case IDIV:
             operands.push_back({instr.get_operand(0).get_register(), mcode::RegUsage::USE});
             operands.push_back({mcode::Register::from_physical(X8664Register::RAX), mcode::RegUsage::USE_DEF});

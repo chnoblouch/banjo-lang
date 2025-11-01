@@ -35,6 +35,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case CDQ: encode_cdq(); break;
         case CQO: encode_cqo(); break;
         case IMUL: encode_imul(instr, func); break;
+        case DIV: encode_div(instr, func); break;
         case IDIV: encode_idiv(instr, func); break;
         case JMP: encode_jmp(instr); break;
         case CMP: encode_cmp(instr, func); break;
@@ -171,6 +172,16 @@ void X8664Encoder::encode_imul(mcode::Instruction &instr, mcode::Function *func)
     if (is_reg(src)) emit_imul_rr(reg(dst), reg(src), dst.get_size());
     else if (is_addr(src)) emit_imul_rm(reg(dst), addr(src, func), dst.get_size());
     else if (is_imm(src)) emit_imul_rri(reg(dst), imm(src), dst.get_size());
+}
+
+void X8664Encoder::encode_div(mcode::Instruction &instr, mcode::Function *func) {
+    RegOrAddr src = roa(instr.get_operand(0), func);
+    int size = instr.get_operand(0).get_size();
+
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rroa(size, 0, src);
+    emit_opcode(size == 1 ? 0xF6 : 0xF7);
+    emit_modrm_sib(6, src);
 }
 
 void X8664Encoder::encode_idiv(mcode::Instruction &instr, mcode::Function *func) {
