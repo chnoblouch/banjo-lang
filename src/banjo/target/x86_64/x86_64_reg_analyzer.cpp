@@ -116,7 +116,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
 
         mcode::InstrIter prev = iter.get_prev();
         while (prev != block.begin().get_prev() && prev->get_opcode() != CALL) {
-            if (prev->get_dest().is_physical_reg()) {
+            if (prev->has_dest() && prev->get_dest().is_physical_reg()) {
                 operands.push_back({prev->get_dest().get_register(), mcode::RegUsage::USE});
             }
 
