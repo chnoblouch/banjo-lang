@@ -12,4 +12,11 @@ struct Slice[T] {
             length: 0,
         };
     }
+
+    pub func as_bytes(self) -> Slice[u8] {
+        return Slice[u8] {
+            elements: self.elements as *u8,
+            length: self.length * meta(T).size,
+        };
+    }
 }
