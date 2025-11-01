@@ -162,7 +162,6 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
 
         case PUSH:
         case CALL:
-        case RET:
             if (instr.get_operand(0).is_register()) {
                 operands.push_back({instr.get_operand(0).get_register(), mcode::RegUsage::USE});
             } else if (instr.get_operand(0).is_addr()) {
