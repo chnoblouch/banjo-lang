@@ -18,8 +18,19 @@ WasmSSALowerer::WasmSSALowerer(target::Target *target) : codegen::SSALowerer(tar
 
 void WasmSSALowerer::init_module(ssa::Module &mod) {
     WasmModData mod_data;
+    
+    std::unordered_set<std::string_view> existing_funcs;
+    std::unordered_set<std::string_view> existing_globals;
 
     for (ssa::FunctionDecl *func_decl : mod.get_external_functions()) {
+        auto iter = existing_funcs.find(func_decl->name);
+
+        if (iter == existing_funcs.end()) {
+            existing_funcs.insert(func_decl->name);
+        } else {
+            continue;
+        }
+
         mod_data.func_imports.push_back(
             WasmFuncImport{
                 .mod = "env",
@@ -30,6 +41,14 @@ void WasmSSALowerer::init_module(ssa::Module &mod) {
     }
 
     for (ssa::GlobalDecl *global_decl : mod.get_external_globals()) {
+        auto iter = existing_globals.find(global_decl->name);
+
+        if (iter == existing_globals.end()) {
+            existing_globals.insert(global_decl->name);
+        } else {
+            continue;
+        }
+
         mod_data.extern_globals.push_back(global_decl->name);
     }
 
