@@ -13,7 +13,7 @@ A small low-level programming language I use for personal projects. The language
 - A hopefully more sane standard library than C++
 - Metaprogramming
 - Built-in support for unit testing
-- Cross-compilation for Linux, Windows and macOS
+- Cross-compilation for Linux, Windows, macOS, and WebAssembly
 - Fast compile times
 - Performance in the ballpark of C/C++
 - Automatic generating of bindings for C libraries
@@ -49,6 +49,8 @@ The compiler is written completely from scratch and emits either object files or
 - `x86_64-linux-gnu`: x86-64/AMD64 Linux using GNU libraries 
 - `aarch64-linux-gnu`: AArch64/ARM64 Linux using GNU libraries
 - `aarch64-macos`: Apple Silicon macOS
+- `wasm-unknown`: Standalone WebAssembly runtimes (standard library not available)
+- `wasm-emscripten`: WebAssembly in the browser using Emscripten
 
 The internals of the compiler are documented [here](docs/compiler.md).
 
@@ -70,7 +72,6 @@ The hot reloader is a tool that watches source files for changes, recompiles the
 ## Annoyances
 
 - Some optimization passes are unstable and can produce broken code.
-- The AArch64 backend is very incomplete and often generates invalid assembly.
 - Values that fit into two registers are passed by reference on the System-V ABI even though they should be passed by splitting them into two registers.
 
 ## Directory Structure
@@ -84,6 +85,7 @@ The hot reloader is a tool that watches source files for changes, recompiles the
             - `elf`: Generating ELF binaries (the binary format of Linux)
             - `macho`: Generating Mach-O binaries (the binary format of macOS)
             - `pe`: Generating PE binaries (the binary format of Windows)
+            - `wasm`: Generating binary WebAssembly modules
         - `lexer`: Tokenizing source code
         - `mcode`: Intermediate representation for target machine instructions
         - `parser`: Parsing tokens into an AST
@@ -96,6 +98,7 @@ The hot reloader is a tool that watches source files for changes, recompiles the
         - `ssa_gen`: SSA IR generator
         - `target`: Backends for the different target architectures
             - `aarch64`: AArch64/ARM64 backend
+            - `wasm`: WebAssembly backend
             - `x86_64`: x86-64/AMD64 backend
         - `utils`: Utility functions and classes
     - `banjo-compiler`: The compiler
