@@ -14,6 +14,7 @@ struct Manifest {
     std::string name;
     std::string type;
     std::vector<std::string> args;
+    std::vector<std::string> linker_args;
     std::vector<std::string> libraries;
     std::vector<std::string> macos_frameworks;
     std::vector<std::string> packages;

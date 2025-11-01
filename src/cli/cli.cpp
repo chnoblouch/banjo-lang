@@ -689,6 +689,7 @@ void CLI::load_root_manifest(const Manifest &manifest) {
 
 void CLI::load_manifest(const Manifest &manifest) {
     extra_compiler_args.insert(extra_compiler_args.end(), manifest.args.begin(), manifest.args.end());
+    linker_args.insert(linker_args.end(), manifest.linker_args.begin(), manifest.linker_args.end());
     libraries.insert(libraries.end(), manifest.libraries.begin(), manifest.libraries.end());
     macos_frameworks.insert(macos_frameworks.end(), manifest.macos_frameworks.begin(), manifest.macos_frameworks.end());
 
@@ -814,6 +815,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
     std::optional<std::string> name;
     std::string type = "executable";
     std::vector<std::string> args;
+    std::vector<std::string> linker_args;
     std::vector<std::string> libraries;
     std::vector<std::string> macos_frameworks;
     std::vector<std::string> packages;
@@ -827,6 +829,8 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
             type = unwrap_json_string(member_name, member_value);
         } else if (member_name == "args") {
             args = unwrap_json_string_array(member_name, member_value);
+        } else if (member_name == "linker_args") {
+            linker_args = unwrap_json_string_array(member_name, member_value);
         } else if (member_name == "libraries") {
             libraries = unwrap_json_string_array(member_name, member_value);
         } else if (member_name == "library_paths") {
@@ -858,6 +862,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         .name = name.value_or(""),
         .type = type,
         .args = args,
+        .linker_args = linker_args,
         .libraries = libraries,
         .macos_frameworks = macos_frameworks,
         .packages = packages,
@@ -1157,6 +1162,8 @@ void CLI::invoke_msvc_linker() {
         args.push_back(library + ".lib");
     }
 
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
+
     Command command{
         .executable = (msvc_tools_path / "link").string(),
         .args = args,
@@ -1206,6 +1213,8 @@ void CLI::invoke_mingw_linker() {
     for (const std::string &library : libraries) {
         args.push_back("-l" + library);
     }
+
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
         .executable = linker_path.string(),
@@ -1272,6 +1281,8 @@ void CLI::invoke_unix_linker() {
         args.push_back("-l" + library);
     }
 
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
+
     Command command{
         .executable = linker_path.string(),
         .args = args,
@@ -1324,6 +1335,8 @@ void CLI::invoke_darwin_linker() {
         args.push_back(framework);
     }
 
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
+
     Command command{
         .executable = "ld64.lld",
         .args = args,
@@ -1355,6 +1368,8 @@ void CLI::invoke_wasm_linker() {
         args.push_back("-l" + library);
     }
 
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
+
     Command command{
         .executable = linker_path.string(),
         .args = args,
@@ -1376,7 +1391,7 @@ void CLI::invoke_emscripten_linker() {
     args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
-    args.push_back("-sSTACK_SIZE=1024*1024");
+    args.push_back("-sSTACK_SIZE=1mb");
     args.push_back("-sALLOW_MEMORY_GROWTH=1");
     args.push_back("-sASSERTIONS");
 
@@ -1387,6 +1402,8 @@ void CLI::invoke_emscripten_linker() {
     for (const std::string &library : libraries) {
         args.push_back("-l" + library);
     }
+
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
         .executable = linker_path.string(),

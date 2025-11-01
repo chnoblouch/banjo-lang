@@ -56,6 +56,7 @@ private:
     PackageType package_type;
     std::vector<std::string> packages;
     std::vector<std::string> source_paths;
+    std::vector<std::string> linker_args;
     std::vector<std::string> libraries;
     std::vector<std::string> library_paths;
     std::vector<std::string> macos_frameworks;
