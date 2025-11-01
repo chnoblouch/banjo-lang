@@ -1,7 +1,7 @@
 use std.config;
 use c;
 
-meta if config.OS == config.EMSCRIPTEN {
+# meta if config.OS == config.EMSCRIPTEN {
     struct Sockaddr {
         var family: u16;
         var data: [u8; 14];
@@ -33,4 +33,4 @@ meta if config.OS == config.EMSCRIPTEN {
     pub func errno() -> i32 {
         return *__errno_location();
     }
-}
+# }
