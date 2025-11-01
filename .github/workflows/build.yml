@@ -107,3 +107,25 @@ jobs:
         with:
           name: build-aarch64-macos
           path: banjo-aarch64-macos.zip
+  
+  test-wasm:
+    runs-on: ubuntu-24.04-arm
+    needs: build-linux
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+
+      - name: Install Emscripten
+        run: sudo apt-get install -y emscripten
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-aarch64-linux
+
+      - name: Extract build
+        run: unzip banjo-aarch64-linux.zip
+
+      - name: Run tests
+        run: python3 test/scripted/test_compilation.py --install-dir banjo-aarch64-linux --wasm
