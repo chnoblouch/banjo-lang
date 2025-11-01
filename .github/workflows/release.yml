@@ -4,12 +4,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
   release:
     runs-on: ubuntu-24.04
+    needs: build
 
     steps:
-      - name: Build
-        uses: ./.github/workflows/build.yml
+      - uses: actions/checkout@v4
 
       - name: Download build for x86_64-windows
         uses: actions/download-artifact@v4
