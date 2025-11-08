@@ -1,14 +1,12 @@
-#include "source_reader.hpp"
+#include "source_file.hpp"
 
 #include "banjo/utils/timing.hpp"
 
-namespace banjo {
+#include <utility>
 
-namespace lang {
+namespace banjo::lang {
 
-static constexpr unsigned EOF_ZONE_SIZE = 2;
-
-SourceReader SourceReader::read(std::istream &stream) {
+SourceFile SourceFile::read(std::filesystem::path fs_path, std::istream &stream) {
     PROFILE_SCOPE("file loading");
 
     stream.seekg(0, std::ios::end);
@@ -25,11 +23,13 @@ SourceReader SourceReader::read(std::istream &stream) {
         buffer[file_size + i] = EOF_CHAR;
     }
 
-    return SourceReader{std::move(buffer)};
+    return SourceFile{
+        .fs_path = std::move(fs_path),
+        .buffer = std::move(buffer),
+        .tokens{},
+        .ast_mod = nullptr,
+        .sir_mod = nullptr,
+    };
 }
 
-SourceReader::SourceReader(std::string buffer) : buffer(std::move(buffer)) {}
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

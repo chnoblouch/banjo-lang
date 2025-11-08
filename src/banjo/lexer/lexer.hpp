@@ -3,6 +3,7 @@
 
 #include "banjo/lexer/source_reader.hpp"
 #include "banjo/lexer/token.hpp"
+#include "banjo/source/source_file.hpp"
 
 #include <vector>
 
@@ -19,7 +20,7 @@ public:
     };
 
 private:
-    SourceReader &reader;
+    SourceReader reader;
     Mode mode;
 
     bool current_line_empty = true;
@@ -34,7 +35,7 @@ private:
     TextPosition start_position;
 
 public:
-    Lexer(SourceReader &reader, Mode mode = Mode::COMPILATION);
+    Lexer(SourceFile &file, Mode mode = Mode::COMPILATION);
     void enable_completion(TextPosition completion_point);
     std::vector<Token> tokenize();
 

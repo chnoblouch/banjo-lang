@@ -6,6 +6,7 @@
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/source/module_path.hpp"
+#include "banjo/source/source_file.hpp"
 #include "banjo/utils/paths.hpp"
 
 #include <fstream>
@@ -60,7 +61,7 @@ ASTModule *ModuleManager::load(const ModuleTreeNode &module_tree_node) {
 
     for (const ModuleTreeNode &child : module_tree_node.children) {
         ASTModule *sub_module = load(child);
-        link_sub_module(mod, sub_module);
+        mod->add_sub_mod(sub_module);
     }
 
     return mod;
@@ -112,9 +113,8 @@ ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPositi
         return nullptr;
     }
 
-    SourceReader reader = SourceReader::read(*stream);
-
-    Lexer lexer(reader);
+    SourceFile file = SourceFile::read(module_file->file_path, *stream);
+    Lexer lexer{file};
     lexer.enable_completion(completion_point);
     std::vector<Token> tokens = lexer.tokenize();
 
@@ -151,12 +151,8 @@ std::vector<ModulePath> ModuleManager::enumerate_root_paths() {
 void ModuleManager::link_sub_modules(ASTModule *mod, const ModuleFile &module_file) {
     for (const ModulePath &sub_path : module_discovery.find_sub_modules(module_file)) {
         ASTModule *sub_module = module_list.get_by_path(sub_path);
-        link_sub_module(mod, sub_module);
+        mod->add_sub_mod(sub_module);
     }
-}
-
-void ModuleManager::link_sub_module(ASTModule *mod, ASTModule *sub_mod) {
-    mod->add_sub_mod(sub_mod);
 }
 
 std::unique_ptr<std::istream> ModuleManager::open_module_file(const ModuleFile &module_file) {
@@ -181,8 +177,8 @@ ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
         };
     }
 
-    SourceReader reader = SourceReader::read(*stream);
-    std::vector<Token> tokens = Lexer(reader).tokenize();
+    SourceFile file = SourceFile::read(module_file.file_path, *stream);
+    std::vector<Token> tokens = Lexer{file}.tokenize();
     return Parser(tokens, module_file.path).parse_module();
 }
 

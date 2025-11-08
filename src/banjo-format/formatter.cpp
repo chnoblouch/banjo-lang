@@ -3,6 +3,7 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/lexer.hpp"
 #include "banjo/parser/parser.hpp"
+#include "banjo/source/source_file.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -29,9 +30,9 @@ static const std::initializer_list<lang::ASTNodeType> NODES_WITH_BLOCKS{
 };
 
 void Formatter::format(const std::filesystem::path &file_path) {
-    std::ifstream stream(file_path);
-    lang::SourceReader reader = lang::SourceReader::read(stream);
-    lang::Lexer lexer(reader, lang::Lexer::Mode::FORMATTING);
+    std::ifstream stream{file_path};
+    lang::SourceFile file = lang::SourceFile::read(file_path, stream);
+    lang::Lexer lexer{file, lang::Lexer::Mode::FORMATTING};
     std::vector<lang::Token> tokens = lexer.tokenize();
 
     lang::Parser parser(tokens, {}, lang::Parser::Mode::FORMATTING);

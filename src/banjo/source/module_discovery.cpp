@@ -31,7 +31,7 @@ void ModuleDiscovery::find_modules(
 
     std::reverse(file_paths.begin(), file_paths.end());
 
-    for (std::filesystem::path file_path : file_paths) {
+    for (const std::filesystem::path &file_path : file_paths) {
         if (file_path.extension() == ".bnj" && file_path.stem() != "module") {
             modules.push_back(node_from_file(file_path, prefix));
         } else if (std::filesystem::is_directory(file_path)) {

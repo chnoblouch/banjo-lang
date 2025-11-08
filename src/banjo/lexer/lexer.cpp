@@ -12,56 +12,25 @@ namespace banjo {
 namespace lang {
 
 const std::map<std::string_view, TokenType> KEYWORDS{
-    {"var", TKN_VAR},
-    {"const", TKN_CONST},
-    {"func", TKN_FUNC},
-    {"i8", TKN_I8},
-    {"i16", TKN_I16},
-    {"i32", TKN_I32},
-    {"i64", TKN_I64},
-    {"u8", TKN_U8},
-    {"u16", TKN_U16},
-    {"u32", TKN_U32},
-    {"u64", TKN_U64},
-    {"f32", TKN_F32},
-    {"f64", TKN_F64},
-    {"usize", TKN_USIZE},
-    {"bool", TKN_BOOL},
-    {"addr", TKN_ADDR},
-    {"void", TKN_VOID},
-    {"except", TKN_EXCEPT},
-    {"ref", TKN_REF},
-    {"mut", TKN_MUT},
-    {"as", TKN_AS},
-    {"if", TKN_IF},
-    {"else", TKN_ELSE},
-    {"switch", TKN_SWITCH},
-    {"try", TKN_TRY},
-    {"while", TKN_WHILE},
-    {"for", TKN_FOR},
-    {"in", TKN_IN},
-    {"break", TKN_BREAK},
-    {"continue", TKN_CONTINUE},
-    {"return", TKN_RETURN},
-    {"struct", TKN_STRUCT},
-    {"self", TKN_SELF},
-    {"enum", TKN_ENUM},
-    {"union", TKN_UNION},
-    {"case", TKN_CASE},
-    {"proto", TKN_PROTO},
-    {"false", TKN_FALSE},
-    {"true", TKN_TRUE},
-    {"null", TKN_NULL},
-    {"none", TKN_NONE},
-    {"undefined", TKN_UNDEFINED},
-    {"use", TKN_USE},
-    {"pub", TKN_PUB},
-    {"native", TKN_NATIVE},
-    {"meta", TKN_META},
-    {"type", TKN_TYPE},
+    {"var", TKN_VAR},       {"const", TKN_CONST},   {"func", TKN_FUNC},
+    {"i8", TKN_I8},         {"i16", TKN_I16},       {"i32", TKN_I32},
+    {"i64", TKN_I64},       {"u8", TKN_U8},         {"u16", TKN_U16},
+    {"u32", TKN_U32},       {"u64", TKN_U64},       {"f32", TKN_F32},
+    {"f64", TKN_F64},       {"usize", TKN_USIZE},   {"bool", TKN_BOOL},
+    {"addr", TKN_ADDR},     {"void", TKN_VOID},     {"except", TKN_EXCEPT},
+    {"ref", TKN_REF},       {"mut", TKN_MUT},       {"as", TKN_AS},
+    {"if", TKN_IF},         {"else", TKN_ELSE},     {"switch", TKN_SWITCH},
+    {"try", TKN_TRY},       {"while", TKN_WHILE},   {"for", TKN_FOR},
+    {"in", TKN_IN},         {"break", TKN_BREAK},   {"continue", TKN_CONTINUE},
+    {"return", TKN_RETURN}, {"struct", TKN_STRUCT}, {"self", TKN_SELF},
+    {"enum", TKN_ENUM},     {"union", TKN_UNION},   {"case", TKN_CASE},
+    {"proto", TKN_PROTO},   {"false", TKN_FALSE},   {"true", TKN_TRUE},
+    {"null", TKN_NULL},     {"none", TKN_NONE},     {"undefined", TKN_UNDEFINED},
+    {"use", TKN_USE},       {"pub", TKN_PUB},       {"native", TKN_NATIVE},
+    {"meta", TKN_META},     {"type", TKN_TYPE},
 };
 
-Lexer::Lexer(SourceReader &reader, Mode mode /*= Mode::COMPILATION*/) : reader(reader), mode(mode) {}
+Lexer::Lexer(SourceFile &file, Mode mode /*= Mode::COMPILATION*/) : reader{file}, mode(mode) {}
 
 void Lexer::enable_completion(TextPosition completion_point) {
     completion_enabled = true;
@@ -74,7 +43,7 @@ std::vector<Token> Lexer::tokenize() {
     tokens.clear();
     start_position = reader.get_position();
 
-    while (reader.get() != SourceReader::EOF_CHAR) {
+    while (reader.get() != SourceFile::EOF_CHAR) {
         read_token();
         start_position = reader.get_position();
         try_insert_completion_token();
@@ -134,7 +103,7 @@ void Lexer::read_character() {
     reader.consume();
 
     char c = reader.consume();
-    while (c != SourceReader::EOF_CHAR) {
+    while (c != SourceFile::EOF_CHAR) {
         if (c == '\'') {
             break;
         }
@@ -149,10 +118,10 @@ void Lexer::read_string() {
     reader.consume();
 
     char c = reader.consume();
-    while (c != SourceReader::EOF_CHAR) {
+    while (c != SourceFile::EOF_CHAR) {
         if (c == '\\') {
             c = reader.consume();
-            if (c == SourceReader::EOF_CHAR) break;
+            if (c == SourceFile::EOF_CHAR) break;
         } else if (c == '\"') {
             break;
         }
@@ -165,7 +134,7 @@ void Lexer::read_string() {
 
 void Lexer::skip_comment() {
     char c = reader.consume();
-    while (c != '\n' && c != SourceReader::EOF_CHAR) {
+    while (c != '\n' && c != SourceFile::EOF_CHAR) {
         c = reader.consume();
     }
 }

@@ -55,7 +55,6 @@ public:
     std::optional<std::filesystem::path> find_source_file(const ModulePath &path);
     std::vector<ModulePath> enumerate_root_paths();
     void link_sub_modules(ASTModule *mod, const ModuleFile &module_file);
-    void link_sub_module(ASTModule *mod, ASTModule *sub_mod);
 
 private:
     static std::unique_ptr<std::istream> open_module_file(const ModuleFile &module_file);

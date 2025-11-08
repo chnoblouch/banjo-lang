@@ -1,8 +1,7 @@
 #ifndef BANJO_LEXER_SOURCE_READER_H
 #define BANJO_LEXER_SOURCE_READER_H
 
-#include <istream>
-#include <string>
+#include "banjo/source/source_file.hpp"
 
 namespace banjo {
 
@@ -10,18 +9,12 @@ namespace lang {
 
 class SourceReader {
 
-public:
-    static constexpr char EOF_CHAR = '\0';
-
 private:
-    std::string buffer;
+    std::string_view buffer;
     unsigned position = 0;
 
 public:
-    static SourceReader read(std::istream &stream);
-
-private:
-    SourceReader(std::string buffer);
+    SourceReader(const SourceFile &file) : buffer(file.buffer) {}
 
 public:
     char consume() { return buffer[position++]; }
