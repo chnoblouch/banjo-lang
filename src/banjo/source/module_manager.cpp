@@ -3,10 +3,12 @@
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/std_config_module.hpp"
 #include "banjo/lexer/lexer.hpp"
+#include "banjo/parser/parser.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/source/source_file.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/paths.hpp"
 
 #include <fstream>
@@ -53,56 +55,51 @@ void ModuleManager::load_all() {
     }
 }
 
-ASTModule *ModuleManager::load(const ModuleTreeNode &module_tree_node) {
-    ASTModule *mod = load(module_tree_node.file);
-    if (!mod) {
+SourceFile *ModuleManager::load(const ModuleTreeNode &module_tree_node) {
+    SourceFile *parsed_file = load(module_tree_node.file);
+    if (!parsed_file) {
         return nullptr;
     }
 
     for (const ModuleTreeNode &child : module_tree_node.children) {
-        ASTModule *sub_module = load(child);
-        mod->add_sub_mod(sub_module);
+        SourceFile *sub_mod = load(child);
+        parsed_file->sub_mod_paths.push_back(sub_mod->mod_path);
     }
 
-    return mod;
+    return parsed_file;
 }
 
-ASTModule *ModuleManager::load(const ModuleFile &module_file) {
-    ParsedAST parsed_ast = parse_module(module_file);
-    ASTModule *mod = parsed_ast.module_;
+SourceFile *ModuleManager::load(const ModuleFile &module_file) {
+    SourceFile *parsed_file = parse_module(module_file);
+    ASTModule *mod = parsed_file->ast_mod;
     if (!mod) {
         return nullptr;
     }
 
-    mod->set_file_path(module_file.file_path);
-
     module_list.add(mod);
-    report_manager.merge_result(std::move(parsed_ast.reports), parsed_ast.is_valid);
+    report_manager.merge_result(std::move(mod->reports), mod->is_valid);
 
-    return mod;
+    return parsed_file;
 }
 
-ASTModule *ModuleManager::reload(ASTModule *mod) {
-    std::optional<ModuleFile> module_file = module_discovery.find_module(mod->get_path());
+SourceFile *ModuleManager::reload(ASTModule *mod) {
+    std::optional<ModuleFile> module_file = module_discovery.find_module(mod->file.mod_path);
     if (!module_file) {
         return nullptr;
     }
 
-    ParsedAST parsed_ast = parse_module(*module_file);
-    ASTModule *new_mod = parsed_ast.module_;
-    if (!new_mod) {
+    SourceFile *parsed_file = parse_module(*module_file);
+    if (!parsed_file->ast_mod) {
         return nullptr;
     }
 
-    new_mod->set_file_path(module_file->file_path);
+    module_list.replace(mod, parsed_file->ast_mod);
+    report_manager.merge_result(std::move(parsed_file->ast_mod->reports), parsed_file->ast_mod->is_valid);
 
-    module_list.replace(mod, new_mod);
-    report_manager.merge_result(std::move(parsed_ast.reports), parsed_ast.is_valid);
-
-    return new_mod;
+    return parsed_file;
 }
 
-ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPosition completion_point) {
+SourceFile *ModuleManager::load_for_completion(const ModulePath &path, TextPosition completion_point) {
     std::optional<ModuleFile> module_file = module_discovery.find_module(path);
     if (!module_file) {
         return nullptr;
@@ -113,14 +110,17 @@ ASTModule *ModuleManager::load_for_completion(const ModulePath &path, TextPositi
         return nullptr;
     }
 
-    SourceFile file = SourceFile::read(module_file->file_path, *stream);
-    Lexer lexer{file};
-    lexer.enable_completion(completion_point);
-    std::vector<Token> tokens = lexer.tokenize();
+    SourceFile *file = new SourceFile(SourceFile::read(module_file->path, module_file->file_path, *stream));
 
-    Parser parser(tokens, module_file->path);
+    Lexer lexer{*file};
+    lexer.enable_completion(completion_point);
+    file->tokens = lexer.tokenize();
+
+    Parser parser{*file};
     parser.enable_completion();
-    return parser.parse_module().module_;
+    file->ast_mod = parser.parse_module();
+
+    return file;
 }
 
 void ModuleManager::clear() {
@@ -140,46 +140,43 @@ std::vector<ModulePath> ModuleManager::enumerate_root_paths() {
     std::vector<ModulePath> paths;
 
     for (ASTModule *mod : module_list) {
-        if (mod->get_path().get_size() == 1) {
-            paths.push_back(mod->get_path());
+        if (mod->file.mod_path.get_size() == 1) {
+            paths.push_back(mod->file.mod_path);
         }
     }
 
     return paths;
 }
 
-void ModuleManager::link_sub_modules(ASTModule *mod, const ModuleFile &module_file) {
-    for (const ModulePath &sub_path : module_discovery.find_sub_modules(module_file)) {
-        ASTModule *sub_module = module_list.get_by_path(sub_path);
-        mod->add_sub_mod(sub_module);
-    }
-}
-
 std::unique_ptr<std::istream> ModuleManager::open_module_file(const ModuleFile &module_file) {
     return std::make_unique<std::ifstream>(module_file.file_path, std::ios::binary);
 }
 
-ParsedAST ModuleManager::parse_module(const ModuleFile &module_file) {
+SourceFile *ModuleManager::parse_module(const ModuleFile &module_file) {
     if (module_file.path == ModulePath{"std", "config"}) {
-        return ParsedAST{
-            .module_ = new StdConfigModule(),
-            .is_valid = true,
-            .reports = {},
+        SourceFile *file = new SourceFile{
+            .mod_path = module_file.path,
+            .fs_path = module_file.file_path,
+            .buffer{},
+            .tokens{},
+            .ast_mod = nullptr,
+            .sir_mod = nullptr,
         };
+
+        file->ast_mod = new StdConfigModule(*file);
+        return file;
     }
 
     std::unique_ptr<std::istream> stream = open_func(module_file);
     if (!stream) {
-        return ParsedAST{
-            .module_ = nullptr,
-            .is_valid = false,
-            .reports = {},
-        };
+        // FIXME
+        ASSERT_UNREACHABLE;
     }
 
-    SourceFile file = SourceFile::read(module_file.file_path, *stream);
-    std::vector<Token> tokens = Lexer{file}.tokenize();
-    return Parser(tokens, module_file.path).parse_module();
+    SourceFile *file = new SourceFile(SourceFile::read(module_file.path, module_file.file_path, *stream));
+    file->tokens = Lexer{*file}.tokenize();
+    file->ast_mod = Parser{*file}.parse_module();
+    return file;
 }
 
 } // namespace lang

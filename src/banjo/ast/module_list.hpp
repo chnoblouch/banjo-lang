@@ -3,6 +3,7 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/utils/timing.hpp"
+#include "banjo/source/source_file.hpp"
 
 #include <list>
 
@@ -52,7 +53,7 @@ public:
 
     ASTModule *get_by_path(const ModulePath &path) const {
         for (ASTModule *module_ : modules) {
-            if (module_->get_path() == path) {
+            if (module_->file.mod_path == path) {
                 return module_;
             }
         }

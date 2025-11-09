@@ -38,7 +38,7 @@ std::vector<lang::sir::Module *> Workspace::initialize() {
 
     for (sir::Module *mod : sir_unit.mods) {
         ASTModule *ast_module = module_manager.get_module_list().get_by_path(mod->path);
-        File *file = find_file(ast_module->get_file_path());
+        File *file = find_file(ast_module->file.fs_path);
 
         if (!file) {
             continue;
@@ -58,8 +58,8 @@ std::vector<lang::sir::Module *> Workspace::update(const std::filesystem::path &
     File *file = find_file(fs_path);
     file->content = std::move(new_content);
 
-    ASTModule *new_mod = module_manager.reload(file->ast_module);
-    file->ast_module = new_mod;
+    SourceFile *parsed_file = module_manager.reload(file->ast_module);
+    file->ast_module = parsed_file->ast_mod;
 
     std::unordered_set<lang::ModulePath> paths_to_analyze;
     paths_to_analyze.insert(file->sir_module->path);
@@ -86,9 +86,9 @@ CompletionInfo Workspace::run_completion(
     TextPosition completion_point,
     lang::sir::Module &out_sir_mod
 ) {
-    ASTModule *mod = module_manager.load_for_completion(file->ast_module->get_path(), completion_point);
-    ASSERT(mod);
-    out_sir_mod = SIRGenerator().generate(mod);
+    SourceFile *parsed_file = module_manager.load_for_completion(file->ast_module->file.mod_path, completion_point);
+    ASSERT(parsed_file.ast_mod);
+    out_sir_mod = SIRGenerator().generate(parsed_file->ast_mod);
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::COMPLETION);
     analyzer.analyze(out_sir_mod);
@@ -152,12 +152,14 @@ File *Workspace::find_or_load_file(const std::filesystem::path &fs_path) {
     stream.seekg(0, std::ios::beg);
     stream.read(content.data(), size);
 
-    files.push_back(File{
-        .fs_path = fs_path_absolute,
-        .ast_module = nullptr,
-        .sir_module = nullptr,
-        .content = std::move(content),
-    });
+    files.push_back(
+        File{
+            .fs_path = fs_path_absolute,
+            .ast_module = nullptr,
+            .sir_module = nullptr,
+            .content = std::move(content),
+        }
+    );
 
     files_by_fs_path.insert({fs_path_absolute, &files.back()});
     return &files.back();
@@ -178,13 +180,7 @@ std::vector<lang::ModulePath> Workspace::list_sub_mods(lang::sir::Module *mod) {
         return {};
     }
 
-    std::vector<lang::ModulePath> paths(ast_mod->get_sub_mods().size());
-
-    for (unsigned i = 0; i < ast_mod->get_sub_mods().size(); i++) {
-        paths[i] = ast_mod->get_sub_mods()[i]->get_path();
-    }
-
-    return paths;
+    return ast_mod->file.sub_mod_paths;
 }
 
 std::unique_ptr<std::istream> Workspace::open_module(const lang::ModuleFile &module_file) {

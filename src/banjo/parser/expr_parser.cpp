@@ -262,13 +262,13 @@ ParseResult ExprParser::parse_number_literal() {
 
 ParseResult ExprParser::parse_char_literal() {
     Token *token = stream.consume();
-    std::string value{token->value.substr(1, token->value.size() - 2)};
+    std::string_view value{token->value.substr(1, token->value.size() - 2)};
     return parser.create_node(AST_CHAR_LITERAL, value, token->range());
 }
 
 ParseResult ExprParser::parse_string_literal() {
     Token *token = stream.consume();
-    std::string value{token->value.substr(1, token->value.size() - 2)};
+    std::string_view value{token->value.substr(1, token->value.size() - 2)};
     return parser.create_node(AST_STRING_LITERAL, value, token->range());
 }
 

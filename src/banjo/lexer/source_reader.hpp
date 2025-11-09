@@ -14,7 +14,7 @@ private:
     unsigned position = 0;
 
 public:
-    SourceReader(const SourceFile &file) : buffer(file.buffer) {}
+    SourceReader(const SourceFile &file) : buffer(file.get_buffer()) {}
 
 public:
     char consume() { return buffer[position++]; }

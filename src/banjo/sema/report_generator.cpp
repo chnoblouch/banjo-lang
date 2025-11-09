@@ -6,6 +6,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/source/source_file.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
@@ -57,7 +58,7 @@ const ModulePath &ReportBuilder::find_mod_path(ASTNode *node) {
         node = node->parent;
     }
 
-    return static_cast<ASTModule *>(node)->get_path();
+    return static_cast<ASTModule *>(node)->file.mod_path;
 }
 
 ReportGenerator::ReportGenerator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}

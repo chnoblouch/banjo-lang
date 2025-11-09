@@ -2,7 +2,7 @@
 
 #include "banjo/source/text_range.hpp"
 
-#include <utility>
+#include <string_view>
 
 namespace banjo {
 
@@ -12,16 +12,12 @@ ASTNode::ASTNode() : type(AST_INVALID), value(""), range(0, 0) {}
 
 ASTNode::ASTNode(ASTNodeType type) : type(type), value(""), range(0, 0) {}
 
-ASTNode::ASTNode(ASTNodeType type, std::string value, TextRange range)
-  : type(type),
-    value(std::move(value)),
-    range(range) {}
+ASTNode::ASTNode(ASTNodeType type, std::string_view value, TextRange range) : type(type), value(value), range(range) {}
 
 ASTNode::ASTNode(ASTNodeType type, TextRange range) : type(type), range(range) {}
 
-ASTNode::ASTNode(ASTNodeType type, Token *token) : type(type), value(""), range{0, 0} {
+ASTNode::ASTNode(ASTNodeType type, Token *token) : type(type), value(token->value), range{0, 0} {
     range = token->range();
-    value = std::move(token->value);
 }
 
 unsigned ASTNode::num_children() {

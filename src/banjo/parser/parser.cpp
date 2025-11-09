@@ -5,9 +5,9 @@
 #include "banjo/parser/decl_parser.hpp"
 #include "banjo/parser/expr_parser.hpp"
 #include "banjo/parser/stmt_parser.hpp"
+#include "banjo/source/source_file.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <memory>
 #include <unordered_set>
 
 namespace banjo {
@@ -32,30 +32,21 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_NATIVE,
 };
 
-Parser::Parser(std::vector<Token> &tokens, const ModulePath &module_path, Mode mode /*= Mode::COMPILATION*/)
-  : stream(tokens),
-    module_path(module_path),
-    mode(mode) {}
+Parser::Parser(SourceFile &file, Mode mode /*= Mode::COMPILATION*/) : file(file), stream{file.tokens}, mode(mode) {}
 
 void Parser::enable_completion() {
     running_completion = true;
 }
 
-ParsedAST Parser::parse_module() {
+ASTModule *Parser::parse_module() {
     PROFILE_SCOPE("parser");
 
     stream.seek(0);
-    is_valid = true;
-
-    cur_mod = new ASTModule(module_path);
-    cur_mod->append_child(parse_top_level_block());
-    cur_mod->set_range_from_children();
-
-    return ParsedAST{
-        .module_ = cur_mod,
-        .is_valid = is_valid,
-        .reports = reports,
-    };
+    
+    mod = new ASTModule(file);
+    mod->append_child(parse_top_level_block());
+    mod->set_range_from_children();
+    return mod;
 }
 
 ASTNode *Parser::parse_top_level_block() {
@@ -356,9 +347,9 @@ ParseResult Parser::check_stmt_terminator(ASTNode *node) {
 }
 
 Report &Parser::register_error(TextRange range) {
-    reports.push_back(Report(Report::Type::ERROR, SourceLocation{module_path, range}));
-    is_valid = false;
-    return reports.back();
+    mod->reports.push_back(Report(Report::Type::ERROR, SourceLocation{file.mod_path, range}));
+    mod->is_valid = false;
+    return mod->reports.back();
 }
 
 void Parser::report_unexpected_token() {

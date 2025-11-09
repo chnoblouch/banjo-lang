@@ -2,33 +2,27 @@
 #define BANJO_AST_MODULE_H
 
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/source/module_path.hpp"
+#include "banjo/reports/report.hpp"
 #include "banjo/utils/typed_arena.hpp"
 
-#include <filesystem>
 #include <vector>
 
-namespace banjo {
+namespace banjo::lang {
 
-namespace lang {
+class SourceFile;
 
 class ASTModule : public ASTNode {
 
+public:
+    SourceFile &file;
+    bool is_valid;
+    std::vector<Report> reports;
+
 private:
-    ModulePath path;
-    std::filesystem::path file_path;
-    std::vector<ASTModule *> sub_mods;
     utils::TypedArena<ASTNode, 128> node_arena;
 
 public:
-    ASTModule(ModulePath path) : ASTNode(AST_MODULE), path(path) {}
-
-    const ModulePath &get_path() { return path; }
-    const std::filesystem::path &get_file_path() { return file_path; }
-    const std::vector<ASTModule *> &get_sub_mods() { return sub_mods; }
-
-    void set_file_path(std::filesystem::path file_path) { this->file_path = file_path; }
-    void add_sub_mod(ASTModule *sub_mod) { sub_mods.push_back(sub_mod); }
+    ASTModule(SourceFile &file) : ASTNode(AST_MODULE), file(file), is_valid(true) {}
 
     template <typename... Args>
     ASTNode *create_node(Args... args) {
@@ -38,8 +32,6 @@ public:
     ASTNode *get_block() { return first_child; }
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

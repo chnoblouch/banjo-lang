@@ -6,7 +6,7 @@
 
 namespace banjo::lang {
 
-SourceFile SourceFile::read(std::filesystem::path fs_path, std::istream &stream) {
+SourceFile SourceFile::read(ModulePath mod_path, std::filesystem::path fs_path, std::istream &stream) {
     PROFILE_SCOPE("file loading");
 
     stream.seekg(0, std::ios::end);
@@ -24,8 +24,9 @@ SourceFile SourceFile::read(std::filesystem::path fs_path, std::istream &stream)
     }
 
     return SourceFile{
+        .mod_path = std::move(mod_path),
         .fs_path = std::move(fs_path),
-        .buffer = std::move(buffer),
+        .buffer = buffer,
         .tokens{},
         .ast_mod = nullptr,
         .sir_mod = nullptr,

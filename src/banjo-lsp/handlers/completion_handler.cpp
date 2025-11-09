@@ -123,8 +123,8 @@ void CompletionHandler::build_after_implicit_dot(JSONArray &items, lang::sir::Ex
 
 void CompletionHandler::build_in_use(JSONArray &items) {
     for (lang::ASTModule *mod : workspace.get_mod_list()) {
-        if (mod->get_path().get_size() == 1) {
-            items.add(create_simple_item(mod->get_path()[0], LSPCompletionItemKind::MODULE));
+        if (mod->file.mod_path.get_size() == 1) {
+            items.add(create_simple_item(mod->file.mod_path[0], LSPCompletionItemKind::MODULE));
         }
     }
 }
@@ -161,12 +161,14 @@ void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::Str
 
             std::string_view name = field->ident.value;
 
-            items.add(JSONObject{
-                {"label", name},
-                {"kind", LSPCompletionItemKind::FIELD},
-                {"insertText", std::string{name} + ": "},
-                {"insertTextFormat", 2},
-            });
+            items.add(
+                JSONObject{
+                    {"label", name},
+                    {"kind", LSPCompletionItemKind::FIELD},
+                    {"insertText", std::string{name} + ": "},
+                    {"insertTextFormat", 2},
+                }
+            );
         }
     }
 }

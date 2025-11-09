@@ -7,7 +7,7 @@
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/token_stream.hpp"
 #include "banjo/reports/report.hpp"
-#include "banjo/source/module_path.hpp"
+#include "banjo/source/source_file.hpp"
 
 #include <functional>
 #include <vector>
@@ -15,12 +15,6 @@
 namespace banjo {
 
 namespace lang {
-
-struct ParsedAST {
-    ASTModule *module_;
-    bool is_valid;
-    std::vector<Report> reports;
-};
 
 typedef std::function<ParseResult()> ListElementParser;
 
@@ -45,23 +39,20 @@ public:
     };
 
 private:
+    SourceFile &file;
     TokenStream stream;
-    const ModulePath &module_path;
     Mode mode;
 
-    ASTModule *cur_mod;
+    ASTModule *mod;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;
 
-    bool is_valid = false;
-    std::vector<Report> reports;
-
 public:
-    Parser(std::vector<Token> &tokens, const ModulePath &module_path, Mode mode = Mode::COMPILATION);
+    Parser(SourceFile &file, Mode mode = Mode::COMPILATION);
     void enable_completion();
 
-    ParsedAST parse_module();
+    ASTModule *parse_module();
 
     Mode get_mode() { return mode; }
     ASTNode *get_completion_node() { return completion_node; }
@@ -110,7 +101,7 @@ private:
 
     template <typename... Args>
     ASTNode *create_node(Args... args) {
-        return cur_mod->create_node(args...);
+        return mod->create_node(args...);
     }
 
     NodeBuilder build_node() { return NodeBuilder(stream, create_node()); }

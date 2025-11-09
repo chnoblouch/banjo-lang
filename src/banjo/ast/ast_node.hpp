@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace banjo {
 
@@ -176,7 +177,7 @@ struct ASTNode {
 
     ASTNodeType type;
     Flags flags;
-    std::string value;
+    std::string_view value;
     TextRange range;
 
     ASTNode *first_child = nullptr;
@@ -186,7 +187,7 @@ struct ASTNode {
 
     ASTNode();
     ASTNode(ASTNodeType type);
-    ASTNode(ASTNodeType type, std::string value, TextRange range = {0, 0});
+    ASTNode(ASTNodeType type, std::string_view value, TextRange range = {0, 0});
     ASTNode(ASTNodeType type, TextRange range);
     ASTNode(ASTNodeType type, Token *token);
 

@@ -133,7 +133,7 @@ void SemanticAnalyzer::run_postponed_analyses() {
 }
 
 sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const std::string &name) {
-    return sir_unit.mods_by_path[mod_path]->block.symbol_table->look_up_local(name);
+    return sir_unit.mods_by_path.at(mod_path)->block.symbol_table->look_up_local(name);
 }
 
 sir::Symbol SemanticAnalyzer::find_std_optional() {

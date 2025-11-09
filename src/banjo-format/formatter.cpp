@@ -31,19 +31,21 @@ static const std::initializer_list<lang::ASTNodeType> NODES_WITH_BLOCKS{
 
 void Formatter::format(const std::filesystem::path &file_path) {
     std::ifstream stream{file_path};
-    lang::SourceFile file = lang::SourceFile::read(file_path, stream);
+    lang::SourceFile file = lang::SourceFile::read({}, file_path, stream);
+
     lang::Lexer lexer{file, lang::Lexer::Mode::FORMATTING};
-    std::vector<lang::Token> tokens = lexer.tokenize();
+    file.tokens = lexer.tokenize();
+    lang::Parser parser{file, lang::Parser::Mode::FORMATTING};
+    lang::ASTModule *ast_mod = parser.parse_module();
 
-    lang::Parser parser(tokens, {}, lang::Parser::Mode::FORMATTING);
-    lang::ParsedAST parse_result = parser.parse_module();
-
-    if (!parse_result.is_valid) {
+    if (!ast_mod->is_valid) {
         return;
     }
 
     out_stream = std::ofstream(file_path);
-    print_node(parse_result.module_);
+    print_node(ast_mod);
+
+    delete ast_mod;
 }
 
 void Formatter::print_node(lang::ASTNode *node) {
