@@ -56,9 +56,9 @@ bool JITCompiler::build_ir() {
 }
 
 lang::sir::Module *JITCompiler::find_mod(const std::filesystem::path &absolute_path) {
-    for (lang::ASTModule *ast_mod : module_manager.get_module_list()) {
-        if (std::filesystem::absolute(ast_mod->get_file_path()) == absolute_path) {
-            return sir_unit.mods_by_path[ast_mod->get_path()];
+    for (const std::unique_ptr<lang::SourceFile> &ast_mod : module_manager.get_module_list()) {
+        if (std::filesystem::absolute(ast_mod->fs_path) == absolute_path) {
+            return sir_unit.mods_by_path[ast_mod->mod_path];
         }
     }
 

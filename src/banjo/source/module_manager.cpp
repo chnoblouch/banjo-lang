@@ -92,6 +92,10 @@ std::unique_ptr<ASTModule> ModuleManager::parse_for_completion(SourceFile *file,
     return parser.parse_module();
 }
 
+void ModuleManager::clear() {
+    module_list = ModuleList{};
+}
+
 std::optional<std::filesystem::path> ModuleManager::find_source_file(const ModulePath &path) {
     std::optional<ModuleFile> module_file = module_discovery.find_module(path);
     if (!module_file) {
