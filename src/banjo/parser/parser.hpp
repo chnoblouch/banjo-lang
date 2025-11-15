@@ -9,7 +9,9 @@
 #include "banjo/reports/report.hpp"
 #include "banjo/source/source_file.hpp"
 
+#include <algorithm>
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace banjo {
@@ -43,7 +45,7 @@ private:
     TokenStream stream;
     Mode mode;
 
-    ASTModule *mod;
+    std::unique_ptr<ASTModule> mod;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;
@@ -52,7 +54,7 @@ public:
     Parser(SourceFile &file, std::vector<Token> &tokens, Mode mode = Mode::COMPILATION);
     void enable_completion();
 
-    ASTModule *parse_module();
+    std::unique_ptr<ASTModule> parse_module();
 
     Mode get_mode() { return mode; }
     ASTNode *get_completion_node() { return completion_node; }

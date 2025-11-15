@@ -36,16 +36,14 @@ void Formatter::format(const std::filesystem::path &file_path) {
     lang::Lexer lexer{*file, lang::Lexer::Mode::FORMATTING};
     file->tokens = lexer.tokenize();
     lang::Parser parser{*file, file->tokens, lang::Parser::Mode::FORMATTING};
-    lang::ASTModule *ast_mod = parser.parse_module();
+    std::unique_ptr<lang::ASTModule> ast_mod = parser.parse_module();
 
     if (!ast_mod->is_valid) {
         return;
     }
 
     out_stream = std::ofstream(file_path);
-    print_node(ast_mod);
-
-    delete ast_mod;
+    print_node(ast_mod.get());
 }
 
 void Formatter::print_node(lang::ASTNode *node) {

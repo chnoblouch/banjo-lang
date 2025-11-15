@@ -9,6 +9,7 @@
 #include "banjo/utils/timing.hpp"
 
 #include <unordered_set>
+#include <utility>
 
 namespace banjo {
 
@@ -41,15 +42,15 @@ void Parser::enable_completion() {
     running_completion = true;
 }
 
-ASTModule *Parser::parse_module() {
+std::unique_ptr<ASTModule> Parser::parse_module() {
     PROFILE_SCOPE("parser");
 
     stream.seek(0);
 
-    mod = new ASTModule(file);
+    mod = std::make_unique<ASTModule>(file);
     mod->append_child(parse_top_level_block());
     mod->set_range_from_children();
-    return mod;
+    return std::move(mod);
 }
 
 ASTNode *Parser::parse_top_level_block() {

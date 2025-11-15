@@ -66,7 +66,7 @@ std::vector<lang::SourceFile *> Workspace::update(const std::filesystem::path &f
 
     for (const lang::ModulePath &path : paths_to_analyze) {
         lang::SourceFile *file = find_file(path);
-        SIRGenerator().regenerate_mod(sir_unit, file->ast_mod);
+        SIRGenerator().regenerate_mod(sir_unit, file->ast_mod.get());
 
         files_to_analyze.push_back(file);
         mods_to_analyze.push_back(file->sir_mod);
@@ -84,9 +84,10 @@ CompletionInfo Workspace::run_completion(
     TextPosition completion_point,
     lang::sir::Module &out_sir_mod
 ) {
-    ASTModule *ast_mod = module_manager.parse_for_completion(file, completion_point);
+    std::unique_ptr<ASTModule> ast_mod = module_manager.parse_for_completion(file, completion_point);
     ASSERT(ast_mod);
-    out_sir_mod = SIRGenerator().generate(ast_mod);
+
+    out_sir_mod = SIRGenerator().generate(ast_mod.get());
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::COMPLETION);
     analyzer.analyze(out_sir_mod);

@@ -12,6 +12,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -75,15 +76,13 @@ SourceFile *ModuleManager::load(const ModuleFile &location) {
 }
 
 void ModuleManager::reparse(SourceFile *file) {
-    delete file->ast_mod;
-
     file->tokens = Lexer{*file}.tokenize();
     file->ast_mod = Parser{*file, file->tokens}.parse_module();
 
     report_manager.merge_result(std::move(file->ast_mod->reports), file->ast_mod->is_valid);
 }
 
-ASTModule *ModuleManager::parse_for_completion(SourceFile *file, TextPosition completion_point) {
+std::unique_ptr<ASTModule> ModuleManager::parse_for_completion(SourceFile *file, TextPosition completion_point) {
     Lexer lexer{*file};
     lexer.enable_completion(completion_point);
     std::vector<Token> tokens = lexer.tokenize();
@@ -125,7 +124,7 @@ std::unique_ptr<SourceFile> ModuleManager::parse_module(const ModuleFile &module
             .sir_mod = nullptr,
         });
 
-        file->ast_mod = new StdConfigModule(*file);
+        file->ast_mod = std::make_unique<StdConfigModule>(*file);
         return file;
     }
 

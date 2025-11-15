@@ -21,12 +21,12 @@ JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &co
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
-    File *file = workspace.find_file(fs_path);
+    lang::SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
         return JSONObject{{"data", JSONArray{}}};
     }
 
-    ModuleIndex *index = workspace.find_index(file->sir_module);
+    ModuleIndex *index = workspace.find_index(file->sir_mod);
     if (!index) {
         return JSONObject{{"data", JSONArray{}}};
     }
@@ -41,7 +41,7 @@ JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &co
         return lhs.range.start < rhs.range.start;
     });
 
-    std::vector<LSPSemanticToken> lsp_tokens = tokens_to_lsp(file->content, tokens);
+    std::vector<LSPSemanticToken> lsp_tokens = tokens_to_lsp(file->buffer, tokens);
     JSONArray data = serialize(lsp_tokens);
 
     return JSONObject{{"data", data}};

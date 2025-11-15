@@ -26,10 +26,14 @@ public:
     std::filesystem::path fs_path;
     std::string buffer;
     std::vector<Token> tokens;
-    ASTModule *ast_mod;
+    std::unique_ptr<ASTModule> ast_mod;
     sir::Module *sir_mod;
 
-    static std::unique_ptr<SourceFile> read(ModulePath mod_path, const std::filesystem::path &fs_path, std::istream &stream);
+    static std::unique_ptr<SourceFile> read(
+        ModulePath mod_path,
+        const std::filesystem::path &fs_path,
+        std::istream &stream
+    );
 
     void update_content(std::string content);
     std::string_view get_content() const;

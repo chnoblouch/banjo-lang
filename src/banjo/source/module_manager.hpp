@@ -42,7 +42,7 @@ public:
     SourceFile *load_tree(const ModuleTreeNode &module_tree_node);
     SourceFile *load(const ModuleFile &location);
     void reparse(SourceFile *file);
-    ASTModule *parse_for_completion(SourceFile *file, TextPosition completion_point);
+    std::unique_ptr<ASTModule> parse_for_completion(SourceFile *file, TextPosition completion_point);
 
     std::optional<std::filesystem::path> find_source_file(const ModulePath &path);
     std::vector<ModulePath> enumerate_root_paths();

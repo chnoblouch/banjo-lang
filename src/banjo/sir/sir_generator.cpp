@@ -24,7 +24,7 @@ sir::Unit SIRGenerator::generate(ModuleList &mods) {
     }
 
     for (const std::unique_ptr<SourceFile> &file : mods) {
-        generate_mod(file->ast_mod, *file->sir_mod);
+        generate_mod(file->ast_mod.get(), *file->sir_mod);
     }
 
     return sir_unit;
