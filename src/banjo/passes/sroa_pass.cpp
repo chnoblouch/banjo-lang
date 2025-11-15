@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#define DEBUG_LOG is_logging() && log()
+
 namespace banjo {
 
 namespace passes {
@@ -25,6 +27,7 @@ void SROAPass::run(ssa::Module &mod) {
 void SROAPass::run(ssa::Function *func) {
     stack_values.clear();
     stack_ptr_defs.clear();
+    use_map = PassUtils::collect_uses(*func);
 
     for (ssa::BasicBlockIter iter = func->begin(); iter != func->end(); ++iter) {
         collect_stack_values(iter);
@@ -54,7 +57,7 @@ void SROAPass::run(ssa::Function *func) {
 
     apply_splits(*func);
 
-    // dump(*func);
+    dump(*func);
 }
 
 void SROAPass::collect_stack_values(ssa::BasicBlockIter block_iter) {
@@ -115,7 +118,7 @@ void SROAPass::collect_members(unsigned val_index) {
 void SROAPass::disable_invalid_splits(ssa::BasicBlock &block) {
     for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
         // Memberptr instructions can be removed. Their destination register will be replaced by the
-        // new replaced by the allocation during splitting.
+        // new allocation during splitting.
         if (iter->get_opcode() == ssa::Opcode::MEMBERPTR && iter->get_operand(1).is_register()) {
             continue;
         }
@@ -160,9 +163,9 @@ void SROAPass::split_member(StackValue &value, ssa::Function *func) {
 }
 
 void SROAPass::collect_stack_ptr_defs(ssa::Function &func) {
-    PassUtils::UseMap use_map = PassUtils::collect_uses(func);
+    std::unordered_map<ssa::VirtualRegister, unsigned> stack_ptr_defs_copy = stack_ptr_defs;
 
-    for (auto &[reg, value_index] : stack_ptr_defs) {
+    for (auto &[reg, value_index] : stack_ptr_defs_copy) {
         StackValue &value = stack_values[value_index];
 
         if (value.parent || !value.members) {
@@ -347,11 +350,14 @@ bool SROAPass::is_aggregate(const ssa::Type &type) {
 }
 
 void SROAPass::dump(ssa::Function &func) {
-    std::cout << "\n  stack values for function `" << func.name << "`:\n\n";
+    DEBUG_LOG << "function " << func.name << "\n\n";
+    DEBUG_LOG << "  stack values:\n";
     dump_stack_values();
+    DEBUG_LOG << "\n";
 
-    std::cout << "  stack pointer replacements: \n\n";
+    DEBUG_LOG << "  stack pointer replacements:\n";
     dump_stack_replacements();
+    DEBUG_LOG << "\n\n";
 }
 
 void SROAPass::dump_stack_values() {
@@ -363,62 +369,61 @@ void SROAPass::dump_stack_values() {
         }
 
         dump_stack_value(reg, stack_value, 0);
-        std::cout << "\n";
     }
 }
 
 void SROAPass::dump_stack_value(std::optional<ssa::VirtualRegister> reg, StackValue &value, unsigned indent) {
-    std::cout << "    ";
+    DEBUG_LOG << "    ";
 
     if (reg) {
-        std::cout << "%" << *reg << ": ";
+        DEBUG_LOG << "%" << *reg << ": ";
     }
 
-    std::cout << std::string(2 * indent, ' ');
+    DEBUG_LOG << std::string(2 * indent, ' ');
 
     if (!value.members) {
-        std::cout << "unsplittable";
+        DEBUG_LOG << "unsplittable";
 
         if (value.replacement) {
-            std::cout << " -> %" << *value.replacement;
+            DEBUG_LOG << " -> %" << *value.replacement;
         }
 
-        std::cout << '\n';
+        DEBUG_LOG << '\n';
         return;
     }
 
-    if (value.type.is_struct()) std::cout << value.type.get_struct()->name;
-    std::cout << " {\n";
+    if (value.type.is_struct()) DEBUG_LOG << value.type.get_struct()->name;
+    DEBUG_LOG << " {\n";
 
     for (unsigned member_index : *value.members) {
         dump_stack_value({}, stack_values[member_index], indent + 1);
     }
 
-    std::cout << "    " << std::string(2 * indent, ' ') << "}";
+    DEBUG_LOG << "    " << std::string(2 * indent, ' ') << "}";
 
     if (value.members && value.replacement) {
-        std::cout << " -> %" << *value.replacement;
+        DEBUG_LOG << " -> %" << *value.replacement;
     }
 
-    std::cout << '\n';
+    DEBUG_LOG << '\n';
 }
 
 void SROAPass::dump_stack_replacements() {
     for (auto &[old_reg, value_index] : stack_ptr_defs) {
         StackValue &value = stack_values[value_index];
 
-        std::cout << "    %" << old_reg << " -> ";
+        DEBUG_LOG << "    %" << old_reg << " -> ";
 
         if (value.replacement) {
-            std::cout << "%" << *value.replacement;
+            DEBUG_LOG << "%" << *value.replacement;
         } else {
-            std::cout << "removed";
+            DEBUG_LOG << "removed";
         }
 
-        std::cout << "\n";
+        DEBUG_LOG << "\n";
     }
 
-    std::cout << "\n";
+    DEBUG_LOG << "\n";
 }
 
 } // namespace passes

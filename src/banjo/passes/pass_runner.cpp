@@ -77,14 +77,21 @@ std::vector<Pass *> PassRunner::create_opt_passes(target::Target *target) {
 
 void PassRunner::run_pass(Pass *pass, unsigned index, ssa::Module &mod) {
     PROFILE_SCOPE(std::to_string(index) + "_" + pass->get_name());
-    pass->run(mod);
+
+    std::string number = std::to_string(index);
+    std::string prefix = std::string(2 - number.size(), '0') + number;
+    std::string name = "ssa.pass" + prefix + "_" + pass->get_name();
 
     if (is_debug) {
-        std::string number = std::to_string(index);
-        std::string prefix = std::string(2 - number.size(), '0') + number;
-        std::string file_name = "ssa.pass" + prefix + "_" + pass->get_name() + ".cryoir";
-        std::string path = "logs/" + file_name;
-        std::ofstream stream(path);
+        std::ofstream stream{"dumps/logs." + name + ".txt"};
+        pass->enable_logging(stream);
+        pass->run(mod);
+    } else {
+        pass->run(mod);
+    }
+
+    if (is_debug) {
+        std::ofstream stream{"dumps/" + name + ".bnjssa"};
         ssa::Writer(stream).write(mod);
 
         std::cout << "validating pass " << index << std::endl;

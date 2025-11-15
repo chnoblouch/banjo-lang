@@ -50,7 +50,7 @@ void MachinePassRunner::run_all(std::vector<MachinePass *> passes, mcode::Module
 }
 
 void MachinePassRunner::emit(mcode::Module &module, std::string file_name) {
-    std::ofstream stream("logs/" + file_name + ".cryoasm");
+    std::ofstream stream("dumps/" + file_name + ".bnjasm");
     DebugEmitter(module, stream, target->get_descr()).generate();
 }
 

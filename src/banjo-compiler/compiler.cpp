@@ -29,8 +29,12 @@ Compiler::Compiler(const Config &config)
     report_printer(module_manager) {}
 
 void Compiler::compile() {
-    if (config.debug && !std::filesystem::is_directory("logs")) {
-        std::filesystem::create_directories("logs");
+    if (config.debug) {
+        if (std::filesystem::is_directory("dumps")) {
+            std::filesystem::remove_all("dumps");
+        }
+
+        std::filesystem::create_directories("dumps");
     }
 
     target::CodeModel code_model = config.code_model ? *config.code_model : target::CodeModel::SMALL;
@@ -47,19 +51,19 @@ void Compiler::compile() {
     module_manager.load_all();
 
     if (config.debug) {
-        std::ofstream stream("logs/ast.bnj-tree");
+        std::ofstream stream("dumps/ast.txt");
         ASTWriter(stream).write_all(module_manager.get_module_list());
     }
 
     sir::Unit sir_unit = SIRGenerator().generate(module_manager.get_module_list());
     if (config.debug) {
-        std::ofstream sir_file_generated("logs/sir.generated.txt");
+        std::ofstream sir_file_generated("dumps/sir.generated.txt");
         sir::Printer(sir_file_generated).print(sir_unit);
     }
 
     sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
     if (config.debug) {
-        std::ofstream sir_file_analyzed("logs/sir.analyzed.txt");
+        std::ofstream sir_file_analyzed("dumps/sir.analyzed.txt");
         sir::Printer(sir_file_analyzed).print(sir_unit);
     }
 
@@ -75,7 +79,7 @@ void Compiler::compile() {
     ssa::Module ssa_module = SSAGenerator(sir_unit, target).generate();
 
     if (config.debug) {
-        std::ofstream stream("logs/ssa.input.cryoir");
+        std::ofstream stream("dumps/ssa.input.bnjssa");
         ssa::Writer(stream).write(ssa_module);
     }
 

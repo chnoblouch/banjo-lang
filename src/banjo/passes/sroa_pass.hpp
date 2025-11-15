@@ -1,9 +1,9 @@
 #ifndef BANJO_PASSES_SROA_PASS_H
 #define BANJO_PASSES_SROA_PASS_H
 
-#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/passes/pass.hpp"
 #include "banjo/passes/pass_utils.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 
 #include <functional>
 #include <optional>
@@ -37,6 +37,7 @@ private:
 
     std::vector<StackValue> stack_values;
     std::unordered_map<ssa::VirtualRegister, unsigned> stack_ptr_defs;
+    PassUtils::UseMap use_map;
 
 public:
     SROAPass(target::Target *target);
