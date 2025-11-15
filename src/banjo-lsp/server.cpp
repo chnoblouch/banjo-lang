@@ -38,7 +38,7 @@ void Server::start() {
     connection.on_request("shutdown", &shutdown_handler);
 
     connection.on_notification("initialized", [&](JSONObject &) {
-        std::vector<lang::sir::Module *> mods = workspace.initialize();
+        std::vector<lang::SourceFile *> mods = workspace.initialize();
         publish_diagnostics(connection, workspace, mods);
     });
 
@@ -76,8 +76,8 @@ void Server::start() {
         const JSONObject &last_change = changes.get_object(changes.length() - 1);
         std::string new_content = last_change.get_string("text");
 
-        std::vector<lang::sir::Module *> mods = workspace.update(fs_path, new_content);
-        publish_diagnostics(connection, workspace, mods);
+        std::vector<lang::SourceFile *> files = workspace.update(fs_path, new_content);
+        publish_diagnostics(connection, workspace, files);
     });
 
     connection.start();

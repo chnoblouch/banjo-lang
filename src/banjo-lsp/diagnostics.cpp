@@ -7,19 +7,14 @@ namespace banjo {
 
 namespace lsp {
 
-void publish_diagnostics(Connection &connection, Workspace &workspace, std::vector<lang::sir::Module *> &mods) {
-    for (lang::sir::Module *mod : mods) {
-        publish_diagnostics(connection, workspace, *mod);
+void publish_diagnostics(Connection &connection, Workspace &workspace, const std::vector<lang::SourceFile *> &files) {
+    for (lang::SourceFile *file : files) {
+        publish_diagnostics(connection, workspace, *file);
     }
 }
 
-void publish_diagnostics(Connection &connection, Workspace &workspace, lang::sir::Module &mod) {
-    File *file = workspace.find_file(mod);
-    if (!file) {
-        return;
-    }
-
-    ModuleIndex *index = workspace.find_index(&mod);
+void publish_diagnostics(Connection &connection, Workspace &workspace, lang::SourceFile &file) {
+    ModuleIndex *index = workspace.find_index(file.sir_mod);
     if (!index) {
         return;
     }
@@ -31,7 +26,7 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::sir
         std::string message = report.get_message().text;
 
         JSONObject diagnostic{
-            {"range", ProtocolStructs::range_to_lsp(file->content, location.range)},
+            {"range", ProtocolStructs::range_to_lsp(file.buffer, location.range)},
             {"severity", static_cast<unsigned>(ProtocolStructs::report_type_to_lsp(report.get_type()))},
             {"message", message},
         };
@@ -40,20 +35,22 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::sir
             JSONArray related_information;
 
             for (const lang::ReportMessage &note : report.get_notes()) {
-                File *note_file = workspace.find_file(note.location->path);
+                lang::SourceFile *note_file = workspace.find_file(note.location->path);
                 if (!note_file) {
                     continue;
                 }
 
                 JSONObject location{
                     {"uri", URI::encode_from_path(note_file->fs_path)},
-                    {"range", ProtocolStructs::range_to_lsp(note_file->content, note.location->range)}
+                    {"range", ProtocolStructs::range_to_lsp(note_file->buffer, note.location->range)}
                 };
 
-                related_information.add(JSONObject{
-                    {"location", location},
-                    {"message", note.text},
-                });
+                related_information.add(
+                    JSONObject{
+                        {"location", location},
+                        {"message", note.text},
+                    }
+                );
             }
 
             diagnostic.add("relatedInformation", related_information);
@@ -62,7 +59,7 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::sir
         diagnostics.add(diagnostic);
     }
 
-    std::string uri = URI::encode_from_path(file->fs_path);
+    std::string uri = URI::encode_from_path(file.fs_path);
     JSONObject notification{{"uri", uri}, {"diagnostics", diagnostics}};
     connection.send_notification("textDocument/publishDiagnostics", notification);
 }

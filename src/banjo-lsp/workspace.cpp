@@ -1,5 +1,6 @@
 #include "workspace.hpp"
 
+#include "banjo/ast/ast_module.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
@@ -21,11 +22,11 @@ namespace lsp {
 using namespace lang;
 
 Workspace::Workspace()
-  : module_manager(std::bind(&Workspace::open_module, this, std::placeholders::_1), report_manager),
+  : module_manager(report_manager),
     config(Config::instance()),
     target(target::Target::create(config.target, target::CodeModel::LARGE)) {}
 
-std::vector<lang::sir::Module *> Workspace::initialize() {
+std::vector<lang::SourceFile *> Workspace::initialize() {
     module_manager.add_standard_stdlib_search_path();
     module_manager.add_config_search_paths(config);
     module_manager.load_all();
@@ -36,59 +37,56 @@ std::vector<lang::sir::Module *> Workspace::initialize() {
     analyzer.analyze();
     build_index(analyzer.get_extra_analysis(), sir_unit.mods);
 
-    for (sir::Module *mod : sir_unit.mods) {
-        ASTModule *ast_module = module_manager.get_module_list().get_by_path(mod->path);
-        File *file = find_file(ast_module->file.fs_path);
+    std::vector<lang::SourceFile *> files;
+    files.reserve(module_manager.get_module_list().get_size());
 
-        if (!file) {
-            continue;
-        }
-
-        file->ast_module = ast_module;
-        file->sir_module = mod;
-        files_by_mod_path[mod->path] = file;
+    for (const std::unique_ptr<lang::SourceFile> &file : module_manager.get_module_list()) {
+        files.push_back(file.get());
     }
 
-    return sir_unit.mods;
+    return files;
 }
 
-std::vector<lang::sir::Module *> Workspace::update(const std::filesystem::path &fs_path, std::string new_content) {
+std::vector<lang::SourceFile *> Workspace::update(const std::filesystem::path &fs_path, std::string new_content) {
     report_manager.reset();
 
-    File *file = find_file(fs_path);
-    file->content = std::move(new_content);
-
-    SourceFile *parsed_file = module_manager.reload(file->ast_module);
-    file->ast_module = parsed_file->ast_mod;
+    SourceFile *file = find_file(fs_path);
+    file->update_content(std::move(new_content));
+    module_manager.reparse(file);
 
     std::unordered_set<lang::ModulePath> paths_to_analyze;
-    paths_to_analyze.insert(file->sir_module->path);
-    collect_dependents(*file->sir_module, paths_to_analyze);
+    paths_to_analyze.insert(file->mod_path);
+    collect_dependents(*file->sir_mod, paths_to_analyze);
 
+    std::vector<lang::SourceFile *> files_to_analyze;
     std::vector<lang::sir::Module *> mods_to_analyze;
+
+    files_to_analyze.reserve(files_to_analyze.size());
     mods_to_analyze.reserve(paths_to_analyze.size());
 
     for (const lang::ModulePath &path : paths_to_analyze) {
-        File *file = find_file(path);
-        SIRGenerator().regenerate_mod(sir_unit, file->ast_module);
-        mods_to_analyze.push_back(file->sir_module);
+        lang::SourceFile *file = find_file(path);
+        SIRGenerator().regenerate_mod(sir_unit, file->ast_mod);
+
+        files_to_analyze.push_back(file);
+        mods_to_analyze.push_back(file->sir_mod);
     }
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::INDEXING);
     analyzer.analyze(mods_to_analyze);
     build_index(analyzer.get_extra_analysis(), mods_to_analyze);
 
-    return mods_to_analyze;
+    return files_to_analyze;
 }
 
 CompletionInfo Workspace::run_completion(
-    const File *file,
+    lang::SourceFile *file,
     TextPosition completion_point,
     lang::sir::Module &out_sir_mod
 ) {
-    SourceFile *parsed_file = module_manager.load_for_completion(file->ast_module->file.mod_path, completion_point);
-    ASSERT(parsed_file.ast_mod);
-    out_sir_mod = SIRGenerator().generate(parsed_file->ast_mod);
+    ASTModule *ast_mod = module_manager.parse_for_completion(file, completion_point);
+    ASSERT(ast_mod);
+    out_sir_mod = SIRGenerator().generate(ast_mod);
 
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::COMPLETION);
     analyzer.analyze(out_sir_mod);
@@ -122,47 +120,12 @@ void Workspace::undo_infection(lang::sema::CompletionInfection &infection) {
     }
 }
 
-File *Workspace::find_file(const std::filesystem::path &fs_path) {
-    std::string fs_path_absolute = std::filesystem::absolute(fs_path).string();
-    auto iter = files_by_fs_path.find(fs_path_absolute);
-    return iter == files_by_fs_path.end() ? nullptr : iter->second;
+lang::SourceFile *Workspace::find_file(const std::filesystem::path &fs_path) {
+    return module_manager.get_module_list().find(fs_path);
 }
 
-File *Workspace::find_file(const lang::ModulePath &mod_path) {
-    auto iter = files_by_mod_path.find(mod_path);
-    return iter == files_by_mod_path.end() ? nullptr : iter->second;
-}
-
-File *Workspace::find_file(const lang::sir::Module &mod) {
-    return find_file(mod.path);
-}
-
-File *Workspace::find_or_load_file(const std::filesystem::path &fs_path) {
-    if (File *file = find_file(fs_path)) {
-        return file;
-    }
-
-    std::string fs_path_absolute = std::filesystem::absolute(fs_path).string();
-
-    std::string content;
-    std::ifstream stream(fs_path_absolute, std::ios::binary);
-    stream.seekg(0, std::ios::end);
-    std::istream::pos_type size = stream.tellg();
-    content.resize(size);
-    stream.seekg(0, std::ios::beg);
-    stream.read(content.data(), size);
-
-    files.push_back(
-        File{
-            .fs_path = fs_path_absolute,
-            .ast_module = nullptr,
-            .sir_module = nullptr,
-            .content = std::move(content),
-        }
-    );
-
-    files_by_fs_path.insert({fs_path_absolute, &files.back()});
-    return &files.back();
+lang::SourceFile *Workspace::find_file(const lang::ModulePath &mod_path) {
+    return module_manager.get_module_list().find(mod_path);
 }
 
 ModuleIndex *Workspace::find_index(lang::sir::Module *mod) {
@@ -172,24 +135,6 @@ ModuleIndex *Workspace::find_index(lang::sir::Module *mod) {
 
 const SymbolRef &Workspace::get_index_symbol(const SymbolKey &key) {
     return index.get_symbol(key);
-}
-
-std::vector<lang::ModulePath> Workspace::list_sub_mods(lang::sir::Module *mod) {
-    lang::ASTModule *ast_mod = module_manager.get_module_list().get_by_path(mod->path);
-    if (!ast_mod) {
-        return {};
-    }
-
-    return ast_mod->file.sub_mod_paths;
-}
-
-std::unique_ptr<std::istream> Workspace::open_module(const lang::ModuleFile &module_file) {
-    File *file = find_or_load_file(module_file.file_path);
-    if (!file) {
-        return nullptr;
-    }
-
-    return std::make_unique<std::stringstream>(file->content);
 }
 
 void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods) {

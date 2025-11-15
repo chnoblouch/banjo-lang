@@ -35,7 +35,7 @@ private:
     TextPosition start_position;
 
 public:
-    Lexer(SourceFile &file, Mode mode = Mode::COMPILATION);
+    Lexer(const SourceFile &file, Mode mode = Mode::COMPILATION);
     void enable_completion(TextPosition completion_point);
     std::vector<Token> tokenize();
 

@@ -30,7 +30,7 @@ const std::map<std::string_view, TokenType> KEYWORDS{
     {"meta", TKN_META},     {"type", TKN_TYPE},
 };
 
-Lexer::Lexer(SourceFile &file, Mode mode /*= Mode::COMPILATION*/) : reader{file}, mode(mode) {}
+Lexer::Lexer(const SourceFile &file, Mode mode /*= Mode::COMPILATION*/) : reader{file}, mode(mode) {}
 
 void Lexer::enable_completion(TextPosition completion_point) {
     completion_enabled = true;

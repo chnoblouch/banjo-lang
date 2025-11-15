@@ -25,7 +25,7 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
-    File *file = workspace.find_file(fs_path);
+    lang::SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
         return JSONObject{{"data", JSONArray{}}};
     }
@@ -33,7 +33,7 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     const JSONObject &lsp_position = params.get_object("position");
     int line = lsp_position.get_int("line");
     int column = lsp_position.get_int("character");
-    TextPosition position = ASTNavigation::pos_from_lsp(file->content, line, column);
+    TextPosition position = ASTNavigation::pos_from_lsp(file->buffer, line, column);
 
     sir::Module sir_mod;
     CompletionInfo completion_info = workspace.run_completion(file, position, sir_mod);
@@ -122,9 +122,9 @@ void CompletionHandler::build_after_implicit_dot(JSONArray &items, lang::sir::Ex
 }
 
 void CompletionHandler::build_in_use(JSONArray &items) {
-    for (lang::ASTModule *mod : workspace.get_mod_list()) {
-        if (mod->file.mod_path.get_size() == 1) {
-            items.add(create_simple_item(mod->file.mod_path[0], LSPCompletionItemKind::MODULE));
+    for (const std::unique_ptr<SourceFile> &file : workspace.get_mod_list()) {
+        if (file->mod_path.get_size() == 1) {
+            items.add(create_simple_item(file->mod_path[0], LSPCompletionItemKind::MODULE));
         }
     }
 }
@@ -221,7 +221,7 @@ void CompletionHandler::build_symbol_members(
     lang::sir::Symbol &symbol
 ) {
     if (auto mod = symbol.match<sir::Module>()) {
-        for (const lang::ModulePath &path : workspace.list_sub_mods(mod)) {
+        for (const lang::ModulePath &path : workspace.find_file(mod->path)->sub_mod_paths) {
             items.add(create_simple_item(path[path.get_size() - 1], LSPCompletionItemKind::MODULE));
         }
     }

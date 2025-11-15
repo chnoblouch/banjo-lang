@@ -17,15 +17,14 @@ sir::Unit SIRGenerator::generate(ModuleList &mods) {
 
     sir::Unit sir_unit;
 
-    for (ASTModule *mod : mods) {
-        sir::Module *sir_mod = sir_unit.create_mod();
-        sir_unit.mods.push_back(sir_mod);
-        sir_unit.mods_by_path.insert({mod->file.mod_path, sir_mod});
+    for (const std::unique_ptr<SourceFile> &file : mods) {
+        file->sir_mod = sir_unit.create_mod();
+        sir_unit.mods.push_back(file->sir_mod);
+        sir_unit.mods_by_path.insert({file->mod_path, file->sir_mod});
     }
 
-    for (ASTModule *mod : mods) {
-        sir::Module *sir_mod = sir_unit.mods_by_path[mod->file.mod_path];
-        generate_mod(mod, *sir_mod);
+    for (const std::unique_ptr<SourceFile> &file : mods) {
+        generate_mod(file->ast_mod, *file->sir_mod);
     }
 
     return sir_unit;

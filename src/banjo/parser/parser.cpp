@@ -32,7 +32,10 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_NATIVE,
 };
 
-Parser::Parser(SourceFile &file, Mode mode /*= Mode::COMPILATION*/) : file(file), stream{file.tokens}, mode(mode) {}
+Parser::Parser(SourceFile &file, std::vector<Token> &tokens, Mode mode /*= Mode::COMPILATION*/)
+  : file(file),
+    stream{tokens},
+    mode(mode) {}
 
 void Parser::enable_completion() {
     running_completion = true;
@@ -42,7 +45,7 @@ ASTModule *Parser::parse_module() {
     PROFILE_SCOPE("parser");
 
     stream.seek(0);
-    
+
     mod = new ASTModule(file);
     mod->append_child(parse_top_level_block());
     mod->set_range_from_children();

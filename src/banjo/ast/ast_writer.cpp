@@ -13,8 +13,8 @@ void ASTWriter::write(ASTNode *node) {
 }
 
 void ASTWriter::write_all(ModuleList &module_list) {
-    for (ASTModule *module_ : module_list) {
-        write(module_);
+    for (const std::unique_ptr<SourceFile> &file : module_list) {
+        write(file->ast_mod);
     }
 }
 

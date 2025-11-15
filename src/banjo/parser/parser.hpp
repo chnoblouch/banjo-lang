@@ -49,7 +49,7 @@ private:
     ASTNode *completion_node = nullptr;
 
 public:
-    Parser(SourceFile &file, Mode mode = Mode::COMPILATION);
+    Parser(SourceFile &file, std::vector<Token> &tokens, Mode mode = Mode::COMPILATION);
     void enable_completion();
 
     ASTModule *parse_module();

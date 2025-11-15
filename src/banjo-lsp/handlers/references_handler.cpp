@@ -14,7 +14,7 @@ ReferencesHandler::ReferencesHandler(Workspace &workspace) : workspace(workspace
 ReferencesHandler::~ReferencesHandler() {}
 
 JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*connection*/) {
-    const File *file = find_file(params);
+    const lang::SourceFile *file = find_file(params);
     if (!file) {
         return JSONArray{};
     }
@@ -26,7 +26,7 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*con
 
     JSONArray array;
 
-    for (const auto &[path, mod_index] : workspace.get_index().mods) {
+    for (const auto &[mod, mod_index] : workspace.get_index().mods) {
         for (const SymbolRef &symbol_ref : mod_index.symbol_refs) {
             if (symbol_ref.symbol != symbol_def->symbol) {
                 continue;
@@ -36,14 +36,14 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*con
                 continue;
             }
 
-            File *file = workspace.find_file(*path);
+            lang::SourceFile *file = workspace.find_file(mod->path);
             if (!file) {
                 continue;
             }
 
             array.add(JSONObject{
                 {"uri", URI::encode_from_path(file->fs_path)},
-                {"range", ProtocolStructs::range_to_lsp(file->content, symbol_ref.range)}
+                {"range", ProtocolStructs::range_to_lsp(file->buffer, symbol_ref.range)}
             });
         }
     }
@@ -51,14 +51,14 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*con
     return array;
 }
 
-const File *ReferencesHandler::find_file(const JSONObject &params) {
+const lang::SourceFile *ReferencesHandler::find_file(const JSONObject &params) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
     return workspace.find_file(fs_path);
 }
 
-const SymbolRef *ReferencesHandler::find_symbol(const File &file, const JSONObject &params) {
-    ModuleIndex *index = workspace.find_index(file.sir_module);
+const SymbolRef *ReferencesHandler::find_symbol(const lang::SourceFile &file, const JSONObject &params) {
+    ModuleIndex *index = workspace.find_index(file.sir_mod);
     if (!index) {
         return nullptr;
     }
@@ -66,7 +66,7 @@ const SymbolRef *ReferencesHandler::find_symbol(const File &file, const JSONObje
     const JSONObject &lsp_position = params.get_object("position");
     int line = lsp_position.get_int("line");
     int column = lsp_position.get_int("character");
-    lang::TextPosition position = ASTNavigation::pos_from_lsp(file.content, line, column);
+    lang::TextPosition position = ASTNavigation::pos_from_lsp(file.buffer, line, column);
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {
         if (position >= symbol_ref.range.start && position <= symbol_ref.range.end) {

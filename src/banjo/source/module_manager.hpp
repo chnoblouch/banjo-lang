@@ -10,7 +10,6 @@
 #include "banjo/source/text_range.hpp"
 
 #include <filesystem>
-#include <functional>
 #include <istream>
 #include <memory>
 #include <vector>
@@ -24,11 +23,7 @@ class ReportManager;
 
 class ModuleManager {
 
-public:
-    typedef std::function<std::unique_ptr<std::istream>(const ModuleFile &module_file)> OpenFunc;
-
 private:
-    OpenFunc open_func;
     ReportManager &report_manager;
 
     ModuleList module_list;
@@ -36,7 +31,6 @@ private:
 
 public:
     ModuleManager(ReportManager &report_manager);
-    ModuleManager(OpenFunc open_func, ReportManager &report_manager);
 
     ModuleList &get_module_list() { return module_list; }
 
@@ -45,19 +39,16 @@ public:
     void add_config_search_paths(const Config &config);
 
     void load_all();
-    SourceFile *load(const ModuleTreeNode &module_tree_node);
-    SourceFile *load(const ModuleFile &module_file);
-    SourceFile *reload(ASTModule *mod);
-    SourceFile *load_for_completion(const ModulePath &path, TextPosition completion_point);
-    void clear();
+    SourceFile *load_tree(const ModuleTreeNode &module_tree_node);
+    SourceFile *load(const ModuleFile &location);
+    void reparse(SourceFile *file);
+    ASTModule *parse_for_completion(SourceFile *file, TextPosition completion_point);
 
     std::optional<std::filesystem::path> find_source_file(const ModulePath &path);
     std::vector<ModulePath> enumerate_root_paths();
 
 private:
-    static std::unique_ptr<std::istream> open_module_file(const ModuleFile &module_file);
-
-    SourceFile *parse_module(const ModuleFile &module_file);
+    std::unique_ptr<SourceFile> parse_module(const ModuleFile &module_file);
 };
 
 } // namespace lang

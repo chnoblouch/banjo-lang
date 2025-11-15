@@ -3,12 +3,12 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/lexer/token.hpp"
-#include "banjo/reports/report.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/module_path.hpp"
 
 #include <filesystem>
 #include <istream>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -29,10 +29,10 @@ public:
     ASTModule *ast_mod;
     sir::Module *sir_mod;
 
-    static SourceFile read(ModulePath mod_path, std::filesystem::path fs_path, std::istream &stream);
+    static std::unique_ptr<SourceFile> read(ModulePath mod_path, const std::filesystem::path &fs_path, std::istream &stream);
 
-    std::string_view get_buffer() const { return buffer; }
-    std::string_view get_content() const { return std::string_view{buffer}.substr(0, buffer.size() - EOF_ZONE_SIZE); }
+    void update_content(std::string content);
+    std::string_view get_content() const;
 };
 
 } // namespace banjo::lang
