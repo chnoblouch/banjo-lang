@@ -559,7 +559,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
         if (pass_method.num_args == 1) {
             ssa_operands.push_back(generate(arg).turn_into_value_or_copy(ctx).value_or_ptr);
         } else {
-            StoredValue ssa_arg = generate(arg).turn_into_value_or_copy(ctx);
+            StoredValue ssa_arg = generate(arg).turn_into_reference(ctx);
             ASSERT(ssa_arg.kind == StoredValue::Kind::REFERENCE);
 
             for (unsigned i = 0; i < pass_method.num_args; i++) {
@@ -656,7 +656,7 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
             ctx.append_store(ssa::Operand::from_int_immediate(0, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
         }
 
-        return StoredValue::create_value(stored_val.get_ptr());
+        return stored_val;
     } else {
         return generate(coercion_expr.value, hints);
     }

@@ -1,0 +1,20 @@
+# test:output "Test"
+
+proto I {
+    func m(self);
+}
+
+struct S: I {
+    func m(self) {
+        print("Test");
+    }
+}
+
+func f(a: *I) {
+    a.m();
+}
+
+func main() {
+    var s: *S = null;
+    f(s);
+}
