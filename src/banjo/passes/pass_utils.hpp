@@ -31,6 +31,7 @@ void iter_values(std::vector<ssa::Operand> &operands, std::function<void(ssa::Va
 void iter_regs(std::vector<ssa::Operand> &operands, std::function<void(ssa::VirtualRegister reg)> func);
 void iter_imms(std::vector<ssa::Operand> &operands, std::function<void(ssa::Value &val)> func);
 void replace_block(ssa::Function *func, ssa::ControlFlowGraph &cfg, unsigned node, unsigned replacement);
+ssa::InstrIter find_def(ssa::Function &func, ssa::VirtualRegister reg);
 UseMap collect_uses(ssa::Function &func);
 
 } // namespace PassUtils

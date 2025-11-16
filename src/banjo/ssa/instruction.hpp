@@ -11,9 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 class Instruction {
 
@@ -64,13 +62,13 @@ public:
     bool is_branching() const {
         return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;
     }
+
+    Type get_type() const;
 };
 
 typedef LinkedListNode<Instruction> InstrNode;
 typedef LinkedListIter<Instruction> InstrIter;
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

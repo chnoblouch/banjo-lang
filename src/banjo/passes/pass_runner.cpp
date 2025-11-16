@@ -2,6 +2,7 @@
 
 #include "banjo/passes/addr_table_pass.hpp"
 #include "banjo/passes/branch_elimination.hpp"
+#include "banjo/passes/canonicalization_pass.hpp"
 #include "banjo/passes/control_flow_opt_pass.hpp"
 #include "banjo/passes/cse_pass.hpp"
 #include "banjo/passes/dead_func_elimination_pass.hpp"
@@ -42,6 +43,7 @@ std::vector<Pass *> PassRunner::create_opt_passes(target::Target *target) {
 
     if (opt_level >= 1) {
         passes.push_back(new ControlFlowOptPass(target));
+        passes.push_back(new CanonicalizationPass(target));
         passes.push_back(new SROAPass(target));
         passes.push_back(new StackToRegPass(target));
     }
@@ -56,6 +58,7 @@ std::vector<Pass *> PassRunner::create_opt_passes(target::Target *target) {
         passes.push_back(new InliningPass(target));
         passes.push_back(new DeadFuncEliminationPass(target));
         passes.push_back(new ControlFlowOptPass(target));
+        passes.push_back(new CanonicalizationPass(target));
         passes.push_back(new SROAPass(target));
         passes.push_back(new StackToRegPass(target));
     }

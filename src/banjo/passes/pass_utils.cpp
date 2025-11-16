@@ -1,5 +1,6 @@
 #include "pass_utils.hpp"
 
+#include "banjo/passes/pass.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
@@ -123,6 +124,18 @@ void PassUtils::replace_block(ssa::Function *func, ssa::ControlFlowGraph &cfg, u
             }
         }
     }
+}
+
+ssa::InstrIter PassUtils::find_def(ssa::Function &func, ssa::VirtualRegister reg) {
+    for (ssa::BasicBlock &block : func) {
+        for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
+            if (iter->get_dest() && iter->get_dest() == reg) {
+                return iter;
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 PassUtils::UseMap PassUtils::collect_uses(ssa::Function &func) {
