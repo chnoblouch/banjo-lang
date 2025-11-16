@@ -147,7 +147,26 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ssa::Function *fun
 void StackToRegPass::find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter block, ssa::Instruction &instr) {
     ssa::Opcode opcode = instr.get_opcode();
 
-    if (opcode == ssa::Opcode::STORE) {
+    if (opcode == ssa::Opcode::LOAD) {
+        ssa::Type type = instr.get_operand(0).get_type();
+        ssa::Operand &src = instr.get_operand(1);
+
+        if (src.is_register()) {
+            analyze_reg_use(slots, src.get_register(), block, opcode);
+
+            auto iter = slots.find(src.get_register());
+            if (iter == slots.end()) {
+                return;
+            }
+
+            StackSlotInfo &slot = iter->second;
+
+            // Can't promote if a different type than allocated is loaded from this slot.
+            if (slot.type != type) {
+                slot.promotable = false;
+            }
+        }
+    } else if (opcode == ssa::Opcode::STORE) {
         ssa::Operand &src = instr.get_operand(0);
         ssa::Operand &dst = instr.get_operand(1);
 
@@ -157,9 +176,18 @@ void StackToRegPass::find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter blo
 
         if (dst.is_register()) {
             auto iter = slots.find(dst.get_register());
-            if (iter != slots.end()) {
-                iter->second.store_blocks.push_back(block);
+            if (iter == slots.end()) {
+                return;
             }
+
+            StackSlotInfo &slot = iter->second;
+
+            // Can't promote if a different type than allocated is stored into this slot.
+            if (slot.type != src.get_type()) {
+                slot.promotable = false;
+            }
+
+            slot.store_blocks.push_back(block);
         }
     } else if (opcode != ssa::Opcode::ALLOCA) {
         PassUtils::iter_regs(instr.get_operands(), [this, &slots, opcode, block](ssa::VirtualRegister reg) {
