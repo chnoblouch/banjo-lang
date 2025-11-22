@@ -19,7 +19,7 @@ private:
         ssa::InstrIter alloca_instr;
         ssa::BasicBlockIter alloca_block;
         ssa::Type type;
-        std::optional<ssa::VirtualRegister> parent;
+        std::optional<unsigned> parent;
         std::optional<std::vector<unsigned>> members;
         std::optional<ssa::VirtualRegister> replacement;
     };
@@ -61,6 +61,7 @@ private:
 
     StackValue *look_up_stack_value(ssa::VirtualRegister reg);
     std::optional<unsigned> look_up_stack_value_index(ssa::VirtualRegister reg);
+    void disable_parent_splitting(StackValue &value);
     bool is_aggregate(const ssa::Type &type);
 
     void dump(ssa::Function &func);

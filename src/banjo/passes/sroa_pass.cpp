@@ -128,6 +128,23 @@ void SROAPass::disable_invalid_splits(ssa::BasicBlock &block) {
             continue;
         }
 
+        // If a different type is loaded from/stored to a stack value than was allocated, disable
+        // splitting for the entire hierarchy. For example, if a u64 is loaded from a u32 struct
+        // member, we cannot split the struct because the following members would be allocated in a
+        // different place.
+        if (iter->get_opcode() == ssa::Opcode::LOAD || iter->get_opcode() == ssa::Opcode::STORE) {
+            if (iter->get_operand(1).is_register()) {
+                ssa::Type type = iter->get_operand(0).get_type();
+                ssa::VirtualRegister reg = iter->get_operand(1).get_register();
+
+                if (StackValue *value = look_up_stack_value(reg)) {
+                    if (value->type != type) {
+                        disable_parent_splitting(*value);
+                    }
+                }
+            }
+        }
+
         // Disable splitting for all stack values that are used by this instruction.
         PassUtils::iter_regs(iter->get_operands(), [this](ssa::VirtualRegister reg) {
             if (StackValue *value = look_up_stack_value(reg)) {
@@ -343,6 +360,14 @@ SROAPass::StackValue *SROAPass::look_up_stack_value(ssa::VirtualRegister reg) {
 std::optional<unsigned> SROAPass::look_up_stack_value_index(ssa::VirtualRegister reg) {
     auto iter = stack_ptr_defs.find(reg);
     return iter == stack_ptr_defs.end() ? std::optional<unsigned>{} : iter->second;
+}
+
+void SROAPass::disable_parent_splitting(StackValue &value) {
+    if (value.parent) {
+        disable_parent_splitting(stack_values[*value.parent]);
+    } else {
+        value.members = {};
+    }
 }
 
 bool SROAPass::is_aggregate(const ssa::Type &type) {
