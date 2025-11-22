@@ -132,7 +132,7 @@ std::unique_ptr<SourceFile> ModuleManager::parse_module(const ModuleFile &module
         return file;
     }
 
-    std::ifstream stream{module_file.file_path};
+    std::ifstream stream{module_file.file_path, std::ios::binary};
     if (!stream) {
         return nullptr;
     }
