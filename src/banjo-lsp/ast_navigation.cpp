@@ -4,7 +4,7 @@ namespace banjo {
 
 namespace lsp {
 
-lang::TextPosition ASTNavigation::pos_from_lsp(const std::string &source, int line, int column) {
+lang::TextPosition ASTNavigation::pos_from_lsp(std::string_view source, int line, int column) {
     lang::TextPosition offset = 0;
 
     for (int source_line = 0; source_line < line; source_line++) {
@@ -21,7 +21,7 @@ lang::TextPosition ASTNavigation::pos_from_lsp(const std::string &source, int li
     return offset;
 }
 
-LSPTextPosition ASTNavigation::pos_to_lsp(const std::string &source, lang::TextPosition position) {
+LSPTextPosition ASTNavigation::pos_to_lsp(std::string_view source, lang::TextPosition position) {
     LSPTextPosition lsp_position{.line = 0, .column = 0};
 
     for (lang::TextPosition offset = 0; offset < position; offset++) {

@@ -12,6 +12,7 @@
 #include "handlers/rename_handler.hpp"
 #include "handlers/semantic_tokens_handler.hpp"
 #include "handlers/shutdown_handler.hpp"
+#include "handlers/formatting_handler.hpp"
 
 namespace banjo {
 
@@ -22,11 +23,12 @@ void Server::start() {
     Workspace workspace;
 
     InitializeHandler initialize_handler;
-    CompletionHandler completion_handler(workspace);
-    DefinitionHandler definition_handler(workspace);
-    ReferencesHandler references_handler(workspace);
-    RenameHandler rename_handler(workspace);
-    SemanticTokensHandler semantic_tokens_handler(workspace);
+    CompletionHandler completion_handler{workspace};
+    DefinitionHandler definition_handler{workspace};
+    ReferencesHandler references_handler{workspace};
+    RenameHandler rename_handler{workspace};
+    FormattingHandler formatting_handler{workspace};
+    SemanticTokensHandler semantic_tokens_handler{workspace};
     ShutdownHandler shutdown_handler;
 
     connection.on_request("initialize", &initialize_handler);
@@ -34,6 +36,7 @@ void Server::start() {
     connection.on_request("textDocument/definition", &definition_handler);
     connection.on_request("textDocument/references", &references_handler);
     connection.on_request("textDocument/rename", &rename_handler);
+    connection.on_request("textDocument/formatting", &formatting_handler);
     connection.on_request("textDocument/semanticTokens/full", &semantic_tokens_handler);
     connection.on_request("shutdown", &shutdown_handler);
 

@@ -5,6 +5,8 @@
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/json.hpp"
 
+#include <string_view>
+
 namespace banjo {
 
 namespace lsp {
@@ -58,7 +60,7 @@ enum DiagnosticSeverity {
 
 namespace ProtocolStructs {
 
-JSONObject range_to_lsp(const std::string &source, lang::TextRange range);
+JSONObject range_to_lsp(std::string_view source, lang::TextRange range);
 DiagnosticSeverity report_type_to_lsp(lang::Report::Type type);
 
 } // namespace ProtocolStructs

@@ -27,6 +27,7 @@ JSONValue InitializeHandler::handle(const JSONObject &params, Connection &) {
              {"definitionProvider", true},
              {"referencesProvider", true},
              {"renameProvider", true},
+             {"documentFormattingProvider", true},
              {"semanticTokensProvider",
               JSONObject{
                   {"legend",

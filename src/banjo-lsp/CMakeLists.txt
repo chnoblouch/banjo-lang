@@ -23,6 +23,8 @@ add_executable(banjo-lsp
     "handlers/completion_handler.hpp"
     "handlers/definition_handler.cpp"
     "handlers/definition_handler.hpp"
+    "handlers/formatting_handler.cpp"
+    "handlers/formatting_handler.hpp"
     "handlers/initialize_handler.cpp"
     "handlers/initialize_handler.hpp"
     "handlers/references_handler.cpp"
