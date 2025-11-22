@@ -25,7 +25,7 @@ public:
     std::vector<ModulePath> sub_mod_paths;
     std::filesystem::path fs_path;
     std::string buffer;
-    std::vector<Token> tokens;
+    TokenList tokens;
     std::unique_ptr<ASTModule> ast_mod;
     sir::Module *sir_mod;
 

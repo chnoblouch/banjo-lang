@@ -31,13 +31,15 @@ private:
     bool completion_token_inserted = false;
 
     std::vector<Token> tokens;
+    std::vector<Token> attached_tokens;
+    std::vector<TokenList::Span> attachments;
 
     TextPosition start_position;
 
 public:
     Lexer(const SourceFile &file, Mode mode = Mode::COMPILATION);
     void enable_completion(TextPosition completion_point);
-    std::vector<Token> tokenize();
+    TokenList tokenize();
 
 private:
     void read_token();
@@ -47,11 +49,12 @@ private:
     void read_number();
     void read_character();
     void read_string();
-    void skip_comment();
+    void read_comment();
     void read_punctuation();
 
     void finish_token(TokenType type);
     void finish_line();
+    void attach_token(TokenType type);
     void try_insert_completion_token();
 
     bool is_whitespace_char(char c);

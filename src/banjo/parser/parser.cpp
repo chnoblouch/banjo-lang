@@ -33,10 +33,10 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_NATIVE,
 };
 
-Parser::Parser(SourceFile &file, std::vector<Token> &tokens, Mode mode /*= Mode::COMPILATION*/)
-  : file(file),
-    stream{tokens},
-    mode(mode) {}
+Parser::Parser(SourceFile &file, TokenList &input, Mode mode /*= Mode::COMPILATION*/)
+  : file{file},
+    stream{input},
+    mode{mode} {}
 
 void Parser::enable_completion() {
     running_completion = true;
@@ -100,10 +100,6 @@ void Parser::parse_and_append_block_child(ASTNode *block) {
 }
 
 ParseResult Parser::parse_block_child() {
-    if (mode == Mode::FORMATTING && stream.get()->after_empty_line) {
-        return create_node(AST_EMPTY_LINE);
-    }
-
     switch (stream.get()->type) {
         case TKN_VAR: return StmtParser(*this).parse_var();
         case TKN_REF: return StmtParser(*this).parse_ref();
@@ -122,7 +118,7 @@ ParseResult Parser::parse_block_child() {
         case TKN_ENUM: return DeclParser(*this).parse_enum();
         case TKN_UNION: return DeclParser(*this).parse_union();
         case TKN_PROTO: return DeclParser(*this).parse_proto();
-        case TKN_TYPE: return parse_type_alias_or_explicit_type();
+        case TKN_TYPE: return DeclParser(*this).parse_type_alias();
         case TKN_CASE: return DeclParser(*this).parse_union_case();
         case TKN_SELF: return parse_expr_or_assign();
         case TKN_NATIVE: return DeclParser(*this).parse_native();
@@ -157,14 +153,6 @@ ParseResult Parser::parse_expr_or_assign() {
         case TKN_SHL_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHL_ASSIGN);
         case TKN_SHR_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHR_ASSIGN);
         default: return check_stmt_terminator(result.node);
-    }
-}
-
-ParseResult Parser::parse_type_alias_or_explicit_type() {
-    if (stream.peek(1)->is(TKN_LPAREN)) {
-        return parse_expr_or_assign();
-    } else {
-        return DeclParser(*this).parse_type_alias();
     }
 }
 

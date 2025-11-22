@@ -3,6 +3,7 @@
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/std_config_module.hpp"
 #include "banjo/lexer/lexer.hpp"
+#include "banjo/lexer/token.hpp"
 #include "banjo/parser/parser.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/source/module_discovery.hpp"
@@ -85,7 +86,7 @@ void ModuleManager::reparse(SourceFile *file) {
 std::unique_ptr<ASTModule> ModuleManager::parse_for_completion(SourceFile *file, TextPosition completion_point) {
     Lexer lexer{*file};
     lexer.enable_completion(completion_point);
-    std::vector<Token> tokens = lexer.tokenize();
+    TokenList tokens = lexer.tokenize();
 
     Parser parser{*file, tokens};
     parser.enable_completion();

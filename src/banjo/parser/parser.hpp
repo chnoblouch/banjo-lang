@@ -51,7 +51,7 @@ private:
     ASTNode *completion_node = nullptr;
 
 public:
-    Parser(SourceFile &file, std::vector<Token> &tokens, Mode mode = Mode::COMPILATION);
+    Parser(SourceFile &file, TokenList &input, Mode mode = Mode::COMPILATION);
     void enable_completion();
 
     std::unique_ptr<ASTModule> parse_module();
@@ -68,7 +68,6 @@ private:
     ASTNode *parse_expression();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
-    ParseResult parse_type_alias_or_explicit_type();
     ParseResult parse_meta();
 
     ParseResult parse_attribute_wrapper(const std::function<ParseResult()> &child_parser);
@@ -100,6 +99,12 @@ private:
 
     bool is_at_completion_point();
     ASTNode *parse_completion_point();
+
+    ASTNode *consume_into_node(ASTNodeType type) {
+        ASTNode *node = mod->create_node(type, stream.consume());
+        node->tokens.append(stream.get_position() - 1);
+        return node;
+    }
 
     template <typename... Args>
     ASTNode *create_node(Args... args) {

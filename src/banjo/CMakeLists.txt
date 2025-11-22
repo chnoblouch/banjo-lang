@@ -66,6 +66,8 @@ add_library(banjo STATIC
     "emit/wasm/wasm_emitter.cpp"
     "emit/wasm/wasm_emitter.hpp"
     "emit/wasm/wasm_format.hpp"
+    "format/formatter.cpp"
+    "format/formatter.hpp"
     "lexer/lexer.cpp"
     "lexer/lexer.hpp"
     "lexer/source_reader.hpp"

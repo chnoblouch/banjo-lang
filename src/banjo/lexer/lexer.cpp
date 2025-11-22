@@ -1,6 +1,7 @@
 #include "lexer.hpp"
 
 #include "banjo/config/config.hpp"
+#include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -37,7 +38,7 @@ void Lexer::enable_completion(TextPosition completion_point) {
     this->completion_point = completion_point;
 }
 
-std::vector<Token> Lexer::tokenize() {
+TokenList Lexer::tokenize() {
     PROFILE_SCOPE("lexer");
 
     tokens.clear();
@@ -50,7 +51,12 @@ std::vector<Token> Lexer::tokenize() {
     }
 
     finish_line();
-    return tokens;
+
+    return TokenList{
+        .tokens = std::move(tokens),
+        .attached_tokens = std::move(attached_tokens),
+        .attachments = std::move(attachments),
+    };
 }
 
 void Lexer::read_token() {
@@ -62,12 +68,13 @@ void Lexer::read_token() {
     else if (c >= '0' && c <= '9') read_number();
     else if (c == '\'') read_character();
     else if (c == '\"') read_string();
-    else if (c == '#') skip_comment();
+    else if (c == '#') read_comment();
     else read_punctuation();
 }
 
 void Lexer::read_newline() {
     reader.consume();
+    attach_token(TKN_LINE_ENDING);
     finish_line();
 }
 
@@ -75,6 +82,8 @@ void Lexer::read_whitespace() {
     while (is_whitespace_char(reader.get())) {
         reader.consume();
     }
+
+    attach_token(TKN_WHITESPACE);
 }
 
 void Lexer::read_identifier() {
@@ -132,11 +141,13 @@ void Lexer::read_string() {
     finish_token(TKN_STRING);
 }
 
-void Lexer::skip_comment() {
+void Lexer::read_comment() {
     char c = reader.consume();
     while (c != '\n' && c != SourceFile::EOF_CHAR) {
         c = reader.consume();
     }
+
+    attach_token(TKN_COMMENT);
 }
 
 void Lexer::read_punctuation() {
@@ -201,6 +212,8 @@ void Lexer::finish_token(TokenType type) {
     tokens.push_back(Token{type, reader.value(start_position), start_position});
 
     if (mode == Mode::FORMATTING) {
+        attachments.push_back(TokenList::Span{.first = 0, .count = 0});
+
         current_line_empty = false;
 
         if (previous_line_empty) {
@@ -221,6 +234,23 @@ void Lexer::finish_line() {
         } else {
             current_line_empty = true;
         }
+    }
+}
+
+void Lexer::attach_token(TokenType type) {
+    if (mode != Mode::FORMATTING) {
+        return;
+    }
+
+    attached_tokens.push_back(Token{type, reader.value(start_position), start_position});
+
+    TokenList::Span &attachment = attachments[tokens.size() - 1];
+
+    if (attachment.count == 0) {
+        attachment.first = static_cast<unsigned>(attached_tokens.size() - 1);
+        attachment.count = 1;
+    } else {
+        attachment.count += 1;
     }
 }
 

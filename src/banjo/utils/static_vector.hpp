@@ -21,7 +21,9 @@ private:
     std::size_t size;
 
 public:
-    StaticVector(std::initializer_list<T> elements) : size(0) {
+    StaticVector() : size{0} {}
+
+    StaticVector(std::initializer_list<T> elements) : size{0} {
         for (const T &element : elements) {
             append(element);
         }

@@ -63,11 +63,11 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 
 ParseResult DeclParser::parse_const() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'const'
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
-    stream.consume(); // Consume ':'
+    node.consume(); // Consume 'const'
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
+    node.consume(); // Consume ':'
     node.append_child(parser.parse_type().node);
-    stream.consume(); // Consume '='
+    node.consume(); // Consume '='
     node.append_child(parser.parse_expression());
 
     return parser.check_stmt_terminator(node.build(AST_CONSTANT));

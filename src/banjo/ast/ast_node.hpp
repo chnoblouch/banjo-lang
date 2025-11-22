@@ -3,6 +3,7 @@
 
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
+#include "banjo/utils/static_vector.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -179,6 +180,7 @@ struct ASTNode {
     Flags flags;
     std::string_view value;
     TextRange range;
+    StaticVector<unsigned, 4> tokens;
 
     ASTNode *first_child = nullptr;
     ASTNode *last_child = nullptr;

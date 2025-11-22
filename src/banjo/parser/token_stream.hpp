@@ -2,6 +2,7 @@
 #define BANJO_PARSER_TOKEN_STREAM_H
 
 #include "banjo/lexer/token.hpp"
+
 #include <vector>
 
 namespace banjo {
@@ -11,19 +12,21 @@ namespace lang {
 class TokenStream {
 
 private:
-    std::vector<Token> &tokens;
-    std::vector<Token>::size_type position;
+    TokenList &input;
+    unsigned position;
     Token eof_token{TKN_EOF, "", 0};
 
 public:
-    TokenStream(std::vector<Token> &tokens);
+    TokenStream(TokenList &input);
 
+    unsigned get_position() { return position; }
     Token *get();
     Token *consume();
-    Token *peek(std::vector<Token>::size_type offset);
+    Token *peek(unsigned offset);
     Token *previous();
-    void seek(std::vector<Token>::size_type position);
+    void seek(unsigned position);
     void split_current();
+    std::span<Token> previous_attached_tokens();
 };
 
 } // namespace lang

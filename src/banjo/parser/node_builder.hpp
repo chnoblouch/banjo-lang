@@ -27,13 +27,17 @@ public:
         node->range.start = stream.get()->position;
     }
 
+    void consume() {
+        stream.consume();
+        node->tokens.append(stream.get_position() - 1);
+    }
+
     void append_child(ASTNode *child) { node->append_child(child); }
     void set_start_position(TextPosition start_position) { node->range.start = start_position; }
 
     ASTNode *build(ASTNodeType type) {
         Token *previous = stream.previous();
         node->range.end = previous ? previous->end() : node->range.start;
-
         node->type = type;
         return node;
     }

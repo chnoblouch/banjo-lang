@@ -1,55 +1,62 @@
 #include "token_stream.hpp"
 
+#include "banjo/lexer/token.hpp"
+
 namespace banjo {
 
 namespace lang {
 
-TokenStream::TokenStream(std::vector<Token> &tokens) : tokens(tokens) {}
+TokenStream::TokenStream(TokenList &input) : input{input} {}
 
 Token *TokenStream::get() {
-    if (position >= tokens.size()) {
+    if (position >= input.tokens.size()) {
         return &eof_token;
     }
 
-    return &tokens[position];
+    return &input.tokens[position];
 }
 
 Token *TokenStream::consume() {
-    if (position >= tokens.size()) {
+    if (position >= input.tokens.size()) {
         return &eof_token;
     }
 
-    Token *token = &tokens[position];
+    Token *token = &input.tokens[position];
     position++;
     return token;
 }
 
-Token *TokenStream::peek(std::vector<Token>::size_type offset) {
-    if (position + offset >= tokens.size()) {
+Token *TokenStream::peek(unsigned offset) {
+    if (position + offset >= input.tokens.size()) {
         return &eof_token;
     }
 
-    return &tokens[position + offset];
+    return &input.tokens[position + offset];
 }
 
 Token *TokenStream::previous() {
-    return position > 0 ? &tokens[position - 1] : &eof_token;
+    return position > 0 ? &input.tokens[position - 1] : &eof_token;
 }
 
-void TokenStream::seek(std::vector<Token>::size_type position) {
+void TokenStream::seek(unsigned position) {
     this->position = position;
 }
 
 void TokenStream::split_current() {
-    Token *token = &tokens[position];
+    Token *token = &input.tokens[position];
 
     switch (token->type) {
         case TKN_OR_OR:
-            tokens[position] = Token(TKN_OR, "", token->position);
-            tokens.insert(tokens.begin() + position, Token(TKN_OR, "", token->position + 1));
+            input.tokens[position] = Token{TKN_OR, "", token->position};
+            input.tokens.insert(input.tokens.begin() + position, Token{TKN_OR, "", token->position + 1});
             break;
         default: break;
     }
+}
+
+std::span<Token> TokenStream::previous_attached_tokens() {
+    TokenList::Span span = input.attachments[position - 1];
+    return std::span<Token>{&input.attached_tokens[span.first], span.count};
 }
 
 } // namespace lang
