@@ -206,12 +206,12 @@ ParseResult Parser::parse_list(
     bool consume_terminator /* = true */
 ) {
     NodeBuilder node = build_node();
-    stream.consume(); // Consume starting token
+    node.consume(); // Consume starting token
 
     while (true) {
         if (stream.get()->is(terminator)) {
             if (consume_terminator) {
-                stream.consume();
+                node.consume();
             }
 
             ASTNode *result = node.build(type);
@@ -231,7 +231,7 @@ ParseResult Parser::parse_list(
 
         if (stream.get()->is(terminator)) {
             if (consume_terminator) {
-                stream.consume();
+                node.consume();
             }
 
             return node.build(type);

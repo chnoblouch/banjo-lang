@@ -20,7 +20,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         node.append_child(parser.create_node(AST_QUALIFIER_LIST));
     }
 
-    stream.consume(); // Consume 'func'
+    node.consume(); // Consume 'func'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);

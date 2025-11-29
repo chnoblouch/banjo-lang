@@ -44,6 +44,10 @@ TokenList Lexer::tokenize() {
     tokens.clear();
     start_position = reader.get_position();
 
+    if (mode == Mode::FORMATTING) {
+        attachments.push_back(TokenList::Span{.first = 0, .count = 0});
+    }
+
     while (reader.get() != SourceFile::EOF_CHAR) {
         read_token();
         start_position = reader.get_position();
@@ -244,7 +248,7 @@ void Lexer::attach_token(TokenType type) {
 
     attached_tokens.push_back(Token{type, reader.value(start_position), start_position});
 
-    TokenList::Span &attachment = attachments[tokens.size() - 1];
+    TokenList::Span &attachment = attachments.back();
 
     if (attachment.count == 0) {
         attachment.first = static_cast<unsigned>(attached_tokens.size() - 1);
