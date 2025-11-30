@@ -1,6 +1,7 @@
 #ifndef BANJO_PARSER_NODE_BUILDER_H
 #define BANJO_PARSER_NODE_BUILDER_H
 
+#include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/parser/token_stream.hpp"
 
@@ -20,16 +21,18 @@ class NodeBuilder {
 
 private:
     TokenStream &stream;
+    ASTModule *mod;
     ASTNode *node;
+    std::vector<unsigned> tokens;
 
 public:
-    NodeBuilder(TokenStream &stream, ASTNode *node) : stream(stream), node(node) {
+    NodeBuilder(TokenStream &stream, ASTModule *mod, ASTNode *node) : stream(stream), mod(mod), node(node) {
         node->range.start = stream.get()->position;
     }
 
     void consume() {
         stream.consume();
-        node->tokens.append(stream.get_position() - 1);
+        tokens.push_back(stream.get_position() - 1);
     }
 
     void append_child(ASTNode *child) { node->append_child(child); }
@@ -39,6 +42,7 @@ public:
         Token *previous = stream.previous();
         node->range.end = previous ? previous->end() : node->range.start;
         node->type = type;
+        node->tokens = mod->create_token_indices(tokens);
         return node;
     }
 
@@ -54,7 +58,7 @@ public:
         }
 
         node->type = AST_ERROR;
-        return node;
+        return ParseResult{node, false};
     }
 };
 

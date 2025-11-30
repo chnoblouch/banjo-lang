@@ -22,7 +22,6 @@ class ProcessResult:
 
 
 class Test:
-
     def __init__(self, name, source):
         self.name = name
         self.source = source
@@ -64,7 +63,7 @@ def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
             if file_path.suffix != file_name_extension:
                 continue
                 
-            tests.extend(load_test_file(str(file_path), file_path))
+            tests.extend(load_test_file(str(file_path.stem), file_path))
 
     tests = filter(filter_fn, tests)
     tests = [test for test in tests if fnmatch.fnmatch(test.name, args.pattern)]
@@ -168,7 +167,8 @@ def load_test_file(name, file_path):
                 if section_name is None:
                     test.source += line if enabled else f"# DISABLED: {line}"
                 else:
-                    test.sections[section_name] += line
+                    if not has_subtests or j == subtest_index:
+                        test.sections[section_name] += line
 
     return tests
 

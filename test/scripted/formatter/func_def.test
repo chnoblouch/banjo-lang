@@ -1,0 +1,35 @@
+# test:subtest
+# test:section input
+
+func  f  (  )  {  }
+
+# test:section output
+
+func f() {}
+
+# test:subtest
+# test:section input
+
+func  f  (  a  :  i32  )  {  }
+
+# test:section output
+
+func f(a: i32) {}
+
+# test:subtest
+# test:section input
+
+func  f  (  a  :  i32  ,  b  :  f64  )  {  }
+
+# test:section output
+
+func f(a: i32, b: f64) {}
+
+# test:subtest
+# test:section input
+
+func  f  (  a  :  i32  ,  b  :  f64  )  ->  bool  {  }
+
+# test:section output
+
+func f(a: i32, b: f64) -> bool {}

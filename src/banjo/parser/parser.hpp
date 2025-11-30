@@ -62,7 +62,7 @@ public:
 private:
     ASTNode *parse_top_level_block();
     ParseResult parse_block();
-    void parse_and_append_block_child(ASTNode *block);
+    void parse_and_append_block_child(NodeBuilder &node);
 
     ParseResult parse_block_child();
     ASTNode *parse_expression();
@@ -102,7 +102,7 @@ private:
 
     ASTNode *consume_into_node(ASTNodeType type) {
         ASTNode *node = mod->create_node(type, stream.consume());
-        node->tokens.append(stream.get_position() - 1);
+        node->tokens = mod->create_token_index(stream.get_position() - 1);
         return node;
     }
 
@@ -111,7 +111,7 @@ private:
         return mod->create_node(args...);
     }
 
-    NodeBuilder build_node() { return NodeBuilder(stream, create_node()); }
+    NodeBuilder build_node() { return NodeBuilder{stream, mod.get(), create_node()}; }
     ASTNode *create_dummy_block();
 };
 

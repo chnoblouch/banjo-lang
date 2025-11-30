@@ -165,6 +165,7 @@ enum ASTNodeType : std::uint8_t {
     AST_META_FIELD_ACCESS,
     AST_META_METHOD_CALL,
     AST_PAREN_EXPR,
+    AST_EMPTY,
     AST_EMPTY_LINE,
     AST_ERROR,
     AST_COMPLETION_TOKEN,
@@ -180,7 +181,7 @@ struct ASTNode {
     Flags flags;
     std::string_view value;
     TextRange range;
-    StaticVector<unsigned, 4> tokens;
+    std::span<unsigned> tokens;
 
     ASTNode *first_child = nullptr;
     ASTNode *last_child = nullptr;

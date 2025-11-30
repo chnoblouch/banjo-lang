@@ -115,7 +115,6 @@ enum TokenType : std::uint8_t {
     TKN_QUESTION,
     TKN_AT,
 
-    TKN_LINE_ENDING,
     TKN_WHITESPACE,
     TKN_COMMENT,
 };

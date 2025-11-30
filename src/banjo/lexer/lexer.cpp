@@ -78,7 +78,7 @@ void Lexer::read_token() {
 
 void Lexer::read_newline() {
     reader.consume();
-    attach_token(TKN_LINE_ENDING);
+    attach_token(TKN_WHITESPACE);
     finish_line();
 }
 

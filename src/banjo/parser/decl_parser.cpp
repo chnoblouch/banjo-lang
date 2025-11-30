@@ -27,7 +27,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         return node.build_error();
     }
 
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     bool generic;
     bool head_valid = parse_func_head(node, generic);
@@ -398,7 +398,7 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
         ParseResult result = parse_generic_param_list();
         if (!result.is_valid) {
             node.append_child(parser.create_node(AST_PARAM_LIST));
-            node.append_child(parser.create_node(AST_VOID));
+            node.append_child(parser.create_node(AST_EMPTY));
             return false;
         }
 
@@ -408,7 +408,7 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
     if (!stream.get()->is(TKN_LPAREN)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'('");
         node.append_child(parser.create_node(AST_PARAM_LIST));
-        node.append_child(parser.create_node(AST_VOID));
+        node.append_child(parser.create_node(AST_EMPTY));
         return false;
     }
 
@@ -419,7 +419,7 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
     }
 
     if (stream.get()->is(TKN_ARROW)) {
-        stream.consume(); // Consume '->'
+        node.consume(); // Consume '->'
 
         ParseResult result = parser.parse_return_type();
         node.append_child(result.node);
@@ -428,10 +428,10 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
             return false;
         }
     } else if (stream.get()->is(TKN_LBRACE) || stream.get()->is(TKN_SEMI) || stream.previous()->end_of_line) {
-        node.append_child(parser.create_node(AST_VOID));
+        node.append_child(parser.create_node(AST_EMPTY));
     } else {
         parser.report_unexpected_token();
-        node.append_child(parser.create_node(AST_VOID));
+        node.append_child(parser.create_node(AST_EMPTY));
         return false;
     }
 

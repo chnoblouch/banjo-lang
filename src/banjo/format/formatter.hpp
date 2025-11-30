@@ -34,7 +34,13 @@ private:
     void format_const_def(ASTNode *node);
     void format_struct_def(ASTNode *node);
 
-    void format_param_list(ASTNode *node);
+    void format_block(ASTNode *node);
+
+    void format_expr(ASTNode *node, bool space_after);
+
+    void format_keyword(ASTNode *node, bool space_after);
+    void format_param_list(ASTNode *node, bool space_after);
+    void format_param(ASTNode *node);
 
     void ensure_no_space_before(unsigned token_index);
     void ensure_no_space_after(unsigned token_index);

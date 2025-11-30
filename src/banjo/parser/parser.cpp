@@ -54,45 +54,43 @@ std::unique_ptr<ASTModule> Parser::parse_module() {
 }
 
 ASTNode *Parser::parse_top_level_block() {
-    ASTNode *block = create_node(AST_BLOCK, TextRange{0, 0});
+    NodeBuilder node = build_node();
 
     while (!stream.get()->is(TKN_EOF)) {
-        parse_and_append_block_child(block);
+        parse_and_append_block_child(node);
     }
 
-    block->set_range_from_children();
-    return block;
+    return node.build(AST_BLOCK);
 }
 
 ParseResult Parser::parse_block() {
-    ASTNode *block = create_node(AST_BLOCK, TextRange{0, 0});
+    NodeBuilder node = build_node();
 
     if (stream.get()->is(TKN_LBRACE)) {
-        stream.consume(); // Consume '{'
+        node.consume(); // Consume '{'
     } else {
         report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'{'");
-        return {block, false};
+        return node.build_error();
     }
 
     while (true) {
         if (stream.get()->is(TKN_RBRACE)) {
-            stream.consume(); // Consume '}'
+            node.consume(); // Consume '}'
             break;
         } else if (stream.get()->is(TKN_EOF)) {
             register_error(stream.previous()->range()).set_message(ReportText("file ends with unclosed block").str());
-            return {block, false};
+            return node.build_error();
         } else {
-            parse_and_append_block_child(block);
+            parse_and_append_block_child(node);
         }
     }
 
-    block->set_range_from_children();
-    return block;
+    return node.build(AST_BLOCK);
 }
 
-void Parser::parse_and_append_block_child(ASTNode *block) {
+void Parser::parse_and_append_block_child(NodeBuilder &node) {
     ParseResult result = parse_block_child();
-    block->append_child(result.node);
+    node.append_child(result.node);
 
     if (!result.is_valid) {
         recover();
@@ -236,7 +234,7 @@ ParseResult Parser::parse_list(
 
             return node.build(type);
         } else if (stream.get()->is(TKN_COMMA)) {
-            stream.consume();
+            node.consume();
         } else {
             report_unexpected_token();
             return {node.build(type), false};
@@ -280,11 +278,11 @@ ParseResult Parser::parse_param() {
             }
 
             type = is_mut ? AST_REF_MUT_PARAM : AST_REF_PARAM;
-            node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
-            stream.consume(); // Consume ':'
+            node.append_child(consume_into_node(AST_IDENTIFIER));
+            node.consume(); // Consume ':'
         } else if (stream.peek(1)->is(TKN_COLON)) {
-            node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
-            stream.consume(); // Consume ':'
+            node.append_child(consume_into_node(AST_IDENTIFIER));
+            node.consume(); // Consume ':'
         } else {
             node.append_child(create_node(AST_IDENTIFIER, "", TextRange{0, 0}));
         }

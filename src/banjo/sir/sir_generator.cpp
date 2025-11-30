@@ -1328,7 +1328,14 @@ sir::FuncType SIRGenerator::generate_func_type(ASTNode *params_node, ASTNode *re
 
     sir::Expr return_type;
 
-    if (return_node->type == AST_REF_RETURN) {
+    if (return_node->type == AST_EMPTY) {
+        return_type = create(
+            sir::PrimitiveType{
+                .ast_node = nullptr,
+                .primitive = sir::Primitive::VOID,
+            }
+        );
+    } else if (return_node->type == AST_REF_RETURN) {
         return_type = create(
             sir::ReferenceType{
                 .ast_node = return_node,
