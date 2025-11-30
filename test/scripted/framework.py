@@ -53,12 +53,18 @@ def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
 
     tests = []
 
-    for sub_directory in Path(directory).iterdir():
-        for file_path in sub_directory.iterdir():
+    for file_path in Path(directory).iterdir():
+        if file_path.is_dir():
+            for sub_path in file_path.iterdir():
+                if sub_path.suffix != file_name_extension:
+                    continue
+                
+                tests.extend(load_test_file(f"{file_path.stem}.{sub_path.stem}", sub_path))
+        else:
             if file_path.suffix != file_name_extension:
                 continue
-            
-            tests.extend(load_test_file(f"{sub_directory.stem}.{file_path.stem}", file_path))
+                
+            tests.extend(load_test_file(str(file_path), file_path))
 
     tests = filter(filter_fn, tests)
     tests = [test for test in tests if fnmatch.fnmatch(test.name, args.pattern)]

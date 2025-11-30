@@ -1,6 +1,8 @@
 add_executable(banjo-test-util
     "assembly_util.cpp"
     "assembly_util.hpp"
+    "formatter_util.cpp"
+    "formatter_util.hpp"
     "main.cpp"
     "line_based_reader.cpp"
     "line_based_reader.hpp"
