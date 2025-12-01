@@ -14,7 +14,6 @@ class TokenStream {
 private:
     TokenList &input;
     unsigned position;
-    Token eof_token{TKN_EOF, "", 0};
 
 public:
     TokenStream(TokenList &input);

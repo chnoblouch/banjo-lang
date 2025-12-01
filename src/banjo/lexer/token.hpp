@@ -138,6 +138,8 @@ struct Token {
 };
 
 struct TokenList {
+    static constexpr unsigned EOF_ZONE_SIZE = 1;
+
     struct Span {
         unsigned first;
         unsigned count;

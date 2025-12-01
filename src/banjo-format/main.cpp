@@ -15,7 +15,8 @@ int main(int argc, char *argv[]) {
 
     std::ifstream stream{file_path};
     std::unique_ptr<banjo::lang::SourceFile> file = banjo::lang::SourceFile::read({}, file_path, stream);
-    banjo::lang::Formatter().format(*file);
+    banjo::lang::Formatter().format_in_place(*file);
+    std::ofstream{file_path} << file->get_content();
 
     // banjo::format::Formatter().format(file);
 

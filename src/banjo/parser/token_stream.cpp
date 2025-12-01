@@ -9,33 +9,21 @@ namespace lang {
 TokenStream::TokenStream(TokenList &input) : input{input} {}
 
 Token *TokenStream::get() {
-    if (position >= input.tokens.size()) {
-        return &eof_token;
-    }
-
     return &input.tokens[position];
 }
 
 Token *TokenStream::consume() {
-    if (position >= input.tokens.size()) {
-        return &eof_token;
-    }
-
     Token *token = &input.tokens[position];
     position++;
     return token;
 }
 
 Token *TokenStream::peek(unsigned offset) {
-    if (position + offset >= input.tokens.size()) {
-        return &eof_token;
-    }
-
     return &input.tokens[position + offset];
 }
 
 Token *TokenStream::previous() {
-    return position > 0 ? &input.tokens[position - 1] : &eof_token;
+    return position > 0 ? &input.tokens[position - 1] : &input.tokens.back();
 }
 
 void TokenStream::seek(unsigned position) {

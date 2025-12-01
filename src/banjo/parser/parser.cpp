@@ -336,6 +336,18 @@ ParseResult Parser::check_stmt_terminator(ASTNode *node) {
     }
 }
 
+ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type) {
+     if (stream.get()->is(TKN_SEMI)) {
+        builder.consume();
+        return builder.build(type);
+    } else if (stream.previous()->end_of_line) {
+        return builder.build(type);
+    } else {
+        report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);
+        return builder.build_error();
+    }
+}
+
 Report &Parser::register_error(TextRange range) {
     mod->reports.push_back(Report(Report::Type::ERROR, SourceLocation{file.mod_path, range}));
     mod->is_valid = false;

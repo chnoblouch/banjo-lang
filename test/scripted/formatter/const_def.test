@@ -1,6 +1,6 @@
 # test:section input
 
- const  A  :  i32  =  100;
+ const  A  :  i32  =  100  ;
 
 # test:section output
 

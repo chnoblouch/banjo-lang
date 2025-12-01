@@ -56,6 +56,10 @@ TokenList Lexer::tokenize() {
 
     finish_line();
 
+    for (unsigned i = 0; i < TokenList::EOF_ZONE_SIZE; i++) {
+        tokens.push_back(Token{TKN_EOF, {}, reader.get_position()});
+    }
+
     return TokenList{
         .tokens = std::move(tokens),
         .attached_tokens = std::move(attached_tokens),

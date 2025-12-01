@@ -26,92 +26,39 @@ std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
     return edits;
 }
 
-void Formatter::format_mod(ASTNode *node) {
-    ASTNode *block_node = node->first_child;
+void Formatter::format_in_place(SourceFile &file) {
+    std::vector<Edit> edits = format(file);
 
-    format_decl_block(block_node);
-}
+    std::string_view input = file.get_content();
+    std::string output;
 
-void Formatter::format_decl_block(ASTNode *node) {
-    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        switch (child->type) {
-            case AST_FUNCTION_DEFINITION: format_func_def(child); break;
-            case AST_CONSTANT: format_const_def(child); break;
-            case AST_STRUCT_DEFINITION: format_struct_def(child); break;
-            default: break;
-        }
-    }
-}
-
-void Formatter::format_func_def(ASTNode *node) {
-    ASTNode *qualifiers_node = node->first_child;
-    ASTNode *name_node = qualifiers_node->next_sibling;
-    ASTNode *params_node = name_node->next_sibling;
-    ASTNode *return_type_node = params_node->next_sibling;
-    ASTNode *block_node = return_type_node->next_sibling;
-
-    unsigned tkn_func = node->tokens[0];
-    unsigned tkn_ident = name_node->tokens[0];
-
-    ensure_indented(tkn_func);
-    ensure_space_after(tkn_func);
-    ensure_no_space_after(tkn_ident);
-    format_param_list(params_node, true);
-
-    if (return_type_node->type != AST_EMPTY) {
-        unsigned tkn_arrow = node->tokens[1];
-
-        ensure_space_after(tkn_arrow);
-        format_expr(return_type_node, true);
-    }
-
-    format_block(block_node);
-
-    first_decl = false;
-}
-
-void Formatter::format_const_def(ASTNode *node) {
-    ASTNode *name_node = node->first_child;
-
-    unsigned tkn_const = node->tokens[0];
-    unsigned tkn_ident = name_node->tokens[0];
-    unsigned tkn_colon = node->tokens[1];
-    unsigned tkn_equals = node->tokens[2];
-
-    ensure_indented(tkn_const);
-    ensure_space_after(tkn_const);
-    ensure_no_space_after(tkn_ident);
-    ensure_space_after(tkn_colon);
-    ensure_space_before(tkn_equals);
-    ensure_space_after(tkn_equals);
-
-    first_decl = false;
-}
-
-void Formatter::format_struct_def(ASTNode *node) {
-    ASTNode *name_node = node->first_child;
-    ASTNode *impls_node = name_node->next_sibling;
-    ASTNode *block_node = impls_node->next_sibling;
-
-    first_decl = false;
-
-    indentation += 1;
-    format_decl_block(block_node);
-    indentation -= 1;
-}
-
-void Formatter::format_block(ASTNode *node) {
-    unsigned tkn_lbrace = node->tokens[0];
-
-    if (node->has_children()) {
-        ensure_whitespace_after(tkn_lbrace, "\n");
+    if (edits.empty()) {
+        output = input;
     } else {
-        ensure_no_space_after(tkn_lbrace);
+        for (unsigned i = 0; i < edits.size(); i++) {
+            unsigned prev_end = i == 0 ? 0 : edits[i - 1].range.end;
+            unsigned next_start = edits[i].range.start;
+            std::string_view replacement = edits[i].replacement;
+
+            output.insert(output.end(), input.begin() + prev_end, input.begin() + next_start);
+            output.insert(output.end(), replacement.begin(), replacement.end());
+        }
+
+        unsigned last_end = edits.back().range.end;
+        output.insert(output.end(), input.begin() + last_end, input.end());
     }
+
+    file.update_content(std::move(output));
 }
 
-void Formatter::format_expr(ASTNode *node, bool space_after) {
+void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
     switch (node->type) {
+        case AST_BLOCK: format_block(node, whitespace); break;
+        case AST_FUNCTION_DEFINITION: format_func_def(node, whitespace); break;
+        case AST_CONSTANT: format_const_def(node, whitespace); break;
+        case AST_STRUCT_DEFINITION: format_struct_def(node); break;
+        case AST_INT_LITERAL:
+        case AST_FLOAT_LITERAL:
         case AST_I8:
         case AST_I16:
         case AST_I32:
@@ -125,21 +72,118 @@ void Formatter::format_expr(ASTNode *node, bool space_after) {
         case AST_USIZE:
         case AST_BOOL:
         case AST_ADDR:
-        case AST_VOID: format_keyword(node, space_after); break;
+        case AST_VOID: format_single_token_node(node, whitespace); break;
+        default: break;
     }
 }
 
-void Formatter::format_keyword(ASTNode *node, bool space_after) {
-    unsigned token = node->tokens[0];
+void Formatter::format_mod(ASTNode *node) {
+    ASTNode *block_node = node->first_child;
 
-    if (space_after) {
-        ensure_space_after(token);
+    for (ASTNode *child = block_node->first_child; child; child = child->next_sibling) {
+        format_node(child, WhitespaceKind::INDENT);
+    }
+}
+
+void Formatter::format_decl_block(ASTNode *node) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        format_node(child, WhitespaceKind::INDENT);
+    }
+}
+
+void Formatter::format_func_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT && node->next_sibling) {
+        whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+    }
+
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *params_node = name_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+    ASTNode *block_node = return_type_node->next_sibling;
+
+    unsigned tkn_func = node->tokens[0];
+    unsigned tkn_ident = name_node->tokens[0];
+
+    ensure_space_after(tkn_func);
+    ensure_no_space_after(tkn_ident);
+    format_param_list(params_node, WhitespaceKind::SPACE);
+
+    if (return_type_node->type != AST_EMPTY) {
+        unsigned tkn_arrow = node->tokens[1];
+
+        ensure_space_after(tkn_arrow);
+        format_node(return_type_node, WhitespaceKind::SPACE);
+    }
+
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT) {
+        if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+    ASTNode *value_node = type_node->next_sibling;
+
+    unsigned tkn_const = node->tokens[0];
+    unsigned tkn_ident = name_node->tokens[0];
+    unsigned tkn_colon = node->tokens[1];
+    unsigned tkn_equals = node->tokens[2];
+
+    ensure_space_after(tkn_const);
+    ensure_no_space_after(tkn_ident);
+    ensure_space_after(tkn_colon);
+    format_node(type_node, WhitespaceKind::SPACE);
+    ensure_space_after(tkn_equals);
+
+    if (node->tokens.size() == 4) {
+        unsigned tkn_semi = node->tokens[3];
+        format_node(value_node, WhitespaceKind::NONE);
+        ensure_whitespace_after(tkn_semi, whitespace);
     } else {
-        ensure_no_space_after(token);
+        format_node(value_node, whitespace);
     }
 }
 
-void Formatter::format_param_list(ASTNode *node, bool space_after) {
+void Formatter::format_struct_def(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *impls_node = name_node->next_sibling;
+    ASTNode *block_node = impls_node->next_sibling;
+
+    indentation += 1;
+    format_decl_block(block_node);
+    indentation -= 1;
+}
+
+void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
+    unsigned tkn_lbrace = node->tokens[0];
+    unsigned tkn_rbrace = node->tokens[1];
+
+    indentation += 1;
+
+    ensure_whitespace_after(tkn_lbrace, node->has_children() ? WhitespaceKind::INDENT : WhitespaceKind::NONE);
+
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        bool last_child = !child->next_sibling;
+        format_node(child, last_child ? WhitespaceKind::INDENT_OUT : WhitespaceKind::INDENT);
+    }
+
+    indentation -= 1;
+
+    ensure_whitespace_after(tkn_rbrace, whitespace);
+}
+
+void Formatter::format_single_token_node(ASTNode *node, WhitespaceKind whitespace) {
+    unsigned token = node->tokens[0];
+    ensure_whitespace_after(token, whitespace);
+}
+
+void Formatter::format_param_list(ASTNode *node, WhitespaceKind whitespace) {
     unsigned tkn_lparen = node->tokens.front();
     unsigned tkn_rparen = node->tokens.back();
 
@@ -149,18 +193,14 @@ void Formatter::format_param_list(ASTNode *node, bool space_after) {
         ensure_space_after(node->tokens[i]);
     }
 
-    if (space_after) {
-        ensure_space_after(tkn_rparen);
-    } else {
-        ensure_no_space_after(tkn_rparen);
-    }
+    ensure_whitespace_after(tkn_rparen, whitespace);
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        format_param(child);
+        format_param(child, whitespace);
     }
 }
 
-void Formatter::format_param(ASTNode *node) {
+void Formatter::format_param(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *name_node = node->first_child;
     ASTNode *expr_node = name_node->next_sibling;
 
@@ -169,11 +209,39 @@ void Formatter::format_param(ASTNode *node) {
 
     ensure_no_space_after(tkn_ident);
     ensure_space_after(tkn_colon);
-    format_expr(expr_node, false);
+    format_node(expr_node, whitespace);
 }
 
-void Formatter::ensure_no_space_before(unsigned token_index) {
-    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index);
+void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace) {
+    switch (whitespace) {
+        case WhitespaceKind::NONE: {
+            ensure_no_space_after(token_index);
+            break;
+        }
+        case WhitespaceKind::SPACE: {
+            ensure_space_after(token_index);
+            break;
+        }
+        case WhitespaceKind::INDENT: {
+            std::string whitespace = "\n" + build_indent(indentation);
+            ensure_whitespace_after(token_index, whitespace);
+            break;
+        }
+        case WhitespaceKind::INDENT_OUT: {
+            std::string whitespace = "\n" + build_indent(indentation - 1);
+            ensure_whitespace_after(token_index, whitespace);
+            break;
+        }
+        case WhitespaceKind::INDENT_EMPTY_LINE: {
+            std::string whitespace = "\n\n" + build_indent(indentation);
+            ensure_whitespace_after(token_index, whitespace);
+            break;
+        }
+    }
+}
+
+void Formatter::ensure_no_space_after(unsigned token_index) {
+    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
 
     for (const Token &attached_token : attached_tokens) {
         if (attached_token.is(TKN_WHITESPACE)) {
@@ -182,31 +250,19 @@ void Formatter::ensure_no_space_before(unsigned token_index) {
     }
 }
 
-void Formatter::ensure_no_space_after(unsigned token_index) {
-    ensure_no_space_before(token_index + 1);
-}
-
-void Formatter::ensure_space_before(unsigned token_index) {
-    ensure_whitespace_before(token_index, " ");
-}
-
 void Formatter::ensure_space_after(unsigned token_index) {
-    ensure_space_before(token_index + 1);
+    ensure_whitespace_after(token_index, " ");
 }
 
-void Formatter::ensure_indented(unsigned token_index) {
-    std::string indent_whitespace = std::string(4 * indentation, ' ');
-
-    if (first_decl) {
-        ensure_whitespace_before(token_index, indent_whitespace);
-    } else {
-        ensure_whitespace_before(token_index, "\n" + indent_whitespace);
-    }
+void Formatter::ensure_indent_after(unsigned token_index, unsigned indent_addend /* = 0 */) {
+    unsigned num_spaces = 4 * (indentation + indent_addend);
+    std::string indent_whitespace = std::string(num_spaces, ' ');
+    ensure_whitespace_after(token_index, "\n" + indent_whitespace);
 }
 
-void Formatter::ensure_whitespace_before(unsigned token_index, std::string whitespace) {
-    const Token &token = tokens.tokens[token_index];
-    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index);
+void Formatter::ensure_whitespace_after(unsigned token_index, std::string whitespace) {
+    const Token &token = tokens.tokens[token_index + 1];
+    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
 
     if (attached_tokens.size() == 1) {
         if (attached_tokens[0].is(TKN_WHITESPACE) && attached_tokens[0].value == whitespace) {
@@ -223,8 +279,9 @@ void Formatter::ensure_whitespace_before(unsigned token_index, std::string white
     edits.push_back(Edit{.range{token.position, token.position}, .replacement = std::move(whitespace)});
 }
 
-void Formatter::ensure_whitespace_after(unsigned token_index, std::string whitespace) {
-    ensure_whitespace_before(token_index + 1, std::move(whitespace));
+std::string Formatter::build_indent(unsigned indentation) {
+    unsigned num_spaces = 4 * indentation;
+    return std::string(num_spaces, ' ');
 }
 
 } // namespace banjo::lang

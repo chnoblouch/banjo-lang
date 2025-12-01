@@ -70,7 +70,7 @@ ParseResult DeclParser::parse_const() {
     node.consume(); // Consume '='
     node.append_child(parser.parse_expression());
 
-    return parser.check_stmt_terminator(node.build(AST_CONSTANT));
+    return parser.check_stmt_terminator(node, AST_CONSTANT);
 }
 
 ParseResult DeclParser::parse_struct() {

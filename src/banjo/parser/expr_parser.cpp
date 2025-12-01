@@ -251,12 +251,10 @@ ParseResult ExprParser::parse_operand() {
 }
 
 ParseResult ExprParser::parse_number_literal() {
-    Token *token = stream.consume();
-
-    if (token->value.find('.') != std::string::npos) {
-        return parser.create_node(AST_FLOAT_LITERAL, token);
+    if (stream.get()->value.find('.') != std::string::npos) {
+        return parser.consume_into_node(AST_FLOAT_LITERAL);
     } else {
-        return parser.create_node(AST_INT_LITERAL, token);
+        return parser.consume_into_node(AST_INT_LITERAL);
     }
 }
 
