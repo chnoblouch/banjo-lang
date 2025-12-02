@@ -212,7 +212,7 @@ ParseResult ExprParser::parse_operand() {
     switch (stream.get()->type) {
         case TKN_LITERAL: return parse_number_literal();
         case TKN_CHARACTER: return parse_char_literal();
-        case TKN_IDENTIFIER: return parser.create_node(AST_IDENTIFIER, stream.consume());
+        case TKN_IDENTIFIER: return parser.consume_into_node(AST_IDENTIFIER);
         case TKN_FALSE: return parser.create_node(AST_FALSE, stream.consume()->range());
         case TKN_TRUE: return parser.create_node(AST_TRUE, stream.consume()->range());
         case TKN_NULL: return parser.create_node(AST_NULL, stream.consume()->range());

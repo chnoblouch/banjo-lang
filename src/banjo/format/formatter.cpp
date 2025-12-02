@@ -4,6 +4,7 @@
 #include "banjo/lexer/lexer.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/parser.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <span>
 #include <utility>
@@ -54,9 +55,10 @@ void Formatter::format_in_place(SourceFile &file) {
 void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
     switch (node->type) {
         case AST_BLOCK: format_block(node, whitespace); break;
+        case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
         case AST_FUNCTION_DEFINITION: format_func_def(node, whitespace); break;
         case AST_CONSTANT: format_const_def(node, whitespace); break;
-        case AST_STRUCT_DEFINITION: format_struct_def(node); break;
+        case AST_STRUCT_DEFINITION: format_struct_def(node, whitespace); break;
         case AST_INT_LITERAL:
         case AST_FLOAT_LITERAL:
         case AST_I8:
@@ -82,13 +84,11 @@ void Formatter::format_mod(ASTNode *node) {
     ASTNode *block_node = node->first_child;
 
     for (ASTNode *child = block_node->first_child; child; child = child->next_sibling) {
-        format_node(child, WhitespaceKind::INDENT);
-    }
-}
-
-void Formatter::format_decl_block(ASTNode *node) {
-    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        format_node(child, WhitespaceKind::INDENT);
+        if (child == block_node->first_child) {
+            format_node(child, WhitespaceKind::INDENT_FIRST);
+        } else {
+            format_node(child, WhitespaceKind::INDENT);
+        }
     }
 }
 
@@ -151,14 +151,16 @@ void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
     }
 }
 
-void Formatter::format_struct_def(ASTNode *node) {
+void Formatter::format_struct_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT && node->next_sibling) {
+        whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+    }
+
     ASTNode *name_node = node->first_child;
     ASTNode *impls_node = name_node->next_sibling;
     ASTNode *block_node = impls_node->next_sibling;
 
-    indentation += 1;
-    format_decl_block(block_node);
-    indentation -= 1;
+    format_node(block_node, whitespace);
 }
 
 void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
@@ -167,11 +169,10 @@ void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
 
     indentation += 1;
 
-    ensure_whitespace_after(tkn_lbrace, node->has_children() ? WhitespaceKind::INDENT : WhitespaceKind::NONE);
+    ensure_whitespace_after(tkn_lbrace, node->has_children() ? WhitespaceKind::INDENT_FIRST : WhitespaceKind::NONE);
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        bool last_child = !child->next_sibling;
-        format_node(child, last_child ? WhitespaceKind::INDENT_OUT : WhitespaceKind::INDENT);
+        format_node(child, child->next_sibling ? WhitespaceKind::INDENT : WhitespaceKind::INDENT_OUT);
     }
 
     indentation -= 1;
@@ -231,29 +232,12 @@ void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace) {
 
 void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace) {
     switch (whitespace) {
-        case WhitespaceKind::NONE: {
-            ensure_no_space_after(token_index);
-            break;
-        }
-        case WhitespaceKind::SPACE: {
-            ensure_space_after(token_index);
-            break;
-        }
-        case WhitespaceKind::INDENT: {
-            std::string whitespace = "\n" + build_indent(indentation);
-            ensure_whitespace_after(token_index, whitespace);
-            break;
-        }
-        case WhitespaceKind::INDENT_OUT: {
-            std::string whitespace = "\n" + build_indent(indentation - 1);
-            ensure_whitespace_after(token_index, whitespace);
-            break;
-        }
-        case WhitespaceKind::INDENT_EMPTY_LINE: {
-            std::string whitespace = "\n\n" + build_indent(indentation);
-            ensure_whitespace_after(token_index, whitespace);
-            break;
-        }
+        case WhitespaceKind::NONE: ensure_no_space_after(token_index); break;
+        case WhitespaceKind::SPACE: ensure_space_after(token_index); break;
+        case WhitespaceKind::INDENT:
+        case WhitespaceKind::INDENT_FIRST:
+        case WhitespaceKind::INDENT_OUT:
+        case WhitespaceKind::INDENT_EMPTY_LINE: ensure_indent_after(token_index, whitespace); break;
     }
 }
 
@@ -269,6 +253,40 @@ void Formatter::ensure_no_space_after(unsigned token_index) {
 
 void Formatter::ensure_space_after(unsigned token_index) {
     ensure_whitespace_after(token_index, " ");
+}
+
+void Formatter::ensure_indent_after(unsigned token_index, WhitespaceKind whitespace) {
+    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
+
+    if (whitespace == WhitespaceKind::INDENT) {
+        unsigned num_newlines = 0;
+
+        for (Token &token : attached_tokens) {
+            if (token.is(TKN_WHITESPACE)) {
+                if (token.value == "\n") {
+                    num_newlines += 1;
+                }
+            } else {
+                break;
+            }
+        }
+
+        if (num_newlines >= 2) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    std::string whitespace_string;
+
+    switch (whitespace) {
+        case WhitespaceKind::INDENT:
+        case WhitespaceKind::INDENT_FIRST: whitespace_string = "\n" + build_indent(indentation); break;
+        case WhitespaceKind::INDENT_OUT: whitespace_string = "\n" + build_indent(indentation - 1); break;
+        case WhitespaceKind::INDENT_EMPTY_LINE: whitespace_string = "\n\n" + build_indent(indentation); break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    ensure_whitespace_after(token_index, whitespace_string);
 }
 
 void Formatter::ensure_indent_after(unsigned token_index, int indent_addend /* = 0 */) {

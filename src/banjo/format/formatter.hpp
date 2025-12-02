@@ -24,6 +24,7 @@ private:
         NONE,
         SPACE,
         INDENT,
+        INDENT_FIRST,
         INDENT_OUT,
         INDENT_EMPTY_LINE,
     };
@@ -40,10 +41,9 @@ private:
     void format_node(ASTNode *node, WhitespaceKind whitespace);
 
     void format_mod(ASTNode *node);
-    void format_decl_block(ASTNode *node);
     void format_func_def(ASTNode *node, WhitespaceKind whitespace);
     void format_const_def(ASTNode *node, WhitespaceKind whitespace);
-    void format_struct_def(ASTNode *node);
+    void format_struct_def(ASTNode *node, WhitespaceKind whitespace);
 
     void format_block(ASTNode *node, WhitespaceKind whitespace);
 
@@ -56,6 +56,7 @@ private:
     void ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace);
     void ensure_no_space_after(unsigned token_index);
     void ensure_space_after(unsigned token_index);
+    void ensure_indent_after(unsigned token_index, WhitespaceKind whitespace);
     void ensure_indent_after(unsigned token_index, int indent_addend = 0);
     void ensure_whitespace_after(unsigned token_index, std::string whitespace);
     std::string build_indent(unsigned indentation);
