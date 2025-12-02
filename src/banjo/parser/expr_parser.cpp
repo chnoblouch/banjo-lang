@@ -241,7 +241,6 @@ ParseResult ExprParser::parse_operand() {
         case TKN_DOT_DOT_DOT: return parser.consume_into_node(AST_PARAM_SEQUENCE_TYPE);
         case TKN_FUNC: return parse_func_type();
         case TKN_META: return parse_meta_expr();
-        case TKN_TYPE: return parse_explicit_type();
         default: {
             parser.report_unexpected_token();
             ASTNode *node = parser.create_node(AST_ERROR, stream.previous()->range());
@@ -460,35 +459,8 @@ ParseResult ExprParser::parse_meta_expr() {
     return {builder.build(AST_META_EXPR), result.is_valid};
 }
 
-ParseResult ExprParser::parse_explicit_type() {
-    NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'type'
-
-    if (!stream.get()->is(TKN_LPAREN)) {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "(");
-        return node.build_error();
-    }
-    stream.consume(); // Consume '('
-
-    ParseResult result = parser.parse_type();
-    if (!result.is_valid) {
-        return node.build_error();
-    }
-    node.append_child(result.node);
-
-    if (!stream.get()->is(TKN_RPAREN)) {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, ")");
-        return node.build_error();
-    }
-    stream.consume(); // Consume ')'
-
-    return node.build(AST_EXPLICIT_TYPE);
-}
-
 ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
-    bool is_meta_field_access = lhs_node->type == AST_EXPLICIT_TYPE;
-    ASTNode *operator_node =
-        is_meta_field_access ? parser.create_node(AST_META_FIELD_ACCESS) : parser.create_node(AST_DOT_OPERATOR);
+    ASTNode *operator_node = parser.create_node(AST_DOT_OPERATOR);
 
     operator_node->append_child(lhs_node);
     stream.consume(); // Consume '.'
@@ -500,9 +472,7 @@ ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
 }
 
 ParseResult ExprParser::parse_call_expr(ASTNode *lhs_node) {
-    bool is_meta_method_call = lhs_node->type == AST_META_FIELD_ACCESS;
-    ASTNode *node =
-        is_meta_method_call ? parser.create_node(AST_META_METHOD_CALL) : parser.create_node(AST_FUNCTION_CALL);
+    ASTNode *node = parser.create_node(AST_FUNCTION_CALL);
     node->append_child(lhs_node);
 
     ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RPAREN, [this]() {

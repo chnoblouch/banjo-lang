@@ -85,7 +85,6 @@ private:
     void print_optional_type(lang::ASTNode *node);
     void print_result_type(lang::ASTNode *node);
     void print_closure_type(lang::ASTNode *node);
-    void print_explicit_type(lang::ASTNode *node);
     void print_meta_access(lang::ASTNode *node);
     
     void print_meta_if_stmt(lang::ASTNode *node);

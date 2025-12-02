@@ -168,11 +168,8 @@ void Formatter::print_node(lang::ASTNode *node) {
         case lang::ASTNodeType::AST_OPTIONAL_DATA_TYPE: print_optional_type(node); break;
         case lang::ASTNodeType::AST_RESULT_TYPE: print_result_type(node); break;
         case lang::ASTNodeType::AST_CLOSURE_TYPE: print_closure_type(node); break;
-        case lang::ASTNodeType::AST_EXPLICIT_TYPE: print_explicit_type(node); break;
         case lang::ASTNodeType::AST_PARAM_SEQUENCE_TYPE: emit("..."); break;
         case lang::ASTNodeType::AST_META_EXPR: print_meta_access(node); break;
-        case lang::ASTNodeType::AST_META_FIELD_ACCESS: print_dot_expr(node); break;
-        case lang::ASTNodeType::AST_META_METHOD_CALL: print_call_expr(node); break;
         case lang::ASTNodeType::AST_META_IF: print_meta_if_stmt(node); break;
         case lang::ASTNodeType::AST_META_IF_CONDITION: break;
         case lang::ASTNodeType::AST_META_ELSE: break;
@@ -183,7 +180,6 @@ void Formatter::print_node(lang::ASTNode *node) {
         case lang::ASTNodeType::AST_QUALIFIER: break;
         case lang::ASTNodeType::AST_GENERIC_PARAM_LIST: break;
         case lang::ASTNodeType::AST_GENERIC_PARAMETER: print_generic_param(node); break;
-        case lang::ASTNodeType::AST_EMPTY_LINE: break;
         case lang::ASTNodeType::AST_ERROR: break;
         case lang::ASTNodeType::AST_COMPLETION_TOKEN: break;
         case lang::ASTNodeType::AST_INVALID: break;
@@ -837,14 +833,6 @@ void Formatter::print_closure_type(lang::ASTNode *node) {
     print_closure_type(params_node, return_type_node);
 }
 
-void Formatter::print_explicit_type(lang::ASTNode *node) {
-    lang::ASTNode *type_node = node->first_child;
-
-    emit("type(");
-    print_node(type_node);
-    emit(")");
-}
-
 void Formatter::print_meta_access(lang::ASTNode *node) {
     lang::ASTNode *expr_node = node->first_child;
 
@@ -974,10 +962,6 @@ void Formatter::print_block_children(lang::ASTNode *node) {
     for (lang::ASTNode *child = node->first_child; child; child = child->next_sibling) {
         try_insert_empty_line(child);
 
-        if (child->type == lang::ASTNodeType::AST_EMPTY_LINE) {
-            continue;
-        }
-
         indent_line();
         print_node(child);
 
@@ -996,7 +980,7 @@ void Formatter::indent_line() {
 }
 
 void Formatter::try_insert_empty_line(lang::ASTNode *child) {
-    if (insert_empty_line || child->type == lang::ASTNodeType::AST_EMPTY_LINE) {
+    if (insert_empty_line) {
         emit("\n");
         insert_empty_line = false;
     }

@@ -327,6 +327,7 @@ ParseResult Parser::parse_return_type() {
 ParseResult Parser::check_stmt_terminator(ASTNode *node) {
     if (stream.get()->is(TKN_SEMI)) {
         stream.consume();
+        node->tokens = mod->create_token_index(stream.get_position() - 1);
         return {node, true};
     } else if (stream.previous()->end_of_line) {
         return {node, true};
