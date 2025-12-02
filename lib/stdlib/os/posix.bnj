@@ -104,6 +104,7 @@ meta if os.IS_UNIX {
         const S_IFCHR: u32 = 0o020000;
         const S_IFIFO: u32 = 0o010000;
 
+        const MSG_NOSIGNAL: i32 = 0x4000;
         const AF_INET: i32 = 2;
         const AF_INET6: i32 = 10;
         const SOCK_STREAM: i32 = 1;
@@ -224,6 +225,7 @@ meta if os.IS_UNIX {
         const S_IFCHR: u32 = 0o020000;
         const S_IFIFO: u32 = 0o010000;
 
+        const MSG_NOSIGNAL: i32 = 0x80000;
         const AF_INET: i32 = 2;
         const AF_INET6: i32 = 10;
         const SOCK_STREAM: i32 = 1;

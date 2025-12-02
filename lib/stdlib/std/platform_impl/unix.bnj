@@ -199,7 +199,7 @@ meta if IS_UNIX {
     }
 
     pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
-        var result = posix.send(socket, buffer, size, 0);
+        var result = posix.send(socket, buffer, size, posix.MSG_NOSIGNAL);
         if result >= 0 {
             return result as usize;
         } else {
