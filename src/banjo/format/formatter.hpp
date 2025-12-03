@@ -46,12 +46,19 @@ private:
     void format_struct_def(ASTNode *node, WhitespaceKind whitespace);
 
     void format_block(ASTNode *node, WhitespaceKind whitespace);
+    void format_expr_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_struct_literal(ASTNode *node, WhitespaceKind whitespace);
+    void format_typeless_struct_literal(ASTNode *node, WhitespaceKind whitespace);
+    void format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between = true);
+    void format_unary_expr(ASTNode *node, WhitespaceKind whitespace);
+    void format_call_or_bracket_expr(ASTNode *node, WhitespaceKind whitespace);
+    void format_static_array_type(ASTNode *node, WhitespaceKind whitespace);
 
-    void format_param_list(ASTNode *node, WhitespaceKind whitespace);
     void format_param(ASTNode *node, WhitespaceKind whitespace);
-    
+    void format_struct_literal_entry(ASTNode *node, WhitespaceKind whitespace);
+
     void format_single_token_node(ASTNode *node, WhitespaceKind whitespace);
-    void format_list(ASTNode *node, WhitespaceKind whitespace);
+    void format_list(ASTNode *node, WhitespaceKind whitespace, bool enclosing_spaces = false);
 
     void ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace);
     void ensure_no_space_after(unsigned token_index);

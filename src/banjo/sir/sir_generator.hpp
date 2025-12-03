@@ -69,6 +69,7 @@ private:
     sir::MetaBlock *generate_meta_block(ASTNode *node, MetaBlockKind kind);
 
     sir::Stmt generate_stmt(ASTNode *node);
+    sir::Stmt generate_expr_stmt(ASTNode *node);
     sir::Stmt generate_var_stmt(ASTNode *node, sir::Attributes *attrs);
     sir::Stmt generate_typeless_var_stmt(ASTNode *node, sir::Attributes *attrs);
     sir::Stmt generate_ref_stmt(ASTNode *node, sir::Attributes *attrs, bool mut);

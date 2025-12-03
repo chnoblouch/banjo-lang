@@ -462,13 +462,16 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_BREAK: return generate_break_stmt(node);
         case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::STMT);
         case AST_META_FOR: return generate_meta_for_stmt(node, MetaBlockKind::STMT);
-        case AST_FUNCTION_CALL: return create(generate_expr(node));
-        case AST_IDENTIFIER: return create(generate_expr(node));
-        case AST_DOT_OPERATOR: return create(generate_expr(node));
+        case AST_EXPR_STMT: return generate_expr_stmt(node);
         case AST_BLOCK: return create(generate_block(node));
         case AST_COMPLETION_TOKEN: return create(generate_expr(node));
         default: return generate_error_stmt(node);
     }
+}
+
+sir::Stmt SIRGenerator::generate_expr_stmt(ASTNode *node) {
+    ASTNode *expr_node = node->first_child;
+    return create(generate_expr(expr_node));
 }
 
 sir::Stmt SIRGenerator::generate_var_stmt(ASTNode *node, sir::Attributes *attrs) {

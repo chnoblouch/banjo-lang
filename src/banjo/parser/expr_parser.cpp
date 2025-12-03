@@ -114,7 +114,7 @@ ParseResult ExprParser::parse_cast_level() {
     if (stream.get()->is(TKN_AS)) {
         NodeBuilder cast_node = parser.build_node();
         cast_node.append_child(result.node);
-        stream.consume(); // Consume 'as'
+        cast_node.consume(); // Consume 'as'
 
         result = parser.parse_type();
         if (!result.is_valid) {
@@ -135,17 +135,17 @@ ParseResult ExprParser::parse_result_level() {
     }
 
     if (stream.get()->is(TKN_EXCEPT)) {
-        NodeBuilder cast_node = parser.build_node();
-        cast_node.append_child(result.node);
-        stream.consume(); // Consume 'as'
+        NodeBuilder node = parser.build_node();
+        node.append_child(result.node);
+        node.consume(); // Consume 'except'
 
         result = parser.parse_type();
         if (!result.is_valid) {
-            return cast_node.build_error();
+            return node.build_error();
         }
 
-        cast_node.append_child(result.node);
-        return cast_node.build_with_inferred_range(AST_RESULT_TYPE);
+        node.append_child(result.node);
+        return node.build_with_inferred_range(AST_RESULT_TYPE);
     } else {
         return result;
     }
@@ -167,7 +167,7 @@ ParseResult ExprParser::parse_unary_level() {
     }
 
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume operator
+    node.consume(); // Consume operator
     ParseResult result = parse_unary_level();
     node.append_child(result.node);
     return {node.build(type), result.is_valid};
@@ -213,12 +213,12 @@ ParseResult ExprParser::parse_operand() {
         case TKN_LITERAL: return parse_number_literal();
         case TKN_CHARACTER: return parse_char_literal();
         case TKN_IDENTIFIER: return parser.consume_into_node(AST_IDENTIFIER);
-        case TKN_FALSE: return parser.create_node(AST_FALSE, stream.consume()->range());
-        case TKN_TRUE: return parser.create_node(AST_TRUE, stream.consume()->range());
-        case TKN_NULL: return parser.create_node(AST_NULL, stream.consume()->range());
-        case TKN_NONE: return parser.create_node(AST_NONE, stream.consume()->range());
-        case TKN_UNDEFINED: return parser.create_node(AST_UNDEFINED, stream.consume()->range());
-        case TKN_SELF: return parser.create_node(AST_SELF, stream.consume()->range());
+        case TKN_FALSE: return parser.consume_into_node(AST_FALSE);
+        case TKN_TRUE: return parser.consume_into_node(AST_TRUE);
+        case TKN_NULL: return parser.consume_into_node(AST_NULL);
+        case TKN_NONE: return parser.consume_into_node(AST_NONE);
+        case TKN_UNDEFINED: return parser.consume_into_node(AST_UNDEFINED);
+        case TKN_SELF: return parser.consume_into_node(AST_SELF);
         case TKN_STRING: return parse_string_literal();
         case TKN_LBRACKET: return parse_array_literal();
         case TKN_LPAREN: return parse_paren_expr();
@@ -260,24 +260,30 @@ ParseResult ExprParser::parse_number_literal() {
 ParseResult ExprParser::parse_char_literal() {
     Token *token = stream.consume();
     std::string_view value{token->value.substr(1, token->value.size() - 2)};
-    return parser.create_node(AST_CHAR_LITERAL, value, token->range());
+
+    ASTNode *node = parser.create_node(AST_CHAR_LITERAL, value, token->range());
+    node->tokens = parser.mod->create_token_index(stream.get_position() - 1);
+    return node;
 }
 
 ParseResult ExprParser::parse_string_literal() {
     Token *token = stream.consume();
     std::string_view value{token->value.substr(1, token->value.size() - 2)};
-    return parser.create_node(AST_STRING_LITERAL, value, token->range());
+
+    ASTNode *node = parser.create_node(AST_STRING_LITERAL, value, token->range());
+    node->tokens = parser.mod->create_token_index(stream.get_position() - 1);
+    return node;
 }
 
 ParseResult ExprParser::parse_array_literal() {
     ASTNodeType type = AST_ARRAY_EXPR;
 
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume '['
+    node.consume(); // Consume '['
 
     while (true) {
         if (stream.get()->is(TKN_RBRACKET)) {
-            stream.consume();
+            node.consume();
             break;
         } else {
             ParseResult result = ExprParser(parser, true).parse();
@@ -297,7 +303,7 @@ ParseResult ExprParser::parse_array_literal() {
                 node.append_child(pair_node.build(AST_MAP_EXPR_PAIR));
             } else if (stream.get()->is(TKN_SEMI)) {
                 type = AST_STATIC_ARRAY_TYPE;
-                stream.consume(); // Consume ';'
+                node.consume(); // Consume ';'
 
                 node.append_child(result.node);
 
@@ -313,10 +319,10 @@ ParseResult ExprParser::parse_array_literal() {
         }
 
         if (stream.get()->is(TKN_RBRACKET)) {
-            stream.consume();
+            node.consume();
             break;
         } else if (stream.get()->is(TKN_COMMA)) {
-            stream.consume();
+            node.consume();
         } else {
             parser.report_unexpected_token();
             return {node.build(type), false};
@@ -460,15 +466,14 @@ ParseResult ExprParser::parse_meta_expr() {
 }
 
 ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
-    ASTNode *operator_node = parser.create_node(AST_DOT_OPERATOR);
+    NodeBuilder operator_node = parser.build_node();
 
-    operator_node->append_child(lhs_node);
-    stream.consume(); // Consume '.'
+    operator_node.append_child(lhs_node);
+    operator_node.consume(); // Consume '.'
     ParseResult result = parse_operand();
-    operator_node->append_child(result.node);
+    operator_node.append_child(result.node);
 
-    operator_node->set_range_from_children();
-    return {operator_node, result.is_valid};
+    return {operator_node.build(AST_DOT_OPERATOR), result.is_valid};
 }
 
 ParseResult ExprParser::parse_call_expr(ASTNode *lhs_node) {
@@ -517,29 +522,28 @@ ParseResult ExprParser::parse_struct_literal_body() {
             return {parser.parse_completion_point(), true};
         }
 
-        ASTNode *value_node = parser.create_node(AST_STRUCT_FIELD_VALUE);
+        NodeBuilder entry_node = parser.build_node();
         ASTNode *name_node;
 
         if (stream.get()->is(TKN_IDENTIFIER)) {
-            name_node = parser.create_node(AST_IDENTIFIER, stream.consume());
-            value_node->append_child(name_node);
+            name_node = parser.consume_into_node(AST_IDENTIFIER);
+            entry_node.append_child(name_node);
         } else {
             parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
-            return {value_node, false};
+            return entry_node.build_error();
         }
 
         if (stream.get()->is(TKN_COLON)) {
-            stream.consume(); // Consume ':'
-            value_node->append_child(parse().node);
+            entry_node.consume(); // Consume ':'
+            entry_node.append_child(parse().node);
         } else if (stream.get()->is(TKN_COMMA) || stream.get()->is(TKN_RBRACE)) {
-            value_node->append_child(parser.create_node(AST_IDENTIFIER, name_node->value, name_node->range));
+            entry_node.append_child(parser.create_node(AST_IDENTIFIER, name_node->value, name_node->range));
         } else {
             parser.report_unexpected_token();
-            return {value_node, false};
+            return entry_node.build_error();
         }
 
-        value_node->set_range_from_children();
-        return value_node;
+        return entry_node.build(AST_STRUCT_FIELD_VALUE);
     });
 }
 
@@ -557,12 +561,15 @@ ParseResult ExprParser::parse_level(
 
     while (type != AST_NONE) {
         Token *token = stream.consume();
+        unsigned token_index = stream.get_position() - 1;
+
         ASTNode *operator_node = parser.create_node(type, token->range());
         operator_node->append_child(current_node);
 
         result = (this->*child_builder)();
         operator_node->append_child(result.node);
         operator_node->set_range_from_children();
+        operator_node->tokens = parser.mod->create_token_index(token_index);
         current_node = operator_node;
 
         if (!result.is_valid) {

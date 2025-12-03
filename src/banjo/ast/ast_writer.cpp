@@ -52,6 +52,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_IMPLICIT_TYPE_REF_MUT_VAR: return "IMPLICIT_TYPE_REF_MUT_VAR";
         case AST_IMPLICIT_TYPE_VAR: return "IMPLICIT_TYPE_VAR";
         case AST_CONSTANT: return "CONSTANT";
+        case AST_EXPR_STMT: return "EXPR_STMT";
         case AST_ASSIGNMENT: return "ASSIGNMENT";
         case AST_I8: return "I8";
         case AST_I16: return "I16";

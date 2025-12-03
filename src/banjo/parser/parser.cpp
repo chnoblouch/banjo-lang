@@ -4,6 +4,7 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/decl_parser.hpp"
 #include "banjo/parser/expr_parser.hpp"
+#include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/stmt_parser.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/utils/timing.hpp"
@@ -133,6 +134,8 @@ ASTNode *Parser::parse_expression() {
 }
 
 ParseResult Parser::parse_expr_or_assign() {
+    NodeBuilder node = build_node();
+
     ParseResult result = ExprParser(*this, false).parse();
     if (!result.is_valid) {
         return {result.node, false};
@@ -150,7 +153,10 @@ ParseResult Parser::parse_expr_or_assign() {
         case TKN_CARET_EQ: return StmtParser(*this).parse_assign(result.node, AST_BIT_XOR_ASSIGN);
         case TKN_SHL_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHL_ASSIGN);
         case TKN_SHR_EQ: return StmtParser(*this).parse_assign(result.node, AST_SHR_ASSIGN);
-        default: return check_stmt_terminator(result.node);
+        default: {
+            node.append_child(result.node);
+            return check_stmt_terminator(node, AST_EXPR_STMT);
+        }
     }
 }
 
@@ -327,7 +333,6 @@ ParseResult Parser::parse_return_type() {
 ParseResult Parser::check_stmt_terminator(ASTNode *node) {
     if (stream.get()->is(TKN_SEMI)) {
         stream.consume();
-        node->tokens = mod->create_token_index(stream.get_position() - 1);
         return {node, true};
     } else if (stream.previous()->end_of_line) {
         return {node, true};
