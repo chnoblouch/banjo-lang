@@ -47,6 +47,25 @@ private:
 
     void format_block(ASTNode *node, WhitespaceKind whitespace);
     void format_expr_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_var_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_typeless_var_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_assign_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_return_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_if_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_if_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_else_if_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_else_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_switch_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_switch_case_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_try_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_try_success_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_try_except_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_try_else_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_while_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_for_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_meta_if_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_meta_for_stmt(ASTNode *node, WhitespaceKind whitespace);
+
     void format_struct_literal(ASTNode *node, WhitespaceKind whitespace);
     void format_typeless_struct_literal(ASTNode *node, WhitespaceKind whitespace);
     void format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between = true);
@@ -57,8 +76,10 @@ private:
     void format_param(ASTNode *node, WhitespaceKind whitespace);
     void format_struct_literal_entry(ASTNode *node, WhitespaceKind whitespace);
 
+    void format_keyword_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_single_token_node(ASTNode *node, WhitespaceKind whitespace);
     void format_list(ASTNode *node, WhitespaceKind whitespace, bool enclosing_spaces = false);
+    void format_before_terminator(ASTNode *parent, ASTNode *child, WhitespaceKind whitespace, unsigned semi_index);
 
     void ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace);
     void ensure_no_space_after(unsigned token_index);

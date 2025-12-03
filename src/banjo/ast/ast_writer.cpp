@@ -186,8 +186,9 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_USE_REBINDING: return "USE_REBINDING";
         case AST_META_EXPR: return "META_EXPR";
         case AST_META_IF: return "META_IF";
-        case AST_META_IF_CONDITION: return "META_IF_CONDITION";
-        case AST_META_ELSE: return "META_ELSE";
+        case AST_META_IF_BRANCH: return "META_IF_BRANCH";
+        case AST_META_ELSE_IF_BRANCH: return "META_ELSE_IF_BRANCH";
+        case AST_META_ELSE_BRANCH: return "META_ELSE_BRANCH";
         case AST_META_FOR: return "META_FOR";
         case AST_PAREN_EXPR: return "PAREN_EXPR";
         case AST_EMPTY: return "EMPTY";

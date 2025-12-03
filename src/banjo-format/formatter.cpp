@@ -171,8 +171,6 @@ void Formatter::print_node(lang::ASTNode *node) {
         case lang::ASTNodeType::AST_PARAM_SEQUENCE_TYPE: emit("..."); break;
         case lang::ASTNodeType::AST_META_EXPR: print_meta_access(node); break;
         case lang::ASTNodeType::AST_META_IF: print_meta_if_stmt(node); break;
-        case lang::ASTNodeType::AST_META_IF_CONDITION: break;
-        case lang::ASTNodeType::AST_META_ELSE: break;
         case lang::ASTNodeType::AST_META_FOR: print_meta_for_stmt(node); break;
         case lang::ASTNodeType::AST_PARAM_LIST: break;
         case lang::ASTNodeType::AST_PARAM: print_param(node); break;
@@ -847,10 +845,11 @@ void Formatter::print_meta_if_stmt(lang::ASTNode *node) {
     bool first = true;
 
     for (lang::ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->type == lang::ASTNodeType::AST_META_IF_CONDITION) {
+        if (child->type == lang::ASTNodeType::AST_META_IF_BRANCH ||
+            child->type == lang::ASTNodeType::AST_META_ELSE_IF_BRANCH) {
             print_if_condition(child, first);
             first = false;
-        } else if (child->type == lang::ASTNodeType::AST_META_ELSE) {
+        } else if (child->type == lang::ASTNodeType::AST_META_ELSE_BRANCH) {
             print_else(child);
         } else {
             ASSERT_UNREACHABLE;

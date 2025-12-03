@@ -752,7 +752,7 @@ sir::MetaIfStmt *SIRGenerator::generate_meta_if_stmt(ASTNode *node, MetaBlockKin
     std::optional<sir::MetaIfElseBranch> else_branch;
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->type == AST_META_IF_CONDITION) {
+        if (child->type == AST_META_IF_BRANCH || child->type == AST_META_ELSE_IF_BRANCH) {
             ASTNode *condition_node = child->first_child;
             ASTNode *block_node = condition_node->next_sibling;
 
@@ -761,7 +761,7 @@ sir::MetaIfStmt *SIRGenerator::generate_meta_if_stmt(ASTNode *node, MetaBlockKin
                 .condition = generate_expr(condition_node),
                 .block = generate_meta_block(block_node, kind),
             });
-        } else if (child->type == AST_META_ELSE) {
+        } else if (child->type == AST_META_ELSE_BRANCH) {
             ASTNode *block_node = child->first_child;
 
             else_branch = sir::MetaIfElseBranch{

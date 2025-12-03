@@ -1,6 +1,7 @@
 #ifndef BANJO_PARSER_STMT_PARSER_H
 #define BANJO_PARSER_STMT_PARSER_H
 
+#include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/parser.hpp"
 
 namespace banjo {
@@ -30,7 +31,7 @@ public:
     ParseResult parse_meta_stmt();
 
 private:
-    ParseResult parse_var_or_ref(TextPosition start, ASTNodeType type, ASTNodeType type_typeless);
+    ParseResult parse_var_or_ref(NodeBuilder &node, ASTNodeType type, ASTNodeType type_typeless);
     ParseResult parse_var_with_type(NodeBuilder &node, ASTNodeType type);
     ParseResult parse_var_without_type(NodeBuilder &node, ASTNodeType type);
     ParseResult parse_meta_if(NodeBuilder &node);
