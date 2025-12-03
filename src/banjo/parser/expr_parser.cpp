@@ -293,10 +293,10 @@ ParseResult ExprParser::parse_array_literal() {
 
             if (stream.get()->is(TKN_COLON)) {
                 type = AST_MAP_EXPR;
-                stream.consume(); // Consume ':'
 
                 NodeBuilder pair_node = parser.build_node();
                 pair_node.append_child(result.node);
+                pair_node.consume(); // Consume ':'
                 result = ExprParser(parser, true).parse();
                 pair_node.append_child(result.node);
 
@@ -338,44 +338,35 @@ ParseResult ExprParser::parse_array_literal() {
 }
 
 ParseResult ExprParser::parse_paren_expr() {
-    TextPosition start = stream.get()->position;
-    stream.consume(); // Consume opening '('
+    NodeBuilder node = parser.build_node();
+    node.consume(); // Consume '('
 
     in_parentheses = true;
     ASTNode *sub_expression = ExprParser(parser, true).parse().node;
     in_parentheses = false;
 
     if (stream.get()->is(TKN_COMMA)) {
-        ASTNode *tuple_literal = parser.create_node(AST_TUPLE_EXPR);
-        tuple_literal->append_child(sub_expression);
+        node.append_child(sub_expression);
 
         while (stream.get()->is(TKN_COMMA)) {
-            stream.consume(); // Consume ','
+            node.consume(); // Consume ','
 
             if (stream.get()->is(TKN_RPAREN)) {
                 break;
             }
 
-            tuple_literal->append_child(ExprParser(parser, true).parse().node);
+            node.append_child(ExprParser(parser, true).parse().node);
         }
 
-        tuple_literal->range = {start, stream.get()->end()};
-        stream.consume(); // Consume ')'
-
-        if (parser.mode == Parser::Mode::FORMATTING && stream.peek(-2)->is(TKN_COMMA)) {
-            tuple_literal->flags.trailing_comma = true;
-        }
-
-        return tuple_literal;
+        node.consume(); // Consume ')'
+        return node.build(AST_TUPLE_EXPR);
     }
 
-    sub_expression->range = {start, stream.get()->end()};
-    stream.consume(); // Consume ')'
+    node.consume(); // Consume ')'
 
     if (parser.mode == Parser::Mode::FORMATTING) {
-        ASTNode *paren_expr = parser.create_node(AST_PAREN_EXPR, sub_expression->range);
-        paren_expr->append_child(sub_expression);
-        return paren_expr;
+        node.append_child(sub_expression);
+        return node.build(AST_PAREN_EXPR);
     } else {
         return sub_expression;
     }
@@ -408,10 +399,10 @@ ParseResult ExprParser::parse_closure() {
     node.append_child(result.node);
 
     if (stream.get()->is(TKN_ARROW)) {
-        stream.consume(); // Consume '->'
+        node.consume(); // Consume '->'
         node.append_child(parser.parse_return_type().node);
     } else {
-        node.append_child(parser.create_node(AST_VOID));
+        node.append_child(parser.create_node(AST_EMPTY));
     }
 
     if (!stream.get()->is(TKN_LBRACE) || type_expected) {
@@ -429,7 +420,7 @@ ParseResult ExprParser::parse_closure() {
 
 ParseResult ExprParser::parse_func_type() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'func'
+    node.consume(); // Consume 'func'
 
     if (!stream.get()->is(TKN_LPAREN)) {
         parser.report_unexpected_token();
@@ -444,10 +435,10 @@ ParseResult ExprParser::parse_func_type() {
     }
 
     if (stream.get()->is(TKN_ARROW)) {
-        stream.consume(); // Consume '->'
+        node.consume(); // Consume '->'
         node.append_child(parser.parse_return_type().node);
     } else {
-        node.append_child(parser.create_node(AST_VOID));
+        node.append_child(parser.create_node(AST_EMPTY));
     }
 
     return node.build(AST_FUNCTION_DATA_TYPE);
@@ -455,11 +446,11 @@ ParseResult ExprParser::parse_func_type() {
 
 ParseResult ExprParser::parse_meta_expr() {
     NodeBuilder builder = parser.build_node();
-    stream.consume(); // Consume 'meta'
+    builder.consume(); // Consume 'meta'
 
-    stream.consume(); // Consume '('
+    builder.consume(); // Consume '('
     ParseResult result = parse();
-    stream.consume(); // Consume ')'
+    builder.consume(); // Consume ')'
 
     builder.append_child(result.node);
     return {builder.build(AST_META_EXPR), result.is_valid};

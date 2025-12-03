@@ -3,7 +3,6 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/expr_parser.hpp"
-#include "banjo/reports/report_texts.hpp"
 
 namespace banjo {
 
@@ -33,7 +32,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
     bool head_valid = parse_func_head(node, generic);
 
     if (stream.get()->is(TKN_SEMI)) {
-        stream.consume(); // Consume ';'
+        node.consume(); // Consume ';'
         return {node.build(AST_FUNC_DECL), head_valid};
     } else if (!stream.get()->is(TKN_LBRACE)) {
         if (stream.previous()->end_of_line) {
@@ -75,13 +74,13 @@ ParseResult DeclParser::parse_const() {
 
 ParseResult DeclParser::parse_struct() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'struct'
+    node.consume(); // Consume 'struct'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     if (stream.get()->is(TKN_LBRACKET)) {
         ParseResult result = parse_generic_param_list();
@@ -101,6 +100,7 @@ ParseResult DeclParser::parse_struct() {
     }
 
     if (stream.get()->is(TKN_COLON)) {
+        // TODO: Don't accept empty lists.
         ParseResult result =
             parser.parse_list(AST_IMPL_LIST, TKN_LBRACE, [this]() { return ExprParser(parser).parse_type(); }, false);
 
@@ -124,20 +124,20 @@ ParseResult DeclParser::parse_struct() {
 
 ParseResult DeclParser::parse_enum() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'enum'
+    node.consume(); // Consume 'enum'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     ParseResult result = parser.parse_list(AST_ENUM_VARIANT_LIST, TKN_RBRACE, [this]() {
         NodeBuilder variant = parser.build_node();
-        variant.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+        variant.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
         if (stream.get()->is(TKN_EQ)) {
-            stream.consume(); // Consume '='
+            variant.consume(); // Consume '='
             variant.append_child(ExprParser(parser, false).parse().node);
         }
 
@@ -150,13 +150,13 @@ ParseResult DeclParser::parse_enum() {
 
 ParseResult DeclParser::parse_union() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'union'
+    node.consume(); // Consume 'union'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     ParseResult result = parser.parse_block();
     if (!result.is_valid) {
@@ -169,10 +169,10 @@ ParseResult DeclParser::parse_union() {
 
 ParseResult DeclParser::parse_union_case() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'case'
+    node.consume(); // Consume 'case'
 
     if (stream.get()->is(TKN_IDENTIFIER)) {
-        node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+        node.append_child(parser.consume_into_node(AST_IDENTIFIER));
     } else {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
@@ -189,18 +189,18 @@ ParseResult DeclParser::parse_union_case() {
         return node.build(AST_UNION_CASE);
     }
 
-    return parser.check_stmt_terminator(node.build(AST_UNION_CASE));
+    return parser.check_stmt_terminator(node, AST_UNION_CASE);
 }
 
 ParseResult DeclParser::parse_proto() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'proto'
+    node.consume(); // Consume 'proto'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     ParseResult result = parser.parse_block();
     if (!result.is_valid) {
@@ -213,20 +213,20 @@ ParseResult DeclParser::parse_proto() {
 
 ParseResult DeclParser::parse_type_alias() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'type'
+    node.consume(); // Consume 'type'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
 
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     if (!stream.get()->is(TKN_EQ)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'='");
         return node.build_error();
     }
-    stream.consume(); // Consume '='
+    node.consume(); // Consume '='
 
     ParseResult result = parser.parse_type();
     node.append_child(result.node);
@@ -235,12 +235,12 @@ ParseResult DeclParser::parse_type_alias() {
         return node.build_error();
     }
 
-    return parser.check_stmt_terminator(node.build(AST_TYPE_ALIAS));
+    return parser.check_stmt_terminator(node, AST_TYPE_ALIAS);
 }
 
 ParseResult DeclParser::parse_use() {
     NodeBuilder node = parser.build_node();
-    stream.consume(); // Consume 'use'
+    node.consume(); // Consume 'use'
 
     ParseResult result = parse_use_tree();
     node.append_child(result.node);
@@ -249,7 +249,7 @@ ParseResult DeclParser::parse_use() {
         return {node.build(AST_USE), false};
     }
 
-    return parser.check_stmt_terminator(node.build(AST_USE));
+    return parser.check_stmt_terminator(node, AST_USE);
 }
 
 ParseResult DeclParser::parse_use_tree() {
@@ -264,6 +264,7 @@ ParseResult DeclParser::parse_use_tree() {
         ASTNode *dot_operator = parser.create_node(AST_DOT_OPERATOR);
         dot_operator->append_child(current_node);
         stream.consume(); // Consume '.'
+        dot_operator->tokens = parser.mod->create_token_index(stream.get_position() - 1);
 
         result = parse_use_tree_element();
         dot_operator->append_child(result.node);
@@ -284,18 +285,21 @@ ParseResult DeclParser::parse_use_tree_element() {
     }
 
     Token *token = stream.get();
+
     if (token->is(TKN_IDENTIFIER)) {
-        ASTNode *identifier = parser.create_node(AST_IDENTIFIER, stream.consume());
+        ASTNode *identifier = parser.consume_into_node(AST_IDENTIFIER);
 
         if (!stream.get()->is(TKN_AS)) {
             return identifier;
         } else {
+            unsigned as_token_index = stream.get_position();
             stream.consume(); // Consume 'as'
 
             ASTNode *rebinding_node = parser.create_node(AST_USE_REBINDING);
             rebinding_node->append_child(identifier);
-            rebinding_node->append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+            rebinding_node->append_child(parser.consume_into_node(AST_IDENTIFIER));
             rebinding_node->set_range_from_children();
+            rebinding_node->tokens = parser.mod->create_token_index(as_token_index);
             return rebinding_node;
         }
     } else if (token->is(TKN_LBRACE)) {
@@ -309,7 +313,7 @@ ParseResult DeclParser::parse_use_tree_element() {
 ParseResult DeclParser::parse_qualifiers() {
     ASTNode *qualifier_list = parser.create_node(AST_QUALIFIER_LIST);
     while (stream.get()->is(TKN_PUB)) {
-        qualifier_list->append_child(parser.create_node(AST_QUALIFIER, stream.consume()));
+        qualifier_list->append_child(parser.consume_into_node(AST_QUALIFIER));
     }
 
     return qualifier_list;
@@ -317,9 +321,11 @@ ParseResult DeclParser::parse_qualifiers() {
 
 ParseResult DeclParser::parse_native() {
     Token *deciding_token = stream.peek(1);
-    if (deciding_token->is(TKN_VAR)) return parse_native_var();
-    else if (deciding_token->is(TKN_FUNC)) return parse_native_func();
-    else {
+    if (deciding_token->is(TKN_VAR)) {
+        return parse_native_var();
+    } else if (deciding_token->is(TKN_FUNC)) {
+        return parse_native_func();
+    } else {
         stream.consume(); // Consume 'native'
         parser.report_unexpected_token();
         stream.consume(); // Consume invalid token
@@ -330,33 +336,33 @@ ParseResult DeclParser::parse_native() {
 ParseResult DeclParser::parse_native_var() {
     NodeBuilder node = parser.build_node();
 
-    stream.consume(); // Consume 'native'
-    stream.consume(); // Consume 'var'
+    node.consume(); // Consume 'native'
+    node.consume(); // Consume 'var'
 
-    ASTNode *identifier = parser.create_node(AST_IDENTIFIER, stream.consume());
-    stream.consume(); // Consume ':'
+    ASTNode *identifier = parser.consume_into_node(AST_IDENTIFIER);
+    node.consume(); // Consume ':'
     ASTNode *data_type = parser.parse_type().node;
 
     node.append_child(identifier);
     node.append_child(data_type);
 
-    return parser.check_stmt_terminator(node.build(AST_NATIVE_VAR));
+    return parser.check_stmt_terminator(node, AST_NATIVE_VAR);
 }
 
 ParseResult DeclParser::parse_native_func() {
     NodeBuilder node = parser.build_node();
 
-    stream.consume(); // Consume 'native'
+    node.consume(); // Consume 'native'
     node.append_child(parser.create_node(AST_QUALIFIER_LIST));
 
-    stream.consume(); // Consume 'func'
+    node.consume(); // Consume 'func'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
         return node.build_error();
     }
 
-    node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     bool generic;
     bool head_valid = parse_func_head(node, generic);
@@ -364,7 +370,7 @@ ParseResult DeclParser::parse_native_func() {
         return node.build_error();
     }
 
-    return parser.check_stmt_terminator(node.build(AST_NATIVE_FUNCTION_DECLARATION));
+    return parser.check_stmt_terminator(node, AST_NATIVE_FUNCTION_DECLARATION);
 }
 
 ParseResult DeclParser::parse_pub() {
@@ -441,10 +447,10 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
 ParseResult DeclParser::parse_generic_param_list() {
     return parser.parse_list(AST_GENERIC_PARAM_LIST, TKN_RBRACKET, [this]() {
         NodeBuilder node = parser.build_node();
-        node.append_child(parser.create_node(AST_IDENTIFIER, stream.consume()));
+        node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
         if (stream.get()->is(TKN_COLON)) {
-            stream.consume(); // Consume ':'
+            node.consume(); // Consume ':'
 
             ParseResult result = parser.parse_type();
             if (result.is_valid) {

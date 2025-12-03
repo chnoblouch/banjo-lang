@@ -6,6 +6,7 @@
 #include "banjo/parser/parser.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cstdarg>
 #include <span>
@@ -58,13 +59,27 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
     switch (node->type) {
         case AST_MODULE: ASSERT_UNREACHABLE;
         case AST_BLOCK: format_block(node, whitespace); break;
-        case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
-
         case AST_FUNCTION_DEFINITION: format_func_def(node, whitespace); break;
+        case AST_GENERIC_FUNCTION_DEFINITION: format_generic_func_def(node, whitespace); break;
+        case AST_FUNC_DECL: format_func_decl(node, whitespace); break;
+        case AST_NATIVE_FUNCTION_DECLARATION: format_func_decl(node, whitespace); break;
         case AST_CONSTANT: format_const_def(node, whitespace); break;
         case AST_STRUCT_DEFINITION: format_struct_def(node, whitespace); break;
+        case AST_GENERIC_STRUCT_DEFINITION: format_generic_struct_def(node, whitespace); break;
+        case AST_ENUM_DEFINITION: format_enum_def(node, whitespace); break;
+        case AST_ENUM_VARIANT_LIST: format_list(node, whitespace); break;
+        case AST_ENUM_VARIANT: format_enum_variant(node, whitespace); break;
+        case AST_UNION: format_union_def(node, whitespace); break;
+        case AST_UNION_CASE: format_union_case(node, whitespace); break;
+        case AST_PROTO: format_proto_def(node, whitespace); break;
+        case AST_TYPE_ALIAS: format_type_alias(node, whitespace); break;
+        case AST_NATIVE_VAR: format_var_decl(node, whitespace); break;
+        case AST_USE: format_use_decl(node, whitespace); break;
+        case AST_USE_TREE_LIST: format_list(node, whitespace); break;
+        case AST_USE_REBINDING: format_use_rebind(node, whitespace); break;
+
         case AST_EXPR_STMT: format_expr_stmt(node, whitespace); break;
-        case AST_VAR: format_var_stmt(node, whitespace); break;
+        case AST_VAR: global_scope ? format_var_decl(node, whitespace) : format_var_stmt(node, whitespace); break;
         case AST_IMPLICIT_TYPE_VAR: format_typeless_var_stmt(node, whitespace); break;
         case AST_REF_VAR: format_var_stmt(node, whitespace); break;
         case AST_IMPLICIT_TYPE_REF_VAR: format_typeless_var_stmt(node, whitespace); break;
@@ -105,7 +120,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_META_ELSE_IF_BRANCH: format_else_if_branch(node, whitespace); break;
         case AST_META_ELSE_BRANCH: format_else_branch(node, whitespace); break;
         case AST_META_FOR: format_meta_for_stmt(node, whitespace); break;
-
+        case AST_PAREN_EXPR: format_paren_expr(node, whitespace); break;
         case AST_INT_LITERAL: format_single_token_node(node, whitespace); break;
         case AST_FLOAT_LITERAL: format_single_token_node(node, whitespace); break;
         case AST_CHAR_LITERAL: format_single_token_node(node, whitespace); break;
@@ -118,8 +133,9 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_ARRAY_EXPR: format_list(node, whitespace); break;
         case AST_STRUCT_INSTANTIATION: format_struct_literal(node, whitespace); break;
         case AST_ANON_STRUCT_LITERAL: format_typeless_struct_literal(node, whitespace); break;
-        case AST_MAP_EXPR: ASSERT_UNREACHABLE; // TODO
-        case AST_CLOSURE: ASSERT_UNREACHABLE;  // TODO
+        case AST_MAP_EXPR: format_list(node, whitespace); break;
+        case AST_MAP_EXPR_PAIR: format_map_literal_entry(node, whitespace); break;
+        case AST_CLOSURE: format_closure_literal(node, whitespace); break;
         case AST_SELF: format_single_token_node(node, whitespace); break;
         case AST_OPERATOR_ADD: format_binary_expr(node, whitespace); break;
         case AST_OPERATOR_SUB: format_binary_expr(node, whitespace); break;
@@ -150,7 +166,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_IMPLICIT_DOT_OPERATOR: format_unary_expr(node, whitespace); break;
         case AST_ARRAY_ACCESS: format_call_or_bracket_expr(node, whitespace); break;
         case AST_RANGE: format_binary_expr(node, whitespace, false); break;
-        case AST_TUPLE_EXPR: ASSERT_UNREACHABLE; // TODO
+        case AST_TUPLE_EXPR: format_list(node, whitespace); break;
         case AST_I8: format_single_token_node(node, whitespace); break;
         case AST_I16: format_single_token_node(node, whitespace); break;
         case AST_I32: format_single_token_node(node, whitespace); break;
@@ -166,18 +182,32 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_ADDR: format_single_token_node(node, whitespace); break;
         case AST_VOID: format_single_token_node(node, whitespace); break;
         case AST_STATIC_ARRAY_TYPE: format_static_array_type(node, whitespace); break;
+        case AST_FUNCTION_DATA_TYPE: format_func_type(node, whitespace); break;
         case AST_OPTIONAL_DATA_TYPE: format_unary_expr(node, whitespace); break;
         case AST_RESULT_TYPE: format_binary_expr(node, whitespace); break;
-        case AST_CLOSURE_TYPE: ASSERT_UNREACHABLE; // TODO
+        case AST_CLOSURE_TYPE: format_closure_type(node, whitespace); break;
         case AST_PARAM_SEQUENCE_TYPE: format_single_token_node(node, whitespace); break;
-        case AST_META_EXPR: ASSERT_UNREACHABLE; // TODO
-
+        case AST_META_EXPR: format_meta_expr(node, whitespace); break;
+        case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
         case AST_PARAM_LIST: format_list(node, whitespace); break;
         case AST_PARAM: format_param(node, whitespace); break;
+        case AST_REF_PARAM: format_param(node, whitespace); break;
+        case AST_REF_MUT_PARAM: format_param(node, whitespace); break;
+        case AST_REF_RETURN: format_ref_return(node, whitespace); break;
+        case AST_REF_MUT_RETURN: format_ref_return(node, whitespace); break;
+        case AST_GENERIC_PARAM_LIST: format_list(node, whitespace); break;
+        case AST_GENERIC_PARAMETER: format_generic_param(node, whitespace); break;
         case AST_STRUCT_FIELD_VALUE_LIST: format_list(node, whitespace, true); break;
         case AST_STRUCT_FIELD_VALUE: format_struct_literal_entry(node, whitespace); break;
         case AST_FUNCTION_ARGUMENT_LIST: format_list(node, whitespace); break;
-
+        case AST_IMPL_LIST: format_impl_list(node, whitespace); break;
+        case AST_QUALIFIER_LIST: format_qualifier_list(node, whitespace); break;
+        case AST_QUALIFIER: format_single_token_node(node, whitespace); break;
+        case AST_ATTRIBUTE_WRAPPER: format_attribute_wrapper(node, whitespace); break;
+        case AST_ATTRIBUTE_LIST: format_attribute_list(node, whitespace); break;
+        case AST_ATTRIBUTE_TAG: format_single_token_node(node, whitespace); break;
+        case AST_ATTRIBUTE_VALUE: format_attribute_value(node, whitespace); break;
+        case AST_EMPTY: ASSERT_UNREACHABLE;
         case AST_ERROR: ASSERT_UNREACHABLE;
         case AST_COMPLETION_TOKEN: ASSERT_UNREACHABLE;
         case AST_INVALID: ASSERT_UNREACHABLE;
@@ -210,20 +240,94 @@ void Formatter::format_func_def(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *block_node = return_type_node->next_sibling;
 
     unsigned tkn_func = node->tokens[0];
-    unsigned tkn_ident = name_node->tokens[0];
 
+    format_node(qualifiers_node, WhitespaceKind::SPACE);
     ensure_space_after(tkn_func);
-    ensure_no_space_after(tkn_ident);
+    format_node(name_node, WhitespaceKind::NONE);
     format_node(params_node, WhitespaceKind::SPACE);
 
     if (return_type_node->type != AST_EMPTY) {
         unsigned tkn_arrow = node->tokens[1];
-
         ensure_space_after(tkn_arrow);
         format_node(return_type_node, WhitespaceKind::SPACE);
     }
 
+    bool was_global_scope = global_scope;
+    global_scope = false;
     format_node(block_node, whitespace);
+    global_scope = was_global_scope;
+}
+
+void Formatter::format_generic_func_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *params_node = generic_params_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+    ASTNode *block_node = return_type_node->next_sibling;
+
+    unsigned tkn_func = node->tokens[0];
+
+    format_node(qualifiers_node, WhitespaceKind::SPACE);
+    ensure_space_after(tkn_func);
+    format_node(name_node, WhitespaceKind::NONE);
+    format_node(generic_params_node, WhitespaceKind::NONE);
+    format_node(params_node, WhitespaceKind::SPACE);
+
+    if (return_type_node->type != AST_EMPTY) {
+        unsigned tkn_arrow = node->tokens[1];
+        ensure_space_after(tkn_arrow);
+        format_node(return_type_node, WhitespaceKind::SPACE);
+    }
+
+    bool was_global_scope = global_scope;
+    global_scope = false;
+    format_node(block_node, whitespace);
+    global_scope = was_global_scope;
+}
+
+void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling && node->next_sibling->type != node->type) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *qualifiers_node = node->first_child;
+    ASTNode *name_node = qualifiers_node->next_sibling;
+    ASTNode *params_node = name_node->next_sibling;
+    ASTNode *return_type_node = params_node->next_sibling;
+
+    format_node(qualifiers_node, WhitespaceKind::SPACE);
+
+    unsigned tkn_index_offset = 0;
+
+    if (node->type == AST_NATIVE_FUNCTION_DECLARATION) {
+        unsigned tkn_native = node->tokens[0];
+        ensure_space_after(tkn_native);
+        tkn_index_offset = 1;
+    }
+
+    unsigned tkn_func = node->tokens[tkn_index_offset + 0];
+
+    ensure_space_after(tkn_func);
+    format_node(name_node, WhitespaceKind::NONE);
+
+    if (return_type_node->type == AST_EMPTY) {
+        format_before_terminator(node, params_node, whitespace, tkn_index_offset + 1);
+    } else {
+        unsigned tkn_arrow = node->tokens[tkn_index_offset + 1];
+
+        format_node(params_node, WhitespaceKind::SPACE);
+        ensure_space_after(tkn_arrow);
+        format_before_terminator(node, return_type_node, whitespace, tkn_index_offset + 2);
+    }
 }
 
 void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
@@ -250,18 +354,175 @@ void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_struct_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT && node->next_sibling) {
-        whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
     }
 
     ASTNode *name_node = node->first_child;
     ASTNode *impls_node = name_node->next_sibling;
     ASTNode *block_node = impls_node->next_sibling;
 
+    unsigned tkn_struct = node->tokens[0];
+
+    ensure_space_after(tkn_struct);
+    format_node(name_node, impls_node->tokens.empty() ? WhitespaceKind::SPACE : WhitespaceKind::NONE);
+    format_node(impls_node, WhitespaceKind::SPACE);
     format_node(block_node, whitespace);
 }
 
+void Formatter::format_generic_struct_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *block_node = generic_params_node->next_sibling;
+
+    unsigned tkn_struct = node->tokens[0];
+
+    ensure_space_after(tkn_struct);
+    format_node(name_node, WhitespaceKind::NONE);
+    format_node(generic_params_node, WhitespaceKind::SPACE);
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_enum_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *variants_node = name_node->next_sibling;
+
+    unsigned tkn_enum = node->tokens[0];
+
+    ensure_space_after(tkn_enum);
+    format_node(name_node, WhitespaceKind::SPACE);
+    format_node(variants_node, whitespace);
+}
+
+void Formatter::format_enum_variant(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *value_node = name_node->next_sibling;
+
+    if (value_node) {
+        unsigned tkn_equals = node->tokens[0];
+
+        format_node(name_node, WhitespaceKind::SPACE);
+        ensure_space_after(tkn_equals);
+        format_node(value_node, whitespace);
+    } else {
+        format_node(name_node, whitespace);
+    }
+}
+
+void Formatter::format_union_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *block_node = name_node->next_sibling;
+
+    unsigned tkn_union = node->tokens[0];
+
+    ensure_space_after(tkn_union);
+    format_node(name_node, WhitespaceKind::SPACE);
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_union_case(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *fields_node = name_node->next_sibling;
+
+    unsigned tkn_case = node->tokens[0];
+
+    ensure_space_after(tkn_case);
+    format_node(name_node, WhitespaceKind::NONE);
+
+    if (node->tokens.size() == 2) {
+        unsigned tkn_semi = node->tokens[1];
+        format_list(fields_node, WhitespaceKind::NONE);
+        ensure_whitespace_after(tkn_semi, whitespace);
+    } else {
+        format_list(fields_node, whitespace);
+    }
+}
+
+void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *block_node = name_node->next_sibling;
+
+    unsigned tkn_proto = node->tokens[0];
+
+    ensure_space_after(tkn_proto);
+    format_node(name_node, WhitespaceKind::SPACE);
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *underlying_type_node = name_node->next_sibling;
+
+    unsigned tkn_type = node->tokens[0];
+    unsigned tkn_equals = node->tokens[1];
+
+    ensure_space_after(tkn_type);
+    format_node(name_node, WhitespaceKind::SPACE);
+    ensure_space_after(tkn_equals);
+    format_before_terminator(node, underlying_type_node, whitespace, 2);
+}
+
+void Formatter::format_use_decl(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling && node->next_sibling->type != AST_USE) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *root_item_node = node->first_child;
+    unsigned tkn_use = node->tokens[0];
+
+    ensure_space_after(tkn_use);
+    format_before_terminator(node, root_item_node, whitespace, 1);
+}
+
+void Formatter::format_use_rebind(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *target_name_node = node->first_child;
+    ASTNode *local_name_node = target_name_node->next_sibling;
+
+    unsigned tkn_as = node->tokens[0];
+
+    format_node(target_name_node, WhitespaceKind::SPACE);
+    ensure_space_after(tkn_as);
+    format_node(local_name_node, whitespace);
+}
+
 void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
+    // TODO: Declaration and statement blocks should have different types so we know if we're in
+    // the global scope or not.
+
     unsigned tkn_lbrace = node->tokens[0];
     unsigned tkn_rbrace = node->tokens[1];
 
@@ -295,32 +556,66 @@ void Formatter::format_var_stmt(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *type_node = name_node->next_sibling;
     ASTNode *value_node = type_node->next_sibling;
 
-    if (node->type == AST_VAR || node->type == AST_REF_VAR) {
-        unsigned tkn_var_or_ref = node->tokens[0];
-        unsigned tkn_colon = node->tokens[1];
-        unsigned tkn_equals = node->tokens[2];
+    unsigned tkn_index_offset = 0;
 
-        ensure_space_after(tkn_var_or_ref);
-        format_node(name_node, WhitespaceKind::NONE);
-        ensure_space_after(tkn_colon);
-        format_node(type_node, WhitespaceKind::SPACE);
-        ensure_space_after(tkn_equals);
-        format_before_terminator(node, value_node, whitespace, 3);
-    } else if (node->type == AST_REF_MUT_VAR) {
+    if (node->type == AST_REF_MUT_VAR) {
         unsigned tkn_ref = node->tokens[0];
-        unsigned tkn_mut = node->tokens[1];
-        unsigned tkn_colon = node->tokens[2];
-        unsigned tkn_equals = node->tokens[3];
-
         ensure_space_after(tkn_ref);
-        ensure_space_after(tkn_mut);
-        format_node(name_node, WhitespaceKind::NONE);
-        ensure_space_after(tkn_colon);
+        tkn_index_offset = 1;
+    }
+
+    unsigned tkn_var_or_ref = node->tokens[tkn_index_offset + 0];
+    unsigned tkn_colon = node->tokens[tkn_index_offset + 1];
+
+    ensure_space_after(tkn_var_or_ref);
+    format_node(name_node, WhitespaceKind::NONE);
+    ensure_space_after(tkn_colon);
+
+    if (value_node) {
+        unsigned tkn_equals = node->tokens[tkn_index_offset + 2];
+
         format_node(type_node, WhitespaceKind::SPACE);
         ensure_space_after(tkn_equals);
-        format_before_terminator(node, value_node, whitespace, 4);
+        format_before_terminator(node, value_node, whitespace, tkn_index_offset + 3);
     } else {
-        ASSERT_UNREACHABLE;
+        format_before_terminator(node, type_node, whitespace, tkn_index_offset + 2);
+    }
+}
+
+void Formatter::format_var_decl(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+        if (node->next_sibling && node->next_sibling->type != node->type) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+    ASTNode *value_node = type_node->next_sibling;
+
+    unsigned tkn_index_offset = 0;
+
+    if (node->type == AST_NATIVE_VAR) {
+        unsigned tkn_native = node->tokens[0];
+        ensure_space_after(tkn_native);
+        tkn_index_offset = 1;
+    }
+
+    unsigned tkn_var = node->tokens[tkn_index_offset + 0];
+    unsigned tkn_colon = node->tokens[tkn_index_offset + 1];
+
+    ensure_space_after(tkn_var);
+    format_node(name_node, WhitespaceKind::NONE);
+    ensure_space_after(tkn_colon);
+
+    if (value_node) {
+        unsigned tkn_equals = node->tokens[tkn_index_offset + 2];
+
+        format_node(type_node, WhitespaceKind::SPACE);
+        ensure_space_after(tkn_equals);
+        format_before_terminator(node, value_node, whitespace, tkn_index_offset + 3);
+    } else {
+        format_before_terminator(node, type_node, whitespace, tkn_index_offset + 2);
     }
 }
 
@@ -572,6 +867,17 @@ void Formatter::format_meta_for_stmt(ASTNode *node, WhitespaceKind whitespace) {
     format_node(block_node, whitespace);
 }
 
+void Formatter::format_paren_expr(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *child = node->first_child;
+
+    unsigned tkn_lparen = node->tokens[0];
+    unsigned tkn_rparen = node->tokens[1];
+
+    ensure_no_space_after(tkn_lparen);
+    format_node(child, WhitespaceKind::NONE);
+    ensure_whitespace_after(tkn_rparen, whitespace);
+}
+
 void Formatter::format_struct_literal(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *name_node = node->first_child;
     ASTNode *entries_node = name_node->next_sibling;
@@ -584,6 +890,37 @@ void Formatter::format_typeless_struct_literal(ASTNode *node, WhitespaceKind whi
     ASTNode *entries_node = node->first_child;
 
     format_node(entries_node, whitespace);
+}
+
+void Formatter::format_map_literal_entry(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *key_node = node->first_child;
+    ASTNode *value_node = key_node->next_sibling;
+
+    unsigned tkn_colon = node->tokens[0];
+
+    format_node(key_node, WhitespaceKind::NONE);
+    ensure_space_after(tkn_colon);
+    format_node(value_node, whitespace);
+}
+
+void Formatter::format_closure_literal(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *params_node = node->first_child;
+    ASTNode *return_type_node = params_node->next_sibling;
+    ASTNode *block_node = return_type_node->next_sibling;
+
+    format_node(params_node, WhitespaceKind::SPACE);
+
+    if (return_type_node->type != AST_EMPTY) {
+        unsigned tkn_arrow = node->tokens[0];
+
+        ensure_space_after(tkn_arrow);
+        format_node(return_type_node, WhitespaceKind::SPACE);
+    }
+
+    bool was_global_scope = global_scope;
+    global_scope = false;
+    format_node(block_node, whitespace);
+    global_scope = was_global_scope;
 }
 
 void Formatter::format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between /* = true */) {
@@ -634,16 +971,127 @@ void Formatter::format_static_array_type(ASTNode *node, WhitespaceKind whitespac
     ensure_whitespace_after(tkn_rbracket, whitespace);
 }
 
+void Formatter::format_func_type(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *params_node = node->first_child;
+    ASTNode *return_type_node = params_node->next_sibling;
+
+    unsigned tkn_func = node->tokens[0];
+
+    ensure_no_space_after(tkn_func);
+
+    if (return_type_node->type == AST_EMPTY) {
+        format_node(params_node, whitespace);
+    } else {
+        unsigned tkn_arrow = node->tokens[1];
+
+        format_node(params_node, WhitespaceKind::SPACE);
+        ensure_space_after(tkn_arrow);
+        format_node(return_type_node, whitespace);
+    }
+}
+
+void Formatter::format_closure_type(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *params_node = node->first_child;
+    ASTNode *return_type_node = params_node->next_sibling;
+
+    if (return_type_node->type == AST_EMPTY) {
+        format_node(params_node, whitespace);
+    } else {
+        unsigned tkn_arrow = node->tokens[0];
+
+        format_node(params_node, WhitespaceKind::SPACE);
+        ensure_space_after(tkn_arrow);
+        format_node(return_type_node, whitespace);
+    }
+}
+
+void Formatter::format_meta_expr(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *expr_node = node->first_child;
+
+    unsigned tkn_meta = node->tokens[0];
+    unsigned tkn_lparen = node->tokens[1];
+    unsigned tkn_rparen = node->tokens[2];
+
+    ensure_no_space_after(tkn_meta);
+    ensure_no_space_after(tkn_lparen);
+    format_node(expr_node, WhitespaceKind::NONE);
+    ensure_whitespace_after(tkn_rparen, whitespace);
+}
+
 void Formatter::format_param(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *name_node = node->first_child;
     ASTNode *expr_node = name_node->next_sibling;
 
-    unsigned tkn_ident = name_node->tokens[0];
-    unsigned tkn_colon = node->tokens[0];
+    if (node->type == AST_PARAM) {
+        if (name_node->type == AST_EMPTY) {
+            format_node(expr_node, whitespace);
+        } else {
+            unsigned tkn_colon = node->tokens[0];
 
-    ensure_no_space_after(tkn_ident);
-    ensure_space_after(tkn_colon);
-    format_node(expr_node, whitespace);
+            format_node(name_node, WhitespaceKind::NONE);
+            ensure_space_after(tkn_colon);
+            format_node(expr_node, whitespace);
+        }
+    } else if (node->type == AST_REF_PARAM) {
+        if (name_node->type == AST_SELF) {
+            format_node(name_node, whitespace);
+        } else {
+            unsigned tkn_ref = node->tokens[0];
+            unsigned tkn_colon = node->tokens[1];
+
+            ensure_space_after(tkn_ref);
+            format_node(name_node, WhitespaceKind::NONE);
+            ensure_space_after(tkn_colon);
+            format_node(expr_node, whitespace);
+        }
+    } else if (node->type == AST_REF_MUT_PARAM) {
+        if (name_node->type == AST_SELF) {
+            unsigned tkn_mut = node->tokens[0];
+            ensure_space_after(tkn_mut);
+            format_node(name_node, whitespace);
+        } else {
+            unsigned tkn_ref = node->tokens[0];
+            unsigned tkn_mut = node->tokens[1];
+            unsigned tkn_colon = node->tokens[2];
+
+            ensure_space_after(tkn_ref);
+            ensure_space_after(tkn_mut);
+            format_node(name_node, WhitespaceKind::NONE);
+            ensure_space_after(tkn_colon);
+            format_node(expr_node, whitespace);
+        }
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void Formatter::format_ref_return(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *type = node->first_child;
+    unsigned tkn_ref = node->tokens[0];
+
+    ensure_space_after(tkn_ref);
+
+    if (node->type == AST_REF_MUT_RETURN) {
+        unsigned tkn_mut = node->tokens[1];
+        ensure_space_after(tkn_mut);
+    }
+
+    format_node(type, whitespace);
+}
+
+void Formatter::format_generic_param(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *type_node = name_node->next_sibling;
+
+    if (type_node) {
+        unsigned tkn_colon = node->tokens[0];
+
+        format_node(name_node, WhitespaceKind::NONE);
+        ensure_space_after(tkn_colon);
+        format_node(type_node, whitespace);
+    } else {
+        format_node(name_node, whitespace);
+    }
 }
 
 void Formatter::format_struct_literal_entry(ASTNode *node, WhitespaceKind whitespace) {
@@ -654,6 +1102,75 @@ void Formatter::format_struct_literal_entry(ASTNode *node, WhitespaceKind whites
 
     format_node(name_node, WhitespaceKind::NONE);
     ensure_space_after(tkn_colon);
+    format_node(value_node, whitespace);
+}
+
+void Formatter::format_impl_list(ASTNode *node, WhitespaceKind whitespace) {
+    // TODO: What about trailing commas here?
+
+    if (node->tokens.empty()) {
+        return;
+    }
+
+    unsigned tkn_colon = node->tokens[0];
+    ensure_space_after(tkn_colon);
+
+    for (unsigned i = 1; i < node->tokens.size(); i++) {
+        ensure_space_after(node->tokens[i]);
+    }
+
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->next_sibling || tokens.tokens[node->tokens.back()].is(TKN_COMMA)) {
+            format_node(child, WhitespaceKind::NONE);
+        } else {
+            format_node(child, whitespace);
+        }
+    }
+}
+
+void Formatter::format_qualifier_list(ASTNode *node, WhitespaceKind whitespace) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->next_sibling) {
+            format_node(child, WhitespaceKind::SPACE);
+        } else {
+            format_node(child, whitespace);
+        }
+    }
+}
+
+void Formatter::format_attribute_wrapper(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *attrs_node = node->first_child;
+    ASTNode *wrapped_node = attrs_node->next_sibling;
+
+    unsigned tkn_at = node->tokens[0];
+
+    if (Utils::is_one_of(wrapped_node->type, {AST_PARAM, AST_REF_PARAM, AST_REF_MUT_PARAM})) {
+        ensure_no_space_after(tkn_at);
+        format_node(attrs_node, WhitespaceKind::SPACE);
+        format_node(wrapped_node, whitespace);
+    } else {
+        ensure_no_space_after(tkn_at);
+        format_node(attrs_node, WhitespaceKind::INDENT_FIRST);
+        format_node(wrapped_node, WhitespaceKind::INDENT_EMPTY_LINE);
+    }
+}
+
+void Formatter::format_attribute_list(ASTNode *node, WhitespaceKind whitespace) {
+    if (node->tokens.empty()) {
+        format_node(node->first_child, whitespace);
+    } else {
+        format_list(node, whitespace);
+    }
+}
+
+void Formatter::format_attribute_value(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *value_node = name_node->next_sibling;
+
+    unsigned tkn_equals = node->tokens[0];
+
+    format_node(name_node, WhitespaceKind::NONE);
+    ensure_no_space_after(tkn_equals);
     format_node(value_node, whitespace);
 }
 

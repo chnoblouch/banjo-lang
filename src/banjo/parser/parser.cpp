@@ -175,7 +175,7 @@ ParseResult Parser::parse_type() {
 ParseResult Parser::parse_attribute_wrapper(const std::function<ParseResult()> &child_parser) {
     NodeBuilder node = build_node();
 
-    stream.consume(); // Consume '@'
+    node.consume(); // Consume '@'
     node.append_child(parse_attribute_list().node);
     node.append_child(child_parser().node);
     return node.build(AST_ATTRIBUTE_WRAPPER);
@@ -194,12 +194,12 @@ ParseResult Parser::parse_attribute_list() {
 ParseResult Parser::parse_attribute() {
     if (stream.peek(1)->is(TKN_EQ)) {
         NodeBuilder node = build_node();
-        node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
-        stream.consume(); // Consume '='
-        node.append_child(create_node(AST_IDENTIFIER, stream.consume()));
+        node.append_child(consume_into_node(AST_IDENTIFIER));
+        node.consume(); // Consume '='
+        node.append_child(consume_into_node(AST_IDENTIFIER));
         return node.build(AST_ATTRIBUTE_VALUE);
     } else {
-        return create_node(AST_ATTRIBUTE_TAG, stream.consume());
+        return consume_into_node(AST_ATTRIBUTE_TAG);
     }
 }
 
@@ -264,23 +264,23 @@ ParseResult Parser::parse_param() {
 
     if (stream.get()->is(TKN_MUT)) {
         is_mut = true;
-        stream.consume(); // Consume 'mut'
+        node.consume(); // Consume 'mut'
     }
 
     if (stream.get()->is(TKN_SELF)) {
         type = is_mut ? AST_REF_MUT_PARAM : AST_REF_PARAM;
-        node.append_child(create_node(AST_SELF, "", stream.consume()->range()));
+        node.append_child(consume_into_node(AST_SELF));
     } else {
         if (is_mut) {
             report_unexpected_token();
         }
 
         if (stream.get()->is(TKN_REF)) {
-            stream.consume(); // Consume 'ref'
+            node.consume(); // Consume 'ref'
 
             if (stream.get()->is(TKN_MUT)) {
                 is_mut = true;
-                stream.consume(); // Consume 'mut'
+                node.consume(); // Consume 'mut'
             }
 
             type = is_mut ? AST_REF_MUT_PARAM : AST_REF_PARAM;
@@ -290,7 +290,7 @@ ParseResult Parser::parse_param() {
             node.append_child(consume_into_node(AST_IDENTIFIER));
             node.consume(); // Consume ':'
         } else {
-            node.append_child(create_node(AST_IDENTIFIER, "", TextRange{0, 0}));
+            node.append_child(create_node(AST_EMPTY, "", TextRange{0, 0}));
         }
 
         ParseResult result = parse_type();
@@ -298,7 +298,7 @@ ParseResult Parser::parse_param() {
 
         if (!result.is_valid) {
             if (stream.get()->is(TKN_RPAREN)) {
-                stream.consume();
+                node.consume();
             }
 
             return {node.build(type), false};
@@ -310,40 +310,27 @@ ParseResult Parser::parse_param() {
 
 ParseResult Parser::parse_return_type() {
     if (stream.get()->is(TKN_REF)) {
-        stream.consume(); // Consume 'ref'
+        NodeBuilder ref_node = build_node();
+        ref_node.consume(); // Consume 'ref'
 
         bool is_mut = false;
 
         if (stream.get()->is(TKN_MUT)) {
             is_mut = true;
-            stream.consume(); // Consume 'mut'
+            ref_node.consume(); // Consume 'mut'
         }
 
         ParseResult result = parse_type();
 
-        ASTNode *ref_node = create_node(is_mut ? AST_REF_MUT_RETURN : AST_REF_RETURN);
-        ref_node->append_child(result.node);
-        ref_node->set_range_from_children();
-        return ref_node;
+        ref_node.append_child(result.node);
+        return ref_node.build(is_mut ? AST_REF_MUT_RETURN : AST_REF_RETURN);
     } else {
         return parse_type();
     }
 }
 
-ParseResult Parser::check_stmt_terminator(ASTNode *node) {
-    if (stream.get()->is(TKN_SEMI)) {
-        stream.consume();
-        return {node, true};
-    } else if (stream.previous()->end_of_line) {
-        return {node, true};
-    } else {
-        report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);
-        return {node, false};
-    }
-}
-
 ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type) {
-     if (stream.get()->is(TKN_SEMI)) {
+    if (stream.get()->is(TKN_SEMI)) {
         builder.consume();
         return builder.build(type);
     } else if (stream.previous()->end_of_line) {

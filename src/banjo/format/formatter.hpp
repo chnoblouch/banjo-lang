@@ -32,6 +32,7 @@ private:
     TokenList tokens;
     std::vector<Edit> edits;
     unsigned indentation = 0;
+    bool global_scope = true;
 
 public:
     std::vector<Edit> format(SourceFile &file);
@@ -42,12 +43,24 @@ private:
 
     void format_mod(ASTNode *node);
     void format_func_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_generic_func_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_func_decl(ASTNode *node, WhitespaceKind whitespace);
     void format_const_def(ASTNode *node, WhitespaceKind whitespace);
     void format_struct_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_generic_struct_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_enum_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_enum_variant(ASTNode *node, WhitespaceKind whitespace);
+    void format_union_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_union_case(ASTNode *node, WhitespaceKind whitespace);
+    void format_proto_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_type_alias(ASTNode *node, WhitespaceKind whitespace);
+    void format_use_decl(ASTNode *node, WhitespaceKind whitespace);
+    void format_use_rebind(ASTNode *node, WhitespaceKind whitespace);
 
     void format_block(ASTNode *node, WhitespaceKind whitespace);
     void format_expr_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_var_stmt(ASTNode *node, WhitespaceKind whitespace);
+    void format_var_decl(ASTNode *node, WhitespaceKind whitespace);
     void format_typeless_var_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_assign_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_return_stmt(ASTNode *node, WhitespaceKind whitespace);
@@ -66,15 +79,28 @@ private:
     void format_meta_if_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_meta_for_stmt(ASTNode *node, WhitespaceKind whitespace);
 
+    void format_paren_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_struct_literal(ASTNode *node, WhitespaceKind whitespace);
     void format_typeless_struct_literal(ASTNode *node, WhitespaceKind whitespace);
+    void format_map_literal_entry(ASTNode *node, WhitespaceKind whitespace);
+    void format_closure_literal(ASTNode *node, WhitespaceKind whitespace);
     void format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between = true);
     void format_unary_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_call_or_bracket_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_static_array_type(ASTNode *node, WhitespaceKind whitespace);
+    void format_func_type(ASTNode *node, WhitespaceKind whitespace);
+    void format_closure_type(ASTNode *node, WhitespaceKind whitespace);
+    void format_meta_expr(ASTNode *node, WhitespaceKind whitespace);
 
     void format_param(ASTNode *node, WhitespaceKind whitespace);
+    void format_ref_return(ASTNode *node, WhitespaceKind whitespace);
+    void format_generic_param(ASTNode *node, WhitespaceKind whitespace);
     void format_struct_literal_entry(ASTNode *node, WhitespaceKind whitespace);
+    void format_impl_list(ASTNode *node, WhitespaceKind whitespace);
+    void format_qualifier_list(ASTNode *node, WhitespaceKind whitespace);
+    void format_attribute_wrapper(ASTNode *node, WhitespaceKind whitespace);
+    void format_attribute_list(ASTNode *node, WhitespaceKind whitespace);
+    void format_attribute_value(ASTNode *node, WhitespaceKind whitespace);
 
     void format_keyword_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_single_token_node(ASTNode *node, WhitespaceKind whitespace);
