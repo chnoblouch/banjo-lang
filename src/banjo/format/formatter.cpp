@@ -1098,11 +1098,15 @@ void Formatter::format_struct_literal_entry(ASTNode *node, WhitespaceKind whites
     ASTNode *name_node = node->first_child;
     ASTNode *value_node = name_node->next_sibling;
 
-    unsigned tkn_colon = node->tokens[0];
+    if (value_node) {
+        unsigned tkn_colon = node->tokens[0];
 
-    format_node(name_node, WhitespaceKind::NONE);
-    ensure_space_after(tkn_colon);
-    format_node(value_node, whitespace);
+        format_node(name_node, WhitespaceKind::NONE);
+        ensure_space_after(tkn_colon);
+        format_node(value_node, whitespace);
+    } else {
+        format_node(name_node, whitespace);
+    }
 }
 
 void Formatter::format_impl_list(ASTNode *node, WhitespaceKind whitespace) {

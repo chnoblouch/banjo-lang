@@ -527,11 +527,6 @@ ParseResult ExprParser::parse_struct_literal_body() {
         if (stream.get()->is(TKN_COLON)) {
             entry_node.consume(); // Consume ':'
             entry_node.append_child(parse().node);
-        } else if (stream.get()->is(TKN_COMMA) || stream.get()->is(TKN_RBRACE)) {
-            entry_node.append_child(parser.create_node(AST_IDENTIFIER, name_node->value, name_node->range));
-        } else {
-            parser.report_unexpected_token();
-            return entry_node.build_error();
         }
 
         return entry_node.build(AST_STRUCT_FIELD_VALUE);

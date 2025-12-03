@@ -1531,7 +1531,7 @@ std::span<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries
 
         entries[index] = sir::StructLiteralEntry{
             .ident = generate_ident(name_node),
-            .value = generate_expr(value_node),
+            .value = value_node ? generate_expr(value_node) : generate_expr(name_node),
             .field = nullptr,
         };
 
