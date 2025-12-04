@@ -329,12 +329,7 @@ ParseResult ExprParser::parse_array_literal() {
         }
     }
 
-    ASTNode *result = node.build(type);
-    if (parser.mode == Parser::Mode::FORMATTING && stream.peek(-2)->is(TKN_COMMA)) {
-        result->flags.trailing_comma = true;
-    }
-
-    return result;
+    return node.build(type);
 }
 
 ParseResult ExprParser::parse_paren_expr() {

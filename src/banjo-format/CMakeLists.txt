@@ -1,6 +1,4 @@
 add_executable(banjo-format
-    "formatter.cpp"
-    "formatter.hpp"
     "main.cpp"
 )
 

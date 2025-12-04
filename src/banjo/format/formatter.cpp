@@ -8,6 +8,7 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
+#include <algorithm>
 #include <cstdarg>
 #include <span>
 #include <utility>
@@ -1286,9 +1287,7 @@ void Formatter::ensure_indent_after(unsigned token_index, WhitespaceKind whitesp
 
         for (Token &token : attached_tokens) {
             if (token.is(TKN_WHITESPACE)) {
-                if (token.value == "\n") {
-                    num_newlines += 1;
-                }
+                num_newlines += std::ranges::count(token.value, '\n');
             } else {
                 break;
             }
@@ -1322,24 +1321,26 @@ void Formatter::ensure_whitespace_after(unsigned token_index, std::string whites
     const Token &token = tokens.tokens[token_index + 1];
     std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
 
-    if (attached_tokens.size() == 1) {
-        if (attached_tokens[0].is(TKN_WHITESPACE) && attached_tokens[0].value == whitespace) {
-            return;
+    if (attached_tokens.empty()) {
+        insert_edit(token.position, std::move(whitespace));
+    } else if (attached_tokens.size() == 1 && attached_tokens[0].is(TKN_WHITESPACE)) {
+        if (attached_tokens[0].value != whitespace) {
+            insert_edit(attached_tokens[0].range(), std::move(whitespace));
         }
     }
-
-    for (const Token &attached_token : attached_tokens) {
-        if (attached_token.is(TKN_WHITESPACE)) {
-            edits.push_back(Edit{.range = attached_token.range(), .replacement = ""});
-        }
-    }
-
-    edits.push_back(Edit{.range{token.position, token.position}, .replacement = std::move(whitespace)});
 }
 
 std::string Formatter::build_indent(unsigned indentation) {
     unsigned num_spaces = 4 * indentation;
     return std::string(num_spaces, ' ');
+}
+
+void Formatter::insert_edit(TextRange range, std::string replacement) {
+    edits.push_back(Edit{.range = range, .replacement = std::move(replacement)});
+}
+
+void Formatter::insert_edit(TextPosition position, std::string replacement) {
+    edits.push_back(Edit{.range{position, position}, .replacement = std::move(replacement)});
 }
 
 } // namespace banjo::lang

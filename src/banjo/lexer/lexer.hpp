@@ -23,9 +23,6 @@ private:
     SourceReader reader;
     Mode mode;
 
-    bool current_line_empty = true;
-    bool previous_line_empty = false;
-
     bool completion_enabled = false;
     TextPosition completion_point;
     bool completion_token_inserted = false;
@@ -43,7 +40,6 @@ public:
 
 private:
     void read_token();
-    void read_newline();
     void read_whitespace();
     void read_identifier();
     void read_number();

@@ -1,3 +1,4 @@
+#include "banjo/config/config.hpp"
 #include "banjo/format/formatter.hpp"
 #include "banjo/source/source_file.hpp"
 
@@ -13,12 +14,12 @@ int main(int argc, char *argv[]) {
 
     std::string file_path(argv[1]);
 
+    // banjo::lang::Config().instance().optional_semicolons = true;
+
     std::ifstream stream{file_path};
     std::unique_ptr<banjo::lang::SourceFile> file = banjo::lang::SourceFile::read({}, file_path, stream);
     banjo::lang::Formatter().format_in_place(*file);
     std::ofstream{file_path} << file->get_content();
-
-    // banjo::format::Formatter().format(file);
 
     return 0;
 }

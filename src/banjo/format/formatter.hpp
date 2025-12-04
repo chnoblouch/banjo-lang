@@ -29,10 +29,6 @@ private:
         INDENT_EMPTY_LINE,
     };
 
-    enum class CommentAnchor {
-        AFTER,
-    };
-
     TokenList tokens;
     std::vector<Edit> edits;
     unsigned indentation = 0;
@@ -119,6 +115,9 @@ private:
     void ensure_indent_after(unsigned token_index, int indent_addend = 0);
     void ensure_whitespace_after(unsigned token_index, std::string whitespace);
     std::string build_indent(unsigned indentation);
+
+    void insert_edit(TextRange range, std::string replacement);
+    void insert_edit(TextPosition position, std::string replacement);
 };
 
 } // namespace banjo::lang

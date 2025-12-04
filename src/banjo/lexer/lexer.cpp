@@ -70,8 +70,7 @@ TokenList Lexer::tokenize() {
 void Lexer::read_token() {
     char c = reader.get();
 
-    if (c == '\n') read_newline();
-    else if (is_whitespace_char(c)) read_whitespace();
+    if (is_whitespace_char(c)) read_whitespace();
     else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') read_identifier();
     else if (c >= '0' && c <= '9') read_number();
     else if (c == '\'') read_character();
@@ -80,15 +79,21 @@ void Lexer::read_token() {
     else read_punctuation();
 }
 
-void Lexer::read_newline() {
-    reader.consume();
-    attach_token(TKN_WHITESPACE);
-    finish_line();
-}
-
 void Lexer::read_whitespace() {
-    while (is_whitespace_char(reader.get())) {
+    char c = reader.get();
+    bool end_of_line = false;
+
+    while (is_whitespace_char(c)) {
+        if (c == '\n') {
+            end_of_line = true;
+        }
+
         reader.consume();
+        c = reader.get();
+    }
+
+    if (end_of_line) {
+        finish_line();
     }
 
     attach_token(TKN_WHITESPACE);
@@ -221,27 +226,12 @@ void Lexer::finish_token(TokenType type) {
 
     if (mode == Mode::FORMATTING) {
         attachments.push_back(TokenList::Span{.first = 0, .count = 0});
-
-        current_line_empty = false;
-
-        if (previous_line_empty) {
-            previous_line_empty = false;
-            tokens.back().after_empty_line = true;
-        }
     }
 }
 
 void Lexer::finish_line() {
     if (Config::instance().optional_semicolons && !tokens.empty()) {
         tokens.back().end_of_line = true;
-    }
-
-    if (mode == Mode::FORMATTING) {
-        if (current_line_empty) {
-            previous_line_empty = true;
-        } else {
-            current_line_empty = true;
-        }
     }
 }
 
@@ -278,7 +268,7 @@ void Lexer::try_insert_completion_token() {
 }
 
 bool Lexer::is_whitespace_char(char c) {
-    return c == ' ' || c == '\r' || c == '\t';
+    return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
 bool Lexer::is_identifier_char(char c) {

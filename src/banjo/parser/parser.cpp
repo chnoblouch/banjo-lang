@@ -218,12 +218,7 @@ ParseResult Parser::parse_list(
                 node.consume();
             }
 
-            ASTNode *result = node.build(type);
-            if (mode == Mode::FORMATTING && stream.peek(-2)->is(TKN_COMMA)) {
-                result->flags.trailing_comma = true;
-            }
-
-            return result;
+            return node.build(type);
         } else {
             ParseResult result = element_parser();
             node.append_child(result.node);

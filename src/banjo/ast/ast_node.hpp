@@ -171,12 +171,7 @@ enum ASTNodeType : std::uint8_t {
 };
 
 struct ASTNode {
-    struct Flags {
-        bool trailing_comma : 1 = false;
-    };
-
     ASTNodeType type;
-    Flags flags;
     std::string_view value;
     TextRange range;
     std::span<unsigned> tokens;

@@ -124,7 +124,6 @@ struct Token {
     std::string_view value;
     TextPosition position;
     bool end_of_line = false;
-    bool after_empty_line = false;
 
     Token(TokenType type, std::string_view value, TextPosition position)
       : type(type),
