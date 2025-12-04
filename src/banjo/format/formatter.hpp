@@ -108,6 +108,7 @@ private:
     void format_before_terminator(ASTNode *parent, ASTNode *child, WhitespaceKind whitespace, unsigned semi_index);
 
     void ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace);
+    void ensure_no_space_before(unsigned token_index);
     void ensure_no_space_after(unsigned token_index);
     void ensure_space_after(unsigned token_index);
     void ensure_indent_after(unsigned token_index, WhitespaceKind whitespace);

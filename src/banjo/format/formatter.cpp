@@ -77,7 +77,6 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_USE: format_use_decl(node, whitespace); break;
         case AST_USE_TREE_LIST: format_list(node, whitespace); break;
         case AST_USE_REBINDING: format_use_rebind(node, whitespace); break;
-
         case AST_EXPR_STMT: format_expr_stmt(node, whitespace); break;
         case AST_VAR: global_scope ? format_var_decl(node, whitespace) : format_var_stmt(node, whitespace); break;
         case AST_IMPLICIT_TYPE_VAR: format_typeless_var_stmt(node, whitespace); break;
@@ -216,6 +215,10 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
 
 void Formatter::format_mod(ASTNode *node) {
     ASTNode *block_node = node->first_child;
+
+    if (!tokens.tokens.empty()) {
+        ensure_no_space_before(0);
+    }
 
     for (ASTNode *child = block_node->first_child; child; child = child->next_sibling) {
         if (child == block_node->first_child) {
@@ -1258,14 +1261,18 @@ void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whi
     }
 }
 
-void Formatter::ensure_no_space_after(unsigned token_index) {
-    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
+void Formatter::ensure_no_space_before(unsigned token_index) {
+    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index);
 
     for (const Token &attached_token : attached_tokens) {
         if (attached_token.is(TKN_WHITESPACE)) {
             edits.push_back(Edit{.range = attached_token.range(), .replacement = ""});
         }
     }
+}
+
+void Formatter::ensure_no_space_after(unsigned token_index) {
+    ensure_no_space_before(token_index + 1);
 }
 
 void Formatter::ensure_space_after(unsigned token_index) {
