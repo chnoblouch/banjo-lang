@@ -221,16 +221,12 @@ void Formatter::format_mod(ASTNode *node) {
     }
 
     for (ASTNode *child = block_node->first_child; child; child = child->next_sibling) {
-        if (child == block_node->first_child) {
-            format_node(child, WhitespaceKind::INDENT_FIRST);
-        } else {
-            format_node(child, WhitespaceKind::INDENT);
-        }
+        format_node(child, WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE);
     }
 }
 
 void Formatter::format_func_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -262,7 +258,7 @@ void Formatter::format_func_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_generic_func_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -296,7 +292,7 @@ void Formatter::format_generic_func_def(ASTNode *node, WhitespaceKind whitespace
 }
 
 void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling && node->next_sibling->type != node->type) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -334,7 +330,7 @@ void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -357,7 +353,7 @@ void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_struct_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -376,7 +372,7 @@ void Formatter::format_struct_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_generic_struct_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -395,7 +391,7 @@ void Formatter::format_generic_struct_def(ASTNode *node, WhitespaceKind whitespa
 }
 
 void Formatter::format_enum_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -427,7 +423,7 @@ void Formatter::format_enum_variant(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_union_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -462,7 +458,7 @@ void Formatter::format_union_case(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -479,7 +475,7 @@ void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -498,7 +494,7 @@ void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_use_decl(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling && node->next_sibling->type != AST_USE) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -531,7 +527,10 @@ void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
 
     indentation += 1;
 
-    ensure_whitespace_after(tkn_lbrace, node->has_children() ? WhitespaceKind::INDENT_FIRST : WhitespaceKind::NONE);
+    ensure_whitespace_after(
+        tkn_lbrace,
+        node->has_children() ? WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE : WhitespaceKind::NONE
+    );
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         format_node(child, child->next_sibling ? WhitespaceKind::INDENT : WhitespaceKind::INDENT_OUT);
@@ -586,7 +585,7 @@ void Formatter::format_var_stmt(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_var_decl(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FIRST) {
+    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
         if (node->next_sibling && node->next_sibling->type != node->type) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -1157,7 +1156,7 @@ void Formatter::format_attribute_wrapper(ASTNode *node, WhitespaceKind whitespac
         format_node(wrapped_node, whitespace);
     } else {
         ensure_no_space_after(tkn_at);
-        format_node(attrs_node, WhitespaceKind::INDENT_FIRST);
+        format_node(attrs_node, WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE);
         format_node(wrapped_node, WhitespaceKind::INDENT_EMPTY_LINE);
     }
 }
@@ -1255,7 +1254,7 @@ void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whi
         case WhitespaceKind::NONE: ensure_no_space_after(token_index); break;
         case WhitespaceKind::SPACE: ensure_space_after(token_index); break;
         case WhitespaceKind::INDENT:
-        case WhitespaceKind::INDENT_FIRST:
+        case WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE:
         case WhitespaceKind::INDENT_OUT:
         case WhitespaceKind::INDENT_EMPTY_LINE: ensure_indent_after(token_index, whitespace); break;
     }
@@ -1304,7 +1303,7 @@ void Formatter::ensure_indent_after(unsigned token_index, WhitespaceKind whitesp
 
     switch (whitespace) {
         case WhitespaceKind::INDENT:
-        case WhitespaceKind::INDENT_FIRST: whitespace_string = "\n" + build_indent(indentation); break;
+        case WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE: whitespace_string = "\n" + build_indent(indentation); break;
         case WhitespaceKind::INDENT_OUT: whitespace_string = "\n" + build_indent(indentation - 1); break;
         case WhitespaceKind::INDENT_EMPTY_LINE: whitespace_string = "\n\n" + build_indent(indentation); break;
         default: ASSERT_UNREACHABLE;

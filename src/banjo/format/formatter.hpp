@@ -24,9 +24,13 @@ private:
         NONE,
         SPACE,
         INDENT,
-        INDENT_FIRST,
+        INDENT_FORCE_NO_EMPTY_LINE,
         INDENT_OUT,
         INDENT_EMPTY_LINE,
+    };
+
+    enum class CommentAnchor {
+        AFTER,
     };
 
     TokenList tokens;
