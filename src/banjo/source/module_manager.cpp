@@ -22,7 +22,9 @@ namespace banjo {
 
 namespace lang {
 
-ModuleManager::ModuleManager(ReportManager &report_manager) : report_manager(report_manager) {}
+ModuleManager::ModuleManager(ReportManager &report_manager, Lexer::Mode lexer_mode /* = Lexer::Mode::COMPILATION */)
+  : report_manager{report_manager},
+    lexer_mode{lexer_mode} {}
 
 void ModuleManager::add_search_path(std::filesystem::path path) {
     module_discovery.add_search_path(std::move(path));
@@ -77,7 +79,7 @@ SourceFile *ModuleManager::load(const ModuleFile &location) {
 }
 
 void ModuleManager::reparse(SourceFile *file) {
-    file->tokens = Lexer{*file}.tokenize();
+    file->tokens = Lexer{*file, lexer_mode}.tokenize();
     file->ast_mod = Parser{*file, file->tokens}.parse_module();
 
     report_manager.merge_result(std::move(file->ast_mod->reports), file->ast_mod->is_valid);
@@ -139,7 +141,7 @@ std::unique_ptr<SourceFile> ModuleManager::parse_module(const ModuleFile &module
     }
 
     std::unique_ptr<SourceFile> file = SourceFile::read(module_file.path, module_file.file_path, stream);
-    file->tokens = Lexer{*file}.tokenize();
+    file->tokens = Lexer{*file, lexer_mode}.tokenize();
     file->ast_mod = Parser{*file, file->tokens}.parse_module();
     return file;
 }

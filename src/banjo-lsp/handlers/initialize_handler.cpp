@@ -22,6 +22,7 @@ JSONValue InitializeHandler::handle(const JSONObject &params, Connection &) {
              {"completionProvider",
               JSONObject{
                   {"triggerCharacters", JSONArray{"."}},
+                  {"resolveProvider", true},
                   {"completionItem", JSONObject{{"labelDetailsSupport", true}}}
               }},
              {"definitionProvider", true},

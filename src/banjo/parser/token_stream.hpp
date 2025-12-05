@@ -2,12 +2,11 @@
 #define BANJO_PARSER_TOKEN_STREAM_H
 
 #include "banjo/lexer/token.hpp"
+#include "banjo/lexer/token_list.hpp"
 
-#include <vector>
+#include <span>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 class TokenStream {
 
@@ -25,11 +24,8 @@ public:
     Token *previous();
     void seek(unsigned position);
     void split_current();
-    std::span<Token> previous_attached_tokens();
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

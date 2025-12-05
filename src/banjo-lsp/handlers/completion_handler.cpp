@@ -5,7 +5,10 @@
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/json.hpp"
+#include "completion_engine.hpp"
+#include "protocol_structs.hpp"
 #include "uri.hpp"
+#include "workspace.hpp"
 
 #include <set>
 #include <string_view>
@@ -53,6 +56,50 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
         build_after_use_dot(items, after_use_dot->lhs);
     } else if (auto in_struct_literal = std::get_if<sema::CompleteInStructLiteral>(&completion_info.context)) {
         build_in_struct_literal(items, *in_struct_literal->struct_literal);
+    }
+
+    workspace.completion_engine.cur_file = file;
+    workspace.completion_engine.cur_items.clear();
+
+    if (std::holds_alternative<sema::CompleteInBlock>(completion_info.context)) {
+        for (const std::unique_ptr<SourceFile> &mod : workspace.get_mod_list()) {
+            std::string_view path = mod->mod_path.to_string();
+
+            for (sir::Decl &decl : mod->sir_mod->block.decls) {
+                sir::Symbol symbol;
+                
+                if (auto struct_def = decl.match<sir::StructDef>()) {
+                    symbol = struct_def;
+                } else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) {
+                    symbol = native_func_decl;
+                } else if (auto func_def = decl.match<sir::FuncDef>()) {
+                    symbol = func_def;
+                } else {
+                    continue;
+                }
+
+                std::string name = symbol.get_name();
+                std::string use_text = "use " + std::string{path} + '.' + name + "\n";
+
+                items.add(
+                    JSONObject{
+                        {"label", name},
+                        {"labelDetails", JSONObject{{"description", path}}},
+                        {"kind", LSPCompletionItemKind::STRUCT},
+                        {"insertTextFormat", 2},
+                        {"data", static_cast<unsigned>(workspace.completion_engine.cur_items.size())},
+                    }
+                );
+
+                workspace.completion_engine.cur_items.push_back(
+                    CompletionEngine::CompletionItem{
+                        .file = *mod,
+                        .symbol = symbol,
+                        .requires_use = true,
+                    }
+                );
+            }
+        }
     }
 
     workspace.undo_infection(completion_info.infection);

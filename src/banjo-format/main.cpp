@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     // banjo::lang::Config().instance().optional_semicolons = true;
 
-    std::ifstream stream{file_path};
+    std::ifstream stream{file_path, std::ios::binary};
     std::unique_ptr<banjo::lang::SourceFile> file = banjo::lang::SourceFile::read({}, file_path, stream);
     banjo::lang::Formatter().format_in_place(*file);
     std::ofstream{file_path} << file->get_content();

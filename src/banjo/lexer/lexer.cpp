@@ -44,7 +44,7 @@ TokenList Lexer::tokenize() {
     tokens.clear();
     start_position = reader.get_position();
 
-    if (mode == Mode::FORMATTING) {
+    if (mode == Mode::KEEP_WHITESPACE) {
         attachments.push_back(TokenList::Span{.first = 0, .count = 0});
     }
 
@@ -224,7 +224,7 @@ void Lexer::read_punctuation() {
 void Lexer::finish_token(TokenType type) {
     tokens.push_back(Token{type, reader.value(start_position), start_position});
 
-    if (mode == Mode::FORMATTING) {
+    if (mode == Mode::KEEP_WHITESPACE) {
         attachments.push_back(TokenList::Span{.first = 0, .count = 0});
     }
 }
@@ -236,7 +236,7 @@ void Lexer::finish_line() {
 }
 
 void Lexer::attach_token(TokenType type) {
-    if (mode != Mode::FORMATTING) {
+    if (mode != Mode::KEEP_WHITESPACE) {
         return;
     }
 

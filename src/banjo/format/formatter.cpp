@@ -16,7 +16,7 @@
 namespace banjo::lang {
 
 std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
-    Lexer lexer{file, Lexer::Mode::FORMATTING};
+    Lexer lexer{file, Lexer::Mode::KEEP_WHITESPACE};
     tokens = lexer.tokenize();
 
     Parser parser{file, tokens, Parser::Mode::FORMATTING};

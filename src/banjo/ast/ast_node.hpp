@@ -3,11 +3,10 @@
 
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
-#include "banjo/utils/static_vector.hpp"
 
 #include <cassert>
 #include <cstdint>
-#include <string>
+#include <span>
 #include <string_view>
 
 namespace banjo {

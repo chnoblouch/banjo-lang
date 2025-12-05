@@ -2,7 +2,7 @@
 #define BANJO_SOURCE_FILE_H
 
 #include "banjo/ast/ast_module.hpp"
-#include "banjo/lexer/token.hpp"
+#include "banjo/lexer/token_list.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/module_path.hpp"
 

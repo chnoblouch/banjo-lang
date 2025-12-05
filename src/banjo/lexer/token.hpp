@@ -4,9 +4,7 @@
 #include "banjo/source/text_range.hpp"
 
 #include <cstdint>
-#include <span>
 #include <string_view>
-#include <vector>
 
 namespace banjo {
 
@@ -134,24 +132,6 @@ struct Token {
     TextRange range() const { return TextRange{position, end()}; }
 
     bool is(TokenType type) const { return this->type == type; }
-};
-
-struct TokenList {
-    static constexpr unsigned EOF_ZONE_SIZE = 1;
-
-    struct Span {
-        unsigned first;
-        unsigned count;
-    };
-
-    std::vector<Token> tokens;
-    std::vector<Token> attached_tokens;
-    std::vector<Span> attachments;
-
-    std::span<Token> get_attached_tokens(unsigned token_index) {
-        TokenList::Span span = attachments[token_index];
-        return std::span<Token>{&attached_tokens[span.first], span.count};
-    }
 };
 
 } // namespace lang

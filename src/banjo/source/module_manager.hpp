@@ -4,6 +4,7 @@
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/module_list.hpp"
 #include "banjo/config/config.hpp"
+#include "banjo/lexer/lexer.hpp"
 #include "banjo/source/module_discovery.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/source/source_file.hpp"
@@ -25,12 +26,13 @@ class ModuleManager {
 
 private:
     ReportManager &report_manager;
+    Lexer::Mode lexer_mode;
 
     ModuleList module_list;
     ModuleDiscovery module_discovery;
 
 public:
-    ModuleManager(ReportManager &report_manager);
+    ModuleManager(ReportManager &report_manager, Lexer::Mode lexer_mode = Lexer::Mode::COMPILATION);
 
     ModuleList &get_module_list() { return module_list; }
 

@@ -10,6 +10,8 @@
 #include "banjo/source/module_manager.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/source/source_file.hpp"
+
+#include "completion_engine.hpp"
 #include "index.hpp"
 
 #include <filesystem>
@@ -43,6 +45,9 @@ private:
 
     lang::Config &config;
     std::unique_ptr<target::Target> target;
+
+public:
+    CompletionEngine completion_engine;
 
 public:
     Workspace();

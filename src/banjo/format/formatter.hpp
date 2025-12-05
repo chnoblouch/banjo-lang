@@ -29,6 +29,11 @@ private:
         INDENT_EMPTY_LINE,
     };
 
+    enum class CommentAnchor {
+        TRAILING,
+        LINE,
+    };
+
     TokenList tokens;
     std::vector<Edit> edits;
     unsigned indentation = 0;

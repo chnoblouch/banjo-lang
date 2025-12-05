@@ -71,6 +71,8 @@ add_library(banjo STATIC
     "lexer/lexer.cpp"
     "lexer/lexer.hpp"
     "lexer/source_reader.hpp"
+    "lexer/token_list.cpp"
+    "lexer/token_list.hpp"
     "lexer/token.hpp"
     "mcode/basic_block.cpp"
     "mcode/basic_block.hpp"

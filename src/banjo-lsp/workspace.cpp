@@ -22,7 +22,7 @@ namespace lsp {
 using namespace lang;
 
 Workspace::Workspace()
-  : module_manager(report_manager),
+  : module_manager(report_manager, Lexer::Mode::KEEP_WHITESPACE),
     config(Config::instance()),
     target(target::Target::create(config.target, target::CodeModel::LARGE)) {}
 

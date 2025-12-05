@@ -16,7 +16,7 @@ class Lexer {
 public:
     enum class Mode {
         COMPILATION,
-        FORMATTING,
+        KEEP_WHITESPACE,
     };
 
 private:

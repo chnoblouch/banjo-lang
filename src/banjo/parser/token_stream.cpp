@@ -1,10 +1,9 @@
 #include "token_stream.hpp"
 
 #include "banjo/lexer/token.hpp"
+#include "banjo/lexer/token_list.hpp"
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 TokenStream::TokenStream(TokenList &input) : input{input} {}
 
@@ -42,11 +41,4 @@ void TokenStream::split_current() {
     }
 }
 
-std::span<Token> TokenStream::previous_attached_tokens() {
-    TokenList::Span span = input.attachments[position - 1];
-    return std::span<Token>{&input.attached_tokens[span.first], span.count};
-}
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
