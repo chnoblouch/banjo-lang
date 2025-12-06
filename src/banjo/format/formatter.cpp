@@ -1307,9 +1307,10 @@ void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whi
 }
 
 void Formatter::format_comments(std::span<Token> &attached_tokens, WhitespaceKind whitespace) {
+    // TODO: Remove empty lines before first node in parent
+
     for (unsigned i = 0; i < attached_tokens.size(); i++) {
         Token &attached_token = attached_tokens[i];
-        bool is_first = i == 0;
         bool is_last = i == attached_tokens.size() - 1;
 
         if (attached_token.is(TKN_WHITESPACE)) {
@@ -1324,10 +1325,6 @@ void Formatter::format_comments(std::span<Token> &attached_tokens, WhitespaceKin
             }
 
             num_line_breaks = std::min(num_line_breaks, 2u);
-
-            if (is_first) {
-                num_line_breaks = std::min(num_line_breaks, 1u);
-            }
 
             if (whitespace == WhitespaceKind::INDENT_OUT && is_last) {
                 add_replace_edit(range, "\n" + build_indent(indentation - 1));
