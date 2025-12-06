@@ -50,6 +50,7 @@ private:
         const lang::sir::FuncType &type
     );
 
+    JSONObject serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item);
     JSONObject serialize_struct_field_template(unsigned index, CompletionEngine::Item &item);
 };
 

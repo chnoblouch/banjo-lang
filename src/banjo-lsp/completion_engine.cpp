@@ -251,11 +251,13 @@ void CompletionEngine::try_collect_item(std::string name, sir::Symbol symbol, Op
         return;
     }
 
-    if (symbol.is<sir::OverloadSet>()) {
-        return;
-    }
+    if (auto overload_set = symbol.match<sir::OverloadSet>()) {
+        for (sir::FuncDef *func : overload_set->func_defs) {
+            try_collect_item(name, func, options);
+        }
 
-    if (auto use_ident = symbol.match<sir::UseIdent>()) {
+        return;
+    } else if (auto use_ident = symbol.match<sir::UseIdent>()) {
         symbol = use_ident->symbol;
     } else if (auto use_rebind = symbol.match<sir::UseRebind>()) {
         symbol = use_rebind->symbol;
@@ -263,7 +265,7 @@ void CompletionEngine::try_collect_item(std::string name, sir::Symbol symbol, Op
 
     Item item{
         .kind = Item::Kind::SIMPLE,
-        .name = std::move(name),
+        .name = name,
         .symbol = symbol,
         .file_to_use = options.file_to_use,
     };
@@ -275,6 +277,21 @@ void CompletionEngine::try_collect_item(std::string name, sir::Symbol symbol, Op
     }
 
     add_item(item);
+
+    if (options.allow_values) {
+        if (auto struct_def = symbol.match<sir::StructDef>()) {
+            if (!struct_def->is_generic()) {
+                Item item{
+                    .kind = Item::Kind::STRUCT_LITERAL_TEMPLATE,
+                    .name = name,
+                    .symbol = symbol,
+                    .file_to_use = options.file_to_use,
+                };
+
+                add_item(item);
+            }
+        }
+    }
 }
 
 void CompletionEngine::add_item(Item item) {

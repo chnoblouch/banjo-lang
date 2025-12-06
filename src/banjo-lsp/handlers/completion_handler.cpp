@@ -86,6 +86,8 @@ JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::I
         } else {
             ASSERT_UNREACHABLE;
         }
+    } else if (item.kind == CompletionEngine::Item::Kind::STRUCT_LITERAL_TEMPLATE) {
+        return serialize_struct_literal_template(index, item);
     } else if (item.kind == CompletionEngine::Item::Kind::STRUCT_FIELD_TEMPLATE) {
         return serialize_struct_field_template(index, item);
     } else {
@@ -158,6 +160,36 @@ JSONObject CompletionHandler::serialize_func_call_template(
         {"label", item.name},
         {"labelDetails", JSONObject{{"detail", detail}}},
         {"kind", is_method ? LSPCompletionItemKind::METHOD : LSPCompletionItemKind::FUNCTION},
+        {"insertText", insert_text},
+        {"insertTextFormat", 2},
+        {"data", index},
+    };
+}
+
+JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item) {
+    sir::StructDef &struct_def = item.symbol.as<sir::StructDef>();
+
+    std::string insert_text = item.name + " {\n";
+    std::string detail = " { ";
+
+    for (unsigned i = 0; i < struct_def.fields.size(); i++) {
+        std::string field_name{struct_def.fields[i]->ident.value};
+        insert_text += "    " + field_name + ": ${" + std::to_string(i + 1) + ":},\n";
+
+        detail += field_name;
+
+        if (i != struct_def.fields.size() - 1) {
+            detail += ", ";
+        }
+    }
+
+    insert_text += "}";
+    detail += " }";
+
+    return JSONObject{
+        {"label", struct_def.ident.value},
+        {"labelDetails", JSONObject{{"detail", detail}}},
+        {"kind", LSPCompletionItemKind::STRUCT},
         {"insertText", insert_text},
         {"insertTextFormat", 2},
         {"data", index},
