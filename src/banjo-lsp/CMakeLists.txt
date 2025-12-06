@@ -3,6 +3,7 @@ add_executable(banjo-lsp
     "ast_navigation.hpp"
     "base_message_stream.cpp"
     "base_message_stream.hpp"
+    "completion_engine.cpp"
     "completion_engine.hpp"
     "connection.cpp"
     "connection.hpp"

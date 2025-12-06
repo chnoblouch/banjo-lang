@@ -3,6 +3,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/json.hpp"
+#include "completion_engine.hpp"
 #include "connection.hpp"
 #include "workspace.hpp"
 
@@ -37,35 +38,19 @@ private:
 
 public:
     CompletionHandler(Workspace &workspace);
-    ~CompletionHandler();
-
     JSONValue handle(const JSONObject &params, Connection &connection);
 
 private:
-    void build_in_block(JSONArray &items, lang::sir::SymbolTable &symbol_table, const CompletionInfo &completion_info);
-    void build_after_dot(JSONArray &items, lang::sir::Expr &lhs);
-    void build_after_implicit_dot(JSONArray &items, lang::sir::Expr &type);
-    void build_in_use(JSONArray &items);
-    void build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs);
-    void build_in_struct_literal(JSONArray &items, lang::sir::StructLiteral &struct_literal);
+    JSONObject serialize_item(unsigned index, CompletionEngine::Item item);
+    JSONObject serialize_simple_item(unsigned index, CompletionEngine::Item item, LSPCompletionItemKind kind);
 
-    void build_value_members(JSONArray &items, lang::sir::StructDef &struct_def);
-    void build_items(const CompletionConfig &config, JSONArray &items, lang::sir::SymbolTable &symbol_table);
-
-    void build_symbol_members(const CompletionConfig &config, JSONArray &items, lang::sir::Symbol &symbol);
-
-    void build_item(
-        const CompletionConfig &config,
-        JSONArray &items,
-        std::string_view name,
-        const lang::sir::Symbol &symbol
+    JSONObject serialize_func_call_template(
+        unsigned index,
+        CompletionEngine::Item &item,
+        const lang::sir::FuncType &type
     );
 
-    JSONObject build_item(std::string_view name, const lang::sir::FuncType &type, bool is_method);
-    void build_item(JSONArray &items, std::string_view name, const lang::sir::OverloadSet &overload_set);
-    JSONObject build_struct_literal_item(const lang::sir::StructDef &struct_def);
-
-    JSONObject create_simple_item(std::string_view name, LSPCompletionItemKind kind);
+    JSONObject serialize_struct_field_template(unsigned index, CompletionEngine::Item &item);
 };
 
 } // namespace lsp

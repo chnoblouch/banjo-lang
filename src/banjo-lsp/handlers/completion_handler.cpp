@@ -2,27 +2,21 @@
 
 #include "ast_navigation.hpp"
 #include "banjo/reports/report_texts.hpp"
-#include "banjo/sema/completion_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/json.hpp"
+#include "banjo/utils/macros.hpp"
+
 #include "completion_engine.hpp"
-#include "protocol_structs.hpp"
 #include "uri.hpp"
 #include "workspace.hpp"
 
-#include <set>
 #include <string_view>
-#include <variant>
 
-namespace banjo {
+using namespace banjo::lang;
 
-namespace lsp {
-
-using namespace lang;
+namespace banjo::lsp {
 
 CompletionHandler::CompletionHandler(Workspace &workspace) : workspace(workspace) {}
-
-CompletionHandler::~CompletionHandler() {}
 
 JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*connection*/) {
     std::string uri = params.get_object("textDocument").get_string("uri");
@@ -40,292 +34,86 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
 
     sir::Module sir_mod;
     CompletionInfo completion_info = workspace.run_completion(file, position, sir_mod);
-    JSONArray items;
+    JSONArray items_serialized;
 
-    if (auto in_decl_block = std::get_if<sema::CompleteInDeclBlock>(&completion_info.context)) {
-        build_in_block(items, *in_decl_block->decl_block->symbol_table, completion_info);
-    } else if (auto in_block = std::get_if<sema::CompleteInBlock>(&completion_info.context)) {
-        build_in_block(items, *in_block->block->symbol_table, completion_info);
-    } else if (auto after_dot = std::get_if<sema::CompleteAfterDot>(&completion_info.context)) {
-        build_after_dot(items, after_dot->lhs);
-    } else if (auto after_implicit_dot = std::get_if<sema::CompleteAfterImplicitDot>(&completion_info.context)) {
-        build_after_implicit_dot(items, after_implicit_dot->type);
-    } else if (std::holds_alternative<sema::CompleteInUse>(completion_info.context)) {
-        build_in_use(items);
-    } else if (auto after_use_dot = std::get_if<sema::CompleteAfterUseDot>(&completion_info.context)) {
-        build_after_use_dot(items, after_use_dot->lhs);
-    } else if (auto in_struct_literal = std::get_if<sema::CompleteInStructLiteral>(&completion_info.context)) {
-        build_in_struct_literal(items, *in_struct_literal->struct_literal);
-    }
-
-    workspace.completion_engine.cur_file = file;
-    workspace.completion_engine.cur_items.clear();
-
-    if (std::holds_alternative<sema::CompleteInBlock>(completion_info.context)) {
-        for (const std::unique_ptr<SourceFile> &mod : workspace.get_mod_list()) {
-            std::string_view path = mod->mod_path.to_string();
-
-            for (sir::Decl &decl : mod->sir_mod->block.decls) {
-                sir::Symbol symbol;
-                
-                if (auto struct_def = decl.match<sir::StructDef>()) {
-                    symbol = struct_def;
-                } else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) {
-                    symbol = native_func_decl;
-                } else if (auto func_def = decl.match<sir::FuncDef>()) {
-                    symbol = func_def;
-                } else {
-                    continue;
-                }
-
-                std::string name = symbol.get_name();
-                std::string use_text = "use " + std::string{path} + '.' + name + "\n";
-
-                items.add(
-                    JSONObject{
-                        {"label", name},
-                        {"labelDetails", JSONObject{{"description", path}}},
-                        {"kind", LSPCompletionItemKind::STRUCT},
-                        {"insertTextFormat", 2},
-                        {"data", static_cast<unsigned>(workspace.completion_engine.cur_items.size())},
-                    }
-                );
-
-                workspace.completion_engine.cur_items.push_back(
-                    CompletionEngine::CompletionItem{
-                        .file = *mod,
-                        .symbol = symbol,
-                        .requires_use = true,
-                    }
-                );
-            }
+    workspace.completion_engine.complete(
+        CompletionEngine::Request{
+            .file = *file,
+            .context = completion_info.context,
+            .preamble_symbols = completion_info.preamble_symbols,
         }
+    );
+
+    std::vector<CompletionEngine::Item> &items = workspace.completion_engine.state.items;
+
+    for (unsigned i = 0; i < items.size(); i++) {
+        items_serialized.add(serialize_item(i, items[i]));
     }
 
     workspace.undo_infection(completion_info.infection);
-    return items;
+    return items_serialized;
 }
 
-void CompletionHandler::build_in_block(
-    JSONArray &items,
-    lang::sir::SymbolTable &symbol_table,
-    const CompletionInfo &completion_info
-) {
-    CompletionConfig config{
-        .allow_values = true,
-        .include_parent_scopes = true,
-        .include_uses = true,
-        .append_func_parameters = true,
-    };
-
-    build_items(config, items, symbol_table);
-
-    for (const lang::sir::Symbol &symbol : completion_info.preamble_symbols) {
-        CompletionConfig config{
-            .allow_values = true,
-            .include_parent_scopes = false,
-            .include_uses = false,
-            .append_func_parameters = true,
-        };
-
-        build_item(config, items, symbol.get_name(), symbol);
-    }
-}
-
-void CompletionHandler::build_after_dot(JSONArray &items, lang::sir::Expr &lhs) {
-    sir::Expr type = lhs.get_type();
-
-    if (type) {
-        while (auto pointer_type = type.match<sir::PointerType>()) {
-            type = pointer_type->base_type;
-        }
-
-        if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-            build_value_members(items, *struct_def);
-        }
-    } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {
-        CompletionConfig config{
-            .allow_values = true,
-            .include_parent_scopes = false,
-            .include_uses = false,
-            .append_func_parameters = true,
-        };
-
-        build_symbol_members(config, items, symbol_expr->symbol);
-    }
-}
-
-void CompletionHandler::build_after_implicit_dot(JSONArray &items, lang::sir::Expr &type) {
-    if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
-        CompletionConfig config{
-            .allow_values = true,
-            .include_parent_scopes = false,
-            .include_uses = false,
-            .append_func_parameters = true,
-        };
-
-        build_symbol_members(config, items, symbol_expr->symbol);
-    }
-}
-
-void CompletionHandler::build_in_use(JSONArray &items) {
-    for (const std::unique_ptr<SourceFile> &file : workspace.get_mod_list()) {
-        if (file->mod_path.get_size() == 1) {
-            items.add(create_simple_item(file->mod_path[0], LSPCompletionItemKind::MODULE));
-        }
-    }
-}
-
-void CompletionHandler::build_after_use_dot(JSONArray &items, lang::sir::UseItem &lhs) {
-    CompletionConfig config{
-        .allow_values = false,
-        .include_parent_scopes = false,
-        .include_uses = false,
-        .append_func_parameters = false,
-    };
-
-    if (auto use_ident = lhs.match<sir::UseIdent>()) {
-        build_symbol_members(config, items, use_ident->symbol);
-    } else if (auto use_dot_expr = lhs.match<sir::UseDotExpr>()) {
-        build_symbol_members(config, items, use_dot_expr->rhs.as<sir::UseIdent>().symbol);
-    }
-}
-
-void CompletionHandler::build_in_struct_literal(JSONArray &items, lang::sir::StructLiteral &struct_literal) {
-    if (auto struct_def = struct_literal.type.match_symbol<sir::StructDef>()) {
-        std::set<sir::StructField *> set_fields;
-
-        for (lang::sir::StructLiteralEntry &entry : struct_literal.entries) {
-            if (entry.field) {
-                set_fields.insert(entry.field);
-            }
-        }
-
-        for (sir::StructField *field : struct_def->fields) {
-            if (set_fields.contains(field)) {
-                continue;
-            }
-
-            std::string_view name = field->ident.value;
-
-            items.add(
-                JSONObject{
-                    {"label", name},
-                    {"kind", LSPCompletionItemKind::FIELD},
-                    {"insertText", std::string{name} + ": "},
-                    {"insertTextFormat", 2},
-                }
-            );
-        }
-    }
-}
-
-void CompletionHandler::build_value_members(JSONArray &items, lang::sir::StructDef &struct_def) {
-    CompletionConfig config{
-        .allow_values = false,
-        .include_parent_scopes = false,
-        .include_uses = false,
-        .append_func_parameters = true,
-    };
-
-    for (lang::sir::StructField *field : struct_def.fields) {
-        items.add(create_simple_item(field->ident.value, LSPCompletionItemKind::FIELD));
-    }
-
-    for (const auto &[name, symbol] : struct_def.block.symbol_table->symbols) {
-        bool is_value_member = false;
-
-        if (auto func_def = symbol.match<sir::FuncDef>()) {
-            is_value_member = func_def->is_method();
-        } else if (symbol.is<sir::OverloadSet>()) {
-            // TODO: Only include the overloads that are actually methods.
-            is_value_member = true;
-        }
-
-        if (is_value_member) {
-            build_item(config, items, name, symbol);
-        }
-    }
-}
-
-void CompletionHandler::build_items(
-    const CompletionConfig &config,
-    JSONArray &items,
-    lang::sir::SymbolTable &symbol_table
-) {
-    for (const auto &[name, symbol] : symbol_table.symbols) {
-        build_item(config, items, name, symbol);
-    }
-
-    if (config.include_parent_scopes && symbol_table.parent) {
-        build_items(config, items, *symbol_table.parent);
-    }
-}
-
-void CompletionHandler::build_symbol_members(
-    const CompletionConfig &config,
-    JSONArray &items,
-    lang::sir::Symbol &symbol
-) {
-    if (auto mod = symbol.match<sir::Module>()) {
-        for (const lang::ModulePath &path : workspace.find_file(mod->path)->sub_mod_paths) {
-            items.add(create_simple_item(path[path.get_size() - 1], LSPCompletionItemKind::MODULE));
-        }
-    }
-
-    if (sir::SymbolTable *symbol_table = symbol.get_symbol_table()) {
-        build_items(config, items, *symbol_table);
-    }
-}
-
-void CompletionHandler::build_item(
-    const CompletionConfig &config,
-    JSONArray &items,
-    std::string_view name,
-    const lang::sir::Symbol &symbol
-) {
-    if (symbol.is<sir::Module>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::MODULE));
-    } else if (auto func_def = symbol.match<sir::FuncDef>()) {
-        if (config.append_func_parameters) {
-            items.add(build_item(name, func_def->type, func_def->is_method()));
+JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::Item item) {
+    if (item.kind == CompletionEngine::Item::Kind::SIMPLE) {
+        if (item.symbol.is<sir::Module>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::MODULE);
+        } else if (item.symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::FUNCTION);
+        } else if (item.symbol.is<sir::ConstDef>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::CONSTANT);
+        } else if (item.symbol
+                       .is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::STRUCT);
+        } else if (item.symbol.is_one_of<sir::VarDecl, sir::NativeVarDecl, sir::Local, sir::Param>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::VARIABLE);
+        } else if (item.symbol.is<sir::StructField>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::FIELD);
+        } else if (item.symbol.is<sir::EnumVariant>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM_MEMBER);
+        } else if (item.symbol.is<sir::EnumVariant>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM_MEMBER);
         } else {
-            items.add(create_simple_item(name, LSPCompletionItemKind::FUNCTION));
+            ASSERT_UNREACHABLE;
         }
-    } else if (auto native_func_decl = symbol.match<sir::NativeFuncDecl>()) {
-        if (config.append_func_parameters) {
-            items.add(build_item(name, native_func_decl->type, false));
+    } else if (item.kind == CompletionEngine::Item::Kind::FUNC_CALL_TEMPLATE) {
+        if (auto func_def = item.symbol.match<sir::FuncDef>()) {
+            return serialize_func_call_template(index, item, func_def->type);
+        } else if (auto func_decl = item.symbol.match<sir::FuncDecl>()) {
+            return serialize_func_call_template(index, item, func_decl->type);
+        } else if (auto native_func_decl = item.symbol.match<sir::NativeFuncDecl>()) {
+            return serialize_func_call_template(index, item, native_func_decl->type);
         } else {
-            items.add(create_simple_item(name, LSPCompletionItemKind::FUNCTION));
+            ASSERT_UNREACHABLE;
         }
-    } else if (symbol.is<sir::ConstDef>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::CONSTANT));
-    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::STRUCT));
-
-        if (config.allow_values && !struct_def->is_generic()) {
-            items.add(build_struct_literal_item(*struct_def));
-        }
-    } else if (symbol.is_one_of<sir::UnionDef, sir::UnionCase, sir::TypeAlias>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::STRUCT));
-    } else if (symbol.is_one_of<sir::VarDecl, sir::NativeVarDecl, sir::Local, sir::Param>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::VARIABLE));
-    } else if (symbol.is<sir::EnumDef>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::ENUM));
-    } else if (symbol.is<sir::EnumVariant>()) {
-        items.add(create_simple_item(name, LSPCompletionItemKind::ENUM_MEMBER));
-    } else if (auto overload_set = symbol.match<sir::OverloadSet>()) {
-        build_item(items, name, *overload_set);
-    } else if (config.include_uses) {
-        if (auto use_ident = symbol.match<sir::UseIdent>()) {
-            build_item(config, items, name, use_ident->symbol);
-        } else if (auto use_rebind = symbol.match<sir::UseRebind>()) {
-            build_item(config, items, name, use_rebind->symbol);
-        }
+    } else if (item.kind == CompletionEngine::Item::Kind::STRUCT_FIELD_TEMPLATE) {
+        return serialize_struct_field_template(index, item);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
-JSONObject CompletionHandler::build_item(std::string_view name, const lang::sir::FuncType &type, bool is_method) {
+JSONObject CompletionHandler::serialize_simple_item(
+    unsigned index,
+    CompletionEngine::Item item,
+    LSPCompletionItemKind kind
+) {
+    return JSONObject{
+        {"label", item.name},
+        {"kind", kind},
+        {"insertText", item.name},
+        {"insertTextFormat", 2},
+        {"data", index},
+    };
+}
+
+JSONObject CompletionHandler::serialize_func_call_template(
+    unsigned index,
+    CompletionEngine::Item &item,
+    const sir::FuncType &type
+) {
+    bool is_method = type.is_func_method();
+
     std::string detail = "(";
 
     for (unsigned i = 0; i < type.params.size(); i++) {
@@ -350,7 +138,7 @@ JSONObject CompletionHandler::build_item(std::string_view name, const lang::sir:
         detail += " -> " + ReportText::to_string(return_type);
     }
 
-    std::string insert_text = std::string(name) + "(";
+    std::string insert_text = item.name + "(";
 
     for (unsigned i = is_method ? 1 : 0; i < type.params.size(); i++) {
         std::string_view param_name = type.params[i].name.value;
@@ -367,56 +155,23 @@ JSONObject CompletionHandler::build_item(std::string_view name, const lang::sir:
     insert_text += ")";
 
     return JSONObject{
-        {"label", name},
+        {"label", item.name},
         {"labelDetails", JSONObject{{"detail", detail}}},
         {"kind", is_method ? LSPCompletionItemKind::METHOD : LSPCompletionItemKind::FUNCTION},
         {"insertText", insert_text},
         {"insertTextFormat", 2},
+        {"data", index},
     };
 }
 
-void CompletionHandler::build_item(JSONArray &items, std::string_view name, const sir::OverloadSet &overload_set) {
-    for (sir::FuncDef *func_def : overload_set.func_defs) {
-        items.add(build_item(name, func_def->type, func_def->is_method()));
-    }
-}
-
-JSONObject CompletionHandler::build_struct_literal_item(const lang::sir::StructDef &struct_def) {
-    std::string insert_text = std::string(struct_def.ident.value) + " {\n";
-    std::string detail = " { ";
-
-    for (unsigned i = 0; i < struct_def.fields.size(); i++) {
-        std::string field_name{struct_def.fields[i]->ident.value};
-        insert_text += "    " + field_name + ": ${" + std::to_string(i + 1) + ":},\n";
-
-        detail += field_name;
-
-        if (i != struct_def.fields.size() - 1) {
-            detail += ", ";
-        }
-    }
-
-    insert_text += "}";
-    detail += " }";
-
+JSONObject CompletionHandler::serialize_struct_field_template(unsigned index, CompletionEngine::Item &item) {
     return JSONObject{
-        {"label", struct_def.ident.value},
-        {"labelDetails", JSONObject{{"detail", detail}}},
-        {"kind", LSPCompletionItemKind::STRUCT},
-        {"insertText", insert_text},
+        {"label", item.name},
+        {"kind", LSPCompletionItemKind::FIELD},
+        {"insertText", item.name + ": "},
         {"insertTextFormat", 2},
+        {"data", index},
     };
 }
 
-JSONObject CompletionHandler::create_simple_item(std::string_view name, LSPCompletionItemKind kind) {
-    return JSONObject{
-        {"label", name},
-        {"kind", kind},
-        {"insertText", name},
-        {"insertTextFormat", 2},
-    };
-}
-
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

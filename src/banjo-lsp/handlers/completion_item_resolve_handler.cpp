@@ -22,15 +22,19 @@ CompletionItemResolveHandler::CompletionItemResolveHandler(Workspace &workspace)
 JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connection & /*connection*/) {
     std::optional<unsigned> index = params.try_get_int("data");
 
-    if (!index || *index >= workspace.completion_engine.cur_items.size()) {
+    if (!index || *index >= workspace.completion_engine.state.items.size()) {
         return params;
     }
 
-    SourceFile &cur_file = *workspace.completion_engine.cur_file;
-    CompletionEngine::CompletionItem &item = workspace.completion_engine.cur_items[*index];
+    SourceFile &cur_file = *workspace.completion_engine.state.file;
+    CompletionEngine::Item &item = workspace.completion_engine.state.items[*index];
+
+    if (!item.file_to_use) {
+        return params;
+    }
 
     std::string name = item.symbol.get_name();
-    std::string_view mod_path = item.file.mod_path.to_string();
+    std::string_view mod_path = item.file_to_use->mod_path.to_string();
     std::string use_text = "use " + std::string{mod_path} + '.' + name + ";\n";
 
     ASTNode *last_use = nullptr;

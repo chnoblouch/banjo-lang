@@ -24,7 +24,8 @@ using namespace lang;
 Workspace::Workspace()
   : module_manager(report_manager, Lexer::Mode::KEEP_WHITESPACE),
     config(Config::instance()),
-    target(target::Target::create(config.target, target::CodeModel::LARGE)) {}
+    target(target::Target::create(config.target, target::CodeModel::LARGE)),
+    completion_engine(*this) {}
 
 std::vector<lang::SourceFile *> Workspace::initialize() {
     module_manager.add_standard_stdlib_search_path();
