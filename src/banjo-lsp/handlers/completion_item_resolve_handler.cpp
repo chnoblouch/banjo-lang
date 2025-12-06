@@ -78,13 +78,13 @@ CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert
         };
     }
 
-    Token *comment_token = nullptr;
+    std::optional<unsigned> comment_token;
 
     if (attached_tokens[0].is(TKN_COMMENT)) {
-        comment_token = &attached_tokens[0];
+        comment_token = 0;
     } else if (attached_tokens.size() >= 2 && attached_tokens[1].is(TKN_COMMENT)) {
         bool comment_on_same_line = true;
-        
+
         for (char c : attached_tokens[0].value) {
             if (c == '\n') {
                 comment_on_same_line = false;
@@ -93,23 +93,19 @@ CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert
         }
 
         if (comment_on_same_line) {
-            comment_token = &attached_tokens[1];
+            comment_token = 1;
         }
     }
 
+    Token whitespace_token = attached_tokens[comment_token ? *comment_token + 1 : 0];
+    std::string::size_type first_new_line = whitespace_token.value.find_first_of('\n');
+    
     TextPosition position;
 
-    if (comment_token) {
-        position = comment_token->end();
+    if (first_new_line == std::string::npos) {
+        position = node->range.end;
     } else {
-        Token whitespace_token = attached_tokens[0];
-        std::string::size_type first_new_line = whitespace_token.value.find_first_of('\n');
-
-        if (first_new_line == std::string::npos) {
-            position = node->range.end;
-        } else {
-            position = node->range.end + first_new_line + 1;
-        }
+        position = whitespace_token.position + first_new_line + 1;
     }
 
     return TextInsertion{

@@ -16,6 +16,8 @@
 namespace banjo::lang {
 
 std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
+    file_content = file.get_content();
+
     Lexer lexer{file, Lexer::Mode::KEEP_WHITESPACE};
     tokens = lexer.tokenize();
 
@@ -218,16 +220,26 @@ void Formatter::format_mod(ASTNode *node) {
     ASTNode *block_node = node->first_child;
 
     if (!tokens.tokens.empty()) {
-        ensure_no_space_before(0);
+        std::span<Token> first_attached_tokens = tokens.get_attached_tokens(0);
+
+        if (!first_attached_tokens.empty() && first_attached_tokens[0].is(TKN_WHITESPACE)) {
+            add_delete_edit(first_attached_tokens[0].range());
+        }
+
+        for (Token &token : first_attached_tokens) {
+            if (token.is(TKN_COMMENT)) {
+                format_comment_text(token);
+            }
+        }
     }
 
     for (ASTNode *child = block_node->first_child; child; child = child->next_sibling) {
-        format_node(child, WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE);
+        format_node(child, WhitespaceKind::INDENT);
     }
 }
 
 void Formatter::format_func_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -259,7 +271,7 @@ void Formatter::format_func_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_generic_func_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -293,7 +305,7 @@ void Formatter::format_generic_func_def(ASTNode *node, WhitespaceKind whitespace
 }
 
 void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling && node->next_sibling->type != node->type) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -331,7 +343,7 @@ void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -354,7 +366,7 @@ void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_struct_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -373,7 +385,7 @@ void Formatter::format_struct_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_generic_struct_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -392,7 +404,7 @@ void Formatter::format_generic_struct_def(ASTNode *node, WhitespaceKind whitespa
 }
 
 void Formatter::format_enum_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -405,7 +417,7 @@ void Formatter::format_enum_def(ASTNode *node, WhitespaceKind whitespace) {
 
     ensure_space_after(tkn_enum);
     format_node(name_node, WhitespaceKind::SPACE);
-    format_node(variants_node, whitespace);
+    format_node(variants_node, whitespace); // TODO: Spaces!
 }
 
 void Formatter::format_enum_variant(ASTNode *node, WhitespaceKind whitespace) {
@@ -424,7 +436,7 @@ void Formatter::format_enum_variant(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_union_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -459,7 +471,7 @@ void Formatter::format_union_case(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -476,7 +488,7 @@ void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -495,7 +507,7 @@ void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_use_decl(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling && node->next_sibling->type != AST_USE) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -528,13 +540,16 @@ void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
 
     indentation += 1;
 
-    ensure_whitespace_after(
-        tkn_lbrace,
-        node->has_children() ? WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE : WhitespaceKind::NONE
-    );
+    if (node->has_children()) {
+        ensure_whitespace_after(tkn_lbrace, WhitespaceKind::INDENT);
+    } else if (followed_by_comment(tkn_lbrace)) {
+        ensure_whitespace_after(tkn_lbrace, WhitespaceKind::INDENT_OUT);
+    } else {
+        ensure_whitespace_after(tkn_lbrace, WhitespaceKind::NONE);
+    }
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        format_node(child, child->next_sibling ? WhitespaceKind::INDENT : WhitespaceKind::INDENT_OUT);
+        format_node(child, child->next_sibling ? WhitespaceKind::INDENT_ALLOW_EMPTY_LINE : WhitespaceKind::INDENT_OUT);
     }
 
     indentation -= 1;
@@ -586,7 +601,7 @@ void Formatter::format_var_stmt(ASTNode *node, WhitespaceKind whitespace) {
 }
 
 void Formatter::format_var_decl(ASTNode *node, WhitespaceKind whitespace) {
-    if (whitespace == WhitespaceKind::INDENT || whitespace == WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
         if (node->next_sibling && node->next_sibling->type != node->type) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
@@ -1157,7 +1172,7 @@ void Formatter::format_attribute_wrapper(ASTNode *node, WhitespaceKind whitespac
         format_node(wrapped_node, whitespace);
     } else {
         ensure_no_space_after(tkn_at);
-        format_node(attrs_node, WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE);
+        format_node(attrs_node, WhitespaceKind::INDENT);
         format_node(wrapped_node, WhitespaceKind::INDENT_EMPTY_LINE);
     }
 }
@@ -1202,14 +1217,16 @@ void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace, bool enclo
     unsigned tkn_start = node->tokens.front();
     unsigned tkn_end = node->tokens.back();
 
-    if (tokens.tokens[tkn_end - 1].is(TKN_COMMA)) {
+    bool multiline = tokens.tokens[tkn_end - 1].is(TKN_COMMA) || followed_by_comment(tkn_start);
+
+    if (multiline) {
         indentation += 1;
 
         for (unsigned i = 0; i < node->tokens.size() - 2; i++) {
-            ensure_indent_after(node->tokens[i]);
+            ensure_whitespace_after(node->tokens[i], WhitespaceKind::INDENT);
         }
 
-        ensure_indent_after(node->tokens[node->tokens.size() - 2], -1);
+        ensure_whitespace_after(node->tokens[node->tokens.size() - 2], WhitespaceKind::INDENT_OUT);
 
         for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
             format_node(child, WhitespaceKind::NONE);
@@ -1250,47 +1267,23 @@ void Formatter::format_before_terminator(
     }
 }
 
-void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace) {
-    switch (whitespace) {
-        case WhitespaceKind::NONE: ensure_no_space_after(token_index); break;
-        case WhitespaceKind::SPACE: ensure_space_after(token_index); break;
-        case WhitespaceKind::INDENT:
-        case WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE:
-        case WhitespaceKind::INDENT_OUT:
-        case WhitespaceKind::INDENT_EMPTY_LINE: ensure_indent_after(token_index, whitespace); break;
-    }
-}
-
-void Formatter::ensure_no_space_before(unsigned token_index) {
-    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index);
-
-    for (const Token &attached_token : attached_tokens) {
-        if (attached_token.is(TKN_WHITESPACE)) {
-            edits.push_back(Edit{.range = attached_token.range(), .replacement = ""});
-        }
-    }
-}
-
 void Formatter::ensure_no_space_after(unsigned token_index) {
-    ensure_no_space_before(token_index + 1);
+    ensure_whitespace_after(token_index, WhitespaceKind::NONE);
 }
 
 void Formatter::ensure_space_after(unsigned token_index) {
-    ensure_whitespace_after(token_index, " ");
+    ensure_whitespace_after(token_index, WhitespaceKind::SPACE);
 }
 
-void Formatter::ensure_indent_after(unsigned token_index, WhitespaceKind whitespace) {
+void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace) {
+    Token &token = tokens.tokens[token_index + 1];
     std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
 
-    if (whitespace == WhitespaceKind::INDENT) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE) {
         unsigned num_newlines = 0;
 
-        for (Token &token : attached_tokens) {
-            if (token.is(TKN_WHITESPACE)) {
-                num_newlines += std::ranges::count(token.value, '\n');
-            } else {
-                break;
-            }
+        if (attached_tokens[0].is(TKN_WHITESPACE)) {
+            num_newlines = std::ranges::count(attached_tokens[0].value, '\n');
         }
 
         if (num_newlines >= 2) {
@@ -1298,35 +1291,95 @@ void Formatter::ensure_indent_after(unsigned token_index, WhitespaceKind whitesp
         }
     }
 
-    std::string whitespace_string;
+    if (attached_tokens.empty()) {
+        if (whitespace != WhitespaceKind::NONE) {
+            add_insert_edit(token.position, whitespace_as_string(whitespace));
+        }
+    } else if (attached_tokens.size() == 1 && attached_tokens[0].is(TKN_WHITESPACE)) {
+        if (whitespace == WhitespaceKind::NONE) {
+            add_delete_edit(attached_tokens[0].range());
+        } else {
+            add_replace_edit(attached_tokens[0].range(), whitespace_as_string(whitespace));
+        }
+    } else {
+        format_comments(attached_tokens, whitespace);
+    }
+}
 
-    switch (whitespace) {
-        case WhitespaceKind::INDENT:
-        case WhitespaceKind::INDENT_FORCE_NO_EMPTY_LINE: whitespace_string = "\n" + build_indent(indentation); break;
-        case WhitespaceKind::INDENT_OUT: whitespace_string = "\n" + build_indent(indentation - 1); break;
-        case WhitespaceKind::INDENT_EMPTY_LINE: whitespace_string = "\n\n" + build_indent(indentation); break;
-        default: ASSERT_UNREACHABLE;
+void Formatter::format_comments(std::span<Token> &attached_tokens, WhitespaceKind whitespace) {
+    for (unsigned i = 0; i < attached_tokens.size(); i++) {
+        Token &attached_token = attached_tokens[i];
+        bool is_first = i == 0;
+        bool is_last = i == attached_tokens.size() - 1;
+
+        if (attached_token.is(TKN_WHITESPACE)) {
+            TextRange range = attached_token.range();
+            unsigned num_line_breaks = std::ranges::count(attached_token.value, '\n');
+
+            if (num_line_breaks == 0 && i != attached_tokens.size() - 1) {
+                if (attached_tokens[i + 1].is(TKN_COMMENT)) {
+                    add_replace_edit(range, "  ");
+                    continue;
+                }
+            }
+
+            num_line_breaks = std::min(num_line_breaks, 2u);
+
+            if (is_first) {
+                num_line_breaks = std::min(num_line_breaks, 1u);
+            }
+
+            if (whitespace == WhitespaceKind::INDENT_OUT && is_last) {
+                add_replace_edit(range, "\n" + build_indent(indentation - 1));
+            } else {
+                std::string line_breaks(num_line_breaks, '\n');
+                add_replace_edit(range, line_breaks + build_indent(indentation));
+            }
+        } else if (attached_token.is(TKN_COMMENT)) {
+            if (i == 0) {
+                add_insert_edit(attached_token.position, "  ");
+            }
+
+            format_comment_text(attached_token);
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+}
+
+void Formatter::format_comment_text(Token &comment_token) {
+    std::string_view text = comment_token.value;
+
+    if (text.size() >= 2 && text[1] != ' ') {
+        add_insert_edit(comment_token.position + 1, " ");
     }
 
-    ensure_whitespace_after(token_index, whitespace_string);
-}
+    std::optional<unsigned> trailing_whitespace_start;
 
-void Formatter::ensure_indent_after(unsigned token_index, int indent_addend /* = 0 */) {
-    unsigned num_spaces = 4 * (indentation + indent_addend);
-    std::string indent_whitespace = std::string(num_spaces, ' ');
-    ensure_whitespace_after(token_index, "\n" + indent_whitespace);
-}
-
-void Formatter::ensure_whitespace_after(unsigned token_index, std::string whitespace) {
-    const Token &token = tokens.tokens[token_index + 1];
-    std::span<Token> attached_tokens = tokens.get_attached_tokens(token_index + 1);
-
-    if (attached_tokens.empty()) {
-        insert_edit(token.position, std::move(whitespace));
-    } else if (attached_tokens.size() == 1 && attached_tokens[0].is(TKN_WHITESPACE)) {
-        if (attached_tokens[0].value != whitespace) {
-            insert_edit(attached_tokens[0].range(), std::move(whitespace));
+    for (unsigned i = 0; i < text.size(); i++) {
+        if (Utils::is_one_of(text[i], {' ', '\r', '\t'})) {
+            if (!trailing_whitespace_start) {
+                trailing_whitespace_start = i;
+            }
+        } else {
+            trailing_whitespace_start = {};
         }
+    }
+
+    if (trailing_whitespace_start) {
+        TextPosition range_start = comment_token.position + *trailing_whitespace_start;
+        add_delete_edit({range_start, comment_token.end()});
+    }
+}
+
+std::string Formatter::whitespace_as_string(WhitespaceKind whitespace) {
+    switch (whitespace) {
+        case WhitespaceKind::NONE: return "";
+        case WhitespaceKind::SPACE: return " ";
+        case WhitespaceKind::INDENT_ALLOW_EMPTY_LINE:
+        case WhitespaceKind::INDENT: return "\n" + build_indent(indentation);
+        case WhitespaceKind::INDENT_OUT: return "\n" + build_indent(indentation - 1);
+        case WhitespaceKind::INDENT_EMPTY_LINE: return "\n\n" + build_indent(indentation);
     }
 }
 
@@ -1335,12 +1388,32 @@ std::string Formatter::build_indent(unsigned indentation) {
     return std::string(num_spaces, ' ');
 }
 
-void Formatter::insert_edit(TextRange range, std::string replacement) {
+bool Formatter::followed_by_comment(unsigned token_index) {
+    for (Token &attached_token : tokens.get_attached_tokens(token_index + 1)) {
+        if (attached_token.is(TKN_COMMENT)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void Formatter::add_replace_edit(TextRange range, std::string replacement) {
+    if (range.start != range.end) {
+        if (file_content.substr(range.start, range.end - range.start) == replacement) {
+            return;
+        }
+    }
+
     edits.push_back(Edit{.range = range, .replacement = std::move(replacement)});
 }
 
-void Formatter::insert_edit(TextPosition position, std::string replacement) {
+void Formatter::add_insert_edit(TextPosition position, std::string replacement) {
     edits.push_back(Edit{.range{position, position}, .replacement = std::move(replacement)});
+}
+
+void Formatter::add_delete_edit(TextRange range) {
+    edits.push_back(Edit{.range = range, .replacement = ""});
 }
 
 } // namespace banjo::lang

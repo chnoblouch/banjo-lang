@@ -155,9 +155,8 @@ void Lexer::read_string() {
 }
 
 void Lexer::read_comment() {
-    char c = reader.consume();
-    while (c != '\n' && c != SourceFile::EOF_CHAR) {
-        c = reader.consume();
+    while (reader.get() != '\n' && reader.get() != SourceFile::EOF_CHAR) {
+        reader.consume();
     }
 
     attach_token(TKN_COMMENT);

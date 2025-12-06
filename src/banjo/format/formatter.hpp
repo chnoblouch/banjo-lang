@@ -24,16 +24,12 @@ private:
         NONE,
         SPACE,
         INDENT,
-        INDENT_FORCE_NO_EMPTY_LINE,
+        INDENT_ALLOW_EMPTY_LINE,
         INDENT_OUT,
         INDENT_EMPTY_LINE,
     };
 
-    enum class CommentAnchor {
-        TRAILING,
-        LINE,
-    };
-
+    std::string_view file_content;
     TokenList tokens;
     std::vector<Edit> edits;
     unsigned indentation = 0;
@@ -112,17 +108,19 @@ private:
     void format_list(ASTNode *node, WhitespaceKind whitespace, bool enclosing_spaces = false);
     void format_before_terminator(ASTNode *parent, ASTNode *child, WhitespaceKind whitespace, unsigned semi_index);
 
-    void ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace);
-    void ensure_no_space_before(unsigned token_index);
     void ensure_no_space_after(unsigned token_index);
     void ensure_space_after(unsigned token_index);
-    void ensure_indent_after(unsigned token_index, WhitespaceKind whitespace);
-    void ensure_indent_after(unsigned token_index, int indent_addend = 0);
-    void ensure_whitespace_after(unsigned token_index, std::string whitespace);
-    std::string build_indent(unsigned indentation);
+    void ensure_whitespace_after(unsigned token_index, WhitespaceKind whitespace);
+    void format_comments(std::span<Token> &attached_tokens, WhitespaceKind whitespace);
+    void format_comment_text(Token &comment_token);
 
-    void insert_edit(TextRange range, std::string replacement);
-    void insert_edit(TextPosition position, std::string replacement);
+    std::string whitespace_as_string(WhitespaceKind whitespace);
+    std::string build_indent(unsigned indentation);
+    bool followed_by_comment(unsigned token_index);
+
+    void add_replace_edit(TextRange range, std::string replacement);
+    void add_insert_edit(TextPosition position, std::string replacement);
+    void add_delete_edit(TextRange range);
 };
 
 } // namespace banjo::lang
