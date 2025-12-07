@@ -97,30 +97,6 @@ struct StringSlice {
         return none;
     }
 
-    pub func to_i64(self) -> i64 {
-        var sign: i64 = 1;
-        var last_index = 0;
-
-        if self.data[0] == '-' {
-            sign = -1 as i64;
-            last_index = 1;
-        }
-
-        var result: i64 = 0;
-        var index = self.length as i32 - 1;
-        var place_value: i64 = 1;
-
-        while index >= last_index {
-            var digit = (self.data[index] - '0') as i64;
-            result += digit * place_value;
-
-            index -= 1;
-            place_value *= 10;
-        }
-
-        return sign * result;
-    }
-
     pub func __eq__(self, rhs: StringSlice) -> bool {
         if self.length != rhs.length {
             return false;

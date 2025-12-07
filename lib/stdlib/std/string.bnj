@@ -114,10 +114,6 @@ struct String {
         };
     }
 
-    pub func to_i64(self) -> i64 {
-        return self.slice.to_i64();
-    }
-
     pub func __add__(self, ref rhs: String) -> String {
         return concat(self, rhs);
     }

@@ -1,4 +1,5 @@
 use std.memory;
+use c.lib.{stdlib.strtod, string.isspace};
 use internal.runtime;
 
 pub func to_string[T](ref value: T) -> String {
@@ -41,6 +42,81 @@ pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     } else {
         return to_string(value);
     }
+}
+
+pub func parse_u64(string: StringSlice) -> ?u64 {
+    # TODO: Better validation (overflow)
+
+    var index: i32 = string.length as i32 - 1;
+    var place_value: u64 = 1;
+    var value: u64 = 0;
+
+    while index >= 0 {
+        var char = string.data[index];
+
+        if !(char >= '0' && char <= '9') {
+            return none;
+        }
+
+        value += place_value * (char - '0') as u64;
+        place_value *= 10;
+        index -= 1;
+    }
+
+    return value;
+}
+
+pub func parse_i64(string: StringSlice) -> ?i64 {
+    # TODO: Better validation (overflow)
+
+    var sign: i64 = 1;
+    var last_index = 0;
+
+    if string.data[0] == '-' {
+        sign = -1 as i64;
+        last_index = 1;
+    }
+
+    var index: i32 = string.length as i32 - 1;
+    var place_value: i64 = 1;
+    var value: i64 = 0;
+
+    while index >= last_index {
+        var char = string.data[index];
+
+        if !(char >= '0' && char <= '9') {
+            return none;
+        }
+
+        value += place_value * (char - '0') as i64;
+        place_value *= 10;
+        index -= 1;
+    }
+
+    return sign * value;
+}
+
+pub func parse_f64(string: StringSlice) -> ?f64 {
+    if string.length == 0 || string.length >= 1024 {
+        return none;
+    }
+
+    if isspace(string.data[0] as i32) != 0 {
+        return none;
+    }
+
+    var c_string: [u8; 1024];
+    memory.copy(string.data, &c_string[0], string.length);
+    c_string[string.length] = '\0';
+
+    var end: *u8 = null;
+    var result = strtod(&c_string[0], &end);
+
+    if end != &c_string[string.length] {
+        return none;
+    }
+
+    return result;
 }
 
 func i64_to_string(value: i64) -> String {

@@ -10,3 +10,4 @@ native func atof(str: *u8) -> f64;
 
 native func strtol(str: *u8, str_end: **u8, base: i32) -> i32;
 native func strtof(str: *u8, str_end: **u8) -> f32;
+native func strtod(str: *u8, str_end: **u8) -> f64;
