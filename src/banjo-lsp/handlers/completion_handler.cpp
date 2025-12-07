@@ -69,8 +69,8 @@ JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::I
             return serialize_simple_item(index, item, LSPCompletionItemKind::VARIABLE);
         } else if (item.symbol.is<sir::StructField>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::FIELD);
-        } else if (item.symbol.is<sir::EnumVariant>()) {
-            return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM_MEMBER);
+        } else if (item.symbol.is<sir::EnumDef>()) {
+            return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM);
         } else if (item.symbol.is<sir::EnumVariant>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM_MEMBER);
         } else {
@@ -100,13 +100,20 @@ JSONObject CompletionHandler::serialize_simple_item(
     CompletionEngine::Item item,
     LSPCompletionItemKind kind
 ) {
-    return JSONObject{
+    JSONObject result{
         {"label", item.name},
         {"kind", kind},
         {"insertText", item.name},
         {"insertTextFormat", 2},
         {"data", index},
     };
+
+    if (item.file_to_use) {
+        std::string path{item.file_to_use->mod_path.to_string()};
+        result.add("labelDetails", JSONObject{{"description", path}});
+    }
+
+    return result;
 }
 
 JSONObject CompletionHandler::serialize_func_call_template(
@@ -156,9 +163,18 @@ JSONObject CompletionHandler::serialize_func_call_template(
 
     insert_text += ")";
 
+    JSONObject serialized_details;
+
+    if (item.file_to_use) {
+        std::string path{item.file_to_use->mod_path.to_string()};
+        serialized_details = JSONObject{{"detail", detail}, {"description", path}};
+    } else {
+        serialized_details = JSONObject{{"detail", detail}};
+    }
+
     return JSONObject{
         {"label", item.name},
-        {"labelDetails", JSONObject{{"detail", detail}}},
+        {"labelDetails", serialized_details},
         {"kind", is_method ? LSPCompletionItemKind::METHOD : LSPCompletionItemKind::FUNCTION},
         {"insertText", insert_text},
         {"insertTextFormat", 2},
@@ -186,9 +202,18 @@ JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, 
     insert_text += "}";
     detail += " }";
 
+    JSONObject serialized_details;
+
+    if (item.file_to_use) {
+        std::string path{item.file_to_use->mod_path.to_string()};
+        serialized_details = JSONObject{{"detail", detail}, {"description", path}};
+    } else {
+        serialized_details = JSONObject{{"detail", detail}};
+    }
+
     return JSONObject{
         {"label", struct_def.ident.value},
-        {"labelDetails", JSONObject{{"detail", detail}}},
+        {"labelDetails", serialized_details},
         {"kind", LSPCompletionItemKind::STRUCT},
         {"insertText", insert_text},
         {"insertTextFormat", 2},
@@ -197,13 +222,20 @@ JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, 
 }
 
 JSONObject CompletionHandler::serialize_struct_field_template(unsigned index, CompletionEngine::Item &item) {
-    return JSONObject{
+    JSONObject result{
         {"label", item.name},
         {"kind", LSPCompletionItemKind::FIELD},
         {"insertText", item.name + ": "},
         {"insertTextFormat", 2},
         {"data", index},
     };
+
+    if (item.file_to_use) {
+        std::string path{item.file_to_use->mod_path.to_string()};
+        result.add("labelDetails", JSONObject{{"description", path}});
+    }
+
+    return result;
 }
 
 } // namespace banjo::lsp
