@@ -33,7 +33,7 @@ use c.lib.stdio.puts;
 
 func main() {
     var string = "Hi!";
-    puts(string.to_cstring().data);
+    puts(string.to_cstring().data());
 }
 
 # test:subtest

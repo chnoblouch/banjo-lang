@@ -38,7 +38,7 @@ meta if IS_UNIX {
     pub func path_exists(path: *String) -> bool {
         # TODO: Error handling
 
-        var result = posix.access(path.to_cstring().data, posix.F_OK);
+        var result = posix.access(path.to_cstring().data(), posix.F_OK);
         return result == 0;
     }
 
@@ -46,7 +46,7 @@ meta if IS_UNIX {
         # TODO: Error handling
 
         var stat: posix.Stat;
-        posix.stat(path.to_cstring().data, &stat);
+        posix.stat(path.to_cstring().data(), &stat);
         return (stat.mode & posix.S_IFMT) == posix.S_IFREG;
     }
 
@@ -54,14 +54,14 @@ meta if IS_UNIX {
         # TODO: Error handling
 
         var stat: posix.Stat;
-        posix.stat(path.to_cstring().data, &stat);
+        posix.stat(path.to_cstring().data(), &stat);
         return (stat.mode & posix.S_IFMT) == posix.S_IFDIR;
     }
 
     pub func path_list_dir(path: *String) -> Array[String] {
         # TODO: Error handling
         
-        var dir = posix.opendir(path.to_cstring().data);
+        var dir = posix.opendir(path.to_cstring().data());
         var entry = posix.readdir(dir);
 
         var file_names: Array[String] = [];
@@ -188,7 +188,7 @@ meta if IS_UNIX {
         var port_cstring = to_string(port).to_cstring();
 
         var addr_info: *posix.Addrinfo;
-        result = posix.getaddrinfo(host_cstring.data, port_cstring.data, &addr_hints, &addr_info);
+        result = posix.getaddrinfo(host_cstring.data(), port_cstring.data(), &addr_hints, &addr_info);
         if result != 0 {
             return false;
         }

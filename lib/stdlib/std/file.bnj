@@ -51,7 +51,7 @@ struct File: Read, Write {
         else if mode == Mode.READ_APPEND { c_mode = "a+b"; }
     
         var path_cstring = Path.from(path).str().to_cstring();
-        var stream = fopen(path_cstring.data, c_mode);
+        var stream = fopen(path_cstring.data(), c_mode);
     
         if stream == null {
             return Error.last();
@@ -93,7 +93,7 @@ struct File: Read, Write {
     }
 
     pub func read(self, data: Slice[u8]) -> usize except Error {
-        var result = fread(data.elements, 1, data.length, self.stream);
+        var result = fread(data.data, 1, data.length, self.stream);
 
         if result == data.length || feof(self.stream) != 0 {
             return result;
@@ -103,7 +103,7 @@ struct File: Read, Write {
     }
     
     pub func write(self, data: Slice[u8]) -> usize except Error {
-        var result = fwrite(data.elements, 1, data.length, self.stream);
+        var result = fwrite(data.data, 1, data.length, self.stream);
 
         if result == data.length {
             return result;

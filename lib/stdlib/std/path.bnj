@@ -61,11 +61,11 @@ struct Path {
         # TODO: Error handling
 
         var file_names = platform.path_list_dir(__builtin_pointer_to(self.path));
-        var paths = Array[Path].sized(file_names.length);
+        var paths = Array[Path].sized(file_names.length());
 
         var prefix = self.path.copy() + '/';
 
-        for i in 0..file_names.length {
+        for i in 0..file_names.length() {
             paths[i] = Path.from(prefix.copy() + file_names[i].copy());
         }
 

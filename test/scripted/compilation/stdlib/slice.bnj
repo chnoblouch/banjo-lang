@@ -7,11 +7,11 @@ func main() {
 
     print(slice.length);
     print(',');
-    print(slice.elements[0]);
+    print(slice.data[0]);
     print(',');
-    print(slice.elements[1]);
+    print(slice.data[1]);
     print(',');
-    print(slice.elements[2]);
+    print(slice.data[2]);
 }
 
 # test:subtest

@@ -169,7 +169,7 @@ struct IntSet: IntCollection, DebugPrint {
     }
     
     func count(self) -> usize {
-        return self.array.length;
+        return self.array.length();
     }
     
     func debug_print(mut self) {

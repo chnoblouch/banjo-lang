@@ -1,22 +1,87 @@
+use std.{
+    memory.{PointerMoveIter, PointerRefIter},
+    system.panic,
+    convert,
+    config,
+};
+
 struct Slice[T] {
-    var elements: *T;
+    var data: *T;
     var length: usize;
 
-    pub func new(elements: *T, length: usize) -> Slice[T] {
-        return Slice[T] { elements, length };
+    pub func new(data: *T, length: usize) -> Slice[T] {
+        return Slice[T] { data, length };
     }
 
     pub func new_empty() -> Slice[T] {
         return Slice[T] {
-            elements: null,
+            data: null,
             length: 0,
         };
     }
 
     pub func as_bytes(self) -> Slice[u8] {
         return Slice[u8] {
-            elements: self.elements as *u8,
+            data: self.data as *u8,
             length: self.length * meta(T).size,
         };
+    }
+
+    pub func __index__(self, index: usize) -> ref T {
+        meta if config.BUILD_CONFIG == config.DEBUG {
+            self.check_bounds(index);
+        }
+    
+        return self.data[index];
+    }
+
+    pub func __mutindex__(mut self, index: usize) -> ref mut T {
+        meta if config.BUILD_CONFIG == config.DEBUG {
+            self.check_bounds(index);
+        }
+    
+        return self.data[index];
+    }
+
+    pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
+        return PointerMoveIter[T].new(self.data, self.data + self.length);
+    }
+
+    pub func __refiter__(self) -> PointerRefIter[T] {
+        return PointerRefIter[T].new(self.data, self.data + self.length);
+    }
+
+    pub func __mutiter__(mut self) -> PointerRefIter[T] {
+        return PointerRefIter[T].new(self.data, self.data + self.length);
+    }
+
+    pub func __str__(self) -> String {
+        return self.__repr__(0);
+    }
+
+    pub func __repr__(self, indent: u32) -> String {
+        var string = "[\n";
+
+        for i in 0..self.length {
+            for j in 0..indent + 1 {
+                string += "  ";
+            }
+
+            string.append(convert.to_repr_indent(self.data[i], indent + 1));
+            string.append(",\n");
+        }
+
+        for i in 0..indent {
+            string += "  ";
+        }
+
+        string.append(']');
+        return string;
+    }
+
+    func check_bounds(self, index: usize) {
+        if index < 0 || index >= self.length {
+            panic("index out of bounds");
+        }
     }
 }

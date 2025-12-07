@@ -9,13 +9,13 @@ func main() {
 	print(',');
 	print(array[2]);
 	print(',');
-	print(array.length);
+	print(array.length());
 	
 	array.append(-3);
 	print(',');
 	print(array[3]);
 	print(',');
-	print(array.length);
+	print(array.length());
 	
 	var pointer = &array[2];
 	print(',');
@@ -29,7 +29,7 @@ func main() {
 	
 	array.clear();
 	print(',');
-	print(array.length);
+	print(array.length());
 }
 
 # test:subtest

@@ -108,8 +108,7 @@ struct String {
         data[self.slice.length] = '\0';
 
         return Array[u8] {
-            data,
-            length: size,
+            slice: Slice[u8].new(data, size),
             capacity: size,
         };
     }

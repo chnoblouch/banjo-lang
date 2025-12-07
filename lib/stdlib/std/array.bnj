@@ -1,14 +1,16 @@
-use std.{memory, memory.{PointerMoveIter, PointerRefIter}, system.panic, config, convert};
+use std.{
+    memory.{PointerMoveIter, PointerRefIter},
+    memory,
+    convert,
+};
 
 struct Array[T] {
-    var data: *T;
-    var length: usize;
+    var slice: Slice[T];
     var capacity: usize;
     
     pub func new() -> Array[T] {
         return Array[T] {
-            data: null,
-            length: 0,
+            slice: Slice[T].new_empty(),
             capacity: 0,
         };
     }
@@ -19,148 +21,118 @@ struct Array[T] {
         memory.copy(pointer, data, size);
         
         return Array[T] {
-            data,
-            length,
+            slice: Slice[T].new(data, length),
             capacity: length,
         };
     }
     
-    pub func sized(size: usize) -> Array[T] {
-        var data = memory.alloc(size * meta(T).size) as *T;
+    pub func sized(length: usize) -> Array[T] {
+        var data = memory.alloc(length * meta(T).size) as *T;
     
         return Array[T] {
-            data: data,
-            length: size,
-            capacity: size,
+            slice: Slice[T].new(data, length),
+            capacity: length,
         };
     }
     
     pub func __deinit__(self) {
-        for i in 0..self.length {
-            __builtin_deinit(self.data[i]);
+        for i in 0..self.slice.length {
+            __builtin_deinit(self.slice.data[i]);
         }
         
-        memory.free(self.data);
+        memory.free(self.slice.data);
     }
 
     pub func slice(self) -> Slice[T] {
-        return Slice[T] {
-            elements: self.data,
-            length: self.length,
-        };
+        return self.slice;
+    }
+    
+    pub func data(self) -> *T {
+        return self.slice.data;
+    }
+
+    pub func length(self) -> usize {
+        return self.slice.length;
     }
     
     pub func append(mut self, value: T) {    
-        self.ensure_capacity(self.length + 1);
-        self.data[self.length] = value;
-        self.length += 1;
+        self.ensure_capacity(self.slice.length + 1);
+        self.slice.data[self.slice.length] = value;
+        self.slice.length += 1;
     }
     
     pub func resize(mut self, length: usize) {
-        self.length = length;
+        self.slice.length = length;
         self.ensure_capacity(length);
     }
     
     pub func clear(mut self) {
-        self.length = 0;
+        self.slice.length = 0;
     }
 
     pub func copy(self) -> Array[T] {
-        var size = self.length * meta(T).size;
+        var size = self.slice.length * meta(T).size;
         var data = memory.alloc(size) as *T;
-        memory.copy(self.data, data, size);
+        memory.copy(self.slice.data, data, size);
         
         return Array[T] {
-            data,
-            length: self.length,
-            capacity: self.length,
+            slice: Slice[T].new(data, self.slice.length),
+            capacity: self.slice.length,
         };
     }
     
     pub func __index__(self, index: usize) -> ref T {
-        meta if config.BUILD_CONFIG == config.DEBUG {
-            self.check_bounds(index);
-        }
-    
-        return self.data[index];
+        return self.slice.__index__(index);
     }
 
     pub func __mutindex__(mut self, index: usize) -> ref mut T {
-        meta if config.BUILD_CONFIG == config.DEBUG {
-            self.check_bounds(index);
-        }
-    
-        return self.data[index];
+        return self.slice.__mutindex__(index);
     }
     
     pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
-        return PointerMoveIter[T].new(self.data, self.data + self.length);
+        return self.slice.__iter__();
     }
 
     pub func __refiter__(self) -> PointerRefIter[T] {
-        return PointerRefIter[T].new(self.data, self.data + self.length);
+        return self.slice.__refiter__();
     }
 
     pub func __mutiter__(mut self) -> PointerRefIter[T] {
-        return PointerRefIter[T].new(self.data, self.data + self.length);
+        return self.slice.__mutiter__();
     }
     
     pub func __add__(mut self, value: T) -> Array[T] {
-        var length = self.length + 1;
+        var length = self.slice.length + 1;
         var data = memory.alloc(length * meta(T).size) as *T;
         
-        memory.copy(self.data, data, self.length * meta(T).size);
-        data[self.length] = value;
+        memory.copy(self.slice.data, data, self.slice.length * meta(T).size);
+        data[self.slice.length] = value;
 
         return Array[T] {
-            data,
-            length,
+            slice: Slice[T].new(data, length),
             capacity: length,
         };
     }
 
     pub func __add__(mut self, other: Array[T]) -> Array[T] {
-        var length = self.length + other.length;
+        var length = self.slice.length + other.slice.length;
         var data = memory.alloc(length * meta(T).size) as *T;
         
-        memory.copy(self.data, &data[0], self.length * meta(T).size);
-        memory.copy(other.data, &data[self.length], other.length * meta(T).size);
+        memory.copy(self.slice.data, &data[0], self.slice.length * meta(T).size);
+        memory.copy(other.slice.data, &data[self.slice.length], other.slice.length * meta(T).size);
 
         return Array[T] {
-            data,
-            length,
+            slice: Slice[T].new(data, length),
             capacity: length,
         };
     }
 
     pub func __str__(self) -> String {
-        return self.__repr__(0);
+        return self.slice.__str__();
     }
 
     pub func __repr__(self, indent: u32) -> String {
-        var string = "[\n";
-
-        for i in 0..self.length {
-            for j in 0..indent + 1 {
-                string += "  ";
-            }
-
-            string.append(convert.to_repr_indent(self.data[i], indent + 1));
-            string.append(",\n");
-        }
-
-        for i in 0..indent {
-            string += "  ";
-        }
-
-        string.append(']');
-        return string;
-    }
-    
-    func check_bounds(self, index: usize) {
-        if index < 0 || index >= self.length {
-            panic("index out of bounds");
-        }
+        return self.slice.__repr__(indent);
     }
     
     func ensure_capacity(mut self, capacity: usize) {
@@ -175,6 +147,6 @@ struct Array[T] {
         }
 
         var size = self.capacity * meta(T).size;
-        self.data = memory.realloc(self.data, size) as *T;
+        self.slice.data = memory.realloc(self.slice.data, size) as *T;
     }
 }

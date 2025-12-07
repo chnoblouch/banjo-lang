@@ -91,7 +91,7 @@ func main() {
     var paths_root = Path.from("root").list_dir();
     var paths_sub_dir = Path.from("root/sub_dir").list_dir();
 
-    print(paths_root.length);
+    print(paths_root.length());
     print(',');
     check_contains(&paths_root, "root/file_a");
     print(',');
@@ -99,7 +99,7 @@ func main() {
     print(',');
     check_contains(&paths_root, "root/sub_dir");
     print(',');
-    print(paths_sub_dir.length);
+    print(paths_sub_dir.length());
     print(',');
     check_contains(&paths_sub_dir, "root/sub_dir/file_c");
 }
@@ -108,7 +108,7 @@ func check_contains(paths: *Array[Path], path: StringSlice) {
     var found = false;
     
     # FIXME: Iterating over dereferenced pointers to arrays.
-    for i in 0..paths.length {
+    for i in 0..paths.length() {
         if (*paths)[i].str() == path {
             found = true;
             break;

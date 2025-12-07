@@ -4,7 +4,7 @@
 func main() {
     var array = [1, 4];
     
-    print(array.length);
+    print(array.length());
     print(",");
     print(array[0]);
     print(",");
@@ -17,7 +17,7 @@ func main() {
 func main() {
     var array: [i32] = [1, 4];
     
-    print(array.length);
+    print(array.length());
     print(",");
     print(array[0]);
     print(",");
