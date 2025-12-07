@@ -1,16 +1,16 @@
 #include "completion_item_resolve_handler.hpp"
 
 #include "banjo/ast/ast_node.hpp"
-#include "banjo/format/formatter.hpp"
+#include "banjo/config/config.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/json.hpp"
-#include "banjo/utils/json_serializer.hpp"
+
 #include "completion_engine.hpp"
 #include "protocol_structs.hpp"
-#include "uri.hpp"
 #include "workspace.hpp"
 
+#include <algorithm>
 #include <vector>
 
 namespace banjo::lsp {
@@ -35,7 +35,13 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
 
     std::string name = item.symbol.get_name();
     std::string_view mod_path = item.file_to_use->mod_path.to_string();
-    std::string use_text = "use " + std::string{mod_path} + '.' + name + ";\n";
+    std::string use_text = "use " + std::string{mod_path} + '.' + name;
+
+    if (Config::instance().optional_semicolons) {
+        use_text += "\n";
+    } else {
+        use_text += ";\n";
+    }
 
     ASTNode *last_use = nullptr;
 
@@ -55,6 +61,13 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
         use_text = insertion.text;
     } else {
         insert_pos = 0;
+
+        std::span<Token> attached_tokens = cur_file.tokens.get_attached_tokens(0);
+
+        if (attached_tokens.size() == 0 || !attached_tokens[0].is(TKN_WHITESPACE) ||
+            std::ranges::count(attached_tokens[0].value, '\n') == 0) {
+            use_text += "\n";
+        }
     }
 
     JSONObject edit{
@@ -103,7 +116,7 @@ CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert
 
     Token whitespace_token = attached_tokens[comment_token ? *comment_token + 1 : 0];
     std::string::size_type first_new_line = whitespace_token.value.find_first_of('\n');
-    
+
     TextPosition position;
 
     if (first_new_line == std::string::npos) {
