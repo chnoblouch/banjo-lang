@@ -332,7 +332,7 @@ ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type
         return builder.build(type);
     } else {
         report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);
-        return builder.build_error();
+        return builder.build_error(type);
     }
 }
 

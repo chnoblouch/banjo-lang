@@ -377,7 +377,7 @@ ParseResult ExprParser::parse_anon_struct_literal() {
 
     ParseResult result = parse_struct_literal_body();
     if (!result.is_valid) {
-        return node.build_error();
+        return node.build_error(AST_ANON_STRUCT_LITERAL);
     }
     node.append_child(result.node);
 
@@ -453,6 +453,7 @@ ParseResult ExprParser::parse_meta_expr() {
 
 ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
     NodeBuilder operator_node = parser.build_node();
+    operator_node.set_start_position(lhs_node->range.start);
 
     operator_node.append_child(lhs_node);
     operator_node.consume(); // Consume '.'
@@ -488,18 +489,17 @@ ParseResult ExprParser::parse_bracket_expr(ASTNode *lhs_node) {
 }
 
 ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
-    ASTNode *node = parser.create_node(AST_STRUCT_INSTANTIATION);
-    node->append_child(lhs_node);
+    NodeBuilder node = parser.build_node();
+    node.append_child(lhs_node);
 
     ParseResult result = parse_struct_literal_body();
-    node->append_child(result.node);
-    node->set_range_from_children();
-
-    if (!result.is_valid) {
-        node->type = AST_ERROR;
+    node.append_child(result.node);
+    
+    if (result.is_valid) {
+        return node.build(AST_STRUCT_INSTANTIATION);
+    } else {
+        return node.build_error(AST_STRUCT_INSTANTIATION);
     }
-
-    return {node, result.is_valid};
 }
 
 ParseResult ExprParser::parse_struct_literal_body() {

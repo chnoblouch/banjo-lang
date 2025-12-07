@@ -130,6 +130,7 @@ class Decl;
 class Symbol;
 class UseItem;
 
+constexpr std::string_view ERROR_TOKEN_VALUE = "[error]";
 constexpr std::string_view COMPLETION_TOKEN_VALUE = "[completion]";
 
 enum class ExprCategory : std::uint8_t {
@@ -542,6 +543,7 @@ struct Ident {
     ASTNode *ast_node;
     std::string_view value;
 
+    bool is_error_token() const { return value == ERROR_TOKEN_VALUE; }
     bool is_completion_token() const { return value == COMPLETION_TOKEN_VALUE; }
 
     bool operator==(const Ident &other) const { return value == other.value; }

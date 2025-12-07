@@ -21,7 +21,7 @@ ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
     node.append_child(result.node);
 
     if (!result.is_valid) {
-        return node.build_error();
+        return node.build_error(type);
     }
 
     return parser.check_stmt_terminator(node, type);
@@ -80,7 +80,7 @@ ParseResult StmtParser::parse_var_with_type(NodeBuilder &node, ASTNodeType type)
         node.append_child(result.node);
 
         if (!result.is_valid) {
-            return node.build_error();
+            return node.build_error(type);
         }
     }
 
@@ -94,7 +94,7 @@ ParseResult StmtParser::parse_var_without_type(NodeBuilder &node, ASTNodeType ty
     node.append_child(result.node);
 
     if (!result.is_valid) {
-        return node.build_error();
+        return node.build_error(type);
     }
 
     return parser.check_stmt_terminator(node, type);

@@ -74,9 +74,11 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     if (!cur_entry) {
         cur_entry = &func_def;
     } else if (auto cur_func_def = cur_entry.match<sir::FuncDef>()) {
-        cur_entry = analyzer.create(sir::OverloadSet{
-            .func_defs = {cur_func_def, &func_def},
-        });
+        cur_entry = analyzer.create(
+            sir::OverloadSet{
+                .func_defs = {cur_func_def, &func_def},
+            }
+        );
     } else if (auto cur_overload_set = cur_entry.match<sir::OverloadSet>()) {
         cur_overload_set->func_defs.push_back(&func_def);
     }
@@ -88,18 +90,22 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
         };
 
         // TODO
-        cur_entry = analyzer.create(sir::GuardedSymbol{
-            .variants{variant},
-        });
+        cur_entry = analyzer.create(
+            sir::GuardedSymbol{
+                .variants{variant},
+            }
+        );
     }
 
     analyzer.add_symbol_def(&func_def);
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
         if (func_def.is_method()) {
-            proto_def->func_decls.push_back(sir::ProtoFuncDecl{
-                .decl = &func_def,
-            });
+            proto_def->func_decls.push_back(
+                sir::ProtoFuncDecl{
+                    .decl = &func_def,
+                }
+            );
         }
     }
 }
@@ -110,9 +116,11 @@ void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
     analyzer.add_symbol_def(&func_decl);
 
     if (auto proto_def = analyzer.get_scope().decl.match<sir::ProtoDef>()) {
-        proto_def->func_decls.push_back(sir::ProtoFuncDecl{
-            .decl = &func_decl,
-        });
+        proto_def->func_decls.push_back(
+            sir::ProtoFuncDecl{
+                .decl = &func_decl,
+            }
+        );
     }
 }
 
@@ -221,6 +229,16 @@ void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
     } else if (auto use_rebind = use_dot_expr.rhs.match<sir::UseRebind>()) {
         collect_use_rebind(*use_rebind);
     } else if (auto use_list = use_dot_expr.rhs.match<sir::UseList>()) {
+        if (analyzer.mode == Mode::COMPLETION) {
+            for (sir::UseItem &use_item : use_list->items) {
+                if (auto use_ident = use_item.match<sir::UseIdent>()) {
+                    if (use_ident->is_completion_token()) {
+                        analyzer.completion_context = CompleteAfterUseDot{.lhs = use_dot_expr.lhs};
+                    }
+                }
+            }
+        }
+
         collect_use_list(*use_list);
     }
 }
@@ -243,9 +261,11 @@ void SymbolCollector::add_symbol(std::string_view name, sir::Symbol symbol) {
         };
 
         if (!cur_entry) {
-            cur_entry = analyzer.create(sir::GuardedSymbol{
-                .variants{variant},
-            });
+            cur_entry = analyzer.create(
+                sir::GuardedSymbol{
+                    .variants{variant},
+                }
+            );
         } else if (auto guarded_symbol = cur_entry.match<sir::GuardedSymbol>()) {
             guarded_symbol->variants.push_back(variant);
         } else {

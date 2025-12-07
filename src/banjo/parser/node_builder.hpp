@@ -52,12 +52,12 @@ public:
         return node;
     }
 
-    ParseResult build_error() {
+    ParseResult build_error(ASTNodeType type = AST_ERROR) {
         if (node->last_child) {
             node->range.end = node->last_child->range.end;
         }
 
-        node->type = AST_ERROR;
+        node->type = type;
         return ParseResult{node, false};
     }
 };

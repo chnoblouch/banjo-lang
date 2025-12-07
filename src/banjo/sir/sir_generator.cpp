@@ -1143,7 +1143,7 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
     } else if (rhs_node->type == AST_ERROR) {
         rhs = {
             .ast_node = rhs_node,
-            .value = "[error]",
+            .value = sir::ERROR_TOKEN_VALUE,
         };
     }
 

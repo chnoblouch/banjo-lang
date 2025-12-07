@@ -980,6 +980,10 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         return partial_result;
     }
 
+    if (dot_expr.rhs.is_error_token()) {
+        return Result::ERROR;
+    }
+
     sir::Expr lhs = dot_expr.lhs;
     sir::Expr lhs_type = dot_expr.lhs.get_type();
 
@@ -1611,6 +1615,10 @@ Result ExprAnalyzer::analyze_completion_token() {
 }
 
 Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
+    if (dot_expr.rhs.is_error_token()) {
+        return Result::ERROR;
+    }
+    
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
         SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up_rhs_local(dot_expr);
