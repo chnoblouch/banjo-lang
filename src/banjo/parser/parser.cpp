@@ -80,7 +80,7 @@ ParseResult Parser::parse_block() {
             break;
         } else if (stream.get()->is(TKN_EOF)) {
             register_error(stream.previous()->range()).set_message(ReportText("file ends with unclosed block").str());
-            return node.build_error();
+            return node.build_error(AST_BLOCK);
         } else {
             parse_and_append_block_child(node);
         }
@@ -138,7 +138,8 @@ ParseResult Parser::parse_expr_or_assign() {
 
     ParseResult result = ExprParser(*this, false).parse();
     if (!result.is_valid) {
-        return {result.node, false};
+        node.append_child(result.node);
+        return node.build_error(AST_EXPR_STMT);
     }
 
     switch (stream.get()->type) {

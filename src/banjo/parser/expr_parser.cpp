@@ -5,6 +5,7 @@
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/reports/report_texts.hpp"
 #include "banjo/source/text_range.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -205,10 +206,6 @@ ParseResult ExprParser::parse_operand() {
         return parser.parse_completion_point();
     }
 
-    if (stream.get()->is(TKN_OR_OR)) {
-        stream.split_current();
-    }
-
     switch (stream.get()->type) {
         case TKN_LITERAL: return parse_number_literal();
         case TKN_CHARACTER: return parse_char_literal();
@@ -224,6 +221,7 @@ ParseResult ExprParser::parse_operand() {
         case TKN_LPAREN: return parse_paren_expr();
         case TKN_LBRACE: return parse_anon_struct_literal();
         case TKN_OR: return parse_closure();
+        case TKN_OR_OR: return parse_closure();
         case TKN_I8: return parser.consume_into_node(AST_I8);
         case TKN_I16: return parser.consume_into_node(AST_I16);
         case TKN_I32: return parser.consume_into_node(AST_I32);
@@ -387,11 +385,18 @@ ParseResult ExprParser::parse_anon_struct_literal() {
 ParseResult ExprParser::parse_closure() {
     NodeBuilder node = parser.build_node();
 
-    ParseResult result = parser.parse_param_list(TKN_OR);
-    if (!result.is_valid) {
-        return node.build_error();
+    if (stream.get()->is(TKN_OR_OR)) {
+        node.append_child(parser.consume_into_node(AST_PARAM_LIST));
+    } else if (stream.get()->is(TKN_OR)) {
+        ParseResult result = parser.parse_param_list(TKN_OR);
+        if (!result.is_valid) {
+            return node.build_error();
+        }
+
+        node.append_child(result.node);
+    } else {
+        ASSERT_UNREACHABLE;
     }
-    node.append_child(result.node);
 
     if (stream.get()->is(TKN_ARROW)) {
         node.consume(); // Consume '->'
@@ -404,7 +409,7 @@ ParseResult ExprParser::parse_closure() {
         return node.build(AST_CLOSURE_TYPE);
     }
 
-    result = parser.parse_block();
+    ParseResult result = parser.parse_block();
     if (!result.is_valid) {
         return node.build_error();
     }
@@ -494,7 +499,7 @@ ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
 
     ParseResult result = parse_struct_literal_body();
     node.append_child(result.node);
-    
+
     if (result.is_valid) {
         return node.build(AST_STRUCT_INSTANTIATION);
     } else {

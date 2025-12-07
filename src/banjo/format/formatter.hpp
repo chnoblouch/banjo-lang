@@ -93,6 +93,7 @@ private:
     void format_closure_type(ASTNode *node, WhitespaceKind whitespace);
     void format_meta_expr(ASTNode *node, WhitespaceKind whitespace);
 
+    void format_param_list(ASTNode *node, WhitespaceKind whitespace);
     void format_param(ASTNode *node, WhitespaceKind whitespace);
     void format_ref_return(ASTNode *node, WhitespaceKind whitespace);
     void format_generic_param(ASTNode *node, WhitespaceKind whitespace);

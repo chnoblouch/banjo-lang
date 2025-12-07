@@ -191,7 +191,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_PARAM_SEQUENCE_TYPE: format_single_token_node(node, whitespace); break;
         case AST_META_EXPR: format_meta_expr(node, whitespace); break;
         case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
-        case AST_PARAM_LIST: format_list(node, whitespace); break;
+        case AST_PARAM_LIST: format_param_list(node, whitespace); break;
         case AST_PARAM: format_param(node, whitespace); break;
         case AST_REF_PARAM: format_param(node, whitespace); break;
         case AST_REF_MUT_PARAM: format_param(node, whitespace); break;
@@ -1034,6 +1034,16 @@ void Formatter::format_meta_expr(ASTNode *node, WhitespaceKind whitespace) {
     ensure_no_space_after(tkn_lparen);
     format_node(expr_node, WhitespaceKind::NONE);
     ensure_whitespace_after(tkn_rparen, whitespace);
+}
+
+void Formatter::format_param_list(ASTNode *node, WhitespaceKind whitespace) {
+    unsigned first_token = node->tokens[0];
+
+    if (tokens.tokens[first_token].is(TKN_OR_OR)) {
+        ensure_whitespace_after(first_token, whitespace);
+    } else {
+        return format_list(node, whitespace);
+    }
 }
 
 void Formatter::format_param(ASTNode *node, WhitespaceKind whitespace) {

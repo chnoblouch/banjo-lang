@@ -29,16 +29,4 @@ void TokenStream::seek(unsigned position) {
     this->position = position;
 }
 
-void TokenStream::split_current() {
-    Token *token = &input.tokens[position];
-
-    switch (token->type) {
-        case TKN_OR_OR:
-            input.tokens[position] = Token{TKN_OR, "", token->position};
-            input.tokens.insert(input.tokens.begin() + position, Token{TKN_OR, "", token->position + 1});
-            break;
-        default: break;
-    }
-}
-
 } // namespace banjo::lang
