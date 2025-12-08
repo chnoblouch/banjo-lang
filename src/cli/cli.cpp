@@ -119,6 +119,10 @@ static const ArgumentParser::Positional POSITIONAL_TOOL{
     "tool",
 };
 
+static const ArgumentParser::Positional POSITIONAL_FORMAT_FILE{
+    "file",
+};
+
 static const ArgumentParser::Positional POSITIONAL_BINDGEN_SOURCE{
     "file",
 };
@@ -217,9 +221,23 @@ static const ArgumentParser::Command COMMAND_LSP{
     "Launch the language server",
     {
         OPTION_HELP,
+        OPTION_TARGET,
         OPTION_QUIET,
         OPTION_VERBOSE,
     },
+};
+
+static const ArgumentParser::Command COMMAND_FORMAT{
+    "format",
+    "Format source files",
+    {
+        OPTION_HELP,
+        OPTION_QUIET,
+        OPTION_VERBOSE,
+    },
+    {
+        POSITIONAL_FORMAT_FILE,
+    }
 };
 
 static const ArgumentParser::Command COMMAND_BINDGEN{
@@ -271,6 +289,7 @@ void CLI::run(int argc, const char *argv[]) {
             COMMAND_INVOKE,
             COMMAND_TARGETS,
             COMMAND_LSP,
+            COMMAND_FORMAT,
             COMMAND_BINDGEN,
             COMMAND_TOOLCHAINS,
             COMMAND_HELP,
@@ -360,6 +379,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_invoke(args);
     } else if (args.command->name == COMMAND_LSP.name) {
         execute_lsp();
+    } else if (args.command->name == COMMAND_FORMAT.name) {
+        execute_format(args);
     } else if (args.command->name == COMMAND_BINDGEN.name) {
         execute_bindgen(args);
     } else if (args.command->name == COMMAND_HELP.name) {
@@ -561,6 +582,29 @@ void CLI::execute_lsp() {
         .stdin_stream = Command::Stream::INHERIT,
         .stdout_stream = Command::Stream::INHERIT,
         .stderr_stream = Command::Stream::INHERIT,
+    };
+
+    std::optional<Process> process = Process::spawn(command);
+    process->wait();
+}
+
+void CLI::execute_format(const ArgumentParser::Result &args) {
+    std::string path = args.command_positionals[0];
+
+    if (!std::filesystem::is_regular_file(path)) {
+        error("source file '" + path + "' not found");
+    }
+
+    quiet = true;
+    load_config();
+
+    std::vector<std::string> command_args;
+    append_compilation_args(command_args);
+    command_args.push_back(path);
+
+    Command command{
+        .executable = "banjo-format",
+        .args = command_args,
     };
 
     std::optional<Process> process = Process::spawn(command);

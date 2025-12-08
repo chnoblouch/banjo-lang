@@ -234,7 +234,7 @@ void Formatter::format_mod(ASTNode *node) {
     }
 
     for (ASTNode *child = block_node->first_child; child; child = child->next_sibling) {
-        format_node(child, WhitespaceKind::INDENT);
+        format_node(child, WhitespaceKind::INDENT_ALLOW_EMPTY_LINE);
     }
 }
 
@@ -1152,7 +1152,7 @@ void Formatter::format_impl_list(ASTNode *node, WhitespaceKind whitespace) {
     }
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->next_sibling || tokens.tokens[node->tokens.back()].is(TKN_COMMA)) {
+        if (child->next_sibling) {
             format_node(child, WhitespaceKind::NONE);
         } else {
             format_node(child, whitespace);
