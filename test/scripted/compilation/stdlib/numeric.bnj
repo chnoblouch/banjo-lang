@@ -1,0 +1,101 @@
+# test:common
+
+use std.numeric;
+
+# test:subtest
+# test:output "59380,3891569798,16714165016638904133"
+
+func main() {
+    print(numeric.u16_from_bytes_be([0xE7, 0xF4]));
+    print(',');
+    print(numeric.u32_from_bytes_be([0xE7, 0xF4, 0xA4, 0x86]));
+    print(',');
+    print(numeric.u64_from_bytes_be([0xE7, 0xF4, 0xA4, 0x86, 0xF6, 0x05, 0xD7, 0x45]));
+}
+
+# test:subtest
+# test:output "62695,2258957543,5032497664988869863"
+
+func main() {
+    print(numeric.u16_from_bytes_le([0xE7, 0xF4]));
+    print(',');
+    print(numeric.u32_from_bytes_le([0xE7, 0xF4, 0xA4, 0x86]));
+    print(',');
+    print(numeric.u64_from_bytes_le([0xE7, 0xF4, 0xA4, 0x86, 0xF6, 0x05, 0xD7, 0x45]));
+}
+
+# test:subtest
+# test:output "231,244;231,244,164,134;231,244,164,134,246,5,215,69"
+
+func main() {
+    var bytes_u16 = numeric.u16_to_bytes_be(59380);
+    print(bytes_u16[0] as u32);
+    print(',');
+    print(bytes_u16[1] as u32);
+    print(';');
+
+    var bytes_u32 = numeric.u32_to_bytes_be(3891569798);
+    print(bytes_u32[0] as u32);
+    print(',');
+    print(bytes_u32[1] as u32);
+    print(',');
+    print(bytes_u32[2] as u32);
+    print(',');
+    print(bytes_u32[3] as u32);
+    print(';');
+
+    var bytes_u64 = numeric.u64_to_bytes_be(16714165016638904133);
+    print(bytes_u64[0] as u32);
+    print(',');
+    print(bytes_u64[1] as u32);
+    print(',');
+    print(bytes_u64[2] as u32);
+    print(',');
+    print(bytes_u64[3] as u32);
+    print(',');
+    print(bytes_u64[4] as u32);
+    print(',');
+    print(bytes_u64[5] as u32);
+    print(',');
+    print(bytes_u64[6] as u32);
+    print(',');
+    print(bytes_u64[7] as u32);
+}
+
+# test:subtest
+# test:output "231,244;231,244,164,134;231,244,164,134,246,5,215,69"
+
+func main() {
+    var bytes_u16 = numeric.u16_to_bytes_le(62695);
+    print(bytes_u16[0] as u32);
+    print(',');
+    print(bytes_u16[1] as u32);
+    print(';');
+
+    var bytes_u32 = numeric.u32_to_bytes_le(2258957543);
+    print(bytes_u32[0] as u32);
+    print(',');
+    print(bytes_u32[1] as u32);
+    print(',');
+    print(bytes_u32[2] as u32);
+    print(',');
+    print(bytes_u32[3] as u32);
+    print(';');
+
+    var bytes_u64 = numeric.u64_to_bytes_le(5032497664988869863);
+    print(bytes_u64[0] as u32);
+    print(',');
+    print(bytes_u64[1] as u32);
+    print(',');
+    print(bytes_u64[2] as u32);
+    print(',');
+    print(bytes_u64[3] as u32);
+    print(',');
+    print(bytes_u64[4] as u32);
+    print(',');
+    print(bytes_u64[5] as u32);
+    print(',');
+    print(bytes_u64[6] as u32);
+    print(',');
+    print(bytes_u64[7] as u32);
+}
