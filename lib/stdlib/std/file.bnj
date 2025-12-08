@@ -3,7 +3,7 @@ use std.{
     memory,
     convert,
     path.Path,
-    io.{Read, Write, Error},
+    io.{Read, Write, Seek, Error},
 };
 
 use c;
@@ -22,7 +22,7 @@ use c.lib.stdio.{
     SEEK_END,
 };
 
-struct File: Read, Write {
+struct File: Read, Write, Seek {
     enum Mode {
         READ,
         WRITE,
@@ -30,12 +30,6 @@ struct File: Read, Write {
         READ_WRITE,
         READ_WRITE_ERASE,
         READ_APPEND,
-    }
-
-    enum SeekOrigin {
-        START,
-        END,
-        CURRENT,
     }
 
     var stream: addr;
@@ -64,9 +58,9 @@ struct File: Read, Write {
         # TODO: Error handling
 
         var file = open(path, File.Mode.READ).unwrap();
-        file.seek(0, SeekOrigin.END);
+        file.seek(0, .END);
         var size = file.position().unwrap() as usize;
-        file.seek(0, SeekOrigin.START);
+        file.seek(0, .START);
 
         var buffer = Array[u8].sized(size);
         file.read(buffer.slice());
@@ -75,9 +69,9 @@ struct File: Read, Write {
     
     pub func read_all_string[P](path: P) -> String except Error {
         var file = open(path, File.Mode.READ).unwrap();
-        file.seek(0, SeekOrigin.END);
+        file.seek(0, .END);
         var size = file.position().unwrap() as usize;
-        file.seek(0, SeekOrigin.START);
+        file.seek(0, .START);
 
         var string = String {
             slice: StringSlice {
@@ -124,16 +118,16 @@ struct File: Read, Write {
         }
     }
 
-    pub func seek(self, offset: i64, origin: SeekOrigin) -> void except Error {
+    pub func seek(mut self, offset: i64, origin: Seek.Origin) -> void except Error {
         # TODO: Actually support 64-bit offsets.
 
         var libc_origin: i32 = 0;
 
-        if origin == SeekOrigin.START {
+        if origin == .START {
             libc_origin = SEEK_SET;
-        } else if origin == SeekOrigin.END {
+        } else if origin == .END {
             libc_origin = SEEK_END;
-        } else if origin == SeekOrigin.CURRENT {
+        } else if origin == .CURRENT {
             libc_origin = SEEK_CUR;
         }
 

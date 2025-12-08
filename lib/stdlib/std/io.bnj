@@ -1,4 +1,4 @@
-use std.{platform, file.File};
+use std.{platform, numeric, file.File};
 
 use c.lib.{
     string.strlen,
@@ -6,9 +6,119 @@ use c.lib.{
 };
 
 proto Read {
-    pub func read(self, data: Slice[u8]) -> usize except Error;
+    pub func read(mut self, data: Slice[u8]) -> usize except Error;
 
-    pub func read_line(self) -> String {
+    pub func read_u8(mut self) -> u8 except Error {
+        var value: u8;
+        
+        try num_bytes in self.read(Slice[u8].new(&value, 1)) {
+            # TODO: Check number of bytes
+            return value;
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u16_be(mut self) -> u16 except Error {
+        var bytes: [u8; 2];
+        
+        try num_bytes in self.read(Slice[u8].new(&bytes[0], 2)) {
+            # TODO: Check number of bytes
+            return numeric.u16_from_bytes_be(bytes);
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u16_le(mut self) -> u16 except Error {
+        var bytes: [u8; 2];
+        
+        try num_bytes in self.read(Slice[u8].new(&bytes[0], 2)) {
+            # TODO: Check number of bytes
+            return numeric.u16_from_bytes_le(bytes);
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u16_native(mut self) -> u16 except Error {
+        var value: u16;
+        
+        try num_bytes in self.read(Slice[u8].new(&value as *u8, 2)) {
+            # TODO: Check number of bytes
+            return value;
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u32_be(mut self) -> u32 except Error {
+        var bytes: [u8; 4];
+        
+        try num_bytes in self.read(Slice[u8].new(&bytes[0], 4)) {
+            # TODO: Check number of bytes
+            return numeric.u32_from_bytes_be(bytes);
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u32_le(mut self) -> u32 except Error {
+        var bytes: [u8; 4];
+        
+        try num_bytes in self.read(Slice[u8].new(&bytes[0], 4)) {
+            # TODO: Check number of bytes
+            return numeric.u32_from_bytes_le(bytes);
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u32_native(mut self) -> u32 except Error {
+        var value: u32;
+        
+        try num_bytes in self.read(Slice[u8].new(&value as *u8, 4)) {
+            # TODO: Check number of bytes
+            return value;
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u64_be(mut self) -> u64 except Error {
+        var bytes: [u8; 8];
+        
+        try num_bytes in self.read(Slice[u8].new(&bytes[0], 8)) {
+            # TODO: Check number of bytes
+            return numeric.u64_from_bytes_be(bytes);
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u64_le(mut self) -> u64 except Error {
+        var bytes: [u8; 8];
+        
+        try num_bytes in self.read(Slice[u8].new(&bytes[0], 8)) {
+            # TODO: Check number of bytes
+            return numeric.u64_from_bytes_le(bytes);
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_u64_native(mut self) -> u64 except Error {
+        var value: u64;
+        
+        try num_bytes in self.read(Slice[u8].new(&value as *u8, 8)) {
+            # TODO: Check number of bytes
+            return value;
+        } except error: Error {
+            return error;
+        }
+    }
+
+    pub func read_line(mut self) -> String {
         # TODO: Buffering, error handling
 
         var line = "";
@@ -26,16 +136,73 @@ proto Read {
 }
 
 proto Write {
-    pub func write(self, data: Slice[u8]) -> usize except Error;
+    pub func write(mut self, data: Slice[u8]) -> usize except Error;
     
-    pub func write_string(self, string: StringSlice) -> usize except Error {
+    pub func write_u8(mut self, value: u8) -> usize except Error {
+        return self.write(Slice[u8].new(&value, 1));
+    }
+
+    pub func write_u16_be(mut self, value: u16) -> usize except Error {
+        var data = numeric.u16_to_bytes_be(value);
+        return self.write(Slice[u8].new(&data[0], 2));
+    }
+
+    pub func write_u16_le(mut self, value: u16) -> usize except Error {
+        var data = numeric.u16_to_bytes_le(value);
+        return self.write(Slice[u8].new(&data[0], 2));
+    }
+
+    pub func write_u16_native(mut self, value: u16) -> usize except Error {
+        return self.write(Slice[u8].new(&value as *u8, 2));
+    }
+
+    pub func write_u32_be(mut self, value: u32) -> usize except Error {
+        var data = numeric.u32_to_bytes_be(value);
+        return self.write(Slice[u8].new(&data[0], 4));
+    }
+
+    pub func write_u32_le(mut self, value: u32) -> usize except Error {
+        var data = numeric.u32_to_bytes_le(value);
+        return self.write(Slice[u8].new(&data[0], 4));
+    }
+
+    pub func write_u32_native(mut self, value: u32) -> usize except Error {
+        return self.write(Slice[u8].new(&value as *u8, 4));
+    }
+
+    pub func write_u64_be(mut self, value: u64) -> usize except Error {
+        var data = numeric.u64_to_bytes_be(value);
+        return self.write(Slice[u8].new(&data[0], 8));
+    }
+
+    pub func write_u64_le(mut self, value: u64) -> usize except Error {
+        var data = numeric.u64_to_bytes_le(value);
+        return self.write(Slice[u8].new(&data[0], 8));
+    }
+
+    pub func write_u64_native(mut self, value: u64) -> usize except Error {
+        return self.write(Slice[u8].new(&value as *u8, 8));
+    }
+
+    pub func write_string(mut self, string: StringSlice) -> usize except Error {
         return self.write(Slice[u8].new(string.data, string.length));
     }
 
-    pub func write_cstring(self, data: *u8) -> usize except Error {
+    pub func write_cstring(mut self, data: *u8) -> usize except Error {
         var length = strlen(data);
         return self.write(Slice[u8].new(data, length));
     }
+}
+
+proto Seek {
+    enum Origin {
+        START,
+        END,
+        CURRENT,
+    }
+
+    pub func position(self) -> u64 except Error;
+    pub func seek(mut self, offset: i64, origin: Origin) -> void except Error;
 }
 
 struct Error {

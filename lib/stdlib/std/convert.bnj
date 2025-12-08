@@ -35,6 +35,8 @@ pub func to_repr[T](ref value: T) -> String {
 pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     meta if T == String {
         return "\"" + value.copy() + "\"";
+    }  else if T == u8 {
+        return "\'" + char_to_string(value) + "\'";
     } else if meta(T).has_method("__repr__") {
         return value.__repr__(indent);
     } else if meta(T).is_struct {

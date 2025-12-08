@@ -1,0 +1,51 @@
+use std.{io, memory};
+
+struct Buffer: io.Read, io.Write, io.Seek {
+    var data: Array[u8];
+    var position: usize;
+
+    pub func new() -> Buffer {
+        return Buffer {
+            data: [],
+            position: 0,
+        };
+    }
+
+    pub func read(mut self, data: Slice[u8]) -> usize except io.Error {
+        if self.position + data.length > self.data.length() {
+            return io.Error { handle: undefined };
+        }
+
+        memory.copy(&self.data[self.position], data.data, data.length);
+        return data.length;
+    }
+
+    pub func write(mut self, data: Slice[u8]) -> usize except io.Error {
+        if self.position + data.length > self.data.length() {
+            self.data.resize(self.position + data.length);
+        }
+
+        memory.copy(data.data, &self.data[self.position], data.length);
+        self.position += data.length;
+
+        return data.length;
+    }
+
+    pub func position(self) -> u64 except io.Error {
+        return self.position as u64;
+    }
+
+    pub func seek(mut self, offset: i64, origin: io.Seek.Origin) -> void except io.Error {
+        if origin == .START {
+            # TODO: Check non-negative
+            self.position = offset as usize;
+        } else if origin == .END {
+            self.position = self.data.length();
+        } else if origin == .CURRENT {
+            # TODO: Out of bounds check, casting
+            self.position = (self.position as i64 + offset) as usize;
+        }
+
+        return undefined;
+    }
+}
