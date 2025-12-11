@@ -489,7 +489,7 @@ void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
 
 void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
     if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
-        if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
+        if (node->next_sibling && node->next_sibling->type != AST_TYPE_ALIAS) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
     }
@@ -1244,7 +1244,8 @@ void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace, bool enclo
 
         indentation -= 1;
     } else {
-        ensure_whitespace_after(tkn_start, enclosing_spaces ? WhitespaceKind::SPACE : WhitespaceKind::NONE);
+        bool space_after_lbrace = enclosing_spaces && node->has_children();
+        ensure_whitespace_after(tkn_start, space_after_lbrace ? WhitespaceKind::SPACE : WhitespaceKind::NONE);
 
         for (unsigned i = 1; i < node->tokens.size() - 1; i++) {
             ensure_space_after(node->tokens[i]);
