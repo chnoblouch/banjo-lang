@@ -1382,7 +1382,7 @@ void CLI::invoke_darwin_linker() {
     args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
-        .executable = "ld64.lld",
+        .executable = linker_path,
         .args = args,
     };
 
