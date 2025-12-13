@@ -2,6 +2,7 @@
 
 #include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/meta_expr_evaluator.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_visitor.hpp"
@@ -16,8 +17,12 @@ namespace sema {
 ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
-    sir::Expr result = evaluate(expr);
-    if (auto int_literal = result.match<sir::IntLiteral>()) {
+    Output evaluated = evaluate(expr);
+    if (evaluated.result != Result::SUCCESS) {
+        return 0;
+    }
+
+    if (auto int_literal = evaluated.expr.match<sir::IntLiteral>()) {
         return int_literal->value;
     } else {
         return 0;
@@ -25,15 +30,19 @@ LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
 }
 
 bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
-    sir::Expr result = evaluate(expr);
-    if (auto bool_literal = result.match<sir::BoolLiteral>()) {
+    Output evaluated = evaluate(expr);
+    if (evaluated.result != Result::SUCCESS) {
+        return 0;
+    }
+
+    if (auto bool_literal = evaluated.expr.match<sir::BoolLiteral>()) {
         return bool_literal->value;
     } else {
         return false;
-    };
+    }
 }
 
-sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
+ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
     SIR_VISIT_EXPR(
         expr,
         SIR_VISIT_IMPOSSIBLE,                    // empty
@@ -85,7 +94,7 @@ sir::Expr ConstEvaluator::evaluate(sir::Expr &expr) {
     );
 }
 
-sir::Expr ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_literal) {
+ConstEvaluator::Output ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_literal) {
     sir::ArrayLiteral result{
         .ast_node = array_literal.ast_node,
         .type = clone(array_literal.type),
@@ -93,90 +102,102 @@ sir::Expr ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_litera
     };
 
     for (unsigned i = 0; i < array_literal.values.size(); i++) {
-        sir::Expr value = evaluate(array_literal.values[i]);
-        if (!value) {
-            return nullptr;
+        Output value = evaluate(array_literal.values[i]);
+        if (value.result != Result::SUCCESS) {
+            return value.result;
         }
 
-        result.values[i] = value;
+        result.values[i] = value.expr;
     }
 
-    return analyzer.create(result);
+    return {Result::SUCCESS, analyzer.create(result)};
 }
 
-sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
+ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
     SIR_VISIT_SYMBOL(
         symbol_expr.symbol,
-        SIR_VISIT_IMPOSSIBLE,                    // empty
-        SIR_VISIT_IMPOSSIBLE,                    // module
-        SIR_VISIT_IMPOSSIBLE,                    // func_def
-        SIR_VISIT_IMPOSSIBLE,                    // func_decl
-        SIR_VISIT_IMPOSSIBLE,                    // native_func_decl
-        return evaluate_const_def_value(*inner), // const_def
-        return &symbol_expr,                     // struct_def
-        SIR_VISIT_IMPOSSIBLE,                    // struct_field
-        SIR_VISIT_IMPOSSIBLE,                    // var_decl
-        SIR_VISIT_IMPOSSIBLE,                    // native_var_decl
-        return &symbol_expr,                     // enum_def
-        return clone(evaluate(inner->value)),    // enum_variant
-        return &symbol_expr,                     // union_def
-        SIR_VISIT_IMPOSSIBLE,                    // union_case
-        SIR_VISIT_IMPOSSIBLE,                    // proto_def
-        SIR_VISIT_IMPOSSIBLE,                    // type_alias
-        SIR_VISIT_IMPOSSIBLE,                    // use_ident
-        SIR_VISIT_IMPOSSIBLE,                    // use_rebind
-        return &symbol_expr,                     // local
-        return &symbol_expr,                     // param
-        SIR_VISIT_IMPOSSIBLE                     // overload_set
+        SIR_VISIT_IMPOSSIBLE,                      // empty
+        SIR_VISIT_IMPOSSIBLE,                      // module
+        SIR_VISIT_IMPOSSIBLE,                      // func_def
+        SIR_VISIT_IMPOSSIBLE,                      // func_decl
+        SIR_VISIT_IMPOSSIBLE,                      // native_func_decl
+        return evaluate_const_def_value(*inner),   // const_def
+        return sir::Expr(&symbol_expr),            // struct_def
+        SIR_VISIT_IMPOSSIBLE,                      // struct_field
+        SIR_VISIT_IMPOSSIBLE,                      // var_decl
+        SIR_VISIT_IMPOSSIBLE,                      // native_var_decl
+        return sir::Expr(&symbol_expr),            // enum_def
+        return clone(evaluate(inner->value).expr), // enum_variant
+        return sir::Expr(&symbol_expr),            // union_def
+        SIR_VISIT_IMPOSSIBLE,                      // union_case
+        SIR_VISIT_IMPOSSIBLE,                      // proto_def
+        SIR_VISIT_IMPOSSIBLE,                      // type_alias
+        SIR_VISIT_IMPOSSIBLE,                      // use_ident
+        SIR_VISIT_IMPOSSIBLE,                      // use_rebind
+        return sir::Expr(&symbol_expr),            // local
+        return sir::Expr(&symbol_expr),            // param
+        SIR_VISIT_IMPOSSIBLE                       // overload_set
     );
 }
 
-sir::Expr ConstEvaluator::evaluate_const_def_value(sir::ConstDef &const_def) {
-    DeclBodyAnalyzer(analyzer).visit_const_def(const_def);
-    return clone(evaluate(const_def.value));
-}
-
-sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
-    sir::Expr lhs = evaluate(binary_expr.lhs);
-    sir::Expr rhs = evaluate(binary_expr.rhs);
-
-    if (!lhs || !rhs) {
-        return nullptr;
+ConstEvaluator::Output ConstEvaluator::evaluate_const_def_value(sir::ConstDef &const_def) {
+    Result result = DeclBodyAnalyzer(analyzer).visit_const_def(const_def);
+    if (result != Result::SUCCESS) {
+        return result;
     }
 
-    if (lhs.is<sir::IntLiteral>() && rhs.is<sir::IntLiteral>()) {
-        LargeInt lhs_int = lhs.as<sir::IntLiteral>().value;
-        LargeInt rhs_int = rhs.as<sir::IntLiteral>().value;
+    ConstEvaluator::Output evaluated = evaluate(const_def.value);
+    if (evaluated.result != Result::SUCCESS) {
+        return evaluated.result;
+    }
+
+    return clone(evaluated.expr);
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
+    ConstEvaluator::Output lhs = evaluate(binary_expr.lhs);
+    ConstEvaluator::Output rhs = evaluate(binary_expr.rhs);
+
+    if (lhs.result != Result::SUCCESS || rhs.result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    if (lhs.expr.is<sir::IntLiteral>() && rhs.expr.is<sir::IntLiteral>()) {
+        LargeInt lhs_int = lhs.expr.as<sir::IntLiteral>().value;
+        LargeInt rhs_int = rhs.expr.as<sir::IntLiteral>().value;
 
         if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs_int == rhs_int);
         else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs_int != rhs_int);
         else ASSERT_UNREACHABLE;
-    } else if (lhs.is<sir::BoolLiteral>() && rhs.is<sir::BoolLiteral>()) {
-        bool lhs_bool = lhs.as<sir::BoolLiteral>().value;
-        bool rhs_bool = rhs.as<sir::BoolLiteral>().value;
+    } else if (lhs.expr.is<sir::BoolLiteral>() && rhs.expr.is<sir::BoolLiteral>()) {
+        bool lhs_bool = lhs.expr.as<sir::BoolLiteral>().value;
+        bool rhs_bool = rhs.expr.as<sir::BoolLiteral>().value;
 
         if (binary_expr.op == sir::BinaryOp::AND) return create_bool_literal(lhs_bool && rhs_bool);
         else if (binary_expr.op == sir::BinaryOp::OR) return create_bool_literal(lhs_bool || rhs_bool);
         else ASSERT_UNREACHABLE;
-    } else if (lhs.is_type() && rhs.is_type()) {
-        if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs == rhs);
-        else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs != rhs);
+    } else if (lhs.expr.is_type() && rhs.expr.is_type()) {
+        if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs.expr == rhs.expr);
+        else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs.expr != rhs.expr);
         else ASSERT_UNREACHABLE;
     } else {
         return create_bool_literal(false);
     }
 }
 
-sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
-    sir::Expr value = evaluate(unary_expr.value);
+ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
+    Output value = evaluate(unary_expr.value);
+    if (value.result != Result::SUCCESS) {
+        return value.result;
+    }
 
-    if (auto int_literal = value.match<sir::IntLiteral>()) {
+    if (auto int_literal = value.expr.match<sir::IntLiteral>()) {
         if (unary_expr.op == sir::UnaryOp::NEG) return create_int_literal(-int_literal->value, unary_expr.ast_node);
         else ASSERT_UNREACHABLE;
-    } else if (auto fp_literal = value.match<sir::FPLiteral>()) {
+    } else if (auto fp_literal = value.expr.match<sir::FPLiteral>()) {
         if (unary_expr.op == sir::UnaryOp::NEG) return create_fp_literal(-fp_literal->value, unary_expr.ast_node);
         else ASSERT_UNREACHABLE;
-    } else if (auto bool_literal = value.match<sir::BoolLiteral>()) {
+    } else if (auto bool_literal = value.expr.match<sir::BoolLiteral>()) {
         if (unary_expr.op == sir::UnaryOp::NOT) return create_bool_literal(!bool_literal->value, unary_expr.ast_node);
         else ASSERT_UNREACHABLE;
     } else {
@@ -184,7 +205,7 @@ sir::Expr ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
     }
 }
 
-sir::Expr ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {
+ConstEvaluator::Output ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {
     sir::TupleExpr result{
         .ast_node = tuple_expr.ast_node,
         .type = clone(tuple_expr.type),
@@ -192,32 +213,32 @@ sir::Expr ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {
     };
 
     for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
-        sir::Expr value = evaluate(tuple_expr.exprs[i]);
-        if (!value) {
-            return nullptr;
+        Output value = evaluate(tuple_expr.exprs[i]);
+        if (value.result != Result::SUCCESS) {
+            return value.result;
         }
 
-        result.exprs[i] = value;
+        result.exprs[i] = value.expr;
     }
 
-    return analyzer.create(result);
+    return sir::Expr{analyzer.create(result)};
 }
 
-sir::Expr ConstEvaluator::evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
+ConstEvaluator::Output ConstEvaluator::evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
     sir::Expr dummy_expr = &meta_field_expr;
     MetaExprEvaluator(analyzer).evaluate(meta_field_expr, dummy_expr);
     return dummy_expr;
 }
 
-sir::Expr ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_expr) {
+ConstEvaluator::Output ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_expr) {
     sir::Expr dummy_expr = &meta_call_expr;
     MetaExprEvaluator(analyzer).evaluate(meta_call_expr, dummy_expr);
     return dummy_expr;
 }
 
-sir::Expr ConstEvaluator::evaluate_non_const(sir::Expr &value) {
+ConstEvaluator::Output ConstEvaluator::evaluate_non_const(sir::Expr &value) {
     analyzer.report_generator.report_err_compile_time_unknown(value);
-    return nullptr;
+    return Result::ERROR;
 }
 
 sir::Expr ConstEvaluator::create_int_literal(LargeInt value, ASTNode *ast_node /*= nullptr*/) {

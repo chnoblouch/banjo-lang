@@ -25,7 +25,7 @@ public:
     void visit_func_def(sir::FuncDef &func_def);
     void visit_func_decl(sir::FuncDecl &func_decl);
     void visit_native_func_decl(sir::NativeFuncDecl &native_func_decl);
-    void visit_const_def(sir::ConstDef &const_def);
+    Result visit_const_def(sir::ConstDef &const_def);
     void visit_struct_def(sir::StructDef &struct_def);
     void visit_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl);
     void visit_native_var_decl(sir::NativeVarDecl &native_var_decl);

@@ -50,9 +50,7 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
     DeclState &state = analyzer.decl_states[*const_def.sema_index];
 
-    if (state.stage < DeclStage::BODY) {
-        state.stage = DeclStage::BODY;
-    } else {
+    if (state.stage >= DeclStage::BODY) {
         return Result::SUCCESS;
     }
 
@@ -60,7 +58,31 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
         return Result::ERROR;
     }
 
-    Result result = ExprAnalyzer(analyzer).analyze_value(const_def.value, const_def.type);
+    if (std::ranges::count(analyzer.decl_stack, sir::Decl{&const_def})) {
+        analyzer.report_generator.report_err_cyclical_definition(const_def.value);
+        state.stage = DeclStage::BODY;
+        return Result::DEF_CYCLE;
+    }
+
+    Result result = ExprAnalyzer{analyzer}.analyze_value(const_def.value, const_def.type);
+
+    if (result != Result::SUCCESS) {
+        state.stage = DeclStage::BODY;
+        return result;
+    }
+
+    analyzer.decl_stack.push_back(&const_def);
+    ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate(const_def.value);
+    analyzer.decl_stack.pop_back();
+
+    if (evaluated.result != Result::SUCCESS) {
+        state.stage = DeclStage::BODY;
+        return evaluated.result;
+    }
+
+    const_def.value = evaluated.expr;
+    state.stage = DeclStage::BODY;
+
     return result;
 }
 
@@ -126,7 +148,7 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Proto
 
 Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*out_decl*/) {
     DeclState &state = analyzer.decl_states[*var_decl.sema_index];
-    
+
     if (state.stage < DeclStage::BODY) {
         state.stage = DeclStage::BODY;
     } else {
@@ -145,12 +167,12 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
             return Result::ERROR;
         }
 
-        sir::Expr evaluated = ConstEvaluator(analyzer).evaluate(var_decl.value);
-        if (evaluated) {
-            var_decl.value = evaluated;
-        } else {
+        ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate(var_decl.value);
+        if (evaluated.result != Result::SUCCESS) {
             return Result::ERROR;
         }
+
+        var_decl.value = evaluated.expr;
 
         partial_result = ExprFinalizer(analyzer).finalize_by_coercion(var_decl.value, var_decl.type);
         if (partial_result != Result::SUCCESS) {
@@ -163,13 +185,13 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
 
 Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
     DeclState &state = analyzer.decl_states[*enum_def.sema_index];
-    
+
     if (state.stage < DeclStage::BODY) {
         state.stage = DeclStage::BODY;
     } else {
         return Result::SUCCESS;
     }
-    
+
     Result partial_result;
     LargeInt next_value = 0;
 
@@ -180,12 +202,12 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
                 continue;
             }
 
-            variant->value = ConstEvaluator(analyzer).evaluate(variant->value);
-            if (!variant->value.is<sir::IntLiteral>()) {
-                analyzer.report_generator.report_err_expected_integer(variant->value);
+            ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate(variant->value);
+            if (evaluated.result != Result::SUCCESS) {
                 continue;
             }
 
+            variant->value = evaluated.expr;
             next_value = variant->value.as<sir::IntLiteral>().value + 1;
             ExprFinalizer(analyzer).finalize(variant->value);
         } else {

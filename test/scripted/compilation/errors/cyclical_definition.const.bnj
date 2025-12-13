@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 4:16 "cyclical definition"
+
+const A: i32 = A;
+
+# test:subtest
+# test:error 9:16 "cyclical definition"
+
+const A: f32 = B;
+const B: f32 = A;
+
+# test:subtest
+# test:error 15:16 "cyclical definition"
+
+const A: u32 = C;
+const B: u32 = A;
+const C: u32 = B;

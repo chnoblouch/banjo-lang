@@ -2,6 +2,7 @@
 
 #include "banjo/sema/const_evaluator.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sir/sir.hpp"
@@ -84,7 +85,7 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
             return;
         }
 
-        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition) /* || is_guard */) {
+        if (ConstEvaluator{analyzer}.evaluate_to_bool(cond_branch.condition) /* || is_guard */) {
             // if (is_guard) {
             //     analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
             // }
@@ -137,7 +138,7 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
             return;
         }
 
-        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition) || is_guard) {
+        if (ConstEvaluator{analyzer}.evaluate_to_bool(cond_branch.condition) || is_guard) {
             if (is_guard) {
                 analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
             }
@@ -197,15 +198,18 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
         return Result::ERROR;
     }
 
-    sir::Expr evaluated_range = ConstEvaluator(analyzer).evaluate(range);
+    ConstEvaluator::Output evaluated_range = ConstEvaluator{analyzer}.evaluate(range);
+    if (evaluated_range.result != Result::SUCCESS) {
+        return evaluated_range.result;
+    }
 
-    if (auto array_literal = evaluated_range.match<sir::ArrayLiteral>()) {
+    if (auto array_literal = evaluated_range.expr.match<sir::ArrayLiteral>()) {
         out_values.insert(out_values.begin(), array_literal->values.begin(), array_literal->values.end());
         return Result::SUCCESS;
-    } else if (auto tuple_expr = evaluated_range.match<sir::TupleExpr>()) {
+    } else if (auto tuple_expr = evaluated_range.expr.match<sir::TupleExpr>()) {
         out_values.insert(out_values.begin(), tuple_expr->exprs.begin(), tuple_expr->exprs.end());
         return Result::SUCCESS;
-    } else if (auto symbol_expr = evaluated_range.match<sir::SymbolExpr>()) {
+    } else if (auto symbol_expr = evaluated_range.expr.match<sir::SymbolExpr>()) {
         sir::Expr type = symbol_expr->type;
 
         if (auto tuple_expr = type.match<sir::TupleExpr>()) {

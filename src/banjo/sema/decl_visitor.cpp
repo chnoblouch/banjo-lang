@@ -63,10 +63,12 @@ void DeclVisitor::visit_native_func_decl(sir::NativeFuncDecl &native_func_decl) 
     analyzer.exit_decl_scope();
 }
 
-void DeclVisitor::visit_const_def(sir::ConstDef &const_def) {
+Result DeclVisitor::visit_const_def(sir::ConstDef &const_def) {
     analyzer.enter_decl_scope(*analyzer.decl_states[*const_def.sema_index].scope);
-    analyze_const_def(const_def);
+    Result result = analyze_const_def(const_def);
     analyzer.exit_decl_scope();
+
+    return result;
 }
 
 void DeclVisitor::visit_struct_def(sir::StructDef &struct_def) {

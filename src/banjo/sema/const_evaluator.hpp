@@ -4,6 +4,8 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <cstddef>
+
 namespace banjo {
 
 namespace lang {
@@ -11,6 +13,17 @@ namespace lang {
 namespace sema {
 
 class ConstEvaluator {
+
+public:
+    struct Output {
+        Result result;
+        sir::Expr expr;
+
+        Output(Result result, sir::Expr expr) : result{result}, expr{expr} {}
+        Output(sir::Expr expr) : result{Result::SUCCESS}, expr{expr} {}
+        Output(Result result) : result{result}, expr{nullptr} {}
+        Output(std::nullptr_t) : result{Result::ERROR}, expr{nullptr} {}
+    };
 
 private:
     SemanticAnalyzer &analyzer;
@@ -20,17 +33,17 @@ public:
 
     LargeInt evaluate_to_int(sir::Expr &expr);
     bool evaluate_to_bool(sir::Expr &expr);
-    sir::Expr evaluate(sir::Expr &expr);
+    Output evaluate(sir::Expr &expr);
 
-    sir::Expr evaluate_array_literal(sir::ArrayLiteral &array_literal);
-    sir::Expr evaluate_symbol_expr(sir::SymbolExpr &symbol_expr);
-    sir::Expr evaluate_const_def_value(sir::ConstDef &const_def);
-    sir::Expr evaluate_binary_expr(sir::BinaryExpr &unary_expr);
-    sir::Expr evaluate_unary_expr(sir::UnaryExpr &unary_expr);
-    sir::Expr evaluate_tuple_expr(sir::TupleExpr &tuple_expr);
-    sir::Expr evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr);
-    sir::Expr evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_expr);
-    sir::Expr evaluate_non_const(sir::Expr &value);
+    Output evaluate_array_literal(sir::ArrayLiteral &array_literal);
+    Output evaluate_symbol_expr(sir::SymbolExpr &symbol_expr);
+    Output evaluate_const_def_value(sir::ConstDef &const_def);
+    Output evaluate_binary_expr(sir::BinaryExpr &unary_expr);
+    Output evaluate_unary_expr(sir::UnaryExpr &unary_expr);
+    Output evaluate_tuple_expr(sir::TupleExpr &tuple_expr);
+    Output evaluate_meta_field_expr(sir::MetaFieldExpr &meta_field_expr);
+    Output evaluate_meta_call_expr(sir::MetaCallExpr &meta_call_expr);
+    Output evaluate_non_const(sir::Expr &value);
 
 private:
     sir::Expr create_int_literal(LargeInt value, ASTNode *ast_node = nullptr);

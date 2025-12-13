@@ -610,7 +610,12 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (binary_expr.lhs.is_type() ||
         (binary_expr.lhs.is<sir::BoolLiteral>() && binary_expr.rhs.is<sir::BoolLiteral>())) {
-        out_expr = ConstEvaluator(analyzer).evaluate_binary_expr(binary_expr);
+        ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
+        if (evaluated.result != Result::SUCCESS) {
+            return evaluated.result;
+        }
+
+        out_expr = evaluated.expr;
         return analyze_uncoerced(out_expr);
     }
 
@@ -1164,8 +1169,8 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
         return Result::ERROR;
     }
 
-    sir::Expr length_evaluated = ConstEvaluator(analyzer).evaluate(static_array_type.length);
-    if (!length_evaluated) {
+    ConstEvaluator::Output length_evaluated = ConstEvaluator{analyzer}.evaluate(static_array_type.length);
+    if (length_evaluated.result != Result::SUCCESS) {
         return Result::ERROR;
     }
 
@@ -1173,7 +1178,7 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
     // This requires better literal coercion though, so int literals can be coerced to
     // unsigned integers for array lengths.
 
-    if (auto int_literal = length_evaluated.match<sir::IntLiteral>()) {
+    if (auto int_literal = length_evaluated.expr.match<sir::IntLiteral>()) {
         if (int_literal->value < 0) {
             analyzer.report_generator.report_err_negative_array_length(static_array_type.length, int_literal->value);
             return Result::ERROR;
@@ -1183,7 +1188,7 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
         return Result::ERROR;
     }
 
-    static_array_type.length = length_evaluated;
+    static_array_type.length = length_evaluated.expr;
     return result;
 }
 
