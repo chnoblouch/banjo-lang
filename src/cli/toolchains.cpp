@@ -171,20 +171,24 @@ std::optional<std::string> MSVCToolchain::get_max_version(
         std::vector<std::string_view> string_components = Utils::split_string(version, '.');
 
         if (string_components.size() != num_components) {
-            return {};
+            continue;
         }
 
         std::vector<std::uint64_t> number_components(num_components);
+        bool is_valid = true;
 
         for (unsigned i = 0; i < num_components; i++) {
             if (auto number = Utils::parse_u64(string_components[i])) {
                 number_components.push_back(*number);
             } else {
-                return {};
+                is_valid = false;
+                break;
             }
         }
 
-        parsed_versions.push_back({version, number_components});
+        if (is_valid) {
+            parsed_versions.push_back({version, number_components});
+        }
     }
 
     auto sort_comparison_func = [](const auto &lhs, const auto &rhs) {
