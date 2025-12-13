@@ -316,6 +316,7 @@ void BlockSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa:
     }
 
     sir::Symbol deinit_symbol = symbol_table->look_up_local(sir::MagicMethods::DEINIT);
+    ASSERT(deinit_symbol);
 
     sir::SymbolExpr callee{
         .ast_node = nullptr,

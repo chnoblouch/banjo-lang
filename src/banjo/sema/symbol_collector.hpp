@@ -4,6 +4,9 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <optional>
+#include <vector>
+
 namespace banjo {
 
 namespace lang {
@@ -14,14 +17,18 @@ class SymbolCollector {
 
 private:
     SemanticAnalyzer &analyzer;
+    std::optional<unsigned> guarded_scope;
 
 public:
     SymbolCollector(SemanticAnalyzer &analyzer);
     void collect(const std::vector<sir::Module *> &mods);
+    void collect_in_mod(sir::Module &mod);
     void collect_in_block(sir::DeclBlock &decl_block);
-    void collect_in_meta_block(sir::MetaBlock &meta_block);
-    void collect_decl(sir::Decl &decl);
+    void collect_func_specialization(sir::FuncDef &generic_def, sir::FuncDef &specialization);
+    void collect_struct_specialization(sir::StructDef &generic_def, sir::StructDef &specialization);
+    ClosureContext &collect_closure_func(sir::FuncDef &func_def, sir::TupleExpr *data_type);
 
+    void collect_decl(sir::Decl &decl, unsigned index);
     void collect_func_def(sir::FuncDef &func_def);
     void collect_func_decl(sir::FuncDecl &func_decl);
     void collect_native_func_decl(sir::NativeFuncDecl &native_func_decl);
@@ -36,6 +43,7 @@ public:
     void collect_proto_def(sir::ProtoDef &proto_def);
     void collect_type_alias(sir::TypeAlias &type_alias);
     void collect_use_decl(sir::UseDecl &use_decl);
+    void collect_in_meta_if_stmt(sir::MetaIfStmt &meta_if_stmt, unsigned index);
 
     void collect_use_item(sir::UseItem &use_item);
     void collect_use_ident(sir::UseIdent &use_ident);
@@ -43,10 +51,13 @@ public:
     void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr);
     void collect_use_list(sir::UseList &use_list);
 
-private:
+    unsigned create_decl_state();
+    std::unique_ptr<DeclScope> create_scope(sir::Symbol decl);
+    std::unique_ptr<DeclScope> push_new_scope(sir::Symbol decl);
+    void pop_scope();
+
     void add_symbol(std::string_view name, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();
-    void collect_in_decl(sir::Symbol decl, sir::DeclBlock &block);
 };
 
 } // namespace sema

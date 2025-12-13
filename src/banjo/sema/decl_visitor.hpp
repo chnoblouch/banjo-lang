@@ -20,9 +20,23 @@ protected:
 public:
     void analyze(const std::vector<sir::Module *> &mods);
     void analyze_decl_block(sir::DeclBlock &decl_block);
-    void analyze_meta_block(sir::MetaBlock &meta_block);
     Result analyze_decl(sir::Decl &decl);
 
+    void visit_func_def(sir::FuncDef &func_def);
+    void visit_func_decl(sir::FuncDecl &func_decl);
+    void visit_native_func_decl(sir::NativeFuncDecl &native_func_decl);
+    void visit_const_def(sir::ConstDef &const_def);
+    void visit_struct_def(sir::StructDef &struct_def);
+    void visit_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl);
+    void visit_native_var_decl(sir::NativeVarDecl &native_var_decl);
+    void visit_enum_def(sir::EnumDef &enum_def);
+    void visit_enum_variant(sir::EnumVariant &enum_variant);
+    void visit_union_def(sir::UnionDef &union_def);
+    void visit_union_case(sir::UnionCase &union_case);
+    void visit_proto_def(sir::ProtoDef &proto_def);
+    void visit_type_alias(sir::TypeAlias &type_alias);
+
+private:
     virtual Result analyze_func_def(sir::FuncDef & /*func_def*/) { return Result::SUCCESS; }
     virtual Result analyze_func_decl(sir::FuncDecl & /*func_decl*/) { return Result::SUCCESS; }
     virtual Result analyze_native_func_decl(sir::NativeFuncDecl & /*native_func_decl*/) { return Result::SUCCESS; }
@@ -36,13 +50,6 @@ public:
     virtual Result analyze_union_case(sir::UnionCase & /*union_case*/) { return Result::SUCCESS; }
     virtual Result analyze_proto_def(sir::ProtoDef & /*proto_def*/) { return Result::SUCCESS; }
     virtual Result analyze_type_alias(sir::TypeAlias & /*type_alias*/) { return Result::SUCCESS; }
-    virtual Result analyze_use_decl(sir::UseDecl & /*use_decl*/) { return Result::SUCCESS; }
-
-    Result process_func_def(sir::FuncDef &func_def);
-    void process_struct_def(sir::StructDef &struct_def);
-    void process_enum_def(sir::EnumDef &enum_def);
-    void process_union_def(sir::UnionDef &union_def);
-    void process_proto_def(sir::ProtoDef &proto_def);
 };
 
 } // namespace sema

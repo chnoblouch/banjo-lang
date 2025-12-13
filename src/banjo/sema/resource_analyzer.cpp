@@ -1,11 +1,12 @@
 #include "resource_analyzer.hpp"
 
+#include "banjo/sema/decl_interface_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <algorithm>
 #include <ranges>
 
 namespace banjo {
@@ -17,6 +18,14 @@ namespace sema {
 ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    DeclState &state = analyzer.decl_states[*func_def.sema_index];
+
+    if (state.stage < DeclStage::RESOURCES) {
+        state.stage = DeclStage::RESOURCES;
+    } else {
+        return Result::SUCCESS;
+    }
+
     resource_locations.clear();
     resources_by_symbols.clear();
 
@@ -137,6 +146,8 @@ std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
 
 std::optional<sir::Resource> ResourceAnalyzer::create_struct_resource(sir::StructDef &struct_def, sir::Expr type) {
     std::optional<sir::Resource> resource;
+
+    DeclInterfaceAnalyzer(analyzer).visit_struct_def(struct_def);
 
     sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
     auto iter = symbol_table.symbols.find(sir::MagicMethods::DEINIT);

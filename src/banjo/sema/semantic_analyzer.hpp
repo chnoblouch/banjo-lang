@@ -8,12 +8,16 @@
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
+#include "banjo/utils/typed_arena.hpp"
 
+#include <cstddef>
+#include <memory>
 #include <set>
 #include <stack>
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -35,16 +39,41 @@ struct ClosureContext {
     sir::Block *parent_block;
 };
 
-struct Scope {
+enum class Result {
+    SUCCESS,
+    ERROR,
+    DEF_CYCLE,
+};
+
+enum class DeclStage {
+    NAME,
+    INTERFACE,
+    BODY,
+    RESOURCES,
+};
+
+struct DeclScope {
+    sir::Module *mod;
     sir::Symbol decl = nullptr;
-    sir::Block *block = nullptr;
+    sir::Symbol decl_parent = nullptr;
+    sir::DeclBlock *decl_block = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
     ClosureContext *closure_ctx = nullptr;
 };
 
-enum class Result {
-    SUCCESS,
-    ERROR,
+struct DeclState {
+    DeclStage stage;
+    std::unique_ptr<DeclScope> scope;
+};
+
+struct Scope {
+    DeclScope *decl_scope;
+    sir::Block *block;
+};
+
+struct GuardedScope {
+    unsigned guard_stmt_index;
+    DeclScope &scope;
 };
 
 struct CompletionInfection {
@@ -92,13 +121,20 @@ private:
     CompletionContext completion_context;
     CompletionInfection completion_infection;
 
-    sir::Module *cur_sir_mod;
-    std::stack<Scope> scopes;
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::unordered_map<std::string_view, sir::Expr> meta_field_types;
+
+    DeclStage stage;
+
+    sir::Module *mod;
+    std::vector<sir::Decl> decl_stack;
+    std::stack<Scope> scope_stack;
+
+    std::vector<DeclState> decl_states;
+    utils::TypedArena<ClosureContext> closure_ctxs;
+
     std::set<const sir::Decl *> blocked_decls;
-    std::vector<std::tuple<sir::Decl, Scope>> decls_awaiting_body_analysis;
-    std::unordered_map<sir::DeclBlock *, Scope> incomplete_decl_blocks;
+    std::vector<GuardedScope> guarded_scopes;
     bool in_meta_expansion = false;
     unsigned loop_depth = 0;
 
@@ -123,29 +159,33 @@ public:
     const std::unordered_map<std::string_view, sir::Symbol> &get_preamble_symbols() { return preamble_symbols; }
 
 private:
-    Scope &get_scope() { return scopes.top(); }
+    sir::Module &get_mod() { return *mod; }
+    DeclScope &get_decl_scope() { return *scope_stack.top().decl_scope; }
 
-    Scope &push_scope() {
-        scopes.push(scopes.top());
-        return get_scope();
+    void enter_decl_scope(DeclScope &scope) {
+        mod = scope.mod;
+        scope_stack.push(Scope{.decl_scope = &scope, .block = nullptr});
     }
 
-    Scope &push_empty_scope() {
-        scopes.push(Scope{});
-        return get_scope();
+    void exit_decl_scope() {
+        scope_stack.pop();
+        DeclScope *decl_scope = scope_stack.top().decl_scope;
+        mod = decl_scope ? decl_scope->mod : nullptr;
     }
 
-    void pop_scope() { scopes.pop(); }
+    sir::Block &get_block() { return *scope_stack.top().block; }
 
-    void enter_mod(sir::Module *mod);
-    void exit_mod() { scopes.pop(); }
+    void enter_block(sir::Block &block) {
+        scope_stack.push(Scope{.decl_scope = scope_stack.top().decl_scope, .block = &block});
+    }
 
-    bool is_in_stmt_block() { return get_scope().block; }
-    bool is_in_decl() { return get_scope().decl; }
+    void exit_block() { scope_stack.pop(); }
+
+    bool is_in_stmt_block() { return scope_stack.top().block; }
+    bool is_in_decl() { return scope_stack.top().decl_scope->decl; }
     sir::SymbolTable &get_symbol_table();
 
     void populate_preamble_symbols();
-    void run_postponed_analyses();
 
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
     sir::Symbol find_std_optional();
@@ -168,21 +208,23 @@ private:
 
     template <typename T>
     T *create(T value) {
-        return cur_sir_mod->create(value);
+        return get_mod().create(value);
     }
 
     template <typename T>
     std::span<T> allocate_array(unsigned length) {
-        return cur_sir_mod->allocate_array<T>(length);
+        return get_mod().allocate_array<T>(length);
     }
 
     template <typename T>
     std::span<T> create_array(std::initializer_list<T> values) {
-        return cur_sir_mod->create_array(std::move(values));
+        return get_mod().create_array(std::move(values));
     }
 
-    std::string_view create_string(std::string_view value) { return cur_sir_mod->create_string(value); }
+    std::string_view create_string(std::string_view value) { return get_mod().create_string(value); }
 };
+
+std::strong_ordering operator<=>(const DeclStage &lhs, const DeclStage &rhs);
 
 } // namespace sema
 

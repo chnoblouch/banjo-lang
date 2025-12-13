@@ -10,6 +10,7 @@
 #include "banjo/utils/typed_arena.hpp"
 #include "banjo/utils/utils.hpp"
 
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <list>
@@ -132,6 +133,8 @@ class UseItem;
 
 constexpr std::string_view ERROR_TOKEN_VALUE = "[error]";
 constexpr std::string_view COMPLETION_TOKEN_VALUE = "[completion]";
+
+typedef std::variant<Block *, DeclBlock *> MetaBlock;
 
 enum class ExprCategory : std::uint8_t {
     VALUE,
@@ -383,30 +386,34 @@ public:
     }
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
+
+    bool operator==(const Decl &other) const = default;
+    bool operator!=(const Decl &other) const = default;
 };
 
 class Symbol : public DynamicPointer<
-                   Module,
-                   FuncDef,
-                   FuncDecl,
-                   NativeFuncDecl,
-                   ConstDef,
-                   StructDef,
-                   StructField,
-                   VarDecl,
-                   NativeVarDecl,
-                   EnumDef,
-                   EnumVariant,
-                   UnionDef,
-                   UnionCase,
-                   ProtoDef,
-                   TypeAlias,
-                   UseIdent,
-                   UseRebind,
-                   Local,
-                   Param,
-                   OverloadSet,
-                   GuardedSymbol> {
+                   Module,         // 1
+                   FuncDef,        // 2
+                   FuncDecl,       // 3
+                   NativeFuncDecl, // 4
+                   ConstDef,       // 5
+                   StructDef,      // 6
+                   StructField,    // 7
+                   VarDecl,        // 8
+                   NativeVarDecl,  // 9
+                   EnumDef,        // 10
+                   EnumVariant,    // 11
+                   UnionDef,       // 12
+                   UnionCase,      // 13
+                   ProtoDef,       // 14
+                   TypeAlias,      // 15
+                   UseIdent,       // 16
+                   UseRebind,      // 17
+                   Local,          // 18
+                   Param,          // 19
+                   OverloadSet,    // 20
+                   GuardedSymbol   // 21
+                   > {
 public:
     Symbol() : DynamicPointer() {}
 
@@ -432,38 +439,6 @@ public:
 
     template <typename T>
     UseItem(T value) : DynamicPointer(value) {}
-};
-
-class Node {
-
-private:
-    std::variant<Expr, Stmt, Decl, UseItem> kind;
-
-public:
-    Node() {}
-
-    template <typename T>
-    Node(T kind) : kind(kind) {}
-
-    template <typename T>
-    T &as() {
-        return std::get<T>(kind);
-    }
-
-    template <typename T>
-    const T &as() const {
-        return std::get<T>(kind);
-    }
-
-    template <typename T>
-    T *match() {
-        return std::get_if<T>(&kind);
-    }
-
-    template <typename T>
-    const T *match() const {
-        return std::get_if<T>(&kind);
-    }
 };
 
 struct DeclBlock {
@@ -499,6 +474,7 @@ struct SymbolTable {
     SymbolTable *parent;
     std::unordered_map<std::string_view, Symbol> symbols;
     std::vector<Symbol> local_symbols_ordered;
+    std::unordered_map<std::string_view, unsigned> guarded_scopes;
 
     void insert_decl(std::string_view name, Symbol symbol);
     void insert_local(std::string_view name, Symbol symbol);
@@ -1130,20 +1106,15 @@ struct BreakStmt {
     ASTNode *ast_node;
 };
 
-struct MetaBlock {
-    ASTNode *ast_node;
-    std::vector<Node> nodes;
-};
-
 struct MetaIfCondBranch {
     ASTNode *ast_node;
     Expr condition;
-    MetaBlock *block;
+    MetaBlock block;
 };
 
 struct MetaIfElseBranch {
     ASTNode *ast_node;
-    MetaBlock *block;
+    MetaBlock block;
 };
 
 struct MetaIfStmt {
@@ -1156,7 +1127,7 @@ struct MetaForStmt {
     ASTNode *ast_node;
     Ident ident;
     Expr range;
-    MetaBlock *block;
+    MetaBlock block;
 };
 
 struct ExpandedMetaStmt {};
@@ -1171,6 +1142,7 @@ struct FuncDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;
+    std::optional<unsigned> sema_index;
 
     Module &find_mod() const;
     bool is_generic() const { return !generic_params.empty(); }
@@ -1183,6 +1155,7 @@ struct FuncDecl {
     Ident ident;
     Symbol parent;
     FuncType type;
+    std::optional<unsigned> sema_index;
 
     bool is_method() const { return type.is_func_method(); }
 };
@@ -1192,6 +1165,7 @@ struct NativeFuncDecl {
     Ident ident;
     FuncType type;
     Attributes *attrs = nullptr;
+    std::optional<unsigned> sema_index;
 };
 
 struct ConstDef {
@@ -1199,6 +1173,7 @@ struct ConstDef {
     Ident ident;
     Expr type;
     Expr value;
+    std::optional<unsigned> sema_index;
 };
 
 struct StructDef {
@@ -1212,6 +1187,7 @@ struct StructDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
     Specialization<StructDef> *parent_specialization;
+    std::optional<unsigned> sema_index;
 
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
@@ -1234,6 +1210,7 @@ struct VarDecl {
     Expr type;
     Expr value;
     Attributes *attrs = nullptr;
+    std::optional<unsigned> sema_index;
 };
 
 struct NativeVarDecl {
@@ -1241,6 +1218,7 @@ struct NativeVarDecl {
     Ident ident;
     Expr type;
     Attributes *attrs = nullptr;
+    std::optional<unsigned> sema_index;
 };
 
 struct EnumDef {
@@ -1248,6 +1226,7 @@ struct EnumDef {
     Ident ident;
     DeclBlock block;
     std::vector<EnumVariant *> variants;
+    std::optional<unsigned> sema_index;
 };
 
 struct EnumVariant {
@@ -1255,6 +1234,7 @@ struct EnumVariant {
     Ident ident;
     Expr type;
     Expr value;
+    std::optional<unsigned> sema_index;
 };
 
 struct UnionDef {
@@ -1262,6 +1242,7 @@ struct UnionDef {
     Ident ident;
     DeclBlock block;
     std::vector<UnionCase *> cases;
+    std::optional<unsigned> sema_index;
 
     unsigned get_index(const UnionCase &case_) const;
 };
@@ -1276,6 +1257,7 @@ struct UnionCase {
     ASTNode *ast_node;
     Ident ident;
     std::vector<UnionCaseField> fields;
+    std::optional<unsigned> sema_index;
 
     std::optional<unsigned> find_field(std::string_view name) const;
 };
@@ -1285,6 +1267,7 @@ struct ProtoDef {
     Ident ident;
     DeclBlock block;
     std::vector<ProtoFuncDecl> func_decls;
+    std::optional<unsigned> sema_index;
 
     std::optional<unsigned> get_index(std::string_view name) const;
 };
@@ -1302,6 +1285,7 @@ struct TypeAlias {
     ASTNode *ast_node;
     Ident ident;
     Expr type;
+    std::optional<unsigned> sema_index;
 };
 
 struct UseDecl {
@@ -1342,6 +1326,7 @@ struct Module {
     utils::Arena<2048> trivial_arena;
     utils::StringArena<512> string_arena;
 
+    utils::TypedArena<DeclBlock> decl_block_arena;
     utils::TypedArena<FuncDef> func_def_arena;
     utils::TypedArena<StructDef> struct_def_arena;
     utils::TypedArena<EnumDef> enum_def_arena;
@@ -1349,7 +1334,6 @@ struct Module {
     utils::TypedArena<UnionCase> union_case_arena;
     utils::TypedArena<ProtoDef> proto_def_arena;
     utils::TypedArena<Block> block_arena;
-    utils::TypedArena<MetaBlock> meta_block_arena;
     utils::TypedArena<SymbolTable> symbol_table_arena;
     utils::TypedArena<OverloadSet> overload_set_arena;
     utils::TypedArena<GuardedSymbol> guarded_symbol_arena;
@@ -1358,6 +1342,7 @@ struct Module {
 
     ModulePath path;
     DeclBlock block;
+    std::optional<unsigned> sema_index;
 
     template <typename T>
     T *create(T value) {
@@ -1383,6 +1368,9 @@ struct Module {
 };
 
 template <>
+DeclBlock *Module::create(DeclBlock value);
+
+template <>
 FuncDef *Module::create(FuncDef value);
 
 template <>
@@ -1402,9 +1390,6 @@ ProtoDef *Module::create(ProtoDef value);
 
 template <>
 Block *Module::create(Block value);
-
-template <>
-MetaBlock *Module::create(MetaBlock value);
 
 template <>
 SymbolTable *Module::create(SymbolTable value);

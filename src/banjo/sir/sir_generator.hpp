@@ -66,7 +66,7 @@ private:
 
     sir::Ident generate_ident(ASTNode *node);
     sir::Block generate_block(ASTNode *node);
-    sir::MetaBlock *generate_meta_block(ASTNode *node, MetaBlockKind kind);
+    sir::MetaBlock generate_meta_block(ASTNode *node, MetaBlockKind kind);
 
     sir::Stmt generate_stmt(ASTNode *node);
     sir::Stmt generate_expr_stmt(ASTNode *node);

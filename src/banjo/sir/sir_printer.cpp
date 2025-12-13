@@ -63,6 +63,10 @@ void Printer::print(const Unit &unit) {
     BEGIN_LIST_FIELD("mods");
 
     for (const Module *mod : unit.mods) {
+        if (mod->path != ModulePath{"main"}) {
+            continue;
+        }
+
         INDENT_LIST_ELEMENT();
         print_mod(*mod);
     }
@@ -561,7 +565,7 @@ void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
         INDENT_LIST_ELEMENT();
         BEGIN_OBJECT("MetaIfCondBranch");
         PRINT_EXPR_FIELD("condition", cond_branch.condition);
-        PRINT_META_BLOCK_FIELD("block", *cond_branch.block);
+        PRINT_META_BLOCK_FIELD("block", cond_branch.block);
         END_OBJECT();
     }
 
@@ -570,7 +574,7 @@ void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
 
     if (meta_if_stmt.else_branch) {
         BEGIN_OBJECT("MetaIfElseBranch");
-        PRINT_META_BLOCK_FIELD("block", *meta_if_stmt.else_branch->block);
+        PRINT_META_BLOCK_FIELD("block", meta_if_stmt.else_branch->block);
         END_OBJECT();
     } else {
         stream << "none\n";
@@ -583,7 +587,7 @@ void Printer::print_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
     BEGIN_OBJECT("MetaForStmt");
     PRINT_FIELD("ident", meta_for_stmt.ident.value);
     PRINT_EXPR_FIELD("range", meta_for_stmt.range);
-    PRINT_META_BLOCK_FIELD("block", *meta_for_stmt.block);
+    PRINT_META_BLOCK_FIELD("block", meta_for_stmt.block);
     END_OBJECT();
 }
 
@@ -1122,19 +1126,13 @@ void Printer::print_binary_op(const char *field_name, BinaryOp op) {
 }
 
 void Printer::print_meta_block(const MetaBlock &meta_block) {
-    stream << "\n";
-    indent++;
-
-    for (const Node &node : meta_block.nodes) {
-        stream << get_indent();
-
-        if (auto expr = node.match<sir::Expr>()) print_expr(*expr);
-        else if (auto stmt = node.match<sir::Stmt>()) print_stmt(*stmt);
-        else if (auto decl = node.match<sir::Decl>()) print_decl(*decl);
-        else ASSERT_UNREACHABLE;
+    if (auto block = std::get_if<Block *>(&meta_block)) {
+        print_block(**block);
+    } else if (auto decl_block = std::get_if<DeclBlock *>(&meta_block)) {
+        print_decl_block(**decl_block);
+    } else {
+        ASSERT_UNREACHABLE;
     }
-
-    indent--;
 }
 
 void Printer::print_resource(const Resource &resource, bool is_sub_resource) {

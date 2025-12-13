@@ -109,6 +109,10 @@ void ReportGenerator::report_err_redefinition(const sir::Ident &ident, const sir
         .report();
 }
 
+void ReportGenerator::report_err_cyclical_definition(sir::Expr expr) {
+    report_error("cyclical definition", expr.get_ast_node());
+}
+
 void ReportGenerator::report_err_type_mismatch(
     const sir::Expr &value,
     const sir::Expr &expected,

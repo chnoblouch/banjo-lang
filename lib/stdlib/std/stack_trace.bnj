@@ -90,13 +90,13 @@ pub func print_stack_trace() {
             
             if frame.symbol.starts_with(StringSlice.of_cstring("bnj_")) {
                 print("\x1B[0;36m");
-                println(frame.symbol.slice());
+                println(frame.symbol.slice);
             } else if frame.symbol == "main" {
                 print("\x1B[0;36m");
-                println(frame.symbol.slice());
+                println(frame.symbol.slice);
             } else {
                 print("\x1B[0;2m");
-                println(frame.symbol.slice());
+                println(frame.symbol.slice);
             }
             
             print("\x1B[0;0m");

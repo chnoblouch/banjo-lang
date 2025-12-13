@@ -235,7 +235,7 @@ StoredValue ExprSSAGenerator::generate_union_case_literal(
 
 StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol_expr) {
     if (auto func_def = symbol_expr.symbol.match<sir::FuncDef>()) {
-        ssa::Function *ssa_func = ctx.ssa_funcs[func_def];
+        ssa::Function *ssa_func = ctx.ssa_funcs.at(func_def);
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {

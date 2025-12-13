@@ -19,14 +19,13 @@ namespace sema {
 StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void StmtAnalyzer::analyze_block(sir::Block &block) {
-    Scope &scope = analyzer.push_scope();
-    scope.block = &block;
+    analyzer.enter_block(block);
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
         analyze(block, i);
     }
 
-    analyzer.pop_scope();
+    analyzer.exit_block();
 }
 
 void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
@@ -138,7 +137,7 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 }
 
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
-    sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
+    sir::FuncDef &func_def = analyzer.get_decl_scope().decl.as<sir::FuncDef>();
     sir::Expr return_type = func_def.type.return_type;
 
     if (return_stmt.value) {
@@ -292,7 +291,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
                             .type = unwrap_func->type.return_type,
                         },
                         .value = sir::create_call(
-                            *analyzer.cur_sir_mod,
+                            analyzer.get_mod(),
                             *unwrap_func,
                             analyzer.create_array<sir::Expr>({result_ref_expr})
                         ),
@@ -343,7 +342,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
                                     .type = nullptr,
                                 },
                                 .value = sir::create_call(
-                                    *analyzer.cur_sir_mod,
+                                    analyzer.get_mod(),
                                     *unwrap_error_func,
                                     analyzer.create_array<sir::Expr>({result_ref_expr})
                                 ),
@@ -443,7 +442,7 @@ void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt &break_stmt) {
 }
 
 void StmtAnalyzer::insert_symbol(sir::Ident &ident, sir::Symbol symbol) {
-    insert_symbol(*analyzer.get_scope().block->symbol_table, ident, symbol);
+    insert_symbol(*analyzer.get_block().symbol_table, ident, symbol);
 }
 
 void StmtAnalyzer::insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ident, sir::Symbol symbol) {
@@ -561,9 +560,9 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
     block->stmts = {var_stmt, loop_stmt};
     block->symbol_table->insert_local(var_stmt->local.name.value, &var_stmt->local);
 
-    analyzer.push_scope().block = block;
+    analyzer.enter_block(*block);
     analyze_loop_stmt(*loop_stmt);
-    analyzer.pop_scope();
+    analyzer.exit_block();
 
     out_stmt = block;
 }
@@ -571,7 +570,7 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
     Result partial_result;
 
-    sir::Expr iterable_unanalyzed = sir::Cloner(*analyzer.cur_sir_mod).clone_expr(for_stmt.range);
+    sir::Expr iterable_unanalyzed = sir::Cloner(analyzer.get_mod()).clone_expr(for_stmt.range);
 
     partial_result = ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
     if (partial_result != Result::SUCCESS) {

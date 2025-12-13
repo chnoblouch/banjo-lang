@@ -4,6 +4,7 @@
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/expr_finalizer.hpp"
 #include "banjo/sema/return_checker.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
@@ -16,13 +17,19 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    if (analyzer.get_scope().decl.is<sir::ProtoDef>() && func_def.is_method()) {
+    DeclState &state = analyzer.decl_states[*func_def.sema_index];
+
+    if (state.stage < DeclStage::BODY) {
+        state.stage = DeclStage::BODY;
+    } else {
         return Result::SUCCESS;
     }
 
-    analyzer.push_scope().decl = &func_def;
+    if (state.scope->decl_parent.is<sir::ProtoDef>() && func_def.is_method()) {
+        return Result::SUCCESS;
+    }
+
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
-    analyzer.pop_scope();
 
     ReturnChecker::Result return_checker_result = ReturnChecker(analyzer).check(func_def.block);
     bool has_return_value = !func_def.type.return_type.is_primitive_type(sir::Primitive::VOID);
@@ -41,14 +48,31 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
+    DeclState &state = analyzer.decl_states[*const_def.sema_index];
+
+    if (state.stage < DeclStage::BODY) {
+        state.stage = DeclStage::BODY;
+    } else {
+        return Result::SUCCESS;
+    }
+
     if (!const_def.type) {
         return Result::ERROR;
     }
 
-    return ExprAnalyzer(analyzer).analyze_value(const_def.value, const_def.type);
+    Result result = ExprAnalyzer(analyzer).analyze_value(const_def.value, const_def.type);
+    return result;
 }
 
 Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
+    DeclState &state = analyzer.decl_states[*struct_def.sema_index];
+
+    if (state.stage < DeclStage::BODY) {
+        state.stage = DeclStage::BODY;
+    } else {
+        return Result::SUCCESS;
+    }
+
     for (sir::Expr &impl : struct_def.impls) {
         if (auto proto_def = impl.match_symbol<sir::ProtoDef>()) {
             analyze_proto_impl(struct_def, *proto_def);
@@ -101,6 +125,14 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Proto
 }
 
 Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*out_decl*/) {
+    DeclState &state = analyzer.decl_states[*var_decl.sema_index];
+    
+    if (state.stage < DeclStage::BODY) {
+        state.stage = DeclStage::BODY;
+    } else {
+        return Result::SUCCESS;
+    }
+
     Result partial_result;
 
     if (!var_decl.type) {
@@ -130,8 +162,15 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
 }
 
 Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
+    DeclState &state = analyzer.decl_states[*enum_def.sema_index];
+    
+    if (state.stage < DeclStage::BODY) {
+        state.stage = DeclStage::BODY;
+    } else {
+        return Result::SUCCESS;
+    }
+    
     Result partial_result;
-
     LargeInt next_value = 0;
 
     for (sir::EnumVariant *variant : enum_def.variants) {

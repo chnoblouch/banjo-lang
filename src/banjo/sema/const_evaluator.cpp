@@ -1,5 +1,6 @@
 #include "const_evaluator.hpp"
 
+#include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/meta_expr_evaluator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
@@ -106,28 +107,33 @@ sir::Expr ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral &array_litera
 sir::Expr ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
     SIR_VISIT_SYMBOL(
         symbol_expr.symbol,
-        SIR_VISIT_IMPOSSIBLE,                 // empty
-        SIR_VISIT_IMPOSSIBLE,                 // module
-        SIR_VISIT_IMPOSSIBLE,                 // func_def
-        SIR_VISIT_IMPOSSIBLE,                 // func_decl
-        SIR_VISIT_IMPOSSIBLE,                 // native_func_decl
-        return clone(evaluate(inner->value)), // const_def
-        return &symbol_expr,                  // struct_def
-        SIR_VISIT_IMPOSSIBLE,                 // struct_field
-        SIR_VISIT_IMPOSSIBLE,                 // var_decl
-        SIR_VISIT_IMPOSSIBLE,                 // native_var_decl
-        return &symbol_expr,                  // enum_def
-        return clone(evaluate(inner->value)), // enum_variant
-        return &symbol_expr,                  // union_def
-        SIR_VISIT_IMPOSSIBLE,                 // union_case
-        SIR_VISIT_IMPOSSIBLE,                 // proto_def
-        SIR_VISIT_IMPOSSIBLE,                 // type_alias
-        SIR_VISIT_IMPOSSIBLE,                 // use_ident
-        SIR_VISIT_IMPOSSIBLE,                 // use_rebind
-        return &symbol_expr,                  // local
-        return &symbol_expr,                  // param
-        SIR_VISIT_IMPOSSIBLE                  // overload_set
+        SIR_VISIT_IMPOSSIBLE,                    // empty
+        SIR_VISIT_IMPOSSIBLE,                    // module
+        SIR_VISIT_IMPOSSIBLE,                    // func_def
+        SIR_VISIT_IMPOSSIBLE,                    // func_decl
+        SIR_VISIT_IMPOSSIBLE,                    // native_func_decl
+        return evaluate_const_def_value(*inner), // const_def
+        return &symbol_expr,                     // struct_def
+        SIR_VISIT_IMPOSSIBLE,                    // struct_field
+        SIR_VISIT_IMPOSSIBLE,                    // var_decl
+        SIR_VISIT_IMPOSSIBLE,                    // native_var_decl
+        return &symbol_expr,                     // enum_def
+        return clone(evaluate(inner->value)),    // enum_variant
+        return &symbol_expr,                     // union_def
+        SIR_VISIT_IMPOSSIBLE,                    // union_case
+        SIR_VISIT_IMPOSSIBLE,                    // proto_def
+        SIR_VISIT_IMPOSSIBLE,                    // type_alias
+        SIR_VISIT_IMPOSSIBLE,                    // use_ident
+        SIR_VISIT_IMPOSSIBLE,                    // use_rebind
+        return &symbol_expr,                     // local
+        return &symbol_expr,                     // param
+        SIR_VISIT_IMPOSSIBLE                     // overload_set
     );
+}
+
+sir::Expr ConstEvaluator::evaluate_const_def_value(sir::ConstDef &const_def) {
+    DeclBodyAnalyzer(analyzer).visit_const_def(const_def);
+    return clone(evaluate(const_def.value));
 }
 
 sir::Expr ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &binary_expr) {
@@ -245,7 +251,7 @@ sir::Expr ConstEvaluator::create_bool_literal(bool value, ASTNode *ast_node /*= 
 }
 
 sir::Expr ConstEvaluator::clone(sir::Expr expr) {
-    return sir::Cloner(*analyzer.cur_sir_mod).clone_expr(expr);
+    return sir::Cloner(analyzer.get_mod()).clone_expr(expr);
 }
 
 } // namespace sema

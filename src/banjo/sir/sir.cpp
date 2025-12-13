@@ -509,6 +509,7 @@ Module &StructDef::find_mod() const {
 
     while (!symbol.is<sir::Module>()) {
         symbol = symbol.get_parent();
+        ASSERT(symbol);
     }
 
     return symbol.as<Module>();
@@ -615,6 +616,11 @@ FuncType &ProtoFuncDecl::get_type() {
 }
 
 template <>
+DeclBlock *Module::create(DeclBlock value) {
+    return decl_block_arena.create(std::move(value));
+}
+
+template <>
 FuncDef *Module::create(FuncDef value) {
     return func_def_arena.create(std::move(value));
 }
@@ -647,11 +653,6 @@ ProtoDef *Module::create(ProtoDef value) {
 template <>
 Block *Module::create(Block value) {
     return block_arena.create(std::move(value));
-}
-
-template <>
-MetaBlock *Module::create(MetaBlock value) {
-    return meta_block_arena.create(std::move(value));
 }
 
 template <>

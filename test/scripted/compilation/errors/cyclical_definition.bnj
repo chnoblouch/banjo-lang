@@ -1,0 +1,19 @@
+# test:subtest
+# test:error 4:11 "cyclical definition"
+
+type A = *A;
+
+# test:subtest
+# test:error 10:10 "cyclical definition"
+
+type A = B;
+type B = A;
+
+# test:subtest
+# test:error 16:11 "cyclical definition"
+
+type A = *C;
+type B = ?A;
+type C = [B; 2];
+
+# TODO: Report the cycle at the first definition

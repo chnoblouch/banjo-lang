@@ -1,8 +1,6 @@
 #include "meta_expansion.hpp"
 
 #include "banjo/sema/const_evaluator.hpp"
-#include "banjo/sema/decl_body_analyzer.hpp"
-#include "banjo/sema/decl_interface_analyzer.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
@@ -19,9 +17,11 @@ MetaExpansion::MetaExpansion(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void MetaExpansion::run(const std::vector<sir::Module *> &mods) {
     for (sir::Module *mod : mods) {
-        analyzer.enter_mod(mod);
+        DeclState &state = analyzer.decl_states[*mod->sema_index];
+
+        analyzer.enter_decl_scope(*state.scope);
         run_on_decl_block(mod->block);
-        analyzer.exit_mod();
+        analyzer.exit_decl_scope();
     }
 }
 
@@ -42,18 +42,18 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 
         if (auto struct_def = decl.match<sir::StructDef>()) {
             if (!struct_def->is_generic()) {
-                analyzer.push_scope().decl = struct_def;
+                analyzer.enter_decl_scope(*analyzer.decl_states[*struct_def->sema_index].scope);
                 run_on_decl_block(struct_def->block);
-                analyzer.pop_scope();
+                analyzer.exit_decl_scope();
             }
         } else if (auto union_def = decl.match<sir::UnionDef>()) {
-            analyzer.push_scope().decl = union_def;
+            analyzer.enter_decl_scope(*analyzer.decl_states[*union_def->sema_index].scope);
             run_on_decl_block(union_def->block);
-            analyzer.pop_scope();
+            analyzer.exit_decl_scope();
         } else if (auto proto_def = decl.match<sir::ProtoDef>()) {
-            analyzer.push_scope().decl = proto_def;
+            analyzer.enter_decl_scope(*analyzer.decl_states[*proto_def->sema_index].scope);
             run_on_decl_block(proto_def->block);
-            analyzer.pop_scope();
+            analyzer.exit_decl_scope();
         } else if (decl.is<sir::MetaIfStmt>()) {
             evaluate_meta_if_stmt(decl_block, i);
         }
@@ -62,18 +62,17 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
     }
 
     analyzer.in_meta_expansion = prev_in_meta_expansion;
-    analyzer.incomplete_decl_blocks.erase(&decl_block);
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index) {
     sir::MetaIfStmt &meta_if_stmt = decl_block.decls[index].as<sir::MetaIfStmt>();
 
-    // bool is_guard = analyzer.cur_sir_mod->path == ModulePath{"main"};
-    bool is_guard = false;
+    // bool is_guard = analyzer.get_mod().path == ModulePath{"main"};
+    // bool is_guard = false;
 
-    if (is_guard) {
-        analyzer.symbol_ctx.push_meta_condition();
-    }
+    // if (is_guard) {
+    //     analyzer.symbol_ctx.push_meta_condition();
+    // }
 
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
         if (ExprAnalyzer(analyzer, false).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
@@ -81,58 +80,58 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
         }
 
         // Evaluating the expression may have already expanded this `meta if` statement.
-        if (!decl_block.decls[index].is<sir::MetaIfStmt>() && !is_guard) {
+        if (!decl_block.decls[index].is<sir::MetaIfStmt>() /* && !is_guard */) {
             return;
         }
 
-        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition) || is_guard) {
-            if (is_guard) {
-                analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
-            }
+        if (ConstEvaluator(analyzer).evaluate_to_bool(cond_branch.condition) /* || is_guard */) {
+            // if (is_guard) {
+            //     analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
+            // }
 
-            expand(decl_block, index, *cond_branch.block);
+            expand(decl_block, index, *std::get<sir::DeclBlock *>(cond_branch.block));
 
-            if (!is_guard) {
-                return;
-            }
+            // if (!is_guard) {
+            //     return;
+            // }
         }
     }
 
     if (meta_if_stmt.else_branch) {
-        if (is_guard) {
-            analyzer.symbol_ctx.add_else_meta_condition();
-        }
+        // if (is_guard) {
+        //     analyzer.symbol_ctx.add_else_meta_condition();
+        // }
 
-        expand(decl_block, index, *meta_if_stmt.else_branch->block);
+        expand(decl_block, index, *std::get<sir::DeclBlock *>(meta_if_stmt.else_branch->block));
     }
 
-    if (is_guard) {
-        analyzer.symbol_ctx.pop_meta_condition();
-    }
+    // if (is_guard) {
+    //     analyzer.symbol_ctx.pop_meta_condition();
+    // }
 }
 
-void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::MetaBlock &meta_block) {
+void MetaExpansion::expand(sir::DeclBlock &decl_block, unsigned &index, sir::DeclBlock &body) {
     analyzer.blocked_decls.clear();
 
     decl_block.decls[index] = analyzer.create(sir::ExpandedMetaStmt{});
 
-    SymbolCollector(analyzer).collect_in_meta_block(meta_block);
+    SymbolCollector(analyzer).collect_in_block(body);
 
-    for (sir::Node &node : meta_block.nodes) {
-        decl_block.decls.push_back(node.as<sir::Decl>());
+    for (sir::Decl decl : body.decls) {
+        decl_block.decls.push_back(decl);
     }
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
     sir::MetaIfStmt &meta_if_stmt = block.stmts[index].as<sir::MetaIfStmt>();
 
-    // bool is_guard = analyzer.cur_sir_mod->path == ModulePath{"main"};
+    // bool is_guard = analyzer.get_mod().path == ModulePath{"main"};
     bool is_guard = false;
 
     if (is_guard) {
         analyzer.symbol_ctx.push_meta_condition();
     }
-    
+
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
         if (ExprAnalyzer(analyzer, false).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
             return;
@@ -143,7 +142,7 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
                 analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
             }
 
-            expand(block, index, *cond_branch.block);
+            expand(block, index, *std::get<sir::Block *>(cond_branch.block));
 
             if (!is_guard) {
                 return;
@@ -155,8 +154,8 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
         if (is_guard) {
             analyzer.symbol_ctx.add_else_meta_condition();
         }
-        
-        expand(block, index, *meta_if_stmt.else_branch->block);
+
+        expand(block, index, *std::get<sir::Block *>(meta_if_stmt.else_branch->block));
     }
 
     if (is_guard) {
@@ -175,17 +174,21 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
     block.stmts[index] = analyzer.create(sir::ExpandedMetaStmt{});
 
     for (sir::Expr &value : values) {
-        analyzer.push_scope().generic_args.insert({meta_for_stmt.ident.value, value});
+        DeclScope tmp_scope = analyzer.get_decl_scope();
+        tmp_scope.generic_args.insert({meta_for_stmt.ident.value, value});
+        analyzer.enter_decl_scope(tmp_scope);
+        analyzer.enter_block(block);
 
-        for (sir::Node &node : meta_for_stmt.block->nodes) {
+        for (sir::Stmt stmt : std::get<sir::Block *>(meta_for_stmt.block)->stmts) {
             index += 1;
 
-            sir::Stmt clone = sir::Cloner(*analyzer.cur_sir_mod).clone_stmt(node.as<sir::Stmt>());
+            sir::Stmt clone = sir::Cloner(analyzer.get_mod()).clone_stmt(stmt);
             block.stmts.insert(block.stmts.begin() + index, clone);
             StmtAnalyzer(analyzer).analyze(block, index);
         }
 
-        analyzer.pop_scope();
+        analyzer.exit_block();
+        analyzer.exit_decl_scope();
     }
 }
 
@@ -209,12 +212,14 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
             out_values.resize(tuple_expr->exprs.size());
 
             for (unsigned i = 0; i < tuple_expr->exprs.size(); i++) {
-                out_values[i] = analyzer.create(sir::FieldExpr{
-                    .ast_node = nullptr,
-                    .type = tuple_expr->exprs[i],
-                    .base = symbol_expr,
-                    .field_index = i,
-                });
+                out_values[i] = analyzer.create(
+                    sir::FieldExpr{
+                        .ast_node = nullptr,
+                        .type = tuple_expr->exprs[i],
+                        .base = symbol_expr,
+                        .field_index = i,
+                    }
+                );
             }
 
             return Result::SUCCESS;
@@ -228,12 +233,12 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
     }
 }
 
-void MetaExpansion::expand(sir::Block &block, unsigned &index, sir::MetaBlock &meta_block) {
+void MetaExpansion::expand(sir::Block &block, unsigned &index, sir::Block &body) {
     block.stmts[index] = analyzer.create(sir::ExpandedMetaStmt{});
 
-    for (sir::Node &node : meta_block.nodes) {
+    for (sir::Stmt stmt : body.stmts) {
         index += 1;
-        block.stmts.insert(block.stmts.begin() + index, node.as<sir::Stmt>());
+        block.stmts.insert(block.stmts.begin() + index, stmt);
         StmtAnalyzer(analyzer).analyze(block, index);
     }
 }

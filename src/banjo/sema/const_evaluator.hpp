@@ -24,6 +24,7 @@ public:
 
     sir::Expr evaluate_array_literal(sir::ArrayLiteral &array_literal);
     sir::Expr evaluate_symbol_expr(sir::SymbolExpr &symbol_expr);
+    sir::Expr evaluate_const_def_value(sir::ConstDef &const_def);
     sir::Expr evaluate_binary_expr(sir::BinaryExpr &unary_expr);
     sir::Expr evaluate_unary_expr(sir::UnaryExpr &unary_expr);
     sir::Expr evaluate_tuple_expr(sir::TupleExpr &tuple_expr);

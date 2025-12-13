@@ -1,7 +1,9 @@
 #include "symbol_context.hpp"
 
+#include "banjo/sema/meta_expansion.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include <optional>
 
 namespace banjo::lang::sema {
 
@@ -29,7 +31,7 @@ void SymbolContext::pop_meta_condition() {
 
 SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
-    ClosureContext *closure_ctx = analyzer.get_scope().closure_ctx;
+    ClosureContext *closure_ctx = analyzer.get_decl_scope().closure_ctx;
 
     std::string_view name = ident_expr.value;
 
@@ -51,6 +53,21 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     if (!result.symbol) {
         auto iter = analyzer.preamble_symbols.find(name);
         result.symbol = iter == analyzer.preamble_symbols.end() ? nullptr : iter->second;
+    }
+
+    if (!result.symbol) {
+        auto iter = symbol_table.guarded_scopes.find(name);
+        if (iter != symbol_table.guarded_scopes.end()) {
+            GuardedScope &guarded_scope = analyzer.guarded_scopes[iter->second];
+            sir::DeclBlock &block = *guarded_scope.scope.decl_block;
+            unsigned guard_stmt_index = guarded_scope.guard_stmt_index;
+
+            analyzer.enter_decl_scope(guarded_scope.scope);
+            MetaExpansion(analyzer).evaluate_meta_if_stmt(block, guard_stmt_index);
+            analyzer.exit_decl_scope();
+
+            result.symbol = symbol_table.look_up(name);
+        }
     }
 
     if (!result.symbol) {

@@ -63,7 +63,7 @@ struct File: Read, Write, Seek {
         file.seek(0, .START);
 
         var buffer = Array[u8].sized(size);
-        file.read(buffer.slice());
+        file.read(buffer.slice);
         return buffer;
     }
     

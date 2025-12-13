@@ -119,7 +119,7 @@ public:
     FuncType clone_func_type_directly(const FuncType &func_type);
     Local clone_local(const Local &local);
     Attributes *clone_attrs(const Attributes *attrs);
-    MetaBlock *clone_meta_block(const MetaBlock *meta_block);
+    MetaBlock clone_meta_block(const MetaBlock &meta_block);
     Ident clone_ident(const Ident &ident);
     Error *clone_error(const Error &error);
 };

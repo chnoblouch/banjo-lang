@@ -1,5 +1,6 @@
 #include "meta_expr_evaluator.hpp"
 
+#include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/resource_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
@@ -121,6 +122,8 @@ sir::Expr MetaExprEvaluator::compute_variants(sir::Expr &type) {
     if (!enum_def) {
         return create_array_literal({});
     }
+
+    DeclBodyAnalyzer(analyzer).visit_enum_def(*enum_def);
 
     std::span<sir::Expr> variants = analyzer.allocate_array<sir::Expr>(enum_def->variants.size());
 

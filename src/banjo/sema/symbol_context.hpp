@@ -3,7 +3,6 @@
 
 #include "banjo/sir/sir.hpp"
 
-#include <optional>
 #include <vector>
 
 namespace banjo::lang::sema {

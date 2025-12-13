@@ -10,7 +10,7 @@ func main() {
     var path = Path.from("test.txt");
     var file = File.open(path, File.Mode.READ).unwrap();
     var data = Array[u8].sized(7);
-    file.read(data.slice());
+    file.read(data.slice);
     
     for char in data {
         print(char);
@@ -25,7 +25,7 @@ func main() {
     var path = Path.from("test.txt");
     var file = File.open(path, File.Mode.READ).unwrap();
     var data = Array[u8].sized(100);
-    var result = file.read(data.slice());
+    var result = file.read(data.slice);
 
     print(result);
     print(',');
@@ -42,7 +42,7 @@ func main() {
     var path = Path.from("test.txt");
     var file = File.open(path, File.Mode.WRITE).unwrap();
     var data = ['F', 'i', 'l', 'e'];
-    file.write(data.slice());
+    file.write(data.slice);
 }
 
 # test:subtest
@@ -53,11 +53,11 @@ func main() {
     var path = Path.from("test.txt");
     var file = File.open(path, File.Mode.READ).unwrap();
 
-    file.read(Array[u8].sized(5).slice());
+    file.read(Array[u8].sized(5).slice);
     print(file.position());
     print(',');
 
-    file.read(Array[u8].sized(8).slice());
+    file.read(Array[u8].sized(8).slice);
     print(file.position());
 }
 
@@ -69,15 +69,15 @@ func main() {
     var path = Path.from("test.txt");
     var file = File.open(path, File.Mode.READ).unwrap();
 
-    file.seek(5, File.SeekOrigin.START);
+    file.seek(5, .START);
     read_string(&file, 4);
     print(',');
 
-    file.seek(-10, File.SeekOrigin.END);
+    file.seek(-10, .END);
     read_string(&file, 4);
     print(',');
 
-    file.seek(-13, File.SeekOrigin.CURRENT);
+    file.seek(-13, .CURRENT);
     read_string(&file, 8);
 }
 
@@ -86,7 +86,7 @@ func read_string(file: *File, length: usize) {
     print(',');
 
     var data = Array[u8].sized(length);
-    file.read(data.slice());
+    file.read(data.slice);
 
     var string = StringSlice.new(&data[0], length);
     print(string);

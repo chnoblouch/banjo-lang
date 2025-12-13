@@ -1,6 +1,7 @@
 #include "decl_interface_analyzer.hpp"
 
 #include "banjo/sema/expr_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
@@ -14,15 +15,23 @@ namespace sema {
 DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    DeclState &state = analyzer.decl_states[*func_def.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
         sir::Param &param = func_def.type.params[i];
         analyzer.add_symbol_def(&param);
 
-        if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_def.is_method())) {
+        if (!(state.scope->decl_parent.is<sir::ProtoDef>() && func_def.is_method())) {
             func_def.block.symbol_table->insert_local(param.name.value, &param);
         }
 
-        if (analyzer.get_scope().closure_ctx && i == 0) {
+        if (state.scope->closure_ctx && i == 0) {
             continue;
         }
 
@@ -30,17 +39,26 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
+
     return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
+    DeclState &state = analyzer.decl_states[*func_decl.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
     for (unsigned i = 0; i < func_decl.type.params.size(); i++) {
         analyze_param(i, func_decl.type.params[i]);
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_decl.type.return_type);
 
-    if (!(analyzer.get_scope().decl.is<sir::ProtoDef>() && func_decl.is_method())) {
+    if (!(state.scope->decl_parent.is<sir::ProtoDef>() && func_decl.is_method())) {
         analyzer.report_generator.report_err_func_decl_outside_proto(func_decl);
     }
 
@@ -48,22 +66,47 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
 }
 
 Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
+    DeclState &state = analyzer.decl_states[*native_func_decl.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
     for (sir::Param &param : native_func_decl.type.params) {
         ExprAnalyzer(analyzer).analyze_type(param.type);
     }
 
     ExprAnalyzer(analyzer).analyze_type(native_func_decl.type.return_type);
+
     return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
-    return ExprAnalyzer(analyzer).analyze_type(const_def.type);
+    DeclState &state = analyzer.decl_states[*const_def.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
+    ExprAnalyzer(analyzer).analyze_type(const_def.type);
+
+    return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
-    Result partial_result;
+    DeclState &state = analyzer.decl_states[*struct_def.sema_index];
 
-    analyzer.push_scope().decl = &struct_def;
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
+    Result partial_result;
 
     for (sir::Expr &impl : struct_def.impls) {
         partial_result = ExprAnalyzer(analyzer).analyze_type(impl);
@@ -79,7 +122,6 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
         }
     }
 
-    analyzer.pop_scope();
     return Result::SUCCESS;
 }
 
@@ -106,17 +148,25 @@ void DeclInterfaceAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::
 
 void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def) {
     sir::SymbolTable &parent_symbol_table = *func_def.block.symbol_table->parent;
-    sir::FuncDef *clone = sir::Cloner(*analyzer.cur_sir_mod, parent_symbol_table).clone_func_def(func_def);
+    sir::FuncDef *clone = sir::Cloner(analyzer.get_mod(), parent_symbol_table).clone_func_def(func_def);
     struct_def.block.decls.push_back(clone);
 
     SymbolCollector(analyzer).collect_func_def(*clone);
-    analyze_func_def(*clone);
+    visit_func_def(*clone);
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
+    DeclState &state = analyzer.decl_states[*var_decl.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
     ExprAnalyzer(analyzer).analyze_type(var_decl.type);
 
-    if (auto struct_def = analyzer.get_scope().decl.match<sir::StructDef>()) {
+    if (auto struct_def = state.scope->decl_parent.match<sir::StructDef>()) {
         // TODO: Error handling for missing type.
 
         out_decl = analyzer.create(
@@ -138,15 +188,33 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
 }
 
 Result DeclInterfaceAnalyzer::analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) {
-    return ExprAnalyzer(analyzer).analyze_type(native_var_decl.type);
+    DeclState &state = analyzer.decl_states[*native_var_decl.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
+    Result result = ExprAnalyzer(analyzer).analyze_type(native_var_decl.type);
+
+    return result;
 }
 
 Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant) {
+    DeclState &state = analyzer.decl_states[*enum_variant.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
     if (enum_variant.value) {
         ExprAnalyzer(analyzer).analyze_value(enum_variant.value);
     }
 
-    sir::EnumDef &enum_def = analyzer.get_scope().decl.as<sir::EnumDef>();
+    sir::EnumDef &enum_def = state.scope->decl_parent.as<sir::EnumDef>();
     enum_def.variants.push_back(&enum_variant);
 
     enum_variant.type = analyzer.create(
@@ -161,11 +229,19 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
 }
 
 Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
+    DeclState &state = analyzer.decl_states[*union_case.sema_index];
+
+    if (state.stage < DeclStage::INTERFACE) {
+        state.stage = DeclStage::INTERFACE;
+    } else {
+        return Result::SUCCESS;
+    }
+
     for (sir::UnionCaseField &field : union_case.fields) {
         ExprAnalyzer(analyzer).analyze_type(field.type);
     }
 
-    if (auto union_def = analyzer.get_scope().decl.match<sir::UnionDef>()) {
+    if (auto union_def = state.scope->decl_parent.match<sir::UnionDef>()) {
         union_def->cases.push_back(&union_case);
     } else {
         analyzer.report_generator.report_err_case_outside_union(union_case);
@@ -177,8 +253,10 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
 void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
     // TODO: Check for duplicate parameter names.
 
+    sir::Symbol parent_decl = analyzer.get_decl_scope().decl_parent;
+
     if (param.is_self()) {
-        if (!analyzer.get_scope().decl.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
+        if (!parent_decl.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
             analyzer.report_generator.report_err_self_not_allowed(param);
             return;
         }
@@ -192,7 +270,7 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             sir::SymbolExpr{
                 .ast_node = nullptr,
                 .type = nullptr,
-                .symbol = analyzer.get_scope().decl,
+                .symbol = parent_decl,
             }
         );
 

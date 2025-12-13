@@ -1,10 +1,14 @@
 #include "generics_specializer.hpp"
 
+#include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/decl_interface_analyzer.hpp"
 #include "banjo/sema/meta_expansion.hpp"
+#include "banjo/sema/resource_analyzer.hpp"
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/type_alias_resolver.hpp"
 #include "banjo/sema/use_resolver.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -49,6 +53,7 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
             .generic_params = {},
             .specializations = {},
             .parent_specialization = nullptr,
+            .sema_index = {},
         }
     );
 
@@ -61,28 +66,21 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
 
     clone->parent_specialization = &generic_func_def.specializations.back();
 
-    sir::Module *prev_mod = analyzer.cur_sir_mod;
+    SymbolCollector(analyzer).collect_func_specialization(generic_func_def, *clone);
+    analyzer.enter_decl_scope(*analyzer.decl_states[*clone->sema_index].scope);
+    DeclInterfaceAnalyzer(analyzer).visit_func_def(*clone);
 
-    analyzer.cur_sir_mod = &def_mod;
-    analyzer.push_empty_scope();
-    analyzer.get_scope().closure_ctx = nullptr;
-    analyzer.get_scope().generic_args.clear();
-
-    for (unsigned i = 0; i < args.size(); i++) {
-        std::string_view param_name = generic_func_def.generic_params[i].ident.value;
-        analyzer.get_scope().generic_args.insert({param_name, args[i]});
+    if (analyzer.stage >= DeclStage::BODY) {
+        DeclBodyAnalyzer(analyzer).visit_func_def(*clone);
     }
 
-    analyzer.get_scope().decl = generic_func_def.parent;
-    DeclInterfaceAnalyzer(analyzer).process_func_def(*clone);
+    if (analyzer.stage >= DeclStage::RESOURCES) {
+        ResourceAnalyzer(analyzer).visit_func_def(*clone);
+    }
 
-    analyzer.get_scope().decl = clone;
-    analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});
+    analyzer.exit_decl_scope();
 
-    analyzer.pop_scope();
-    analyzer.cur_sir_mod = prev_mod;
-
-    if (analyzer.mode == sema::Mode::COMPLETION) {
+    if (analyzer.mode == Mode::COMPLETION) {
         analyzer.get_completion_infection().func_specializations[&generic_func_def] += 1;
     }
 
@@ -116,29 +114,26 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
 
     clone->parent_specialization = &generic_struct_def.specializations.back();
 
-    sir::Module *prev_mod = analyzer.cur_sir_mod;
+    SymbolCollector(analyzer).collect_struct_specialization(generic_struct_def, *clone);
 
-    analyzer.cur_sir_mod = &def_mod;
-    analyzer.push_empty_scope();
-    analyzer.push_scope().decl = clone;
-
-    for (unsigned i = 0; i < args.size(); i++) {
-        std::string_view param_name = generic_struct_def.generic_params[i].ident.value;
-        analyzer.get_scope().generic_args.insert({param_name, args[i]});
-    }
-
-    SymbolCollector(analyzer).collect_in_block(clone->block);
+    analyzer.enter_decl_scope(*analyzer.decl_states[*clone->sema_index].scope);
     MetaExpansion(analyzer).run_on_decl_block(clone->block);
     UseResolver(analyzer).resolve_in_block(clone->block);
     TypeAliasResolver(analyzer).analyze_decl_block(clone->block);
-    DeclInterfaceAnalyzer(analyzer).process_struct_def(*clone);
-    analyzer.decls_awaiting_body_analysis.push_back({clone, analyzer.get_scope()});
+    analyzer.exit_decl_scope();
 
-    analyzer.pop_scope();
-    analyzer.pop_scope();
-    analyzer.cur_sir_mod = prev_mod;
+    DeclInterfaceAnalyzer(analyzer).visit_struct_def(*clone);
 
-    if (analyzer.mode == sema::Mode::COMPLETION) {
+    if (analyzer.stage >= DeclStage::BODY) {
+        DeclBodyAnalyzer(analyzer).visit_struct_def(*clone);
+    }
+
+    if (analyzer.stage >= DeclStage::RESOURCES) {
+        ResourceAnalyzer(analyzer).visit_struct_def(*clone);
+    }
+
+
+    if (analyzer.mode == Mode::COMPLETION) {
         analyzer.get_completion_infection().struct_specializations[&generic_struct_def] += 1;
     }
 

@@ -64,11 +64,11 @@ private:
 
 public:
     ResourceAnalyzer(SemanticAnalyzer &analyzer);
-    Result analyze_func_def(sir::FuncDef &func_def) override;
 
     std::optional<sir::Resource> create_resource(sir::Expr type);
 
 private:
+    Result analyze_func_def(sir::FuncDef &func_def) override;
     Scope analyze_block(sir::Block &block, ScopeType type = ScopeType::GENERIC);
 
     std::optional<sir::Resource> create_struct_resource(sir::StructDef &struct_def, sir::Expr type);

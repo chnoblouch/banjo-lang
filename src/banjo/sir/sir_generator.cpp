@@ -45,6 +45,7 @@ void SIRGenerator::generate_mod(ASTModule *node, sir::Module &out_sir_mod) {
     cur_sir_mod = &out_sir_mod;
     out_sir_mod.path = node->file.mod_path;
     out_sir_mod.block = generate_decl_block(node->get_block());
+    out_sir_mod.sema_index = {};
 }
 
 sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
@@ -126,6 +127,7 @@ sir::Decl SIRGenerator::generate_func_def(ASTNode *node, sir::Attributes *attrs)
             .block = generate_block(block_node),
             .attrs = attrs,
             .generic_params = {},
+            .sema_index = {},
         }
     );
 }
@@ -145,6 +147,7 @@ sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
             .type = generate_func_type(params_node, return_type_node),
             .block = generate_block(block_node),
             .generic_params = generate_generic_param_list(generic_params_node),
+            .sema_index = {},
         }
     );
 }
@@ -160,6 +163,7 @@ sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
+            .sema_index = {},
         }
     );
 }
@@ -176,6 +180,7 @@ sir::Decl SIRGenerator::generate_native_func(ASTNode *node, sir::Attributes *att
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
             .attrs = attrs,
+            .sema_index = {},
         }
     );
 }
@@ -255,6 +260,7 @@ sir::Decl SIRGenerator::generate_var_decl(ASTNode *node, sir::Attributes *attrs)
             .type = generate_expr(type_node),
             .value = value_node ? generate_expr(value_node) : nullptr,
             .attrs = attrs,
+            .sema_index = {},
         }
     );
 }
@@ -269,6 +275,7 @@ sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node, sir::Attributes 
             .ident = generate_ident(name_node),
             .type = generate_expr(type_node),
             .attrs = attrs,
+            .sema_index = {},
         }
     );
 }
@@ -290,6 +297,7 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
                 .ast_node = variant_node,
                 .ident = generate_ident(name_node),
                 .value = value_node ? generate_expr(value_node) : nullptr,
+                .sema_index = {},
             }
         ));
     }
@@ -299,6 +307,7 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .block = block,
+            .sema_index = {},
         }
     );
 }
@@ -313,6 +322,7 @@ sir::Decl SIRGenerator::generate_union(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
             .cases = {},
+            .sema_index = {},
         }
     );
 }
@@ -326,6 +336,7 @@ sir::Decl SIRGenerator::generate_union_case(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .fields = generate_union_case_fields(fields_node),
+            .sema_index = {},
         }
     );
 }
@@ -340,6 +351,7 @@ sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
             .func_decls = {},
+            .sema_index = {},
         }
     );
 }
@@ -353,6 +365,7 @@ sir::Decl SIRGenerator::generate_type_alias(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_expr(underlying_type_node),
+            .sema_index = {},
         }
     );
 }
@@ -408,20 +421,11 @@ sir::Block SIRGenerator::generate_block(ASTNode *node) {
     return sir_block;
 }
 
-sir::MetaBlock *SIRGenerator::generate_meta_block(ASTNode *node, MetaBlockKind kind) {
-    sir::MetaBlock sir_meta_block{
-        .ast_node = node,
-        .nodes = {},
-    };
-
-    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        switch (kind) {
-            case MetaBlockKind::DECL: sir_meta_block.nodes.push_back(generate_decl(child)); break;
-            case MetaBlockKind::STMT: sir_meta_block.nodes.push_back(generate_stmt(child)); break;
-        }
+sir::MetaBlock SIRGenerator::generate_meta_block(ASTNode *node, MetaBlockKind kind) {
+    switch (kind) {
+        case MetaBlockKind::DECL: return create(generate_decl_block(node));
+        case MetaBlockKind::STMT: return create(generate_block(node));
     }
-
-    return create(sir_meta_block);
 }
 
 sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
@@ -1435,10 +1439,11 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
 
         return sir::Param{
             .ast_node = node,
-            .name = sir::Ident{
-                .ast_node = nullptr,
-                .value = "",
-            },
+            .name =
+                sir::Ident{
+                    .ast_node = nullptr,
+                    .value = "",
+                },
             .type = generate_expr(type_node),
             .attrs = attrs,
         };

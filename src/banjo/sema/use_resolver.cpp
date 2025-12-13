@@ -1,7 +1,5 @@
 #include "use_resolver.hpp"
 
-#include "banjo/utils/macros.hpp"
-
 namespace banjo {
 
 namespace lang {
@@ -12,24 +10,17 @@ UseResolver::UseResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void UseResolver::resolve(const std::vector<sir::Module *> &mods) {
     for (sir::Module *mod : mods) {
-        analyzer.enter_mod(mod);
+        DeclState &state = analyzer.decl_states[*mod->sema_index];
+
+        analyzer.enter_decl_scope(*state.scope);
         resolve_in_block(mod->block);
-        analyzer.exit_mod();
+        analyzer.exit_decl_scope();
     }
 }
 
 void UseResolver::resolve_in_block(sir::DeclBlock &decl_block) {
     for (sir::Decl &decl : decl_block.decls) {
         if (auto use_decl = decl.match<sir::UseDecl>()) {
-            sir::Symbol symbol = nullptr;
-            resolve_use_item(use_decl->root_item, symbol);
-        }
-    }
-}
-
-void UseResolver::resolve_in_meta_block(sir::MetaBlock &meta_block) {
-    for (sir::Node &node : meta_block.nodes) {
-        if (auto use_decl = node.as<sir::Decl>().match<sir::UseDecl>()) {
             sir::Symbol symbol = nullptr;
             resolve_use_item(use_decl->root_item, symbol);
         }

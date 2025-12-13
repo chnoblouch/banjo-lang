@@ -51,6 +51,7 @@ public:
     void report_err_symbol_not_found_in(const sir::Ident &member_ident, const std::string &base_name);
     void report_err_module_not_found(const sir::Ident &ident);
     void report_err_redefinition(const sir::Ident &ident, const sir::Symbol &prev_def);
+    void report_err_cyclical_definition(sir::Expr expr);
     void report_err_type_mismatch(const sir::Expr &value, const sir::Expr &expected, const sir::Expr &actual);
     void report_err_cannot_coerce(const sir::Expr &expr, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);

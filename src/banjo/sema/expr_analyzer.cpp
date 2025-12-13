@@ -7,12 +7,13 @@
 #include "banjo/sema/expr_property_analyzer.hpp"
 #include "banjo/sema/generic_arg_inference.hpp"
 #include "banjo/sema/generics_specializer.hpp"
-#include "banjo/sema/meta_expansion.hpp"
 #include "banjo/sema/meta_expr_evaluator.hpp"
 #include "banjo/sema/overload_resolver.hpp"
 #include "banjo/sema/resource_analyzer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/symbol_context.hpp"
+#include "banjo/sema/type_alias_resolver.hpp"
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
@@ -173,40 +174,48 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     }
 
     if (auto reference_type = expr.get_type().match<sir::ReferenceType>()) {
-        expr = analyzer.create(sir::UnaryExpr{
-            .ast_node = expr.get_ast_node(),
-            .type = reference_type->base_type,
-            .op = sir::UnaryOp::DEREF,
-            .value = expr,
-        });
+        expr = analyzer.create(
+            sir::UnaryExpr{
+                .ast_node = expr.get_ast_node(),
+                .type = reference_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = expr,
+            }
+        );
     }
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
-    int_literal.type = analyzer.create(sir::PseudoType{
-        .ast_node = nullptr,
-        .kind = sir::PseudoTypeKind::INT_LITERAL,
-    });
+    int_literal.type = analyzer.create(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::INT_LITERAL,
+        }
+    );
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
-    fp_literal.type = analyzer.create(sir::PseudoType{
-        .ast_node = nullptr,
-        .kind = sir::PseudoTypeKind::FP_LITERAL,
-    });
+    fp_literal.type = analyzer.create(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::FP_LITERAL,
+        }
+    );
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
-    bool_literal.type = analyzer.create(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::BOOL,
-    });
+    bool_literal.type = analyzer.create(
+        sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::BOOL,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -214,37 +223,45 @@ Result ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
 Result ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
     // TODO: Error handling for characters with size != 1
 
-    char_literal.type = analyzer.create(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::U8,
-    });
+    char_literal.type = analyzer.create(
+        sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::U8,
+        }
+    );
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
-    null_literal.type = analyzer.create(sir::PseudoType{
-        .ast_node = nullptr,
-        .kind = sir::PseudoTypeKind::NULL_LITERAL,
-    });
+    null_literal.type = analyzer.create(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::NULL_LITERAL,
+        }
+    );
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_none_literal(sir::NoneLiteral &none_literal) {
-    none_literal.type = analyzer.create(sir::PseudoType{
-        .ast_node = nullptr,
-        .kind = sir::PseudoTypeKind::NONE_LITERAL,
-    });
+    none_literal.type = analyzer.create(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::NONE_LITERAL,
+        }
+    );
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_undefined_literal(sir::UndefinedLiteral &undefined_literal) {
-    undefined_literal.type = analyzer.create(sir::PseudoType{
-        .ast_node = nullptr,
-        .kind = sir::PseudoTypeKind::UNDEFINED_LITERAL,
-    });
+    undefined_literal.type = analyzer.create(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::UNDEFINED_LITERAL,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -267,27 +284,33 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
     }
 
     if (array_literal.values.size() == 1 && array_literal.values[0].is_type()) {
-        out_expr = analyzer.create(sir::ArrayType{
-            .ast_node = array_literal.ast_node,
-            .base_type = array_literal.values[0],
-        });
+        out_expr = analyzer.create(
+            sir::ArrayType{
+                .ast_node = array_literal.ast_node,
+                .base_type = array_literal.values[0],
+            }
+        );
 
         return analyze_array_type(out_expr.as<sir::ArrayType>(), out_expr);
     } else {
-        array_literal.type = analyzer.create(sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::ARRAY_LITERAL,
-        });
+        array_literal.type = analyzer.create(
+            sir::PseudoType{
+                .ast_node = nullptr,
+                .kind = sir::PseudoTypeKind::ARRAY_LITERAL,
+            }
+        );
     }
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
-    string_literal.type = analyzer.create(sir::PseudoType{
-        .ast_node = nullptr,
-        .kind = sir::PseudoTypeKind::STRING_LITERAL,
-    });
+    string_literal.type = analyzer.create(
+        sir::PseudoType{
+            .ast_node = nullptr,
+            .kind = sir::PseudoTypeKind::STRING_LITERAL,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -346,18 +369,22 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
     sir::ExprCategory first_value_category = map_literal.entries[0].value.get_category();
 
     if (first_key_category == sir::ExprCategory::VALUE && first_value_category == sir::ExprCategory::VALUE) {
-        map_literal.type = analyzer.create(sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::MAP_LITERAL,
-        });
+        map_literal.type = analyzer.create(
+            sir::PseudoType{
+                .ast_node = nullptr,
+                .kind = sir::PseudoTypeKind::MAP_LITERAL,
+            }
+        );
 
         return Result::SUCCESS;
     } else if (first_key_category == sir::ExprCategory::TYPE && first_value_category == sir::ExprCategory::TYPE) {
-        out_expr = analyzer.create(sir::MapType{
-            .ast_node = map_literal.ast_node,
-            .key_type = map_literal.entries[0].key,
-            .value_type = map_literal.entries[0].value,
-        });
+        out_expr = analyzer.create(
+            sir::MapType{
+                .ast_node = map_literal.ast_node,
+                .key_type = map_literal.entries[0].key,
+                .value_type = map_literal.entries[0].value,
+            }
+        );
 
         return analyze_map_type(out_expr.as<sir::MapType>(), out_expr);
     } else {
@@ -367,19 +394,23 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
 }
 
 Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr) {
-    sir::TupleExpr *data_type = analyzer.create(sir::TupleExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .exprs = {},
-    });
+    sir::TupleExpr *data_type = analyzer.create(
+        sir::TupleExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .exprs = {},
+        }
+    );
 
     sir::Param data_ptr_param{
         .ast_node = nullptr,
         .name = {},
-        .type = analyzer.create(sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::ADDR,
-        }),
+        .type = analyzer.create(
+            sir::PrimitiveType{
+                .ast_node = nullptr,
+                .primitive = sir::Primitive::ADDR,
+            }
+        ),
     };
 
     unsigned num_args = closure_literal.func_type.params.size() + 1;
@@ -397,37 +428,30 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         .return_type = closure_literal.func_type.return_type,
     };
 
-    sir::FuncDef *generated_func = analyzer.create(sir::FuncDef{
-        .ast_node = closure_literal.ast_node,
-        .ident{
-            .ast_node = nullptr,
-            .value = "",
-        },
-        .type = generated_func_type,
-        .block = *closure_literal.block,
-        .attrs = nullptr,
-        .generic_params = {},
-        .specializations = {},
-        .parent_specialization = nullptr,
-    });
+    sir::FuncDef *generated_func = analyzer.create(
+        sir::FuncDef{
+            .ast_node = closure_literal.ast_node,
+            .ident{
+                .ast_node = nullptr,
+                .value = "",
+            },
+            .type = generated_func_type,
+            .block = *closure_literal.block,
+            .attrs = nullptr,
+            .generic_params = {},
+            .specializations = {},
+            .parent_specialization = nullptr,
+        }
+    );
 
-    generated_func->block.symbol_table->parent = analyzer.get_scope().decl.get_symbol_table();
+    generated_func->block.symbol_table->parent = analyzer.get_decl_scope().decl_block->symbol_table;
 
-    ClosureContext closure_ctx{
-        .captured_vars = {},
-        .data_type = data_type,
-        .parent_block = analyzer.get_scope().block,
-    };
+    ClosureContext &closure_ctx = SymbolCollector(analyzer).collect_closure_func(*generated_func, data_type);
+    DeclInterfaceAnalyzer(analyzer).visit_func_def(*generated_func);
+    DeclBodyAnalyzer(analyzer).visit_func_def(*generated_func);
+    ResourceAnalyzer(analyzer).visit_func_def(*generated_func);
 
-    analyzer.push_scope().closure_ctx = &closure_ctx;
-
-    DeclInterfaceAnalyzer(analyzer).analyze_func_def(*generated_func);
-    DeclBodyAnalyzer(analyzer).analyze_func_def(*generated_func);
-    ResourceAnalyzer(analyzer).analyze_func_def(*generated_func);
-
-    analyzer.pop_scope();
-
-    analyzer.cur_sir_mod->block.decls.push_back(generated_func);
+    analyzer.get_mod().block.decls.push_back(generated_func);
 
     data_type->exprs = analyzer.allocate_array<sir::Expr>(closure_ctx.captured_vars.size());
     std::span<sir::Expr> capture_values = analyzer.allocate_array<sir::Expr>(closure_ctx.captured_vars.size());
@@ -436,21 +460,25 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         sir::Symbol &captured_var = closure_ctx.captured_vars[i];
 
         sir::Expr type = captured_var.get_type();
-        sir::Expr value = analyzer.create(sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = type,
-            .symbol = captured_var,
-        });
+        sir::Expr value = analyzer.create(
+            sir::SymbolExpr{
+                .ast_node = nullptr,
+                .type = type,
+                .symbol = captured_var,
+            }
+        );
 
         data_type->exprs[i] = type;
         capture_values[i] = value;
     }
 
-    sir::TupleExpr *data = analyzer.create(sir::TupleExpr{
-        .ast_node = nullptr,
-        .type = data_type,
-        .exprs = capture_values,
-    });
+    sir::TupleExpr *data = analyzer.create(
+        sir::TupleExpr{
+            .ast_node = nullptr,
+            .type = data_type,
+            .exprs = capture_values,
+        }
+    );
 
     sir::StructDef &std_closure_def = analyzer.find_std_closure().as<sir::StructDef>();
 
@@ -458,39 +486,51 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
     std::span<sir::Expr> generic_args = analyzer.create_array<sir::Expr>({data_type});
     sir::FuncDef &new_def = *GenericsSpecializer(analyzer).specialize(new_def_generic, generic_args);
 
-    sir::Expr callee = analyzer.create(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = &new_def.type,
-        .symbol = &new_def,
-    });
-
-    sir::Expr addr_type = analyzer.create(sir::PrimitiveType{
-        .ast_node = nullptr,
-        .primitive = sir::Primitive::ADDR,
-    });
-
-    sir::Expr func_ptr = analyzer.create(sir::CastExpr{
-        .ast_node = nullptr,
-        .type = addr_type,
-        .value = analyzer.create(sir::SymbolExpr{
+    sir::Expr callee = analyzer.create(
+        sir::SymbolExpr{
             .ast_node = nullptr,
-            .type = &generated_func->type,
-            .symbol = generated_func,
-        }),
-    });
+            .type = &new_def.type,
+            .symbol = &new_def,
+        }
+    );
+
+    sir::Expr addr_type = analyzer.create(
+        sir::PrimitiveType{
+            .ast_node = nullptr,
+            .primitive = sir::Primitive::ADDR,
+        }
+    );
+
+    sir::Expr func_ptr = analyzer.create(
+        sir::CastExpr{
+            .ast_node = nullptr,
+            .type = addr_type,
+            .value = analyzer.create(
+                sir::SymbolExpr{
+                    .ast_node = nullptr,
+                    .type = &generated_func->type,
+                    .symbol = generated_func,
+                }
+            ),
+        }
+    );
 
     analyze_func_type(closure_literal.func_type);
 
-    out_expr = analyzer.create(sir::CallExpr{
-        .ast_node = nullptr,
-        .type = analyzer.create(sir::ClosureType{
+    out_expr = analyzer.create(
+        sir::CallExpr{
             .ast_node = nullptr,
-            .func_type = closure_literal.func_type,
-            .underlying_struct = &std_closure_def,
-        }),
-        .callee = callee,
-        .args = analyzer.create_array<sir::Expr>({func_ptr, data}),
-    });
+            .type = analyzer.create(
+                sir::ClosureType{
+                    .ast_node = nullptr,
+                    .func_type = closure_literal.func_type,
+                    .underlying_struct = &std_closure_def,
+                }
+            ),
+            .callee = callee,
+            .args = analyzer.create_array<sir::Expr>({func_ptr, data}),
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -627,7 +667,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        binary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
+        binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (Utils::is_one_of(binary_expr.op, logical_ops)) {
         if (!lhs_type.is_primitive_type(sir::Primitive::BOOL)) {
             analyzer.report_generator.report_err_expected_bool(binary_expr.lhs);
@@ -643,7 +683,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        binary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
+        binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     }
 
     return Result::SUCCESS;
@@ -671,10 +711,12 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (unary_expr.op == sir::UnaryOp::REF) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
-        unary_expr.type = analyzer.create(sir::PointerType{
-            .ast_node = nullptr,
-            .base_type = value_type,
-        });
+        unary_expr.type = analyzer.create(
+            sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = value_type,
+            }
+        );
 
         ExprProperties props = ExprPropertyAnalyzer().analyze(unary_expr.value);
 
@@ -731,7 +773,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             return Result::ERROR;
         }
 
-        unary_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
+        unary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -792,26 +834,32 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         if (ident_expr->value == "__builtin_deinit") {
             ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
 
-            out_expr = analyzer.create(sir::DeinitExpr{
-                .ast_node = nullptr,
-                .type = call_expr.args[0].get_type(),
-                .value = call_expr.args[0],
-                .resource = nullptr,
-            });
+            out_expr = analyzer.create(
+                sir::DeinitExpr{
+                    .ast_node = nullptr,
+                    .type = call_expr.args[0].get_type(),
+                    .value = call_expr.args[0],
+                    .resource = nullptr,
+                }
+            );
 
             return Result::SUCCESS;
         } else if (ident_expr->value == "__builtin_pointer_to") {
             ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
 
-            out_expr = analyzer.create(sir::UnaryExpr{
-                .ast_node = nullptr,
-                .type = analyzer.create(sir::PointerType{
+            out_expr = analyzer.create(
+                sir::UnaryExpr{
                     .ast_node = nullptr,
-                    .base_type = call_expr.args[0].get_type(),
-                }),
-                .op = sir::UnaryOp::REF,
-                .value = call_expr.args[0],
-            });
+                    .type = analyzer.create(
+                        sir::PointerType{
+                            .ast_node = nullptr,
+                            .base_type = call_expr.args[0].get_type(),
+                        }
+                    ),
+                    .op = sir::UnaryOp::REF,
+                    .value = call_expr.args[0],
+                }
+            );
 
             return Result::SUCCESS;
         }
@@ -891,11 +939,13 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                     args[i] = call_expr.args[i];
                 }
 
-                args[num_non_sequence_args] = analyzer.create(sir::TupleExpr{
-                    .ast_node = nullptr,
-                    .type = generic_args.back(),
-                    .exprs = sequence_args,
-                });
+                args[num_non_sequence_args] = analyzer.create(
+                    sir::TupleExpr{
+                        .ast_node = nullptr,
+                        .type = generic_args.back(),
+                        .exprs = sequence_args,
+                    }
+                );
 
                 call_expr.args = args;
             }
@@ -912,11 +962,13 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
         analyzer.add_symbol_use(call_expr.callee.as<sir::SymbolExpr>().ast_node, callee_func_def);
 
-        call_expr.callee = analyzer.create(sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = &callee_func_def->type,
-            .symbol = callee_func_def,
-        });
+        call_expr.callee = analyzer.create(
+            sir::SymbolExpr{
+                .ast_node = nullptr,
+                .type = &callee_func_def->type,
+                .symbol = callee_func_def,
+            }
+        );
     }
 
     sir::Expr callee_type = call_expr.callee.get_type();
@@ -939,25 +991,31 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     call_expr.type = callee_func_type->return_type;
 
     if (auto closure_type = callee_type.match<sir::ClosureType>()) {
-        sir::Expr func_ptr = analyzer.create(sir::FieldExpr{
-            .ast_node = nullptr,
-            .type = closure_type->underlying_struct->fields[0]->type,
-            .base = call_expr.callee,
-            .field_index = 0,
-        });
+        sir::Expr func_ptr = analyzer.create(
+            sir::FieldExpr{
+                .ast_node = nullptr,
+                .type = closure_type->underlying_struct->fields[0]->type,
+                .base = call_expr.callee,
+                .field_index = 0,
+            }
+        );
 
-        sir::Expr data_ptr = analyzer.create(sir::FieldExpr{
-            .ast_node = nullptr,
-            .type = closure_type->underlying_struct->fields[1]->type,
-            .base = call_expr.callee,
-            .field_index = 1,
-        });
+        sir::Expr data_ptr = analyzer.create(
+            sir::FieldExpr{
+                .ast_node = nullptr,
+                .type = closure_type->underlying_struct->fields[1]->type,
+                .base = call_expr.callee,
+                .field_index = 1,
+            }
+        );
 
-        call_expr.callee = analyzer.create(sir::CastExpr{
-            .ast_node = nullptr,
-            .type = &closure_type->func_type,
-            .value = func_ptr,
-        });
+        call_expr.callee = analyzer.create(
+            sir::CastExpr{
+                .ast_node = nullptr,
+                .type = &closure_type->func_type,
+                .value = func_ptr,
+            }
+        );
 
         std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(call_expr.args.size() + 1);
         args[0] = data_ptr;
@@ -992,12 +1050,14 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             break;
         }
 
-        lhs = analyzer.create(sir::UnaryExpr{
-            .ast_node = nullptr,
-            .type = pointer_type->base_type,
-            .op = sir::UnaryOp::DEREF,
-            .value = lhs,
-        });
+        lhs = analyzer.create(
+            sir::UnaryExpr{
+                .ast_node = nullptr,
+                .type = pointer_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = lhs,
+            }
+        );
 
         lhs_type = pointer_type->base_type;
     }
@@ -1016,12 +1076,14 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         if (field) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
 
-            out_call_expr.callee = analyzer.create(sir::FieldExpr{
-                .ast_node = dot_expr.ast_node,
-                .type = field->type,
-                .base = lhs,
-                .field_index = field->index,
-            });
+            out_call_expr.callee = analyzer.create(
+                sir::FieldExpr{
+                    .ast_node = dot_expr.ast_node,
+                    .type = field->type,
+                    .base = lhs,
+                    .field_index = field->index,
+                }
+            );
 
             return Result::SUCCESS;
         }
@@ -1077,11 +1139,13 @@ Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::E
         return Result::ERROR;
     }
 
-    out_expr = analyzer.create(sir::UnionCaseLiteral{
-        .ast_node = nullptr,
-        .type = call_expr.callee,
-        .args = call_expr.args,
-    });
+    out_expr = analyzer.create(
+        sir::UnionCaseLiteral{
+            .ast_node = nullptr,
+            .type = call_expr.callee,
+            .args = call_expr.args,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -1293,11 +1357,13 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
         types[i] = tuple_expr.exprs[i].get_type();
     }
 
-    tuple_expr.type = analyzer.create(sir::TupleExpr{
-        .ast_node = nullptr,
-        .type = nullptr,
-        .exprs = types,
-    });
+    tuple_expr.type = analyzer.create(
+        sir::TupleExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .exprs = types,
+        }
+    );
 }
 
 Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr) {
@@ -1307,13 +1373,13 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return analyze_completion_token();
     }
 
-    const std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
+    const auto &generic_args = analyzer.get_decl_scope().generic_args;
 
     if (!generic_args.empty()) {
         auto iter = generic_args.find(ident_expr.value);
         if (iter != generic_args.end()) {
             if (iter->second.is<sir::StringLiteral>()) {
-                out_expr = sir::Cloner(*analyzer.cur_sir_mod).clone_expr(iter->second);
+                out_expr = sir::Cloner(analyzer.get_mod()).clone_expr(iter->second);
             } else {
                 out_expr = iter->second;
             }
@@ -1323,16 +1389,16 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     }
 
     if (analyzer.in_meta_expansion) {
-        sir::DeclBlock &decl_block = *analyzer.get_scope().decl.get_decl_block();
+        sir::DeclBlock &decl_block = *analyzer.get_decl_scope().decl_block;
         UseResolver(analyzer).resolve_in_block(decl_block);
-        MetaExpansion(analyzer).run_on_decl_block(decl_block);
+        // MetaExpansion(analyzer).run_on_decl_block(decl_block);
     }
 
     SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up(ident_expr);
     sir::Symbol symbol = lookup_result.symbol;
 
     if (lookup_result.kind == SymbolLookupResult::Kind::ERROR) {
-        out_expr = sir::create_error_value(*analyzer.cur_sir_mod, ident_expr.ast_node);
+        out_expr = sir::create_error_value(analyzer.get_mod(), ident_expr.ast_node);
         return Result::ERROR;
     }
 
@@ -1356,31 +1422,41 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
                 closure_ctx.captured_vars.push_back(symbol);
             }
 
-            sir::FuncDef &func_def = analyzer.get_scope().decl.as<sir::FuncDef>();
+            sir::FuncDef &func_def = analyzer.get_decl_scope().decl.as<sir::FuncDef>();
             sir::Symbol data_ptr_param = &func_def.type.params[0];
 
-            out_expr = analyzer.create(sir::FieldExpr{
-                .ast_node = nullptr,
-                .type = symbol.get_type(),
-                .base = analyzer.create(sir::UnaryExpr{
+            out_expr = analyzer.create(
+                sir::FieldExpr{
                     .ast_node = nullptr,
-                    .type = closure_ctx.data_type,
-                    .op = sir::UnaryOp::DEREF,
-                    .value = analyzer.create(sir::CastExpr{
-                        .ast_node = nullptr,
-                        .type = analyzer.create(sir::PointerType{
+                    .type = symbol.get_type(),
+                    .base = analyzer.create(
+                        sir::UnaryExpr{
                             .ast_node = nullptr,
-                            .base_type = closure_ctx.data_type,
-                        }),
-                        .value = analyzer.create(sir::SymbolExpr{
-                            .ast_node = nullptr,
-                            .type = data_ptr_param.get_type(),
-                            .symbol = data_ptr_param,
-                        })
-                    }),
-                }),
-                .field_index = captured_var_index,
-            });
+                            .type = closure_ctx.data_type,
+                            .op = sir::UnaryOp::DEREF,
+                            .value = analyzer.create(
+                                sir::CastExpr{
+                                    .ast_node = nullptr,
+                                    .type = analyzer.create(
+                                        sir::PointerType{
+                                            .ast_node = nullptr,
+                                            .base_type = closure_ctx.data_type,
+                                        }
+                                    ),
+                                    .value = analyzer.create(
+                                        sir::SymbolExpr{
+                                            .ast_node = nullptr,
+                                            .type = data_ptr_param.get_type(),
+                                            .symbol = data_ptr_param,
+                                        }
+                                    )
+                                }
+                            ),
+                        }
+                    ),
+                    .field_index = captured_var_index,
+                }
+            );
 
             return Result::SUCCESS;
         }
@@ -1390,11 +1466,29 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         analyzer.add_symbol_use(ident_expr.ast_node, symbol);
     }
 
-    out_expr = analyzer.create(sir::SymbolExpr{
-        .ast_node = ident_expr.ast_node,
-        .type = symbol.get_type(),
-        .symbol = symbol,
-    });
+    if (auto const_def = symbol.match<sir::ConstDef>()) {
+        DeclInterfaceAnalyzer{analyzer}.visit_const_def(*const_def);
+    } else if (auto type_alias = symbol.match<sir::TypeAlias>()) {
+        if (analyzer.decl_states[*type_alias->sema_index].stage < DeclStage::BODY) {
+            Result result = TypeAliasResolver(analyzer).analyze_type_alias(*type_alias);
+
+            if (result == Result::DEF_CYCLE) {
+                analyzer.report_generator.report_err_cyclical_definition(&ident_expr);
+            }
+
+            if (result != Result::SUCCESS) {
+                return Result::ERROR;
+            }
+        }
+    }
+
+    out_expr = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = ident_expr.ast_node,
+            .type = symbol.get_type(),
+            .symbol = symbol,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -1408,10 +1502,12 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
     }
 
     if (star_expr.value.is_type()) {
-        out_expr = analyzer.create(sir::PointerType{
-            .ast_node = star_expr.ast_node,
-            .base_type = star_expr.value,
-        });
+        out_expr = analyzer.create(
+            sir::PointerType{
+                .ast_node = star_expr.ast_node,
+                .base_type = star_expr.value,
+            }
+        );
     } else {
         sir::Expr value_type = star_expr.value.get_type();
 
@@ -1429,19 +1525,23 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
         }
 
         if (auto pointer_type = value_type.match<sir::PointerType>()) {
-            out_expr = analyzer.create(sir::UnaryExpr{
-                .ast_node = star_expr.ast_node,
-                .type = pointer_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = star_expr.value,
-            });
+            out_expr = analyzer.create(
+                sir::UnaryExpr{
+                    .ast_node = star_expr.ast_node,
+                    .type = pointer_type->base_type,
+                    .op = sir::UnaryOp::DEREF,
+                    .value = star_expr.value,
+                }
+            );
         } else if (auto reference_type = value_type.match<sir::ReferenceType>()) {
-            out_expr = analyzer.create(sir::UnaryExpr{
-                .ast_node = star_expr.ast_node,
-                .type = reference_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = star_expr.value,
-            });
+            out_expr = analyzer.create(
+                sir::UnaryExpr{
+                    .ast_node = star_expr.ast_node,
+                    .type = reference_type->base_type,
+                    .op = sir::UnaryOp::DEREF,
+                    .value = star_expr.value,
+                }
+            );
         } else {
             analyzer.report_generator.report_err_cannot_deref(star_expr.value);
             return Result::ERROR;
@@ -1559,9 +1659,9 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
     Result result = analyze(meta_field_expr.base);
 
     if (meta_field_expr.field.value == "size") {
-        meta_field_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::USIZE);
+        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
     } else if (Utils::is_one_of(meta_field_expr.field.value, {"is_pointer", "is_struct", "is_enum", "is_resource"})) {
-        meta_field_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
+        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     }
 
     return result;
@@ -1587,7 +1687,7 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr) {
 
     if (auto meta_field_expr = meta_call_expr.callee.match<sir::MetaFieldExpr>()) {
         if (meta_field_expr->field.value == "has_method") {
-            meta_call_expr.type = sir::create_primitive_type(*analyzer.cur_sir_mod, sir::Primitive::BOOL);
+            meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
         }
     }
 
@@ -1597,15 +1697,15 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr) {
 Result ExprAnalyzer::analyze_completion_token() {
     if (analyzer.is_in_stmt_block()) {
         analyzer.completion_context = CompleteInBlock{
-            .block = analyzer.get_scope().block,
+            .block = &analyzer.get_block(),
         };
     } else if (analyzer.is_in_decl()) {
         analyzer.completion_context = CompleteInDeclBlock{
-            .decl_block = analyzer.get_scope().decl.get_decl_block(),
+            .decl_block = analyzer.get_decl_scope().decl_parent.get_decl_block(),
         };
     } else {
         analyzer.completion_context = CompleteInDeclBlock{
-            .decl_block = &analyzer.cur_sir_mod->block,
+            .decl_block = &analyzer.get_mod().block,
         };
     }
 
@@ -1618,31 +1718,21 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     if (dot_expr.rhs.is_error_token()) {
         return Result::ERROR;
     }
-    
+
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
     if (decl_block) {
         SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up_rhs_local(dot_expr);
 
-        if (!lookup_result.symbol) {
-            auto iter = analyzer.incomplete_decl_blocks.find(decl_block);
-
-            if (iter != analyzer.incomplete_decl_blocks.end()) {
-                analyzer.push_scope() = iter->second;
-                MetaExpansion(analyzer).run_on_decl_block(*decl_block);
-                analyzer.pop_scope();
-
-                lookup_result = analyzer.symbol_ctx.look_up_rhs_local(dot_expr);
-            }
-        }
-
         if (lookup_result.symbol) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, lookup_result.symbol);
 
-            out_expr = analyzer.create(sir::SymbolExpr{
-                .ast_node = dot_expr.ast_node,
-                .type = lookup_result.symbol.get_type(),
-                .symbol = lookup_result.symbol,
-            });
+            out_expr = analyzer.create(
+                sir::SymbolExpr{
+                    .ast_node = dot_expr.ast_node,
+                    .type = lookup_result.symbol.get_type(),
+                    .symbol = lookup_result.symbol,
+                }
+            );
 
             return Result::SUCCESS;
         }
@@ -1655,17 +1745,19 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             if (sub_mod) {
                 analyzer.add_symbol_use(dot_expr.rhs.ast_node, sub_mod);
 
-                out_expr = analyzer.create(sir::SymbolExpr{
-                    .ast_node = dot_expr.ast_node,
-                    .type = nullptr,
-                    .symbol = sub_mod,
-                });
+                out_expr = analyzer.create(
+                    sir::SymbolExpr{
+                        .ast_node = dot_expr.ast_node,
+                        .type = nullptr,
+                        .symbol = sub_mod,
+                    }
+                );
 
                 return Result::SUCCESS;
             }
         }
 
-        out_expr = sir::create_error_value(*analyzer.cur_sir_mod, dot_expr.ast_node);
+        out_expr = sir::create_error_value(analyzer.get_mod(), dot_expr.ast_node);
         analyzer.report_generator.report_err_symbol_not_found(dot_expr.rhs);
         return Result::ERROR;
     }
@@ -1674,12 +1766,14 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     sir::Expr lhs_type = dot_expr.lhs.get_type();
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
-        lhs = analyzer.create(sir::UnaryExpr{
-            .ast_node = nullptr,
-            .type = pointer_type->base_type,
-            .op = sir::UnaryOp::DEREF,
-            .value = lhs,
-        });
+        lhs = analyzer.create(
+            sir::UnaryExpr{
+                .ast_node = nullptr,
+                .type = pointer_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = lhs,
+            }
+        );
 
         lhs_type = pointer_type->base_type;
     }
@@ -1694,12 +1788,14 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
-        out_expr = analyzer.create(sir::FieldExpr{
-            .ast_node = dot_expr.ast_node,
-            .type = field->type,
-            .base = lhs,
-            .field_index = field->index,
-        });
+        out_expr = analyzer.create(
+            sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = field->type,
+                .base = lhs,
+                .field_index = field->index,
+            }
+        );
 
         analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
     } else if (auto union_case = lhs_type.match_symbol<sir::UnionCase>()) {
@@ -1712,12 +1808,14 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
 
         sir::UnionCaseField &field = union_case->fields[*field_index];
 
-        out_expr = analyzer.create(sir::FieldExpr{
-            .ast_node = dot_expr.ast_node,
-            .type = field.type,
-            .base = lhs,
-            .field_index = *field_index,
-        });
+        out_expr = analyzer.create(
+            sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = field.type,
+                .base = lhs,
+                .field_index = *field_index,
+            }
+        );
 
         analyzer.add_symbol_use(dot_expr.rhs.ast_node, &field);
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
@@ -1735,12 +1833,14 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
-        out_expr = analyzer.create(sir::FieldExpr{
-            .ast_node = dot_expr.ast_node,
-            .type = tuple_expr->exprs[field_index],
-            .base = lhs,
-            .field_index = field_index,
-        });
+        out_expr = analyzer.create(
+            sir::FieldExpr{
+                .ast_node = dot_expr.ast_node,
+                .type = tuple_expr->exprs[field_index],
+                .base = lhs,
+                .field_index = field_index,
+            }
+        );
     } else {
         analyzer.report_generator.report_err_no_members(dot_expr);
     }
@@ -1757,12 +1857,14 @@ Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Exp
         return Result::ERROR;
     }
 
-    out_expr = analyzer.create(sir::IndexExpr{
-        .ast_node = bracket_expr.ast_node,
-        .type = base_type,
-        .base = bracket_expr.lhs,
-        .index = create_isize_cast(bracket_expr.rhs[0]),
-    });
+    out_expr = analyzer.create(
+        sir::IndexExpr{
+            .ast_node = bracket_expr.ast_node,
+            .type = base_type,
+            .base = bracket_expr.lhs,
+            .index = create_isize_cast(bracket_expr.rhs[0]),
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -1791,18 +1893,22 @@ Result ExprAnalyzer::analyze_operator_overload_call(
 
     ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
 
-    sir::Expr callee = analyzer.create(sir::SymbolExpr{
-        .ast_node = nullptr,
-        .type = &impl->type,
-        .symbol = impl,
-    });
+    sir::Expr callee = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = &impl->type,
+            .symbol = impl,
+        }
+    );
 
-    sir::CallExpr *call_expr = analyzer.create(sir::CallExpr{
-        .ast_node = inout_expr.get_ast_node(),
-        .type = impl->type.return_type,
-        .callee = callee,
-        .args = args,
-    });
+    sir::CallExpr *call_expr = analyzer.create(
+        sir::CallExpr{
+            .ast_node = inout_expr.get_ast_node(),
+            .type = impl->type.return_type,
+            .callee = callee,
+            .args = args,
+        }
+    );
 
     // FIXME
     // analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
@@ -1845,11 +1951,13 @@ Result ExprAnalyzer::finalize_call_expr_args(
 Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
     sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(func_def, generic_args);
 
-    inout_expr = analyzer.create(sir::SymbolExpr{
-        .ast_node = inout_expr.get_ast_node(),
-        .type = &specialization->type,
-        .symbol = specialization,
-    });
+    inout_expr = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = inout_expr.get_ast_node(),
+            .type = &specialization->type,
+            .symbol = specialization,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -1857,11 +1965,13 @@ Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> gen
 Result ExprAnalyzer::specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
     sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
 
-    inout_expr = analyzer.create(sir::SymbolExpr{
-        .ast_node = inout_expr.get_ast_node(),
-        .type = nullptr,
-        .symbol = specialization,
-    });
+    inout_expr = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = inout_expr.get_ast_node(),
+            .type = nullptr,
+            .symbol = specialization,
+        }
+    );
 
     return Result::SUCCESS;
 }
@@ -1876,11 +1986,13 @@ void ExprAnalyzer::create_method_call(
 
     sir::Expr callee_type = method.get_type();
 
-    call_expr.callee = analyzer.create(sir::SymbolExpr{
-        .ast_node = rhs.ast_node,
-        .type = callee_type,
-        .symbol = method,
-    });
+    call_expr.callee = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = rhs.ast_node,
+            .type = callee_type,
+            .symbol = method,
+        }
+    );
 
     std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(call_expr.args.size() + 1);
     args[0] = lhs;
@@ -1896,14 +2008,18 @@ sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
     // TODO: Add isize primitive type
     sir::Primitive target_type = analyzer.target->get_descr().is_wasm() ? sir::Primitive::I32 : sir::Primitive::I64;
 
-    return analyzer.create(sir::CastExpr{
-        .ast_node = value.get_ast_node(),
-        .type = analyzer.create(sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = target_type,
-        }),
-        .value = value,
-    });
+    return analyzer.create(
+        sir::CastExpr{
+            .ast_node = value.get_ast_node(),
+            .type = analyzer.create(
+                sir::PrimitiveType{
+                    .ast_node = nullptr,
+                    .primitive = target_type,
+                }
+            ),
+            .value = value,
+        }
+    );
 }
 
 bool ExprAnalyzer::can_be_coerced(sir::Expr value) {

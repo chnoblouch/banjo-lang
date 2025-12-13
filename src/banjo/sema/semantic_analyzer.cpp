@@ -37,6 +37,13 @@ SemanticAnalyzer::SemanticAnalyzer(
     report_generator(*this),
     mode(mode) {
 
+    scope_stack.push(
+        Scope{
+            .decl_scope = nullptr,
+            .block = nullptr,
+        }
+    );
+
     // HACK
 
     sir::Module &mod = *sir_unit.mods[0];
@@ -56,45 +63,49 @@ void SemanticAnalyzer::analyze() {
 }
 
 void SemanticAnalyzer::analyze(const std::vector<sir::Module *> &mods) {
+    stage = DeclStage::NAME;
     SymbolCollector(*this).collect(mods);
     populate_preamble_symbols();
     MetaExpansion(*this).run(mods);
     UseResolver(*this).resolve(mods);
+
+    stage = DeclStage::INTERFACE;
     TypeAliasResolver(*this).analyze(mods);
     DeclInterfaceAnalyzer(*this).analyze(mods);
+
+    stage = DeclStage::BODY;
     DeclBodyAnalyzer(*this).analyze(mods);
+
+    stage = DeclStage::RESOURCES;
     ResourceAnalyzer(*this).analyze(mods);
-    run_postponed_analyses();
 }
 
 void SemanticAnalyzer::analyze(sir::Module &mod) {
-    enter_mod(&mod);
-
-    SymbolCollector(*this).collect_in_block(mod.block);
+    stage = DeclStage::NAME;
+    SymbolCollector(*this).collect_in_mod(mod);
     populate_preamble_symbols();
     MetaExpansion(*this).run_on_decl_block(mod.block);
     UseResolver(*this).resolve_in_block(mod.block);
+
+    stage = DeclStage::INTERFACE;
     TypeAliasResolver(*this).analyze_decl_block(mod.block);
     DeclInterfaceAnalyzer(*this).analyze_decl_block(mod.block);
+
+    stage = DeclStage::BODY;
     DeclBodyAnalyzer(*this).analyze_decl_block(mod.block);
+
+    stage = DeclStage::RESOURCES;
     ResourceAnalyzer(*this).analyze_decl_block(mod.block);
-    run_postponed_analyses();
-
-    exit_mod();
-}
-
-void SemanticAnalyzer::enter_mod(sir::Module *mod) {
-    cur_sir_mod = mod;
-
-    scopes.push(Scope{
-        .decl = mod,
-        .block = nullptr,
-    });
 }
 
 sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
-    Scope &scope = get_scope();
-    return scope.block ? *scope.block->symbol_table : *scope.decl.get_symbol_table();
+    Scope &scope = scope_stack.top();
+
+    if (scope.block) {
+        return *scope.block->symbol_table;
+    } else {
+        return *scope.decl_scope->decl_block->symbol_table;
+    }
 }
 
 void SemanticAnalyzer::populate_preamble_symbols() {
@@ -118,22 +129,9 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     };
 }
 
-void SemanticAnalyzer::run_postponed_analyses() {
-    while (!decls_awaiting_body_analysis.empty()) {
-        auto clone = decls_awaiting_body_analysis;
-        decls_awaiting_body_analysis.clear();
-
-        for (auto &[decl, scope] : clone) {
-            scopes.push(scope);
-            DeclBodyAnalyzer(*this).analyze_decl(decl);
-            ResourceAnalyzer(*this).analyze_decl(decl);
-            scopes.pop();
-        }
-    }
-}
-
 sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const std::string &name) {
-    return sir_unit.mods_by_path.at(mod_path)->block.symbol_table->look_up_local(name);
+    sir::Module &mod = *sir_unit.mods_by_path.at(mod_path);
+    return mod.block.symbol_table->look_up_local(name);
 }
 
 sir::Symbol SemanticAnalyzer::find_std_optional() {
@@ -230,7 +228,7 @@ unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
 }
 
 void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
-    if (mode != Mode::INDEXING || !get_scope().generic_args.empty()) {
+    if (mode != Mode::INDEXING || !get_decl_scope().generic_args.empty()) {
         return;
     }
 
@@ -244,11 +242,11 @@ void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
         .ident_range = ast_node->range,
     };
 
-    extra_analysis.mods[cur_sir_mod].symbol_defs.push_back(def);
+    extra_analysis.mods[&get_mod()].symbol_defs.push_back(def);
 }
 
 void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol) {
-    if (mode != Mode::INDEXING || !get_scope().generic_args.empty() || !ast_node) {
+    if (mode != Mode::INDEXING || !get_decl_scope().generic_args.empty() || !ast_node) {
         return;
     }
 
@@ -257,7 +255,11 @@ void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol)
         .symbol = sir_symbol,
     };
 
-    extra_analysis.mods[cur_sir_mod].symbol_uses.push_back(use);
+    extra_analysis.mods[&get_mod()].symbol_uses.push_back(use);
+}
+
+std::strong_ordering operator<=>(const DeclStage &lhs, const DeclStage &rhs) {
+    return static_cast<unsigned>(lhs) <=> static_cast<unsigned>(rhs);
 }
 
 } // namespace sema
