@@ -1207,6 +1207,7 @@ struct StructField {
 struct VarDecl {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     Expr type;
     Expr value;
     Attributes *attrs = nullptr;
@@ -1232,6 +1233,7 @@ struct EnumDef {
 struct EnumVariant {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     Expr type;
     Expr value;
     std::optional<unsigned> sema_index;
@@ -1256,6 +1258,7 @@ struct UnionCaseField {
 struct UnionCase {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     std::vector<UnionCaseField> fields;
     std::optional<unsigned> sema_index;
 

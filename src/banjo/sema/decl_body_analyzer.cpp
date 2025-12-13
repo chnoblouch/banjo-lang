@@ -25,7 +25,7 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         return Result::SUCCESS;
     }
 
-    if (state.scope->decl_parent.is<sir::ProtoDef>() && func_def.is_method()) {
+    if (func_def.parent.is<sir::ProtoDef>() && func_def.is_method()) {
         return Result::SUCCESS;
     }
 

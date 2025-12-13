@@ -52,10 +52,7 @@ public:
     void collect_use_list(sir::UseList &use_list);
 
     unsigned create_decl_state();
-    std::unique_ptr<DeclScope> create_scope(sir::Symbol decl);
-    std::unique_ptr<DeclScope> push_new_scope(sir::Symbol decl);
-    void pop_scope();
-
+    
     void add_symbol(std::string_view name, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();
 };

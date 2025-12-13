@@ -1706,7 +1706,7 @@ Result ExprAnalyzer::analyze_completion_token() {
         };
     } else if (analyzer.is_in_decl()) {
         analyzer.completion_context = CompleteInDeclBlock{
-            .decl_block = analyzer.get_decl_scope().decl_parent.get_decl_block(),
+            .decl_block = analyzer.get_decl_scope().decl_block,
         };
     } else {
         analyzer.completion_context = CompleteInDeclBlock{

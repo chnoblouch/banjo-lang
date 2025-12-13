@@ -27,7 +27,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         sir::Param &param = func_def.type.params[i];
         analyzer.add_symbol_def(&param);
 
-        if (!(state.scope->decl_parent.is<sir::ProtoDef>() && func_def.is_method())) {
+        if (!(func_def.parent.is<sir::ProtoDef>() && func_def.is_method())) {
             func_def.block.symbol_table->insert_local(param.name.value, &param);
         }
 
@@ -35,7 +35,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
             continue;
         }
 
-        analyze_param(i, param);
+        analyze_param(param, i, func_def.parent);
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
@@ -53,12 +53,12 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
     }
 
     for (unsigned i = 0; i < func_decl.type.params.size(); i++) {
-        analyze_param(i, func_decl.type.params[i]);
+        analyze_param(func_decl.type.params[i], i, func_decl.parent);
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_decl.type.return_type);
 
-    if (!(state.scope->decl_parent.is<sir::ProtoDef>() && func_decl.is_method())) {
+    if (!(func_decl.parent.is<sir::ProtoDef>() && func_decl.is_method())) {
         analyzer.report_generator.report_err_func_decl_outside_proto(func_decl);
     }
 
@@ -166,7 +166,7 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
 
     ExprAnalyzer(analyzer).analyze_type(var_decl.type);
 
-    if (auto struct_def = state.scope->decl_parent.match<sir::StructDef>()) {
+    if (auto struct_def = var_decl.parent.match<sir::StructDef>()) {
         // TODO: Error handling for missing type.
 
         out_decl = analyzer.create(
@@ -214,7 +214,7 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
         ExprAnalyzer(analyzer).analyze_value(enum_variant.value);
     }
 
-    sir::EnumDef &enum_def = state.scope->decl_parent.as<sir::EnumDef>();
+    sir::EnumDef &enum_def = enum_variant.parent.as<sir::EnumDef>();
     enum_def.variants.push_back(&enum_variant);
 
     enum_variant.type = analyzer.create(
@@ -241,7 +241,7 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
         ExprAnalyzer(analyzer).analyze_type(field.type);
     }
 
-    if (auto union_def = state.scope->decl_parent.match<sir::UnionDef>()) {
+    if (auto union_def = union_case.parent.match<sir::UnionDef>()) {
         union_def->cases.push_back(&union_case);
     } else {
         analyzer.report_generator.report_err_case_outside_union(union_case);
@@ -250,13 +250,11 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
     return Result::SUCCESS;
 }
 
-void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
+void DeclInterfaceAnalyzer::analyze_param(sir::Param &param, unsigned index, sir::Symbol &func_parent) {
     // TODO: Check for duplicate parameter names.
 
-    sir::Symbol parent_decl = analyzer.get_decl_scope().decl_parent;
-
     if (param.is_self()) {
-        if (!parent_decl.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
+        if (!func_parent.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
             analyzer.report_generator.report_err_self_not_allowed(param);
             return;
         }
@@ -270,7 +268,7 @@ void DeclInterfaceAnalyzer::analyze_param(unsigned index, sir::Param &param) {
             sir::SymbolExpr{
                 .ast_node = nullptr,
                 .type = nullptr,
-                .symbol = parent_decl,
+                .symbol = func_parent,
             }
         );
 

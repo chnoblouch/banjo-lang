@@ -55,7 +55,6 @@ enum class DeclStage {
 struct DeclScope {
     sir::Module *mod;
     sir::Symbol decl = nullptr;
-    sir::Symbol decl_parent = nullptr;
     sir::DeclBlock *decl_block = nullptr;
     std::unordered_map<std::string_view, sir::Expr> generic_args;
     ClosureContext *closure_ctx = nullptr;

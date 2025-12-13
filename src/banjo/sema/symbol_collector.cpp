@@ -29,7 +29,6 @@ void SymbolCollector::collect_in_mod(sir::Module &mod) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = &mod,
         .decl = &mod,
-        .decl_parent = nullptr,
         .decl_block = &mod.block,
     });
 
@@ -53,7 +52,6 @@ void SymbolCollector::collect_func_specialization(sir::FuncDef &generic_def, sir
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = generic_def_scope.mod,
         .decl = &specialization,
-        .decl_parent = generic_def_scope.decl_parent,
         .decl_block = generic_def_scope.decl_block,
         .generic_args = generic_def_scope.generic_args,
         .closure_ctx = generic_def_scope.closure_ctx,
@@ -76,7 +74,6 @@ void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def,
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = generic_def_scope.mod,
         .decl = &specialization,
-        .decl_parent = generic_def_scope.decl_parent,
         .decl_block = &specialization.block,
         .generic_args = generic_def_scope.generic_args,
         .closure_ctx = generic_def_scope.closure_ctx,
@@ -101,7 +98,6 @@ ClosureContext &SymbolCollector::collect_closure_func(sir::FuncDef &func_def, si
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &func_def,
-        .decl_parent = analyzer.get_decl_scope().decl_parent,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.closure_ctxs.create(
@@ -113,7 +109,7 @@ ClosureContext &SymbolCollector::collect_closure_func(sir::FuncDef &func_def, si
         ),
     });
 
-    func_def.parent = analyzer.get_decl_scope().decl_parent;
+    func_def.parent = analyzer.get_decl_scope().decl.get_parent();
 
     return *state.scope->closure_ctx;
 }
@@ -155,13 +151,12 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &func_def,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
-    func_def.parent = state.scope->decl_parent;
+    func_def.parent = analyzer.get_decl_scope().decl;
 
     analyzer.enter_decl_scope(*state.scope);
     sir::Symbol &cur_entry = get_symbol_table().symbols[func_def.ident.value];
@@ -194,7 +189,7 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
 
     analyzer.add_symbol_def(&func_def);
 
-    if (auto proto_def = state.scope->decl_parent.match<sir::ProtoDef>()) {
+    if (auto proto_def = func_def.parent.match<sir::ProtoDef>()) {
         if (func_def.is_method()) {
             proto_def->func_decls.push_back(
                 sir::ProtoFuncDecl{
@@ -214,18 +209,17 @@ void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &func_decl,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
-    func_decl.parent = state.scope->decl_parent;
+    func_decl.parent = analyzer.get_decl_scope().decl;
 
     add_symbol(func_decl.ident.value, &func_decl);
     analyzer.add_symbol_def(&func_decl);
 
-    if (auto proto_def = state.scope->decl_parent.match<sir::ProtoDef>()) {
+    if (auto proto_def = func_decl.parent.match<sir::ProtoDef>()) {
         proto_def->func_decls.push_back(
             sir::ProtoFuncDecl{
                 .decl = &func_decl,
@@ -241,7 +235,6 @@ void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &native_func_decl,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -258,7 +251,6 @@ void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &const_def,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -275,13 +267,12 @@ void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &struct_def,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = &struct_def.block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
-    struct_def.parent = state.scope->decl_parent;
+    struct_def.parent = analyzer.get_decl_scope().decl;
 
     if (!struct_def.is_generic()) {
         analyzer.enter_decl_scope(*state.scope);
@@ -300,11 +291,12 @@ void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &var_decl,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
+
+    var_decl.parent = analyzer.get_decl_scope().decl;
 
     if (!state.scope->decl.is<sir::StructDef>()) {
         add_symbol(var_decl.ident.value, &var_decl);
@@ -319,7 +311,6 @@ void SymbolCollector::collect_native_var_decl(sir::NativeVarDecl &native_var_dec
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &native_var_decl,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -336,7 +327,6 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &enum_def,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = &enum_def.block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -357,11 +347,12 @@ void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &enum_variant,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
+
+    enum_variant.parent = analyzer.get_decl_scope().decl;
 
     add_symbol(enum_variant.ident.value, &enum_variant);
     analyzer.add_symbol_def(&enum_variant);
@@ -374,7 +365,6 @@ void SymbolCollector::collect_union_def(sir::UnionDef &union_def) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &union_def,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = &union_def.block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -395,11 +385,12 @@ void SymbolCollector::collect_union_case(sir::UnionCase &union_case) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &union_case,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
+
+    union_case.parent = analyzer.get_decl_scope().decl;
 
     add_symbol(union_case.ident.value, &union_case);
     analyzer.add_symbol_def(&union_case);
@@ -412,7 +403,6 @@ void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &proto_def,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = &proto_def.block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -433,7 +423,6 @@ void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
     state.scope = std::make_unique<DeclScope>(DeclScope{
         .mod = analyzer.get_decl_scope().mod,
         .decl = &type_alias,
-        .decl_parent = analyzer.get_decl_scope().decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
         .generic_args = analyzer.get_decl_scope().generic_args,
         .closure_ctx = analyzer.get_decl_scope().closure_ctx,
@@ -534,28 +523,6 @@ unsigned SymbolCollector::create_decl_state() {
     );
 
     return static_cast<unsigned>(analyzer.decl_states.size() - 1);
-}
-
-std::unique_ptr<DeclScope> SymbolCollector::create_scope(sir::Symbol decl) {
-    DeclScope &top = analyzer.get_decl_scope();
-
-    std::unique_ptr<DeclScope> scope = std::make_unique<DeclScope>();
-    scope->mod = top.mod;
-    scope->decl = decl;
-    scope->decl_parent = top.decl;
-    scope->generic_args = top.generic_args;
-    scope->closure_ctx = top.closure_ctx;
-    return scope;
-}
-
-std::unique_ptr<DeclScope> SymbolCollector::push_new_scope(sir::Symbol decl) {
-    std::unique_ptr<DeclScope> scope = create_scope(decl);
-    analyzer.enter_decl_scope(*scope);
-    return scope;
-}
-
-void SymbolCollector::pop_scope() {
-    analyzer.exit_decl_scope();
 }
 
 void SymbolCollector::add_symbol(std::string_view name, sir::Symbol symbol) {

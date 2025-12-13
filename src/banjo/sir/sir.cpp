@@ -400,7 +400,11 @@ std::string Symbol::get_name() const {
 
 Symbol Symbol::get_parent() const {
     if (auto func_def = match<FuncDef>()) return func_def->parent;
+    else if (auto func_decl = match<FuncDecl>()) return func_decl->parent;
     else if (auto struct_def = match<StructDef>()) return struct_def->parent;
+    else if (auto var_decl = match<VarDecl>()) return var_decl->parent;
+    else if (auto enum_variant = match<EnumVariant>()) return enum_variant->parent;
+    else if (auto union_case = match<UnionCase>()) return union_case->parent;
     else return nullptr;
 }
 
