@@ -143,18 +143,6 @@ void SemanticAnalyzer::enter_block(sir::Block &block) {
     scope_stack.push(scope);
 }
 
-void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable &symbol_table) {
-    Scope scope{
-        .decl = scope_stack.top().decl,
-        .decl_block = scope_stack.top().decl_block,
-        .block = scope_stack.top().block,
-        .symbol_table = &symbol_table,
-        .closure_ctx = scope_stack.top().closure_ctx,
-    };
-
-    scope_stack.push(scope);
-}
-
 void SemanticAnalyzer::enter_closure_ctx(ClosureContext &closure_ctx) {
     Scope scope{
         .decl = scope_stack.top().decl,

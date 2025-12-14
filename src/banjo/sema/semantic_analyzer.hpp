@@ -136,6 +136,7 @@ public:
 private:
     sir::Module &get_mod() { return *mod; }
     sir::DeclBlock &get_decl_block() { return *scope_stack.top().decl_block; }
+    sir::SymbolTable &get_symbol_table() { return *scope_stack.top().symbol_table; }
 
     sir::Symbol get_decl() { return scope_stack.top().decl; }
     void enter_decl(sir::Symbol decl);
@@ -144,11 +145,7 @@ private:
     sir::Block &get_block() { return *scope_stack.top().block; }
     void enter_block(sir::Block &block);
     void exit_block() { scope_stack.pop(); }
-
-    sir::SymbolTable &get_symbol_table() { return *scope_stack.top().symbol_table; }
-    void enter_symbol_table(sir::SymbolTable &symbol_table);
-    void exit_symbol_table() { scope_stack.pop(); }
-
+    
     ClosureContext *get_closure_ctx() { return scope_stack.top().closure_ctx; }
     void enter_closure_ctx(ClosureContext &closure_ctx);
     void exit_closure_ctx() { scope_stack.pop(); }

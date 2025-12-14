@@ -172,21 +172,16 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
 
     block.stmts[index] = analyzer.create(sir::ExpandedMetaStmt{});
 
+    sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
+    std::unordered_map<std::string_view, sir::Symbol> saved_symbols = symbol_table.symbols;
+
     for (sir::Expr value : values) {
         sir::GenericArg generic_arg{
             .ident = meta_for_stmt.ident,
             .value = value,
         };
 
-        sir::SymbolTable tmp_symbol_table{
-            .parent = &analyzer.get_symbol_table(),
-            .symbols{},
-            .local_symbols_ordered{},
-            .guarded_scopes{},
-        };
-
-        tmp_symbol_table.insert_decl(generic_arg.ident.value, &generic_arg);
-        analyzer.enter_symbol_table(tmp_symbol_table);
+        symbol_table.symbols[generic_arg.ident.value] = &generic_arg;
 
         for (sir::Stmt stmt : std::get<sir::Block *>(meta_for_stmt.block)->stmts) {
             index += 1;
@@ -195,9 +190,9 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
             block.stmts.insert(block.stmts.begin() + index, clone);
             StmtAnalyzer(analyzer).analyze(block, index);
         }
-
-        analyzer.exit_symbol_table();
     }
+
+    symbol_table.symbols = saved_symbols;
 }
 
 Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::Expr> &out_values) {
