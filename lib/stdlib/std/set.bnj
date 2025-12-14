@@ -3,14 +3,14 @@ struct Set[T] {
     
     pub func new() -> Set[T] {
         return Set[T] {
-            elements: []
+            elements: [],
         };
     }
     
     pub func of(elements: [T]) -> Set[T] {
         var set = new();
         
-        for i in 0..elements.length {
+        for i in 0..elements.length() {
             set.insert(elements[i]);
         }
         
@@ -18,7 +18,7 @@ struct Set[T] {
     }
     
     pub func insert(mut self, element: T) {
-        for i in 0..self.elements.length {
+        for i in 0..self.elements.length() {
             if self.elements[i] == element {
                 return;
             }
@@ -28,7 +28,7 @@ struct Set[T] {
     }
 
     pub func contains(self, element: T) -> bool {
-        for i in 0..self.elements.length {
+        for i in 0..self.elements.length() {
             if self.elements[i] == element {
                 return true;
             }
