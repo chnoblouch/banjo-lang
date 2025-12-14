@@ -118,6 +118,7 @@ struct DeclBlock;
 struct Block;
 struct SymbolTable;
 struct OverloadSet;
+struct GenericArg;
 struct GuardedSymbol;
 struct Ident;
 struct Module;
@@ -412,7 +413,8 @@ class Symbol : public DynamicPointer<
                    Local,          // 18
                    Param,          // 19
                    OverloadSet,    // 20
-                   GuardedSymbol   // 21
+                   GenericArg,     // 21
+                   GuardedSymbol   // 22
                    > {
 public:
     Symbol() : DynamicPointer() {}
@@ -547,6 +549,11 @@ struct GenericParam {
     ASTNode *ast_node;
     Ident ident;
     GenericParamKind kind;
+};
+
+struct GenericArg {
+    Ident ident;
+    sir::Expr value;
 };
 
 template <typename T>

@@ -174,11 +174,21 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
 
     block.stmts[index] = analyzer.create(sir::ExpandedMetaStmt{});
 
-    for (sir::Expr &value : values) {
-        DeclScope tmp_scope = analyzer.get_decl_scope();
-        tmp_scope.generic_args.insert({meta_for_stmt.ident.value, value});
-        analyzer.enter_decl_scope(tmp_scope);
-        analyzer.enter_block(block);
+    for (sir::Expr value : values) {
+        sir::GenericArg generic_arg{
+            .ident = meta_for_stmt.ident,
+            .value = value,
+        };
+
+        sir::SymbolTable tmp_symbol_table{
+            .parent = &analyzer.get_symbol_table(),
+            .symbols{},
+            .local_symbols_ordered{},
+            .guarded_scopes{},
+        };
+
+        tmp_symbol_table.insert_decl(generic_arg.ident.value, &generic_arg);
+        analyzer.enter_symbol_table(tmp_symbol_table);
 
         for (sir::Stmt stmt : std::get<sir::Block *>(meta_for_stmt.block)->stmts) {
             index += 1;
@@ -188,8 +198,7 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
             StmtAnalyzer(analyzer).analyze(block, index);
         }
 
-        analyzer.exit_block();
-        analyzer.exit_decl_scope();
+        analyzer.exit_symbol_table();
     }
 }
 

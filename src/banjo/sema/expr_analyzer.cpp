@@ -1378,25 +1378,9 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return analyze_completion_token();
     }
 
-    const auto &generic_args = analyzer.get_decl_scope().generic_args;
-
-    if (!generic_args.empty()) {
-        auto iter = generic_args.find(ident_expr.value);
-        if (iter != generic_args.end()) {
-            if (iter->second.is<sir::StringLiteral>()) {
-                out_expr = sir::Cloner(analyzer.get_mod()).clone_expr(iter->second);
-            } else {
-                out_expr = iter->second;
-            }
-
-            return Result::SUCCESS;
-        }
-    }
-
     if (analyzer.in_meta_expansion) {
         sir::DeclBlock &decl_block = *analyzer.get_decl_scope().decl_block;
-        UseResolver(analyzer).resolve_in_block(decl_block);
-        // MetaExpansion(analyzer).run_on_decl_block(decl_block);
+        UseResolver{analyzer}.resolve_in_block(decl_block);
     }
 
     SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up(ident_expr);
@@ -1411,18 +1395,16 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         ClosureContext &closure_ctx = *lookup_result.closure_ctx;
 
         if (symbol.is_one_of<sir::Local, sir::Param>()) {
-            unsigned captured_var_index = 0;
-            bool captured_var_exists = false;
+            std::optional<unsigned> captured_var_index;
 
             for (unsigned i = 0; i < closure_ctx.captured_vars.size(); i++) {
                 if (closure_ctx.captured_vars[i] == symbol) {
                     captured_var_index = i;
-                    captured_var_exists = true;
                     break;
                 }
             }
 
-            if (!captured_var_exists) {
+            if (captured_var_index) {
                 captured_var_index = closure_ctx.captured_vars.size();
                 closure_ctx.captured_vars.push_back(symbol);
             }
@@ -1459,7 +1441,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
                             ),
                         }
                     ),
-                    .field_index = captured_var_index,
+                    .field_index = *captured_var_index,
                 }
             );
 
@@ -1469,6 +1451,16 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 
     if (!symbol.is<sir::OverloadSet>()) {
         analyzer.add_symbol_use(ident_expr.ast_node, symbol);
+    }
+
+    if (auto generic_arg = symbol.match<sir::GenericArg>()) {
+        if (generic_arg->value.is<sir::StringLiteral>()) {
+            out_expr = sir::Cloner{analyzer.get_mod()}.clone_expr(generic_arg->value);
+        } else {
+            out_expr = generic_arg->value;
+        }
+
+        return Result::SUCCESS;
     }
 
     if (auto const_def = symbol.match<sir::ConstDef>()) {

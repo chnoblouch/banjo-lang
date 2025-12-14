@@ -362,27 +362,28 @@ ASTNode *Stmt::get_ast_node() const {
 const Ident &Symbol::get_ident() const {
     SIR_VISIT_SYMBOL(
         *this,
-        SIR_VISIT_IMPOSSIBLE,             // empty
-        SIR_VISIT_IMPOSSIBLE,             // module
-        return inner->ident,              // func_def
-        return inner->ident,              // func_decl
-        return inner->ident,              // native_func_decl
-        return inner->ident,              // const_def
-        return inner->ident,              // struct_def
-        return inner->ident,              // struct_field
-        return inner->ident,              // var_decl
-        return inner->ident,              // native_var_decl
-        return inner->ident,              // enum_def
-        return inner->ident,              // enum_variant
-        return inner->ident,              // union_def
-        return inner->ident,              // union_case
-        return inner->ident,              // proto_def
-        return inner->ident,              // type_alias
-        return inner->ident,              // use_ident
-        SIR_VISIT_IMPOSSIBLE,             // use_rebind
-        return inner->name,               // local
-        return inner->name,               // param
-        return inner->func_defs[0]->ident // overload_set
+        SIR_VISIT_IMPOSSIBLE,              // empty
+        SIR_VISIT_IMPOSSIBLE,              // module
+        return inner->ident,               // func_def
+        return inner->ident,               // func_decl
+        return inner->ident,               // native_func_decl
+        return inner->ident,               // const_def
+        return inner->ident,               // struct_def
+        return inner->ident,               // struct_field
+        return inner->ident,               // var_decl
+        return inner->ident,               // native_var_decl
+        return inner->ident,               // enum_def
+        return inner->ident,               // enum_variant
+        return inner->ident,               // union_def
+        return inner->ident,               // union_case
+        return inner->ident,               // proto_def
+        return inner->ident,               // type_alias
+        return inner->ident,               // use_ident
+        SIR_VISIT_IMPOSSIBLE,              // use_rebind
+        return inner->name,                // local
+        return inner->name,                // param
+        return inner->func_defs[0]->ident, // overload_set
+        return inner->ident                // generic_arg
     );
 }
 
@@ -411,27 +412,28 @@ Symbol Symbol::get_parent() const {
 Expr Symbol::get_type() {
     SIR_VISIT_SYMBOL(
         *this,
-        return nullptr,      // empty
-        return nullptr,      // module
-        return &inner->type, // func_def
-        return &inner->type, // func_decl
-        return &inner->type, // native_func_decl
-        return inner->type,  // const_def
-        return nullptr,      // struct_def
-        return inner->type,  // struct_field
-        return inner->type,  // var_decl
-        return inner->type,  // native_var_decl
-        return nullptr,      // enum_def
-        return inner->type,  // enum_variant
-        return nullptr,      // union_def
-        return nullptr,      // union_case
-        return nullptr,      // proto_def
-        return nullptr,      // type_alias
-        return nullptr,      // use_ident
-        return nullptr,      // use_rebind
-        return inner->type,  // local
-        return inner->type,  // param
-        return nullptr       // overload_set
+        return nullptr,                // empty
+        return nullptr,                // module
+        return &inner->type,           // func_def
+        return &inner->type,           // func_decl
+        return &inner->type,           // native_func_decl
+        return inner->type,            // const_def
+        return nullptr,                // struct_def
+        return inner->type,            // struct_field
+        return inner->type,            // var_decl
+        return inner->type,            // native_var_decl
+        return nullptr,                // enum_def
+        return inner->type,            // enum_variant
+        return nullptr,                // union_def
+        return nullptr,                // union_case
+        return nullptr,                // proto_def
+        return nullptr,                // type_alias
+        return nullptr,                // use_ident
+        return nullptr,                // use_rebind
+        return inner->type,            // local
+        return inner->type,            // param
+        return nullptr,                // overload_set
+        return inner->value.get_type() // generic_arg
     );
 }
 

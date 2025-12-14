@@ -98,14 +98,62 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
     ResourceAnalyzer(*this).analyze_decl_block(mod.block);
 }
 
-sir::SymbolTable &SemanticAnalyzer::get_symbol_table() {
-    Scope &scope = scope_stack.top();
+void SemanticAnalyzer::enter_decl_scope(DeclScope &decl_scope) {
+    mod = decl_scope.mod;
 
-    if (scope.block) {
-        return *scope.block->symbol_table;
-    } else {
-        return *scope.decl_scope->decl_block->symbol_table;
+    Scope scope{
+        .decl_scope = &decl_scope,
+        .block = nullptr,
+        .symbol_table = decl_scope.decl_block->symbol_table,
+    };
+
+    scope_stack.push(scope);
+}
+
+void SemanticAnalyzer::exit_decl_scope() {
+    scope_stack.pop();
+    DeclScope *decl_scope = scope_stack.top().decl_scope;
+    mod = decl_scope ? decl_scope->mod : nullptr;
+}
+
+void SemanticAnalyzer::enter_block(sir::Block &block) {
+    Scope scope{
+        .decl_scope = scope_stack.top().decl_scope,
+        .block = &block,
+        .symbol_table = block.symbol_table,
+    };
+
+    scope_stack.push(scope);
+}
+
+void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable &symbol_table) {
+    Scope scope{
+        .decl_scope = scope_stack.top().decl_scope,
+        .block = scope_stack.top().block,
+        .symbol_table = &symbol_table,
+    };
+
+    scope_stack.push(scope);
+}
+
+bool SemanticAnalyzer::is_in_specialization() {
+    sir::Symbol decl = get_decl_scope().decl;
+
+    while (decl && !decl.is<sir::Module>()) {
+        if (auto func_def = decl.match<sir::FuncDef>()) {
+            if (func_def->parent_specialization) {
+                return true;
+            }
+        } else if (auto struct_def = decl.match<sir::StructDef>()) {
+            if (struct_def->parent_specialization) {
+                return true;
+            }
+        }
+
+        decl = decl.get_parent();
     }
+
+    return false;
 }
 
 void SemanticAnalyzer::populate_preamble_symbols() {
@@ -228,7 +276,7 @@ unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
 }
 
 void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
-    if (mode != Mode::INDEXING || !get_decl_scope().generic_args.empty()) {
+    if (mode != Mode::INDEXING || is_in_specialization()) {
         return;
     }
 
@@ -246,7 +294,7 @@ void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
 }
 
 void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol) {
-    if (mode != Mode::INDEXING || !get_decl_scope().generic_args.empty() || !ast_node) {
+    if (mode != Mode::INDEXING || is_in_specialization() || !ast_node) {
         return;
     }
 

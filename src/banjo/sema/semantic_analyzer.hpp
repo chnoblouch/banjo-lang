@@ -56,7 +56,6 @@ struct DeclScope {
     sir::Module *mod;
     sir::Symbol decl = nullptr;
     sir::DeclBlock *decl_block = nullptr;
-    std::unordered_map<std::string_view, sir::Expr> generic_args;
     ClosureContext *closure_ctx = nullptr;
 };
 
@@ -68,6 +67,7 @@ struct DeclState {
 struct Scope {
     DeclScope *decl_scope;
     sir::Block *block;
+    sir::SymbolTable *symbol_table;
 };
 
 struct GuardedScope {
@@ -160,29 +160,20 @@ public:
 private:
     sir::Module &get_mod() { return *mod; }
     DeclScope &get_decl_scope() { return *scope_stack.top().decl_scope; }
-
-    void enter_decl_scope(DeclScope &scope) {
-        mod = scope.mod;
-        scope_stack.push(Scope{.decl_scope = &scope, .block = nullptr});
-    }
-
-    void exit_decl_scope() {
-        scope_stack.pop();
-        DeclScope *decl_scope = scope_stack.top().decl_scope;
-        mod = decl_scope ? decl_scope->mod : nullptr;
-    }
+    void enter_decl_scope(DeclScope &decl_scope);
+    void exit_decl_scope();
 
     sir::Block &get_block() { return *scope_stack.top().block; }
-
-    void enter_block(sir::Block &block) {
-        scope_stack.push(Scope{.decl_scope = scope_stack.top().decl_scope, .block = &block});
-    }
-
+    void enter_block(sir::Block &block);
     void exit_block() { scope_stack.pop(); }
+
+    sir::SymbolTable &get_symbol_table() { return *scope_stack.top().symbol_table; }
+    void enter_symbol_table(sir::SymbolTable &symbol_table);
+    void exit_symbol_table() { scope_stack.pop(); }
 
     bool is_in_stmt_block() { return scope_stack.top().block; }
     bool is_in_decl() { return scope_stack.top().decl_scope->decl; }
-    sir::SymbolTable &get_symbol_table();
+    bool is_in_specialization();
 
     void populate_preamble_symbols();
 

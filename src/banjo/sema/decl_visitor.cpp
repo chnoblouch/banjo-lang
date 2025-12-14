@@ -46,7 +46,9 @@ void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
         }
     } else {
         analyzer.enter_decl_scope(*analyzer.decl_states[*func_def.sema_index].scope);
+        analyzer.enter_block(func_def.block);
         analyze_func_def(func_def);
+        analyzer.exit_block();
         analyzer.exit_decl_scope();
     }
 }

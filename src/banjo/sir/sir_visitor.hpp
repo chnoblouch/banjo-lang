@@ -337,7 +337,8 @@
     use_rebind_visitor,                                                                                                \
     local_visitor,                                                                                                     \
     param_visitor,                                                                                                     \
-    overload_set_visitor                                                                                               \
+    overload_set_visitor,                                                                                              \
+    generic_arg_visitor                                                                                                \
 )                                                                                                                      \
     if (!(symbol)) {                                                                                                   \
         empty_visitor;                                                                                                 \
@@ -381,6 +382,8 @@
         param_visitor;                                                                                                 \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::OverloadSet>()) {                        \
         overload_set_visitor;                                                                                          \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::lang::sir::GenericArg>()) {                         \
+        generic_arg_visitor;                                                                                           \
     } else {                                                                                                           \
         ASSERT_UNREACHABLE;                                                                                            \
     }
