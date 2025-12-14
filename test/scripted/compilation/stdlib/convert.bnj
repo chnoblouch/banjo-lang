@@ -92,14 +92,14 @@ func main() {
 # test:output "eeee"
 
 func main() {
-    var a: addr = 0x16F682A50;
+    var a: addr = 0x6F682A50;
     var b: addr = null;
-	var c: *i32 = 0x16F682A50;
+	var c: *i32 = 0x6F682A50;
 	var d: *bool = null;
 
-    check(a, "0x16F682A50");
+    check(a, "0x6F682A50");
 	check(b, "null");
-	check(c, "0x16F682A50");
+	check(c, "0x6F682A50");
 	check(d, "null");
 }
 
