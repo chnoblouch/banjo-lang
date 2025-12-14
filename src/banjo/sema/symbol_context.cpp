@@ -57,18 +57,7 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     }
 
     if (!result.symbol) {
-        auto iter = symbol_table.guarded_scopes.find(name);
-        if (iter != symbol_table.guarded_scopes.end()) {
-            GuardedScope &guarded_scope = analyzer.guarded_scopes[iter->second];
-            sir::DeclBlock &block = *guarded_scope.decl.get_decl_block();
-            unsigned guard_stmt_index = guarded_scope.guard_stmt_index;
-
-            analyzer.enter_decl(guarded_scope.decl);
-            MetaExpansion(analyzer).evaluate_meta_if_stmt(block, guard_stmt_index);
-            analyzer.exit_decl();
-
-            result.symbol = symbol_table.look_up(name);
-        }
+        result.symbol = try_resolve_meta_if(symbol_table, name);
     }
 
     if (!result.symbol) {
@@ -98,7 +87,28 @@ SymbolLookupResult SymbolContext::look_up_rhs_local(sir::DotExpr &dot_expr, sir:
         .closure_ctx = nullptr,
     };
 
+    if (!result.symbol) {
+        result.symbol = try_resolve_meta_if(symbol_table, name);
+    }
+
     return resolve_if_guarded(result, dot_expr.rhs.ast_node);
+}
+
+sir::Symbol SymbolContext::try_resolve_meta_if(sir::SymbolTable &symbol_table, std::string_view name) {
+    auto iter = symbol_table.guarded_scopes.find(name);
+    if (iter == symbol_table.guarded_scopes.end()) {
+        return nullptr;
+    }
+
+    GuardedScope &guarded_scope = analyzer.guarded_scopes[iter->second];
+    sir::DeclBlock &block = *guarded_scope.decl.get_decl_block();
+    unsigned guard_stmt_index = guarded_scope.guard_stmt_index;
+
+    analyzer.enter_decl(guarded_scope.decl);
+    MetaExpansion(analyzer).evaluate_meta_if_stmt(block, guard_stmt_index);
+    analyzer.exit_decl();
+
+    return symbol_table.look_up(name);
 }
 
 sir::GuardedSymbol::TruthTable SymbolContext::build_condition(sir::Expr expr) {

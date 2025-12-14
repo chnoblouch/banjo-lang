@@ -46,6 +46,8 @@ public:
     bool is_guarded() { return !sub_meta_conditions.empty(); }
 
 private:
+    sir::Symbol try_resolve_meta_if(sir::SymbolTable &symbol_table, std::string_view name);
+
     sir::GuardedSymbol::TruthTable build_condition(sir::Expr expr);
     sir::GuardedSymbol::TruthTable build_condition(sir::BinaryExpr &binary_expr);
     sir::GuardedSymbol::TruthTable build_condition(sir::UnaryExpr &unary_expr);
