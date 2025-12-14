@@ -31,7 +31,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
             func_def.block.symbol_table->insert_local(param.name.value, &param);
         }
 
-        if (state.scope->closure_ctx && i == 0) {
+        if (analyzer.get_closure_ctx() && i == 0) {
             continue;
         }
 

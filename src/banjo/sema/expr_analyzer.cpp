@@ -446,9 +446,15 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 
     generated_func->block.symbol_table->parent = analyzer.get_decl_scope().decl_block->symbol_table;
 
-    ClosureContext &closure_ctx = SymbolCollector(analyzer).collect_closure_func(*generated_func, data_type);
+    ClosureContext closure_ctx{
+        .captured_vars{},
+        .data_type = data_type,
+        .parent_block = &analyzer.get_block(),
+    };
+
+    SymbolCollector(analyzer).collect_closure_def(*generated_func);
     DeclInterfaceAnalyzer(analyzer).visit_func_def(*generated_func);
-    DeclBodyAnalyzer(analyzer).visit_func_def(*generated_func);
+    DeclBodyAnalyzer(analyzer).visit_closure_def(*generated_func, closure_ctx);
     ResourceAnalyzer(analyzer).visit_func_def(*generated_func);
 
     analyzer.get_mod().block.decls.push_back(generated_func);
@@ -1404,7 +1410,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
                 }
             }
 
-            if (captured_var_index) {
+            if (!captured_var_index) {
                 captured_var_index = closure_ctx.captured_vars.size();
                 closure_ctx.captured_vars.push_back(symbol);
             }

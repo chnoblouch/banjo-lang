@@ -53,7 +53,6 @@ void SymbolCollector::collect_func_specialization(sir::FuncDef &generic_def, sir
         .mod = generic_def_scope.mod,
         .decl = &specialization,
         .decl_block = generic_def_scope.decl_block,
-        .closure_ctx = generic_def_scope.closure_ctx,
     });
 
     std::span<sir::Expr> args = specialization.parent_specialization->args;
@@ -80,7 +79,6 @@ void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def,
         .mod = generic_def_scope.mod,
         .decl = &specialization,
         .decl_block = &specialization.block,
-        .closure_ctx = generic_def_scope.closure_ctx,
     });
 
     std::span<sir::Expr> args = specialization.parent_specialization->args;
@@ -101,7 +99,7 @@ void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def,
     analyzer.exit_decl_scope();
 }
 
-ClosureContext &SymbolCollector::collect_closure_func(sir::FuncDef &func_def, sir::TupleExpr *data_type) {
+void SymbolCollector::collect_closure_def(sir::FuncDef &func_def) {
     func_def.sema_index = create_decl_state();
     DeclState &state = analyzer.decl_states[*func_def.sema_index];
 
@@ -109,18 +107,9 @@ ClosureContext &SymbolCollector::collect_closure_func(sir::FuncDef &func_def, si
         .mod = analyzer.get_decl_scope().mod,
         .decl = &func_def,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.closure_ctxs.create(
-            ClosureContext{
-                .captured_vars = {},
-                .data_type = data_type,
-                .parent_block = &analyzer.get_block(),
-            }
-        ),
     });
 
     func_def.parent = analyzer.get_decl_scope().decl.get_parent();
-
-    return *state.scope->closure_ctx;
 }
 
 void SymbolCollector::collect_decl(sir::Decl &decl, unsigned index) {
@@ -161,7 +150,6 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &func_def,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     func_def.parent = analyzer.get_decl_scope().decl;
@@ -218,7 +206,6 @@ void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &func_decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     func_decl.parent = analyzer.get_decl_scope().decl;
@@ -243,7 +230,6 @@ void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_
         .mod = analyzer.get_decl_scope().mod,
         .decl = &native_func_decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     add_symbol(native_func_decl.ident.value, &native_func_decl);
@@ -258,7 +244,6 @@ void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &const_def,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     add_symbol(const_def.ident.value, &const_def);
@@ -273,7 +258,6 @@ void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &struct_def,
         .decl_block = &struct_def.block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     struct_def.parent = analyzer.get_decl_scope().decl;
@@ -296,7 +280,6 @@ void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &var_decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     var_decl.parent = analyzer.get_decl_scope().decl;
@@ -315,7 +298,6 @@ void SymbolCollector::collect_native_var_decl(sir::NativeVarDecl &native_var_dec
         .mod = analyzer.get_decl_scope().mod,
         .decl = &native_var_decl,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     add_symbol(native_var_decl.ident.value, &native_var_decl);
@@ -330,7 +312,6 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &enum_def,
         .decl_block = &enum_def.block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     analyzer.enter_decl_scope(*state.scope);
@@ -349,7 +330,6 @@ void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &enum_variant,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     enum_variant.parent = analyzer.get_decl_scope().decl;
@@ -366,7 +346,6 @@ void SymbolCollector::collect_union_def(sir::UnionDef &union_def) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &union_def,
         .decl_block = &union_def.block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     analyzer.enter_decl_scope(*state.scope);
@@ -385,7 +364,6 @@ void SymbolCollector::collect_union_case(sir::UnionCase &union_case) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &union_case,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     union_case.parent = analyzer.get_decl_scope().decl;
@@ -402,7 +380,6 @@ void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &proto_def,
         .decl_block = &proto_def.block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     analyzer.enter_decl_scope(*state.scope);
@@ -421,7 +398,6 @@ void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
         .mod = analyzer.get_decl_scope().mod,
         .decl = &type_alias,
         .decl_block = analyzer.get_decl_scope().decl_block,
-        .closure_ctx = analyzer.get_decl_scope().closure_ctx,
     });
 
     add_symbol(type_alias.ident.value, &type_alias);

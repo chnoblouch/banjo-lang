@@ -31,7 +31,7 @@ void SymbolContext::pop_meta_condition() {
 
 SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
-    ClosureContext *closure_ctx = analyzer.get_decl_scope().closure_ctx;
+    ClosureContext *closure_ctx = analyzer.get_closure_ctx();
 
     std::string_view name = ident_expr.value;
 
@@ -42,6 +42,8 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     };
 
     if (!result.symbol && closure_ctx) {
+        // FIXME: If there is a global symbol it will be prioritized over the symbol to capture!
+
         result.symbol = closure_ctx->parent_block->symbol_table->look_up(name);
 
         if (result.symbol) {

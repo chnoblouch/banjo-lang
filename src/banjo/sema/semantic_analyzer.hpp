@@ -56,7 +56,6 @@ struct DeclScope {
     sir::Module *mod;
     sir::Symbol decl = nullptr;
     sir::DeclBlock *decl_block = nullptr;
-    ClosureContext *closure_ctx = nullptr;
 };
 
 struct DeclState {
@@ -68,6 +67,7 @@ struct Scope {
     DeclScope *decl_scope;
     sir::Block *block;
     sir::SymbolTable *symbol_table;
+    ClosureContext *closure_ctx;
 };
 
 struct GuardedScope {
@@ -170,6 +170,10 @@ private:
     sir::SymbolTable &get_symbol_table() { return *scope_stack.top().symbol_table; }
     void enter_symbol_table(sir::SymbolTable &symbol_table);
     void exit_symbol_table() { scope_stack.pop(); }
+
+    ClosureContext *get_closure_ctx() { return scope_stack.top().closure_ctx; }
+    void enter_closure_ctx(ClosureContext &closure_ctx);
+    void exit_closure_ctx() { scope_stack.pop(); }
 
     bool is_in_stmt_block() { return scope_stack.top().block; }
     bool is_in_decl() { return scope_stack.top().decl_scope->decl; }

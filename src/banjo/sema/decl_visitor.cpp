@@ -137,6 +137,16 @@ void DeclVisitor::visit_type_alias(sir::TypeAlias &type_alias) {
     analyzer.exit_decl_scope();
 }
 
+void DeclVisitor::visit_closure_def(sir::FuncDef &func_def, ClosureContext &closure_ctx) {
+    analyzer.enter_decl_scope(*analyzer.decl_states[*func_def.sema_index].scope);
+    analyzer.enter_block(func_def.block);
+    analyzer.enter_closure_ctx(closure_ctx);
+    analyze_func_def(func_def);
+    analyzer.exit_closure_ctx();
+    analyzer.exit_block();
+    analyzer.exit_decl_scope();
+}
+
 Result DeclVisitor::analyze_decl(sir::Decl &decl) {
     SIR_VISIT_DECL(
         decl,

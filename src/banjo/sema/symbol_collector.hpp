@@ -26,7 +26,7 @@ public:
     void collect_in_block(sir::DeclBlock &decl_block);
     void collect_func_specialization(sir::FuncDef &generic_def, sir::FuncDef &specialization);
     void collect_struct_specialization(sir::StructDef &generic_def, sir::StructDef &specialization);
-    ClosureContext &collect_closure_func(sir::FuncDef &func_def, sir::TupleExpr *data_type);
+    void collect_closure_def(sir::FuncDef &func_def);
 
     void collect_decl(sir::Decl &decl, unsigned index);
     void collect_func_def(sir::FuncDef &func_def);
@@ -52,7 +52,7 @@ public:
     void collect_use_list(sir::UseList &use_list);
 
     unsigned create_decl_state();
-    
+
     void add_symbol(std::string_view name, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();
 };

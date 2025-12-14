@@ -41,6 +41,8 @@ SemanticAnalyzer::SemanticAnalyzer(
         Scope{
             .decl_scope = nullptr,
             .block = nullptr,
+            .symbol_table = nullptr,
+            .closure_ctx = nullptr,
         }
     );
 
@@ -105,6 +107,7 @@ void SemanticAnalyzer::enter_decl_scope(DeclScope &decl_scope) {
         .decl_scope = &decl_scope,
         .block = nullptr,
         .symbol_table = decl_scope.decl_block->symbol_table,
+        .closure_ctx = nullptr,
     };
 
     scope_stack.push(scope);
@@ -121,6 +124,7 @@ void SemanticAnalyzer::enter_block(sir::Block &block) {
         .decl_scope = scope_stack.top().decl_scope,
         .block = &block,
         .symbol_table = block.symbol_table,
+        .closure_ctx = scope_stack.top().closure_ctx,
     };
 
     scope_stack.push(scope);
@@ -131,6 +135,18 @@ void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable &symbol_table) {
         .decl_scope = scope_stack.top().decl_scope,
         .block = scope_stack.top().block,
         .symbol_table = &symbol_table,
+        .closure_ctx = scope_stack.top().closure_ctx,
+    };
+
+    scope_stack.push(scope);
+}
+
+void SemanticAnalyzer::enter_closure_ctx(ClosureContext &closure_ctx) {
+    Scope scope{
+        .decl_scope = scope_stack.top().decl_scope,
+        .block = scope_stack.top().block,
+        .symbol_table = scope_stack.top().symbol_table,
+        .closure_ctx = &closure_ctx,
     };
 
     scope_stack.push(scope);

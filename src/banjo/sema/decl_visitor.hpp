@@ -35,6 +35,7 @@ public:
     void visit_union_case(sir::UnionCase &union_case);
     void visit_proto_def(sir::ProtoDef &proto_def);
     void visit_type_alias(sir::TypeAlias &type_alias);
+    void visit_closure_def(sir::FuncDef &func_def, ClosureContext &closure_ctx);
 
 private:
     virtual Result analyze_func_def(sir::FuncDef & /*func_def*/) { return Result::SUCCESS; }
