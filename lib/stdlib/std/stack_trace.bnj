@@ -84,7 +84,7 @@ pub func print_stack_trace() {
 
         println("stack trace:");
         
-        for i in 1..frames.length {
+        for i in 1..frames.length() {
             var frame = &frames[i];
             printf("  0x%016llX: ", frame.address as u64);
             
