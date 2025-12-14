@@ -195,18 +195,16 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
             } else {
                 auto def_key = symbol_defs.find(use.symbol);
 
-                if (def_key == symbol_defs.end()) {
-                    continue;
+                if (def_key != symbol_defs.end()) {
+                    ModuleIndex &def_mod_index = index.mods[def_key->second.mod];
+                    SymbolRef &def = def_mod_index.symbol_refs[def_key->second.index];
+
+                    ref.def_mod = def.def_mod;
+                    ref.def_range = def.def_range;
+
+                    // def.uses.push_back(key);
+                    def_mod_index.dependents.insert(mod->path);
                 }
-
-                ModuleIndex &def_mod_index = index.mods[def_key->second.mod];
-                SymbolRef &def = def_mod_index.symbol_refs[def_key->second.index];
-
-                ref.def_mod = def.def_mod;
-                ref.def_range = def.def_range;
-
-                // def.uses.push_back(key);
-                def_mod_index.dependents.insert(mod->path);
             }
 
             mod_index.symbol_refs.push_back(ref);

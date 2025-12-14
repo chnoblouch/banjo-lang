@@ -36,6 +36,11 @@ JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*con
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {
         if (position >= symbol_ref.range.start && position <= symbol_ref.range.end) {
+            // TODO: Remove this as soon as all symbols have a definition
+            if (!symbol_ref.def_mod) {
+                continue;
+            }
+
             lang::SourceFile *target_file = workspace.find_file(symbol_ref.def_mod->path);
 
             return {JSONObject{
