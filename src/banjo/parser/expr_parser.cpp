@@ -356,13 +356,9 @@ ParseResult ExprParser::parse_paren_expr() {
     }
 
     node.consume(); // Consume ')'
+    node.append_child(sub_expression);
 
-    if (parser.mode == Parser::Mode::FORMATTING) {
-        node.append_child(sub_expression);
-        return node.build(AST_PAREN_EXPR);
-    } else {
-        return sub_expression;
-    }
+    return node.build(AST_PAREN_EXPR);
 }
 
 ParseResult ExprParser::parse_anon_struct_literal() {
@@ -495,6 +491,7 @@ ParseResult ExprParser::parse_bracket_expr(ASTNode *lhs_node) {
 
 ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
     NodeBuilder node = parser.build_node();
+    node.set_start_position(lhs_node->range.start);
     node.append_child(lhs_node);
 
     ParseResult result = parse_struct_literal_body();

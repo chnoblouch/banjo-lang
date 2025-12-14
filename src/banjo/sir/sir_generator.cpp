@@ -879,6 +879,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_RESULT_TYPE: return generate_result_type(node);
         case AST_CLOSURE_TYPE: return generate_closure_type(node);
         case AST_META_EXPR: return generate_meta_access(node);
+        case AST_PAREN_EXPR: return generate_expr(node->first_child);
         case AST_COMPLETION_TOKEN: return generate_completion_token(node);
         default: return generate_error_expr(node);
     }
