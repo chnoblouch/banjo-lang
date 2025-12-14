@@ -4,10 +4,8 @@
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/resource_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/utils/macros.hpp"
 
 #include <string_view>
-#include <utility>
 #include <vector>
 
 namespace banjo {
@@ -32,13 +30,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     base_expr = unwrap_expr(base_expr);
 
     if (field_name == "size") {
-        out_expr = analyzer.create(
-            sir::IntLiteral{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .value = analyzer.compute_size(base_expr),
-            }
-        );
+        out_expr = create_int_literal(analyzer.compute_size(base_expr));
     } else if (field_name == "name") {
         out_expr = compute_name(base_expr);
     } else if (field_name == "is_pointer") {
@@ -47,12 +39,22 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
         out_expr = create_bool_literal(base_expr.is_symbol<sir::StructDef>());
     } else if (field_name == "is_enum") {
         out_expr = create_bool_literal(base_expr.is_symbol<sir::EnumDef>());
+    } else if (field_name == "is_static_array") {
+        out_expr = create_bool_literal(base_expr.is<sir::StaticArrayType>());
+    } else if (field_name == "is_tuple") {
+        out_expr = create_bool_literal(base_expr.is<sir::TupleExpr>());
     } else if (field_name == "fields") {
         out_expr = compute_fields(base_expr);
     } else if (field_name == "is_resource") {
         out_expr = compute_is_resource(base_expr);
     } else if (field_name == "variants") {
         out_expr = compute_variants(base_expr);
+    } else if (field_name == "array_base") {
+        out_expr = compute_array_base(base_expr);
+    } else if (field_name == "array_length") {
+        out_expr = compute_array_length(base_expr);
+    } else if (field_name == "tuple_num_fields") {
+        out_expr = compute_tuple_num_fields(base_expr);
     } else {
         analyzer.report_generator.report_err_invalid_meta_field(meta_field_expr);
         return Result::ERROR;
@@ -79,6 +81,8 @@ Result MetaExprEvaluator::evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr 
         out_expr = compute_has_method(base_expr, meta_call_expr.args);
     } else if (callee_name == "field") {
         out_expr = compute_field(base_expr, meta_call_expr.args);
+    } else if (callee_name == "tuple_field") {
+        out_expr = compute_tuple_field(base_expr, meta_call_expr.args);
     } else {
         analyzer.report_generator.report_err_invalid_meta_method(meta_call_expr);
         return Result::ERROR;
@@ -145,6 +149,38 @@ sir::Expr MetaExprEvaluator::compute_variants(sir::Expr &type) {
     return create_array_literal(variants);
 }
 
+sir::Expr MetaExprEvaluator::compute_array_base(sir::Expr &base) {
+    sir::StaticArrayType *array_type = base.match<sir::StaticArrayType>();
+    if (!array_type) {
+        return analyzer.create(
+            sir::PrimitiveType{
+                .ast_node = nullptr,
+                .primitive = sir::Primitive::VOID,
+            }
+        );
+    }
+
+    return array_type->base_type;
+}
+
+sir::Expr MetaExprEvaluator::compute_array_length(sir::Expr &base) {
+    sir::StaticArrayType *array_type = base.match<sir::StaticArrayType>();
+    if (!array_type) {
+        return create_int_literal(0);
+    }
+
+    return create_int_literal(array_type->length.as<sir::IntLiteral>().value);
+}
+
+sir::Expr MetaExprEvaluator::compute_tuple_num_fields(sir::Expr &type) {
+    sir::TupleExpr *tuple_expr = type.match<sir::TupleExpr>();
+    if (!tuple_expr) {
+        return create_int_literal(0);
+    }
+
+    return create_int_literal(tuple_expr->exprs.size());
+}
+
 sir::Expr MetaExprEvaluator::compute_has_method(sir::Expr &type, std::span<sir::Expr> args) {
     // TODO: Proper error reporting
 
@@ -182,6 +218,37 @@ sir::Expr MetaExprEvaluator::compute_field(sir::Expr &base, std::span<sir::Expr>
                 .ast_node = nullptr,
                 .value = analyzer.create_string(name),
             },
+        }
+    );
+}
+
+sir::Expr MetaExprEvaluator::compute_tuple_field(sir::Expr &base, std::span<sir::Expr> args) {
+    // TODO: Proper error reporting
+
+    if (args.size() != 1 || !args[0].is<sir::IntLiteral>()) {
+        return create_bool_literal(false);
+    }
+
+    std::string index = args[0].as<sir::IntLiteral>().value.to_string();
+
+    return analyzer.create(
+        sir::DotExpr{
+            .ast_node = nullptr,
+            .lhs = base,
+            .rhs{
+                .ast_node = nullptr,
+                .value = analyzer.create_string(index),
+            },
+        }
+    );
+}
+
+sir::Expr MetaExprEvaluator::create_int_literal(LargeInt value) {
+    return analyzer.create(
+        sir::IntLiteral{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .value = value,
         }
     );
 }

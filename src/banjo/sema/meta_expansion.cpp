@@ -210,7 +210,19 @@ Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::
         return evaluated_range.result;
     }
 
-    if (auto array_literal = evaluated_range.expr.match<sir::ArrayLiteral>()) {
+    if (auto range_expr = evaluated_range.expr.match<sir::RangeExpr>()) {
+        // TODO: Error handling
+
+        LargeInt start = range_expr->lhs.as<sir::IntLiteral>().value;
+        LargeInt end = range_expr->rhs.as<sir::IntLiteral>().value;
+
+        for (LargeInt i = start; i < end; i += 1) {
+            sir::IntLiteral expr{.ast_node = nullptr, .value = i};
+            out_values.push_back(analyzer.create(expr));
+        }
+
+        return Result::SUCCESS;
+    } else if (auto array_literal = evaluated_range.expr.match<sir::ArrayLiteral>()) {
         out_values.insert(out_values.begin(), array_literal->values.begin(), array_literal->values.end());
         return Result::SUCCESS;
     } else if (auto tuple_expr = evaluated_range.expr.match<sir::TupleExpr>()) {

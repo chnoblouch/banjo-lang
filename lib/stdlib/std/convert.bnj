@@ -8,15 +8,21 @@ pub func to_string[T](ref value: T) -> String {
     } else if T == *u8 {
         return String.from(value);
     } else if T == i8 || T == i16 || T == i32 || T == i64 {
-        return i64_to_string(value as i64);
+        return i64_to_string(value as i64, 10);
     } else if T == u16 || T == u32 || T == u64 || T == usize {
-        return u64_to_string(value as u64);
+        return u64_to_string(value as u64, 10);
     } else if T == f32 || T == f64 {
         return f64_to_string(value as f64);
     } else if T == u8 {
         return char_to_string(value);
     } else if T == bool {
         return bool_to_string(value);
+    } else if T == addr || meta(T).is_pointer {
+        return pointer_to_string(value);
+    } else if meta(T).is_static_array {
+        return static_array_to_repr(value, 0);
+    } else if meta(T).is_tuple {
+        return tuple_to_repr(value, 0);
     } else if meta(T).has_method("__str__") {
         return value.__str__();
     } else if meta(T).is_struct {
@@ -37,6 +43,10 @@ pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
         return "\"" + value.copy() + "\"";
     }  else if T == u8 {
         return "\'" + char_to_string(value) + "\'";
+    } else if meta(T).is_static_array {
+        return static_array_to_repr(value, indent);
+    } else if meta(T).is_tuple {
+        return tuple_to_repr(value, indent);
     } else if meta(T).has_method("__repr__") {
         return value.__repr__(indent);
     } else if meta(T).is_struct {
@@ -121,7 +131,7 @@ pub func parse_f64(string: StringSlice) -> ?f64 {
     return result;
 }
 
-func i64_to_string(value: i64) -> String {
+func i64_to_string(value: i64, base: u64) -> String {
     var capacity: usize = 32;
     var buffer: [u8; 32];
     var length: usize = 0;
@@ -136,11 +146,13 @@ func i64_to_string(value: i64) -> String {
         remainder = -value as u64;
         negative = true;
     }
+
+    var chars: *u8 = "0123456789ABCDEF";
     
     while true {
         length += 1;
-        buffer[capacity - length] = (remainder % 10) as u8 + '0';
-        remainder /= 10;
+        buffer[capacity - length] = chars[(remainder % base)];
+        remainder /= base;
         
         if remainder == 0 {
             break;
@@ -156,17 +168,18 @@ func i64_to_string(value: i64) -> String {
     return String.from(slice);
 }
 
-func u64_to_string(value: u64) -> String {
+func u64_to_string(value: u64, base: u64) -> String {
     var capacity: usize = 32;
     var buffer: [u8; 32];
     var length: usize = 0;
     
     var remainder = value;
+    var chars: *u8 = "0123456789ABCDEF";
     
     while true {
         length += 1;
-        buffer[capacity - length] = (remainder % 10) as u8 + '0';
-        remainder /= 10;
+        buffer[capacity - length] = chars[(remainder % base)];
+        remainder /= base;
         
         if remainder == 0 {
             break;
@@ -195,6 +208,40 @@ func bool_to_string(value: bool) -> String {
     } else {
         return "false";
     }
+}
+
+func pointer_to_string[T](value: T) -> String {
+    if value == null {
+        return "null";
+    }
+
+    return "0x" + u64_to_string(value as u64, 16);
+}
+
+func static_array_to_repr[T](ref value: T, indent: u32) -> String {
+    var pointer = __builtin_pointer_to(value[0]);
+    var slice = Slice[meta(T).array_base].new(pointer, meta(T).array_length);
+    return slice.__repr__(indent);   
+}
+
+func tuple_to_repr[T](ref value: T, indent: u32) -> String {
+    var string = "(\n";
+
+    meta for i in 0..meta(T).tuple_num_fields {    
+        for i in 0..indent + 1 {
+            string += "  ";
+        }
+
+        string += to_repr_indent(meta(value).tuple_field(i), indent + 1);
+        string += ",\n";
+    }
+
+    for i in 0..indent {
+        string += "  ";
+    }
+
+    string += ')';
+    return string;
 }
 
 func struct_to_repr[T](ref struct_: T, indent: u32) -> String {

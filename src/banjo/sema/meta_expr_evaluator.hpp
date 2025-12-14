@@ -28,9 +28,14 @@ private:
     sir::Expr compute_fields(sir::Expr &type);
     sir::Expr compute_is_resource(sir::Expr &type);
     sir::Expr compute_variants(sir::Expr &type);
+    sir::Expr compute_array_base(sir::Expr &base);
+    sir::Expr compute_array_length(sir::Expr &base);
+    sir::Expr compute_tuple_num_fields(sir::Expr &type);
     sir::Expr compute_has_method(sir::Expr &type, std::span<sir::Expr> args);
     sir::Expr compute_field(sir::Expr &base, std::span<sir::Expr> args);
+    sir::Expr compute_tuple_field(sir::Expr &base, std::span<sir::Expr> args);
 
+    sir::Expr create_int_literal(LargeInt value);
     sir::Expr create_bool_literal(bool value);
     sir::Expr create_array_literal(std::span<sir::Expr> values);
     sir::Expr create_string_literal(std::string_view value);

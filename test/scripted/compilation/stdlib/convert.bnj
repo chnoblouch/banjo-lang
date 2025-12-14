@@ -89,6 +89,43 @@ func main() {
 }
 
 # test:subtest
+# test:output "eeee"
+
+func main() {
+    var a: addr = 0x16F682A50;
+    var b: addr = null;
+	var c: *i32 = 0x16F682A50;
+	var d: *bool = null;
+
+    check(a, "0x16F682A50");
+	check(b, "null");
+	check(c, "0x16F682A50");
+	check(d, "null");
+}
+
+# test:subtest
+# test:output "ee"
+
+func main() {
+	var a: [i32; 3] = [483, -12, 1289];
+	var b: [bool; 2] = [true, false];
+
+	check(a, "[\n  483,\n  -12,\n  1289,\n]");
+	check(b, "[\n  true,\n  false,\n]");
+}
+
+# test:subtest
+# test:output "ee"
+
+func main() {
+	var a = (-8, 2.5, true);
+	var b = ("String", 194);
+
+	check(a, "(\n  -8,\n  2.5,\n  true,\n)");
+	check(b, "(\n  \"String\",\n  194,\n)");
+}
+
+# test:subtest
 # test:output "ee"
 
 struct Point {
@@ -108,7 +145,7 @@ func main() {
 		y: -20,
 	};
 	
-	check(point, "Point {\n    x: 100,\n    y: -20,\n}");
+	check(point, "Point {\n  x: 100,\n  y: -20,\n}");
 
 	var object = Object {
 		name: "Tree",
@@ -116,7 +153,7 @@ func main() {
 		age: 48,
 	};
 	
-	check(object, "Object {\n    name: \"Tree\",\n    position: Point {\n        x: 100,\n        y: -20,\n    },\n    age: 48,\n}");
+	check(object, "Object {\n  name: \"Tree\",\n  position: Point {\n    x: 100,\n    y: -20,\n  },\n  age: 48,\n}");
 }
 
 # test:subtest

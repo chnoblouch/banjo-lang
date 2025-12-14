@@ -3,7 +3,6 @@
 #include "banjo/sema/meta_expansion.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
-#include <optional>
 
 namespace banjo::lang::sema {
 

@@ -66,7 +66,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return evaluate_non_const(expr),         // index_expr
         return evaluate_non_const(expr),         // call_expr
         return evaluate_non_const(expr),         // field_expr
-        return evaluate_non_const(expr),         // range_expr
+        return evaluate_range_expr(*inner),      // range_expr
         return evaluate_tuple_expr(*inner),      // tuple_expr
         return evaluate_non_const(expr),         // coercion_expr
         return expr,                             // primitive_type
@@ -204,6 +204,23 @@ ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_range_expr(sir::RangeExpr &range_expr) {
+    ConstEvaluator::Output lhs = evaluate(range_expr.lhs);
+    ConstEvaluator::Output rhs = evaluate(range_expr.rhs);
+
+    if (lhs.result != Result::SUCCESS || rhs.result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    sir::RangeExpr result{
+        .ast_node = range_expr.ast_node,
+        .lhs = lhs.expr,
+        .rhs = rhs.expr,
+    };
+
+    return sir::Expr{analyzer.create(result)};
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_tuple_expr(sir::TupleExpr &tuple_expr) {

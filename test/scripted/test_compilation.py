@@ -26,7 +26,6 @@ SKIPPED_TESTS = set([
     "features.map_literal.1",
     "features.meta_if.8",
     "features.globals.3",
-    "stdlib.convert.6",
 ])
 
 SKIPPED_TESTS_WASM = set([

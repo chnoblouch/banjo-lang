@@ -55,7 +55,12 @@ SemanticAnalyzer::SemanticAnalyzer(
         {"name", sir::create_pseudo_type(mod, sir::PseudoTypeKind::STRING_LITERAL)},
         {"is_pointer", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
         {"is_struct", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
+        {"is_static_array", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
+        {"is_tuple", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
         {"is_enum", sir::create_primitive_type(mod, sir::Primitive::BOOL)},
+        {"array_base", sir::create_primitive_type(mod, sir::Primitive::VOID)},
+        {"array_length", sir::create_pseudo_type(mod, sir::PseudoTypeKind::INT_LITERAL)},
+        {"tuple_num_fields", sir::create_pseudo_type(mod, sir::PseudoTypeKind::INT_LITERAL)},
     };
 }
 
