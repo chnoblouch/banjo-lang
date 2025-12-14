@@ -748,7 +748,7 @@ void CLI::load_manifest(const Manifest &manifest) {
 
     for (const auto &[manifest_target, sub_manifest] : manifest.target_manifests) {
         if (manifest_target == target) {
-            load_manifest(sub_manifest);
+            load_manifest(*sub_manifest);
         }
     }
 }
@@ -827,7 +827,7 @@ Manifest CLI::parse_manifest(const std::filesystem::path &path) {
     }
 
     if (std::optional<Manifest> manifest = try_parse_manifest(path)) {
-        return *manifest;
+        return std::move(*manifest);
     } else {
         error("could not open manifest at '" + path.string() + "'");
     }
@@ -863,7 +863,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
     std::vector<std::string> libraries;
     std::vector<std::string> macos_frameworks;
     std::vector<std::string> packages;
-    std::vector<std::pair<Target, Manifest>> target_manifests;
+    std::vector<std::pair<Target, std::unique_ptr<Manifest>>> target_manifests;
     std::optional<std::string> build_script;
 
     for (const auto &[member_name, member_value] : json) {
@@ -887,7 +887,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
             for (const auto &[target_string, json_properties] : member_value.as_object()) {
                 Target target = parse_target(target_string);
                 Manifest target_manifest = parse_manifest(json_properties.as_object());
-                target_manifests.push_back({target, target_manifest});
+                target_manifests.push_back({target, std::make_unique<Manifest>(std::move(target_manifest))});
             }
         } else if (member_name == "windows.subsystem") {
             // TODO
@@ -910,7 +910,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         .libraries = libraries,
         .macos_frameworks = macos_frameworks,
         .packages = packages,
-        .target_manifests = target_manifests,
+        .target_manifests = std::move(target_manifests),
         .build_script = build_script,
     };
 }

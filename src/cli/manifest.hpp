@@ -3,6 +3,7 @@
 
 #include "target.hpp"
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,7 +19,7 @@ struct Manifest {
     std::vector<std::string> libraries;
     std::vector<std::string> macos_frameworks;
     std::vector<std::string> packages;
-    std::vector<std::pair<Target, Manifest>> target_manifests;
+    std::vector<std::pair<Target, std::unique_ptr<Manifest>>> target_manifests;
     std::optional<std::string> build_script;
 };
 

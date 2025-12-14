@@ -130,7 +130,7 @@ void CompletionEngine::complete_in_use() {
         if (file->mod_path.get_size() == 1) {
             Item item{
                 .kind = Item::Kind::SIMPLE,
-                .name{file->mod_path[0]},
+                .name = std::string{file->mod_path[0]},
                 .symbol = file->sir_mod,
                 .file_to_use = nullptr,
             };
@@ -175,7 +175,7 @@ void CompletionEngine::complete_in_struct_literal(sir::StructLiteral &struct_lit
 
             Item item{
                 .kind = Item::Kind::STRUCT_FIELD_TEMPLATE,
-                .name{field->ident.value},
+                .name = std::string{field->ident.value},
                 .symbol = field,
                 .file_to_use = nullptr,
             };
@@ -190,7 +190,7 @@ void CompletionEngine::collect_symbol_members(sir::Symbol &symbol, Options &opti
         for (ModulePath &path : workspace.find_file(mod->path)->sub_mod_paths) {
             Item item{
                 .kind = Item::Kind::SIMPLE,
-                .name{path[path.get_size() - 1]},
+                .name = std::string{path[path.get_size() - 1]},
                 .symbol = symbol,
                 .file_to_use = options.file_to_use,
             };
@@ -216,7 +216,7 @@ void CompletionEngine::collect_value_members(sir::StructDef &struct_def) {
     for (sir::StructField *field : struct_def.fields) {
         Item item{
             .kind = Item::Kind::SIMPLE,
-            .name{field->ident.value},
+            .name = std::string{field->ident.value},
             .symbol = field,
             .file_to_use = options.file_to_use,
         };
