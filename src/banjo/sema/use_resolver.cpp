@@ -10,11 +10,9 @@ UseResolver::UseResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void UseResolver::resolve(const std::vector<sir::Module *> &mods) {
     for (sir::Module *mod : mods) {
-        DeclState &state = analyzer.decl_states[*mod->sema_index];
-
-        analyzer.enter_decl_scope(*state.scope);
+        analyzer.enter_decl(mod);
         resolve_in_block(mod->block);
-        analyzer.exit_decl_scope();
+        analyzer.exit_decl();
     }
 }
 

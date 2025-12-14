@@ -18,11 +18,9 @@ MetaExpansion::MetaExpansion(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void MetaExpansion::run(const std::vector<sir::Module *> &mods) {
     for (sir::Module *mod : mods) {
-        DeclState &state = analyzer.decl_states[*mod->sema_index];
-
-        analyzer.enter_decl_scope(*state.scope);
+        analyzer.enter_decl(mod);
         run_on_decl_block(mod->block);
-        analyzer.exit_decl_scope();
+        analyzer.exit_decl();
     }
 }
 
@@ -43,18 +41,18 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 
         if (auto struct_def = decl.match<sir::StructDef>()) {
             if (!struct_def->is_generic()) {
-                analyzer.enter_decl_scope(*analyzer.decl_states[*struct_def->sema_index].scope);
+                analyzer.enter_decl(struct_def);
                 run_on_decl_block(struct_def->block);
-                analyzer.exit_decl_scope();
+                analyzer.exit_decl();
             }
         } else if (auto union_def = decl.match<sir::UnionDef>()) {
-            analyzer.enter_decl_scope(*analyzer.decl_states[*union_def->sema_index].scope);
+            analyzer.enter_decl(union_def);
             run_on_decl_block(union_def->block);
-            analyzer.exit_decl_scope();
+            analyzer.exit_decl();
         } else if (auto proto_def = decl.match<sir::ProtoDef>()) {
-            analyzer.enter_decl_scope(*analyzer.decl_states[*proto_def->sema_index].scope);
+            analyzer.enter_decl(proto_def);
             run_on_decl_block(proto_def->block);
-            analyzer.exit_decl_scope();
+            analyzer.exit_decl();
         } else if (decl.is<sir::MetaIfStmt>()) {
             evaluate_meta_if_stmt(decl_block, i);
         }

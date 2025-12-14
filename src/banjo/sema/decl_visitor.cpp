@@ -14,11 +14,9 @@ DeclVisitor::DeclVisitor(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void DeclVisitor::analyze(const std::vector<sir::Module *> &mods) {
     for (sir::Module *mod : mods) {
-        DeclState &state = analyzer.decl_states[*mod->sema_index];
-
-        analyzer.enter_decl_scope(*state.scope);
+        analyzer.enter_decl(mod);
         analyze_decl_block(mod->block);
-        analyzer.exit_decl_scope();
+        analyzer.exit_decl();
     }
 }
 
@@ -45,30 +43,30 @@ void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
             visit_func_def(*specialization.def);
         }
     } else {
-        analyzer.enter_decl_scope(*analyzer.decl_states[*func_def.sema_index].scope);
+        analyzer.enter_decl(&func_def);
         analyzer.enter_block(func_def.block);
         analyze_func_def(func_def);
         analyzer.exit_block();
-        analyzer.exit_decl_scope();
+        analyzer.exit_decl();
     }
 }
 
 void DeclVisitor::visit_func_decl(sir::FuncDecl &func_decl) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*func_decl.sema_index].scope);
+    analyzer.enter_decl(&func_decl);
     analyze_func_decl(func_decl);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*native_func_decl.sema_index].scope);
+    analyzer.enter_decl(&native_func_decl);
     analyze_native_func_decl(native_func_decl);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 Result DeclVisitor::visit_const_def(sir::ConstDef &const_def) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*const_def.sema_index].scope);
+    analyzer.enter_decl(&const_def);
     Result result = analyze_const_def(const_def);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 
     return result;
 }
@@ -79,72 +77,72 @@ void DeclVisitor::visit_struct_def(sir::StructDef &struct_def) {
             visit_struct_def(*specialization.def);
         }
     } else {
-        analyzer.enter_decl_scope(*analyzer.decl_states[*struct_def.sema_index].scope);
+        analyzer.enter_decl(&struct_def);
         analyze_struct_def(struct_def);
         analyze_decl_block(struct_def.block);
-        analyzer.exit_decl_scope();
+        analyzer.exit_decl();
     }
 }
 
 void DeclVisitor::visit_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*var_decl.sema_index].scope);
+    analyzer.enter_decl(&var_decl);
     analyze_var_decl(var_decl, out_decl);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_native_var_decl(sir::NativeVarDecl &native_var_decl) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*native_var_decl.sema_index].scope);
+    analyzer.enter_decl(&native_var_decl);
     analyze_native_var_decl(native_var_decl);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_enum_def(sir::EnumDef &enum_def) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*enum_def.sema_index].scope);
+    analyzer.enter_decl(&enum_def);
     analyze_enum_def(enum_def);
     analyze_decl_block(enum_def.block);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_enum_variant(sir::EnumVariant &enum_variant) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*enum_variant.sema_index].scope);
+    analyzer.enter_decl(&enum_variant);
     analyze_enum_variant(enum_variant);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_union_def(sir::UnionDef &union_def) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*union_def.sema_index].scope);
+    analyzer.enter_decl(&union_def);
     analyze_union_def(union_def);
     analyze_decl_block(union_def.block);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_union_case(sir::UnionCase &union_case) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*union_case.sema_index].scope);
+    analyzer.enter_decl(&union_case);
     analyze_union_case(union_case);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_proto_def(sir::ProtoDef &proto_def) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*proto_def.sema_index].scope);
+    analyzer.enter_decl(&proto_def);
     analyze_proto_def(proto_def);
     analyze_decl_block(proto_def.block);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_type_alias(sir::TypeAlias &type_alias) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*type_alias.sema_index].scope);
+    analyzer.enter_decl(&type_alias);
     analyze_type_alias(type_alias);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_closure_def(sir::FuncDef &func_def, ClosureContext &closure_ctx) {
-    analyzer.enter_decl_scope(*analyzer.decl_states[*func_def.sema_index].scope);
+    analyzer.enter_decl(&func_def);
     analyzer.enter_block(func_def.block);
     analyzer.enter_closure_ctx(closure_ctx);
     analyze_func_def(func_def);
     analyzer.exit_closure_ctx();
     analyzer.exit_block();
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 Result DeclVisitor::analyze_decl(sir::Decl &decl) {

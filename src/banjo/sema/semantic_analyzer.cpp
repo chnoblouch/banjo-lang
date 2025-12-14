@@ -39,7 +39,7 @@ SemanticAnalyzer::SemanticAnalyzer(
 
     scope_stack.push(
         Scope{
-            .decl_scope = nullptr,
+            .decl = nullptr,
             .block = nullptr,
             .symbol_table = nullptr,
             .closure_ctx = nullptr,
@@ -65,63 +65,71 @@ void SemanticAnalyzer::analyze() {
 }
 
 void SemanticAnalyzer::analyze(const std::vector<sir::Module *> &mods) {
-    stage = DeclStage::NAME;
+    stage = sir::SemaStage::NAME;
     SymbolCollector(*this).collect(mods);
     populate_preamble_symbols();
     MetaExpansion(*this).run(mods);
     UseResolver(*this).resolve(mods);
 
-    stage = DeclStage::INTERFACE;
+    stage = sir::SemaStage::INTERFACE;
     TypeAliasResolver(*this).analyze(mods);
     DeclInterfaceAnalyzer(*this).analyze(mods);
 
-    stage = DeclStage::BODY;
+    stage = sir::SemaStage::BODY;
     DeclBodyAnalyzer(*this).analyze(mods);
 
-    stage = DeclStage::RESOURCES;
+    stage = sir::SemaStage::RESOURCES;
     ResourceAnalyzer(*this).analyze(mods);
 }
 
 void SemanticAnalyzer::analyze(sir::Module &mod) {
-    stage = DeclStage::NAME;
+    stage = sir::SemaStage::NAME;
     SymbolCollector(*this).collect_in_mod(mod);
     populate_preamble_symbols();
     MetaExpansion(*this).run_on_decl_block(mod.block);
     UseResolver(*this).resolve_in_block(mod.block);
 
-    stage = DeclStage::INTERFACE;
+    stage = sir::SemaStage::INTERFACE;
     TypeAliasResolver(*this).analyze_decl_block(mod.block);
     DeclInterfaceAnalyzer(*this).analyze_decl_block(mod.block);
 
-    stage = DeclStage::BODY;
+    stage = sir::SemaStage::BODY;
     DeclBodyAnalyzer(*this).analyze_decl_block(mod.block);
 
-    stage = DeclStage::RESOURCES;
+    stage = sir::SemaStage::RESOURCES;
     ResourceAnalyzer(*this).analyze_decl_block(mod.block);
 }
 
-void SemanticAnalyzer::enter_decl_scope(DeclScope &decl_scope) {
-    mod = decl_scope.mod;
+void SemanticAnalyzer::enter_decl(sir::Symbol decl) {
+    mod = &decl.find_mod();
+
+    sir::DeclBlock *decl_block = decl.get_decl_block();
+
+    if (!decl_block) {
+        decl_block = decl.get_parent().get_decl_block();
+    }
 
     Scope scope{
-        .decl_scope = &decl_scope,
+        .decl = decl,
+        .decl_block = decl_block,
         .block = nullptr,
-        .symbol_table = decl_scope.decl_block->symbol_table,
+        .symbol_table = decl_block->symbol_table,
         .closure_ctx = nullptr,
     };
 
     scope_stack.push(scope);
 }
 
-void SemanticAnalyzer::exit_decl_scope() {
+void SemanticAnalyzer::exit_decl() {
     scope_stack.pop();
-    DeclScope *decl_scope = scope_stack.top().decl_scope;
-    mod = decl_scope ? decl_scope->mod : nullptr;
+    sir::Symbol decl = scope_stack.top().decl;
+    mod = decl ? &decl.find_mod() : nullptr;
 }
 
 void SemanticAnalyzer::enter_block(sir::Block &block) {
     Scope scope{
-        .decl_scope = scope_stack.top().decl_scope,
+        .decl = scope_stack.top().decl,
+        .decl_block = scope_stack.top().decl_block,
         .block = &block,
         .symbol_table = block.symbol_table,
         .closure_ctx = scope_stack.top().closure_ctx,
@@ -132,7 +140,8 @@ void SemanticAnalyzer::enter_block(sir::Block &block) {
 
 void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable &symbol_table) {
     Scope scope{
-        .decl_scope = scope_stack.top().decl_scope,
+        .decl = scope_stack.top().decl,
+        .decl_block = scope_stack.top().decl_block,
         .block = scope_stack.top().block,
         .symbol_table = &symbol_table,
         .closure_ctx = scope_stack.top().closure_ctx,
@@ -143,7 +152,8 @@ void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable &symbol_table) {
 
 void SemanticAnalyzer::enter_closure_ctx(ClosureContext &closure_ctx) {
     Scope scope{
-        .decl_scope = scope_stack.top().decl_scope,
+        .decl = scope_stack.top().decl,
+        .decl_block = scope_stack.top().decl_block,
         .block = scope_stack.top().block,
         .symbol_table = scope_stack.top().symbol_table,
         .closure_ctx = &closure_ctx,
@@ -153,7 +163,7 @@ void SemanticAnalyzer::enter_closure_ctx(ClosureContext &closure_ctx) {
 }
 
 bool SemanticAnalyzer::is_in_specialization() {
-    sir::Symbol decl = get_decl_scope().decl;
+    sir::Symbol decl = get_decl();
 
     while (decl && !decl.is<sir::Module>()) {
         if (auto func_def = decl.match<sir::FuncDef>()) {
@@ -320,10 +330,6 @@ void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol)
     };
 
     extra_analysis.mods[&get_mod()].symbol_uses.push_back(use);
-}
-
-std::strong_ordering operator<=>(const DeclStage &lhs, const DeclStage &rhs) {
-    return static_cast<unsigned>(lhs) <=> static_cast<unsigned>(rhs);
 }
 
 } // namespace sema

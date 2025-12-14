@@ -444,7 +444,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         }
     );
 
-    generated_func->block.symbol_table->parent = analyzer.get_decl_scope().decl_block->symbol_table;
+    generated_func->block.symbol_table->parent = analyzer.get_decl_block().symbol_table;
 
     ClosureContext closure_ctx{
         .captured_vars{},
@@ -1385,8 +1385,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     }
 
     if (analyzer.in_meta_expansion) {
-        sir::DeclBlock &decl_block = *analyzer.get_decl_scope().decl_block;
-        UseResolver{analyzer}.resolve_in_block(decl_block);
+        UseResolver{analyzer}.resolve_in_block(analyzer.get_decl_block());
     }
 
     SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up(ident_expr);
@@ -1415,7 +1414,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
                 closure_ctx.captured_vars.push_back(symbol);
             }
 
-            sir::FuncDef &func_def = analyzer.get_decl_scope().decl.as<sir::FuncDef>();
+            sir::FuncDef &func_def = analyzer.get_decl().as<sir::FuncDef>();
             sir::Symbol data_ptr_param = &func_def.type.params[0];
 
             out_expr = analyzer.create(
@@ -1472,7 +1471,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
     if (auto const_def = symbol.match<sir::ConstDef>()) {
         DeclInterfaceAnalyzer{analyzer}.visit_const_def(*const_def);
     } else if (auto type_alias = symbol.match<sir::TypeAlias>()) {
-        if (analyzer.decl_states[*type_alias->sema_index].stage < DeclStage::BODY) {
+        if (type_alias->stage < sir::SemaStage::BODY) {
             Result result = TypeAliasResolver(analyzer).analyze_type_alias(*type_alias);
 
             if (result == Result::DEF_CYCLE) {
@@ -1704,7 +1703,7 @@ Result ExprAnalyzer::analyze_completion_token() {
         };
     } else if (analyzer.is_in_decl()) {
         analyzer.completion_context = CompleteInDeclBlock{
-            .decl_block = analyzer.get_decl_scope().decl_block,
+            .decl_block = &analyzer.get_decl_block(),
         };
     } else {
         analyzer.completion_context = CompleteInDeclBlock{

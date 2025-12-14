@@ -402,11 +402,28 @@ std::string Symbol::get_name() const {
 Symbol Symbol::get_parent() const {
     if (auto func_def = match<FuncDef>()) return func_def->parent;
     else if (auto func_decl = match<FuncDecl>()) return func_decl->parent;
+    else if (auto native_func_decl = match<NativeFuncDecl>()) return native_func_decl->parent;
+    else if (auto const_def = match<ConstDef>()) return const_def->parent;
     else if (auto struct_def = match<StructDef>()) return struct_def->parent;
     else if (auto var_decl = match<VarDecl>()) return var_decl->parent;
+    else if (auto native_var_decl = match<NativeVarDecl>()) return native_var_decl->parent;
+    else if (auto enum_def = match<EnumDef>()) return enum_def->parent;
     else if (auto enum_variant = match<EnumVariant>()) return enum_variant->parent;
+    else if (auto union_def = match<UnionDef>()) return union_def->parent;
     else if (auto union_case = match<UnionCase>()) return union_case->parent;
+    else if (auto proto_def = match<ProtoDef>()) return proto_def->parent;
+    else if (auto type_alias = match<TypeAlias>()) return type_alias->parent;
     else return nullptr;
+}
+
+Module &Symbol::find_mod() const {
+    Symbol symbol = *this;
+
+    while (!symbol.is<sir::Module>()) {
+        symbol = symbol.get_parent();
+    }
+
+    return symbol.as<Module>();
 }
 
 Expr Symbol::get_type() {
@@ -684,6 +701,10 @@ Attributes *Module::create(Attributes value) {
 template <>
 Resource *Module::create(Resource value) {
     return resource_arena.create(std::move(value));
+}
+
+std::strong_ordering operator<=>(const SemaStage &lhs, const SemaStage &rhs) {
+    return static_cast<unsigned>(lhs) <=> static_cast<unsigned>(rhs);
 }
 
 } // namespace sir

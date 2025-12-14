@@ -79,7 +79,7 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
             .generic_params = func_def.generic_params,
             .specializations = {},
             .parent_specialization = nullptr,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -90,7 +90,7 @@ FuncDecl *Cloner::clone_func_decl(const FuncDecl &func_decl) {
             .ast_node = func_decl.ast_node,
             .ident = clone_ident(func_decl.ident),
             .type = clone_func_type_directly(func_decl.type),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -102,7 +102,7 @@ NativeFuncDecl *Cloner::clone_native_func_decl(const NativeFuncDecl &native_func
             .ident = clone_ident(native_func_decl.ident),
             .type = clone_func_type_directly(native_func_decl.type),
             .attrs = clone_attrs(native_func_decl.attrs),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -114,7 +114,7 @@ ConstDef *Cloner::clone_const_def(const ConstDef &const_def) {
             .ident = clone_ident(const_def.ident),
             .type = clone_expr(const_def.type),
             .value = clone_expr(const_def.value),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -135,7 +135,7 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
             .generic_params = struct_def.generic_params,
             .specializations = {},
             .parent_specialization = nullptr,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -152,7 +152,7 @@ VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
             .type = clone_expr(var_decl.type),
             .value = clone_expr(var_decl.value),
             .attrs = clone_attrs(var_decl.attrs),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -164,7 +164,7 @@ NativeVarDecl *Cloner::clone_native_var_decl(const NativeVarDecl &native_var_dec
             .ident = clone_ident(native_var_decl.ident),
             .type = clone_expr(native_var_decl.type),
             .attrs = clone_attrs(native_var_decl.attrs),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -178,7 +178,7 @@ EnumDef *Cloner::clone_enum_def(const EnumDef &enum_def) {
             .ident = clone_ident(enum_def.ident),
             .block = enum_def.block,
             .variants = {},
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -190,7 +190,7 @@ EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
             .ident = clone_ident(enum_variant.ident),
             .type = clone_expr(enum_variant.type),
             .value = clone_expr(enum_variant.value),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -202,7 +202,7 @@ UnionDef *Cloner::clone_union_def(const UnionDef &union_def) {
             .ident = clone_ident(union_def.ident),
             .block = clone_decl_block(union_def.block),
             .cases = {},
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -213,7 +213,7 @@ UnionCase *Cloner::clone_union_case(const UnionCase &union_case) {
             .ast_node = union_case.ast_node,
             .ident = clone_ident(union_case.ident),
             .fields = union_case.fields,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -225,7 +225,7 @@ ProtoDef *Cloner::clone_proto_def(const ProtoDef &proto_def) {
             .ident = clone_ident(proto_def.ident),
             .block = clone_decl_block(proto_def.block),
             .func_decls = {},
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -236,7 +236,7 @@ TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
             .ast_node = type_alias.ast_node,
             .ident = clone_ident(type_alias.ident),
             .type = clone_expr(type_alias.type),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }

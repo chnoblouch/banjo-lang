@@ -45,7 +45,7 @@ void SIRGenerator::generate_mod(ASTModule *node, sir::Module &out_sir_mod) {
     cur_sir_mod = &out_sir_mod;
     out_sir_mod.path = node->file.mod_path;
     out_sir_mod.block = generate_decl_block(node->get_block());
-    out_sir_mod.sema_index = {};
+    out_sir_mod.stage = sir::SemaStage::NAME;
 }
 
 sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
@@ -127,7 +127,7 @@ sir::Decl SIRGenerator::generate_func_def(ASTNode *node, sir::Attributes *attrs)
             .block = generate_block(block_node),
             .attrs = attrs,
             .generic_params = {},
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -147,7 +147,7 @@ sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
             .type = generate_func_type(params_node, return_type_node),
             .block = generate_block(block_node),
             .generic_params = generate_generic_param_list(generic_params_node),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -163,7 +163,7 @@ sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -180,7 +180,7 @@ sir::Decl SIRGenerator::generate_native_func(ASTNode *node, sir::Attributes *att
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
             .attrs = attrs,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -260,7 +260,7 @@ sir::Decl SIRGenerator::generate_var_decl(ASTNode *node, sir::Attributes *attrs)
             .type = generate_expr(type_node),
             .value = value_node ? generate_expr(value_node) : nullptr,
             .attrs = attrs,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -275,7 +275,7 @@ sir::Decl SIRGenerator::generate_native_var_decl(ASTNode *node, sir::Attributes 
             .ident = generate_ident(name_node),
             .type = generate_expr(type_node),
             .attrs = attrs,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -297,7 +297,7 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
                 .ast_node = variant_node,
                 .ident = generate_ident(name_node),
                 .value = value_node ? generate_expr(value_node) : nullptr,
-                .sema_index = {},
+                .stage = sir::SemaStage::NAME,
             }
         ));
     }
@@ -307,7 +307,7 @@ sir::Decl SIRGenerator::generate_enum(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .block = block,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -322,7 +322,7 @@ sir::Decl SIRGenerator::generate_union(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
             .cases = {},
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -336,7 +336,7 @@ sir::Decl SIRGenerator::generate_union_case(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .fields = generate_union_case_fields(fields_node),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -351,7 +351,7 @@ sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
             .func_decls = {},
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -365,7 +365,7 @@ sir::Decl SIRGenerator::generate_type_alias(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_expr(underlying_type_node),
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 }

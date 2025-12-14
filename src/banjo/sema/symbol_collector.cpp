@@ -5,8 +5,6 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
-#include <memory>
-
 namespace banjo {
 
 namespace lang {
@@ -22,19 +20,9 @@ void SymbolCollector::collect(const std::vector<sir::Module *> &mods) {
 }
 
 void SymbolCollector::collect_in_mod(sir::Module &mod) {
-    mod.sema_index = create_decl_state();
-
-    DeclState &state = analyzer.decl_states[*mod.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = &mod,
-        .decl = &mod,
-        .decl_block = &mod.block,
-    });
-
-    analyzer.enter_decl_scope(*state.scope);
+    analyzer.enter_decl(&mod);
     collect_in_block(mod.block);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
@@ -44,16 +32,7 @@ void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
 }
 
 void SymbolCollector::collect_func_specialization(sir::FuncDef &generic_def, sir::FuncDef &specialization) {
-    DeclScope &generic_def_scope = *analyzer.decl_states[*generic_def.sema_index].scope;
-
-    specialization.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*specialization.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = generic_def_scope.mod,
-        .decl = &specialization,
-        .decl_block = generic_def_scope.decl_block,
-    });
+    specialization.parent = generic_def.parent;
 
     std::span<sir::Expr> args = specialization.parent_specialization->args;
 
@@ -70,16 +49,7 @@ void SymbolCollector::collect_func_specialization(sir::FuncDef &generic_def, sir
 }
 
 void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def, sir::StructDef &specialization) {
-    DeclScope &generic_def_scope = *analyzer.decl_states[*generic_def.sema_index].scope;
-
-    specialization.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*specialization.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = generic_def_scope.mod,
-        .decl = &specialization,
-        .decl_block = &specialization.block,
-    });
+    specialization.parent = generic_def.parent;
 
     std::span<sir::Expr> args = specialization.parent_specialization->args;
 
@@ -94,22 +64,13 @@ void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def,
         specialization.block.symbol_table->insert_decl(arg->ident.value, arg);
     }
 
-    analyzer.enter_decl_scope(*state.scope);
+    analyzer.enter_decl(&specialization);
     collect_in_block(specialization.block);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_closure_def(sir::FuncDef &func_def) {
-    func_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*func_def.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &func_def,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
-
-    func_def.parent = analyzer.get_decl_scope().decl.get_parent();
+    func_def.parent = analyzer.get_decl().get_parent();
 }
 
 void SymbolCollector::collect_decl(sir::Decl &decl, unsigned index) {
@@ -143,18 +104,9 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
         return;
     }
 
-    func_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*func_def.sema_index];
+    func_def.parent = analyzer.get_decl();
+    analyzer.enter_decl(&func_def);
 
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &func_def,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
-
-    func_def.parent = analyzer.get_decl_scope().decl;
-
-    analyzer.enter_decl_scope(*state.scope);
     sir::Symbol &cur_entry = get_symbol_table().symbols[func_def.ident.value];
 
     if (!cur_entry) {
@@ -195,77 +147,41 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
         }
     }
 
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
-    func_decl.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*func_decl.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &func_decl,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
-
-    func_decl.parent = analyzer.get_decl_scope().decl;
+    func_decl.parent = analyzer.get_decl();
 
     add_symbol(func_decl.ident.value, &func_decl);
     analyzer.add_symbol_def(&func_decl);
 
     if (auto proto_def = func_decl.parent.match<sir::ProtoDef>()) {
-        proto_def->func_decls.push_back(
-            sir::ProtoFuncDecl{
-                .decl = &func_decl,
-            }
-        );
+        proto_def->func_decls.push_back(sir::ProtoFuncDecl{.decl = &func_decl});
     }
 }
 
 void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
-    native_func_decl.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*native_func_decl.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &native_func_decl,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
+    native_func_decl.parent = analyzer.get_decl();
 
     add_symbol(native_func_decl.ident.value, &native_func_decl);
     analyzer.add_symbol_def(&native_func_decl);
 }
 
 void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
-    const_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*const_def.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &const_def,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
+    const_def.parent = analyzer.get_decl();
 
     add_symbol(const_def.ident.value, &const_def);
     analyzer.add_symbol_def(&const_def);
 }
 
 void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
-    struct_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*struct_def.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &struct_def,
-        .decl_block = &struct_def.block,
-    });
-
-    struct_def.parent = analyzer.get_decl_scope().decl;
+    struct_def.parent = analyzer.get_decl();
 
     if (!struct_def.is_generic()) {
-        analyzer.enter_decl_scope(*state.scope);
+        analyzer.enter_decl(&struct_def);
         collect_in_block(struct_def.block);
-        analyzer.exit_decl_scope();
+        analyzer.exit_decl();
     }
 
     add_symbol(struct_def.ident.value, &struct_def);
@@ -273,132 +189,70 @@ void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
 }
 
 void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
-    var_decl.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*var_decl.sema_index];
+    var_decl.parent = analyzer.get_decl();
 
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &var_decl,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
-
-    var_decl.parent = analyzer.get_decl_scope().decl;
-
-    if (!state.scope->decl.is<sir::StructDef>()) {
+    if (!var_decl.parent.is<sir::StructDef>()) {
         add_symbol(var_decl.ident.value, &var_decl);
         analyzer.add_symbol_def(&var_decl);
     }
 }
 
 void SymbolCollector::collect_native_var_decl(sir::NativeVarDecl &native_var_decl) {
-    native_var_decl.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*native_var_decl.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &native_var_decl,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
+    native_var_decl.parent = analyzer.get_decl();
 
     add_symbol(native_var_decl.ident.value, &native_var_decl);
     analyzer.add_symbol_def(&native_var_decl);
 }
 
 void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
-    enum_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*enum_def.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &enum_def,
-        .decl_block = &enum_def.block,
-    });
-
-    analyzer.enter_decl_scope(*state.scope);
-    collect_in_block(enum_def.block);
-    analyzer.exit_decl_scope();
+    enum_def.parent = analyzer.get_decl();
 
     add_symbol(enum_def.ident.value, &enum_def);
     analyzer.add_symbol_def(&enum_def);
+    
+    analyzer.enter_decl(&enum_def);
+    collect_in_block(enum_def.block);
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
-    enum_variant.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*enum_variant.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &enum_variant,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
-
-    enum_variant.parent = analyzer.get_decl_scope().decl;
+    enum_variant.parent = analyzer.get_decl();
 
     add_symbol(enum_variant.ident.value, &enum_variant);
     analyzer.add_symbol_def(&enum_variant);
 }
 
 void SymbolCollector::collect_union_def(sir::UnionDef &union_def) {
-    union_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*union_def.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &union_def,
-        .decl_block = &union_def.block,
-    });
-
-    analyzer.enter_decl_scope(*state.scope);
-    collect_in_block(union_def.block);
-    analyzer.exit_decl_scope();
+    union_def.parent = analyzer.get_decl();
 
     add_symbol(union_def.ident.value, &union_def);
     analyzer.add_symbol_def(&union_def);
+
+    analyzer.enter_decl(&union_def);
+    collect_in_block(union_def.block);
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_union_case(sir::UnionCase &union_case) {
-    union_case.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*union_case.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &union_case,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
-
-    union_case.parent = analyzer.get_decl_scope().decl;
+    union_case.parent = analyzer.get_decl();
 
     add_symbol(union_case.ident.value, &union_case);
     analyzer.add_symbol_def(&union_case);
 }
 
 void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
-    proto_def.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*proto_def.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &proto_def,
-        .decl_block = &proto_def.block,
-    });
-
-    analyzer.enter_decl_scope(*state.scope);
-    collect_in_block(proto_def.block);
-    analyzer.exit_decl_scope();
+    proto_def.parent = analyzer.get_decl();
 
     add_symbol(proto_def.ident.value, &proto_def);
     analyzer.add_symbol_def(&proto_def);
+    
+    analyzer.enter_decl(&proto_def);
+    collect_in_block(proto_def.block);
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
-    type_alias.sema_index = create_decl_state();
-    DeclState &state = analyzer.decl_states[*type_alias.sema_index];
-
-    state.scope = std::make_unique<DeclScope>(DeclScope{
-        .mod = analyzer.get_decl_scope().mod,
-        .decl = &type_alias,
-        .decl_block = analyzer.get_decl_scope().decl_block,
-    });
+    type_alias.parent = analyzer.get_decl();
 
     add_symbol(type_alias.ident.value, &type_alias);
     analyzer.add_symbol_def(&type_alias);
@@ -422,7 +276,7 @@ void SymbolCollector::collect_in_meta_if_stmt(sir::MetaIfStmt &meta_if_stmt, uns
     analyzer.guarded_scopes.push_back(
         GuardedScope{
             .guard_stmt_index = index,
-            .scope = analyzer.get_decl_scope(),
+            .decl = analyzer.get_decl(),
         }
     );
 
@@ -484,17 +338,6 @@ void SymbolCollector::collect_use_list(sir::UseList &use_list) {
     for (sir::UseItem &use_item : use_list.items) {
         collect_use_item(use_item);
     }
-}
-
-unsigned SymbolCollector::create_decl_state() {
-    analyzer.decl_states.push_back(
-        DeclState{
-            .stage = DeclStage::NAME,
-            .scope = nullptr,
-        }
-    );
-
-    return static_cast<unsigned>(analyzer.decl_states.size() - 1);
 }
 
 void SymbolCollector::add_symbol(std::string_view name, sir::Symbol symbol) {

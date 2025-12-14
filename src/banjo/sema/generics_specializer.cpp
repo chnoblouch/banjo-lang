@@ -53,7 +53,7 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
             .generic_params = {},
             .specializations = {},
             .parent_specialization = nullptr,
-            .sema_index = {},
+            .stage = sir::SemaStage::NAME,
         }
     );
 
@@ -67,18 +67,18 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
     clone->parent_specialization = &generic_func_def.specializations.back();
 
     SymbolCollector(analyzer).collect_func_specialization(generic_func_def, *clone);
-    analyzer.enter_decl_scope(*analyzer.decl_states[*clone->sema_index].scope);
+    analyzer.enter_decl(clone);
     DeclInterfaceAnalyzer(analyzer).visit_func_def(*clone);
 
-    if (analyzer.stage >= DeclStage::BODY) {
+    if (analyzer.stage >= sir::SemaStage::BODY) {
         DeclBodyAnalyzer(analyzer).visit_func_def(*clone);
     }
 
-    if (analyzer.stage >= DeclStage::RESOURCES) {
+    if (analyzer.stage >= sir::SemaStage::RESOURCES) {
         ResourceAnalyzer(analyzer).visit_func_def(*clone);
     }
 
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 
     if (analyzer.mode == Mode::COMPLETION) {
         analyzer.get_completion_infection().func_specializations[&generic_func_def] += 1;
@@ -102,6 +102,7 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
             .generic_params = {},
             .specializations = {},
             .parent_specialization = nullptr,
+            .stage = sir::SemaStage::NAME,
         }
     );
 
@@ -116,19 +117,19 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
 
     SymbolCollector(analyzer).collect_struct_specialization(generic_struct_def, *clone);
 
-    analyzer.enter_decl_scope(*analyzer.decl_states[*clone->sema_index].scope);
+    analyzer.enter_decl(clone);
     MetaExpansion(analyzer).run_on_decl_block(clone->block);
     UseResolver(analyzer).resolve_in_block(clone->block);
     TypeAliasResolver(analyzer).analyze_decl_block(clone->block);
-    analyzer.exit_decl_scope();
+    analyzer.exit_decl();
 
     DeclInterfaceAnalyzer(analyzer).visit_struct_def(*clone);
 
-    if (analyzer.stage >= DeclStage::BODY) {
+    if (analyzer.stage >= sir::SemaStage::BODY) {
         DeclBodyAnalyzer(analyzer).visit_struct_def(*clone);
     }
 
-    if (analyzer.stage >= DeclStage::RESOURCES) {
+    if (analyzer.stage >= sir::SemaStage::RESOURCES) {
         ResourceAnalyzer(analyzer).visit_struct_def(*clone);
     }
 

@@ -13,9 +13,7 @@ namespace sema {
 TypeAliasResolver::TypeAliasResolver(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result TypeAliasResolver::analyze_type_alias(sir::TypeAlias &type_alias) {
-    DeclState &state = analyzer.decl_states[*type_alias.sema_index];
-
-    if (state.stage >= DeclStage::BODY) {
+    if (type_alias.stage >= sir::SemaStage::BODY) {
         return Result::SUCCESS;
     }
 
@@ -27,7 +25,7 @@ Result TypeAliasResolver::analyze_type_alias(sir::TypeAlias &type_alias) {
     Result result = ExprAnalyzer(analyzer).analyze_type(type_alias.type);
     analyzer.decl_stack.pop_back();
 
-    state.stage = DeclStage::BODY;
+    type_alias.stage = sir::SemaStage::BODY;
     return result;
 }
 

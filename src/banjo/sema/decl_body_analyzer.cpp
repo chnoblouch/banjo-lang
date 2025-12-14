@@ -17,10 +17,8 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    DeclState &state = analyzer.decl_states[*func_def.sema_index];
-
-    if (state.stage < DeclStage::BODY) {
-        state.stage = DeclStage::BODY;
+    if (func_def.stage < sir::SemaStage::BODY) {
+        func_def.stage = sir::SemaStage::BODY;
     } else {
         return Result::SUCCESS;
     }
@@ -48,9 +46,7 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
-    DeclState &state = analyzer.decl_states[*const_def.sema_index];
-
-    if (state.stage >= DeclStage::BODY) {
+    if (const_def.stage >= sir::SemaStage::BODY) {
         return Result::SUCCESS;
     }
 
@@ -60,14 +56,14 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
 
     if (std::ranges::count(analyzer.decl_stack, sir::Decl{&const_def})) {
         analyzer.report_generator.report_err_cyclical_definition(const_def.value);
-        state.stage = DeclStage::BODY;
+        const_def.stage = sir::SemaStage::BODY;
         return Result::DEF_CYCLE;
     }
 
     Result result = ExprAnalyzer{analyzer}.analyze_value(const_def.value, const_def.type);
 
     if (result != Result::SUCCESS) {
-        state.stage = DeclStage::BODY;
+        const_def.stage = sir::SemaStage::BODY;
         return result;
     }
 
@@ -76,21 +72,19 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
     analyzer.decl_stack.pop_back();
 
     if (evaluated.result != Result::SUCCESS) {
-        state.stage = DeclStage::BODY;
+        const_def.stage = sir::SemaStage::BODY;
         return evaluated.result;
     }
 
     const_def.value = evaluated.expr;
-    state.stage = DeclStage::BODY;
+    const_def.stage = sir::SemaStage::BODY;
 
     return result;
 }
 
 Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
-    DeclState &state = analyzer.decl_states[*struct_def.sema_index];
-
-    if (state.stage < DeclStage::BODY) {
-        state.stage = DeclStage::BODY;
+    if (struct_def.stage < sir::SemaStage::BODY) {
+        struct_def.stage = sir::SemaStage::BODY;
     } else {
         return Result::SUCCESS;
     }
@@ -147,10 +141,8 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Proto
 }
 
 Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*out_decl*/) {
-    DeclState &state = analyzer.decl_states[*var_decl.sema_index];
-
-    if (state.stage < DeclStage::BODY) {
-        state.stage = DeclStage::BODY;
+    if (var_decl.stage < sir::SemaStage::BODY) {
+        var_decl.stage = sir::SemaStage::BODY;
     } else {
         return Result::SUCCESS;
     }
@@ -184,10 +176,8 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
 }
 
 Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
-    DeclState &state = analyzer.decl_states[*enum_def.sema_index];
-
-    if (state.stage < DeclStage::BODY) {
-        state.stage = DeclStage::BODY;
+    if (enum_def.stage < sir::SemaStage::BODY) {
+        enum_def.stage = sir::SemaStage::BODY;
     } else {
         return Result::SUCCESS;
     }

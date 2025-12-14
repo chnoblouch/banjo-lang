@@ -15,10 +15,8 @@ namespace sema {
 DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    DeclState &state = analyzer.decl_states[*func_def.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (func_def.stage < sir::SemaStage::INTERFACE) {
+        func_def.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -39,15 +37,12 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
-
     return Result::SUCCESS;
 }
 
 Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
-    DeclState &state = analyzer.decl_states[*func_decl.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (func_decl.stage < sir::SemaStage::INTERFACE) {
+        func_decl.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -66,10 +61,8 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
 }
 
 Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
-    DeclState &state = analyzer.decl_states[*native_func_decl.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (native_func_decl.stage < sir::SemaStage::INTERFACE) {
+        native_func_decl.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -84,10 +77,8 @@ Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &nati
 }
 
 Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
-    DeclState &state = analyzer.decl_states[*const_def.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (const_def.stage < sir::SemaStage::INTERFACE) {
+        const_def.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -98,10 +89,8 @@ Result DeclInterfaceAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
 }
 
 Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
-    DeclState &state = analyzer.decl_states[*struct_def.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (struct_def.stage < sir::SemaStage::INTERFACE) {
+        struct_def.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -156,10 +145,8 @@ void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir:
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {
-    DeclState &state = analyzer.decl_states[*var_decl.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (var_decl.stage < sir::SemaStage::INTERFACE) {
+        var_decl.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -188,24 +175,19 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
 }
 
 Result DeclInterfaceAnalyzer::analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) {
-    DeclState &state = analyzer.decl_states[*native_var_decl.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (native_var_decl.stage < sir::SemaStage::INTERFACE) {
+        native_var_decl.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
 
     Result result = ExprAnalyzer(analyzer).analyze_type(native_var_decl.type);
-
     return result;
 }
 
 Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_variant) {
-    DeclState &state = analyzer.decl_states[*enum_variant.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (enum_variant.stage < sir::SemaStage::INTERFACE) {
+        enum_variant.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }
@@ -229,10 +211,8 @@ Result DeclInterfaceAnalyzer::analyze_enum_variant(sir::EnumVariant &enum_varian
 }
 
 Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
-    DeclState &state = analyzer.decl_states[*union_case.sema_index];
-
-    if (state.stage < DeclStage::INTERFACE) {
-        state.stage = DeclStage::INTERFACE;
+    if (union_case.stage < sir::SemaStage::INTERFACE) {
+        union_case.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
     }

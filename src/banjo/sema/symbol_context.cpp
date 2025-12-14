@@ -61,12 +61,12 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
         auto iter = symbol_table.guarded_scopes.find(name);
         if (iter != symbol_table.guarded_scopes.end()) {
             GuardedScope &guarded_scope = analyzer.guarded_scopes[iter->second];
-            sir::DeclBlock &block = *guarded_scope.scope.decl_block;
+            sir::DeclBlock &block = *guarded_scope.decl.get_decl_block();
             unsigned guard_stmt_index = guarded_scope.guard_stmt_index;
 
-            analyzer.enter_decl_scope(guarded_scope.scope);
+            analyzer.enter_decl(guarded_scope.decl);
             MetaExpansion(analyzer).evaluate_meta_if_stmt(block, guard_stmt_index);
-            analyzer.exit_decl_scope();
+            analyzer.exit_decl();
 
             result.symbol = symbol_table.look_up(name);
         }

@@ -18,10 +18,8 @@ namespace sema {
 ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    DeclState &state = analyzer.decl_states[*func_def.sema_index];
-
-    if (state.stage < DeclStage::RESOURCES) {
-        state.stage = DeclStage::RESOURCES;
+    if (func_def.stage < sir::SemaStage::RESOURCES) {
+        func_def.stage = sir::SemaStage::RESOURCES;
     } else {
         return Result::SUCCESS;
     }

@@ -21,6 +21,7 @@ private:
 
 public:
     SymbolCollector(SemanticAnalyzer &analyzer);
+    
     void collect(const std::vector<sir::Module *> &mods);
     void collect_in_mod(sir::Module &mod);
     void collect_in_block(sir::DeclBlock &decl_block);
@@ -50,8 +51,6 @@ public:
     void collect_use_rebind(sir::UseRebind &use_rebind);
     void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr);
     void collect_use_list(sir::UseList &use_list);
-
-    unsigned create_decl_state();
 
     void add_symbol(std::string_view name, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();

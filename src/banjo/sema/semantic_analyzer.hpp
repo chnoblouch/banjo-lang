@@ -8,16 +8,12 @@
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/target/target.hpp"
-#include "banjo/utils/typed_arena.hpp"
 
 #include <cstddef>
-#include <memory>
 #include <set>
 #include <stack>
 #include <string_view>
-#include <tuple>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -45,26 +41,9 @@ enum class Result {
     DEF_CYCLE,
 };
 
-enum class DeclStage {
-    NAME,
-    INTERFACE,
-    BODY,
-    RESOURCES,
-};
-
-struct DeclScope {
-    sir::Module *mod;
-    sir::Symbol decl = nullptr;
-    sir::DeclBlock *decl_block = nullptr;
-};
-
-struct DeclState {
-    DeclStage stage;
-    std::unique_ptr<DeclScope> scope;
-};
-
 struct Scope {
-    DeclScope *decl_scope;
+    sir::Symbol decl;
+    sir::DeclBlock *decl_block;
     sir::Block *block;
     sir::SymbolTable *symbol_table;
     ClosureContext *closure_ctx;
@@ -72,7 +51,7 @@ struct Scope {
 
 struct GuardedScope {
     unsigned guard_stmt_index;
-    DeclScope &scope;
+    sir::Symbol decl;
 };
 
 struct CompletionInfection {
@@ -123,14 +102,11 @@ private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::unordered_map<std::string_view, sir::Expr> meta_field_types;
 
-    DeclStage stage;
+    sir::SemaStage stage;
 
     sir::Module *mod;
     std::vector<sir::Decl> decl_stack;
     std::stack<Scope> scope_stack;
-
-    std::vector<DeclState> decl_states;
-    utils::TypedArena<ClosureContext> closure_ctxs;
 
     std::set<const sir::Decl *> blocked_decls;
     std::vector<GuardedScope> guarded_scopes;
@@ -159,9 +135,11 @@ public:
 
 private:
     sir::Module &get_mod() { return *mod; }
-    DeclScope &get_decl_scope() { return *scope_stack.top().decl_scope; }
-    void enter_decl_scope(DeclScope &decl_scope);
-    void exit_decl_scope();
+    sir::DeclBlock &get_decl_block() { return *scope_stack.top().decl_block; }
+
+    sir::Symbol get_decl() { return scope_stack.top().decl; }
+    void enter_decl(sir::Symbol decl);
+    void exit_decl();
 
     sir::Block &get_block() { return *scope_stack.top().block; }
     void enter_block(sir::Block &block);
@@ -176,7 +154,7 @@ private:
     void exit_closure_ctx() { scope_stack.pop(); }
 
     bool is_in_stmt_block() { return scope_stack.top().block; }
-    bool is_in_decl() { return scope_stack.top().decl_scope->decl; }
+    bool is_in_decl() { return !is_in_stmt_block(); }
     bool is_in_specialization();
 
     void populate_preamble_symbols();
@@ -217,8 +195,6 @@ private:
 
     std::string_view create_string(std::string_view value) { return get_mod().create_string(value); }
 };
-
-std::strong_ordering operator<=>(const DeclStage &lhs, const DeclStage &rhs);
 
 } // namespace sema
 

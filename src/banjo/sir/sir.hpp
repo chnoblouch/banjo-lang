@@ -10,7 +10,6 @@
 #include "banjo/utils/typed_arena.hpp"
 #include "banjo/utils/utils.hpp"
 
-#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <list>
@@ -426,6 +425,7 @@ public:
     Ident &get_ident();
     std::string get_name() const;
     Symbol get_parent() const;
+    Module &find_mod() const;
     Expr get_type();
     Symbol resolve() const;
     const SymbolTable *get_symbol_table() const;
@@ -441,6 +441,13 @@ public:
 
     template <typename T>
     UseItem(T value) : DynamicPointer(value) {}
+};
+
+enum class SemaStage {
+    NAME,
+    INTERFACE,
+    BODY,
+    RESOURCES,
 };
 
 struct DeclBlock {
@@ -1149,7 +1156,7 @@ struct FuncDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     Module &find_mod() const;
     bool is_generic() const { return !generic_params.empty(); }
@@ -1162,7 +1169,7 @@ struct FuncDecl {
     Ident ident;
     Symbol parent;
     FuncType type;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     bool is_method() const { return type.is_func_method(); }
 };
@@ -1170,17 +1177,19 @@ struct FuncDecl {
 struct NativeFuncDecl {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     FuncType type;
     Attributes *attrs = nullptr;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct ConstDef {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     Expr type;
     Expr value;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct StructDef {
@@ -1194,7 +1203,7 @@ struct StructDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
     Specialization<StructDef> *parent_specialization;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
@@ -1218,23 +1227,25 @@ struct VarDecl {
     Expr type;
     Expr value;
     Attributes *attrs = nullptr;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct NativeVarDecl {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     Expr type;
     Attributes *attrs = nullptr;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct EnumDef {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     DeclBlock block;
     std::vector<EnumVariant *> variants;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct EnumVariant {
@@ -1243,15 +1254,16 @@ struct EnumVariant {
     Symbol parent;
     Expr type;
     Expr value;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct UnionDef {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     DeclBlock block;
     std::vector<UnionCase *> cases;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     unsigned get_index(const UnionCase &case_) const;
 };
@@ -1267,7 +1279,7 @@ struct UnionCase {
     Ident ident;
     Symbol parent;
     std::vector<UnionCaseField> fields;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     std::optional<unsigned> find_field(std::string_view name) const;
 };
@@ -1275,9 +1287,10 @@ struct UnionCase {
 struct ProtoDef {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     DeclBlock block;
     std::vector<ProtoFuncDecl> func_decls;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     std::optional<unsigned> get_index(std::string_view name) const;
 };
@@ -1294,8 +1307,9 @@ struct ProtoFuncDecl {
 struct TypeAlias {
     ASTNode *ast_node;
     Ident ident;
+    Symbol parent;
     Expr type;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 };
 
 struct UseDecl {
@@ -1352,7 +1366,7 @@ struct Module {
 
     ModulePath path;
     DeclBlock block;
-    std::optional<unsigned> sema_index;
+    SemaStage stage;
 
     template <typename T>
     T *create(T value) {
@@ -1460,6 +1474,8 @@ const T *Expr::match_symbol() const {
         return nullptr;
     }
 }
+
+std::strong_ordering operator<=>(const SemaStage &lhs, const SemaStage &rhs);
 
 } // namespace sir
 

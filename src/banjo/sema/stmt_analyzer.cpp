@@ -137,7 +137,7 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 }
 
 void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
-    sir::FuncDef &func_def = analyzer.get_decl_scope().decl.as<sir::FuncDef>();
+    sir::FuncDef &func_def = analyzer.get_decl().as<sir::FuncDef>();
     sir::Expr return_type = func_def.type.return_type;
 
     if (return_stmt.value) {
