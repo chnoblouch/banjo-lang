@@ -1325,7 +1325,7 @@ void CLI::invoke_unix_linker() {
         args.push_back("-l" + library);
     }
 
-    args.insert(args.end(), linker_args.begin(), linker_args.end());
+    args.insert(args.end(), this->linker_args.begin(), this->linker_args.end());
 
     Command command{
         .executable = linker_path.string(),
@@ -1379,7 +1379,7 @@ void CLI::invoke_darwin_linker() {
         args.push_back(framework);
     }
 
-    args.insert(args.end(), linker_args.begin(), linker_args.end());
+    args.insert(args.end(), this->linker_args.begin(), this->linker_args.end());
 
     Command command{
         .executable = linker_path.string(),
