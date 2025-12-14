@@ -61,6 +61,10 @@ void CompletionEngine::complete_in_block(Request request, sir::SymbolTable &symb
     }
 
     for (const std::unique_ptr<SourceFile> &mod : workspace.get_mod_list()) {
+        if (mod.get() == &request.file) {
+            continue;
+        }
+
         for (auto &[name, symbol] : mod->sir_mod->block.symbol_table->symbols) {
             if (symbol.is_one_of<sir::UseIdent, sir::UseRebind>()) {
                 continue;
@@ -246,7 +250,7 @@ void CompletionEngine::collect_items(sir::SymbolTable &symbol_table, Options &op
     }
 }
 
-void CompletionEngine::try_collect_item(std::string name, sir::Symbol symbol, Options &options) {
+void CompletionEngine::try_collect_item(const std::string &name, sir::Symbol symbol, Options &options) {
     if (!options.include_uses && symbol.is_one_of<sir::UseIdent, sir::UseRebind>()) {
         return;
     }

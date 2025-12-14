@@ -69,7 +69,7 @@ private:
     void collect_value_members(lang::sir::StructDef &struct_def);
 
     void collect_items(lang::sir::SymbolTable &symbol_table, Options &options);
-    void try_collect_item(std::string name, lang::sir::Symbol symbol, Options &options);
+    void try_collect_item(const std::string &name, lang::sir::Symbol symbol, Options &options);
 
     void add_item(Item item);
 };
