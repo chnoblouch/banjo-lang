@@ -167,9 +167,16 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &bin
         LargeInt lhs_int = lhs.expr.as<sir::IntLiteral>().value;
         LargeInt rhs_int = rhs.expr.as<sir::IntLiteral>().value;
 
-        if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs_int == rhs_int);
-        else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs_int != rhs_int);
-        else ASSERT_UNREACHABLE;
+        switch (binary_expr.op) {
+            case sir::BinaryOp::ADD: return create_int_literal(lhs_int + rhs_int);
+            case sir::BinaryOp::SUB: return create_int_literal(lhs_int - rhs_int);
+            case sir::BinaryOp::MUL: return create_int_literal(lhs_int * rhs_int);
+            case sir::BinaryOp::DIV: return create_int_literal(lhs_int / rhs_int);
+            case sir::BinaryOp::MOD: return create_int_literal(lhs_int % rhs_int);
+            case sir::BinaryOp::EQ: return create_bool_literal(lhs_int == rhs_int);
+            case sir::BinaryOp::NE: return create_bool_literal(lhs_int != rhs_int);
+            default: ASSERT_UNREACHABLE;
+        }
     } else if (lhs.expr.is<sir::BoolLiteral>() && rhs.expr.is<sir::BoolLiteral>()) {
         bool lhs_bool = lhs.expr.as<sir::BoolLiteral>().value;
         bool rhs_bool = rhs.expr.as<sir::BoolLiteral>().value;

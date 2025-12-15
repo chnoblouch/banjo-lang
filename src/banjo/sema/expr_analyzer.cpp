@@ -606,6 +606,11 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
         rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, binary_expr.lhs.get_type());
     } else {
+        if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
+            binary_expr.type = binary_expr.lhs.get_type();
+            return Result::SUCCESS;
+        }
+
         lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
     }
@@ -614,8 +619,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return Result::ERROR;
     }
 
-    if (binary_expr.lhs.is_type() ||
-        (binary_expr.lhs.is<sir::BoolLiteral>() && binary_expr.rhs.is<sir::BoolLiteral>())) {
+    if (binary_expr.lhs.is_type()) {
         ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
         if (evaluated.result != Result::SUCCESS) {
             return evaluated.result;
@@ -636,50 +640,21 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
     }
 
-    std::initializer_list<sir::BinaryOp> arith_bitwise_ops{
-        sir::BinaryOp::ADD,
-        sir::BinaryOp::SUB,
-        sir::BinaryOp::MUL,
-        sir::BinaryOp::DIV,
-        sir::BinaryOp::MOD,
-        sir::BinaryOp::BIT_AND,
-        sir::BinaryOp::BIT_OR,
-        sir::BinaryOp::BIT_XOR,
-        sir::BinaryOp::SHL,
-        sir::BinaryOp::SHR,
-    };
-
-    std::initializer_list<sir::BinaryOp> comparison_ops{
-        sir::BinaryOp::EQ,
-        sir::BinaryOp::NE,
-        sir::BinaryOp::GT,
-        sir::BinaryOp::LT,
-        sir::BinaryOp::GE,
-        sir::BinaryOp::LE,
-    };
-
-    std::initializer_list<sir::BinaryOp> logical_ops{
-        sir::BinaryOp::AND,
-        sir::BinaryOp::OR,
-    };
-
-    if (Utils::is_one_of(binary_expr.op, arith_bitwise_ops)) {
+    if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
         if (lhs_type != rhs_type) {
-            if (!(lhs_type.is<sir::PointerType>() && rhs_type.is_int_type())) {
-                analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
-                return Result::ERROR;
-            }
+            analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
+            return Result::ERROR;
         }
 
         binary_expr.type = lhs_type;
-    } else if (Utils::is_one_of(binary_expr.op, comparison_ops)) {
+    } else if (binary_expr.is_comparison_op()) {
         if (lhs_type != rhs_type) {
             analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
             return Result::ERROR;
         }
 
         binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
-    } else if (Utils::is_one_of(binary_expr.op, logical_ops)) {
+    } else if (binary_expr.is_logical_op()) {
         if (!lhs_type.is_primitive_type(sir::Primitive::BOOL)) {
             analyzer.report_generator.report_err_expected_bool(binary_expr.lhs);
             lhs_result = Result::ERROR;
@@ -695,6 +670,8 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
 
         binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     return Result::SUCCESS;
@@ -2029,7 +2006,7 @@ bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
         return !dot_expr->lhs;
     }
 
-    return value.is<sir::IntLiteral>() || value.is<sir::FPLiteral>() || value.is<sir::NullLiteral>();
+    return value.get_type().is<sir::PseudoType>();
 }
 
 } // namespace sema

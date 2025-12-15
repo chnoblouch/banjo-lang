@@ -1,0 +1,53 @@
+# test:subtest
+# test:output "19"
+
+func main() {
+    print(10 + 9);
+}
+
+# test:subtest
+# test:output "15"
+
+func main() {
+    print(10 + 9 - 4);
+}
+
+# test:subtest
+# test:output "15"
+
+func main() {
+    var a: i64 = 10 + 9 - 4;
+    print(a);
+}
+
+# test:subtest
+# test:output "4.5"
+
+func main() {
+    print(3.0 * 1.5);
+}
+
+# test:subtest
+# test:output "3.5"
+
+func main() {
+    print(3.0 * 1.5 - 1.0);
+}
+
+# test:subtest
+# test:output "3.5"
+
+func main() {
+    var a: f64 = 3.0 * 1.5 - 1.0;
+    print(a);
+}
+
+# test:subtest
+# test:error 52:18 "cannot coerce int literal to type 'f64'"
+# test:error 52:23 "cannot coerce int literal to type 'f64'"
+
+# TODO: Only report one error here
+
+func main() {
+    var a: f64 = 10 + 2;
+}

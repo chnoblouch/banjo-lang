@@ -37,6 +37,7 @@ public:
     Result finalize_coercion(sir::StructLiteral &struct_literal, sir::Expr type);
     Result finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr type);
     Result finalize_coercion(sir::MapLiteral &map_literal, sir::Expr type, sir::Expr &out_expr);
+    Result finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr type);
     Result finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr type);
 
     Result finalize_default(sir::IntLiteral &int_literal);
@@ -49,6 +50,7 @@ public:
     Result finalize_default(sir::StructLiteral &struct_literal);
     Result finalize_default(sir::TupleExpr &tuple_literal);
     Result finalize_default(sir::MapLiteral &map_literal, sir::Expr &out_expr);
+    Result finalize_default(sir::BinaryExpr &binary_expr);
     Result finalize_default(sir::UnaryExpr &unary_expr);
     Result finalize_default(sir::DotExpr &dot_expr);
 

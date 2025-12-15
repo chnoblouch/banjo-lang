@@ -509,6 +509,48 @@ Symbol SymbolTable::look_up_local(std::string_view name) const {
     return iter == symbols.end() ? nullptr : iter->second.resolve();
 }
 
+bool BinaryExpr::is_arithmetic_op() {
+    switch (op) {
+        case sir::BinaryOp::ADD:
+        case sir::BinaryOp::SUB:
+        case sir::BinaryOp::MUL:
+        case sir::BinaryOp::DIV:
+        case sir::BinaryOp::MOD: return true;
+        default: return false;
+    }
+}
+
+bool BinaryExpr::is_bitwise_op() {
+    switch (op) {
+        case sir::BinaryOp::BIT_AND:
+        case sir::BinaryOp::BIT_OR:
+        case sir::BinaryOp::BIT_XOR:
+        case sir::BinaryOp::SHL:
+        case sir::BinaryOp::SHR: return true;
+        default: return false;
+    }
+}
+
+bool BinaryExpr::is_comparison_op() {
+    switch (op) {
+        case sir::BinaryOp::EQ:
+        case sir::BinaryOp::NE:
+        case sir::BinaryOp::GT:
+        case sir::BinaryOp::LT:
+        case sir::BinaryOp::GE:
+        case sir::BinaryOp::LE: return true;
+        default: return false;
+    }
+}
+
+bool BinaryExpr::is_logical_op() {
+    switch (op) {
+        case sir::BinaryOp::AND:
+        case sir::BinaryOp::OR: return true;
+        default: return false;
+    }
+}
+
 bool PseudoType::is_struct_by_default() const {
     switch (kind) {
         case PseudoTypeKind::ARRAY_LITERAL:

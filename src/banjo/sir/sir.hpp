@@ -736,6 +736,11 @@ struct BinaryExpr {
     Expr lhs;
     Expr rhs;
 
+    bool is_arithmetic_op();
+    bool is_bitwise_op();
+    bool is_comparison_op();
+    bool is_logical_op();
+
     bool operator==(const BinaryExpr &other) const { return op == other.op && lhs == other.lhs && rhs == other.rhs; }
     bool operator!=(const BinaryExpr &other) const { return !(*this == other); }
 };

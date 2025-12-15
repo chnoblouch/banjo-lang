@@ -17,6 +17,7 @@ class MetaExprEvaluator {
 
 private:
     SemanticAnalyzer &analyzer;
+    ASTNode *ast_node;
 
 public:
     MetaExprEvaluator(SemanticAnalyzer &analyzer);

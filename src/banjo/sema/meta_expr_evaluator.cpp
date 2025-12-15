@@ -19,6 +19,8 @@ MetaExprEvaluator::MetaExprEvaluator(SemanticAnalyzer &analyzer) : analyzer(anal
 Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Expr &out_expr) {
     Result partial_result;
 
+    ast_node = meta_field_expr.ast_node;
+
     sir::Expr base_expr = meta_field_expr.base.as<sir::MetaAccess>().expr;
     std::string_view field_name = meta_field_expr.field.value;
 
@@ -65,6 +67,8 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
 }
 
 Result MetaExprEvaluator::evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr) {
+    ast_node = meta_call_expr.ast_node;
+
     sir::MetaFieldExpr field_expr = meta_call_expr.callee.as<sir::MetaFieldExpr>();
     sir::Expr base_expr = field_expr.base.as<sir::MetaAccess>().expr;
     std::string_view callee_name = field_expr.field.value;
@@ -246,7 +250,7 @@ sir::Expr MetaExprEvaluator::compute_tuple_field(sir::Expr &base, std::span<sir:
 sir::Expr MetaExprEvaluator::create_int_literal(LargeInt value) {
     return analyzer.create(
         sir::IntLiteral{
-            .ast_node = nullptr,
+            .ast_node = ast_node,
             .type = nullptr,
             .value = value,
         }
@@ -256,7 +260,7 @@ sir::Expr MetaExprEvaluator::create_int_literal(LargeInt value) {
 sir::Expr MetaExprEvaluator::create_bool_literal(bool value) {
     return analyzer.create(
         sir::BoolLiteral{
-            .ast_node = nullptr,
+            .ast_node = ast_node,
             .type = nullptr,
             .value = value,
         }
@@ -266,7 +270,7 @@ sir::Expr MetaExprEvaluator::create_bool_literal(bool value) {
 sir::Expr MetaExprEvaluator::create_array_literal(std::span<sir::Expr> values) {
     return analyzer.create(
         sir::ArrayLiteral{
-            .ast_node = nullptr,
+            .ast_node = ast_node,
             .type = nullptr,
             .values = values,
         }
@@ -276,7 +280,7 @@ sir::Expr MetaExprEvaluator::create_array_literal(std::span<sir::Expr> values) {
 sir::Expr MetaExprEvaluator::create_string_literal(std::string_view value) {
     return analyzer.create(
         sir::StringLiteral{
-            .ast_node = nullptr,
+            .ast_node = ast_node,
             .type = nullptr,
             .value = analyzer.create_string(value),
         }
