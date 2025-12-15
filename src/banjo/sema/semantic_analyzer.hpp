@@ -110,7 +110,6 @@ private:
 
     std::set<const sir::Decl *> blocked_decls;
     std::vector<GuardedScope> guarded_scopes;
-    bool in_meta_expansion = false;
     unsigned loop_depth = 0;
 
 public:

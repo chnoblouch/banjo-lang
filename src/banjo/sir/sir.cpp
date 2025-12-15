@@ -455,8 +455,8 @@ Expr Symbol::get_type() {
 }
 
 Symbol Symbol::resolve() const {
-    if (auto use_ident = match<UseIdent>()) return use_ident->symbol;
-    else if (auto use_rebind = match<UseRebind>()) return use_rebind->symbol;
+    if (auto use_ident = match<UseIdent>()) return use_ident->symbol ? use_ident->symbol : *this;
+    else if (auto use_rebind = match<UseRebind>()) return use_rebind->symbol ? use_rebind->symbol : *this;
     else return *this;
 }
 

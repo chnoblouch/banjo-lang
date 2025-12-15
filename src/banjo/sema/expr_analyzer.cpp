@@ -1361,10 +1361,6 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return analyze_completion_token();
     }
 
-    if (analyzer.in_meta_expansion) {
-        UseResolver{analyzer}.resolve_in_block(analyzer.get_decl_block());
-    }
-
     SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up(ident_expr);
     sir::Symbol symbol = lookup_result.symbol;
 

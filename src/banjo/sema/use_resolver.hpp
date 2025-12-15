@@ -4,6 +4,8 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <vector>
+
 namespace banjo {
 
 namespace lang {
@@ -14,18 +16,20 @@ class UseResolver {
 
 private:
     SemanticAnalyzer &analyzer;
+    std::vector<sir::UseItem> item_stack;
 
 public:
     UseResolver(SemanticAnalyzer &analyzer);
     void resolve(const std::vector<sir::Module *> &mods);
     void resolve_in_block(sir::DeclBlock &decl_block);
+    Result resolve_use_decl(sir::UseDecl &use_decl);
 
 private:
-    void resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol);
-    void resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol);
-    void resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol);
-    void resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol);
-    void resolve_use_list(sir::UseList &use_list, sir::Symbol &symbol);
+    Result resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol);
+    Result resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol);
+    Result resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol);
+    Result resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol);
+    Result resolve_use_list(sir::UseList &use_list, sir::Symbol &symbol);
 
     sir::Symbol resolve_symbol(sir::Ident &ident, sir::Symbol &symbol);
     sir::Symbol resolve_module(sir::Ident &ident, sir::Symbol &symbol);

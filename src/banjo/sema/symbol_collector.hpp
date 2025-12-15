@@ -46,11 +46,11 @@ public:
     void collect_use_decl(sir::UseDecl &use_decl);
     void collect_in_meta_if_stmt(sir::MetaIfStmt &meta_if_stmt, unsigned index);
 
-    void collect_use_item(sir::UseItem &use_item);
-    void collect_use_ident(sir::UseIdent &use_ident);
-    void collect_use_rebind(sir::UseRebind &use_rebind);
-    void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr);
-    void collect_use_list(sir::UseList &use_list);
+    void collect_use_item(sir::UseItem &use_item, sir::UseDecl &parent);
+    void collect_use_ident(sir::UseIdent &use_ident, sir::UseDecl &parent);
+    void collect_use_rebind(sir::UseRebind &use_rebind, sir::UseDecl &parent);
+    void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::UseDecl &parent);
+    void collect_use_list(sir::UseList &use_list, sir::UseDecl &parent);
 
     void add_symbol(std::string_view name, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();

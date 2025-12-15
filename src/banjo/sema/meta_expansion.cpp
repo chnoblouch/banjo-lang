@@ -25,9 +25,6 @@ void MetaExpansion::run(const std::vector<sir::Module *> &mods) {
 }
 
 void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
-    bool prev_in_meta_expansion = analyzer.in_meta_expansion;
-    analyzer.in_meta_expansion = true;
-
     for (unsigned i = 0; i < decl_block.decls.size(); i++) {
         sir::Decl &decl = decl_block.decls[i];
 
@@ -59,8 +56,6 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 
         analyzer.blocked_decls.erase(&decl);
     }
-
-    analyzer.in_meta_expansion = prev_in_meta_expansion;
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index) {

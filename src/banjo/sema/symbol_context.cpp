@@ -2,6 +2,7 @@
 
 #include "banjo/sema/meta_expansion.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 
 namespace banjo::lang::sema {
@@ -60,6 +61,10 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
         result.symbol = try_resolve_meta_if(symbol_table, name);
     }
 
+    if (result.symbol) {
+        result.symbol = resolve_symbol(result.symbol);
+    }
+
     if (!result.symbol) {
         analyzer.report_generator.report_err_symbol_not_found(ident_expr);
 
@@ -87,6 +92,10 @@ SymbolLookupResult SymbolContext::look_up_rhs_local(sir::DotExpr &dot_expr, sir:
         .closure_ctx = nullptr,
     };
 
+    if (result.symbol) {
+        result.symbol = resolve_symbol(result.symbol);
+    }
+
     if (!result.symbol) {
         result.symbol = try_resolve_meta_if(symbol_table, name);
     }
@@ -109,6 +118,18 @@ sir::Symbol SymbolContext::try_resolve_meta_if(sir::SymbolTable &symbol_table, s
     analyzer.exit_decl();
 
     return symbol_table.look_up(name);
+}
+
+sir::Symbol SymbolContext::resolve_symbol(sir::Symbol symbol) {
+    if (auto use_ident = symbol.match<sir::UseIdent>()) {
+        Result result = UseResolver{analyzer}.resolve_use_decl(use_ident->parent);
+        return result == Result::SUCCESS ? use_ident->symbol : nullptr;
+    } else if (auto use_ident = symbol.match<sir::UseIdent>()) {
+        Result result = UseResolver{analyzer}.resolve_use_decl(use_ident->parent);
+        return result == Result::SUCCESS ? use_ident->symbol : nullptr;
+    } else {
+        return symbol;
+    }
 }
 
 sir::GuardedSymbol::TruthTable SymbolContext::build_condition(sir::Expr expr) {

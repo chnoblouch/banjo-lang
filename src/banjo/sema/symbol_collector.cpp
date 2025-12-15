@@ -4,6 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -209,7 +210,7 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
 
     add_symbol(enum_def.ident.value, &enum_def);
     analyzer.add_symbol_def(&enum_def);
-    
+
     analyzer.enter_decl(&enum_def);
     collect_in_block(enum_def.block);
     analyzer.exit_decl();
@@ -245,7 +246,7 @@ void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
 
     add_symbol(proto_def.ident.value, &proto_def);
     analyzer.add_symbol_def(&proto_def);
-    
+
     analyzer.enter_decl(&proto_def);
     collect_in_block(proto_def.block);
     analyzer.exit_decl();
@@ -259,6 +260,8 @@ void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
 }
 
 void SymbolCollector::collect_use_decl(sir::UseDecl &use_decl) {
+    use_decl.parent = analyzer.get_decl();
+
     if (auto use_ident = use_decl.root_item.match<sir::UseIdent>()) {
         if (analyzer.mode == Mode::COMPLETION && use_ident->is_completion_token()) {
             analyzer.completion_context = CompleteInUse{};
@@ -266,7 +269,7 @@ void SymbolCollector::collect_use_decl(sir::UseDecl &use_decl) {
         }
     }
 
-    collect_use_item(use_decl.root_item);
+    collect_use_item(use_decl.root_item, use_decl);
 }
 
 void SymbolCollector::collect_in_meta_if_stmt(sir::MetaIfStmt &meta_if_stmt, unsigned index) {
@@ -291,22 +294,25 @@ void SymbolCollector::collect_in_meta_if_stmt(sir::MetaIfStmt &meta_if_stmt, uns
     guarded_scope = prev_guarded_scope;
 }
 
-void SymbolCollector::collect_use_item(sir::UseItem &use_item) {
-    if (auto use_ident = use_item.match<sir::UseIdent>()) collect_use_ident(*use_ident);
-    else if (auto use_rebind = use_item.match<sir::UseRebind>()) collect_use_rebind(*use_rebind);
-    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) collect_use_dot_expr(*use_dot_expr);
-    else if (auto use_list = use_item.match<sir::UseList>()) collect_use_list(*use_list);
+void SymbolCollector::collect_use_item(sir::UseItem &use_item, sir::UseDecl &parent) {
+    if (auto use_ident = use_item.match<sir::UseIdent>()) collect_use_ident(*use_ident, parent);
+    else if (auto use_rebind = use_item.match<sir::UseRebind>()) collect_use_rebind(*use_rebind, parent);
+    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) collect_use_dot_expr(*use_dot_expr, parent);
+    else if (auto use_list = use_item.match<sir::UseList>()) collect_use_list(*use_list, parent);
+    else ASSERT_UNREACHABLE;
 }
 
-void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident) {
+void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident, sir::UseDecl &parent) {
+    use_ident.parent = parent;
     add_symbol(use_ident.ident.value, &use_ident);
 }
 
-void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind) {
+void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind, sir::UseDecl &parent) {
+    use_rebind.parent = parent;
     add_symbol(use_rebind.local_ident.value, &use_rebind);
 }
 
-void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
+void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::UseDecl &parent) {
     if (auto use_ident = use_dot_expr.rhs.match<sir::UseIdent>()) {
         if (analyzer.mode == Mode::COMPLETION && use_ident->is_completion_token()) {
             analyzer.completion_context = CompleteAfterUseDot{
@@ -316,9 +322,9 @@ void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
             return;
         }
 
-        collect_use_ident(*use_ident);
+        collect_use_ident(*use_ident, parent);
     } else if (auto use_rebind = use_dot_expr.rhs.match<sir::UseRebind>()) {
-        collect_use_rebind(*use_rebind);
+        collect_use_rebind(*use_rebind, parent);
     } else if (auto use_list = use_dot_expr.rhs.match<sir::UseList>()) {
         if (analyzer.mode == Mode::COMPLETION) {
             for (sir::UseItem &use_item : use_list->items) {
@@ -330,13 +336,13 @@ void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr) {
             }
         }
 
-        collect_use_list(*use_list);
+        collect_use_list(*use_list, parent);
     }
 }
 
-void SymbolCollector::collect_use_list(sir::UseList &use_list) {
+void SymbolCollector::collect_use_list(sir::UseList &use_list, sir::UseDecl &parent) {
     for (sir::UseItem &use_item : use_list.items) {
-        collect_use_item(use_item);
+        collect_use_item(use_item, parent);
     }
 }
 

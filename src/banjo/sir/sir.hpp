@@ -1319,11 +1319,13 @@ struct TypeAlias {
 
 struct UseDecl {
     ASTNode *ast_node;
+    Symbol parent;
     UseItem root_item;
 };
 
 struct UseIdent {
     Ident ident;
+    UseDecl parent;
     Symbol symbol;
 
     bool is_completion_token() const { return ident.is_completion_token(); }
@@ -1333,6 +1335,7 @@ struct UseRebind {
     ASTNode *ast_node;
     Ident target_ident;
     Ident local_ident;
+    UseDecl parent;
     Symbol symbol;
 };
 

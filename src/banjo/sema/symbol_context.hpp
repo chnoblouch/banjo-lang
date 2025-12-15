@@ -47,6 +47,7 @@ public:
 
 private:
     sir::Symbol try_resolve_meta_if(sir::SymbolTable &symbol_table, std::string_view name);
+    sir::Symbol resolve_symbol(sir::Symbol symbol);
 
     sir::GuardedSymbol::TruthTable build_condition(sir::Expr expr);
     sir::GuardedSymbol::TruthTable build_condition(sir::BinaryExpr &binary_expr);
