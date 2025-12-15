@@ -17,18 +17,20 @@ class UseResolver {
 private:
     SemanticAnalyzer &analyzer;
     std::vector<sir::UseItem> item_stack;
+    sir::Symbol symbol_to_analyze = nullptr;
 
 public:
     UseResolver(SemanticAnalyzer &analyzer);
     void resolve(const std::vector<sir::Module *> &mods);
     void resolve_in_block(sir::DeclBlock &decl_block);
-    Result resolve_use_decl(sir::UseDecl &use_decl);
+    Result resolve_use_decl_remotely(sir::UseDecl &use_decl, sir::Symbol symbol_to_analyze);
 
 private:
-    Result resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol);
-    Result resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol);
+    Result resolve_use_decl(sir::UseDecl &use_decl);
+    Result resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol, bool is_leaf);
+    Result resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol, bool is_leaf);
     Result resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol);
-    Result resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol);
+    Result resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol, bool is_leaf);
     Result resolve_use_list(sir::UseList &use_list, sir::Symbol &symbol);
 
     sir::Symbol resolve_symbol(sir::Ident &ident, sir::Symbol &symbol);

@@ -122,11 +122,11 @@ sir::Symbol SymbolContext::try_resolve_meta_if(sir::SymbolTable &symbol_table, s
 
 sir::Symbol SymbolContext::resolve_symbol(sir::Symbol symbol) {
     if (auto use_ident = symbol.match<sir::UseIdent>()) {
-        Result result = UseResolver{analyzer}.resolve_use_decl(use_ident->parent);
+        Result result = UseResolver{analyzer}.resolve_use_decl_remotely(use_ident->parent, symbol);
         return result == Result::SUCCESS ? use_ident->symbol : nullptr;
-    } else if (auto use_ident = symbol.match<sir::UseIdent>()) {
-        Result result = UseResolver{analyzer}.resolve_use_decl(use_ident->parent);
-        return result == Result::SUCCESS ? use_ident->symbol : nullptr;
+    } else if (auto use_rebind = symbol.match<sir::UseRebind>()) {
+        Result result = UseResolver{analyzer}.resolve_use_decl_remotely(use_rebind->parent, symbol);
+        return result == Result::SUCCESS ? use_rebind->symbol : nullptr;
     } else {
         return symbol;
     }

@@ -1670,6 +1670,7 @@ sir::UseItem SIRGenerator::generate_use_ident(ASTNode *node) {
         sir::UseIdent{
             .ident = generate_ident(node),
             .symbol = nullptr,
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -1684,6 +1685,7 @@ sir::UseItem SIRGenerator::generate_use_rebind(ASTNode *node) {
             .target_ident = generate_ident(target_name_node),
             .local_ident = generate_ident(local_name_node),
             .symbol = nullptr,
+            .stage = sir::SemaStage::NAME,
         }
     );
 }

@@ -1327,6 +1327,7 @@ struct UseIdent {
     Ident ident;
     UseDecl parent;
     Symbol symbol;
+    SemaStage stage;
 
     bool is_completion_token() const { return ident.is_completion_token(); }
 };
@@ -1337,6 +1338,7 @@ struct UseRebind {
     Ident local_ident;
     UseDecl parent;
     Symbol symbol;
+    SemaStage stage;
 };
 
 struct UseDotExpr {

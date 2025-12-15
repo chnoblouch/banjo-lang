@@ -306,6 +306,7 @@ UseIdent *Cloner::clone_use_ident(const UseIdent &use_ident) {
         sir::UseIdent{
             .ident = clone_ident(use_ident.ident),
             .symbol = nullptr,
+            .stage = sir::SemaStage::NAME,
         }
     );
 }
@@ -317,6 +318,7 @@ UseRebind *Cloner::clone_use_rebind(const UseRebind &use_rebind) {
             .target_ident = clone_ident(use_rebind.target_ident),
             .local_ident = clone_ident(use_rebind.local_ident),
             .symbol = nullptr,
+            .stage = sir::SemaStage::NAME,
         }
     );
 }

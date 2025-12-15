@@ -1,4 +1,5 @@
 #include "use_resolver.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {
@@ -25,21 +26,40 @@ void UseResolver::resolve_in_block(sir::DeclBlock &decl_block) {
     }
 }
 
+Result UseResolver::resolve_use_decl_remotely(sir::UseDecl &use_decl, sir::Symbol symbol_to_analyze) {
+    this->symbol_to_analyze = symbol_to_analyze;
+    Result result = resolve_use_decl(use_decl);
+    this->symbol_to_analyze = nullptr;
+
+    return result;
+}
+
 Result UseResolver::resolve_use_decl(sir::UseDecl &use_decl) {
     sir::Symbol symbol = nullptr;
-    return resolve_use_item(use_decl.root_item, symbol);
+    return resolve_use_item(use_decl.root_item, symbol, true);
 }
 
-Result UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol) {
-    if (auto use_ident = use_item.match<sir::UseIdent>()) return resolve_use_ident(*use_ident, symbol);
-    else if (auto use_rebind = use_item.match<sir::UseRebind>()) return resolve_use_rebind(*use_rebind, symbol);
-    else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) return resolve_use_dot_expr(*use_dot_expr, symbol);
-    else if (auto use_list = use_item.match<sir::UseList>()) return resolve_use_list(*use_list, symbol);
-    else ASSERT_UNREACHABLE;
+Result UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol, bool is_leaf) {
+    if (auto use_ident = use_item.match<sir::UseIdent>()) {
+        return resolve_use_ident(*use_ident, symbol, is_leaf);
+    } else if (auto use_rebind = use_item.match<sir::UseRebind>()) {
+        return resolve_use_rebind(*use_rebind, symbol);
+    } else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) {
+        return resolve_use_dot_expr(*use_dot_expr, symbol, is_leaf);
+    } else if (auto use_list = use_item.match<sir::UseList>()) {
+        return resolve_use_list(*use_list, symbol);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
-Result UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol) {
-    if (use_ident.symbol) {
+Result UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &symbol, bool is_leaf) {
+    if (use_ident.stage >= sir::SemaStage::BODY) {
+        symbol = use_ident.symbol;
+        return Result::SUCCESS;
+    }
+
+    if (is_leaf && symbol_to_analyze && symbol_to_analyze != sir::Symbol{&use_ident}) {
         return Result::SUCCESS;
     }
 
@@ -54,11 +74,18 @@ Result UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &sym
     analyzer.add_symbol_use(use_ident.ident.ast_node, symbol);
 
     item_stack.pop_back();
+
+    use_ident.stage = sir::SemaStage::BODY;
     return Result::SUCCESS;
 }
 
 Result UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol) {
-    if (use_rebind.symbol) {
+    if (use_rebind.stage >= sir::SemaStage::BODY) {
+        symbol = use_rebind.symbol;
+        return Result::SUCCESS;
+    }
+
+    if (symbol_to_analyze && symbol_to_analyze != sir::Symbol{&use_rebind}) {
         return Result::SUCCESS;
     }
 
@@ -74,18 +101,20 @@ Result UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &
     analyzer.add_symbol_use(use_rebind.local_ident.ast_node, symbol);
 
     item_stack.pop_back();
+
+    use_rebind.stage = sir::SemaStage::BODY;
     return Result::SUCCESS;
 }
 
-Result UseResolver::resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol) {
+Result UseResolver::resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol, bool is_leaf) {
     Result partial_result;
 
-    partial_result = resolve_use_item(use_dot_expr.lhs, symbol);
+    partial_result = resolve_use_item(use_dot_expr.lhs, symbol, false);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
 
-    partial_result = resolve_use_item(use_dot_expr.rhs, symbol);
+    partial_result = resolve_use_item(use_dot_expr.rhs, symbol, is_leaf);
     if (partial_result != Result::SUCCESS) {
         return partial_result;
     }
@@ -99,7 +128,7 @@ Result UseResolver::resolve_use_list(sir::UseList &use_list, sir::Symbol &symbol
 
     for (sir::UseItem &use_item : use_list.items) {
         sir::Symbol symbol_copy = symbol;
-        partial_result = resolve_use_item(use_item, symbol_copy);
+        partial_result = resolve_use_item(use_item, symbol_copy, true);
 
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
@@ -114,19 +143,6 @@ sir::Symbol UseResolver::resolve_symbol(sir::Ident &ident, sir::Symbol &symbol) 
         return resolve_module(ident, symbol);
     }
 
-    sir::Symbol new_symbol = symbol.get_symbol_table()->look_up_local(ident.value);
-
-    if (new_symbol) {
-        if (auto use_ident = new_symbol.match<sir::UseIdent>()) {
-            resolve_use_decl(use_ident->parent);
-        } else if (auto use_rebind = new_symbol.match<sir::UseRebind>()) {
-            resolve_use_decl(use_rebind->parent);
-        }
-
-        symbol = new_symbol;
-        return new_symbol;
-    }
-
     if (auto mod = symbol.match<sir::Module>()) {
         ModulePath sub_mod_path = mod->path;
         sub_mod_path.append(ident.value);
@@ -136,6 +152,21 @@ sir::Symbol UseResolver::resolve_symbol(sir::Ident &ident, sir::Symbol &symbol) 
             symbol = sub_mod;
             return sub_mod;
         }
+    }
+
+    sir::Symbol new_symbol = symbol.get_symbol_table()->look_up_local(ident.value);
+
+    if (new_symbol) {
+        if (auto use_ident = new_symbol.match<sir::UseIdent>()) {
+            resolve_use_decl(use_ident->parent);
+            new_symbol = use_ident->symbol;
+        } else if (auto use_rebind = new_symbol.match<sir::UseRebind>()) {
+            resolve_use_decl(use_rebind->parent);
+            new_symbol = use_rebind->symbol;
+        }
+
+        symbol = new_symbol;
+        return new_symbol;
     }
 
     analyzer.report_generator.report_err_symbol_not_found_in(ident, symbol.get_name());
