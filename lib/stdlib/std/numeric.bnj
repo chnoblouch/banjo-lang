@@ -16,15 +16,11 @@ const U32_MAX: u32 = 0xFFFFFFFF;
 const U64_MIN: u64 = 0x0000000000000000;
 const U64_MAX: u64 = 0xFFFFFFFFFFFFFFFF;
 
-# TODO: Fix const evaluation
+const F32_NAN: f32 = 0.0 / 0.0;
+const F32_INFINITY: f32 = 1.0 / 0.0;
 
-# const F32_NAN: f32 = 0.0 / 0.0;
-# const F32_INFINITY: f32 = 1.0 / 0.0;
-# const F32_NEG_INFINITY: f32 = -1.0 / 0.0;
-
-# const F64_NAN: f64 = 0.0 / 0.0;
-# const F64_INFINITY: f64 = 1.0 / 0.0;
-# const F64_NEG_INFINITY: f64 = -1.0 / 0.0;
+const F64_NAN: f64 = 0.0 / 0.0;
+const F64_INFINITY: f64 = 1.0 / 0.0;
 
 pub func u16_from_bytes_be(bytes: [u8; 2]) -> u16 {
     return bytes[0] as u16 << 8 |

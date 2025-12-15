@@ -177,6 +177,19 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &bin
             case sir::BinaryOp::NE: return create_bool_literal(lhs_int != rhs_int);
             default: ASSERT_UNREACHABLE;
         }
+    } else if (lhs.expr.is<sir::FPLiteral>() && rhs.expr.is<sir::FPLiteral>()) {
+        double lhs_fp = lhs.expr.as<sir::FPLiteral>().value;
+        double rhs_fp = rhs.expr.as<sir::FPLiteral>().value;
+
+        switch (binary_expr.op) {
+            case sir::BinaryOp::ADD: return sir::Expr{&binary_expr};
+            case sir::BinaryOp::SUB: return sir::Expr{&binary_expr};
+            case sir::BinaryOp::MUL: return sir::Expr{&binary_expr};
+            case sir::BinaryOp::DIV: return sir::Expr{&binary_expr};
+            case sir::BinaryOp::EQ: return create_bool_literal(lhs_fp == rhs_fp);
+            case sir::BinaryOp::NE: return create_bool_literal(lhs_fp != rhs_fp);
+            default: ASSERT_UNREACHABLE;
+        }
     } else if (lhs.expr.is<sir::BoolLiteral>() && rhs.expr.is<sir::BoolLiteral>()) {
         bool lhs_bool = lhs.expr.as<sir::BoolLiteral>().value;
         bool rhs_bool = rhs.expr.as<sir::BoolLiteral>().value;
@@ -189,7 +202,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &bin
         else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs.expr != rhs.expr);
         else ASSERT_UNREACHABLE;
     } else {
-        return create_bool_literal(false);
+        return create_int_literal(false);
     }
 }
 
