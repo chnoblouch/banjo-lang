@@ -11,7 +11,7 @@ namespace banjo::lang {
 struct ASTNode;
 
 struct TokenList {
-    static constexpr unsigned EOF_ZONE_SIZE = 1;
+    static constexpr unsigned EOF_ZONE_SIZE = 2;
 
     struct Span {
         unsigned first;

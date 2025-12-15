@@ -3,6 +3,7 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/expr_parser.hpp"
+#include "banjo/parser/node_builder.hpp"
 
 namespace banjo {
 
@@ -31,33 +32,32 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
     bool generic;
     bool head_valid = parse_func_head(node, generic);
 
+    if (!head_valid) {
+        node.append_child(parser.create_dummy_block());
+        ASTNodeType type = generic ? AST_GENERIC_FUNCTION_DEFINITION : AST_FUNCTION_DEFINITION;
+        return {node.build(type), false};
+    }
+
     if (stream.get()->is(TKN_SEMI)) {
         node.consume(); // Consume ';'
-        return {node.build(AST_FUNC_DECL), head_valid};
+        return {node.build(AST_FUNC_DECL), true};
     } else if (!stream.get()->is(TKN_LBRACE)) {
         if (stream.previous()->end_of_line) {
-            return {node.build(AST_FUNC_DECL), head_valid};
+            return {node.build(AST_FUNC_DECL), true};
         }
 
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'{'");
-
         node.append_child(parser.create_dummy_block());
-        if (generic) {
-            return {node.build(AST_GENERIC_FUNCTION_DEFINITION), false};
-        } else {
-            return {node.build(AST_FUNCTION_DEFINITION), false};
-        }
+
+        ASTNodeType type = generic ? AST_GENERIC_FUNCTION_DEFINITION : AST_FUNCTION_DEFINITION;
+        return {node.build(type), false};
     }
 
     ParseResult result = parser.parse_block();
     node.append_child(result.node);
 
-    bool is_valid = head_valid && result.is_valid;
-    if (generic) {
-        return {node.build(AST_GENERIC_FUNCTION_DEFINITION), is_valid};
-    } else {
-        return {node.build(AST_FUNCTION_DEFINITION), is_valid};
-    }
+    ASTNodeType type = generic ? AST_GENERIC_FUNCTION_DEFINITION : AST_FUNCTION_DEFINITION;
+    return {node.build(type), result.is_valid};
 }
 
 ParseResult DeclParser::parse_const() {
@@ -402,6 +402,8 @@ bool DeclParser::parse_func_head(NodeBuilder &node, bool &generic) {
         generic = true;
 
         ParseResult result = parse_generic_param_list();
+        node.append_child(result.node);
+
         if (!result.is_valid) {
             node.append_child(parser.create_node(AST_PARAM_LIST));
             node.append_child(parser.create_node(AST_EMPTY));
