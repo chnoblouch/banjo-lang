@@ -1,7 +1,7 @@
 use std.config;
 use c;
 
-# meta if config.OS == config.MACOS {
+meta if config.OS == config.MACOS {
     struct Sockaddr {
         var len: u8;
         var family: u8;
@@ -34,4 +34,4 @@ use c;
     pub func errno() -> i32 {
         return *__error();
     }
-# }
+}
