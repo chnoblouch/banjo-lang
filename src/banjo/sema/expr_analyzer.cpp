@@ -1441,6 +1441,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return Result::SUCCESS;
     }
 
+    // TODO: Add remaining symbol types
     if (auto const_def = symbol.match<sir::ConstDef>()) {
         DeclInterfaceAnalyzer{analyzer}.visit_const_def(*const_def);
     } else if (auto type_alias = symbol.match<sir::TypeAlias>()) {

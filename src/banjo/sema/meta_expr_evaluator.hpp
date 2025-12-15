@@ -26,6 +26,7 @@ public:
 
 private:
     sir::Expr compute_name(sir::Expr &type);
+    sir::Expr compute_is_pointer(sir::Expr &type);
     sir::Expr compute_fields(sir::Expr &type);
     sir::Expr compute_is_resource(sir::Expr &type);
     sir::Expr compute_variants(sir::Expr &type);

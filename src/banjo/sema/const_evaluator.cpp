@@ -5,6 +5,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
+#include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -164,46 +165,153 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &bin
     }
 
     if (lhs.expr.is<sir::IntLiteral>() && rhs.expr.is<sir::IntLiteral>()) {
-        LargeInt lhs_int = lhs.expr.as<sir::IntLiteral>().value;
-        LargeInt rhs_int = rhs.expr.as<sir::IntLiteral>().value;
-
-        switch (binary_expr.op) {
-            case sir::BinaryOp::ADD: return create_int_literal(lhs_int + rhs_int);
-            case sir::BinaryOp::SUB: return create_int_literal(lhs_int - rhs_int);
-            case sir::BinaryOp::MUL: return create_int_literal(lhs_int * rhs_int);
-            case sir::BinaryOp::DIV: return create_int_literal(lhs_int / rhs_int);
-            case sir::BinaryOp::MOD: return create_int_literal(lhs_int % rhs_int);
-            case sir::BinaryOp::EQ: return create_bool_literal(lhs_int == rhs_int);
-            case sir::BinaryOp::NE: return create_bool_literal(lhs_int != rhs_int);
-            default: ASSERT_UNREACHABLE;
-        }
+        sir::IntLiteral &lhs_int = lhs.expr.as<sir::IntLiteral>();
+        sir::IntLiteral &rhs_int = rhs.expr.as<sir::IntLiteral>();
+        return evaluate_binary_expr_int(binary_expr, lhs_int, rhs_int);
     } else if (lhs.expr.is<sir::FPLiteral>() && rhs.expr.is<sir::FPLiteral>()) {
-        double lhs_fp = lhs.expr.as<sir::FPLiteral>().value;
-        double rhs_fp = rhs.expr.as<sir::FPLiteral>().value;
+        sir::FPLiteral &lhs_fp = lhs.expr.as<sir::FPLiteral>();
+        sir::FPLiteral &rhs_fp = rhs.expr.as<sir::FPLiteral>();
+        return evaluate_binary_expr_fp(binary_expr, lhs_fp, rhs_fp);
+    } else if (lhs.expr.is<sir::BoolLiteral>() && rhs.expr.is<sir::BoolLiteral>()) {
+        sir::BoolLiteral &lhs_bool = lhs.expr.as<sir::BoolLiteral>();
+        sir::BoolLiteral &rhs_bool = rhs.expr.as<sir::BoolLiteral>();
+        return evaluate_binary_expr_bool(binary_expr, lhs_bool, rhs_bool);
+    } else if (lhs.expr.is_type() && rhs.expr.is_type()) {
+        return evaluate_binary_expr_type(binary_expr, lhs.expr, rhs.expr);
+    } else {
+        return create_int_literal(0);
+    }
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr_int(
+    sir::BinaryExpr &binary_expr,
+    sir::IntLiteral &lhs,
+    sir::IntLiteral &rhs
+) {
+    if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
+        LargeInt result = 0;
 
         switch (binary_expr.op) {
-            case sir::BinaryOp::ADD: return sir::Expr{&binary_expr};
-            case sir::BinaryOp::SUB: return sir::Expr{&binary_expr};
-            case sir::BinaryOp::MUL: return sir::Expr{&binary_expr};
-            case sir::BinaryOp::DIV: return sir::Expr{&binary_expr};
-            case sir::BinaryOp::EQ: return create_bool_literal(lhs_fp == rhs_fp);
-            case sir::BinaryOp::NE: return create_bool_literal(lhs_fp != rhs_fp);
+            case sir::BinaryOp::ADD: result = lhs.value + rhs.value; break;
+            case sir::BinaryOp::SUB: result = lhs.value - rhs.value; break;
+            case sir::BinaryOp::MUL: result = lhs.value * rhs.value; break;
+            case sir::BinaryOp::DIV: result = lhs.value / rhs.value; break;
+            case sir::BinaryOp::MOD: result = lhs.value % rhs.value; break;
+            case sir::BinaryOp::BIT_AND: result = lhs.value & rhs.value; break;
+            case sir::BinaryOp::BIT_OR: result = lhs.value | rhs.value; break;
+            case sir::BinaryOp::BIT_XOR: result = lhs.value ^ rhs.value; break;
+            // TODO
+            case sir::BinaryOp::SHL: return evaluate_non_const(&binary_expr);
+            case sir::BinaryOp::SHR: return evaluate_non_const(&binary_expr);
             default: ASSERT_UNREACHABLE;
         }
-    } else if (lhs.expr.is<sir::BoolLiteral>() && rhs.expr.is<sir::BoolLiteral>()) {
-        bool lhs_bool = lhs.expr.as<sir::BoolLiteral>().value;
-        bool rhs_bool = rhs.expr.as<sir::BoolLiteral>().value;
 
-        if (binary_expr.op == sir::BinaryOp::AND) return create_bool_literal(lhs_bool && rhs_bool);
-        else if (binary_expr.op == sir::BinaryOp::OR) return create_bool_literal(lhs_bool || rhs_bool);
-        else ASSERT_UNREACHABLE;
-    } else if (lhs.expr.is_type() && rhs.expr.is_type()) {
-        if (binary_expr.op == sir::BinaryOp::EQ) return create_bool_literal(lhs.expr == rhs.expr);
-        else if (binary_expr.op == sir::BinaryOp::NE) return create_bool_literal(lhs.expr != rhs.expr);
-        else ASSERT_UNREACHABLE;
+        sir::IntLiteral output{
+            .ast_node = binary_expr.ast_node,
+            .type = lhs.type,
+            .value = result,
+        };
+
+        return {analyzer.create(output)};
+    } else if (binary_expr.is_comparison_op()) {
+        bool result;
+
+        switch (binary_expr.op) {
+            case sir::BinaryOp::EQ: result = lhs.value == rhs.value; break;
+            case sir::BinaryOp::NE: result = lhs.value != rhs.value; break;
+            case sir::BinaryOp::GT: result = lhs.value > rhs.value; break;
+            case sir::BinaryOp::LT: result = lhs.value < rhs.value; break;
+            case sir::BinaryOp::GE: result = lhs.value >= rhs.value; break;
+            case sir::BinaryOp::LE: result = lhs.value <= rhs.value; break;
+            default: ASSERT_UNREACHABLE;
+        }
+
+        sir::BoolLiteral output{
+            .ast_node = binary_expr.ast_node,
+            .type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL),
+            .value = result,
+        };
+
+        return {analyzer.create(output)};
     } else {
-        return create_int_literal(false);
+        ASSERT_UNREACHABLE;
     }
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr_fp(
+    sir::BinaryExpr &binary_expr,
+    sir::FPLiteral &lhs,
+    sir::FPLiteral &rhs
+) {
+    if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
+        return {&binary_expr};
+    } else if (binary_expr.is_comparison_op()) {
+        bool result;
+
+        switch (binary_expr.op) {
+            case sir::BinaryOp::EQ: result = lhs.value == rhs.value; break;
+            case sir::BinaryOp::NE: result = lhs.value != rhs.value; break;
+            case sir::BinaryOp::GT: result = lhs.value > rhs.value; break;
+            case sir::BinaryOp::LT: result = lhs.value < rhs.value; break;
+            case sir::BinaryOp::GE: result = lhs.value >= rhs.value; break;
+            case sir::BinaryOp::LE: result = lhs.value <= rhs.value; break;
+            default: ASSERT_UNREACHABLE;
+        }
+
+        sir::BoolLiteral output{
+            .ast_node = binary_expr.ast_node,
+            .type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL),
+            .value = result,
+        };
+
+        return {analyzer.create(output)};
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr_bool(
+    sir::BinaryExpr &binary_expr,
+    sir::BoolLiteral &lhs,
+    sir::BoolLiteral &rhs
+) {
+    bool result;
+
+    switch (binary_expr.op) {
+        case sir::BinaryOp::AND: result = lhs.value && rhs.value; break;
+        case sir::BinaryOp::OR: result = lhs.value || rhs.value; break;
+        default: return evaluate_non_const(&binary_expr);
+    }
+
+    sir::BoolLiteral output{
+        .ast_node = binary_expr.ast_node,
+        .type = lhs.type,
+        .value = result,
+    };
+
+    return {analyzer.create(output)};
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr_type(
+    sir::BinaryExpr &binary_expr,
+    sir::Expr lhs,
+    sir::Expr rhs
+) {
+    bool result;
+
+    switch (binary_expr.op) {
+        case sir::BinaryOp::EQ: result = lhs == rhs; break;
+        case sir::BinaryOp::NE: result = lhs != rhs; break;
+        default: return evaluate_non_const(&binary_expr);
+    }
+
+    sir::BoolLiteral output{
+        .ast_node = binary_expr.ast_node,
+        .type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL),
+        .value = result,
+    };
+
+    return {analyzer.create(output)};
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {
@@ -213,17 +321,65 @@ ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary
     }
 
     if (auto int_literal = value.expr.match<sir::IntLiteral>()) {
-        if (unary_expr.op == sir::UnaryOp::NEG) return create_int_literal(-int_literal->value, unary_expr.ast_node);
-        else ASSERT_UNREACHABLE;
+        return evaluate_unary_expr_int(unary_expr, *int_literal);
     } else if (auto fp_literal = value.expr.match<sir::FPLiteral>()) {
-        if (unary_expr.op == sir::UnaryOp::NEG) return create_fp_literal(-fp_literal->value, unary_expr.ast_node);
-        else ASSERT_UNREACHABLE;
+        return evaluate_unary_expr_fp(unary_expr, *fp_literal);
     } else if (auto bool_literal = value.expr.match<sir::BoolLiteral>()) {
-        if (unary_expr.op == sir::UnaryOp::NOT) return create_bool_literal(!bool_literal->value, unary_expr.ast_node);
-        else ASSERT_UNREACHABLE;
+        return evaluate_unary_expr_bool(unary_expr, *bool_literal);
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr_int(sir::UnaryExpr &unary_expr, sir::IntLiteral &value) {
+    LargeInt result = 0;
+
+    switch (unary_expr.op) {
+        case sir::UnaryOp::NEG: result = -value.value; break;
+        default: return evaluate_non_const(&unary_expr);
+    }
+
+    sir::IntLiteral output{
+        .ast_node = value.ast_node,
+        .type = value.type,
+        .value = result,
+    };
+
+    return {analyzer.create(output)};
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr_fp(sir::UnaryExpr &unary_expr, sir::FPLiteral &value) {
+    double result;
+
+    switch (unary_expr.op) {
+        case sir::UnaryOp::NEG: result = -value.value; break;
+        default: return evaluate_non_const(&unary_expr);
+    }
+
+    sir::FPLiteral output{
+        .ast_node = value.ast_node,
+        .type = value.type,
+        .value = result,
+    };
+
+    return {analyzer.create(output)};
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr_bool(sir::UnaryExpr &unary_expr, sir::BoolLiteral &value) {
+    bool result;
+
+    switch (unary_expr.op) {
+        case sir::UnaryOp::NOT: result = !value.value; break;
+        default: return evaluate_non_const(&unary_expr);
+    }
+
+    sir::BoolLiteral output{
+        .ast_node = value.ast_node,
+        .type = value.type,
+        .value = result,
+    };
+
+    return {analyzer.create(output)};
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_range_expr(sir::RangeExpr &range_expr) {
@@ -274,7 +430,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr
     return dummy_expr;
 }
 
-ConstEvaluator::Output ConstEvaluator::evaluate_non_const(sir::Expr &value) {
+ConstEvaluator::Output ConstEvaluator::evaluate_non_const(sir::Expr value) {
     analyzer.report_generator.report_err_compile_time_unknown(value);
     return Result::ERROR;
 }

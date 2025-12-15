@@ -36,7 +36,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     } else if (field_name == "name") {
         out_expr = compute_name(base_expr);
     } else if (field_name == "is_pointer") {
-        out_expr = create_bool_literal(base_expr.is<sir::PointerType>());
+        out_expr = compute_is_pointer(base_expr);
     } else if (field_name == "is_struct") {
         out_expr = create_bool_literal(base_expr.is_symbol<sir::StructDef>());
     } else if (field_name == "is_enum") {
@@ -102,6 +102,18 @@ sir::Expr MetaExprEvaluator::compute_name(sir::Expr &type) {
     } else {
         return create_string_literal("");
     }
+}
+
+sir::Expr MetaExprEvaluator::compute_is_pointer(sir::Expr &type) {
+    bool result = false;
+
+    if (auto pointer_type = type.match<sir::PointerType>()) {
+        if (!pointer_type->base_type.is_symbol<sir::ProtoDef>()) {
+            result = true;
+        }
+    }
+
+    return create_bool_literal(result);
 }
 
 sir::Expr MetaExprEvaluator::compute_fields(sir::Expr &type) {
