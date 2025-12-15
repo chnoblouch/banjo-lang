@@ -17,9 +17,17 @@ namespace lang {
 class ReportPrinter {
 
 private:
-    struct LinePosition {
-        unsigned number;
+    struct VisualPosition {
         unsigned offset;
+        unsigned line_offset;
+        unsigned line_end_offset;
+        unsigned line_number;
+        unsigned column_number;
+    };
+
+    struct VisualRange {
+        VisualPosition start;
+        VisualPosition end;
     };
 
     std::ostream &stream;
@@ -35,15 +43,17 @@ public:
 private:
     void print_message_location(const SourceLocation &location);
 
-    LinePosition find_line(std::ifstream &file, TextPosition position);
-    unsigned find_column(std::ifstream &file, const ReportMessage &message, LinePosition line_position);
+    VisualPosition find_position(const SourceFile &file, TextPosition position);
+    VisualPosition find_visible_line_start(const SourceFile &file, VisualPosition position);
+    VisualPosition find_visible_line_end(const SourceFile &file, VisualPosition position);
+    bool is_whitespace(char c);
 
-    void print_decorated_line(std::ifstream &file, TextRange range, std::string_view prefix);
-    void print_decorated_line(std::ifstream &file, std::string_view prefix);
+    void print_decorated_line(const SourceFile &file, VisualRange range, std::string_view prefix);
 
     void print_char(int c);
     unsigned char_width(int c);
     void set_color(std::string_view color);
+
 };
 
 } // namespace lang
