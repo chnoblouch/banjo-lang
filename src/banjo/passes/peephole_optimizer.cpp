@@ -13,17 +13,17 @@ PeepholeOptimizer::PeepholeOptimizer(target::Target *target) : Pass("peephole-op
 
 void PeepholeOptimizer::run(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
-        run(func, mod);
+        run(func);
     }
 }
 
-void PeepholeOptimizer::run(ssa::Function *func, ssa::Module &mod) {
+void PeepholeOptimizer::run(ssa::Function *func) {
     for (ssa::BasicBlock &block : func->get_basic_blocks()) {
-        run(block, *func, mod);
+        run(block, *func);
     }
 }
 
-void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func, ssa::Module &mod) {
+void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
     // TODO: canonicalization
     for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
         std::optional<ssa::Value> value = Precomputing::precompute_result(*iter);
@@ -37,10 +37,10 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func, ssa::Mo
             case ssa::Opcode::FADD: optimize_add(iter, block, func); break;
             case ssa::Opcode::SUB:
             case ssa::Opcode::FSUB: optimize_sub(iter, block, func); break;
-            case ssa::Opcode::MUL: optimize_mul(iter, block, func); break;
-            case ssa::Opcode::UDIV: optimize_udiv(iter, block, func); break;
+            case ssa::Opcode::MUL: optimize_mul(iter, block); break;
+            case ssa::Opcode::UDIV: optimize_udiv(iter, block); break;
             case ssa::Opcode::FMUL: optimize_fmul(iter, block, func); break;
-            case ssa::Opcode::CALL: optimize_call(iter, block, func, mod); break;
+            case ssa::Opcode::CALL: optimize_call(iter, block, func); break;
             default: break;
         }
     }
@@ -60,7 +60,7 @@ void PeepholeOptimizer::optimize_sub(ssa::InstrIter &iter, ssa::BasicBlock &bloc
     }
 }
 
-void PeepholeOptimizer::optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (is_imm(iter->get_operand(0)) && !is_imm(iter->get_operand(1))) {
         ssa::Operand tmp = iter->get_operand(0);
         iter->get_operand(0) = iter->get_operand(1);
@@ -73,20 +73,20 @@ void PeepholeOptimizer::optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &bloc
         if (BitOperations::is_power_of_two(value)) {
             unsigned shift = BitOperations::get_first_bit_set(value);
             ssa::Operand lhs = iter->get_operand(0);
-            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift);
+            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, lhs.get_type());
             iter = block.replace(iter, ssa::Instruction(ssa::Opcode::SHL, *iter->get_dest(), {lhs, rhs}));
         }
     }
 }
 
-void PeepholeOptimizer::optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (iter->get_operand(1).is_int_immediate()) {
         std::uint64_t value = iter->get_operand(1).get_int_immediate().to_bits();
 
         if (BitOperations::is_power_of_two(value)) {
             unsigned shift = BitOperations::get_first_bit_set(value);
             ssa::Operand lhs = iter->get_operand(0);
-            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift);
+            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, lhs.get_type());
             iter = block.replace(iter, ssa::Instruction(ssa::Opcode::SHR, *iter->get_dest(), {lhs, rhs}));
         }
     }
@@ -104,12 +104,7 @@ void PeepholeOptimizer::optimize_fmul(ssa::InstrIter &iter, ssa::BasicBlock &blo
     }
 }
 
-void PeepholeOptimizer::optimize_call(
-    ssa::InstrIter &iter,
-    ssa::BasicBlock &block,
-    ssa::Function &func,
-    ssa::Module &mod
-) {
+void PeepholeOptimizer::optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
     ssa::Value &callee = iter->get_operand(0);
     if (!callee.is_extern_func()) {
         return;

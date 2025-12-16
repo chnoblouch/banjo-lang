@@ -14,15 +14,15 @@ public:
     void run(ssa::Module &mod);
 
 private:
-    void run(ssa::Function *func, ssa::Module &mod);
-    void run(ssa::BasicBlock &block, ssa::Function &func, ssa::Module &mod);
+    void run(ssa::Function *func);
+    void run(ssa::BasicBlock &block, ssa::Function &func);
 
     void optimize_add(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
     void optimize_sub(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
-    void optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
-    void optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &block);
+    void optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block);
     void optimize_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
-    void optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func, ssa::Module &mod);
+    void optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
 
     void eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::BasicBlock &block, ssa::Function &func);
     bool is_imm(ssa::Operand &operand);
