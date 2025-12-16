@@ -4,7 +4,6 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -120,6 +119,8 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
         );
     } else if (auto cur_overload_set = cur_entry.match<sir::OverloadSet>()) {
         cur_overload_set->func_defs.push_back(&func_def);
+    } else {
+        analyzer.report_generator.report_err_redefinition(func_def.ident, cur_entry);
     }
 
     // if (analyzer.symbol_ctx.is_guarded()) {
@@ -154,7 +155,7 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
 void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
     func_decl.parent = analyzer.get_decl();
 
-    add_symbol(func_decl.ident.value, &func_decl);
+    add_symbol(func_decl.ident, &func_decl);
     analyzer.add_symbol_def(&func_decl);
 
     if (auto proto_def = func_decl.parent.match<sir::ProtoDef>()) {
@@ -165,14 +166,14 @@ void SymbolCollector::collect_func_decl(sir::FuncDecl &func_decl) {
 void SymbolCollector::collect_native_func_decl(sir::NativeFuncDecl &native_func_decl) {
     native_func_decl.parent = analyzer.get_decl();
 
-    add_symbol(native_func_decl.ident.value, &native_func_decl);
+    add_symbol(native_func_decl.ident, &native_func_decl);
     analyzer.add_symbol_def(&native_func_decl);
 }
 
 void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
     const_def.parent = analyzer.get_decl();
 
-    add_symbol(const_def.ident.value, &const_def);
+    add_symbol(const_def.ident, &const_def);
     analyzer.add_symbol_def(&const_def);
 }
 
@@ -185,7 +186,7 @@ void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
         analyzer.exit_decl();
     }
 
-    add_symbol(struct_def.ident.value, &struct_def);
+    add_symbol(struct_def.ident, &struct_def);
     analyzer.add_symbol_def(&struct_def);
 }
 
@@ -193,7 +194,7 @@ void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
     var_decl.parent = analyzer.get_decl();
 
     if (!var_decl.parent.is<sir::StructDef>()) {
-        add_symbol(var_decl.ident.value, &var_decl);
+        add_symbol(var_decl.ident, &var_decl);
         analyzer.add_symbol_def(&var_decl);
     }
 }
@@ -201,14 +202,14 @@ void SymbolCollector::collect_var_decl(sir::VarDecl &var_decl) {
 void SymbolCollector::collect_native_var_decl(sir::NativeVarDecl &native_var_decl) {
     native_var_decl.parent = analyzer.get_decl();
 
-    add_symbol(native_var_decl.ident.value, &native_var_decl);
+    add_symbol(native_var_decl.ident, &native_var_decl);
     analyzer.add_symbol_def(&native_var_decl);
 }
 
 void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
     enum_def.parent = analyzer.get_decl();
 
-    add_symbol(enum_def.ident.value, &enum_def);
+    add_symbol(enum_def.ident, &enum_def);
     analyzer.add_symbol_def(&enum_def);
 
     analyzer.enter_decl(&enum_def);
@@ -219,14 +220,14 @@ void SymbolCollector::collect_enum_def(sir::EnumDef &enum_def) {
 void SymbolCollector::collect_enum_variant(sir::EnumVariant &enum_variant) {
     enum_variant.parent = analyzer.get_decl();
 
-    add_symbol(enum_variant.ident.value, &enum_variant);
+    add_symbol(enum_variant.ident, &enum_variant);
     analyzer.add_symbol_def(&enum_variant);
 }
 
 void SymbolCollector::collect_union_def(sir::UnionDef &union_def) {
     union_def.parent = analyzer.get_decl();
 
-    add_symbol(union_def.ident.value, &union_def);
+    add_symbol(union_def.ident, &union_def);
     analyzer.add_symbol_def(&union_def);
 
     analyzer.enter_decl(&union_def);
@@ -237,14 +238,14 @@ void SymbolCollector::collect_union_def(sir::UnionDef &union_def) {
 void SymbolCollector::collect_union_case(sir::UnionCase &union_case) {
     union_case.parent = analyzer.get_decl();
 
-    add_symbol(union_case.ident.value, &union_case);
+    add_symbol(union_case.ident, &union_case);
     analyzer.add_symbol_def(&union_case);
 }
 
 void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
     proto_def.parent = analyzer.get_decl();
 
-    add_symbol(proto_def.ident.value, &proto_def);
+    add_symbol(proto_def.ident, &proto_def);
     analyzer.add_symbol_def(&proto_def);
 
     analyzer.enter_decl(&proto_def);
@@ -255,7 +256,7 @@ void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
 void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
     type_alias.parent = analyzer.get_decl();
 
-    add_symbol(type_alias.ident.value, &type_alias);
+    add_symbol(type_alias.ident, &type_alias);
     analyzer.add_symbol_def(&type_alias);
 }
 
@@ -303,12 +304,12 @@ void SymbolCollector::collect_use_item(sir::UseItem &use_item, sir::UseDecl &par
 
 void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident, sir::UseDecl &parent) {
     use_ident.parent = parent;
-    add_symbol(use_ident.ident.value, &use_ident);
+    add_symbol(use_ident.ident, &use_ident);
 }
 
 void SymbolCollector::collect_use_rebind(sir::UseRebind &use_rebind, sir::UseDecl &parent) {
     use_rebind.parent = parent;
-    add_symbol(use_rebind.local_ident.value, &use_rebind);
+    add_symbol(use_rebind.local_ident, &use_rebind);
 }
 
 void SymbolCollector::collect_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::UseDecl &parent) {
@@ -345,13 +346,20 @@ void SymbolCollector::collect_use_list(sir::UseList &use_list, sir::UseDecl &par
     }
 }
 
-void SymbolCollector::add_symbol(std::string_view name, sir::Symbol symbol) {
+void SymbolCollector::add_symbol(sir::Ident &ident, sir::Symbol symbol) {
+    std::string_view name = ident.value;
     sir::SymbolTable &symbol_table = get_symbol_table();
 
     if (guarded_scope) {
         symbol_table.guarded_scopes.insert({name, *guarded_scope});
     } else {
-        symbol_table.insert_decl(name, symbol);
+        sir::Symbol &cur_entry = symbol_table.symbols[name];
+
+        if (cur_entry) {
+            analyzer.report_generator.report_err_redefinition(ident, cur_entry);
+        } else {
+            cur_entry = symbol;
+        }
     }
 
     // if (analyzer.symbol_ctx.is_guarded()) {

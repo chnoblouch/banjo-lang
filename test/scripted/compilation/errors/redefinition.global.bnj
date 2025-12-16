@@ -1,0 +1,120 @@
+# test:subtest
+# test:error 7:6 "redefinition of 'f'"
+# test:note 5:7 "previously defined here"
+
+const f: i32 = 0;
+
+func f() {}
+
+# test:subtest
+# test:error 15:10 "redefinition of 'f'"
+# test:note 14:10 "previously defined here"
+
+proto P {
+    func f(self);
+    func f(self);
+}
+
+# test:subtest
+# test:error 24:13 "redefinition of 'f'"
+# test:note 22:7 "previously defined here"
+
+const f: i32 = 0;
+
+native func f();
+
+# test:subtest
+# test:error 32:7 "redefinition of 'C'"
+# test:note 30:8 "previously defined here"
+
+struct C {}
+
+const C: i32 = 0;
+
+# test:subtest
+# test:error 40:8 "redefinition of 'S'"
+# test:note 38:7 "previously defined here"
+
+const S: i32 = 0;
+
+struct S {}
+
+# test:subtest
+# test:error 48:5 "redefinition of 'v'"
+# test:note 46:7 "previously defined here"
+
+const v: i32 = 0;
+
+var v: i32 = 0;
+
+# test:subtest
+# test:error 56:12 "redefinition of 'v'"
+# test:note 54:7 "previously defined here"
+
+const v: i32 = 0;
+
+native var v: i32;
+
+# test:subtest
+# test:error 64:6 "redefinition of 'E'"
+# test:note 62:7 "previously defined here"
+
+const E: i32 = 0;
+
+enum E {}
+
+# test:subtest
+# test:error 72:5 "redefinition of 'V'"
+# test:note 71:5 "previously defined here"
+
+enum E {
+    V,
+    V,
+}
+
+# test:subtest
+# test:error 81:7 "redefinition of 'U'"
+# test:note 79:7 "previously defined here"
+
+const U: i32 = 0;
+
+union U {}
+
+# test:subtest
+# test:error 89:10 "redefinition of 'C'"
+# test:note 88:10 "previously defined here"
+
+union U {
+    case C();
+    case C();
+}
+
+# test:subtest
+# test:error 98:7 "redefinition of 'P'"
+# test:note 96:7 "previously defined here"
+
+const P: i32 = 0;
+
+proto P {}
+
+# test:subtest
+# test:error 106:6 "redefinition of 'T'"
+# test:note 104:7 "previously defined here"
+
+const T: i32 = 0;
+
+type T = i32;
+
+# test:subtest
+# test:error 114:9 "redefinition of 'io'"
+# test:note 112:7 "previously defined here"
+
+const io: i32 = 0;
+
+use std.io;
+
+# test:subtest
+# test:error 120:14 "redefinition of 'io'"
+# test:note 120:10 "previously defined here"
+
+use std.{io, io};

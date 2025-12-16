@@ -84,6 +84,7 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
             // }
 
             expand(decl_block, index, *std::get<sir::DeclBlock *>(cond_branch.block));
+            return;
 
             // if (!is_guard) {
             //     return;

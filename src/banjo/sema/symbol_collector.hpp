@@ -52,7 +52,7 @@ public:
     void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::UseDecl &parent);
     void collect_use_list(sir::UseList &use_list, sir::UseDecl &parent);
 
-    void add_symbol(std::string_view name, sir::Symbol symbol);
+    void add_symbol(sir::Ident &ident, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();
 };
 
