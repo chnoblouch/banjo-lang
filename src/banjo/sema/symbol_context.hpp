@@ -41,12 +41,12 @@ public:
     SymbolLookupResult look_up(const sir::IdentExpr &ident_expr);
     SymbolLookupResult look_up_rhs_local(sir::DotExpr &dot_expr);
     SymbolLookupResult look_up_rhs_local(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table);
+    sir::Symbol try_resolve_meta_if(sir::SymbolTable &symbol_table, std::string_view name);
 
     sir::GuardedSymbol::TruthTable get_meta_condition() { return meta_condition; }
     bool is_guarded() { return !sub_meta_conditions.empty(); }
 
 private:
-    sir::Symbol try_resolve_meta_if(sir::SymbolTable &symbol_table, std::string_view name);
     sir::Symbol resolve_symbol(sir::Symbol symbol);
 
     sir::GuardedSymbol::TruthTable build_condition(sir::Expr expr);

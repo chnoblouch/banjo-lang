@@ -1,5 +1,10 @@
 #include "module_discovery.hpp"
 
+#if BANJO_DEBUG
+#    include <algorithm>
+#    include <random>
+#endif
+
 #include <algorithm>
 #include <filesystem>
 #include <random>
@@ -25,9 +30,14 @@ void ModuleDiscovery::find_modules(
 ) {
     std::vector<std::filesystem::path> file_paths;
 
-    for (std::filesystem::path file_path : std::filesystem::directory_iterator(directory)) {
+    for (std::filesystem::path file_path : std::filesystem::directory_iterator{directory}) {
         file_paths.push_back(file_path);
     }
+
+#if BANJO_DEBUG
+    std::default_random_engine rng;
+    std::ranges::shuffle(file_paths, rng);
+#endif
 
     std::reverse(file_paths.begin(), file_paths.end());
 

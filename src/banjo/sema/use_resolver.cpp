@@ -1,6 +1,5 @@
 #include "use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -154,7 +153,12 @@ sir::Symbol UseResolver::resolve_symbol(sir::Ident &ident, sir::Symbol &symbol) 
         }
     }
 
-    sir::Symbol new_symbol = symbol.get_symbol_table()->look_up_local(ident.value);
+    sir::SymbolTable &symbol_table = *symbol.get_symbol_table();
+    sir::Symbol new_symbol = symbol_table.look_up_local(ident.value);
+
+    if (!new_symbol) {
+        new_symbol = analyzer.symbol_ctx.try_resolve_meta_if(symbol_table, ident.value);
+    }
 
     if (new_symbol) {
         if (auto use_ident = new_symbol.match<sir::UseIdent>()) {
