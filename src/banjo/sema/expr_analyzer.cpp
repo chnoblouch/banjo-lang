@@ -20,6 +20,7 @@
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/source/module_path.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -589,7 +590,10 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     bool can_lhs_be_coerced = can_be_coerced(binary_expr.lhs);
     bool can_rhs_be_coerced = can_be_coerced(binary_expr.rhs);
 
-    if (can_lhs_be_coerced && !can_rhs_be_coerced) {
+    if (!can_lhs_be_coerced && !can_rhs_be_coerced) {
+        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+        rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
+    } else if (can_lhs_be_coerced && !can_rhs_be_coerced) {
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
         if (rhs_result != Result::SUCCESS) {
@@ -631,24 +635,27 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     sir::Expr lhs_type = binary_expr.lhs.get_type();
     sir::Expr rhs_type = binary_expr.rhs.get_type();
+    bool types_equal = lhs_type == rhs_type;
 
     if (lhs_type != rhs_type) {
         if (binary_expr.lhs.get_type().is_addr_like_type()) {
             binary_expr.rhs = create_isize_cast(binary_expr.rhs);
+            types_equal = true;
         } else if (binary_expr.rhs.get_type().is_addr_like_type()) {
             binary_expr.lhs = create_isize_cast(binary_expr.lhs);
+            types_equal = true;
         }
     }
 
     if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
-        if (lhs_type != rhs_type) {
+        if (!types_equal) {
             analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
             return Result::ERROR;
         }
 
         binary_expr.type = lhs_type;
     } else if (binary_expr.is_comparison_op()) {
-        if (lhs_type != rhs_type) {
+        if (!types_equal) {
             analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
             return Result::ERROR;
         }

@@ -179,7 +179,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr(sir::BinaryExpr &bin
     } else if (lhs.expr.is_type() && rhs.expr.is_type()) {
         return evaluate_binary_expr_type(binary_expr, lhs.expr, rhs.expr);
     } else {
-        return create_int_literal(0);
+        return {&binary_expr};
     }
 }
 
