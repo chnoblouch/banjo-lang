@@ -403,7 +403,7 @@ void Parser::recover() {
         }
     }
 
-    if (stream.get()->is(TKN_SEMI) || stream.get()->is(TKN_RBRACE)) {
+    if (stream.get()->is(TKN_SEMI)) {
         stream.consume();
     }
 }
