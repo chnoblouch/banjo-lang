@@ -175,12 +175,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 188:11 "resource used after move"
-# test:note 187:17 "previously moved here"
-
-struct Resource {
-    func __deinit__(self) {}
-}
+# test:error 184:11 "resource used after move"
+# test:note 183:17 "previously moved here"
 
 func main() {
     var array = [Resource {}, Resource {}, Resource {}];
@@ -189,8 +185,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 201:13 "resource used after move"
-# test:note 200:13 "previously moved here"
+# test:error 197:13 "resource used after move"
+# test:note 196:13 "previously moved here"
 
 func consume(resource: Resource) {}
 func use_ref(ref resource: Resource) {}
@@ -202,8 +198,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 214:13 "resource used after move"
-# test:note 213:13 "previously moved here"
+# test:error 210:13 "resource used after move"
+# test:note 209:13 "previously moved here"
 
 func main() {
     var closure = |a: i32, b: i32| -> i32 {
@@ -215,8 +211,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 232:13 "resource used after move"
-# test:note 231:13 "previously moved here"
+# test:error 228:13 "resource used after move"
+# test:note 227:13 "previously moved here"
 
 func main() {
     var tuple = (

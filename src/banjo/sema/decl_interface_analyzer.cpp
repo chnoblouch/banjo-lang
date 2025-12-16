@@ -136,12 +136,14 @@ void DeclInterfaceAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::
 }
 
 void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def) {
+    if (func_def.stage <= sir::SemaStage::INTERFACE) {
+        DeclInterfaceAnalyzer{analyzer}.visit_func_def(func_def);
+    }
+
     sir::SymbolTable &parent_symbol_table = *func_def.block.symbol_table->parent;
     sir::FuncDef *clone = sir::Cloner(analyzer.get_mod(), parent_symbol_table).clone_func_def(func_def);
     struct_def.block.decls.push_back(clone);
-
     SymbolCollector(analyzer).collect_func_def(*clone);
-    visit_func_def(*clone);
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {

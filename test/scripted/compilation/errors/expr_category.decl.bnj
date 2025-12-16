@@ -2,42 +2,42 @@
 # test:error 5:11 "expected type, got value"
 # test:error 6:13 "expected type, got value"
 
-func f(a: 0) {}
-func f() -> 0 {}
+func f1(a: 0) {}
+func f2() -> 0 {}
 
 # test:subtest
-# test:error 13:21 "expected type, got value"
-# test:error 14:21 "expected type, got value"
+# test:error 13:22 "expected type, got value"
+# test:error 14:22 "expected type, got value"
 
 proto P {
-    func f(self, a: 0);
-    func f(self) -> 0;
+    func f1(self, a: 0);
+    func f2(self) -> 0;
 }
 
 # test:subtest
-# test:error 21:18 "expected type, got value"
-# test:error 22:20 "expected type, got value"
+# test:error 21:19 "expected type, got value"
+# test:error 22:21 "expected type, got value"
 
-native func f(a: 0);
-native func f() -> 0;
+native func f1(a: 0);
+native func f2() -> 0;
 
 # test:subtest
-# test:error 28:10 "expected type, got value"
-# test:error 29:16 "expected value, got type"
+# test:error 28:11 "expected type, got value"
+# test:error 29:17 "expected value, got type"
 
-const C: 0 = 0;
-const C: i32 = i32;
+const C1: 0 = 0;
+const C2: i32 = i32;
 
 # test:subtest
 # test:error 36:12 "expected type, got value"
-# test:error 40:11 "expected type, got value"
+# test:error 40:12 "expected type, got value"
 
-struct S {
+struct S1 {
     var f: 0;
 }
 
 # TODO: The error message should probably be something like "expected proto, got value"
-struct S: 0 {}
+struct S2: 0 {}
 
 # test:subtest
 # test:error 45:8 "expected type, got value"
