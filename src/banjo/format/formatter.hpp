@@ -3,6 +3,7 @@
 
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/source/text_range.hpp"
 
@@ -29,6 +30,8 @@ private:
         INDENT_EMPTY_LINE,
     };
 
+    ReportManager &report_manager;
+    
     std::string_view file_content;
     TokenList tokens;
     std::vector<Edit> edits;
@@ -36,6 +39,8 @@ private:
     bool global_scope = true;
 
 public:
+    Formatter(ReportManager &report_manager);
+
     std::vector<Edit> format(SourceFile &file);
     void format_in_place(SourceFile &file);
 

@@ -2,7 +2,6 @@
 #define BANJO_REPORTS_REPORT_H
 
 #include "banjo/reports/report_texts.hpp"
-#include "banjo/source/module_path.hpp"
 #include "banjo/source/text_range.hpp"
 
 #include <string>
@@ -13,8 +12,10 @@ namespace banjo {
 
 namespace lang {
 
+class SourceFile;
+
 struct SourceLocation {
-    ModulePath path;
+    SourceFile *file;
     TextRange range;
 };
 

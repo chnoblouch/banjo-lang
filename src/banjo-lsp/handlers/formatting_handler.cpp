@@ -1,6 +1,7 @@
 #include "formatting_handler.hpp"
 
 #include "banjo/format/formatter.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/utils/json.hpp"
 #include "protocol_structs.hpp"
 #include "uri.hpp"
@@ -24,7 +25,8 @@ JSONValue FormattingHandler::handle(const JSONObject &params, Connection & /*con
         return JSONObject{{"data", JSONArray{}}};
     }
 
-    std::vector<Formatter::Edit> edits = Formatter().format(*file);
+    ReportManager report_manager;
+    std::vector<Formatter::Edit> edits = Formatter(report_manager).format(*file);
     JSONArray lsp_edits;
 
     for (const Formatter::Edit &edit : edits) {

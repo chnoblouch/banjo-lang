@@ -145,7 +145,7 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
     }
 
     for (const Report &report : report_manager.get_reports()) {
-        ModuleIndex &mod = index.mods[sir_unit.mods_by_path[report.get_message().location->path]];
+        ModuleIndex &mod = index.mods[report.get_message().location->file->sir_mod];
         mod.reports.push_back(report);
     }
 

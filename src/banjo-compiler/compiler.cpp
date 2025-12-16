@@ -5,6 +5,7 @@
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/passes/pass_runner.hpp"
+#include "banjo/reports/report_printer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_generator.hpp"
@@ -23,12 +24,11 @@ namespace banjo {
 
 namespace lang {
 
-Compiler::Compiler(const Config &config)
-  : config(config),
-    module_manager(report_manager),
-    report_printer(module_manager) {}
+Compiler::Compiler(const Config &config) : config(config), module_manager(report_manager) {}
 
 void Compiler::compile() {
+    ReportPrinter report_printer;
+
     if (config.debug) {
         if (std::filesystem::is_directory("dumps")) {
             std::filesystem::remove_all("dumps");

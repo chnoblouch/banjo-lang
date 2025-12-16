@@ -35,7 +35,7 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::Sou
             JSONArray related_information;
 
             for (const lang::ReportMessage &note : report.get_notes()) {
-                lang::SourceFile *note_file = workspace.find_file(note.location->path);
+                lang::SourceFile *note_file = note.location->file;
                 if (!note_file) {
                     continue;
                 }

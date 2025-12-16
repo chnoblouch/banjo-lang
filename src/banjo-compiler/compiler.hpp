@@ -3,9 +3,7 @@
 
 #include "banjo/config/config.hpp"
 #include "banjo/reports/report_manager.hpp"
-#include "banjo/reports/report_printer.hpp"
 #include "banjo/source/module_manager.hpp"
-#include "banjo/ssa/module.hpp"
 #include "banjo/target/target.hpp"
 
 namespace banjo {
@@ -23,7 +21,6 @@ private:
     target::Target *target;
     ReportManager report_manager;
     ModuleManager module_manager;
-    ReportPrinter report_printer;
 
 public:
     Compiler(const Config &config);

@@ -15,6 +15,8 @@
 
 namespace banjo::lang {
 
+Formatter::Formatter(ReportManager &report_manager) : report_manager{report_manager} {}
+
 std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
     file_content = file.get_content();
 
@@ -23,6 +25,7 @@ std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
 
     Parser parser{file, tokens, Parser::Mode::FORMATTING};
     std::unique_ptr<ASTModule> ast_mod = parser.parse_module();
+    report_manager.merge_result(ast_mod->reports, ast_mod->is_valid);
 
     if (!ast_mod->is_valid) {
         return {};

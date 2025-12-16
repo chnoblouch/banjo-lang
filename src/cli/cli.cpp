@@ -608,7 +608,13 @@ void CLI::execute_format(const ArgumentParser::Result &args) {
     };
 
     std::optional<Process> process = Process::spawn(command);
-    process->wait();
+    ProcessResult result = process->wait();
+
+    if (result.exit_code != 0) {
+        print_empty_line();
+        std::cerr << result.stderr_buffer;
+        std::exit(1);
+    }
 }
 
 void CLI::execute_bindgen(const ArgumentParser::Result &args) {

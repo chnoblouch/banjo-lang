@@ -338,7 +338,7 @@ ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type
 }
 
 Report &Parser::register_error(TextRange range) {
-    mod->reports.push_back(Report(Report::Type::ERROR, SourceLocation{file.mod_path, range}));
+    mod->reports.push_back(Report(Report::Type::ERROR, SourceLocation{&file, range}));
     mod->is_valid = false;
     return mod->reports.back();
 }

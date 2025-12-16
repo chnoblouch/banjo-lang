@@ -39,7 +39,7 @@ bool JITCompiler::build_ir() {
     lang::sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
 
     if (!report_manager.is_valid()) {
-        lang::ReportPrinter report_printer(module_manager);
+        lang::ReportPrinter report_printer;
         if (config.color_diagnostics) {
             report_printer.enable_colors();
         }

@@ -35,9 +35,9 @@ ReportBuilder &ReportBuilder::add_note(std::string_view format_str, ASTNode *nod
 
 SourceLocation ReportBuilder::find_location(ASTNode *node) {
     if (node) {
-        return SourceLocation{find_mod_path(node), node->range};
+        return SourceLocation{&find_file(node), node->range};
     } else {
-        return SourceLocation{{}, {0, 0}};
+        return SourceLocation{nullptr, {0, 0}};
     }
 }
 
@@ -53,12 +53,12 @@ void ReportBuilder::report() {
     analyzer.report_manager.insert(partial_report);
 }
 
-const ModulePath &ReportBuilder::find_mod_path(ASTNode *node) {
+SourceFile &ReportBuilder::find_file(ASTNode *node) {
     while (node->type != AST_MODULE) {
         node = node->parent;
     }
 
-    return static_cast<ASTModule *>(node)->file.mod_path;
+    return static_cast<ASTModule *>(node)->file;
 }
 
 ReportGenerator::ReportGenerator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}

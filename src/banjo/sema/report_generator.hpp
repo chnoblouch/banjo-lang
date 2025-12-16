@@ -34,7 +34,7 @@ public:
     void report();
 
 private:
-    const ModulePath &find_mod_path(ASTNode *node);
+    SourceFile &find_file(ASTNode *node);
 };
 
 class ReportGenerator {

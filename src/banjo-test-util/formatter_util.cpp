@@ -1,6 +1,7 @@
 #include "formatter_util.hpp"
 
 #include "banjo/format/formatter.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/source/source_file.hpp"
 
 #include <algorithm>
@@ -23,7 +24,8 @@ void FormatterUtil::format(std::string source) {
 
     source_file.update_content(std::move(source));
 
-    std::vector<Formatter::Edit> edits = Formatter{}.format(source_file);
+    ReportManager report_manager;
+    std::vector<Formatter::Edit> edits = Formatter{report_manager}.format(source_file);
 
     std::sort(edits.begin(), edits.end(), [](const Formatter::Edit &lhs, const Formatter::Edit &rhs) {
         return lhs.range.start < rhs.range.start;

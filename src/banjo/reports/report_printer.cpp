@@ -10,7 +10,7 @@ namespace lang {
 
 constexpr unsigned MAX_PRINTED_REPORTS = 256;
 
-ReportPrinter::ReportPrinter(ModuleManager &module_manager) : stream(std::cerr), module_manager(module_manager) {}
+ReportPrinter::ReportPrinter() : stream{std::cerr} {}
 
 void ReportPrinter::print_reports(const std::vector<Report> &reports) {
     unsigned num_errors = 0;
@@ -81,12 +81,12 @@ void ReportPrinter::print_report(const Report &report) {
 }
 
 void ReportPrinter::print_message_location(const SourceLocation &location) {
-    if (location.path.is_empty()) {
+    if (!location.file) {
         std::cerr << "(source location unknown)\n";
         return;
     }
 
-    const SourceFile &file = *module_manager.get_module_list().find(location.path);
+    const SourceFile &file = *location.file;
     VisualPosition start_position = find_position(file, location.range.start);
     VisualPosition end_position = find_position(file, location.range.end);
 
