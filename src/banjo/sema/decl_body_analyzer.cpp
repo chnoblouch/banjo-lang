@@ -57,7 +57,7 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
     }
 
     if (std::ranges::count(analyzer.decl_stack, sir::Decl{&const_def})) {
-        analyzer.report_generator.report_err_cyclical_definition(const_def.value);
+        analyzer.report_generator.report_err_cyclical_definition(const_def.value.get_ast_node());
         const_def.stage = sir::SemaStage::BODY;
         return Result::DEF_CYCLE;
     }

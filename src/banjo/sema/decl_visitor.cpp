@@ -1,7 +1,9 @@
 #include "decl_visitor.hpp"
 
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+
 #include <variant>
 
 namespace banjo {
@@ -173,6 +175,37 @@ Result DeclVisitor::analyze_decl(sir::Decl &decl) {
     );
 
     return Result::SUCCESS;
+}
+
+void DeclVisitor::visit_symbol(sir::Symbol symbol) {
+    // TODO: Variable declarations
+    // TODO: Analyzing the body of an enum variant does not yield its value
+
+    SIR_VISIT_SYMBOL(
+        symbol,
+        SIR_VISIT_IGNORE,               // empty
+        SIR_VISIT_IGNORE,               // module
+        visit_func_def(*inner),         // func_def
+        visit_func_decl(*inner),        // func_decl
+        visit_native_func_decl(*inner), // native_func_decl
+        visit_const_def(*inner),        // const_def
+        visit_struct_def(*inner),       // struct_def
+        SIR_VISIT_IGNORE,               // struct_field
+        SIR_VISIT_IGNORE,               // var_decl
+        visit_native_var_decl(*inner),  // native_var_decl
+        visit_enum_def(*inner),         // enum_def
+        visit_enum_variant(*inner),     // enum_variant
+        visit_union_def(*inner),        // union_def
+        visit_union_case(*inner),       // union_case
+        visit_proto_def(*inner),        // proto_def
+        visit_type_alias(*inner),       // type_alias
+        SIR_VISIT_IGNORE,               // use_ident
+        SIR_VISIT_IGNORE,               // use_rebind
+        SIR_VISIT_IGNORE,               // local
+        SIR_VISIT_IGNORE,               // param
+        SIR_VISIT_IGNORE,               // overload_set
+        SIR_VISIT_IGNORE                // generic_arg
+    );
 }
 
 } // namespace sema

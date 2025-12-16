@@ -21,6 +21,7 @@ public:
     void analyze(const std::vector<sir::Module *> &mods);
     void analyze_decl_block(sir::DeclBlock &decl_block);
     Result analyze_decl(sir::Decl &decl);
+    void visit_symbol(sir::Symbol symbol);
 
     void visit_func_def(sir::FuncDef &func_def);
     void visit_func_decl(sir::FuncDecl &func_decl);

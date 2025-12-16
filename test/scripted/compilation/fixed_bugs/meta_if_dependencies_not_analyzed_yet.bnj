@@ -1,0 +1,16 @@
+# test:output "true"
+
+struct S {
+    var a: i64;
+    var b: i32;
+}
+
+meta if meta(S).size >= 8 {
+    const LARGE: bool = true;
+} else {
+    const LARGE: bool = false;
+}
+
+func main() {
+    print(LARGE);
+}

@@ -18,7 +18,6 @@ private:
     bool allow_struct_literals;
 
     bool type_expected = false;
-    bool in_parentheses = false;
 
 public:
     ExprParser(Parser &parser, bool allow_struct_literals = false);

@@ -1448,21 +1448,9 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return Result::SUCCESS;
     }
 
-    // TODO: Add remaining symbol types
-    if (auto const_def = symbol.match<sir::ConstDef>()) {
-        DeclInterfaceAnalyzer{analyzer}.visit_const_def(*const_def);
-    } else if (auto type_alias = symbol.match<sir::TypeAlias>()) {
-        if (type_alias->stage < sir::SemaStage::BODY) {
-            Result result = TypeAliasResolver(analyzer).analyze_type_alias(*type_alias);
-
-            if (result == Result::DEF_CYCLE) {
-                analyzer.report_generator.report_err_cyclical_definition(&ident_expr);
-            }
-
-            if (result != Result::SUCCESS) {
-                return Result::ERROR;
-            }
-        }
+    Result partial_result = analyzer.ensure_interface_analyzed(symbol, ident_expr.ast_node);
+    if (partial_result != Result::SUCCESS) {
+        return partial_result;
     }
 
     out_expr = analyzer.create(

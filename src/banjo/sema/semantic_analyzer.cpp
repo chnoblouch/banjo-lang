@@ -12,6 +12,7 @@
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/timing.hpp"
@@ -283,6 +284,28 @@ sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_map_specialization
     }
 
     return nullptr;
+}
+
+Result SemanticAnalyzer::ensure_interface_analyzed(sir::Symbol symbol, ASTNode *ident_ast_node) {
+    if (auto type_alias = symbol.match<sir::TypeAlias>()) {
+        if (type_alias->stage >= sir::SemaStage::BODY) {
+            return Result::SUCCESS;
+        }
+
+        Result result = TypeAliasResolver{*this}.analyze_type_alias(*type_alias);
+
+        if (result == Result::DEF_CYCLE) {
+            report_generator.report_err_cyclical_definition(ident_ast_node);
+        }
+
+        if (result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+        return Result::SUCCESS;
+    } else {
+        DeclInterfaceAnalyzer{*this}.visit_symbol(symbol);
+        return Result::SUCCESS;
+    }
 }
 
 unsigned SemanticAnalyzer::compute_size(sir::Expr type) {

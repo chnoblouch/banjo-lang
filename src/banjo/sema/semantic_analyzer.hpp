@@ -169,6 +169,7 @@ private:
     sir::Specialization<sir::StructDef> *as_std_result_specialization(sir::Expr &type);
     sir::Specialization<sir::StructDef> *as_std_map_specialization(sir::Expr &type);
 
+    Result ensure_interface_analyzed(sir::Symbol symbol, ASTNode *ident_ast_node);
     unsigned compute_size(sir::Expr type);
 
     void add_symbol_def(sir::Symbol sir_symbol);

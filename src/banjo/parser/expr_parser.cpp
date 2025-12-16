@@ -334,9 +334,7 @@ ParseResult ExprParser::parse_paren_expr() {
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume '('
 
-    in_parentheses = true;
     ASTNode *sub_expression = ExprParser(parser, true).parse().node;
-    in_parentheses = false;
 
     if (stream.get()->is(TKN_COMMA)) {
         node.append_child(sub_expression);
