@@ -1186,7 +1186,7 @@ void Formatter::format_attribute_wrapper(ASTNode *node, WhitespaceKind whitespac
     } else {
         ensure_no_space_after(tkn_at);
         format_node(attrs_node, WhitespaceKind::INDENT);
-        format_node(wrapped_node, WhitespaceKind::INDENT_EMPTY_LINE);
+        format_node(wrapped_node, whitespace);
     }
 }
 
