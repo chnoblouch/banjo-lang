@@ -169,7 +169,7 @@ def check_reports(test, conditions):
 
     def add_report(type, line):
         message = line[len(type) + 2:]
-        location = ":".join(stderr_lines[i + 1][3:].split(":")[1:])
+        location = ":".join(stderr_lines[i + 1][3:].split(":")[-2:])
         reports.append((type, message, location))
 
     for i, line in enumerate(stderr_lines):
