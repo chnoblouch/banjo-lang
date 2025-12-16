@@ -2,10 +2,15 @@ use std.{system.panic, convert.to_string};
 
 struct Result[T, E] {
     var successful: bool;
-    @unmanaged var value: T;
-    @unmanaged var error: E;
+
+    @unmanaged
+    var value: T;
+
+    @unmanaged
+    var error: E;
+
     var unwrapped: bool;
-    
+
     pub func new_success(value: T) -> Result[T, E] {
         return Result[T, E] {
             successful: true,
@@ -14,7 +19,7 @@ struct Result[T, E] {
             unwrapped: false,
         };
     }
-    
+
     pub func new_failure(error: E) -> Result[T, E] {
         return Result[T, E] {
             successful: false,
@@ -23,12 +28,12 @@ struct Result[T, E] {
             unwrapped: false,
         };
     }
-    
+
     pub func unwrap(@byval self) -> T {
         if !self.successful {
             panic("tried to unwrap error result: " + to_string(self.error));
         }
-        
+
         self.unwrapped = true;
         return self.value;
     }
@@ -41,7 +46,7 @@ struct Result[T, E] {
         self.unwrapped = true;
         return self.error;
     }
-    
+
     pub func __str__(self) -> String {
         if self.successful {
             return to_string(self.value);
@@ -49,7 +54,7 @@ struct Result[T, E] {
             return to_string(self.error);
         }
     }
-    
+
     meta if meta(T).is_resource || meta(E).is_resource {
         pub func __deinit__(self) {
             if self.unwrapped {

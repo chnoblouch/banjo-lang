@@ -43,7 +43,7 @@ struct StringSlice {
             return false;
         }
 
-        return memory.compare(self.pointer(self.length - other.length), other.data, other.length); 
+        return memory.compare(self.pointer(self.length - other.length), other.data, other.length);
     }
 
     pub func find(self, char: u8) -> ?usize {
@@ -72,12 +72,12 @@ struct StringSlice {
 
     pub func find(self, substr: StringSlice) -> ?usize {
         var i: usize = 0;
-        
+
         while i < self.length - substr.length {
             if self.data[i] == substr.data[0] {
                 var j: usize = 1;
                 var matching = true;
-                
+
                 while j < substr.length {
                     if self.data[i + j] != substr.data[j] {
                         matching = false;
@@ -85,7 +85,7 @@ struct StringSlice {
 
                     j = j + 1;
                 }
-                
+
                 if matching {
                     return i;
                 }

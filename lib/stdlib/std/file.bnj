@@ -33,20 +33,27 @@ struct File: Read, Write, Seek {
     }
 
     var stream: addr;
-    
+
     pub func open[P](path: P, mode: Mode) -> File except Error {
         var c_mode: *u8;
-        
-        if mode == Mode.READ { c_mode = "rb"; }
-        else if mode == Mode.WRITE { c_mode = "wb"; }
-        else if mode == Mode.APPEND { c_mode = "ab"; }
-        else if mode == Mode.READ_WRITE { c_mode = "r+b"; }
-        else if mode == Mode.READ_WRITE_ERASE { c_mode = "w+b"; }
-        else if mode == Mode.READ_APPEND { c_mode = "a+b"; }
-    
+
+        if mode == Mode.READ {
+            c_mode = "rb";
+        } else if mode == Mode.WRITE {
+            c_mode = "wb";
+        } else if mode == Mode.APPEND {
+            c_mode = "ab";
+        } else if mode == Mode.READ_WRITE {
+            c_mode = "r+b";
+        } else if mode == Mode.READ_WRITE_ERASE {
+            c_mode = "w+b";
+        } else if mode == Mode.READ_APPEND {
+            c_mode = "a+b";
+        }
+
         var path_cstring = Path.from(path).str().to_cstring();
         var stream = fopen(path_cstring.data(), c_mode);
-    
+
         if stream == null {
             return Error.last();
         }
@@ -66,7 +73,7 @@ struct File: Read, Write, Seek {
         file.read(buffer.slice);
         return buffer;
     }
-    
+
     pub func read_all_string[P](path: P) -> String except Error {
         var file = open(path, File.Mode.READ).unwrap();
         file.seek(0, .END);
@@ -95,7 +102,7 @@ struct File: Read, Write, Seek {
             return Error.last();
         }
     }
-    
+
     pub func write(self, data: Slice[u8]) -> usize except Error {
         var result = fwrite(data.data, 1, data.length, self.stream);
 
@@ -145,7 +152,7 @@ struct File: Read, Write, Seek {
 
         fflush(self.stream);
     }
-    
+
     func __deinit__(self) {
         fclose(self.stream);
     }

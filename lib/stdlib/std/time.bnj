@@ -5,43 +5,43 @@ struct SystemTime {
 
     pub func now() -> SystemTime {
         return SystemTime {
-            ticks: platform.time_system_ticks()
+            ticks: platform.time_system_ticks(),
         };
     }
-    
+
     pub func unix_epoch() -> SystemTime {
         return SystemTime {
-            ticks: platform.time_system_ticks_since_unix_epoch()
+            ticks: platform.time_system_ticks_since_unix_epoch(),
         };
     }
-    
+
     pub func nanosecs(self) -> u64 {
         return calc_nanosecs(self.ticks, platform.time_system_frequency());
     }
-    
+
     pub func microsecs(self) -> f64 {
         return calc_microsecs(self.ticks, platform.time_system_frequency());
     }
-    
+
     pub func millisecs(self) -> f64 {
         return calc_millisecs(self.ticks, platform.time_system_frequency());
     }
-    
+
     pub func secs(self) -> f64 {
         return calc_secs(self.ticks, platform.time_system_frequency());
     }
-    
+
     pub func since(self, time: SystemTime) -> Duration {
         return Duration {
             ticks: self.ticks - time.ticks,
-            frequency: platform.time_system_frequency()
+            frequency: platform.time_system_frequency(),
         };
     }
-    
+
     pub func elapsed(self) -> Duration {
         return now().since(self);
     }
-    
+
     pub func __sub__(self, rhs: SystemTime) -> Duration {
         return self.since(rhs);
     }
@@ -52,37 +52,37 @@ struct MonotonicTime {
 
     pub func now() -> MonotonicTime {
         return MonotonicTime {
-            ticks: platform.time_monotonic_ticks()
+            ticks: platform.time_monotonic_ticks(),
         };
     }
-    
+
     pub func nanosecs(self) -> u64 {
         return calc_nanosecs(self.ticks, platform.time_monotonic_frequency());
     }
-    
+
     pub func microsecs(self) -> f64 {
         return calc_microsecs(self.ticks, platform.time_monotonic_frequency());
     }
-    
+
     pub func millisecs(self) -> f64 {
         return calc_millisecs(self.ticks, platform.time_monotonic_frequency());
     }
-    
+
     pub func secs(self) -> f64 {
         return calc_secs(self.ticks, platform.time_monotonic_frequency());
     }
-    
+
     pub func since(self, time: MonotonicTime) -> Duration {
         return Duration {
             ticks: self.ticks - time.ticks,
-            frequency: platform.time_monotonic_frequency()
+            frequency: platform.time_monotonic_frequency(),
         };
     }
-    
+
     pub func elapsed(self) -> Duration {
         return now().since(self);
     }
-    
+
     pub func __sub__(self, rhs: MonotonicTime) -> Duration {
         return self.since(rhs);
     }
@@ -91,19 +91,19 @@ struct MonotonicTime {
 struct Duration {
     var ticks: u64;
     var frequency: u64;
-    
+
     pub func nanosecs(self) -> u64 {
         return calc_nanosecs(self.ticks, self.frequency);
     }
-    
+
     pub func microsecs(self) -> f64 {
         return calc_microsecs(self.ticks, self.frequency);
     }
-    
+
     pub func millisecs(self) -> f64 {
         return calc_millisecs(self.ticks, self.frequency);
     }
-    
+
     pub func secs(self) -> f64 {
         return calc_secs(self.ticks, self.frequency);
     }

@@ -1,6 +1,6 @@
 use c.lib.{
     stdlib.{malloc as cmalloc, realloc as crealloc, free as cfree},
-    string.{memcpy as cmemcpy, memcmp as cmemcmp, memset as cmemset}
+    string.{memcpy as cmemcpy, memcmp as cmemcmp, memset as cmemset},
 };
 
 # var alloc_counter: u32 = 0;
@@ -50,16 +50,16 @@ pub func zero[T]() -> T {
 struct PointerMoveIter[T] {
     var pointer: *T;
     var end: *T;
-    
+
     pub func new(pointer: *T, end: *T) -> PointerMoveIter[T] {
         return PointerMoveIter[T] { pointer, end };
     }
-    
+
     func __next__(mut self) -> ?T {
         if self.pointer == self.end {
             return none;
         }
-        
+
         var value: T;
         copy(self.pointer, &value, meta(T).size);
         self.pointer += 1;
@@ -70,16 +70,16 @@ struct PointerMoveIter[T] {
 struct PointerRefIter[T] {
     var pointer: *T;
     var end: *T;
-    
+
     pub func new(pointer: *T, end: *T) -> PointerRefIter[T] {
         return PointerRefIter[T] { pointer, end };
     }
-    
+
     func __next__(mut self) -> ?*T {
         if self.pointer == self.end {
             return none;
         }
-        
+
         var pointer = self.pointer;
         self.pointer += 1;
         return pointer;

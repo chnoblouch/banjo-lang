@@ -31,7 +31,7 @@ struct Socket {
             p_socket_type = platform.SOCKET_TYPE_DATAGRAM;
             p_protocol = platform.SOCKET_PROTOCOL_UDP;
         }
-        
+
         var handle = platform.socket_create(p_address_family, p_socket_type, p_protocol);
 
         if handle == platform.SOCKET_INVALID {

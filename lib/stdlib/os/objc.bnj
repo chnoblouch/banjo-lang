@@ -1,21 +1,26 @@
 use std.config;
 
 meta if config.OS == config.MACOS {
-    @[link_name=objc_msgSend] native func objc_msg_send(obj: addr, sel: addr, param: u64) -> u64;
-    @[link_name=objc_getClass] native func objc_get_class(name: *u8) -> addr;
-    @[link_name=sel_registerName] native func sel_register_name(name: *u8) -> addr;
+    @[link_name=objc_msgSend]
+    native func objc_msg_send(obj: addr, sel: addr, param: u64) -> u64;
+
+    @[link_name=objc_getClass]
+    native func objc_get_class(name: *u8) -> addr;
+
+    @[link_name=sel_registerName]
+    native func sel_register_name(name: *u8) -> addr;
 
     struct Object {
         var id: addr;
-        
+
         pub func from_id(id: addr) -> Object {
             return Object { id };
         }
-        
+
         pub func send_message(self, name: *u8, param: u64) -> u64 {
             return objc_msg_send(self.id, sel_register_name(name), param);
         }
-        
+
         pub func property(self, name: *u8) -> Object {
             var id = self.send_message(name, 0) as addr;
             return Object { id };
@@ -24,21 +29,19 @@ meta if config.OS == config.MACOS {
 
     struct Class {
         var id: addr;
-        
+
         pub func from_id(id: addr) -> Class {
             return Class { id };
         }
-        
+
         pub func from_name(name: *u8) -> Class {
-            return Class {
-                id: objc_get_class(name)
-            };
+            return Class { id: objc_get_class(name) };
         }
-        
+
         pub func send_message(self, name: *u8, param: u64) -> u64 {
             return objc_msg_send(self.id, sel_register_name(name), param);
         }
-        
+
         pub func property(self, name: *u8) -> Object {
             var id = self.send_message(name, 0) as addr;
             return Object { id };

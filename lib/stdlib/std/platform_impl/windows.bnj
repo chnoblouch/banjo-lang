@@ -13,7 +13,7 @@ meta if IS_WINDOWS {
     const SOCKET_TYPE_DATAGRAM: i32 = winapi.SOCK_DGRAM;
     const SOCKET_PROTOCOL_TCP: i32 = winapi.IPPROTO_TCP;
     const SOCKET_PROTOCOL_UDP: i32 = winapi.IPPROTO_UDP;
-    
+
     var wsa_initialized: bool = false;
 
     pub func error_last() -> Error {
@@ -22,7 +22,7 @@ meta if IS_WINDOWS {
 
     pub func error_to_string(error: Error) -> String {
         var buffer: *u8 = null;
-        
+
         var length = winapi.format_message(
             winapi.FORMAT_MESSAGE_ALLOCATE_BUFFER | winapi.FORMAT_MESSAGE_FROM_SYSTEM | winapi.FORMAT_MESSAGE_IGNORE_INSERTS,
             null,
@@ -32,11 +32,11 @@ meta if IS_WINDOWS {
             0,
             null
         );
-        
+
         var trimmed_length = length as usize - 2;
         var string = String.from(StringSlice.new(buffer, trimmed_length));
         winapi.local_free(buffer);
-        
+
         return string;
     }
 
@@ -153,11 +153,11 @@ meta if IS_WINDOWS {
         winapi.get_system_time_as_file_time(&time);
         return time.low_date_time as u64 | (time.high_date_time as u64 << 32);
     }
-    
+
     pub func time_system_frequency() -> u64 {
         return 10000000;
     }
-    
+
     pub func time_system_ticks_since_unix_epoch() -> u64 {
         return 116444736000000000;
     }
@@ -175,11 +175,11 @@ meta if IS_WINDOWS {
     }
 
     pub func socket_create(address_family: i32, socket_type: i32, protocol: i32) -> Socket {
-        if !wsa_initialized {            
+        if !wsa_initialized {
             var wsa_version: u16 = 514;  # MAKEWORD(2, 2)
             var wsa_data: [u8; 512] = undefined;
             winapi.wsa_startup(wsa_version, &wsa_data);
-        
+
             wsa_initialized = true;
         }
 
@@ -188,7 +188,7 @@ meta if IS_WINDOWS {
 
     pub func socket_set_blocking(socket: Socket, blocking: bool) {
         var value: u32;
-    
+
         if blocking {
             value = 0;
         } else {
@@ -200,7 +200,7 @@ meta if IS_WINDOWS {
 
     pub func socket_connect(socket: Socket, host: String, port: u32) -> bool {
         var result: i32;
-        
+
         var addr_hints = winapi.Addrinfo {
             flags: 0,
             family: 0,

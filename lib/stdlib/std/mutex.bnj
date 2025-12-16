@@ -11,7 +11,7 @@ struct Mutex {
 
     pub func lock(self) -> Lock {
         platform.mutex_lock(self.handle);
-        
+
         return Lock {
             handle: self.handle,
         };

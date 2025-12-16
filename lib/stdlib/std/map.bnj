@@ -16,16 +16,16 @@ struct Map[K, V] {
     pub func new() -> Map[K, V] {
         var capacity: u32 = 128;
         var alloc_size = capacity as usize * meta(EntryPtr).size;
-        
+
         var entries = memory.alloc(alloc_size) as *EntryPtr;
         for i in 0..capacity {
             entries[i] = null;
         }
-        
+
         return Map[K, V] {
             entries,
             length: 0,
-            capacity
+            capacity,
         };
     }
 
@@ -38,78 +38,78 @@ struct Map[K, V] {
 
         return map;
     }
-    
+
     pub func contains(self, ref key: K) -> bool {
         var index = self.get_index(key);
         var entry = self.entries[index];
-        
+
         while entry != null as EntryPtr {
             if entry.key == key {
                 return true;
             }
-        
+
             entry = entry.next;
         }
-        
+
         return false;
     }
 
     pub func insert(mut self, key: K, value: V) {
         var index = self.get_index(key);
         var dst = &self.entries[index];
-    
+
         while *dst != null as EntryPtr {
             dst = &(*dst).next;
         }
-        
+
         *dst = memory.box(Entry[K, V] {
             key,
             value,
-            next: null
+            next: null,
         });
-        
+
         self.length += 1;
     }
 
     pub func try_get(self, ref key: K) -> ?V {
         var index = self.get_index(key);
         var entry = self.entries[index];
-        
+
         while entry != null as EntryPtr {
             if entry.key == key {
                 return entry.value;
             }
-        
+
             entry = entry.next;
         }
-        
+
         return none;
     }
 
     pub func __index__(self, ref key: K) -> *V {
         var index = self.get_index(key);
         var entry = self.entries[index];
-        
+
         while entry != null {
             if entry.key == key {
                 return &entry.value;
             }
-        
+
             entry = entry.next;
         }
-        
+
         meta if config.BUILD_CONFIG == config.DEBUG {
             panic("key " + to_repr(key) + " is not in map");
         }
 
         return null;
     }
-    
+
     pub func __refiter__(mut self) -> MapIter[K, V] {
         return MapIter[K, V] {
             cur_bucket: self.entries,
             cur_item: self.entries[0],
-            end: &self.entries[self.capacity]
+            end: &self.entries[self.capacity],
         };
     }
 
@@ -121,24 +121,24 @@ struct Map[K, V] {
         #     string.append(to_repr(entry.key));
         #     string.append(": ");
         #     string.append(to_repr(entry.value));
-            
+
         #     if index != self.length - 1 {
         #         string.append(", ");
         #     }
 
         #     index += 1;
         # }
-        
+
         string.append(']');
         return string;
     }
-    
+
     func get_index(self, ref key: K) -> u32 {
         var hash_code = hash(key);
         var index = hash_code as u32 % self.capacity;
         return 0;
     }
-    
+
     func hash(ref key: K) -> u64 {
         meta if K == i32 {
             return key as u64;
@@ -157,14 +157,14 @@ struct MapIter[K, V] {
 
     pub func __next__(mut self) -> ?*Entry[K, V] {
         while self.cur_item == null {
-            self.cur_bucket += 1;            
+            self.cur_bucket += 1;
             if self.cur_bucket == self.end {
                 return none;
             }
-            
+
             self.cur_item = *self.cur_bucket;
         }
-                
+
         var value = self.cur_item;
         self.cur_item = self.cur_item.next;
         return value;

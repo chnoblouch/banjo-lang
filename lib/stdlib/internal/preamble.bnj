@@ -16,7 +16,7 @@ pub func print[T](ref value: T) {
 pub func println[T](ref value: T) {
     var string = convert.to_string(value);
     write_to_stdout(string.bytes(), string.length());
-    
+
     var line_ending: u8 = '\n';
     write_to_stdout(&line_ending, 1);
 }

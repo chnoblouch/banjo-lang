@@ -2,24 +2,24 @@ use std.platform;
 
 struct Path {
     var path: String;
-    
+
     pub func new() -> Path {
         return Path { path: "" };
     }
-    
+
     pub func from[T](ref value: T) -> Path {
         meta if T == Path {
             var path = value.copy();
-        } else if T == String {            
+        } else if T == String {
             var path = Path { path: value.copy() };
         } else if T == *u8 {
             var path = Path { path: String.from(value) };
         }
-        
+
         path.normalize();
         return path;
     }
-    
+
     pub func append(mut self, component: String) {
         self.path.append('/');
         self.path.append(component);
@@ -34,7 +34,7 @@ struct Path {
             return self.path.copy();
         }
     }
-    
+
     pub func parent(self) -> Path {
         # TODO: Error handling
 
@@ -56,7 +56,7 @@ struct Path {
         # TODO: Error handling
         return platform.path_is_dir(__builtin_pointer_to(self.path));
     }
-    
+
     pub func list_dir(self) -> Array[Path] {
         # TODO: Error handling
 
@@ -71,15 +71,15 @@ struct Path {
 
         return paths;
     }
-    
+
     pub func copy(self) -> Path {
         return Path { path: self.path.copy() };
     }
 
-    pub func str(self) -> String {    
+    pub func str(self) -> String {
         return self.path.copy();
     }
-    
+
     pub func __str__(self) -> String {
         return self.path.copy();
     }
@@ -87,7 +87,7 @@ struct Path {
     pub func __repr__(self, indent: u32) -> String {
         return self.path.__repr__(indent);
     }
-    
+
     func normalize(mut self) {
         for i in 0..self.path.length() {
             if self.path.bytes()[i] == '\\' {

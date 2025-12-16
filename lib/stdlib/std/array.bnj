@@ -7,46 +7,46 @@ use std.{
 struct Array[T] {
     var slice: Slice[T];
     var capacity: usize;
-    
+
     pub func new() -> Array[T] {
         return Array[T] {
             slice: Slice[T].new_empty(),
             capacity: 0,
         };
     }
-    
+
     pub func from(pointer: *T, length: usize) -> Array[T] {
         var size = length * meta(T).size;
         var data = memory.alloc(size) as *T;
         memory.copy(pointer, data, size);
-        
+
         return Array[T] {
             slice: Slice[T].new(data, length),
             capacity: length,
         };
     }
-    
+
     pub func sized(length: usize) -> Array[T] {
         var data = memory.alloc(length * meta(T).size) as *T;
-    
+
         return Array[T] {
             slice: Slice[T].new(data, length),
             capacity: length,
         };
     }
-    
+
     pub func __deinit__(self) {
         for i in 0..self.slice.length {
             __builtin_deinit(self.slice.data[i]);
         }
-        
+
         memory.free(self.slice.data);
     }
 
     pub func slice(self) -> Slice[T] {
         return self.slice;
     }
-    
+
     pub func data(self) -> *T {
         return self.slice.data;
     }
@@ -54,18 +54,18 @@ struct Array[T] {
     pub func length(self) -> usize {
         return self.slice.length;
     }
-    
-    pub func append(mut self, value: T) {    
+
+    pub func append(mut self, value: T) {
         self.ensure_capacity(self.slice.length + 1);
         self.slice.data[self.slice.length] = value;
         self.slice.length += 1;
     }
-    
+
     pub func resize(mut self, length: usize) {
         self.slice.length = length;
         self.ensure_capacity(length);
     }
-    
+
     pub func clear(mut self) {
         self.slice.length = 0;
     }
@@ -74,13 +74,13 @@ struct Array[T] {
         var size = self.slice.length * meta(T).size;
         var data = memory.alloc(size) as *T;
         memory.copy(self.slice.data, data, size);
-        
+
         return Array[T] {
             slice: Slice[T].new(data, self.slice.length),
             capacity: self.slice.length,
         };
     }
-    
+
     pub func __index__(self, index: usize) -> ref T {
         return self.slice.__index__(index);
     }
@@ -88,7 +88,7 @@ struct Array[T] {
     pub func __mutindex__(mut self, index: usize) -> ref mut T {
         return self.slice.__mutindex__(index);
     }
-    
+
     pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
         return self.slice.__iter__();
     }
@@ -100,11 +100,11 @@ struct Array[T] {
     pub func __mutiter__(mut self) -> PointerRefIter[T] {
         return self.slice.__mutiter__();
     }
-    
+
     pub func __add__(mut self, value: T) -> Array[T] {
         var length = self.slice.length + 1;
         var data = memory.alloc(length * meta(T).size) as *T;
-        
+
         memory.copy(self.slice.data, data, self.slice.length * meta(T).size);
         data[self.slice.length] = value;
 
@@ -117,7 +117,7 @@ struct Array[T] {
     pub func __add__(mut self, other: Array[T]) -> Array[T] {
         var length = self.slice.length + other.slice.length;
         var data = memory.alloc(length * meta(T).size) as *T;
-        
+
         memory.copy(self.slice.data, &data[0], self.slice.length * meta(T).size);
         memory.copy(other.slice.data, &data[self.slice.length], other.slice.length * meta(T).size);
 
@@ -134,12 +134,12 @@ struct Array[T] {
     pub func __repr__(self, indent: u32) -> String {
         return self.slice.__repr__(indent);
     }
-    
+
     func ensure_capacity(mut self, capacity: usize) {
         if self.capacity >= capacity {
             return;
         }
-                
+
         if self.capacity == 0 {
             self.capacity = capacity;
         } else {

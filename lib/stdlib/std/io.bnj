@@ -10,7 +10,7 @@ proto Read {
 
     pub func read_u8(mut self) -> u8 except Error {
         var value: u8;
-        
+
         try num_bytes in self.read(Slice[u8].new(&value, 1)) {
             # TODO: Check number of bytes
             return value;
@@ -21,7 +21,7 @@ proto Read {
 
     pub func read_u16_be(mut self) -> u16 except Error {
         var bytes: [u8; 2];
-        
+
         try num_bytes in self.read(Slice[u8].new(&bytes[0], 2)) {
             # TODO: Check number of bytes
             return numeric.u16_from_bytes_be(bytes);
@@ -32,7 +32,7 @@ proto Read {
 
     pub func read_u16_le(mut self) -> u16 except Error {
         var bytes: [u8; 2];
-        
+
         try num_bytes in self.read(Slice[u8].new(&bytes[0], 2)) {
             # TODO: Check number of bytes
             return numeric.u16_from_bytes_le(bytes);
@@ -43,7 +43,7 @@ proto Read {
 
     pub func read_u16_native(mut self) -> u16 except Error {
         var value: u16;
-        
+
         try num_bytes in self.read(Slice[u8].new(&value as *u8, 2)) {
             # TODO: Check number of bytes
             return value;
@@ -54,7 +54,7 @@ proto Read {
 
     pub func read_u32_be(mut self) -> u32 except Error {
         var bytes: [u8; 4];
-        
+
         try num_bytes in self.read(Slice[u8].new(&bytes[0], 4)) {
             # TODO: Check number of bytes
             return numeric.u32_from_bytes_be(bytes);
@@ -65,7 +65,7 @@ proto Read {
 
     pub func read_u32_le(mut self) -> u32 except Error {
         var bytes: [u8; 4];
-        
+
         try num_bytes in self.read(Slice[u8].new(&bytes[0], 4)) {
             # TODO: Check number of bytes
             return numeric.u32_from_bytes_le(bytes);
@@ -76,7 +76,7 @@ proto Read {
 
     pub func read_u32_native(mut self) -> u32 except Error {
         var value: u32;
-        
+
         try num_bytes in self.read(Slice[u8].new(&value as *u8, 4)) {
             # TODO: Check number of bytes
             return value;
@@ -87,7 +87,7 @@ proto Read {
 
     pub func read_u64_be(mut self) -> u64 except Error {
         var bytes: [u8; 8];
-        
+
         try num_bytes in self.read(Slice[u8].new(&bytes[0], 8)) {
             # TODO: Check number of bytes
             return numeric.u64_from_bytes_be(bytes);
@@ -98,7 +98,7 @@ proto Read {
 
     pub func read_u64_le(mut self) -> u64 except Error {
         var bytes: [u8; 8];
-        
+
         try num_bytes in self.read(Slice[u8].new(&bytes[0], 8)) {
             # TODO: Check number of bytes
             return numeric.u64_from_bytes_le(bytes);
@@ -109,7 +109,7 @@ proto Read {
 
     pub func read_u64_native(mut self) -> u64 except Error {
         var value: u64;
-        
+
         try num_bytes in self.read(Slice[u8].new(&value as *u8, 8)) {
             # TODO: Check number of bytes
             return value;
@@ -122,11 +122,11 @@ proto Read {
         # TODO: Buffering, error handling
 
         var line = "";
-        
+
         var char: u8;
         self.read(Slice[u8].new(&char, 1)).unwrap();
 
-        while char != '\r' && char != '\n' {            
+        while char != '\r' && char != '\n' {
             line += char;
             self.read(Slice[u8].new(&char, 1)).unwrap();
         }
@@ -137,7 +137,7 @@ proto Read {
 
 proto Write {
     pub func write(mut self, data: Slice[u8]) -> usize except Error;
-    
+
     pub func write_u8(mut self, value: u8) -> usize except Error {
         return self.write(Slice[u8].new(&value, 1));
     }
@@ -207,13 +207,13 @@ proto Seek {
 
 struct Error {
     var handle: platform.Error;
-    
+
     pub func last() -> Error {
         return Error {
             handle: platform.error_last(),
         };
     }
-    
+
     pub func __str__(self) -> String {
         return platform.error_to_string(self.handle);
     }

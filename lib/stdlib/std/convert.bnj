@@ -41,7 +41,7 @@ pub func to_repr[T](ref value: T) -> String {
 pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     meta if T == String {
         return "\"" + value.copy() + "\"";
-    }  else if T == u8 {
+    } else if T == u8 {
         return "\'" + char_to_string(value) + "\'";
     } else if meta(T).is_static_array {
         return static_array_to_repr(value, indent);
@@ -135,10 +135,10 @@ func i64_to_string(value: i64, base: u64) -> String {
     var capacity: usize = 32;
     var buffer: [u8; 32];
     var length: usize = 0;
-    
+
     var remainder: u64;
     var negative: bool;
-    
+
     if value >= 0 {
         remainder = value as u64;
         negative = false;
@@ -148,22 +148,22 @@ func i64_to_string(value: i64, base: u64) -> String {
     }
 
     var chars: *u8 = "0123456789ABCDEF";
-    
+
     while true {
         length += 1;
         buffer[capacity - length] = chars[(remainder % base)];
         remainder /= base;
-        
+
         if remainder == 0 {
             break;
         }
     }
-    
+
     if negative {
         length += 1;
         buffer[capacity - length] = '-';
     }
-    
+
     var slice = StringSlice.new(&buffer[capacity - length], length);
     return String.from(slice);
 }
@@ -172,20 +172,20 @@ func u64_to_string(value: u64, base: u64) -> String {
     var capacity: usize = 32;
     var buffer: [u8; 32];
     var length: usize = 0;
-    
+
     var remainder = value;
     var chars: *u8 = "0123456789ABCDEF";
-    
+
     while true {
         length += 1;
         buffer[capacity - length] = chars[(remainder % base)];
         remainder /= base;
-        
+
         if remainder == 0 {
             break;
         }
     }
-    
+
     var slice = StringSlice.new(&buffer[capacity - length], length);
     return String.from(slice);
 }
@@ -221,13 +221,13 @@ func pointer_to_string[T](value: T) -> String {
 func static_array_to_repr[T](ref value: T, indent: u32) -> String {
     var pointer = __builtin_pointer_to(value[0]);
     var slice = Slice[meta(T).array_base].new(pointer, meta(T).array_length);
-    return slice.__repr__(indent);   
+    return slice.__repr__(indent);
 }
 
 func tuple_to_repr[T](ref value: T, indent: u32) -> String {
     var string = "(\n";
 
-    meta for i in 0..meta(T).tuple_num_fields {    
+    meta for i in 0..meta(T).tuple_num_fields {
         for i in 0..indent + 1 {
             string += "  ";
         }
@@ -247,7 +247,7 @@ func tuple_to_repr[T](ref value: T, indent: u32) -> String {
 func struct_to_repr[T](ref struct_: T, indent: u32) -> String {
     var string = meta(T).name + " {\n";
 
-    meta for field_name in meta(T).fields {    
+    meta for field_name in meta(T).fields {
         for i in 0..indent + 1 {
             string += "  ";
         }
@@ -268,7 +268,7 @@ func struct_to_repr[T](ref struct_: T, indent: u32) -> String {
 
 func enum_to_repr[T](enum_: T) -> String {
     var variant_name: String;
-    
+
     meta for variant in meta(T).variants {
         # TODO: This cast to 'i32' should not be necessary.
         if enum_ as i32 == variant.1 {

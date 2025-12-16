@@ -18,7 +18,7 @@ meta if IS_UNIX {
     pub func error_last() -> Error {
         return posix.errno();
     }
-    
+
     pub func error_to_string(error: Error) -> String {
         return String.from_cstr(c.lib.string.strerror(error));
     }
@@ -60,7 +60,7 @@ meta if IS_UNIX {
 
     pub func path_list_dir(path: *String) -> Array[String] {
         # TODO: Error handling
-        
+
         var dir = posix.opendir(path.to_cstring().data());
         var entry = posix.readdir(dir);
 
@@ -97,9 +97,9 @@ meta if IS_UNIX {
     pub func thread_sleep(milliseconds: u32) {
         var time = posix.Timespec {
             tv_sec: (milliseconds / 1000) as c.LongLong,
-            tv_nsec: (milliseconds % 1000) as c.Long * 1000000
+            tv_nsec: (milliseconds % 1000) as c.Long * 1000000,
         };
-        
+
         posix.nanosleep(&time, null);
     }
 
@@ -109,7 +109,7 @@ meta if IS_UNIX {
 
     pub func mutex_create() -> Mutex {
         var mutex = memory.alloc_box[posix.PthreadMutex]();
-        
+
         if posix.pthread_mutex_init(mutex, null) != 0 {
             panic("failed to create mutex");
         }
@@ -142,11 +142,11 @@ meta if IS_UNIX {
         posix.clock_gettime(posix.CLOCK_REALTIME, &time);
         return 1000000000 * time.tv_sec as u64 + time.tv_nsec as u64;
     }
-    
+
     pub func time_system_frequency() -> u64 {
         return 1000000000;
     }
-    
+
     pub func time_system_ticks_since_unix_epoch() -> u64 {
         return 0;
     }
@@ -172,7 +172,7 @@ meta if IS_UNIX {
 
     pub func socket_connect(socket: Socket, host: String, port: u32) -> bool {
         var result: i32;
-        
+
         var addr_hints = posix.Addrinfo {
             flags: 0,
             family: 0,

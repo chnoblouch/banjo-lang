@@ -16,8 +16,8 @@ struct Thread {
     pub func join(self) {
         platform.thread_join(self.handle);
     }
-    
-    func initializer(data: addr) {    
+
+    func initializer(data: addr) {
         var pointer = data as *||;
         var target = *pointer;
         memory.free(data);

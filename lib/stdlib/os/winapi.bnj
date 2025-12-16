@@ -84,7 +84,7 @@ native func read_file(
     buffer: addr,
     number_of_bytes_to_read: Dword,
     number_of_bytes_read: *Dword,
-    overlapped: addr
+    overlapped: addr,
 ) -> Bool;
 
 @[link_name=WriteFile]
@@ -93,7 +93,7 @@ native func write_file(
     buffer: addr,
     number_of_bytes_to_write: Dword,
     number_of_bytes_written: *Dword,
-    overlapped: addr
+    overlapped: addr,
 ) -> Bool;
 
 @[link_name=GetFileAttributesA]
@@ -140,20 +140,18 @@ const WAIT_FAILED: Dword = 0xFFFFFFFF;
 @[link_name=WaitForSingleObject]
 native func wait_for_single_object(
     handle: addr,
-    milliseconds: u32
+    milliseconds: u32,
 ) -> u32;
 
 @[link_name=CreateMutexA]
 native func create_mutex(
     mutex_attributes: addr,
     initial_owner: Bool,
-    name: *u8
+    name: *u8,
 ) -> Handle;
 
 @[link_name=ReleaseMutex]
-native func release_mutex(
-    mutex: Handle
-) -> Bool;
+native func release_mutex(mutex: Handle) -> Bool;
 
 @[link_name=Sleep]
 native func sleep(milliseconds: u32);
@@ -173,7 +171,7 @@ native func create_thread(
     start_address: func(addr),
     parameter: addr,
     creation_flags: u32,
-    thread_id: *u32
+    thread_id: *u32,
 ) -> addr;
 
 # --- sysinfoapi.h ---
@@ -214,7 +212,7 @@ native func get_last_error() -> Dword;
 
 struct Sockaddr {
     var family: u16;
-    var data: [u8; 14];   
+    var data: [u8; 14];
 }
 
 struct Addrinfo {
@@ -267,21 +265,21 @@ const FIONBIO: u32 = 0x8004667E;
 @[link_name=WSAStartup]
 native func wsa_startup(
     version_required: Word,
-    wsa_data: addr
+    wsa_data: addr,
 ) -> i32;
 
 @[link_name=socket]
 native func socket(
     af: i32,
     type_: i32,
-    protocol: i32
+    protocol: i32,
 ) -> Socket;
 
 @[link_name=connect]
 native func connect(
     s: Socket,
     name: *Sockaddr,
-    namelen: i32
+    namelen: i32,
 ) -> i32;
 
 @[link_name=send]
@@ -289,7 +287,7 @@ native func send(
     s: Socket,
     buf: *u8,
     len: i32,
-    flags: i32
+    flags: i32,
 ) -> i32;
 
 @[link_name=recv]
@@ -297,13 +295,13 @@ native func recv(
     s: Socket,
     buf: *u8,
     len: i32,
-    flags: i32
+    flags: i32,
 ) -> i32;
 
 @[link_name=shutdown]
 native func shutdown(
     s: Socket,
-    how: i32
+    how: i32,
 ) -> i32;
 
 @[link_name=closesocket]
@@ -313,7 +311,7 @@ native func closesocket(s: Socket) -> i32;
 native func ioctlsocket(
     s: Socket,
     cmd: u32,
-    argp: *u32
+    argp: *u32,
 ) -> i32;
 
 # --- ws2tcpip.h ---
@@ -323,7 +321,7 @@ native func getaddrinfo(
     node_name: *u8,
     service_name: *u8,
     hints: *Addrinfo,
-    result: **Addrinfo
+    result: **Addrinfo,
 ) -> i32;
 
 @[link_name=freeaddrinfo]
@@ -416,10 +414,16 @@ native func sym_from_addr(
 ) -> Bool;
 
 @[link_name=SymGetModuleBase64]
-native func sym_get_module_base_64(process: Handle, addr_: Dword64) -> Dword64;
+native func sym_get_module_base_64(
+    process: Handle,
+    addr_: Dword64,
+) -> Dword64;
 
 @[link_name=SymFunctionTableAccess64]
-native func sym_function_table_access_64(process: Handle, addr_base: Dword64) -> addr;
+native func sym_function_table_access_64(
+    process: Handle,
+    addr_base: Dword64,
+) -> addr;
 
 @[link_name=StackWalk64]
 native func stack_walk_64(
