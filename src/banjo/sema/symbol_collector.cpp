@@ -299,7 +299,6 @@ void SymbolCollector::collect_use_item(sir::UseItem &use_item, sir::UseDecl &par
     else if (auto use_rebind = use_item.match<sir::UseRebind>()) collect_use_rebind(*use_rebind, parent);
     else if (auto use_dot_expr = use_item.match<sir::UseDotExpr>()) collect_use_dot_expr(*use_dot_expr, parent);
     else if (auto use_list = use_item.match<sir::UseList>()) collect_use_list(*use_list, parent);
-    else ASSERT_UNREACHABLE;
 }
 
 void SymbolCollector::collect_use_ident(sir::UseIdent &use_ident, sir::UseDecl &parent) {

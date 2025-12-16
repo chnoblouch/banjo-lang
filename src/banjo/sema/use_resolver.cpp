@@ -49,7 +49,7 @@ Result UseResolver::resolve_use_item(sir::UseItem &use_item, sir::Symbol &symbol
     } else if (auto use_list = use_item.match<sir::UseList>()) {
         return resolve_use_list(*use_list, symbol);
     } else {
-        ASSERT_UNREACHABLE;
+        return Result::SUCCESS;
     }
 }
 
