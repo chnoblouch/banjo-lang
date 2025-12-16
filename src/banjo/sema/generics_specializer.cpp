@@ -57,14 +57,22 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
         }
     );
 
+    sir::SymbolTable *symbol_table = analyzer.get_mod().create(
+        sir::SymbolTable{
+            .parent = generic_func_def.block.symbol_table->parent,
+        }
+    );
+
     generic_func_def.specializations.push_back(
         sir::Specialization<sir::FuncDef>{
             .args = args,
             .def = clone,
+            .symbol_table = symbol_table,
         }
     );
 
     clone->parent_specialization = &generic_func_def.specializations.back();
+    clone->block.symbol_table->parent = symbol_table;
 
     SymbolCollector(analyzer).collect_func_specialization(generic_func_def, *clone);
     analyzer.enter_decl(clone);
@@ -106,14 +114,22 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
         }
     );
 
+    sir::SymbolTable *symbol_table = analyzer.get_mod().create(
+        sir::SymbolTable{
+            .parent = generic_struct_def.block.symbol_table->parent,
+        }
+    );
+
     generic_struct_def.specializations.push_back(
         sir::Specialization<sir::StructDef>{
             .args = args,
             .def = clone,
+            .symbol_table = symbol_table,
         }
     );
 
     clone->parent_specialization = &generic_struct_def.specializations.back();
+    clone->block.symbol_table->parent = symbol_table;
 
     SymbolCollector(analyzer).collect_struct_specialization(generic_struct_def, *clone);
 
@@ -132,7 +148,6 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     if (analyzer.stage >= sir::SemaStage::RESOURCES) {
         ResourceAnalyzer(analyzer).visit_struct_def(*clone);
     }
-
 
     if (analyzer.mode == Mode::COMPLETION) {
         analyzer.get_completion_infection().struct_specializations[&generic_struct_def] += 1;

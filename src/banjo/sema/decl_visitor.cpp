@@ -42,11 +42,14 @@ void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
         for (sir::Specialization<sir::FuncDef> &specialization : func_def.specializations) {
             visit_func_def(*specialization.def);
         }
+    } else if (func_def.parent_specialization) {
+        analyzer.enter_decl(&func_def);
+        analyzer.scope_stack.top().symbol_table = func_def.parent_specialization->symbol_table;
+        analyze_func_def(func_def);
+        analyzer.exit_decl();
     } else {
         analyzer.enter_decl(&func_def);
-        analyzer.enter_block(func_def.block);
         analyze_func_def(func_def);
-        analyzer.exit_block();
         analyzer.exit_decl();
     }
 }

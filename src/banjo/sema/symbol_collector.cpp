@@ -45,7 +45,7 @@ void SymbolCollector::collect_func_specialization(sir::FuncDef &generic_def, sir
             }
         );
 
-        specialization.block.symbol_table->insert_decl(arg->ident.value, arg);
+        specialization.parent_specialization->symbol_table->insert_decl(arg->ident.value, arg);
     }
 }
 
@@ -62,7 +62,7 @@ void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def,
             }
         );
 
-        specialization.block.symbol_table->insert_decl(arg->ident.value, arg);
+        specialization.parent_specialization->symbol_table->insert_decl(arg->ident.value, arg);
     }
 
     analyzer.enter_decl(&specialization);

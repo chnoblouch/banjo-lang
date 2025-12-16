@@ -27,7 +27,9 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         return Result::SUCCESS;
     }
 
+    analyzer.enter_block(func_def.block);
     StmtAnalyzer(analyzer).analyze_block(func_def.block);
+    analyzer.exit_block();
 
     ReturnChecker::Result return_checker_result = ReturnChecker(analyzer).check(func_def.block);
     bool has_return_value = !func_def.type.return_type.is_primitive_type(sir::Primitive::VOID);

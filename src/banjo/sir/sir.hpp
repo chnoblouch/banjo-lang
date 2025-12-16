@@ -560,13 +560,14 @@ struct GenericParam {
 
 struct GenericArg {
     Ident ident;
-    sir::Expr value;
+    Expr value;
 };
 
 template <typename T>
 struct Specialization {
     std::span<Expr> args;
     T *def;
+    SymbolTable *symbol_table;
 };
 
 struct FuncType {
