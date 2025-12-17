@@ -143,7 +143,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &sym
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_const_def_value(sir::ConstDef &const_def) {
-    Result result = DeclBodyAnalyzer(analyzer).visit_const_def(const_def);
+    Result result = DeclBodyAnalyzer{analyzer}.visit_const_def(const_def);
     if (result != Result::SUCCESS) {
         return result;
     }

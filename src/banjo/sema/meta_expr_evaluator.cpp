@@ -24,7 +24,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaFieldExpr &meta_field_expr, sir::Exp
     sir::Expr base_expr = meta_field_expr.base.as<sir::MetaAccess>().expr;
     std::string_view field_name = meta_field_expr.field.value;
 
-    partial_result = ExprAnalyzer(analyzer).analyze(base_expr);
+    partial_result = ExprAnalyzer(analyzer, ExprAnalyzer::ANALYZE_SYMBOL_INTERFACES).analyze(base_expr);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }

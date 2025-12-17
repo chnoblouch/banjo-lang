@@ -22,7 +22,8 @@ Result TypeAliasResolver::analyze_type_alias(sir::TypeAlias &type_alias) {
     }
 
     analyzer.decl_stack.push_back(&type_alias);
-    Result result = ExprAnalyzer(analyzer).analyze_type(type_alias.type);
+    ExprAnalyzer expr_analyzer{analyzer, ExprAnalyzer::ANALYZE_SYMBOL_INTERFACES};
+    Result result = expr_analyzer.analyze_type(type_alias.type);
     analyzer.decl_stack.pop_back();
 
     type_alias.stage = sir::SemaStage::BODY;

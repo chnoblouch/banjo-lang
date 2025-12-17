@@ -69,7 +69,12 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
     // }
 
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
-        if (ExprAnalyzer(analyzer, false).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+        ExprAnalyzer expr_analyzer{
+            analyzer,
+            ExprAnalyzer::DONT_EVAL_META_EXPRS | ExprAnalyzer::ANALYZE_SYMBOL_INTERFACES,
+        };
+
+        if (expr_analyzer.analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
             return;
         }
 
@@ -128,7 +133,12 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
     }
 
     for (sir::MetaIfCondBranch &cond_branch : meta_if_stmt.cond_branches) {
-        if (ExprAnalyzer(analyzer, false).analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
+        ExprAnalyzer expr_analyzer{
+            analyzer,
+            ExprAnalyzer::DONT_EVAL_META_EXPRS | ExprAnalyzer::ANALYZE_SYMBOL_INTERFACES,
+        };
+
+        if (expr_analyzer.analyze_uncoerced(cond_branch.condition) != Result::SUCCESS) {
             return;
         }
 
@@ -192,7 +202,9 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
 }
 
 Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::Expr> &out_values) {
-    if (ExprAnalyzer(analyzer).analyze_uncoerced(range) != Result::SUCCESS) {
+    ExprAnalyzer expr_analyzer{analyzer, ExprAnalyzer::ANALYZE_SYMBOL_INTERFACES};
+
+    if (expr_analyzer.analyze_uncoerced(range) != Result::SUCCESS) {
         return Result::ERROR;
     }
 

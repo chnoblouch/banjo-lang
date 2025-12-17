@@ -34,9 +34,9 @@ namespace lang {
 
 namespace sema {
 
-ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, bool eval_meta_exprs /* = true */)
-  : analyzer(analyzer),
-    eval_meta_exprs(eval_meta_exprs) {}
+ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, unsigned flags /* = 0x00000000 */)
+  : analyzer{analyzer},
+    flags{flags} {}
 
 Result ExprAnalyzer::analyze_value(sir::Expr &expr) {
     Result result = analyze_value_uncoerced(expr);
@@ -113,6 +113,8 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     if (expr.get_type().is<sir::ReferenceType>()) {
         return Result::SUCCESS;
     }
+
+    bool eval_meta_exprs = !(flags & DONT_EVAL_META_EXPRS);
 
     SIR_VISIT_EXPR(
         expr,
@@ -274,7 +276,7 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
     Result partial_result;
 
     for (sir::Expr &value : array_literal.values) {
-        partial_result = ExprAnalyzer(analyzer).analyze_uncoerced(value);
+        partial_result = analyze_uncoerced(value);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -320,7 +322,7 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
     Result result;
 
     if (struct_literal.type) {
-        result = ExprAnalyzer(analyzer).analyze_type(struct_literal.type);
+        result = analyze_type(struct_literal.type);
         if (result != Result::SUCCESS) {
             return result;
         }
@@ -335,7 +337,7 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
             continue;
         }
 
-        result = ExprAnalyzer(analyzer).analyze_value_uncoerced(entry.value);
+        result = analyze_value_uncoerced(entry.value);
         if (result != Result::SUCCESS) {
             return result;
         }
@@ -351,12 +353,12 @@ Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr
     Result partial_result;
 
     for (sir::MapLiteralEntry &entry : map_literal.entries) {
-        partial_result = ExprAnalyzer(analyzer).analyze_uncoerced(entry.key);
+        partial_result = analyze_uncoerced(entry.key);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
 
-        partial_result = ExprAnalyzer(analyzer).analyze_uncoerced(entry.value);
+        partial_result = analyze_uncoerced(entry.value);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -547,11 +549,11 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     Result rhs_result;
 
     if (Utils::is_one_of(binary_expr.op, {sir::BinaryOp::EQ, sir::BinaryOp::NE})) {
-        lhs_result = ExprAnalyzer(analyzer).analyze_uncoerced(binary_expr.lhs);
-        rhs_result = ExprAnalyzer(analyzer).analyze_uncoerced(binary_expr.rhs);
+        lhs_result = analyze_uncoerced(binary_expr.lhs);
+        rhs_result = analyze_uncoerced(binary_expr.rhs);
     } else {
-        lhs_result = ExprAnalyzer(analyzer).analyze_value_uncoerced(binary_expr.lhs);
-        rhs_result = ExprAnalyzer(analyzer).analyze_value_uncoerced(binary_expr.rhs);
+        lhs_result = analyze_value_uncoerced(binary_expr.lhs);
+        rhs_result = analyze_value_uncoerced(binary_expr.rhs);
     }
 
     if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
@@ -696,7 +698,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     // expressions twice.
     ASSUME(unary_expr.op != sir::UnaryOp::DEREF);
 
-    partial_result = ExprAnalyzer(analyzer).analyze_value_uncoerced(unary_expr.value);
+    partial_result = analyze_value_uncoerced(unary_expr.value);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -780,12 +782,12 @@ Result ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze_value(cast_expr.value);
+    partial_result = analyze_value(cast_expr.value);
     if (partial_result != Result::SUCCESS) {
         result = partial_result;
     }
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(cast_expr.type);
+    partial_result = analyze_type(cast_expr.type);
     if (partial_result != Result::SUCCESS) {
         result = partial_result;
     }
@@ -827,7 +829,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     // TODO: move this into some kind of builtin module.
     if (auto ident_expr = call_expr.callee.match<sir::IdentExpr>()) {
         if (ident_expr->value == "__builtin_deinit") {
-            ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
+            analyze_value(call_expr.args[0]);
 
             out_expr = analyzer.create(
                 sir::DeinitExpr{
@@ -840,7 +842,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
             return Result::SUCCESS;
         } else if (ident_expr->value == "__builtin_pointer_to") {
-            ExprAnalyzer(analyzer).analyze_value(call_expr.args[0]);
+            analyze_value(call_expr.args[0]);
 
             out_expr = analyzer.create(
                 sir::UnaryExpr{
@@ -863,7 +865,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
         partial_result = analyze_dot_expr_callee(*dot_expr, call_expr, is_method);
     } else {
-        partial_result = ExprAnalyzer(analyzer).analyze_value(call_expr.callee);
+        partial_result = analyze_value(call_expr.callee);
     }
 
     if (partial_result != Result::SUCCESS) {
@@ -879,7 +881,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     for (unsigned i = first_arg_to_analyze; i < call_expr.args.size(); i++) {
         sir::Expr &arg = call_expr.args[i];
 
-        partial_result = ExprAnalyzer(analyzer).analyze_value_uncoerced(arg);
+        partial_result = analyze_value_uncoerced(arg);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -1028,7 +1030,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr, bool &is_method) {
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
+    partial_result = analyze(dot_expr.lhs);
     if (partial_result != Result::SUCCESS) {
         return partial_result;
     }
@@ -1124,7 +1126,7 @@ Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::E
     for (unsigned i = 0; i < call_expr.args.size(); i++) {
         sir::Expr expected_type = union_case.fields[i].type;
 
-        partial_result = ExprAnalyzer(analyzer).analyze_value(call_expr.args[i], expected_type);
+        partial_result = analyze_value(call_expr.args[i], expected_type);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -1149,12 +1151,12 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(static_array_type.base_type);
+    partial_result = analyze_type(static_array_type.base_type);
     if (partial_result != Result::SUCCESS) {
         result = Result::ERROR;
     }
 
-    partial_result = ExprAnalyzer(analyzer).analyze_value(static_array_type.length);
+    partial_result = analyze_value(static_array_type.length);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -1187,14 +1189,14 @@ Result ExprAnalyzer::analyze_func_type(sir::FuncType &func_type) {
     Result partial_result;
 
     for (sir::Param &param : func_type.params) {
-        partial_result = ExprAnalyzer(analyzer).analyze_type(param.type);
+        partial_result = analyze_type(param.type);
 
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
     }
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(func_type.return_type);
+    partial_result = analyze_type(func_type.return_type);
 
     if (partial_result != Result::SUCCESS) {
         result = Result::ERROR;
@@ -1206,7 +1208,7 @@ Result ExprAnalyzer::analyze_func_type(sir::FuncType &func_type) {
 Result ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir::Expr &out_expr) {
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(optional_type.base_type);
+    partial_result = analyze_type(optional_type.base_type);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -1222,12 +1224,12 @@ Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(result_type.value_type);
+    partial_result = analyze_type(result_type.value_type);
     if (partial_result != Result::SUCCESS) {
         result = Result::ERROR;
     }
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(result_type.error_type);
+    partial_result = analyze_type(result_type.error_type);
     if (partial_result != Result::SUCCESS) {
         result = Result::ERROR;
     }
@@ -1246,7 +1248,7 @@ Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr
 Result ExprAnalyzer::analyze_array_type(sir::ArrayType &array_type, sir::Expr &out_expr) {
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(array_type.base_type);
+    partial_result = analyze_type(array_type.base_type);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -1262,12 +1264,12 @@ Result ExprAnalyzer::analyze_map_type(sir::MapType &map_type, sir::Expr &out_exp
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(map_type.key_type);
+    partial_result = analyze_type(map_type.key_type);
     if (partial_result != Result::SUCCESS) {
         result = Result::ERROR;
     }
 
-    partial_result = ExprAnalyzer(analyzer).analyze_type(map_type.value_type);
+    partial_result = analyze_type(map_type.value_type);
     if (partial_result != Result::SUCCESS) {
         result = Result::ERROR;
     }
@@ -1297,8 +1299,8 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
     Result lhs_result;
     Result rhs_result;
 
-    lhs_result = ExprAnalyzer(analyzer).analyze_uncoerced(range_expr.lhs);
-    rhs_result = ExprAnalyzer(analyzer).analyze_uncoerced(range_expr.rhs);
+    lhs_result = analyze_uncoerced(range_expr.lhs);
+    rhs_result = analyze_uncoerced(range_expr.rhs);
 
     if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
         return Result::ERROR;
@@ -1339,7 +1341,7 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
     ASSERT(!tuple_expr.exprs.empty());
 
     for (sir::Expr &expr : tuple_expr.exprs) {
-        ExprAnalyzer(analyzer).analyze_uncoerced(expr);
+        analyze_uncoerced(expr);
     }
 
     if (tuple_expr.exprs[0].is_type()) {
@@ -1448,9 +1450,12 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         return Result::SUCCESS;
     }
 
-    Result partial_result = analyzer.ensure_interface_analyzed(symbol, ident_expr.ast_node);
-    if (partial_result != Result::SUCCESS) {
-        return partial_result;
+    if (flags & ANALYZE_SYMBOL_INTERFACES) {
+        Result partial_result = analyzer.ensure_interface_analyzed(symbol, ident_expr.ast_node);
+        
+        if (partial_result != Result::SUCCESS) {
+            return partial_result;
+        }
     }
 
     out_expr = analyzer.create(
@@ -1467,7 +1472,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr) {
     Result result;
 
-    result = ExprAnalyzer(analyzer).analyze(star_expr.value);
+    result = analyze(star_expr.value);
     if (result != Result::SUCCESS) {
         return result;
     }
@@ -1526,13 +1531,13 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    partial_result = ExprAnalyzer(analyzer).analyze(bracket_expr.lhs);
+    partial_result = analyze(bracket_expr.lhs);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
 
     for (sir::Expr &expr : bracket_expr.rhs) {
-        partial_result = ExprAnalyzer(analyzer).analyze(expr);
+        partial_result = analyze(expr);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -1605,7 +1610,7 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
         return Result::SUCCESS;
     }
 
-    Result result = ExprAnalyzer(analyzer).analyze(dot_expr.lhs);
+    Result result = analyze(dot_expr.lhs);
     if (result != Result::SUCCESS) {
         return result;
     }

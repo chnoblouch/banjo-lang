@@ -62,7 +62,8 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
         return Result::DEF_CYCLE;
     }
 
-    Result result = ExprAnalyzer{analyzer}.analyze_value(const_def.value, const_def.type);
+    ExprAnalyzer expr_analyzer{analyzer, ExprAnalyzer::ANALYZE_SYMBOL_INTERFACES};
+    Result result = expr_analyzer.analyze_value(const_def.value, const_def.type);
 
     if (result != Result::SUCCESS) {
         const_def.stage = sir::SemaStage::BODY;

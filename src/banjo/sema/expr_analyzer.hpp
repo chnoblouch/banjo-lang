@@ -12,12 +12,16 @@ namespace sema {
 
 class ExprAnalyzer {
 
+public:
+    static constexpr unsigned DONT_EVAL_META_EXPRS = 0x00000001;
+    static constexpr unsigned ANALYZE_SYMBOL_INTERFACES = 0x00000002;
+
 private:
     SemanticAnalyzer &analyzer;
-    bool eval_meta_exprs;
+    unsigned flags;
 
 public:
-    ExprAnalyzer(SemanticAnalyzer &analyzer, bool eval_meta_exprs = true);
+    ExprAnalyzer(SemanticAnalyzer &analyzer, unsigned flags = 0x00000000);
     Result analyze_value(sir::Expr &expr);
     Result analyze_value(sir::Expr &expr, sir::Expr expected_type);
     Result analyze_value_uncoerced(sir::Expr &expr);
