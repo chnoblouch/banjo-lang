@@ -1302,6 +1302,7 @@ void CLI::invoke_unix_linker() {
     args.push_back("-lm");
     args.push_back("-ldl");
     args.push_back("-lpthread");
+    args.push_back("-lc_nonshared");
 
     for (const std::string &lib : additional_libraries) {
         args.push_back("-l" + lib);
@@ -1314,6 +1315,9 @@ void CLI::invoke_unix_linker() {
     } else if (target.arch == "aarch64") {
         args.push_back("/lib/ld-linux-aarch64.so.1");
     }
+
+    args.push_back("-z");
+    args.push_back("noexecstack");
 
     if (package_type == PackageType::EXECUTABLE) {
         args.push_back((crt_dir / "crt1.o").string());
