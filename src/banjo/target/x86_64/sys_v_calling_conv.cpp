@@ -202,7 +202,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
         }
     }
 
-    if (func->get_stack_frame().get_size() > 0) {
+    if (func->get_stack_frame().get_size() > 0 || true) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
         mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->get_stack_frame().get_size());
@@ -251,7 +251,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
         }
     }
 
-    if (func->get_stack_frame().get_size() > 0) {
+    if (func->get_stack_frame().get_size() > 0 || true) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
         mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->get_stack_frame().get_size());
