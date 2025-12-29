@@ -43,6 +43,7 @@ public:
     };
 
     struct FuncContext {
+        const sir::FuncDef *sir_func;
         ssa::Function *ssa_func;
         ssa::BasicBlockIter ssa_block;
         ssa::BasicBlockIter ssa_func_exit;
@@ -88,7 +89,7 @@ public:
     void pop_decl_context() { decl_contexts.pop_front(); }
 
     FuncContext &get_func_context() { return func_contexts.top(); }
-    void push_func_context(ssa::Function *ssa_func);
+    void push_func_context(const sir::FuncDef &sir_func, ssa::Function *ssa_func);
     void pop_func_context() { func_contexts.pop(); }
 
     LoopContext &get_loop_context() { return loop_contexts.top(); }

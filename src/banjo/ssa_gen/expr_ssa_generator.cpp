@@ -67,7 +67,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_call_expr(*inner, hints),          // call_expr
         return generate_field_expr(*inner),                // field_expr
         SIR_VISIT_IMPOSSIBLE,                              // range_expr
-        return generate_try_expr(*inner),                  // try_expr
+        return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
         SIR_VISIT_IMPOSSIBLE,                              // primitive_type
@@ -600,12 +600,17 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
 }
 
-StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr) {
-    sir::StructDef &struct_def = try_expr.value.get_type().as_symbol<sir::StructDef>();
-    sir::SymbolTable *symbol_table = struct_def.block.symbol_table;
+StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {
+    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
+    const sir::StructDef &return_struct_def = func_def.type.return_type.as_symbol<sir::StructDef>();
+    sir::SymbolTable &return_struct_symbol_table = *return_struct_def.block.symbol_table;
 
-    sir::Symbol to_error_symbol = symbol_table->look_up_local("unwrap_error");
-    ASSERT(to_error_symbol);
+    sir::StructDef &struct_def = try_expr.value.get_type().as_symbol<sir::StructDef>();
+    sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
+
+    sir::FuncDef &unwrap_func = symbol_table.look_up_local("unwrap").as<sir::FuncDef>();
+    sir::FuncDef &unwrap_error_func = symbol_table.look_up_local("unwrap_error").as<sir::FuncDef>();
+    sir::FuncDef &error_init_func = return_struct_symbol_table.look_up_local("new_failure").as<sir::FuncDef>();
 
     ssa::BasicBlockIter ssa_return_branch = ctx.create_block();
     ssa::BasicBlockIter ssa_unwrap_branch = ctx.create_block();
@@ -613,28 +618,27 @@ StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr) {
     ssa::Value ssa_ptr = ExprSSAGenerator(ctx).generate_as_reference(try_expr.value).get_ptr();
     ssa::Operand ssa_flag = ctx.append_load(ssa::Primitive::U8, ssa_ptr);
     ssa::Operand ssa_false = ssa::Operand::from_int_immediate(0, ssa::Primitive::U8);
+
     ctx.append_cjmp(ssa_flag, ssa::Comparison::NE, ssa_false, ssa_unwrap_branch, ssa_return_branch);
-    
     ctx.append_block(ssa_return_branch);
+
+    ssa::Type ssa_error_type = TypeSSAGenerator(ctx).generate(unwrap_error_func.type.return_type);
+    ssa::Operand ssa_unwrap_error_func = ssa::Operand::from_func(ctx.ssa_funcs.at(&unwrap_error_func));
+    StoredValue ssa_error = generate_call(ssa_error_type, ssa_unwrap_error_func, {ssa_ptr}, StorageHints::none());
+
+    ssa::Type ssa_result_type = TypeSSAGenerator(ctx).generate(error_init_func.type.return_type);
+    ssa::Operand ssa_error_init_func = ssa::Operand::from_func(ctx.ssa_funcs.at(&error_init_func));
+    ssa::VirtualRegister ssa_return_slot = ctx.get_func_context().ssa_return_slot;
+
+    generate_call(ssa_result_type, ssa_error_init_func, {ssa_error.value_or_ptr}, StorageHints::into(ssa_return_slot))
+        .copy_to(ssa_return_slot, ctx);
+
     ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
     ctx.append_block(ssa_unwrap_branch);
 
-    sir::Symbol deinit_symbol = symbol_table->look_up_local("unwrap");
-    ASSERT(deinit_symbol);
-
-    sir::SymbolExpr callee{
-        .ast_node = nullptr,
-        .type = deinit_symbol.get_type(),
-        .symbol = deinit_symbol,
-    };
-
-    ssa::VirtualRegister ssa_dst_reg = ctx.next_vreg();
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(try_expr.type);
-
-    ssa::Value ssa_callee = ExprSSAGenerator(ctx).generate(&callee).get_value();
-    ctx.get_ssa_block()->append({ssa::Opcode::CALL, ssa_dst_reg, {ssa_callee, std::move(ssa_ptr)}});
-
-    return StoredValue::create_value(ssa::Operand::from_register(ssa_dst_reg, ssa_type));
+    ssa::Operand ssa_unwrap_func = ssa::Operand::from_func(ctx.ssa_funcs.at(&unwrap_func));
+    return generate_call(ssa_type, ssa_unwrap_func, {ssa_ptr}, hints);
 }
 
 StoredValue ExprSSAGenerator::generate_tuple_expr(const sir::TupleExpr &tuple_expr, const StorageHints &hints) {
@@ -838,6 +842,45 @@ ssa::Value ExprSSAGenerator::generate_field_access(
         return ssa::Value::from_register(ssa_field_ptr_reg, ssa::Primitive::ADDR);
     } else if (type_layout == sir::Attributes::Layout::OVERLAPPING) {
         return base.get_ptr();
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+StoredValue ExprSSAGenerator::generate_call(
+    ssa::Type return_type,
+    const ssa::Value &callee,
+    std::initializer_list<ssa::Operand> args,
+    const StorageHints &hints
+) {
+    ReturnMethod return_method = ctx.get_return_method(return_type);
+
+    std::vector<ssa::Value> ssa_operands;
+    StoredValue return_value_ptr;
+
+    if (return_method == ReturnMethod::VIA_POINTER_ARG) {
+        ssa_operands.push_back(callee.with_type(ssa::Primitive::VOID));
+        return_value_ptr = StoredValue::alloc(return_type, hints, ctx);
+        ssa_operands.push_back(return_value_ptr.get_ptr());
+    } else {
+        ssa_operands.push_back(callee.with_type(return_type));
+    }
+
+    for (ssa::Operand arg : std::move(args)) {
+        ssa_operands.push_back(std::move(arg));
+    }
+
+    if (return_method == ReturnMethod::NO_RETURN_VALUE || hints.is_unused) {
+        ASSERT(!hints.dst);
+        ctx.get_ssa_block()->append({ssa::Opcode::CALL, ssa_operands});
+        return StoredValue::create_value({});
+    } else if (return_method == ReturnMethod::IN_REGISTER) {
+        ssa::VirtualRegister dst = ctx.next_vreg();
+        ctx.get_ssa_block()->append({ssa::Opcode::CALL, dst, ssa_operands});
+        return StoredValue::create_value(dst, return_type);
+    } else if (return_method == ReturnMethod::VIA_POINTER_ARG) {
+        ctx.get_ssa_block()->append({ssa::Opcode::CALL, ssa_operands});
+        return return_value_ptr;
     } else {
         ASSERT_UNREACHABLE;
     }

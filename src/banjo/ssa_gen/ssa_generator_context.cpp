@@ -15,8 +15,9 @@ SSAGeneratorContext::DeclContext &SSAGeneratorContext::push_decl_context() {
     return decl_contexts.front();
 }
 
-void SSAGeneratorContext::push_func_context(ssa::Function *ssa_func) {
+void SSAGeneratorContext::push_func_context(const sir::FuncDef &sir_func, ssa::Function *ssa_func) {
     func_contexts.push({
+        .sir_func = &sir_func,
         .ssa_func = ssa_func,
         .ssa_block = ssa_func->get_entry_block_iter(),
         .ssa_last_alloca = ssa_func->get_entry_block().get_instrs().get_header(),

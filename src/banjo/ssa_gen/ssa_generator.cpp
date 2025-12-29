@@ -338,7 +338,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         return;
     }
 
-    ctx.push_func_context(ssa_func);
+    ctx.push_func_context(sir_func, ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
