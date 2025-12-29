@@ -114,6 +114,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_OPERATOR_BIT_NOT: return "OPERATOR_BIT_NOT";
         case AST_CAST: return "CAST";
         case AST_RANGE: return "RANGE";
+        case AST_TRY_EXPR: return "TRY_EXPR";
         case AST_ADD_ASSIGN: return "ADD_ASSIGN";
         case AST_SUB_ASSIGN: return "SUB_ASSIGN";
         case AST_MUL_ASSIGN: return "MUL_ASSIGN";

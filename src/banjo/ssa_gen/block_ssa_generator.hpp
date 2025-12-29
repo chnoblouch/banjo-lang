@@ -22,6 +22,8 @@ public:
     void generate_block_body(const sir::Block &block);
     void generate_block_deinit(const sir::Block &block);
 
+    void generate_stmt(sir::Stmt stmt);
+
 private:
     void generate_var_stmt(const sir::VarStmt &var_stmt);
     void generate_assign_stmt(const sir::AssignStmt &assign_stmt);

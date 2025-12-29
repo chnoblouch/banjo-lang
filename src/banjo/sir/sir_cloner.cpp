@@ -370,7 +370,7 @@ Block Cloner::clone_block(const Block &block) {
 Stmt Cloner::clone_stmt(const Stmt &stmt) {
     SIR_VISIT_STMT(
         stmt,
-        SIR_VISIT_IMPOSSIBLE,
+        return nullptr,
         return clone_var_stmt(*inner),
         return clone_assign_stmt(*inner),
         return clone_comp_assign_stmt(*inner),
@@ -598,6 +598,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_call_expr(*inner),
         return clone_field_expr(*inner),
         return clone_range_expr(*inner),
+        return clone_try_expr(*inner),
         return clone_tuple_expr(*inner),
         return clone_coercion_expr(*inner),
         return clone_primitive_type(*inner),
@@ -871,6 +872,17 @@ RangeExpr *Cloner::clone_range_expr(const RangeExpr &range_expr) {
             .ast_node = range_expr.ast_node,
             .lhs = clone_expr(range_expr.lhs),
             .rhs = clone_expr(range_expr.rhs),
+        }
+    );
+}
+
+TryExpr *Cloner::clone_try_expr(const TryExpr &try_expr) {
+    return mod.create(
+        TryExpr{
+            .ast_node = try_expr.ast_node,
+            .type = clone_expr(try_expr.type),
+            .value = clone_expr(try_expr.value),
+            .return_stmt = clone_stmt(try_expr.return_stmt),
         }
     );
 }

@@ -54,40 +54,13 @@ void BlockSSAGenerator::generate_resource_flags(const sir::Resource &resource) {
 void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
     ctx.get_func_context().sir_scopes.push_back(&block);
 
-    for (const sir::Stmt &sir_stmt : block.stmts) {
-        SIR_VISIT_STMT(
-            sir_stmt,
-            SIR_VISIT_IMPOSSIBLE,                                           // empty
-            generate_var_stmt(*inner),                                      // var_stmt
-            generate_assign_stmt(*inner),                                   // assign_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // comp_assign_stmt
-            generate_return_stmt(*inner),                                   // return_stmt
-            generate_if_stmt(*inner),                                       // if_stmt
-            generate_switch_stmt(*inner),                                   // switch_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // try_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // while_stmt
-            SIR_VISIT_IMPOSSIBLE,                                           // for_stmt
-            generate_loop_stmt(*inner),                                     // loop_stmt
-            generate_continue_stmt(*inner),                                 // continue_stmt
-            generate_break_stmt(*inner),                                    // break_stmt
-            SIR_VISIT_IGNORE,                                               // meta_if_stmt
-            SIR_VISIT_IGNORE,                                               // meta_for_stmt
-            SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
-            ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
-            generate_block(*inner),                                         // block_stmt
-            continue                                                        // error
-        );
+    for (sir::Stmt sir_stmt : block.stmts) {
+        generate_stmt(sir_stmt);
 
         if (ctx.get_ssa_block()->is_branching()) {
             ctx.get_func_context().sir_scopes.pop_back();
             return;
         }
-
-        for (DeferredDeinit &deferred_deinit : ctx.get_func_context().cur_deferred_deinits) {
-            generate_deinit(*deferred_deinit.resource, deferred_deinit.ssa_ptr);
-        }
-
-        ctx.get_func_context().cur_deferred_deinits.clear();
     }
 
     ctx.get_func_context().sir_scopes.pop_back();
@@ -99,6 +72,41 @@ void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
     for (const auto &[symbol, resource] : block.resources) {
         generate_deinit(resource, symbol);
     }
+}
+
+void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt) {
+    SIR_VISIT_STMT(
+        sir_stmt,
+        SIR_VISIT_IMPOSSIBLE,                                           // empty
+        generate_var_stmt(*inner),                                      // var_stmt
+        generate_assign_stmt(*inner),                                   // assign_stmt
+        SIR_VISIT_IMPOSSIBLE,                                           // comp_assign_stmt
+        generate_return_stmt(*inner),                                   // return_stmt
+        generate_if_stmt(*inner),                                       // if_stmt
+        generate_switch_stmt(*inner),                                   // switch_stmt
+        SIR_VISIT_IMPOSSIBLE,                                           // try_stmt
+        SIR_VISIT_IMPOSSIBLE,                                           // while_stmt
+        SIR_VISIT_IMPOSSIBLE,                                           // for_stmt
+        generate_loop_stmt(*inner),                                     // loop_stmt
+        generate_continue_stmt(*inner),                                 // continue_stmt
+        generate_break_stmt(*inner),                                    // break_stmt
+        SIR_VISIT_IGNORE,                                               // meta_if_stmt
+        SIR_VISIT_IGNORE,                                               // meta_for_stmt
+        SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
+        ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
+        generate_block(*inner),                                         // block_stmt
+        return                                                          // error
+    );
+
+    if (ctx.get_ssa_block()->is_branching()) {
+        return;
+    }
+
+    for (DeferredDeinit &deferred_deinit : ctx.get_func_context().cur_deferred_deinits) {
+        generate_deinit(*deferred_deinit.resource, deferred_deinit.ssa_ptr);
+    }
+
+    ctx.get_func_context().cur_deferred_deinits.clear();
 }
 
 void BlockSSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {

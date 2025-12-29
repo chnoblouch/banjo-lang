@@ -111,6 +111,7 @@ private:
     sir::Expr generate_dot_expr(ASTNode *node);
     sir::Expr generate_implicit_dot_expr(ASTNode *node);
     sir::Expr generate_range_expr(ASTNode *node);
+    sir::Expr generate_try_expr(ASTNode *node);
     sir::Expr generate_tuple_expr(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);
     sir::Expr generate_bracket_expr(ASTNode *node);

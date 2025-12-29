@@ -31,6 +31,7 @@
     call_expr_visitor,                                                                                                 \
     field_expr_visitor,                                                                                                \
     range_expr_visitor,                                                                                                \
+    try_expr_visitor,                                                                                                  \
     tuple_expr_visitor,                                                                                                \
     coercion_expr_visitor,                                                                                             \
     primitive_type_visitor,                                                                                            \
@@ -100,6 +101,8 @@
         field_expr_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::RangeExpr>()) {                            \
         range_expr_visitor;                                                                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::TryExpr>()) {                              \
+        try_expr_visitor;                                                                                              \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                            \
         tuple_expr_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CoercionExpr>()) {                         \

@@ -164,6 +164,7 @@ ParseResult ExprParser::parse_unary_level() {
         case TKN_NOT: type = AST_OPERATOR_NOT; break;
         case TKN_QUESTION: type = AST_OPTIONAL_DATA_TYPE; break;
         case TKN_DOT: type = AST_IMPLICIT_DOT_OPERATOR; break;
+        case TKN_TRY: type = AST_TRY_EXPR; break;
         default: return parse_post_operand();
     }
 

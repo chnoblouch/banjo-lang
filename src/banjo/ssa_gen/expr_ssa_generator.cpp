@@ -5,8 +5,10 @@
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+#include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
@@ -65,6 +67,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_call_expr(*inner, hints),          // call_expr
         return generate_field_expr(*inner),                // field_expr
         SIR_VISIT_IMPOSSIBLE,                              // range_expr
+        return generate_try_expr(*inner),                  // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
         SIR_VISIT_IMPOSSIBLE,                              // primitive_type
@@ -595,6 +598,43 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_expr.type);
 
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
+}
+
+StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr) {
+    sir::StructDef &struct_def = try_expr.value.get_type().as_symbol<sir::StructDef>();
+    sir::SymbolTable *symbol_table = struct_def.block.symbol_table;
+
+    sir::Symbol to_error_symbol = symbol_table->look_up_local("unwrap_error");
+    ASSERT(to_error_symbol);
+
+    ssa::BasicBlockIter ssa_return_branch = ctx.create_block();
+    ssa::BasicBlockIter ssa_unwrap_branch = ctx.create_block();
+
+    ssa::Value ssa_ptr = ExprSSAGenerator(ctx).generate_as_reference(try_expr.value).get_ptr();
+    ssa::Operand ssa_flag = ctx.append_load(ssa::Primitive::U8, ssa_ptr);
+    ssa::Operand ssa_false = ssa::Operand::from_int_immediate(0, ssa::Primitive::U8);
+    ctx.append_cjmp(ssa_flag, ssa::Comparison::NE, ssa_false, ssa_unwrap_branch, ssa_return_branch);
+    
+    ctx.append_block(ssa_return_branch);
+    ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
+    ctx.append_block(ssa_unwrap_branch);
+
+    sir::Symbol deinit_symbol = symbol_table->look_up_local("unwrap");
+    ASSERT(deinit_symbol);
+
+    sir::SymbolExpr callee{
+        .ast_node = nullptr,
+        .type = deinit_symbol.get_type(),
+        .symbol = deinit_symbol,
+    };
+
+    ssa::VirtualRegister ssa_dst_reg = ctx.next_vreg();
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(try_expr.type);
+
+    ssa::Value ssa_callee = ExprSSAGenerator(ctx).generate(&callee).get_value();
+    ctx.get_ssa_block()->append({ssa::Opcode::CALL, ssa_dst_reg, {ssa_callee, std::move(ssa_ptr)}});
+
+    return StoredValue::create_value(ssa::Operand::from_register(ssa_dst_reg, ssa_type));
 }
 
 StoredValue ExprSSAGenerator::generate_tuple_expr(const sir::TupleExpr &tuple_expr, const StorageHints &hints) {

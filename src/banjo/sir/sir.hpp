@@ -51,6 +51,7 @@ struct IndexExpr;
 struct CallExpr;
 struct FieldExpr;
 struct RangeExpr;
+struct TryExpr;
 struct TupleExpr;
 struct CoercionExpr;
 enum class Primitive;
@@ -167,31 +168,32 @@ class Expr {
         CallExpr *,         // 18
         FieldExpr *,        // 19
         RangeExpr *,        // 20
-        TupleExpr *,        // 21
-        CoercionExpr *,     // 22
-        PrimitiveType *,    // 23
-        PointerType *,      // 24
-        StaticArrayType *,  // 25
-        FuncType *,         // 26
-        OptionalType *,     // 27
-        ResultType *,       // 28
-        ArrayType *,        // 29
-        MapType *,          // 30
-        ClosureType *,      // 31
-        ReferenceType *,    // 32
-        IdentExpr *,        // 33
-        StarExpr *,         // 34
-        BracketExpr *,      // 35
-        DotExpr *,          // 36
-        PseudoType *,       // 37
-        MetaAccess *,       // 38
-        MetaFieldExpr *,    // 39
-        MetaCallExpr *,     // 40
-        InitExpr *,         // 41
-        MoveExpr *,         // 42
-        DeinitExpr *,       // 43
-        Error *,            // 44
-        std::nullptr_t>     // 45
+        TryExpr *,          // 21
+        TupleExpr *,        // 22
+        CoercionExpr *,     // 23
+        PrimitiveType *,    // 24
+        PointerType *,      // 25
+        StaticArrayType *,  // 26
+        FuncType *,         // 27
+        OptionalType *,     // 28
+        ResultType *,       // 29
+        ArrayType *,        // 30
+        MapType *,          // 31
+        ClosureType *,      // 32
+        ReferenceType *,    // 33
+        IdentExpr *,        // 34
+        StarExpr *,         // 35
+        BracketExpr *,      // 36
+        DotExpr *,          // 37
+        PseudoType *,       // 38
+        MetaAccess *,       // 39
+        MetaFieldExpr *,    // 40
+        MetaCallExpr *,     // 41
+        InitExpr *,         // 42
+        MoveExpr *,         // 43
+        DeinitExpr *,       // 44
+        Error *,            // 45
+        std::nullptr_t>     // 46
         kind;
 
 public:
@@ -795,6 +797,13 @@ struct RangeExpr {
     ASTNode *ast_node;
     Expr lhs;
     Expr rhs;
+};
+
+struct TryExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
+    Stmt return_stmt;
 };
 
 struct TupleExpr {

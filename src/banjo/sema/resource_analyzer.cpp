@@ -393,6 +393,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_call_expr(*inner, ctx),         // call_expr
         result = analyze_field_expr(*inner, expr, ctx),  // field_expr
         SIR_VISIT_IGNORE,                                // range_expr
+        SIR_VISIT_IGNORE,                                // try_expr
         result = analyze_tuple_expr(*inner, ctx),        // tuple_expr
         SIR_VISIT_IGNORE,                                // coercion_expr
         SIR_VISIT_IGNORE,                                // primitive_type

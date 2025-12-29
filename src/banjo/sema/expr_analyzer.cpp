@@ -140,6 +140,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_call_expr(*inner, expr),       // call_expr
         SIR_VISIT_IGNORE,                               // field_expr
         analyze_range_expr(*inner),                     // range_expr
+        result = analyze_try_expr(*inner),              // try_expr
         analyze_tuple_expr(*inner),                     // tuple_expr
         SIR_VISIT_IGNORE,                               // coercion_expr
         SIR_VISIT_IGNORE,                               // primitive_type
@@ -1337,6 +1338,25 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
     return Result::SUCCESS;
 }
 
+Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
+    Result partial_result = analyze(try_expr.value);
+
+    if (partial_result != Result::SUCCESS) {
+        return Result::ERROR;
+    }
+
+    if (auto struct_def = try_expr.value.get_type().match_symbol<sir::StructDef>()) {
+        if (!struct_def->parent_specialization) {
+            return Result::ERROR;
+        }
+
+        try_expr.type = struct_def->fields[1]->type;
+        return Result::SUCCESS;
+    }
+
+    return Result::ERROR;
+}
+
 void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
     ASSERT(!tuple_expr.exprs.empty());
 
@@ -1452,7 +1472,7 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
 
     if (flags & ANALYZE_SYMBOL_INTERFACES) {
         Result partial_result = analyzer.ensure_interface_analyzed(symbol, ident_expr.ast_node);
-        
+
         if (partial_result != Result::SUCCESS) {
             return partial_result;
         }

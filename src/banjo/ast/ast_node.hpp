@@ -86,6 +86,7 @@ enum ASTNodeType : std::uint8_t {
     AST_OPERATOR_NOT,
     AST_CAST,
     AST_RANGE,
+    AST_TRY_EXPR,
     AST_ADD_ASSIGN,
     AST_SUB_ASSIGN,
     AST_MUL_ASSIGN,

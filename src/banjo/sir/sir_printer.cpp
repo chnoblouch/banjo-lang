@@ -633,6 +633,7 @@ void Printer::print_expr(const Expr &expr) {
         print_call_expr(*inner),
         print_field_expr(*inner),
         print_range_expr(*inner),
+        print_try_expr(*inner),
         print_tuple_expr(*inner),
         print_coercion_expr(*inner),
         print_primitive_type(*inner),
@@ -837,6 +838,21 @@ void Printer::print_range_expr(const RangeExpr &range_expr) {
     BEGIN_OBJECT("RangeExpr");
     PRINT_EXPR_FIELD("lhs", range_expr.lhs);
     PRINT_EXPR_FIELD("rhs", range_expr.rhs);
+    END_OBJECT();
+}
+
+void Printer::print_try_expr(const TryExpr &try_expr) {
+    BEGIN_OBJECT("TryExpr");
+    PRINT_EXPR_FIELD("type", try_expr.type);
+    PRINT_EXPR_FIELD("value", try_expr.value);
+    
+    if (try_expr.return_stmt) {
+        PRINT_FIELD_NAME("return_stmt");
+        print_stmt(try_expr.return_stmt);
+    } else {
+        PRINT_FIELD("return_stmt", "none");
+    }
+
     END_OBJECT();
 }
 

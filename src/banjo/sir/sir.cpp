@@ -41,6 +41,7 @@ bool Expr::operator==(const Expr &other) const {
         return false,                                       // call_expr
         return false,                                       // field_expr
         return false,                                       // range_expr
+        return false,                                       // try_expr
         return *inner == other.as<TupleExpr>(),             // tuple_expr
         return false,                                       // coercion_expr
         return *inner == other.as<PrimitiveType>(),         // primitive_type
@@ -97,6 +98,7 @@ Expr Expr::get_type() const {
         return inner->type, // call_expr
         return inner->type, // field_expr
         return nullptr,     // range_expr
+        return inner->type, // try_expr
         return inner->type, // tuple_expr
         return inner->type, // coercion_type
         return nullptr,     // primitive_type
@@ -278,6 +280,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

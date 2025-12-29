@@ -89,6 +89,7 @@ public:
     CallExpr *clone_call_expr(const CallExpr &call_expr);
     FieldExpr *clone_field_expr(const FieldExpr &field_expr);
     RangeExpr *clone_range_expr(const RangeExpr &range_expr);
+    TryExpr *clone_try_expr(const TryExpr &try_expr);
     TupleExpr *clone_tuple_expr(const TupleExpr &tuple_expr);
     CoercionExpr *clone_coercion_expr(const CoercionExpr &coercion_expr);
     PrimitiveType *clone_primitive_type(const PrimitiveType &primitive_type);

@@ -858,6 +858,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_IMPLICIT_DOT_OPERATOR: return generate_implicit_dot_expr(node);
         case AST_ARRAY_ACCESS: return generate_bracket_expr(node);
         case AST_RANGE: return generate_range_expr(node);
+        case AST_TRY_EXPR: return generate_try_expr(node);
         case AST_TUPLE_EXPR: return generate_tuple_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
         case AST_I16: return generate_primitive_type(node, sir::Primitive::I16);
@@ -1217,6 +1218,19 @@ sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
             .ast_node = node,
             .lhs = generate_expr(lhs_node),
             .rhs = generate_expr(rhs_node),
+        }
+    );
+}
+
+sir::Expr SIRGenerator::generate_try_expr(ASTNode *node) {
+    ASTNode *value_node = node->first_child;
+
+    return create(
+        sir::TryExpr{
+            .ast_node = node,
+            .type = nullptr,
+            .value = generate_expr(value_node),
+            .return_stmt = nullptr,
         }
     );
 }
