@@ -65,20 +65,20 @@ struct File: Read, Write, Seek {
         # TODO: Error handling
 
         var file = open(path, File.Mode.READ).unwrap();
-        file.seek(0, .END);
+        try file.seek(0, .END);
         var size = file.position().unwrap() as usize;
-        file.seek(0, .START);
+        try file.seek(0, .START);
 
         var buffer = Array[u8].sized(size);
-        file.read(buffer.slice);
+        try file.read(buffer.slice);
         return buffer;
     }
 
     pub func read_all_string[P](path: P) -> String except Error {
         var file = open(path, File.Mode.READ).unwrap();
-        file.seek(0, .END);
+        try file.seek(0, .END);
         var size = file.position().unwrap() as usize;
-        file.seek(0, .START);
+        try file.seek(0, .START);
 
         var string = String {
             slice: StringSlice {
@@ -89,7 +89,7 @@ struct File: Read, Write, Seek {
         };
 
         # TODO: Error handling
-        file.read(Slice[u8].new(string.bytes(), string.length()));
+        try file.read(Slice[u8].new(string.bytes(), string.length()));
         return string;
     }
 

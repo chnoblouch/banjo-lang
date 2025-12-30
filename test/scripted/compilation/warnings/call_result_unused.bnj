@@ -1,0 +1,21 @@
+# test:subtest
+# test:warning 9:5 "unused function call result (type 'Result[i32, bool]')"
+
+func f0() -> i32 except bool {
+    return 0;
+}
+
+func f1() {
+    f0();
+}
+
+# test:subtest
+# test:no_reports
+
+func f0() -> i32 except bool {
+    return 0;
+}
+
+func f1() {
+    var _ = f0();
+}

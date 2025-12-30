@@ -75,6 +75,9 @@ def run_test(test, conditions):
         elif condition == "compiles":
             result = check_compiles(test, conditions)
             break
+        elif condition == "no_reports":
+            result = check_no_reports(test, conditions)
+            break
         elif condition == "file":
             result = check_file(test, conditions)
             break
@@ -124,6 +127,18 @@ def check_compiles(test, conditions):
 
     if result.exit_code == 0:
         return TestResult(True)
+    else:
+        return TestResult(False, "unexpected exit code", 0, result.exit_code)
+    
+
+def check_no_reports(test, conditions):
+    result = compile_source(test)
+
+    if result.exit_code == 0:
+        if len(result.stderr) == 0:
+            return TestResult(True)
+        else:
+            return TestResult(False, "compiler returned with reports", None, None)
     else:
         return TestResult(False, "unexpected exit code", 0, result.exit_code)
 

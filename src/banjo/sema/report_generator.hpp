@@ -171,6 +171,8 @@ public:
     void report_err_symbol_guarded(ASTNode *ast_node, const sir::GuardedSymbol &guarded_symbol);
 
     void report_warn_unreachable_code(const sir::Stmt &stmt);
+    void report_warn_call_result_unused(sir::CallExpr &call_expr);
+    void report_warn_try_expr_value_unused(sir::TryExpr &try_expr);
 
 private:
     template <typename... FormatArgs>

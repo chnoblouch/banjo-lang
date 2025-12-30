@@ -748,6 +748,15 @@ void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
     report_warning("unreachable code", stmt.get_ast_node());
 }
 
+void ReportGenerator::report_warn_call_result_unused(sir::CallExpr &call_expr) {
+    // TODO: Add note with definition of function
+    report_warning("unused function call result (type '$')", call_expr.ast_node, call_expr.type);
+}
+
+void ReportGenerator::report_warn_try_expr_value_unused(sir::TryExpr &try_expr) {
+    report_warning("unused 'try' value (type '$')", try_expr.ast_node, try_expr.type);
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,

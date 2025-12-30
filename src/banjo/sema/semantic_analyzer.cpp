@@ -181,12 +181,14 @@ void SemanticAnalyzer::populate_preamble_symbols() {
         return;
     }
 
+    std_result_def = &find_std_symbol({"std", "result"}, "Result").as<sir::StructDef>();
+
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},
         {"println", find_std_symbol({"internal", "preamble"}, "println")},
         {"assert", find_std_symbol({"internal", "preamble"}, "assert")},
         {"Optional", find_std_symbol({"std", "optional"}, "Optional")},
-        {"Result", find_std_symbol({"std", "result"}, "Result")},
+        {"Result", std_result_def},
         {"Array", find_std_symbol({"std", "array"}, "Array")},
         {"Slice", find_std_symbol({"std", "slice"}, "Slice")},
         {"String", find_std_symbol({"std", "string"}, "String")},
@@ -204,10 +206,6 @@ sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const 
 
 sir::Symbol SemanticAnalyzer::find_std_optional() {
     return find_std_symbol({"std", "optional"}, "Optional");
-}
-
-sir::Symbol SemanticAnalyzer::find_std_result() {
-    return find_std_symbol({"std", "result"}, "Result");
 }
 
 sir::Symbol SemanticAnalyzer::find_std_array() {
@@ -260,9 +258,7 @@ sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_optional_specializ
 
 sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_result_specialization(sir::Expr &type) {
     if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        sir::StructDef &optional_def = find_std_result().as<sir::StructDef>();
-
-        for (sir::Specialization<sir::StructDef> &specialization : optional_def.specializations) {
+        for (sir::Specialization<sir::StructDef> &specialization : std_result_def->specializations) {
             if (specialization.def == struct_def) {
                 return &specialization;
             }

@@ -1239,7 +1239,7 @@ Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr
         return Result::ERROR;
     }
 
-    sir::StructDef &struct_def = analyzer.find_std_result().as<sir::StructDef>();
+    sir::StructDef &struct_def = analyzer.get_std_result();
     std::span<sir::Expr> generic_args = analyzer.create_array({result_type.value_type, result_type.error_type});
     specialize(struct_def, generic_args, out_expr);
 
@@ -1345,7 +1345,7 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
         return Result::ERROR;
     }
 
-    sir::StructDef &result_def = analyzer.find_std_result().as<sir::StructDef>();
+    sir::StructDef &result_def = analyzer.get_std_result();
     sir::StructDef *value_result_def = nullptr;
 
     if (auto struct_def = try_expr.value.get_type().match_symbol<sir::StructDef>()) {

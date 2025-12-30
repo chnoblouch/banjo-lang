@@ -110,6 +110,10 @@ def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
             
             print(f"  {test.name}: {result.failure_reason}")
             
+            if result.expected is None and result.actual is None:
+                print("\n")
+                continue
+
             if is_string and ("\n" in result.expected or "\n" in result.actual):
                 print(f"\n=== expected:\n\n{result.expected}\n")
                 print(f"=== actual:\n\n{result.actual}\n")

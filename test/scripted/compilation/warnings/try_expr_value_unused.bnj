@@ -1,0 +1,23 @@
+# test:subtest
+# test:warning 9:5 "unused 'try' value (type 'i32')"
+
+func f0() -> i32 except bool {
+    return 0;
+}
+
+func f1() -> i32 except bool {
+    try f0();
+    return 0;
+}
+
+# test:subtest
+# test:no_reports
+
+func f0() -> i32 except bool {
+    return 0;
+}
+
+func f1() -> i32 except bool {
+    var _ = try f0();
+    return 0;
+}

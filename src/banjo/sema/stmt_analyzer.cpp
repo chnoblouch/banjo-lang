@@ -49,7 +49,7 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
         MetaExpansion(analyzer).evaluate_meta_if_stmt(block, index),  // meta_if_stmt
         MetaExpansion(analyzer).evaluate_meta_for_stmt(block, index), // meta_for_stmt
         SIR_VISIT_IGNORE,                                             // expanded_meta_stmt
-        ExprAnalyzer(analyzer).analyze(*inner),                       // expr_stmt
+        analyze_expr_stmt(*inner),                                    // expr_stmt
         analyze_block(*inner),                                        // block_stmt
         SIR_VISIT_IGNORE                                              // error
     )
@@ -438,6 +438,26 @@ void StmtAnalyzer::analyze_continue_stmt(sir::ContinueStmt &continue_stmt) {
 void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt &break_stmt) {
     if (analyzer.loop_depth == 0) {
         analyzer.report_generator.report_err_break_outside_loop(break_stmt);
+    }
+}
+
+void StmtAnalyzer::analyze_expr_stmt(sir::Expr &expr) {
+    Result result = ExprAnalyzer(analyzer).analyze(expr);
+
+    if (result != Result::SUCCESS) {
+        return;
+    }
+
+    if (auto call_expr = expr.match<sir::CallExpr>()) {
+        if (auto struct_def = call_expr->type.match_symbol<sir::StructDef>()) {
+            if (struct_def->is_specialization_of(analyzer.get_std_result())) {
+                analyzer.report_generator.report_warn_call_result_unused(*call_expr);
+            }
+        }
+    } else if (auto try_expr = expr.match<sir::TryExpr>()) {
+        if (!try_expr->type.is_primitive_type(sir::Primitive::VOID)) {
+            analyzer.report_generator.report_warn_try_expr_value_unused(*try_expr);
+        }
     }
 }
 

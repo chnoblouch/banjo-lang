@@ -21,61 +21,61 @@ proto Read {
 
     pub func read_u8(mut self) -> u8 except Error {
         var value: u8;
-        try self.read(Slice[u8].new(&value, 1));
+        try self.read_full(Slice[u8].new(&value, 1));
         return value;
     }
 
     pub func read_u16_be(mut self) -> u16 except Error {
         var bytes: [u8; 2];
-        try self.read(Slice[u8].new(&bytes[0], 2));
+        try self.read_full(Slice[u8].new(&bytes[0], 2));
         return numeric.u16_from_bytes_be(bytes);
     }
 
     pub func read_u16_le(mut self) -> u16 except Error {
         var bytes: [u8; 2];
-        try self.read(Slice[u8].new(&bytes[0], 2));
+        try self.read_full(Slice[u8].new(&bytes[0], 2));
         return numeric.u16_from_bytes_le(bytes);
     }
 
     pub func read_u16_native(mut self) -> u16 except Error {
         var value: u16;
-        try self.read(Slice[u8].new(&value as *u8, 2));
+        try self.read_full(Slice[u8].new(&value as *u8, 2));
         return value;
     }
 
     pub func read_u32_be(mut self) -> u32 except Error {
         var bytes: [u8; 4];
-        try self.read(Slice[u8].new(&bytes[0], 4));
+        try self.read_full(Slice[u8].new(&bytes[0], 4));
         return numeric.u32_from_bytes_be(bytes);
     }
 
     pub func read_u32_le(mut self) -> u32 except Error {
         var bytes: [u8; 4];
-        try self.read(Slice[u8].new(&bytes[0], 4));
+        try self.read_full(Slice[u8].new(&bytes[0], 4));
         return numeric.u32_from_bytes_le(bytes);
     }
 
     pub func read_u32_native(mut self) -> u32 except Error {
         var value: u32;
-        try self.read(Slice[u8].new(&value as *u8, 4));
+        try self.read_full(Slice[u8].new(&value as *u8, 4));
         return value;
     }
 
     pub func read_u64_be(mut self) -> u64 except Error {
         var bytes: [u8; 8];
-        try self.read(Slice[u8].new(&bytes[0], 8));
+        try self.read_full(Slice[u8].new(&bytes[0], 8));
         return numeric.u64_from_bytes_be(bytes);
     }
 
     pub func read_u64_le(mut self) -> u64 except Error {
         var bytes: [u8; 8];
-        try self.read(Slice[u8].new(&bytes[0], 8));
+        try self.read_full(Slice[u8].new(&bytes[0], 8));
         return numeric.u64_from_bytes_le(bytes);
     }
 
     pub func read_u64_native(mut self) -> u64 except Error {
         var value: u64;
-        try self.read(Slice[u8].new(&value as *u8, 8));
+        try self.read_full(Slice[u8].new(&value as *u8, 8));
         return value;
     }
 
@@ -85,11 +85,11 @@ proto Read {
         var line = "";
 
         var char: u8;
-        try self.read(Slice[u8].new(&char, 1));
+        try self.read_full(Slice[u8].new(&char, 1));
 
         while char != '\r' && char != '\n' {
             line += char;
-            try self.read(Slice[u8].new(&char, 1));
+            try self.read_full(Slice[u8].new(&char, 1));
         }
 
         return line;

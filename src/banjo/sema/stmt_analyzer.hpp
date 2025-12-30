@@ -33,6 +33,7 @@ private:
     void analyze_loop_stmt(sir::LoopStmt &loop_stmt);
     void analyze_continue_stmt(sir::ContinueStmt &continue_stmt);
     void analyze_break_stmt(sir::BreakStmt &break_stmt);
+    void analyze_expr_stmt(sir::Expr &expr);
 
     void insert_symbol(sir::Ident &ident, sir::Symbol symbol);
     void insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ident, sir::Symbol symbol);

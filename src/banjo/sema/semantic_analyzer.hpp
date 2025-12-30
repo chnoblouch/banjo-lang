@@ -99,6 +99,7 @@ private:
     CompletionContext completion_context;
     CompletionInfection completion_infection;
 
+    sir::StructDef *std_result_def;
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::unordered_map<std::string_view, sir::Expr> meta_field_types;
 
@@ -144,7 +145,7 @@ private:
     sir::Block &get_block() { return *scope_stack.top().block; }
     void enter_block(sir::Block &block);
     void exit_block() { scope_stack.pop(); }
-    
+
     ClosureContext *get_closure_ctx() { return scope_stack.top().closure_ctx; }
     void enter_closure_ctx(ClosureContext &closure_ctx);
     void exit_closure_ctx() { scope_stack.pop(); }
@@ -157,7 +158,7 @@ private:
 
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
     sir::Symbol find_std_optional();
-    sir::Symbol find_std_result();
+    sir::StructDef &get_std_result() { return *std_result_def; }
     sir::Symbol find_std_array();
     sir::Symbol find_std_string();
     sir::Symbol find_std_string_slice();
