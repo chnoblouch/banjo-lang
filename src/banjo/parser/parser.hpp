@@ -68,6 +68,7 @@ private:
     ASTNode *parse_expression();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
+    ParseResult parse_try();
     ParseResult parse_meta();
 
     ParseResult parse_attribute_wrapper(const std::function<ParseResult()> &child_parser);

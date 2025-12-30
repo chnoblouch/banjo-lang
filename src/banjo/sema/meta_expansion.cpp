@@ -59,7 +59,13 @@ void MetaExpansion::run_on_decl_block(sir::DeclBlock &decl_block) {
 }
 
 void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &index) {
-    sir::MetaIfStmt &meta_if_stmt = decl_block.decls[index].as<sir::MetaIfStmt>();
+    sir::Decl decl = decl_block.decls[index];
+
+    if (decl.is<sir::ExpandedMetaStmt>()) {
+        return;
+    }
+
+    sir::MetaIfStmt &meta_if_stmt = decl.as<sir::MetaIfStmt>();
 
     // bool is_guard = analyzer.get_mod().path == ModulePath{"main"};
     // bool is_guard = false;

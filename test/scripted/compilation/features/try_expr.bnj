@@ -47,3 +47,27 @@ func f() -> i32 except bool {
 func main() {
     print(f());
 }
+
+# test:subtest
+# test:output "-123819"
+
+func f() -> i32 except bool {
+    try create_value();
+    return -123819;
+}
+
+func main() {
+    print(f());
+}
+
+# test:subtest
+# test:output "false"
+
+func f() -> i32 except bool {
+    try create_error();
+    return -123819;
+}
+
+func main() {
+    print(f());
+}

@@ -106,7 +106,7 @@ ParseResult Parser::parse_block_child() {
         case TKN_FUNC: return DeclParser(*this).parse_func(nullptr);
         case TKN_IF: return StmtParser(*this).parse_if_chain();
         case TKN_SWITCH: return StmtParser(*this).parse_switch();
-        case TKN_TRY: return StmtParser(*this).parse_try();
+        case TKN_TRY: return parse_try();
         case TKN_WHILE: return StmtParser(*this).parse_while();
         case TKN_FOR: return StmtParser(*this).parse_for();
         case TKN_BREAK: return StmtParser(*this).parse_break();
@@ -157,6 +157,22 @@ ParseResult Parser::parse_expr_or_assign() {
         default: {
             node.append_child(result.node);
             return check_stmt_terminator(node, AST_EXPR_STMT);
+        }
+    }
+}
+
+ParseResult Parser::parse_try() {
+    if (stream.peek(2)->is(TKN_IN)) {
+        return StmtParser(*this).parse_try();
+    } else {
+        NodeBuilder node = build_node();
+        ParseResult result = ExprParser(*this, false).parse();
+        node.append_child(result.node);
+
+        if (result.is_valid) {
+            return check_stmt_terminator(node, AST_EXPR_STMT);
+        } else {
+            return node.build_error(AST_EXPR_STMT);
         }
     }
 }
