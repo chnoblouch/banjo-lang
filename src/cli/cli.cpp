@@ -1068,9 +1068,13 @@ ProcessResult CLI::invoke_compiler() {
     std::optional<Process> process = Process::spawn(command);
     ProcessResult result = process->wait();
 
-    if (result.exit_code != 0) {
+    if (!result.stderr_buffer.empty()) {
         print_empty_line();
         std::cerr << result.stderr_buffer;
+        compiler_output_printed = true;
+    }
+
+    if (result.exit_code != 0) {
         std::exit(1);
     }
 
@@ -1474,6 +1478,10 @@ void CLI::invoke_emscripten_linker() {
 }
 
 void CLI::run_build() {
+    if (compiler_output_printed) {
+        print_empty_line();
+    }
+
     print_step("Running...");
     print_clear_line();
 

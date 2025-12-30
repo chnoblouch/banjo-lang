@@ -62,6 +62,7 @@ private:
     std::vector<std::string> macos_frameworks;
 
     std::chrono::steady_clock::time_point start_time;
+    bool compiler_output_printed = false;
 
 public:
     void run(int argc, const char *argv[]);

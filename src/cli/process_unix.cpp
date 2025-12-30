@@ -126,8 +126,15 @@ ProcessResult Process::wait() {
         error("`close` failed for stderr read fd");
     }
 
+    int exit_code = WEXITSTATUS(status);
+
+    // If the process was terminated by a signal, it probably crashed.
+    if (WIFSIGNALED(status)) {
+        exit_code = 1;
+    }
+
     return ProcessResult{
-        .exit_code = WEXITSTATUS(status),
+        .exit_code = exit_code,
         .stdout_buffer = std::move(stdout_buffer),
         .stderr_buffer = std::move(stderr_buffer),
     };
