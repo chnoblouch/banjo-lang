@@ -254,6 +254,8 @@ add_library(banjo STATIC
     "ssa/writer.hpp"
     "ssa_gen/block_ssa_generator.cpp"
     "ssa_gen/block_ssa_generator.hpp"
+    "ssa_gen/call_ssa_builder.cpp"
+    "ssa_gen/call_ssa_builder.hpp"
     "ssa_gen/expr_ssa_generator.cpp"
     "ssa_gen/expr_ssa_generator.hpp"
     "ssa_gen/global_ssa_generator.cpp"

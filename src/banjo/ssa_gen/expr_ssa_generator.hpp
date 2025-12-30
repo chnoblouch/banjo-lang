@@ -94,13 +94,6 @@ private:
         sir::Attributes::Layout type_layout
     );
 
-    StoredValue generate_call(
-        ssa::Type return_type,
-        const ssa::Value &callee,
-        std::initializer_list<ssa::Operand> args,
-        const StorageHints &hints
-    );
-
     sir::Attributes::Layout get_type_layout(const sir::Expr &type);
 };
 
