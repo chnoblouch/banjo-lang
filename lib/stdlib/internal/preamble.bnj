@@ -1,12 +1,11 @@
 use std.{config, convert, stack_trace};
-use c.lib.stdlib.exit as cexit;
+use libc as c;
 use os;
 
 meta if os.IS_WINDOWS {
     use os.winapi;
 } else if os.IS_UNIX {
     use os.posix;
-    use c.lib.stdio.fwrite;
 }
 
 pub func print[T](ref value: T) {
@@ -23,7 +22,7 @@ pub func println[T](ref value: T) {
 }
 
 pub func exit(status: i32) {
-    cexit(status);
+    c.exit(status);
 }
 
 pub func assert(condition: bool, message: String) {
@@ -56,6 +55,6 @@ func write_to_stdout(data: *u8, size: usize) {
         var bytes_written: winapi.Dword;
         winapi.write_file(handle, data, size as winapi.Dword, &bytes_written, null);
     } else if os.IS_UNIX {
-        fwrite(data, size, 1, posix.stdout);
+        c.fwrite(data, size, 1, posix.stdout);
     }
 }

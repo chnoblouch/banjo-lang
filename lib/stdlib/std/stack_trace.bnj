@@ -1,5 +1,4 @@
 use std.{memory, config};
-use c.lib.string.{strcmp, strncmp};
 
 meta if config.OS == config.WINDOWS {
     use os.{winapi, msvcrt};

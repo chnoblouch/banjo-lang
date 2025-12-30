@@ -1,6 +1,6 @@
-use os.{IS_UNIX, posix};
-use c;
 use std.{memory, io, convert.to_string};
+use os.{IS_UNIX, posix};
+use libc as c;
 
 meta if IS_UNIX {
     type ErrorCode = i32;
@@ -30,7 +30,7 @@ meta if IS_UNIX {
     }
 
     pub func error_message(error: ErrorCode) -> String {
-        return String.from_cstr(c.lib.string.strerror(error));
+        return String.from_cstr(c.strerror(error));
     }
 
     pub func io_get_stdin_stream() -> addr {

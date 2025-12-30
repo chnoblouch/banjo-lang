@@ -1,7 +1,4 @@
-use c.lib.{
-    stdlib.{malloc as cmalloc, realloc as crealloc, free as cfree},
-    string.{memcpy as cmemcpy, memcmp as cmemcmp, memset as cmemset},
-};
+use libc as c;
 
 # var alloc_counter: u32 = 0;
 # var free_counter: u32 = 0;
@@ -9,26 +6,26 @@ use c.lib.{
 pub func alloc(size: usize) -> addr {
     # alloc_counter += 1;
 
-    var pointer = cmalloc(size);
+    var pointer = c.malloc(size);
     return pointer;
 }
 
 pub func realloc(pointer: addr, size: usize) -> addr {
-    return crealloc(pointer, size);
+    return c.realloc(pointer, size);
 }
 
 pub func free(pointer: addr) {
     # free_counter += 1;
 
-    cfree(pointer);
+    c.free(pointer);
 }
 
 pub func copy(src: addr, dst: addr, size: usize) {
-    cmemcpy(dst, src, size);
+    c.memcpy(dst, src, size);
 }
 
 pub func compare(addr0: addr, addr1: addr, size: usize) -> bool {
-    return cmemcmp(addr0, addr1, size) == 0;
+    return c.memcmp(addr0, addr1, size) == 0;
 }
 
 pub func alloc_box[T]() -> *T {
@@ -43,7 +40,7 @@ pub func box[T](value: T) -> *T {
 
 pub func zero[T]() -> T {
     var value: T;
-    cmemset(&value, 0, meta(T).size);
+    c.memset(&value, 0, meta(T).size);
     return value;
 }
 

@@ -75,7 +75,7 @@ Result UseResolver::resolve_use_ident(sir::UseIdent &use_ident, sir::Symbol &sym
     item_stack.pop_back();
 
     use_ident.stage = sir::SemaStage::BODY;
-    return Result::SUCCESS;
+    return use_ident.symbol ? Result::SUCCESS : Result::ERROR;
 }
 
 Result UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &symbol) {
@@ -102,7 +102,7 @@ Result UseResolver::resolve_use_rebind(sir::UseRebind &use_rebind, sir::Symbol &
     item_stack.pop_back();
 
     use_rebind.stage = sir::SemaStage::BODY;
-    return Result::SUCCESS;
+    return use_rebind.symbol ? Result::SUCCESS : Result::ERROR;
 }
 
 Result UseResolver::resolve_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::Symbol &symbol, bool is_leaf) {

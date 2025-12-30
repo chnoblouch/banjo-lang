@@ -1,0 +1,114 @@
+use std.config;
+
+# --- Types ---
+
+# FIXME: I think `char` is not unsigned on all platforms
+type Char = u8;
+type UChar = u8;
+type Short = i16;
+type UShort = u16;
+type Int = i32;
+type UInt = u32;
+
+meta if config.ARCH == config.X86_64 || config.ARCH == config.AARCH64 {
+    type Long = i64;
+    type ULong = u64;
+} else if config.ARCH == config.WASM {
+    type Long = i32;
+    type ULong = u32;
+}
+
+type LongLong = i64;
+type ULongLong = u64;
+
+# --- stdlib.h ---
+
+native func malloc(size: usize) -> addr;
+native func calloc(num_members: usize, size: usize) -> addr;
+native func realloc(pointer: addr, size: usize) -> addr;
+native func free(ptr: addr);
+
+native func exit(status: i32);
+
+native func atoi(str: *u8) -> i32;
+native func atof(str: *u8) -> f64;
+
+native func strtol(str: *u8, str_end: **u8, base: i32) -> i32;
+native func strtof(str: *u8, str_end: **u8) -> f32;
+native func strtod(str: *u8, str_end: **u8) -> f64;
+
+# --- stdio.h ---
+
+native func printf(format: *u8, value: i64) -> i32;
+native func scanf(format: *u8, address: addr) -> i32;
+native func puts(s: *u8) -> i32;
+native func perror(s: *u8) -> void;
+
+native func fopen(filename: *u8, mode: *u8) -> addr;
+native func fclose(stream: addr) -> addr;
+native func fflush(stream: addr) -> i32;
+native func fread(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
+native func fwrite(ptr: addr, size: usize, nmemb: usize, stream: addr) -> usize;
+native func fgetc(stream: addr) -> Int;
+native func fputc(ch: Int, stream: addr) -> Int;
+native func fseek(stream: addr, offset: Long, whence: Int) -> Int;
+native func ftell(stream: addr) -> Long;
+native func feof(stream: addr) -> Int;
+native func ferror(stream: addr) -> Int;
+
+const SEEK_SET: i32 = 0;
+const SEEK_CUR: i32 = 1;
+const SEEK_END: i32 = 2;
+
+# --- string.h ---
+
+native func isalnum(ch: i32) -> i32;
+native func isalpha(ch: i32) -> i32;
+native func islower(ch: i32) -> i32;
+native func isupper(ch: i32) -> i32;
+native func isdigit(ch: i32) -> i32;
+native func isxdigit(ch: i32) -> i32;
+native func iscntrl(ch: i32) -> i32;
+native func isgraph(ch: i32) -> i32;
+native func isspace(ch: i32) -> i32;
+native func isblank(ch: i32) -> i32;
+native func isprint(ch: i32) -> i32;
+native func ispunct(ch: i32) -> i32;
+
+native func tolower(ch: i32) -> i32;
+native func toupper(ch: i32) -> i32;
+
+native func strlen(str: *u8) -> usize;
+native func strcmp(lhs: *u8, rhs: *u8) -> i32;
+native func strncmp(lhs: *u8, rhs: *u8, count: usize) -> i32;
+native func strcat(destination: *u8, source: *u8, num: usize) -> *u8;
+
+native func strcpy(dst: *u8, src: *u8) -> *u8;
+
+native func memchr(ptr: addr, ch: i32, count: usize) -> addr;
+native func memcmp(lhs: addr, rhs: addr, count: usize) -> i32;
+native func memset(dest: addr, ch: i32, count: usize) -> addr;
+native func memcpy(dest: addr, src: addr, count: usize) -> addr;
+native func memmove(dest: addr, src: addr, count: usize) -> addr;
+
+native func strerror(errnum: i32) -> *u8;
+
+# --- math.h ---
+
+native func sqrt(arg: f64) -> f64;
+native func sin(arg: f64) -> f64;
+native func cos(arg: f64) -> f64;
+native func tan(arg: f64) -> f64;
+native func asin(arg: f64) -> f64;
+native func acos(arg: f64) -> f64;
+native func atan(arg: f64) -> f64;
+native func atan2(y: f64, x: f64) -> f64;
+
+native func sqrtf(arg: f32) -> f32;
+native func sinf(arg: f32) -> f32;
+native func cosf(arg: f32) -> f32;
+native func tanf(arg: f32) -> f32;
+native func asinf(arg: f32) -> f32;
+native func acosf(arg: f32) -> f32;
+native func atanf(arg: f32) -> f32;
+native func atan2f(y: f32, x: f32) -> f32;

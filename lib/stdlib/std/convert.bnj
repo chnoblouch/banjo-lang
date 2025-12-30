@@ -1,5 +1,5 @@
 use std.memory;
-use c.lib.{stdlib.strtod, string.isspace};
+use libc as c;
 use internal.runtime;
 
 pub func to_string[T](ref value: T) -> String {
@@ -113,7 +113,7 @@ pub func parse_f64(string: StringSlice) -> ?f64 {
         return none;
     }
 
-    if isspace(string.data[0] as i32) != 0 {
+    if c.isspace(string.data[0] as i32) != 0 {
         return none;
     }
 
@@ -122,7 +122,7 @@ pub func parse_f64(string: StringSlice) -> ?f64 {
     c_string[string.length] = '\0';
 
     var end: *u8 = null;
-    var result = strtod(&c_string[0], &end);
+    var result = c.strtod(&c_string[0], &end);
 
     if end != &c_string[string.length] {
         return none;

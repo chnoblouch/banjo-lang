@@ -1,5 +1,5 @@
 use std.config;
-use c;
+use libc as c;
 
 meta if config.OS == config.EMSCRIPTEN {
     const ENOENT: i32 = 0x02;

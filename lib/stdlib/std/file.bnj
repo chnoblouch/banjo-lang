@@ -6,21 +6,7 @@ use std.{
     io.{Read, Write, Seek, Error},
 };
 
-use c;
-
-use c.lib.stdio.{
-    fopen,
-    fseek,
-    ftell,
-    fread,
-    fwrite,
-    feof,
-    fclose,
-    fflush,
-    SEEK_SET,
-    SEEK_CUR,
-    SEEK_END,
-};
+use libc as c;
 
 struct File: Read, Write, Seek {
     enum Mode {
@@ -52,7 +38,7 @@ struct File: Read, Write, Seek {
         }
 
         var path_cstring = Path.from(path).str().to_cstring();
-        var stream = fopen(path_cstring.data(), c_mode);
+        var stream = c.fopen(path_cstring.data(), c_mode);
 
         if stream == null {
             return Error.last();
@@ -94,9 +80,9 @@ struct File: Read, Write, Seek {
     }
 
     pub func read(self, data: Slice[u8]) -> usize except Error {
-        var result = fread(data.data, 1, data.length, self.stream);
+        var result = c.fread(data.data, 1, data.length, self.stream);
 
-        if result == data.length || feof(self.stream) != 0 {
+        if result == data.length || c.feof(self.stream) != 0 {
             return result;
         } else {
             return Error.last();
@@ -104,7 +90,7 @@ struct File: Read, Write, Seek {
     }
 
     pub func write(self, data: Slice[u8]) -> usize except Error {
-        var result = fwrite(data.data, 1, data.length, self.stream);
+        var result = c.fwrite(data.data, 1, data.length, self.stream);
 
         if result == data.length {
             return result;
@@ -116,7 +102,7 @@ struct File: Read, Write, Seek {
     pub func position(self) -> u64 except Error {
         # TODO: Actually support 64-bit offsets.
 
-        var result = ftell(self.stream);
+        var result = c.ftell(self.stream);
 
         if result != 0xFFFFFFFF {
             return result as u64;
@@ -131,14 +117,14 @@ struct File: Read, Write, Seek {
         var libc_origin: i32 = 0;
 
         if origin == .START {
-            libc_origin = SEEK_SET;
+            libc_origin = c.SEEK_SET;
         } else if origin == .END {
-            libc_origin = SEEK_END;
+            libc_origin = c.SEEK_END;
         } else if origin == .CURRENT {
-            libc_origin = SEEK_CUR;
+            libc_origin = c.SEEK_CUR;
         }
 
-        var result = fseek(self.stream, offset as c.Long, libc_origin);
+        var result = c.fseek(self.stream, offset as c.Long, libc_origin);
 
         if result == 0 {
             return undefined;
@@ -150,10 +136,10 @@ struct File: Read, Write, Seek {
     pub func flush(self) {
         # TODO: Error handling
 
-        fflush(self.stream);
+        c.fflush(self.stream);
     }
 
     func __deinit__(self) {
-        fclose(self.stream);
+        c.fclose(self.stream);
     }
 }

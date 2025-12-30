@@ -1,9 +1,5 @@
 use std.{platform, numeric, file.File, convert.to_string};
-
-use c.lib.{
-    string.strlen,
-    stdio.{fread, ferror, fgetc, fputc, fwrite, fflush},
-};
+use libc as c;
 
 proto Read {
     pub func read(mut self, data: Slice[u8]) -> usize except Error;
@@ -150,7 +146,7 @@ proto Write {
     }
 
     pub func write_cstring(mut self, data: *u8) -> usize except Error {
-        var length = strlen(data);
+        var length = c.strlen(data);
         return self.write(Slice[u8].new(data, length));
     }
 }

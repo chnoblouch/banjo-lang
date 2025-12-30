@@ -1,4 +1,4 @@
-use c.lib.math as cmath;
+use libc as c;
 
 const PI32: f32 = 3.14159;
 
@@ -11,35 +11,35 @@ pub func abs(x: f64) -> f64 {
 }
 
 pub func sqrt(x: f64) -> f64 {
-    return cmath.sqrt(x);
+    return c.sqrt(x);
 }
 
 pub func sin(x: f64) -> f64 {
-    return cmath.sin(x);
+    return c.sin(x);
 }
 
 pub func cos(x: f64) -> f64 {
-    return cmath.cos(x);
+    return c.cos(x);
 }
 
 pub func tan(x: f64) -> f64 {
-    return cmath.tan(x);
+    return c.tan(x);
 }
 
 pub func asin(x: f64) -> f64 {
-    return cmath.asin(x);
+    return c.asin(x);
 }
 
 pub func acos(x: f64) -> f64 {
-    return cmath.acos(x);
+    return c.acos(x);
 }
 
 pub func atan(x: f64) -> f64 {
-    return cmath.atan(x);
+    return c.atan(x);
 }
 
 pub func atan2(y: f64, x: f64) -> f64 {
-    return cmath.atan2(y, x);
+    return c.atan2(y, x);
 }
 
 pub func abs(x: f32) -> f32 {
@@ -51,35 +51,35 @@ pub func abs(x: f32) -> f32 {
 }
 
 pub func sqrt(x: f32) -> f32 {
-    return cmath.sqrtf(x);
+    return c.sqrtf(x);
 }
 
 pub func sin(x: f32) -> f32 {
-    return cmath.sinf(x);
+    return c.sinf(x);
 }
 
 pub func cos(x: f32) -> f32 {
-    return cmath.cosf(x);
+    return c.cosf(x);
 }
 
 pub func tan(x: f32) -> f32 {
-    return cmath.tanf(x);
+    return c.tanf(x);
 }
 
 pub func asin(x: f32) -> f32 {
-    return cmath.asinf(x);
+    return c.asinf(x);
 }
 
 pub func acos(x: f32) -> f32 {
-    return cmath.acosf(x);
+    return c.acosf(x);
 }
 
 pub func atan(x: f32) -> f32 {
-    return cmath.atanf(x);
+    return c.atanf(x);
 }
 
 pub func atan2(y: f32, x: f32) -> f32 {
-    return cmath.atan2f(y, x);
+    return c.atan2f(y, x);
 }
 
 pub func deg2rad(deg: f32) -> f32 {

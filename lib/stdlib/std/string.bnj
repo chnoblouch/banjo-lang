@@ -1,5 +1,4 @@
 use std.memory;
-use c.lib.{string.{strlen, strcmp}, stdlib.{strtol, strtof}};
 
 struct String {
     var slice: StringSlice;

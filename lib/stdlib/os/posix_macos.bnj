@@ -1,5 +1,5 @@
 use std.config;
-use c;
+use libc as c;
 
 meta if config.OS == config.MACOS {
     const ENOENT: i32 = 2;

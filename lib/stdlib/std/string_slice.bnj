@@ -1,5 +1,5 @@
 use std.memory;
-use c.lib.string.strlen;
+use libc as c;
 
 struct StringSlice {
     var data: *u8;
@@ -19,7 +19,7 @@ struct StringSlice {
     pub func of_cstring(data: *u8) -> StringSlice {
         return StringSlice {
             data,
-            length: strlen(data),
+            length: c.strlen(data),
         };
     }
 
