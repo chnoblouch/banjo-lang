@@ -46,6 +46,7 @@ private:
     Mode mode;
 
     std::unique_ptr<ASTModule> mod;
+    std::optional<unsigned> prev_recover_pos;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;

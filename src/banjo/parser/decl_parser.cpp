@@ -63,9 +63,33 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 ParseResult DeclParser::parse_const() {
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume 'const'
+
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
+        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+        node.append_child(parser.create_node(AST_ERROR));
+        node.append_child(parser.create_node(AST_ERROR));
+        node.append_child(parser.create_node(AST_ERROR));
+        return node.build(AST_CONSTANT);
+    }
+
     node.append_child(parser.consume_into_node(AST_IDENTIFIER));
+
+    if (!stream.get()->is(TKN_COLON)) {
+        parser.report_unexpected_token();
+        node.append_child(parser.create_node(AST_ERROR));
+        node.append_child(parser.create_node(AST_ERROR));
+        return node.build(AST_CONSTANT);
+    }
+
     node.consume(); // Consume ':'
     node.append_child(parser.parse_type().node);
+
+    if (!stream.get()->is(TKN_EQ)) {
+        parser.report_unexpected_token();
+        node.append_child(parser.create_node(AST_ERROR));
+        return node.build(AST_CONSTANT);
+    }
+
     node.consume(); // Consume '='
     node.append_child(parser.parse_expression());
 

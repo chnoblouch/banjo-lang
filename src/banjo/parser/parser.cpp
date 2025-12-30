@@ -401,6 +401,11 @@ std::string Parser::token_to_str(Token *token) {
 }
 
 void Parser::recover() {
+    // Ensure forward progress.
+    if (stream.get_position() == prev_recover_pos) {
+        stream.consume();
+    }
+
     while (!is_at_recover_punctuation() && !is_at_recover_keyword() && !stream.get()->is(TKN_EOF)) {
         Token *token = stream.consume();
 
@@ -422,6 +427,8 @@ void Parser::recover() {
     if (stream.get()->is(TKN_SEMI)) {
         stream.consume();
     }
+
+    prev_recover_pos = stream.get_position();
 }
 
 bool Parser::is_at_recover_punctuation() {
