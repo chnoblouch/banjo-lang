@@ -1,4 +1,4 @@
-use std.{memory, convert.to_repr, config, system.panic};
+use std.{memory, convert.to_repr, config};
 
 struct Entry[K, V] {
     var key: K;

@@ -1,5 +1,5 @@
 use os.{IS_WINDOWS, winapi, msvcrt};
-use std.{io, convert.to_string, system.panic};
+use std.{io, convert.to_string};
 
 meta if IS_WINDOWS {
     type ErrorCode = winapi.Dword;

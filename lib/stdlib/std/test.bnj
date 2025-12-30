@@ -1,4 +1,4 @@
-use std.{system.exit, convert.to_repr};
+use std.convert.to_repr;
 
 func assert_eq[T](ref a: T, ref b: T) {
     if a != b {

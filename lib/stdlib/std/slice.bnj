@@ -1,6 +1,5 @@
 use std.{
     memory.{PointerMoveIter, PointerRefIter},
-    system.panic,
     convert,
     config,
 };

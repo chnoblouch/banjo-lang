@@ -1,4 +1,4 @@
-use std.{system.panic, convert.to_string};
+use std.convert.to_string;
 
 struct Optional[T] {
     var has_value: bool;
@@ -20,12 +20,11 @@ struct Optional[T] {
         };
     }
 
-    pub func unwrap(@byval self) -> T {
+    pub func unwrap(@[byval, unmanaged] self) -> T {
         if !self.has_value {
             panic("optional does not have a value");
         }
 
-        self.has_value = false;
         return self.value;
     }
 

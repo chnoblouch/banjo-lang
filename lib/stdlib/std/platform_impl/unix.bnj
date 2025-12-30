@@ -1,6 +1,6 @@
 use os.{IS_UNIX, posix};
 use c;
-use std.{memory, io, convert.to_string, system.panic};
+use std.{memory, io, convert.to_string};
 
 meta if IS_UNIX {
     type ErrorCode = i32;

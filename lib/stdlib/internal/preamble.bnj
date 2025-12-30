@@ -1,4 +1,5 @@
-use std.{convert, system.panic};
+use std.{config, convert, stack_trace};
+use c.lib.stdlib.exit as cexit;
 use os;
 
 meta if os.IS_WINDOWS {
@@ -21,10 +22,28 @@ pub func println[T](ref value: T) {
     write_to_stdout(&line_ending, 1);
 }
 
+pub func exit(status: i32) {
+    cexit(status);
+}
+
 pub func assert(condition: bool, message: String) {
     if !condition {
         panic("assertion failed: " + message);
     }
+}
+
+pub func panic(message: String) {
+    println("\n================================================================");
+    print("panic: ");
+    println(message);
+
+    meta if config.BUILD_CONFIG == config.DEBUG {
+        stack_trace.print_stack_trace();
+    }
+
+    println("================================================================\n");
+
+    exit(1);
 }
 
 func write_to_stdout(data: *u8, size: usize) {
