@@ -1,0 +1,8 @@
+# test:error 6:13 "'try' unwraps a different error type ('i32') than the function returns"
+# test:note 4:6 "expected error type 'bool' as defined here"
+
+func f() -> i32 except bool {
+    var a: f32 except i32 = undefined;
+    var b = try a;
+    return 100;
+}

@@ -128,7 +128,18 @@ public:
     );
 
     void report_err_cannot_use_in_try(const sir::Expr &expr);
+    void report_err_cannot_use_in_try_expr(const sir::Expr &expr);
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
+    void report_err_try_expr_not_allowed(sir::TryExpr &try_expr);
+    void report_err_try_expr_return_type_not_result(sir::TryExpr &expr, sir::FuncDef &func_def);
+    
+    void report_err_try_expr_return_error_mismatch(
+        const sir::TryExpr &expr,
+        sir::Expr unwrap_error,
+        sir::Expr return_error,
+        sir::FuncDef &func_def
+    );
+
     void report_err_compile_time_unknown(const sir::Expr &value);
 
     void report_err_expected_proto(const sir::Expr &expr);

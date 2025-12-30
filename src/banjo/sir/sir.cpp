@@ -613,6 +613,10 @@ Attributes::Layout StructDef::get_layout() const {
     return *attrs->layout;
 }
 
+bool StructDef::is_specialization_of(sir::StructDef &generic_struct_def) {
+    return parent_specialization && parent_specialization->generic_def == &generic_struct_def;
+}
+
 unsigned UnionDef::get_index(const UnionCase &case_) const {
     for (unsigned i = 0; i < cases.size(); i++) {
         if (cases[i] == &case_) {

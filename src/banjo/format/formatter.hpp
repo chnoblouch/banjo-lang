@@ -91,7 +91,7 @@ private:
     void format_map_literal_entry(ASTNode *node, WhitespaceKind whitespace);
     void format_closure_literal(ASTNode *node, WhitespaceKind whitespace);
     void format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between = true);
-    void format_unary_expr(ASTNode *node, WhitespaceKind whitespace);
+    void format_unary_expr(ASTNode *node, WhitespaceKind whitespace, bool space_between = false);
     void format_call_or_bracket_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_static_array_type(ASTNode *node, WhitespaceKind whitespace);
     void format_func_type(ASTNode *node, WhitespaceKind whitespace);

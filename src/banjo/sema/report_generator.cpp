@@ -562,8 +562,33 @@ void ReportGenerator::report_err_cannot_use_in_try(const sir::Expr &expr) {
     report_error("type '$' is not a result or optional type", expr.get_ast_node(), expr.get_type());
 }
 
+void ReportGenerator::report_err_cannot_use_in_try_expr(const sir::Expr &expr) {
+    report_error("cannot unwrap value ('$' is not a result type)", expr.get_ast_node(), expr.get_type());
+}
+
 void ReportGenerator::report_err_try_no_error_field(const sir::TryExceptBranch &branch) {
     report_error("optional types don't have an error field", branch.ast_node);
+}
+
+void ReportGenerator::report_err_try_expr_not_allowed(sir::TryExpr &try_expr) {
+    report_error("'try' can only be used in functions", try_expr.ast_node);
+}
+
+void ReportGenerator::report_err_try_expr_return_type_not_result(sir::TryExpr &expr, sir::FuncDef &func_def) {
+    build_error("'try' is not allowed in this function because it does not return a result", expr.ast_node)
+        .add_note("the return type is '$'", func_def.ident.ast_node, func_def.type.return_type)
+        .report();
+}
+
+void ReportGenerator::report_err_try_expr_return_error_mismatch(
+    const sir::TryExpr &expr,
+    sir::Expr unwrap_error,
+    sir::Expr return_error,
+    sir::FuncDef &func_def
+) {
+    build_error("'try' unwraps a different error type ('$') than the function returns", expr.ast_node, unwrap_error)
+        .add_note("expected error type '$' as defined here", func_def.ident.ast_node, return_error)
+        .report();
 }
 
 void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &value) {

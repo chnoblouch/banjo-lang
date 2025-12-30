@@ -1,0 +1,24 @@
+# test:subtest
+# test:error 5:17 "cannot unwrap value ('i32' is not a result type)"
+
+func main() {
+    var a = try 100;
+}
+
+# test:subtest
+# test:error 14:17 "cannot unwrap value ('S' is not a result type)"
+
+struct S {}
+
+func main() {
+    var a = try S {};
+}
+
+# test:subtest
+# test:error 23:17 "cannot unwrap value ('S[i32]' is not a result type)"
+
+struct S[T] {}
+
+func main() {
+    var a = try S[i32] {};
+}

@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 8:14 "'try' can only be used in functions"
+
+func f() -> i32 except bool {
+    return 0;
+}
+
+var a: i32 = try f();
+
+# test:subtest
+# test:error 17:16 "'try' can only be used in functions"
+
+func f() -> i32 except bool {
+    return 0;
+}
+
+const A: i32 = try f();

@@ -567,6 +567,7 @@ struct GenericArg {
 
 template <typename T>
 struct Specialization {
+    T *generic_def;
     std::span<Expr> args;
     T *def;
     SymbolTable *symbol_table;
@@ -1225,6 +1226,7 @@ struct StructDef {
     bool has_impl_for(const sir::ProtoDef &proto_def) const;
     Attributes::Layout get_layout() const;
     bool is_generic() const { return !generic_params.empty(); }
+    bool is_specialization_of(sir::StructDef &generic_struct_def);
 };
 
 struct StructField {

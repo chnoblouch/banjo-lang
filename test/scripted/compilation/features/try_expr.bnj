@@ -1,0 +1,49 @@
+# test:common
+
+func create_value() -> i32 except bool {
+    return 42;
+}
+
+func create_error() -> i32 except bool {
+    return false;
+}
+
+# test:subtest
+# test:output "ok,42"
+
+func f() -> i32 except bool {
+    var value = try create_value();
+    print("ok,");
+    print(value);
+    return value;
+}
+
+func main() {
+    var _ = f();
+}
+
+# test:subtest
+# test:output "ok,42"
+
+func f() -> i32 except bool {
+    var value = try create_value();
+    print("ok,");
+    return value;
+}
+
+func main() {
+    print(f());
+}
+
+# test:subtest
+# test:output "false"
+
+func f() -> i32 except bool {
+    var value = try create_error();
+    print("ok,");
+    return value;
+}
+
+func main() {
+    print(f());
+}

@@ -1345,16 +1345,52 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
         return Result::ERROR;
     }
 
-    if (auto struct_def = try_expr.value.get_type().match_symbol<sir::StructDef>()) {
-        if (!struct_def->parent_specialization) {
-            return Result::ERROR;
-        }
+    sir::StructDef &result_def = analyzer.find_std_result().as<sir::StructDef>();
+    sir::StructDef *value_result_def = nullptr;
 
-        try_expr.type = struct_def->fields[1]->type;
-        return Result::SUCCESS;
+    if (auto struct_def = try_expr.value.get_type().match_symbol<sir::StructDef>()) {
+        if (struct_def->is_specialization_of(result_def)) {
+            value_result_def = struct_def;
+        }
     }
 
-    return Result::ERROR;
+    if (!value_result_def) {
+        analyzer.report_generator.report_err_cannot_use_in_try_expr(try_expr.value);
+        return Result::ERROR;
+    }
+
+    sir::FuncDef *func_def = analyzer.get_decl().match<sir::FuncDef>();
+
+    if (!func_def) {
+        analyzer.report_generator.report_err_try_expr_not_allowed(try_expr);
+        return Result::ERROR;
+    }
+
+    sir::Expr return_type = func_def->type.return_type;
+    sir::StructDef *return_result_def = nullptr;
+
+    if (auto struct_def = return_type.match_symbol<sir::StructDef>()) {
+        if (struct_def->is_specialization_of(result_def)) {
+            return_result_def = struct_def;
+        }
+    }
+
+    if (!return_result_def) {
+        analyzer.report_generator.report_err_try_expr_return_type_not_result(try_expr, *func_def);
+        return Result::ERROR;
+    }
+
+    sir::Expr unwrap_error = value_result_def->parent_specialization->args[1];
+    sir::Expr return_error = return_result_def->parent_specialization->args[1];
+
+    if (unwrap_error != return_error) {
+        analyzer.report_generator
+            .report_err_try_expr_return_error_mismatch(try_expr, unwrap_error, return_error, *func_def);
+        return Result::ERROR;
+    }
+
+    try_expr.type = value_result_def->parent_specialization->args[0];
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {

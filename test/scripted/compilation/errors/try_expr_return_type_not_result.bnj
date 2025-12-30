@@ -1,0 +1,42 @@
+# test:subtest
+# test:error 7:13 "'try' is not allowed in this function because it does not return a result"
+# test:note 5:6 "the return type is 'i32'"
+
+func f() -> i32 {
+    var a: i32 except bool = undefined;
+    var b = try a;
+    return 0;
+}
+
+# test:subtest
+# test:error 19:13 "'try' is not allowed in this function because it does not return a result"
+# test:note 17:6 "the return type is 'S'"
+
+struct S {}
+
+func f() -> S {
+    var a: i32 except bool = undefined;
+    var b = try a;
+    return S {};
+}
+
+# test:subtest
+# test:error 31:13 "'try' is not allowed in this function because it does not return a result"
+# test:note 29:6 "the return type is 'S[i32]'"
+
+struct S[T] {}
+
+func f() -> S[i32] {
+    var a: i32 except bool = undefined;
+    var b = try a;
+    return S[i32] {};
+}
+
+# test:subtest
+# test:error 41:13 "'try' is not allowed in this function because it does not return a result"
+# test:note 39:6 "the return type is 'void'"
+
+func f() {
+    var a: i32 except bool = undefined;
+    var b = try a;
+}

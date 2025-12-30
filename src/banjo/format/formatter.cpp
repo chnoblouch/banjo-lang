@@ -171,6 +171,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_IMPLICIT_DOT_OPERATOR: format_unary_expr(node, whitespace); break;
         case AST_ARRAY_ACCESS: format_call_or_bracket_expr(node, whitespace); break;
         case AST_RANGE: format_binary_expr(node, whitespace, false); break;
+        case AST_TRY_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_TUPLE_EXPR: format_list(node, whitespace); break;
         case AST_I8: format_single_token_node(node, whitespace); break;
         case AST_I16: format_single_token_node(node, whitespace); break;
@@ -961,11 +962,16 @@ void Formatter::format_binary_expr(ASTNode *node, WhitespaceKind whitespace, boo
     format_node(rhs_node, whitespace);
 }
 
-void Formatter::format_unary_expr(ASTNode *node, WhitespaceKind whitespace) {
+void Formatter::format_unary_expr(ASTNode *node, WhitespaceKind whitespace, bool space_between /* = false */) {
     ASTNode *value_node = node->first_child;
     unsigned tkn_operator = node->tokens[0];
 
-    ensure_no_space_after(tkn_operator);
+    if (space_between) {
+        ensure_space_after(tkn_operator);
+    } else {
+        ensure_no_space_after(tkn_operator);
+    }
+
     format_node(value_node, whitespace);
 }
 

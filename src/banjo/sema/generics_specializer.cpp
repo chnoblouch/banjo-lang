@@ -65,6 +65,7 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
 
     generic_func_def.specializations.push_back(
         sir::Specialization<sir::FuncDef>{
+            .generic_def = &generic_func_def,
             .args = args,
             .def = clone,
             .symbol_table = symbol_table,
@@ -122,6 +123,7 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
 
     generic_struct_def.specializations.push_back(
         sir::Specialization<sir::StructDef>{
+            .generic_def = &generic_struct_def,
             .args = args,
             .def = clone,
             .symbol_table = symbol_table,
