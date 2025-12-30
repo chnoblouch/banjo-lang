@@ -13,7 +13,7 @@ struct Buffer: io.Read, io.Write, io.Seek {
 
     pub func read(mut self, data: Slice[u8]) -> usize except io.Error {
         if self.position + data.length > self.data.length() {
-            return io.Error { handle: undefined };
+            return io.Error.new(.UNKNOWN);
         }
 
         memory.copy(&self.data[self.position], data.data, data.length);

@@ -52,20 +52,16 @@ struct Socket {
     pub func send(self, buffer: *u8, size: usize) -> usize except Error {
         try size_sent in platform.socket_send(self.handle, buffer, size) {
             return size_sent;
-        } except error: platform.Error {
-            return Error {
-                handle: error,
-            };
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
     }
 
     pub func recv(self, buffer: *u8, size: usize) -> usize except Error {
         try size_received in platform.socket_recv(self.handle, buffer, size) {
             return size_received;
-        } except error: platform.Error {
-            return Error {
-                handle: error,
-            };
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
     }
 

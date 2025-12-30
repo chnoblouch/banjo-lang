@@ -1,8 +1,8 @@
 use os.{IS_WINDOWS, winapi, msvcrt};
-use std.{convert.to_string, system.panic};
+use std.{io, convert.to_string, system.panic};
 
 meta if IS_WINDOWS {
-    type Error = winapi.Dword;
+    type ErrorCode = winapi.Dword;
     type Mutex = winapi.Handle;
     type Socket = winapi.Socket;
 
@@ -16,11 +16,21 @@ meta if IS_WINDOWS {
 
     var wsa_initialized: bool = false;
 
-    pub func error_last() -> Error {
+    pub func error_last() -> ErrorCode {
         return winapi.get_last_error();
     }
 
-    pub func error_to_string(error: Error) -> String {
+    pub func error_kind(error: ErrorCode) -> io.Error.Kind {
+        if error == winapi.ERROR_FILE_NOT_FOUND {
+            return .NOT_FOUND;
+        } else if error == winapi.ERROR_ACCESS_DENIED {
+            return .PERMISSION_DENIED;
+        } else {
+            return .UNKNOWN;
+        }
+    }
+
+    pub func error_message(error: ErrorCode) -> String {
         var buffer: *u8 = null;
 
         var length = winapi.format_message(
@@ -226,7 +236,7 @@ meta if IS_WINDOWS {
         return result == 0;
     }
 
-    pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+    pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except ErrorCode {
         var result = winapi.send(socket, buffer, size as i32, 0);
         if result >= 0 {
             return result as usize;
@@ -235,7 +245,7 @@ meta if IS_WINDOWS {
         }
     }
 
-    pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+    pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except ErrorCode {
         var result = winapi.recv(socket, buffer, size as i32, 0);
         if result >= 0 {
             return result as usize;

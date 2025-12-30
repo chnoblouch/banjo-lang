@@ -1,4 +1,4 @@
-use std.{platform, numeric, file.File};
+use std.{platform, numeric, file.File, convert.to_string};
 
 use c.lib.{
     string.strlen,
@@ -8,127 +8,88 @@ use c.lib.{
 proto Read {
     pub func read(mut self, data: Slice[u8]) -> usize except Error;
 
+    pub func read_full(mut self, data: Slice[u8]) -> void except Error {
+        var num_bytes: usize = 0;
+
+        while num_bytes < data.length {
+            var sub_slice = data.sub(num_bytes, data.length - num_bytes);
+            num_bytes += try self.read(sub_slice);
+        }
+
+        return undefined;
+    }
+
     pub func read_u8(mut self) -> u8 except Error {
         var value: u8;
-
-        try num_bytes in self.read(Slice[u8].new(&value, 1)) {
-            # TODO: Check number of bytes
-            return value;
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&value, 1));
+        return value;
     }
 
     pub func read_u16_be(mut self) -> u16 except Error {
         var bytes: [u8; 2];
-
-        try num_bytes in self.read(Slice[u8].new(&bytes[0], 2)) {
-            # TODO: Check number of bytes
-            return numeric.u16_from_bytes_be(bytes);
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&bytes[0], 2));
+        return numeric.u16_from_bytes_be(bytes);
     }
 
     pub func read_u16_le(mut self) -> u16 except Error {
         var bytes: [u8; 2];
-
-        try num_bytes in self.read(Slice[u8].new(&bytes[0], 2)) {
-            # TODO: Check number of bytes
-            return numeric.u16_from_bytes_le(bytes);
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&bytes[0], 2));
+        return numeric.u16_from_bytes_le(bytes);
     }
 
     pub func read_u16_native(mut self) -> u16 except Error {
         var value: u16;
-
-        try num_bytes in self.read(Slice[u8].new(&value as *u8, 2)) {
-            # TODO: Check number of bytes
-            return value;
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&value as *u8, 2));
+        return value;
     }
 
     pub func read_u32_be(mut self) -> u32 except Error {
         var bytes: [u8; 4];
-
-        try num_bytes in self.read(Slice[u8].new(&bytes[0], 4)) {
-            # TODO: Check number of bytes
-            return numeric.u32_from_bytes_be(bytes);
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&bytes[0], 4));
+        return numeric.u32_from_bytes_be(bytes);
     }
 
     pub func read_u32_le(mut self) -> u32 except Error {
         var bytes: [u8; 4];
-
-        try num_bytes in self.read(Slice[u8].new(&bytes[0], 4)) {
-            # TODO: Check number of bytes
-            return numeric.u32_from_bytes_le(bytes);
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&bytes[0], 4));
+        return numeric.u32_from_bytes_le(bytes);
     }
 
     pub func read_u32_native(mut self) -> u32 except Error {
         var value: u32;
-
-        try num_bytes in self.read(Slice[u8].new(&value as *u8, 4)) {
-            # TODO: Check number of bytes
-            return value;
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&value as *u8, 4));
+        return value;
     }
 
     pub func read_u64_be(mut self) -> u64 except Error {
         var bytes: [u8; 8];
-
-        try num_bytes in self.read(Slice[u8].new(&bytes[0], 8)) {
-            # TODO: Check number of bytes
-            return numeric.u64_from_bytes_be(bytes);
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&bytes[0], 8));
+        return numeric.u64_from_bytes_be(bytes);
     }
 
     pub func read_u64_le(mut self) -> u64 except Error {
         var bytes: [u8; 8];
-
-        try num_bytes in self.read(Slice[u8].new(&bytes[0], 8)) {
-            # TODO: Check number of bytes
-            return numeric.u64_from_bytes_le(bytes);
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&bytes[0], 8));
+        return numeric.u64_from_bytes_le(bytes);
     }
 
     pub func read_u64_native(mut self) -> u64 except Error {
         var value: u64;
-
-        try num_bytes in self.read(Slice[u8].new(&value as *u8, 8)) {
-            # TODO: Check number of bytes
-            return value;
-        } except error: Error {
-            return error;
-        }
+        try self.read(Slice[u8].new(&value as *u8, 8));
+        return value;
     }
 
-    pub func read_line(mut self) -> String {
-        # TODO: Buffering, error handling
+    pub func read_line(mut self) -> String except Error {
+        # TODO: Buffering
 
         var line = "";
 
         var char: u8;
-        self.read(Slice[u8].new(&char, 1)).unwrap();
+        try self.read(Slice[u8].new(&char, 1));
 
         while char != '\r' && char != '\n' {
             line += char;
-            self.read(Slice[u8].new(&char, 1)).unwrap();
+            try self.read(Slice[u8].new(&char, 1));
         }
 
         return line;
@@ -206,16 +167,47 @@ proto Seek {
 }
 
 struct Error {
-    var handle: platform.Error;
+    enum Kind {
+        NOT_FOUND,
+        PERMISSION_DENIED,
+        UNKNOWN,
+    }
 
-    pub func last() -> Error {
+    var kind: Kind;
+    var code: ?platform.ErrorCode;
+
+    pub func new(kind: Kind) -> Error {
         return Error {
-            handle: platform.error_last(),
+            kind,
+            code: none,
         };
     }
 
+    pub func from_platform(code: platform.ErrorCode) -> Error {
+        return Error {
+            kind: platform.error_kind(code),
+            code,
+        };
+    }
+
+    pub func last() -> Error {
+        return from_platform(platform.error_last());
+    }
+
+    pub func message(self) -> ?String {
+        try code in self.code {
+            return platform.error_message(code);
+        } else {
+            return none;
+        }
+    }
+
     pub func __str__(self) -> String {
-        return platform.error_to_string(self.handle);
+        try message in self.message() {
+            return to_string(self.kind) + " (" + message + ")";
+        } else {
+            return to_string(self.kind);
+        }
     }
 }
 

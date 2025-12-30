@@ -2,6 +2,9 @@ use std.config;
 use c;
 
 meta if config.OS == config.MACOS {
+    const ENOENT: i32 = 2;
+    const EACCES: i32 = 13;
+
     struct Sockaddr {
         var len: u8;
         var family: u8;

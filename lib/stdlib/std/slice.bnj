@@ -27,6 +27,13 @@ struct Slice[T] {
         };
     }
 
+    pub func sub(mut self, start: usize, end: usize) -> Slice[T] {
+        return Slice[T] {
+            data: &self.data[start],
+            length: end - start,
+        };
+    }
+
     pub func __index__(self, index: usize) -> ref T {
         meta if config.BUILD_CONFIG == config.DEBUG {
             self.check_bounds(index);

@@ -1,9 +1,9 @@
 use os.{IS_UNIX, posix};
 use c;
-use std.{memory, convert.to_string, system.panic};
+use std.{memory, io, convert.to_string, system.panic};
 
 meta if IS_UNIX {
-    type Error = i32;
+    type ErrorCode = i32;
     type Mutex = *posix.PthreadMutex;
     type Socket = i32;
 
@@ -15,11 +15,21 @@ meta if IS_UNIX {
     const SOCKET_PROTOCOL_TCP: i32 = posix.IPPROTO_TCP;
     const SOCKET_PROTOCOL_UDP: i32 = posix.IPPROTO_UDP;
 
-    pub func error_last() -> Error {
+    pub func error_last() -> ErrorCode {
         return posix.errno();
     }
 
-    pub func error_to_string(error: Error) -> String {
+    pub func error_kind(error: ErrorCode) -> io.Error.Kind {
+        if error == posix.ENOENT {
+            return .NOT_FOUND;
+        } else if error == posix.EACCES {
+            return .PERMISSION_DENIED;
+        } else {
+            return .UNKNOWN;
+        }
+    }
+
+    pub func error_message(error: ErrorCode) -> String {
         return String.from_cstr(c.lib.string.strerror(error));
     }
 
@@ -198,7 +208,7 @@ meta if IS_UNIX {
         return result == 0;
     }
 
-    pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+    pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except ErrorCode {
         var result = posix.send(socket, buffer, size, posix.MSG_NOSIGNAL);
         if result >= 0 {
             return result as usize;
@@ -207,7 +217,7 @@ meta if IS_UNIX {
         }
     }
 
-    pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except Error {
+    pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except ErrorCode {
         var result = posix.recv(socket, buffer, size, 0);
         if result >= 0 {
             return result as usize;

@@ -3,6 +3,8 @@ use os;
 
 meta if config.OS == config.LINUX {
     use os.posix_linux.{
+        ENOENT,
+        EACCES,
         Sockaddr,
         Addrinfo,
         Timespec,
@@ -13,6 +15,8 @@ meta if config.OS == config.LINUX {
     };
 } else if config.OS == config.MACOS {
     use os.posix_macos.{
+        ENOENT,
+        EACCES,
         Sockaddr,
         Addrinfo,
         Timespec,
@@ -23,6 +27,8 @@ meta if config.OS == config.LINUX {
     };
 } else if config.OS == config.EMSCRIPTEN {
     use os.posix_emscripten.{
+        ENOENT,
+        EACCES,
         Sockaddr,
         Addrinfo,
         Timespec,
