@@ -95,6 +95,7 @@ private:
     Result analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_call_expr(sir::CallExpr &call_expr, Context &ctx);
     Result analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx);
+    Result analyze_try_expr(sir::TryExpr &try_expr, Context &ctx);
     Result analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx);
     Result analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr);
 

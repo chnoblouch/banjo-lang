@@ -32,6 +32,9 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type /*= ScopeType::GENERIC*/) {
+    // FIXME: Deinitialize unused return values of functions
+    // FIXME: Deinitialize right-hand side of logical operators conditionally
+    
     // TODO: There are performance issues here when analyzing large numbers of resources.
     // One example is `convert.enum_to_repr` with enums that have lots of variants.
 
@@ -393,7 +396,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_call_expr(*inner, ctx),         // call_expr
         result = analyze_field_expr(*inner, expr, ctx),  // field_expr
         SIR_VISIT_IGNORE,                                // range_expr
-        SIR_VISIT_IGNORE,                                // try_expr
+        result = analyze_try_expr(*inner, ctx),          // try_expr
         result = analyze_tuple_expr(*inner, ctx),        // tuple_expr
         SIR_VISIT_IGNORE,                                // coercion_expr
         SIR_VISIT_IGNORE,                                // primitive_type
@@ -566,6 +569,10 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
 
     ctx.cur_resource = nullptr;
     return Result::SUCCESS;
+}
+
+Result ResourceAnalyzer::analyze_try_expr(sir::TryExpr &try_expr, Context &ctx) {
+    return analyze_expr(try_expr.value, true, ctx.conditional);
 }
 
 Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx) {

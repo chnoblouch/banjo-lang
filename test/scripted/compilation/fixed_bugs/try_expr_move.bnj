@@ -1,0 +1,19 @@
+# test:output "d"
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+pub func f0(value: Resource) -> Resource except bool {
+    return value;
+}
+
+func f1(resource: Resource) -> Resource except bool {
+    return try f0(resource);
+}
+
+func main() {
+    var a = f1(Resource {});
+}
