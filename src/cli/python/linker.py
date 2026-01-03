@@ -38,14 +38,13 @@ class WindowsLinker(Linker):
         output_path = str(Path(input.output_dir) / output_file)
         command.append("/OUT:" + output_path)
 
-        #command.extend(["msvcrt.lib", "ws2_32.lib", "shlwapi.lib"])
+        #command.extend(["msvcrt.lib", "ws2_32.lib"])
         command.extend([
             "msvcrt.lib",
             "kernel32.lib",
             "user32.lib",
             "legacy_stdio_definitions.lib",
             "ws2_32.lib",
-            "shlwapi.lib",
             "dbghelp.lib",
         ])
         command.append("/SUBSYSTEM:" + input.config.win_subsystem)
@@ -112,7 +111,6 @@ class MinGWLinker(Linker):
             "-lkernel32",
             "-lmingw32",
             "-lws2_32",
-            "-lshlwapi",
             "-ldbghelp",
         ])
 

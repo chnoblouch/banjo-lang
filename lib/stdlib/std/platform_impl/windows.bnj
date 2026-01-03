@@ -63,12 +63,12 @@ meta if IS_WINDOWS {
     }
 
     pub func path_exists(path: *String) -> bool except ErrorCode {
-        var result = winapi.path_file_exists(path.to_cstring().data());
+        var attributes = winapi.get_file_attributes(path.to_cstring().data());
 
-        if result != 0 {
+        if attributes != winapi.INVALID_FILE_ATTRIBUTES {
             return true;
-        } else {
-            var error = winapi.get_last_error();
+        } else { 
+            var error = error_last();
 
             if error == winapi.ERROR_FILE_NOT_FOUND {
                 return false;

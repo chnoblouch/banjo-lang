@@ -321,7 +321,6 @@ def run_executable(test):
             "user32.lib",
             "legacy_stdio_definitions.lib",
             "ws2_32.lib",
-            "shlwapi.lib",
             "dbghelp.lib",
             "/SUBSYSTEM:CONSOLE",
             "/OUT:test.exe",

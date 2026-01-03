@@ -1197,7 +1197,6 @@ void CLI::invoke_msvc_linker() {
     args.push_back("gdi32.lib");
     args.push_back("shell32.lib");
     args.push_back("ws2_32.lib");
-    args.push_back("shlwapi.lib");
     args.push_back("dbghelp.lib");
     args.push_back("legacy_stdio_definitions.lib");
     args.push_back("/SUBSYSTEM:CONSOLE");
@@ -1257,7 +1256,6 @@ void CLI::invoke_mingw_linker() {
     args.push_back("-lgdi32");
     args.push_back("-lshell32");
     args.push_back("-lws2_32");
-    args.push_back("-lshlwapi");
     args.push_back("-ldbghelp");
 
     for (const std::string &library_path : library_paths) {

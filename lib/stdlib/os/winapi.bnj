@@ -1,451 +1,450 @@
-type Bool = u32;
-type Handle = addr;
-type Word = u16;
-type Dword = u32;
-type Dword64 = u64;
-type LargeInteger = u64;
-type Int = i32;
-type Ulong = u32;
-type Ulong64 = u64;
+use os;
 
-const FALSE: Bool = 0;
-const TRUE: Bool = 1;
+meta if os.IS_WINDOWS {
+    type Bool = u32;
+    type Handle = addr;
+    type Word = u16;
+    type Dword = u32;
+    type Dword64 = u64;
+    type LargeInteger = u64;
+    type Int = i32;
+    type Ulong = u32;
+    type Ulong64 = u64;
 
-# --- error.h ---
+    const FALSE: Bool = 0;
+    const TRUE: Bool = 1;
 
-const ERROR_SUCCESS: u32 = 0x00000000;
-const ERROR_FILE_NOT_FOUND: u32 = 0x00000002;
-const ERROR_ACCESS_DENIED: u32 = 0x00000005;
-const ERROR_NO_MORE_FILES: u32 = 0x00000012;
+    # --- error.h ---
 
-# --- winnt.h ---
+    const ERROR_SUCCESS: u32 = 0x00000000;
+    const ERROR_FILE_NOT_FOUND: u32 = 0x00000002;
+    const ERROR_ACCESS_DENIED: u32 = 0x00000005;
+    const ERROR_NO_MORE_FILES: u32 = 0x00000012;
 
-const IMAGE_FILE_MACHINE_AMD64: u32 = 0x8664;
+    # --- winnt.h ---
 
-@[link_name=RtlCaptureContext]
-native func rtl_capture_context(context_record: addr);
+    const IMAGE_FILE_MACHINE_AMD64: u32 = 0x8664;
 
-# --- handleapi.h ---
+    @[link_name=RtlCaptureContext]
+    native func rtl_capture_context(context_record: addr);
 
-const INVALID_HANDLE_VALUE: addr = 0xFFFFFFFFFFFFFFFF;
+    # --- handleapi.h ---
 
-@[link_name=CloseHandle]
-native func close_handle(object: Handle) -> bool;
+    const INVALID_HANDLE_VALUE: addr = 0xFFFFFFFFFFFFFFFF;
 
-# --- winbase.h ---
+    @[link_name=CloseHandle]
+    native func close_handle(object: Handle) -> bool;
 
-const FORMAT_MESSAGE_ALLOCATE_BUFFER: u32 = 0x00000100;
-const FORMAT_MESSAGE_ARGUMENT_ARRAY: u32 = 0x00002000;
-const FORMAT_MESSAGE_FROM_HMODULE: u32 = 0x00000800;
-const FORMAT_MESSAGE_FROM_STRING: u32 = 0x00000400;
-const FORMAT_MESSAGE_FROM_SYSTEM: u32 = 0x00001000;
-const FORMAT_MESSAGE_IGNORE_INSERTS: u32 = 0x00000200;
+    # --- winbase.h ---
 
-@[link_name=LocalFree]
-native func local_free(mem: addr) -> addr;
+    const FORMAT_MESSAGE_ALLOCATE_BUFFER: u32 = 0x00000100;
+    const FORMAT_MESSAGE_ARGUMENT_ARRAY: u32 = 0x00002000;
+    const FORMAT_MESSAGE_FROM_HMODULE: u32 = 0x00000800;
+    const FORMAT_MESSAGE_FROM_STRING: u32 = 0x00000400;
+    const FORMAT_MESSAGE_FROM_SYSTEM: u32 = 0x00001000;
+    const FORMAT_MESSAGE_IGNORE_INSERTS: u32 = 0x00000200;
 
-@[link_name=FormatMessageA]
-native func format_message(
-    flags: Dword,
-    source: addr,
-    message_id: Dword,
-    language_id: Dword,
-    buffer: **u8,
-    size: Dword,
-    arguments: addr,
-) -> u32;
+    @[link_name=LocalFree]
+    native func local_free(mem: addr) -> addr;
 
-# --- minwindef.h ---
+    @[link_name=FormatMessageA]
+    native func format_message(
+        flags: Dword,
+        source: addr,
+        message_id: Dword,
+        language_id: Dword,
+        buffer: **u8,
+        size: Dword,
+        arguments: addr,
+    ) -> u32;
 
-const MAX_PATH: usize = 260;
+    # --- minwindef.h ---
 
-# --- minwinbase.h ---
+    const MAX_PATH: usize = 260;
 
-struct Filetime {
-    var low_date_time: Dword;
-    var high_date_time: Dword;
+    # --- minwinbase.h ---
+
+    struct Filetime {
+        var low_date_time: Dword;
+        var high_date_time: Dword;
+    }
+
+    struct Win32FindData {
+        var file_attributes: Dword;
+        var creation_time: Filetime;
+        var last_access_time: Filetime;
+        var last_write_time: Filetime;
+        var file_size_high: Dword;
+        var file_size_low: Dword;
+        var reserved0: Dword;
+        var reserved1: Dword;
+        var file_name: [u8; MAX_PATH];
+        var alternate_file_name: [u8; 14];
+    }
+
+    const INVALID_FILE_ATTRIBUTES: Dword = 0xFFFFFFFF;
+
+    # --- fileapi.h ---
+
+    const FILE_ATTRIBUTE_DIRECTORY: Dword = 0x00000010;
+
+    # TODO: Overlapped
+
+    @[link_name=ReadFile]
+    native func read_file(
+        file: Handle,
+        buffer: addr,
+        number_of_bytes_to_read: Dword,
+        number_of_bytes_read: *Dword,
+        overlapped: addr,
+    ) -> Bool;
+
+    @[link_name=WriteFile]
+    native func write_file(
+        file: Handle,
+        buffer: addr,
+        number_of_bytes_to_write: Dword,
+        number_of_bytes_written: *Dword,
+        overlapped: addr,
+    ) -> Bool;
+
+    @[link_name=GetFileAttributesA]
+    native func get_file_attributes(file_name: *u8) -> Dword;
+
+    @[link_name=FindFirstFileA]
+    native func find_first_file(
+        file_name: *u8,
+        find_file_data: *Win32FindData,
+    ) -> Handle;
+
+    @[link_name=FindNextFileA]
+    native func find_next_file(
+        find_file: Handle,
+        find_file_data: *Win32FindData,
+    ) -> Bool;
+
+    @[link_name=FindClose]
+    native func find_close(find_file: Handle) -> Bool;
+
+    # --- processenv.h ---
+
+    const STD_INPUT_HANDLE: Dword = 0xFFFFFFF6;
+    const STD_OUTPUT_HANDLE: Dword = 0xFFFFFFF5;
+    const STD_ERROR_HANDLE: Dword = 0xFFFFFFF4;
+
+    @[link_name=GetStdHandle]
+    native func get_std_handle(std_handle: Dword) -> addr;
+
+    # --- synchapi.h ---
+
+    const INFINITE: Dword = 0xFFFFFFFF;
+
+    const WAIT_ABANDONED: Dword = 0x00000080;
+    const WAIT_OBJECT_0: Dword = 0x00000000;
+    const WAIT_TIMEOUT: Dword = 0x00000102;
+    const WAIT_FAILED: Dword = 0xFFFFFFFF;
+
+    @[link_name=WaitForSingleObject]
+    native func wait_for_single_object(
+        handle: addr,
+        milliseconds: u32,
+    ) -> u32;
+
+    @[link_name=CreateMutexA]
+    native func create_mutex(
+        mutex_attributes: addr,
+        initial_owner: Bool,
+        name: *u8,
+    ) -> Handle;
+
+    @[link_name=ReleaseMutex]
+    native func release_mutex(mutex: Handle) -> Bool;
+
+    @[link_name=Sleep]
+    native func sleep(milliseconds: u32);
+
+    # --- processthreadsapi.h ---
+
+    @[link_name=GetCurrentProcess]
+    native func get_current_process() -> Handle;
+
+    @[link_name=GetCurrentThread]
+    native func get_current_thread() -> Handle;
+
+    @[link_name=CreateThread]
+    native func create_thread(
+        thread_attributes: addr,
+        stack_size: usize,
+        start_address: func(addr),
+        parameter: addr,
+        creation_flags: u32,
+        thread_id: *u32,
+    ) -> addr;
+
+    # --- sysinfoapi.h ---
+
+    struct SystemInfo {
+        var union_0: u32;
+        var page_size: u32;
+        var minimum_application_dddress: addr;
+        var maximum_application_dddress: addr;
+        var active_processor_mask: *u32;
+        var number_of_processors: u32;
+        var processor_type: u32;
+        var allocation_granularity: u32;
+        var processor_level: u16;
+        var processor_revision: u16;
+    }
+
+    @[link_name=GetNativeSystemInfo]
+    native func get_native_system_info(system_info: *SystemInfo);
+
+    @[link_name=GetSystemTimeAsFileTime]
+    native func get_system_time_as_file_time(system_time_as_file_time: *Filetime);
+
+    # --- profileapi.h ---
+
+    @[link_name=QueryPerformanceCounter]
+    native func query_performance_counter(performance_count: *LargeInteger) -> bool;
+
+    @[link_name=QueryPerformanceFrequency]
+    native func query_performance_frequency(frequency: *LargeInteger) -> bool;
+
+    # --- errhandlingapi.h ---
+
+    @[link_name=GetLastError]
+    native func get_last_error() -> Dword;
+
+    @[link_name=SetLastError]
+    native func set_last_error(err_code: Dword);
+
+    # --- ws2def.h ---
+
+    struct Sockaddr {
+        var family: u16;
+        var data: [u8; 14];
+    }
+
+    struct Addrinfo {
+        var flags: i32;
+        var family: i32;
+        var socktype: i32;
+        var protocol: i32;
+        var addrlen: usize;
+        var canonname: *u8;
+        var addr_: *Sockaddr;
+        var next: *Addrinfo;
+    }
+
+    # --- winsock2.h ---
+
+    type Socket = u64;
+
+    const INVALID_SOCKET: u64 = 0xFFFFFFFFFFFFFFFF;
+    const SOCKET_ERROR: i32 = -1;
+
+    const AF_UNSPEC: i32 = 0;
+    const AF_INET: i32 = 2;
+    const AF_IPX: i32 = 6;
+    const AF_APPLETALK: i32 = 16;
+    const AF_NETBIOS: i32 = 17;
+    const AF_INET6: i32 = 23;
+    const AF_IRDA: i32 = 26;
+    const AF_BTH: i32 = 32;
+
+    const SOCK_STREAM: i32 = 1;
+    const SOCK_DGRAM: i32 = 2;
+    const SOCK_RAW: i32 = 3;
+    const SOCK_RDM: i32 = 4;
+    const SOCK_SEQPACKET: i32 = 5;
+
+    const IPPROTO_ICMP: i32 = 1;
+    const IPPROTO_IGMP: i32 = 2;
+    const BTHPROTO_RFCOMM: i32 = 3;
+    const IPPROTO_TCP: i32 = 6;
+    const IPPROTO_UDP: i32 = 17;
+    const IPPROTO_ICMPV6: i32 = 58;
+    const IPPROTO_RM: i32 = 113;
+
+    const SD_RECEIVE: i32 = 0;
+    const SD_SEND: i32 = 1;
+    const SD_BOTH: i32 = 2;
+
+    const FIONBIO: u32 = 0x8004667E;
+
+    @[link_name=WSAStartup]
+    native func wsa_startup(
+        version_required: Word,
+        wsa_data: addr,
+    ) -> i32;
+
+    @[link_name=socket]
+    native func socket(
+        af: i32,
+        type_: i32,
+        protocol: i32,
+    ) -> Socket;
+
+    @[link_name=connect]
+    native func connect(
+        s: Socket,
+        name: *Sockaddr,
+        namelen: i32,
+    ) -> i32;
+
+    @[link_name=send]
+    native func send(
+        s: Socket,
+        buf: *u8,
+        len: i32,
+        flags: i32,
+    ) -> i32;
+
+    @[link_name=recv]
+    native func recv(
+        s: Socket,
+        buf: *u8,
+        len: i32,
+        flags: i32,
+    ) -> i32;
+
+    @[link_name=shutdown]
+    native func shutdown(
+        s: Socket,
+        how: i32,
+    ) -> i32;
+
+    @[link_name=closesocket]
+    native func closesocket(s: Socket) -> i32;
+
+    @[link_name=ioctlsocket]
+    native func ioctlsocket(
+        s: Socket,
+        cmd: u32,
+        argp: *u32,
+    ) -> i32;
+
+    # --- ws2tcpip.h ---
+
+    @[link_name=getaddrinfo]
+    native func getaddrinfo(
+        node_name: *u8,
+        service_name: *u8,
+        hints: *Addrinfo,
+        result: **Addrinfo,
+    ) -> i32;
+
+    @[link_name=freeaddrinfo]
+    native func freeaddrinfo(addr_info: *Addrinfo);
+
+    # --- dbghelp.h ---
+
+    type ReadProcessMemoryRoutine64 = func(
+        process: Handle,
+        base_address: Dword64,
+        buffer: addr,
+        size: Dword,
+        number_of_bytes_read: *Dword,
+    ) -> Bool;
+
+    type FunctionTableAccessRoutine64 = func(
+        process: Handle,
+        addr_base: Dword64,
+    ) -> addr;
+
+    type GetModuleBaseRoutine64 = func(
+        process: Handle,
+        address: Dword64,
+    ) -> Dword64;
+
+    type TranslateAddressRoutine64 = func(
+        process: Handle,
+        thread: Handle,
+        addr: *Address64,
+    ) -> Dword64;
+
+    struct Address64 {
+        var offset: u64;
+        var segment: u16;
+        var mode: u32;
+    }
+
+    struct StackFrame64 {
+        var addr_pc: Address64;
+        var addr_return: Address64;
+        var addr_frame: Address64;
+        var addr_stack: Address64;
+        var addr_bstore: Address64;
+        var func_table_entry: addr;
+        var params: [Dword64; 4];
+        var far: Bool;
+        var virtual: Bool;
+        var reserved: [Dword64; 3];
+        var kd_help: [u64; 14];
+    }
+
+    struct SymbolInfo {
+        var size_of_struct: Ulong;
+        var type_index: Ulong;
+        var reserved: [Ulong64; 2];
+        var index: Ulong;
+        var size: Ulong;
+        var mod_base: Ulong64;
+        var flags: Ulong;
+        var value: Ulong64;
+        var address: Ulong64;
+        var register: Ulong;
+        var scope: Ulong;
+        var tag: Ulong;
+        var name_len: Ulong;
+        var max_name_len: Ulong;
+        var name: u8;
+    }
+
+    const ADDR_MODE_FLAT: u32 = 3;
+    const SYMOPT_UNDNAME: u32 = 0x2;
+    const SYMOPT_DEFERRED_LOADS: u32 = 0x4;
+
+    @[link_name=SymSetOptions]
+    native func sym_set_options(sym_options: Dword) -> Dword;
+
+    @[link_name=SymInitialize]
+    native func sym_initialize(
+        process: Handle,
+        user_search_path: *u8,
+        invade_process: Bool,
+    ) -> Bool;
+
+    @[link_name=SymFromAddr]
+    native func sym_from_addr(
+        process: Handle,
+        address: Dword64,
+        displacement: *Dword64,
+        symbol: *SymbolInfo,
+    ) -> Bool;
+
+    @[link_name=SymGetModuleBase64]
+    native func sym_get_module_base_64(
+        process: Handle,
+        addr_: Dword64,
+    ) -> Dword64;
+
+    @[link_name=SymFunctionTableAccess64]
+    native func sym_function_table_access_64(
+        process: Handle,
+        addr_base: Dword64,
+    ) -> addr;
+
+    @[link_name=StackWalk64]
+    native func stack_walk_64(
+        machine_type: Dword,
+        process: Handle,
+        thread: Handle,
+        stack_frame: *StackFrame64,
+        context_record: addr,
+        read_memory_routine: ReadProcessMemoryRoutine64,
+        function_table_access_routine: FunctionTableAccessRoutine64,
+        get_module_base_routine: GetModuleBaseRoutine64,
+        translate_address: TranslateAddressRoutine64,
+    ) -> u32;
 }
-
-struct Win32FindData {
-    var file_attributes: Dword;
-    var creation_time: Filetime;
-    var last_access_time: Filetime;
-    var last_write_time: Filetime;
-    var file_size_high: Dword;
-    var file_size_low: Dword;
-    var reserved0: Dword;
-    var reserved1: Dword;
-    var file_name: [u8; MAX_PATH];
-    var alternate_file_name: [u8; 14];
-}
-
-const INVALID_FILE_ATTRIBUTES: Dword = 0xFFFFFFFF;
-
-# --- fileapi.h ---
-
-const FILE_ATTRIBUTE_DIRECTORY: Dword = 0x00000010;
-
-# TODO: Overlapped
-
-@[link_name=ReadFile]
-native func read_file(
-    file: Handle,
-    buffer: addr,
-    number_of_bytes_to_read: Dword,
-    number_of_bytes_read: *Dword,
-    overlapped: addr,
-) -> Bool;
-
-@[link_name=WriteFile]
-native func write_file(
-    file: Handle,
-    buffer: addr,
-    number_of_bytes_to_write: Dword,
-    number_of_bytes_written: *Dword,
-    overlapped: addr,
-) -> Bool;
-
-@[link_name=GetFileAttributesA]
-native func get_file_attributes(file_name: *u8) -> Dword;
-
-@[link_name=FindFirstFileA]
-native func find_first_file(
-    file_name: *u8,
-    find_file_data: *Win32FindData,
-) -> Handle;
-
-@[link_name=FindNextFileA]
-native func find_next_file(
-    find_file: Handle,
-    find_file_data: *Win32FindData,
-) -> Bool;
-
-@[link_name=FindClose]
-native func find_close(find_file: Handle) -> Bool;
-
-# --- shlwapi.h ---
-
-@[link_name=PathFileExistsA]
-native func path_file_exists(path: *u8) -> Bool;
-
-# --- processenv.h ---
-
-const STD_INPUT_HANDLE: Dword = 0xFFFFFFF6;
-const STD_OUTPUT_HANDLE: Dword = 0xFFFFFFF5;
-const STD_ERROR_HANDLE: Dword = 0xFFFFFFF4;
-
-@[link_name=GetStdHandle]
-native func get_std_handle(std_handle: Dword) -> addr;
-
-# --- synchapi.h ---
-
-const INFINITE: Dword = 0xFFFFFFFF;
-
-const WAIT_ABANDONED: Dword = 0x00000080;
-const WAIT_OBJECT_0: Dword = 0x00000000;
-const WAIT_TIMEOUT: Dword = 0x00000102;
-const WAIT_FAILED: Dword = 0xFFFFFFFF;
-
-@[link_name=WaitForSingleObject]
-native func wait_for_single_object(
-    handle: addr,
-    milliseconds: u32,
-) -> u32;
-
-@[link_name=CreateMutexA]
-native func create_mutex(
-    mutex_attributes: addr,
-    initial_owner: Bool,
-    name: *u8,
-) -> Handle;
-
-@[link_name=ReleaseMutex]
-native func release_mutex(mutex: Handle) -> Bool;
-
-@[link_name=Sleep]
-native func sleep(milliseconds: u32);
-
-# --- processthreadsapi.h ---
-
-@[link_name=GetCurrentProcess]
-native func get_current_process() -> Handle;
-
-@[link_name=GetCurrentThread]
-native func get_current_thread() -> Handle;
-
-@[link_name=CreateThread]
-native func create_thread(
-    thread_attributes: addr,
-    stack_size: usize,
-    start_address: func(addr),
-    parameter: addr,
-    creation_flags: u32,
-    thread_id: *u32,
-) -> addr;
-
-# --- sysinfoapi.h ---
-
-struct SystemInfo {
-    var union_0: u32;
-    var page_size: u32;
-    var minimum_application_dddress: addr;
-    var maximum_application_dddress: addr;
-    var active_processor_mask: *u32;
-    var number_of_processors: u32;
-    var processor_type: u32;
-    var allocation_granularity: u32;
-    var processor_level: u16;
-    var processor_revision: u16;
-}
-
-@[link_name=GetNativeSystemInfo]
-native func get_native_system_info(system_info: *SystemInfo);
-
-@[link_name=GetSystemTimeAsFileTime]
-native func get_system_time_as_file_time(system_time_as_file_time: *Filetime);
-
-# --- profileapi.h ---
-
-@[link_name=QueryPerformanceCounter]
-native func query_performance_counter(performance_count: *LargeInteger) -> bool;
-
-@[link_name=QueryPerformanceFrequency]
-native func query_performance_frequency(frequency: *LargeInteger) -> bool;
-
-# --- errhandlingapi.h ---
-
-@[link_name=GetLastError]
-native func get_last_error() -> Dword;
-
-@[link_name=SetLastError]
-native func set_last_error(err_code: Dword);
-
-# --- ws2def.h ---
-
-struct Sockaddr {
-    var family: u16;
-    var data: [u8; 14];
-}
-
-struct Addrinfo {
-    var flags: i32;
-    var family: i32;
-    var socktype: i32;
-    var protocol: i32;
-    var addrlen: usize;
-    var canonname: *u8;
-    var addr_: *Sockaddr;
-    var next: *Addrinfo;
-}
-
-# --- winsock2.h ---
-
-type Socket = u64;
-
-const INVALID_SOCKET: u64 = 0xFFFFFFFFFFFFFFFF;
-const SOCKET_ERROR: i32 = -1;
-
-const AF_UNSPEC: i32 = 0;
-const AF_INET: i32 = 2;
-const AF_IPX: i32 = 6;
-const AF_APPLETALK: i32 = 16;
-const AF_NETBIOS: i32 = 17;
-const AF_INET6: i32 = 23;
-const AF_IRDA: i32 = 26;
-const AF_BTH: i32 = 32;
-
-const SOCK_STREAM: i32 = 1;
-const SOCK_DGRAM: i32 = 2;
-const SOCK_RAW: i32 = 3;
-const SOCK_RDM: i32 = 4;
-const SOCK_SEQPACKET: i32 = 5;
-
-const IPPROTO_ICMP: i32 = 1;
-const IPPROTO_IGMP: i32 = 2;
-const BTHPROTO_RFCOMM: i32 = 3;
-const IPPROTO_TCP: i32 = 6;
-const IPPROTO_UDP: i32 = 17;
-const IPPROTO_ICMPV6: i32 = 58;
-const IPPROTO_RM: i32 = 113;
-
-const SD_RECEIVE: i32 = 0;
-const SD_SEND: i32 = 1;
-const SD_BOTH: i32 = 2;
-
-const FIONBIO: u32 = 0x8004667E;
-
-@[link_name=WSAStartup]
-native func wsa_startup(
-    version_required: Word,
-    wsa_data: addr,
-) -> i32;
-
-@[link_name=socket]
-native func socket(
-    af: i32,
-    type_: i32,
-    protocol: i32,
-) -> Socket;
-
-@[link_name=connect]
-native func connect(
-    s: Socket,
-    name: *Sockaddr,
-    namelen: i32,
-) -> i32;
-
-@[link_name=send]
-native func send(
-    s: Socket,
-    buf: *u8,
-    len: i32,
-    flags: i32,
-) -> i32;
-
-@[link_name=recv]
-native func recv(
-    s: Socket,
-    buf: *u8,
-    len: i32,
-    flags: i32,
-) -> i32;
-
-@[link_name=shutdown]
-native func shutdown(
-    s: Socket,
-    how: i32,
-) -> i32;
-
-@[link_name=closesocket]
-native func closesocket(s: Socket) -> i32;
-
-@[link_name=ioctlsocket]
-native func ioctlsocket(
-    s: Socket,
-    cmd: u32,
-    argp: *u32,
-) -> i32;
-
-# --- ws2tcpip.h ---
-
-@[link_name=getaddrinfo]
-native func getaddrinfo(
-    node_name: *u8,
-    service_name: *u8,
-    hints: *Addrinfo,
-    result: **Addrinfo,
-) -> i32;
-
-@[link_name=freeaddrinfo]
-native func freeaddrinfo(addr_info: *Addrinfo);
-
-# --- dbghelp.h ---
-
-type ReadProcessMemoryRoutine64 = func(
-    process: Handle,
-    base_address: Dword64,
-    buffer: addr,
-    size: Dword,
-    number_of_bytes_read: *Dword,
-) -> Bool;
-
-type FunctionTableAccessRoutine64 = func(
-    process: Handle,
-    addr_base: Dword64,
-) -> addr;
-
-type GetModuleBaseRoutine64 = func(
-    process: Handle,
-    address: Dword64,
-) -> Dword64;
-
-type TranslateAddressRoutine64 = func(
-    process: Handle,
-    thread: Handle,
-    addr: *Address64,
-) -> Dword64;
-
-struct Address64 {
-    var offset: u64;
-    var segment: u16;
-    var mode: u32;
-}
-
-struct StackFrame64 {
-    var addr_pc: Address64;
-    var addr_return: Address64;
-    var addr_frame: Address64;
-    var addr_stack: Address64;
-    var addr_bstore: Address64;
-    var func_table_entry: addr;
-    var params: [Dword64; 4];
-    var far: Bool;
-    var virtual: Bool;
-    var reserved: [Dword64; 3];
-    var kd_help: [u64; 14];
-}
-
-struct SymbolInfo {
-    var size_of_struct: Ulong;
-    var type_index: Ulong;
-    var reserved: [Ulong64; 2];
-    var index: Ulong;
-    var size: Ulong;
-    var mod_base: Ulong64;
-    var flags: Ulong;
-    var value: Ulong64;
-    var address: Ulong64;
-    var register: Ulong;
-    var scope: Ulong;
-    var tag: Ulong;
-    var name_len: Ulong;
-    var max_name_len: Ulong;
-    var name: u8;
-}
-
-const ADDR_MODE_FLAT: u32 = 3;
-const SYMOPT_UNDNAME: u32 = 0x2;
-const SYMOPT_DEFERRED_LOADS: u32 = 0x4;
-
-@[link_name=SymSetOptions]
-native func sym_set_options(sym_options: Dword) -> Dword;
-
-@[link_name=SymInitialize]
-native func sym_initialize(
-    process: Handle,
-    user_search_path: *u8,
-    invade_process: Bool,
-) -> Bool;
-
-@[link_name=SymFromAddr]
-native func sym_from_addr(
-    process: Handle,
-    address: Dword64,
-    displacement: *Dword64,
-    symbol: *SymbolInfo,
-) -> Bool;
-
-@[link_name=SymGetModuleBase64]
-native func sym_get_module_base_64(
-    process: Handle,
-    addr_: Dword64,
-) -> Dword64;
-
-@[link_name=SymFunctionTableAccess64]
-native func sym_function_table_access_64(
-    process: Handle,
-    addr_base: Dword64,
-) -> addr;
-
-@[link_name=StackWalk64]
-native func stack_walk_64(
-    machine_type: Dword,
-    process: Handle,
-    thread: Handle,
-    stack_frame: *StackFrame64,
-    context_record: addr,
-    read_memory_routine: ReadProcessMemoryRoutine64,
-    function_table_access_routine: FunctionTableAccessRoutine64,
-    get_module_base_routine: GetModuleBaseRoutine64,
-    translate_address: TranslateAddressRoutine64,
-) -> u32;
