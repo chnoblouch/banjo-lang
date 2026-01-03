@@ -1,4 +1,4 @@
-use std.platform;
+use std.{platform, io.Error};
 
 struct Path {
     var path: String;
@@ -35,41 +35,60 @@ struct Path {
         }
     }
 
-    pub func parent(self) -> Path {
-        # TODO: Error handling
+    pub func parent(self) -> ?Path {
+        # TODO: Support `try` expressions with optionals.
 
-        var last_separator = self.path.rfind('/').unwrap();
-        return from(self.path.substring(0, last_separator));
-    }
-
-    pub func exists(self) -> bool {
-        # TODO: Error handling
-        return platform.path_exists(__builtin_pointer_to(self.path));
-    }
-
-    pub func is_file(self) -> bool {
-        # TODO: Types other than regular files and directories, error handling
-        return platform.path_is_file(__builtin_pointer_to(self.path));
-    }
-
-    pub func is_dir(self) -> bool {
-        # TODO: Error handling
-        return platform.path_is_dir(__builtin_pointer_to(self.path));
-    }
-
-    pub func list_dir(self) -> Array[Path] {
-        # TODO: Error handling
-
-        var file_names = platform.path_list_dir(__builtin_pointer_to(self.path));
-        var paths = Array[Path].sized(file_names.length());
-
-        var prefix = self.path.copy() + '/';
-
-        for i in 0..file_names.length() {
-            paths[i] = Path.from(prefix.copy() + file_names[i].copy());
+        if self.path.length() == 1 {
+            return none;
         }
 
-        return paths;
+        try last_separator in self.path.rfind('/') {
+            return from(self.path.substring(0, last_separator + 1));
+        } else {
+            return none;
+        }
+    }
+
+    pub func exists(self) -> bool except Error {
+        try result in platform.path_exists(__builtin_pointer_to(self.path)) {
+            return result;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
+        }
+    }
+
+    pub func is_file(self) -> bool except Error {
+        # TODO: Types other than regular files and directories.
+
+        try result in platform.path_is_file(__builtin_pointer_to(self.path)) {
+            return result;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
+        }
+    }
+
+    pub func is_dir(self) -> bool except Error {
+        try result in platform.path_is_dir(__builtin_pointer_to(self.path)) {
+            return result;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
+        }
+    }
+
+    pub func list_dir(self) -> Array[Path] except Error {
+        try file_names in platform.path_list_dir(__builtin_pointer_to(self.path)) {
+            var paths = Array[Path].sized(file_names.length());
+
+            var prefix = self.path.copy() + '/';
+
+            for i in 0..file_names.length() {
+                paths[i] = Path.from(prefix.copy() + file_names[i].copy());
+            }
+
+            return paths;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
+        }
     }
 
     pub func copy(self) -> Path {
@@ -95,8 +114,10 @@ struct Path {
             }
         }
 
-        if self.path.bytes()[self.path.length() - 1] == '/' {
-            self.path = self.path.substring(0, self.path.length() - 1);
+        if self.path.length() > 1 {
+            if self.path.bytes()[self.path.length() - 1] == '/' {
+                self.path = self.path.substring(0, self.path.length() - 1);
+            }
         }
     }
 }

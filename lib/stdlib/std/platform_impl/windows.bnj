@@ -43,7 +43,7 @@ meta if IS_WINDOWS {
             null
         );
 
-        var trimmed_length = length as usize - 2;
+        var trimmed_length = length as usize - 3;
         var string = String.from(StringSlice.new(buffer, trimmed_length));
         winapi.local_free(buffer);
 
@@ -62,38 +62,55 @@ meta if IS_WINDOWS {
         return msvcrt.acrt_iob_func(2);
     }
 
-    pub func path_exists(path: *String) -> bool {
-        # TODO: Error handling
+    pub func path_exists(path: *String) -> bool except ErrorCode {
+        var result = winapi.path_file_exists(path.to_cstring().data());
 
-        return winapi.path_file_exists(path.to_cstring().data()) != 0;
+        if result != 0 {
+            return true;
+        } else {
+            var error = winapi.get_last_error();
+
+            if error == winapi.ERROR_FILE_NOT_FOUND {
+                return false;
+            } else {
+                return error;
+            }
+        }
     }
 
-    pub func path_is_file(path: *String) -> bool {
+    pub func path_is_file(path: *String) -> bool except ErrorCode {
         # For reference: https://github.com/microsoft/STL/blob/6d253467512d9a4295fdf25fa6fc92f898c9d52c/stl/inc/filesystem#L1992
-        # TODO: Error handling
 
         var attributes = winapi.get_file_attributes(path.to_cstring().data());
-        return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) == 0;
+
+        if attributes != winapi.INVALID_FILE_ATTRIBUTES {
+            return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) == 0;
+        } else {
+            return error_last();
+        }
     }
 
-    pub func path_is_dir(path: *String) -> bool {
+    pub func path_is_dir(path: *String) -> bool except ErrorCode {
         # For reference: https://github.com/microsoft/STL/blob/6d253467512d9a4295fdf25fa6fc92f898c9d52c/stl/inc/filesystem#L1992
-        # TODO: Error handling
 
         var attributes = winapi.get_file_attributes(path.to_cstring().data());
-        return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        if attributes != winapi.INVALID_FILE_ATTRIBUTES {
+            return (attributes & winapi.FILE_ATTRIBUTE_DIRECTORY) != 0;
+        } else {
+            return error_last();
+        }
     }
 
-    pub func path_list_dir(path: *String) -> Array[String] {
+    pub func path_list_dir(path: *String) -> Array[String] except ErrorCode {
         # For reference: https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-        # TODO: Error handling
 
         var pattern = path.copy() + "\\*";
         var find_data: winapi.Win32FindData;
 
         var handle = winapi.find_first_file(pattern.to_cstring().data(), &find_data);
         if handle == winapi.INVALID_HANDLE_VALUE {
-            return [];
+            return error_last();
         }
 
         var file_names: Array[String] = [];
@@ -109,8 +126,14 @@ meta if IS_WINDOWS {
             more_paths = winapi.find_next_file(handle, &find_data) != 0;
         }
 
+        var error = error_last();
         winapi.find_close(handle);
-        return file_names;
+
+        if error == winapi.ERROR_NO_MORE_FILES {
+            return file_names;
+        } else {
+            return error;
+        }
     }
 
     pub func thread_spawn(function: func(addr), argument: addr) -> usize {

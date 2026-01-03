@@ -48,22 +48,20 @@ struct File: Read, Write, Seek {
     }
 
     pub func read_all[P](path: P) -> Array[u8] except Error {
-        # TODO: Error handling
-
-        var file = open(path, File.Mode.READ).unwrap();
+        var file = try open(path, File.Mode.READ);
         try file.seek(0, .END);
-        var size = file.position().unwrap() as usize;
+        var size = try file.position() as usize;
         try file.seek(0, .START);
 
         var buffer = Array[u8].sized(size);
-        try file.read(buffer.slice);
+        try file.read_full(buffer.slice);
         return buffer;
     }
 
     pub func read_all_string[P](path: P) -> String except Error {
-        var file = open(path, File.Mode.READ).unwrap();
+        var file = try open(path, File.Mode.READ);
         try file.seek(0, .END);
-        var size = file.position().unwrap() as usize;
+        var size = try file.position() as usize;
         try file.seek(0, .START);
 
         var string = String {
@@ -74,8 +72,7 @@ struct File: Read, Write, Seek {
             capacity: size,
         };
 
-        # TODO: Error handling
-        try file.read(Slice[u8].new(string.bytes(), string.length()));
+        try file.read_full(Slice[u8].new(string.bytes(), string.length()));
         return string;
     }
 

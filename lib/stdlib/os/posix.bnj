@@ -5,249 +5,116 @@ meta if config.OS == config.LINUX {
     use os.posix_linux.{
         ENOENT,
         EACCES,
-        Sockaddr,
-        Addrinfo,
+        errno,
+        Stat,
+        Dirent,
+        F_OK,
+        S_IFMT,
+        S_IFSOCK,
+        S_IFLNK,
+        S_IFREG,
+        S_IFBLK,
+        S_IFDIR,
+        S_IFCHR,
+        S_IFIFO,
+        stdin,
+        stdout,
+        stderr,
+        PthreadMutex,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,
-        errno,
+        Sockaddr,
+        Addrinfo,
+        MSG_NOSIGNAL,
+        AF_INET,
+        AF_INET6,
+        SOCK_STREAM,
+        SOCK_DGRAM,
+        IPPROTO_TCP,
+        IPPROTO_UDP,
+        SHUT_RD,
+        SHUT_WR,
+        SHUT_RDWR,
     };
 } else if config.OS == config.MACOS {
     use os.posix_macos.{
         ENOENT,
         EACCES,
-        Sockaddr,
-        Addrinfo,
+        errno,
+        Stat,
+        Dirent,
+        F_OK,
+        S_IFMT,
+        S_IFSOCK,
+        S_IFLNK,
+        S_IFREG,
+        S_IFBLK,
+        S_IFDIR,
+        S_IFCHR,
+        S_IFIFO,
+        stdin,
+        stdout,
+        stderr,
+        PthreadMutex,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,
-        errno,
+        Sockaddr,
+        Addrinfo,
+        MSG_NOSIGNAL,
+        AF_INET,
+        AF_INET6,
+        SOCK_STREAM,
+        SOCK_DGRAM,
+        IPPROTO_TCP,
+        IPPROTO_UDP,
+        SHUT_RD,
+        SHUT_WR,
+        SHUT_RDWR,
     };
 } else if config.OS == config.EMSCRIPTEN {
     use os.posix_emscripten.{
         ENOENT,
         EACCES,
-        Sockaddr,
-        Addrinfo,
+        errno,
+        Stat,
+        Dirent,
+        F_OK,
+        S_IFMT,
+        S_IFSOCK,
+        S_IFLNK,
+        S_IFREG,
+        S_IFBLK,
+        S_IFDIR,
+        S_IFCHR,
+        S_IFIFO,
+        stdin,
+        stdout,
+        stderr,
+        PthreadMutex,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,
-        errno,
+        Sockaddr,
+        Addrinfo,
+        MSG_NOSIGNAL,
+        AF_INET,
+        AF_INET6,
+        SOCK_STREAM,
+        SOCK_DGRAM,
+        IPPROTO_TCP,
+        IPPROTO_UDP,
+        SHUT_RD,
+        SHUT_WR,
+        SHUT_RDWR,
     };
 }
 
 meta if os.IS_UNIX {
-    meta if config.OS == config.LINUX {
-        meta if config.ARCH == config.X86_64 {
-            struct Stat {
-                var dev: u64;
-                var ino: u64;
-                var nlink: u64;
-                var mode: u32;
-                var uid: u32;
-                var gid: u32;
-                var pad0: i32;
-                var rdev: u64;
-                var size: i64;
-                var blksize: i64;
-                var blocks: i64;
-                var atim: Timespec;
-                var mtim: Timespec;
-                var ctim: Timespec;
-                var reserved: [i64; 3];
-            }
-
-            struct Dirent {
-                var ino: u64;
-                var off: i64;
-                var reclen: u16;
-                var type_: u8;
-                var name: [u8; 256];
-            }
-        } else if config.ARCH == config.AARCH64 {
-            struct Stat {
-                var dev: u64;
-                var ino: u64;
-                var mode: u32;
-                var nlink: u32;
-                var uid: u32;
-                var gid: u32;
-                var rdev: u64;
-                var pad1: u64;
-                var size: i64;
-                var blksize: i32;
-                var pad2: i32;
-                var blocks: i64;
-                var atim: Timespec;
-                var mtim: Timespec;
-                var ctim: Timespec;
-                var reserved: [i32; 2];
-            }
-
-            struct Dirent {
-                var ino: u64;
-                var off: i64;
-                var reclen: u16;
-                var type_: u8;
-                var name: [u8; 256];
-            }
-        }
-
-        # TODO: This size is definitely only 40 on x86-64.
-        type PthreadMutex = [u8; 40];
-
-        const F_OK: i32 = 0;
-
-        const S_IFMT: u32 = 0o170000;
-        const S_IFSOCK: u32 = 0o140000;
-        const S_IFLNK: u32 = 0o120000;
-        const S_IFREG: u32 = 0o100000;
-        const S_IFBLK: u32 = 0o600000;
-        const S_IFDIR: u32 = 0o040000;
-        const S_IFCHR: u32 = 0o020000;
-        const S_IFIFO: u32 = 0o010000;
-
-        const MSG_NOSIGNAL: i32 = 0x4000;
-        const AF_INET: i32 = 2;
-        const AF_INET6: i32 = 10;
-        const SOCK_STREAM: i32 = 1;
-        const SOCK_DGRAM: i32 = 2;
-        const IPPROTO_TCP: i32 = 6;
-        const IPPROTO_UDP: i32 = 17;
-        const SHUT_RD: i32 = 0;
-        const SHUT_WR: i32 = 1;
-        const SHUT_RDWR: i32 = 2;
-
-        native var stdin: addr;
-        native var stdout: addr;
-        native var stderr: addr;
-    } else if os.IS_DARWIN {
-        struct Stat {
-            var dev: i32;
-            var mode: u16;
-            var nlink: u16;
-            var ino: u64;
-            var uid: u32;
-            var gid: u32;
-            var rdev: i32;
-            var atimespec: Timespec;
-            var mtimespec: Timespec;
-            var ctimespec: Timespec;
-            var birthtimespec: Timespec;
-            var size: i64;
-            var blocks: i64;
-            var blksize: i32;
-            var flags: u32;
-            var gen: u32;
-            var lspare: i32;
-            var qspare: [i64; 2];
-        }
-
-        struct Dirent {
-            var ino: u64;
-            var seekoff: u64;
-            var reclen: u16;
-            var namlen: u16;
-            var type_: u8;
-            var name: [u8; 1024];
-        }
-
-        struct PthreadMutex {
-            var sig: u64;
-
-            # TODO: This size is definitely only 56 on AArch64.
-            var opaque: [u8; 56];
-        }
-
-        const F_OK: i32 = 0;
-
-        const S_IFMT: u16 = 0o170000;
-        const S_IFSOCK: u16 = 0o140000;
-        const S_IFLNK: u16 = 0o120000;
-        const S_IFREG: u16 = 0o100000;
-        const S_IFBLK: u16 = 0o600000;
-        const S_IFDIR: u16 = 0o040000;
-        const S_IFCHR: u16 = 0o020000;
-        const S_IFIFO: u16 = 0o010000;
-
-        const MSG_NOSIGNAL: i32 = 0x80000;
-        const AF_INET: i32 = 2;
-        const AF_INET6: i32 = 30;
-        const SOCK_STREAM: i32 = 1;
-        const SOCK_DGRAM: i32 = 2;
-        const IPPROTO_TCP: i32 = 6;
-        const IPPROTO_UDP: i32 = 17;
-        const SHUT_RD: i32 = 0;
-        const SHUT_WR: i32 = 1;
-        const SHUT_RDWR: i32 = 2;
-
-        @[link_name=__stdinp]
-        native var stdin: addr;
-
-        @[link_name=__stdoutp]
-        native var stdout: addr;
-
-        @[link_name=__stderrp]
-        native var stderr: addr;
-    } else if os.IS_EMSCRIPTEN {
-        struct Stat {
-            var dev: u32;
-            var mode: u32;
-            var nlink: u32;
-            var uid: u32;
-            var gid: u32;
-            var rdev: u32;
-            var size: i64;
-            var blksize: i32;
-            var blocks: i32;
-            var atim: Timespec;
-            var mtim: Timespec;
-            var ctim: Timespec;
-            var ino: u64;
-        }
-
-        struct Dirent {
-            var ino: u64;
-            var off: i64;
-            var reclen: u16;
-            var type_: u8;
-            var name: [u8; 256];
-        }
-
-        # TODO: Stubs
-
-        type PthreadMutex = [u8; 40];
-
-        const F_OK: i32 = 0;
-
-        const S_IFMT: u32 = 0o170000;
-        const S_IFSOCK: u32 = 0o140000;
-        const S_IFLNK: u32 = 0o120000;
-        const S_IFREG: u32 = 0o100000;
-        const S_IFBLK: u32 = 0o600000;
-        const S_IFDIR: u32 = 0o040000;
-        const S_IFCHR: u32 = 0o020000;
-        const S_IFIFO: u32 = 0o010000;
-
-        const MSG_NOSIGNAL: i32 = 0x4000;
-        const AF_INET: i32 = 2;
-        const AF_INET6: i32 = 10;
-        const SOCK_STREAM: i32 = 1;
-        const SOCK_DGRAM: i32 = 2;
-        const IPPROTO_TCP: i32 = 6;
-        const IPPROTO_UDP: i32 = 17;
-        const SHUT_RD: i32 = 0;
-        const SHUT_WR: i32 = 1;
-        const SHUT_RDWR: i32 = 2;
-
-        native var stdin: addr;
-        native var stdout: addr;
-        native var stderr: addr;
-    }
-
     native func stat(pathname: *u8, statbuf: *Stat) -> i32;
     native func access(pathname: *u8, mode: i32) -> i32;
     native func close(fd: i32) -> i32;

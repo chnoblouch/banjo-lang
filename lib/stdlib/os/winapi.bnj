@@ -13,8 +13,10 @@ const TRUE: Bool = 1;
 
 # --- error.h ---
 
+const ERROR_SUCCESS: u32 = 0x00000000;
 const ERROR_FILE_NOT_FOUND: u32 = 0x00000002;
 const ERROR_ACCESS_DENIED: u32 = 0x00000005;
+const ERROR_NO_MORE_FILES: u32 = 0x00000012;
 
 # --- winnt.h ---
 
@@ -76,6 +78,8 @@ struct Win32FindData {
     var file_name: [u8; MAX_PATH];
     var alternate_file_name: [u8; 14];
 }
+
+const INVALID_FILE_ATTRIBUTES: Dword = 0xFFFFFFFF;
 
 # --- fileapi.h ---
 
@@ -212,6 +216,9 @@ native func query_performance_frequency(frequency: *LargeInteger) -> bool;
 
 @[link_name=GetLastError]
 native func get_last_error() -> Dword;
+
+@[link_name=SetLastError]
+native func set_last_error(err_code: Dword);
 
 # --- ws2def.h ---
 

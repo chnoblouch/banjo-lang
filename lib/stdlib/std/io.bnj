@@ -12,7 +12,7 @@ proto Read {
             num_bytes += try self.read(sub_slice);
         }
 
-        return undefined;
+        return Result[void, Error].new_success(undefined);
     }
 
     pub func read_u8(mut self) -> u8 except Error {

@@ -45,6 +45,15 @@ func main() {
 }
 
 # test:subtest
+# test:output "/,none"
+
+func main() {
+    print(Path.from("/home").parent());
+    print(',');
+    print(Path.from("/").parent());
+}
+
+# test:subtest
 # test:write_file "file" "."
 # test:create_dir "directory"
 # test:output "true,true,false"
@@ -88,8 +97,8 @@ func main() {
 # test:output "3,ok,ok,ok,1,ok"
 
 func main() {
-    var paths_root = Path.from("root").list_dir();
-    var paths_sub_dir = Path.from("root/sub_dir").list_dir();
+    var paths_root = Path.from("root").list_dir().unwrap();
+    var paths_sub_dir = Path.from("root/sub_dir").list_dir().unwrap();
 
     print(paths_root.length());
     print(',');

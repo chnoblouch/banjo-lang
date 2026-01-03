@@ -5,6 +5,77 @@ meta if config.OS == config.MACOS {
     const ENOENT: i32 = 2;
     const EACCES: i32 = 13;
 
+    native func __error() -> *i32;
+
+    pub func errno() -> *i32 {
+        return __error();
+    }
+
+    struct Stat {
+        var dev: i32;
+        var mode: u16;
+        var nlink: u16;
+        var ino: u64;
+        var uid: u32;
+        var gid: u32;
+        var rdev: i32;
+        var atimespec: Timespec;
+        var mtimespec: Timespec;
+        var ctimespec: Timespec;
+        var birthtimespec: Timespec;
+        var size: i64;
+        var blocks: i64;
+        var blksize: i32;
+        var flags: u32;
+        var gen: u32;
+        var lspare: i32;
+        var qspare: [i64; 2];
+    }
+
+    struct Dirent {
+        var ino: u64;
+        var seekoff: u64;
+        var reclen: u16;
+        var namlen: u16;
+        var type_: u8;
+        var name: [u8; 1024];
+    }
+
+    const F_OK: i32 = 0;
+
+    const S_IFMT: u16 = 0o170000;
+    const S_IFSOCK: u16 = 0o140000;
+    const S_IFLNK: u16 = 0o120000;
+    const S_IFREG: u16 = 0o100000;
+    const S_IFBLK: u16 = 0o600000;
+    const S_IFDIR: u16 = 0o040000;
+    const S_IFCHR: u16 = 0o020000;
+    const S_IFIFO: u16 = 0o010000;
+
+    @[link_name=__stdinp]
+    native var stdin: addr;
+
+    @[link_name=__stdoutp]
+    native var stdout: addr;
+
+    @[link_name=__stderrp]
+    native var stderr: addr;
+
+    struct PthreadMutex {
+        var sig: u64;
+        var opaque: [u8; 56];
+    }
+
+    type ClockId = u64;
+
+    struct Timespec {
+        var tv_sec: c.LongLong;
+        var tv_nsec: c.Long;
+    }
+
+    const CLOCK_REALTIME: ClockId = 0;
+    const CLOCK_MONOTONIC: ClockId = 6;
+
     struct Sockaddr {
         var len: u8;
         var family: u8;
@@ -22,19 +93,14 @@ meta if config.OS == config.MACOS {
         var next: *Addrinfo;
     }
 
-    type ClockId = u64;
-
-    struct Timespec {
-        var tv_sec: c.LongLong;
-        var tv_nsec: c.Long;
-    }
-
-    const CLOCK_REALTIME: ClockId = 0;
-    const CLOCK_MONOTONIC: ClockId = 6;
-
-    native func __error() -> *i32;
-
-    pub func errno() -> i32 {
-        return *__error();
-    }
+    const MSG_NOSIGNAL: i32 = 0x80000;
+    const AF_INET: i32 = 2;
+    const AF_INET6: i32 = 30;
+    const SOCK_STREAM: i32 = 1;
+    const SOCK_DGRAM: i32 = 2;
+    const IPPROTO_TCP: i32 = 6;
+    const IPPROTO_UDP: i32 = 17;
+    const SHUT_RD: i32 = 0;
+    const SHUT_WR: i32 = 1;
+    const SHUT_RDWR: i32 = 2;
 }

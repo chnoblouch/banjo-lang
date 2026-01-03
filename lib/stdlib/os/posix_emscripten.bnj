@@ -2,8 +2,65 @@ use std.config;
 use libc as c;
 
 meta if config.OS == config.EMSCRIPTEN {
-    const ENOENT: i32 = 0x02;
-    const EACCES: i32 = 0x0D;
+    const ENOENT: i32 = 0x02;  # TODO
+    const EACCES: i32 = 0x0D;  # TODO
+
+    native func __errno_location() -> *i32;
+
+    pub func errno() -> *i32 {
+        return __errno_location();
+    }
+
+    struct Stat {
+        var dev: u32;
+        var mode: u32;
+        var nlink: u32;
+        var uid: u32;
+        var gid: u32;
+        var rdev: u32;
+        var size: i64;
+        var blksize: i32;
+        var blocks: i32;
+        var atim: Timespec;
+        var mtim: Timespec;
+        var ctim: Timespec;
+        var ino: u64;
+    }
+
+    struct Dirent {
+        var ino: u64;
+        var off: i64;
+        var reclen: u16;
+        var type_: u8;
+        var name: [u8; 256];
+    }
+
+    const F_OK: i32 = 0;  # TODO
+
+    const S_IFMT: u32 = 0o170000;  # TODO
+    const S_IFSOCK: u32 = 0o140000;  # TODO
+    const S_IFLNK: u32 = 0o120000;  # TODO
+    const S_IFREG: u32 = 0o100000;  # TODO
+    const S_IFBLK: u32 = 0o600000;  # TODO
+    const S_IFDIR: u32 = 0o040000;  # TODO
+    const S_IFCHR: u32 = 0o020000;  # TODO
+    const S_IFIFO: u32 = 0o010000;  # TODO
+
+    native var stdin: addr;
+    native var stdout: addr;
+    native var stderr: addr;
+
+    type PthreadMutex = [u8; 40];  # TODO
+
+    type ClockId = u32;
+
+    struct Timespec {
+        var tv_sec: c.LongLong;
+        var tv_nsec: c.Long;
+    }
+
+    const CLOCK_REALTIME: ClockId = 0;
+    const CLOCK_MONOTONIC: ClockId = 1;
 
     struct Sockaddr {
         var family: u16;
@@ -21,19 +78,14 @@ meta if config.OS == config.EMSCRIPTEN {
         var next: *Addrinfo;
     }
 
-    type ClockId = u32;
-
-    struct Timespec {
-        var tv_sec: c.LongLong;
-        var tv_nsec: c.Long;
-    }
-
-    const CLOCK_REALTIME: ClockId = 0;
-    const CLOCK_MONOTONIC: ClockId = 1;
-
-    native func __errno_location() -> *i32;
-
-    pub func errno() -> i32 {
-        return *__errno_location();
-    }
+    const MSG_NOSIGNAL: i32 = 0x4000;  # TODO
+    const AF_INET: i32 = 2;  # TODO
+    const AF_INET6: i32 = 10;  # TODO
+    const SOCK_STREAM: i32 = 1;  # TODO
+    const SOCK_DGRAM: i32 = 2;  # TODO
+    const IPPROTO_TCP: i32 = 6;  # TODO
+    const IPPROTO_UDP: i32 = 17;  # TODO
+    const SHUT_RD: i32 = 0;  # TODO
+    const SHUT_WR: i32 = 1;  # TODO
+    const SHUT_RDWR: i32 = 2;  # TODO
 }

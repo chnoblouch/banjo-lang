@@ -16,7 +16,7 @@ meta if IS_UNIX {
     const SOCKET_PROTOCOL_UDP: i32 = posix.IPPROTO_UDP;
 
     pub func error_last() -> ErrorCode {
-        return posix.errno();
+        return *posix.errno();
     }
 
     pub func error_kind(error: ErrorCode) -> io.Error.Kind {
@@ -45,33 +45,53 @@ meta if IS_UNIX {
         return posix.stderr;
     }
 
-    pub func path_exists(path: *String) -> bool {
-        # TODO: Error handling
-
+    pub func path_exists(path: *String) -> bool except ErrorCode {
         var result = posix.access(path.to_cstring().data(), posix.F_OK);
-        return result == 0;
+        
+        if result != -1 {
+            return result == 0;
+        } else {
+            var error = error_last();
+
+            if error == posix.ENOENT {
+                return false;
+            } else {
+                return error;
+            }
+        }
     }
 
-    pub func path_is_file(path: *String) -> bool {
-        # TODO: Error handling
-
+    pub func path_is_file(path: *String) -> bool except ErrorCode {
         var stat: posix.Stat;
-        posix.stat(path.to_cstring().data(), &stat);
-        return (stat.mode & posix.S_IFMT) == posix.S_IFREG;
+        var result = posix.stat(path.to_cstring().data(), &stat);
+        
+        if result != -1 {
+            return (stat.mode & posix.S_IFMT) == posix.S_IFREG;
+        } else {
+            return error_last();
+        }
     }
 
-    pub func path_is_dir(path: *String) -> bool {
-        # TODO: Error handling
-
+    pub func path_is_dir(path: *String) -> bool except ErrorCode {
         var stat: posix.Stat;
-        posix.stat(path.to_cstring().data(), &stat);
-        return (stat.mode & posix.S_IFMT) == posix.S_IFDIR;
+        var result = posix.stat(path.to_cstring().data(), &stat);
+        
+        if result != -1 {
+            return (stat.mode & posix.S_IFMT) == posix.S_IFDIR;
+        } else {
+            return error_last();
+        }
     }
 
-    pub func path_list_dir(path: *String) -> Array[String] {
+    pub func path_list_dir(path: *String) -> Array[String] except ErrorCode {
         # TODO: Error handling
 
         var dir = posix.opendir(path.to_cstring().data());
+        if dir == null {
+            return error_last();
+        }
+
+        *posix.errno() = 0;
         var entry = posix.readdir(dir);
 
         var file_names: Array[String] = [];
@@ -83,7 +103,12 @@ meta if IS_UNIX {
                 file_names.append(file_name_string);
             }
 
+            *posix.errno() = 0;
             entry = posix.readdir(dir);
+        }
+
+        if *posix.errno() != 0 {
+            return error_last();
         }
 
         posix.closedir(dir);
@@ -199,6 +224,7 @@ meta if IS_UNIX {
 
         var addr_info: *posix.Addrinfo;
         result = posix.getaddrinfo(host_cstring.data(), port_cstring.data(), &addr_hints, &addr_info);
+        
         if result != 0 {
             return false;
         }
@@ -210,6 +236,7 @@ meta if IS_UNIX {
 
     pub func socket_send(socket: Socket, buffer: *u8, size: usize) -> usize except ErrorCode {
         var result = posix.send(socket, buffer, size, posix.MSG_NOSIGNAL);
+
         if result >= 0 {
             return result as usize;
         } else {
@@ -219,6 +246,7 @@ meta if IS_UNIX {
 
     pub func socket_recv(socket: Socket, buffer: *u8, size: usize) -> usize except ErrorCode {
         var result = posix.recv(socket, buffer, size, 0);
+
         if result >= 0 {
             return result as usize;
         } else {
