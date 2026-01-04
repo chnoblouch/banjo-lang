@@ -24,6 +24,8 @@ meta if IS_UNIX {
             return .NOT_FOUND;
         } else if error == posix.EACCES {
             return .PERMISSION_DENIED;
+        } else if error == posix.EEXIST {
+            return .ALREADY_EXISTS;
         } else {
             return .UNKNOWN;
         }
@@ -113,6 +115,27 @@ meta if IS_UNIX {
 
         posix.closedir(dir);
         return file_names;
+    }
+
+    pub func path_create_dir(path: *String) -> void except ErrorCode {
+        var result = posix.mkdir(path.to_cstring().data(), 0o777);
+        if result == -1 {
+            return error_last(); 
+        }
+    }
+
+    pub func path_remove_file(path: *String) -> void except ErrorCode {
+        var result = posix.unlink(path.to_cstring().data());
+        if result == -1 {
+            return error_last(); 
+        }
+    }
+
+    pub func path_remove_dir(path: *String) -> void except ErrorCode {
+        var result = posix.rmdir(path.to_cstring().data());
+        if result == -1 {
+            return error_last(); 
+        }
     }
 
     pub func thread_spawn(function: func(addr), argument: addr) -> usize {

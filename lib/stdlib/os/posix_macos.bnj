@@ -4,6 +4,7 @@ use libc as c;
 meta if config.OS == config.MACOS {
     const ENOENT: i32 = 2;
     const EACCES: i32 = 13;
+    const EEXIST: i32 = 17;
 
     native func __error() -> *i32;
 
@@ -40,6 +41,8 @@ meta if config.OS == config.MACOS {
         var type_: u8;
         var name: [u8; 1024];
     }
+
+    type Mode = u16;
 
     const F_OK: i32 = 0;
 

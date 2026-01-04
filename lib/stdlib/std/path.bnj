@@ -91,6 +91,30 @@ struct Path {
         }
     }
 
+    pub func create_dir(self) -> void except Error {
+        var result = platform.path_create_dir(__builtin_pointer_to(self.path));
+
+        if !result.successful {
+            return Error.from_platform(result.unwrap_error());
+        }
+    }
+
+    pub func remove_file(self) -> void except Error {
+        var result = platform.path_remove_file(__builtin_pointer_to(self.path));
+
+        if !result.successful {
+            return Error.from_platform(result.unwrap_error());
+        }
+    }
+
+    pub func remove_dir(self) -> void except Error {
+        var result = platform.path_remove_dir(__builtin_pointer_to(self.path));
+
+        if !result.successful {
+            return Error.from_platform(result.unwrap_error());
+        }
+    }
+
     pub func copy(self) -> Path {
         return Path { path: self.path.copy() };
     }

@@ -5,9 +5,11 @@ meta if config.OS == config.LINUX {
     use os.posix_linux.{
         ENOENT,
         EACCES,
+        EEXIST,
         errno,
         Stat,
         Dirent,
+        Mode,
         F_OK,
         S_IFMT,
         S_IFSOCK,
@@ -42,9 +44,11 @@ meta if config.OS == config.LINUX {
     use os.posix_macos.{
         ENOENT,
         EACCES,
+        EEXIST,
         errno,
         Stat,
         Dirent,
+        Mode,
         F_OK,
         S_IFMT,
         S_IFSOCK,
@@ -79,9 +83,11 @@ meta if config.OS == config.LINUX {
     use os.posix_emscripten.{
         ENOENT,
         EACCES,
+        EEXIST,
         errno,
         Stat,
         Dirent,
+        Mode,
         F_OK,
         S_IFMT,
         S_IFSOCK,
@@ -118,9 +124,12 @@ meta if os.IS_UNIX {
     native func stat(pathname: *u8, statbuf: *Stat) -> i32;
     native func access(pathname: *u8, mode: i32) -> i32;
     native func close(fd: i32) -> i32;
+    native func unlink(path: *u8) -> i32;
     native func opendir(name: *u8) -> addr;
     native func readdir(dirp: addr) -> *Dirent;
     native func closedir(dirp: addr) -> i32;
+    native func mkdir(path: *u8, mode: Mode) -> i32;
+    native func rmdir(path: *u8) -> i32;
     native func pthread_create(thread: *usize, attr: addr, start_routine: func(addr), arg: addr) -> i32;
     native func pthread_join(thread: usize, retval: *addr) -> i32;
     native func pthread_mutex_init(mutex: *PthreadMutex, attr: addr) -> i32;

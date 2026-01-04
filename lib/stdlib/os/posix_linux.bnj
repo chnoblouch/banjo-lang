@@ -4,6 +4,7 @@ use libc as c;
 meta if config.OS == config.LINUX {
     const ENOENT: i32 = 0x02;
     const EACCES: i32 = 0x0D;
+    const EEXIST: i32 = 0x11;
 
     native func __errno_location() -> *i32;
 
@@ -65,6 +66,8 @@ meta if config.OS == config.LINUX {
             var name: [u8; 256];
         }
     }
+
+    type Mode = u32;  # TODO
 
     const F_OK: i32 = 0;
 

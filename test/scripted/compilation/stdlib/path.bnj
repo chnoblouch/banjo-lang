@@ -1,6 +1,6 @@
 # test:common
 
-use std.path.Path;
+use std.{path.Path, io.Error};
 
 # test:subtest
 # test:output "file.txt,desktop,desktop,.,..,file.txt,.,..,file.txt,user"
@@ -128,5 +128,89 @@ func check_contains(paths: *Array[Path], path: StringSlice) {
         print("ok");
     } else {
         print("missing");
+    }
+}
+
+# test:subtest
+# test:output "true,false,true"
+
+func main() {
+    var path = Path.from("directory");
+    path.create_dir().unwrap();
+
+    print(path.exists());
+    print(',');
+    print(path.is_file());
+    print(',');
+    print(path.is_dir());
+
+    path.remove_dir().unwrap();
+}
+
+# test:subtest
+# test:write_file "file" ""
+# test:output "true,false"
+
+func main() {
+    var path = Path.from("file");
+
+    print(path.exists());
+    print(',');
+    path.remove_file().unwrap();
+    print(path.exists());
+}
+
+# test:subtest
+# test:create_dir "directory" ""
+# test:output "true,false"
+
+func main() {
+    var path = Path.from("directory");
+
+    print(path.exists());
+    print(',');
+    path.remove_dir().unwrap();
+    print(path.exists());
+}
+
+# test:subtest
+# test:output "ok,Kind.ALREADY_EXISTS"
+
+func main() {
+    var path = Path.from("directory");
+    
+    try _ in path.create_dir() {
+        print("ok");
+    } except error: Error {
+        print(error.kind);
+    }
+
+    print(',');
+    
+    try _ in path.create_dir() {
+        print("ok");
+    } except error: Error {
+        print(error.kind);
+    }
+
+    path.remove_dir();
+}
+
+# test:subtest
+# test:output "Kind.NOT_FOUND,Kind.NOT_FOUND"
+
+func main() {
+    try _ in Path.from("file").remove_file() {
+        print("ok");
+    } except error: Error {
+        print(error.kind);
+    }
+
+    print(',');
+
+    try _ in Path.from("directory").remove_dir() {
+        print("ok");
+    } except error: Error {
+        print(error.kind);
     }
 }

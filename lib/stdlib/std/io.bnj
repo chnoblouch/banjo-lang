@@ -11,8 +11,6 @@ proto Read {
             var sub_slice = data.sub(num_bytes, data.length - num_bytes);
             num_bytes += try self.read(sub_slice);
         }
-
-        return Result[void, Error].new_success(undefined);
     }
 
     pub func read_u8(mut self) -> u8 except Error {
@@ -166,6 +164,7 @@ struct Error {
     enum Kind {
         NOT_FOUND,
         PERMISSION_DENIED,
+        ALREADY_EXISTS,
         UNKNOWN,
     }
 

@@ -25,6 +25,8 @@ meta if IS_WINDOWS {
             return .NOT_FOUND;
         } else if error == winapi.ERROR_ACCESS_DENIED {
             return .PERMISSION_DENIED;
+        } else if error == winapi.ERROR_ALREADY_EXISTS {
+            return .ALREADY_EXISTS;
         } else {
             return .UNKNOWN;
         }
@@ -133,6 +135,27 @@ meta if IS_WINDOWS {
             return file_names;
         } else {
             return error;
+        }
+    }
+
+    pub func path_create_dir(path: *String) -> void except ErrorCode {
+        var result = winapi.create_directory(path.to_cstring().data(), null);
+        if result == 0 {
+            return error_last();
+        }
+    }
+
+    pub func path_remove_file(path: *String) -> void except ErrorCode {
+        var result = winapi.delete_file(path.to_cstring().data());
+        if result == 0 {
+            return error_last();
+        }
+    }
+
+    pub func path_remove_dir(path: *String) -> void except ErrorCode {
+        var result = winapi.remove_directory(path.to_cstring().data());
+        if result == 0 {
+            return error_last();
         }
     }
 
