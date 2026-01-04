@@ -1,0 +1,19 @@
+# test:subtest
+# test:compiles
+
+func f() {}
+
+# test:subtest
+# test:compiles
+
+func f() -> void {}
+
+# test:subtest
+# test:output "true"
+
+func f() -> void except bool {}
+
+func main() {
+    var a = f();
+    print(a.successful);
+}

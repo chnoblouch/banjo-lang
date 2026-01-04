@@ -7,6 +7,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_create.hpp"
 
 namespace banjo {
 
@@ -37,6 +38,16 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     if (!has_return_value || return_checker_result == ReturnChecker::Result::RETURNS_ALWAYS) {
         return Result::SUCCESS;
     } else {
+        if (auto struct_def = func_def.type.return_type.match_symbol<sir::StructDef>()) {
+            if (struct_def->is_specialization_of(analyzer.get_std_result())) {
+                if (struct_def->parent_specialization->args[0].is_primitive_type(sir::Primitive::VOID)) {
+                    sir::Stmt stmt = sir::create_return_result_success_void(*analyzer.mod, *struct_def);
+                    func_def.block.stmts.push_back(stmt);
+                    return Result::SUCCESS;
+                }
+            }
+        }
+
         if (return_checker_result == ReturnChecker::Result::RETURNS_SOMETIMES) {
             analyzer.report_generator.report_err_does_not_always_return(func_def.ident);
         } else if (return_checker_result == ReturnChecker::Result::RETURNS_NEVER) {
