@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
     std::ifstream stream{file_path, std::ios::binary};
     std::unique_ptr<banjo::lang::SourceFile> file = banjo::lang::SourceFile::read({}, file_path, stream);
-    banjo::lang::Formatter{report_manager}.format_in_place(*file);
+    banjo::lang::Formatter{report_manager, *file}.format().apply_edits();
 
     if (report_manager.is_valid()) {
         std::ofstream{file_path, std::ios::binary} << file->get_content();

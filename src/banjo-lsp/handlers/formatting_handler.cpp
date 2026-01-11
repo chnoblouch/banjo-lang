@@ -3,10 +3,9 @@
 #include "banjo/format/formatter.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/utils/json.hpp"
+
 #include "protocol_structs.hpp"
 #include "uri.hpp"
-
-#include <vector>
 
 namespace banjo::lsp {
 
@@ -26,10 +25,10 @@ JSONValue FormattingHandler::handle(const JSONObject &params, Connection & /*con
     }
 
     ReportManager report_manager;
-    std::vector<Formatter::Edit> edits = Formatter(report_manager).format(*file);
+    EditList edits = Formatter{report_manager, *file}.format();
     JSONArray lsp_edits;
 
-    for (const Formatter::Edit &edit : edits) {
+    for (const Edit &edit : edits.get_elements()) {
         JSONObject lsp_edit{
             {"range", ProtocolStructs::range_to_lsp(file->get_content(), edit.range)},
             {"newText", edit.replacement},

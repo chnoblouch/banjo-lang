@@ -208,6 +208,8 @@ add_library(banjo STATIC
     "sir/sir_visitor.hpp"
     "sir/test_driver_generator.cpp"
     "sir/test_driver_generator.hpp"
+    "source/edit.cpp"
+    "source/edit.hpp"
     "source/module_discovery.cpp"
     "source/module_discovery.hpp"
     "source/module_manager.cpp"

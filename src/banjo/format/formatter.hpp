@@ -4,21 +4,16 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/reports/report_manager.hpp"
+#include "banjo/source/edit.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/source/text_range.hpp"
 
+#include <functional>
 #include <string>
-#include <vector>
 
 namespace banjo::lang {
 
 class Formatter {
-
-public:
-    struct Edit {
-        TextRange range;
-        std::string replacement;
-    };
 
 private:
     enum class WhitespaceKind {
@@ -31,18 +26,16 @@ private:
     };
 
     ReportManager &report_manager;
-    
-    std::string_view file_content;
+    SourceFile &file;
+    EditList edits;
+
     TokenList tokens;
-    std::vector<Edit> edits;
     unsigned indentation = 0;
     bool global_scope = true;
 
 public:
-    Formatter(ReportManager &report_manager);
-
-    std::vector<Edit> format(SourceFile &file);
-    void format_in_place(SourceFile &file);
+    Formatter(ReportManager &report_manager, SourceFile &file);
+    EditList format();
 
 private:
     void format_node(ASTNode *node, WhitespaceKind whitespace);
@@ -62,6 +55,7 @@ private:
     void format_type_alias(ASTNode *node, WhitespaceKind whitespace);
     void format_use_decl(ASTNode *node, WhitespaceKind whitespace);
     void format_use_rebind(ASTNode *node, WhitespaceKind whitespace);
+    void format_use_list(ASTNode *node, WhitespaceKind whitespace);
 
     void format_block(ASTNode *node, WhitespaceKind whitespace);
     void format_expr_stmt(ASTNode *node, WhitespaceKind whitespace);
@@ -112,6 +106,14 @@ private:
     void format_keyword_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_single_token_node(ASTNode *node, WhitespaceKind whitespace);
     void format_list(ASTNode *node, WhitespaceKind whitespace, bool enclosing_spaces = false);
+
+    void format_list(
+        ASTNode *node,
+        WhitespaceKind whitespace,
+        bool enclosing_spaces,
+        const std::function<void(ASTNode *, WhitespaceKind whitespace)> &child_formatter
+    );
+
     void format_before_terminator(ASTNode *parent, ASTNode *child, WhitespaceKind whitespace, unsigned semi_index);
 
     void ensure_no_space_after(unsigned token_index);
@@ -124,9 +126,9 @@ private:
     std::string build_indent(unsigned indentation);
     bool followed_by_comment(unsigned token_index);
 
-    void add_replace_edit(TextRange range, std::string replacement);
-    void add_insert_edit(TextPosition position, std::string replacement);
-    void add_delete_edit(TextRange range);
+    static bool compare(ASTNode *a, ASTNode *b);
+    static std::string_view ordering_string(ASTNode *node);
+    static unsigned ordering_value(char c);
 };
 
 } // namespace banjo::lang

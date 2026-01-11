@@ -9,17 +9,18 @@
 #include "banjo/utils/utils.hpp"
 
 #include <algorithm>
+#include <compare>
 #include <cstdarg>
 #include <span>
-#include <utility>
 
 namespace banjo::lang {
 
-Formatter::Formatter(ReportManager &report_manager) : report_manager{report_manager} {}
+Formatter::Formatter(ReportManager &report_manager, SourceFile &file)
+  : report_manager{report_manager},
+    file{file},
+    edits{file} {}
 
-std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
-    file_content = file.get_content();
-
+EditList Formatter::format() {
     Lexer lexer{file, Lexer::Mode::KEEP_WHITESPACE};
     tokens = lexer.tokenize();
 
@@ -28,37 +29,12 @@ std::vector<Formatter::Edit> Formatter::format(SourceFile &file) {
     report_manager.merge_result(ast_mod->reports, ast_mod->is_valid);
 
     if (!ast_mod->is_valid) {
-        return {};
+        return edits;
     }
 
     format_mod(ast_mod.get());
 
     return edits;
-}
-
-void Formatter::format_in_place(SourceFile &file) {
-    std::vector<Edit> edits = format(file);
-
-    std::string_view input = file.get_content();
-    std::string output;
-
-    if (edits.empty()) {
-        output = input;
-    } else {
-        for (unsigned i = 0; i < edits.size(); i++) {
-            unsigned prev_end = i == 0 ? 0 : edits[i - 1].range.end;
-            unsigned next_start = edits[i].range.start;
-            std::string_view replacement = edits[i].replacement;
-
-            output.insert(output.end(), input.begin() + prev_end, input.begin() + next_start);
-            output.insert(output.end(), replacement.begin(), replacement.end());
-        }
-
-        unsigned last_end = edits.back().range.end;
-        output.insert(output.end(), input.begin() + last_end, input.end());
-    }
-
-    file.update_content(std::move(output));
 }
 
 void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
@@ -81,7 +57,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_TYPE_ALIAS: format_type_alias(node, whitespace); break;
         case AST_NATIVE_VAR: format_var_decl(node, whitespace); break;
         case AST_USE: format_use_decl(node, whitespace); break;
-        case AST_USE_TREE_LIST: format_list(node, whitespace); break;
+        case AST_USE_TREE_LIST: format_use_list(node, whitespace); break;
         case AST_USE_REBINDING: format_use_rebind(node, whitespace); break;
         case AST_EXPR_STMT: format_expr_stmt(node, whitespace); break;
         case AST_VAR: global_scope ? format_var_decl(node, whitespace) : format_var_stmt(node, whitespace); break;
@@ -227,7 +203,7 @@ void Formatter::format_mod(ASTNode *node) {
         std::span<Token> first_attached_tokens = tokens.get_attached_tokens(0);
 
         if (!first_attached_tokens.empty() && first_attached_tokens[0].is(TKN_WHITESPACE)) {
-            add_delete_edit(first_attached_tokens[0].range());
+            edits.add_delete_edit(first_attached_tokens[0].range());
         }
 
         for (Token &token : first_attached_tokens) {
@@ -533,6 +509,38 @@ void Formatter::format_use_rebind(ASTNode *node, WhitespaceKind whitespace) {
     format_node(target_name_node, WhitespaceKind::SPACE);
     ensure_space_after(tkn_as);
     format_node(local_name_node, whitespace);
+}
+
+void Formatter::format_use_list(ASTNode *node, WhitespaceKind whitespace) {
+    std::vector<ASTNode *> children_sorted;
+    children_sorted.reserve(node->num_children());
+
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        children_sorted.push_back(child);
+    }
+
+    std::ranges::sort(children_sorted, compare);
+
+    unsigned index = 0;
+
+    format_list(node, whitespace, false, [&](ASTNode *child, WhitespaceKind whitespace) {
+        if (children_sorted[index] == child) {
+            format_node(child, whitespace);
+        } else {
+            EditList old_edits = edits;
+            edits = EditList{file};
+
+            format_node(children_sorted[index], WhitespaceKind::NONE);
+            std::string replacement = edits.apply_edits_to_source_copy(children_sorted[index]->range);
+
+            edits = old_edits;
+
+            edits.add_replace_edit(child->range, replacement);
+            ensure_whitespace_after(file.tokens.last_token_index(child), whitespace);
+        }
+
+        index += 1;
+    });
 }
 
 void Formatter::format_block(ASTNode *node, WhitespaceKind whitespace) {
@@ -1233,6 +1241,20 @@ void Formatter::format_single_token_node(ASTNode *node, WhitespaceKind whitespac
 }
 
 void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace, bool enclosing_spaces /* = false */) {
+    format_list(
+        node,
+        whitespace,
+        enclosing_spaces,
+        std::bind(&Formatter::format_node, this, std::placeholders::_1, std::placeholders::_2)
+    );
+}
+
+void Formatter::format_list(
+    ASTNode *node,
+    WhitespaceKind whitespace,
+    bool enclosing_spaces,
+    const std::function<void(ASTNode *, WhitespaceKind whitespace)> &child_formatter
+) {
     unsigned tkn_start = node->tokens.front();
     unsigned tkn_end = node->tokens.back();
 
@@ -1241,6 +1263,8 @@ void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace, bool enclo
     if (multiline) {
         indentation += 1;
 
+        // FIXME: The index to dedent is wrong if there is a comment but no trailing comma.
+
         for (unsigned i = 0; i < node->tokens.size() - 2; i++) {
             ensure_whitespace_after(node->tokens[i], WhitespaceKind::INDENT);
         }
@@ -1248,7 +1272,7 @@ void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace, bool enclo
         ensure_whitespace_after(node->tokens[node->tokens.size() - 2], WhitespaceKind::INDENT_OUT);
 
         for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-            format_node(child, WhitespaceKind::NONE);
+            child_formatter(child, WhitespaceKind::NONE);
         }
 
         indentation -= 1;
@@ -1262,9 +1286,9 @@ void Formatter::format_list(ASTNode *node, WhitespaceKind whitespace, bool enclo
 
         for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
             if (enclosing_spaces && !child->next_sibling) {
-                format_node(child, WhitespaceKind::SPACE);
+                child_formatter(child, WhitespaceKind::SPACE);
             } else {
-                format_node(child, WhitespaceKind::NONE);
+                child_formatter(child, WhitespaceKind::NONE);
             }
         }
     }
@@ -1313,13 +1337,13 @@ void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whi
 
     if (attached_tokens.empty()) {
         if (whitespace != WhitespaceKind::NONE) {
-            add_insert_edit(token.position, whitespace_as_string(whitespace));
+            edits.add_insert_edit(token.position, whitespace_as_string(whitespace));
         }
     } else if (attached_tokens.size() == 1 && attached_tokens[0].is(TKN_WHITESPACE)) {
         if (whitespace == WhitespaceKind::NONE) {
-            add_delete_edit(attached_tokens[0].range());
+            edits.add_delete_edit(attached_tokens[0].range());
         } else {
-            add_replace_edit(attached_tokens[0].range(), whitespace_as_string(whitespace));
+            edits.add_replace_edit(attached_tokens[0].range(), whitespace_as_string(whitespace));
         }
     } else {
         format_comments(attached_tokens, whitespace);
@@ -1339,7 +1363,7 @@ void Formatter::format_comments(std::span<Token> &attached_tokens, WhitespaceKin
 
             if (num_line_breaks == 0 && i != attached_tokens.size() - 1) {
                 if (attached_tokens[i + 1].is(TKN_COMMENT)) {
-                    add_replace_edit(range, "  ");
+                    edits.add_replace_edit(range, "  ");
                     continue;
                 }
             }
@@ -1347,14 +1371,14 @@ void Formatter::format_comments(std::span<Token> &attached_tokens, WhitespaceKin
             num_line_breaks = std::min(num_line_breaks, 2u);
 
             if (whitespace == WhitespaceKind::INDENT_OUT && is_last) {
-                add_replace_edit(range, "\n" + build_indent(indentation - 1));
+                edits.add_replace_edit(range, "\n" + build_indent(indentation - 1));
             } else {
                 std::string line_breaks(num_line_breaks, '\n');
-                add_replace_edit(range, line_breaks + build_indent(indentation));
+                edits.add_replace_edit(range, line_breaks + build_indent(indentation));
             }
         } else if (attached_token.is(TKN_COMMENT)) {
             if (i == 0) {
-                add_insert_edit(attached_token.position, "  ");
+                edits.add_insert_edit(attached_token.position, "  ");
             }
 
             format_comment_text(attached_token);
@@ -1368,7 +1392,7 @@ void Formatter::format_comment_text(Token &comment_token) {
     std::string_view text = comment_token.value;
 
     if (text.size() >= 2 && text[1] != ' ') {
-        add_insert_edit(comment_token.position + 1, " ");
+        edits.add_insert_edit(comment_token.position + 1, " ");
     }
 
     std::optional<unsigned> trailing_whitespace_start;
@@ -1385,7 +1409,7 @@ void Formatter::format_comment_text(Token &comment_token) {
 
     if (trailing_whitespace_start) {
         TextPosition range_start = comment_token.position + *trailing_whitespace_start;
-        add_delete_edit({range_start, comment_token.end()});
+        edits.add_delete_edit({range_start, comment_token.end()});
     }
 }
 
@@ -1415,22 +1439,51 @@ bool Formatter::followed_by_comment(unsigned token_index) {
     return false;
 }
 
-void Formatter::add_replace_edit(TextRange range, std::string replacement) {
-    if (range.start != range.end) {
-        if (file_content.substr(range.start, range.end - range.start) == replacement) {
-            return;
+bool Formatter::compare(ASTNode *a, ASTNode *b) {
+    std::string_view string_a = ordering_string(a);
+    std::string_view string_b = ordering_string(b);
+
+    for (unsigned i = 0; i < std::min(string_a.size(), string_b.size()); i++) {
+        std::weak_ordering ordering = ordering_value(string_a[i]) <=> ordering_value(string_b[i]);
+
+        if (ordering == std::weak_ordering::less) {
+            return true;
+        } else if (ordering == std::weak_ordering::greater) {
+            return false;
         }
     }
 
-    edits.push_back(Edit{.range = range, .replacement = std::move(replacement)});
+    return string_a.size() < string_b.size();
 }
 
-void Formatter::add_insert_edit(TextPosition position, std::string replacement) {
-    edits.push_back(Edit{.range{position, position}, .replacement = std::move(replacement)});
+std::string_view Formatter::ordering_string(ASTNode *node) {
+    if (node->type == AST_IDENTIFIER) {
+        return node->value;
+    } else if (node->type == AST_USE_REBINDING) {
+        ASTNode *target_name_node = node->first_child;
+        return target_name_node->value;
+    } else if (node->type == AST_DOT_OPERATOR) {
+        ASTNode *lhs_node = node->first_child;
+        return lhs_node->value;
+    } else if (node->type == AST_USE_TREE_LIST) {
+        return 0;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
-void Formatter::add_delete_edit(TextRange range) {
-    edits.push_back(Edit{.range = range, .replacement = ""});
+unsigned Formatter::ordering_value(char c) {
+    if (c >= 'a' && c <= 'z') {
+        return static_cast<unsigned>(c - 'a');
+    } else if (c >= 'A' && c <= 'Z') {
+        return static_cast<unsigned>(c - 'A' + 128);
+    } else if (c >= '0' && c <= '9') {
+        return static_cast<unsigned>(c - '0' + 256);
+    } else if (c == '_') {
+        return static_cast<unsigned>(512);
+    } else {
+        return 0;
+    }
 }
 
 } // namespace banjo::lang
