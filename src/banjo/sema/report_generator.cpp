@@ -56,6 +56,7 @@ void ReportBuilder::report() {
 SourceFile &ReportBuilder::find_file(ASTNode *node) {
     while (node->type != AST_MODULE) {
         node = node->parent;
+        ASSERT(node);
     }
 
     return static_cast<ASTModule *>(node)->file;

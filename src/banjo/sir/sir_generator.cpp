@@ -1137,19 +1137,31 @@ sir::Expr SIRGenerator::generate_dot_expr(ASTNode *node) {
     if (rhs_node->type == AST_IDENTIFIER) {
         rhs = generate_ident(rhs_node);
     } else if (rhs_node->type == AST_INT_LITERAL) {
-        rhs = {
+        rhs = sir::Ident{
             .ast_node = rhs_node,
             .value = create_string(rhs_node->value),
         };
     } else if (rhs_node->type == AST_COMPLETION_TOKEN) {
-        rhs = {
+        rhs = sir::Ident{
             .ast_node = rhs_node,
             .value = sir::COMPLETION_TOKEN_VALUE,
         };
     } else if (rhs_node->type == AST_ERROR) {
-        rhs = {
+        rhs = sir::Ident{
             .ast_node = rhs_node,
             .value = sir::ERROR_TOKEN_VALUE,
+        };
+    } else if (rhs_node->type == AST_SELF) {
+        rhs = sir::Ident{
+            .ast_node = nullptr,
+            .value = sir::ERROR_TOKEN_VALUE,
+        };
+    } else {
+        // TODO: Proper error message
+
+        rhs = sir::Ident{
+            .ast_node = nullptr,
+            .value = "[error]",
         };
     }
 
