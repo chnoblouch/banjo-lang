@@ -1,0 +1,15 @@
+# test:subtest
+# test:output "true"
+
+func main() {
+    var a: u16 = 0xFF01;
+    println(a as u8 < 0xFF);
+}
+
+# test:subtest
+# test:output "true"
+
+func main() {
+    var a: u32 = 0xFFFF0001;
+    println(a as u16 < 0xFFFF);
+}

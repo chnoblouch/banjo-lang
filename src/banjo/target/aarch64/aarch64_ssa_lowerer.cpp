@@ -420,6 +420,19 @@ void AArch64SSALowerer::lower_truncate(ssa::Instruction &instr) {
     mcode::Operand m_src = lower_value(instr.get_operand(0)).with_size(dst_size);
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
     emit(mcode::Instruction(AArch64Opcode::MOV, {m_dst, m_src}));
+
+    // TODO: Use the immediate directly in the `AND` instruction.
+    // This requires support for bitmask immediates in the encoder.
+
+    if (dst_size == 1) {
+        mcode::Operand m_mask_reg = mcode::Operand::from_register(create_tmp_reg(), 4);
+        emit({AArch64Opcode::MOV, {m_mask_reg, mcode::Operand::from_int_immediate(0xFF)}});
+        emit({AArch64Opcode::AND, {m_dst, m_dst, m_mask_reg}});
+    } else if (dst_size == 2) {
+        mcode::Operand m_mask_reg = mcode::Operand::from_register(create_tmp_reg(), 4);
+        emit({AArch64Opcode::MOV, {m_mask_reg, mcode::Operand::from_int_immediate(0xFFFF)}});
+        emit({AArch64Opcode::AND, {m_dst, m_dst, m_mask_reg}});
+    }
 }
 
 void AArch64SSALowerer::lower_fpromote(ssa::Instruction &instr) {
