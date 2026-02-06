@@ -35,6 +35,7 @@ public:
     virtual unsigned get_alignment(const ssa::Type &type) const = 0;
     virtual unsigned get_member_offset(ssa::Structure *struct_, unsigned index) const = 0;
 
+    unsigned get_register_size() { return params.register_size; }
     ssa::Type get_usize_type() const { return params.usize_type; }
     bool fits_in_register(const ssa::Type &type) const;
     ArgPassMethod get_arg_pass_method(const ssa::Type &type) const;
