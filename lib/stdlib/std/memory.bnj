@@ -24,6 +24,13 @@ pub func copy(src: addr, dst: addr, size: usize) {
     c.memcpy(dst, src, size);
 }
 
+pub func swap[T](ref mut a: T, ref mut b: T) {
+    var tmp: [u8; meta(T).size];
+    copy(&a, &tmp, meta(T).size);
+    copy(&b, &a, meta(T).size);
+    copy(&tmp, &b, meta(T).size);
+}
+
 pub func compare(addr0: addr, addr1: addr, size: usize) -> bool {
     return c.memcmp(addr0, addr1, size) == 0;
 }

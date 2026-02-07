@@ -1,0 +1,20 @@
+use std.memory.swap;
+
+pub func sort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
+    # TODO: Bubblesort algorithm. Very slow.
+
+    while true {
+        var changed = false;
+
+        for i in 0..slice.length - 1 {
+            if comparator(slice[i + 1], slice[i]) {
+                swap(slice[i], slice[i + 1]);
+                changed = true;
+            }
+        }
+
+        if !changed {
+            break;
+        }
+    }
+}
