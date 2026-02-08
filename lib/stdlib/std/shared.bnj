@@ -1,0 +1,42 @@
+use std.memory;
+
+struct Shared[T] {
+    struct Data {
+        var value: T;
+        var ref_count: u32;
+    }
+
+    var data: *Data;
+
+    pub func new(value: T) -> Shared[T] {
+        var data = Data {
+            value,
+            ref_count: 1,
+        };
+
+        return Shared[T] {
+            data: memory.box(data),
+        };
+    }
+
+    pub func get(self) -> *T {
+        return &self.data.value;
+    }
+
+    pub func copy(self) -> Shared[T] {
+        self.data.ref_count += 1;
+
+        return Shared[T] {
+            data: self.data,
+        };
+    }
+
+    pub func __deinit__(self) {
+        self.data.ref_count -= 1;
+
+        if self.data.ref_count == 0 {
+            __builtin_deinit(self.data.value);
+            memory.free(self.data);
+        }
+    }
+}
