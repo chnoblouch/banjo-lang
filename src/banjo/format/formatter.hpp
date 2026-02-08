@@ -90,7 +90,7 @@ private:
     void format_static_array_type(ASTNode *node, WhitespaceKind whitespace);
     void format_func_type(ASTNode *node, WhitespaceKind whitespace);
     void format_closure_type(ASTNode *node, WhitespaceKind whitespace);
-    void format_meta_expr(ASTNode *node, WhitespaceKind whitespace);
+    void format_meta_access(ASTNode *node, WhitespaceKind whitespace);
 
     void format_param_list(ASTNode *node, WhitespaceKind whitespace);
     void format_param(ASTNode *node, WhitespaceKind whitespace);

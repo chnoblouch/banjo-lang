@@ -34,7 +34,7 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
 
     if (!head_valid) {
         node.append_child(parser.create_dummy_block());
-        ASTNodeType type = generic ? AST_GENERIC_FUNCTION_DEFINITION : AST_FUNCTION_DEFINITION;
+        ASTNodeType type = generic ? AST_GENERIC_FUNC_DEF : AST_FUNC_DEF;
         return {node.build(type), false};
     }
 
@@ -49,14 +49,14 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'{'");
         node.append_child(parser.create_dummy_block());
 
-        ASTNodeType type = generic ? AST_GENERIC_FUNCTION_DEFINITION : AST_FUNCTION_DEFINITION;
+        ASTNodeType type = generic ? AST_GENERIC_FUNC_DEF : AST_FUNC_DEF;
         return {node.build(type), false};
     }
 
     ParseResult result = parser.parse_block();
     node.append_child(result.node);
 
-    ASTNodeType type = generic ? AST_GENERIC_FUNCTION_DEFINITION : AST_FUNCTION_DEFINITION;
+    ASTNodeType type = generic ? AST_GENERIC_FUNC_DEF : AST_FUNC_DEF;
     return {node.build(type), result.is_valid};
 }
 
@@ -69,7 +69,7 @@ ParseResult DeclParser::parse_const() {
         node.append_child(parser.create_node(AST_ERROR));
         node.append_child(parser.create_node(AST_ERROR));
         node.append_child(parser.create_node(AST_ERROR));
-        return node.build(AST_CONSTANT);
+        return node.build(AST_CONST_DEF);
     }
 
     node.append_child(parser.consume_into_node(AST_IDENTIFIER));
@@ -78,7 +78,7 @@ ParseResult DeclParser::parse_const() {
         parser.report_unexpected_token();
         node.append_child(parser.create_node(AST_ERROR));
         node.append_child(parser.create_node(AST_ERROR));
-        return node.build(AST_CONSTANT);
+        return node.build(AST_CONST_DEF);
     }
 
     node.consume(); // Consume ':'
@@ -87,13 +87,13 @@ ParseResult DeclParser::parse_const() {
     if (!stream.get()->is(TKN_EQ)) {
         parser.report_unexpected_token();
         node.append_child(parser.create_node(AST_ERROR));
-        return node.build(AST_CONSTANT);
+        return node.build(AST_CONST_DEF);
     }
 
     node.consume(); // Consume '='
     node.append_child(parser.parse_expression());
 
-    return parser.check_stmt_terminator(node, AST_CONSTANT);
+    return parser.check_stmt_terminator(node, AST_CONST_DEF);
 }
 
 ParseResult DeclParser::parse_struct() {
@@ -118,9 +118,9 @@ ParseResult DeclParser::parse_struct() {
         node.append_child(result.node);
 
         if (!result.is_valid) {
-            return {node.build(AST_GENERIC_STRUCT_DEFINITION), false};
+            return {node.build(AST_GENERIC_STRUCT_DEF), false};
         }
-        return node.build(AST_GENERIC_STRUCT_DEFINITION);
+        return node.build(AST_GENERIC_STRUCT_DEF);
     }
 
     if (stream.get()->is(TKN_COLON)) {
@@ -141,9 +141,9 @@ ParseResult DeclParser::parse_struct() {
     node.append_child(result.node);
 
     if (!result.is_valid) {
-        return {node.build(AST_STRUCT_DEFINITION), false};
+        return {node.build(AST_STRUCT_DEF), false};
     }
-    return node.build(AST_STRUCT_DEFINITION);
+    return node.build(AST_STRUCT_DEF);
 }
 
 ParseResult DeclParser::parse_enum() {
@@ -169,7 +169,7 @@ ParseResult DeclParser::parse_enum() {
     });
 
     node.append_child(result.node);
-    return node.build(AST_ENUM_DEFINITION);
+    return node.build(AST_ENUM_DEF);
 }
 
 ParseResult DeclParser::parse_union() {
@@ -188,7 +188,7 @@ ParseResult DeclParser::parse_union() {
     }
     node.append_child(result.node);
 
-    return node.build(AST_UNION);
+    return node.build(AST_UNION_DEF);
 }
 
 ParseResult DeclParser::parse_union_case() {
@@ -232,7 +232,7 @@ ParseResult DeclParser::parse_proto() {
     }
     node.append_child(result.node);
 
-    return node.build(AST_PROTO);
+    return node.build(AST_PROTO_DEF);
 }
 
 ParseResult DeclParser::parse_type_alias() {
@@ -259,7 +259,7 @@ ParseResult DeclParser::parse_type_alias() {
         return node.build_error();
     }
 
-    return parser.check_stmt_terminator(node, AST_TYPE_ALIAS);
+    return parser.check_stmt_terminator(node, AST_TYPE_ALIAS_DEF);
 }
 
 ParseResult DeclParser::parse_use() {
@@ -270,10 +270,10 @@ ParseResult DeclParser::parse_use() {
     node.append_child(result.node);
 
     if (!result.is_valid) {
-        return {node.build(AST_USE), false};
+        return {node.build(AST_USE_DECL), false};
     }
 
-    return parser.check_stmt_terminator(node, AST_USE);
+    return parser.check_stmt_terminator(node, AST_USE_DECL);
 }
 
 ParseResult DeclParser::parse_use_tree() {
@@ -285,7 +285,7 @@ ParseResult DeclParser::parse_use_tree() {
     ASTNode *current_node = result.node;
 
     while (stream.get()->is(TKN_DOT)) {
-        ASTNode *dot_operator = parser.create_node(AST_DOT_OPERATOR);
+        ASTNode *dot_operator = parser.create_node(AST_DOT_EXPR);
         dot_operator->append_child(current_node);
         stream.consume(); // Consume '.'
         dot_operator->tokens = parser.mod->create_token_index(stream.get_position() - 1);
@@ -319,7 +319,7 @@ ParseResult DeclParser::parse_use_tree_element() {
             unsigned as_token_index = stream.get_position();
             stream.consume(); // Consume 'as'
 
-            ASTNode *rebinding_node = parser.create_node(AST_USE_REBINDING);
+            ASTNode *rebinding_node = parser.create_node(AST_USE_REBIND);
             rebinding_node->append_child(identifier);
             rebinding_node->append_child(parser.consume_into_node(AST_IDENTIFIER));
             rebinding_node->set_range_from_children();
@@ -327,7 +327,7 @@ ParseResult DeclParser::parse_use_tree_element() {
             return rebinding_node;
         }
     } else if (token->is(TKN_LBRACE)) {
-        return parser.parse_list(AST_USE_TREE_LIST, TKN_RBRACE, std::bind(&DeclParser::parse_use_tree, this));
+        return parser.parse_list(AST_USE_LIST, TKN_RBRACE, std::bind(&DeclParser::parse_use_tree, this));
     } else {
         parser.report_unexpected_token();
         return {parser.create_node(AST_ERROR), false};
@@ -370,7 +370,7 @@ ParseResult DeclParser::parse_native_var() {
     node.append_child(identifier);
     node.append_child(data_type);
 
-    return parser.check_stmt_terminator(node, AST_NATIVE_VAR);
+    return parser.check_stmt_terminator(node, AST_NATIVE_VAR_DECL);
 }
 
 ParseResult DeclParser::parse_native_func() {
@@ -394,7 +394,7 @@ ParseResult DeclParser::parse_native_func() {
         return node.build_error();
     }
 
-    return parser.check_stmt_terminator(node, AST_NATIVE_FUNCTION_DECLARATION);
+    return parser.check_stmt_terminator(node, AST_NATIVE_FUNC_DECL);
 }
 
 ParseResult DeclParser::parse_pub() {

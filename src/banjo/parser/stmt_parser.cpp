@@ -30,7 +30,7 @@ ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
 ParseResult StmtParser::parse_var() {
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume 'var'
-    return parse_var_or_ref(node, AST_VAR, AST_IMPLICIT_TYPE_VAR);
+    return parse_var_or_ref(node, AST_VAR_DEF, AST_TYPELESS_VAR_DEF);
 }
 
 ParseResult StmtParser::parse_ref() {
@@ -39,9 +39,9 @@ ParseResult StmtParser::parse_ref() {
 
     if (stream.get()->is(TKN_MUT)) {
         node.consume(); // Consume 'mut'
-        return parse_var_or_ref(node, AST_REF_MUT_VAR, AST_IMPLICIT_TYPE_REF_MUT_VAR);
+        return parse_var_or_ref(node, AST_REF_MUT_VAR_DEF, AST_TYPELESS_REF_MUT_VAR_DEF);
     } else {
-        return parse_var_or_ref(node, AST_REF_VAR, AST_IMPLICIT_TYPE_REF_VAR);
+        return parse_var_or_ref(node, AST_REF_VAR_DEF, AST_TYPELESS_REF_VAR_DEF);
     }
 }
 
@@ -110,18 +110,18 @@ ParseResult StmtParser::parse_if_chain() {
     first_if.append_child(result.node);
     if (!result.is_valid) {
         first_if.append_child(parser.create_node(AST_ERROR));
-        node.append_child(first_if.build_with_inferred_range(AST_IF));
-        return {node.build_with_inferred_range(AST_IF_CHAIN), false};
+        node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
+        return {node.build_with_inferred_range(AST_IF_STMT), false};
     }
 
     result = parser.parse_block();
     first_if.append_child(result.node);
     if (!result.is_valid) {
-        node.append_child(first_if.build_with_inferred_range(AST_IF));
-        return {node.build_with_inferred_range(AST_IF_CHAIN), false};
+        node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
+        return {node.build_with_inferred_range(AST_IF_STMT), false};
     }
 
-    node.append_child(first_if.build(AST_IF));
+    node.append_child(first_if.build(AST_IF_BRANCH));
 
     while (stream.get()->is(TKN_ELSE)) {
         if (stream.peek(1)->is(TKN_IF)) {
@@ -133,17 +133,17 @@ ParseResult StmtParser::parse_if_chain() {
             else_if_node.append_child(result.node);
             if (!result.is_valid) {
                 else_if_node.append_child(parser.create_node(AST_ERROR));
-                node.append_child(else_if_node.build_with_inferred_range(AST_ELSE_IF));
-                return {node.build_with_inferred_range(AST_IF), false};
+                node.append_child(else_if_node.build_with_inferred_range(AST_ELSE_IF_BRANCH));
+                return {node.build_with_inferred_range(AST_IF_BRANCH), false};
             }
 
             else_if_node.append_child(parser.parse_block().node);
-            node.append_child(else_if_node.build(AST_ELSE_IF));
+            node.append_child(else_if_node.build(AST_ELSE_IF_BRANCH));
         } else if (stream.peek(1)->is(TKN_LBRACE)) {
             NodeBuilder else_node = parser.build_node();
             else_node.consume(); // Consume 'else'
             else_node.append_child(parser.parse_block().node);
-            node.append_child(else_node.build(AST_ELSE));
+            node.append_child(else_node.build(AST_ELSE_BRANCH));
         } else {
             stream.consume(); // Consume 'else'
             parser.report_unexpected_token();
@@ -151,7 +151,7 @@ ParseResult StmtParser::parse_if_chain() {
         }
     }
 
-    return node.build(AST_IF_CHAIN);
+    return node.build(AST_IF_STMT);
 }
 
 ParseResult StmtParser::parse_switch() {
@@ -174,7 +174,7 @@ ParseResult StmtParser::parse_switch() {
         if (stream.get()->value == "_") {
             stream.consume();
             case_node.append_child(parser.parse_block().node);
-            cases_node.append_child(case_node.build(AST_SWITCH_DEFAULT_CASE));
+            cases_node.append_child(case_node.build(AST_SWITCH_DEFAULT_BRANCH));
             continue;
         }
 
@@ -189,13 +189,13 @@ ParseResult StmtParser::parse_switch() {
         }
 
         case_node.append_child(parser.parse_block().node);
-        cases_node.append_child(case_node.build(AST_SWITCH_CASE));
+        cases_node.append_child(case_node.build(AST_SWITCH_CASE_BRANCH));
     }
 
     cases_node.consume(); // Consume '}'
     node.append_child(cases_node.build(AST_SWITCH_CASE_LIST));
 
-    return node.build(AST_SWITCH);
+    return node.build(AST_SWITCH_STMT);
 }
 
 ParseResult StmtParser::parse_try() {
@@ -224,7 +224,7 @@ ParseResult StmtParser::parse_try() {
     success_case_node.append_child(result.node);
 
     success_case_node.append_child(parser.parse_block().node);
-    node.append_child(success_case_node.build(AST_TRY_SUCCESS_CASE));
+    node.append_child(success_case_node.build(AST_TRY_SUCCESS_BRANCH));
 
     if (stream.get()->is(TKN_EXCEPT)) {
         NodeBuilder error_case_node = parser.build_node();
@@ -247,15 +247,15 @@ ParseResult StmtParser::parse_try() {
         }
 
         error_case_node.append_child(parser.parse_block().node);
-        node.append_child(error_case_node.build(AST_TRY_ERROR_CASE));
+        node.append_child(error_case_node.build(AST_TRY_EXCEPT_BRANCH));
     } else if (stream.get()->is(TKN_ELSE)) {
         NodeBuilder else_case_node = parser.build_node();
         else_case_node.consume(); // Consume 'else'
         else_case_node.append_child(parser.parse_block().node);
-        node.append_child(else_case_node.build(AST_TRY_ELSE_CASE));
+        node.append_child(else_case_node.build(AST_TRY_ELSE_BRANCH));
     }
 
-    return node.build(AST_TRY);
+    return node.build(AST_TRY_STMT);
 }
 
 ParseResult StmtParser::parse_while() {
@@ -269,22 +269,22 @@ ParseResult StmtParser::parse_while() {
     node.append_child(result.node);
 
     node.append_child(parser.parse_block().node);
-    return node.build(AST_WHILE);
+    return node.build(AST_WHILE_STMT);
 }
 
 ParseResult StmtParser::parse_for() {
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume 'for'
 
-    ASTNodeType type = AST_FOR;
+    ASTNodeType type = AST_FOR_STMT;
 
     if (stream.get()->is(TKN_REF)) {
         node.consume(); // Consume 'ref'
-        type = AST_FOR_REF;
+        type = AST_FOR_REF_STMT;
 
         if (stream.get()->is(TKN_MUT)) {
             node.consume(); // Consume 'mut'
-            type = AST_FOR_REF_MUT;
+            type = AST_FOR_REF_MUT_STMT;
         }
     }
 
@@ -316,13 +316,13 @@ ParseResult StmtParser::parse_for() {
 ParseResult StmtParser::parse_break() {
     NodeBuilder builder = parser.build_node();
     builder.consume(); // Consume 'break'
-    return parser.check_stmt_terminator(builder, AST_BREAK);
+    return parser.check_stmt_terminator(builder, AST_BREAK_STMT);
 }
 
 ParseResult StmtParser::parse_continue() {
     NodeBuilder builder = parser.build_node();
     builder.consume(); // Consume 'continue'
-    return parser.check_stmt_terminator(builder, AST_CONTINUE);
+    return parser.check_stmt_terminator(builder, AST_CONTINUE_STMT);
 }
 
 ParseResult StmtParser::parse_return() {
@@ -334,11 +334,11 @@ ParseResult StmtParser::parse_return() {
         builder.append_child(result.node);
 
         if (!result.is_valid) {
-            return {builder.build(AST_FUNCTION_RETURN), false};
+            return {builder.build(AST_RETURN_STMT), false};
         }
     }
 
-    return parser.check_stmt_terminator(builder, AST_FUNCTION_RETURN);
+    return parser.check_stmt_terminator(builder, AST_RETURN_STMT);
 }
 
 ParseResult StmtParser::parse_meta_stmt() {
@@ -390,7 +390,7 @@ ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
         }
     }
 
-    return node.build(AST_META_IF);
+    return node.build(AST_META_IF_STMT);
 }
 
 ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
@@ -416,7 +416,7 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
 
     node.append_child(parser.parse_block().node);
 
-    return node.build(AST_META_FOR);
+    return node.build(AST_META_FOR_STMT);
 }
 
 } // namespace lang

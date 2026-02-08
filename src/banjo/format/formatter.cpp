@@ -41,112 +41,113 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
     switch (node->type) {
         case AST_MODULE: ASSERT_UNREACHABLE;
         case AST_BLOCK: format_block(node, whitespace); break;
-        case AST_FUNCTION_DEFINITION: format_func_def(node, whitespace); break;
-        case AST_GENERIC_FUNCTION_DEFINITION: format_generic_func_def(node, whitespace); break;
+        case AST_FUNC_DEF: format_func_def(node, whitespace); break;
+        case AST_GENERIC_FUNC_DEF: format_generic_func_def(node, whitespace); break;
         case AST_FUNC_DECL: format_func_decl(node, whitespace); break;
-        case AST_NATIVE_FUNCTION_DECLARATION: format_func_decl(node, whitespace); break;
-        case AST_CONSTANT: format_const_def(node, whitespace); break;
-        case AST_STRUCT_DEFINITION: format_struct_def(node, whitespace); break;
-        case AST_GENERIC_STRUCT_DEFINITION: format_generic_struct_def(node, whitespace); break;
-        case AST_ENUM_DEFINITION: format_enum_def(node, whitespace); break;
+        case AST_NATIVE_FUNC_DECL: format_func_decl(node, whitespace); break;
+        case AST_CONST_DEF: format_const_def(node, whitespace); break;
+        case AST_STRUCT_DEF: format_struct_def(node, whitespace); break;
+        case AST_GENERIC_STRUCT_DEF: format_generic_struct_def(node, whitespace); break;
+        case AST_ENUM_DEF: format_enum_def(node, whitespace); break;
         case AST_ENUM_VARIANT_LIST: format_list(node, whitespace); break;
         case AST_ENUM_VARIANT: format_enum_variant(node, whitespace); break;
-        case AST_UNION: format_union_def(node, whitespace); break;
+        case AST_UNION_DEF: format_union_def(node, whitespace); break;
         case AST_UNION_CASE: format_union_case(node, whitespace); break;
-        case AST_PROTO: format_proto_def(node, whitespace); break;
-        case AST_TYPE_ALIAS: format_type_alias(node, whitespace); break;
-        case AST_NATIVE_VAR: format_var_decl(node, whitespace); break;
-        case AST_USE: format_use_decl(node, whitespace); break;
-        case AST_USE_TREE_LIST: format_use_list(node, whitespace); break;
-        case AST_USE_REBINDING: format_use_rebind(node, whitespace); break;
+        case AST_PROTO_DEF: format_proto_def(node, whitespace); break;
+        case AST_TYPE_ALIAS_DEF: format_type_alias(node, whitespace); break;
+        case AST_NATIVE_VAR_DECL: format_var_decl(node, whitespace); break;
+        case AST_USE_DECL: format_use_decl(node, whitespace); break;
+        case AST_USE_LIST: format_use_list(node, whitespace); break;
+        case AST_USE_REBIND: format_use_rebind(node, whitespace); break;
         case AST_EXPR_STMT: format_expr_stmt(node, whitespace); break;
-        case AST_VAR: global_scope ? format_var_decl(node, whitespace) : format_var_stmt(node, whitespace); break;
-        case AST_IMPLICIT_TYPE_VAR: format_typeless_var_stmt(node, whitespace); break;
-        case AST_REF_VAR: format_var_stmt(node, whitespace); break;
-        case AST_IMPLICIT_TYPE_REF_VAR: format_typeless_var_stmt(node, whitespace); break;
-        case AST_REF_MUT_VAR: format_var_stmt(node, whitespace); break;
-        case AST_IMPLICIT_TYPE_REF_MUT_VAR: format_typeless_var_stmt(node, whitespace); break;
-        case AST_ASSIGNMENT: format_assign_stmt(node, whitespace); break;
-        case AST_ADD_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_SUB_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_MUL_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_DIV_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_MOD_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_BIT_AND_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_BIT_OR_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_BIT_XOR_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_SHL_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_SHR_ASSIGN: format_assign_stmt(node, whitespace); break;
-        case AST_FUNCTION_RETURN: format_return_stmt(node, whitespace); break;
-        case AST_IF_CHAIN: format_if_stmt(node, whitespace); break;
-        case AST_IF: format_if_branch(node, whitespace); break;
-        case AST_ELSE_IF: format_else_if_branch(node, whitespace); break;
-        case AST_ELSE: format_else_branch(node, whitespace); break;
-        case AST_SWITCH: format_switch_stmt(node, whitespace); break;
+        case AST_VAR_DEF: global_scope ? format_var_decl(node, whitespace) : format_var_stmt(node, whitespace); break;
+        case AST_TYPELESS_VAR_DEF: format_typeless_var_stmt(node, whitespace); break;
+        case AST_REF_VAR_DEF: format_var_stmt(node, whitespace); break;
+        case AST_TYPELESS_REF_VAR_DEF: format_typeless_var_stmt(node, whitespace); break;
+        case AST_REF_MUT_VAR_DEF: format_var_stmt(node, whitespace); break;
+        case AST_TYPELESS_REF_MUT_VAR_DEF: format_typeless_var_stmt(node, whitespace); break;
+        case AST_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_ADD_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_SUB_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_MUL_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_DIV_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_MOD_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_BIT_AND_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_BIT_OR_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_BIT_XOR_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_SHL_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_SHR_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
+        case AST_RETURN_STMT: format_return_stmt(node, whitespace); break;
+        case AST_IF_STMT: format_if_stmt(node, whitespace); break;
+        case AST_IF_BRANCH: format_if_branch(node, whitespace); break;
+        case AST_ELSE_IF_BRANCH: format_else_if_branch(node, whitespace); break;
+        case AST_ELSE_BRANCH: format_else_branch(node, whitespace); break;
+        case AST_SWITCH_STMT: format_switch_stmt(node, whitespace); break;
         case AST_SWITCH_CASE_LIST: format_block(node, whitespace); break;
-        case AST_SWITCH_CASE: format_switch_case_branch(node, whitespace); break;
-        case AST_SWITCH_DEFAULT_CASE: ASSERT_UNREACHABLE;
-        case AST_TRY: format_try_stmt(node, whitespace); break;
-        case AST_TRY_SUCCESS_CASE: format_try_success_branch(node, whitespace); break;
-        case AST_TRY_ERROR_CASE: format_try_except_branch(node, whitespace); break;
-        case AST_TRY_ELSE_CASE: format_try_else_branch(node, whitespace); break;
-        case AST_WHILE: format_while_stmt(node, whitespace); break;
-        case AST_FOR: format_for_stmt(node, whitespace); break;
-        case AST_FOR_REF: format_for_stmt(node, whitespace); break;
-        case AST_FOR_REF_MUT: format_for_stmt(node, whitespace); break;
-        case AST_CONTINUE: format_keyword_stmt(node, whitespace); break;
-        case AST_BREAK: format_keyword_stmt(node, whitespace); break;
-        case AST_META_IF: format_meta_if_stmt(node, whitespace); break;
+        case AST_SWITCH_CASE_BRANCH: format_switch_case_branch(node, whitespace); break;
+        case AST_SWITCH_DEFAULT_BRANCH: ASSERT_UNREACHABLE;
+        case AST_TRY_STMT: format_try_stmt(node, whitespace); break;
+        case AST_TRY_SUCCESS_BRANCH: format_try_success_branch(node, whitespace); break;
+        case AST_TRY_EXCEPT_BRANCH: format_try_except_branch(node, whitespace); break;
+        case AST_TRY_ELSE_BRANCH: format_try_else_branch(node, whitespace); break;
+        case AST_WHILE_STMT: format_while_stmt(node, whitespace); break;
+        case AST_FOR_STMT: format_for_stmt(node, whitespace); break;
+        case AST_FOR_REF_STMT: format_for_stmt(node, whitespace); break;
+        case AST_FOR_REF_MUT_STMT: format_for_stmt(node, whitespace); break;
+        case AST_CONTINUE_STMT: format_keyword_stmt(node, whitespace); break;
+        case AST_BREAK_STMT: format_keyword_stmt(node, whitespace); break;
+        case AST_META_IF_STMT: format_meta_if_stmt(node, whitespace); break;
         case AST_META_IF_BRANCH: format_if_branch(node, whitespace); break;
         case AST_META_ELSE_IF_BRANCH: format_else_if_branch(node, whitespace); break;
         case AST_META_ELSE_BRANCH: format_else_branch(node, whitespace); break;
-        case AST_META_FOR: format_meta_for_stmt(node, whitespace); break;
+        case AST_META_FOR_STMT: format_meta_for_stmt(node, whitespace); break;
         case AST_PAREN_EXPR: format_paren_expr(node, whitespace); break;
         case AST_INT_LITERAL: format_single_token_node(node, whitespace); break;
-        case AST_FLOAT_LITERAL: format_single_token_node(node, whitespace); break;
+        case AST_FP_LITERAL: format_single_token_node(node, whitespace); break;
         case AST_CHAR_LITERAL: format_single_token_node(node, whitespace); break;
         case AST_STRING_LITERAL: format_single_token_node(node, whitespace); break;
-        case AST_FALSE: format_single_token_node(node, whitespace); break;
-        case AST_TRUE: format_single_token_node(node, whitespace); break;
-        case AST_NULL: format_single_token_node(node, whitespace); break;
-        case AST_NONE: format_single_token_node(node, whitespace); break;
-        case AST_UNDEFINED: format_single_token_node(node, whitespace); break;
-        case AST_ARRAY_EXPR: format_list(node, whitespace); break;
-        case AST_STRUCT_INSTANTIATION: format_struct_literal(node, whitespace); break;
-        case AST_ANON_STRUCT_LITERAL: format_typeless_struct_literal(node, whitespace); break;
-        case AST_MAP_EXPR: format_list(node, whitespace); break;
-        case AST_MAP_EXPR_PAIR: format_map_literal_entry(node, whitespace); break;
-        case AST_CLOSURE: format_closure_literal(node, whitespace); break;
+        case AST_FALSE_LITERAL: format_single_token_node(node, whitespace); break;
+        case AST_TRUE_LITERAL: format_single_token_node(node, whitespace); break;
+        case AST_NULL_LITERAL: format_single_token_node(node, whitespace); break;
+        case AST_NONE_LITERAL: format_single_token_node(node, whitespace); break;
+        case AST_UNDEFINED_LITERAL: format_single_token_node(node, whitespace); break;
+        case AST_ARRAY_LITERAL: format_list(node, whitespace); break;
+        case AST_STRUCT_LITERAL: format_struct_literal(node, whitespace); break;
+        case AST_TYPELESS_STRUCT_LITERAL: format_typeless_struct_literal(node, whitespace); break;
+        case AST_MAP_LITERAL: format_list(node, whitespace); break;
+        case AST_MAP_LITERAL_ENTRY: format_map_literal_entry(node, whitespace); break;
+        case AST_CLOSURE_LITERAL: format_closure_literal(node, whitespace); break;
         case AST_SELF: format_single_token_node(node, whitespace); break;
-        case AST_OPERATOR_ADD: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_SUB: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_MUL: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_DIV: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_MOD: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_BIT_AND: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_BIT_OR: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_BIT_XOR: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_SHL: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_SHR: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_EQ: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_NE: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_GT: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_LT: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_GE: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_LE: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_AND: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_OR: format_binary_expr(node, whitespace); break;
-        case AST_OPERATOR_NEG: format_unary_expr(node, whitespace); break;
-        case AST_OPERATOR_BIT_NOT: format_unary_expr(node, whitespace); break;
-        case AST_OPERATOR_REF: format_unary_expr(node, whitespace); break;
+        case AST_ADD_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_SUB_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_MUL_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_DIV_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_MOD_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_BIT_AND_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_BIT_OR_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_BIT_XOR_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_SHL_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_SHR_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_EQ_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_NE_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_GT_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_LT_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_GE_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_LE_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_AND_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_OR_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_NEG_EXPR: format_unary_expr(node, whitespace); break;
+        case AST_BIT_NOT_EXPR: format_unary_expr(node, whitespace); break;
+        case AST_REF_EXPR: format_unary_expr(node, whitespace); break;
         case AST_STAR_EXPR: format_unary_expr(node, whitespace); break;
-        case AST_OPERATOR_NOT: format_unary_expr(node, whitespace); break;
-        case AST_CAST: format_binary_expr(node, whitespace); break;
-        case AST_FUNCTION_CALL: format_call_or_bracket_expr(node, whitespace); break;
-        case AST_DOT_OPERATOR: format_binary_expr(node, whitespace, false); break;
-        case AST_IMPLICIT_DOT_OPERATOR: format_unary_expr(node, whitespace); break;
-        case AST_ARRAY_ACCESS: format_call_or_bracket_expr(node, whitespace); break;
-        case AST_RANGE: format_binary_expr(node, whitespace, false); break;
+        case AST_NOT_EXPR: format_unary_expr(node, whitespace); break;
+        case AST_CAST_EXPR: format_binary_expr(node, whitespace); break;
+        case AST_CALL_EXPR: format_call_or_bracket_expr(node, whitespace); break;
+        case AST_ARG_LIST: format_list(node, whitespace); break;
+        case AST_DOT_EXPR: format_binary_expr(node, whitespace, false); break;
+        case AST_IMPLICIT_DOT_EXPR: format_unary_expr(node, whitespace); break;
+        case AST_BRACKET_EXPR: format_call_or_bracket_expr(node, whitespace); break;
+        case AST_RANGE_EXPR: format_binary_expr(node, whitespace, false); break;
         case AST_TRY_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_TUPLE_EXPR: format_list(node, whitespace); break;
         case AST_I8: format_single_token_node(node, whitespace); break;
@@ -164,12 +165,12 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_ADDR: format_single_token_node(node, whitespace); break;
         case AST_VOID: format_single_token_node(node, whitespace); break;
         case AST_STATIC_ARRAY_TYPE: format_static_array_type(node, whitespace); break;
-        case AST_FUNCTION_DATA_TYPE: format_func_type(node, whitespace); break;
-        case AST_OPTIONAL_DATA_TYPE: format_unary_expr(node, whitespace); break;
+        case AST_FUNC_TYPE: format_func_type(node, whitespace); break;
+        case AST_OPTIONAL_TYPE: format_unary_expr(node, whitespace); break;
         case AST_RESULT_TYPE: format_binary_expr(node, whitespace); break;
         case AST_CLOSURE_TYPE: format_closure_type(node, whitespace); break;
         case AST_PARAM_SEQUENCE_TYPE: format_single_token_node(node, whitespace); break;
-        case AST_META_EXPR: format_meta_expr(node, whitespace); break;
+        case AST_META_ACCESS: format_meta_access(node, whitespace); break;
         case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
         case AST_PARAM_LIST: format_param_list(node, whitespace); break;
         case AST_PARAM: format_param(node, whitespace); break;
@@ -179,9 +180,8 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_REF_MUT_RETURN: format_ref_return(node, whitespace); break;
         case AST_GENERIC_PARAM_LIST: format_list(node, whitespace); break;
         case AST_GENERIC_PARAMETER: format_generic_param(node, whitespace); break;
-        case AST_STRUCT_FIELD_VALUE_LIST: format_list(node, whitespace, true); break;
-        case AST_STRUCT_FIELD_VALUE: format_struct_literal_entry(node, whitespace); break;
-        case AST_FUNCTION_ARGUMENT_LIST: format_list(node, whitespace); break;
+        case AST_STRUCT_LITERAL_ENTRY_LIST: format_list(node, whitespace, true); break;
+        case AST_STRUCT_LITERAL_ENTRY: format_struct_literal_entry(node, whitespace); break;
         case AST_IMPL_LIST: format_impl_list(node, whitespace); break;
         case AST_QUALIFIER_LIST: format_qualifier_list(node, whitespace); break;
         case AST_QUALIFIER: format_single_token_node(node, whitespace); break;
@@ -300,7 +300,7 @@ void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
 
     unsigned tkn_index_offset = 0;
 
-    if (node->type == AST_NATIVE_FUNCTION_DECLARATION) {
+    if (node->type == AST_NATIVE_FUNC_DECL) {
         unsigned tkn_native = node->tokens[0];
         ensure_space_after(tkn_native);
         tkn_index_offset = 1;
@@ -324,7 +324,7 @@ void Formatter::format_func_decl(ASTNode *node, WhitespaceKind whitespace) {
 
 void Formatter::format_const_def(ASTNode *node, WhitespaceKind whitespace) {
     if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
-        if (node->next_sibling && node->next_sibling->type != AST_CONSTANT) {
+        if (node->next_sibling && node->next_sibling->type != AST_CONST_DEF) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
     }
@@ -469,7 +469,7 @@ void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
 
 void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
     if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
-        if (node->next_sibling && node->next_sibling->type != AST_TYPE_ALIAS) {
+        if (node->next_sibling && node->next_sibling->type != AST_TYPE_ALIAS_DEF) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
     }
@@ -488,7 +488,7 @@ void Formatter::format_type_alias(ASTNode *node, WhitespaceKind whitespace) {
 
 void Formatter::format_use_decl(ASTNode *node, WhitespaceKind whitespace) {
     if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
-        if (node->next_sibling && node->next_sibling->type != AST_USE) {
+        if (node->next_sibling && node->next_sibling->type != AST_USE_DECL) {
             whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
         }
     }
@@ -588,7 +588,7 @@ void Formatter::format_var_stmt(ASTNode *node, WhitespaceKind whitespace) {
 
     unsigned tkn_index_offset = 0;
 
-    if (node->type == AST_REF_MUT_VAR) {
+    if (node->type == AST_REF_MUT_VAR_DEF) {
         unsigned tkn_ref = node->tokens[0];
         ensure_space_after(tkn_ref);
         tkn_index_offset = 1;
@@ -625,7 +625,7 @@ void Formatter::format_var_decl(ASTNode *node, WhitespaceKind whitespace) {
 
     unsigned tkn_index_offset = 0;
 
-    if (node->type == AST_NATIVE_VAR) {
+    if (node->type == AST_NATIVE_VAR_DECL) {
         unsigned tkn_native = node->tokens[0];
         ensure_space_after(tkn_native);
         tkn_index_offset = 1;
@@ -653,7 +653,7 @@ void Formatter::format_typeless_var_stmt(ASTNode *node, WhitespaceKind whitespac
     ASTNode *name_node = node->first_child;
     ASTNode *value_node = name_node->next_sibling;
 
-    if (node->type == AST_IMPLICIT_TYPE_VAR || node->type == AST_IMPLICIT_TYPE_REF_VAR) {
+    if (node->type == AST_TYPELESS_VAR_DEF || node->type == AST_TYPELESS_REF_VAR_DEF) {
         unsigned tkn_var_or_ref = node->tokens[0];
         unsigned tkn_equals = node->tokens[1];
 
@@ -661,7 +661,7 @@ void Formatter::format_typeless_var_stmt(ASTNode *node, WhitespaceKind whitespac
         format_node(name_node, WhitespaceKind::SPACE);
         ensure_space_after(tkn_equals);
         format_before_terminator(node, value_node, whitespace, 2);
-    } else if (node->type == AST_IMPLICIT_TYPE_REF_MUT_VAR) {
+    } else if (node->type == AST_TYPELESS_REF_MUT_VAR_DEF) {
         unsigned tkn_ref = node->tokens[0];
         unsigned tkn_mut = node->tokens[1];
         unsigned tkn_equals = node->tokens[2];
@@ -831,14 +831,14 @@ void Formatter::format_for_stmt(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *range_node = name_node->next_sibling;
     ASTNode *block_node = range_node->next_sibling;
 
-    if (node->type == AST_FOR) {
+    if (node->type == AST_FOR_STMT) {
         unsigned tkn_for = node->tokens[0];
         unsigned tkn_in = node->tokens[1];
 
         ensure_space_after(tkn_for);
         format_node(name_node, WhitespaceKind::SPACE);
         ensure_space_after(tkn_in);
-    } else if (node->type == AST_FOR_REF) {
+    } else if (node->type == AST_FOR_REF_STMT) {
         unsigned tkn_for = node->tokens[0];
         unsigned tkn_ref = node->tokens[1];
         unsigned tkn_in = node->tokens[2];
@@ -847,7 +847,7 @@ void Formatter::format_for_stmt(ASTNode *node, WhitespaceKind whitespace) {
         ensure_space_after(tkn_ref);
         format_node(name_node, WhitespaceKind::SPACE);
         ensure_space_after(tkn_in);
-    } else if (node->type == AST_FOR_REF_MUT) {
+    } else if (node->type == AST_FOR_REF_MUT_STMT) {
         unsigned tkn_for = node->tokens[0];
         unsigned tkn_ref = node->tokens[1];
         unsigned tkn_ref_mut = node->tokens[2];
@@ -1040,7 +1040,7 @@ void Formatter::format_closure_type(ASTNode *node, WhitespaceKind whitespace) {
     }
 }
 
-void Formatter::format_meta_expr(ASTNode *node, WhitespaceKind whitespace) {
+void Formatter::format_meta_access(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *expr_node = node->first_child;
 
     unsigned tkn_meta = node->tokens[0];
@@ -1459,13 +1459,13 @@ bool Formatter::compare(ASTNode *a, ASTNode *b) {
 std::string_view Formatter::ordering_string(ASTNode *node) {
     if (node->type == AST_IDENTIFIER) {
         return node->value;
-    } else if (node->type == AST_USE_REBINDING) {
+    } else if (node->type == AST_USE_REBIND) {
         ASTNode *target_name_node = node->first_child;
         return target_name_node->value;
-    } else if (node->type == AST_DOT_OPERATOR) {
+    } else if (node->type == AST_DOT_EXPR) {
         ASTNode *lhs_node = node->first_child;
         return lhs_node->value;
-    } else if (node->type == AST_USE_TREE_LIST) {
+    } else if (node->type == AST_USE_LIST) {
         return 0;
     } else {
         ASSERT_UNREACHABLE;

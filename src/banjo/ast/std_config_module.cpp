@@ -78,7 +78,7 @@ unsigned StdConfigModule::get_os() {
 }
 
 void StdConfigModule::add_const_u32(std::string_view name, unsigned value) {
-    ASTNode *config_const = create_node(AST_CONSTANT);
+    ASTNode *config_const = create_node(AST_CONST_DEF);
     config_const->append_child(create_node(AST_IDENTIFIER, name, TextRange{0, 0}));
     config_const->append_child(create_node(AST_U32));
     config_const->append_child(create_node(AST_INT_LITERAL, string_arena.store(std::to_string(value))));
@@ -98,16 +98,16 @@ void StdConfigModule::add_const_enum(
         enum_variants->append_child(enum_variant);
     }
 
-    ASTNode *enum_def = create_node(AST_ENUM_DEFINITION);
+    ASTNode *enum_def = create_node(AST_ENUM_DEF);
     enum_def->append_child(create_node(AST_IDENTIFIER, enum_name, TextRange{0, 0}));
     enum_def->append_child(enum_variants);
     block->append_child(enum_def);
 
-    ASTNode *const_value_dot_expr = create_node(AST_DOT_OPERATOR);
+    ASTNode *const_value_dot_expr = create_node(AST_DOT_EXPR);
     const_value_dot_expr->append_child(create_node(AST_IDENTIFIER, enum_name, TextRange{0, 0}));
     const_value_dot_expr->append_child(create_node(AST_IDENTIFIER, *values.begin(), TextRange{0, 0}));
 
-    ASTNode *const_def = create_node(AST_CONSTANT);
+    ASTNode *const_def = create_node(AST_CONST_DEF);
     const_def->append_child(create_node(AST_IDENTIFIER, const_name, TextRange{0, 0}));
     const_def->append_child(create_node(AST_IDENTIFIER, enum_name, TextRange{0, 0}));
     const_def->append_child(const_value_dot_expr);

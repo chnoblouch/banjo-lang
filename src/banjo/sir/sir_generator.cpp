@@ -90,22 +90,22 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
     }
 
     switch (node->type) {
-        case AST_FUNCTION_DEFINITION: return generate_func_def(node, attrs);
-        case AST_GENERIC_FUNCTION_DEFINITION: return generate_generic_func(node);
+        case AST_FUNC_DEF: return generate_func_def(node, attrs);
+        case AST_GENERIC_FUNC_DEF: return generate_generic_func(node);
         case AST_FUNC_DECL: return generate_func_decl(node);
-        case AST_NATIVE_FUNCTION_DECLARATION: return generate_native_func(node, attrs);
-        case AST_CONSTANT: return generate_const(node);
-        case AST_STRUCT_DEFINITION: return generate_struct(node, attrs);
-        case AST_GENERIC_STRUCT_DEFINITION: return generate_generic_struct(node);
-        case AST_ENUM_DEFINITION: return generate_enum(node);
-        case AST_UNION: return generate_union(node);
+        case AST_NATIVE_FUNC_DECL: return generate_native_func(node, attrs);
+        case AST_CONST_DEF: return generate_const(node);
+        case AST_STRUCT_DEF: return generate_struct(node, attrs);
+        case AST_GENERIC_STRUCT_DEF: return generate_generic_struct(node);
+        case AST_ENUM_DEF: return generate_enum(node);
+        case AST_UNION_DEF: return generate_union(node);
         case AST_UNION_CASE: return generate_union_case(node);
-        case AST_PROTO: return generate_proto(node);
-        case AST_TYPE_ALIAS: return generate_type_alias(node);
-        case AST_VAR: return generate_var_decl(node, attrs);
-        case AST_NATIVE_VAR: return generate_native_var_decl(node, attrs);
-        case AST_USE: return generate_use_decl(node);
-        case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
+        case AST_PROTO_DEF: return generate_proto(node);
+        case AST_TYPE_ALIAS_DEF: return generate_type_alias(node);
+        case AST_VAR_DEF: return generate_var_decl(node, attrs);
+        case AST_NATIVE_VAR_DECL: return generate_native_var_decl(node, attrs);
+        case AST_USE_DECL: return generate_use_decl(node);
+        case AST_META_IF_STMT: return generate_meta_if_stmt(node, MetaBlockKind::DECL);
         case AST_IDENTIFIER: return generate_error_decl(node);
         // case AST_COMPLETION_TOKEN: return generate_completion_token(node);
         default: return generate_error_decl(node);
@@ -439,35 +439,35 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
     }
 
     switch (node->type) {
-        case AST_VAR: return generate_var_stmt(node, attrs);
-        case AST_IMPLICIT_TYPE_VAR: return generate_typeless_var_stmt(node, attrs);
-        case AST_REF_VAR: return generate_ref_stmt(node, attrs, false);
-        case AST_IMPLICIT_TYPE_REF_VAR: return generate_typeless_ref_stmt(node, attrs, false);
-        case AST_REF_MUT_VAR: return generate_ref_stmt(node, attrs, true);
-        case AST_IMPLICIT_TYPE_REF_MUT_VAR: return generate_typeless_ref_stmt(node, attrs, true);
-        case AST_ASSIGNMENT: return generate_assign_stmt(node);
-        case AST_ADD_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::ADD);
-        case AST_SUB_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SUB);
-        case AST_MUL_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::MUL);
-        case AST_DIV_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::DIV);
-        case AST_MOD_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::MOD);
-        case AST_BIT_AND_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_AND);
-        case AST_BIT_OR_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_OR);
-        case AST_BIT_XOR_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_XOR);
-        case AST_SHL_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SHL);
-        case AST_SHR_ASSIGN: return generate_comp_assign_stmt(node, sir::BinaryOp::SHR);
-        case AST_FUNCTION_RETURN: return generate_return_stmt(node);
-        case AST_IF_CHAIN: return generate_if_stmt(node);
-        case AST_SWITCH: return generate_switch_stmt(node);
-        case AST_TRY: return generate_try_stmt(node);
-        case AST_WHILE: return generate_while_stmt(node);
-        case AST_FOR: return generate_for_stmt(node);
-        case AST_FOR_REF: return generate_for_stmt(node);
-        case AST_FOR_REF_MUT: return generate_for_stmt(node);
-        case AST_CONTINUE: return generate_continue_stmt(node);
-        case AST_BREAK: return generate_break_stmt(node);
-        case AST_META_IF: return generate_meta_if_stmt(node, MetaBlockKind::STMT);
-        case AST_META_FOR: return generate_meta_for_stmt(node, MetaBlockKind::STMT);
+        case AST_VAR_DEF: return generate_var_stmt(node, attrs);
+        case AST_TYPELESS_VAR_DEF: return generate_typeless_var_stmt(node, attrs);
+        case AST_REF_VAR_DEF: return generate_ref_stmt(node, attrs, false);
+        case AST_TYPELESS_REF_VAR_DEF: return generate_typeless_ref_stmt(node, attrs, false);
+        case AST_REF_MUT_VAR_DEF: return generate_ref_stmt(node, attrs, true);
+        case AST_TYPELESS_REF_MUT_VAR_DEF: return generate_typeless_ref_stmt(node, attrs, true);
+        case AST_ASSIGN_STMT: return generate_assign_stmt(node);
+        case AST_ADD_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::ADD);
+        case AST_SUB_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SUB);
+        case AST_MUL_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::MUL);
+        case AST_DIV_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::DIV);
+        case AST_MOD_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::MOD);
+        case AST_BIT_AND_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_AND);
+        case AST_BIT_OR_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_OR);
+        case AST_BIT_XOR_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_XOR);
+        case AST_SHL_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SHL);
+        case AST_SHR_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SHR);
+        case AST_RETURN_STMT: return generate_return_stmt(node);
+        case AST_IF_STMT: return generate_if_stmt(node);
+        case AST_SWITCH_STMT: return generate_switch_stmt(node);
+        case AST_TRY_STMT: return generate_try_stmt(node);
+        case AST_WHILE_STMT: return generate_while_stmt(node);
+        case AST_FOR_STMT: return generate_for_stmt(node);
+        case AST_FOR_REF_STMT: return generate_for_stmt(node);
+        case AST_FOR_REF_MUT_STMT: return generate_for_stmt(node);
+        case AST_CONTINUE_STMT: return generate_continue_stmt(node);
+        case AST_BREAK_STMT: return generate_break_stmt(node);
+        case AST_META_IF_STMT: return generate_meta_if_stmt(node, MetaBlockKind::STMT);
+        case AST_META_FOR_STMT: return generate_meta_for_stmt(node, MetaBlockKind::STMT);
         case AST_EXPR_STMT: return generate_expr_stmt(node);
         case AST_BLOCK: return create(generate_block(node));
         case AST_COMPLETION_TOKEN: return create(generate_expr(node));
@@ -597,7 +597,7 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
     std::optional<sir::IfElseBranch> else_branch;
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->type == AST_IF || child->type == AST_ELSE_IF) {
+        if (child->type == AST_IF_BRANCH || child->type == AST_ELSE_IF_BRANCH) {
             ASTNode *condition_node = child->first_child;
             ASTNode *block_node = condition_node->next_sibling;
 
@@ -606,7 +606,7 @@ sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
                 .condition = generate_expr(condition_node),
                 .block = create(generate_block(block_node)),
             });
-        } else if (child->type == AST_ELSE) {
+        } else if (child->type == AST_ELSE_BRANCH) {
             ASTNode *block_node = child->first_child;
 
             else_branch = sir::IfElseBranch{
@@ -662,7 +662,7 @@ sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
     };
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->type == AST_TRY_SUCCESS_CASE) {
+        if (child->type == AST_TRY_SUCCESS_BRANCH) {
             ASTNode *name_node = child->first_child;
             ASTNode *expr_node = name_node->next_sibling;
             ASTNode *block_node = expr_node->next_sibling;
@@ -673,7 +673,7 @@ sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
                 .expr = generate_expr(expr_node),
                 .block = create(generate_block(block_node)),
             };
-        } else if (child->type == AST_TRY_ERROR_CASE) {
+        } else if (child->type == AST_TRY_EXCEPT_BRANCH) {
             ASTNode *name_node = child->first_child;
             ASTNode *type_node = name_node->next_sibling;
             ASTNode *block_node = type_node->next_sibling;
@@ -684,7 +684,7 @@ sir::Stmt SIRGenerator::generate_try_stmt(ASTNode *node) {
                 .type = generate_expr(type_node),
                 .block = create(generate_block(block_node)),
             };
-        } else if (child->type == AST_TRY_ELSE_CASE) {
+        } else if (child->type == AST_TRY_ELSE_BRANCH) {
             ASTNode *block_node = child->first_child;
 
             sir_try_stmt.else_branch = sir::TryElseBranch{
@@ -720,9 +720,9 @@ sir::Stmt SIRGenerator::generate_for_stmt(ASTNode *node) {
     sir::IterKind iter_kind;
 
     switch (node->type) {
-        case AST_FOR: iter_kind = sir::IterKind::MOVE; break;
-        case AST_FOR_REF: iter_kind = sir::IterKind::REF; break;
-        case AST_FOR_REF_MUT: iter_kind = sir::IterKind::MUT; break;
+        case AST_FOR_STMT: iter_kind = sir::IterKind::MOVE; break;
+        case AST_FOR_REF_STMT: iter_kind = sir::IterKind::REF; break;
+        case AST_FOR_REF_MUT_STMT: iter_kind = sir::IterKind::MUT; break;
         default: ASSERT_UNREACHABLE;
     }
 
@@ -814,50 +814,50 @@ sir::Stmt SIRGenerator::generate_error_stmt(ASTNode *node) {
 sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
     switch (node->type) {
         case AST_INT_LITERAL: return generate_int_literal(node);
-        case AST_FLOAT_LITERAL: return generate_fp_literal(node);
-        case AST_FALSE: return generate_bool_literal(node, false);
-        case AST_TRUE: return generate_bool_literal(node, true);
+        case AST_FP_LITERAL: return generate_fp_literal(node);
+        case AST_FALSE_LITERAL: return generate_bool_literal(node, false);
+        case AST_TRUE_LITERAL: return generate_bool_literal(node, true);
         case AST_CHAR_LITERAL: return generate_char_literal(node);
-        case AST_NULL: return generate_null_literal(node);
-        case AST_NONE: return generate_none_literal(node);
-        case AST_UNDEFINED: return generate_undefined_literal(node);
-        case AST_ARRAY_EXPR: return generate_array_literal(node);
+        case AST_NULL_LITERAL: return generate_null_literal(node);
+        case AST_NONE_LITERAL: return generate_none_literal(node);
+        case AST_UNDEFINED_LITERAL: return generate_undefined_literal(node);
+        case AST_ARRAY_LITERAL: return generate_array_literal(node);
         case AST_STRING_LITERAL: return generate_string_literal(node);
-        case AST_STRUCT_INSTANTIATION: return generate_struct_literal(node);
-        case AST_ANON_STRUCT_LITERAL: return generate_typeless_struct_literal(node);
-        case AST_MAP_EXPR: return generate_map_literal(node);
-        case AST_CLOSURE: return generate_closure_literal(node);
+        case AST_STRUCT_LITERAL: return generate_struct_literal(node);
+        case AST_TYPELESS_STRUCT_LITERAL: return generate_typeless_struct_literal(node);
+        case AST_MAP_LITERAL: return generate_map_literal(node);
+        case AST_CLOSURE_LITERAL: return generate_closure_literal(node);
         case AST_IDENTIFIER: return generate_ident_expr(node);
         case AST_SELF: return generate_self(node);
-        case AST_OPERATOR_ADD: return generate_binary_expr(node, sir::BinaryOp::ADD);
-        case AST_OPERATOR_SUB: return generate_binary_expr(node, sir::BinaryOp::SUB);
-        case AST_OPERATOR_MUL: return generate_binary_expr(node, sir::BinaryOp::MUL);
-        case AST_OPERATOR_DIV: return generate_binary_expr(node, sir::BinaryOp::DIV);
-        case AST_OPERATOR_MOD: return generate_binary_expr(node, sir::BinaryOp::MOD);
-        case AST_OPERATOR_BIT_AND: return generate_binary_expr(node, sir::BinaryOp::BIT_AND);
-        case AST_OPERATOR_BIT_OR: return generate_binary_expr(node, sir::BinaryOp::BIT_OR);
-        case AST_OPERATOR_BIT_XOR: return generate_binary_expr(node, sir::BinaryOp::BIT_XOR);
-        case AST_OPERATOR_SHL: return generate_binary_expr(node, sir::BinaryOp::SHL);
-        case AST_OPERATOR_SHR: return generate_binary_expr(node, sir::BinaryOp::SHR);
-        case AST_OPERATOR_EQ: return generate_binary_expr(node, sir::BinaryOp::EQ);
-        case AST_OPERATOR_NE: return generate_binary_expr(node, sir::BinaryOp::NE);
-        case AST_OPERATOR_GT: return generate_binary_expr(node, sir::BinaryOp::GT);
-        case AST_OPERATOR_LT: return generate_binary_expr(node, sir::BinaryOp::LT);
-        case AST_OPERATOR_GE: return generate_binary_expr(node, sir::BinaryOp::GE);
-        case AST_OPERATOR_LE: return generate_binary_expr(node, sir::BinaryOp::LE);
-        case AST_OPERATOR_AND: return generate_binary_expr(node, sir::BinaryOp::AND);
-        case AST_OPERATOR_OR: return generate_binary_expr(node, sir::BinaryOp::OR);
-        case AST_OPERATOR_NEG: return generate_unary_expr(node, sir::UnaryOp::NEG);
-        case AST_OPERATOR_BIT_NOT: return generate_unary_expr(node, sir::UnaryOp::BIT_NOT);
-        case AST_OPERATOR_REF: return generate_unary_expr(node, sir::UnaryOp::REF);
+        case AST_ADD_EXPR: return generate_binary_expr(node, sir::BinaryOp::ADD);
+        case AST_SUB_EXPR: return generate_binary_expr(node, sir::BinaryOp::SUB);
+        case AST_MUL_EXPR: return generate_binary_expr(node, sir::BinaryOp::MUL);
+        case AST_DIV_EXPR: return generate_binary_expr(node, sir::BinaryOp::DIV);
+        case AST_MOD_EXPR: return generate_binary_expr(node, sir::BinaryOp::MOD);
+        case AST_BIT_AND_EXPR: return generate_binary_expr(node, sir::BinaryOp::BIT_AND);
+        case AST_BIT_OR_EXPR: return generate_binary_expr(node, sir::BinaryOp::BIT_OR);
+        case AST_BIT_XOR_EXPR: return generate_binary_expr(node, sir::BinaryOp::BIT_XOR);
+        case AST_SHL_EXPR: return generate_binary_expr(node, sir::BinaryOp::SHL);
+        case AST_SHR_EXPR: return generate_binary_expr(node, sir::BinaryOp::SHR);
+        case AST_EQ_EXPR: return generate_binary_expr(node, sir::BinaryOp::EQ);
+        case AST_NE_EXPR: return generate_binary_expr(node, sir::BinaryOp::NE);
+        case AST_GT_EXPR: return generate_binary_expr(node, sir::BinaryOp::GT);
+        case AST_LT_EXPR: return generate_binary_expr(node, sir::BinaryOp::LT);
+        case AST_GE_EXPR: return generate_binary_expr(node, sir::BinaryOp::GE);
+        case AST_LE_EXPR: return generate_binary_expr(node, sir::BinaryOp::LE);
+        case AST_AND_EXPR: return generate_binary_expr(node, sir::BinaryOp::AND);
+        case AST_OR_EXPR: return generate_binary_expr(node, sir::BinaryOp::OR);
+        case AST_NEG_EXPR: return generate_unary_expr(node, sir::UnaryOp::NEG);
+        case AST_BIT_NOT_EXPR: return generate_unary_expr(node, sir::UnaryOp::BIT_NOT);
+        case AST_REF_EXPR: return generate_unary_expr(node, sir::UnaryOp::REF);
         case AST_STAR_EXPR: return generate_star_expr(node);
-        case AST_OPERATOR_NOT: return generate_unary_expr(node, sir::UnaryOp::NOT);
-        case AST_CAST: return generate_cast_expr(node);
-        case AST_FUNCTION_CALL: return generate_call_expr(node);
-        case AST_DOT_OPERATOR: return generate_dot_expr(node);
-        case AST_IMPLICIT_DOT_OPERATOR: return generate_implicit_dot_expr(node);
-        case AST_ARRAY_ACCESS: return generate_bracket_expr(node);
-        case AST_RANGE: return generate_range_expr(node);
+        case AST_NOT_EXPR: return generate_unary_expr(node, sir::UnaryOp::NOT);
+        case AST_CAST_EXPR: return generate_cast_expr(node);
+        case AST_CALL_EXPR: return generate_call_expr(node);
+        case AST_DOT_EXPR: return generate_dot_expr(node);
+        case AST_IMPLICIT_DOT_EXPR: return generate_implicit_dot_expr(node);
+        case AST_BRACKET_EXPR: return generate_bracket_expr(node);
+        case AST_RANGE_EXPR: return generate_range_expr(node);
         case AST_TRY_EXPR: return generate_try_expr(node);
         case AST_TUPLE_EXPR: return generate_tuple_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
@@ -875,11 +875,11 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_ADDR: return generate_primitive_type(node, sir::Primitive::ADDR);
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);
-        case AST_FUNCTION_DATA_TYPE: return generate_func_type(node);
-        case AST_OPTIONAL_DATA_TYPE: return generate_optional_type(node);
+        case AST_FUNC_TYPE: return generate_func_type(node);
+        case AST_OPTIONAL_TYPE: return generate_optional_type(node);
         case AST_RESULT_TYPE: return generate_result_type(node);
         case AST_CLOSURE_TYPE: return generate_closure_type(node);
-        case AST_META_EXPR: return generate_meta_access(node);
+        case AST_META_ACCESS: return generate_meta_access(node);
         case AST_PAREN_EXPR: return generate_expr(node->first_child);
         case AST_COMPLETION_TOKEN: return generate_completion_token(node);
         default: return generate_error_expr(node);
@@ -1683,9 +1683,9 @@ char SIRGenerator::decode_char(std::string_view value, unsigned &index) {
 sir::UseItem SIRGenerator::generate_use_item(ASTNode *node) {
     switch (node->type) {
         case AST_IDENTIFIER: return generate_use_ident(node);
-        case AST_USE_REBINDING: return generate_use_rebind(node);
-        case AST_DOT_OPERATOR: return generate_use_dot_expr(node);
-        case AST_USE_TREE_LIST: return generate_use_list(node);
+        case AST_USE_REBIND: return generate_use_rebind(node);
+        case AST_DOT_EXPR: return generate_use_dot_expr(node);
+        case AST_USE_LIST: return generate_use_list(node);
         case AST_COMPLETION_TOKEN: return generate_use_completion_token(node);
         default: return generate_error_use_item(node);
     }

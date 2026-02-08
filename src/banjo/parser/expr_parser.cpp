@@ -27,60 +27,60 @@ ParseResult ExprParser::parse_type() {
 
 ParseResult ExprParser::parse_range_level() {
     return parse_level(&ExprParser::parse_or_level, [](TokenType type) {
-        return type == TKN_DOT_DOT ? AST_RANGE : AST_NONE;
+        return type == TKN_DOT_DOT ? AST_RANGE_EXPR : AST_NONE_LITERAL;
     });
 }
 
 ParseResult ExprParser::parse_or_level() {
     return parse_level(&ExprParser::parse_and_level, [](TokenType type) {
-        return type == TKN_OR_OR ? AST_OPERATOR_OR : AST_NONE;
+        return type == TKN_OR_OR ? AST_OR_EXPR : AST_NONE_LITERAL;
     });
 }
 
 ParseResult ExprParser::parse_and_level() {
     return parse_level(&ExprParser::parse_cmp_level, [](TokenType type) {
-        return type == TKN_AND_AND ? AST_OPERATOR_AND : AST_NONE;
+        return type == TKN_AND_AND ? AST_AND_EXPR : AST_NONE_LITERAL;
     });
 }
 
 ParseResult ExprParser::parse_cmp_level() {
     return parse_level(&ExprParser::parse_bit_or_level, [](TokenType type) {
         switch (type) {
-            case TKN_EQ_EQ: return AST_OPERATOR_EQ;
-            case TKN_NE: return AST_OPERATOR_NE;
-            case TKN_GT: return AST_OPERATOR_GT;
-            case TKN_LT: return AST_OPERATOR_LT;
-            case TKN_GE: return AST_OPERATOR_GE;
-            case TKN_LE: return AST_OPERATOR_LE;
-            default: return AST_NONE;
+            case TKN_EQ_EQ: return AST_EQ_EXPR;
+            case TKN_NE: return AST_NE_EXPR;
+            case TKN_GT: return AST_GT_EXPR;
+            case TKN_LT: return AST_LT_EXPR;
+            case TKN_GE: return AST_GE_EXPR;
+            case TKN_LE: return AST_LE_EXPR;
+            default: return AST_NONE_LITERAL;
         }
     });
 }
 
 ParseResult ExprParser::parse_bit_or_level() {
     return parse_level(&ExprParser::parse_bit_xor_level, [](TokenType type) {
-        return type == TKN_OR ? AST_OPERATOR_BIT_OR : AST_NONE;
+        return type == TKN_OR ? AST_BIT_OR_EXPR : AST_NONE_LITERAL;
     });
 }
 
 ParseResult ExprParser::parse_bit_xor_level() {
     return parse_level(&ExprParser::parse_bit_and_level, [](TokenType type) {
-        return type == TKN_CARET ? AST_OPERATOR_BIT_XOR : AST_NONE;
+        return type == TKN_CARET ? AST_BIT_XOR_EXPR : AST_NONE_LITERAL;
     });
 }
 
 ParseResult ExprParser::parse_bit_and_level() {
     return parse_level(&ExprParser::parse_bit_shift_level, [](TokenType type) {
-        return type == TKN_AND ? AST_OPERATOR_BIT_AND : AST_NONE;
+        return type == TKN_AND ? AST_BIT_AND_EXPR : AST_NONE_LITERAL;
     });
 }
 
 ParseResult ExprParser::parse_bit_shift_level() {
     return parse_level(&ExprParser::parse_add_level, [](TokenType type) {
         switch (type) {
-            case TKN_SHL: return AST_OPERATOR_SHL;
-            case TKN_SHR: return AST_OPERATOR_SHR;
-            default: return AST_NONE;
+            case TKN_SHL: return AST_SHL_EXPR;
+            case TKN_SHR: return AST_SHR_EXPR;
+            default: return AST_NONE_LITERAL;
         }
     });
 }
@@ -88,9 +88,9 @@ ParseResult ExprParser::parse_bit_shift_level() {
 ParseResult ExprParser::parse_add_level() {
     return parse_level(&ExprParser::parse_mul_level, [](TokenType type) {
         switch (type) {
-            case TKN_PLUS: return AST_OPERATOR_ADD;
-            case TKN_MINUS: return AST_OPERATOR_SUB;
-            default: return AST_NONE;
+            case TKN_PLUS: return AST_ADD_EXPR;
+            case TKN_MINUS: return AST_SUB_EXPR;
+            default: return AST_NONE_LITERAL;
         }
     });
 }
@@ -98,10 +98,10 @@ ParseResult ExprParser::parse_add_level() {
 ParseResult ExprParser::parse_mul_level() {
     return parse_level(&ExprParser::parse_cast_level, [](TokenType type) {
         switch (type) {
-            case TKN_STAR: return AST_OPERATOR_MUL;
-            case TKN_SLASH: return AST_OPERATOR_DIV;
-            case TKN_PERCENT: return AST_OPERATOR_MOD;
-            default: return AST_NONE;
+            case TKN_STAR: return AST_MUL_EXPR;
+            case TKN_SLASH: return AST_DIV_EXPR;
+            case TKN_PERCENT: return AST_MOD_EXPR;
+            default: return AST_NONE_LITERAL;
         }
     });
 }
@@ -123,7 +123,7 @@ ParseResult ExprParser::parse_cast_level() {
         }
 
         cast_node.append_child(result.node);
-        return cast_node.build_with_inferred_range(AST_CAST);
+        return cast_node.build_with_inferred_range(AST_CAST_EXPR);
     } else {
         return result;
     }
@@ -157,13 +157,13 @@ ParseResult ExprParser::parse_unary_level() {
 
     ASTNodeType type;
     switch (token->type) {
-        case TKN_MINUS: type = AST_OPERATOR_NEG; break;
-        case TKN_TILDE: type = AST_OPERATOR_BIT_NOT; break;
-        case TKN_AND: type = AST_OPERATOR_REF; break;
+        case TKN_MINUS: type = AST_NEG_EXPR; break;
+        case TKN_TILDE: type = AST_BIT_NOT_EXPR; break;
+        case TKN_AND: type = AST_REF_EXPR; break;
         case TKN_STAR: type = AST_STAR_EXPR; break;
-        case TKN_NOT: type = AST_OPERATOR_NOT; break;
-        case TKN_QUESTION: type = AST_OPTIONAL_DATA_TYPE; break;
-        case TKN_DOT: type = AST_IMPLICIT_DOT_OPERATOR; break;
+        case TKN_NOT: type = AST_NOT_EXPR; break;
+        case TKN_QUESTION: type = AST_OPTIONAL_TYPE; break;
+        case TKN_DOT: type = AST_IMPLICIT_DOT_EXPR; break;
         case TKN_TRY: type = AST_TRY_EXPR; break;
         default: return parse_post_operand();
     }
@@ -211,11 +211,11 @@ ParseResult ExprParser::parse_operand() {
         case TKN_LITERAL: return parse_number_literal();
         case TKN_CHARACTER: return parse_char_literal();
         case TKN_IDENTIFIER: return parser.consume_into_node(AST_IDENTIFIER);
-        case TKN_FALSE: return parser.consume_into_node(AST_FALSE);
-        case TKN_TRUE: return parser.consume_into_node(AST_TRUE);
-        case TKN_NULL: return parser.consume_into_node(AST_NULL);
-        case TKN_NONE: return parser.consume_into_node(AST_NONE);
-        case TKN_UNDEFINED: return parser.consume_into_node(AST_UNDEFINED);
+        case TKN_FALSE: return parser.consume_into_node(AST_FALSE_LITERAL);
+        case TKN_TRUE: return parser.consume_into_node(AST_TRUE_LITERAL);
+        case TKN_NULL: return parser.consume_into_node(AST_NULL_LITERAL);
+        case TKN_NONE: return parser.consume_into_node(AST_NONE_LITERAL);
+        case TKN_UNDEFINED: return parser.consume_into_node(AST_UNDEFINED_LITERAL);
         case TKN_SELF: return parser.consume_into_node(AST_SELF);
         case TKN_STRING: return parse_string_literal();
         case TKN_LBRACKET: return parse_array_literal();
@@ -250,7 +250,7 @@ ParseResult ExprParser::parse_operand() {
 
 ParseResult ExprParser::parse_number_literal() {
     if (stream.get()->value.find('.') != std::string::npos) {
-        return parser.consume_into_node(AST_FLOAT_LITERAL);
+        return parser.consume_into_node(AST_FP_LITERAL);
     } else {
         return parser.consume_into_node(AST_INT_LITERAL);
     }
@@ -275,7 +275,7 @@ ParseResult ExprParser::parse_string_literal() {
 }
 
 ParseResult ExprParser::parse_array_literal() {
-    ASTNodeType type = AST_ARRAY_EXPR;
+    ASTNodeType type = AST_ARRAY_LITERAL;
 
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume '['
@@ -291,7 +291,7 @@ ParseResult ExprParser::parse_array_literal() {
             }
 
             if (stream.get()->is(TKN_COLON)) {
-                type = AST_MAP_EXPR;
+                type = AST_MAP_LITERAL;
 
                 NodeBuilder pair_node = parser.build_node();
                 pair_node.append_child(result.node);
@@ -299,7 +299,7 @@ ParseResult ExprParser::parse_array_literal() {
                 result = ExprParser(parser, true).parse();
                 pair_node.append_child(result.node);
 
-                node.append_child(pair_node.build(AST_MAP_EXPR_PAIR));
+                node.append_child(pair_node.build(AST_MAP_LITERAL_ENTRY));
             } else if (stream.get()->is(TKN_SEMI)) {
                 type = AST_STATIC_ARRAY_TYPE;
                 node.consume(); // Consume ';'
@@ -370,11 +370,11 @@ ParseResult ExprParser::parse_anon_struct_literal() {
 
     ParseResult result = parse_struct_literal_body();
     if (!result.is_valid) {
-        return node.build_error(AST_ANON_STRUCT_LITERAL);
+        return node.build_error(AST_TYPELESS_STRUCT_LITERAL);
     }
     node.append_child(result.node);
 
-    return node.build(AST_ANON_STRUCT_LITERAL);
+    return node.build(AST_TYPELESS_STRUCT_LITERAL);
 }
 
 ParseResult ExprParser::parse_closure() {
@@ -410,7 +410,7 @@ ParseResult ExprParser::parse_closure() {
     }
     node.append_child(result.node);
 
-    return node.build(AST_CLOSURE);
+    return node.build(AST_CLOSURE_LITERAL);
 }
 
 ParseResult ExprParser::parse_func_type() {
@@ -436,7 +436,7 @@ ParseResult ExprParser::parse_func_type() {
         node.append_child(parser.create_node(AST_EMPTY));
     }
 
-    return node.build(AST_FUNCTION_DATA_TYPE);
+    return node.build(AST_FUNC_TYPE);
 }
 
 ParseResult ExprParser::parse_meta_expr() {
@@ -448,7 +448,7 @@ ParseResult ExprParser::parse_meta_expr() {
     builder.consume(); // Consume ')'
 
     builder.append_child(result.node);
-    return {builder.build(AST_META_EXPR), result.is_valid};
+    return {builder.build(AST_META_ACCESS), result.is_valid};
 }
 
 ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
@@ -460,16 +460,15 @@ ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
     ParseResult result = parse_operand();
     operator_node.append_child(result.node);
 
-    return {operator_node.build(AST_DOT_OPERATOR), result.is_valid};
+    return {operator_node.build(AST_DOT_EXPR), result.is_valid};
 }
 
 ParseResult ExprParser::parse_call_expr(ASTNode *lhs_node) {
-    ASTNode *node = parser.create_node(AST_FUNCTION_CALL);
+    ASTNode *node = parser.create_node(AST_CALL_EXPR);
     node->append_child(lhs_node);
 
-    ParseResult result = parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RPAREN, [this]() {
-        return ExprParser(parser, true).parse();
-    });
+    ParseResult result =
+        parser.parse_list(AST_ARG_LIST, TKN_RPAREN, [this]() { return ExprParser(parser, true).parse(); });
     node->append_child(result.node);
 
     node->set_range_from_children();
@@ -481,11 +480,10 @@ ParseResult ExprParser::parse_bracket_expr(ASTNode *lhs_node) {
     node.set_start_position(lhs_node->range.start);
     node.append_child(lhs_node);
 
-    ParseResult result =
-        parser.parse_list(AST_FUNCTION_ARGUMENT_LIST, TKN_RBRACKET, [this]() { return ExprParser(parser).parse(); });
+    ParseResult result = parser.parse_list(AST_ARG_LIST, TKN_RBRACKET, [this]() { return ExprParser(parser).parse(); });
     node.append_child(result.node);
 
-    return {node.build(AST_ARRAY_ACCESS), result.is_valid};
+    return {node.build(AST_BRACKET_EXPR), result.is_valid};
 }
 
 ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
@@ -497,14 +495,14 @@ ParseResult ExprParser::parse_struct_literal(ASTNode *lhs_node) {
     node.append_child(result.node);
 
     if (result.is_valid) {
-        return node.build(AST_STRUCT_INSTANTIATION);
+        return node.build(AST_STRUCT_LITERAL);
     } else {
-        return node.build_error(AST_STRUCT_INSTANTIATION);
+        return node.build_error(AST_STRUCT_LITERAL);
     }
 }
 
 ParseResult ExprParser::parse_struct_literal_body() {
-    return parser.parse_list(AST_STRUCT_FIELD_VALUE_LIST, TKN_RBRACE, [this]() -> ParseResult {
+    return parser.parse_list(AST_STRUCT_LITERAL_ENTRY_LIST, TKN_RBRACE, [this]() -> ParseResult {
         if (parser.is_at_completion_point()) {
             return {parser.parse_completion_point(), true};
         }
@@ -525,7 +523,7 @@ ParseResult ExprParser::parse_struct_literal_body() {
             entry_node.append_child(parse().node);
         }
 
-        return entry_node.build(AST_STRUCT_FIELD_VALUE);
+        return entry_node.build(AST_STRUCT_LITERAL_ENTRY);
     });
 }
 
@@ -541,7 +539,7 @@ ParseResult ExprParser::parse_level(
     ASTNode *current_node = result.node;
     ASTNodeType type = token_checker(stream.get()->type);
 
-    while (type != AST_NONE) {
+    while (type != AST_NONE_LITERAL) {
         Token *token = stream.consume();
         unsigned token_index = stream.get_position() - 1;
 
