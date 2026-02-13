@@ -61,6 +61,43 @@ struct Array[T] {
         self.slice.length += 1;
     }
 
+    pub func insert(mut self, index: usize, value: T) {
+        if index > self.slice.length {
+            panic(
+                "insertion index out of bounds (index: " +
+                convert.to_string(index) +
+                ", array length: " +
+                convert.to_string(self.slice.length) +
+                ")",
+            );
+        }
+
+        self.ensure_capacity(self.slice.length + 1);
+
+        var num_bytes = meta(T).size * (self.slice.length - index);
+        memory.copy(&self.slice.data[index], &self.slice.data[index + 1], num_bytes);
+
+        self.slice.data[index] = value;
+        self.slice.length += 1;
+    }
+
+    pub func remove(mut self, index: usize) {
+        if index >= self.slice.length {
+            panic(
+                "index to remove out of bounds (index: " +
+                convert.to_string(index) +
+                ", array length: " +
+                convert.to_string(self.slice.length) +
+                ")",
+            );
+        }
+        
+        var num_bytes = meta(T).size * (self.slice.length - index);
+        memory.copy(&self.slice.data[index + 1], &self.slice.data[index], num_bytes);
+
+        self.slice.length -= 1;
+    }
+
     pub func resize(mut self, length: usize) {
         self.slice.length = length;
         self.ensure_capacity(length);
@@ -79,6 +116,38 @@ struct Array[T] {
             slice: Slice[T].new(data, self.slice.length),
             capacity: self.slice.length,
         };
+    }
+
+    pub func find(self, predicate: |value: ref T| -> bool) -> ?usize {
+        for i in 0..self.slice.length {
+            if predicate(self.slice.data[i]) {
+                return i;
+            }
+        }
+        
+        return none;
+    }
+
+    pub func filter(@byval self, predicate: |value: ref T| -> bool) -> Array[T] {
+        var result: Array[T] = [];
+        
+        for value in self {
+            if predicate(value) {
+                result.append(value);
+            }
+        }
+        
+        return result;
+    }
+
+    pub func map[R](self, function: |value: ref T| -> R) -> Array[R] {
+        var result = Array[R].sized(self.slice.length);
+
+        for i in 0..self.slice.length {
+            result[i] = function(self.slice.data[i]);
+        }
+
+        return result;
     }
 
     pub func __index__(self, index: usize) -> ref T {

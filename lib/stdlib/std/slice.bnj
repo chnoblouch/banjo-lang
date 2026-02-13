@@ -86,8 +86,14 @@ struct Slice[T] {
     }
 
     func check_bounds(self, index: usize) {
-        if index < 0 || index >= self.length {
-            panic("index out of bounds");
+        if index >= self.length {
+            panic(
+                "index out of bounds (index: " +
+                convert.to_string(index) +
+                ", array length: " +
+                convert.to_string(self.length) +
+                ")",
+            );
         }
     }
 }
