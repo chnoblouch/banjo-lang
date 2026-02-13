@@ -115,6 +115,11 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     }
 
     bool eval_meta_exprs = !(flags & DONT_EVAL_META_EXPRS);
+    bool is_ref = false;
+
+    if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
+        is_ref = unary_expr->op == sir::UnaryOp::REF || unary_expr->op == sir::UnaryOp::REF_MUT;
+    }
 
     SIR_VISIT_EXPR(
         expr,
@@ -177,15 +182,17 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         expr = type_alias->type;
     }
 
-    if (auto reference_type = expr.get_type().match<sir::ReferenceType>()) {
-        expr = analyzer.create(
-            sir::UnaryExpr{
-                .ast_node = expr.get_ast_node(),
-                .type = reference_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = expr,
-            }
-        );
+    if (!is_ref) {
+        if (auto reference_type = expr.get_type().match<sir::ReferenceType>()) {
+            expr = analyzer.create(
+                sir::UnaryExpr{
+                    .ast_node = expr.get_ast_node(),
+                    .type = reference_type->base_type,
+                    .op = sir::UnaryOp::DEREF,
+                    .value = expr,
+                }
+            );
+        }
     }
 
     return Result::SUCCESS;
@@ -699,14 +706,14 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     // expressions twice.
     ASSUME(unary_expr.op != sir::UnaryOp::DEREF);
 
-    partial_result = analyze_value_uncoerced(unary_expr.value);
+    partial_result = analyze_uncoerced(unary_expr.value);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
 
     sir::Expr value_type = unary_expr.value.get_type();
 
-    if (unary_expr.op == sir::UnaryOp::REF) {
+    if (unary_expr.op == sir::UnaryOp::ADDR) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         unary_expr.type = analyzer.create(
@@ -772,6 +779,33 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         }
 
         unary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+    } else if (unary_expr.op == sir::UnaryOp::REF || unary_expr.op == sir::UnaryOp::REF_MUT) {
+        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        bool mut = unary_expr.op == sir::UnaryOp::REF_MUT;
+
+        if (unary_expr.value.is_type()) {
+            out_expr = analyzer.create(
+                sir::ReferenceType{
+                    .ast_node = nullptr,
+                    .mut = mut,
+                    .base_type = unary_expr.value,
+                }
+            );
+        } else {
+            unary_expr.op = sir::UnaryOp::ADDR;
+
+            unary_expr.type = analyzer.create(
+                sir::ReferenceType{
+                    .ast_node = nullptr,
+                    .mut = mut,
+                    .base_type = unary_expr.value.get_type(),
+                }
+            );
+        }
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -854,7 +888,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                             .base_type = call_expr.args[0].get_type(),
                         }
                     ),
-                    .op = sir::UnaryOp::REF,
+                    .op = sir::UnaryOp::ADDR,
                     .value = call_expr.args[0],
                 }
             );

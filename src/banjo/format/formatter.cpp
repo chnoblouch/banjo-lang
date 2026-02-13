@@ -138,7 +138,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_OR_EXPR: format_binary_expr(node, whitespace); break;
         case AST_NEG_EXPR: format_unary_expr(node, whitespace); break;
         case AST_BIT_NOT_EXPR: format_unary_expr(node, whitespace); break;
-        case AST_REF_EXPR: format_unary_expr(node, whitespace); break;
+        case AST_ADDR_EXPR: format_unary_expr(node, whitespace); break;
         case AST_STAR_EXPR: format_unary_expr(node, whitespace); break;
         case AST_NOT_EXPR: format_unary_expr(node, whitespace); break;
         case AST_CAST_EXPR: format_binary_expr(node, whitespace); break;

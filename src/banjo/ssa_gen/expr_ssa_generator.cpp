@@ -364,9 +364,11 @@ StoredValue ExprSSAGenerator::generate_unary_expr(const sir::UnaryExpr &unary_ex
     switch (unary_expr.op) {
         case sir::UnaryOp::NEG: return generate_neg(unary_expr);
         case sir::UnaryOp::BIT_NOT: return generate_bit_not(unary_expr);
-        case sir::UnaryOp::REF: return generate_ref(unary_expr);
+        case sir::UnaryOp::ADDR: return generate_ref(unary_expr);
         case sir::UnaryOp::DEREF: return generate_deref(unary_expr);
         case sir::UnaryOp::NOT: return generate_bool_expr(expr);
+        case sir::UnaryOp::REF: ASSERT_UNREACHABLE;
+        case sir::UnaryOp::REF_MUT: ASSERT_UNREACHABLE;
     }
 }
 

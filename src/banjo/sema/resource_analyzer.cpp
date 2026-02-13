@@ -494,7 +494,7 @@ Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, Context 
 
         ctx.in_pointer = true;
         return result;
-    } else if (unary_expr.op == sir::UnaryOp::REF) {
+    } else if (unary_expr.op == sir::UnaryOp::ADDR) {
         return analyze_expr(unary_expr.value, false, ctx.conditional);
     } else {
         return analyze_expr(unary_expr.value, ctx);

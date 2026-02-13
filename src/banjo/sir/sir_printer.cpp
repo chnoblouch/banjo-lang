@@ -793,9 +793,11 @@ void Printer::print_unary_expr(const UnaryExpr &unary_expr) {
     switch (unary_expr.op) {
         case UnaryOp::NEG: PRINT_FIELD("op", "NEG"); break;
         case UnaryOp::BIT_NOT: PRINT_FIELD("op", "BIT_NOT"); break;
-        case UnaryOp::REF: PRINT_FIELD("op", "REF"); break;
+        case UnaryOp::ADDR: PRINT_FIELD("op", "ADDR"); break;
         case UnaryOp::DEREF: PRINT_FIELD("op", "DEREF"); break;
         case UnaryOp::NOT: PRINT_FIELD("op", "NOT"); break;
+        case UnaryOp::REF: PRINT_FIELD("op", "REF"); break;
+        case UnaryOp::REF_MUT: PRINT_FIELD("op", "REF_MUT"); break;
     }
 
     PRINT_EXPR_FIELD("type", unary_expr.type);

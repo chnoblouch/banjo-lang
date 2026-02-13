@@ -117,11 +117,16 @@ void PeepholeOptimizer::optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &blo
             ssa::Operand src = iter->get_operand(2);
             ssa::Operand size_operand = iter->get_operand(3);
 
-            if (!dst.is_register() || !src.is_register() || !size_operand.is_int_immediate()) {
+            if (!dst.is_register() || !src.is_register()) {
+                return;
+            }
+
+            if (!size_operand.is_int_immediate() || size_operand.get_int_immediate().is_negative()) {
                 return;
             }
 
             unsigned size = static_cast<unsigned>(size_operand.get_int_immediate().to_u64());
+            
             unsigned usize = get_target()->get_data_layout().get_register_size();
             ssa::Operand size_as_type = ssa::Operand::from_type({ssa::Primitive::U8, size});
 

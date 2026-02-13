@@ -53,7 +53,7 @@ sir::Expr create_unary_ref(sir::Module &mod, sir::Expr base_value) {
                     .base_type = base_value.get_type(),
                 }
             ),
-            .op = sir::UnaryOp::REF,
+            .op = sir::UnaryOp::ADDR,
             .value = base_value,
         }
     );

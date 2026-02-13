@@ -17,7 +17,7 @@ void PointerEscapeChecker::check_return_stmt(sir::ReturnStmt &return_stmt) {
 
 void PointerEscapeChecker::check_escaping_value(sir::Stmt stmt, sir::Expr value) {
     if (auto unary_expr = value.match<sir::UnaryExpr>()) {
-        if (unary_expr->op != sir::UnaryOp::REF) {
+        if (unary_expr->op != sir::UnaryOp::ADDR) {
             return;
         }
 

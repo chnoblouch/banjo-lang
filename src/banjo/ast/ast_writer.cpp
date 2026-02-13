@@ -141,7 +141,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_OR_EXPR: return "OR_EXPR";
         case AST_NEG_EXPR: return "NEG_EXPR";
         case AST_BIT_NOT_EXPR: return "BIT_NOT_EXPR";
-        case AST_REF_EXPR: return "REF_EXPR";
+        case AST_ADDR_EXPR: return "REF_EXPR";
         case AST_STAR_EXPR: return "STAR_EXPR";
         case AST_NOT_EXPR: return "NOT_EXPR";
         case AST_CAST_EXPR: return "CAST_EXPR";
@@ -150,6 +150,8 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_DOT_EXPR: return "DOT_EXPR";
         case AST_IMPLICIT_DOT_EXPR: return "IMPLICIT_DOT_EXPR";
         case AST_RANGE_EXPR: return "RANGE_EXPR";
+        case AST_REF_EXPR: return "REF_EXPR";
+        case AST_REF_MUT_EXPR: return "REF_MUT_EXPR";
         case AST_TRY_EXPR: return "TRY_EXPR";
         case AST_TUPLE_EXPR: return "TUPLE_EXPR";
         case AST_BRACKET_EXPR: return "BRACKET_EXPR";

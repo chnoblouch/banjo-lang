@@ -159,17 +159,24 @@ ParseResult ExprParser::parse_unary_level() {
     switch (token->type) {
         case TKN_MINUS: type = AST_NEG_EXPR; break;
         case TKN_TILDE: type = AST_BIT_NOT_EXPR; break;
-        case TKN_AND: type = AST_REF_EXPR; break;
+        case TKN_AND: type = AST_ADDR_EXPR; break;
         case TKN_STAR: type = AST_STAR_EXPR; break;
         case TKN_NOT: type = AST_NOT_EXPR; break;
         case TKN_QUESTION: type = AST_OPTIONAL_TYPE; break;
         case TKN_DOT: type = AST_IMPLICIT_DOT_EXPR; break;
+        case TKN_REF: type = AST_REF_EXPR; break;
         case TKN_TRY: type = AST_TRY_EXPR; break;
         default: return parse_post_operand();
     }
 
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume operator
+
+    if (type == AST_REF_EXPR && stream.get()->is(TKN_MUT)) {
+        node.consume();
+        type = AST_REF_MUT_EXPR;
+    }
+
     ParseResult result = parse_unary_level();
     node.append_child(result.node);
     return {node.build(type), result.is_valid};

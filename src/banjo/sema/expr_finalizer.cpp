@@ -156,7 +156,7 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
         sir::UnaryExpr{
             .ast_node = inout_expr.get_ast_node(),
             .type = &reference_type,
-            .op = sir::UnaryOp::REF,
+            .op = sir::UnaryOp::ADDR,
             .value = inout_expr,
         }
     );

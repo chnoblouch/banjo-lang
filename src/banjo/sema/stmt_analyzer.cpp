@@ -148,7 +148,7 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     }
 
     if (auto unary_expr = return_stmt.value.match<sir::UnaryExpr>()) {
-        if (unary_expr->op != sir::UnaryOp::REF || !unary_expr->type.is<sir::ReferenceType>()) {
+        if (unary_expr->op != sir::UnaryOp::ADDR || !unary_expr->type.is<sir::ReferenceType>()) {
             return;
         }
 
