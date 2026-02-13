@@ -1,5 +1,6 @@
 #include "generic_arg_inference.hpp"
 
+#include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -92,6 +93,8 @@ Result GenericArgInference::infer(const sir::Expr &param_type, const sir::Expr &
         return infer_on_ident(*ident_expr, arg_type);
     } else if (auto star_expr = param_type.match<sir::StarExpr>()) {
         return infer_on_pointer_type(*star_expr, arg_type);
+    } else if (auto closure_type = param_type.match<sir::ClosureType>()) {
+        return infer_on_closure_type(*closure_type, arg_type);
     } else if (auto reference_type = param_type.match<sir::ReferenceType>()) {
         return infer_on_reference_type(*reference_type, arg_type);
     } else {
@@ -123,6 +126,32 @@ Result GenericArgInference::infer_on_ident(const sir::IdentExpr &ident_expr, con
 Result GenericArgInference::infer_on_pointer_type(const sir::StarExpr &star_expr, const sir::Expr &arg_type) {
     if (auto arg_pointer_type = arg_type.match<sir::PointerType>()) {
         return infer(star_expr.value, arg_pointer_type->base_type);
+    } else {
+        return Result::SUCCESS;
+    }
+}
+
+Result GenericArgInference::infer_on_closure_type(const sir::ClosureType &closure_type, const sir::Expr &arg_type) {
+    if (auto arg_closure_type = arg_type.match<sir::ClosureType>()) {
+        Result result = Result::SUCCESS;
+        Result partial_result;
+
+        const sir::FuncType &func_type = closure_type.func_type;
+        const sir::FuncType &arg_func_type = arg_closure_type->func_type;
+
+        for (unsigned i = 0; i < std::min(func_type.params.size(), arg_func_type.params.size()); i++) {
+            partial_result = infer(func_type.params[i].type, arg_func_type.params[i].type);
+            if (partial_result != Result::SUCCESS) {
+                result = Result::ERROR;
+            }
+        }
+
+        partial_result = infer(func_type.return_type, arg_func_type.return_type);
+        if (partial_result != Result::SUCCESS) {
+            result = Result::ERROR;
+        }
+
+        return result;
     } else {
         return Result::SUCCESS;
     }

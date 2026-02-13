@@ -41,6 +41,7 @@ private:
     Result infer(const sir::Expr &param_type, const sir::Expr &arg_type);
     Result infer_on_ident(const sir::IdentExpr &ident_expr, const sir::Expr &arg_type);
     Result infer_on_pointer_type(const sir::StarExpr &star_expr, const sir::Expr &arg_type);
+    Result infer_on_closure_type(const sir::ClosureType &closure_type, const sir::Expr &arg_type);
     Result infer_on_reference_type(const sir::ReferenceType &reference_type, const sir::Expr &arg_type);
 };
 
