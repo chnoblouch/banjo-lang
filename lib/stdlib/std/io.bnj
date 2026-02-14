@@ -9,7 +9,13 @@ proto Read {
 
         while num_bytes < data.length {
             var sub_slice = data.sub(num_bytes, data.length - num_bytes);
-            num_bytes += try self.read(sub_slice);
+            var new_bytes = try self.read(sub_slice);
+        
+            if new_bytes == 0 {
+                return Error.new(.END_OF_DATA);
+            } else {
+                num_bytes += new_bytes;
+            }
         }
     }
 
@@ -165,6 +171,7 @@ struct Error {
         NOT_FOUND,
         PERMISSION_DENIED,
         ALREADY_EXISTS,
+        END_OF_DATA,
         UNKNOWN,
     }
 
