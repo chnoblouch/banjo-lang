@@ -158,6 +158,7 @@ static const ArgumentParser::Command COMMAND_RUN{
     "Build and run the current package",
     {
         OPTION_HELP,
+        OPTION_TARGET,
         OPTION_HOT_RELOAD,
         OPTION_CONFIG,
         OPTION_OPT_LEVEL,
@@ -460,6 +461,11 @@ void CLI::execute_build() {
 
 void CLI::execute_run() {
     load_config();
+
+    if (!target.is_executable_on_host()) {
+        error("cannot run '" + target.to_string() + "' binaries on this platform");
+    }
+
     build();
 
     if (hot_reloading_enabled) {

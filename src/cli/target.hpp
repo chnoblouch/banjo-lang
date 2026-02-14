@@ -18,6 +18,7 @@ struct Target {
     Target(std::string arch, std::string os, std::optional<std::string> env);
 
     std::string to_string() const;
+    bool is_executable_on_host();
 
     bool operator==(const Target &rhs) const = default;
     bool operator!=(const Target &rhs) const = default;

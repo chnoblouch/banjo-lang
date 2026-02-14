@@ -52,6 +52,20 @@ std::string Target::to_string() const {
     }
 }
 
+bool Target::is_executable_on_host() {
+    Target host_target = host();
+
+    if (*this == host_target) {
+        return true;
+    }
+
+    if (host_target.os == "windows" && os == "windows" && env == "gnu") {
+        return true;
+    }
+
+    return false;
+}
+
 std::vector<Target> Target::list_available() {
     return {
         Target("x86_64", "windows", "msvc"),
