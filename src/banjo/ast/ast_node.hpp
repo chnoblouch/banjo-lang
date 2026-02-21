@@ -124,6 +124,7 @@ enum ASTNodeType : std::uint8_t {
     AST_RANGE_EXPR,
     AST_REF_EXPR,
     AST_REF_MUT_EXPR,
+    AST_SHARE_EXPR,
     AST_TRY_EXPR,
     AST_TUPLE_EXPR,
     AST_BRACKET_EXPR,

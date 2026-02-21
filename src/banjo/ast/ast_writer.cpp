@@ -152,6 +152,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_RANGE_EXPR: return "RANGE_EXPR";
         case AST_REF_EXPR: return "REF_EXPR";
         case AST_REF_MUT_EXPR: return "REF_MUT_EXPR";
+        case AST_SHARE_EXPR: return "SHARE_EXPR";
         case AST_TRY_EXPR: return "TRY_EXPR";
         case AST_TUPLE_EXPR: return "TUPLE_EXPR";
         case AST_BRACKET_EXPR: return "BRACKET_EXPR";

@@ -391,6 +391,7 @@ StoredValue ExprSSAGenerator::generate_unary_expr(const sir::UnaryExpr &unary_ex
         case sir::UnaryOp::NOT: return generate_bool_expr(expr);
         case sir::UnaryOp::REF: ASSERT_UNREACHABLE;
         case sir::UnaryOp::REF_MUT: ASSERT_UNREACHABLE;
+        case sir::UnaryOp::SHARE: ASSERT_UNREACHABLE;
     }
 }
 

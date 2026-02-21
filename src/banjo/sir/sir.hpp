@@ -757,6 +757,7 @@ enum class UnaryOp {
     NOT,
     REF,
     REF_MUT,
+    SHARE,
 };
 
 struct UnaryExpr {

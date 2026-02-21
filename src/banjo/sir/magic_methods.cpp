@@ -44,6 +44,7 @@ std::string_view look_up(sir::UnaryOp op) {
         case sir::UnaryOp::NOT: ASSERT_UNREACHABLE;
         case sir::UnaryOp::REF: ASSERT_UNREACHABLE;
         case sir::UnaryOp::REF_MUT: ASSERT_UNREACHABLE;
+        case sir::UnaryOp::SHARE: ASSERT_UNREACHABLE;
     }
 }
 

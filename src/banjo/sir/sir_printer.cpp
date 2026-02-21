@@ -798,6 +798,7 @@ void Printer::print_unary_expr(const UnaryExpr &unary_expr) {
         case UnaryOp::NOT: PRINT_FIELD("op", "NOT"); break;
         case UnaryOp::REF: PRINT_FIELD("op", "REF"); break;
         case UnaryOp::REF_MUT: PRINT_FIELD("op", "REF_MUT"); break;
+        case UnaryOp::SHARE: PRINT_FIELD("op", "SHARE"); break;
     }
 
     PRINT_EXPR_FIELD("type", unary_expr.type);

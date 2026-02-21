@@ -806,6 +806,27 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
                 }
             );
         }
+    } else if (unary_expr.op == sir::UnaryOp::SHARE) {
+        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        sir::StructDef &struct_def = analyzer.find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
+
+        if (unary_expr.value.is_type()) {
+            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
+            specialize(struct_def, generic_args, out_expr);
+        } else {
+            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value.get_type()});
+            sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
+
+            out_expr = sir::create_call(
+                analyzer.get_mod(),
+                specialization->block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
+                analyzer.create_array({unary_expr.value})
+            );
+        }
     } else {
         ASSERT_UNREACHABLE;
     }

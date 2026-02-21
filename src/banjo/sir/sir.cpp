@@ -154,16 +154,7 @@ ExprCategory Expr::get_category() const {
 }
 
 bool Expr::is_type() const {
-    if (auto symbol_expr = match<SymbolExpr>()) {
-        return symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef>();
-    } else if (auto tuple_expr = match<TupleExpr>()) {
-        return tuple_expr->exprs.empty() || tuple_expr->exprs[0].is_type();
-    } else if (auto star_expr = match<StarExpr>()) {
-        return star_expr->value.is_type();
-    } else {
-        return is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
-               is<sir::ClosureType>() || is<sir::ReferenceType>();
-    }
+    return get_category() == sir::ExprCategory::TYPE;
 }
 
 bool Expr::is_primitive_type(Primitive primitive) const {

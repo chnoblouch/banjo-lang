@@ -854,6 +854,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_NOT_EXPR: return generate_unary_expr(node, sir::UnaryOp::NOT);
         case AST_REF_EXPR: return generate_unary_expr(node, sir::UnaryOp::REF);
         case AST_REF_MUT_EXPR: return generate_unary_expr(node, sir::UnaryOp::REF_MUT);
+        case AST_SHARE_EXPR: return generate_unary_expr(node, sir::UnaryOp::SHARE);
         case AST_CAST_EXPR: return generate_cast_expr(node);
         case AST_CALL_EXPR: return generate_call_expr(node);
         case AST_DOT_EXPR: return generate_dot_expr(node);
