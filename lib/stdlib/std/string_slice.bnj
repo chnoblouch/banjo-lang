@@ -1,4 +1,4 @@
-use std.memory;
+use std.{memory, convert};
 use libc as c;
 
 struct StringSlice {
@@ -109,6 +109,16 @@ struct StringSlice {
         return !(self == rhs);
     }
 
+    pub func __index__(self, index: usize) -> ref u8 {
+        self.check_bounds(index);
+        return self.data[index];
+    }
+
+    pub func __mutindex__(mut self, index: usize) -> ref mut u8 {
+        self.check_bounds(index);
+        return self.data[index];
+    }
+
     pub func __str__(self) -> String {
         return String.from(self);
     }
@@ -152,5 +162,17 @@ struct StringSlice {
 
     func pointer(self, index: usize) -> *u8 {
         return __builtin_pointer_to(self.data[index]);
+    }
+
+    func check_bounds(self, index: usize) {
+        if index >= self.length {
+            panic(
+                "index out of bounds (index: " +
+                convert.to_string(index) +
+                ", string length: " +
+                convert.to_string(self.length) +
+                ")",
+            );
+        }
     }
 }

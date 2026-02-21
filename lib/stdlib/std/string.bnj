@@ -138,6 +138,18 @@ struct String {
         return self.slice != rhs.slice;
     }
 
+    pub func __index__(self, index: usize) -> ref u8 {
+        return self.slice.__index__(index);
+    }
+
+    pub func __index__(self, index: usize) -> ref u8 {
+        return self.slice.__index__(index);
+    }
+
+    pub func __mutindex__(mut self, index: usize) -> ref mut u8 {
+        return self.slice.__mutindex__(index);
+    }
+
     pub func __str__(self) -> String {
         return self.slice.__str__();
     }
