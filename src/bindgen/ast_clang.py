@@ -6,6 +6,10 @@ def parse(filename, include_paths):
     index = cindex.Index.create()
     args = [f"-I{path}" for path in include_paths]
     tu = index.parse(filename, args, options=cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
+    
+    for diagnostic in tu.diagnostics:
+        print(f"    {diagnostic}")
+    
     return tu
 
 
@@ -69,7 +73,10 @@ class ASTConverter:
                 if child.underlying_typedef_type.kind == cindex.TypeKind.ELABORATED:
                     decl = child.underlying_typedef_type.get_declaration()
 
-                    if decl.kind == cindex.CursorKind.ENUM_DECL:
+                    if decl.kind == cindex.CursorKind.STRUCT_DECL:
+                        symbol = self.gen_struct(decl)
+                        symbols[symbol.name] = symbol
+                    elif decl.kind == cindex.CursorKind.ENUM_DECL:
                         symbol = self.gen_enum(decl)
                         symbols[symbol.name] = symbol
 
@@ -124,11 +131,12 @@ class ASTConverter:
 
         if tokens[1].kind == cindex.TokenKind.LITERAL:
             value = tokens[1].spelling
-            value = value.lower().replace("u", "").replace("l", "")
 
             type_ = PrimitiveType("i64")
             if value[0] == "\"":
                 type_ = PtrType(PrimitiveType("u8"))
+            else:
+                value = value.lower().replace("u", "").replace("l", "")
 
             return Constant(name, type_, value)
 
@@ -148,6 +156,7 @@ class ASTConverter:
 
             field_type = self.gen_type(field.type, param_names)
             fields.append(Field(field_name, field_type))
+
 
         return Struct(name, fields)
 
@@ -236,6 +245,8 @@ class ASTConverter:
             return ArrayType(base, length)
         elif type_.kind in ASTConverter.PRIMITIVE_TYPES:
             return PrimitiveType(ASTConverter.PRIMITIVE_TYPES[type_.kind])
+        else:
+            print(f"Warning: Unknown type kind: {type_.kind}")
 
         return IdentifierType("i64")
 

@@ -1,22 +1,31 @@
+from enum import Enum
+
 def to_snake_case(identifier):
-    snake_identifier = ""
-    first = True
-    last_had_underscore = False
+    result = ""
 
-    for char in identifier:
-        if char.isupper():
-            if not first and not last_had_underscore:
-                snake_identifier += "_"
-                last_had_underscore = True
+    for i in range(len(identifier)):
+        char = identifier[i]
+        prev_char = identifier[i - 1] if i != 0 else None
+        next_char = identifier[i + 1] if i != len(identifier) - 1 else None
+        
+        if char.islower():
+            result += char
+        elif char.isupper():
+            if prev_char and not prev_char.isupper() and prev_char != "_":
+                result += "_"
+            if prev_char and next_char and prev_char.isupper() and next_char.islower():
+                result += "_"
 
-            snake_identifier += char.lower()
-        else:
-            snake_identifier += char
-            last_had_underscore = False
+            result += char.lower()
+        elif char.isdigit():
+            if prev_char and not prev_char.isdigit():
+                result += "_"
+            
+            result += char
+        elif char == "_":
+            result += char
 
-        first = False
-
-    return snake_identifier
+    return result
 
 
 def to_pascal_case(identifier):
