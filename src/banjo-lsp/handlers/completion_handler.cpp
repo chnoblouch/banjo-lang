@@ -132,7 +132,12 @@ JSONObject CompletionHandler::serialize_func_call_template(
         //     detail += "self";
         // }
 
-        detail += type.params[i].name.value;
+        std::string_view param_name = type.params[i].name.value;
+        if (param_name.empty()) {
+            param_name = "_";
+        }
+
+        detail += param_name;
 
         if (i != type.params.size() - 1) {
             detail += ", ";
