@@ -559,6 +559,20 @@ void ReportGenerator::report_err_generic_arg_inference_conflict(
         .report();
 }
 
+void ReportGenerator::report_err_constraint_not_satisfied(
+    ASTNode *ast_node,
+    sir::Expr arg,
+    const sir::GenericParam &generic_param
+) {
+    build_error("'$' does not satisfy type constraint '$'", ast_node, arg, generic_param.constraint)
+        .add_note(
+            "constraint defined here for generic parameter '$'",
+            generic_param.ast_node,
+            generic_param.ident.value
+        )
+        .report();
+}
+
 void ReportGenerator::report_err_cannot_use_in_try(const sir::Expr &expr) {
     report_error("type '$' is not a result or optional type", expr.get_ast_node(), expr.get_type());
 }

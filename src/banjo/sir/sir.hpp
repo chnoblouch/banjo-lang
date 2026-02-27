@@ -558,6 +558,7 @@ struct GenericParam {
     ASTNode *ast_node;
     Ident ident;
     GenericParamKind kind;
+    Expr constraint;
 };
 
 struct GenericArg {

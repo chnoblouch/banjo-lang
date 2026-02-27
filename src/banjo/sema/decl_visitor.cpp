@@ -41,6 +41,10 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
 
 void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
     if (func_def.is_generic()) {
+        analyzer.enter_decl(&func_def);
+        analyze_generic_func_def(func_def);
+        analyzer.exit_decl();
+
         for (sir::Specialization<sir::FuncDef> &specialization : func_def.specializations) {
             visit_func_def(*specialization.def);
         }

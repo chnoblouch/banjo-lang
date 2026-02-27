@@ -92,7 +92,11 @@ private:
     sir::Unit &sir_unit;
     target::Target *target;
     ReportManager &report_manager;
+
+public:
     ReportGenerator report_generator;
+
+private:
     Mode mode;
 
     ExtraAnalysis extra_analysis;

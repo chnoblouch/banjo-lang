@@ -40,6 +40,16 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     return Result::SUCCESS;
 }
 
+Result DeclInterfaceAnalyzer::analyze_generic_func_def(sir::FuncDef &func_def) {
+    for (sir::GenericParam &generic_param : func_def.generic_params ){
+        if (generic_param.constraint) {
+            ExprAnalyzer{analyzer}.analyze_type(generic_param.constraint);
+        }
+    }
+    
+    return Result::SUCCESS;
+}
+
 Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
     if (func_decl.stage < sir::SemaStage::INTERFACE) {
         func_decl.stage = sir::SemaStage::INTERFACE;

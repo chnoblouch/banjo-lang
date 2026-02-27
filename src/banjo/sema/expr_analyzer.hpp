@@ -75,6 +75,7 @@ private:
     Result analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr);
     Result analyze_operator_overload_call(sir::Symbol symbol, std::span<sir::Expr> args, sir::Expr &inout_expr);
     Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
+    
     Result specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
     Result specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
 

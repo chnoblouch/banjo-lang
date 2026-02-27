@@ -1,0 +1,47 @@
+# test:subtest
+# test:error 12:7 "'i32' does not satisfy type constraint 'P'"
+# test:note 9:8 "constraint defined here for generic parameter 'T'"
+
+proto P {
+    func f(self);
+}
+
+func f[T: P]() {}
+
+func test() {
+    f[i32]();
+}
+
+# test:subtest
+# test:error 32:7 "'i32' does not satisfy type constraint 'P1'"
+# test:note 29:8 "constraint defined here for generic parameter 'T1'"
+# test:error 32:12 "'f32' does not satisfy type constraint 'P2'"
+# test:note 29:16 "constraint defined here for generic parameter 'T2'"
+
+proto P1 {
+    func f1(self);
+}
+
+proto P2 {
+    func f2(self);
+}
+
+func f[T1: P1, T2: P2]() {}
+
+func test() {
+    f[i32, f32]();
+}
+
+# test:subtest
+# test:error 46:5 "'bool' does not satisfy type constraint 'P'"
+# test:note 43:8 "constraint defined here for generic parameter 'T'"
+
+proto P {
+    func f(self);
+}
+
+func f[T: P](a: T) {}
+
+func test() {
+    f(false);
+}

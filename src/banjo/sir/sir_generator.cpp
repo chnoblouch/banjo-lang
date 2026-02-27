@@ -1491,14 +1491,21 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
         ASTNode *type_node = name_node->next_sibling;
 
         sir::GenericParamKind kind = sir::GenericParamKind::TYPE;
-        if (type_node && type_node->type == AST_PARAM_SEQUENCE_TYPE) {
-            kind = sir::GenericParamKind::SEQUENCE;
+        sir::Expr constraint = nullptr;
+        
+        if (type_node) {
+            if (type_node->type == AST_PARAM_SEQUENCE_TYPE) {
+                kind = sir::GenericParamKind::SEQUENCE;
+            } else {
+                constraint = generate_expr(type_node);
+            }
         }
 
         sir_generic_params[index] = sir::GenericParam{
             .ast_node = child,
             .ident = generate_ident(name_node),
             .kind = kind,
+            .constraint = constraint,
         };
 
         index += 1;

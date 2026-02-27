@@ -73,6 +73,9 @@ JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::I
             return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM);
         } else if (item.symbol.is<sir::EnumVariant>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::ENUM_MEMBER);
+        } else if (item.symbol.is_one_of<sir::GenericArg, sir::GenericParam>()) {
+            // TODO: Generic arguments shouldn't appear here
+            return serialize_simple_item(index, item, LSPCompletionItemKind::TYPE_PARAMETER);
         } else {
             ASSERT_UNREACHABLE;
         }

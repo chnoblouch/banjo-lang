@@ -10,10 +10,12 @@
 #include "banjo/sema/meta_expr_evaluator.hpp"
 #include "banjo/sema/overload_resolver.hpp"
 #include "banjo/sema/resource_analyzer.hpp"
+#include "banjo/sema/result_macros.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sema/type_alias_resolver.hpp"
+#include "banjo/sema/type_constraints.hpp"
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
@@ -973,6 +975,16 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                 return Result::ERROR;
             }
 
+            Result result = Result::SUCCESS;
+
+            for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
+                sir::GenericParam &param = func_def->generic_params[i];
+                sir::Expr &arg = generic_args[i];
+                RESULT_MERGE(result, check_type_constraint(analyzer, call_expr.callee.get_ast_node(), arg, param));
+            }
+
+            RESULT_RETURN_ON_ERROR(result);
+
             partial_result = specialize(*func_def, generic_args, call_expr.callee);
             if (partial_result != Result::SUCCESS) {
                 return partial_result;
@@ -1665,6 +1677,13 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
                 return Result::ERROR;
             }
 
+            for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
+                sir::GenericParam &param = func_def->generic_params[i];
+                sir::Expr &arg = bracket_expr.rhs[i];
+                RESULT_MERGE(result, check_type_constraint(analyzer, arg.get_ast_node(), arg, param));
+            }
+
+            RESULT_RETURN_ON_ERROR(result);
             return specialize(*func_def, bracket_expr.rhs, out_expr);
         }
     } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
@@ -2036,6 +2055,8 @@ Result ExprAnalyzer::finalize_call_expr_args(
 }
 
 Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
+    ASSERT(func_def.generic_params.size() == generic_args.size());
+
     sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(func_def, generic_args);
 
     inout_expr = analyzer.create(

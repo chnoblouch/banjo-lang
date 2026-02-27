@@ -1073,6 +1073,7 @@ void Printer::print_generic_params(const std::vector<GenericParam> &generic_para
             case GenericParamKind::SEQUENCE: PRINT_FIELD("kind", "SEQUENCE"); break;
         }
 
+        PRINT_EXPR_FIELD("constraint", generic_param.constraint);
         END_OBJECT();
     }
 

@@ -127,12 +127,14 @@ public:
         const sir::Expr &second_source
     );
 
+    void report_err_constraint_not_satisfied(ASTNode *ast_node, sir::Expr arg, const sir::GenericParam &generic_param);
+
     void report_err_cannot_use_in_try(const sir::Expr &expr);
     void report_err_cannot_use_in_try_expr(const sir::Expr &expr);
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);
     void report_err_try_expr_not_allowed(sir::TryExpr &try_expr);
     void report_err_try_expr_return_type_not_result(sir::TryExpr &expr, sir::FuncDef &func_def);
-    
+
     void report_err_try_expr_return_error_mismatch(
         const sir::TryExpr &expr,
         sir::Expr unwrap_error,

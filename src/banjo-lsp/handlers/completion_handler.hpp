@@ -25,6 +25,7 @@ private:
         ENUM_MEMBER = 20,
         CONSTANT = 21,
         STRUCT = 22,
+        TYPE_PARAMETER = 25,
     };
 
     struct CompletionConfig {
