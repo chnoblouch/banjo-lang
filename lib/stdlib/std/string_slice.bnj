@@ -71,9 +71,13 @@ struct StringSlice {
     }
 
     pub func find(self, substr: StringSlice) -> ?usize {
+        if substr.length > self.length {
+            return none;
+        }
+
         var i: usize = 0;
 
-        while i < self.length - substr.length {
+        while i <= self.length - substr.length {
             if self.data[i] == substr.data[0] {
                 var j: usize = 1;
                 var matching = true;

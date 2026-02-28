@@ -3,6 +3,10 @@ use std.memory.swap;
 pub func sort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
     # TODO: Bubblesort algorithm. Very slow.
 
+    if slice.length == 0 {
+        return;
+    }
+
     while true {
         var changed = false;
 
