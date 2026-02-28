@@ -208,6 +208,8 @@ add_library(banjo STATIC
     "sir/sir_generator.hpp"
     "sir/sir_printer.cpp"
     "sir/sir_printer.hpp"
+    "sir/sir_to_text.cpp"
+    "sir/sir_to_text.hpp"
     "sir/sir_visitor.hpp"
     "sir/test_driver_generator.cpp"
     "sir/test_driver_generator.hpp"

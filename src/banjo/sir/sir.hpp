@@ -260,6 +260,7 @@ public:
     bool is_signed_type() const;
     bool is_unsigned_type() const;
     bool is_fp_type() const;
+    bool is_number_type() const;
     bool is_addr_like_type() const;
     const ProtoDef *match_proto_ptr() const;
     ProtoDef *match_proto_ptr();
@@ -965,6 +966,7 @@ struct PseudoType {
     ASTNode *ast_node;
     PseudoTypeKind kind;
 
+    bool is_number();
     bool is_struct_by_default() const;
 };
 

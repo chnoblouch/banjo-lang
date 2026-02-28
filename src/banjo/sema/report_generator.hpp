@@ -75,6 +75,7 @@ public:
     void report_err_cannot_infer_type(const sir::StructLiteral &struct_literal);
     void report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr);
     void report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr, sir::Expr type);
+    void report_err_cannot_apply_operator(const sir::BinaryExpr &binary_expr);
     void report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr);
     void report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr);
     void report_err_operator_overload_not_found(const sir::StarExpr &star_expr);
@@ -171,6 +172,8 @@ public:
     void report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr);
     void report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr);
     void report_err_symbol_guarded(ASTNode *ast_node, const sir::GuardedSymbol &guarded_symbol);
+
+    void report_err_generics_invalid_operator(ASTNode *ast_node);
 
     void report_warn_unreachable_code(const sir::Stmt &stmt);
     void report_warn_call_result_unused(sir::CallExpr &call_expr);

@@ -555,10 +555,12 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 }
 
 Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
+    BinaryOpType op_type = get_binary_op_type(binary_expr.op);
+
     Result lhs_result;
     Result rhs_result;
 
-    if (Utils::is_one_of(binary_expr.op, {sir::BinaryOp::EQ, sir::BinaryOp::NE})) {
+    if (op_type == BinaryOpType::EQUALITY_COMP) {
         lhs_result = analyze_uncoerced(binary_expr.lhs);
         rhs_result = analyze_uncoerced(binary_expr.rhs);
     } else {
@@ -570,14 +572,70 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return Result::ERROR;
     }
 
+    if (binary_expr.lhs.is_type()) {
+        ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
+        if (evaluated.result != Result::SUCCESS) {
+            return evaluated.result;
+        }
+
+        out_expr = evaluated.expr;
+        return analyze_uncoerced(out_expr);
+    }
+
+    if (binary_expr.lhs.get_type().is_symbol<sir::GenericParam>() ||
+        binary_expr.rhs.get_type().is_symbol<sir::GenericParam>()) {
+        analyzer.report_generator.report_err_generics_invalid_operator(binary_expr.ast_node);
+    }
+
+    bool is_operator_built_in = false;
     bool is_operator_overload = false;
 
-    if (auto pseudo_type = binary_expr.lhs.get_type().match<sir::PseudoType>()) {
-        if (pseudo_type->is_struct_by_default()) {
-            is_operator_overload = true;
+    if (auto primitive_type = binary_expr.lhs.get_type().match<sir::PrimitiveType>()) {
+        switch (primitive_type->primitive) {
+            case sir::Primitive::I8:
+            case sir::Primitive::I16:
+            case sir::Primitive::I32:
+            case sir::Primitive::I64:
+            case sir::Primitive::U8:
+            case sir::Primitive::U16:
+            case sir::Primitive::U32:
+            case sir::Primitive::U64:
+            case sir::Primitive::USIZE:
+            case sir::Primitive::F32:
+            case sir::Primitive::F64:
+            case sir::Primitive::ADDR:
+                is_operator_built_in = op_type == BinaryOpType::ARITHMETIC || op_type == BinaryOpType::EQUALITY_COMP ||
+                                       op_type == BinaryOpType::ORDER_COMP;
+                break;
+            case sir::Primitive::BOOL:
+                is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || op_type == BinaryOpType::LOGICAL;
+                break;
+            case sir::Primitive::VOID: break;
         }
-    } else if (binary_expr.lhs.get_type().is_symbol<sir::StructDef>()) {
-        is_operator_overload = true;
+    } else if (auto pseudo_type = binary_expr.lhs.get_type().match<sir::PseudoType>()) {
+        switch (pseudo_type->kind) {
+            case sir::PseudoTypeKind::INT_LITERAL:
+            case sir::PseudoTypeKind::FP_LITERAL:
+                is_operator_built_in = op_type == BinaryOpType::ARITHMETIC || op_type == BinaryOpType::EQUALITY_COMP ||
+                                       op_type == BinaryOpType::ORDER_COMP;
+                break;
+            case sir::PseudoTypeKind::NULL_LITERAL:
+                is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD;
+                break;
+            case sir::PseudoTypeKind::NONE_LITERAL: break;
+            case sir::PseudoTypeKind::UNDEFINED_LITERAL: break;
+            case sir::PseudoTypeKind::STRING_LITERAL: is_operator_overload = true; break;
+            case sir::PseudoTypeKind::ARRAY_LITERAL: is_operator_overload = true; break;
+            case sir::PseudoTypeKind::MAP_LITERAL: is_operator_overload = true; break;
+        }
+    } else if (auto symbol_expr = binary_expr.lhs.get_type().match<sir::SymbolExpr>()) {
+        if (symbol_expr->symbol.is<sir::StructDef>()) {
+            is_operator_overload = true;
+        } else if (symbol_expr->symbol.is<sir::EnumDef>()) {
+            is_operator_built_in = true;
+        }
+    } else if (binary_expr.lhs.get_type().is<sir::PointerType>()) {
+        is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD;
     }
 
     if (is_operator_overload) {
@@ -597,6 +655,9 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
         std::span<sir::Expr> call_args = analyzer.create_array<sir::Expr>({binary_expr.lhs, binary_expr.rhs});
         return analyze_operator_overload_call(symbol, call_args, out_expr);
+    } else if (!is_operator_built_in) {
+        analyzer.report_generator.report_err_cannot_apply_operator(binary_expr);
+        return Result::ERROR;
     }
 
     bool can_lhs_be_coerced = can_be_coerced(binary_expr.lhs);
@@ -633,16 +694,6 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
         return Result::ERROR;
-    }
-
-    if (binary_expr.lhs.is_type()) {
-        ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
-        if (evaluated.result != Result::SUCCESS) {
-            return evaluated.result;
-        }
-
-        out_expr = evaluated.expr;
-        return analyze_uncoerced(out_expr);
     }
 
     sir::Expr lhs_type = binary_expr.lhs.get_type();
@@ -735,6 +786,60 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         return Result::SUCCESS;
     }
 
+    if (unary_expr.op == sir::UnaryOp::REF || unary_expr.op == sir::UnaryOp::REF_MUT) {
+        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        bool mut = unary_expr.op == sir::UnaryOp::REF_MUT;
+
+        if (unary_expr.value.is_type()) {
+            out_expr = analyzer.create(
+                sir::ReferenceType{
+                    .ast_node = nullptr,
+                    .mut = mut,
+                    .base_type = unary_expr.value,
+                }
+            );
+        } else {
+            unary_expr.op = sir::UnaryOp::ADDR;
+
+            unary_expr.type = analyzer.create(
+                sir::ReferenceType{
+                    .ast_node = nullptr,
+                    .mut = mut,
+                    .base_type = unary_expr.value.get_type(),
+                }
+            );
+        }
+
+        return Result::SUCCESS;
+    } else if (unary_expr.op == sir::UnaryOp::SHARE) {
+        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
+        if (partial_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        sir::StructDef &struct_def = analyzer.find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
+
+        if (unary_expr.value.is_type()) {
+            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
+            specialize(struct_def, generic_args, out_expr);
+        } else {
+            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value.get_type()});
+            sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
+
+            out_expr = sir::create_call(
+                analyzer.get_mod(),
+                specialization->block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
+                analyzer.create_array({unary_expr.value})
+            );
+        }
+
+        return Result::SUCCESS;
+    }
+
     if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
@@ -781,54 +886,6 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         }
 
         unary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
-    } else if (unary_expr.op == sir::UnaryOp::REF || unary_expr.op == sir::UnaryOp::REF_MUT) {
-        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
-        if (partial_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
-
-        bool mut = unary_expr.op == sir::UnaryOp::REF_MUT;
-
-        if (unary_expr.value.is_type()) {
-            out_expr = analyzer.create(
-                sir::ReferenceType{
-                    .ast_node = nullptr,
-                    .mut = mut,
-                    .base_type = unary_expr.value,
-                }
-            );
-        } else {
-            unary_expr.op = sir::UnaryOp::ADDR;
-
-            unary_expr.type = analyzer.create(
-                sir::ReferenceType{
-                    .ast_node = nullptr,
-                    .mut = mut,
-                    .base_type = unary_expr.value.get_type(),
-                }
-            );
-        }
-    } else if (unary_expr.op == sir::UnaryOp::SHARE) {
-        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
-        if (partial_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
-
-        sir::StructDef &struct_def = analyzer.find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
-
-        if (unary_expr.value.is_type()) {
-            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
-            specialize(struct_def, generic_args, out_expr);
-        } else {
-            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value.get_type()});
-            sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
-
-            out_expr = sir::create_call(
-                analyzer.get_mod(),
-                specialization->block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
-                analyzer.create_array({unary_expr.value})
-            );
-        }
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -2128,6 +2185,29 @@ sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
             .value = value,
         }
     );
+}
+
+ExprAnalyzer::BinaryOpType ExprAnalyzer::get_binary_op_type(sir::BinaryOp op) {
+    switch (op) {
+        case sir::BinaryOp::ADD:
+        case sir::BinaryOp::SUB:
+        case sir::BinaryOp::MUL:
+        case sir::BinaryOp::DIV:
+        case sir::BinaryOp::MOD:
+        case sir::BinaryOp::BIT_AND:
+        case sir::BinaryOp::BIT_OR:
+        case sir::BinaryOp::BIT_XOR:
+        case sir::BinaryOp::SHL:
+        case sir::BinaryOp::SHR: return BinaryOpType::ARITHMETIC;
+        case sir::BinaryOp::EQ:
+        case sir::BinaryOp::NE: return BinaryOpType::EQUALITY_COMP;
+        case sir::BinaryOp::GT:
+        case sir::BinaryOp::LT:
+        case sir::BinaryOp::GE:
+        case sir::BinaryOp::LE: return BinaryOpType::ORDER_COMP;
+        case sir::BinaryOp::AND:
+        case sir::BinaryOp::OR: return BinaryOpType::LOGICAL;
+    }
 }
 
 bool ExprAnalyzer::can_be_coerced(sir::Expr value) {

@@ -227,6 +227,10 @@ bool Expr::is_fp_type() const {
     }
 }
 
+bool Expr::is_number_type() const {
+    return is_int_type() || is_fp_type();
+}
+
 bool Expr::is_addr_like_type() const {
     return is_primitive_type(sir::Primitive::ADDR) || is<sir::PointerType>() || is<sir::FuncType>();
 }
@@ -541,6 +545,14 @@ bool BinaryExpr::is_logical_op() {
     switch (op) {
         case sir::BinaryOp::AND:
         case sir::BinaryOp::OR: return true;
+        default: return false;
+    }
+}
+
+bool PseudoType::is_number() {
+    switch (kind) {
+        case PseudoTypeKind::INT_LITERAL:
+        case PseudoTypeKind::FP_LITERAL: return true;
         default: return false;
     }
 }

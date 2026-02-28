@@ -6,6 +6,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_to_text.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -209,29 +210,13 @@ void ReportGenerator::report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr, 
     report_error("cannot infer left-hand side (type is '$' instead of an enum)", dot_expr.ast_node, type);
 }
 
+void ReportGenerator::report_err_cannot_apply_operator(const sir::BinaryExpr &binary_expr) {
+    std::string_view operator_name = sir::to_text(binary_expr.op);
+    report_error("cannot apply operator '$' to '$'", binary_expr.ast_node, operator_name, binary_expr.lhs.get_type());
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr) {
-    std::string_view operator_name;
-
-    switch (binary_expr.op) {
-        case sir::BinaryOp::ADD: operator_name = "+"; break;
-        case sir::BinaryOp::SUB: operator_name = "-"; break;
-        case sir::BinaryOp::MUL: operator_name = "*"; break;
-        case sir::BinaryOp::DIV: operator_name = "/"; break;
-        case sir::BinaryOp::MOD: operator_name = "%"; break;
-        case sir::BinaryOp::BIT_AND: operator_name = "&"; break;
-        case sir::BinaryOp::BIT_OR: operator_name = "|"; break;
-        case sir::BinaryOp::BIT_XOR: operator_name = "^"; break;
-        case sir::BinaryOp::SHL: operator_name = "<<"; break;
-        case sir::BinaryOp::SHR: operator_name = ">>"; break;
-        case sir::BinaryOp::EQ: operator_name = "=="; break;
-        case sir::BinaryOp::NE: operator_name = "!="; break;
-        case sir::BinaryOp::GT: operator_name = ">"; break;
-        case sir::BinaryOp::LT: operator_name = "<"; break;
-        case sir::BinaryOp::GE: operator_name = ">="; break;
-        case sir::BinaryOp::LE: operator_name = "<="; break;
-        default: ASSERT_UNREACHABLE;
-    }
-
+    std::string_view operator_name = sir::to_text(binary_expr.op);
     std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
     report_err_operator_overload_not_found(binary_expr.ast_node, binary_expr.lhs.get_type(), operator_name, impl_name);
 }
@@ -757,6 +742,10 @@ void ReportGenerator::report_err_symbol_guarded(ASTNode *ast_node, const sir::Gu
         ast_node,
         guarded_symbol.variants[0].symbol.get_name()
     );
+}
+
+void ReportGenerator::report_err_generics_invalid_operator(ASTNode *ast_node) {
+    report_error("cannot use operator on generic types", ast_node);
 }
 
 void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {

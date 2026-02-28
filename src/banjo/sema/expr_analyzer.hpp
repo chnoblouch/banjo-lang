@@ -17,6 +17,18 @@ public:
     static constexpr unsigned ANALYZE_SYMBOL_INTERFACES = 0x00000002;
 
 private:
+    enum class BinaryOpType {
+        ARITHMETIC,
+        EQUALITY_COMP,
+        ORDER_COMP,
+        LOGICAL,
+    };
+
+    static constexpr unsigned TYPE_FLAG_SUPPORTS_ARITH_OP = 0x00000001;
+    static constexpr unsigned TYPE_FLAG_SUPPORTS_EQUAL_OP = 0x00000002;
+    static constexpr unsigned TYPE_FLAG_SUPPORTS_ORDER_OP = 0x00000004;
+    static constexpr unsigned TYPE_FLAG_SUPPORTS_LOGICAL_OP = 0x00000008;
+
     SemanticAnalyzer &analyzer;
     unsigned flags;
 
@@ -75,12 +87,14 @@ private:
     Result analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr);
     Result analyze_operator_overload_call(sir::Symbol symbol, std::span<sir::Expr> args, sir::Expr &inout_expr);
     Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
-    
+
     Result specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
     Result specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
 
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, const sir::Ident &rhs, sir::Symbol method);
     sir::Expr create_isize_cast(sir::Expr value);
+
+    BinaryOpType get_binary_op_type(sir::BinaryOp op);
     bool can_be_coerced(sir::Expr value);
 };
 
