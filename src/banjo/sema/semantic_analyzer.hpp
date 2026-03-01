@@ -140,7 +140,10 @@ public:
 private:
     sir::Module &get_mod() { return *mod; }
     sir::DeclBlock &get_decl_block() { return *scope_stack.top().decl_block; }
+
     sir::SymbolTable &get_symbol_table() { return *scope_stack.top().symbol_table; }
+    void enter_symbol_table(sir::SymbolTable *symbol_table);
+    void exit_symbol_table();
 
     sir::Symbol get_decl() { return scope_stack.top().decl; }
     void enter_decl(sir::Symbol decl);

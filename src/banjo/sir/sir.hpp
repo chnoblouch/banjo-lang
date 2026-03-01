@@ -118,6 +118,7 @@ struct DeclBlock;
 struct Block;
 struct SymbolTable;
 struct OverloadSet;
+struct GenericParam;
 struct GenericArg;
 struct GuardedSymbol;
 struct Ident;
@@ -415,8 +416,9 @@ class Symbol : public DynamicPointer<
                    Local,          // 18
                    Param,          // 19
                    OverloadSet,    // 20
-                   GenericArg,     // 21
-                   GuardedSymbol   // 22
+                   GenericParam,   // 21
+                   GenericArg,     // 22
+                   GuardedSymbol   // 23
                    > {
 public:
     Symbol() : DynamicPointer() {}
@@ -1175,9 +1177,13 @@ struct FuncDef {
     FuncType type;
     Block block;
     Attributes *attrs = nullptr;
+
+    FuncDef *clone_template = nullptr;
+    SymbolTable *generic_param_symbol_table = nullptr;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;
+    
     SemaStage stage;
 
     Module &find_mod() const;

@@ -122,6 +122,8 @@ void SemanticTokensHandler::add_symbol_token(
         tokens.push_back({range, SemanticTokenType::ENUM_MEMBER, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::Param>()) {
         tokens.push_back({range, SemanticTokenType::PARAMETER, SemanticTokenModifiers::NONE});
+    } else if (symbol.is<sir::GenericParam>()) {
+        tokens.push_back({range, SemanticTokenType::TYPE_PARAMETER, SemanticTokenModifiers::NONE});
     }
 }
 

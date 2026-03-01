@@ -41,15 +41,16 @@ sir::StructDef *GenericsSpecializer::specialize(sir::StructDef &generic_struct_d
 }
 
 sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args) {
+    sir::FuncDef &clone_template = *generic_func_def.clone_template;
     sir::Module &def_mod = generic_func_def.find_mod();
     sir::Cloner cloner(def_mod);
 
     sir::FuncDef *clone = def_mod.create(
         sir::FuncDef{
-            .ast_node = generic_func_def.ast_node,
-            .ident = cloner.clone_ident(generic_func_def.ident),
-            .type = *cloner.clone_func_type(generic_func_def.type),
-            .block = cloner.clone_block(generic_func_def.block),
+            .ast_node = clone_template.ast_node,
+            .ident = cloner.clone_ident(clone_template.ident),
+            .type = *cloner.clone_func_type(clone_template.type),
+            .block = cloner.clone_block(clone_template.block),
             .generic_params = {},
             .specializations = {},
             .parent_specialization = nullptr,

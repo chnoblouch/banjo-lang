@@ -106,6 +106,24 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
     ResourceAnalyzer(*this).analyze_decl_block(mod.block);
 }
 
+void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable *symbol_table) {
+    Scope &current = scope_stack.top();
+
+    Scope scope{
+        .decl = current.decl,
+        .decl_block = current.decl_block,
+        .block = current.block,
+        .symbol_table = symbol_table,
+        .closure_ctx = current.closure_ctx,
+    };
+
+    scope_stack.push(scope);
+}
+
+void SemanticAnalyzer::exit_symbol_table() {
+    scope_stack.pop();
+}
+
 void SemanticAnalyzer::enter_decl(sir::Symbol decl) {
     mod = &decl.find_mod();
 

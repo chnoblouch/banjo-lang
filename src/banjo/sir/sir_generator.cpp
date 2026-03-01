@@ -140,16 +140,28 @@ sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
     ASTNode *return_type_node = params_node->next_sibling;
     ASTNode *block_node = return_type_node->next_sibling;
 
-    return create(
+    sir::SymbolTable *generic_param_symbol_table = create(
+        sir::SymbolTable{
+            .parent = get_scope().symbol_table,
+        }
+    );
+
+    push_scope().symbol_table = generic_param_symbol_table;
+
+    sir::FuncDef *func_def = create(
         sir::FuncDef{
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
             .block = generate_block(block_node),
+            .generic_param_symbol_table = generic_param_symbol_table,
             .generic_params = generate_generic_param_list(generic_params_node),
             .stage = sir::SemaStage::NAME,
         }
     );
+
+    pop_scope();
+    return func_def;
 }
 
 sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {
@@ -400,7 +412,6 @@ sir::Block SIRGenerator::generate_block(ASTNode *node) {
     sir::SymbolTable *symbol_table = create(
         sir::SymbolTable{
             .parent = get_scope().symbol_table,
-            .symbols = {},
         }
     );
 
@@ -1492,7 +1503,7 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
 
         sir::GenericParamKind kind = sir::GenericParamKind::TYPE;
         sir::Expr constraint = nullptr;
-        
+
         if (type_node) {
             if (type_node->type == AST_PARAM_SEQUENCE_TYPE) {
                 kind = sir::GenericParamKind::SEQUENCE;

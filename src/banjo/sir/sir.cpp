@@ -130,7 +130,7 @@ ExprCategory Expr::get_category() const {
     if (is<MetaAccess>()) {
         return ExprCategory::META_ACCESS;
     } else if (auto symbol_expr = match<SymbolExpr>()) {
-        if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef>()) {
+        if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef, GenericParam>()) {
             return ExprCategory::TYPE;
         } else if (symbol_expr->symbol.is<Module>()) {
             return ExprCategory::MODULE;
@@ -381,6 +381,7 @@ const Ident &Symbol::get_ident() const {
         return inner->name,                // local
         return inner->name,                // param
         return inner->func_defs[0]->ident, // overload_set
+        return inner->ident,               // generic_param
         return inner->ident                // generic_arg
     );
 }
@@ -448,6 +449,7 @@ Expr Symbol::get_type() {
         return inner->type,            // local
         return inner->type,            // param
         return nullptr,                // overload_set
+        return nullptr,                // generic_param
         return inner->value.get_type() // generic_arg
     );
 }

@@ -92,11 +92,21 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
 
     if (type) {
         while (auto pointer_type = type.match<sir::PointerType>()) {
-            type = pointer_type->base_type;
+            if (pointer_type->base_type.is_symbol<sir::ProtoDef>()) {
+                break;
+            } else {
+                type = pointer_type->base_type;
+            }
         }
 
         if (auto struct_def = type.match_symbol<sir::StructDef>()) {
             collect_value_members(*struct_def);
+        } else if (auto proto_def = type.match_proto_ptr()) {
+            collect_value_members(*proto_def);
+        } else if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+            if (auto proto_def = generic_param->constraint.match_symbol<sir::ProtoDef>()) {
+                collect_value_members(*proto_def);
+            }
         }
     } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {
         Options options{
@@ -236,6 +246,26 @@ void CompletionEngine::collect_value_members(sir::StructDef &struct_def) {
 
         if (is_value_member) {
             try_collect_item(std::string{name}, symbol, options);
+        }
+    }
+}
+
+void CompletionEngine::collect_value_members(lang::sir::ProtoDef &proto_def) {
+    Options options{
+        .allow_values = false,
+        .include_parent_scopes = false,
+        .include_uses = false,
+        .create_func_call_template = true,
+        .file_to_use = nullptr,
+    };
+
+    for (auto &[name, symbol] : proto_def.block.symbol_table->symbols) {
+        if (symbol.is<sir::FuncDecl>()) {
+            try_collect_item(std::string{name}, symbol, options);
+        } else if (auto func_def = symbol.match<sir::FuncDef>()) {
+            if (func_def->is_method()) {
+                try_collect_item(std::string{name}, symbol, options);
+            }
         }
     }
 }

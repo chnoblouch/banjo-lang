@@ -139,6 +139,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &sym
         return sir::Expr(&symbol_expr),            // local
         return sir::Expr(&symbol_expr),            // param
         SIR_VISIT_IMPOSSIBLE,                      // overload_set
+        return sir::Expr(&symbol_expr),            // generic_param
         SIR_VISIT_IMPOSSIBLE                       // generic_arg
     );
 }

@@ -106,6 +106,7 @@ public:
 
     void report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal);
     void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);
+    void report_err_no_method(const sir::Ident &method_ident, const sir::ProtoDef &proto_def);
     void report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set);
     void report_err_continue_outside_loop(const sir::ContinueStmt &continue_stmt);
     void report_err_break_outside_loop(const sir::BreakStmt &break_stmt);
@@ -172,8 +173,6 @@ public:
     void report_err_invalid_meta_field(const sir::MetaFieldExpr &meta_field_expr);
     void report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr);
     void report_err_symbol_guarded(ASTNode *ast_node, const sir::GuardedSymbol &guarded_symbol);
-
-    void report_err_generics_invalid_operator(ASTNode *ast_node);
 
     void report_warn_unreachable_code(const sir::Stmt &stmt);
     void report_warn_call_result_unused(sir::CallExpr &call_expr);

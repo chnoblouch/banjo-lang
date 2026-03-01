@@ -582,11 +582,6 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return analyze_uncoerced(out_expr);
     }
 
-    if (binary_expr.lhs.get_type().is_symbol<sir::GenericParam>() ||
-        binary_expr.rhs.get_type().is_symbol<sir::GenericParam>()) {
-        analyzer.report_generator.report_err_generics_invalid_operator(binary_expr.ast_node);
-    }
-
     bool is_operator_built_in = false;
     bool is_operator_overload = false;
 
@@ -1101,7 +1096,10 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     } else if (auto closure_type = callee_type.match<sir::ClosureType>()) {
         callee_func_type = &closure_type->func_type;
     } else {
-        analyzer.report_generator.report_err_cannot_call(call_expr.callee);
+        if (callee_type) {
+            analyzer.report_generator.report_err_cannot_call(call_expr.callee);
+        }
+
         return Result::ERROR;
     }
 
@@ -1232,14 +1230,26 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             return Result::SUCCESS;
         }
 
-        // analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *proto_def);
         return Result::ERROR;
-    } else {
-        partial_result = analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
+    } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
+        if (auto proto_def = generic_param->constraint.match_symbol<sir::ProtoDef>()) {
+            sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
-        is_method = false;
-        return partial_result;
+            if (method) {
+                analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
+                return Result::ERROR;
+            } else {
+                analyzer.report_generator.report_err_no_method(dot_expr.rhs, *proto_def);
+                return Result::SUCCESS;
+            }
+        }
     }
+
+    partial_result = analyze_dot_expr_rhs(dot_expr, out_call_expr.callee);
+    is_method = false;
+
+    return partial_result;
 }
 
 Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr) {

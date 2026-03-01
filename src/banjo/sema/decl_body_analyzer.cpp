@@ -18,6 +18,10 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    if (func_def.is_generic() && func_def.find_mod().path != ModulePath{"main"}) {
+        return Result::SUCCESS;
+    }
+
     if (func_def.stage < sir::SemaStage::BODY) {
         func_def.stage = sir::SemaStage::BODY;
     } else {

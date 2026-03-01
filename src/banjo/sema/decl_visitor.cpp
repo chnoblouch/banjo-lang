@@ -2,6 +2,7 @@
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
 #include <variant>
@@ -41,13 +42,17 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
 
 void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
     if (func_def.is_generic()) {
-        analyzer.enter_decl(&func_def);
-        analyze_generic_func_def(func_def);
-        analyzer.exit_decl();
+        if (!func_def.clone_template) {
+            func_def.clone_template = sir::Cloner{func_def.find_mod()}.clone_func_def(func_def);
+        }
 
         for (sir::Specialization<sir::FuncDef> &specialization : func_def.specializations) {
             visit_func_def(*specialization.def);
         }
+
+        analyzer.enter_decl(&func_def);
+        analyze_func_def(func_def);
+        analyzer.exit_decl();
     } else if (func_def.parent_specialization) {
         analyzer.enter_decl(&func_def);
         analyzer.scope_stack.top().symbol_table = func_def.parent_specialization->symbol_table;
@@ -208,6 +213,7 @@ void DeclVisitor::visit_symbol(sir::Symbol symbol) {
         SIR_VISIT_IGNORE,               // local
         SIR_VISIT_IGNORE,               // param
         SIR_VISIT_IGNORE,               // overload_set
+        SIR_VISIT_IGNORE,               // generic_param
         SIR_VISIT_IGNORE                // generic_arg
     );
 }

@@ -40,7 +40,6 @@ public:
 
 private:
     virtual Result analyze_func_def(sir::FuncDef & /*func_def*/) { return Result::SUCCESS; }
-    virtual Result analyze_generic_func_def(sir::FuncDef & /*func_def*/) { return Result::SUCCESS; }
     virtual Result analyze_func_decl(sir::FuncDecl & /*func_decl*/) { return Result::SUCCESS; }
     virtual Result analyze_native_func_decl(sir::NativeFuncDecl & /*native_func_decl*/) { return Result::SUCCESS; }
     virtual Result analyze_const_def(sir::ConstDef & /*const_def*/) { return Result::SUCCESS; }

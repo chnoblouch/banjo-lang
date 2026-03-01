@@ -24,11 +24,6 @@ private:
         LOGICAL,
     };
 
-    static constexpr unsigned TYPE_FLAG_SUPPORTS_ARITH_OP = 0x00000001;
-    static constexpr unsigned TYPE_FLAG_SUPPORTS_EQUAL_OP = 0x00000002;
-    static constexpr unsigned TYPE_FLAG_SUPPORTS_ORDER_OP = 0x00000004;
-    static constexpr unsigned TYPE_FLAG_SUPPORTS_LOGICAL_OP = 0x00000008;
-
     SemanticAnalyzer &analyzer;
     unsigned flags;
 

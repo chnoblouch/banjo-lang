@@ -212,7 +212,14 @@ void ReportGenerator::report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr, 
 
 void ReportGenerator::report_err_cannot_apply_operator(const sir::BinaryExpr &binary_expr) {
     std::string_view operator_name = sir::to_text(binary_expr.op);
-    report_error("cannot apply operator '$' to '$'", binary_expr.ast_node, operator_name, binary_expr.lhs.get_type());
+
+    report_error(
+        "cannot apply operator '$' to '$' and '$'",
+        binary_expr.ast_node,
+        operator_name,
+        binary_expr.lhs.get_type(),
+        binary_expr.rhs.get_type()
+    );
 }
 
 void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr) {
@@ -444,6 +451,15 @@ void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const
         "struct '$' has no method named '$'",
         method_ident.ast_node,
         struct_def.ident.ast_node,
+        method_ident.value
+    );
+}
+
+void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::ProtoDef &proto_def) {
+    report_error(
+        "proto '$' has no method named '$'",
+        method_ident.ast_node,
+        proto_def.ident.ast_node,
         method_ident.value
     );
 }
@@ -742,10 +758,6 @@ void ReportGenerator::report_err_symbol_guarded(ASTNode *ast_node, const sir::Gu
         ast_node,
         guarded_symbol.variants[0].symbol.get_name()
     );
-}
-
-void ReportGenerator::report_err_generics_invalid_operator(ASTNode *ast_node) {
-    report_error("cannot use operator on generic types", ast_node);
 }
 
 void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {

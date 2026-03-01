@@ -69,13 +69,26 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
     ASSERT(func_def.specializations.empty());
     ASSERT(!func_def.parent_specialization);
 
+    SymbolTable *generic_param_symbol_table = nullptr;
+
+    if (func_def.generic_param_symbol_table) {
+        generic_param_symbol_table = push_symbol_table(nullptr);
+    }
+
+    sir::Block block = clone_block(func_def.block);
+
+    if (func_def.generic_param_symbol_table) {
+        pop_symbol_table();
+    }
+
     return mod.create(
         FuncDef{
             .ast_node = func_def.ast_node,
             .ident = clone_ident(func_def.ident),
             .type = clone_func_type_directly(func_def.type),
-            .block = clone_block(func_def.block),
+            .block = block,
             .attrs = clone_attrs(func_def.attrs),
+            .generic_param_symbol_table = generic_param_symbol_table,
             .generic_params = func_def.generic_params,
             .specializations = {},
             .parent_specialization = nullptr,

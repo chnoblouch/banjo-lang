@@ -67,6 +67,7 @@ private:
 
     void collect_symbol_members(lang::sir::Symbol &symbol, Options &options);
     void collect_value_members(lang::sir::StructDef &struct_def);
+    void collect_value_members(lang::sir::ProtoDef &proto_def);
 
     void collect_items(lang::sir::SymbolTable &symbol_table, Options &options);
     void try_collect_item(const std::string &name, lang::sir::Symbol symbol, Options &options);

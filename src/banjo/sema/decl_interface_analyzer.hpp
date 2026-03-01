@@ -18,7 +18,6 @@ public:
 
 private:
     Result analyze_func_def(sir::FuncDef &func_def) override;
-    Result analyze_generic_func_def(sir::FuncDef &func_def) override;
     Result analyze_func_decl(sir::FuncDecl &func_decl) override;
     Result analyze_native_func_decl(sir::NativeFuncDecl &native_func_decl) override;
     Result analyze_const_def(sir::ConstDef &const_def) override;
