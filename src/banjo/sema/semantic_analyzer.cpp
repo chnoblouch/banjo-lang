@@ -13,6 +13,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/ssa/type.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/timing.hpp"
@@ -322,6 +323,10 @@ Result SemanticAnalyzer::ensure_interface_analyzed(sir::Symbol symbol, ASTNode *
         DeclInterfaceAnalyzer{*this}.visit_symbol(symbol);
         return Result::SUCCESS;
     }
+}
+
+sir::Expr SemanticAnalyzer::get_resolved_type(sir::Expr value) {
+    return value.get_resolved_type(scope_stack.top().type_narrowing);
 }
 
 unsigned SemanticAnalyzer::compute_size(sir::Expr type) {

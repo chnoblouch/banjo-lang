@@ -4,6 +4,8 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <optional>
+
 namespace banjo {
 
 namespace lang {
@@ -17,7 +19,7 @@ private:
 
 public:
     StmtAnalyzer(SemanticAnalyzer &analyzer);
-    void analyze_block(sir::Block &block);
+    void analyze_block(sir::Block &block, std::optional<sir::TypeNarrowing> type_narrowing = {});
     void analyze(sir::Block &block, unsigned &index);
 
 private:

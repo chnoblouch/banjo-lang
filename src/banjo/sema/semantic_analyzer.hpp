@@ -10,6 +10,7 @@
 #include "banjo/target/target.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <set>
 #include <stack>
 #include <string_view>
@@ -47,6 +48,7 @@ struct Scope {
     sir::Block *block;
     sir::SymbolTable *symbol_table;
     ClosureContext *closure_ctx;
+    std::optional<sir::TypeNarrowing> type_narrowing;
 };
 
 struct GuardedScope {
@@ -178,6 +180,7 @@ private:
     sir::Specialization<sir::StructDef> *as_std_map_specialization(sir::Expr &type);
 
     Result ensure_interface_analyzed(sir::Symbol symbol, ASTNode *ident_ast_node);
+    sir::Expr get_resolved_type(sir::Expr value);
     unsigned compute_size(sir::Expr type);
 
     void add_symbol_def(sir::Symbol sir_symbol);

@@ -18,8 +18,12 @@ namespace sema {
 
 StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void StmtAnalyzer::analyze_block(sir::Block &block) {
+void StmtAnalyzer::analyze_block(sir::Block &block, std::optional<sir::TypeNarrowing> type_narrowing /* = {} */) {
     analyzer.enter_block(block);
+
+    if (type_narrowing) {
+        analyzer.scope_stack.top().type_narrowing = type_narrowing;
+    }
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
         analyze(block, i);
@@ -170,13 +174,12 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
             }
         }
     }
-
-    // PointerEscapeChecker(analyzer).check_return_stmt(return_stmt);
 }
 
 void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
     for (sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
-        Result result = ExprAnalyzer(analyzer).analyze_value(cond_branch.condition);
+        ExprAnalyzer cond_analyzer{analyzer};
+        Result result = cond_analyzer.analyze_value(cond_branch.condition);
 
         if (result == Result::SUCCESS) {
             if (!cond_branch.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
@@ -184,7 +187,21 @@ void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
             }
         }
 
-        analyze_block(*cond_branch.block);
+        bool skip_analysis = false;
+
+        if (auto bool_literal = cond_branch.condition.match<sir::BoolLiteral>()) {
+            if (!bool_literal->value) {
+                if (auto func_def = analyzer.get_decl().match<sir::FuncDef>()) {
+                    skip_analysis = !func_def->is_generic();
+                }
+            }
+        }
+
+        if (!skip_analysis) {
+            analyze_block(*cond_branch.block, cond_analyzer.type_narrowing);
+        } else {
+            cond_branch.block->stmts.clear();
+        }
     }
 
     if (if_stmt.else_branch) {

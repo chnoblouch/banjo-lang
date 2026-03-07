@@ -24,7 +24,7 @@ bool OverloadResolver::is_matching_overload(sir::FuncDef &func_def, std::span<si
     }
 
     for (unsigned i = 0; i < args.size(); i++) {
-        sir::Expr arg_type = args[i].get_type();
+        sir::Expr arg_type = analyzer.get_resolved_type(args[i]);
         sir::Expr param_type = func_def.type.params[i].type;
 
         // FIXME: Prioritize overloads that use references.

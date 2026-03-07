@@ -112,7 +112,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     Result result = Result::SUCCESS;
 
     // FIXME: Hack because range expressions get analyzed twice.
-    if (expr.get_type().is<sir::ReferenceType>()) {
+    if (analyzer.get_resolved_type(expr).is<sir::ReferenceType>()) {
         return Result::SUCCESS;
     }
 
@@ -185,7 +185,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
     }
 
     if (!is_ref) {
-        if (auto reference_type = expr.get_type().match<sir::ReferenceType>()) {
+        if (auto reference_type = analyzer.get_resolved_type(expr).match<sir::ReferenceType>()) {
             expr = analyzer.create(
                 sir::UnaryExpr{
                     .ast_node = expr.get_ast_node(),
@@ -476,9 +476,9 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
     std::span<sir::Expr> capture_values = analyzer.allocate_array<sir::Expr>(closure_ctx.captured_vars.size());
 
     for (unsigned i = 0; i < closure_ctx.captured_vars.size(); i++) {
-        sir::Symbol &captured_var = closure_ctx.captured_vars[i];
-
+        sir::Symbol captured_var = closure_ctx.captured_vars[i];
         sir::Expr type = captured_var.get_type();
+
         sir::Expr value = analyzer.create(
             sir::SymbolExpr{
                 .ast_node = nullptr,
@@ -579,13 +579,18 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
 
         out_expr = evaluated.expr;
+        type_narrowing = evaluated.type_narrowing;
+
         return analyze_uncoerced(out_expr);
     }
+
+    sir::Expr lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
+    sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
 
     bool is_operator_built_in = false;
     bool is_operator_overload = false;
 
-    if (auto primitive_type = binary_expr.lhs.get_type().match<sir::PrimitiveType>()) {
+    if (auto primitive_type = lhs_type.match<sir::PrimitiveType>()) {
         switch (primitive_type->primitive) {
             case sir::Primitive::I8:
             case sir::Primitive::I16:
@@ -607,7 +612,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
                 break;
             case sir::Primitive::VOID: break;
         }
-    } else if (auto pseudo_type = binary_expr.lhs.get_type().match<sir::PseudoType>()) {
+    } else if (auto pseudo_type = lhs_type.match<sir::PseudoType>()) {
         switch (pseudo_type->kind) {
             case sir::PseudoTypeKind::INT_LITERAL:
             case sir::PseudoTypeKind::FP_LITERAL:
@@ -623,13 +628,13 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             case sir::PseudoTypeKind::ARRAY_LITERAL: is_operator_overload = true; break;
             case sir::PseudoTypeKind::MAP_LITERAL: is_operator_overload = true; break;
         }
-    } else if (auto symbol_expr = binary_expr.lhs.get_type().match<sir::SymbolExpr>()) {
+    } else if (auto symbol_expr = lhs_type.match<sir::SymbolExpr>()) {
         if (symbol_expr->symbol.is<sir::StructDef>()) {
             is_operator_overload = true;
         } else if (symbol_expr->symbol.is<sir::EnumDef>()) {
             is_operator_built_in = true;
         }
-    } else if (binary_expr.lhs.get_type().is<sir::PointerType>()) {
+    } else if (lhs_type.is<sir::PointerType>()) {
         is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD;
     }
 
@@ -639,7 +644,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        sir::StructDef &struct_def = binary_expr.lhs.get_type().as_symbol<sir::StructDef>();
+        sir::StructDef &struct_def = analyzer.get_resolved_type(binary_expr.lhs).as_symbol<sir::StructDef>();
         std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
         sir::Symbol symbol = struct_def.block.symbol_table->look_up_local(impl_name);
 
@@ -668,7 +673,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, binary_expr.rhs.get_type());
+        lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, rhs_type);
     } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
         lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
 
@@ -676,10 +681,10 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, binary_expr.lhs.get_type());
+        rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, lhs_type);
     } else {
         if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
-            binary_expr.type = binary_expr.lhs.get_type();
+            binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
             return Result::SUCCESS;
         }
 
@@ -691,15 +696,15 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return Result::ERROR;
     }
 
-    sir::Expr lhs_type = binary_expr.lhs.get_type();
-    sir::Expr rhs_type = binary_expr.rhs.get_type();
+    lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
+    rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
     bool types_equal = lhs_type == rhs_type;
 
     if (lhs_type != rhs_type) {
-        if (binary_expr.lhs.get_type().is_addr_like_type()) {
+        if (lhs_type.is_addr_like_type()) {
             binary_expr.rhs = create_isize_cast(binary_expr.rhs);
             types_equal = true;
-        } else if (binary_expr.rhs.get_type().is_addr_like_type()) {
+        } else if (rhs_type.is_addr_like_type()) {
             binary_expr.lhs = create_isize_cast(binary_expr.lhs);
             types_equal = true;
         }
@@ -759,7 +764,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         return Result::ERROR;
     }
 
-    sir::Expr value_type = unary_expr.value.get_type();
+    sir::Expr value_type = analyzer.get_resolved_type(unary_expr.value);
 
     if (unary_expr.op == sir::UnaryOp::ADDR) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
@@ -804,7 +809,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
                 sir::ReferenceType{
                     .ast_node = nullptr,
                     .mut = mut,
-                    .base_type = unary_expr.value.get_type(),
+                    .base_type = analyzer.get_resolved_type(unary_expr.value),
                 }
             );
         }
@@ -822,7 +827,8 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
             specialize(struct_def, generic_args, out_expr);
         } else {
-            std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value.get_type()});
+            sir::Expr type = analyzer.get_resolved_type(value_type);
+            std::span<sir::Expr> generic_args = analyzer.create_array({type});
             sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
 
             out_expr = sir::create_call(
@@ -854,7 +860,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         if (value_type.is_signed_type() || value_type.is_fp_type() ||
             value_type.is_pseudo_type(sir::PseudoTypeKind::INT_LITERAL) ||
             value_type.is_pseudo_type(sir::PseudoTypeKind::FP_LITERAL)) {
-            unary_expr.type = unary_expr.value.get_type();
+            unary_expr.type = value_type;
         } else if (value_type.is_unsigned_type()) {
             analyzer.report_generator.report_err_cannot_negate_unsigned(unary_expr);
             return Result::ERROR;
@@ -863,19 +869,21 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             return Result::ERROR;
         }
     } else if (unary_expr.op == sir::UnaryOp::BIT_NOT) {
-        if (!unary_expr.value.get_type().is_int_type()) {
+        if (!value_type.is_int_type()) {
             analyzer.report_generator.report_err_expected_integer(unary_expr.value);
             return Result::ERROR;
         }
 
-        unary_expr.type = unary_expr.value.get_type();
+        unary_expr.type = value_type;
     } else if (unary_expr.op == sir::UnaryOp::NOT) {
         partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
         if (partial_result != Result::SUCCESS) {
             return Result::ERROR;
         }
 
-        if (!unary_expr.value.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+        value_type = analyzer.get_resolved_type(unary_expr.value);
+
+        if (!value_type.is_primitive_type(sir::Primitive::BOOL)) {
             analyzer.report_generator.report_err_expected_bool(unary_expr.value);
             return Result::ERROR;
         }
@@ -906,7 +914,7 @@ Result ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
         return result;
     }
 
-    sir::Expr from = cast_expr.value.get_type();
+    sir::Expr from = analyzer.get_resolved_type(cast_expr.value);
     sir::Expr to = cast_expr.type;
     bool is_cast_possible;
 
@@ -944,7 +952,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             out_expr = analyzer.create(
                 sir::DeinitExpr{
                     .ast_node = nullptr,
-                    .type = call_expr.args[0].get_type(),
+                    .type = analyzer.get_resolved_type(call_expr.args[0]),
                     .value = call_expr.args[0],
                     .resource = nullptr,
                 }
@@ -960,7 +968,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                     .type = analyzer.create(
                         sir::PointerType{
                             .ast_node = nullptr,
-                            .base_type = call_expr.args[0].get_type(),
+                            .base_type = analyzer.get_resolved_type(call_expr.args[0]),
                         }
                     ),
                     .op = sir::UnaryOp::ADDR,
@@ -1088,7 +1096,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         );
     }
 
-    sir::Expr callee_type = call_expr.callee.get_type();
+    sir::Expr callee_type = analyzer.get_resolved_type(call_expr.callee);
     sir::FuncType *callee_func_type;
 
     if (auto func_type = callee_type.match<sir::FuncType>()) {
@@ -1163,7 +1171,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
     }
 
     sir::Expr lhs = dot_expr.lhs;
-    sir::Expr lhs_type = dot_expr.lhs.get_type();
+    sir::Expr lhs_type = analyzer.get_resolved_type(dot_expr.lhs);
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
         if (pointer_type->base_type.match_symbol<sir::ProtoDef>()) {
@@ -1441,6 +1449,8 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
         return Result::ERROR;
     }
 
+    sir::Expr lhs_type = analyzer.get_resolved_type(range_expr.lhs);
+    sir::Expr rhs_type = analyzer.get_resolved_type(range_expr.rhs);
     bool can_lhs_be_coerced = can_be_coerced(range_expr.lhs);
     bool can_rhs_be_coerced = can_be_coerced(range_expr.rhs);
 
@@ -1451,7 +1461,7 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
             return Result::ERROR;
         }
 
-        lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(range_expr.lhs, range_expr.rhs.get_type());
+        lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(range_expr.lhs, rhs_type);
     } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
         lhs_result = ExprFinalizer(analyzer).finalize(range_expr.lhs);
 
@@ -1459,7 +1469,7 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
             return Result::ERROR;
         }
 
-        rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(range_expr.rhs, range_expr.lhs.get_type());
+        rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(range_expr.rhs, lhs_type);
     } else {
         lhs_result = ExprFinalizer(analyzer).finalize(range_expr.lhs);
         rhs_result = ExprFinalizer(analyzer).finalize(range_expr.rhs);
@@ -1482,7 +1492,7 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
     sir::StructDef &result_def = analyzer.get_std_result();
     sir::StructDef *value_result_def = nullptr;
 
-    if (auto struct_def = try_expr.value.get_type().match_symbol<sir::StructDef>()) {
+    if (auto struct_def = analyzer.get_resolved_type(try_expr.value).match_symbol<sir::StructDef>()) {
         if (struct_def->is_specialization_of(result_def)) {
             value_result_def = struct_def;
         }
@@ -1541,7 +1551,7 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
     std::span<sir::Expr> types = analyzer.allocate_array<sir::Expr>(tuple_expr.exprs.size());
 
     for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
-        types[i] = tuple_expr.exprs[i].get_type();
+        types[i] = analyzer.get_resolved_type(tuple_expr.exprs[i]);
     }
 
     tuple_expr.type = analyzer.create(
@@ -1675,7 +1685,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
             }
         );
     } else {
-        sir::Expr value_type = star_expr.value.get_type();
+        sir::Expr value_type = analyzer.get_resolved_type(star_expr.value);
 
         if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
             std::string_view impl_name = sir::MagicMethods::look_up(sir::UnaryOp::DEREF);
@@ -1764,7 +1774,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         }
     }
 
-    const sir::Expr &lhs_type = bracket_expr.lhs.get_type();
+    sir::Expr lhs_type = analyzer.get_resolved_type(bracket_expr.lhs);
 
     if (auto pointer_type = lhs_type.match<sir::PointerType>()) {
         return analyze_index_expr(bracket_expr, pointer_type->base_type, out_expr);
@@ -1936,7 +1946,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     }
 
     sir::Expr lhs = dot_expr.lhs;
-    sir::Expr lhs_type = dot_expr.lhs.get_type();
+    sir::Expr lhs_type = analyzer.get_resolved_type(dot_expr.lhs);
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
         lhs = analyzer.create(
@@ -2225,7 +2235,7 @@ bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
         return !dot_expr->lhs;
     }
 
-    return value.get_type().is<sir::PseudoType>();
+    return analyzer.get_resolved_type(value).is<sir::PseudoType>();
 }
 
 } // namespace sema

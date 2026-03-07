@@ -108,6 +108,7 @@ ParseResult StmtParser::parse_if_chain() {
 
     ParseResult result = ExprParser(parser).parse();
     first_if.append_child(result.node);
+    
     if (!result.is_valid) {
         first_if.append_child(parser.create_node(AST_ERROR));
         node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
@@ -116,6 +117,7 @@ ParseResult StmtParser::parse_if_chain() {
 
     result = parser.parse_block();
     first_if.append_child(result.node);
+
     if (!result.is_valid) {
         node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
         return {node.build_with_inferred_range(AST_IF_STMT), false};
@@ -131,6 +133,7 @@ ParseResult StmtParser::parse_if_chain() {
 
             result = ExprParser(parser).parse();
             else_if_node.append_child(result.node);
+            
             if (!result.is_valid) {
                 else_if_node.append_child(parser.create_node(AST_ERROR));
                 node.append_child(else_if_node.build_with_inferred_range(AST_ELSE_IF_BRANCH));
@@ -147,7 +150,7 @@ ParseResult StmtParser::parse_if_chain() {
         } else {
             stream.consume(); // Consume 'else'
             parser.report_unexpected_token();
-            return node.build_error();
+            return node.build(AST_IF_STMT);
         }
     }
 

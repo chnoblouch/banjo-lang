@@ -5,6 +5,7 @@
 #include "banjo/sir/sir.hpp"
 
 #include <cstddef>
+#include <optional>
 
 namespace banjo {
 
@@ -18,6 +19,7 @@ public:
     struct Output {
         Result result;
         sir::Expr expr;
+        std::optional<sir::TypeNarrowing> type_narrowing;
 
         Output(Result result, sir::Expr expr) : result{result}, expr{expr} {}
         Output(sir::Expr expr) : result{Result::SUCCESS}, expr{expr} {}

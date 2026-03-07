@@ -69,10 +69,6 @@ bool Expr::operator==(const Expr &other) const {
     );
 }
 
-bool Expr::is_value() const {
-    return get_type();
-}
-
 Expr Expr::get_type() const {
     SIR_VISIT_EXPR(
         *this,
@@ -124,6 +120,20 @@ Expr Expr::get_type() const {
         return inner->type, // deinit_expr
         return nullptr      // error
     );
+}
+
+Expr Expr::get_resolved_type(std::optional<TypeNarrowing> type_narrowing) {
+    Expr type = get_type();
+
+    if (type_narrowing) {
+        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+            if (type_narrowing->generic_param == generic_param) {
+                return type_narrowing->constraint;
+            }
+        }
+    }
+
+    return type;
 }
 
 ExprCategory Expr::get_category() const {

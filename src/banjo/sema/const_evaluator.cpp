@@ -307,13 +307,29 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr_type(
         default: return evaluate_non_const(&binary_expr);
     }
 
-    sir::BoolLiteral output{
+    sir::BoolLiteral output_expr{
         .ast_node = binary_expr.ast_node,
         .type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL),
         .value = result,
     };
 
-    return {analyzer.create(output)};
+    Output output{analyzer.create(output_expr)};
+
+    if (auto generic_param = lhs.match_symbol<sir::GenericParam>()) {
+        output.type_narrowing = sir::TypeNarrowing{
+            .generic_param = generic_param,
+            .constraint = rhs,
+        };
+    }
+
+    if (auto generic_param = rhs.match_symbol<sir::GenericParam>()) {
+        output.type_narrowing = sir::TypeNarrowing{
+            .generic_param = generic_param,
+            .constraint = lhs,
+        };
+    }
+
+    return output;
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {

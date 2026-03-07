@@ -4,6 +4,8 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <optional>
+
 namespace banjo {
 
 namespace lang {
@@ -28,6 +30,8 @@ private:
     unsigned flags;
 
 public:
+    std::optional<sir::TypeNarrowing> type_narrowing;
+
     ExprAnalyzer(SemanticAnalyzer &analyzer, unsigned flags = 0x00000000);
     Result analyze_value(sir::Expr &expr);
     Result analyze_value(sir::Expr &expr, sir::Expr expected_type);

@@ -120,6 +120,7 @@ struct SymbolTable;
 struct OverloadSet;
 struct GenericParam;
 struct GenericArg;
+struct TypeNarrowing;
 struct GuardedSymbol;
 struct Ident;
 struct Module;
@@ -251,8 +252,8 @@ public:
     bool operator==(const Expr &other) const;
     bool operator!=(const Expr &other) const { return !(*this == other); }
 
-    bool is_value() const;
     Expr get_type() const;
+    Expr get_resolved_type(std::optional<TypeNarrowing> type_narrowing);
 
     ExprCategory get_category() const;
     bool is_type() const;
@@ -567,6 +568,11 @@ struct GenericParam {
 struct GenericArg {
     Ident ident;
     Expr value;
+};
+
+struct TypeNarrowing {
+    sir::GenericParam *generic_param;
+    sir::Expr constraint;
 };
 
 template <typename T>
@@ -1183,7 +1189,7 @@ struct FuncDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;
-    
+
     SemaStage stage;
 
     Module &find_mod() const;

@@ -29,7 +29,7 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
         }
     }
 
-    sir::Expr type = expr.get_type();
+    sir::Expr type = analyzer.get_resolved_type(expr);
 
     if (expected_type.is_primitive_type(sir::Primitive::ADDR) && type.is_addr_like_type()) {
         expr = analyzer.create(
@@ -128,7 +128,7 @@ Result ExprFinalizer::infer_dot_expr_lhs(sir::DotExpr &dot_expr, sir::Expr type,
 Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type) {
     Result partial_result;
 
-    if (inout_expr.get_type().match_proto_ptr()) {
+    if (analyzer.get_resolved_type(inout_expr).match_proto_ptr()) {
         partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
         if (partial_result != Result::SUCCESS) {
             return Result::ERROR;
@@ -202,7 +202,7 @@ Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &
         return Result::ERROR;
     }
 
-    sir::Expr type = inout_expr.get_type();
+    sir::Expr type = analyzer.get_resolved_type(inout_expr);
     if (type == proto_ptr_type) {
         return Result::SUCCESS;
     }
@@ -259,7 +259,7 @@ Result ExprFinalizer::coerce_to_std_result(sir::Expr &inout_expr, sir::Specializ
         return partial_result;
     }
 
-    sir::Expr type = inout_expr.get_type();
+    sir::Expr type = analyzer.get_resolved_type(inout_expr);
 
     if (type == specialization.args[0]) {
         create_std_result_success(specialization, inout_expr);
@@ -391,7 +391,7 @@ Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr
                     result = Result::ERROR;
                 }
 
-                tuple_literal.type.as<sir::TupleExpr>().exprs[i] = value.get_type();
+                tuple_literal.type.as<sir::TupleExpr>().exprs[i] = analyzer.get_resolved_type(value);
             }
 
             if (result != Result::SUCCESS) {
@@ -439,7 +439,7 @@ Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr 
         return Result::ERROR;
     }
 
-    binary_expr.type = binary_expr.lhs.get_type();
+    binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
     return Result::SUCCESS;
 }
 
@@ -453,7 +453,7 @@ Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr ty
     }
 
     if (unary_expr.type.is<sir::PseudoType>()) {
-        unary_expr.type = unary_expr.value.get_type();
+        unary_expr.type = analyzer.get_resolved_type(unary_expr.value);
     }
 
     if (partial_result != Result::SUCCESS) {
@@ -535,7 +535,7 @@ Result ExprFinalizer::finalize_default(sir::ArrayLiteral &array_literal, sir::Ex
     }
 
     finalize_array_literal_elements(array_literal, nullptr);
-    create_std_array(array_literal, array_literal.values[0].get_type(), out_expr);
+    create_std_array(array_literal, analyzer.get_resolved_type(array_literal.values[0]), out_expr);
     return Result::SUCCESS;
 }
 
@@ -564,7 +564,7 @@ Result ExprFinalizer::finalize_default(sir::TupleExpr &tuple_literal) {
     for (unsigned i = 0; i < tuple_literal.exprs.size(); i++) {
         sir::Expr &value = tuple_literal.exprs[i];
         ExprFinalizer(analyzer).finalize(value);
-        tuple_type.exprs[i] = value.get_type();
+        tuple_type.exprs[i] = analyzer.get_resolved_type(value);
     }
 
     return Result::SUCCESS;
@@ -588,8 +588,8 @@ Result ExprFinalizer::finalize_default(sir::BinaryExpr &binary_expr) {
         return Result::ERROR;
     }
 
-    sir::Expr lhs_type = binary_expr.lhs.get_type();
-    sir::Expr rhs_type = binary_expr.rhs.get_type();
+    sir::Expr lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
+    sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
 
     if (lhs_type == rhs_type) {
         binary_expr.type = lhs_type;
@@ -604,7 +604,7 @@ Result ExprFinalizer::finalize_default(sir::UnaryExpr &unary_expr) {
     ExprFinalizer(analyzer).finalize(unary_expr.value);
 
     if (unary_expr.type.is<sir::PseudoType>()) {
-        unary_expr.type = unary_expr.value.get_type();
+        unary_expr.type = analyzer.get_resolved_type(unary_expr.value);
     }
 
     return Result::SUCCESS;
@@ -808,8 +808,8 @@ void ExprFinalizer::create_std_result_failure(
 }
 
 void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_expr) {
-    sir::Expr key_type = map_literal.entries[0].key.get_type();
-    sir::Expr value_type = map_literal.entries[0].value.get_type();
+    sir::Expr key_type = analyzer.get_resolved_type(map_literal.entries[0].key);
+    sir::Expr value_type = analyzer.get_resolved_type(map_literal.entries[0].value);
 
     sir::StructDef &map_type = analyzer.find_std_map().as<sir::StructDef>();
     std::span<sir::Expr> generic_args = analyzer.create_array({key_type, value_type});
@@ -897,7 +897,7 @@ Result ExprFinalizer::finalize_array_literal_elements(sir::ArrayLiteral &array_l
             partial_result = ExprFinalizer(analyzer).finalize_by_coercion(value, element_type);
         } else {
             partial_result = ExprFinalizer(analyzer).finalize(value);
-            element_type = value.get_type();
+            element_type = analyzer.get_resolved_type(value);
         }
 
         if (partial_result != Result::SUCCESS) {
