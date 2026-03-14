@@ -77,6 +77,7 @@ struct MetaCallExpr;
 struct InitExpr;
 struct MoveExpr;
 struct DeinitExpr;
+struct PlaceholderExpr;
 struct VarStmt;
 struct AssignStmt;
 struct CompAssignStmt;
@@ -194,8 +195,9 @@ class Expr {
         InitExpr *,         // 42
         MoveExpr *,         // 43
         DeinitExpr *,       // 44
-        Error *,            // 45
-        std::nullptr_t>     // 46
+        PlaceholderExpr *,  // 45
+        Error *,            // 46
+        std::nullptr_t>     // 47
         kind;
 
 public:
@@ -581,6 +583,7 @@ struct Specialization {
     std::span<Expr> args;
     T *def;
     SymbolTable *symbol_table;
+    std::vector<sir::Expr> expr_replacements;
 };
 
 struct FuncType {
@@ -1030,10 +1033,15 @@ struct DeinitExpr {
     Resource *resource;
 };
 
-struct ProtoCallExpr {
+struct PlaceholderExpr {
+    struct GenericMethod {
+        GenericParam *param;
+        FuncDecl *decl;
+    };
+
     ASTNode *ast_node;
     Expr type;
-    Expr value;
+    std::variant<GenericMethod> kind;
 };
 
 struct VarStmt {

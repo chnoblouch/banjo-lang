@@ -657,6 +657,7 @@ void Printer::print_expr(const Expr &expr) {
         print_init_expr(*inner),
         print_move_expr(*inner),
         print_deinit_expr(*inner),
+        print_placeholder_expr(*inner),
         print_error(*inner)
     );
 }
@@ -848,7 +849,7 @@ void Printer::print_try_expr(const TryExpr &try_expr) {
     BEGIN_OBJECT("TryExpr");
     PRINT_EXPR_FIELD("type", try_expr.type);
     PRINT_EXPR_FIELD("value", try_expr.value);
-    
+
     if (try_expr.return_stmt) {
         PRINT_FIELD_NAME("return_stmt");
         print_stmt(try_expr.return_stmt);
@@ -1057,6 +1058,21 @@ void Printer::print_deinit_expr(const DeinitExpr &deinit_expr) {
     PRINT_EXPR_FIELD("value", deinit_expr.value);
     PRINT_FIELD_NAME("resource");
     print_resource(*deinit_expr.resource, false);
+    END_OBJECT();
+}
+
+void Printer::print_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
+    BEGIN_OBJECT("PlaceholderExpr");
+    PRINT_EXPR_FIELD("type", placeholder_expr.type);
+    PRINT_FIELD_NAME("kind");
+
+    if (auto generic_method = std::get_if<PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
+        BEGIN_OBJECT("GenericMethod");
+        PRINT_FIELD("param", generic_method->param->ident.value);
+        PRINT_FIELD("decl", generic_method->decl->ident.value);
+        END_OBJECT();
+    }
+
     END_OBJECT();
 }
 

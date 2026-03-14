@@ -4,7 +4,10 @@
 #include "banjo/sir/sir.hpp"
 #include "sir.hpp"
 
+#include <functional>
+#include <optional>
 #include <stack>
+#include <unordered_map>
 
 namespace banjo {
 
@@ -15,12 +18,18 @@ namespace sir {
 class Cloner {
 
 private:
+    typedef std::function<Expr(Expr expr)> ExprHook;
+
     Module &mod;
     std::stack<SymbolTable *> symbol_tables;
+    std::optional<ExprHook> expr_hook;
+
+    std::unordered_map<sir::Symbol, sir::Symbol> symbol_map;
 
 public:
     Cloner(Module &mod);
     Cloner(Module &mod, SymbolTable &parent_symbol_table);
+    Cloner(Module &mod, ExprHook expr_hook);
 
     DeclBlock clone_decl_block(const DeclBlock &decl_block);
     Decl clone_decl(const Decl &decl);
@@ -113,9 +122,11 @@ public:
     InitExpr *clone_init_expr(const InitExpr &init_expr);
     MoveExpr *clone_move_expr(const MoveExpr &move_expr);
     DeinitExpr *clone_deinit_expr(const DeinitExpr &deinit_expr);
+    Expr clone_placeholder_expr(const PlaceholderExpr &placeholder_expr);
 
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
     void pop_symbol_table() { symbol_tables.pop(); }
+    Symbol resolve_symbol(Symbol symbol);
 
     FuncType clone_func_type_directly(const FuncType &func_type);
     Local clone_local(const Local &local);

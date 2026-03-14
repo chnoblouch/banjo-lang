@@ -92,6 +92,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                              // placeholder_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
 }
@@ -260,6 +261,8 @@ StoredValue ExprSSAGenerator::generate_union_case_literal(
 }
 
 StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol_expr) {
+    ASSERT(symbol_expr.type == const_cast<sir::Symbol &>(symbol_expr.symbol).get_type());
+
     if (auto func_def = symbol_expr.symbol.match<sir::FuncDef>()) {
         ssa::Function *ssa_func = ctx.ssa_funcs.at(func_def);
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);

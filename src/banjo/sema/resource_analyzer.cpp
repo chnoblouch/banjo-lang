@@ -34,7 +34,7 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type /*= ScopeType::GENERIC*/) {
     // FIXME: Deinitialize unused return values of functions
     // FIXME: Deinitialize right-hand side of logical operators conditionally
-    
+
     // TODO: There are performance issues here when analyzing large numbers of resources.
     // One example is `convert.enum_to_repr` with enums that have lots of variants.
 
@@ -420,6 +420,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // init_expr
         SIR_VISIT_IGNORE,                                // move_expr
         result = analyze_deinit_expr(*inner, expr),      // deinit_expr
+        SIR_VISIT_IGNORE,                                // placeholder_expr
         SIR_VISIT_IGNORE                                 // error
     );
 

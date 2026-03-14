@@ -160,6 +160,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<init expr>",
         return "<move expr>",
         return "<deinit expr>",
+        return "<placeholder expr>",
         return "invalid"
     );
 }

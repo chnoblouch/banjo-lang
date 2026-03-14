@@ -173,6 +173,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                                      // init_expr
         SIR_VISIT_IMPOSSIBLE,                                      // move_expr
         SIR_VISIT_IMPOSSIBLE,                                      // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                                      // placeholder_expr
         result = Result::ERROR                                     // error
     );
 
@@ -1244,13 +1245,35 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         if (auto proto_def = generic_param->constraint.match_symbol<sir::ProtoDef>()) {
             sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
-            if (method) {
-                analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
-                return Result::ERROR;
-            } else {
+            if (!method) {
                 analyzer.report_generator.report_err_no_method(dot_expr.rhs, *proto_def);
                 return Result::SUCCESS;
             }
+
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
+
+            out_call_expr.callee = analyzer.create(
+                sir::PlaceholderExpr{
+                    .ast_node = nullptr,
+                    .type = &method.as<sir::FuncDecl>().type,
+                    .kind = sir::PlaceholderExpr::GenericMethod{
+                        .param = generic_param,
+                        .decl = &method.as<sir::FuncDecl>(),
+                    },
+                }
+            );
+
+            std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(out_call_expr.args.size() + 1);
+            args[0] = lhs;
+
+            for (unsigned i = 0; i < out_call_expr.args.size(); i++) {
+                args[i + 1] = out_call_expr.args[i];
+            }
+
+            out_call_expr.args = args;
+            is_method = true;
+
+            return Result::SUCCESS;
         }
     }
 
@@ -2121,6 +2144,28 @@ Result ExprAnalyzer::finalize_call_expr_args(
     for (unsigned i = 0; i < call_expr.args.size(); i++) {
         sir::Expr &arg = call_expr.args[i];
         sir::Expr expected_type = func_type.params[i].type;
+
+        // If we're calling a method on a generic type, the type of the `self` parameter
+        // is the type that is substituted for `T` and not a pointer to a `proto`.
+        // FIXME: `mut self`, `@byval self`
+        if (i == 0 && call_expr.callee.is<sir::PlaceholderExpr>()) {
+            auto &generic_method =
+                std::get<sir::PlaceholderExpr::GenericMethod>(call_expr.callee.as<sir::PlaceholderExpr>().kind);
+            
+                expected_type = analyzer.create(
+                sir::ReferenceType{
+                    .ast_node = nullptr,
+                    .mut = false,
+                    .base_type = analyzer.create(
+                        sir::SymbolExpr{
+                            .ast_node = nullptr,
+                            .type = nullptr,
+                            .symbol = generic_method.param,
+                        }
+                    ),
+                }
+            );
+        }
 
         partial_result = ExprFinalizer(analyzer).finalize_by_coercion(arg, expected_type);
         if (partial_result != Result::SUCCESS) {

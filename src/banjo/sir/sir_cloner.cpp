@@ -19,8 +19,10 @@ Cloner::Cloner(Module &mod, SymbolTable &parent_symbol_table) : mod(mod) {
     push_symbol_table(&parent_symbol_table);
 }
 
+Cloner::Cloner(Module &mod, ExprHook expr_hook) : mod(mod), expr_hook(expr_hook) {}
+
 DeclBlock Cloner::clone_decl_block(const DeclBlock &decl_block) {
-    assert(decl_block.symbol_table->symbols.empty());
+    ASSERT(decl_block.symbol_table->symbols.empty());
 
     SymbolTable *symbol_table = push_symbol_table(decl_block.symbol_table->parent);
 
@@ -75,26 +77,33 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
         generic_param_symbol_table = push_symbol_table(nullptr);
     }
 
-    sir::Block block = clone_block(func_def.block);
-
-    if (func_def.generic_param_symbol_table) {
-        pop_symbol_table();
-    }
-
-    return mod.create(
+    FuncDef *clone = mod.create(
         FuncDef{
             .ast_node = func_def.ast_node,
             .ident = clone_ident(func_def.ident),
+            .parent = func_def.parent,
             .type = clone_func_type_directly(func_def.type),
-            .block = block,
+            .block{},
             .attrs = clone_attrs(func_def.attrs),
             .generic_param_symbol_table = generic_param_symbol_table,
             .generic_params = func_def.generic_params,
             .specializations = {},
             .parent_specialization = nullptr,
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
+
+    for (unsigned i = 0; i < func_def.type.params.size(); i++) {
+        symbol_map.emplace(&func_def.type.params[i], &clone->type.params[i]);
+    }
+
+    clone->block = clone_block(func_def.block);
+
+    if (func_def.generic_param_symbol_table) {
+        pop_symbol_table();
+    }
+
+    return clone;
 }
 
 FuncDecl *Cloner::clone_func_decl(const FuncDecl &func_decl) {
@@ -103,7 +112,7 @@ FuncDecl *Cloner::clone_func_decl(const FuncDecl &func_decl) {
             .ast_node = func_decl.ast_node,
             .ident = clone_ident(func_decl.ident),
             .type = clone_func_type_directly(func_decl.type),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -115,7 +124,7 @@ NativeFuncDecl *Cloner::clone_native_func_decl(const NativeFuncDecl &native_func
             .ident = clone_ident(native_func_decl.ident),
             .type = clone_func_type_directly(native_func_decl.type),
             .attrs = clone_attrs(native_func_decl.attrs),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -127,7 +136,7 @@ ConstDef *Cloner::clone_const_def(const ConstDef &const_def) {
             .ident = clone_ident(const_def.ident),
             .type = clone_expr(const_def.type),
             .value = clone_expr(const_def.value),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -148,7 +157,7 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
             .generic_params = struct_def.generic_params,
             .specializations = {},
             .parent_specialization = nullptr,
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -165,7 +174,7 @@ VarDecl *Cloner::clone_var_decl(const VarDecl &var_decl) {
             .type = clone_expr(var_decl.type),
             .value = clone_expr(var_decl.value),
             .attrs = clone_attrs(var_decl.attrs),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -177,13 +186,13 @@ NativeVarDecl *Cloner::clone_native_var_decl(const NativeVarDecl &native_var_dec
             .ident = clone_ident(native_var_decl.ident),
             .type = clone_expr(native_var_decl.type),
             .attrs = clone_attrs(native_var_decl.attrs),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
 
 EnumDef *Cloner::clone_enum_def(const EnumDef &enum_def) {
-    assert(enum_def.variants.empty());
+    ASSERT(enum_def.variants.empty());
 
     return mod.create(
         EnumDef{
@@ -191,7 +200,7 @@ EnumDef *Cloner::clone_enum_def(const EnumDef &enum_def) {
             .ident = clone_ident(enum_def.ident),
             .block = enum_def.block,
             .variants = {},
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -203,7 +212,7 @@ EnumVariant *Cloner::clone_enum_variant(const EnumVariant &enum_variant) {
             .ident = clone_ident(enum_variant.ident),
             .type = clone_expr(enum_variant.type),
             .value = clone_expr(enum_variant.value),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -215,7 +224,7 @@ UnionDef *Cloner::clone_union_def(const UnionDef &union_def) {
             .ident = clone_ident(union_def.ident),
             .block = clone_decl_block(union_def.block),
             .cases = {},
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -226,7 +235,7 @@ UnionCase *Cloner::clone_union_case(const UnionCase &union_case) {
             .ast_node = union_case.ast_node,
             .ident = clone_ident(union_case.ident),
             .fields = union_case.fields,
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -238,7 +247,7 @@ ProtoDef *Cloner::clone_proto_def(const ProtoDef &proto_def) {
             .ident = clone_ident(proto_def.ident),
             .block = clone_decl_block(proto_def.block),
             .func_decls = {},
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -249,7 +258,7 @@ TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
             .ast_node = type_alias.ast_node,
             .ident = clone_ident(type_alias.ident),
             .type = clone_expr(type_alias.type),
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
@@ -310,35 +319,35 @@ UseItem Cloner::clone_use_item(const UseItem &use_item) {
     else if (auto use_rebind = use_item.match<UseRebind>()) return clone_use_rebind(*use_rebind);
     else if (auto use_dot_expr = use_item.match<UseDotExpr>()) return clone_use_dot_expr(*use_dot_expr);
     else if (auto use_list = use_item.match<UseList>()) return clone_use_list(*use_list);
-    else if (auto error = use_item.match<sir::Error>()) return clone_error(*error);
+    else if (auto error = use_item.match<Error>()) return clone_error(*error);
     else ASSERT_UNREACHABLE;
 }
 
 UseIdent *Cloner::clone_use_ident(const UseIdent &use_ident) {
     return mod.create(
-        sir::UseIdent{
+        UseIdent{
             .ident = clone_ident(use_ident.ident),
             .symbol = nullptr,
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
 
 UseRebind *Cloner::clone_use_rebind(const UseRebind &use_rebind) {
     return mod.create(
-        sir::UseRebind{
+        UseRebind{
             .ast_node = use_rebind.ast_node,
             .target_ident = clone_ident(use_rebind.target_ident),
             .local_ident = clone_ident(use_rebind.local_ident),
             .symbol = nullptr,
-            .stage = sir::SemaStage::NAME,
+            .stage = SemaStage::NAME,
         }
     );
 }
 
 UseDotExpr *Cloner::clone_use_dot_expr(const UseDotExpr &use_dot_expr) {
     return mod.create(
-        sir::UseDotExpr{
+        UseDotExpr{
             .ast_node = use_dot_expr.ast_node,
             .lhs = clone_use_item(use_dot_expr.lhs),
             .rhs = clone_use_item(use_dot_expr.rhs),
@@ -347,14 +356,14 @@ UseDotExpr *Cloner::clone_use_dot_expr(const UseDotExpr &use_dot_expr) {
 }
 
 UseList *Cloner::clone_use_list(const UseList &use_list) {
-    std::span<sir::UseItem> items = mod.allocate_array<sir::UseItem>(use_list.items.size());
+    std::span<UseItem> items = mod.allocate_array<UseItem>(use_list.items.size());
 
     for (unsigned i = 0; i < use_list.items.size(); i++) {
         items[i] = clone_use_item(use_list.items[i]);
     }
 
     return mod.create(
-        sir::UseList{
+        UseList{
             .ast_node = use_list.ast_node,
             .items = items,
         }
@@ -362,13 +371,21 @@ UseList *Cloner::clone_use_list(const UseList &use_list) {
 }
 
 Block Cloner::clone_block(const Block &block) {
-    assert(block.symbol_table->symbols.empty());
+    // ASSERT(block.symbol_table->symbols.empty());
 
     SymbolTable *symbol_table = push_symbol_table(block.symbol_table->parent);
     std::vector<Stmt> stmts(block.stmts.size());
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
         stmts[i] = clone_stmt(block.stmts[i]);
+    }
+
+    for (auto [name, symbol] : block.symbol_table->symbols) {
+        symbol_table->symbols.emplace(name, resolve_symbol(symbol));
+    }
+
+    for (Symbol symbol : block.symbol_table->local_symbols_ordered) {
+        symbol_table->local_symbols_ordered.push_back(resolve_symbol(symbol));
     }
 
     pop_symbol_table();
@@ -406,13 +423,16 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
 }
 
 VarStmt *Cloner::clone_var_stmt(const VarStmt &var_stmt) {
-    return mod.create(
+    VarStmt *clone = mod.create(
         VarStmt{
             .ast_node = var_stmt.ast_node,
             .local = clone_local(var_stmt.local),
             .value = clone_expr(var_stmt.value),
         }
     );
+
+    symbol_map.emplace(const_cast<Local *>(&var_stmt.local), &clone->local);
+    return clone;
 }
 
 AssignStmt *Cloner::clone_assign_stmt(const AssignStmt &assign_stmt) {
@@ -446,7 +466,7 @@ ReturnStmt *Cloner::clone_return_stmt(const ReturnStmt &return_stmt) {
 }
 
 IfStmt *Cloner::clone_if_stmt(const IfStmt &if_stmt) {
-    std::span<IfCondBranch> cond_branches = mod.allocate_array<sir::IfCondBranch>(if_stmt.cond_branches.size());
+    std::span<IfCondBranch> cond_branches = mod.allocate_array<IfCondBranch>(if_stmt.cond_branches.size());
 
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
         const IfCondBranch &if_cond_branch = if_stmt.cond_branches[i];
@@ -558,8 +578,15 @@ ForStmt *Cloner::clone_for_stmt(const ForStmt &for_stmt) {
     );
 }
 
-LoopStmt *Cloner::clone_loop_stmt(const LoopStmt & /*loop_stmt*/) {
-    ASSERT_UNREACHABLE;
+LoopStmt *Cloner::clone_loop_stmt(const LoopStmt &loop_stmt) {
+    return mod.create(
+        sir::LoopStmt{
+            .ast_node = loop_stmt.ast_node,
+            .condition = clone_expr(loop_stmt.condition),
+            .block = mod.create(clone_block(*loop_stmt.block)),
+            .latch = mod.create(clone_block(*loop_stmt.latch)),
+        }
+    );
 }
 
 ContinueStmt *Cloner::clone_continue_stmt(const ContinueStmt &continue_stmt) {
@@ -587,6 +614,14 @@ Block *Cloner::clone_block_stmt(const Block &block) {
 }
 
 Expr Cloner::clone_expr(const Expr &expr) {
+    if (expr_hook) {
+        Expr clone = (*expr_hook)(expr);
+
+        if (clone) {
+            return clone;
+        }
+    }
+
     SIR_VISIT_EXPR(
         expr,
         return nullptr,
@@ -635,6 +670,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_init_expr(*inner),
         return clone_move_expr(*inner),
         return clone_deinit_expr(*inner),
+        return clone_placeholder_expr(*inner),
         return clone_error(*inner)
     );
 }
@@ -650,7 +686,7 @@ std::vector<Expr> Cloner::clone_expr_list(const std::vector<Expr> &exprs) {
 }
 
 std::span<Expr> Cloner::clone_expr_span(std::span<Expr> exprs) {
-    std::span<Expr> clone = mod.allocate_array<sir::Expr>(exprs.size());
+    std::span<Expr> clone = mod.allocate_array<Expr>(exprs.size());
 
     for (unsigned i = 0; i < exprs.size(); i++) {
         clone[i] = clone_expr(exprs[i]);
@@ -815,7 +851,7 @@ SymbolExpr *Cloner::clone_symbol_expr(const SymbolExpr &symbol_expr) {
         SymbolExpr{
             .ast_node = symbol_expr.ast_node,
             .type = clone_expr(symbol_expr.type),
-            .symbol = symbol_expr.symbol,
+            .symbol = resolve_symbol(symbol_expr.symbol),
         }
     );
 }
@@ -1049,7 +1085,7 @@ DotExpr *Cloner::clone_dot_expr(const DotExpr &dot_expr) {
 
 PseudoType *Cloner::clone_pseudo_type(const PseudoType &pseudo_type) {
     return mod.create(
-        sir::PseudoType{
+        PseudoType{
             .kind = pseudo_type.kind,
         }
     );
@@ -1119,9 +1155,13 @@ DeinitExpr *Cloner::clone_deinit_expr(const DeinitExpr &deinit_expr) {
     );
 }
 
+Expr Cloner::clone_placeholder_expr(const PlaceholderExpr &) {
+    ASSERT_UNREACHABLE;
+}
+
 SymbolTable *Cloner::push_symbol_table(SymbolTable *parent_if_empty) {
     SymbolTable *symbol_table = mod.create(
-        sir::SymbolTable{
+        SymbolTable{
             .parent = symbol_tables.empty() ? parent_if_empty : symbol_tables.top(),
             .symbols = {},
         }
@@ -1129,6 +1169,11 @@ SymbolTable *Cloner::push_symbol_table(SymbolTable *parent_if_empty) {
 
     symbol_tables.push(symbol_table);
     return symbol_table;
+}
+
+Symbol Cloner::resolve_symbol(Symbol symbol) {
+    auto iter = symbol_map.find(symbol);
+    return iter == symbol_map.end() ? symbol : iter->second;
 }
 
 FuncType Cloner::clone_func_type_directly(const FuncType &func_type) {
@@ -1165,9 +1210,9 @@ Attributes *Cloner::clone_attrs(const Attributes *attrs) {
 }
 
 MetaBlock Cloner::clone_meta_block(const MetaBlock &meta_block) {
-    if (auto block = std::get_if<sir::Block *>(&meta_block)) {
+    if (auto block = std::get_if<Block *>(&meta_block)) {
         return mod.create(clone_block(**block));
-    } else if (auto decl_block = std::get_if<sir::DeclBlock *>(&meta_block)) {
+    } else if (auto decl_block = std::get_if<DeclBlock *>(&meta_block)) {
         return mod.create(clone_decl_block(**decl_block));
     } else {
         ASSERT_UNREACHABLE;

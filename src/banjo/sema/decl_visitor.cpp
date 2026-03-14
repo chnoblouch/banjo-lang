@@ -42,9 +42,9 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
 
 void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
     if (func_def.is_generic()) {
-        if (!func_def.clone_template) {
-            func_def.clone_template = sir::Cloner{func_def.find_mod()}.clone_func_def(func_def);
-        }
+        // if (!func_def.clone_template) {
+        //     func_def.clone_template = sir::Cloner{func_def.find_mod()}.clone_func_def(func_def);
+        // }
 
         for (sir::Specialization<sir::FuncDef> &specialization : func_def.specializations) {
             visit_func_def(*specialization.def);

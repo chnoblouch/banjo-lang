@@ -4,6 +4,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <utility>
+#include <variant>
 
 namespace banjo {
 
@@ -65,6 +66,7 @@ bool Expr::operator==(const Expr &other) const {
         return false,                                       // init_expr
         return false,                                       // move_expr
         return false,                                       // deinit_expr
+        return false,                                       // placeholder_expr
         return true                                         // error
     );
 }
@@ -118,6 +120,7 @@ Expr Expr::get_type() const {
         return inner->type, // init_expr
         return inner->type, // move_expr
         return inner->type, // deinit_expr
+        return inner->type, // placeholder_expr
         return nullptr      // error
     );
 }
@@ -158,6 +161,12 @@ ExprCategory Expr::get_category() const {
     } else if (is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
                is<sir::ClosureType>() || is<sir::ReferenceType>()) {
         return ExprCategory::TYPE;
+    } else if (auto placeholder_expr = match<PlaceholderExpr>()) {
+        if (std::holds_alternative<PlaceholderExpr::GenericMethod>(placeholder_expr->kind)) {
+            return ExprCategory::VALUE;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
     } else {
         return ExprCategory::VALUE;
     }
@@ -285,6 +294,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
