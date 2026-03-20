@@ -455,7 +455,7 @@ void StmtAnalyzer::analyze_expr_stmt(sir::Expr &expr) {
 
     if (auto call_expr = expr.match<sir::CallExpr>()) {
         if (auto struct_def = call_expr->type.match_symbol<sir::StructDef>()) {
-            if (struct_def->is_specialization_of(analyzer.get_std_result())) {
+            if (struct_def->is_specialization_of(*analyzer.std_map_def)) {
                 analyzer.report_generator.report_warn_call_result_unused(*call_expr);
             }
         }

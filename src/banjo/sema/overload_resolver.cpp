@@ -51,8 +51,8 @@ bool OverloadResolver::is_coercible(sir::Expr arg_type, sir::Expr param_type) {
         } else if (pseudo_type->kind == sir::PseudoTypeKind::NULL_LITERAL) {
             return param_type.is_addr_like_type();
         } else if (pseudo_type->kind == sir::PseudoTypeKind::STRING_LITERAL) {
-            return param_type.is_u8_ptr() || param_type.is_symbol(analyzer.find_std_string()) ||
-                   param_type.is_symbol(analyzer.find_std_string_slice());
+            return param_type.is_u8_ptr() || param_type.is_symbol(analyzer.std_string_def) ||
+                   param_type.is_symbol(analyzer.std_string_slice_def);
         } else {
             return false;
         }

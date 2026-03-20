@@ -501,8 +501,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
         }
     );
 
-    sir::StructDef &std_closure_def = analyzer.find_std_closure().as<sir::StructDef>();
-
+    sir::StructDef &std_closure_def = *analyzer.std_closure_def;
     sir::FuncDef &new_def_generic = std_closure_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>();
     std::span<sir::Expr> generic_args = analyzer.create_array<sir::Expr>({data_type});
     sir::FuncDef &new_def = *GenericsSpecializer(analyzer).specialize(new_def_generic, generic_args);
@@ -839,7 +838,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             return Result::ERROR;
         }
 
-        sir::StructDef &struct_def = analyzer.find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
+        sir::StructDef &struct_def = *analyzer.std_shared_def;
 
         if (unary_expr.value.is_type()) {
             std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
@@ -1396,9 +1395,8 @@ Result ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir
         return Result::ERROR;
     }
 
-    sir::StructDef &struct_def = analyzer.find_std_optional().as<sir::StructDef>();
     std::span<sir::Expr> generic_args = analyzer.create_array({optional_type.base_type});
-    specialize(struct_def, generic_args, out_expr);
+    specialize(*analyzer.std_optional_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
@@ -1421,7 +1419,7 @@ Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr
         return Result::ERROR;
     }
 
-    sir::StructDef &struct_def = analyzer.get_std_result();
+    sir::StructDef &struct_def = *analyzer.std_result_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({result_type.value_type, result_type.error_type});
     specialize(struct_def, generic_args, out_expr);
 
@@ -1436,9 +1434,8 @@ Result ExprAnalyzer::analyze_array_type(sir::ArrayType &array_type, sir::Expr &o
         return Result::ERROR;
     }
 
-    sir::StructDef &struct_def = analyzer.find_std_array().as<sir::StructDef>();
     std::span<sir::Expr> generic_args = analyzer.create_array<sir::Expr>({array_type.base_type});
-    specialize(struct_def, generic_args, out_expr);
+    specialize(*analyzer.std_array_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
@@ -1461,16 +1458,14 @@ Result ExprAnalyzer::analyze_map_type(sir::MapType &map_type, sir::Expr &out_exp
         return Result::ERROR;
     }
 
-    sir::StructDef &struct_def = analyzer.find_std_map().as<sir::StructDef>();
     std::span<sir::Expr> generic_args = analyzer.create_array({map_type.key_type, map_type.value_type});
-    specialize(struct_def, generic_args, out_expr);
+    specialize(*analyzer.std_map_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_closure_type(sir::ClosureType &closure_type) {
-    sir::StructDef &std_closure_def = analyzer.find_std_closure().as<sir::StructDef>();
-    closure_type.underlying_struct = &std_closure_def;
+    closure_type.underlying_struct = analyzer.std_closure_def;
     return analyze_func_type(closure_type.func_type);
 }
 
@@ -1529,11 +1524,10 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
         return Result::ERROR;
     }
 
-    sir::StructDef &result_def = analyzer.get_std_result();
     sir::StructDef *value_result_def = nullptr;
 
     if (auto struct_def = analyzer.get_resolved_type(try_expr.value).match_symbol<sir::StructDef>()) {
-        if (struct_def->is_specialization_of(result_def)) {
+        if (struct_def->is_specialization_of(*analyzer.std_result_def)) {
             value_result_def = struct_def;
         }
     }
@@ -1554,7 +1548,7 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
     sir::StructDef *return_result_def = nullptr;
 
     if (auto struct_def = return_type.match_symbol<sir::StructDef>()) {
-        if (struct_def->is_specialization_of(result_def)) {
+        if (struct_def->is_specialization_of(*analyzer.std_result_def)) {
             return_result_def = struct_def;
         }
     }

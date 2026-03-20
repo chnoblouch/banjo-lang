@@ -345,10 +345,10 @@ Result ExprFinalizer::finalize_coercion(sir::StringLiteral &string_literal, sir:
     if (type.is_u8_ptr()) {
         string_literal.type = type;
         return Result::SUCCESS;
-    } else if (type.is_symbol(analyzer.find_std_string())) {
+    } else if (type.is_symbol(analyzer.std_string_def)) {
         create_std_string(string_literal, out_expr);
         return Result::SUCCESS;
-    } else if (type.is_symbol(analyzer.find_std_string_slice())) {
+    } else if (type.is_symbol(analyzer.std_string_slice_def)) {
         create_std_string_slice(string_literal, out_expr);
         return Result::SUCCESS;
     } else {
@@ -620,7 +620,7 @@ Result ExprFinalizer::finalize_default(sir::DotExpr &dot_expr) {
 }
 
 void ExprFinalizer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
-    sir::StructDef &struct_def = analyzer.find_std_string().as<sir::StructDef>();
+    sir::StructDef &struct_def = *analyzer.std_string_def;
     sir::FuncDef &func_def = struct_def.block.symbol_table->look_up_local("from_cstr").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create(
@@ -650,7 +650,7 @@ void ExprFinalizer::create_std_string(sir::StringLiteral &string_literal, sir::E
 }
 
 void ExprFinalizer::create_std_string_slice(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
-    sir::StructDef &struct_def = analyzer.find_std_string_slice().as<sir::StructDef>();
+    sir::StructDef &struct_def = *analyzer.std_string_slice_def;
     sir::FuncDef &func_def = struct_def.block.symbol_table->look_up_local("of_cstring").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create(
@@ -721,7 +721,7 @@ void ExprFinalizer::create_std_array(
         }
     );
 
-    sir::StructDef &array_type = analyzer.find_std_array().as<sir::StructDef>();
+    sir::StructDef &array_type = *analyzer.std_array_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({element_type});
     sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(array_type, generic_args);
 
@@ -811,7 +811,7 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
     sir::Expr key_type = analyzer.get_resolved_type(map_literal.entries[0].key);
     sir::Expr value_type = analyzer.get_resolved_type(map_literal.entries[0].value);
 
-    sir::StructDef &map_type = analyzer.find_std_map().as<sir::StructDef>();
+    sir::StructDef &map_type = *analyzer.std_map_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({key_type, value_type});
     sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(map_type, generic_args);
 
