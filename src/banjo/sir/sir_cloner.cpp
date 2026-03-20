@@ -68,14 +68,8 @@ Decl Cloner::clone_decl(const Decl &decl) {
 }
 
 FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
-    ASSERT(func_def.specializations.empty());
+    // ASSERT(func_def.specializations.empty());
     ASSERT(!func_def.parent_specialization);
-
-    SymbolTable *generic_param_symbol_table = nullptr;
-
-    if (func_def.generic_param_symbol_table) {
-        generic_param_symbol_table = push_symbol_table(nullptr);
-    }
 
     FuncDef *clone = mod.create(
         FuncDef{
@@ -85,7 +79,6 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
             .type = clone_func_type_directly(func_def.type),
             .block{},
             .attrs = clone_attrs(func_def.attrs),
-            .generic_param_symbol_table = generic_param_symbol_table,
             .generic_params = func_def.generic_params,
             .specializations = {},
             .parent_specialization = nullptr,
@@ -98,11 +91,6 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
     }
 
     clone->block = clone_block(func_def.block);
-
-    if (func_def.generic_param_symbol_table) {
-        pop_symbol_table();
-    }
-
     return clone;
 }
 
@@ -1167,8 +1155,14 @@ TypeGuardExpr *Cloner::clone_type_guard_expr(const TypeGuardExpr &type_guard_exp
     );
 }
 
-PlaceholderExpr *Cloner::clone_placeholder_expr(const PlaceholderExpr &) {
-    ASSERT_UNREACHABLE;
+PlaceholderExpr *Cloner::clone_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
+    return mod.create(
+        PlaceholderExpr{
+            .ast_node = placeholder_expr.ast_node,
+            .type = clone_expr(placeholder_expr.type),
+            .kind = placeholder_expr.kind,
+        }
+    );
 }
 
 SymbolTable *Cloner::push_symbol_table(SymbolTable *parent_if_empty) {

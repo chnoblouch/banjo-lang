@@ -96,6 +96,8 @@ public:
     void push_loop_context(LoopContext ctx) { loop_contexts.push(ctx); }
     void pop_loop_context() { loop_contexts.pop(); }
 
+    sir::Expr get_generic_arg(const sir::GenericParam &generic_param);
+
     ssa::Function *get_ssa_func() { return get_func_context().ssa_func; }
     ssa::BasicBlockIter get_ssa_block() { return get_func_context().ssa_block; }
 

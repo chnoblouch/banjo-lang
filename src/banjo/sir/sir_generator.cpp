@@ -140,28 +140,16 @@ sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
     ASTNode *return_type_node = params_node->next_sibling;
     ASTNode *block_node = return_type_node->next_sibling;
 
-    sir::SymbolTable *generic_param_symbol_table = create(
-        sir::SymbolTable{
-            .parent = get_scope().symbol_table,
-        }
-    );
-
-    push_scope().symbol_table = generic_param_symbol_table;
-
-    sir::FuncDef *func_def = create(
+    return create(
         sir::FuncDef{
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
             .block = generate_block(block_node),
-            .generic_param_symbol_table = generic_param_symbol_table,
             .generic_params = generate_generic_param_list(generic_params_node),
             .stage = sir::SemaStage::NAME,
         }
     );
-
-    pop_scope();
-    return func_def;
 }
 
 sir::Decl SIRGenerator::generate_func_decl(ASTNode *node) {

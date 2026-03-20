@@ -41,49 +41,20 @@ sir::StructDef *GenericsSpecializer::specialize(sir::StructDef &generic_struct_d
 }
 
 sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args) {
-    sir::Module &def_mod = generic_func_def.find_mod();
-
-    auto expr_hook = [&](sir::Expr expr) -> sir::Expr {
-        if (auto generic_param = expr.match_symbol<sir::GenericParam>()) {
-            for (unsigned i = 0; i < generic_func_def.generic_params.size(); i++) {
-                if (&generic_func_def.generic_params[i] == generic_param) {
-                    return args[i];
-                }
-            }
-        } else if (auto placeholder_expr = expr.match<sir::PlaceholderExpr>()) {
-            if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr->kind)) {
-                for (unsigned i = 0; i < generic_func_def.generic_params.size(); i++) {
-                    if (&generic_func_def.generic_params[i] != generic_method->param) {
-                        continue;
-                    }
-
-                    sir::StructDef &struct_def = args[i].as_symbol<sir::StructDef>();
-                    std::string_view method_name = generic_method->decl->ident.value;
-                    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up(method_name).as<sir::FuncDef>();
-
-                    return analyzer.create(
-                        sir::SymbolExpr{
-                            .ast_node = nullptr,
-                            .type = &func_def.type,
-                            .symbol = &func_def,
-                        }
-                    );
-                }
-            }
-        }
-
-        return nullptr;
+    Context ctx{
+        .params = generic_func_def.generic_params,
+        .args = args,
     };
 
-    sir::Cloner cloner(def_mod, expr_hook);
-
-    sir::FuncDef *clone = cloner.clone_func_def(generic_func_def);
-    clone->generic_params.clear();
-    clone->specializations.clear();
-
-    sir::SymbolTable *symbol_table = analyzer.get_mod().create(
-        sir::SymbolTable{
-            .parent = generic_func_def.block.symbol_table->parent,
+    sir::FuncDef *clone = analyzer.create(
+        sir::FuncDef{
+            .ast_node = generic_func_def.ast_node,
+            .ident = generic_func_def.ident,
+            .parent = generic_func_def.parent,
+            .type = specialize_func_type_directly(ctx, generic_func_def.type),
+            .block = generic_func_def.block,
+            .attrs = generic_func_def.attrs,
+            .stage = generic_func_def.stage,
         }
     );
 
@@ -92,12 +63,11 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
             .generic_def = &generic_func_def,
             .args = args,
             .def = clone,
-            .symbol_table = symbol_table,
+            .symbol_table = nullptr,
         }
     );
 
     clone->parent_specialization = &generic_func_def.specializations.back();
-    clone->block.symbol_table->parent = symbol_table;
 
     if (analyzer.mode == Mode::COMPLETION) {
         analyzer.get_completion_infection().func_specializations[&generic_func_def] += 1;
@@ -166,6 +136,49 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     }
 
     return clone;
+}
+
+sir::FuncType GenericsSpecializer::specialize_func_type_directly(Context &ctx, sir::FuncType &func_type) {
+    std::span<sir::Param> params = analyzer.allocate_array<sir::Param>(func_type.params.size());
+
+    for (unsigned i = 0; i < func_type.params.size(); i++) {
+        const sir::Param &param = func_type.params[i];
+
+        params[i] = sir::Param{
+            .ast_node = param.ast_node,
+            .name = param.name,
+            .type = specialize_expr(ctx, param.type),
+            .attrs = param.attrs,
+        };
+    }
+
+    return sir::FuncType{
+        .ast_node = func_type.ast_node,
+        .params = params,
+        .return_type = specialize_expr(ctx, func_type.return_type),
+    };
+}
+
+sir::Expr GenericsSpecializer::specialize_expr(Context &ctx, sir::Expr expr) {
+    if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
+        return specialize_symbol_expr(ctx, *symbol_expr);
+    } else {
+        return expr;
+    }
+}
+
+sir::Expr GenericsSpecializer::specialize_symbol_expr(Context &ctx, sir::SymbolExpr &symbol_expr) {
+    if (auto generic_param = symbol_expr.symbol.match<sir::GenericParam>()) {
+        for (unsigned i = 0; i < ctx.params.size(); i++) {
+            if (&ctx.params[i] == generic_param) {
+                return ctx.args[i];
+            }
+        }
+
+        ASSERT_UNREACHABLE;
+    } else {
+        return &symbol_expr;
+    }
 }
 
 } // namespace sema

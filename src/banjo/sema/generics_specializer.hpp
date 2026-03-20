@@ -14,6 +14,11 @@ namespace sema {
 class GenericsSpecializer {
 
 private:
+    struct Context {
+        std::vector<sir::GenericParam> &params;
+        std::span<sir::Expr> args;
+    };
+
     SemanticAnalyzer &analyzer;
 
 public:
@@ -24,6 +29,10 @@ public:
 private:
     sir::FuncDef *create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args);
     sir::StructDef *create_specialized_clone(sir::StructDef &generic_struct_def, std::span<sir::Expr> args);
+
+    sir::FuncType specialize_func_type_directly(Context &ctx, sir::FuncType &func_type);
+    sir::Expr specialize_expr(Context &ctx, sir::Expr expr);
+    sir::Expr specialize_symbol_expr(Context &ctx, sir::SymbolExpr &symbol_expr);
 
     template <typename T>
     T *find_existing_specialization(T &generic_def, std::span<sir::Expr> args) {

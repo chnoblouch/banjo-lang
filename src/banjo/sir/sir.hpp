@@ -585,7 +585,6 @@ struct Specialization {
     std::span<Expr> args;
     T *def;
     SymbolTable *symbol_table;
-    std::vector<sir::Expr> expr_replacements;
 };
 
 struct FuncType {
@@ -1201,8 +1200,6 @@ struct FuncDef {
     Block block;
     Attributes *attrs = nullptr;
 
-    FuncDef *clone_template = nullptr;
-    SymbolTable *generic_param_symbol_table = nullptr;
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;

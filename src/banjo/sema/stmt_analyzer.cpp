@@ -182,7 +182,9 @@ void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
         Result result = cond_analyzer.analyze_value(cond_branch.condition);
 
         if (result == Result::SUCCESS) {
-            if (!cond_branch.condition.get_type().is_primitive_type(sir::Primitive::BOOL)) {
+            sir::Expr type = analyzer.get_resolved_type(cond_branch.condition);
+
+            if (!type.is_primitive_type(sir::Primitive::BOOL)) {
                 analyzer.report_generator.report_err_expected_bool(cond_branch.condition);
             }
         }

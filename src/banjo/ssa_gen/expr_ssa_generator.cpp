@@ -93,7 +93,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
         SIR_VISIT_IMPOSSIBLE,                              // type_guard_expr
-        SIR_VISIT_IMPOSSIBLE,                              // placeholder_expr
+        return generate_placeholder_expr(*inner),          // placeholder_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
 }
@@ -295,6 +295,9 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         return StoredValue::create_reference(ssa_ptr, ssa_type);
     } else if (auto param = symbol_expr.symbol.match<sir::Param>()) {
         return generate_param_expr(*param);
+    } else if (auto generic_param = symbol_expr.symbol.match<sir::GenericParam>()) {
+        sir::Expr generic_arg = ctx.get_generic_arg(*generic_param);
+        return generate(generic_arg);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -732,6 +735,25 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
     });
 
     return ssa_val;
+}
+
+StoredValue ExprSSAGenerator::generate_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {
+    if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
+        sir::Expr sir_generic_arg = ctx.get_generic_arg(*generic_method->param);
+        sir::StructDef &sir_struct_def = sir_generic_arg.as_symbol<sir::StructDef>();
+        std::string_view sir_method_name = generic_method->decl->ident.value;
+        sir::Symbol sir_func_def = sir_struct_def.block.symbol_table->look_up(sir_method_name);
+
+        sir::SymbolExpr sir_replacement{
+            .ast_node = nullptr,
+            .type = sir_func_def.get_type(),
+            .symbol = sir_func_def,
+        };
+
+        return generate_symbol_expr(sir_replacement);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 ssa::VirtualRegister ExprSSAGenerator::generate_pointer_expr(

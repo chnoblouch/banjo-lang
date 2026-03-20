@@ -2,7 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
-#include <algorithm>
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -22,6 +22,20 @@ void SSAGeneratorContext::push_func_context(const sir::FuncDef &sir_func, ssa::F
         .ssa_block = ssa_func->get_entry_block_iter(),
         .ssa_last_alloca = ssa_func->get_entry_block().get_instrs().get_header(),
     });
+}
+
+sir::Expr SSAGeneratorContext::get_generic_arg(const sir::GenericParam &generic_param) {
+    const sir::FuncDef &func_def = *get_func_context().sir_func;
+    const sir::Specialization<sir::FuncDef> &specialization = *func_def.parent_specialization;
+    const sir::FuncDef &generic_func_def = *specialization.generic_def;
+
+    for (unsigned i = 0; i < generic_func_def.generic_params.size(); i++) {
+        if (&generic_func_def.generic_params[i] == &generic_param) {
+            return specialization.args[i];
+        }
+    }
+
+    ASSERT_UNREACHABLE;
 }
 
 ssa::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {
