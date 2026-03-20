@@ -187,21 +187,7 @@ void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
             }
         }
 
-        bool skip_analysis = false;
-
-        if (auto bool_literal = cond_branch.condition.match<sir::BoolLiteral>()) {
-            if (!bool_literal->value) {
-                if (auto func_def = analyzer.get_decl().match<sir::FuncDef>()) {
-                    skip_analysis = !func_def->is_generic();
-                }
-            }
-        }
-
-        if (!skip_analysis) {
-            analyze_block(*cond_branch.block, cond_analyzer.type_narrowing);
-        } else {
-            cond_branch.block->stmts.clear();
-        }
+        analyze_block(*cond_branch.block, cond_analyzer.type_narrowing);
     }
 
     if (if_stmt.else_branch) {

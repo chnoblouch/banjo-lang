@@ -173,6 +173,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                                      // init_expr
         SIR_VISIT_IMPOSSIBLE,                                      // move_expr
         SIR_VISIT_IMPOSSIBLE,                                      // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                                      // type_guard_expr
         SIR_VISIT_IMPOSSIBLE,                                      // placeholder_expr
         result = Result::ERROR                                     // error
     );
@@ -573,6 +574,24 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return Result::ERROR;
     }
 
+    if (binary_expr.lhs.is_symbol<sir::GenericParam>() && binary_expr.rhs.is_type()) {
+        out_expr = analyzer.create(
+            sir::TypeGuardExpr{
+                .ast_node = binary_expr.ast_node,
+                .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
+                .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
+                .constraint = binary_expr.rhs,
+            }
+        );
+
+        type_narrowing = sir::TypeNarrowing{
+            .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
+            .constraint = binary_expr.rhs,
+        };
+
+        return Result::SUCCESS;
+    }
+
     if (binary_expr.lhs.is_type()) {
         ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
         if (evaluated.result != Result::SUCCESS) {
@@ -580,8 +599,6 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
 
         out_expr = evaluated.expr;
-        type_narrowing = evaluated.type_narrowing;
-
         return analyze_uncoerced(out_expr);
     }
 
@@ -2151,8 +2168,8 @@ Result ExprAnalyzer::finalize_call_expr_args(
         if (i == 0 && call_expr.callee.is<sir::PlaceholderExpr>()) {
             auto &generic_method =
                 std::get<sir::PlaceholderExpr::GenericMethod>(call_expr.callee.as<sir::PlaceholderExpr>().kind);
-            
-                expected_type = analyzer.create(
+
+            expected_type = analyzer.create(
                 sir::ReferenceType{
                     .ast_node = nullptr,
                     .mut = false,

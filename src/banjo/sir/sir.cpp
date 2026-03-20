@@ -66,6 +66,7 @@ bool Expr::operator==(const Expr &other) const {
         return false,                                       // init_expr
         return false,                                       // move_expr
         return false,                                       // deinit_expr
+        return false,                                       // type_guard_expr
         return false,                                       // placeholder_expr
         return true                                         // error
     );
@@ -120,6 +121,7 @@ Expr Expr::get_type() const {
         return inner->type, // init_expr
         return inner->type, // move_expr
         return inner->type, // deinit_expr
+        return inner->type, // type_guard_expr
         return inner->type, // placeholder_expr
         return nullptr      // error
     );
@@ -294,6 +296,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

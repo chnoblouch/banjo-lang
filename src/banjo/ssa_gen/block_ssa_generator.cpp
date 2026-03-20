@@ -147,11 +147,34 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
         ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
         ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
 
-        ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
+        if (auto type_guard_expr = sir_branch.condition.match<sir::TypeGuardExpr>()) {
+            const sir::FuncDef &sir_func = *ctx.get_func_context().sir_func;
+            const sir::Specialization<sir::FuncDef> &sir_specialization = *sir_func.parent_specialization;
+            const sir::FuncDef &generic_def = *sir_specialization.generic_def;
+            sir::Expr arg;
 
-        ctx.append_block(ssa_target_if_true);
-        generate_block(*sir_branch.block);
-        ctx.append_jmp(ssa_end_block);
+            for (unsigned i = 0; i < generic_def.generic_params.size(); i++) {
+                if (&generic_def.generic_params[i] == type_guard_expr->generic_param) {
+                    arg = sir_specialization.args[i];
+                    break;
+                }
+            }
+
+            if (arg == type_guard_expr->constraint) {
+                ctx.append_jmp(ssa_target_if_true);
+                ctx.append_block(ssa_target_if_true);
+                generate_block(*sir_branch.block);
+                ctx.append_jmp(ssa_end_block);
+            } else {
+                ctx.append_jmp(ssa_target_if_false);
+            }
+        } else {
+            ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
+
+            ctx.append_block(ssa_target_if_true);
+            generate_block(*sir_branch.block);
+            ctx.append_jmp(ssa_end_block);
+        }
 
         if (!is_final_branch) {
             ctx.append_block(ssa_next_block);

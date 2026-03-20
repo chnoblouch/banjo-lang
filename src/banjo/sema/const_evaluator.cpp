@@ -92,6 +92,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // init_expr
         return expr,                             // move_expr
         return expr,                             // deinit_expr
+        return expr,                             // type_guard_expr
         return expr,                             // placeholder_expr
         return nullptr                           // error
     );
@@ -314,23 +315,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_binary_expr_type(
         .value = result,
     };
 
-    Output output{analyzer.create(output_expr)};
-
-    if (auto generic_param = lhs.match_symbol<sir::GenericParam>()) {
-        output.type_narrowing = sir::TypeNarrowing{
-            .generic_param = generic_param,
-            .constraint = rhs,
-        };
-    }
-
-    if (auto generic_param = rhs.match_symbol<sir::GenericParam>()) {
-        output.type_narrowing = sir::TypeNarrowing{
-            .generic_param = generic_param,
-            .constraint = lhs,
-        };
-    }
-
-    return output;
+    return Output{analyzer.create(output_expr)};
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_unary_expr(sir::UnaryExpr &unary_expr) {

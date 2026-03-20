@@ -55,6 +55,7 @@
     init_expr_visitor,                                                                                                 \
     move_expr_visitor,                                                                                                 \
     deinit_expr_visitor,                                                                                               \
+    type_guard_expr_visitor,                                                                                           \
     placeholder_expr_visitor,                                                                                          \
     error_visitor                                                                                                      \
 )                                                                                                                      \
@@ -150,6 +151,8 @@
         move_expr_visitor;                                                                                             \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::DeinitExpr>()) {                           \
         deinit_expr_visitor;                                                                                           \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::TypeGuardExpr>()) {                        \
+        type_guard_expr_visitor;                                                                                       \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PlaceholderExpr>()) {                      \
         placeholder_expr_visitor;                                                                                      \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::Error>()) {                                \

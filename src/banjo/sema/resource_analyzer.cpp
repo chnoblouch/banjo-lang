@@ -420,6 +420,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // init_expr
         SIR_VISIT_IGNORE,                                // move_expr
         result = analyze_deinit_expr(*inner, expr),      // deinit_expr
+        SIR_VISIT_IGNORE,                                // type_guard_expr
         SIR_VISIT_IGNORE,                                // placeholder_expr
         SIR_VISIT_IGNORE                                 // error
     );

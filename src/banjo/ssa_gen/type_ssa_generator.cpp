@@ -53,6 +53,7 @@ ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::SymbolExpr &symbol_t
     else if (auto enum_def = symbol.match<sir::EnumDef>()) return generate_enum_type(*enum_def);
     else if (auto union_def = symbol.match<sir::UnionDef>()) return generate_union_type(*union_def);
     else if (auto union_case = symbol.match<sir::UnionCase>()) return generate_union_case_type(*union_case);
+    else if (auto generic_param = symbol.match<sir::GenericParam>()) return generate_generic_type(*generic_param);
     else ASSERT_UNREACHABLE;
 }
 
@@ -70,6 +71,20 @@ ssa::Type TypeSSAGenerator::generate_union_type(const sir::UnionDef &union_def) 
 
 ssa::Type TypeSSAGenerator::generate_union_case_type(const sir::UnionCase &union_case) {
     return ctx.create_union_case(union_case);
+}
+
+ssa::Type TypeSSAGenerator::generate_generic_type(const sir::GenericParam &generic_param) {
+    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
+    const sir::Specialization<sir::FuncDef> &func_specialization = *func_def.parent_specialization;
+    const sir::FuncDef &generic_func_def = *func_specialization.generic_def;
+
+    for (unsigned i = 0; i < generic_func_def.generic_params.size(); i++) {
+        if (&generic_func_def.generic_params[i] == &generic_param) {
+            return generate(func_specialization.args[i]);
+        }
+    }
+
+    ASSERT_UNREACHABLE;
 }
 
 ssa::Type TypeSSAGenerator::generate_pointer_type(const sir::PointerType &pointer_type) {

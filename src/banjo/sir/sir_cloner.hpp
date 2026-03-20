@@ -122,7 +122,8 @@ public:
     InitExpr *clone_init_expr(const InitExpr &init_expr);
     MoveExpr *clone_move_expr(const MoveExpr &move_expr);
     DeinitExpr *clone_deinit_expr(const DeinitExpr &deinit_expr);
-    Expr clone_placeholder_expr(const PlaceholderExpr &placeholder_expr);
+    TypeGuardExpr *clone_type_guard_expr(const TypeGuardExpr &type_guard_expr);
+    PlaceholderExpr *clone_placeholder_expr(const PlaceholderExpr &placeholder_expr);
 
     SymbolTable *push_symbol_table(SymbolTable *parent_if_empty);
     void pop_symbol_table() { symbol_tables.pop(); }

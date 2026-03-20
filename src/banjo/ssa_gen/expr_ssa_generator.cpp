@@ -92,6 +92,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                              // type_guard_expr
         SIR_VISIT_IMPOSSIBLE,                              // placeholder_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
