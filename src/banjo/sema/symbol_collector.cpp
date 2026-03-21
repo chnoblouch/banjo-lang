@@ -180,11 +180,9 @@ void SymbolCollector::collect_const_def(sir::ConstDef &const_def) {
 void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
     struct_def.parent = analyzer.get_decl();
 
-    if (!struct_def.is_generic()) {
-        analyzer.enter_decl(&struct_def);
-        collect_in_block(struct_def.block);
-        analyzer.exit_decl();
-    }
+    analyzer.enter_decl(&struct_def);
+    collect_in_block(struct_def.block);
+    analyzer.exit_decl();
 
     add_symbol(struct_def.ident, &struct_def);
     analyzer.add_symbol_def(&struct_def);

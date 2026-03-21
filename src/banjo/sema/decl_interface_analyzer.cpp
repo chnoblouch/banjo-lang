@@ -5,7 +5,6 @@
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
-#include "banjo/source/module_path.hpp"
 
 namespace banjo {
 
@@ -16,10 +15,6 @@ namespace sema {
 DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
-    if (func_def.is_generic() && func_def.find_mod().path != ModulePath{"main"}) {
-        return Result::SUCCESS;
-    }
-
     if (func_def.stage < sir::SemaStage::INTERFACE) {
         func_def.stage = sir::SemaStage::INTERFACE;
     } else {
@@ -110,6 +105,15 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     }
 
     Result partial_result;
+
+    for (sir::GenericParam &generic_param : struct_def.generic_params) {
+        if (generic_param.constraint) {
+            ExprAnalyzer{analyzer}.analyze_type(generic_param.constraint);
+        }
+
+        analyzer.get_symbol_table().insert_decl(generic_param.ident.value, &generic_param);
+        analyzer.add_symbol_def(&generic_param);
+    }
 
     for (sir::Expr &impl : struct_def.impls) {
         partial_result = ExprAnalyzer(analyzer).analyze_type(impl);

@@ -2,7 +2,6 @@
 
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
 #include <variant>
@@ -42,10 +41,6 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
 
 void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
     if (func_def.is_generic()) {
-        // if (!func_def.clone_template) {
-        //     func_def.clone_template = sir::Cloner{func_def.find_mod()}.clone_func_def(func_def);
-        // }
-
         for (sir::Specialization<sir::FuncDef> &specialization : func_def.specializations) {
             visit_func_def(*specialization.def);
         }
@@ -90,12 +85,12 @@ void DeclVisitor::visit_struct_def(sir::StructDef &struct_def) {
         for (sir::Specialization<sir::StructDef> &specialization : struct_def.specializations) {
             visit_struct_def(*specialization.def);
         }
-    } else {
-        analyzer.enter_decl(&struct_def);
-        analyze_struct_def(struct_def);
-        analyze_decl_block(struct_def.block);
-        analyzer.exit_decl();
     }
+
+    analyzer.enter_decl(&struct_def);
+    analyze_struct_def(struct_def);
+    analyze_decl_block(struct_def.block);
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {

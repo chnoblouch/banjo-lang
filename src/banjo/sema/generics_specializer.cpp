@@ -46,7 +46,7 @@ sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generi
         .args = args,
     };
 
-    sir::FuncDef *clone = analyzer.create(
+    sir::FuncDef *clone = generic_func_def.find_mod().create(
         sir::FuncDef{
             .ast_node = generic_func_def.ast_node,
             .ident = generic_func_def.ident,
@@ -80,24 +80,37 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
     sir::StructDef &generic_struct_def,
     std::span<sir::Expr> args
 ) {
-    sir::Module &def_mod = generic_struct_def.find_mod();
-    sir::Cloner cloner(def_mod);
+    Context ctx{
+        .params = generic_struct_def.generic_params,
+        .args = args,
+    };
 
-    sir::StructDef *clone = def_mod.create(
+    std::vector<sir::StructField *> fields{generic_struct_def.fields.size()};
+
+    for (unsigned i = 0; i < generic_struct_def.fields.size(); i++) {
+        sir::StructField &field = *generic_struct_def.fields[i];
+
+        fields[i] = analyzer.create(
+            sir::StructField{
+                .ast_node = field.ast_node,
+                .ident = field.ident,
+                .type = specialize_expr(ctx, field.type),
+                .attrs = field.attrs,
+                .index = field.index,
+            }
+        );
+    }
+
+    sir::StructDef *clone = generic_struct_def.find_mod().create(
         sir::StructDef{
             .ast_node = generic_struct_def.ast_node,
-            .ident = cloner.clone_ident(generic_struct_def.ident),
-            .block = cloner.clone_decl_block(generic_struct_def.block),
-            .generic_params = {},
-            .specializations = {},
-            .parent_specialization = nullptr,
-            .stage = sir::SemaStage::NAME,
-        }
-    );
-
-    sir::SymbolTable *symbol_table = analyzer.get_mod().create(
-        sir::SymbolTable{
-            .parent = generic_struct_def.block.symbol_table->parent,
+            .ident = generic_struct_def.ident,
+            .parent = generic_struct_def.parent,
+            .block = generic_struct_def.block,
+            .fields = fields,
+            .impls = generic_struct_def.impls,
+            .attrs = generic_struct_def.attrs,
+            .stage = generic_struct_def.stage,
         }
     );
 
@@ -106,30 +119,11 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
             .generic_def = &generic_struct_def,
             .args = args,
             .def = clone,
-            .symbol_table = symbol_table,
+            .symbol_table = nullptr,
         }
     );
 
     clone->parent_specialization = &generic_struct_def.specializations.back();
-    clone->block.symbol_table->parent = symbol_table;
-
-    SymbolCollector(analyzer).collect_struct_specialization(generic_struct_def, *clone);
-
-    analyzer.enter_decl(clone);
-    MetaExpansion(analyzer).run_on_decl_block(clone->block);
-    UseResolver(analyzer).resolve_in_block(clone->block);
-    TypeAliasResolver(analyzer).analyze_decl_block(clone->block);
-    analyzer.exit_decl();
-
-    DeclInterfaceAnalyzer(analyzer).visit_struct_def(*clone);
-
-    if (analyzer.stage >= sir::SemaStage::BODY) {
-        DeclBodyAnalyzer(analyzer).visit_struct_def(*clone);
-    }
-
-    if (analyzer.stage >= sir::SemaStage::RESOURCES) {
-        ResourceAnalyzer(analyzer).visit_struct_def(*clone);
-    }
 
     if (analyzer.mode == Mode::COMPLETION) {
         analyzer.get_completion_infection().struct_specializations[&generic_struct_def] += 1;

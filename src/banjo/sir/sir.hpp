@@ -1248,9 +1248,11 @@ struct StructDef {
     std::vector<StructField *> fields;
     std::vector<Expr> impls;
     Attributes *attrs = nullptr;
+
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
     Specialization<StructDef> *parent_specialization;
+    
     SemaStage stage;
 
     Module &find_mod() const;
