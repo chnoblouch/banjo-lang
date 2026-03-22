@@ -4,6 +4,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <string>
 #include <vector>
@@ -126,7 +127,7 @@ sir::Decl SIRGenerator::generate_func_def(ASTNode *node, sir::Attributes *attrs)
             .type = generate_func_type(params_node, return_type_node),
             .block = generate_block(block_node),
             .attrs = attrs,
-            .generic_params = {},
+            .generic_params = get_scope().generic_params,
             .stage = sir::SemaStage::NAME,
         }
     );
@@ -241,7 +242,9 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
         }
     );
 
-    push_scope().struct_def = struct_def;
+    Scope &scope = push_scope();
+    scope.struct_def = struct_def;
+    utils::extend(scope.generic_params, struct_def->generic_params);
     struct_def->block = generate_decl_block(block_node);
     pop_scope();
 
@@ -1482,8 +1485,11 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
 }
 
 std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode *node) {
-    std::vector<sir::GenericParam> sir_generic_params(node->num_children());
-    unsigned index = 0;
+    std::vector<sir::GenericParam> &inherited_params = get_scope().generic_params;
+
+    std::vector<sir::GenericParam> sir_generic_params;
+    sir_generic_params.reserve(node->num_children() + inherited_params.size());
+    utils::extend(sir_generic_params, inherited_params);
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         ASTNode *name_node = child->first_child;
@@ -1500,14 +1506,14 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
             }
         }
 
-        sir_generic_params[index] = sir::GenericParam{
-            .ast_node = child,
-            .ident = generate_ident(name_node),
-            .kind = kind,
-            .constraint = constraint,
-        };
-
-        index += 1;
+        sir_generic_params.push_back(
+            sir::GenericParam{
+                .ast_node = child,
+                .ident = generate_ident(name_node),
+                .kind = kind,
+                .constraint = constraint,
+            }
+        );
     }
 
     return sir_generic_params;

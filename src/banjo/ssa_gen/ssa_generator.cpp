@@ -73,8 +73,9 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
         return;
     }
 
-    sir::Attributes *attrs = sir_func.attrs;
+    insert_generic_args(sir_func.parent_specialization);
 
+    sir::Attributes *attrs = sir_func.attrs;
     std::string ssa_name = NameMangling::get_link_name(sir_func);
 
     ssa::FunctionType ssa_func_type{
@@ -102,6 +103,8 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
     if (attrs && attrs->dllexport && ctx.target->get_descr().is_windows()) {
         ssa_mod.add_dll_export(ssa_name);
     }
+
+    remove_generic_args(sir_func.parent_specialization);
 }
 
 void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) {
@@ -167,13 +170,10 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
     return ssa_return_type;
 }
 
-void SSAGenerator::create_struct_def(
-    const sir::StructDef &sir_struct_def,
-    const std::span<sir::Expr> *generic_args /* = nullptr */
-) {
+void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
     if (sir_struct_def.is_generic()) {
         for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
-            create_struct_def(*sir_specialization.def, &sir_specialization.args);
+            create_struct_def(*sir_specialization.def);
         }
 
         return;
@@ -181,8 +181,9 @@ void SSAGenerator::create_struct_def(
 
     SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
     decl_context.sir_struct_def = &sir_struct_def;
-    decl_context.sir_generic_args = generic_args;
+    insert_generic_args(sir_struct_def.parent_specialization);
     create_decls(sir_struct_def.block);
+    remove_generic_args(sir_struct_def.parent_specialization);
     ctx.pop_decl_context();
 }
 
@@ -194,10 +195,12 @@ void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
     ssa::Structure *vtable_type = new ssa::Structure("vtable." + std::string{sir_proto_def.ident.value});
 
     for (unsigned i = 0; i < sir_proto_def.func_decls.size(); i++) {
-        vtable_type->add(ssa::StructureMember{
-            .name = "f" + std::to_string(i),
-            .type = ssa::Primitive::ADDR,
-        });
+        vtable_type->add(
+            ssa::StructureMember{
+                .name = "f" + std::to_string(i),
+                .type = ssa::Primitive::ADDR,
+            }
+        );
     }
 
     ssa_mod.add(vtable_type);
@@ -340,6 +343,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
 
     ctx.push_func_context(sir_func, ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
+    insert_generic_args(sir_func.parent_specialization);
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
     ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
@@ -349,7 +353,8 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     if (return_method == ReturnMethod::VIA_POINTER_ARG) {
         ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
 
-        ssa::Type ssa_arg_type = return_method == ReturnMethod::VIA_POINTER_ARG ? ssa::Primitive::ADDR : ssa_return_type;
+        ssa::Type ssa_arg_type =
+            return_method == ReturnMethod::VIA_POINTER_ARG ? ssa::Primitive::ADDR : ssa_return_type;
         ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_arg_type);
         alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
 
@@ -435,6 +440,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         ASSERT_UNREACHABLE;
     }
 
+    remove_generic_args(sir_func.parent_specialization);
     ctx.pop_func_context();
 }
 
@@ -447,7 +453,9 @@ void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
         return;
     }
 
+    insert_generic_args(sir_struct_def.parent_specialization);
     generate_decls(sir_struct_def.block);
+    remove_generic_args(sir_struct_def.parent_specialization);
 }
 
 void SSAGenerator::generate_union_def(const sir::UnionDef &sir_union_def) {

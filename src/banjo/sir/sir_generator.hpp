@@ -19,6 +19,7 @@ private:
     struct Scope {
         sir::SymbolTable *symbol_table = nullptr;
         sir::StructDef *struct_def = nullptr;
+        std::vector<sir::GenericParam> generic_params;
     };
 
     enum class MetaBlockKind {

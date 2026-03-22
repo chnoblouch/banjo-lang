@@ -39,7 +39,6 @@ public:
     struct DeclContext {
         const sir::Module *sir_mod = nullptr;
         const sir::StructDef *sir_struct_def = nullptr;
-        const std::span<sir::Expr> *sir_generic_args = nullptr;
     };
 
     struct FuncContext {
@@ -78,6 +77,7 @@ public:
     std::unordered_map<const lang::sir::ProtoDef *, ssa::Structure *> ssa_vtable_types;
     std::unordered_map<const lang::sir::StructDef *, std::vector<unsigned>> ssa_vtables;
     std::vector<ssa::Structure *> tuple_structs;
+    std::unordered_map<const sir::GenericParam *, sir::Expr> sir_generic_args;
 
     int string_name_id = 0;
     int block_id = 0;

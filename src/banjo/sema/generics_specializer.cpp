@@ -114,6 +114,19 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
         }
     );
 
+    clone->block.symbol_table = generic_struct_def.find_mod().create(
+        sir::SymbolTable{
+            .parent = clone->block.symbol_table->parent,
+            .symbols = clone->block.symbol_table->symbols,
+        }
+    );
+
+    for (auto &[name, symbol] : clone->block.symbol_table->symbols) {
+        if (auto func_def = symbol.match<sir::FuncDef>()) {
+            symbol = specialize(*func_def, args);
+        }
+    }
+
     generic_struct_def.specializations.push_back(
         sir::Specialization<sir::StructDef>{
             .generic_def = &generic_struct_def,

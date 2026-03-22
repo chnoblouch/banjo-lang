@@ -74,17 +74,8 @@ ssa::Type TypeSSAGenerator::generate_union_case_type(const sir::UnionCase &union
 }
 
 ssa::Type TypeSSAGenerator::generate_generic_type(const sir::GenericParam &generic_param) {
-    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
-    const sir::Specialization<sir::FuncDef> &func_specialization = *func_def.parent_specialization;
-    const sir::FuncDef &generic_func_def = *func_specialization.generic_def;
-
-    for (unsigned i = 0; i < generic_func_def.generic_params.size(); i++) {
-        if (&generic_func_def.generic_params[i] == &generic_param) {
-            return generate(func_specialization.args[i]);
-        }
-    }
-
-    ASSERT_UNREACHABLE;
+    sir::Expr generic_arg = ctx.get_generic_arg(generic_param);
+    return generate(generic_arg);
 }
 
 ssa::Type TypeSSAGenerator::generate_pointer_type(const sir::PointerType &pointer_type) {

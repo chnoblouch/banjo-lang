@@ -21,6 +21,11 @@ T div_ceil(T divident, T divisor) {
     return (divident + divisor - 1) / divisor;
 }
 
+template <typename T>
+void extend(std::vector<T> &dst, const std::vector<T> &src) {
+    dst.insert(dst.end(), src.begin(), src.end());
+}
+
 } // namespace utils
 
 namespace Utils {
