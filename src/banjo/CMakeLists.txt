@@ -211,6 +211,8 @@ add_library(banjo STATIC
     "sir/sir_to_text.cpp"
     "sir/sir_to_text.hpp"
     "sir/sir_visitor.hpp"
+    "sir/specializer.cpp"
+    "sir/specializer.hpp"
     "sir/test_driver_generator.cpp"
     "sir/test_driver_generator.hpp"
     "source/edit.cpp"

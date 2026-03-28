@@ -53,11 +53,6 @@ private:
 
         for (unsigned i = 0; i < specialization->args.size(); i++) {
             sir::Expr arg = specialization->args[i];
-            
-            while (auto generic_param = arg.match_symbol<sir::GenericParam>()) {
-                arg = ctx.get_generic_arg(*generic_param);    
-            }
-
             ctx.sir_generic_args.emplace(&generic_def.generic_params[i], arg);
         }
     }

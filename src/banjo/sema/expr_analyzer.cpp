@@ -22,6 +22,7 @@
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/specializer.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
@@ -150,6 +151,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_try_expr(*inner),              // try_expr
         analyze_tuple_expr(*inner),                     // tuple_expr
         SIR_VISIT_IGNORE,                               // coercion_expr
+        SIR_VISIT_IGNORE,                               // specialize_expr
         SIR_VISIT_IGNORE,                               // primitive_type
         SIR_VISIT_IGNORE,                               // pointer_type
         result = analyze_static_array_type(*inner),     // static_array_type
@@ -2190,13 +2192,26 @@ Result ExprAnalyzer::finalize_call_expr_args(
 Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
     ASSERT(func_def.generic_params.size() == generic_args.size());
 
-    sir::FuncDef *specialization = GenericsSpecializer(analyzer).specialize(func_def, generic_args);
+    // TODO
+
+    GenericsSpecializer{analyzer}.specialize(
+        func_def,
+        analyzer.create_array({sir::create_primitive_type(*analyzer.mod, sir::Primitive::I32)})
+    );
+
+    GenericsSpecializer{analyzer}.specialize(
+        func_def,
+        analyzer.create_array({sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL)})
+    );
+
+    sir::Specializer specializer{analyzer.mod->trivial_arena, func_def.generic_params, generic_args};
 
     inout_expr = analyzer.create(
-        sir::SymbolExpr{
+        sir::SpecializeExpr{
             .ast_node = inout_expr.get_ast_node(),
-            .type = &specialization->type,
-            .symbol = specialization,
+            .type = specializer.specialize_func_type(func_def.type),
+            .symbol = &func_def,
+            .args = generic_args,
         }
     );
 

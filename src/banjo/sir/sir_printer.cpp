@@ -636,6 +636,7 @@ void Printer::print_expr(const Expr &expr) {
         print_try_expr(*inner),
         print_tuple_expr(*inner),
         print_coercion_expr(*inner),
+        print_specialize_expr(*inner),
         print_primitive_type(*inner),
         print_pointer_type(*inner),
         print_static_array_type(*inner),
@@ -872,6 +873,14 @@ void Printer::print_coercion_expr(const CoercionExpr &coercion_expr) {
     BEGIN_OBJECT("CoercionExpr");
     PRINT_EXPR_FIELD("type", coercion_expr.type);
     PRINT_EXPR_FIELD("value", coercion_expr.value);
+    END_OBJECT();
+}
+
+void Printer::print_specialize_expr(const SpecializeExpr &specialize_expr) {
+    BEGIN_OBJECT("SpecializeExpr");
+    PRINT_EXPR_FIELD("type", specialize_expr.type);
+    PRINT_FIELD("symbol", "\"" + specialize_expr.symbol.get_name() + "\"");
+    PRINT_EXPR_LIST_FIELD("args", specialize_expr.args);
     END_OBJECT();
 }
 

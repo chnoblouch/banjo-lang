@@ -139,6 +139,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<try expr>",
         return tuple_expr_to_string(*inner),
         return "<coercion expr>",
+        return "<specialize expr>",
         return primitive_to_string(inner->primitive),
         return "*" + to_string(inner->base_type),
         return "[" + to_string(inner->base_type) + "; " + to_string(inner->length) + "]",

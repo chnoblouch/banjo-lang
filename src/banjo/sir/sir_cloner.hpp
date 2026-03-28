@@ -101,6 +101,7 @@ public:
     TryExpr *clone_try_expr(const TryExpr &try_expr);
     TupleExpr *clone_tuple_expr(const TupleExpr &tuple_expr);
     CoercionExpr *clone_coercion_expr(const CoercionExpr &coercion_expr);
+    SpecializeExpr *clone_specialize_expr(const SpecializeExpr &specialize_expr);
     PrimitiveType *clone_primitive_type(const PrimitiveType &primitive_type);
     PointerType *clone_pointer_type(const PointerType &pointer_type);
     StaticArrayType *clone_static_array_type(const StaticArrayType &static_array_type);

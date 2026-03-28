@@ -34,6 +34,7 @@
     try_expr_visitor,                                                                                                  \
     tuple_expr_visitor,                                                                                                \
     coercion_expr_visitor,                                                                                             \
+    specialize_expr_visitor,                                                                                           \
     primitive_type_visitor,                                                                                            \
     pointer_type_visitor,                                                                                              \
     static_array_type_visitor,                                                                                         \
@@ -109,6 +110,8 @@
         tuple_expr_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::CoercionExpr>()) {                         \
         coercion_expr_visitor;                                                                                         \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::SpecializeExpr>()) {                       \
+        specialize_expr_visitor;                                                                                       \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                        \
         primitive_type_visitor;                                                                                        \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                          \

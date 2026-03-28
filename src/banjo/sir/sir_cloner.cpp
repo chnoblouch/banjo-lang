@@ -637,6 +637,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_try_expr(*inner),
         return clone_tuple_expr(*inner),
         return clone_coercion_expr(*inner),
+        return clone_specialize_expr(*inner),
         return clone_primitive_type(*inner),
         return clone_pointer_type(*inner),
         return clone_static_array_type(*inner),
@@ -941,6 +942,17 @@ CoercionExpr *Cloner::clone_coercion_expr(const CoercionExpr &coercion_expr) {
             .ast_node = coercion_expr.ast_node,
             .type = clone_expr(coercion_expr.type),
             .value = clone_expr(coercion_expr.value),
+        }
+    );
+}
+
+SpecializeExpr *Cloner::clone_specialize_expr(const SpecializeExpr &specialize_expr) {
+    return mod.create(
+        SpecializeExpr{
+            .ast_node = specialize_expr.ast_node,
+            .type = clone_expr(specialize_expr.type),
+            .symbol = specialize_expr.symbol,
+            .args = clone_expr_span(specialize_expr.args),
         }
     );
 }

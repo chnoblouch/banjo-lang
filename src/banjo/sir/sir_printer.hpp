@@ -92,6 +92,7 @@ private:
     void print_range_expr(const RangeExpr &range_expr);
     void print_tuple_expr(const TupleExpr &tuple_expr);
     void print_coercion_expr(const CoercionExpr &coercion_expr);
+    void print_specialize_expr(const SpecializeExpr &specialize_expr);
     void print_primitive_type(const PrimitiveType &primitive_type);
     void print_pointer_type(const PointerType &pointer_type);
     void print_static_array_type(const StaticArrayType &static_array_type);

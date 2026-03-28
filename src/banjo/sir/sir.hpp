@@ -54,6 +54,7 @@ struct RangeExpr;
 struct TryExpr;
 struct TupleExpr;
 struct CoercionExpr;
+struct SpecializeExpr;
 enum class Primitive;
 struct PrimitiveType;
 struct PointerType;
@@ -175,31 +176,32 @@ class Expr {
         TryExpr *,          // 21
         TupleExpr *,        // 22
         CoercionExpr *,     // 23
-        PrimitiveType *,    // 24
-        PointerType *,      // 25
-        StaticArrayType *,  // 26
-        FuncType *,         // 27
-        OptionalType *,     // 28
-        ResultType *,       // 29
-        ArrayType *,        // 30
-        MapType *,          // 31
-        ClosureType *,      // 32
-        ReferenceType *,    // 33
-        IdentExpr *,        // 34
-        StarExpr *,         // 35
-        BracketExpr *,      // 36
-        DotExpr *,          // 37
-        PseudoType *,       // 38
-        MetaAccess *,       // 39
-        MetaFieldExpr *,    // 40
-        MetaCallExpr *,     // 41
-        InitExpr *,         // 42
-        MoveExpr *,         // 43
-        DeinitExpr *,       // 44
-        TypeGuardExpr *,    // 45
-        PlaceholderExpr *,  // 46
-        Error *,            // 47
-        std::nullptr_t>     // 48
+        SpecializeExpr *,   // 24
+        PrimitiveType *,    // 25
+        PointerType *,      // 26
+        StaticArrayType *,  // 27
+        FuncType *,         // 28
+        OptionalType *,     // 29
+        ResultType *,       // 30
+        ArrayType *,        // 31
+        MapType *,          // 32
+        ClosureType *,      // 33
+        ReferenceType *,    // 34
+        IdentExpr *,        // 35
+        StarExpr *,         // 36
+        BracketExpr *,      // 37
+        DotExpr *,          // 38
+        PseudoType *,       // 39
+        MetaAccess *,       // 40
+        MetaFieldExpr *,    // 41
+        MetaCallExpr *,     // 42
+        InitExpr *,         // 43
+        MoveExpr *,         // 44
+        DeinitExpr *,       // 45
+        TypeGuardExpr *,    // 46
+        PlaceholderExpr *,  // 47
+        Error *,            // 48
+        std::nullptr_t>     // 49
         kind;
 
 public:
@@ -839,6 +841,19 @@ struct CoercionExpr {
     Expr value;
 };
 
+struct SpecializeExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Symbol symbol;
+    std::span<sir::Expr> args;
+
+    bool operator==(const SpecializeExpr &other) const {
+        return symbol == other.symbol && Utils::equal(args, other.args);
+    }
+
+    bool operator!=(const SpecializeExpr &other) const { return !(*this == other); }
+};
+
 enum class Primitive {
     I8,
     I16,
@@ -1203,6 +1218,7 @@ struct FuncDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;
+    std::vector<SpecializeExpr *> specialize_exprs;
 
     SemaStage stage;
 
@@ -1252,7 +1268,7 @@ struct StructDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<StructDef>> specializations;
     Specialization<StructDef> *parent_specialization;
-    
+
     SemaStage stage;
 
     Module &find_mod() const;

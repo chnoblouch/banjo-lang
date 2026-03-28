@@ -2,6 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/specializer.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
@@ -17,6 +18,7 @@
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cassert>
 #include <vector>
@@ -71,6 +73,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
+        return generate_specialize_expr(*inner, hints),    // specialize_expr
         SIR_VISIT_IMPOSSIBLE,                              // primitive_type
         SIR_VISIT_IMPOSSIBLE,                              // pointer_type
         SIR_VISIT_IMPOSSIBLE,                              // static_array_type
@@ -704,6 +707,34 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
     } else {
         return generate(coercion_expr.value, hints);
     }
+}
+
+StoredValue ExprSSAGenerator::generate_specialize_expr(
+    const sir::SpecializeExpr &specialize_expr,
+    const StorageHints &hints
+) {
+    utils::Arena<2048> arena;
+    std::span<sir::Expr> args = specialize_expr.args;
+
+    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
+
+    if (func_def.parent_specialization) {
+        const sir::Specialization<sir::FuncDef> &specialization = *func_def.parent_specialization;
+        const sir::FuncDef &generic_func_def = *specialization.generic_def;
+        args = sir::Specializer{arena, generic_func_def.generic_params, specialization.args}.specialize_expr_list(args);
+    }
+
+    if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
+        for (const sir::Specialization<sir::FuncDef> &spec : func_def->specializations) {
+            if (Utils::equal(spec.args, args)) {
+                ssa::Function *ssa_func = ctx.ssa_funcs.at(spec.def);
+                ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
+                return StoredValue::create_value(ssa_value);
+            }
+        }
+    }
+
+    ASSERT_UNREACHABLE;
 }
 
 StoredValue ExprSSAGenerator::generate_init_expr(const sir::InitExpr &init_expr, const StorageHints &hints) {

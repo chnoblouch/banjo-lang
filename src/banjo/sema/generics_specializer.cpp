@@ -1,15 +1,7 @@
 #include "generics_specializer.hpp"
 
-#include "banjo/sema/decl_body_analyzer.hpp"
-#include "banjo/sema/decl_interface_analyzer.hpp"
-#include "banjo/sema/meta_expansion.hpp"
-#include "banjo/sema/resource_analyzer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
-#include "banjo/sema/symbol_collector.hpp"
-#include "banjo/sema/type_alias_resolver.hpp"
-#include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_cloner.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo {

@@ -71,6 +71,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // try_expr
         return evaluate_tuple_expr(*inner),      // tuple_expr
         return evaluate_non_const(expr),         // coercion_expr
+        return expr,                             // specialize_expr
         return expr,                             // primitive_type
         return expr,                             // pointer_type
         return expr,                             // static_array_type
