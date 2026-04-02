@@ -60,8 +60,8 @@ std::string convert_eol_to_lf(std::string_view string);
 LEB128Buffer encode_uleb128(std::uint64_t value);
 LEB128Buffer encode_sleb128(LargeInt value);
 
-template <typename T>
-bool equal(const std::span<T> &lhs, const std::span<T> &rhs) {
+template <typename A, typename B>
+bool equal(const A &lhs, const B &rhs) {
     if (lhs.size() != rhs.size()) {
         return false;
     }

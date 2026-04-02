@@ -50,7 +50,7 @@ ssa::Module SSAGenerator::generate() {
 
 void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
-        if (auto func_def = decl.match<sir::FuncDef>()) create_func_def(*func_def);
+        if (auto func_def = decl.match<sir::FuncDef>()) create_func_defs(*func_def);
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) create_native_func_decl(*native_func_decl);
         else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_def(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) create_union_def(*union_def);
@@ -60,21 +60,37 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
     }
 }
 
-void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
+void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
     if (sir_func.parent.is<sir::ProtoDef>() && sir_func.is_method()) {
         return;
     }
 
     if (sir_func.is_generic()) {
-        for (const sir::Specialization<sir::FuncDef> &sir_specialization : sir_func.specializations) {
-            create_func_def(*sir_specialization.def);
+        std::vector<std::vector<sir::Expr>> specializations{
+            {new sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::I32}},
+            {new sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::F32}},
+            {new sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::BOOL}},
+        };
+
+        for (std::vector<sir::Expr> mono_args : specializations) {
+            insert_generic_args(sir_func.generic_params, mono_args);
+            ssa::Function *ssa_func = create_func_def(sir_func);
+
+            MonoFunc mono_func{
+                .sir_args = std::move(mono_args),
+                .ssa_func = ssa_func,
+            };
+
+            ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
+            remove_generic_args(sir_func.generic_params);
         }
-
-        return;
+    } else {
+        ssa::Function *ssa_func = create_func_def(sir_func);
+        ctx.ssa_funcs.emplace(&sir_func, ssa_func);
     }
+}
 
-    insert_generic_args(sir_func.parent_specialization);
-
+ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
     sir::Attributes *attrs = sir_func.attrs;
     std::string ssa_name = NameMangling::get_link_name(sir_func);
 
@@ -96,15 +112,13 @@ void SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
 
     ssa::Function *ssa_func = new ssa::Function(ssa_name, ssa_func_type);
     ssa_func->global = sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport));
-
     ssa_mod.add(ssa_func);
-    ctx.ssa_funcs.insert({&sir_func, ssa_func});
 
     if (attrs && attrs->dllexport && ctx.target->get_descr().is_windows()) {
         ssa_mod.add_dll_export(ssa_name);
     }
 
-    remove_generic_args(sir_func.parent_specialization);
+    return ssa_func;
 }
 
 void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) {
@@ -322,28 +336,33 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
 }
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
-    target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
-
     if (sir_func.parent.is<sir::ProtoDef>() && sir_func.is_method()) {
         return;
     }
 
     if (sir_func.is_generic()) {
-        for (const sir::Specialization<sir::FuncDef> &sir_specialization : sir_func.specializations) {
-            generate_func_def(*sir_specialization.def);
+        for (MonoFunc &mono_func : ctx.ssa_mono_funcs.at(&sir_func)) {
+            ssa::Function &ssa_func = *mono_func.ssa_func;
+
+            insert_generic_args(sir_func.generic_params, mono_func.sir_args);
+            generate_func_body(sir_func, ssa_func);
+            remove_generic_args(sir_func.generic_params);
         }
+    } else {
+        ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
+        generate_func_body(sir_func, *ssa_func);
+    }
+}
 
+void SSAGenerator::generate_func_body(const sir::FuncDef &sir_func, ssa::Function &ssa_func) {
+    target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+
+    if (ssa_func.name == "___runtime_f64_to_string") {
         return;
     }
 
-    ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
-    if (ssa_func->name == "___runtime_f64_to_string") {
-        return;
-    }
-
-    ctx.push_func_context(sir_func, ssa_func);
+    ctx.push_func_context(sir_func, &ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();
-    insert_generic_args(sir_func.parent_specialization);
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
     ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
@@ -351,14 +370,14 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
     unsigned ssa_arg_index = 0;
 
     if (return_method == ReturnMethod::VIA_POINTER_ARG) {
-        ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
+        ssa::VirtualRegister ssa_slot = ssa_func.next_virtual_reg();
 
         ssa::Type ssa_arg_type =
             return_method == ReturnMethod::VIA_POINTER_ARG ? ssa::Primitive::ADDR : ssa_return_type;
         ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_arg_type);
         alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
 
-        ssa::VirtualRegister ssa_arg_val = ssa_func->next_virtual_reg();
+        ssa::VirtualRegister ssa_arg_val = ssa_func.next_virtual_reg();
         ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_val, ssa_arg_type, ssa_arg_index);
         loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
 
@@ -376,17 +395,17 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         const ssa::Type &ssa_param_type = TypeSSAGenerator(ctx).generate(sir_param.type);
         target::ArgPassMethod pass_method = data_layout.get_arg_pass_method(ssa_param_type);
 
-        ssa::VirtualRegister ssa_slot = ssa_func->next_virtual_reg();
+        ssa::VirtualRegister ssa_slot = ssa_func.next_virtual_reg();
 
         ssa::Type alloca_type = pass_method.via_pointer ? ssa::Primitive::ADDR : ssa_param_type;
         ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, alloca_type);
         alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
 
         for (unsigned i = 0; i < pass_method.num_args; i++) {
-            ssa::VirtualRegister ssa_arg_reg = ssa_func->next_virtual_reg();
+            bool is_last_arg = i == pass_method.num_args - 1;
 
-            ssa::Type copy_type =
-                i == pass_method.num_args - 1 ? pass_method.last_arg_type : data_layout.get_usize_type();
+            ssa::VirtualRegister ssa_arg_reg = ssa_func.next_virtual_reg();
+            ssa::Type copy_type = is_last_arg ? pass_method.last_arg_type : data_layout.get_usize_type();
 
             ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_reg, copy_type, ssa_arg_index);
             loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
@@ -440,7 +459,6 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         ASSERT_UNREACHABLE;
     }
 
-    remove_generic_args(sir_func.parent_specialization);
     ctx.pop_func_context();
 }
 
@@ -479,6 +497,18 @@ void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
     ssa::GlobalDecl *ssa_global = ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]];
     ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
+}
+
+void SSAGenerator::insert_generic_args(const std::vector<sir::GenericParam> &params, std::span<sir::Expr> args) {
+    for (unsigned i = 0; i < params.size(); i++) {
+        ctx.sir_generic_args.emplace(&params[i], args[i]);
+    }
+}
+
+void SSAGenerator::remove_generic_args(const std::vector<sir::GenericParam> &params) {
+    for (const sir::GenericParam &param : params) {
+        ctx.sir_generic_args.erase(&param);
+    }
 }
 
 } // namespace lang

@@ -2192,18 +2192,6 @@ Result ExprAnalyzer::finalize_call_expr_args(
 Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
     ASSERT(func_def.generic_params.size() == generic_args.size());
 
-    // TODO
-
-    GenericsSpecializer{analyzer}.specialize(
-        func_def,
-        analyzer.create_array({sir::create_primitive_type(*analyzer.mod, sir::Primitive::I32)})
-    );
-
-    GenericsSpecializer{analyzer}.specialize(
-        func_def,
-        analyzer.create_array({sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL)})
-    );
-
     sir::Specializer specializer{analyzer.mod->trivial_arena, func_def.generic_params, generic_args};
 
     inout_expr = analyzer.create(

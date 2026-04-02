@@ -29,6 +29,11 @@ struct DeferredDeinit {
     ssa::Value ssa_ptr;
 };
 
+struct MonoFunc {
+    std::vector<sir::Expr> sir_args;
+    ssa::Function *ssa_func;
+};
+
 const ssa::Type DEINIT_FLAG_TYPE = ssa::Primitive::U8;
 const ssa::Value DEINIT_FLAG_TRUE = ssa::Value::from_int_immediate(1, DEINIT_FLAG_TYPE);
 const ssa::Value DEINIT_FLAG_FALSE = ssa::Value::from_int_immediate(0, DEINIT_FLAG_TYPE);
@@ -68,6 +73,7 @@ public:
     std::stack<LoopContext> loop_contexts;
 
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
+    std::unordered_map<const lang::sir::FuncDef *, std::vector<MonoFunc>> ssa_mono_funcs;
     std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
     std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
     std::unordered_map<const lang::sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;

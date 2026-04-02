@@ -23,7 +23,8 @@ public:
 
 private:
     void create_decls(const sir::DeclBlock &decl_block);
-    void create_func_def(const sir::FuncDef &sir_func);
+    void create_func_defs(const sir::FuncDef &sir_func);
+    ssa::Function *create_func_def(const sir::FuncDef &sir_func);
     void create_native_func_decl(const sir::NativeFuncDecl &sir_func);
     std::vector<ssa::Type> generate_params(const sir::FuncType &sir_func_type);
     ssa::Type generate_return_type(const sir::Expr &sir_return_type);
@@ -37,11 +38,15 @@ private:
 
     void generate_decls(const sir::DeclBlock &decl_block);
     void generate_func_def(const sir::FuncDef &sir_func);
+    void generate_func_body(const sir::FuncDef &sir_func, ssa::Function &ssa_func);
     void generate_struct_def(const sir::StructDef &sir_struct_def);
     void generate_union_def(const sir::UnionDef &sir_union_def);
     void generate_proto_def(const sir::ProtoDef &sir_proto_def);
     void generate_var_decl(const sir::VarDecl &sir_var_decl);
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
+
+    void insert_generic_args(const std::vector<sir::GenericParam> &params, std::span<sir::Expr> args);
+    void remove_generic_args(const std::vector<sir::GenericParam> &params);
 
     template <typename T>
     void insert_generic_args(const sir::Specialization<T> *specialization) {

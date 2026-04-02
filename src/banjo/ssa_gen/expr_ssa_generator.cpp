@@ -12,6 +12,7 @@
 #include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/call_ssa_builder.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
+#include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
@@ -73,7 +74,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
-        return generate_specialize_expr(*inner, hints),    // specialize_expr
+        return generate_specialize_expr(*inner),           // specialize_expr
         SIR_VISIT_IMPOSSIBLE,                              // primitive_type
         SIR_VISIT_IMPOSSIBLE,                              // pointer_type
         SIR_VISIT_IMPOSSIBLE,                              // static_array_type
@@ -709,25 +710,27 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
     }
 }
 
-StoredValue ExprSSAGenerator::generate_specialize_expr(
-    const sir::SpecializeExpr &specialize_expr,
-    const StorageHints &hints
-) {
+StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr &specialize_expr) {
     utils::Arena<2048> arena;
     std::span<sir::Expr> args = specialize_expr.args;
 
     const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
 
-    if (func_def.parent_specialization) {
-        const sir::Specialization<sir::FuncDef> &specialization = *func_def.parent_specialization;
-        const sir::FuncDef &generic_func_def = *specialization.generic_def;
-        args = sir::Specializer{arena, generic_func_def.generic_params, specialization.args}.specialize_expr_list(args);
+    if (func_def.is_generic()) {
+        std::vector<sir::Expr> parent_args;
+        parent_args.reserve(func_def.generic_params.size());
+
+        for (const sir::GenericParam &generic_param : func_def.generic_params) {
+            parent_args.push_back(ctx.get_generic_arg(generic_param));
+        }
+
+        args = sir::Specializer{arena, func_def.generic_params, std::span{parent_args}}.specialize_expr_list(args);
     }
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
-        for (const sir::Specialization<sir::FuncDef> &spec : func_def->specializations) {
-            if (Utils::equal(spec.args, args)) {
-                ssa::Function *ssa_func = ctx.ssa_funcs.at(spec.def);
+        for (const MonoFunc &mono_func : ctx.ssa_mono_funcs.at(func_def)) {
+            if (Utils::equal(mono_func.sir_args, args)) {
+                ssa::Function *ssa_func = mono_func.ssa_func;
                 ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
                 return StoredValue::create_value(ssa_value);
             }

@@ -1218,7 +1218,6 @@ struct FuncDef {
     std::vector<GenericParam> generic_params;
     std::list<Specialization<FuncDef>> specializations;
     Specialization<FuncDef> *parent_specialization;
-    std::vector<SpecializeExpr *> specialize_exprs;
 
     SemaStage stage;
 

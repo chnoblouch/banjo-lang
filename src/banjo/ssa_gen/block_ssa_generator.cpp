@@ -148,17 +148,7 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
         ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
 
         if (auto type_guard_expr = sir_branch.condition.match<sir::TypeGuardExpr>()) {
-            const sir::FuncDef &sir_func = *ctx.get_func_context().sir_func;
-            const sir::Specialization<sir::FuncDef> &sir_specialization = *sir_func.parent_specialization;
-            const sir::FuncDef &generic_def = *sir_specialization.generic_def;
-            sir::Expr arg;
-
-            for (unsigned i = 0; i < generic_def.generic_params.size(); i++) {
-                if (&generic_def.generic_params[i] == type_guard_expr->generic_param) {
-                    arg = sir_specialization.args[i];
-                    break;
-                }
-            }
+            sir::Expr arg = ctx.get_generic_arg(*type_guard_expr->generic_param);
 
             if (arg == type_guard_expr->constraint) {
                 ctx.append_jmp(ssa_target_if_true);
