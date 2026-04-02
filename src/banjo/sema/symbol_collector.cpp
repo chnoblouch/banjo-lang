@@ -31,44 +31,6 @@ void SymbolCollector::collect_in_block(sir::DeclBlock &decl_block) {
     }
 }
 
-void SymbolCollector::collect_func_specialization(sir::FuncDef &generic_def, sir::FuncDef &specialization) {
-    specialization.parent = generic_def.parent;
-
-    std::span<sir::Expr> args = specialization.parent_specialization->args;
-
-    for (unsigned i = 0; i < args.size(); i++) {
-        sir::GenericArg *arg = analyzer.create(
-            sir::GenericArg{
-                .ident = generic_def.generic_params[i].ident,
-                .value = args[i],
-            }
-        );
-
-        specialization.parent_specialization->symbol_table->insert_decl(arg->ident.value, arg);
-    }
-}
-
-void SymbolCollector::collect_struct_specialization(sir::StructDef &generic_def, sir::StructDef &specialization) {
-    specialization.parent = generic_def.parent;
-
-    std::span<sir::Expr> args = specialization.parent_specialization->args;
-
-    for (unsigned i = 0; i < args.size(); i++) {
-        sir::GenericArg *arg = analyzer.create(
-            sir::GenericArg{
-                .ident = generic_def.generic_params[i].ident,
-                .value = args[i],
-            }
-        );
-
-        specialization.parent_specialization->symbol_table->insert_decl(arg->ident.value, arg);
-    }
-
-    analyzer.enter_decl(&specialization);
-    collect_in_block(specialization.block);
-    analyzer.exit_decl();
-}
-
 void SymbolCollector::collect_closure_def(sir::FuncDef &func_def) {
     func_def.parent = analyzer.get_decl().get_parent();
 }

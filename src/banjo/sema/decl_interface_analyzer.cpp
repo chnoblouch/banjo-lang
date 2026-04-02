@@ -21,6 +21,8 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         return Result::SUCCESS;
     }
 
+    analyzer.enter_symbol_table(func_def.block.symbol_table);
+
     for (sir::GenericParam &generic_param : func_def.generic_params) {
         if (generic_param.constraint) {
             ExprAnalyzer{analyzer}.analyze_type(generic_param.constraint);
@@ -35,7 +37,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         analyzer.add_symbol_def(&param);
 
         if (!(func_def.parent.is<sir::ProtoDef>() && func_def.is_method())) {
-            func_def.block.symbol_table->insert_local(param.name.value, &param);
+            analyzer.get_symbol_table().insert_local(param.name.value, &param);
         }
 
         if (analyzer.get_closure_ctx() && i == 0) {
@@ -46,6 +48,8 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
+    analyzer.exit_symbol_table();
+
     return Result::SUCCESS;
 }
 

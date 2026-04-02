@@ -25,8 +25,6 @@ public:
     void collect(const std::vector<sir::Module *> &mods);
     void collect_in_mod(sir::Module &mod);
     void collect_in_block(sir::DeclBlock &decl_block);
-    void collect_func_specialization(sir::FuncDef &generic_def, sir::FuncDef &specialization);
-    void collect_struct_specialization(sir::StructDef &generic_def, sir::StructDef &specialization);
     void collect_closure_def(sir::FuncDef &func_def);
 
     void collect_decl(sir::Decl &decl, unsigned index);
