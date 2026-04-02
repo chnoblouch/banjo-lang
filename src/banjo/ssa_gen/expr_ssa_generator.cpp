@@ -729,7 +729,7 @@ StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
         for (const MonoFunc &mono_func : ctx.ssa_mono_funcs.at(func_def)) {
-            if (Utils::equal(mono_func.sir_args, args)) {
+            if (Utils::equal(mono_func.specialization.args, args)) {
                 ssa::Function *ssa_func = mono_func.ssa_func;
                 ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
                 return StoredValue::create_value(ssa_value);

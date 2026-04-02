@@ -7,6 +7,7 @@
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/target/target.hpp"
 
 #include <deque>
@@ -30,7 +31,7 @@ struct DeferredDeinit {
 };
 
 struct MonoFunc {
-    std::vector<sir::Expr> sir_args;
+    const SpecializationCollector::Entry &specialization;
     ssa::Function *ssa_func;
 };
 
@@ -72,6 +73,7 @@ public:
     std::stack<FuncContext> func_contexts;
     std::stack<LoopContext> loop_contexts;
 
+    SpecializationCollector::Map specializations;
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
     std::unordered_map<const lang::sir::FuncDef *, std::vector<MonoFunc>> ssa_mono_funcs;
     std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;

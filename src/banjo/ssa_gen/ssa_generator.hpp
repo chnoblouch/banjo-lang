@@ -3,6 +3,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa/module.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/target/target.hpp"
 
@@ -45,8 +46,8 @@ private:
     void generate_var_decl(const sir::VarDecl &sir_var_decl);
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
-    void insert_generic_args(const std::vector<sir::GenericParam> &params, std::span<sir::Expr> args);
-    void remove_generic_args(const std::vector<sir::GenericParam> &params);
+    void insert_generic_args(const SpecializationCollector::Entry &specialization);
+    void remove_generic_args(const SpecializationCollector::Entry &specialization);
 
     template <typename T>
     void insert_generic_args(const sir::Specialization<T> *specialization) {

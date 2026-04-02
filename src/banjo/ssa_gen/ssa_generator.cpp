@@ -9,6 +9,7 @@
 #include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/global_ssa_generator.hpp"
 #include "banjo/ssa_gen/name_mangling.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/target/target_data_layout.hpp"
@@ -32,6 +33,7 @@ ssa::Module SSAGenerator::generate() {
     PROFILE_SCOPE("ssa generator");
 
     ctx.ssa_mod = &ssa_mod;
+    ctx.specializations = SpecializationCollector{}.collect(sir_unit);
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
         ctx.push_decl_context().sir_mod = sir_mod;
@@ -66,23 +68,19 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
     }
 
     if (sir_func.is_generic()) {
-        std::vector<std::vector<sir::Expr>> specializations{
-            {new sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::I32}},
-            {new sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::F32}},
-            {new sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::BOOL}},
-        };
+        const auto &specializations = ctx.specializations.at(const_cast<sir::FuncDef *>(&sir_func));
 
-        for (std::vector<sir::Expr> mono_args : specializations) {
-            insert_generic_args(sir_func.generic_params, mono_args);
+        for (const SpecializationCollector::Entry &specialization : specializations) {
+            insert_generic_args(specialization);
             ssa::Function *ssa_func = create_func_def(sir_func);
 
             MonoFunc mono_func{
-                .sir_args = std::move(mono_args),
+                .specialization = specialization,
                 .ssa_func = ssa_func,
             };
 
             ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
-            remove_generic_args(sir_func.generic_params);
+            remove_generic_args(specialization);
         }
     } else {
         ssa::Function *ssa_func = create_func_def(sir_func);
@@ -344,9 +342,9 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
         for (MonoFunc &mono_func : ctx.ssa_mono_funcs.at(&sir_func)) {
             ssa::Function &ssa_func = *mono_func.ssa_func;
 
-            insert_generic_args(sir_func.generic_params, mono_func.sir_args);
+            insert_generic_args(mono_func.specialization);
             generate_func_body(sir_func, ssa_func);
-            remove_generic_args(sir_func.generic_params);
+            remove_generic_args(mono_func.specialization);
         }
     } else {
         ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
@@ -499,14 +497,14 @@ void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native
     ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
 }
 
-void SSAGenerator::insert_generic_args(const std::vector<sir::GenericParam> &params, std::span<sir::Expr> args) {
-    for (unsigned i = 0; i < params.size(); i++) {
-        ctx.sir_generic_args.emplace(&params[i], args[i]);
+void SSAGenerator::insert_generic_args(const SpecializationCollector::Entry &specialization) {
+    for (unsigned i = 0; i < specialization.params.size(); i++) {
+        ctx.sir_generic_args.emplace(&specialization.params[i], specialization.args[i]);
     }
 }
 
-void SSAGenerator::remove_generic_args(const std::vector<sir::GenericParam> &params) {
-    for (const sir::GenericParam &param : params) {
+void SSAGenerator::remove_generic_args(const SpecializationCollector::Entry &specialization) {
+    for (const sir::GenericParam &param : specialization.params) {
         ctx.sir_generic_args.erase(&param);
     }
 }
