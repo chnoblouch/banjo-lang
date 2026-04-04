@@ -34,6 +34,10 @@ private:
 
     void visit_block(const sir::Block &block);
     void visit_stmt(sir::Stmt stmt);
+    void visit_var_stmt(const sir::VarStmt &var_stmt);
+    void visit_assign_stmt(const sir::AssignStmt &assign_stmt);
+    void visit_return_stmt(const sir::ReturnStmt &return_stmt);
+    void visit_if_stmt(const sir::IfStmt &if_stmt);
 
     void visit_expr(sir::Expr expr);
     void visit_call_expr(const sir::CallExpr &call_expr);

@@ -456,8 +456,6 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
             .block = *closure_literal.block,
             .attrs = nullptr,
             .generic_params = {},
-            .specializations = {},
-            .parent_specialization = nullptr,
         }
     );
 
@@ -506,13 +504,14 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
     sir::StructDef &std_closure_def = *analyzer.std_closure_def;
     sir::FuncDef &new_def_generic = std_closure_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>();
     std::span<sir::Expr> generic_args = analyzer.create_array<sir::Expr>({data_type});
-    sir::FuncDef &new_def = *GenericsSpecializer(analyzer).specialize(new_def_generic, generic_args);
 
     sir::Expr callee = analyzer.create(
-        sir::SymbolExpr{
+        sir::SpecializeExpr{
             .ast_node = nullptr,
-            .type = &new_def.type,
-            .symbol = &new_def,
+            .type = sir::Specializer{analyzer.mod->trivial_arena, new_def_generic.generic_params, generic_args}
+                        .specialize_func_type(new_def_generic.type),
+            .symbol = &new_def_generic,
+            .args = generic_args,
         }
     );
 

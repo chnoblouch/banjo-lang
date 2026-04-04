@@ -68,9 +68,6 @@ Decl Cloner::clone_decl(const Decl &decl) {
 }
 
 FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
-    // ASSERT(func_def.specializations.empty());
-    ASSERT(!func_def.parent_specialization);
-
     FuncDef *clone = mod.create(
         FuncDef{
             .ast_node = func_def.ast_node,
@@ -80,8 +77,6 @@ FuncDef *Cloner::clone_func_def(const FuncDef &func_def) {
             .block{},
             .attrs = clone_attrs(func_def.attrs),
             .generic_params = func_def.generic_params,
-            .specializations = {},
-            .parent_specialization = nullptr,
             .stage = SemaStage::NAME,
         }
     );

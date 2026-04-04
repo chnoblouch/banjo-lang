@@ -1214,11 +1214,7 @@ struct FuncDef {
     FuncType type;
     Block block;
     Attributes *attrs = nullptr;
-
     std::vector<GenericParam> generic_params;
-    std::list<Specialization<FuncDef>> specializations;
-    Specialization<FuncDef> *parent_specialization;
-
     SemaStage stage;
 
     Module &find_mod() const;

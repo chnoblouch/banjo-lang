@@ -40,24 +40,9 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
 }
 
 void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
-    if (func_def.is_generic()) {
-        for (sir::Specialization<sir::FuncDef> &specialization : func_def.specializations) {
-            visit_func_def(*specialization.def);
-        }
-
-        analyzer.enter_decl(&func_def);
-        analyze_func_def(func_def);
-        analyzer.exit_decl();
-    } else if (func_def.parent_specialization) {
-        analyzer.enter_decl(&func_def);
-        analyzer.scope_stack.top().symbol_table = func_def.parent_specialization->symbol_table;
-        analyze_func_def(func_def);
-        analyzer.exit_decl();
-    } else {
-        analyzer.enter_decl(&func_def);
-        analyze_func_def(func_def);
-        analyzer.exit_decl();
-    }
+    analyzer.enter_decl(&func_def);
+    analyze_func_def(func_def);
+    analyzer.exit_decl();
 }
 
 void DeclVisitor::visit_func_decl(sir::FuncDecl &func_decl) {

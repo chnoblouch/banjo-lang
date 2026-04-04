@@ -23,11 +23,9 @@ private:
 
 public:
     GenericsSpecializer(SemanticAnalyzer &analyzer);
-    sir::FuncDef *specialize(sir::FuncDef &generic_func_def, std::span<sir::Expr> args);
     sir::StructDef *specialize(sir::StructDef &generic_struct_def, std::span<sir::Expr> args);
 
 private:
-    sir::FuncDef *create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args);
     sir::StructDef *create_specialized_clone(sir::StructDef &generic_struct_def, std::span<sir::Expr> args);
 
     sir::FuncType specialize_func_type_directly(Context &ctx, sir::FuncType &func_type);

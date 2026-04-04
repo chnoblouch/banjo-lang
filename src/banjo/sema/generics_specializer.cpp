@@ -12,16 +12,6 @@ namespace sema {
 
 GenericsSpecializer::GenericsSpecializer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-sir::FuncDef *GenericsSpecializer::specialize(sir::FuncDef &generic_func_def, std::span<sir::Expr> args) {
-    ASSERT(args.size() == generic_func_def.generic_params.size());
-
-    if (sir::FuncDef *existing_specialization = find_existing_specialization(generic_func_def, args)) {
-        return existing_specialization;
-    } else {
-        return create_specialized_clone(generic_func_def, args);
-    }
-}
-
 sir::StructDef *GenericsSpecializer::specialize(sir::StructDef &generic_struct_def, std::span<sir::Expr> args) {
     ASSERT(args.size() == generic_struct_def.generic_params.size());
 
@@ -30,42 +20,6 @@ sir::StructDef *GenericsSpecializer::specialize(sir::StructDef &generic_struct_d
     } else {
         return create_specialized_clone(generic_struct_def, args);
     }
-}
-
-sir::FuncDef *GenericsSpecializer::create_specialized_clone(sir::FuncDef &generic_func_def, std::span<sir::Expr> args) {
-    Context ctx{
-        .params = generic_func_def.generic_params,
-        .args = args,
-    };
-
-    sir::FuncDef *clone = generic_func_def.find_mod().create(
-        sir::FuncDef{
-            .ast_node = generic_func_def.ast_node,
-            .ident = generic_func_def.ident,
-            .parent = generic_func_def.parent,
-            .type = specialize_func_type_directly(ctx, generic_func_def.type),
-            .block = generic_func_def.block,
-            .attrs = generic_func_def.attrs,
-            .stage = generic_func_def.stage,
-        }
-    );
-
-    generic_func_def.specializations.push_back(
-        sir::Specialization<sir::FuncDef>{
-            .generic_def = &generic_func_def,
-            .args = args,
-            .def = clone,
-            .symbol_table = nullptr,
-        }
-    );
-
-    clone->parent_specialization = &generic_func_def.specializations.back();
-
-    if (analyzer.mode == Mode::COMPLETION) {
-        analyzer.get_completion_infection().func_specializations[&generic_func_def] += 1;
-    }
-
-    return clone;
 }
 
 sir::StructDef *GenericsSpecializer::create_specialized_clone(
@@ -112,12 +66,6 @@ sir::StructDef *GenericsSpecializer::create_specialized_clone(
             .symbols = clone->block.symbol_table->symbols,
         }
     );
-
-    for (auto &[name, symbol] : clone->block.symbol_table->symbols) {
-        if (auto func_def = symbol.match<sir::FuncDef>()) {
-            symbol = specialize(*func_def, args);
-        }
-    }
 
     generic_struct_def.specializations.push_back(
         sir::Specialization<sir::StructDef>{

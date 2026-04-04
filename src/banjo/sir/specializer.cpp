@@ -1,4 +1,5 @@
 #include "specializer.hpp"
+#include "banjo/sir/sir.hpp"
 
 namespace banjo::lang::sir {
 
@@ -14,6 +15,8 @@ Specializer::Specializer(
 sir::Expr Specializer::specialize_expr(sir::Expr expr) {
     if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
         return specialize_symbol_expr(*symbol_expr);
+    } else if (auto pointer_type = expr.match<sir::PointerType>()) {
+        return specialize_pointer_type(*pointer_type);
     } else {
         return expr;
     }
@@ -61,6 +64,21 @@ sir::Expr Specializer::specialize_symbol_expr(sir::SymbolExpr &symbol_expr) {
         ASSERT_UNREACHABLE;
     } else {
         return &symbol_expr;
+    }
+}
+
+sir::Expr Specializer::specialize_pointer_type(sir::PointerType &pointer_type) {
+    sir::Expr base_type = specialize_expr(pointer_type.base_type);
+
+    if (base_type == pointer_type.base_type) {
+        return &pointer_type;
+    } else {
+        sir::PointerType specialization{
+            .ast_node = pointer_type.ast_node,
+            .base_type = base_type,
+        };
+
+        return arena.create<sir::PointerType>(specialization);
     }
 }
 

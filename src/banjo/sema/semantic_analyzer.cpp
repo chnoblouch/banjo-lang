@@ -179,11 +179,7 @@ bool SemanticAnalyzer::is_in_specialization() {
     sir::Symbol decl = get_decl();
 
     while (decl && !decl.is<sir::Module>()) {
-        if (auto func_def = decl.match<sir::FuncDef>()) {
-            if (func_def->parent_specialization) {
-                return true;
-            }
-        } else if (auto struct_def = decl.match<sir::StructDef>()) {
+        if (auto struct_def = decl.match<sir::StructDef>()) {
             if (struct_def->parent_specialization) {
                 return true;
             }

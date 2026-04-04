@@ -134,14 +134,6 @@ void Printer::print_func_def(const FuncDef &func_def) {
     if (func_def.is_generic()) {
         PRINT_FIELD_NAME("generic_params")
         print_generic_params(func_def.generic_params);
-        BEGIN_LIST_FIELD("specializations")
-
-        for (const Specialization<FuncDef> &specialization : func_def.specializations) {
-            INDENT_LIST_ELEMENT()
-            print_func_def(*specialization.def);
-        }
-
-        END_LIST()
     }
 
     END_OBJECT();

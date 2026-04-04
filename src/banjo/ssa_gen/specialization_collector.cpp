@@ -1,7 +1,9 @@
 #include "banjo/ssa_gen/specialization_collector.hpp"
+
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
+
 #include <vector>
 
 namespace banjo::lang {
@@ -47,8 +49,45 @@ void SpecializationCollector::visit_block(const sir::Block &block) {
 }
 
 void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
-    if (auto expr = stmt.match<sir::Expr>()) {
+    // TODO
+
+    if (auto var_stmt = stmt.match<sir::VarStmt>()) {
+        visit_var_stmt(*var_stmt);
+    } else if (auto assign_stmt = stmt.match<sir::AssignStmt>()) {
+        visit_assign_stmt(*assign_stmt);
+    } else if (auto return_stmt = stmt.match<sir::ReturnStmt>()) {
+        visit_return_stmt(*return_stmt);
+    } else if (auto if_stmt = stmt.match<sir::IfStmt>()) {
+        visit_if_stmt(*if_stmt);
+    } else if (auto expr = stmt.match<sir::Expr>()) {
         visit_expr(*expr);
+    } else if (auto block = stmt.match<sir::Block>()) {
+        visit_block(*block);
+    }
+}
+
+void SpecializationCollector::visit_var_stmt(const sir::VarStmt &var_stmt) {
+    visit_expr(var_stmt.local.type);
+    visit_expr(var_stmt.value);
+}
+
+void SpecializationCollector::visit_assign_stmt(const sir::AssignStmt &assign_stmt) {
+    visit_expr(assign_stmt.lhs);
+    visit_expr(assign_stmt.rhs);
+}
+
+void SpecializationCollector::visit_return_stmt(const sir::ReturnStmt &return_stmt) {
+    visit_expr(return_stmt.value);
+}
+
+void SpecializationCollector::visit_if_stmt(const sir::IfStmt &if_stmt) {
+    for (const sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
+        visit_expr(cond_branch.condition);
+        visit_block(*cond_branch.block);
+    }
+
+    if (if_stmt.else_branch) {
+        visit_block(*if_stmt.else_branch->block);
     }
 }
 

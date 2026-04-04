@@ -13,7 +13,7 @@ namespace NameMangling {
 
 static void mangle_symbol_name(std::string &string, sir::Symbol symbol);
 
-std::string get_link_name(const sir::FuncDef &func) {
+std::string get_link_name(const sir::FuncDef &func, const std::vector<sir::Expr> &generic_args) {
     if (func.attrs && func.attrs->link_name) {
         return *func.attrs->link_name;
     } else if (func.is_main() && !Config::instance().testing) {
@@ -21,7 +21,7 @@ std::string get_link_name(const sir::FuncDef &func) {
     } else if (func.attrs && (func.attrs->exposed || func.attrs->dllexport)) {
         return std::string{func.ident.value};
     } else {
-        return mangle_func_name(func);
+        return mangle_func_name(func, generic_args);
     }
 }
 
@@ -59,7 +59,7 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
     } else if (auto pointer_type = type.match<sir::PointerType>()) {
         string += 'a';
         mangle_type(string, pointer_type->base_type);
-    }  else if (auto reference_type = type.match<sir::ReferenceType>()) {
+    } else if (auto reference_type = type.match<sir::ReferenceType>()) {
         string += 'r';
         mangle_type(string, reference_type->base_type);
     } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
@@ -100,7 +100,7 @@ static void mangle_symbol_name(std::string &string, sir::Symbol symbol) {
     }
 }
 
-std::string mangle_func_name(const sir::FuncDef &func) {
+std::string mangle_func_name(const sir::FuncDef &func, const std::vector<sir::Expr> &generic_args) {
     std::string string = "bnj_";
 
     mangle_symbol_name(string, func.parent);
@@ -109,10 +109,10 @@ std::string mangle_func_name(const sir::FuncDef &func) {
     string += std::to_string(func.ident.value.size());
     string += func.ident.value;
 
-    if (func.parent_specialization) {
+    if (!generic_args.empty()) {
         string += 'g';
 
-        for (const sir::Expr &generic_arg : func.parent_specialization->args) {
+        for (const sir::Expr &generic_arg : generic_args) {
             mangle_type(string, generic_arg);
         }
     }

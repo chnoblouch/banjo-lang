@@ -72,7 +72,7 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
 
         for (const SpecializationCollector::Entry &specialization : specializations) {
             insert_generic_args(specialization);
-            ssa::Function *ssa_func = create_func_def(sir_func);
+            ssa::Function *ssa_func = create_func_def(sir_func, specialization.args);
 
             MonoFunc mono_func{
                 .specialization = specialization,
@@ -83,14 +83,14 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
             remove_generic_args(specialization);
         }
     } else {
-        ssa::Function *ssa_func = create_func_def(sir_func);
+        ssa::Function *ssa_func = create_func_def(sir_func, {});
         ctx.ssa_funcs.emplace(&sir_func, ssa_func);
     }
 }
 
-ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func) {
+ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const std::vector<sir::Expr> &generic_args) {
     sir::Attributes *attrs = sir_func.attrs;
-    std::string ssa_name = NameMangling::get_link_name(sir_func);
+    std::string ssa_name = NameMangling::get_link_name(sir_func, generic_args);
 
     ssa::FunctionType ssa_func_type{
         .params = generate_params(sir_func.type),

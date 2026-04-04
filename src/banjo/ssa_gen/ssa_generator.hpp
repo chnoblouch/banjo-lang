@@ -7,6 +7,8 @@
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/target/target.hpp"
 
+#include <vector>
+
 namespace banjo {
 
 namespace lang {
@@ -25,7 +27,7 @@ public:
 private:
     void create_decls(const sir::DeclBlock &decl_block);
     void create_func_defs(const sir::FuncDef &sir_func);
-    ssa::Function *create_func_def(const sir::FuncDef &sir_func);
+    ssa::Function *create_func_def(const sir::FuncDef &sir_func, const std::vector<sir::Expr> &sir_generic_args);
     void create_native_func_decl(const sir::NativeFuncDecl &sir_func);
     std::vector<ssa::Type> generate_params(const sir::FuncType &sir_func_type);
     ssa::Type generate_return_type(const sir::Expr &sir_return_type);
