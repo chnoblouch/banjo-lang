@@ -150,6 +150,12 @@ enum class ExprCategory : std::uint8_t {
     META_ACCESS,
 };
 
+template <typename T>
+struct Concrete {
+    T *def;
+    std::span<Expr> generic_args;
+};
+
 class Expr {
     std::variant<
         IntLiteral *,       // 0
@@ -235,6 +241,9 @@ public:
     const T &as_symbol() const;
 
     template <typename T>
+    Concrete<T> as_concrete() const;
+
+    template <typename T>
     T *match() {
         auto result = std::get_if<T *>(&kind);
         return result ? *result : nullptr;
@@ -252,7 +261,8 @@ public:
     template <typename T>
     const T *match_symbol() const;
 
-    bool is_same_kind(sir::Expr other) { return kind.index() == other.kind.index(); }
+    template <typename T>
+    std::optional<Concrete<T>> match_concrete() const;
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
     bool operator==(const Expr &other) const;
@@ -1526,6 +1536,11 @@ const T &Expr::as_symbol() const {
 }
 
 template <typename T>
+Concrete<T> Expr::as_concrete() const {
+    return *match_concrete<T>();
+}
+
+template <typename T>
 T *Expr::match_symbol() {
     if (auto symbol_expr = match<SymbolExpr>()) {
         return symbol_expr->symbol.match<T>();
@@ -1540,6 +1555,21 @@ const T *Expr::match_symbol() const {
         return symbol_expr->symbol.match<T>();
     } else {
         return nullptr;
+    }
+}
+
+template <typename T>
+std::optional<Concrete<T>> Expr::match_concrete() const {
+    if (auto symbol = match_symbol<T>()) {
+        return Concrete<T>{.def = const_cast<T*>(symbol), .generic_args{}};
+    } else if (auto specialize_expr = match<SpecializeExpr>()) {
+        if (auto symbol = specialize_expr->symbol.match<T>()) {
+            return Concrete<T>{.def = const_cast<T*>(symbol), .generic_args = specialize_expr->args};
+        } else {
+            return {};
+        }
+    } else {
+        return {};
     }
 }
 

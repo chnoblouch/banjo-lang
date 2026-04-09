@@ -6,7 +6,6 @@
 #include "banjo/sema/expr_finalizer.hpp"
 #include "banjo/sema/expr_property_analyzer.hpp"
 #include "banjo/sema/generic_arg_inference.hpp"
-#include "banjo/sema/generics_specializer.hpp"
 #include "banjo/sema/meta_expr_evaluator.hpp"
 #include "banjo/sema/overload_resolver.hpp"
 #include "banjo/sema/resource_analyzer.hpp"
@@ -847,7 +846,9 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         } else {
             sir::Expr type = analyzer.get_resolved_type(value_type);
             std::span<sir::Expr> generic_args = analyzer.create_array({type});
-            sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
+
+            // FIXME: Checked generics
+            sir::StructDef *specialization = nullptr; // GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
 
             out_expr = sir::create_call(
                 analyzer.get_mod(),
@@ -1998,7 +1999,8 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
 
     if (!lhs_type) {
         return Result::ERROR;
-    } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
+    } else if (auto concrete_struct = lhs_type.match_concrete<sir::StructDef>()) {
+        sir::StructDef *struct_def = concrete_struct->def;
         sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
 
         if (!field) {
@@ -2006,10 +2008,22 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
+        sir::Expr field_type = field->type;
+
+        if (!concrete_struct->generic_args.empty()) {
+            sir::Specializer specializer{
+                analyzer.mod->trivial_arena,
+                struct_def->generic_params,
+                concrete_struct->generic_args,
+            };
+
+            field_type = specializer.specialize_expr(field_type);
+        }
+
         out_expr = analyzer.create(
             sir::FieldExpr{
                 .ast_node = dot_expr.ast_node,
-                .type = field->type,
+                .type = field_type,
                 .base = lhs,
                 .field_index = field->index,
             }
@@ -2063,33 +2077,6 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         );
 
         return Result::SUCCESS;
-    } else if (auto specialize_expr = lhs_type.match<sir::SpecializeExpr>()) {
-        if (auto struct_def = specialize_expr->symbol.match<sir::StructDef>()) {
-            sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
-
-            if (!field) {
-                analyzer.report_generator.report_err_no_field(dot_expr.rhs, *struct_def);
-                return Result::ERROR;
-            }
-
-            sir::Specializer specializer{
-                analyzer.mod->trivial_arena,
-                struct_def->generic_params,
-                specialize_expr->args,
-            };
-
-            out_expr = analyzer.create(
-                sir::FieldExpr{
-                    .ast_node = dot_expr.ast_node,
-                    .type = specializer.specialize_expr(field->type),
-                    .base = lhs,
-                    .field_index = field->index,
-                }
-            );
-
-            analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
-            return Result::SUCCESS;
-        }
     }
 
     analyzer.report_generator.report_err_no_members(dot_expr);

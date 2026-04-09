@@ -302,7 +302,7 @@ void ReportGenerator::report_err_cannot_iter_struct(const sir::Expr &expr, sir::
         case sir::IterKind::MUT: note_format_str += "mutating iteration"; break;
     }
 
-    sir::StructDef &struct_def = expr.get_type().as_symbol<sir::StructDef>();
+    sir::StructDef &struct_def = *expr.get_type().as_concrete<sir::StructDef>().def;
 
     build_error("cannot iterate over value with type '$'", expr.get_ast_node(), expr.get_type())
         .add_note(note_format_str, struct_def.ident.ast_node, sir::MagicMethods::look_up_iter(kind))
@@ -401,7 +401,7 @@ void ReportGenerator::report_err_missing_field(
         "missing value for field '$' of struct '$'",
         struct_literal.ast_node,
         field.ident.value,
-        struct_literal.type.as_symbol<sir::StructDef>().ident.value
+        struct_literal.type.as_concrete<sir::StructDef>().def->ident.value
     );
 }
 
@@ -416,15 +416,14 @@ void ReportGenerator::report_err_duplicate_field(
         "more than one value specified for field '$' of struct '$'",
         entry.ident.ast_node,
         entry.field->ident.value,
-        struct_literal.type.as_symbol<sir::StructDef>().ident.value
+        struct_literal.type.as_concrete<sir::StructDef>().def->ident.value
     )
         .add_note("value first specified here", previous_entry.ident.ast_node)
         .report();
 }
 
 void ReportGenerator::report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal) {
-
-    const sir::StructDef &struct_def = struct_literal.type.as_symbol<sir::StructDef>();
+    const sir::StructDef &struct_def = *struct_literal.type.as_concrete<sir::StructDef>().def;
 
     std::string_view format_str;
     ASTNode *ast_node;

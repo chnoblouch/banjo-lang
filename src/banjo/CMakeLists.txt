@@ -163,8 +163,6 @@ add_library(banjo STATIC
     "sema/expr_property_analyzer.cpp"
     "sema/expr_property_analyzer.hpp"
     "sema/extra_analysis.hpp"
-    "sema/generics_specializer.cpp"
-    "sema/generics_specializer.hpp"
     "sema/generic_arg_inference.cpp"
     "sema/generic_arg_inference.hpp"
     "sema/meta_expansion.cpp"

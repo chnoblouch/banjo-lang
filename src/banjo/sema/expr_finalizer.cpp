@@ -2,7 +2,6 @@
 
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/expr_property_analyzer.hpp"
-#include "banjo/sema/generics_specializer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
@@ -726,7 +725,9 @@ void ExprFinalizer::create_std_array(
 
     sir::StructDef &array_type = *analyzer.std_array_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({element_type});
-    sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(array_type, generic_args);
+
+    // FIXME: Checked generics
+    sir::StructDef *specialization = nullptr; // GenericsSpecializer(analyzer).specialize(array_type, generic_args);
 
     sir::FuncDef &func_def = specialization->block.symbol_table->look_up_local("from").as<sir::FuncDef>();
 
@@ -816,7 +817,9 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
 
     sir::StructDef &map_type = *analyzer.std_map_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({key_type, value_type});
-    sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(map_type, generic_args);
+
+    // FIXME: Checked generics
+    sir::StructDef *specialization = nullptr; // GenericsSpecializer(analyzer).specialize(map_type, generic_args);
 
     sir::FuncDef &func_def = specialization->block.symbol_table->look_up_local("from").as<sir::FuncDef>();
 
@@ -915,24 +918,11 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    sir::StructDef *struct_def = nullptr;
-    std::span<sir::Expr> *generic_args = nullptr;
+    // FIXME: What if this is not a struct def?
+    sir::Concrete<sir::StructDef> concrete_struct = struct_literal.type.as_concrete<sir::StructDef>();
+    sir::StructDef &struct_def = *concrete_struct.def;
 
-    if (auto inner_struct_def = struct_literal.type.match_symbol<sir::StructDef>()) {
-        struct_def = inner_struct_def;
-    } else if (auto specialize_expr = struct_literal.type.match<sir::SpecializeExpr>()) {
-        if (auto inner_struct_def = specialize_expr->symbol.match<sir::StructDef>()) {
-            struct_def = inner_struct_def;
-            generic_args = &specialize_expr->args;
-        }
-    }
-
-    if (!struct_def) {
-        // FIXME
-        ASSERT_UNREACHABLE;
-    }
-
-    bool is_layout_overlapping = struct_def->get_layout() == sir::Attributes::Layout::OVERLAPPING;
+    bool is_layout_overlapping = struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING;
 
     if (is_layout_overlapping && struct_literal.entries.size() != 1) {
         analyzer.report_generator.report_err_struct_overlapping_not_one_field(struct_literal);
@@ -941,22 +931,27 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     std::unordered_map<sir::StructField *, sir::StructLiteralEntry *> initialized_fields;
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
-        for (sir::StructField *field : struct_def->fields) {
+        for (sir::StructField *field : struct_def.fields) {
             if (field->ident.value == entry.ident.value) {
                 entry.field = field;
             }
         }
 
         if (!entry.field) {
-            analyzer.report_generator.report_err_no_field(entry.ident, *struct_def);
+            analyzer.report_generator.report_err_no_field(entry.ident, struct_def);
             result = Result::ERROR;
             continue;
         }
 
         sir::Expr field_type = entry.field->type;
 
-        if (generic_args) {
-            sir::Specializer specializer{analyzer.mod->trivial_arena, struct_def->generic_params, *generic_args};
+        if (!concrete_struct.generic_args.empty()) {
+            sir::Specializer specializer{
+                analyzer.mod->trivial_arena,
+                struct_def.generic_params,
+                concrete_struct.generic_args,
+            };
+
             field_type = specializer.specialize_expr(field_type);
         }
 
@@ -978,7 +973,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     }
 
     if (!is_layout_overlapping) {
-        for (sir::StructField *field : struct_def->fields) {
+        for (sir::StructField *field : struct_def.fields) {
             if (!initialized_fields.contains(field)) {
                 analyzer.report_generator.report_err_missing_field(struct_literal, *field);
             }
