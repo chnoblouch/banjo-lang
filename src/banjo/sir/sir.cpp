@@ -147,19 +147,15 @@ ExprCategory Expr::get_category() const {
     if (is<MetaAccess>()) {
         return ExprCategory::META_ACCESS;
     } else if (auto symbol_expr = match<SymbolExpr>()) {
-        if (symbol_expr->symbol.is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef, GenericParam>()) {
-            return ExprCategory::TYPE;
-        } else if (symbol_expr->symbol.is<Module>()) {
-            return ExprCategory::MODULE;
-        } else {
-            return ExprCategory::VALUE;
-        }
+        return symbol_expr->symbol.get_category();
     } else if (auto tuple_expr = match<TupleExpr>()) {
         if (tuple_expr->exprs.empty()) {
             return ExprCategory::VALUE_OR_TYPE;
         } else {
             return tuple_expr->exprs[0].get_category();
         }
+    } else if (auto specialize_expr = match<SpecializeExpr>()) {
+        return specialize_expr->symbol.get_category();
     } else if (auto star_expr = match<StarExpr>()) {
         return star_expr->value.get_category();
     } else if (is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() ||
@@ -478,6 +474,16 @@ Expr Symbol::get_type() {
         return nullptr,                // generic_param
         return inner->value.get_type() // generic_arg
     );
+}
+
+ExprCategory Symbol::get_category() const {
+    if (is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef, GenericParam>()) {
+        return ExprCategory::TYPE;
+    } else if (is<Module>()) {
+        return ExprCategory::MODULE;
+    } else {
+        return ExprCategory::VALUE;
+    }
 }
 
 Symbol Symbol::resolve() const {

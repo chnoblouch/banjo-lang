@@ -164,41 +164,6 @@
         ASSERT_UNREACHABLE;                                                                                            \
     }
 
-#define SIR_VISIT_TYPE(                                                                                                \
-    expr,                                                                                                              \
-    empty_visitor,                                                                                                     \
-    symbol_expr_visitor,                                                                                               \
-    tuple_expr_visitor,                                                                                                \
-    primitive_type_visitor,                                                                                            \
-    pointer_type_visitor,                                                                                              \
-    static_array_type_visitor,                                                                                         \
-    func_type_visitor,                                                                                                 \
-    closure_type_visitor,                                                                                              \
-    reference_type_visitor,                                                                                            \
-    other_visitor                                                                                                      \
-)                                                                                                                      \
-    if (!(expr)) {                                                                                                     \
-        empty_visitor;                                                                                                 \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::SymbolExpr>()) {                           \
-        symbol_expr_visitor;                                                                                           \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::TupleExpr>()) {                            \
-        tuple_expr_visitor;                                                                                            \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PrimitiveType>()) {                        \
-        primitive_type_visitor;                                                                                        \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::PointerType>()) {                          \
-        pointer_type_visitor;                                                                                          \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::StaticArrayType>()) {                      \
-        static_array_type_visitor;                                                                                     \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::FuncType>()) {                             \
-        func_type_visitor;                                                                                             \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ClosureType>()) {                          \
-        closure_type_visitor;                                                                                          \
-    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::lang::sir::ReferenceType>()) {                        \
-        reference_type_visitor;                                                                                        \
-    } else {                                                                                                           \
-        other_visitor;                                                                                                 \
-    }
-
 #define SIR_VISIT_STMT(                                                                                                \
     stmt,                                                                                                              \
     empty_visitor,                                                                                                     \

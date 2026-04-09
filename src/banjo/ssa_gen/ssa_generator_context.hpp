@@ -35,6 +35,11 @@ struct MonoFunc {
     ssa::Function *ssa_func;
 };
 
+struct MonoStruct {
+    const SpecializationCollector::Entry &specialization;
+    ssa::Structure *ssa_struct;
+};
+
 const ssa::Type DEINIT_FLAG_TYPE = ssa::Primitive::U8;
 const ssa::Value DEINIT_FLAG_TRUE = ssa::Value::from_int_immediate(1, DEINIT_FLAG_TYPE);
 const ssa::Value DEINIT_FLAG_FALSE = ssa::Value::from_int_immediate(0, DEINIT_FLAG_TYPE);
@@ -80,6 +85,7 @@ public:
     std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
     std::unordered_map<const lang::sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
+    std::unordered_map<const void *, std::vector<MonoStruct>> ssa_mono_structs;
     std::unordered_map<const lang::sir::VarDecl *, unsigned> ssa_globals;
     std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
     std::unordered_map<const lang::sir::ProtoDef *, ssa::Structure *> ssa_vtable_types;

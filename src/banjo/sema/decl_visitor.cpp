@@ -66,12 +66,6 @@ Result DeclVisitor::visit_const_def(sir::ConstDef &const_def) {
 }
 
 void DeclVisitor::visit_struct_def(sir::StructDef &struct_def) {
-    if (struct_def.is_generic()) {
-        for (sir::Specialization<sir::StructDef> &specialization : struct_def.specializations) {
-            visit_struct_def(*specialization.def);
-        }
-    }
-
     analyzer.enter_decl(&struct_def);
     analyze_struct_def(struct_def);
     analyze_decl_block(struct_def.block);

@@ -54,7 +54,7 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) create_func_defs(*func_def);
         else if (auto native_func_decl = decl.match<sir::NativeFuncDecl>()) create_native_func_decl(*native_func_decl);
-        else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_def(*struct_def);
+        else if (auto struct_def = decl.match<sir::StructDef>()) create_struct_defs(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) create_union_def(*union_def);
         else if (auto proto_def = decl.match<sir::ProtoDef>()) create_proto_def(*proto_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) create_var_decl(*var_decl);
@@ -182,21 +182,41 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
     return ssa_return_type;
 }
 
-void SSAGenerator::create_struct_def(const sir::StructDef &sir_struct_def) {
-    if (sir_struct_def.is_generic()) {
-        for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
-            create_struct_def(*sir_specialization.def);
-        }
+void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
+    if (sir_struct.is_generic()) {
+        const auto &specializations = ctx.specializations.at(const_cast<sir::StructDef *>(&sir_struct));
 
-        return;
+        for (const SpecializationCollector::Entry &specialization : specializations) {
+            insert_generic_args(specialization);
+            ssa::Structure *ssa_struct = create_struct_def(sir_struct, specialization.args);
+
+            MonoStruct mono_struct{
+                .specialization = specialization,
+                .ssa_struct = ssa_struct,
+            };
+
+            ctx.ssa_mono_structs[&sir_struct].push_back(mono_struct);
+            remove_generic_args(specialization);
+        }
+    } else {
+        ssa::Structure *ssa_struct = create_struct_def(sir_struct, {});
+        ctx.ssa_structs.emplace(&sir_struct, ssa_struct);
     }
+}
+
+ssa::Structure *SSAGenerator::create_struct_def(
+    const sir::StructDef &sir_struct,
+    const std::vector<sir::Expr> & /* sir_generic_args */
+) {
+    ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_struct.ident.value});
+    ssa_mod.add(ssa_struct);
 
     SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
-    decl_context.sir_struct_def = &sir_struct_def;
-    insert_generic_args(sir_struct_def.parent_specialization);
-    create_decls(sir_struct_def.block);
-    remove_generic_args(sir_struct_def.parent_specialization);
+    decl_context.sir_struct_def = &sir_struct;
+    create_decls(sir_struct.block);
     ctx.pop_decl_context();
+
+    return ssa_struct;
 }
 
 void SSAGenerator::create_union_def(const sir::UnionDef &sir_union_def) {
@@ -324,8 +344,8 @@ void SSAGenerator::generate_runtime() {
 
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
-        if (auto func_def = decl.match<sir::FuncDef>()) generate_func_def(*func_def);
-        else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def(*struct_def);
+        if (auto func_def = decl.match<sir::FuncDef>()) generate_func_defs(*func_def);
+        else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_defs(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) generate_union_def(*union_def);
         else if (auto proto_def = decl.match<sir::ProtoDef>()) generate_proto_def(*proto_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) generate_var_decl(*var_decl);
@@ -333,7 +353,7 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
     }
 }
 
-void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
+void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
     if (sir_func.parent.is<sir::ProtoDef>() && sir_func.is_method()) {
         return;
     }
@@ -343,16 +363,16 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func) {
             ssa::Function &ssa_func = *mono_func.ssa_func;
 
             insert_generic_args(mono_func.specialization);
-            generate_func_body(sir_func, ssa_func);
+            generate_func_def(sir_func, ssa_func);
             remove_generic_args(mono_func.specialization);
         }
     } else {
         ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
-        generate_func_body(sir_func, *ssa_func);
+        generate_func_def(sir_func, *ssa_func);
     }
 }
 
-void SSAGenerator::generate_func_body(const sir::FuncDef &sir_func, ssa::Function &ssa_func) {
+void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function &ssa_func) {
     target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
 
     if (ssa_func.name == "___runtime_f64_to_string") {
@@ -460,18 +480,50 @@ void SSAGenerator::generate_func_body(const sir::FuncDef &sir_func, ssa::Functio
     ctx.pop_func_context();
 }
 
-void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct_def) {
-    if (sir_struct_def.is_generic()) {
-        for (const sir::Specialization<sir::StructDef> &sir_specialization : sir_struct_def.specializations) {
-            generate_struct_def(*sir_specialization.def);
+void SSAGenerator::generate_struct_defs(const sir::StructDef &sir_struct) {
+    if (sir_struct.is_generic()) {
+        for (MonoStruct &mono_struct : ctx.ssa_mono_structs.at(&sir_struct)) {
+            ssa::Structure &ssa_struct = *mono_struct.ssa_struct;
+
+            insert_generic_args(mono_struct.specialization);
+            generate_struct_def(sir_struct, ssa_struct);
+            remove_generic_args(mono_struct.specialization);
+        }
+    } else {
+        ssa::Structure *ssa_struct = ctx.ssa_structs.at(&sir_struct);
+        generate_struct_def(sir_struct, *ssa_struct);
+    }
+}
+
+void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct) {
+    if (sir_struct.get_layout() == sir::Attributes::Layout::DEFAULT) {
+        for (sir::StructField *sir_field : sir_struct.fields) {
+            ssa_struct.add({
+                .name = std::string{sir_field->ident.value},
+                .type = TypeSSAGenerator(ctx).generate(sir_field->type),
+            });
+        }
+    } else if (sir_struct.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
+        ssa::Type largest_type = ssa::Primitive::VOID;
+        unsigned largest_size = 0;
+
+        for (sir::StructField *sir_field : sir_struct.fields) {
+            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(sir_field->type);
+            unsigned size = ctx.target->get_data_layout().get_size(ssa_type);
+
+            if (size > largest_size) {
+                largest_type = ssa_type;
+                largest_size = size;
+            }
         }
 
-        return;
+        ssa_struct.add({
+            .name = "data",
+            .type = largest_type,
+        });
     }
 
-    insert_generic_args(sir_struct_def.parent_specialization);
-    generate_decls(sir_struct_def.block);
-    remove_generic_args(sir_struct_def.parent_specialization);
+    generate_decls(sir_struct.block);
 }
 
 void SSAGenerator::generate_union_def(const sir::UnionDef &sir_union_def) {

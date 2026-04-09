@@ -204,43 +204,7 @@ ReturnMethod SSAGeneratorContext::get_return_method(const ssa::Type return_type)
 }
 
 ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_struct_def) {
-    auto iter = ssa_structs.find(&sir_struct_def);
-    if (iter != ssa_structs.end()) {
-        return iter->second;
-    }
-
-    ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_struct_def.ident.value});
-    ssa_mod->add(ssa_struct);
-
-    if (sir_struct_def.get_layout() == sir::Attributes::Layout::DEFAULT) {
-        for (sir::StructField *sir_field : sir_struct_def.fields) {
-            ssa_struct->add({
-                .name = std::string{sir_field->ident.value},
-                .type = TypeSSAGenerator(*this).generate(sir_field->type),
-            });
-        }
-    } else if (sir_struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
-        ssa::Type largest_type = ssa::Primitive::VOID;
-        unsigned largest_size = 0;
-
-        for (sir::StructField *sir_field : sir_struct_def.fields) {
-            ssa::Type ssa_type = TypeSSAGenerator(*this).generate(sir_field->type);
-            unsigned size = target->get_data_layout().get_size(ssa_type);
-
-            if (size > largest_size) {
-                largest_type = ssa_type;
-                largest_size = size;
-            }
-        }
-
-        ssa_struct->add({
-            .name = "data",
-            .type = largest_type,
-        });
-    }
-
-    ssa_structs.insert({&sir_struct_def, ssa_struct});
-    return ssa_struct;
+    return ssa_structs.at(&sir_struct_def);
 }
 
 ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union_def) {

@@ -6,8 +6,11 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
+#include "banjo/sir/specializer.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 namespace banjo {
 
@@ -912,8 +915,24 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    sir::StructDef &struct_def = struct_literal.type.as_symbol<sir::StructDef>();
-    bool is_layout_overlapping = struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING;
+    sir::StructDef *struct_def = nullptr;
+    std::span<sir::Expr> *generic_args = nullptr;
+
+    if (auto inner_struct_def = struct_literal.type.match_symbol<sir::StructDef>()) {
+        struct_def = inner_struct_def;
+    } else if (auto specialize_expr = struct_literal.type.match<sir::SpecializeExpr>()) {
+        if (auto inner_struct_def = specialize_expr->symbol.match<sir::StructDef>()) {
+            struct_def = inner_struct_def;
+            generic_args = &specialize_expr->args;
+        }
+    }
+
+    if (!struct_def) {
+        // FIXME
+        ASSERT_UNREACHABLE;
+    }
+
+    bool is_layout_overlapping = struct_def->get_layout() == sir::Attributes::Layout::OVERLAPPING;
 
     if (is_layout_overlapping && struct_literal.entries.size() != 1) {
         analyzer.report_generator.report_err_struct_overlapping_not_one_field(struct_literal);
@@ -922,16 +941,23 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     std::unordered_map<sir::StructField *, sir::StructLiteralEntry *> initialized_fields;
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
-        for (sir::StructField *field : struct_def.fields) {
+        for (sir::StructField *field : struct_def->fields) {
             if (field->ident.value == entry.ident.value) {
                 entry.field = field;
             }
         }
 
         if (!entry.field) {
-            analyzer.report_generator.report_err_no_field(entry.ident, struct_def);
+            analyzer.report_generator.report_err_no_field(entry.ident, *struct_def);
             result = Result::ERROR;
             continue;
+        }
+
+        sir::Expr field_type = entry.field->type;
+
+        if (generic_args) {
+            sir::Specializer specializer{analyzer.mod->trivial_arena, struct_def->generic_params, *generic_args};
+            field_type = specializer.specialize_expr(field_type);
         }
 
         if (!is_layout_overlapping) {
@@ -943,7 +969,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
             initialized_fields.insert({entry.field, &entry});
         }
 
-        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, entry.field->type);
+        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, field_type);
         if (partial_result != Result::SUCCESS) {
             result = Result::ERROR;
         }
@@ -952,7 +978,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     }
 
     if (!is_layout_overlapping) {
-        for (sir::StructField *field : struct_def.fields) {
+        for (sir::StructField *field : struct_def->fields) {
             if (!initialized_fields.contains(field)) {
                 analyzer.report_generator.report_err_missing_field(struct_literal, *field);
             }

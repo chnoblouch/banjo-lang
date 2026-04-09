@@ -235,8 +235,15 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
     const sir::StructLiteral &struct_literal,
     const StorageHints &hints
 ) {
-    const sir::StructDef &sir_struct_def = struct_literal.type.as_symbol<sir::StructDef>();
-    sir::Attributes::Layout layout = sir_struct_def.get_layout();
+    const sir::StructDef *sir_struct_def;
+
+    if (auto specialize_expr = struct_literal.type.match<sir::SpecializeExpr>()) {
+        sir_struct_def = &specialize_expr->symbol.as<sir::StructDef>();
+    }  else {
+        sir_struct_def = &struct_literal.type.as_symbol<sir::StructDef>();
+    }
+
+    sir::Attributes::Layout layout = sir_struct_def->get_layout();
 
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(struct_literal.type);
     StoredValue stored_val = StoredValue::alloc(ssa_type, hints, ctx);

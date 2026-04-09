@@ -3,7 +3,9 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 namespace banjo {
 
@@ -12,19 +14,29 @@ namespace lang {
 TypeSSAGenerator::TypeSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
 ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
-    SIR_VISIT_TYPE(
-        type,
-        return ssa::Primitive::VOID,
-        return generate_symbol_type(*inner),
-        return generate_tuple_type(*inner),
-        return generate_primitive_type(*inner),
-        return generate_pointer_type(*inner),
-        return generate_static_array_type(*inner),
-        return generate_func_type(),
-        return generate_closure_type(*inner),
-        return generate_reference_type(),
-        return ssa::Primitive::VOID
-    );
+    if (!type) {
+        return ssa::Primitive::VOID;
+    } else if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
+        return generate_symbol_type(*symbol_expr);
+    } else if (auto tuple_expr = type.match<sir::TupleExpr>()) {
+        return generate_tuple_type(*tuple_expr);
+    } else if (auto primitive_type = type.match<sir::PrimitiveType>()) {
+        return generate_primitive_type(*primitive_type);
+    } else if (auto pointer_type = type.match<sir::PointerType>()) {
+        return generate_pointer_type(*pointer_type);
+    } else if (auto static_array_type = type.match<sir::StaticArrayType>()) {
+        return generate_static_array_type(*static_array_type);
+    } else if (type.is<sir::FuncType>()) {
+        return generate_func_type();
+    } else if (auto closure_type = type.match<sir::ClosureType>()) {
+        return generate_closure_type(*closure_type);
+    } else if (type.is<sir::ReferenceType>()) {
+        return generate_reference_type();
+    } else if (auto specialize_expr = type.match<sir::SpecializeExpr>()) {
+        return generate_specialize_type(*specialize_expr);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &primitive_type) {
@@ -114,6 +126,20 @@ ssa::Type TypeSSAGenerator::generate_closure_type(const sir::ClosureType &closur
 
 ssa::Type TypeSSAGenerator::generate_reference_type() {
     return ssa::Primitive::ADDR;
+}
+
+ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &specialize_type) {
+    if (auto struct_def = specialize_type.symbol.match<sir::StructDef>()) {
+        for (const MonoStruct &mono_struct : ctx.ssa_mono_structs.at(struct_def)) {
+            if (Utils::equal(mono_struct.specialization.args, specialize_type.args)) {
+                return mono_struct.ssa_struct;
+            }
+        }
+
+        ASSERT_UNREACHABLE;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 } // namespace lang

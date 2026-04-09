@@ -3,6 +3,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <vector>
 
@@ -128,16 +129,28 @@ void SpecializationCollector::visit_specialize_expr(const sir::SpecializeExpr &s
         }
     }
 
+    const std::vector<sir::GenericParam> *generic_params;
+
+    if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
+        generic_params = &func_def->generic_params;
+    } else if (auto struct_def = specialize_expr.symbol.match<sir::StructDef>()) {
+        generic_params = &struct_def->generic_params;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
     Entry entry{
-        .params = specialize_expr.symbol.as<sir::FuncDef>().generic_params,
+        .params = *generic_params,
         .args = args,
     };
 
     entries.push_back(entry);
 
-    entry_stack.push_back(entry);
-    visit_func_def(specialize_expr.symbol.as<sir::FuncDef>());
-    entry_stack.pop_back();
+    if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
+        entry_stack.push_back(entry);
+        visit_func_def(*func_def);
+        entry_stack.pop_back();
+    }
 }
 
 } // namespace banjo::lang

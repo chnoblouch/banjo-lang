@@ -32,6 +32,7 @@ private:
     ssa::Type generate_func_type();
     ssa::Type generate_closure_type(const sir::ClosureType &closure_type);
     ssa::Type generate_reference_type();
+    ssa::Type generate_specialize_type(const sir::SpecializeExpr &specialize_type);
 };
 
 } // namespace lang

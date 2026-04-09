@@ -2016,6 +2016,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         );
 
         analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
+        return Result::SUCCESS;
     } else if (auto union_case = lhs_type.match_symbol<sir::UnionCase>()) {
         std::optional<unsigned> field_index = union_case->find_field(dot_expr.rhs.value);
 
@@ -2036,6 +2037,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         );
 
         analyzer.add_symbol_use(dot_expr.rhs.ast_node, &field);
+        return Result::SUCCESS;
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
         std::optional<std::uint64_t> field_parsed = Utils::parse_u64(dot_expr.rhs.value);
 
@@ -2059,11 +2061,39 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
                 .field_index = field_index,
             }
         );
-    } else {
-        analyzer.report_generator.report_err_no_members(dot_expr);
+
+        return Result::SUCCESS;
+    } else if (auto specialize_expr = lhs_type.match<sir::SpecializeExpr>()) {
+        if (auto struct_def = specialize_expr->symbol.match<sir::StructDef>()) {
+            sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
+
+            if (!field) {
+                analyzer.report_generator.report_err_no_field(dot_expr.rhs, *struct_def);
+                return Result::ERROR;
+            }
+
+            sir::Specializer specializer{
+                analyzer.mod->trivial_arena,
+                struct_def->generic_params,
+                specialize_expr->args,
+            };
+
+            out_expr = analyzer.create(
+                sir::FieldExpr{
+                    .ast_node = dot_expr.ast_node,
+                    .type = specializer.specialize_expr(field->type),
+                    .base = lhs,
+                    .field_index = field->index,
+                }
+            );
+
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
+            return Result::SUCCESS;
+        }
     }
 
-    return Result::SUCCESS;
+    analyzer.report_generator.report_err_no_members(dot_expr);
+    return Result::ERROR;
 }
 
 Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr) {
@@ -2206,13 +2236,16 @@ Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> gen
 }
 
 Result ExprAnalyzer::specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
-    sir::StructDef *specialization = GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
+    ASSERT(struct_def.generic_params.size() == generic_args.size());
+
+    sir::Specializer specializer{analyzer.mod->trivial_arena, struct_def.generic_params, generic_args};
 
     inout_expr = analyzer.create(
-        sir::SymbolExpr{
+        sir::SpecializeExpr{
             .ast_node = inout_expr.get_ast_node(),
             .type = nullptr,
-            .symbol = specialization,
+            .symbol = &struct_def,
+            .args = generic_args,
         }
     );
 

@@ -439,6 +439,7 @@ public:
     Symbol get_parent() const;
     Module &find_mod() const;
     Expr get_type();
+    ExprCategory get_category() const;
     Symbol resolve() const;
     const SymbolTable *get_symbol_table() const;
     SymbolTable *get_symbol_table();

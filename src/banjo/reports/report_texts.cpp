@@ -128,7 +128,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<union case literal>",
         return "<map literal>",
         return "<closure literal>",
-        return symbol_to_string(inner->symbol),
+        return inner->symbol.get_name(),
         return binary_expr_to_string(*inner),
         return "<unary expr>",
         return "<cast expr>",
@@ -182,29 +182,6 @@ std::string ReportText::func_type_to_string(const sir::FuncType &func_type) {
 
     if (!func_type.return_type.is_primitive_type(sir::Primitive::VOID)) {
         str += " -> " + to_string(func_type.return_type);
-    }
-
-    return str;
-}
-
-std::string ReportText::symbol_to_string(sir::Symbol symbol) {
-    std::string str = symbol.get_name();
-
-    if (auto struct_def = symbol.match<sir::StructDef>()) {
-        if (struct_def->parent_specialization) {
-            std::span<sir::Expr> generic_args = struct_def->parent_specialization->args;
-
-            str += "[";
-
-            for (unsigned i = 0; i < generic_args.size(); i++) {
-                str += to_string(generic_args[i]);
-                if (i != generic_args.size() - 1) {
-                    str += ", ";
-                }
-            }
-
-            str += "]";
-        }
     }
 
     return str;
