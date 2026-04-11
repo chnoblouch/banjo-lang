@@ -31,12 +31,12 @@ struct DeferredDeinit {
 };
 
 struct MonoFunc {
-    const SpecializationCollector::Entry &specialization;
+    SpecializationCollector::Entry &specialization;
     ssa::Function *ssa_func;
 };
 
 struct MonoStruct {
-    const SpecializationCollector::Entry &specialization;
+    SpecializationCollector::Entry &specialization;
     ssa::Structure *ssa_struct;
 };
 
@@ -91,6 +91,8 @@ public:
     std::unordered_map<const lang::sir::ProtoDef *, ssa::Structure *> ssa_vtable_types;
     std::unordered_map<const lang::sir::StructDef *, std::vector<unsigned>> ssa_vtables;
     std::vector<ssa::Structure *> tuple_structs;
+
+    std::stack<SpecializationCollector::Entry *> specialization_stack;
     std::unordered_map<const sir::GenericParam *, sir::Expr> sir_generic_args;
 
     int string_name_id = 0;
@@ -110,6 +112,7 @@ public:
     void push_loop_context(LoopContext ctx) { loop_contexts.push(ctx); }
     void pop_loop_context() { loop_contexts.pop(); }
 
+    SpecializationCollector::Entry *get_specialization();
     sir::Expr get_generic_arg(const sir::GenericParam &generic_param);
 
     ssa::Function *get_ssa_func() { return get_func_context().ssa_func; }

@@ -239,7 +239,7 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
 
     if (auto specialize_expr = struct_literal.type.match<sir::SpecializeExpr>()) {
         sir_struct_def = &specialize_expr->symbol.as<sir::StructDef>();
-    }  else {
+    } else {
         sir_struct_def = &struct_literal.type.as_symbol<sir::StructDef>();
     }
 
@@ -721,17 +721,9 @@ StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr
     utils::Arena<2048> arena;
     std::span<sir::Expr> args = specialize_expr.args;
 
-    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
-
-    if (func_def.is_generic()) {
-        std::vector<sir::Expr> parent_args;
-        parent_args.reserve(func_def.generic_params.size());
-
-        for (const sir::GenericParam &generic_param : func_def.generic_params) {
-            parent_args.push_back(ctx.get_generic_arg(generic_param));
-        }
-
-        args = sir::Specializer{arena, func_def.generic_params, std::span{parent_args}}.specialize_expr_list(args);
+    if (auto specialization = ctx.get_specialization()) {
+        sir::Specializer specializer{arena, specialization->params, specialization->args};
+        args = specializer.specialize_expr_list(args);
     }
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {

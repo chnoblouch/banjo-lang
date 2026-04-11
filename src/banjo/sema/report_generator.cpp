@@ -454,6 +454,17 @@ void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const
     );
 }
 
+void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::UnionDef &union_def) {
+    // TODO: Test
+    
+    report_error(
+        "union '$' has no method named '$'",
+        method_ident.ast_node,
+        union_def.ident.ast_node,
+        method_ident.value
+    );
+}
+
 void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::ProtoDef &proto_def) {
     report_error(
         "proto '$' has no method named '$'",
@@ -804,7 +815,7 @@ void ReportGenerator::report_err_operator_overload_not_found(
 
 void ReportGenerator::report_err_unexpected_generic_arg_count(
     sir::BracketExpr &bracket_expr,
-    std::vector<sir::GenericParam> &generic_params,
+    std::span<sir::GenericParam *> generic_params,
     sir::Ident &decl_ident,
     std::string_view decl_kind
 ) {

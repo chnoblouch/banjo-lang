@@ -848,7 +848,8 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             std::span<sir::Expr> generic_args = analyzer.create_array({type});
 
             // FIXME: Checked generics
-            sir::StructDef *specialization = nullptr; // GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
+            sir::StructDef *specialization =
+                nullptr; // GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
 
             out_expr = sir::create_call(
                 analyzer.get_mod(),
@@ -1057,7 +1058,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             Result result = Result::SUCCESS;
 
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                sir::GenericParam &param = func_def->generic_params[i];
+                sir::GenericParam &param = *func_def->generic_params[i];
                 sir::Expr &arg = generic_args[i];
                 RESULT_MERGE(result, check_type_constraint(analyzer, call_expr.callee.get_ast_node(), arg, param));
             }
@@ -1069,7 +1070,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                 return partial_result;
             }
 
-            if (func_def->generic_params.back().kind == sir::GenericParamKind::SEQUENCE) {
+            if (func_def->generic_params.back()->kind == sir::GenericParamKind::SEQUENCE) {
                 unsigned num_non_sequence_args = func_def->type.params.size() - 1;
                 unsigned num_sequence_args = call_expr.args.size() - num_non_sequence_args;
 
@@ -1209,8 +1210,9 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         lhs_type = pointer_type->base_type;
     }
 
-    if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
-        sir::Symbol method = struct_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
+    if (auto concrete_struct = lhs_type.match_concrete<sir::StructDef>()) {
+        sir::StructDef &struct_def = *concrete_struct->def;
+        sir::Symbol method = struct_def.block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
             create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
@@ -1218,7 +1220,9 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             return Result::SUCCESS;
         }
 
-        sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
+        // FIXME: This doesn't work for generic structs.
+
+        sir::StructField *field = struct_def.find_field(dot_expr.rhs.value);
 
         if (field) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
@@ -1235,7 +1239,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             return Result::SUCCESS;
         }
 
-        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, struct_def);
         return Result::ERROR;
     } else if (auto union_def = lhs_type.match_symbol<sir::UnionDef>()) {
         sir::Symbol method = union_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
@@ -1246,7 +1250,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             return Result::SUCCESS;
         }
 
-        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *struct_def);
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *union_def);
         return Result::ERROR;
     } else if (auto proto_def = lhs_type.match_proto_ptr()) {
         sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
@@ -1791,7 +1795,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             }
 
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                sir::GenericParam &param = func_def->generic_params[i];
+                sir::GenericParam &param = *func_def->generic_params[i];
                 sir::Expr &arg = bracket_expr.rhs[i];
                 RESULT_MERGE(result, check_type_constraint(analyzer, arg.get_ast_node(), arg, param));
             }
@@ -1939,19 +1943,37 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     }
 
     sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
+
     if (decl_block) {
         SymbolLookupResult lookup_result = analyzer.symbol_ctx.look_up_rhs_local(dot_expr);
 
         if (lookup_result.symbol) {
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, lookup_result.symbol);
 
-            out_expr = analyzer.create(
-                sir::SymbolExpr{
-                    .ast_node = dot_expr.ast_node,
-                    .type = lookup_result.symbol.get_type(),
-                    .symbol = lookup_result.symbol,
-                }
-            );
+            if (auto specialize_expr = dot_expr.lhs.match<sir::SpecializeExpr>()) {
+                sir::Specializer specializer{
+                    analyzer.mod->trivial_arena,
+                    specialize_expr->symbol.get_generic_params(),
+                    specialize_expr->args,
+                };
+
+                out_expr = analyzer.create(
+                    sir::SpecializeExpr{
+                        .ast_node = dot_expr.ast_node,
+                        .type = specializer.specialize_expr(lookup_result.symbol.get_type()),
+                        .symbol = lookup_result.symbol,
+                        .args = specialize_expr->args,
+                    }
+                );
+            } else {
+                out_expr = analyzer.create(
+                    sir::SymbolExpr{
+                        .ast_node = dot_expr.ast_node,
+                        .type = lookup_result.symbol.get_type(),
+                        .symbol = lookup_result.symbol,
+                    }
+                );
+            }
 
             return Result::SUCCESS;
         }
@@ -2247,15 +2269,30 @@ void ExprAnalyzer::create_method_call(
 ) {
     analyzer.add_symbol_use(rhs.ast_node, method);
 
-    sir::Expr callee_type = method.get_type();
+    if (auto specialize_expr = lhs.get_type().match<sir::SpecializeExpr>()) {
+        sir::Specializer specializer{
+            analyzer.get_mod().trivial_arena,
+            specialize_expr->symbol.get_generic_params(),
+            specialize_expr->args,
+        };
 
-    call_expr.callee = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = rhs.ast_node,
-            .type = callee_type,
-            .symbol = method,
-        }
-    );
+        call_expr.callee = analyzer.create(
+            sir::SpecializeExpr{
+                .ast_node = rhs.ast_node,
+                .type = specializer.specialize_expr(method.get_type()),
+                .symbol = method,
+                .args = specialize_expr->args,
+            }
+        );
+    } else {
+        call_expr.callee = analyzer.create(
+            sir::SymbolExpr{
+                .ast_node = rhs.ast_node,
+                .type = method.get_type(),
+                .symbol = method,
+            }
+        );
+    }
 
     std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(call_expr.args.size() + 1);
     args[0] = lhs;

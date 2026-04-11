@@ -106,6 +106,7 @@ public:
 
     void report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal);
     void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);
+    void report_err_no_method(const sir::Ident &method_ident, const sir::UnionDef &union_def);
     void report_err_no_method(const sir::Ident &method_ident, const sir::ProtoDef &proto_def);
     void report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set);
     void report_err_continue_outside_loop(const sir::ContinueStmt &continue_stmt);
@@ -201,7 +202,7 @@ private:
 
     void report_err_unexpected_generic_arg_count(
         sir::BracketExpr &bracket_expr,
-        std::vector<sir::GenericParam> &generic_params,
+        std::span<sir::GenericParam *> generic_params,
         sir::Ident &decl_ident,
         std::string_view decl_kind
     );

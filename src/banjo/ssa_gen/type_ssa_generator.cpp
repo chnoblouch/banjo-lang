@@ -2,6 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/specializer.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/utils/macros.hpp"
@@ -129,9 +130,18 @@ ssa::Type TypeSSAGenerator::generate_reference_type() {
 }
 
 ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &specialize_type) {
+    utils::Arena<2048> arena;
+    std::span<sir::Expr> args = specialize_type.args;
+
+    if (auto specialization = ctx.get_specialization()) {
+        sir::Specializer specializer{arena, specialization->params, specialization->args};
+        args = specializer.specialize_expr_list(args);
+    }
+
     if (auto struct_def = specialize_type.symbol.match<sir::StructDef>()) {
+
         for (const MonoStruct &mono_struct : ctx.ssa_mono_structs.at(struct_def)) {
-            if (Utils::equal(mono_struct.specialization.args, specialize_type.args)) {
+            if (Utils::equal(mono_struct.specialization.args, args)) {
                 return mono_struct.ssa_struct;
             }
         }

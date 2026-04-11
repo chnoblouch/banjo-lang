@@ -22,7 +22,7 @@ public:
     void print(const Unit &unit);
     void print_mod(const Module &mod);
 
-private:
+public:
     void print_decl_block(const DeclBlock &decl_block);
     void print_decl(const Decl &decl);
     void print_func_def(const FuncDef &func_def);
@@ -117,7 +117,7 @@ private:
     void print_type_guard_expr(const TypeGuardExpr &type_guard_expr);
     void print_placeholder_expr(const PlaceholderExpr &placeholder_expr);
 
-    void print_generic_params(const std::vector<GenericParam> &generic_params);
+    void print_generic_params(std::span<GenericParam *> generic_params);
     void print_attrs(const Attributes &attrs);
     void print_local(const Local &local);
     void print_binary_op(const char *field_name, BinaryOp op);

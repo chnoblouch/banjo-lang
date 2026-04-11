@@ -14,7 +14,7 @@ class SpecializationCollector {
 
 public:
     struct Entry {
-        const std::vector<sir::GenericParam> &params;
+        std::span<sir::GenericParam *> params;
         std::vector<sir::Expr> args;
     };
 
@@ -30,7 +30,8 @@ public:
 
 private:
     void visit_decl_block(const sir::DeclBlock &decl_block);
-    void visit_func_def(const sir::FuncDef &func_def);
+    void visit_func_def(const sir::FuncDef &func_def, bool is_specialized = false);
+    void visit_struct_def(const sir::StructDef &struct_def, bool is_specialized = false);
 
     void visit_block(const sir::Block &block);
     void visit_stmt(sir::Stmt stmt);
@@ -42,6 +43,7 @@ private:
     void visit_expr(sir::Expr expr);
     void visit_call_expr(const sir::CallExpr &call_expr);
     void visit_specialize_expr(const sir::SpecializeExpr &specialize_expr);
+    void visit_func_type(const sir::FuncType &func_type);
 };
 
 } // namespace banjo::lang

@@ -51,35 +51,8 @@ private:
     void generate_var_decl(const sir::VarDecl &sir_var_decl);
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
-    void insert_generic_args(const SpecializationCollector::Entry &specialization);
-    void remove_generic_args(const SpecializationCollector::Entry &specialization);
-
-    template <typename T>
-    void insert_generic_args(const sir::Specialization<T> *specialization) {
-        if (!specialization) {
-            return;
-        }
-
-        const T &generic_def = *specialization->generic_def;
-
-        for (unsigned i = 0; i < specialization->args.size(); i++) {
-            sir::Expr arg = specialization->args[i];
-            ctx.sir_generic_args.emplace(&generic_def.generic_params[i], arg);
-        }
-    }
-
-    template <typename T>
-    void remove_generic_args(const sir::Specialization<T> *specialization) {
-        if (!specialization) {
-            return;
-        }
-
-        const T &generic_def = *specialization->generic_def;
-
-        for (const sir::GenericParam &generic_param : generic_def.generic_params) {
-            ctx.sir_generic_args.erase(&generic_param);
-        }
-    }
+    void push_specialization(SpecializationCollector::Entry &specialization);
+    void pop_specialization(SpecializationCollector::Entry &specialization);
 };
 
 } // namespace lang

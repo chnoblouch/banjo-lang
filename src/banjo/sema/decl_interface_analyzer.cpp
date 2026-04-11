@@ -23,13 +23,13 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 
     analyzer.enter_symbol_table(func_def.block.symbol_table);
 
-    for (sir::GenericParam &generic_param : func_def.generic_params) {
-        if (generic_param.constraint) {
-            ExprAnalyzer{analyzer}.analyze_type(generic_param.constraint);
+    for (sir::GenericParam *generic_param : func_def.generic_params) {
+        if (generic_param->constraint) {
+            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
         }
 
-        analyzer.get_symbol_table().insert_decl(generic_param.ident.value, &generic_param);
-        analyzer.add_symbol_def(&generic_param);
+        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
+        analyzer.add_symbol_def(generic_param);
     }
 
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
@@ -110,13 +110,13 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
 
     Result partial_result;
 
-    for (sir::GenericParam &generic_param : struct_def.generic_params) {
-        if (generic_param.constraint) {
-            ExprAnalyzer{analyzer}.analyze_type(generic_param.constraint);
+    for (sir::GenericParam *generic_param : struct_def.generic_params) {
+        if (generic_param->constraint) {
+            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
         }
 
-        analyzer.get_symbol_table().insert_decl(generic_param.ident.value, &generic_param);
-        analyzer.add_symbol_def(&generic_param);
+        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
+        analyzer.add_symbol_def(generic_param);
     }
 
     for (sir::Expr &impl : struct_def.impls) {
@@ -268,13 +268,42 @@ void DeclInterfaceAnalyzer::analyze_param(sir::Param &param, unsigned index, sir
             return;
         }
 
-        sir::Expr base_type = analyzer.create(
-            sir::SymbolExpr{
-                .ast_node = nullptr,
-                .type = nullptr,
-                .symbol = func_parent,
+        sir::Expr base_type = nullptr;
+
+        if (auto struct_def = func_parent.match<sir::StructDef>()) {
+            if (struct_def->is_generic()) {
+                std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(struct_def->generic_params.size());
+
+                for (unsigned i = 0; i < args.size(); i++) {
+                    args[i] = analyzer.create(
+                        sir::SymbolExpr{
+                            .ast_node = nullptr,
+                            .type = nullptr,
+                            .symbol = struct_def->generic_params[i],
+                        }
+                    );
+                }
+
+                base_type = analyzer.create(
+                    sir::SpecializeExpr{
+                        .ast_node = nullptr,
+                        .type = nullptr,
+                        .symbol = func_parent,
+                        .args = args,
+                    }
+                );
             }
-        );
+        }
+
+        if (!base_type) {
+            base_type = analyzer.create(
+                sir::SymbolExpr{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .symbol = func_parent,
+                }
+            );
+        }
 
         if (param.attrs && param.attrs->byval) {
             param.type = base_type;

@@ -15,7 +15,7 @@ namespace sema {
 GenericArgInference::GenericArgInference(
     SemanticAnalyzer &analyzer,
     const sir::Expr &expr,
-    const std::vector<sir::GenericParam> &generic_params,
+    std::span<sir::GenericParam *> generic_params,
     std::span<sir::Param> params
 )
   : analyzer(analyzer),
@@ -38,7 +38,7 @@ Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    bool has_sequence = generic_params.back().kind == sir::GenericParamKind::SEQUENCE;
+    bool has_sequence = generic_params.back()->kind == sir::GenericParamKind::SEQUENCE;
     unsigned non_sequence_end = has_sequence ? params.size() - 1 : params.size();
     unsigned num_sequence_args = has_sequence ? args.size() - (params.size() - 1) : 0;
 
@@ -78,7 +78,7 @@ Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr
 
     for (unsigned i = 0; i < generic_args.size(); i++) {
         if (!generic_args[i]) {
-            analyzer.report_generator.report_err_cannot_infer_generic_arg(expr, generic_params[i]);
+            analyzer.report_generator.report_err_cannot_infer_generic_arg(expr, *generic_params[i]);
             result = Result::ERROR;
         }
     }
@@ -104,7 +104,7 @@ Result GenericArgInference::infer(const sir::Expr &param_type, const sir::Expr &
 
 Result GenericArgInference::infer_on_ident(const sir::IdentExpr &ident_expr, const sir::Expr &arg_type) {
     for (unsigned i = 0; i < generic_params.size(); i++) {
-        const sir::GenericParam &generic_param = generic_params[i];
+        const sir::GenericParam &generic_param = *generic_params[i];
 
         if (generic_param.ident.value != ident_expr.value) {
             continue;

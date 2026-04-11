@@ -1,6 +1,7 @@
 #include "ssa_generator.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_printer.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/primitive.hpp"
@@ -16,6 +17,7 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
+#include <iostream>
 #include <utility>
 
 namespace banjo {
@@ -34,6 +36,19 @@ ssa::Module SSAGenerator::generate() {
 
     ctx.ssa_mod = &ssa_mod;
     ctx.specializations = SpecializationCollector{}.collect(sir_unit);
+
+    for (const auto &[key, value] : ctx.specializations) {
+        std::cout << key.get_name() << "\n";
+        for (const auto &entry : value) {
+            std::cout << "  ";
+
+            for (sir::Expr arg : entry.args) {
+                sir::Printer{std::cout}.print_expr(arg);
+            }
+        }
+
+        std::cout << "\n";
+    }
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
         ctx.push_decl_context().sir_mod = sir_mod;
@@ -68,10 +83,14 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
     }
 
     if (sir_func.is_generic()) {
-        const auto &specializations = ctx.specializations.at(const_cast<sir::FuncDef *>(&sir_func));
+        auto iter = ctx.specializations.find(const_cast<sir::FuncDef *>(&sir_func));
 
-        for (const SpecializationCollector::Entry &specialization : specializations) {
-            insert_generic_args(specialization);
+        if (iter == ctx.specializations.end()) {
+            return;
+        }
+
+        for (SpecializationCollector::Entry &specialization : iter->second) {
+            push_specialization(specialization);
             ssa::Function *ssa_func = create_func_def(sir_func, specialization.args);
 
             MonoFunc mono_func{
@@ -80,7 +99,7 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
             };
 
             ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
-            remove_generic_args(specialization);
+            pop_specialization(specialization);
         }
     } else {
         ssa::Function *ssa_func = create_func_def(sir_func, {});
@@ -92,23 +111,7 @@ ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const
     sir::Attributes *attrs = sir_func.attrs;
     std::string ssa_name = NameMangling::get_link_name(sir_func, generic_args);
 
-    ssa::FunctionType ssa_func_type{
-        .params = generate_params(sir_func.type),
-        .return_type = generate_return_type(sir_func.type.return_type),
-        .calling_conv = ctx.target->get_default_calling_conv(),
-    };
-
-    if (sir_func.is_main()) {
-        if (ssa_func_type.params.empty()) {
-            ssa_func_type.params = {SSA_MAIN_ARGC_TYPE, SSA_MAIN_ARGV_TYPE};
-        }
-
-        if (ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
-            ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
-        }
-    }
-
-    ssa::Function *ssa_func = new ssa::Function(ssa_name, ssa_func_type);
+    ssa::Function *ssa_func = new ssa::Function(ssa_name, {});
     ssa_func->global = sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport));
     ssa_mod.add(ssa_func);
 
@@ -184,10 +187,14 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
 
 void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
     if (sir_struct.is_generic()) {
-        const auto &specializations = ctx.specializations.at(const_cast<sir::StructDef *>(&sir_struct));
+        auto iter = ctx.specializations.find(const_cast<sir::StructDef *>(&sir_struct));
 
-        for (const SpecializationCollector::Entry &specialization : specializations) {
-            insert_generic_args(specialization);
+        if (iter == ctx.specializations.end()) {
+            return;
+        }
+
+        for (SpecializationCollector::Entry &specialization : iter->second) {
+            push_specialization(specialization);
             ssa::Structure *ssa_struct = create_struct_def(sir_struct, specialization.args);
 
             MonoStruct mono_struct{
@@ -196,7 +203,7 @@ void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
             };
 
             ctx.ssa_mono_structs[&sir_struct].push_back(mono_struct);
-            remove_generic_args(specialization);
+            pop_specialization(specialization);
         }
     } else {
         ssa::Structure *ssa_struct = create_struct_def(sir_struct, {});
@@ -359,12 +366,18 @@ void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
     }
 
     if (sir_func.is_generic()) {
-        for (MonoFunc &mono_func : ctx.ssa_mono_funcs.at(&sir_func)) {
+        auto iter = ctx.ssa_mono_funcs.find(&sir_func);
+
+        if (iter == ctx.ssa_mono_funcs.end()) {
+            return;
+        }
+
+        for (MonoFunc &mono_func : iter->second) {
             ssa::Function &ssa_func = *mono_func.ssa_func;
 
-            insert_generic_args(mono_func.specialization);
+            push_specialization(mono_func.specialization);
             generate_func_def(sir_func, ssa_func);
-            remove_generic_args(mono_func.specialization);
+            pop_specialization(mono_func.specialization);
         }
     } else {
         ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
@@ -374,6 +387,24 @@ void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
 
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function &ssa_func) {
     target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+
+    ssa::FunctionType ssa_func_type{
+        .params = generate_params(sir_func.type),
+        .return_type = generate_return_type(sir_func.type.return_type),
+        .calling_conv = ctx.target->get_default_calling_conv(),
+    };
+
+    if (sir_func.is_main()) {
+        if (ssa_func_type.params.empty()) {
+            ssa_func_type.params = {SSA_MAIN_ARGC_TYPE, SSA_MAIN_ARGV_TYPE};
+        }
+
+        if (ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
+            ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
+        }
+    }
+
+    ssa_func.type = ssa_func_type;
 
     if (ssa_func.name == "___runtime_f64_to_string") {
         return;
@@ -482,12 +513,18 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
 
 void SSAGenerator::generate_struct_defs(const sir::StructDef &sir_struct) {
     if (sir_struct.is_generic()) {
-        for (MonoStruct &mono_struct : ctx.ssa_mono_structs.at(&sir_struct)) {
+        auto iter = ctx.ssa_mono_structs.find(&sir_struct);
+
+        if (iter == ctx.ssa_mono_structs.end()) {
+            return;
+        }
+
+        for (MonoStruct &mono_struct : iter->second) {
             ssa::Structure &ssa_struct = *mono_struct.ssa_struct;
 
-            insert_generic_args(mono_struct.specialization);
+            push_specialization(mono_struct.specialization);
             generate_struct_def(sir_struct, ssa_struct);
-            remove_generic_args(mono_struct.specialization);
+            pop_specialization(mono_struct.specialization);
         }
     } else {
         ssa::Structure *ssa_struct = ctx.ssa_structs.at(&sir_struct);
@@ -549,15 +586,19 @@ void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native
     ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
 }
 
-void SSAGenerator::insert_generic_args(const SpecializationCollector::Entry &specialization) {
+void SSAGenerator::push_specialization(SpecializationCollector::Entry &specialization) {
+    ctx.specialization_stack.push(&specialization);
+
     for (unsigned i = 0; i < specialization.params.size(); i++) {
-        ctx.sir_generic_args.emplace(&specialization.params[i], specialization.args[i]);
+        ctx.sir_generic_args.emplace(specialization.params[i], specialization.args[i]);
     }
 }
 
-void SSAGenerator::remove_generic_args(const SpecializationCollector::Entry &specialization) {
-    for (const sir::GenericParam &param : specialization.params) {
-        ctx.sir_generic_args.erase(&param);
+void SSAGenerator::pop_specialization(SpecializationCollector::Entry &specialization) {
+    ctx.specialization_stack.pop();
+    
+    for (sir::GenericParam *param : specialization.params) {
+        ctx.sir_generic_args.erase(param);
     }
 }
 

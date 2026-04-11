@@ -455,6 +455,7 @@ public:
     SymbolTable *get_symbol_table();
     const DeclBlock *get_decl_block() const;
     DeclBlock *get_decl_block();
+    std::span<sir::GenericParam *> get_generic_params() const;
 };
 
 class UseItem : public DynamicPointer<UseIdent, UseRebind, UseDotExpr, UseList, Error> {
@@ -1225,7 +1226,7 @@ struct FuncDef {
     FuncType type;
     Block block;
     Attributes *attrs = nullptr;
-    std::vector<GenericParam> generic_params;
+    std::span<GenericParam *> generic_params;
     SemaStage stage;
 
     Module &find_mod() const;
@@ -1271,7 +1272,7 @@ struct StructDef {
     std::vector<Expr> impls;
     Attributes *attrs = nullptr;
 
-    std::vector<GenericParam> generic_params;
+    std::span<GenericParam *> generic_params;
     std::list<Specialization<StructDef>> specializations;
     Specialization<StructDef> *parent_specialization;
 
@@ -1561,10 +1562,10 @@ const T *Expr::match_symbol() const {
 template <typename T>
 std::optional<Concrete<T>> Expr::match_concrete() const {
     if (auto symbol = match_symbol<T>()) {
-        return Concrete<T>{.def = const_cast<T*>(symbol), .generic_args{}};
+        return Concrete<T>{.def = const_cast<T *>(symbol), .generic_args{}};
     } else if (auto specialize_expr = match<SpecializeExpr>()) {
         if (auto symbol = specialize_expr->symbol.match<T>()) {
-            return Concrete<T>{.def = const_cast<T*>(symbol), .generic_args = specialize_expr->args};
+            return Concrete<T>{.def = const_cast<T *>(symbol), .generic_args = specialize_expr->args};
         } else {
             return {};
         }

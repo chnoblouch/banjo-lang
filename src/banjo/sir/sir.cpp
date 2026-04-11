@@ -349,6 +349,8 @@ ASTNode *Expr::get_ast_node() const {
 DeclBlock *Expr::get_decl_block() {
     if (auto symbol_expr = match<SymbolExpr>()) {
         return symbol_expr->symbol.get_decl_block();
+    } else if (auto specialize_expr = match<SpecializeExpr>()) {
+        return specialize_expr->symbol.get_decl_block();
     } else {
         return nullptr;
     }
@@ -512,6 +514,12 @@ const DeclBlock *Symbol::get_decl_block() const {
 
 DeclBlock *Symbol::get_decl_block() {
     return const_cast<DeclBlock *>(std::as_const(*this).get_decl_block());
+}
+
+std::span<sir::GenericParam *> Symbol::get_generic_params() const {
+    if (auto func_def = match<FuncDef>()) return func_def->generic_params;
+    else if (auto struct_def = match<StructDef>()) return struct_def->generic_params;
+    else return {};
 }
 
 void SymbolTable::insert_decl(std::string_view name, Symbol symbol) {

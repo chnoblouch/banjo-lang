@@ -1086,20 +1086,20 @@ void Printer::print_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
     END_OBJECT();
 }
 
-void Printer::print_generic_params(const std::vector<GenericParam> &generic_params) {
+void Printer::print_generic_params(std::span<GenericParam *> generic_params) {
     BEGIN_LIST();
 
-    for (const GenericParam &generic_param : generic_params) {
+    for (GenericParam *generic_param : generic_params) {
         INDENT_LIST_ELEMENT();
         BEGIN_OBJECT("GenericParam");
-        PRINT_FIELD("ident", generic_param.ident.value);
+        PRINT_FIELD("ident", generic_param->ident.value);
 
-        switch (generic_param.kind) {
+        switch (generic_param->kind) {
             case GenericParamKind::TYPE: PRINT_FIELD("kind", "TYPE"); break;
             case GenericParamKind::SEQUENCE: PRINT_FIELD("kind", "SEQUENCE"); break;
         }
 
-        PRINT_EXPR_FIELD("constraint", generic_param.constraint);
+        PRINT_EXPR_FIELD("constraint", generic_param->constraint);
         END_OBJECT();
     }
 

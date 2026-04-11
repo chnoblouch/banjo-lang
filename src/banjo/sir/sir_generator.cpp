@@ -244,7 +244,7 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
 
     Scope &scope = push_scope();
     scope.struct_def = struct_def;
-    utils::extend(scope.generic_params, struct_def->generic_params);
+    scope.generic_params = struct_def->generic_params;
     struct_def->block = generate_decl_block(block_node);
     pop_scope();
 
@@ -1484,12 +1484,17 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
     };
 }
 
-std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode *node) {
-    std::vector<sir::GenericParam> &inherited_params = get_scope().generic_params;
+std::span<sir::GenericParam *> SIRGenerator::generate_generic_param_list(ASTNode *node) {
+    std::span<sir::GenericParam *> inherited_params = get_scope().generic_params;
 
-    std::vector<sir::GenericParam> sir_generic_params;
-    sir_generic_params.reserve(node->num_children() + inherited_params.size());
-    utils::extend(sir_generic_params, inherited_params);
+    unsigned num_params = inherited_params.size() + node->num_children();
+    std::span<sir::GenericParam *> sir_generic_params = allocate_array<sir::GenericParam *>(num_params);
+
+    for (unsigned i = 0; i < inherited_params.size(); i++) {
+        sir_generic_params[i] = inherited_params[i];
+    }
+
+    unsigned param_index = 0;
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         ASTNode *name_node = child->first_child;
@@ -1506,7 +1511,7 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
             }
         }
 
-        sir_generic_params.push_back(
+        sir_generic_params[inherited_params.size() + param_index] = create(
             sir::GenericParam{
                 .ast_node = child,
                 .ident = generate_ident(name_node),
@@ -1514,6 +1519,8 @@ std::vector<sir::GenericParam> SIRGenerator::generate_generic_param_list(ASTNode
                 .constraint = constraint,
             }
         );
+
+        param_index += 1;
     }
 
     return sir_generic_params;

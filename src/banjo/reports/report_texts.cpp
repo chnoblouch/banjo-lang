@@ -97,11 +97,11 @@ ReportText &ReportText::format(const std::vector<sir::Expr> &exprs) {
     return format(string);
 }
 
-ReportText &ReportText::format(const std::vector<sir::GenericParam> &generic_params) {
+ReportText &ReportText::format(std::span<sir::GenericParam *> generic_params) {
     std::string string;
 
     for (unsigned i = 0; i < generic_params.size(); i++) {
-        string += "'" + std::string{generic_params[i].ident.value} + "'";
+        string += "'" + std::string{generic_params[i]->ident.value} + "'";
 
         if (i != generic_params.size() - 1) {
             string += ", ";
@@ -139,7 +139,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<try expr>",
         return tuple_expr_to_string(*inner),
         return "<coercion expr>",
-        return "<specialize expr>",
+        return specialize_expr_to_string(*inner),
         return primitive_to_string(inner->primitive),
         return "*" + to_string(inner->base_type),
         return "[" + to_string(inner->base_type) + "; " + to_string(inner->length) + "]",
@@ -227,6 +227,21 @@ std::string ReportText::tuple_expr_to_string(const sir::TupleExpr &tuple_expr) {
     }
 
     str += ")";
+    return str;
+}
+
+std::string ReportText::specialize_expr_to_string(const sir::SpecializeExpr &specialize_expr) {
+    std::string str = specialize_expr.symbol.get_name() + "[";
+
+    for (unsigned i = 0; i < specialize_expr.args.size(); i++) {
+        str += to_string(specialize_expr.args[i]);
+
+        if (i != specialize_expr.args.size() - 1) {
+            str += ", ";
+        }
+    }
+
+    str += "]";
     return str;
 }
 

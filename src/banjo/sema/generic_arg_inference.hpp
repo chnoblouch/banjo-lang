@@ -18,7 +18,7 @@ class GenericArgInference {
 private:
     SemanticAnalyzer &analyzer;
     const sir::Expr &expr;
-    const std::vector<sir::GenericParam> &generic_params;
+    std::span<sir::GenericParam *> generic_params;
     std::span<sir::Param> params;
 
     std::vector<sir::Expr> generic_args;
@@ -29,7 +29,7 @@ public:
     GenericArgInference(
         SemanticAnalyzer &analyzer,
         const sir::Expr &expr,
-        const std::vector<sir::GenericParam> &generic_params,
+        std::span<sir::GenericParam *> generic_params,
         std::span<sir::Param> params
     );
 

@@ -36,7 +36,7 @@ public:
     ReportText &format(sir::Expr &expr);
     ReportText &format(sir::ExprCategory expr_category);
     ReportText &format(const std::vector<sir::Expr> &exprs);
-    ReportText &format(const std::vector<sir::GenericParam> &generic_params);
+    ReportText &format(std::span<sir::GenericParam *> generic_params);
 
     static std::string to_string(const sir::Expr &expr);
 
@@ -44,6 +44,7 @@ private:
     static std::string func_type_to_string(const sir::FuncType &func_type);
     static std::string binary_expr_to_string(const sir::BinaryExpr &binary_expr);
     static std::string tuple_expr_to_string(const sir::TupleExpr &tuple_expr);
+    static std::string specialize_expr_to_string(const sir::SpecializeExpr &specialize_expr);
     static std::string primitive_to_string(sir::Primitive primitive);
     static std::string closure_type_to_string(const sir::ClosureType &closure_type);
     static std::string reference_type_to_string(const sir::ReferenceType &reference_type);

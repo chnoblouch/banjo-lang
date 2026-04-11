@@ -21,26 +21,27 @@ void SpecializationCollector::visit_decl_block(const sir::DeclBlock &decl_block)
     for (sir::Decl decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) {
             visit_func_def(*func_def);
+        } else if (auto struct_def = decl.match<sir::StructDef>()) {
+            visit_struct_def(*struct_def);
         }
     }
 }
 
-void SpecializationCollector::visit_func_def(const sir::FuncDef &func_def) {
-    if (func_def.is_generic()) {
-        bool is_specialized = false;
-
-        for (Entry &entry : entry_stack) {
-            if (&entry.params == &func_def.generic_params) {
-                is_specialized = true;
-            }
-        }
-
-        if (!is_specialized) {
-            return;
-        }
+void SpecializationCollector::visit_func_def(const sir::FuncDef &func_def, bool is_specialized /* = false */) {
+    if (func_def.is_generic() && !is_specialized) {
+        return;
     }
 
+    visit_func_type(func_def.type);
     visit_block(func_def.block);
+}
+
+void SpecializationCollector::visit_struct_def(const sir::StructDef &struct_def, bool is_specialized /* = false */) {
+    if (struct_def.is_generic() && !is_specialized) {
+        return;
+    }
+
+    visit_decl_block(struct_def.block);
 }
 
 void SpecializationCollector::visit_block(const sir::Block &block) {
@@ -97,6 +98,8 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_call_expr(*call_expr);
     } else if (auto specialize_expr = expr.match<sir::SpecializeExpr>()) {
         visit_specialize_expr(*specialize_expr);
+    } else if (auto func_type = expr.match<sir::FuncType>()) {
+        visit_func_type(*func_type);
     }
 }
 
@@ -129,28 +132,41 @@ void SpecializationCollector::visit_specialize_expr(const sir::SpecializeExpr &s
         }
     }
 
-    const std::vector<sir::GenericParam> *generic_params;
+    std::span<sir::GenericParam *> generic_params;
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
-        generic_params = &func_def->generic_params;
+        generic_params = func_def->generic_params;
     } else if (auto struct_def = specialize_expr.symbol.match<sir::StructDef>()) {
-        generic_params = &struct_def->generic_params;
+        generic_params = struct_def->generic_params;
     } else {
         ASSERT_UNREACHABLE;
     }
 
     Entry entry{
-        .params = *generic_params,
+        .params = generic_params,
         .args = args,
     };
 
     entries.push_back(entry);
+    entry_stack.push_back(entry);
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
-        entry_stack.push_back(entry);
-        visit_func_def(*func_def);
-        entry_stack.pop_back();
+        visit_func_def(*func_def, true);
+    } else if (auto struct_def = specialize_expr.symbol.match<sir::StructDef>()) {
+        visit_struct_def(*struct_def, true);
+    } else {
+        ASSERT_UNREACHABLE;
     }
+
+    entry_stack.pop_back();
+}
+
+void SpecializationCollector::visit_func_type(const sir::FuncType &func_type) {
+    for (sir::Param &arg : func_type.params) {
+        visit_expr(arg.type);
+    }
+
+    visit_expr(func_type.return_type);
 }
 
 } // namespace banjo::lang

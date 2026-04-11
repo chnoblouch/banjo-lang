@@ -1,6 +1,7 @@
 #include "ssa_generator_context.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
 
@@ -22,6 +23,10 @@ void SSAGeneratorContext::push_func_context(const sir::FuncDef &sir_func, ssa::F
         .ssa_block = ssa_func->get_entry_block_iter(),
         .ssa_last_alloca = ssa_func->get_entry_block().get_instrs().get_header(),
     });
+}
+
+SpecializationCollector::Entry *SSAGeneratorContext::get_specialization() {
+    return specialization_stack.empty() ? nullptr : specialization_stack.top();
 }
 
 sir::Expr SSAGeneratorContext::get_generic_arg(const sir::GenericParam &generic_param) {
