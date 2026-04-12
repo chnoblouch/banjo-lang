@@ -52,10 +52,12 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
             return coerce_to_union(expr, expected_type);
         } else if (auto proto_def = expected_type.match_proto_ptr()) {
             return coerce_to_proto_ptr(expr, *proto_def, expected_type);
-        } else if (auto specialization = analyzer.as_std_optional_specialization(expected_type)) {
-            return coerce_to_std_optional(expr, *specialization);
-        } else if (auto specialization = analyzer.as_std_result_specialization(expected_type)) {
-            return coerce_to_std_result(expr, *specialization);
+        } else if (auto concrete_struct = expected_type.match_concrete<sir::StructDef>()) {
+            if (concrete_struct->def == analyzer.std_optional_def) {
+                return coerce_to_std_optional(expr, *concrete_struct);
+            } else if (concrete_struct->def == analyzer.std_result_def) {
+                return coerce_to_std_result(expr, *concrete_struct);
+            }
         }
     }
 
@@ -233,10 +235,7 @@ Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &
     return Result::SUCCESS;
 }
 
-Result ExprFinalizer::coerce_to_std_optional(
-    sir::Expr &inout_expr,
-    sir::Specialization<sir::StructDef> &specialization
-) {
+Result ExprFinalizer::coerce_to_std_optional(sir::Expr &inout_expr, sir::Concrete<sir::StructDef> specialization) {
     Result partial_result;
 
     if (inout_expr.is<sir::NoneLiteral>()) {
@@ -244,7 +243,7 @@ Result ExprFinalizer::coerce_to_std_optional(
         return Result::SUCCESS;
     }
 
-    partial_result = ExprFinalizer(analyzer).finalize_by_coercion(inout_expr, specialization.args[0]);
+    partial_result = ExprFinalizer(analyzer).finalize_by_coercion(inout_expr, specialization.generic_args[0]);
     if (partial_result != Result::SUCCESS) {
         return partial_result;
     }
@@ -253,7 +252,7 @@ Result ExprFinalizer::coerce_to_std_optional(
     return Result::SUCCESS;
 }
 
-Result ExprFinalizer::coerce_to_std_result(sir::Expr &inout_expr, sir::Specialization<sir::StructDef> &specialization) {
+Result ExprFinalizer::coerce_to_std_result(sir::Expr &inout_expr, sir::Concrete<sir::StructDef> specialization) {
     Result partial_result;
 
     partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
@@ -263,10 +262,10 @@ Result ExprFinalizer::coerce_to_std_result(sir::Expr &inout_expr, sir::Specializ
 
     sir::Expr type = analyzer.get_resolved_type(inout_expr);
 
-    if (type == specialization.args[0]) {
+    if (type == specialization.generic_args[0]) {
         create_std_result_success(specialization, inout_expr);
         return Result::SUCCESS;
-    } else if (type == specialization.args[1]) {
+    } else if (type == specialization.generic_args[1]) {
         create_std_result_failure(specialization, inout_expr);
         return Result::SUCCESS;
     } else {
@@ -306,8 +305,8 @@ Result ExprFinalizer::finalize_coercion(sir::NullLiteral &null_literal, sir::Exp
 }
 
 Result ExprFinalizer::finalize_coercion(sir::ArrayLiteral &array_literal, sir::Expr type, sir::Expr &out_expr) {
-    if (auto specialization = analyzer.as_std_array_specialization(type)) {
-        sir::Expr element_type = specialization->args[0];
+    if (auto concrete_struct = type.match_specialization<sir::StructDef>(analyzer.std_array_def)) {
+        sir::Expr element_type = concrete_struct->generic_args[0];
 
         array_literal.type = type;
         finalize_array_literal_elements(array_literal, element_type);
@@ -726,89 +725,52 @@ void ExprFinalizer::create_std_array(
     sir::StructDef &array_type = *analyzer.std_array_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({element_type});
 
-    // FIXME: Checked generics
-    sir::StructDef *specialization = nullptr; // GenericsSpecializer(analyzer).specialize(array_type, generic_args);
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &array_type.block.symbol_table->look_up_local("from").as<sir::FuncDef>(),
+        .generic_args = generic_args,
+    };
 
-    sir::FuncDef &func_def = specialization->block.symbol_table->look_up_local("from").as<sir::FuncDef>();
-
-    sir::Expr callee = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = &func_def.type,
-            .symbol = &func_def,
-        }
-    );
-
-    out_expr = analyzer.create(
-        sir::CallExpr{
-            .ast_node = nullptr,
-            .type = func_def.type.return_type,
-            .callee = callee,
-            .args = analyzer.create_array({data_pointer, length}),
-        }
-    );
+    std::span<sir::Expr> call_args = analyzer.create_array({data_pointer, length});
+    out_expr = sir::create_call(analyzer.get_mod(), concrete_func, call_args);
 }
 
-void ExprFinalizer::create_std_optional_some(
-    sir::Specialization<sir::StructDef> &specialization,
-    sir::Expr &inout_expr
-) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_some").as<sir::FuncDef>();
+void ExprFinalizer::create_std_optional_some(sir::Concrete<sir::StructDef> specialization, sir::Expr &inout_expr) {
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &specialization.def->block.symbol_table->look_up_local("new_some").as<sir::FuncDef>(),
+        .generic_args = specialization.generic_args,
+    };
+
     std::span<sir::Expr> call_args = analyzer.create_array({inout_expr});
-    inout_expr = sir::create_call(analyzer.get_mod(), func_def, call_args);
+    inout_expr = sir::create_call(analyzer.get_mod(), concrete_func, call_args);
 }
 
-void ExprFinalizer::create_std_optional_none(sir::Specialization<sir::StructDef> &specialization, sir::Expr &out_expr) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_none").as<sir::FuncDef>();
-    out_expr = sir::create_call(analyzer.get_mod(), func_def, {});
+void ExprFinalizer::create_std_optional_none(sir::Concrete<sir::StructDef> specialization, sir::Expr &out_expr) {
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &specialization.def->block.symbol_table->look_up_local("new_none").as<sir::FuncDef>(),
+        .generic_args = specialization.generic_args,
+    };
+
+    out_expr = sir::create_call(analyzer.get_mod(), concrete_func, {});
 }
 
-void ExprFinalizer::create_std_result_success(
-    sir::Specialization<sir::StructDef> &specialization,
-    sir::Expr &inout_expr
-) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_success").as<sir::FuncDef>();
+void ExprFinalizer::create_std_result_success(sir::Concrete<sir::StructDef> specialization, sir::Expr &inout_expr) {
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &specialization.def->block.symbol_table->look_up_local("new_success").as<sir::FuncDef>(),
+        .generic_args = specialization.generic_args,
+    };
 
-    sir::Expr callee = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = &func_def.type,
-            .symbol = &func_def,
-        }
-    );
-
-    inout_expr = analyzer.create(
-        sir::CallExpr{
-            .ast_node = nullptr,
-            .type = func_def.type.return_type,
-            .callee = callee,
-            .args = analyzer.create_array({inout_expr}),
-        }
-    );
+    std::span<sir::Expr> call_args = analyzer.create_array({inout_expr});
+    inout_expr = sir::create_call(analyzer.get_mod(), concrete_func, call_args);
 }
 
-void ExprFinalizer::create_std_result_failure(
-    sir::Specialization<sir::StructDef> &specialization,
-    sir::Expr &inout_expr
-) {
-    sir::FuncDef &func_def = specialization.def->block.symbol_table->look_up_local("new_failure").as<sir::FuncDef>();
+void ExprFinalizer::create_std_result_failure(sir::Concrete<sir::StructDef> specialization, sir::Expr &inout_expr) {
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &specialization.def->block.symbol_table->look_up_local("new_failure").as<sir::FuncDef>(),
+        .generic_args = specialization.generic_args,
+    };
 
-    sir::Expr callee = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = &func_def.type,
-            .symbol = &func_def,
-        }
-    );
-
-    inout_expr = analyzer.create(
-        sir::CallExpr{
-            .ast_node = nullptr,
-            .type = func_def.type.return_type,
-            .callee = callee,
-            .args = analyzer.create_array({inout_expr}),
-        }
-    );
+    std::span<sir::Expr> call_args = analyzer.create_array({inout_expr});
+    inout_expr = sir::create_call(analyzer.get_mod(), concrete_func, call_args);
 }
 
 void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_expr) {

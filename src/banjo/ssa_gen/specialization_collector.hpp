@@ -39,11 +39,17 @@ private:
     void visit_assign_stmt(const sir::AssignStmt &assign_stmt);
     void visit_return_stmt(const sir::ReturnStmt &return_stmt);
     void visit_if_stmt(const sir::IfStmt &if_stmt);
+    void visit_loop_stmt(const sir::LoopStmt &loop_stmt);
 
     void visit_expr(sir::Expr expr);
+    void visit_unary_expr(const sir::UnaryExpr &unary_expr);
     void visit_call_expr(const sir::CallExpr &call_expr);
     void visit_specialize_expr(const sir::SpecializeExpr &specialize_expr);
     void visit_func_type(const sir::FuncType &func_type);
+    void visit_reference_type(const sir::ReferenceType &reference_type);
+    void visit_meta_access(const sir::MetaAccess &meta_access);
+    void visit_meta_field_expr(const sir::MetaFieldExpr &meta_field_expr);
+    void visit_meta_call_expr(const sir::MetaCallExpr &meta_call_expr);
 };
 
 } // namespace banjo::lang

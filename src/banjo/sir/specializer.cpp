@@ -103,7 +103,7 @@ sir::Expr Specializer::specialize_pointer_type(sir::PointerType &pointer_type) {
     }
 }
 
-sir::Expr Specializer::specialize_func_type(sir::FuncType &func_type) {
+sir::FuncType *Specializer::specialize_func_type(sir::FuncType &func_type) {
     return arena.create<FuncType>(specialize_func_type_directly(func_type));
 }
 

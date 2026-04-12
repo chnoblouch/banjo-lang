@@ -61,6 +61,8 @@ void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
         visit_return_stmt(*return_stmt);
     } else if (auto if_stmt = stmt.match<sir::IfStmt>()) {
         visit_if_stmt(*if_stmt);
+    } else if (auto loop_stmt = stmt.match<sir::LoopStmt>()) {
+        visit_loop_stmt(*loop_stmt);
     } else if (auto expr = stmt.match<sir::Expr>()) {
         visit_expr(*expr);
     } else if (auto block = stmt.match<sir::Block>()) {
@@ -93,17 +95,48 @@ void SpecializationCollector::visit_if_stmt(const sir::IfStmt &if_stmt) {
     }
 }
 
+void SpecializationCollector::visit_loop_stmt(const sir::LoopStmt &loop_stmt) {
+    visit_expr(loop_stmt.condition);
+    visit_block(*loop_stmt.block);
+
+    if (loop_stmt.latch) {
+        visit_block(*loop_stmt.latch);
+    }
+}
+
 void SpecializationCollector::visit_expr(sir::Expr expr) {
-    if (auto call_expr = expr.match<sir::CallExpr>()) {
+    if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
+        visit_unary_expr(*unary_expr);
+    } else if (auto call_expr = expr.match<sir::CallExpr>()) {
         visit_call_expr(*call_expr);
     } else if (auto specialize_expr = expr.match<sir::SpecializeExpr>()) {
         visit_specialize_expr(*specialize_expr);
     } else if (auto func_type = expr.match<sir::FuncType>()) {
         visit_func_type(*func_type);
+    } else if (auto reference_type = expr.match<sir::ReferenceType>()) {
+        visit_reference_type(*reference_type);
+    } else if (auto meta_access = expr.match<sir::MetaAccess>()) {
+        visit_meta_access(*meta_access);
+    } else if (auto meta_field_expr = expr.match<sir::MetaFieldExpr>()) {
+        visit_meta_field_expr(*meta_field_expr);
+    } else if (auto meta_call_expr = expr.match<sir::MetaCallExpr>()) {
+        visit_meta_call_expr(*meta_call_expr);
+    } else if (auto init_expr = expr.match<sir::InitExpr>()) {
+        visit_expr(init_expr->value);
+    } else if (auto move_expr = expr.match<sir::MoveExpr>()) {
+        visit_expr(move_expr->value);
+    } else if (auto deinit_expr = expr.match<sir::DeinitExpr>()) {
+        visit_expr(deinit_expr->value);
     }
 }
 
+void SpecializationCollector::visit_unary_expr(const sir::UnaryExpr &unary_expr) {
+    visit_expr(unary_expr.type);
+    visit_expr(unary_expr.value);
+}
+
 void SpecializationCollector::visit_call_expr(const sir::CallExpr &call_expr) {
+    visit_expr(call_expr.type);
     visit_expr(call_expr.callee);
 
     for (sir::Expr arg : call_expr.args) {
@@ -161,12 +194,34 @@ void SpecializationCollector::visit_specialize_expr(const sir::SpecializeExpr &s
     entry_stack.pop_back();
 }
 
-void SpecializationCollector::visit_func_type(const sir::FuncType &func_type) {
+void SpecializationCollector::visit_func_type(const sir::FuncType &func_type) {    
     for (sir::Param &arg : func_type.params) {
         visit_expr(arg.type);
     }
 
     visit_expr(func_type.return_type);
+}
+
+void SpecializationCollector::visit_reference_type(const sir::ReferenceType &reference_type) {
+    visit_expr(reference_type.base_type);
+}
+
+void SpecializationCollector::visit_meta_access(const sir::MetaAccess &meta_access) {
+    visit_expr(meta_access.expr);
+}
+
+void SpecializationCollector::visit_meta_field_expr(const sir::MetaFieldExpr &meta_field_expr) {
+    visit_expr(meta_field_expr.type);
+    visit_expr(meta_field_expr.base);
+}
+
+void SpecializationCollector::visit_meta_call_expr(const sir::MetaCallExpr &meta_call_expr) {
+    visit_expr(meta_call_expr.type);
+    visit_expr(meta_call_expr.callee);
+
+    for (sir::Expr arg : meta_call_expr.args) {
+        visit_expr(arg);
+    }
 }
 
 } // namespace banjo::lang

@@ -24,7 +24,7 @@ public:
     sir::Expr specialize_symbol_expr(sir::SymbolExpr &symbol_expr);
     sir::Expr specialize_specialize_expr(sir::SpecializeExpr &specialize_expr);
     sir::Expr specialize_pointer_type(sir::PointerType &pointer_type);
-    sir::Expr specialize_func_type(sir::FuncType &func_type);
+    sir::FuncType *specialize_func_type(sir::FuncType &func_type);
     sir::Expr specialize_reference_type(sir::ReferenceType &reference_type);
 };
 

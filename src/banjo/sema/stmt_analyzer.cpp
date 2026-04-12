@@ -226,7 +226,8 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     sir::FuncDef *unwrap_func;
     sir::FuncDef *unwrap_error_func;
 
-    if (auto specialization = analyzer.as_std_result_specialization(type)) {
+    // TODO: generics 
+    /* if (auto specialization = analyzer.as_std_result_specialization(type)) {
         successful_field = specialization->def->find_field("successful");
         unwrap_func = &specialization->def->block.symbol_table->look_up_local("unwrap").as<sir::FuncDef>();
         unwrap_error_func = &specialization->def->block.symbol_table->look_up_local("unwrap_error").as<sir::FuncDef>();
@@ -234,7 +235,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
         successful_field = specialization->def->find_field("has_value");
         unwrap_func = &specialization->def->block.symbol_table->look_up_local("unwrap").as<sir::FuncDef>();
         unwrap_error_func = nullptr;
-    } else {
+    } else */ {
         analyzer.report_generator.report_err_cannot_use_in_try(try_stmt.success_branch.expr);
         return;
     }

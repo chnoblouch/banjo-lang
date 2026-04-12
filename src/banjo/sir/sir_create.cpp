@@ -1,6 +1,7 @@
 #include "sir_create.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/specializer.hpp"
 
 namespace banjo {
 
@@ -22,6 +23,31 @@ sir::Expr create_pseudo_type(sir::Module &mod, sir::PseudoTypeKind kind) {
         sir::PseudoType{
             .ast_node = nullptr,
             .kind = kind,
+        }
+    );
+}
+
+sir::Expr create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concrete_func, std::span<sir::Expr> args) {
+    if (concrete_func.generic_args.empty()) {
+        return create_call(mod, *concrete_func.def, args);
+    }
+
+    sir::Specializer specializer{mod.trivial_arena, concrete_func.def->generic_params, concrete_func.generic_args};
+    sir::FuncType *func_type = specializer.specialize_func_type(concrete_func.def->type);
+
+    return mod.create(
+        sir::CallExpr{
+            .ast_node = nullptr,
+            .type = func_type->return_type,
+            .callee = mod.create(
+                sir::SpecializeExpr{
+                    .ast_node = nullptr,
+                    .type = func_type,
+                    .symbol = concrete_func.def,
+                    .args = concrete_func.generic_args,
+                }
+            ),
+            .args = args,
         }
     );
 }

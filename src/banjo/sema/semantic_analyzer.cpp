@@ -199,11 +199,12 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_optional_def = &find_std_symbol({"std", "optional"}, "Optional").as<sir::StructDef>();
     std_result_def = &find_std_symbol({"std", "result"}, "Result").as<sir::StructDef>();
     std_array_def = &find_std_symbol({"std", "array"}, "Array").as<sir::StructDef>();
+    std_slice_def = &find_std_symbol({"std", "slice"}, "Slice").as<sir::StructDef>();
     std_string_def = &find_std_symbol({"std", "string"}, "String").as<sir::StructDef>();
     std_string_slice_def = &find_std_symbol({"std", "string_slice"}, "StringSlice").as<sir::StructDef>();
-    std_map_def = &find_std_symbol({"std", "map"}, "Map").as<sir::StructDef>();
-    std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
-    std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
+    // std_map_def = &find_std_symbol({"std", "map"}, "Map").as<sir::StructDef>();
+    // std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
+    // std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
 
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},
@@ -214,31 +215,19 @@ void SemanticAnalyzer::populate_preamble_symbols() {
         {"Optional", std_optional_def},
         {"Result", std_result_def},
         {"Array", std_array_def},
-        {"Slice", find_std_symbol({"std", "slice"}, "Slice")},
+        {"Slice", std_slice_def},
         {"String", std_string_def},
         {"StringSlice", std_string_slice_def},
-        {"Map", std_map_def},
-        {"Set", find_std_symbol({"std", "set"}, "Set")},
-        {"Shared", std_shared_def},
-        {"Closure", std_closure_def},
+        // {"Map", std_map_def},
+        // {"Set", find_std_symbol({"std", "set"}, "Set")},
+        // {"Shared", std_shared_def},
+        // {"Closure", std_closure_def},
     };
 }
 
 sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const std::string &name) {
     sir::Module &mod = *sir_unit.mods_by_path.at(mod_path);
     return mod.block.symbol_table->look_up_local(name);
-}
-
-sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_optional_specialization(sir::Expr type) {
-    return as_std_type_specialization(std_optional_def, type);
-}
-
-sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_result_specialization(sir::Expr type) {
-    return as_std_type_specialization(std_result_def, type);
-}
-
-sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_array_specialization(sir::Expr type) {
-    return as_std_type_specialization(std_array_def, type);
 }
 
 sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_map_specialization(sir::Expr type) {

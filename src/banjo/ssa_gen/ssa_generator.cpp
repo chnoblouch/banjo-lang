@@ -56,6 +56,12 @@ ssa::Module SSAGenerator::generate() {
         ctx.pop_decl_context();
     }
 
+    for (const sir::Module *sir_mod : sir_unit.mods) {
+        ctx.push_decl_context().sir_mod = sir_mod;
+        generate_types(sir_mod->block);
+        ctx.pop_decl_context();
+    }
+
     generate_runtime();
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
@@ -349,6 +355,64 @@ void SSAGenerator::generate_runtime() {
     ssa_mod.add(global_format_string);
 }
 
+void SSAGenerator::generate_types(const sir::DeclBlock &decl_block) {
+    for (const sir::Decl &decl : decl_block.decls) {
+        if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def_types(*struct_def);
+    }
+}
+
+void SSAGenerator::generate_struct_def_types(const sir::StructDef &sir_struct) {
+    if (sir_struct.is_generic()) {
+        auto iter = ctx.ssa_mono_structs.find(&sir_struct);
+
+        if (iter == ctx.ssa_mono_structs.end()) {
+            return;
+        }
+
+        for (MonoStruct &mono_struct : iter->second) {
+            ssa::Structure &ssa_struct = *mono_struct.ssa_struct;
+
+            push_specialization(mono_struct.specialization);
+            generate_struct_def_type(sir_struct, ssa_struct);
+            pop_specialization(mono_struct.specialization);
+        }
+    } else {
+        ssa::Structure *ssa_struct = ctx.ssa_structs.at(&sir_struct);
+        generate_struct_def_type(sir_struct, *ssa_struct);
+    }
+}
+
+void SSAGenerator::generate_struct_def_type(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct) {
+    if (sir_struct.get_layout() == sir::Attributes::Layout::DEFAULT) {
+        for (sir::StructField *sir_field : sir_struct.fields) {
+            ssa_struct.add({
+                .name = std::string{sir_field->ident.value},
+                .type = TypeSSAGenerator(ctx).generate(sir_field->type),
+            });
+        }
+    } else if (sir_struct.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
+        ssa::Type largest_type = ssa::Primitive::VOID;
+        unsigned largest_size = 0;
+
+        for (sir::StructField *sir_field : sir_struct.fields) {
+            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(sir_field->type);
+            unsigned size = ctx.target->get_data_layout().get_size(ssa_type);
+
+            if (size > largest_size) {
+                largest_type = ssa_type;
+                largest_size = size;
+            }
+        }
+
+        ssa_struct.add({
+            .name = "data",
+            .type = largest_type,
+        });
+    }
+
+    generate_types(sir_struct.block);
+}
+
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) generate_func_defs(*func_def);
@@ -520,46 +584,16 @@ void SSAGenerator::generate_struct_defs(const sir::StructDef &sir_struct) {
         }
 
         for (MonoStruct &mono_struct : iter->second) {
-            ssa::Structure &ssa_struct = *mono_struct.ssa_struct;
-
             push_specialization(mono_struct.specialization);
-            generate_struct_def(sir_struct, ssa_struct);
+            generate_struct_def(sir_struct);
             pop_specialization(mono_struct.specialization);
         }
     } else {
-        ssa::Structure *ssa_struct = ctx.ssa_structs.at(&sir_struct);
-        generate_struct_def(sir_struct, *ssa_struct);
+        generate_struct_def(sir_struct);
     }
 }
 
-void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct) {
-    if (sir_struct.get_layout() == sir::Attributes::Layout::DEFAULT) {
-        for (sir::StructField *sir_field : sir_struct.fields) {
-            ssa_struct.add({
-                .name = std::string{sir_field->ident.value},
-                .type = TypeSSAGenerator(ctx).generate(sir_field->type),
-            });
-        }
-    } else if (sir_struct.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
-        ssa::Type largest_type = ssa::Primitive::VOID;
-        unsigned largest_size = 0;
-
-        for (sir::StructField *sir_field : sir_struct.fields) {
-            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(sir_field->type);
-            unsigned size = ctx.target->get_data_layout().get_size(ssa_type);
-
-            if (size > largest_size) {
-                largest_type = ssa_type;
-                largest_size = size;
-            }
-        }
-
-        ssa_struct.add({
-            .name = "data",
-            .type = largest_type,
-        });
-    }
-
+void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct) {
     generate_decls(sir_struct.block);
 }
 
@@ -596,7 +630,7 @@ void SSAGenerator::push_specialization(SpecializationCollector::Entry &specializ
 
 void SSAGenerator::pop_specialization(SpecializationCollector::Entry &specialization) {
     ctx.specialization_stack.pop();
-    
+
     for (sir::GenericParam *param : specialization.params) {
         ctx.sir_generic_args.erase(param);
     }

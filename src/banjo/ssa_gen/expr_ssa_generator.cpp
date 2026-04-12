@@ -91,7 +91,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // dot_expr
         SIR_VISIT_IMPOSSIBLE,                              // pseudo_type
         SIR_VISIT_IMPOSSIBLE,                              // meta_access
-        SIR_VISIT_IMPOSSIBLE,                              // meta_field_expr
+        return generate_meta_field_expr(*inner),           // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
@@ -235,14 +235,7 @@ StoredValue ExprSSAGenerator::generate_struct_literal(
     const sir::StructLiteral &struct_literal,
     const StorageHints &hints
 ) {
-    const sir::StructDef *sir_struct_def;
-
-    if (auto specialize_expr = struct_literal.type.match<sir::SpecializeExpr>()) {
-        sir_struct_def = &specialize_expr->symbol.as<sir::StructDef>();
-    } else {
-        sir_struct_def = &struct_literal.type.as_symbol<sir::StructDef>();
-    }
-
+    const sir::StructDef *sir_struct_def = struct_literal.type.as_concrete<sir::StructDef>().def;
     sir::Attributes::Layout layout = sir_struct_def->get_layout();
 
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(struct_literal.type);
@@ -737,6 +730,20 @@ StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr
     }
 
     ASSERT_UNREACHABLE;
+}
+
+StoredValue ExprSSAGenerator::generate_meta_field_expr(const sir::MetaFieldExpr &meta_field_expr) {
+    if (meta_field_expr.field.value == "size") {
+        target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+
+        sir::Expr sir_type = meta_field_expr.base.as<sir::MetaAccess>().expr;
+        ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(sir_type);
+        unsigned size = data_layout.get_size(ssa_type);
+
+        return StoredValue::create_value(ssa::Value::from_int_immediate(size, data_layout.get_usize_type()));
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 StoredValue ExprSSAGenerator::generate_init_expr(const sir::InitExpr &init_expr, const StorageHints &hints) {

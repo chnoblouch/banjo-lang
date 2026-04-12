@@ -41,11 +41,15 @@ private:
 
     void generate_runtime();
 
+    void generate_types(const sir::DeclBlock &decl_block);
+    void generate_struct_def_types(const sir::StructDef &sir_struct);
+    void generate_struct_def_type(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct);
+
     void generate_decls(const sir::DeclBlock &decl_block);
     void generate_func_defs(const sir::FuncDef &sir_func);
     void generate_func_def(const sir::FuncDef &sir_func, ssa::Function &ssa_func);
     void generate_struct_defs(const sir::StructDef &sir_struct);
-    void generate_struct_def(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct);
+    void generate_struct_def(const sir::StructDef &sir_struct);
     void generate_union_def(const sir::UnionDef &sir_union_def);
     void generate_proto_def(const sir::ProtoDef &sir_proto_def);
     void generate_var_decl(const sir::VarDecl &sir_var_decl);

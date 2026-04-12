@@ -116,7 +116,6 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         return Result::SUCCESS;
     }
 
-    bool eval_meta_exprs = !(flags & DONT_EVAL_META_EXPRS);
     bool is_ref = false;
 
     if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
@@ -167,16 +166,14 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_dot_expr(*inner, expr),        // dot_expr
         SIR_VISIT_IMPOSSIBLE,                           // pseudo_tpe
         result = analyze_meta_access(*inner),           // meta_access
-        result = eval_meta_exprs ? MetaExprEvaluator(analyzer).evaluate(*inner, expr)
-                                 : analyze_meta_field_expr(*inner), // meta_field_expr
-        result = eval_meta_exprs ? MetaExprEvaluator(analyzer).evaluate(*inner, expr)
-                                 : analyze_meta_call_expr(*inner), // meta_call_expr
-        SIR_VISIT_IMPOSSIBLE,                                      // init_expr
-        SIR_VISIT_IMPOSSIBLE,                                      // move_expr
-        SIR_VISIT_IMPOSSIBLE,                                      // deinit_expr
-        SIR_VISIT_IMPOSSIBLE,                                      // type_guard_expr
-        SIR_VISIT_IMPOSSIBLE,                                      // placeholder_expr
-        result = Result::ERROR                                     // error
+        result = analyze_meta_field_expr(*inner, expr), // meta_field_expr
+        result = analyze_meta_call_expr(*inner, expr),  // meta_call_expr
+        SIR_VISIT_IMPOSSIBLE,                           // init_expr
+        SIR_VISIT_IMPOSSIBLE,                           // move_expr
+        SIR_VISIT_IMPOSSIBLE,                           // deinit_expr
+        SIR_VISIT_IMPOSSIBLE,                           // type_guard_expr
+        SIR_VISIT_IMPOSSIBLE,                           // placeholder_expr
+        result = Result::ERROR                          // error
     );
 
     if (result != Result::SUCCESS) {
@@ -1878,7 +1875,19 @@ Result ExprAnalyzer::analyze_meta_access(sir::MetaAccess &meta_access) {
     return analyze(meta_access.expr);
 }
 
-Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr) {
+Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, sir::Expr &out_expr) {
+    if (meta_field_expr.field.value == "size") {
+        Result result = analyze(meta_field_expr.base.as<sir::MetaAccess>().expr);
+        RESULT_RETURN_ON_ERROR(result);
+
+        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
+        return Result::SUCCESS;
+    }
+
+    if (flags & DONT_EVAL_META_EXPRS) {
+        return MetaExprEvaluator(analyzer).evaluate(meta_field_expr, out_expr);
+    }
+
     Result result = analyze(meta_field_expr.base);
 
     if (meta_field_expr.field.value == "size") {
@@ -1890,7 +1899,11 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
     return result;
 }
 
-Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr) {
+Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr) {
+    if (flags & DONT_EVAL_META_EXPRS) {
+        return MetaExprEvaluator(analyzer).evaluate(meta_call_expr, out_expr);
+    }
+
     Result result = Result::SUCCESS;
     Result partial_result;
 

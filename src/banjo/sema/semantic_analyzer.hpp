@@ -107,6 +107,7 @@ private:
     sir::StructDef *std_optional_def = nullptr;
     sir::StructDef *std_result_def = nullptr;
     sir::StructDef *std_array_def = nullptr;
+    sir::StructDef *std_slice_def = nullptr;
     sir::StructDef *std_string_def = nullptr;
     sir::StructDef *std_string_slice_def = nullptr;
     sir::StructDef *std_map_def = nullptr;
@@ -172,9 +173,6 @@ private:
     void populate_preamble_symbols();
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
 
-    sir::Specialization<sir::StructDef> *as_std_optional_specialization(sir::Expr type);
-    sir::Specialization<sir::StructDef> *as_std_array_specialization(sir::Expr type);
-    sir::Specialization<sir::StructDef> *as_std_result_specialization(sir::Expr type);
     sir::Specialization<sir::StructDef> *as_std_map_specialization(sir::Expr type);
     sir::Specialization<sir::StructDef> *as_std_type_specialization(sir::StructDef *generic_def, sir::Expr type);
 

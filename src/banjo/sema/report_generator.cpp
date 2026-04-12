@@ -167,14 +167,14 @@ void ReportGenerator::report_err_cannot_coerce(const sir::MapLiteral &map_litera
 
 void ReportGenerator::report_err_cannot_coerce_result(
     const sir::Expr &value,
-    sir::Specialization<sir::StructDef> &result_specialization
+    sir::Concrete<sir::StructDef> result_specialization
 ) {
     report_error(
         "cannot coerce value with type '$' to result type '$ except $'",
         value.get_ast_node(),
         value.get_type(),
-        result_specialization.args[0],
-        result_specialization.args[1]
+        result_specialization.generic_args[0],
+        result_specialization.generic_args[1]
     );
 }
 
@@ -456,7 +456,7 @@ void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const
 
 void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::UnionDef &union_def) {
     // TODO: Test
-    
+
     report_error(
         "union '$' has no method named '$'",
         method_ident.ast_node,

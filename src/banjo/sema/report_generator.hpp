@@ -62,12 +62,7 @@ public:
     void report_err_cannot_coerce(const sir::StringLiteral &string_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::StructLiteral &struct_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::MapLiteral &map_literal, const sir::Expr &expected_type);
-
-    void report_err_cannot_coerce_result(
-        const sir::Expr &value,
-        sir::Specialization<sir::StructDef> &result_specialization
-    );
-
+    void report_err_cannot_coerce_result(const sir::Expr &value, sir::Concrete<sir::StructDef> result_specialization);
     void report_err_ref_immut_to_mut(const sir::Expr &expr, const sir::Expr &immut_sub_expr);
     void report_err_cannot_infer_type(const sir::NoneLiteral &none_literal);
     void report_err_cannot_infer_type(const sir::UndefinedLiteral &undefined_literal);
