@@ -1093,7 +1093,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             }
         }
 
-        callee_func_def = &call_expr.callee.as_symbol<sir::FuncDef>();
+        callee_func_def = func_def;
     } else if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
         callee_func_def = OverloadResolver(analyzer).resolve(*overload_set, call_expr.args);
 

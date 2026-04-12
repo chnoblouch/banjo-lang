@@ -4,8 +4,6 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <utility>
-
 namespace banjo {
 
 namespace lang {
@@ -88,11 +86,11 @@ Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr
     return result;
 }
 
-Result GenericArgInference::infer(const sir::Expr &param_type, const sir::Expr &arg_type) {
-    if (auto ident_expr = param_type.match<sir::IdentExpr>()) {
-        return infer_on_ident(*ident_expr, arg_type);
-    } else if (auto star_expr = param_type.match<sir::StarExpr>()) {
-        return infer_on_pointer_type(*star_expr, arg_type);
+Result GenericArgInference::infer(sir::Expr &param_type, sir::Expr arg_type) {
+    if (auto symbol_expr = param_type.match<sir::SymbolExpr>()) {
+        return infer_on_symbol_expr(*symbol_expr, arg_type);
+    } else if (auto pointer_type = param_type.match<sir::PointerType>()) {
+        return infer_on_pointer_type(*pointer_type, arg_type);
     } else if (auto closure_type = param_type.match<sir::ClosureType>()) {
         return infer_on_closure_type(*closure_type, arg_type);
     } else if (auto reference_type = param_type.match<sir::ReferenceType>()) {
@@ -102,17 +100,21 @@ Result GenericArgInference::infer(const sir::Expr &param_type, const sir::Expr &
     }
 }
 
-Result GenericArgInference::infer_on_ident(const sir::IdentExpr &ident_expr, const sir::Expr &arg_type) {
-    for (unsigned i = 0; i < generic_params.size(); i++) {
-        const sir::GenericParam &generic_param = *generic_params[i];
+Result GenericArgInference::infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr arg_type) {
+    sir::GenericParam *generic_param = symbol_expr.symbol.match<sir::GenericParam>();
 
-        if (generic_param.ident.value != ident_expr.value) {
+    if (!generic_param) {
+        return Result::SUCCESS;
+    }
+
+    for (unsigned i = 0; i < generic_params.size(); i++) {
+        if (generic_param != generic_params[i]) {
             continue;
         }
 
         if (generic_args[i] && generic_args[i] != arg_type) {
             analyzer.report_generator
-                .report_err_generic_arg_inference_conflict(expr, generic_param, inference_sources[i], *cur_arg);
+                .report_err_generic_arg_inference_conflict(expr, *generic_param, inference_sources[i], *cur_arg);
             return Result::ERROR;
         }
 
@@ -123,21 +125,21 @@ Result GenericArgInference::infer_on_ident(const sir::IdentExpr &ident_expr, con
     return Result::SUCCESS;
 }
 
-Result GenericArgInference::infer_on_pointer_type(const sir::StarExpr &star_expr, const sir::Expr &arg_type) {
+Result GenericArgInference::infer_on_pointer_type(sir::PointerType &pointer_type, sir::Expr arg_type) {
     if (auto arg_pointer_type = arg_type.match<sir::PointerType>()) {
-        return infer(star_expr.value, arg_pointer_type->base_type);
+        return infer(pointer_type.base_type, arg_pointer_type->base_type);
     } else {
         return Result::SUCCESS;
     }
 }
 
-Result GenericArgInference::infer_on_closure_type(const sir::ClosureType &closure_type, const sir::Expr &arg_type) {
+Result GenericArgInference::infer_on_closure_type(sir::ClosureType &closure_type, sir::Expr arg_type) {
     if (auto arg_closure_type = arg_type.match<sir::ClosureType>()) {
         Result result = Result::SUCCESS;
         Result partial_result;
 
-        const sir::FuncType &func_type = closure_type.func_type;
-        const sir::FuncType &arg_func_type = arg_closure_type->func_type;
+        sir::FuncType &func_type = closure_type.func_type;
+        sir::FuncType &arg_func_type = arg_closure_type->func_type;
 
         for (unsigned i = 0; i < std::min(func_type.params.size(), arg_func_type.params.size()); i++) {
             partial_result = infer(func_type.params[i].type, arg_func_type.params[i].type);
@@ -157,10 +159,7 @@ Result GenericArgInference::infer_on_closure_type(const sir::ClosureType &closur
     }
 }
 
-Result GenericArgInference::infer_on_reference_type(
-    const sir::ReferenceType &reference_type,
-    const sir::Expr &arg_type
-) {
+Result GenericArgInference::infer_on_reference_type(sir::ReferenceType &reference_type, sir::Expr arg_type) {
     if (auto arg_reference_type = arg_type.match<sir::ReferenceType>()) {
         // If the argument is already a reference, unwrap both reference types.
         return infer(reference_type.base_type, arg_reference_type->base_type);

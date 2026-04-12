@@ -38,11 +38,11 @@ public:
     Result infer(std::span<sir::Expr> args, std::span<sir::Expr> &out_generic_args);
 
 private:
-    Result infer(const sir::Expr &param_type, const sir::Expr &arg_type);
-    Result infer_on_ident(const sir::IdentExpr &ident_expr, const sir::Expr &arg_type);
-    Result infer_on_pointer_type(const sir::StarExpr &star_expr, const sir::Expr &arg_type);
-    Result infer_on_closure_type(const sir::ClosureType &closure_type, const sir::Expr &arg_type);
-    Result infer_on_reference_type(const sir::ReferenceType &reference_type, const sir::Expr &arg_type);
+    Result infer(sir::Expr &param_type, sir::Expr arg_type);
+    Result infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr arg_type);
+    Result infer_on_pointer_type(sir::PointerType &pointer_type, sir::Expr arg_type);
+    Result infer_on_closure_type(sir::ClosureType &closure_type, sir::Expr arg_type);
+    Result infer_on_reference_type(sir::ReferenceType &reference_type, sir::Expr arg_type);
 };
 
 } // namespace sema
