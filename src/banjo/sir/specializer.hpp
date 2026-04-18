@@ -17,6 +17,13 @@ private:
 
 public:
     Specializer(utils::Arena<2048> &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args);
+
+    template <typename T>
+    Specializer(utils::Arena<2048> &arena, sir::Concrete<T> specialization)
+      : arena{arena},
+        params{specialization.def->generic_params},
+        args{specialization.generic_args} {}
+
     sir::Expr specialize_expr(sir::Expr expr);
     std::span<sir::Expr> specialize_expr_list(std::span<sir::Expr> exprs);
     sir::FuncType specialize_func_type_directly(sir::FuncType &func_type);

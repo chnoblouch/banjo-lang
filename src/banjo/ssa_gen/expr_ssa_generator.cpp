@@ -308,7 +308,7 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
 }
 
 StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
-    ssa::VirtualRegister slot = ctx.ssa_param_slots[&param];
+    ssa::VirtualRegister slot = ctx.ssa_param_slots.at(ctx.get_func_context().ssa_func).at(&param);
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(param.type);
     ssa::Value ssa_ptr = ssa::Value::from_register(slot, ssa::Primitive::ADDR);
 
@@ -459,12 +459,21 @@ StoredValue ExprSSAGenerator::generate_deref(const sir::UnaryExpr &unary_expr) {
 }
 
 StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr) {
-    const sir::Expr &sir_type_from = cast_expr.value.get_type();
+    sir::Expr sir_type_from = cast_expr.value.get_type();
+    sir::Expr sir_type_to = cast_expr.type;
+
+    if (auto generic_param = sir_type_from.match_symbol<sir::GenericParam>()) {
+        sir_type_from = ctx.get_generic_arg(*generic_param);
+    }
+
+    if (auto generic_param = sir_type_to.match_symbol<sir::GenericParam>()) {
+        sir_type_to = ctx.get_generic_arg(*generic_param);
+    }
+
     ssa::Value ssa_val_from = generate(cast_expr.value).turn_into_value(ctx).get_value();
     unsigned size_from = ctx.target->get_data_layout().get_size(ssa_val_from.get_type());
     bool is_from_fp = sir_type_from.is_fp_type();
 
-    const sir::Expr &sir_type_to = cast_expr.type;
     ssa::Type ssa_type_to = TypeSSAGenerator(ctx).generate(sir_type_to);
     unsigned size_to = ctx.target->get_data_layout().get_size(ssa_type_to);
     bool is_to_fp = sir_type_to.is_fp_type();

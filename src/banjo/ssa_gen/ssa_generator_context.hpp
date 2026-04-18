@@ -82,7 +82,8 @@ public:
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
     std::unordered_map<const lang::sir::FuncDef *, std::vector<MonoFunc>> ssa_mono_funcs;
     std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
-    std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister> ssa_param_slots;
+    std::unordered_map<const ssa::Function *, std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister>>
+        ssa_param_slots;
     std::unordered_map<const lang::sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;
     std::unordered_map<const void *, ssa::Structure *> ssa_structs;
     std::unordered_map<const void *, std::vector<MonoStruct>> ssa_mono_structs;

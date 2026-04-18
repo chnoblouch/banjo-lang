@@ -1817,16 +1817,18 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         return analyze_index_expr(bracket_expr, pointer_type->base_type, out_expr);
     } else if (auto static_array_type = lhs_type.match<sir::StaticArrayType>()) {
         return analyze_index_expr(bracket_expr, static_array_type->base_type, out_expr);
-    } else if (auto struct_def = lhs_type.match_symbol<sir::StructDef>()) {
+    } else if (auto concrete_struct = lhs_type.match_concrete<sir::StructDef>()) {
+        sir::StructDef &struct_def = *concrete_struct->def;
+
         ExprProperties properties = ExprPropertyAnalyzer().analyze(bracket_expr.lhs);
         bool is_mutable = properties.mutability == Mutability::MUTABLE;
 
         std::string_view symbol_name = is_mutable ? sir::MagicMethods::OP_MUT_INDEX : sir::MagicMethods::OP_INDEX;
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up(symbol_name);
+        sir::Symbol symbol = struct_def.block.symbol_table->look_up(symbol_name);
 
         // If the value is mutable, also try the operator overload for immutable indexing.
         if (!symbol && is_mutable) {
-            symbol = struct_def->block.symbol_table->look_up(sir::MagicMethods::OP_INDEX);
+            symbol = struct_def.block.symbol_table->look_up(sir::MagicMethods::OP_INDEX);
         }
 
         if (!symbol) {
@@ -1841,7 +1843,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             call_args[i + 1] = bracket_expr.rhs[i];
         }
 
-        result = analyze_operator_overload_call(symbol, call_args, out_expr);
+        result = analyze_operator_overload_call(symbol, call_args, out_expr, concrete_struct->generic_args);
         return result;
     } else {
         analyzer.report_generator.report_err_expected_generic_or_indexable(bracket_expr.lhs);
@@ -2142,10 +2144,9 @@ Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Exp
 Result ExprAnalyzer::analyze_operator_overload_call(
     sir::Symbol symbol,
     std::span<sir::Expr> args,
-    sir::Expr &inout_expr
+    sir::Expr &inout_expr,
+    std::span<sir::Expr> generic_args /* = {} */
 ) {
-    Result partial_result;
-
     sir::FuncDef *impl;
 
     if (auto func_def = symbol.match<sir::FuncDef>()) {
@@ -2161,29 +2162,31 @@ Result ExprAnalyzer::analyze_operator_overload_call(
         ASSERT_UNREACHABLE;
     }
 
-    ASSERT(!(impl->type.params[0].attrs && impl->type.params[0].attrs->byval));
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = impl,
+        .generic_args = generic_args,
+    };
 
-    sir::Expr callee = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = &impl->type,
-            .symbol = impl,
-        }
-    );
+    return analyze_operator_overload_call(concrete_func, args, inout_expr);
+}
 
-    sir::CallExpr *call_expr = analyzer.create(
-        sir::CallExpr{
-            .ast_node = inout_expr.get_ast_node(),
-            .type = impl->type.return_type,
-            .callee = callee,
-            .args = args,
-        }
-    );
+Result ExprAnalyzer::analyze_operator_overload_call(
+    sir::Concrete<sir::FuncDef> concrete_func,
+    std::span<sir::Expr> args,
+    sir::Expr &inout_expr
+) {
+    Result partial_result;
+
+    sir::FuncDef &func_def = *concrete_func.def;
+    ASSERT(!(func_def.type.params[0].attrs && func_def.type.params[0].attrs->byval));
 
     // FIXME
     // analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
 
-    partial_result = finalize_call_expr_args(*call_expr, impl->type, impl);
+    sir::CallExpr *call_expr = sir::create_call(analyzer.get_mod(), concrete_func, args);
+    sir::FuncType &func_type = call_expr->callee.get_type().as<sir::FuncType>();
+
+    partial_result = finalize_call_expr_args(*call_expr, func_type, &func_def);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }

@@ -7,6 +7,7 @@
 #include "banjo/sema/report_generator.hpp"
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/specializer.hpp"
 #include "banjo/target/target.hpp"
 
 #include <cstddef>
@@ -179,6 +180,15 @@ private:
     Result ensure_interface_analyzed(sir::Symbol symbol, ASTNode *ident_ast_node);
     sir::Expr get_resolved_type(sir::Expr value);
     unsigned compute_size(sir::Expr type);
+
+    template <typename T>
+    sir::Expr specialize(sir::Expr expr, sir::Concrete<T> &specialization) {
+        if (specialization.generic_args.empty()) {
+            return expr;
+        }
+
+        return sir::Specializer{mod->trivial_arena, specialization}.specialize_expr(expr);
+    }
 
     void add_symbol_def(sir::Symbol sir_symbol);
     void add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol);

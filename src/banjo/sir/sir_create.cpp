@@ -27,7 +27,7 @@ sir::Expr create_pseudo_type(sir::Module &mod, sir::PseudoTypeKind kind) {
     );
 }
 
-sir::Expr create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concrete_func, std::span<sir::Expr> args) {
+sir::CallExpr *create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concrete_func, std::span<sir::Expr> args) {
     if (concrete_func.generic_args.empty()) {
         return create_call(mod, *concrete_func.def, args);
     }
@@ -52,7 +52,7 @@ sir::Expr create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concrete_fun
     );
 }
 
-sir::Expr create_call(sir::Module &mod, sir::FuncDef &func_def, std::span<sir::Expr> args) {
+sir::CallExpr *create_call(sir::Module &mod, sir::FuncDef &func_def, std::span<sir::Expr> args) {
     return mod.create(
         sir::CallExpr{
             .ast_node = nullptr,

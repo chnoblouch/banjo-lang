@@ -35,7 +35,7 @@ ssa::Module SSAGenerator::generate() {
     PROFILE_SCOPE("ssa generator");
 
     ctx.ssa_mod = &ssa_mod;
-    ctx.specializations = SpecializationCollector{}.collect(sir_unit);
+    ctx.specializations = SpecializationCollector{arena}.collect(sir_unit);
 
     for (const auto &[key, value] : ctx.specializations) {
         std::cout << key.get_name() << "\n";
@@ -215,6 +215,11 @@ void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
         ssa::Structure *ssa_struct = create_struct_def(sir_struct, {});
         ctx.ssa_structs.emplace(&sir_struct, ssa_struct);
     }
+
+    SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
+    decl_context.sir_struct_def = &sir_struct;
+    create_decls(sir_struct.block);
+    ctx.pop_decl_context();
 }
 
 ssa::Structure *SSAGenerator::create_struct_def(
@@ -223,12 +228,6 @@ ssa::Structure *SSAGenerator::create_struct_def(
 ) {
     ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_struct.ident.value});
     ssa_mod.add(ssa_struct);
-
-    SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
-    decl_context.sir_struct_def = &sir_struct;
-    create_decls(sir_struct.block);
-    ctx.pop_decl_context();
-
     return ssa_struct;
 }
 
@@ -537,7 +536,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
             ssa_arg_index += 1;
         }
 
-        ctx.ssa_param_slots.insert({&sir_param, ssa_slot});
+        ctx.ssa_param_slots[&ssa_func].emplace(&sir_param, ssa_slot);
     }
 
     if (return_method != ReturnMethod::NO_RETURN_VALUE) {
@@ -576,24 +575,6 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
 }
 
 void SSAGenerator::generate_struct_defs(const sir::StructDef &sir_struct) {
-    if (sir_struct.is_generic()) {
-        auto iter = ctx.ssa_mono_structs.find(&sir_struct);
-
-        if (iter == ctx.ssa_mono_structs.end()) {
-            return;
-        }
-
-        for (MonoStruct &mono_struct : iter->second) {
-            push_specialization(mono_struct.specialization);
-            generate_struct_def(sir_struct);
-            pop_specialization(mono_struct.specialization);
-        }
-    } else {
-        generate_struct_def(sir_struct);
-    }
-}
-
-void SSAGenerator::generate_struct_def(const sir::StructDef &sir_struct) {
     generate_decls(sir_struct.block);
 }
 

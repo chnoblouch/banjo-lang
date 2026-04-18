@@ -30,7 +30,7 @@ void BlockSSAGenerator::generate_block_allocas(const sir::Block &block) {
         if (auto local = symbol.match<sir::Local>()) {
             ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
             ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
-            ctx.ssa_local_regs.insert({local, reg});
+            ctx.ssa_local_regs[local] = reg;
         }
     }
 

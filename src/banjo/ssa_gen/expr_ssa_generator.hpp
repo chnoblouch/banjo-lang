@@ -8,8 +8,6 @@
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 
-#include <initializer_list>
-
 namespace banjo {
 
 namespace lang {
