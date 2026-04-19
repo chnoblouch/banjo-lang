@@ -69,8 +69,8 @@ void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
         visit_loop_stmt(*inner),   // loop_stmt
         SIR_VISIT_IGNORE,          // continue_stmt
         SIR_VISIT_IGNORE,          // break_stmt
-        SIR_VISIT_IMPOSSIBLE,      // meta_if_stmt
-        SIR_VISIT_IMPOSSIBLE,      // meta_for_stmt
+        SIR_VISIT_IGNORE,          // meta_if_stmt
+        SIR_VISIT_IGNORE,          // meta_for_stmt
         SIR_VISIT_IGNORE,          // expanded_meta_stmt
         visit_expr(*inner),        // expr_stmt
         visit_block(*inner),       // block_stmt
@@ -227,6 +227,8 @@ void SpecializationCollector::visit_range_expr(const sir::RangeExpr &range_expr)
 }
 
 void SpecializationCollector::visit_try_expr(const sir::TryExpr &try_expr) {
+    // FIXME: Implicit specializations created here.
+    
     visit_expr(try_expr.type);
     visit_expr(try_expr.value);
     visit_stmt(try_expr.return_stmt);

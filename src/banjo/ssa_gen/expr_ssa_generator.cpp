@@ -18,6 +18,7 @@
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/target/target_data_layout.hpp"
+#include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -606,16 +607,22 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
 }
 
 StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {
-    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
-    const sir::StructDef &return_struct_def = func_def.type.return_type.as_symbol<sir::StructDef>();
-    sir::SymbolTable &return_struct_symbol_table = *return_struct_def.block.symbol_table;
+    utils::Arena<2048> arena;
 
-    sir::StructDef &struct_def = try_expr.value.get_type().as_symbol<sir::StructDef>();
-    sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
+    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
+    sir::Concrete<sir::StructDef> return_struct_def = func_def.type.return_type.as_concrete<sir::StructDef>();
+    sir::SymbolTable &return_struct_symbol_table = *return_struct_def.def->block.symbol_table;
+
+    sir::Concrete<sir::StructDef> struct_def = try_expr.value.get_type().as_concrete<sir::StructDef>();
+    sir::SymbolTable &symbol_table = *struct_def.def->block.symbol_table;
 
     sir::FuncDef &unwrap_func = symbol_table.look_up_local("unwrap").as<sir::FuncDef>();
     sir::FuncDef &unwrap_error_func = symbol_table.look_up_local("unwrap_error").as<sir::FuncDef>();
     sir::FuncDef &error_init_func = return_struct_symbol_table.look_up_local("new_failure").as<sir::FuncDef>();
+
+    sir::Concrete<sir::FuncDef> concrete_unwrap_func{&unwrap_func, struct_def.generic_args};
+    sir::Concrete<sir::FuncDef> concrete_unwrap_error_func{&unwrap_error_func, struct_def.generic_args};
+    sir::Concrete<sir::FuncDef> concrete_error_init_func{&error_init_func, return_struct_def.generic_args};
 
     ssa::BasicBlockIter ssa_return_branch = ctx.create_block();
     ssa::BasicBlockIter ssa_unwrap_branch = ctx.create_block();
@@ -627,18 +634,22 @@ StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, co
     ctx.append_cjmp(ssa_flag, ssa::Comparison::NE, ssa_false, ssa_unwrap_branch, ssa_return_branch);
     ctx.append_block(ssa_return_branch);
 
-    ssa::Type ssa_error_type = TypeSSAGenerator(ctx).generate(unwrap_error_func.type.return_type);
+    sir::Expr concrete_error_type =
+        sir::Specializer{arena, struct_def}.specialize_expr(unwrap_error_func.type.return_type);
+    ssa::Type ssa_error_type = TypeSSAGenerator(ctx).generate(concrete_error_type);
 
     StoredValue ssa_error = CallSSABuilder{ctx, ssa_error_type, StorageHints::none()}
-                                .set_callee(ssa::Operand::from_func(ctx.ssa_funcs.at(&unwrap_error_func)))
+                                .set_callee(ssa::Operand::from_func(&ctx.find_ssa_func(concrete_unwrap_error_func)))
                                 .add_arg(ssa_ptr)
                                 .generate();
 
-    ssa::Type ssa_result_type = TypeSSAGenerator(ctx).generate(error_init_func.type.return_type);
+    sir::Expr concrete_result_type =
+        sir::Specializer{arena, return_struct_def}.specialize_expr(error_init_func.type.return_type);
+    ssa::Type ssa_result_type = TypeSSAGenerator(ctx).generate(concrete_result_type);
     ssa::VirtualRegister ssa_return_slot = ctx.get_func_context().ssa_return_slot;
 
     CallSSABuilder{ctx, ssa_result_type, StorageHints::into(ssa_return_slot)}
-        .set_callee(ssa::Operand::from_func(ctx.ssa_funcs.at(&error_init_func)))
+        .set_callee(ssa::Operand::from_func(&ctx.find_ssa_func(concrete_error_init_func)))
         .add_arg(ssa_error)
         .generate()
         .copy_to(ssa_return_slot, ctx);
@@ -649,7 +660,7 @@ StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, co
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(try_expr.type);
 
     return CallSSABuilder{ctx, ssa_type, hints}
-        .set_callee(ssa::Operand::from_func(ctx.ssa_funcs.at(&unwrap_func)))
+        .set_callee(ssa::Operand::from_func(&ctx.find_ssa_func(concrete_unwrap_func)))
         .add_arg(ssa_ptr)
         .generate();
 }
@@ -729,13 +740,10 @@ StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr
     }
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
-        for (const MonoFunc &mono_func : ctx.ssa_mono_funcs.at(func_def)) {
-            if (Utils::equal(mono_func.specialization.args, args)) {
-                ssa::Function *ssa_func = mono_func.ssa_func;
-                ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
-                return StoredValue::create_value(ssa_value);
-            }
-        }
+        sir::FuncDef *constless_func_def = const_cast<sir::FuncDef *>(func_def);
+        ssa::Function &ssa_func = ctx.find_ssa_func({constless_func_def, args});
+        ssa::Value ssa_value = ssa::Value::from_func(&ssa_func, ssa::Primitive::ADDR);
+        return StoredValue::create_value(ssa_value);
     }
 
     ASSERT_UNREACHABLE;

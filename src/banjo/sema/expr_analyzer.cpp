@@ -1527,13 +1527,8 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
         return Result::ERROR;
     }
 
-    sir::StructDef *value_result_def = nullptr;
-
-    if (auto struct_def = analyzer.get_resolved_type(try_expr.value).match_symbol<sir::StructDef>()) {
-        if (struct_def->is_specialization_of(*analyzer.std_result_def)) {
-            value_result_def = struct_def;
-        }
-    }
+    sir::Expr value_type = try_expr.value.get_type();
+    auto value_result_def = value_type.match_specialization(*analyzer.std_result_def);
 
     if (!value_result_def) {
         analyzer.report_generator.report_err_cannot_use_in_try_expr(try_expr.value);
@@ -1548,21 +1543,15 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
     }
 
     sir::Expr return_type = func_def->type.return_type;
-    sir::StructDef *return_result_def = nullptr;
-
-    if (auto struct_def = return_type.match_symbol<sir::StructDef>()) {
-        if (struct_def->is_specialization_of(*analyzer.std_result_def)) {
-            return_result_def = struct_def;
-        }
-    }
+    auto return_result_def = return_type.match_specialization(*analyzer.std_result_def);
 
     if (!return_result_def) {
         analyzer.report_generator.report_err_try_expr_return_type_not_result(try_expr, *func_def);
         return Result::ERROR;
     }
 
-    sir::Expr unwrap_error = value_result_def->parent_specialization->args[1];
-    sir::Expr return_error = return_result_def->parent_specialization->args[1];
+    sir::Expr unwrap_error = value_result_def->generic_args[1];
+    sir::Expr return_error = return_result_def->generic_args[1];
 
     if (unwrap_error != return_error) {
         analyzer.report_generator
@@ -1570,7 +1559,7 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
         return Result::ERROR;
     }
 
-    try_expr.type = value_result_def->parent_specialization->args[0];
+    try_expr.type = value_result_def->generic_args[0];
     return Result::SUCCESS;
 }
 

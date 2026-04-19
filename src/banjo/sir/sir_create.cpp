@@ -93,29 +93,32 @@ sir::Expr create_error_value(sir::Module &mod, ASTNode *ast_node) {
     );
 }
 
-sir::Stmt create_return_result_success_void(sir::Module &mod, sir::StructDef &result_def) {
-    sir::Symbol new_func = result_def.block.symbol_table->look_up_local("new_success");
+sir::Stmt create_return_result_success_void(sir::Module &mod, sir::Concrete<sir::StructDef> concrete_struct) {
+    sir::Specializer specializer{mod.trivial_arena, concrete_struct};
+    sir::FuncDef &new_func = concrete_struct.def->block.symbol_table->look_up_local("new_success").as<sir::FuncDef>();
 
     sir::Expr type = mod.create(
-        sir::SymbolExpr{
+        sir::SpecializeExpr{
             .ast_node = nullptr,
             .type = nullptr,
-            .symbol = &result_def,
+            .symbol = concrete_struct.def,
+            .args = concrete_struct.generic_args,
         }
     );
 
     sir::Expr callee = mod.create(
-        sir::SymbolExpr{
+        sir::SpecializeExpr{
             .ast_node = nullptr,
-            .type = &new_func.as<sir::FuncDef>().type,
-            .symbol = new_func,
+            .type = specializer.specialize_func_type(new_func.type),
+            .symbol = &new_func,
+            .args = concrete_struct.generic_args,
         }
     );
 
     sir::Expr value = mod.create(
         sir::UndefinedLiteral{
             .ast_node = nullptr,
-            .type = result_def.parent_specialization->args[0],
+            .type = concrete_struct.generic_args[0],
         }
     );
 

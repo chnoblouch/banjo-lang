@@ -38,13 +38,11 @@ Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     if (!has_return_value || return_checker_result == ReturnChecker::Result::RETURNS_ALWAYS) {
         return Result::SUCCESS;
     } else {
-        if (auto struct_def = func_def.type.return_type.match_symbol<sir::StructDef>()) {
-            if (struct_def->is_specialization_of(*analyzer.std_result_def)) {
-                if (struct_def->parent_specialization->args[0].is_primitive_type(sir::Primitive::VOID)) {
-                    sir::Stmt stmt = sir::create_return_result_success_void(*analyzer.mod, *struct_def);
-                    func_def.block.stmts.push_back(stmt);
-                    return Result::SUCCESS;
-                }
+        if (auto specialization = func_def.type.return_type.match_specialization(*analyzer.std_result_def)) {
+            if (specialization->generic_args[0].is_primitive_type(sir::Primitive::VOID)) {
+                sir::Stmt stmt = sir::create_return_result_success_void(*analyzer.mod, *specialization);
+                func_def.block.stmts.push_back(stmt);
+                return Result::SUCCESS;
             }
         }
 

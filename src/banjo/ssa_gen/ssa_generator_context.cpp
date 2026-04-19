@@ -33,6 +33,16 @@ sir::Expr SSAGeneratorContext::get_generic_arg(const sir::GenericParam &generic_
     return sir_generic_args.at(&generic_param);
 }
 
+ssa::Function &SSAGeneratorContext::find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func) {
+    for (const MonoFunc &mono_func : ssa_mono_funcs.at(sir_concrete_func.def)) {
+        if (Utils::equal(mono_func.specialization.args, sir_concrete_func.generic_args)) {
+            return *mono_func.ssa_func;
+        }
+    }
+
+    ASSERT_UNREACHABLE;
+}
+
 ssa::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {
     return get_ssa_func()->create_block(std::move(label));
 }

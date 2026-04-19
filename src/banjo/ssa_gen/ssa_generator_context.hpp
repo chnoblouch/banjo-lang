@@ -115,6 +115,7 @@ public:
 
     SpecializationCollector::Entry *get_specialization();
     sir::Expr get_generic_arg(const sir::GenericParam &generic_param);
+    ssa::Function &find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func);
 
     ssa::Function *get_ssa_func() { return get_func_context().ssa_func; }
     ssa::BasicBlockIter get_ssa_block() { return get_func_context().ssa_block; }

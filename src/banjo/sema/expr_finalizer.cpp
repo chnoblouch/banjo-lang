@@ -305,7 +305,7 @@ Result ExprFinalizer::finalize_coercion(sir::NullLiteral &null_literal, sir::Exp
 }
 
 Result ExprFinalizer::finalize_coercion(sir::ArrayLiteral &array_literal, sir::Expr type, sir::Expr &out_expr) {
-    if (auto concrete_struct = type.match_specialization<sir::StructDef>(analyzer.std_array_def)) {
+    if (auto concrete_struct = type.match_specialization(*analyzer.std_array_def)) {
         sir::Expr element_type = concrete_struct->generic_args[0];
 
         array_literal.type = type;

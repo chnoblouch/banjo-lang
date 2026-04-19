@@ -267,7 +267,7 @@ public:
     std::optional<Concrete<T>> match_concrete() const;
 
     template <typename T>
-    std::optional<Concrete<T>> match_specialization(sir::Symbol symbol);
+    std::optional<Concrete<T>> match_specialization(T &symbol);
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
     bool operator==(const Expr &other) const;
@@ -1580,11 +1580,11 @@ std::optional<Concrete<T>> Expr::match_concrete() const {
 }
 
 template <typename T>
-std::optional<Concrete<T>> Expr::match_specialization(sir::Symbol symbol) {
+std::optional<Concrete<T>> Expr::match_specialization(T &symbol) {
     if (auto specialize_expr = match<sir::SpecializeExpr>()) {
-        if (specialize_expr->symbol == symbol) {
+        if (specialize_expr->symbol == &symbol) {
             return Concrete<T>{
-                .def = &specialize_expr->symbol.as<T>(),
+                .def = &symbol,
                 .generic_args = specialize_expr->args,
             };
         } else {
