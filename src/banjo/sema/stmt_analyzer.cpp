@@ -637,7 +637,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     sir::FuncDef &iter_func_def = iter_symbol.as<sir::FuncDef>();
     sir::FuncType *iter_func_type = &iter_func_def.type;
 
-    if (iterable_struct_def->is_specialiation()) {
+    if (iterable_struct_def->is_specialization()) {
         sir::Specializer specializer{analyzer.mod->trivial_arena, *iterable_struct_def};
         iter_func_type = specializer.specialize_func_type(*iter_func_type);
     }
@@ -655,7 +655,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
     sir::FuncDef &next_func_def = next_symbol.as<sir::FuncDef>();
     sir::FuncType *next_func_type = &next_func_def.type;
 
-    if (iter_struct_def->is_specialiation()) {
+    if (iter_struct_def->is_specialization()) {
         sir::Specializer specializer{analyzer.mod->trivial_arena, *iter_struct_def};
         next_func_type = specializer.specialize_func_type(*next_func_type);
     }

@@ -373,13 +373,15 @@ void Formatter::format_generic_struct_def(ASTNode *node, WhitespaceKind whitespa
 
     ASTNode *name_node = node->first_child;
     ASTNode *generic_params_node = name_node->next_sibling;
-    ASTNode *block_node = generic_params_node->next_sibling;
+    ASTNode *impls_node = generic_params_node->next_sibling;
+    ASTNode *block_node = impls_node->next_sibling;
 
     unsigned tkn_struct = node->tokens[0];
 
     ensure_space_after(tkn_struct);
     format_node(name_node, WhitespaceKind::NONE);
-    format_node(generic_params_node, WhitespaceKind::SPACE);
+    format_node(generic_params_node, impls_node->tokens.empty() ? WhitespaceKind::SPACE : WhitespaceKind::NONE);
+    format_node(impls_node, WhitespaceKind::SPACE);
     format_node(block_node, whitespace);
 }
 

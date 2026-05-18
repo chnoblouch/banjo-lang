@@ -155,7 +155,7 @@ struct Concrete {
     T *def;
     std::span<Expr> generic_args;
 
-    bool is_specialiation() const { return !generic_args.empty(); }
+    bool is_specialization() const { return !generic_args.empty(); }
 };
 
 class Expr {

@@ -795,18 +795,21 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
 
 StoredValue ExprSSAGenerator::generate_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {
     if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
-        sir::Expr sir_generic_arg = ctx.get_generic_arg(*generic_method->param);
-        sir::StructDef &sir_struct_def = sir_generic_arg.as_symbol<sir::StructDef>();
-        std::string_view sir_method_name = generic_method->decl->ident.value;
-        sir::Symbol sir_func_def = sir_struct_def.block.symbol_table->look_up(sir_method_name);
+        sir::Expr generic_arg = ctx.get_generic_arg(*generic_method->param);
+        sir::Concrete<sir::StructDef> concrete_struct = generic_arg.as_concrete<sir::StructDef>();
+        std::string_view method_name = generic_method->decl->ident.value;
+        sir::FuncDef *func_def = &concrete_struct.def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
 
-        sir::SymbolExpr sir_replacement{
-            .ast_node = nullptr,
-            .type = sir_func_def.get_type(),
-            .symbol = sir_func_def,
-        };
+        ssa::Function *ssa_func;
 
-        return generate_symbol_expr(sir_replacement);
+        if (concrete_struct.is_specialization()) {
+            ssa_func = &ctx.find_ssa_func({func_def, concrete_struct.generic_args});
+        } else {
+            ssa_func = ctx.ssa_funcs.at(func_def);
+        }
+
+        ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
+        return StoredValue::create_value(ssa_value);
     } else {
         ASSERT_UNREACHABLE;
     }

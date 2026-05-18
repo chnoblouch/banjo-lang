@@ -226,11 +226,10 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
 }
 
 sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
-    // TODO: Impls?
-
     ASTNode *name_node = node->first_child;
     ASTNode *generic_params_node = name_node->next_sibling;
-    ASTNode *block_node = generic_params_node->next_sibling;
+    ASTNode *impls_node = generic_params_node->next_sibling;
+    ASTNode *block_node = impls_node->next_sibling;
 
     sir::StructDef *struct_def = create(
         sir::StructDef{
@@ -238,6 +237,7 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = {},
             .fields = {},
+            .impls = generate_expr_list(impls_node),
             .generic_params = generate_generic_param_list(generic_params_node),
         }
     );

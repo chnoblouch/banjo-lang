@@ -97,6 +97,8 @@ ParseResult DeclParser::parse_const() {
 }
 
 ParseResult DeclParser::parse_struct() {
+    ASTNodeType type = AST_STRUCT_DEF;
+
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume 'struct'
 
@@ -113,14 +115,7 @@ ParseResult DeclParser::parse_struct() {
         }
 
         node.append_child(result.node);
-
-        result = parser.parse_block();
-        node.append_child(result.node);
-
-        if (!result.is_valid) {
-            return {node.build(AST_GENERIC_STRUCT_DEF), false};
-        }
-        return node.build(AST_GENERIC_STRUCT_DEF);
+        type = AST_GENERIC_STRUCT_DEF;
     }
 
     if (stream.get()->is(TKN_COLON)) {
@@ -139,11 +134,8 @@ ParseResult DeclParser::parse_struct() {
 
     ParseResult result = parser.parse_block();
     node.append_child(result.node);
-
-    if (!result.is_valid) {
-        return {node.build(AST_STRUCT_DEF), false};
-    }
-    return node.build(AST_STRUCT_DEF);
+    
+    return {node.build(type), result.is_valid};
 }
 
 ParseResult DeclParser::parse_enum() {

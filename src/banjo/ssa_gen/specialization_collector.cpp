@@ -172,7 +172,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_move_expr(*inner),         // move_expr
         visit_deinit_expr(*inner),       // deinit_expr
         SIR_VISIT_IGNORE,                // type_guard_expr (TODO)
-        SIR_VISIT_IGNORE,                // placeholder_expr (TODO)
+        visit_placeholder_expr(*inner),  // placeholder_expr
         SIR_VISIT_IMPOSSIBLE             // error
     )
 }
@@ -314,6 +314,30 @@ void SpecializationCollector::visit_move_expr(const sir::MoveExpr &move_expr) {
 void SpecializationCollector::visit_deinit_expr(const sir::DeinitExpr &deinit_expr) {
     visit_expr(deinit_expr.type);
     visit_expr(deinit_expr.value);
+}
+
+void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {
+    if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
+        if (!entry_stack.empty()) {
+            SpecializationCollector::Entry &entry = entry_stack.back();
+            sir::Expr generic_arg = nullptr;
+
+            for (unsigned i = 0; i < entry.params.size(); i++) {
+                if (entry.params[i] == generic_method->param) {
+                    generic_arg = entry.args[i];
+                    break;
+                }
+            }
+
+            if (auto concrete_struct = generic_arg.match_concrete<sir::StructDef>()) {
+                std::string_view method_name = generic_method->decl->ident.value;
+                sir::Symbol func_def = concrete_struct->def->block.symbol_table->look_up(method_name);
+                visit_concrete(func_def, concrete_struct->generic_args);
+            }
+        }
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args) {

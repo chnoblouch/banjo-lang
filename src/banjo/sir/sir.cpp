@@ -609,8 +609,8 @@ bool PseudoType::is_struct_by_default() const {
 
 bool TypeGuardExpr::is_satisfied_by(sir::Expr type) const {
     if (auto proto_def = constraint.match_symbol<sir::ProtoDef>()) {
-        if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-            if (struct_def->has_impl_for(*proto_def)) {
+        if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
+            if (concrete_struct->def->has_impl_for(*proto_def)) {
                 return true;
             }
         }
