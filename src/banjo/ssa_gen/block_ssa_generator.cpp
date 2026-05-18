@@ -150,7 +150,7 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
         if (auto type_guard_expr = sir_branch.condition.match<sir::TypeGuardExpr>()) {
             sir::Expr arg = ctx.get_generic_arg(*type_guard_expr->generic_param);
 
-            if (arg == type_guard_expr->constraint) {
+            if (type_guard_expr->is_satisfied_by(arg)) {
                 ctx.append_jmp(ssa_target_if_true);
                 ctx.append_block(ssa_target_if_true);
                 generate_block(*sir_branch.block);

@@ -1261,7 +1261,16 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         analyzer.report_generator.report_err_no_method(dot_expr.rhs, *proto_def);
         return Result::ERROR;
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
-        if (auto proto_def = generic_param->constraint.match_symbol<sir::ProtoDef>()) {
+        sir::ProtoDef *proto_def = generic_param->constraint.match_symbol<sir::ProtoDef>();
+
+        if (auto type_narrowing = analyzer.scope_stack.top().type_narrowing) {
+            if (type_narrowing->generic_param == generic_param &&
+                type_narrowing->constraint.is_symbol<sir::ProtoDef>()) {
+                proto_def = &type_narrowing->constraint.as_symbol<sir::ProtoDef>();
+            }
+        }
+
+        if (proto_def) {
             sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
             if (!method) {
@@ -1906,7 +1915,7 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, s
         result = Result::ERROR;
     }
 
-    for (sir::Expr arg : meta_call_expr.args) {
+    for (sir::Expr &arg : meta_call_expr.args) {
         partial_result = analyze(arg);
 
         if (partial_result != Result::SUCCESS) {
@@ -1915,7 +1924,25 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, s
     }
 
     if (auto meta_field_expr = meta_call_expr.callee.match<sir::MetaFieldExpr>()) {
-        if (meta_field_expr->field.value == "has_method") {
+        if (meta_field_expr->field.value == "impl_of") {
+            sir::Expr expr = meta_field_expr->base.as<sir::MetaAccess>().expr;
+
+            out_expr = analyzer.create(
+                sir::TypeGuardExpr{
+                    .ast_node = meta_call_expr.ast_node,
+                    .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
+                    .generic_param = &expr.as_symbol<sir::GenericParam>(),
+                    .constraint = meta_call_expr.args[0],
+                }
+            );
+
+            type_narrowing = sir::TypeNarrowing{
+                .generic_param = &expr.as_symbol<sir::GenericParam>(),
+                .constraint = meta_call_expr.args[0],
+            };
+
+            meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+        } else if (meta_field_expr->field.value == "has_method") {
             meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
         }
     }

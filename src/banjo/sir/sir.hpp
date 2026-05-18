@@ -1071,6 +1071,8 @@ struct TypeGuardExpr {
     Expr type;
     GenericParam *generic_param;
     Expr constraint;
+
+    bool is_satisfied_by(sir::Expr type) const;
 };
 
 struct PlaceholderExpr {
