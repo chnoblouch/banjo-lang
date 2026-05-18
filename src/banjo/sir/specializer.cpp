@@ -19,6 +19,8 @@ sir::Expr Specializer::specialize_expr(sir::Expr expr) {
         return specialize_pointer_type(*pointer_type);
     } else if (auto func_type = expr.match<sir::FuncType>()) {
         return specialize_func_type(*func_type);
+    } else if (auto closure_type = expr.match<sir::ClosureType>()) {
+        return specialize_closure_type(*closure_type);
     } else if (auto reference_type = expr.match<sir::ReferenceType>()) {
         return specialize_reference_type(*reference_type);
     } else {
@@ -105,6 +107,16 @@ sir::Expr Specializer::specialize_pointer_type(sir::PointerType &pointer_type) {
 
 sir::FuncType *Specializer::specialize_func_type(sir::FuncType &func_type) {
     return arena.create<FuncType>(specialize_func_type_directly(func_type));
+}
+
+sir::Expr Specializer::specialize_closure_type(sir::ClosureType &closure_type) {
+    sir::ClosureType specialization{
+        .ast_node = closure_type.ast_node,
+        .func_type = specialize_func_type_directly(closure_type.func_type),
+        .underlying_struct = closure_type.underlying_struct,
+    };
+
+    return arena.create<sir::ClosureType>(specialization);
 }
 
 sir::Expr Specializer::specialize_reference_type(sir::ReferenceType &reference_type) {
