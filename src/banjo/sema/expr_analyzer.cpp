@@ -1560,6 +1560,8 @@ Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {
     }
 
     try_expr.type = value_result_def->generic_args[0];
+    try_expr.return_type = return_type;
+
     return Result::SUCCESS;
 }
 

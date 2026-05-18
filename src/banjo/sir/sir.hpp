@@ -840,7 +840,7 @@ struct TryExpr {
     ASTNode *ast_node;
     Expr type;
     Expr value;
-    Stmt return_stmt;
+    Expr return_type;
 };
 
 struct TupleExpr {

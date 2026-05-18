@@ -609,11 +609,10 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
 StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {
     utils::Arena<2048> arena;
 
-    const sir::FuncDef &func_def = *ctx.get_func_context().sir_func;
-    sir::Concrete<sir::StructDef> return_struct_def = func_def.type.return_type.as_concrete<sir::StructDef>();
-    sir::SymbolTable &return_struct_symbol_table = *return_struct_def.def->block.symbol_table;
-
+    sir::Concrete<sir::StructDef> return_struct_def = try_expr.return_type.as_concrete<sir::StructDef>();
     sir::Concrete<sir::StructDef> struct_def = try_expr.value.get_type().as_concrete<sir::StructDef>();
+
+    sir::SymbolTable &return_struct_symbol_table = *return_struct_def.def->block.symbol_table;
     sir::SymbolTable &symbol_table = *struct_def.def->block.symbol_table;
 
     sir::FuncDef &unwrap_func = symbol_table.look_up_local("unwrap").as<sir::FuncDef>();

@@ -1247,7 +1247,7 @@ sir::Expr SIRGenerator::generate_try_expr(ASTNode *node) {
             .ast_node = node,
             .type = nullptr,
             .value = generate_expr(value_node),
-            .return_stmt = nullptr,
+            .return_type = nullptr,
         }
     );
 }

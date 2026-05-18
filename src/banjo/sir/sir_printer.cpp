@@ -843,14 +843,7 @@ void Printer::print_try_expr(const TryExpr &try_expr) {
     BEGIN_OBJECT("TryExpr");
     PRINT_EXPR_FIELD("type", try_expr.type);
     PRINT_EXPR_FIELD("value", try_expr.value);
-
-    if (try_expr.return_stmt) {
-        PRINT_FIELD_NAME("return_stmt");
-        print_stmt(try_expr.return_stmt);
-    } else {
-        PRINT_FIELD("return_stmt", "none");
-    }
-
+    PRINT_EXPR_FIELD("return_type", try_expr.return_type);
     END_OBJECT();
 }
 

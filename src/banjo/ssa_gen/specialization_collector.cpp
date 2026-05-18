@@ -227,11 +227,22 @@ void SpecializationCollector::visit_range_expr(const sir::RangeExpr &range_expr)
 }
 
 void SpecializationCollector::visit_try_expr(const sir::TryExpr &try_expr) {
-    // FIXME: Implicit specializations created here.
-    
     visit_expr(try_expr.type);
     visit_expr(try_expr.value);
-    visit_stmt(try_expr.return_stmt);
+
+    sir::Concrete<sir::StructDef> return_struct_def = try_expr.return_type.as_concrete<sir::StructDef>();
+    sir::Concrete<sir::StructDef> struct_def = try_expr.value.get_type().as_concrete<sir::StructDef>();
+
+    sir::SymbolTable &return_struct_symbol_table = *return_struct_def.def->block.symbol_table;
+    sir::SymbolTable &symbol_table = *struct_def.def->block.symbol_table;
+
+    sir::Symbol unwrap_func = symbol_table.look_up_local("unwrap");
+    sir::Symbol unwrap_error_func = symbol_table.look_up_local("unwrap_error");
+    sir::Symbol error_init_func = return_struct_symbol_table.look_up_local("new_failure");
+
+    visit_concrete(unwrap_func, struct_def.generic_args);
+    visit_concrete(unwrap_error_func, struct_def.generic_args);
+    visit_concrete(error_init_func, return_struct_def.generic_args);
 }
 
 void SpecializationCollector::visit_tuple_expr(const sir::TupleExpr &tuple_expr) {
@@ -248,51 +259,7 @@ void SpecializationCollector::visit_coercion_expr(const sir::CoercionExpr &coerc
 }
 
 void SpecializationCollector::visit_specialize_expr(const sir::SpecializeExpr &specialize_expr) {
-    std::vector<sir::Expr> args(specialize_expr.args.begin(), specialize_expr.args.end());
-
-    if (!entry_stack.empty()) {
-        SpecializationCollector::Entry &entry = entry_stack.back();
-
-        sir::Specializer specializer{arena, entry.params, entry.args};
-        std::span<sir::Expr> specialized_args = specializer.specialize_expr_list(args);
-        args.assign(specialized_args.begin(), specialized_args.end());
-    }
-
-    std::vector<Entry> &entries = specializations[specialize_expr.symbol];
-
-    for (Entry &entry : entries) {
-        if (entry.args == args) {
-            return;
-        }
-    }
-
-    std::span<sir::GenericParam *> generic_params;
-
-    if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
-        generic_params = func_def->generic_params;
-    } else if (auto struct_def = specialize_expr.symbol.match<sir::StructDef>()) {
-        generic_params = struct_def->generic_params;
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-
-    Entry entry{
-        .params = generic_params,
-        .args = args,
-    };
-
-    entries.push_back(entry);
-    entry_stack.push_back(entry);
-
-    if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
-        visit_func_def(*func_def, true);
-    } else if (auto struct_def = specialize_expr.symbol.match<sir::StructDef>()) {
-        visit_struct_def(*struct_def, true);
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-
-    entry_stack.pop_back();
+    visit_concrete(specialize_expr.symbol, specialize_expr.args);
 }
 
 void SpecializationCollector::visit_pointer_type(const sir::PointerType &pointer_type) {
@@ -347,6 +314,54 @@ void SpecializationCollector::visit_move_expr(const sir::MoveExpr &move_expr) {
 void SpecializationCollector::visit_deinit_expr(const sir::DeinitExpr &deinit_expr) {
     visit_expr(deinit_expr.type);
     visit_expr(deinit_expr.value);
+}
+
+void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args) {
+    std::vector<sir::Expr> args_full(args.begin(), args.end());
+
+    if (!entry_stack.empty()) {
+        SpecializationCollector::Entry &entry = entry_stack.back();
+
+        sir::Specializer specializer{arena, entry.params, entry.args};
+        std::span<sir::Expr> specialized_args = specializer.specialize_expr_list(args_full);
+        args_full.assign(specialized_args.begin(), specialized_args.end());
+    }
+
+    std::vector<Entry> &entries = specializations[symbol];
+
+    for (Entry &entry : entries) {
+        if (entry.args == args_full) {
+            return;
+        }
+    }
+
+    std::span<sir::GenericParam *> generic_params;
+
+    if (auto func_def = symbol.match<sir::FuncDef>()) {
+        generic_params = func_def->generic_params;
+    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
+        generic_params = struct_def->generic_params;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    Entry entry{
+        .params = generic_params,
+        .args = args_full,
+    };
+
+    entries.push_back(entry);
+    entry_stack.push_back(entry);
+
+    if (auto func_def = symbol.match<sir::FuncDef>()) {
+        visit_func_def(*func_def, true);
+    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
+        visit_struct_def(*struct_def, true);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    entry_stack.pop_back();
 }
 
 } // namespace banjo::lang

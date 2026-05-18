@@ -916,7 +916,7 @@ TryExpr *Cloner::clone_try_expr(const TryExpr &try_expr) {
             .ast_node = try_expr.ast_node,
             .type = clone_expr(try_expr.type),
             .value = clone_expr(try_expr.value),
-            .return_stmt = clone_stmt(try_expr.return_stmt),
+            .return_type = clone_expr(try_expr.return_type),
         }
     );
 }

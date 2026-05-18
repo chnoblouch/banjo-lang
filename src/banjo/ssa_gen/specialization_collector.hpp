@@ -68,6 +68,8 @@ private:
     void visit_init_expr(const sir::InitExpr &init_expr);
     void visit_move_expr(const sir::MoveExpr &move_expr);
     void visit_deinit_expr(const sir::DeinitExpr &deinit_expr);
+
+    void visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args);
 };
 
 } // namespace banjo::lang
