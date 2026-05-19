@@ -57,11 +57,6 @@ struct GuardedScope {
     sir::Symbol decl;
 };
 
-struct CompletionInfection {
-    std::unordered_map<sir::FuncDef *, unsigned> func_specializations;
-    std::unordered_map<sir::StructDef *, unsigned> struct_specializations;
-};
-
 class SemanticAnalyzer {
 
     // This is getting slightly out of hand...
@@ -103,7 +98,6 @@ private:
 
     ExtraAnalysis extra_analysis;
     CompletionContext completion_context;
-    CompletionInfection completion_infection;
 
     sir::StructDef *std_optional_def = nullptr;
     sir::StructDef *std_result_def = nullptr;
@@ -144,7 +138,6 @@ public:
 
     ExtraAnalysis &get_extra_analysis() { return extra_analysis; }
     CompletionContext &get_completion_context() { return completion_context; }
-    CompletionInfection &get_completion_infection() { return completion_infection; }
     const std::unordered_map<std::string_view, sir::Symbol> &get_preamble_symbols() { return preamble_symbols; }
 
 private:
@@ -169,13 +162,9 @@ private:
 
     bool is_in_stmt_block() { return scope_stack.top().block; }
     bool is_in_decl() { return !is_in_stmt_block(); }
-    bool is_in_specialization();
 
     void populate_preamble_symbols();
     sir::Symbol find_std_symbol(const ModulePath &mod_path, const std::string &name);
-
-    sir::Specialization<sir::StructDef> *as_std_map_specialization(sir::Expr type);
-    sir::Specialization<sir::StructDef> *as_std_type_specialization(sir::StructDef *generic_def, sir::Expr type);
 
     Result ensure_interface_analyzed(sir::Symbol symbol, ASTNode *ident_ast_node);
     sir::Expr get_resolved_type(sir::Expr value);

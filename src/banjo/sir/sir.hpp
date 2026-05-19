@@ -1278,11 +1278,7 @@ struct StructDef {
     std::vector<StructField *> fields;
     std::vector<Expr> impls;
     Attributes *attrs = nullptr;
-
     std::span<GenericParam *> generic_params;
-    std::list<Specialization<StructDef>> specializations;
-    Specialization<StructDef> *parent_specialization;
-
     SemaStage stage;
 
     Module &find_mod() const;
@@ -1290,7 +1286,6 @@ struct StructDef {
     bool has_impl_for(const sir::ProtoDef &proto_def) const;
     Attributes::Layout get_layout() const;
     bool is_generic() const { return !generic_params.empty(); }
-    bool is_specialization_of(sir::StructDef &generic_struct_def);
 };
 
 struct StructField {

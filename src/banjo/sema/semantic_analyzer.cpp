@@ -175,22 +175,6 @@ void SemanticAnalyzer::enter_closure_ctx(ClosureContext &closure_ctx) {
     scope_stack.push(scope);
 }
 
-bool SemanticAnalyzer::is_in_specialization() {
-    sir::Symbol decl = get_decl();
-
-    while (decl && !decl.is<sir::Module>()) {
-        if (auto struct_def = decl.match<sir::StructDef>()) {
-            if (struct_def->parent_specialization) {
-                return true;
-            }
-        }
-
-        decl = decl.get_parent();
-    }
-
-    return false;
-}
-
 void SemanticAnalyzer::populate_preamble_symbols() {
     if (!Config::instance().is_stdlib_enabled()) {
         return;
@@ -230,29 +214,6 @@ sir::Symbol SemanticAnalyzer::find_std_symbol(const ModulePath &mod_path, const 
     return mod.block.symbol_table->look_up_local(name);
 }
 
-sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_map_specialization(sir::Expr type) {
-    return as_std_type_specialization(std_map_def, type);
-}
-
-sir::Specialization<sir::StructDef> *SemanticAnalyzer::as_std_type_specialization(
-    sir::StructDef *generic_def,
-    sir::Expr type
-) {
-    if (!generic_def) {
-        return nullptr;
-    }
-
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        for (sir::Specialization<sir::StructDef> &specialization : generic_def->specializations) {
-            if (specialization.def == struct_def) {
-                return &specialization;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 Result SemanticAnalyzer::ensure_interface_analyzed(sir::Symbol symbol, ASTNode *ident_ast_node) {
     if (auto type_alias = symbol.match<sir::TypeAlias>()) {
         if (type_alias->stage >= sir::SemaStage::BODY) {
@@ -289,7 +250,7 @@ unsigned SemanticAnalyzer::compute_size(sir::Expr type) {
 }
 
 void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
-    if (mode != Mode::INDEXING || is_in_specialization()) {
+    if (mode != Mode::INDEXING) {
         return;
     }
 
@@ -307,7 +268,7 @@ void SemanticAnalyzer::add_symbol_def(sir::Symbol sir_symbol) {
 }
 
 void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol) {
-    if (mode != Mode::INDEXING || is_in_specialization() || !ast_node) {
+    if (mode != Mode::INDEXING || !ast_node) {
         return;
     }
 

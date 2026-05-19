@@ -187,14 +187,6 @@ void Printer::print_struct_def(const StructDef &struct_def) {
     if (struct_def.is_generic()) {
         PRINT_FIELD_NAME("generic_params")
         print_generic_params(struct_def.generic_params);
-        BEGIN_LIST_FIELD("specializations")
-
-        for (const Specialization<StructDef> &specialization : struct_def.specializations) {
-            INDENT_LIST_ELEMENT()
-            print_struct_def(*specialization.def);
-        }
-
-        END_LIST()
     }
 
     END_OBJECT();

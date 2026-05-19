@@ -50,7 +50,6 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
         items_serialized.add(serialize_item(i, items[i]));
     }
 
-    workspace.undo_infection(completion_info.infection);
     return items_serialized;
 }
 

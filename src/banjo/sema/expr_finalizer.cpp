@@ -414,18 +414,19 @@ Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr
 }
 
 Result ExprFinalizer::finalize_coercion(sir::MapLiteral &map_literal, sir::Expr type, sir::Expr &out_expr) {
-    if (auto specialization = analyzer.as_std_map_specialization(type)) {
-        sir::Expr key_type = specialization->args[0];
-        sir::Expr value_type = specialization->args[1];
+    // TODO
+    // if (auto specialization = analyzer.as_std_map_specialization(type)) {
+    //     sir::Expr key_type = specialization->args[0];
+    //     sir::Expr value_type = specialization->args[1];
 
-        map_literal.type = type;
-        finalize_map_literal_elements(map_literal, key_type, value_type);
-        create_std_map(map_literal, out_expr);
-        return Result::SUCCESS;
-    } else {
-        analyzer.report_generator.report_err_cannot_coerce(map_literal, type);
-        return Result::ERROR;
-    }
+    //     map_literal.type = type;
+    //     finalize_map_literal_elements(map_literal, key_type, value_type);
+    //     create_std_map(map_literal, out_expr);
+    //     return Result::SUCCESS;
+    // } else {
+    //     analyzer.report_generator.report_err_cannot_coerce(map_literal, type);
+    return Result::ERROR;
+    // }
 }
 
 Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr type) {

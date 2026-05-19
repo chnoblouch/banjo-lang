@@ -89,14 +89,6 @@ static void mangle_symbol_name(std::string &string, sir::Symbol symbol) {
         string += 's';
         string += std::to_string(struct_def->ident.value.size());
         string += struct_def->ident.value;
-
-        if (struct_def->parent_specialization) {
-            string += 'g';
-
-            for (const sir::Expr &generic_arg : struct_def->parent_specialization->args) {
-                mangle_type(string, generic_arg);
-            }
-        }
     }
 }
 

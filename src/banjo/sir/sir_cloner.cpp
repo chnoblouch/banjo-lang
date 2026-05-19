@@ -126,8 +126,6 @@ ConstDef *Cloner::clone_const_def(const ConstDef &const_def) {
 
 StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
     ASSERT(struct_def.fields.empty());
-    ASSERT(struct_def.specializations.empty());
-    ASSERT(!struct_def.parent_specialization);
 
     return mod.create(
         StructDef{
@@ -138,8 +136,6 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
             .impls = clone_expr_list(struct_def.impls),
             .attrs = clone_attrs(struct_def.attrs),
             .generic_params = struct_def.generic_params,
-            .specializations = {},
-            .parent_specialization = nullptr,
             .stage = SemaStage::NAME,
         }
     );

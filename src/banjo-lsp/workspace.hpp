@@ -29,7 +29,6 @@ namespace lsp {
 struct CompletionInfo {
     lang::sir::Module sir_mod;
     lang::sema::CompletionContext context;
-    lang::sema::CompletionInfection infection;
     std::vector<lang::sir::Symbol> preamble_symbols;
 };
 
@@ -60,7 +59,6 @@ public:
         lang::TextPosition completion_point,
         lang::sir::Module &out_sir_mod
     );
-    void undo_infection(lang::sema::CompletionInfection &infection);
 
     lang::SourceFile *find_file(const std::filesystem::path &fs_path);
     lang::SourceFile *find_file(const lang::ModulePath &mod_path);
