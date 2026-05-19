@@ -104,8 +104,8 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
         } else if (auto proto_def = type.match_proto_ptr()) {
             collect_value_members(*proto_def);
         } else if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
-            if (auto proto_def = generic_param->constraint.match_symbol<sir::ProtoDef>()) {
-                collect_value_members(*proto_def);
+            if (auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>()) {
+                collect_value_members(*concrete_proto->def);
             }
         }
     } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {

@@ -1,0 +1,57 @@
+# test:common
+
+proto Printer[T] {
+    func print_value(self, value: T);
+}
+
+struct IntPrinter: Printer[i32] {
+    pub func print_value(self, value: i32) {
+        print("i");
+        print(value);
+    }
+}
+
+struct BoolPrinter: Printer[bool] {
+    pub func print_value(self, value: bool) {
+        print("b");
+        print(value);
+    }
+}
+
+# test:subtest
+# test:compiles
+
+struct FloatPrinter: Printer[f32] {
+    pub func print_value(self, value: f32) {
+        print("f");
+        print(value);
+    }
+}
+
+# test:subtest
+# test:output "i42"
+
+func f[P: Printer[i32]](printer: P) {
+    printer.print_value(42);
+}
+
+func main() {
+    var i = IntPrinter {};
+    f(i);
+}
+
+# test:subtest
+# test:output "i10,btrue"
+
+func f[T, P: Printer[T]](printer: P, value: T) {
+    printer.print_value(value);
+}
+
+func main() {
+    var i = IntPrinter {};
+    var b = BoolPrinter {};
+
+    f(i, 10);
+    print(',');
+    f(b, true);
+}

@@ -102,6 +102,7 @@ private:
 
     Result specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
     Result specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
+    Result specialize(sir::ProtoDef &proto_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
 
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, const sir::Ident &rhs, sir::Symbol method);
     sir::Expr create_isize_cast(sir::Expr value);

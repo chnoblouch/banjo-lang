@@ -126,8 +126,8 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
             continue;
         }
 
-        if (auto proto_def = impl.match_symbol<sir::ProtoDef>()) {
-            analyze_proto_impl(struct_def, *proto_def);
+        if (auto concrete_proto = impl.match_concrete<sir::ProtoDef>()) {
+            analyze_proto_impl(struct_def, *concrete_proto->def);
         } else {
             analyzer.report_generator.report_err_expected_proto(impl);
         }
@@ -249,6 +249,19 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
         union_def->cases.push_back(&union_case);
     } else {
         analyzer.report_generator.report_err_case_outside_union(union_case);
+    }
+
+    return Result::SUCCESS;
+}
+
+Result DeclInterfaceAnalyzer::analyze_proto_def(sir::ProtoDef &proto_def) {
+    for (sir::GenericParam *generic_param : proto_def.generic_params) {
+        if (generic_param->constraint) {
+            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
+        }
+
+        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
+        analyzer.add_symbol_def(generic_param);
     }
 
     return Result::SUCCESS;

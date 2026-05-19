@@ -115,6 +115,7 @@ public:
     void report_err_too_many_indices(const sir::BracketExpr &bracket_expr);
     void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::FuncDef &func_def);
     void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::StructDef &struct_def);
+    void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::ProtoDef &proto_def);
     void report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr);
     void report_err_cannot_infer_generic_arg(const sir::Expr &expr, const sir::GenericParam &generic_param);
 

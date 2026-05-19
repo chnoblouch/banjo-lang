@@ -8,6 +8,8 @@
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
+#include "banjo/sir/specializer.hpp"
+#include "banjo/utils/arena.hpp"
 
 namespace banjo {
 
@@ -102,8 +104,8 @@ Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     }
 
     for (sir::Expr &impl : struct_def.impls) {
-        if (auto proto_def = impl.match_symbol<sir::ProtoDef>()) {
-            analyze_proto_impl(struct_def, *proto_def);
+        if (auto concrete_proto = impl.match_concrete<sir::ProtoDef>()) {
+            analyze_proto_impl(struct_def, *concrete_proto);
         }
     }
 
@@ -115,10 +117,12 @@ Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     return Result::SUCCESS;
 }
 
-void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def) {
+void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concrete<sir::ProtoDef> concrete_proto) {
+    utils::Arena<2048> arena;
+
     sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
 
-    for (sir::ProtoFuncDecl func_decl : proto_def.func_decls) {
+    for (sir::ProtoFuncDecl func_decl : concrete_proto.def->func_decls) {
         std::string_view name = func_decl.get_ident().value;
         auto iter = symbol_table.symbols.find(name);
 
@@ -129,20 +133,26 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Proto
         sir::FuncDef &func_def = iter->second.as<sir::FuncDef>();
 
         sir::FuncType &def_type = func_def.type;
-        sir::FuncType &decl_type = func_decl.get_type();
+        sir::FuncType *decl_type = &func_decl.get_type();
+
+        if (concrete_proto.is_specialization()) {
+            sir::Specializer specializer{arena, concrete_proto};
+            decl_type = specializer.specialize_func_type(*decl_type);
+        }
+
         bool types_equal = true;
 
-        if (def_type.params.size() != decl_type.params.size()) {
+        if (def_type.params.size() != decl_type->params.size()) {
             types_equal = false;
         }
 
         for (unsigned i = 1; i < def_type.params.size(); i++) {
-            if (def_type.params[i] != decl_type.params[i]) {
+            if (def_type.params[i] != decl_type->params[i]) {
                 types_equal = false;
             }
         }
 
-        if (def_type.return_type != decl_type.return_type) {
+        if (def_type.return_type != decl_type->return_type) {
             types_equal = false;
         }
 

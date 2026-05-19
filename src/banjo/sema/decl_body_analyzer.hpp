@@ -30,7 +30,7 @@ private:
     Result analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) override;
     Result analyze_enum_def(sir::EnumDef &enum_def) override;
 
-    void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
+    void analyze_proto_impl(sir::StructDef &struct_def, sir::Concrete<sir::ProtoDef> concrete_proto);
 };
 
 } // namespace sema

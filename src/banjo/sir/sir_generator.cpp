@@ -102,6 +102,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_UNION_DEF: return generate_union(node);
         case AST_UNION_CASE: return generate_union_case(node);
         case AST_PROTO_DEF: return generate_proto(node);
+        case AST_GENERIC_PROTO_DEF: return generate_generic_proto(node);
         case AST_TYPE_ALIAS_DEF: return generate_type_alias(node);
         case AST_VAR_DEF: return generate_var_decl(node, attrs);
         case AST_NATIVE_VAR_DECL: return generate_native_var_decl(node, attrs);
@@ -354,6 +355,24 @@ sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
             .func_decls = {},
+            .generic_params = {},
+            .stage = sir::SemaStage::NAME,
+        }
+    );
+}
+
+sir::Decl SIRGenerator::generate_generic_proto(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *block_node = generic_params_node->next_sibling;
+
+    return create(
+        sir::ProtoDef{
+            .ast_node = node,
+            .ident = generate_ident(name_node),
+            .block = generate_decl_block(block_node),
+            .func_decls = {},
+            .generic_params = generate_generic_param_list(generic_params_node),
             .stage = sir::SemaStage::NAME,
         }
     );

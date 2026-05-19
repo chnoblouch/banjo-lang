@@ -10,7 +10,7 @@ Result check_type_constraint(SemanticAnalyzer &analyzer, ASTNode *ast_node, sir:
     bool satisfied = false;
 
     if (auto struct_def = arg.match_symbol<sir::StructDef>()) {
-        if (struct_def->has_impl_for(param.constraint.as_symbol<sir::ProtoDef>())) {
+        if (struct_def->has_impl_for(param.constraint.as_concrete<sir::ProtoDef>())) {
             satisfied = true;
         }
     }

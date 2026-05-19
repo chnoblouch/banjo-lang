@@ -652,16 +652,21 @@ StructField *StructDef::find_field(std::string_view name) const {
     return nullptr;
 }
 
-bool StructDef::has_impl_for(const sir::ProtoDef &proto_def) const {
+bool StructDef::has_impl_for(sir::Concrete<sir::ProtoDef> concrete_proto) const {
     for (const sir::Expr &impl : impls) {
-        if (auto impl_proto_def = impl.match_symbol<sir::ProtoDef>()) {
-            if (impl_proto_def == &proto_def) {
+        if (auto impl_proto = impl.match_concrete<sir::ProtoDef>()) {
+            if (*impl_proto == concrete_proto) {
                 return true;
             }
         }
     }
 
     return false;
+}
+
+bool StructDef::has_impl_for(const sir::ProtoDef &proto_def) const {
+    // TODO: Remove this once it is unused
+    return has_impl_for({const_cast<sir::ProtoDef *>(&proto_def), {}});
 }
 
 Attributes::Layout StructDef::get_layout() const {

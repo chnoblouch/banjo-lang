@@ -32,7 +32,7 @@ sir::CallExpr *create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concret
         return create_call(mod, *concrete_func.def, args);
     }
 
-    sir::Specializer specializer{mod.trivial_arena, concrete_func.def->generic_params, concrete_func.generic_args};
+    sir::Specializer specializer{mod.trivial_arena, concrete_func};
     sir::FuncType *func_type = specializer.specialize_func_type(concrete_func.def->type);
 
     return mod.create(

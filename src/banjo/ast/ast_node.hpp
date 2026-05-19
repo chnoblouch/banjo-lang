@@ -35,6 +35,7 @@ enum ASTNodeType : std::uint8_t {
     AST_UNION_DEF,
     AST_UNION_CASE,
     AST_PROTO_DEF,
+    AST_GENERIC_PROTO_DEF,
     AST_IMPL_LIST,
     AST_TYPE_ALIAS_DEF,
     AST_USE_DECL,

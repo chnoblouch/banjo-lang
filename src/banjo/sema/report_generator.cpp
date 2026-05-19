@@ -547,6 +547,13 @@ void ReportGenerator::report_err_unexpected_generic_arg_count(
     report_err_unexpected_generic_arg_count(bracket_expr, struct_def.generic_params, struct_def.ident, "struct");
 }
 
+void ReportGenerator::report_err_unexpected_generic_arg_count(
+    sir::BracketExpr &bracket_expr,
+    sir::ProtoDef &proto_def
+) {
+    report_err_unexpected_generic_arg_count(bracket_expr, proto_def.generic_params, proto_def.ident, "proto");
+}
+
 void ReportGenerator::report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr) {
     report_error("too few arguments to infer generic parameter values", expr.get_ast_node());
 }

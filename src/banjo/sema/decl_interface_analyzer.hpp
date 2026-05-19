@@ -26,6 +26,7 @@ private:
     Result analyze_native_var_decl(sir::NativeVarDecl &native_var_decl) override;
     Result analyze_enum_variant(sir::EnumVariant &enum_variant) override;
     Result analyze_union_case(sir::UnionCase &union_case) override;
+    Result analyze_proto_def(sir::ProtoDef &proto_def) override;
 
     void analyze_param(sir::Param &param, unsigned index, sir::Symbol &func_parent);
     void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);

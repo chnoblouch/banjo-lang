@@ -156,6 +156,12 @@ struct Concrete {
     std::span<Expr> generic_args;
 
     bool is_specialization() const { return !generic_args.empty(); }
+
+    bool operator==(const Concrete<T> &other) const {
+        return def == other.def && Utils::equal(generic_args, other.generic_args);
+    }
+
+    bool operator!=(const Concrete<T> &other) const { return !(*this == other); }
 };
 
 class Expr {
@@ -1283,6 +1289,7 @@ struct StructDef {
 
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
+    bool has_impl_for(sir::Concrete<sir::ProtoDef> concrete_proto) const;
     bool has_impl_for(const sir::ProtoDef &proto_def) const;
     Attributes::Layout get_layout() const;
     bool is_generic() const { return !generic_params.empty(); }
@@ -1366,9 +1373,11 @@ struct ProtoDef {
     Symbol parent;
     DeclBlock block;
     std::vector<ProtoFuncDecl> func_decls;
+    std::span<GenericParam *> generic_params;
     SemaStage stage;
 
     std::optional<unsigned> get_index(std::string_view name) const;
+    bool is_generic() const { return !generic_params.empty(); }
 };
 
 struct ProtoFuncDecl {

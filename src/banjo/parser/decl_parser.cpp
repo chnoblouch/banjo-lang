@@ -134,7 +134,7 @@ ParseResult DeclParser::parse_struct() {
 
     ParseResult result = parser.parse_block();
     node.append_child(result.node);
-    
+
     return {node.build(type), result.is_valid};
 }
 
@@ -209,6 +209,8 @@ ParseResult DeclParser::parse_union_case() {
 }
 
 ParseResult DeclParser::parse_proto() {
+    ASTNodeType type = AST_PROTO_DEF;
+
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume 'proto'
 
@@ -218,13 +220,23 @@ ParseResult DeclParser::parse_proto() {
     }
     node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
+    if (stream.get()->is(TKN_LBRACKET)) {
+        ParseResult result = parse_generic_param_list();
+        if (!result.is_valid) {
+            return node.build_error();
+        }
+
+        node.append_child(result.node);
+        type = AST_GENERIC_PROTO_DEF;
+    }
+
     ParseResult result = parser.parse_block();
     if (!result.is_valid) {
         return node.build_error();
     }
     node.append_child(result.node);
 
-    return node.build(AST_PROTO_DEF);
+    return node.build(type);
 }
 
 ParseResult DeclParser::parse_type_alias() {

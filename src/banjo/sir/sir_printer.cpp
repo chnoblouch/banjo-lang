@@ -277,6 +277,12 @@ void Printer::print_proto_def(const ProtoDef &proto_def) {
     PRINT_FIELD("ident", proto_def.ident.value);
     PRINT_FIELD_NAME("block");
     print_decl_block(proto_def.block);
+
+    if (proto_def.is_generic()) {
+        PRINT_FIELD_NAME("generic_params")
+        print_generic_params(proto_def.generic_params);
+    }
+
     END_OBJECT();
 }
 

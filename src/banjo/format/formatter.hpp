@@ -52,6 +52,7 @@ private:
     void format_union_def(ASTNode *node, WhitespaceKind whitespace);
     void format_union_case(ASTNode *node, WhitespaceKind whitespace);
     void format_proto_def(ASTNode *node, WhitespaceKind whitespace);
+    void format_generic_proto_def(ASTNode *node, WhitespaceKind whitespace);
     void format_type_alias(ASTNode *node, WhitespaceKind whitespace);
     void format_use_decl(ASTNode *node, WhitespaceKind whitespace);
     void format_use_rebind(ASTNode *node, WhitespaceKind whitespace);

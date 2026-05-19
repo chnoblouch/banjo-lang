@@ -54,6 +54,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_UNION_DEF: format_union_def(node, whitespace); break;
         case AST_UNION_CASE: format_union_case(node, whitespace); break;
         case AST_PROTO_DEF: format_proto_def(node, whitespace); break;
+        case AST_GENERIC_PROTO_DEF: format_generic_proto_def(node, whitespace); break;
         case AST_TYPE_ALIAS_DEF: format_type_alias(node, whitespace); break;
         case AST_NATIVE_VAR_DECL: format_var_decl(node, whitespace); break;
         case AST_USE_DECL: format_use_decl(node, whitespace); break;
@@ -466,6 +467,25 @@ void Formatter::format_proto_def(ASTNode *node, WhitespaceKind whitespace) {
 
     ensure_space_after(tkn_proto);
     format_node(name_node, WhitespaceKind::SPACE);
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_generic_proto_def(ASTNode *node, WhitespaceKind whitespace) {
+    if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE || whitespace == WhitespaceKind::INDENT) {
+        if (node->next_sibling) {
+            whitespace = WhitespaceKind::INDENT_EMPTY_LINE;
+        }
+    }
+
+    ASTNode *name_node = node->first_child;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *block_node = generic_params_node->next_sibling;
+
+    unsigned tkn_proto = node->tokens[0];
+
+    ensure_space_after(tkn_proto);
+    format_node(name_node, WhitespaceKind::NONE);
+    format_node(generic_params_node, WhitespaceKind::SPACE);
     format_node(block_node, whitespace);
 }
 
