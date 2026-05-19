@@ -66,7 +66,7 @@ private:
     void complete_in_struct_literal(lang::sir::StructLiteral &struct_literal);
 
     void collect_symbol_members(lang::sir::Symbol &symbol, Options &options);
-    void collect_value_members(lang::sir::StructDef &struct_def);
+    void collect_value_members(lang::sir::Concrete<lang::sir::StructDef> &concrete_struct);
     void collect_value_members(lang::sir::ProtoDef &proto_def);
 
     void collect_items(lang::sir::SymbolTable &symbol_table, Options &options);

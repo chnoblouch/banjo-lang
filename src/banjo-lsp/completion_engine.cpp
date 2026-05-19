@@ -99,8 +99,8 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
             }
         }
 
-        if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-            collect_value_members(*struct_def);
+        if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
+            collect_value_members(*concrete_struct);
         } else if (auto proto_def = type.match_proto_ptr()) {
             collect_value_members(*proto_def);
         } else if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
@@ -214,7 +214,7 @@ void CompletionEngine::collect_symbol_members(sir::Symbol &symbol, Options &opti
     }
 }
 
-void CompletionEngine::collect_value_members(sir::StructDef &struct_def) {
+void CompletionEngine::collect_value_members(lang::sir::Concrete<lang::sir::StructDef> &concrete_struct) {
     Options options{
         .allow_values = false,
         .include_parent_scopes = false,
@@ -223,7 +223,7 @@ void CompletionEngine::collect_value_members(sir::StructDef &struct_def) {
         .file_to_use = nullptr,
     };
 
-    for (sir::StructField *field : struct_def.fields) {
+    for (sir::StructField *field : concrete_struct.def->fields) {
         Item item{
             .kind = Item::Kind::SIMPLE,
             .name = std::string{field->ident.value},
@@ -234,7 +234,7 @@ void CompletionEngine::collect_value_members(sir::StructDef &struct_def) {
         add_item(item);
     }
 
-    for (auto &[name, symbol] : struct_def.block.symbol_table->symbols) {
+    for (auto &[name, symbol] : concrete_struct.def->block.symbol_table->symbols) {
         bool is_value_member = false;
 
         if (auto func_def = symbol.match<sir::FuncDef>()) {
