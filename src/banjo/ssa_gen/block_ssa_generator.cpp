@@ -137,46 +137,68 @@ void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt)
 }
 
 void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
-    ssa::BasicBlockIter ssa_end_block = ctx.create_block();
+    std::vector<unsigned> branches;
+    std::optional<unsigned> else_branch;
+
+    if (if_stmt.else_branch) {
+        else_branch = if_stmt.cond_branches.size();
+    }
 
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
         const sir::IfCondBranch &sir_branch = if_stmt.cond_branches[i];
-        bool is_final_branch = i == if_stmt.cond_branches.size() - 1 && !if_stmt.else_branch;
-
-        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
 
         if (auto type_guard_expr = sir_branch.condition.match<sir::TypeGuardExpr>()) {
             sir::Expr arg = ctx.get_generic_arg(*type_guard_expr->generic_param);
 
             if (type_guard_expr->is_satisfied_by(arg)) {
-                ctx.append_jmp(ssa_target_if_true);
-                ctx.append_block(ssa_target_if_true);
-                generate_block(*sir_branch.block);
-                ctx.append_jmp(ssa_end_block);
-            } else {
-                ctx.append_jmp(ssa_target_if_false);
+                else_branch = i;
+                break;
             }
         } else {
-            ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
-
-            ctx.append_block(ssa_target_if_true);
-            generate_block(*sir_branch.block);
-            ctx.append_jmp(ssa_end_block);
+            branches.push_back(i);
         }
+    }
+
+    ssa::BasicBlockIter ssa_end_block;
+
+    if (!branches.empty()) {
+        ssa_end_block = ctx.create_block();
+    }
+
+    for (unsigned i = 0; i < branches.size(); i++) {
+        const sir::IfCondBranch &sir_branch = if_stmt.cond_branches[branches[i]];
+        bool is_final_branch = i == branches.size() - 1 && !else_branch;
+
+        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
+        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
+        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
+
+        ExprSSAGenerator(ctx).generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
+
+        ctx.append_block(ssa_target_if_true);
+        generate_block(*sir_branch.block);
+        ctx.append_jmp(ssa_end_block);
 
         if (!is_final_branch) {
             ctx.append_block(ssa_next_block);
         }
     }
 
-    if (if_stmt.else_branch) {
-        generate_block(*if_stmt.else_branch->block);
-        ctx.append_jmp(ssa_end_block);
+    if (else_branch) {
+        if (*else_branch == if_stmt.cond_branches.size()) {
+            generate_block(*if_stmt.else_branch->block);
+        } else {
+            generate_block(*if_stmt.cond_branches[*else_branch].block);
+        }
+
+        if (!branches.empty()) {
+            ctx.append_jmp(ssa_end_block);
+        }
     }
 
-    ctx.append_block(ssa_end_block);
+    if (!branches.empty()) {
+        ctx.append_block(ssa_end_block);
+    }
 }
 
 void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt) {
