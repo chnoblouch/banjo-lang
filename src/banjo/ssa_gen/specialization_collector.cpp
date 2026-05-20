@@ -332,7 +332,11 @@ void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr 
             if (auto concrete_struct = generic_arg.match_concrete<sir::StructDef>()) {
                 std::string_view method_name = generic_method->decl->ident.value;
                 sir::Symbol func_def = concrete_struct->def->block.symbol_table->look_up(method_name);
-                visit_concrete(func_def, concrete_struct->generic_args);
+
+                // TODO: The method should always be defined?
+                if (func_def) {
+                    visit_concrete(func_def, concrete_struct->generic_args);
+                }
             }
         }
     } else if (auto binary_expr = std::get_if<sir::PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {

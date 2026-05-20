@@ -45,6 +45,8 @@ ssa::Module SSAGenerator::generate() {
             for (sir::Expr arg : entry.args) {
                 sir::Printer{std::cout}.print_expr(arg);
             }
+
+            std::cout << "\n";
         }
 
         std::cout << "\n";

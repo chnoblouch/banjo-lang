@@ -186,8 +186,8 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_slice_def = &find_std_symbol({"std", "slice"}, "Slice").as<sir::StructDef>();
     std_string_def = &find_std_symbol({"std", "string"}, "String").as<sir::StructDef>();
     std_string_slice_def = &find_std_symbol({"std", "string_slice"}, "StringSlice").as<sir::StructDef>();
-    // std_map_def = &find_std_symbol({"std", "map"}, "Map").as<sir::StructDef>();
-    // std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
+    std_map_def = &find_std_symbol({"std", "map"}, "Map").as<sir::StructDef>();
+    std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
     std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
     std_compare_def = &find_std_symbol({"std", "protos"}, "Compare").as<sir::ProtoDef>();
     std_order_def = &find_std_symbol({"std", "protos"}, "Order").as<sir::ProtoDef>();
@@ -204,9 +204,9 @@ void SemanticAnalyzer::populate_preamble_symbols() {
         {"Slice", std_slice_def},
         {"String", std_string_def},
         {"StringSlice", std_string_slice_def},
-        // {"Map", std_map_def},
-        // {"Set", find_std_symbol({"std", "set"}, "Set")},
-        // {"Shared", std_shared_def},
+        {"Map", std_map_def},
+        {"Set", find_std_symbol({"std", "set"}, "Set")},
+        {"Shared", std_shared_def},
         {"Closure", std_closure_def},
     };
 }

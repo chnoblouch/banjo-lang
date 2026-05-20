@@ -13,6 +13,8 @@ Specializer::Specializer(utils::Arena<2048> &arena, std::span<sir::GenericParam 
 sir::Expr Specializer::specialize_expr(sir::Expr expr) {
     if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
         return specialize_symbol_expr(*symbol_expr);
+    } else if (auto tuple_expr = expr.match<sir::TupleExpr>()) {
+        return specialize_tuple_expr(*tuple_expr);
     } else if (auto specialize_expr = expr.match<sir::SpecializeExpr>()) {
         return specialize_specialize_expr(*specialize_expr);
     } else if (auto pointer_type = expr.match<sir::PointerType>()) {
@@ -71,6 +73,22 @@ sir::Expr Specializer::specialize_symbol_expr(sir::SymbolExpr &symbol_expr) {
     } else {
         return &symbol_expr;
     }
+}
+
+sir::Expr Specializer::specialize_tuple_expr(sir::TupleExpr &tuple_expr) {
+    std::span<sir::Expr> exprs = arena.allocate_array<sir::Expr>(tuple_expr.exprs.size());
+
+    for (unsigned i = 0; i < tuple_expr.exprs.size(); i++) {
+        exprs[i] = specialize_expr(tuple_expr.exprs[i]);
+    }
+
+    sir::TupleExpr specialization{
+        .ast_node = tuple_expr.ast_node,
+        .type = specialize_expr(tuple_expr.type),
+        .exprs = exprs,
+    };
+
+    return arena.create<sir::TupleExpr>(specialization);
 }
 
 sir::Expr Specializer::specialize_specialize_expr(sir::SpecializeExpr &specialize_expr) {

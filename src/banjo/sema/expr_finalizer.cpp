@@ -414,19 +414,18 @@ Result ExprFinalizer::finalize_coercion(sir::TupleExpr &tuple_literal, sir::Expr
 }
 
 Result ExprFinalizer::finalize_coercion(sir::MapLiteral &map_literal, sir::Expr type, sir::Expr &out_expr) {
-    // TODO
-    // if (auto specialization = analyzer.as_std_map_specialization(type)) {
-    //     sir::Expr key_type = specialization->args[0];
-    //     sir::Expr value_type = specialization->args[1];
+    if (auto concrete_struct = type.match_specialization(*analyzer.std_map_def)) {
+        sir::Expr key_type = concrete_struct->generic_args[0];
+        sir::Expr value_type = concrete_struct->generic_args[1];
 
-    //     map_literal.type = type;
-    //     finalize_map_literal_elements(map_literal, key_type, value_type);
-    //     create_std_map(map_literal, out_expr);
-    //     return Result::SUCCESS;
-    // } else {
-    //     analyzer.report_generator.report_err_cannot_coerce(map_literal, type);
-    return Result::ERROR;
-    // }
+        map_literal.type = type;
+        finalize_map_literal_elements(map_literal, key_type, value_type);
+        create_std_map(map_literal, out_expr);
+        return Result::SUCCESS;
+    } else {
+        analyzer.report_generator.report_err_cannot_coerce(map_literal, type);
+        return Result::ERROR;
+    }
 }
 
 Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr type) {
@@ -778,14 +777,6 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
     sir::Expr key_type = analyzer.get_resolved_type(map_literal.entries[0].key);
     sir::Expr value_type = analyzer.get_resolved_type(map_literal.entries[0].value);
 
-    sir::StructDef &map_type = *analyzer.std_map_def;
-    std::span<sir::Expr> generic_args = analyzer.create_array({key_type, value_type});
-
-    // FIXME: Checked generics
-    sir::StructDef *specialization = nullptr; // GenericsSpecializer(analyzer).specialize(map_type, generic_args);
-
-    sir::FuncDef &func_def = specialization->block.symbol_table->look_up_local("from").as<sir::FuncDef>();
-
     sir::Expr entry_type = analyzer.create(
         sir::TupleExpr{
             .ast_node = nullptr,
@@ -853,8 +844,16 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
         }
     );
 
+    sir::StructDef &map_type = *analyzer.std_map_def;
+    std::span<sir::Expr> generic_args = analyzer.create_array({key_type, value_type});
+
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &map_type.block.symbol_table->look_up_local("from").as<sir::FuncDef>(),
+        .generic_args = generic_args,
+    };
+
     std::span<sir::Expr> call_args = analyzer.create_array({data_pointer, length});
-    out_expr = sir::create_call(analyzer.get_mod(), func_def, call_args);
+    out_expr = sir::create_call(analyzer.get_mod(), concrete_func, call_args);
 }
 
 Result ExprFinalizer::finalize_array_literal_elements(sir::ArrayLiteral &array_literal, sir::Expr element_type) {
