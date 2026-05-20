@@ -1,0 +1,66 @@
+# test:subtest
+# test:compiles
+
+proto P {}
+
+struct S: P {}
+
+func f[T: P](t: T) {}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:output "m"
+
+proto P {
+    func m(self);
+}
+
+struct S: P {
+    pub func m(self) {
+        print('m');
+    }
+}
+
+func f[T: P](t: T) {
+    t.m();
+}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:compiles
+
+proto P {}
+
+func f[A: P](a: A) {}
+
+func g[B: P](b: B) {
+    f(b);
+}
+
+# test:subtest
+# test:compiles
+
+proto P[T] {}
+
+func f[A: P[i32]](a: A) {}
+
+func g[B: P[i32]](b: B) {
+    f(b);
+}
+
+# test:subtest
+# test:compiles
+
+proto P[T] {}
+
+func f[A: P[A]](a: A) {}
+
+func g[B: P[B]](b: B) {
+    f(b);
+}

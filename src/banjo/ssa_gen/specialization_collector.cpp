@@ -335,6 +335,11 @@ void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr 
                 visit_concrete(func_def, concrete_struct->generic_args);
             }
         }
+    } else if (auto binary_expr = std::get_if<sir::PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
+        // TODO: Specialized operator overloads
+
+        visit_expr(binary_expr->lhs);
+        visit_expr(binary_expr->rhs);
     } else {
         ASSERT_UNREACHABLE;
     }

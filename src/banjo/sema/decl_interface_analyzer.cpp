@@ -24,12 +24,12 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     analyzer.enter_symbol_table(func_def.block.symbol_table);
 
     for (sir::GenericParam *generic_param : func_def.generic_params) {
+        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
+        analyzer.add_symbol_def(generic_param);
+        
         if (generic_param->constraint) {
             ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
         }
-
-        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
-        analyzer.add_symbol_def(generic_param);
     }
 
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {

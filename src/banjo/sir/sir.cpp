@@ -164,6 +164,8 @@ ExprCategory Expr::get_category() const {
     } else if (auto placeholder_expr = match<PlaceholderExpr>()) {
         if (std::holds_alternative<PlaceholderExpr::GenericMethod>(placeholder_expr->kind)) {
             return ExprCategory::VALUE;
+        } else if (std::holds_alternative<PlaceholderExpr::BinaryExpr>(placeholder_expr->kind)) {
+            return ExprCategory::VALUE;
         } else {
             ASSERT_UNREACHABLE;
         }

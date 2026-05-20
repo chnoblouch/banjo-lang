@@ -1,0 +1,11 @@
+proto Compare[T] {
+    func __eq__(self, ref other: T) -> bool;
+    func __ne__(self, ref other: T) -> bool;
+}
+
+proto Order[T] {
+    func __gt__(self, ref other: T) -> bool;
+    func __lt__(self, ref other: T) -> bool;
+    func __ge__(self, ref other: T) -> bool;
+    func __le__(self, ref other: T) -> bool;
+}

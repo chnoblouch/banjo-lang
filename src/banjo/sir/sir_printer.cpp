@@ -1072,6 +1072,14 @@ void Printer::print_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
         PRINT_FIELD("param", generic_method->param->ident.value);
         PRINT_FIELD("decl", generic_method->decl->ident.value);
         END_OBJECT();
+    } else if (auto binary_expr = std::get_if<PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
+        BEGIN_OBJECT("BinaryExpr");
+        print_binary_op("op", binary_expr->op);
+        PRINT_EXPR_FIELD("lhs", binary_expr->lhs);
+        PRINT_EXPR_FIELD("rhs", binary_expr->rhs);
+        END_OBJECT();
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     END_OBJECT();

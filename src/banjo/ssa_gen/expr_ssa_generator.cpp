@@ -1,5 +1,6 @@
 #include "expr_ssa_generator.hpp"
 
+#include "banjo/emit/binary_module.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
@@ -65,8 +66,8 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // map_literal
         SIR_VISIT_IMPOSSIBLE,                              // closure_literal
         return generate_symbol_expr(*inner),               // symbol_expr
-        return generate_binary_expr(*inner, expr),         // binary_expr
-        return generate_unary_expr(*inner, expr),          // unary_expr
+        return generate_binary_expr(*inner),               // binary_expr
+        return generate_unary_expr(*inner),                // unary_expr
         return generate_cast_expr(*inner),                 // cast_expr
         return generate_index_expr(*inner),                // index_expr
         return generate_call_expr(*inner, hints),          // call_expr
@@ -326,7 +327,7 @@ StoredValue ExprSSAGenerator::generate_param_expr(const sir::Param &param) {
     return ssa_value;
 }
 
-StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr) {
+StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary_expr) {
     switch (binary_expr.op) {
         case sir::BinaryOp::EQ:
         case sir::BinaryOp::NE:
@@ -335,7 +336,7 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
         case sir::BinaryOp::GE:
         case sir::BinaryOp::LE:
         case sir::BinaryOp::AND:
-        case sir::BinaryOp::OR: return generate_bool_expr(expr);
+        case sir::BinaryOp::OR: return generate_bool_expr(const_cast<sir::BinaryExpr *>(&binary_expr));
         default: break;
     }
 
@@ -394,13 +395,13 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
     return StoredValue::create_value(reg, ssa_type);
 }
 
-StoredValue ExprSSAGenerator::generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr) {
+StoredValue ExprSSAGenerator::generate_unary_expr(const sir::UnaryExpr &unary_expr) {
     switch (unary_expr.op) {
         case sir::UnaryOp::NEG: return generate_neg(unary_expr);
         case sir::UnaryOp::BIT_NOT: return generate_bit_not(unary_expr);
         case sir::UnaryOp::ADDR: return generate_ref(unary_expr);
         case sir::UnaryOp::DEREF: return generate_deref(unary_expr);
-        case sir::UnaryOp::NOT: return generate_bool_expr(expr);
+        case sir::UnaryOp::NOT: return generate_bool_expr(const_cast<sir::UnaryExpr *>(&unary_expr));
         case sir::UnaryOp::REF: ASSERT_UNREACHABLE;
         case sir::UnaryOp::REF_MUT: ASSERT_UNREACHABLE;
         case sir::UnaryOp::SHARE: ASSERT_UNREACHABLE;
@@ -816,6 +817,16 @@ StoredValue ExprSSAGenerator::generate_placeholder_expr(const sir::PlaceholderEx
 
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
+    } else if (auto binary_expr = std::get_if<sir::PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
+        sir::BinaryExpr dummy_expr{
+            .ast_node = nullptr,
+            .type = placeholder_expr.type,
+            .op = binary_expr->op,
+            .lhs = binary_expr->lhs,
+            .rhs = binary_expr->rhs,
+        };
+
+        return generate_binary_expr(dummy_expr);
     } else {
         ASSERT_UNREACHABLE;
     }

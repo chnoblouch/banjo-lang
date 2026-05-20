@@ -99,6 +99,7 @@ private:
     ExtraAnalysis extra_analysis;
     CompletionContext completion_context;
 
+public:
     sir::StructDef *std_optional_def = nullptr;
     sir::StructDef *std_result_def = nullptr;
     sir::StructDef *std_array_def = nullptr;
@@ -108,6 +109,9 @@ private:
     sir::StructDef *std_map_def = nullptr;
     sir::StructDef *std_shared_def = nullptr;
     sir::StructDef *std_closure_def = nullptr;
+    sir::ProtoDef *std_compare_def = nullptr;
+
+private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::unordered_map<std::string_view, sir::Expr> meta_field_types;
 

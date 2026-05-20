@@ -23,6 +23,7 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/source/module_path.hpp"
+#include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -571,35 +572,43 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     }
 
     if (binary_expr.lhs.is_symbol<sir::GenericParam>() && binary_expr.rhs.is_type()) {
-        out_expr = analyzer.create(
-            sir::TypeGuardExpr{
-                .ast_node = binary_expr.ast_node,
-                .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
-                .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
-                .constraint = binary_expr.rhs,
-            }
-        );
-
-        type_narrowing = sir::TypeNarrowing{
-            .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
-            .constraint = binary_expr.rhs,
-        };
-
-        return Result::SUCCESS;
+        return create_type_guard(binary_expr, out_expr);
     }
 
     if (binary_expr.lhs.is_type()) {
-        ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
-        if (evaluated.result != Result::SUCCESS) {
-            return evaluated.result;
-        }
-
-        out_expr = evaluated.expr;
-        return analyze_uncoerced(out_expr);
+        return create_type_comparison(binary_expr, out_expr);
     }
 
     sir::Expr lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
     sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
+
+    if (op_type == BinaryOpType::EQUALITY_COMP) {
+        if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
+            if (auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>()) {
+                if (concrete_proto->def == analyzer.std_compare_def && concrete_proto->generic_args[0] == rhs_type) {
+                    lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+                    rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
+
+                    RESULT_RETURN_ON_ERROR(lhs_result)
+                    RESULT_RETURN_ON_ERROR(rhs_result)
+
+                    out_expr = analyzer.create(
+                        sir::PlaceholderExpr{
+                            .ast_node = nullptr,
+                            .type = concrete_proto->def->func_decls[0].get_type().return_type,
+                            .kind = sir::PlaceholderExpr::BinaryExpr{
+                                .op = binary_expr.op,
+                                .lhs = binary_expr.lhs,
+                                .rhs = binary_expr.rhs,
+                            },
+                        }
+                    );
+
+                    return Result::SUCCESS;
+                }
+            }
+        }
+    }
 
     bool is_operator_built_in = false;
     bool is_operator_overload = false;
@@ -759,6 +768,34 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     }
 
     return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::create_type_guard(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
+    out_expr = analyzer.create(
+        sir::TypeGuardExpr{
+            .ast_node = binary_expr.ast_node,
+            .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
+            .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
+            .constraint = binary_expr.rhs,
+        }
+    );
+
+    type_narrowing = sir::TypeNarrowing{
+        .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
+        .constraint = binary_expr.rhs,
+    };
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::create_type_comparison(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
+    ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
+    if (evaluated.result != Result::SUCCESS) {
+        return evaluated.result;
+    }
+
+    out_expr = evaluated.expr;
+    return analyze_uncoerced(out_expr);
 }
 
 Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr) {
@@ -1055,9 +1092,16 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             Result result = Result::SUCCESS;
 
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                sir::GenericParam &param = *func_def->generic_params[i];
-                sir::Expr &arg = generic_args[i];
-                RESULT_MERGE(result, check_type_constraint(analyzer, call_expr.callee.get_ast_node(), arg, param));
+                RESULT_MERGE(
+                    result,
+                    check_type_constraint(
+                        analyzer,
+                        call_expr.callee.get_ast_node(),
+                        func_def->generic_params,
+                        generic_args,
+                        i
+                    )
+                );
             }
 
             RESULT_RETURN_ON_ERROR(result);
@@ -1799,9 +1843,16 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             }
 
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                sir::GenericParam &param = *func_def->generic_params[i];
-                sir::Expr &arg = bracket_expr.rhs[i];
-                RESULT_MERGE(result, check_type_constraint(analyzer, arg.get_ast_node(), arg, param));
+                RESULT_MERGE(
+                    result,
+                    check_type_constraint(
+                        analyzer,
+                        bracket_expr.rhs[i].get_ast_node(),
+                        func_def->generic_params,
+                        bracket_expr.rhs,
+                        i
+                    )
+                );
             }
 
             RESULT_RETURN_ON_ERROR(result);

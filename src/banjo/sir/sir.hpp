@@ -1087,9 +1087,17 @@ struct PlaceholderExpr {
         FuncDecl *decl;
     };
 
+    struct BinaryExpr {
+        BinaryOp op;
+        Expr lhs;
+        Expr rhs;
+    };
+
+    typedef std::variant<GenericMethod, BinaryExpr> Kind;
+
     ASTNode *ast_node;
     Expr type;
-    std::variant<GenericMethod> kind;
+    Kind kind;
 };
 
 struct VarStmt {

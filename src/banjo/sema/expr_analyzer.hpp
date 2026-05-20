@@ -55,7 +55,11 @@ private:
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);
     Result analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr &out_expr);
     Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
+    
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+    Result create_type_guard(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+    Result create_type_comparison(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
     Result analyze_cast_expr(sir::CastExpr &cast_expr);
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);

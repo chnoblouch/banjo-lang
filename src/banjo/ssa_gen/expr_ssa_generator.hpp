@@ -47,8 +47,8 @@ private:
     StoredValue generate_union_case_literal(const sir::UnionCaseLiteral &union_case_literal, const StorageHints &hints);
     StoredValue generate_symbol_expr(const sir::SymbolExpr &symbol_expr);
     StoredValue generate_param_expr(const sir::Param &param);
-    StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr, const sir::Expr &expr);
-    StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr, const sir::Expr &expr);
+    StoredValue generate_binary_expr(const sir::BinaryExpr &binary_expr);
+    StoredValue generate_unary_expr(const sir::UnaryExpr &unary_expr);
     StoredValue generate_neg(const sir::UnaryExpr &unary_expr);
     StoredValue generate_bit_not(const sir::UnaryExpr &unary_expr);
     StoredValue generate_ref(const sir::UnaryExpr &unary_expr);

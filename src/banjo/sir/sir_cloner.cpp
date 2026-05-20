@@ -5,6 +5,7 @@
 #include "sir.hpp"
 
 #include <cassert>
+#include <variant>
 #include <vector>
 
 namespace banjo {
@@ -1160,11 +1161,23 @@ TypeGuardExpr *Cloner::clone_type_guard_expr(const TypeGuardExpr &type_guard_exp
 }
 
 PlaceholderExpr *Cloner::clone_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
+    PlaceholderExpr::Kind kind;
+
+    if (std::holds_alternative<PlaceholderExpr::GenericMethod>(placeholder_expr.kind)) {
+        kind = placeholder_expr.kind;
+    } else if (auto binary_expr = std::get_if<PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
+        kind = PlaceholderExpr::BinaryExpr{
+            .op = binary_expr->op,
+            .lhs = clone_expr(binary_expr->lhs),
+            .rhs = clone_expr(binary_expr->rhs),
+        };
+    }
+
     return mod.create(
         PlaceholderExpr{
             .ast_node = placeholder_expr.ast_node,
             .type = clone_expr(placeholder_expr.type),
-            .kind = placeholder_expr.kind,
+            .kind = kind,
         }
     );
 }
