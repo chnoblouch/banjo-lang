@@ -110,6 +110,7 @@ public:
     sir::StructDef *std_shared_def = nullptr;
     sir::StructDef *std_closure_def = nullptr;
     sir::ProtoDef *std_compare_def = nullptr;
+    sir::ProtoDef *std_order_def = nullptr;
 
 private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;

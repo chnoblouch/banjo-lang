@@ -582,30 +582,38 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     sir::Expr lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
     sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
 
-    if (op_type == BinaryOpType::EQUALITY_COMP) {
-        if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
-            if (auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>()) {
-                if (concrete_proto->def == analyzer.std_compare_def && concrete_proto->generic_args[0] == rhs_type) {
-                    lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-                    rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
+    if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
+        sir::ProtoDef *proto_def;
 
-                    RESULT_RETURN_ON_ERROR(lhs_result)
-                    RESULT_RETURN_ON_ERROR(rhs_result)
+        if (op_type == BinaryOpType::EQUALITY_COMP) {
+            proto_def = analyzer.std_compare_def;
+        } else if (op_type == BinaryOpType::ORDER_COMP) {
+            proto_def = analyzer.std_order_def;
+        } else {
+            proto_def = nullptr;
+        }
 
-                    out_expr = analyzer.create(
-                        sir::PlaceholderExpr{
-                            .ast_node = nullptr,
-                            .type = concrete_proto->def->func_decls[0].get_type().return_type,
-                            .kind = sir::PlaceholderExpr::BinaryExpr{
-                                .op = binary_expr.op,
-                                .lhs = binary_expr.lhs,
-                                .rhs = binary_expr.rhs,
-                            },
-                        }
-                    );
+        if (auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>()) {
+            if (concrete_proto->def == proto_def && concrete_proto->generic_args[0] == rhs_type) {
+                lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+                rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
-                    return Result::SUCCESS;
-                }
+                RESULT_RETURN_ON_ERROR(lhs_result)
+                RESULT_RETURN_ON_ERROR(rhs_result)
+
+                out_expr = analyzer.create(
+                    sir::PlaceholderExpr{
+                        .ast_node = nullptr,
+                        .type = concrete_proto->def->func_decls[0].get_type().return_type,
+                        .kind = sir::PlaceholderExpr::BinaryExpr{
+                            .op = binary_expr.op,
+                            .lhs = binary_expr.lhs,
+                            .rhs = binary_expr.rhs,
+                        },
+                    }
+                );
+
+                return Result::SUCCESS;
             }
         }
     }

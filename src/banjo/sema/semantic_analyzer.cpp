@@ -190,6 +190,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     // std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
     std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
     std_compare_def = &find_std_symbol({"std", "protos"}, "Compare").as<sir::ProtoDef>();
+    std_order_def = &find_std_symbol({"std", "protos"}, "Order").as<sir::ProtoDef>();
 
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},

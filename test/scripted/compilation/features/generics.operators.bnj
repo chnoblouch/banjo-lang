@@ -1,0 +1,219 @@
+# test:common
+
+use std.protos.{Compare, Order};
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true,true,true,true,true,true;false"
+
+func eq[T: Compare[T]](a: T, b: T) -> bool {
+    return a == b;
+}
+
+func main() {
+    print(eq(0 as i8, 0 as i8));
+    print(',');
+    print(eq(0 as i16, 0 as i16));
+    print(',');
+    print(eq(0 as i32, 0 as i32));
+    print(',');
+    print(eq(0 as i64, 0 as i64));
+    print(',');
+    print(eq(0 as u8, 0 as u8));
+    print(',');
+    print(eq(0 as u16, 0 as u16));
+    print(',');
+    print(eq(0 as u32, 0 as u32));
+    print(',');
+    print(eq(0 as u64, 0 as u64));
+    print(',');
+    print(eq(0 as usize, 0 as usize));
+    print(',');
+    print(eq(0.0 as f32, 0.0 as f32));
+    print(',');
+    print(eq(0.0 as f64, 0.0 as f64));
+    print(',');
+    print(eq(false, false));
+    print(',');
+    print(eq(null, null));
+    print(';');
+    print(eq(0, 1));
+}
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true,true,true,true,true,true;false"
+
+func ne[T: Compare[T]](a: T, b: T) -> bool {
+    return a != b;
+}
+
+func main() {
+    var value = 0;
+
+    print(ne(1 as i8, 0 as i8));
+    print(',');
+    print(ne(1 as i16, 0 as i16));
+    print(',');
+    print(ne(1 as i32, 0 as i32));
+    print(',');
+    print(ne(1 as i64, 0 as i64));
+    print(',');
+    print(ne(1 as u8, 0 as u8));
+    print(',');
+    print(ne(1 as u16, 0 as u16));
+    print(',');
+    print(ne(1 as u32, 0 as u32));
+    print(',');
+    print(ne(1 as u64, 0 as u64));
+    print(',');
+    print(ne(1 as usize, 0 as usize));
+    print(',');
+    print(ne(1.0 as f32, 0.0 as f32));
+    print(',');
+    print(ne(1.0 as f64, 0.0 as f64));
+    print(',');
+    print(ne(true, false));
+    print(',');
+    print(ne(&value as addr, null));
+    print(';');
+    print(ne(0, 0));
+}
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true,true,true,true;false,false"
+
+func gt[T: Order[T]](a: T, b: T) -> bool {
+    return a > b;
+}
+
+func main() {
+    print(gt(1 as i8, 0 as i8));
+    print(',');
+    print(gt(1 as i16, 0 as i16));
+    print(',');
+    print(gt(1 as i32, 0 as i32));
+    print(',');
+    print(gt(1 as i64, 0 as i64));
+    print(',');
+    print(gt(1 as u8, 0 as u8));
+    print(',');
+    print(gt(1 as u16, 0 as u16));
+    print(',');
+    print(gt(1 as u32, 0 as u32));
+    print(',');
+    print(gt(1 as u64, 0 as u64));
+    print(',');
+    print(gt(1 as usize, 0 as usize));
+    print(',');
+    print(gt(1.0 as f32, 0.0 as f32));
+    print(',');
+    print(gt(1.0 as f64, 0.0 as f64));
+    print(';');
+    print(gt(0, 1));
+    print(',');
+    print(gt(0, 0));
+}
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true,true,true,true;false,false"
+
+func lt[T: Order[T]](a: T, b: T) -> bool {
+    return a < b;
+}
+
+func main() {
+    print(lt(0 as i8, 1 as i8));
+    print(',');
+    print(lt(0 as i16, 1 as i16));
+    print(',');
+    print(lt(0 as i32, 1 as i32));
+    print(',');
+    print(lt(0 as i64, 1 as i64));
+    print(',');
+    print(lt(0 as u8, 1 as u8));
+    print(',');
+    print(lt(0 as u16, 1 as u16));
+    print(',');
+    print(lt(0 as u32, 1 as u32));
+    print(',');
+    print(lt(0 as u64, 1 as u64));
+    print(',');
+    print(lt(0 as usize, 1 as usize));
+    print(',');
+    print(lt(0.0 as f32, 1.0 as f32));
+    print(',');
+    print(lt(0.0 as f64, 1.0 as f64));
+    print(';');
+    print(lt(0, 0));
+    print(',');
+    print(lt(1, 0));
+}
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true,true,true,true;false,true"
+
+func ge[T: Order[T]](a: T, b: T) -> bool {
+    return a >= b;
+}
+
+func main() {
+    print(ge(1 as i8, 0 as i8));
+    print(',');
+    print(ge(1 as i16, 0 as i16));
+    print(',');
+    print(ge(1 as i32, 0 as i32));
+    print(',');
+    print(ge(1 as i64, 0 as i64));
+    print(',');
+    print(ge(1 as u8, 0 as u8));
+    print(',');
+    print(ge(1 as u16, 0 as u16));
+    print(',');
+    print(ge(1 as u32, 0 as u32));
+    print(',');
+    print(ge(1 as u64, 0 as u64));
+    print(',');
+    print(ge(1 as usize, 0 as usize));
+    print(',');
+    print(ge(1.0 as f32, 0.0 as f32));
+    print(',');
+    print(ge(1.0 as f64, 0.0 as f64));
+    print(';');
+    print(ge(0, 1));
+    print(',');
+    print(ge(0, 0));
+}
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true,true,true,true;false,true"
+
+func le[T: Order[T]](a: T, b: T) -> bool {
+    return a <= b;
+}
+
+func main() {
+    print(le(0 as i8, 1 as i8));
+    print(',');
+    print(le(0 as i16, 1 as i16));
+    print(',');
+    print(le(0 as i32, 1 as i32));
+    print(',');
+    print(le(0 as i64, 1 as i64));
+    print(',');
+    print(le(0 as u8, 1 as u8));
+    print(',');
+    print(le(0 as u16, 1 as u16));
+    print(',');
+    print(le(0 as u32, 1 as u32));
+    print(',');
+    print(le(0 as u64, 1 as u64));
+    print(',');
+    print(le(0 as usize, 1 as usize));
+    print(',');
+    print(le(0.0 as f32, 1.0 as f32));
+    print(',');
+    print(le(0.0 as f64, 1.0 as f64));
+    print(';');
+    print(le(1, 0));
+    print(',');
+    print(le(0, 0));
+}

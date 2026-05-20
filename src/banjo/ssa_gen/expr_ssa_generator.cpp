@@ -108,6 +108,10 @@ void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets 
     if (auto binary_expr = expr.match<sir::BinaryExpr>()) {
         sir::Expr type = binary_expr->lhs.get_type();
 
+        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+            type = ctx.get_generic_arg(*generic_param);
+        }
+
         if (type.is_signed_type()) {
             switch (binary_expr->op) {
                 case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);

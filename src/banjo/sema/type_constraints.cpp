@@ -54,6 +54,23 @@ bool primitive_implements(
         }
 
         return proto_def.generic_args[0].is_primitive_type(primitive);
+    } else if (proto_def.def == analyzer.std_order_def) {
+        switch (primitive) {
+            case sir::Primitive::I8:
+            case sir::Primitive::I16:
+            case sir::Primitive::I32:
+            case sir::Primitive::I64:
+            case sir::Primitive::U8:
+            case sir::Primitive::U16:
+            case sir::Primitive::U32:
+            case sir::Primitive::U64:
+            case sir::Primitive::USIZE:
+            case sir::Primitive::F32:
+            case sir::Primitive::F64: return proto_def.generic_args[0].is_primitive_type(primitive);
+            case sir::Primitive::BOOL:
+            case sir::Primitive::ADDR:
+            case sir::Primitive::VOID: return false;
+        }
     } else {
         return false;
     }

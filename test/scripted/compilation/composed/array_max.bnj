@@ -1,0 +1,21 @@
+# test:output "129,21.47"
+
+use std.protos.Order;
+
+func max_of[T: Order[T]](array: Array[T]) -> T {
+    var max = array[0];
+    
+    for value in array {
+        if value > max {
+            max = value;
+        }
+    }
+
+    return max;
+}
+
+func main() {
+    print(max_of[i32]([-23, 3, 129, 48]));
+    print(',');
+    print(max_of[f32]([0.38, 8.25, -29.2, 21.47, 1.03]));
+}
