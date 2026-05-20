@@ -4,6 +4,7 @@
 #include "banjo/sema/decl_visitor.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include <vector>
 
 namespace banjo {
 
@@ -31,6 +32,7 @@ private:
     void analyze_param(sir::Param &param, unsigned index, sir::Symbol &func_parent);
     void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
     void insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def);
+    void analyze_generic_params(std::span<sir::GenericParam *> generic_params);
 };
 
 } // namespace sema

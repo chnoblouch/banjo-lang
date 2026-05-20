@@ -59,8 +59,27 @@ func g[B: P[i32]](b: B) {
 
 proto P[T] {}
 
+struct S: P[S] {}
+
 func f[A: P[A]](a: A) {}
 
 func g[B: P[B]](b: B) {
     f(b);
+}
+
+func main() {
+    g(S {});
+}
+
+# test:subtest
+# test:compiles
+
+proto P[T] {}
+
+struct S: P[i32] {}
+
+func f[A: P[B], B](a: A, b: B) {}
+
+func main() {
+    f(S {}, 0);
 }

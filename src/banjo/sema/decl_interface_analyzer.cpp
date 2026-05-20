@@ -22,15 +22,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     }
 
     analyzer.enter_symbol_table(func_def.block.symbol_table);
-
-    for (sir::GenericParam *generic_param : func_def.generic_params) {
-        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
-        analyzer.add_symbol_def(generic_param);
-        
-        if (generic_param->constraint) {
-            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
-        }
-    }
+    analyze_generic_params(func_def.generic_params);
 
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
         sir::Param &param = func_def.type.params[i];
@@ -110,14 +102,7 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
 
     Result partial_result;
 
-    for (sir::GenericParam *generic_param : struct_def.generic_params) {
-        if (generic_param->constraint) {
-            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
-        }
-
-        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
-        analyzer.add_symbol_def(generic_param);
-    }
+    analyze_generic_params(struct_def.generic_params);
 
     for (sir::Expr &impl : struct_def.impls) {
         partial_result = ExprAnalyzer(analyzer).analyze_type(impl);
@@ -255,15 +240,7 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
 }
 
 Result DeclInterfaceAnalyzer::analyze_proto_def(sir::ProtoDef &proto_def) {
-    for (sir::GenericParam *generic_param : proto_def.generic_params) {
-        if (generic_param->constraint) {
-            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
-        }
-
-        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
-        analyzer.add_symbol_def(generic_param);
-    }
-
+    analyze_generic_params(proto_def.generic_params);
     return Result::SUCCESS;
 }
 
@@ -327,6 +304,19 @@ void DeclInterfaceAnalyzer::analyze_param(sir::Param &param, unsigned index, sir
         return;
     } else {
         ExprAnalyzer(analyzer).analyze_type(param.type);
+    }
+}
+
+void DeclInterfaceAnalyzer::analyze_generic_params(std::span<sir::GenericParam *> generic_params) {
+    for (sir::GenericParam *generic_param : generic_params) {
+        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
+        analyzer.add_symbol_def(generic_param);
+    }
+
+    for (sir::GenericParam *generic_param : generic_params) {
+        if (generic_param->constraint) {
+            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
+        }
     }
 }
 

@@ -370,6 +370,8 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         generic_params = func_def->generic_params;
     } else if (auto struct_def = symbol.match<sir::StructDef>()) {
         generic_params = struct_def->generic_params;
+    } else if (auto proto_def = symbol.match<sir::ProtoDef>()) {
+        generic_params = proto_def->generic_params;
     } else {
         ASSERT_UNREACHABLE;
     }
