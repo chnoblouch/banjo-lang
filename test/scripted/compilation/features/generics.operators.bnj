@@ -217,3 +217,91 @@ func main() {
     print(',');
     print(le(0, 0));
 }
+
+# test:subtest
+# test:output "e,e,n"
+
+struct IntWrapper: Compare[IntWrapper] {
+    var value: i32;
+
+    pub func __eq__(self, ref other: IntWrapper) -> bool {
+        return self.value == other.value;
+    }
+
+    pub func __ne__(self, ref other: IntWrapper) -> bool {
+        return self.value != other.value;
+    }
+}
+
+pub func test[T: Compare[T]](a: T, b: T) {
+    if a == b {
+        print('e');
+    }
+
+    if a != b {
+        print('n');
+    }
+}
+
+func main() {
+    var a = IntWrapper { value: 0 };
+    var b = IntWrapper { value: 42 };
+
+    test(a, a);
+    print(',');
+    test(b, b);
+    print(',');
+    test(a, b);
+}
+
+# test:subtest
+# test:output "ltle,gtge,gele"
+
+struct IntWrapper: Order[IntWrapper] {
+    var value: i32;
+
+    pub func __gt__(self, ref other: IntWrapper) -> bool {
+        return self.value > other.value;
+    }
+
+    pub func __lt__(self, ref other: IntWrapper) -> bool {
+        return self.value < other.value;
+    }
+
+    pub func __ge__(self, ref other: IntWrapper) -> bool {
+        return self.value >= other.value;
+    }
+
+    pub func __le__(self, ref other: IntWrapper) -> bool {
+        return self.value <= other.value;
+    }
+}
+
+pub func test[T: Order[T]](a: T, b: T) {
+    if a > b {
+        print("gt");
+    }
+
+    if a < b {
+        print("lt");
+    }
+
+    if a >= b {
+        print("ge");
+    }
+
+    if a <= b {
+        print("le");
+    }
+}
+
+func main() {
+    var a = IntWrapper { value: 0 };
+    var b = IntWrapper { value: 42 };
+
+    test(a, b);
+    print(',');
+    test(b, a);
+    print(',');
+    test(a, a);
+}

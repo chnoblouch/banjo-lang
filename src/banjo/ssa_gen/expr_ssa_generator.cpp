@@ -1,6 +1,6 @@
 #include "expr_ssa_generator.hpp"
 
-#include "banjo/emit/binary_module.hpp"
+#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
@@ -10,10 +10,7 @@
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/virtual_register.hpp"
-#include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/call_ssa_builder.hpp"
-#include "banjo/ssa_gen/name_mangling.hpp"
-#include "banjo/ssa_gen/ssa_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
@@ -21,7 +18,6 @@
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
-#include "banjo/utils/utils.hpp"
 
 #include <cassert>
 #include <vector>
@@ -99,7 +95,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
         return generate_type_guard(*inner),                // type_guard_expr
-        return generate_placeholder_expr(*inner),          // placeholder_expr
+        return generate_placeholder_expr(*inner, hints),   // placeholder_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
 }
@@ -804,7 +800,10 @@ StoredValue ExprSSAGenerator::generate_type_guard(const sir::TypeGuardExpr &type
     return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
 }
 
-StoredValue ExprSSAGenerator::generate_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {
+StoredValue ExprSSAGenerator::generate_placeholder_expr(
+    const sir::PlaceholderExpr &placeholder_expr,
+    const StorageHints &hints
+) {
     if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
         sir::Expr generic_arg = ctx.get_generic_arg(*generic_method->param);
         sir::Concrete<sir::StructDef> concrete_struct = generic_arg.as_concrete<sir::StructDef>();
@@ -822,15 +821,64 @@ StoredValue ExprSSAGenerator::generate_placeholder_expr(const sir::PlaceholderEx
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto binary_expr = std::get_if<sir::PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
-        sir::BinaryExpr dummy_expr{
-            .ast_node = nullptr,
-            .type = placeholder_expr.type,
-            .op = binary_expr->op,
-            .lhs = binary_expr->lhs,
-            .rhs = binary_expr->rhs,
-        };
+        sir::GenericParam &generic_param = binary_expr->lhs.get_type().as_symbol<sir::GenericParam>();
+        sir::Expr generic_arg = ctx.get_generic_arg(generic_param);
 
-        return generate_binary_expr(dummy_expr);
+        if (auto struct_def = generic_arg.match_symbol<sir::StructDef>()) {
+            std::string_view method_name = sir::MagicMethods::look_up(binary_expr->op);
+            sir::FuncDef &method = struct_def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
+
+            sir::SymbolExpr callee{
+                .ast_node = nullptr,
+                .type = &method.type,
+                .symbol = &method,
+            };
+
+            sir::PointerType lhs_type{
+                .ast_node = nullptr,
+                .base_type = binary_expr->lhs.get_type(),
+            };
+
+            sir::PointerType rhs_type{
+                .ast_node = nullptr,
+                .base_type = binary_expr->rhs.get_type(),
+            };
+
+            sir::UnaryExpr lhs{
+                .ast_node = nullptr,
+                .type = &lhs_type,
+                .op = sir::UnaryOp::ADDR,
+                .value = binary_expr->lhs,
+            };
+
+            sir::UnaryExpr rhs{
+                .ast_node = nullptr,
+                .type = &rhs_type,
+                .op = sir::UnaryOp::ADDR,
+                .value = binary_expr->rhs,
+            };
+
+            std::array<sir::Expr, 2> args{&lhs, &rhs};
+
+            sir::CallExpr source_expr{
+                .ast_node = nullptr,
+                .type = placeholder_expr.type,
+                .callee = &callee,
+                .args = args,
+            };
+
+            return generate_call_expr(source_expr, hints);
+        } else {
+            sir::BinaryExpr source_expr{
+                .ast_node = nullptr,
+                .type = placeholder_expr.type,
+                .op = binary_expr->op,
+                .lhs = binary_expr->lhs,
+                .rhs = binary_expr->rhs,
+            };
+
+            return generate_binary_expr(source_expr);
+        }
     } else {
         ASSERT_UNREACHABLE;
     }
