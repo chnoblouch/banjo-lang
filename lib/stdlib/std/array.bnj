@@ -2,9 +2,10 @@ use std.{
     memory.{PointerMoveIter, PointerRefIter},
     memory,
     convert,
+    protos.{ToRepr, ToString},
 };
 
-struct Array[T] {
+struct Array[T]: ToString, ToRepr {
     var slice: Slice[T];
     var capacity: usize;
 

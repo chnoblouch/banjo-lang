@@ -25,7 +25,7 @@ pub func copy(src: addr, dst: addr, size: usize) {
 }
 
 pub func swap[T](ref mut a: T, ref mut b: T) {
-    var tmp: [u8; meta(T).size];
+    @unmanaged var tmp: T;
     copy(&a, &tmp, meta(T).size);
     copy(&b, &a, meta(T).size);
     copy(&tmp, &b, meta(T).size);

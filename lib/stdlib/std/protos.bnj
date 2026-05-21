@@ -9,3 +9,11 @@ proto Order[T] {
     func __ge__(self, ref other: T) -> bool;
     func __le__(self, ref other: T) -> bool;
 }
+
+proto ToString {
+    func __str__(self) -> String;
+}
+
+proto ToRepr {
+    func __repr__(self, indent: u32) -> String;
+}

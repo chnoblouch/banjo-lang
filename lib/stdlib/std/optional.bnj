@@ -1,6 +1,6 @@
-use std.convert.to_string;
+use std.{convert.to_string, protos.ToString};
 
-struct Optional[T] {
+struct Optional[T]: ToString {
     var has_value: bool;
 
     @unmanaged
@@ -36,11 +36,9 @@ struct Optional[T] {
         }
     }
 
-    meta if meta(T).is_resource {
-        pub func __deinit__(self) {
-            if self.has_value {
-                __builtin_deinit(self.value);
-            }
+    pub func __deinit__(self) {
+        if self.has_value {
+            __builtin_deinit(self.value);
         }
     }
 }

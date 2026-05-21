@@ -1,6 +1,6 @@
-use std.{platform, io.Error};
+use std.{platform, io.Error, protos.{ToRepr, ToString}};
 
-struct Path {
+struct Path: ToString, ToRepr {
     var path: String;
 
     pub func new() -> Path {
@@ -8,12 +8,14 @@ struct Path {
     }
 
     pub func from[T](ref value: T) -> Path {
-        meta if T == Path {
-            var path = value.copy();
+        var path: Path = undefined;
+
+        if T == Path {
+            path = value.copy();
         } else if T == String {
-            var path = Path { path: value.copy() };
+            path = Path { path: value.copy() };
         } else if T == *u8 {
-            var path = Path { path: String.from(value) };
+            path = Path { path: String.from(value) };
         }
 
         path.normalize();

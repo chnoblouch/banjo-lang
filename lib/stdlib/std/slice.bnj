@@ -1,9 +1,10 @@
 use std.{
     memory.{PointerMoveIter, PointerRefIter},
     convert,
+    protos.{ToRepr, ToString},
 };
 
-struct Slice[T] {
+struct Slice[T]: ToString, ToRepr {
     var data: *T;
     var length: usize;
 

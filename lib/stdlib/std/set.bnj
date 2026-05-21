@@ -1,5 +1,7 @@
-struct Set[T] {
-    var elements: [T];
+use std.{convert, protos.{Compare, ToRepr, ToString}};
+
+struct Set[T: Compare[T]]: ToString, ToRepr {
+    var elements: Array[T];
 
     pub func new() -> Set[T] {
         return Set[T] {
@@ -8,7 +10,7 @@ struct Set[T] {
     }
 
     pub func of(elements: [T]) -> Set[T] {
-        var set = new();
+        var set = new[T]();
 
         for i in 0..elements.length() {
             set.insert(elements[i]);
@@ -35,5 +37,13 @@ struct Set[T] {
         }
 
         return false;
+    }
+
+    pub func __str__(self) -> String {
+        return self.elements.__str__();
+    }
+
+    pub func __repr__(self, indent: u32) -> String {
+        return self.elements.__repr__(indent);
     }
 }

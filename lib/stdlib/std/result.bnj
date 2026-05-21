@@ -1,6 +1,6 @@
-use std.convert.to_string;
+use std.{convert.to_string, protos.ToString};
 
-struct Result[T, E] {
+struct Result[T, E]: ToString {
     var successful: bool;
 
     @unmanaged
@@ -49,13 +49,11 @@ struct Result[T, E] {
         }
     }
 
-    meta if meta(T).is_resource || meta(E).is_resource {
-        pub func __deinit__(self) {
-            if self.successful {
-                __builtin_deinit(self.value);
-            } else {
-                __builtin_deinit(self.error);
-            }
+    pub func __deinit__(self) {
+        if self.successful {
+            __builtin_deinit(self.value);
+        } else {
+            __builtin_deinit(self.error);
         }
     }
 }

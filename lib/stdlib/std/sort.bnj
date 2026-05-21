@@ -1,4 +1,27 @@
-use std.memory.swap;
+use std.{memory.swap, protos.Order};
+
+pub func sort[T: Order[T]](slice: Slice[T]) {
+    # TODO: Bubblesort algorithm. Very slow.
+
+    if slice.length == 0 {
+        return;
+    }
+
+    while true {
+        var changed = false;
+
+        for i in 0..slice.length - 1 {
+            if slice[i + 1] < slice[i] {
+                swap(slice[i], slice[i + 1]);
+                changed = true;
+            }
+        }
+
+        if !changed {
+            break;
+        }
+    }
+}
 
 pub func sort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
     # TODO: Bubblesort algorithm. Very slow.

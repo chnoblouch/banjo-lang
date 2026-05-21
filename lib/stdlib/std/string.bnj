@@ -1,6 +1,6 @@
-use std.memory;
+use std.{memory, protos.{ToRepr, ToString}};
 
-struct String {
+struct String: ToString, ToRepr {
     var slice: StringSlice;
     var capacity: usize;
 

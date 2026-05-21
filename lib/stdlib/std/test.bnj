@@ -1,10 +1,10 @@
-use std.convert.to_repr;
+use std.{convert.to_repr, protos.Compare};
 
-func assert_eq[T](ref a: T, ref b: T) {
+func assert_eq[T: Compare[T]](ref a: T, ref b: T) {
     assert_eq_msg(a, b, "assertion failed");
 }
 
-func assert_eq_msg[T](ref a: T, ref b: T, message: String) {
+func assert_eq_msg[T: Compare[T]](ref a: T, ref b: T, message: String) {
     if a != b {
         print(message);
         print(": ");
@@ -15,11 +15,11 @@ func assert_eq_msg[T](ref a: T, ref b: T, message: String) {
     }
 }
 
-func assert_ne[T](ref a: T, ref b: T) {
+func assert_ne[T: Compare[T]](ref a: T, ref b: T) {
     assert_ne_msg(a, b, "assertion failed");
 }
 
-func assert_ne_msg[T](ref a: T, ref b: T, message: String) {
+func assert_ne_msg[T: Compare[T]](ref a: T, ref b: T, message: String) {
     if a == b {
         print(message);
         print(": ");

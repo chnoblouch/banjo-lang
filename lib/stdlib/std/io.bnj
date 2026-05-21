@@ -1,4 +1,4 @@
-use std.{platform, numeric, file.File, convert.to_string};
+use std.{convert.to_string, platform, numeric, file.File, protos.ToString};
 use libc as c;
 
 proto Read {
@@ -166,7 +166,7 @@ proto Seek {
     pub func seek(mut self, offset: i64, origin: Origin) -> void except Error;
 }
 
-struct Error {
+struct Error: ToString {
     enum Kind {
         NOT_FOUND,
         PERMISSION_DENIED,

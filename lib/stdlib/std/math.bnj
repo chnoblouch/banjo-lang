@@ -1,3 +1,4 @@
+use std.protos.Order;
 use libc as c;
 
 const PI32: f32 = 3.14159;
@@ -90,7 +91,7 @@ pub func rad2deg(rad: f32) -> f32 {
     return rad * 180.0 / PI32;
 }
 
-pub func min[T](a: T, b: T) -> T {
+pub func min[T: Order[T]](a: T, b: T) -> T {
     if a < b {
         return a;
     } else {
@@ -98,7 +99,7 @@ pub func min[T](a: T, b: T) -> T {
     }
 }
 
-pub func max[T](a: T, b: T) -> T {
+pub func max[T: Order[T]](a: T, b: T) -> T {
     if a > b {
         return a;
     } else {
@@ -106,6 +107,6 @@ pub func max[T](a: T, b: T) -> T {
     }
 }
 
-pub func clamp[T](v: T, minv: T, maxv: T) -> T {
+pub func clamp[T: Order[T]](v: T, minv: T, maxv: T) -> T {
     return min[T](maxv, max[T](minv, v));
 }

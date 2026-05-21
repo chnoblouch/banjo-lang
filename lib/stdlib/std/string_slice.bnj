@@ -1,7 +1,7 @@
-use std.{memory, convert};
+use std.{memory, convert, protos.{ToRepr, ToString}};
 use libc as c;
 
-struct StringSlice {
+struct StringSlice: ToString, ToRepr {
     var data: *u8;
     var length: usize;
 
