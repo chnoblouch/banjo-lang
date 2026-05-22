@@ -215,14 +215,14 @@ def parse_condition(line):
     return name, tuple(args)
 
 
-def run_process(command):
+def run_process(command, timeout=None):
     def decode_stream(stream, default):
         try:
             return stream.decode("utf-8").strip()
         except UnicodeDecodeError:
             return default
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     out = decode_stream(result.stdout, "<<no output>>")
     err = decode_stream(result.stderr, "<<no error>>")
 

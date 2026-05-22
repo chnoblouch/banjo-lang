@@ -303,7 +303,7 @@ def run_executable(test):
         if not os.path.exists("test.js"):
             return ProcessResult("", "", 1)
 
-        result = run_process(["node", "./test.js"])
+        result = run_process(["node", "./test.js"], 5)
         
         try:
             os.remove("test.js")
@@ -334,7 +334,7 @@ def run_executable(test):
         if not os.path.exists("test.exe"):
             return ProcessResult("", "", 1)
 
-        result = run_process(["./test.exe"])
+        result = run_process(["./test.exe"], 5)
         
         try:
             os.remove("test.exe")
@@ -357,7 +357,10 @@ def run_executable(test):
         if not os.path.exists("test"):
             return ProcessResult("", "", 1)
 
-        result = run_process(["./test"])
+        try:
+            result = run_process(["./test"], 5)
+        except subprocess.TimeoutExpired:
+            result = ProcessResult("", "<<timeout>>", 1)
         
         try:
             os.remove("test")

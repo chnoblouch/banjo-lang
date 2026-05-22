@@ -29,7 +29,7 @@ func main() {
 # test:subtest
 # test:output "Hi!"
 
-use c.lib.stdio.puts;
+use libc.puts;
 
 func main() {
     var string = "Hi!";
@@ -39,7 +39,7 @@ func main() {
 # test:subtest
 # test:output "Hi!"
 
-use c.lib.stdio.puts;
+use libc.puts;
 
 func main() {
     var string: *u8 = "Hi!";

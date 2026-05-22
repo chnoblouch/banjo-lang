@@ -64,6 +64,10 @@ struct StringSlice: ToString, ToRepr {
                 return i;
             }
 
+            if i == 0 {
+                break;
+            }
+
             i -= 1;
         }
 
