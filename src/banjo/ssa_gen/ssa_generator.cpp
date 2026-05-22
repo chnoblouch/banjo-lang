@@ -37,20 +37,20 @@ ssa::Module SSAGenerator::generate() {
     ctx.ssa_mod = &ssa_mod;
     ctx.specializations = SpecializationCollector{arena}.collect(sir_unit);
 
-    for (const auto &[key, value] : ctx.specializations) {
-        std::cout << key.get_name() << "\n";
-        for (const auto &entry : value) {
-            std::cout << "  ";
+    // for (const auto &[key, value] : ctx.specializations) {
+    //     std::cout << key.get_name() << "\n";
+    //     for (const auto &entry : value) {
+    //         std::cout << "  ";
 
-            for (sir::Expr arg : entry.args) {
-                sir::Printer{std::cout}.print_expr(arg);
-            }
+    //         for (sir::Expr arg : entry.args) {
+    //             sir::Printer{std::cout}.print_expr(arg);
+    //         }
 
-            std::cout << "\n";
-        }
+    //         std::cout << "\n";
+    //     }
 
-        std::cout << "\n";
-    }
+    //     std::cout << "\n";
+    // }
 
     for (const sir::Module *sir_mod : sir_unit.mods) {
         ctx.push_decl_context().sir_mod = sir_mod;
