@@ -49,7 +49,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_STRUCT_DEF: format_struct_def(node, whitespace); break;
         case AST_GENERIC_STRUCT_DEF: format_generic_struct_def(node, whitespace); break;
         case AST_ENUM_DEF: format_enum_def(node, whitespace); break;
-        case AST_ENUM_VARIANT_LIST: format_list(node, whitespace); break;
+        case AST_ENUM_VARIANT_LIST: format_list(node, whitespace, true); break;
         case AST_ENUM_VARIANT: format_enum_variant(node, whitespace); break;
         case AST_UNION_DEF: format_union_def(node, whitespace); break;
         case AST_UNION_CASE: format_union_case(node, whitespace); break;
