@@ -5,6 +5,8 @@ meta if config.OS == config.WINDOWS {
 
     native func printf(format: *u8, value: u64);
     native func fflush(stream: addr);
+} else if config.OS == config.EMSCRIPTEN {
+    native func emscripten_run_script(script: *u8);
 }
 
 struct StackFrame {
@@ -101,5 +103,7 @@ pub func print_stack_trace() {
             print("\x1B[0;0m");
             fflush(msvcrt.acrt_iob_func(1));
         }
+    } else if config.OS == config.EMSCRIPTEN {
+        emscripten_run_script("console.trace();");
     }
 }
