@@ -38,11 +38,11 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         return {node.build(type), false};
     }
 
-    if (stream.get()->is(TKN_SEMI)) {
+    if (stream.get()->is(TKN_SEMI) && !generic) {
         node.consume(); // Consume ';'
         return {node.build(AST_FUNC_DECL), true};
     } else if (!stream.get()->is(TKN_LBRACE)) {
-        if (stream.previous()->end_of_line) {
+        if (stream.previous()->end_of_line && !generic) {
             return {node.build(AST_FUNC_DECL), true};
         }
 

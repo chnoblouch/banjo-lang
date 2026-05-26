@@ -118,7 +118,7 @@ Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
 }
 
 void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concrete<sir::ProtoDef> concrete_proto) {
-    utils::Arena<2048> arena;
+    utils::Arena arena;
 
     sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
 

@@ -130,7 +130,7 @@ ssa::Type TypeSSAGenerator::generate_reference_type() {
 }
 
 ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &specialize_type) {
-    utils::Arena<2048> arena;
+    utils::Arena arena;
     std::span<sir::Expr> args = specialize_type.args;
 
     if (auto specialization = ctx.get_specialization()) {
@@ -139,7 +139,6 @@ ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &
     }
 
     if (auto struct_def = specialize_type.symbol.match<sir::StructDef>()) {
-
         for (const MonoStruct &mono_struct : ctx.ssa_mono_structs.at(struct_def)) {
             if (Utils::equal(mono_struct.specialization.args, args)) {
                 return mono_struct.ssa_struct;

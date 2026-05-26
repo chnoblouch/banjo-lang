@@ -1,8 +1,8 @@
 #include "resource_analyzer.hpp"
 
-#include "banjo/sema/decl_interface_analyzer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/magic_methods.hpp"
+#include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
@@ -131,87 +131,6 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
 
     scopes.pop_back();
     return scope;
-}
-
-std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        return create_struct_resource(*struct_def, type);
-    } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
-        return create_tuple_resource(*tuple_type, type);
-    } else if (auto closure_type = type.match<sir::ClosureType>()) {
-        return create_struct_resource(*closure_type->underlying_struct, type);
-    } else {
-        return {};
-    }
-}
-
-std::optional<sir::Resource> ResourceAnalyzer::create_struct_resource(sir::StructDef &struct_def, sir::Expr type) {
-    std::optional<sir::Resource> resource;
-
-    DeclInterfaceAnalyzer(analyzer).visit_struct_def(struct_def);
-
-    sir::SymbolTable &symbol_table = *struct_def.block.symbol_table;
-    auto iter = symbol_table.symbols.find(sir::MagicMethods::DEINIT);
-
-    if (iter != symbol_table.symbols.end() && iter->second.is<sir::FuncDef>()) {
-        resource = sir::Resource{
-            .type = type,
-            .has_deinit = true,
-            .ownership = sir::Ownership::OWNED,
-            .sub_resources = {},
-        };
-    }
-
-    for (unsigned i = 0; i < struct_def.fields.size(); i++) {
-        sir::StructField &field = *struct_def.fields[i];
-        if (field.attrs && field.attrs->unmanaged) {
-            continue;
-        }
-
-        std::optional<sir::Resource> sub_resource = create_resource(field.type);
-        if (!sub_resource) {
-            continue;
-        }
-
-        if (!resource) {
-            resource = sir::Resource{
-                .type = type,
-                .has_deinit = false,
-                .ownership = sir::Ownership::OWNED,
-                .sub_resources = {},
-            };
-        }
-
-        sub_resource->field_index = i;
-        resource->sub_resources.push_back(*sub_resource);
-    }
-
-    return resource;
-}
-
-std::optional<sir::Resource> ResourceAnalyzer::create_tuple_resource(sir::TupleExpr &tuple_type, sir::Expr type) {
-    std::optional<sir::Resource> resource;
-
-    for (unsigned i = 0; i < tuple_type.exprs.size(); i++) {
-        std::optional<sir::Resource> sub_resource = create_resource(tuple_type.exprs[i]);
-        if (!sub_resource) {
-            continue;
-        }
-
-        if (!resource) {
-            resource = sir::Resource{
-                .type = type,
-                .has_deinit = false,
-                .ownership = sir::Ownership::OWNED,
-                .sub_resources = {},
-            };
-        }
-
-        sub_resource->field_index = i;
-        resource->sub_resources.push_back(*sub_resource);
-    }
-
-    return resource;
 }
 
 void ResourceAnalyzer::insert_states(sir::Resource *resource, InitState init_state, ResourceLocation location) {
@@ -757,7 +676,11 @@ unsigned ResourceAnalyzer::get_scope_depth() {
     return static_cast<unsigned>(scopes.size() - 1);
 }
 
-bool ResourceAnalyzer::is_resource(const sir::Expr &type) {
+std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
+    return sir::ResourceGenerator{analyzer.mod->trivial_arena}.create_resource(type);
+}
+
+bool ResourceAnalyzer::is_resource(sir::Expr type) {
     if (auto struct_def = type.match_symbol<sir::StructDef>()) {
         sir::SymbolTable &symbol_table = *struct_def->block.symbol_table;
         auto iter = symbol_table.symbols.find(sir::MagicMethods::DEINIT);

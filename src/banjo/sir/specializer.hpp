@@ -11,15 +11,15 @@ namespace banjo::lang::sir {
 class Specializer {
 
 private:
-    utils::Arena<2048> &arena;
+    utils::Arena &arena;
     std::span<sir::GenericParam *> params;
     std::span<sir::Expr> args;
 
 public:
-    Specializer(utils::Arena<2048> &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args);
+    Specializer(utils::Arena &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args);
 
     template <typename T>
-    Specializer(utils::Arena<2048> &arena, sir::Concrete<T> specialization)
+    Specializer(utils::Arena &arena, sir::Concrete<T> specialization)
       : arena{arena},
         params{specialization.def->generic_params},
         args{specialization.generic_args} {}

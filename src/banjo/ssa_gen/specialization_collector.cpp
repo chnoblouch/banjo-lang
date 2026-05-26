@@ -1,6 +1,8 @@
 #include "banjo/ssa_gen/specialization_collector.hpp"
 
+#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
@@ -10,7 +12,17 @@
 
 namespace banjo::lang {
 
-SpecializationCollector::SpecializationCollector(utils::Arena<2048> &arena) : arena{arena} {}
+sir::Expr SpecializationCollector::Entry::resolve_param(const sir::GenericParam &param) {
+    for (unsigned i = 0; i < params.size(); i++) {
+        if (params[i] == &param) {
+            return args[i];
+        }
+    }
+
+    ASSERT_UNREACHABLE;
+}
+
+SpecializationCollector::SpecializationCollector(utils::Arena &arena) : arena{arena} {}
 
 SpecializationCollector::Map SpecializationCollector::collect(const sir::Unit &unit) {
     for (const sir::Module *mod : unit.mods) {
@@ -50,6 +62,10 @@ void SpecializationCollector::visit_struct_def(const sir::StructDef &struct_def,
 void SpecializationCollector::visit_block(const sir::Block &block) {
     for (sir::Stmt stmt : block.stmts) {
         visit_stmt(stmt);
+    }
+
+    for (const auto &[symbol, resource] : block.resources) {
+        visit_resource(resource);
     }
 }
 
@@ -314,6 +330,7 @@ void SpecializationCollector::visit_move_expr(const sir::MoveExpr &move_expr) {
 void SpecializationCollector::visit_deinit_expr(const sir::DeinitExpr &deinit_expr) {
     visit_expr(deinit_expr.type);
     visit_expr(deinit_expr.value);
+    visit_resource(*deinit_expr.resource);
 }
 
 void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {
@@ -380,13 +397,7 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         ASSERT_UNREACHABLE;
     }
 
-    Entry entry{
-        .params = generic_params,
-        .args = args_full,
-    };
-
-    entries.push_back(entry);
-    entry_stack.push_back(entry);
+    entry_stack.push_back(Entry{.params = generic_params, .args = args_full});
 
     if (auto func_def = symbol.match<sir::FuncDef>()) {
         visit_func_def(*func_def, true);
@@ -396,7 +407,43 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         ASSERT_UNREACHABLE;
     }
 
+    entries.push_back(std::move(entry_stack.back()));
     entry_stack.pop_back();
+}
+
+void SpecializationCollector::visit_resource(const sir::Resource &resource) {
+    std::optional<sir::Resource> specialization;
+
+    if (auto generic_param = resource.type.match_symbol<sir::GenericParam>()) {
+        utils::Arena arena;
+
+        sir::ResourceGenerator resource_generator{
+            arena,
+            resource.ownership,
+            [&](const sir::GenericParam &param) { return entry_stack.back().resolve_param(param); },
+        };
+
+        specialization = resource_generator.create_generic_param_resource(*generic_param, resource.type);
+    }
+
+    sir::Resource &final_resource = const_cast<sir::Resource &>(specialization ? *specialization : resource);
+
+    if (auto concrete_struct = final_resource.type.match_specialization<sir::StructDef>()) {
+        sir::SymbolTable &symbol_table = *concrete_struct->def->block.symbol_table;
+        sir::Symbol deinit_symbol = symbol_table.look_up_local(sir::MagicMethods::DEINIT);
+
+        if (deinit_symbol) {
+            visit_concrete(deinit_symbol, concrete_struct->generic_args);
+        }
+    }
+
+    for (const sir::Resource &sub_resource : final_resource.sub_resources) {
+        visit_resource(sub_resource);
+    }
+
+    if (specialization) {
+        entry_stack.back().resources.emplace(&resource, std::move(*specialization));
+    }
 }
 
 } // namespace banjo::lang

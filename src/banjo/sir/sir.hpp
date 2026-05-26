@@ -273,6 +273,9 @@ public:
     std::optional<Concrete<T>> match_concrete() const;
 
     template <typename T>
+    std::optional<Concrete<T>> match_specialization();
+
+    template <typename T>
     std::optional<Concrete<T>> match_specialization(T &symbol);
 
     operator bool() const { return !std::holds_alternative<std::nullptr_t>(kind); }
@@ -1445,7 +1448,7 @@ struct Error {
 };
 
 struct Module {
-    utils::Arena<2048> trivial_arena;
+    utils::Arena trivial_arena{2048};
     utils::StringArena<512> string_arena;
 
     utils::TypedArena<DeclBlock> decl_block_arena;
@@ -1585,6 +1588,22 @@ std::optional<Concrete<T>> Expr::match_concrete() const {
     } else if (auto specialize_expr = match<SpecializeExpr>()) {
         if (auto symbol = specialize_expr->symbol.match<T>()) {
             return Concrete<T>{.def = const_cast<T *>(symbol), .generic_args = specialize_expr->args};
+        } else {
+            return {};
+        }
+    } else {
+        return {};
+    }
+}
+
+template <typename T>
+std::optional<Concrete<T>> Expr::match_specialization() {
+    if (auto specialize_expr = match<sir::SpecializeExpr>()) {
+        if (auto symbol = specialize_expr->symbol.match<T>()) {
+            return Concrete<T>{
+                .def = symbol,
+                .generic_args = specialize_expr->args,
+            };
         } else {
             return {};
         }

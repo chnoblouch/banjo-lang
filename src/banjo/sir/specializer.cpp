@@ -5,7 +5,7 @@
 
 namespace banjo::lang::sir {
 
-Specializer::Specializer(utils::Arena<2048> &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args)
+Specializer::Specializer(utils::Arena &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args)
   : arena{arena},
     params{params},
     args{args} {}

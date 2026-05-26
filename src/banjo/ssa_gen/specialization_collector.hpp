@@ -17,18 +17,21 @@ public:
     struct Entry {
         std::span<sir::GenericParam *> params;
         std::vector<sir::Expr> args;
+        std::unordered_map<const sir::Resource *, sir::Resource> resources;
+
+        sir::Expr resolve_param(const sir::GenericParam &param);
     };
 
 public:
     typedef std::unordered_map<sir::Symbol, std::vector<Entry>> Map;
 
 private:
-    utils::Arena<2048> &arena;
+    utils::Arena &arena;
     Map specializations;
     std::vector<Entry> entry_stack;
 
 public:
-    SpecializationCollector(utils::Arena<2048> &arena);
+    SpecializationCollector(utils::Arena &arena);
     Map collect(const sir::Unit &unit);
 
 private:
@@ -71,6 +74,7 @@ private:
     void visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr);
 
     void visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args);
+    void visit_resource(const sir::Resource &resource);
 };
 
 } // namespace banjo::lang

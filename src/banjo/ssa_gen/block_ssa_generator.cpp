@@ -6,11 +6,11 @@
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
-#include "banjo/utils/macros.hpp"
 
 #include <utility>
 
@@ -49,6 +49,12 @@ void BlockSSAGenerator::generate_resource_flags(const sir::Resource &resource) {
     for (const sir::Resource &sub_resource : resource.sub_resources) {
         generate_resource_flags(sub_resource);
     }
+}
+
+void BlockSSAGenerator::generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value) {
+    ssa::VirtualRegister flag_slot = ctx.append_alloca(ssa::Primitive::U8);
+    ctx.append_store(std::move(initial_value), flag_slot);
+    ctx.get_func_context().resource_deinit_flags.emplace(&resource, flag_slot);
 }
 
 void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
@@ -285,12 +291,6 @@ void BlockSSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*
     ctx.append_jmp(ctx.get_loop_context().ssa_break_target);
 }
 
-void BlockSSAGenerator::generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value) {
-    ssa::VirtualRegister flag_slot = ctx.append_alloca(ssa::Primitive::U8);
-    ctx.append_store(std::move(initial_value), flag_slot);
-    ctx.get_func_context().resource_deinit_flags.insert({&resource, flag_slot});
-}
-
 void BlockSSAGenerator::generate_loop_jump_deinit() {
     SSAGeneratorContext::FuncContext &func_context = ctx.get_func_context();
     SSAGeneratorContext::LoopContext &loop_context = ctx.get_loop_context();
@@ -318,8 +318,20 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, sir::Symb
 }
 
 void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr) {
+    const sir::Resource *final_resource = &resource;
+
+    SpecializationCollector::Entry *specialization = ctx.get_specialization();
+
+    if (specialization) {
+        auto iter = specialization->resources.find(&resource);
+
+        if (iter != specialization->resources.end()) {
+            final_resource = &iter->second;
+        }
+    }
+
     if (resource.ownership == sir::Ownership::OWNED) {
-        generate_deinit_call(resource, std::move(ssa_ptr));
+        generate_deinit_call(*final_resource, std::move(ssa_ptr));
     } else if (resource.ownership == sir::Ownership::MOVED_COND || resource.ownership == sir::Ownership::INIT_COND) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
@@ -329,14 +341,14 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
         ctx.append_cjmp(flag_val, ssa::Comparison::NE, DEINIT_FLAG_FALSE, deinit_block, end_block);
 
         ctx.append_block(deinit_block);
-        generate_deinit_call(resource, std::move(ssa_ptr));
+        generate_deinit_call(*final_resource, std::move(ssa_ptr));
         ctx.append_jmp(end_block);
         ctx.append_block(end_block);
     }
 
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(resource.type);
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(final_resource->type);
 
-    for (const sir::Resource &sub_resource : resource.sub_resources) {
+    for (const sir::Resource &sub_resource : final_resource->sub_resources) {
         ssa::VirtualRegister field_ptr_reg = ctx.append_memberptr(ssa_type, ssa_ptr, sub_resource.field_index);
         ssa::Value field_ptr = ssa::Value::from_register(field_ptr_reg, ssa::Primitive::ADDR);
         generate_deinit(sub_resource, field_ptr);
@@ -344,30 +356,33 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
 }
 
 void BlockSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa::Value ssa_ptr) {
-    if (!resource.has_deinit) {
+    sir::SymbolTable *symbol_table;
+    std::span<sir::Expr> generic_args{static_cast<sir::Expr *>(nullptr), 0};
+
+    if (auto concrete_struct = resource.type.match_concrete<sir::StructDef>()) {
+        symbol_table = concrete_struct->def->block.symbol_table;
+        generic_args = concrete_struct->generic_args;
+    } else if (auto closure_type = resource.type.match<sir::ClosureType>()) {
+        symbol_table = closure_type->underlying_struct->block.symbol_table;
+        return; // TODO: generics
+    } else {
         return;
     }
 
-    sir::SymbolTable *symbol_table;
-
-    if (auto struct_type = resource.type.match_symbol<sir::StructDef>()) {
-        symbol_table = struct_type->block.symbol_table;
-    } else if (auto closure_type = resource.type.match<sir::ClosureType>()) {
-        symbol_table = closure_type->underlying_struct->block.symbol_table;
-    } else {
-        ASSERT_UNREACHABLE;
+    sir::Symbol deinit_symbol = symbol_table->look_up_local(sir::MagicMethods::DEINIT);
+    if (!deinit_symbol) {
+        return;
     }
 
-    sir::Symbol deinit_symbol = symbol_table->look_up_local(sir::MagicMethods::DEINIT);
-    ASSERT(deinit_symbol);
+    ssa::Function *ssa_func;
 
-    sir::SymbolExpr callee{
-        .ast_node = nullptr,
-        .type = deinit_symbol.get_type(),
-        .symbol = deinit_symbol,
-    };
+    if (generic_args.empty()) {
+        ssa_func = ctx.ssa_funcs.at(&deinit_symbol.as<sir::FuncDef>());
+    } else {
+        ssa_func = &ctx.find_ssa_func({&deinit_symbol.as<sir::FuncDef>(), generic_args});
+    }
 
-    ssa::Value ssa_callee = ExprSSAGenerator(ctx).generate(&callee).get_value();
+    ssa::Value ssa_callee = ssa::Operand::from_func(ssa_func, ssa::Primitive::ADDR);
     ctx.get_ssa_block()->append({ssa::Opcode::CALL, {ssa_callee, std::move(ssa_ptr)}});
 }
 

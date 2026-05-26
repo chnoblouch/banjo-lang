@@ -3,6 +3,8 @@
 
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
+#include "banjo/utils/arena.hpp"
+#include "banjo/utils/typed_arena.hpp"
 
 namespace banjo {
 
@@ -12,6 +14,8 @@ class BlockSSAGenerator {
 
 private:
     SSAGeneratorContext &ctx;
+    utils::TypedArena<sir::Resource> resource_arena;
+    utils::Arena resource_type_arena;
 
 public:
     BlockSSAGenerator(SSAGeneratorContext &ctx);

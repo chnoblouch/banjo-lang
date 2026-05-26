@@ -21,7 +21,7 @@ private:
     const sir::Unit &sir_unit;
     ssa::Module ssa_mod;
     SSAGeneratorContext ctx;
-    utils::Arena<2048> arena;
+    utils::Arena arena;
 
 public:
     SSAGenerator(const sir::Unit &sir_unit, target::Target *target);

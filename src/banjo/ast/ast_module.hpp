@@ -21,7 +21,7 @@ public:
 
 private:
     utils::TypedArena<ASTNode, 128> node_arena;
-    utils::Arena<256> token_index_arena;
+    utils::Arena token_index_arena{256};
 
 public:
     ASTModule(SourceFile &file) : ASTNode(AST_MODULE), file(file), is_valid(true) {}

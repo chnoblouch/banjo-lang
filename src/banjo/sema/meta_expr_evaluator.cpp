@@ -2,7 +2,7 @@
 
 #include "banjo/sema/decl_body_analyzer.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
-#include "banjo/sema/resource_analyzer.hpp"
+#include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 
 #include <string_view>
@@ -133,7 +133,8 @@ sir::Expr MetaExprEvaluator::compute_fields(sir::Expr &type) {
 }
 
 sir::Expr MetaExprEvaluator::compute_is_resource(sir::Expr &type) {
-    bool is_resource = ResourceAnalyzer(analyzer).create_resource(type).has_value();
+    utils::Arena arena;
+    bool is_resource = sir::ResourceGenerator{arena}.create_resource(type).has_value();
     return create_bool_literal(is_resource);
 }
 

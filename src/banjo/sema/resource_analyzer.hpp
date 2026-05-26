@@ -65,14 +65,9 @@ private:
 public:
     ResourceAnalyzer(SemanticAnalyzer &analyzer);
 
-    std::optional<sir::Resource> create_resource(sir::Expr type);
-
 private:
     Result analyze_func_def(sir::FuncDef &func_def) override;
     Scope analyze_block(sir::Block &block, ScopeType type = ScopeType::GENERIC);
-
-    std::optional<sir::Resource> create_struct_resource(sir::StructDef &struct_def, sir::Expr type);
-    std::optional<sir::Resource> create_tuple_resource(sir::TupleExpr &tuple_type, sir::Expr type);
 
     void insert_states(sir::Resource *resource, InitState init_state, ResourceLocation location);
 
@@ -109,7 +104,8 @@ private:
     void mark_uninit_as_cond_init(Scope &scope);
     unsigned get_scope_depth();
 
-    static bool is_resource(const sir::Expr &type);
+    std::optional<sir::Resource> create_resource(sir::Expr type);
+    static bool is_resource(sir::Expr type);
     static void merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional);
 };
 

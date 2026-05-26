@@ -19,7 +19,7 @@ Result check_type_constraint(
 
     sir::Concrete<sir::ProtoDef> concrete_proto = param.constraint.as_concrete<sir::ProtoDef>();
 
-    utils::Arena<2048> arena;
+    utils::Arena arena;
     sir::Specializer specializer{arena, params, args};
     concrete_proto.generic_args = specializer.specialize_expr_list(concrete_proto.generic_args);
 

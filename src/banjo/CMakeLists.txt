@@ -196,6 +196,8 @@ add_library(banjo STATIC
     "sema/use_resolver.hpp"
     "sir/magic_methods.cpp"
     "sir/magic_methods.hpp"
+    "sir/resource_generator.cpp"
+    "sir/resource_generator.hpp"
     "sir/sir.cpp"
     "sir/sir.hpp"
     "sir/sir_cloner.cpp"

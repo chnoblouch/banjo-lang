@@ -608,7 +608,7 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
 }
 
 StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {
-    utils::Arena<2048> arena;
+    utils::Arena arena;
 
     sir::Concrete<sir::StructDef> return_struct_def = try_expr.return_type.as_concrete<sir::StructDef>();
     sir::Concrete<sir::StructDef> struct_def = try_expr.value.get_type().as_concrete<sir::StructDef>();
@@ -731,7 +731,7 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
 }
 
 StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr &specialize_expr) {
-    utils::Arena<2048> arena;
+    utils::Arena arena;
     std::span<sir::Expr> args = specialize_expr.args;
 
     if (auto specialization = ctx.get_specialization()) {
