@@ -43,6 +43,20 @@ ssa::Function &SSAGeneratorContext::find_ssa_func(sir::Concrete<sir::FuncDef> si
     ASSERT_UNREACHABLE;
 }
 
+const sir::Resource &SSAGeneratorContext::resolve_resource(const sir::Resource &resource) {
+    SpecializationCollector::Entry *specialization = get_specialization();
+
+    if (specialization) {
+        auto iter = specialization->resources.find(&resource);
+
+        if (iter != specialization->resources.end()) {
+            return iter->second;
+        }
+    }
+
+    return resource;
+}
+
 ssa::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {
     return get_ssa_func()->create_block(std::move(label));
 }

@@ -1,0 +1,20 @@
+# test:output "r"
+
+struct Resource {
+    func __deinit__(self) {
+        println('r');
+    }
+}
+
+struct Wrapper {
+    var resource: Resource;
+}
+
+func new_undefined[T]() -> T {
+    var value: T;
+    return value;
+}
+
+func main() {
+    var w = new_undefined[Wrapper]();
+}

@@ -35,7 +35,7 @@ void BlockSSAGenerator::generate_block_allocas(const sir::Block &block) {
     }
 
     for (const auto &[symbol, resource] : block.resources) {
-        generate_resource_flags(resource);
+        generate_resource_flags(ctx.resolve_resource(resource));
     }
 }
 
@@ -318,37 +318,28 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, sir::Symb
 }
 
 void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr) {
-    const sir::Resource *final_resource = &resource;
+    const sir::Resource &final_resource = ctx.resolve_resource(resource);
 
-    SpecializationCollector::Entry *specialization = ctx.get_specialization();
-
-    if (specialization) {
-        auto iter = specialization->resources.find(&resource);
-
-        if (iter != specialization->resources.end()) {
-            final_resource = &iter->second;
-        }
-    }
-
-    if (resource.ownership == sir::Ownership::OWNED) {
-        generate_deinit_call(*final_resource, std::move(ssa_ptr));
-    } else if (resource.ownership == sir::Ownership::MOVED_COND || resource.ownership == sir::Ownership::INIT_COND) {
+    if (final_resource.ownership == sir::Ownership::OWNED) {
+        generate_deinit_call(final_resource, std::move(ssa_ptr));
+    } else if (final_resource.ownership == sir::Ownership::MOVED_COND ||
+               final_resource.ownership == sir::Ownership::INIT_COND) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
 
-        ssa::VirtualRegister flag_slot = ctx.get_func_context().resource_deinit_flags.at(&resource);
+        ssa::VirtualRegister flag_slot = ctx.get_func_context().resource_deinit_flags.at(&final_resource);
         ssa::Value flag_val = ctx.append_load(ssa::Primitive::U8, flag_slot);
         ctx.append_cjmp(flag_val, ssa::Comparison::NE, DEINIT_FLAG_FALSE, deinit_block, end_block);
 
         ctx.append_block(deinit_block);
-        generate_deinit_call(*final_resource, std::move(ssa_ptr));
+        generate_deinit_call(final_resource, std::move(ssa_ptr));
         ctx.append_jmp(end_block);
         ctx.append_block(end_block);
     }
 
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(final_resource->type);
+    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(final_resource.type);
 
-    for (const sir::Resource &sub_resource : final_resource->sub_resources) {
+    for (const sir::Resource &sub_resource : final_resource.sub_resources) {
         ssa::VirtualRegister field_ptr_reg = ctx.append_memberptr(ssa_type, ssa_ptr, sub_resource.field_index);
         ssa::Value field_ptr = ssa::Value::from_register(field_ptr_reg, ssa::Primitive::ADDR);
         generate_deinit(sub_resource, field_ptr);

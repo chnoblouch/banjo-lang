@@ -787,7 +787,7 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
     StoredValue ssa_val = generate_as_reference(deinit_expr.value);
 
     ctx.get_func_context().cur_deferred_deinits.push_back({
-        .resource = deinit_expr.resource,
+        .resource = &ctx.resolve_resource(*deinit_expr.resource),
         .ssa_ptr = ssa_val.get_ptr(),
     });
 
@@ -971,7 +971,8 @@ void ExprSSAGenerator::generate_zero_check_branch(const sir::Expr &expr, CondBra
 }
 
 void ExprSSAGenerator::generate_deinit_flag_store(const sir::Resource &resource, const ssa::Value &value) {
-    ssa::VirtualRegister deinit_flag = ctx.get_func_context().resource_deinit_flags.at(&resource);
+    const sir::Resource &resolved_resource = ctx.resolve_resource(resource);
+    ssa::VirtualRegister deinit_flag = ctx.get_func_context().resource_deinit_flags.at(&resolved_resource);
     ctx.append_store(value, deinit_flag);
 
     for (const sir::Resource &sub_resource : resource.sub_resources) {
