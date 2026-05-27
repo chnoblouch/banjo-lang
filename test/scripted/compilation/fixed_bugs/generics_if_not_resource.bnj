@@ -1,0 +1,10 @@
+# test:compiles
+# TODO: Once this is fixed, edit `convert.bnj`, `path.bnj` (1), and `io.bnj` (2)
+
+func consume(value: i32) {}
+
+func f[T](ref value: T) {
+    if T == i32 {
+        consume(value)
+    }
+}

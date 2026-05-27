@@ -20,7 +20,7 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
     }
 
     pub func contains(self, ref key: K) -> bool {
-        for element in self.elements {
+        for ref element in self.elements {
             if element.0 == key {
                 return true;
             }
@@ -29,8 +29,8 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
         return false;
     }
 
-    pub func __index__(self, ref key: K) -> *V {
-        for element in self.elements {
+    pub func __index__(mut self, ref key: K) -> *V {
+        for ref mut element in self.elements {
             if element.0 == key {
                 return &element.1;
             }

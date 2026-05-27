@@ -18,10 +18,9 @@ struct Thread {
     }
 
     func initializer(data: addr) {
-        var pointer = data as *||;
-        var target = *pointer;
+        var target = data as *||;
         memory.free(data);
-        target();
+        (*target)();
     }
 }
 

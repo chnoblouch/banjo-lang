@@ -1,0 +1,17 @@
+# test:error 12:13 "cannot move resource out of pointer"
+
+struct Resource[T] {
+    pub func __deinit__(self) {}
+}
+
+struct S {
+    var r: Resource[i32];
+}
+
+pub func f(s: *S) {
+    var r = s.r;
+}
+
+func main() {
+    var s = S { r: Resource[i32] {} };
+}

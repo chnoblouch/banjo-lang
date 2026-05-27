@@ -38,7 +38,7 @@ struct String: ToString, ToRepr {
         return copy;
     }
 
-    pub func __deinit__(self) {
+    pub func __deinit__(mut self) {
         memory.free(self.slice.data);
     }
 

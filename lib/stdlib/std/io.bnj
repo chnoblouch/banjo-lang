@@ -197,8 +197,9 @@ struct Error: ToString {
     }
 
     pub func message(self) -> ?String {
-        try code in self.code {
-            return platform.error_message(code);
+        # TODO
+        if self.code.has_value {
+            return platform.error_message(self.code.value);
         } else {
             return none;
         }

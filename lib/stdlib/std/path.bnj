@@ -15,7 +15,7 @@ struct Path: ToString, ToRepr {
         } else if T == String {
             path = Path { path: value.copy() };
         } else if T == *u8 {
-            path = Path { path: String.from(value) };
+            path = Path { path: String.from(value as *u8) };
         }
 
         path.normalize();

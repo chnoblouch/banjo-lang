@@ -9,11 +9,11 @@ struct Set[T: Compare[T]]: ToString, ToRepr {
         };
     }
 
-    pub func of(elements: [T]) -> Set[T] {
+    pub func of(elements: Array[T]) -> Set[T] {
         var set = new[T]();
 
-        for i in 0..elements.length() {
-            set.insert(elements[i]);
+        for element in elements {
+            set.insert(element);
         }
 
         return set;

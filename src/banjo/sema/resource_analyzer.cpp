@@ -681,31 +681,9 @@ std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
 }
 
 bool ResourceAnalyzer::is_resource(sir::Expr type) {
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        sir::SymbolTable &symbol_table = *struct_def->block.symbol_table;
-        auto iter = symbol_table.symbols.find(sir::MagicMethods::DEINIT);
-        if (iter != symbol_table.symbols.end() && iter->second.is<sir::FuncDef>()) {
-            return true;
-        }
-
-        for (const sir::StructField *field : struct_def->fields) {
-            if (is_resource(field->type)) {
-                return true;
-            }
-        }
-
-        return false;
-    } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
-        for (const sir::Expr &type : tuple_type->exprs) {
-            if (is_resource(type)) {
-                return true;
-            }
-        }
-
-        return false;
-    } else {
-        return false;
-    }
+    // TODO: Optimize
+    utils::Arena arena;
+    return sir::ResourceGenerator{arena}.create_resource(type).has_value();
 }
 
 void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional) {
