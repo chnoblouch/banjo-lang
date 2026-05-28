@@ -13,15 +13,13 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/symbol_context.hpp"
-#include "banjo/sema/type_alias_resolver.hpp"
-#include "banjo/sema/type_constraints.hpp"
-#include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
+#include "banjo/sir/type_constraints.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
@@ -1122,13 +1120,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
                 RESULT_MERGE(
                     result,
-                    check_type_constraint(
-                        analyzer,
-                        call_expr.callee.get_ast_node(),
-                        func_def->generic_params,
-                        generic_args,
-                        i
-                    )
+                    check_type_constraint(call_expr.callee.get_ast_node(), func_def->generic_params, generic_args, i)
                 );
             }
 
@@ -1883,7 +1875,6 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
                 RESULT_MERGE(
                     result,
                     check_type_constraint(
-                        analyzer,
                         bracket_expr.rhs[i].get_ast_node(),
                         func_def->generic_params,
                         bracket_expr.rhs,
@@ -2506,6 +2497,30 @@ bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
     }
 
     return analyzer.get_resolved_type(value).is<sir::PseudoType>();
+}
+
+Result ExprAnalyzer::check_type_constraint(
+    ASTNode *ast_node,
+    std::span<sir::GenericParam *> params,
+    std::span<sir::Expr> args,
+    unsigned index
+) {
+    sir::GenericParam &param = *params[index];
+    sir::Expr arg = args[index];
+
+    if (!param.constraint) {
+        return Result::SUCCESS;
+    }
+
+    utils::Arena arena;
+    sir::Specializer specializer{arena, params, args};
+
+    if (!param.constraint || satisfies_type_constraint(param.constraint, arg, specializer)) {
+        return Result::SUCCESS;
+    } else {
+        analyzer.report_generator.report_err_constraint_not_satisfied(ast_node, arg, param);
+        return Result::ERROR;
+    }
 }
 
 } // namespace sema

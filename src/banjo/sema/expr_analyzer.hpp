@@ -55,7 +55,7 @@ private:
     Result analyze_struct_literal(sir::StructLiteral &struct_literal);
     Result analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr &out_expr);
     Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
-    
+
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
     Result create_type_guard(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
     Result create_type_comparison(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
@@ -113,6 +113,13 @@ private:
 
     BinaryOpType get_binary_op_type(sir::BinaryOp op);
     bool can_be_coerced(sir::Expr value);
+
+    Result check_type_constraint(
+        ASTNode *ast_node,
+        std::span<sir::GenericParam *> params,
+        std::span<sir::Expr> args,
+        unsigned index
+    );
 };
 
 } // namespace sema

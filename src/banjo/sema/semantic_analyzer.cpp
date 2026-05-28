@@ -190,6 +190,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_map_def = &find_std_symbol({"std", "map"}, "Map").as<sir::StructDef>();
     std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
     std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
+
     std_compare_def = &find_std_symbol({"std", "protos"}, "Compare").as<sir::ProtoDef>();
     std_order_def = &find_std_symbol({"std", "protos"}, "Order").as<sir::ProtoDef>();
     std_add_def = &find_std_symbol({"std", "protos"}, "Add").as<sir::ProtoDef>();
@@ -203,6 +204,20 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_shl_def = &find_std_symbol({"std", "protos"}, "Shl").as<sir::ProtoDef>();
     std_shr_def = &find_std_symbol({"std", "protos"}, "Shr").as<sir::ProtoDef>();
     std_copy_def = &find_std_symbol({"std", "protos"}, "Copy").as<sir::ProtoDef>();
+
+    std_compare_def->role = sir::ProtoDef::Role::COMPARE;
+    std_order_def->role = sir::ProtoDef::Role::ORDER;
+    std_add_def->role = sir::ProtoDef::Role::ADD;
+    std_sub_def->role = sir::ProtoDef::Role::SUB;
+    std_mul_def->role = sir::ProtoDef::Role::MUL;
+    std_div_def->role = sir::ProtoDef::Role::DIV;
+    std_mod_def->role = sir::ProtoDef::Role::MOD;
+    std_bit_and_def->role = sir::ProtoDef::Role::BIT_AND;
+    std_bit_or_def->role = sir::ProtoDef::Role::BIT_OR;
+    std_bit_xor_def->role = sir::ProtoDef::Role::BIT_XOR;
+    std_shl_def->role = sir::ProtoDef::Role::SHL;
+    std_shr_def->role = sir::ProtoDef::Role::SHR;
+    std_copy_def->role = sir::ProtoDef::Role::COPY;
 
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},

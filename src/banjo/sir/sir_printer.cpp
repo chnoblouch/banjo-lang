@@ -278,6 +278,25 @@ void Printer::print_proto_def(const ProtoDef &proto_def) {
     PRINT_FIELD_NAME("block");
     print_decl_block(proto_def.block);
 
+    switch (proto_def.role) {
+        case sir::ProtoDef::Role::NONE: PRINT_FIELD("role", "NONE");
+        case sir::ProtoDef::Role::COMPARE: PRINT_FIELD("role", "COMPARE");
+        case sir::ProtoDef::Role::ORDER: PRINT_FIELD("role", "ORDER");
+        case sir::ProtoDef::Role::ADD: PRINT_FIELD("role", "ADD");
+        case sir::ProtoDef::Role::SUB: PRINT_FIELD("role", "SUB");
+        case sir::ProtoDef::Role::MUL: PRINT_FIELD("role", "MUL");
+        case sir::ProtoDef::Role::DIV: PRINT_FIELD("role", "DIV");
+        case sir::ProtoDef::Role::MOD: PRINT_FIELD("role", "MOD");
+        case sir::ProtoDef::Role::BIT_AND: PRINT_FIELD("role", "BIT_AND");
+        case sir::ProtoDef::Role::BIT_OR: PRINT_FIELD("role", "BIT_OR");
+        case sir::ProtoDef::Role::BIT_XOR: PRINT_FIELD("role", "BIT_XOR");
+        case sir::ProtoDef::Role::SHL: PRINT_FIELD("role", "SHL");
+        case sir::ProtoDef::Role::SHR: PRINT_FIELD("role", "SHR");
+        case sir::ProtoDef::Role::AND: PRINT_FIELD("role", "AND");
+        case sir::ProtoDef::Role::OR: PRINT_FIELD("role", "OR");
+        case sir::ProtoDef::Role::COPY: PRINT_FIELD("role", "COPY");
+    }
+
     if (proto_def.is_generic()) {
         PRINT_FIELD_NAME("generic_params")
         print_generic_params(proto_def.generic_params);

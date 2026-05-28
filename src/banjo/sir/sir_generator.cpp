@@ -354,6 +354,7 @@ sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
+            .role = sir::ProtoDef::Role::NONE,
             .func_decls = {},
             .generic_params = {},
             .stage = sir::SemaStage::NAME,

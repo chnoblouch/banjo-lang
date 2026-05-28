@@ -1292,10 +1292,30 @@ struct UnionCase {
 };
 
 struct ProtoDef {
+    enum class Role {
+        NONE,
+        COMPARE,
+        ORDER,
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        MOD,
+        BIT_AND,
+        BIT_OR,
+        BIT_XOR,
+        SHL,
+        SHR,
+        AND,
+        OR,
+        COPY,
+    };
+
     ASTNode *ast_node;
     Ident ident;
     Symbol parent;
     DeclBlock block;
+    Role role;
     std::vector<ProtoFuncDecl> func_decls;
     std::span<GenericParam *> generic_params;
     SemaStage stage;

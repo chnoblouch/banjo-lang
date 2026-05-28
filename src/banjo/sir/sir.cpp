@@ -2,10 +2,8 @@
 
 #include "banjo/sir/sir_comparison.hpp"
 #include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/type_constraints.hpp"
 #include "banjo/utils/macros.hpp"
-
-// TODO: Uh-oh
-#include "banjo/sema/type_constraints.hpp"
 
 #include <utility>
 #include <variant>
@@ -561,17 +559,7 @@ bool PseudoType::is_struct_by_default() const {
 }
 
 bool TypeGuardExpr::is_satisfied_by(sir::Expr type) const {
-    if (auto proto_def = constraint.match_symbol<sir::ProtoDef>()) {
-        if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
-            if (concrete_struct->def->has_impl_for(*proto_def)) {
-                return true;
-            }
-        }
-
-        return false;
-    } else {
-        return type == constraint;
-    }
+    return satisfies_type_constraint(constraint, type);
 }
 
 Module &FuncDef::find_mod() const {

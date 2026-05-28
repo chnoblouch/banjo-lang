@@ -226,6 +226,7 @@ ProtoDef *Cloner::clone_proto_def(const ProtoDef &proto_def) {
             .ast_node = proto_def.ast_node,
             .ident = clone_ident(proto_def.ident),
             .block = clone_decl_block(proto_def.block),
+            .role = proto_def.role,
             .func_decls = {},
             .generic_params = proto_def.generic_params,
             .stage = SemaStage::NAME,
