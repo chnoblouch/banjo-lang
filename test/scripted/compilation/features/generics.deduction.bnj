@@ -10,10 +10,12 @@ func main() {
 }
 
 # test:subtest
-# test:output "30"
+# test:output "10,20"
 
 func test[T](a: T, b: T) {
-	print(a + b);
+	print(a);
+	print(',');
+	print(b);
 }
 
 func main() {
@@ -43,4 +45,55 @@ func deref[T](ptr: *T) {
 func main() {
 	var value = 100;
 	deref(&value);
+}
+
+# test:subtest
+# test:output "42;true;0.2;false,42;100,true;-1.2,0.2"
+
+struct S[T] {
+	var value: T;
+}
+
+func f0[T](s: S[T]) {
+	print(s.value);
+}
+
+func f1[A, B](a: S[A], b: S[B]) {
+	print(a.value);
+	print(',');
+	print(b.value);
+}
+
+func main() {
+	f0(S[i32] { value: 42 });
+	print(';');
+	f0(S[bool] { value: true });
+	print(';');
+	f0(S[f32] { value: 0.2 });
+	print(';');
+	f1(S[bool] { value: false }, S[i32] { value: 42 });
+    print(';');
+    f1(S[u64] { value: 100 }, S[bool] { value: true });
+    print(';');
+    f1(S[f32] { value: -1.2 }, S[f32] { value: 0.2 });
+}
+
+# test:subtest
+# test:output "42,true,0.2"
+
+struct S[A, B] {
+    var a: A;
+    var b: B;
+}
+
+func f[A, B](s: S[A, B]) -> B {
+    return s.b;
+}
+
+func main() {
+    print(f(S[bool, i32] { a: false, b: 42 }));
+    print(',');
+    print(f(S[u64, bool] { a: 100, b: true }));
+    print(',');
+    print(f(S[f32, f32] { a: -1.2, b: 0.2 }));
 }

@@ -40,6 +40,7 @@ public:
 private:
     Result infer(sir::Expr &param_type, sir::Expr arg_type);
     Result infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr arg_type);
+    Result infer_on_specialize_expr(sir::SpecializeExpr &specialize_expr, sir::Expr arg_type);
     Result infer_on_pointer_type(sir::PointerType &pointer_type, sir::Expr arg_type);
     Result infer_on_closure_type(sir::ClosureType &closure_type, sir::Expr arg_type);
     Result infer_on_reference_type(sir::ReferenceType &reference_type, sir::Expr arg_type);

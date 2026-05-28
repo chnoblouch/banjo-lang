@@ -1,5 +1,6 @@
 #include "generic_arg_inference.hpp"
 
+#include "banjo/sema/result_macros.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
@@ -89,6 +90,8 @@ Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr
 Result GenericArgInference::infer(sir::Expr &param_type, sir::Expr arg_type) {
     if (auto symbol_expr = param_type.match<sir::SymbolExpr>()) {
         return infer_on_symbol_expr(*symbol_expr, arg_type);
+    } else if (auto specialize_expr = param_type.match<sir::SpecializeExpr>()) {
+        return infer_on_specialize_expr(*specialize_expr, arg_type);
     } else if (auto pointer_type = param_type.match<sir::PointerType>()) {
         return infer_on_pointer_type(*pointer_type, arg_type);
     } else if (auto closure_type = param_type.match<sir::ClosureType>()) {
@@ -123,6 +126,20 @@ Result GenericArgInference::infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, s
     }
 
     return Result::SUCCESS;
+}
+
+Result GenericArgInference::infer_on_specialize_expr(sir::SpecializeExpr &specialize_expr, sir::Expr arg_type) {
+    if (auto arg_specialize_expr = arg_type.match<sir::SpecializeExpr>()) {
+        Result result = Result::SUCCESS;
+
+        for (unsigned i = 0; i < std::min(specialize_expr.args.size(), arg_specialize_expr->args.size()); i++) {
+            RESULT_MERGE(result, infer(specialize_expr.args[i], arg_specialize_expr->args[i]));
+        }
+
+        return result;
+    } else {
+        return Result::SUCCESS;
+    }
 }
 
 Result GenericArgInference::infer_on_pointer_type(sir::PointerType &pointer_type, sir::Expr arg_type) {
