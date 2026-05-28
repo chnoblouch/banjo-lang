@@ -1,4 +1,8 @@
-use std.{convert, protos.{Compare, ToRepr, ToString}};
+use std.{
+    convert,
+    memory.{PointerMoveIter, PointerRefIter},
+    protos.{Compare, ToRepr, ToString},
+};
 
 struct Set[T: Compare[T]]: ToString, ToRepr {
     var elements: Array[T];
@@ -29,7 +33,16 @@ struct Set[T: Compare[T]]: ToString, ToRepr {
         self.elements.append(element);
     }
 
-    pub func contains(self, element: T) -> bool {
+    pub func remove(mut self, ref element: T) {
+        for i in 0..self.elements.length() {
+            if self.elements[i] == element {
+                self.elements.remove(i);
+                break;
+            }
+        }
+    }
+
+    pub func contains(self, ref element: T) -> bool {
         for i in 0..self.elements.length() {
             if self.elements[i] == element {
                 return true;
@@ -37,6 +50,26 @@ struct Set[T: Compare[T]]: ToString, ToRepr {
         }
 
         return false;
+    }
+
+    pub func length(self) -> usize {
+        return self.elements.length();
+    }
+
+    pub func to_array(@[byval, unmanaged] self) -> Array[T] {
+        return self.elements;
+    }
+
+    pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
+        return self.elements.__iter__();
+    }
+
+    pub func __refiter__(self) -> PointerRefIter[T] {
+        return self.elements.__refiter__();
+    }
+
+    pub func __mutiter__(mut self) -> PointerRefIter[T] {
+        return self.elements.__mutiter__();
     }
 
     pub func __str__(self) -> String {

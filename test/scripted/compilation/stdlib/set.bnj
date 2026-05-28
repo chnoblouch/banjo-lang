@@ -1,0 +1,127 @@
+# test:common
+
+func print_set[T](set: Set[T]) {
+    print(set.length());
+    print(';');
+
+    var array = set.to_array();
+    
+    for i in 0..array.length() {
+        print(array[i]);
+
+        if i != array.length() - 1 {
+            print(',');
+        }
+    }
+}
+
+# test:subtest
+# test:output "3;1,42,-2"
+
+func main() {
+    var a = Set[i32].new();
+    a.insert(1);
+    a.insert(42);
+    a.insert(-2);
+
+    print_set(a);
+}
+
+# test:subtest
+# test:output "3;1,42,-2"
+
+func main() {
+    var set = Set[i32].new();
+    set.insert(1);
+    set.insert(42);
+    set.insert(-2);
+    set.insert(-2);
+    set.insert(42);
+
+    print_set(set);
+}
+
+# test:subtest
+# test:output "3;1,42,-2"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2, -2, 42]);
+    print_set(set);
+}
+
+# test:subtest
+# test:output "true,true,true,false,false"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2]);
+    
+    print(set.contains(42));
+    print(',');
+    print(set.contains(42));
+    print(',');
+    print(set.contains(42));
+    print(',');
+    print(set.contains(0));
+    print(',');
+    print(set.contains(100));
+}
+
+# test:subtest
+# test:output "2;1,-2"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2, 391]);
+    set.remove(391);
+    set.remove(42);
+
+    print_set(set);
+}
+
+# test:subtest
+# test:output "2;1,42"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2]);
+    set.remove(100);
+    set.remove(-2);
+    set.remove(0);
+
+    print_set(set);
+}
+
+# test:subtest
+# test:output "1,42,-2,"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2]);
+    
+    for value in set {
+        print(value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "1,42,-2,"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2]);
+    
+    for ref value in set {
+        print(value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "3;5,46,2"
+
+func main() {
+    var set = Set[i32].of([1, 42, -2]);
+    
+    for ref mut value in set {
+        value += 4;
+    }
+
+    print_set(set);
+}
