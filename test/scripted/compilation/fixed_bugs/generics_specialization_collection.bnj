@@ -1,0 +1,13 @@
+# test:output "d"
+
+struct Resource[T] {
+    func __deinit__(self) {
+        println('d');
+    }
+}
+
+func f[T](r: Resource[T]) {}
+
+func main() {
+    f[i32](Resource[i32] {});
+}

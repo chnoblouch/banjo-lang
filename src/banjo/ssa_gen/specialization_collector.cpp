@@ -407,16 +407,9 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
 void SpecializationCollector::visit_resource(const sir::Resource &resource) {
     std::optional<sir::Resource> specialization;
 
-    if (auto generic_param = resource.type.match_symbol<sir::GenericParam>()) {
-        utils::Arena arena;
-
-        sir::ResourceGenerator resource_generator{
-            arena,
-            resource.ownership,
-            [&](const sir::GenericParam &param) { return entry_stack.back().resolve_param(param); },
-        };
-
-        specialization = resource_generator.create_generic_param_resource(*generic_param, resource.type);
+    if (!entry_stack.empty()) {
+        sir::ResourceGenerator resource_generator{arena, resource.ownership, entry_stack.back()};
+        specialization = resource_generator.create_resource(resource.type);
     }
 
     sir::Resource &final_resource = const_cast<sir::Resource &>(specialization ? *specialization : resource);

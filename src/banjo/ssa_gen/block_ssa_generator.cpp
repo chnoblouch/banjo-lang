@@ -6,7 +6,6 @@
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
-#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"

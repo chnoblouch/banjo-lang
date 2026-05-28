@@ -2,26 +2,23 @@
 #define BANJO_RESOURCE_GENERATOR_H
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/utils/arena.hpp"
 
-#include <functional>
 #include <optional>
 
 namespace banjo::lang::sir {
 
 class ResourceGenerator {
 
-public:
-    typedef std::function<sir::Expr(const sir::GenericParam &)> GenericParamResolver;
-
 private:
     utils::Arena &arena;
     sir::Ownership ownership;
-    std::optional<GenericParamResolver> generic_param_resolver;
+    SpecializationCollector::Entry *specialization;
 
 public:
     ResourceGenerator(utils::Arena &arena);
-    ResourceGenerator(utils::Arena &arena, sir::Ownership ownership, GenericParamResolver generic_param_resolver);
+    ResourceGenerator(utils::Arena &arena, sir::Ownership ownership, SpecializationCollector::Entry &specialization);
 
     std::optional<sir::Resource> create_resource(sir::Expr type);
     std::optional<sir::Resource> create_struct_resource(sir::Concrete<sir::StructDef> concrete_struct, sir::Expr type);

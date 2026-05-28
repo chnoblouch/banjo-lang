@@ -9,16 +9,16 @@ namespace banjo::lang::sir {
 ResourceGenerator::ResourceGenerator(utils::Arena &arena)
   : arena{arena},
     ownership{Ownership::OWNED},
-    generic_param_resolver{} {}
+    specialization{nullptr} {}
 
 ResourceGenerator::ResourceGenerator(
     utils::Arena &arena,
     sir::Ownership ownership,
-    GenericParamResolver generic_param_resolver
+    SpecializationCollector::Entry &specialization
 )
   : arena{arena},
     ownership{ownership},
-    generic_param_resolver{generic_param_resolver} {}
+    specialization{&specialization} {}
 
 std::optional<sir::Resource> ResourceGenerator::create_resource(sir::Expr type) {
     if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
@@ -38,6 +38,12 @@ std::optional<sir::Resource> ResourceGenerator::create_struct_resource(
     sir::Concrete<sir::StructDef> concrete_struct,
     sir::Expr type
 ) {
+    if (specialization) {
+        sir::Specializer specializer{arena, specialization->params, specialization->args};
+        concrete_struct.generic_args = specializer.specialize_expr_list(concrete_struct.generic_args);
+        type = specializer.specialize_expr(type);
+    }
+
     std::optional<sir::Resource> resource;
 
     sir::SymbolTable &symbol_table = *concrete_struct.def->block.symbol_table;
@@ -114,8 +120,8 @@ std::optional<sir::Resource> ResourceGenerator::create_generic_param_resource(
     const sir::GenericParam &generic_param,
     sir::Expr type
 ) {
-    if (generic_param_resolver) {
-        sir::Expr resolved_type = (*generic_param_resolver)(generic_param);
+    if (specialization) {
+        sir::Expr resolved_type = specialization->resolve_param(generic_param);
         return create_resource(resolved_type);
     } else {
         return sir::Resource{

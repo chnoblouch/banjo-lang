@@ -17,7 +17,6 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <iostream>
 #include <utility>
 
 namespace banjo {
