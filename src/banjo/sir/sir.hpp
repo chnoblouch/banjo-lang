@@ -998,7 +998,9 @@ struct TypeGuardExpr {
 struct PlaceholderExpr {
     struct GenericMethod {
         GenericParam *param;
+        ProtoDef *proto_def;
         FuncDecl *decl;
+        bool is_copy;
     };
 
     struct BinaryExpr {

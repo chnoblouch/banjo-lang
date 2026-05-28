@@ -1334,7 +1334,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         return Result::ERROR;
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>();
-        
+
         if (auto type_narrowing = analyzer.scope_stack.top().type_narrowing) {
             if (type_narrowing->generic_param == generic_param &&
                 type_narrowing->constraint.is_symbol<sir::ProtoDef>()) {
@@ -1372,7 +1372,9 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
                     .type = func_type,
                     .kind = sir::PlaceholderExpr::GenericMethod{
                         .param = generic_param,
+                        .proto_def = concrete_proto->def,
                         .decl = &method.as<sir::FuncDecl>(),
+                        .is_copy = concrete_proto->def == analyzer.std_copy_def,
                     },
                 }
             );

@@ -4,6 +4,9 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
+// TODO: Uh-oh
+#include "banjo/sema/type_constraints.hpp"
+
 #include <utility>
 #include <variant>
 

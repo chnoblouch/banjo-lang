@@ -1,5 +1,7 @@
 #include "type_constraints.hpp"
+#include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/arena.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include <initializer_list>
@@ -36,6 +38,11 @@ Result check_type_constraint(
         if (auto other_proto = other_param->constraint.match_concrete<sir::ProtoDef>()) {
             satisfied = concrete_proto == other_proto;
         }
+    }
+
+    if (!satisfied && concrete_proto.def == analyzer.std_copy_def) {
+        utils::Arena arena;
+        satisfied = !sir::ResourceGenerator{arena}.create_resource(arg).has_value();
     }
 
     if (satisfied) {

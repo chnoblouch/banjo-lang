@@ -124,6 +124,7 @@ public:
     sir::ProtoDef *std_shr_def = nullptr;
     sir::ProtoDef *std_and_def = nullptr;
     sir::ProtoDef *std_or_def = nullptr;
+    sir::ProtoDef *std_copy_def = nullptr;
 
 private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;

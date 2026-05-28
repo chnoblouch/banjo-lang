@@ -20,6 +20,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
+#include <variant>
 #include <vector>
 
 namespace banjo {
@@ -568,6 +569,27 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 
         if (callee_symbol_parent && callee_symbol_parent.is<sir::ProtoDef>() && is_method) {
             proto_def = &callee_symbol_parent.as<sir::ProtoDef>();
+        }
+    } else if (auto placeholder_expr = call_expr.callee.match<sir::PlaceholderExpr>()) {
+        if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr->kind)) {
+            if (generic_method->is_copy) {
+                sir::Expr arg = call_expr.args[0].as<sir::UnaryExpr>().value;
+                bool call_method = false;
+
+                sir::Expr arg_type = arg.get_type();
+
+                if (auto generic_param = arg_type.match_symbol<sir::GenericParam>()) {
+                    arg_type = ctx.get_generic_arg(*generic_param);
+                }
+
+                if (auto struct_def = arg_type.match_symbol<sir::StructDef>()) {
+                    call_method = struct_def->has_impl_for(*generic_method->proto_def);
+                }
+
+                if (!call_method) {
+                    return generate(arg);
+                }
+            }
         }
     }
 

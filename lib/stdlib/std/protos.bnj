@@ -50,6 +50,10 @@ proto Shr[T] {
     func __shr__(self, ref other: T) -> T;
 }
 
+proto Copy {
+    pub func copy(self) -> self.type;
+}
+
 proto ToString {
     func __str__(self) -> String;
 }

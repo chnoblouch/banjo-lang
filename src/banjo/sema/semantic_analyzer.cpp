@@ -202,6 +202,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_bit_xor_def = &find_std_symbol({"std", "protos"}, "BitXor").as<sir::ProtoDef>();
     std_shl_def = &find_std_symbol({"std", "protos"}, "Shl").as<sir::ProtoDef>();
     std_shr_def = &find_std_symbol({"std", "protos"}, "Shr").as<sir::ProtoDef>();
+    std_copy_def = &find_std_symbol({"std", "protos"}, "Copy").as<sir::ProtoDef>();
 
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},
