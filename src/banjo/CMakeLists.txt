@@ -202,6 +202,8 @@ add_library(banjo STATIC
     "sir/sir.hpp"
     "sir/sir_cloner.cpp"
     "sir/sir_cloner.hpp"
+    "sir/sir_comparison.cpp"
+    "sir/sir_comparison.hpp"
     "sir/sir_create.cpp"
     "sir/sir_create.hpp"
     "sir/sir_generator.cpp"

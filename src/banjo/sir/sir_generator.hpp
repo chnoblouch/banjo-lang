@@ -106,6 +106,7 @@ private:
     sir::Expr generate_closure_literal(ASTNode *node);
     sir::Expr generate_ident_expr(ASTNode *node);
     sir::Expr generate_self(ASTNode *node);
+    sir::Expr generate_self_type(ASTNode *node);
     sir::Expr generate_binary_expr(ASTNode *node, sir::BinaryOp op);
     sir::Expr generate_unary_expr(ASTNode *node, sir::UnaryOp op);
     sir::Expr generate_cast_expr(ASTNode *node);

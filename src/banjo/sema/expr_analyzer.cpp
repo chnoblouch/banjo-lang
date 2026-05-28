@@ -165,7 +165,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_star_expr(*inner, expr),       // star_expr
         result = analyze_bracket_expr(*inner, expr),    // bracket_expr
         result = analyze_dot_expr(*inner, expr),        // dot_expr
-        SIR_VISIT_IMPOSSIBLE,                           // pseudo_tpe
+        SIR_VISIT_IGNORE,                               // pseudo_tpe
         result = analyze_meta_access(*inner),           // meta_access
         result = analyze_meta_field_expr(*inner, expr), // meta_field_expr
         result = analyze_meta_call_expr(*inner, expr),  // meta_call_expr
@@ -555,7 +555,7 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 
 Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
     // FIXME: Don't allow mod and bitwise operations on floats.
-    
+
     BinaryOpType op_type = get_binary_op_type(binary_expr.op);
 
     Result lhs_result;
@@ -677,6 +677,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             case sir::PseudoTypeKind::STRING_LITERAL: is_operator_overload = true; break;
             case sir::PseudoTypeKind::ARRAY_LITERAL: is_operator_overload = true; break;
             case sir::PseudoTypeKind::MAP_LITERAL: is_operator_overload = true; break;
+            case sir::PseudoTypeKind::SELF_TYPE: is_operator_overload = true; break;
         }
     } else if (auto symbol_expr = lhs_type.match<sir::SymbolExpr>()) {
         if (symbol_expr->symbol.is<sir::StructDef>()) {
@@ -1333,7 +1334,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         return Result::ERROR;
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>();
-
+        
         if (auto type_narrowing = analyzer.scope_stack.top().type_narrowing) {
             if (type_narrowing->generic_param == generic_param &&
                 type_narrowing->constraint.is_symbol<sir::ProtoDef>()) {
@@ -1351,11 +1352,18 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
 
             analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
 
-            sir::FuncType *func_type = &method.as<sir::FuncDecl>().type;
+            sir::FuncType *func_type = analyzer.create(method.as<sir::FuncDecl>().type);
 
             if (concrete_proto->is_specialization()) {
                 sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
                 func_type = specializer.specialize_func_type(*func_type);
+            }
+
+            // TODO: generics
+            if (auto pseudo_type = func_type->return_type.match<sir::PseudoType>()) {
+                if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
+                    func_type->return_type = lhs_type;
+                }
             }
 
             out_call_expr.callee = analyzer.create(

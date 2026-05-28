@@ -304,6 +304,7 @@ std::string ReportText::pseudo_type_to_string(sir::PseudoTypeKind pseudo_type) {
         case sir::PseudoTypeKind::STRING_LITERAL: return "string literal";
         case sir::PseudoTypeKind::ARRAY_LITERAL: return "array literal";
         case sir::PseudoTypeKind::MAP_LITERAL: return "map literal";
+        case sir::PseudoTypeKind::SELF_TYPE: return "self.type";
     }
 }
 

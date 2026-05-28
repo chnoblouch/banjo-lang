@@ -158,6 +158,7 @@ void SemanticAnalyzer::enter_block(sir::Block &block) {
         .block = &block,
         .symbol_table = block.symbol_table,
         .closure_ctx = scope_stack.top().closure_ctx,
+        .type_narrowing = scope_stack.top().type_narrowing,
     };
 
     scope_stack.push(scope);

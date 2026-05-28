@@ -7,9 +7,11 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_comparison.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
+#include <optional>
 
 namespace banjo {
 
@@ -140,23 +142,21 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concr
             decl_type = specializer.specialize_func_type(*decl_type);
         }
 
-        bool types_equal = true;
-
-        if (def_type.params.size() != decl_type->params.size()) {
-            types_equal = false;
-        }
-
-        for (unsigned i = 1; i < def_type.params.size(); i++) {
-            if (def_type.params[i] != decl_type->params[i]) {
-                types_equal = false;
+        sir::Comparison comparison{[&](sir::Expr lhs, sir::Expr rhs) {
+            if (auto pseudo_type = lhs.match<sir::PseudoType>()) {
+                if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
+                    return std::optional<bool>{rhs.is_symbol(&struct_def)};
+                }
+            } else if (auto pseudo_type = rhs.match<sir::PseudoType>()) {
+                if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
+                    return std::optional<bool>{lhs.is_symbol(&struct_def)};
+                }
             }
-        }
 
-        if (def_type.return_type != decl_type->return_type) {
-            types_equal = false;
-        }
+            return std::optional<bool>{};
+        }};
 
-        if (!types_equal) {
+        if (!comparison.compare(def_type, *decl_type, 1)) {
             analyzer.report_generator.report_err_impl_type_mismatch(func_def, func_decl);
         }
     }

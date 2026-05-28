@@ -190,6 +190,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_GENERIC_PARAM_LIST: return "GENERIC_PARAM_LIST";
         case AST_GENERIC_PARAMETER: return "GENERIC_PARAMETER";
         case AST_SELF: return "SELF";
+        case AST_SELF_TYPE: return "SELF_TYPE";
         case AST_QUALIFIER_LIST: return "QUALIFIER_LIST";
         case AST_QUALIFIER: return "QUALIFIER";
         case AST_ATTRIBUTE_WRAPPER: return "ATTRIBUTE_WRAPPER";

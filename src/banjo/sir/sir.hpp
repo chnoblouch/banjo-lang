@@ -165,6 +165,8 @@ struct Concrete {
 };
 
 class Expr {
+    friend class Comparison;
+
     std::variant<
         IntLiteral *,       // 0
         FPLiteral *,        // 1
@@ -621,11 +623,6 @@ struct FuncType {
     Expr return_type;
 
     bool is_func_method() const { return params.size() > 0 && params[0].is_self(); }
-
-    bool operator==(const FuncType &other) const {
-        return Utils::equal(params, other.params) && return_type == other.return_type;
-    }
-    bool operator!=(const FuncType &other) const { return !(*this == other); }
 };
 
 struct Local {
@@ -638,60 +635,39 @@ struct IntLiteral {
     ASTNode *ast_node;
     Expr type;
     LargeInt value;
-
-    bool operator==(const IntLiteral &other) const { return value == other.value; }
-    bool operator!=(const IntLiteral &other) const { return !(*this == other); }
 };
 
 struct FPLiteral {
     ASTNode *ast_node;
     Expr type;
     double value;
-
-    bool operator==(const FPLiteral &other) const { return value == other.value; }
-    bool operator!=(const FPLiteral &other) const { return !(*this == other); }
 };
 
 struct BoolLiteral {
     ASTNode *ast_node;
     Expr type;
     bool value;
-
-    bool operator==(const BoolLiteral &other) const { return value == other.value; }
-    bool operator!=(const BoolLiteral &other) const { return !(*this == other); }
 };
 
 struct CharLiteral {
     ASTNode *ast_node;
     Expr type;
     char value;
-
-    bool operator==(const CharLiteral &other) const { return value == other.value; }
-    bool operator!=(const CharLiteral &other) const { return !(*this == other); }
 };
 
 struct NullLiteral {
     ASTNode *ast_node;
     Expr type;
-
-    bool operator==(const NullLiteral &) const { return true; }
-    bool operator!=(const NullLiteral &other) const { return !(*this == other); }
 };
 
 struct NoneLiteral {
     ASTNode *ast_node;
     Expr type;
-
-    bool operator==(const NoneLiteral &) const { return true; }
-    bool operator!=(const NoneLiteral &other) const { return !(*this == other); }
 };
 
 struct UndefinedLiteral {
     ASTNode *ast_node;
     Expr type;
-
-    bool operator==(const UndefinedLiteral &) const { return true; }
-    bool operator!=(const UndefinedLiteral &other) const { return !(*this == other); }
 };
 
 struct ArrayLiteral {
@@ -704,9 +680,6 @@ struct StringLiteral {
     ASTNode *ast_node;
     Expr type;
     std::string_view value;
-
-    bool operator==(const StringLiteral &other) const { return value == other.value; }
-    bool operator!=(const StringLiteral &other) const { return !(*this == other); }
 };
 
 struct StructLiteralEntry {
@@ -749,9 +722,6 @@ struct SymbolExpr {
     ASTNode *ast_node;
     Expr type;
     Symbol symbol;
-
-    bool operator==(const SymbolExpr &other) const { return symbol == other.symbol; }
-    bool operator!=(const SymbolExpr &other) const { return !(*this == other); }
 };
 
 enum class BinaryOp {
@@ -786,9 +756,6 @@ struct BinaryExpr {
     bool is_bitwise_op();
     bool is_comparison_op();
     bool is_logical_op();
-
-    bool operator==(const BinaryExpr &other) const { return op == other.op && lhs == other.lhs && rhs == other.rhs; }
-    bool operator!=(const BinaryExpr &other) const { return !(*this == other); }
 };
 
 enum class UnaryOp {
@@ -807,9 +774,6 @@ struct UnaryExpr {
     Expr type;
     UnaryOp op;
     Expr value;
-
-    bool operator==(const UnaryExpr &other) const { return op == other.op && value == other.value; }
-    bool operator!=(const UnaryExpr &other) const { return !(*this == other); }
 };
 
 struct CastExpr {
@@ -856,9 +820,6 @@ struct TupleExpr {
     ASTNode *ast_node;
     Expr type;
     std::span<Expr> exprs;
-
-    bool operator==(const TupleExpr &other) const { return Utils::equal(exprs, other.exprs); }
-    bool operator!=(const TupleExpr &other) const { return !(*this == other); }
 };
 
 struct CoercionExpr {
@@ -872,12 +833,6 @@ struct SpecializeExpr {
     Expr type;
     Symbol symbol;
     std::span<sir::Expr> args;
-
-    bool operator==(const SpecializeExpr &other) const {
-        return symbol == other.symbol && Utils::equal(args, other.args);
-    }
-
-    bool operator!=(const SpecializeExpr &other) const { return !(*this == other); }
 };
 
 enum class Primitive {
@@ -900,84 +855,51 @@ enum class Primitive {
 struct PrimitiveType {
     ASTNode *ast_node;
     Primitive primitive;
-
-    bool operator==(const PrimitiveType &other) const { return primitive == other.primitive; }
-    bool operator!=(const PrimitiveType &other) const { return !(*this == other); }
 };
 
 struct PointerType {
     ASTNode *ast_node;
     Expr base_type;
-
-    bool operator==(const PointerType &other) const { return base_type == other.base_type; }
-    bool operator!=(const PointerType &other) const { return !(*this == other); }
 };
 
 struct StaticArrayType {
     ASTNode *ast_node;
     Expr base_type;
     Expr length;
-
-    bool operator==(const StaticArrayType &other) const {
-        return base_type == other.base_type && length == other.length;
-    }
-
-    bool operator!=(const StaticArrayType &other) const { return !(*this == other); }
 };
 
 struct OptionalType {
     ASTNode *ast_node;
     Expr base_type;
-
-    bool operator==(const OptionalType &other) const { return base_type == other.base_type; }
-    bool operator!=(const OptionalType &other) const { return !(*this == other); }
 };
 
 struct ResultType {
     ASTNode *ast_node;
     Expr value_type;
     Expr error_type;
-
-    bool operator==(const ResultType &other) const {
-        return value_type == other.value_type && error_type == other.error_type;
-    }
-
-    bool operator!=(const ResultType &other) const { return !(*this == other); }
 };
 
 struct ArrayType {
     ASTNode *ast_node;
     Expr base_type;
-
-    bool operator==(const ArrayType &other) const { return base_type == other.base_type; }
-    bool operator!=(const ArrayType &other) const { return !(*this == other); }
 };
 
 struct MapType {
     ASTNode *ast_node;
     Expr key_type;
     Expr value_type;
-
-    bool operator==(const MapType &other) const { return key_type == other.key_type && value_type == other.value_type; }
-    bool operator!=(const MapType &other) const { return !(*this == other); }
 };
 
 struct ClosureType {
     ASTNode *ast_node;
     FuncType func_type;
     StructDef *underlying_struct;
-
-    bool operator==(const ClosureType &other) const { return func_type == other.func_type; }
-    bool operator!=(const ClosureType &other) const { return !(*this == other); }
 };
 
 struct ReferenceType {
     ASTNode *ast_node;
     bool mut;
     Expr base_type;
-
-    bool operator==(const ReferenceType &other) const { return base_type == other.base_type; }
-    bool operator!=(const ReferenceType &other) const { return !(*this == other); }
 };
 
 struct IdentExpr {
@@ -1013,6 +935,7 @@ enum class PseudoTypeKind {
     STRING_LITERAL,
     ARRAY_LITERAL,
     MAP_LITERAL,
+    SELF_TYPE,
 };
 
 struct PseudoType {
@@ -1026,9 +949,6 @@ struct PseudoType {
 struct MetaAccess {
     ASTNode *ast_node;
     Expr expr;
-
-    bool operator==(const MetaAccess &other) const { return expr == other.expr; }
-    bool operator!=(const MetaAccess &other) const { return !(*this == other); }
 };
 
 struct MetaFieldExpr {
@@ -1036,9 +956,6 @@ struct MetaFieldExpr {
     Expr type;
     Expr base;
     Ident field;
-
-    bool operator==(const MetaFieldExpr &other) const { return base == other.base && field == other.field; }
-    bool operator!=(const MetaFieldExpr &other) const { return !(*this == other); }
 };
 
 struct MetaCallExpr {
@@ -1046,12 +963,6 @@ struct MetaCallExpr {
     Expr type;
     Expr callee;
     std::span<Expr> args;
-
-    bool operator==(const MetaCallExpr &other) const {
-        return callee == other.callee && Utils::equal(args, other.args);
-    }
-
-    bool operator!=(const MetaCallExpr &other) const { return !(*this == other); }
 };
 
 struct InitExpr {

@@ -1004,6 +1004,7 @@ void Printer::print_pseudo_type(const PseudoType &pseudo_type) {
         case PseudoTypeKind::STRING_LITERAL: PRINT_FIELD("kind", "STRING_LITERAL"); break;
         case PseudoTypeKind::ARRAY_LITERAL: PRINT_FIELD("kind", "ARRAY_LITERAL"); break;
         case PseudoTypeKind::MAP_LITERAL: PRINT_FIELD("kind", "MAP_LITERAL"); break;
+        case PseudoTypeKind::SELF_TYPE: PRINT_FIELD("kind", "SELF_TYPE"); break;
     }
 
     END_OBJECT();

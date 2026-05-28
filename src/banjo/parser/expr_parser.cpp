@@ -465,10 +465,17 @@ ParseResult ExprParser::parse_dot_expr(ASTNode *lhs_node) {
 
     operator_node.append_child(lhs_node);
     operator_node.consume(); // Consume '.'
-    ParseResult result = parse_operand();
-    operator_node.append_child(result.node);
 
-    return {operator_node.build(AST_DOT_EXPR), result.is_valid};
+    if (lhs_node->type == AST_SELF && stream.get()->is(TKN_TYPE)) {
+        // TODO: Kind of a memory leak here (leaking the `self` AST node).
+
+        stream.consume();
+        return {operator_node.build(AST_SELF_TYPE)};
+    } else {
+        ParseResult result = parse_operand();
+        operator_node.append_child(result.node);
+        return {operator_node.build(AST_DOT_EXPR), result.is_valid};
+    }
 }
 
 ParseResult ExprParser::parse_call_expr(ASTNode *lhs_node) {

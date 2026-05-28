@@ -850,6 +850,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_CLOSURE_LITERAL: return generate_closure_literal(node);
         case AST_IDENTIFIER: return generate_ident_expr(node);
         case AST_SELF: return generate_self(node);
+        case AST_SELF_TYPE: return generate_self_type(node);
         case AST_ADD_EXPR: return generate_binary_expr(node, sir::BinaryOp::ADD);
         case AST_SUB_EXPR: return generate_binary_expr(node, sir::BinaryOp::SUB);
         case AST_MUL_EXPR: return generate_binary_expr(node, sir::BinaryOp::MUL);
@@ -1079,6 +1080,15 @@ sir::Expr SIRGenerator::generate_self(ASTNode *node) {
         sir::IdentExpr{
             .ast_node = node,
             .value = "self",
+        }
+    );
+}
+
+sir::Expr SIRGenerator::generate_self_type(ASTNode *node) {
+    return create(
+        sir::PseudoType{
+            .ast_node = node,
+            .kind = sir::PseudoTypeKind::SELF_TYPE,
         }
     );
 }
