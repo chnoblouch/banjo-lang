@@ -346,6 +346,10 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
 
     sir::Expr lhs_type = binary_expr.lhs.get_type();
 
+    if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
+        lhs_type = ctx.get_generic_arg(*generic_param);
+    }
+
     if (lhs_type.is_int_type()) {
         ssa::Opcode ssa_op;
 

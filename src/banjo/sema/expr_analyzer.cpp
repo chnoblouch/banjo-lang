@@ -554,6 +554,8 @@ Result ExprAnalyzer::analyze_closure_literal(sir::ClosureLiteral &closure_litera
 }
 
 Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
+    // FIXME: Don't allow mod and bitwise operations on floats.
+    
     BinaryOpType op_type = get_binary_op_type(binary_expr.op);
 
     Result lhs_result;
@@ -585,12 +587,25 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def;
 
-        if (op_type == BinaryOpType::EQUALITY_COMP) {
-            proto_def = analyzer.std_compare_def;
-        } else if (op_type == BinaryOpType::ORDER_COMP) {
-            proto_def = analyzer.std_order_def;
-        } else {
-            proto_def = nullptr;
+        switch (binary_expr.op) {
+            case sir::BinaryOp::ADD: proto_def = analyzer.std_add_def; break;
+            case sir::BinaryOp::SUB: proto_def = analyzer.std_sub_def; break;
+            case sir::BinaryOp::MUL: proto_def = analyzer.std_mul_def; break;
+            case sir::BinaryOp::DIV: proto_def = analyzer.std_div_def; break;
+            case sir::BinaryOp::MOD: proto_def = analyzer.std_mod_def; break;
+            case sir::BinaryOp::BIT_AND: proto_def = analyzer.std_bit_and_def; break;
+            case sir::BinaryOp::BIT_OR: proto_def = analyzer.std_bit_or_def; break;
+            case sir::BinaryOp::BIT_XOR: proto_def = analyzer.std_bit_xor_def; break;
+            case sir::BinaryOp::SHL: proto_def = analyzer.std_shl_def; break;
+            case sir::BinaryOp::SHR: proto_def = analyzer.std_shr_def; break;
+            case sir::BinaryOp::EQ: proto_def = analyzer.std_compare_def; break;
+            case sir::BinaryOp::NE: proto_def = analyzer.std_compare_def; break;
+            case sir::BinaryOp::GT: proto_def = analyzer.std_order_def; break;
+            case sir::BinaryOp::LT: proto_def = analyzer.std_order_def; break;
+            case sir::BinaryOp::GE: proto_def = analyzer.std_order_def; break;
+            case sir::BinaryOp::LE: proto_def = analyzer.std_order_def; break;
+            case sir::BinaryOp::AND: proto_def = nullptr; break;
+            case sir::BinaryOp::OR: proto_def = nullptr; break;
         }
 
         if (auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>()) {
@@ -601,10 +616,14 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
                 RESULT_RETURN_ON_ERROR(lhs_result)
                 RESULT_RETURN_ON_ERROR(rhs_result)
 
+                sir::Expr return_type = concrete_proto->def->func_decls[0].get_type().return_type;
+                sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
+                return_type = specializer.specialize_expr(return_type);
+
                 out_expr = analyzer.create(
                     sir::PlaceholderExpr{
                         .ast_node = nullptr,
-                        .type = concrete_proto->def->func_decls[0].get_type().return_type,
+                        .type = return_type,
                         .kind = sir::PlaceholderExpr::BinaryExpr{
                             .op = binary_expr.op,
                             .lhs = binary_expr.lhs,

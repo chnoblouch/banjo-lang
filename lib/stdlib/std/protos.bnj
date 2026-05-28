@@ -10,6 +10,46 @@ proto Order[T] {
     func __le__(self, ref other: T) -> bool;
 }
 
+proto Add[T] {
+    func __add__(self, ref other: T) -> T;
+}
+
+proto Sub[T] {
+    func __sub__(self, ref other: T) -> T;
+}
+
+proto Mul[T] {
+    func __mul__(self, ref other: T) -> T;
+}
+
+proto Div[T] {
+    func __div__(self, ref other: T) -> T;
+}
+
+proto Mod[T] {
+    func __mod__(self, ref other: T) -> T;
+}
+
+proto BitAnd[T] {
+    func __bitand__(self, ref other: T) -> T;
+}
+
+proto BitOr[T] {
+    func __bitor__(self, ref other: T) -> T;
+}
+
+proto BitXor[T] {
+    func __bitxor__(self, ref other: T) -> T;
+}
+
+proto Shl[T] {
+    func __shl__(self, ref other: T) -> T;
+}
+
+proto Shr[T] {
+    func __shr__(self, ref other: T) -> T;
+}
+
 proto ToString {
     func __str__(self) -> String;
 }

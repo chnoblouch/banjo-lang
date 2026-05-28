@@ -109,8 +109,21 @@ public:
     sir::StructDef *std_map_def = nullptr;
     sir::StructDef *std_shared_def = nullptr;
     sir::StructDef *std_closure_def = nullptr;
+
     sir::ProtoDef *std_compare_def = nullptr;
     sir::ProtoDef *std_order_def = nullptr;
+    sir::ProtoDef *std_add_def = nullptr;
+    sir::ProtoDef *std_sub_def = nullptr;
+    sir::ProtoDef *std_mul_def = nullptr;
+    sir::ProtoDef *std_div_def = nullptr;
+    sir::ProtoDef *std_mod_def = nullptr;
+    sir::ProtoDef *std_bit_and_def = nullptr;
+    sir::ProtoDef *std_bit_or_def = nullptr;
+    sir::ProtoDef *std_bit_xor_def = nullptr;
+    sir::ProtoDef *std_shl_def = nullptr;
+    sir::ProtoDef *std_shr_def = nullptr;
+    sir::ProtoDef *std_and_def = nullptr;
+    sir::ProtoDef *std_or_def = nullptr;
 
 private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;

@@ -191,6 +191,16 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
     std_compare_def = &find_std_symbol({"std", "protos"}, "Compare").as<sir::ProtoDef>();
     std_order_def = &find_std_symbol({"std", "protos"}, "Order").as<sir::ProtoDef>();
+    std_add_def = &find_std_symbol({"std", "protos"}, "Add").as<sir::ProtoDef>();
+    std_sub_def = &find_std_symbol({"std", "protos"}, "Sub").as<sir::ProtoDef>();
+    std_mul_def = &find_std_symbol({"std", "protos"}, "Mul").as<sir::ProtoDef>();
+    std_div_def = &find_std_symbol({"std", "protos"}, "Div").as<sir::ProtoDef>();
+    std_mod_def = &find_std_symbol({"std", "protos"}, "Mod").as<sir::ProtoDef>();
+    std_bit_and_def = &find_std_symbol({"std", "protos"}, "BitAnd").as<sir::ProtoDef>();
+    std_bit_or_def = &find_std_symbol({"std", "protos"}, "BitOr").as<sir::ProtoDef>();
+    std_bit_xor_def = &find_std_symbol({"std", "protos"}, "BitXor").as<sir::ProtoDef>();
+    std_shl_def = &find_std_symbol({"std", "protos"}, "Shl").as<sir::ProtoDef>();
+    std_shr_def = &find_std_symbol({"std", "protos"}, "Shr").as<sir::ProtoDef>();
 
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},

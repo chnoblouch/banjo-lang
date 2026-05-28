@@ -1,5 +1,8 @@
 #include "type_constraints.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/utils.hpp"
+
+#include <initializer_list>
 
 namespace banjo::lang::sema {
 
@@ -48,13 +51,30 @@ bool primitive_implements(
     sir::Primitive primitive,
     sir::Concrete<sir::ProtoDef> proto_def
 ) {
+    std::initializer_list<sir::ProtoDef *> numeric_protos{
+        analyzer.std_order_def,
+        analyzer.std_add_def,
+        analyzer.std_sub_def,
+        analyzer.std_mul_def,
+        analyzer.std_div_def,
+    };
+
+    std::initializer_list<sir::ProtoDef *> int_protos{
+        analyzer.std_mod_def,
+        analyzer.std_bit_and_def,
+        analyzer.std_bit_or_def,
+        analyzer.std_bit_xor_def,
+        analyzer.std_shl_def,
+        analyzer.std_shr_def,
+    };
+
     if (proto_def.def == analyzer.std_compare_def) {
         if (primitive == sir::Primitive::VOID) {
             return false;
         }
 
         return proto_def.generic_args[0].is_primitive_type(primitive);
-    } else if (proto_def.def == analyzer.std_order_def) {
+    } else if (Utils::is_one_of(proto_def.def, numeric_protos)) {
         switch (primitive) {
             case sir::Primitive::I8:
             case sir::Primitive::I16:
@@ -67,6 +87,23 @@ bool primitive_implements(
             case sir::Primitive::USIZE:
             case sir::Primitive::F32:
             case sir::Primitive::F64: return proto_def.generic_args[0].is_primitive_type(primitive);
+            case sir::Primitive::BOOL:
+            case sir::Primitive::ADDR:
+            case sir::Primitive::VOID: return false;
+        }
+    } else if (Utils::is_one_of(proto_def.def, int_protos)) {
+        switch (primitive) {
+            case sir::Primitive::I8:
+            case sir::Primitive::I16:
+            case sir::Primitive::I32:
+            case sir::Primitive::I64:
+            case sir::Primitive::U8:
+            case sir::Primitive::U16:
+            case sir::Primitive::U32:
+            case sir::Primitive::U64:
+            case sir::Primitive::USIZE: return proto_def.generic_args[0].is_primitive_type(primitive);
+            case sir::Primitive::F32:
+            case sir::Primitive::F64:
             case sir::Primitive::BOOL:
             case sir::Primitive::ADDR:
             case sir::Primitive::VOID: return false;

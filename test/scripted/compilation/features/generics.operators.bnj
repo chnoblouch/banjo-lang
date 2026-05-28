@@ -1,6 +1,6 @@
 # test:common
 
-use std.protos.{Compare, Order};
+use std.protos.{Compare, Order, Add, Sub, Mul, Div, Mod, BitAnd, BitOr, BitXor, Shl, Shr};
 
 # test:subtest
 # test:output "true,true,true,true,true,true,true,true,true,true,true,true,true;false"
@@ -219,6 +219,292 @@ func main() {
 }
 
 # test:subtest
+# test:output "42,42,42,42,42,42,42,42,42,4.25,4.25"
+
+func add[T: Add[T]](a: T, b: T) -> T {
+    return a + b;
+}
+
+func main() {
+    print(add(27 as i8, 15 as i8));
+    print(',');
+    print(add(27 as i16, 15 as i16));
+    print(',');
+    print(add(27 as i32, 15 as i32));
+    print(',');
+    print(add(27 as i64, 15 as i64));
+    print(',');
+    print(add(27 as u8, 15 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(add(27 as u16, 15 as u16));
+    print(',');
+    print(add(27 as u32, 15 as u32));
+    print(',');
+    print(add(27 as u64, 15 as u64));
+    print(',');
+    print(add(27 as usize, 15 as usize));
+    print(',');
+    print(add(0.25 as f32, 4.0 as f32));
+    print(',');
+    print(add(0.25 as f64, 4.0 as f64));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42,4.25,4.25"
+
+func sub[T: Sub[T]](a: T, b: T) -> T {
+    return a - b;
+}
+
+func main() {
+    print(sub(93 as i8, 51 as i8));
+    print(',');
+    print(sub(93 as i16, 51 as i16));
+    print(',');
+    print(sub(93 as i32, 51 as i32));
+    print(',');
+    print(sub(93 as i64, 51 as i64));
+    print(',');
+    print(sub(93 as u8, 51 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(sub(93 as u16, 51 as u16));
+    print(',');
+    print(sub(93 as u32, 51 as u32));
+    print(',');
+    print(sub(93 as u64, 51 as u64));
+    print(',');
+    print(sub(93 as usize, 51 as usize));
+    print(',');
+    print(sub(8.0 as f32, 3.75 as f32));
+    print(',');
+    print(sub(8.0 as f64, 3.75 as f64));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42,10.5,10.5"
+
+func mul[T: Mul[T]](a: T, b: T) -> T {
+    return a * b;
+}
+
+func main() {
+    print(mul(6 as i8, 7 as i8));
+    print(',');
+    print(mul(6 as i16, 7 as i16));
+    print(',');
+    print(mul(6 as i32, 7 as i32));
+    print(',');
+    print(mul(6 as i64, 7 as i64));
+    print(',');
+    print(mul(6 as u8, 7 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(mul(6 as u16, 7 as u16));
+    print(',');
+    print(mul(6 as u32, 7 as u32));
+    print(',');
+    print(mul(6 as u64, 7 as u64));
+    print(',');
+    print(mul(6 as usize, 7 as usize));
+    print(',');
+    print(mul(0.25 as f32, 42.0 as f32));
+    print(',');
+    print(mul(0.25 as f64, 42.0 as f64));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42,10.5,10.5"
+
+func div[T: Div[T]](a: T, b: T) -> T {
+    return a / b;
+}
+
+func main() {
+    print(div(126 as i8, 3 as i8));
+    print(',');
+    print(div(126 as i16, 3 as i16));
+    print(',');
+    print(div(126 as i32, 3 as i32));
+    print(',');
+    print(div(126 as i64, 3 as i64));
+    print(',');
+    print(div(126 as u8, 3 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(div(126 as u16, 3 as u16));
+    print(',');
+    print(div(126 as u32, 3 as u32));
+    print(',');
+    print(div(126 as u64, 3 as u64));
+    print(',');
+    print(div(126 as usize, 3 as usize));
+    print(',');
+    print(div(42.0 as f32, 4.0 as f32));
+    print(',');
+    print(div(42.0 as f64, 4.0 as f64));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42"
+
+func mod[T: Mod[T]](a: T, b: T) -> T {
+    return a % b;
+}
+
+func main() {
+    print(mod(128 as i8, 43 as i8));
+    print(',');
+    print(mod(128 as i16, 43 as i16));
+    print(',');
+    print(mod(128 as i32, 43 as i32));
+    print(',');
+    print(mod(128 as i64, 43 as i64));
+    print(',');
+    print(mod(128 as u8, 43 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(mod(128 as u16, 43 as u16));
+    print(',');
+    print(mod(128 as u32, 43 as u32));
+    print(',');
+    print(mod(128 as u64, 43 as u64));
+    print(',');
+    print(mod(128 as usize, 43 as usize));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42"
+
+func bit_and[T: BitAnd[T]](a: T, b: T) -> T {
+    return a & b;
+}
+
+func main() {
+    print(bit_and(0x3A as i8, 0x2F as i8));
+    print(',');
+    print(bit_and(0x3A as i16, 0x2F as i16));
+    print(',');
+    print(bit_and(0x3A as i32, 0x2F as i32));
+    print(',');
+    print(bit_and(0x3A as i64, 0x2F as i64));
+    print(',');
+    print(bit_and(0x3A as u8, 0x2F as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(bit_and(0x3A as u16, 0x2F as u16));
+    print(',');
+    print(bit_and(0x3A as u32, 0x2F as u32));
+    print(',');
+    print(bit_and(0x3A as u64, 0x2F as u64));
+    print(',');
+    print(bit_and(0x3A as usize, 0x2F as usize));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42"
+
+func bit_or[T: BitOr[T]](a: T, b: T) -> T {
+    return a | b;
+}
+
+func main() {
+    print(bit_or(0x28 as i8, 0x02 as i8));
+    print(',');
+    print(bit_or(0x28 as i16, 0x02 as i16));
+    print(',');
+    print(bit_or(0x28 as i32, 0x02 as i32));
+    print(',');
+    print(bit_or(0x28 as i64, 0x02 as i64));
+    print(',');
+    print(bit_or(0x28 as u8, 0x02 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(bit_or(0x28 as u16, 0x02 as u16));
+    print(',');
+    print(bit_or(0x28 as u32, 0x02 as u32));
+    print(',');
+    print(bit_or(0x28 as u64, 0x02 as u64));
+    print(',');
+    print(bit_or(0x28 as usize, 0x02 as usize));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42"
+
+func bit_xor[T: BitXor[T]](a: T, b: T) -> T {
+    return a ^ b;
+}
+
+func main() {
+    print(bit_xor(0x35 as i8, 0x1F as i8));
+    print(',');
+    print(bit_xor(0x35 as i16, 0x1F as i16));
+    print(',');
+    print(bit_xor(0x35 as i32, 0x1F as i32));
+    print(',');
+    print(bit_xor(0x35 as i64, 0x1F as i64));
+    print(',');
+    print(bit_xor(0x35 as u8, 0x1F as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(bit_xor(0x35 as u16, 0x1F as u16));
+    print(',');
+    print(bit_xor(0x35 as u32, 0x1F as u32));
+    print(',');
+    print(bit_xor(0x35 as u64, 0x1F as u64));
+    print(',');
+    print(bit_xor(0x35 as usize, 0x1F as usize));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42"
+
+func shl[T: Shl[T]](a: T, b: T) -> T {
+    return a << b;
+}
+
+func main() {
+    print(shl(21 as i8, 1 as i8));
+    print(',');
+    print(shl(21 as i16, 1 as i16));
+    print(',');
+    print(shl(21 as i32, 1 as i32));
+    print(',');
+    print(shl(21 as i64, 1 as i64));
+    print(',');
+    print(shl(21 as u8, 1 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(shl(21 as u16, 1 as u16));
+    print(',');
+    print(shl(21 as u32, 1 as u32));
+    print(',');
+    print(shl(21 as u64, 1 as u64));
+    print(',');
+    print(shl(21 as usize, 1 as usize));
+}
+
+# test:subtest
+# test:output "42,42,42,42,42,42,42,42,42"
+
+func shr[T: Shr[T]](a: T, b: T) -> T {
+    return a >> b;
+}
+
+func main() {
+    print(shr(84 as i8, 1 as i8));
+    print(',');
+    print(shr(84 as i16, 1 as i16));
+    print(',');
+    print(shr(84 as i32, 1 as i32));
+    print(',');
+    print(shr(84 as i64, 1 as i64));
+    print(',');
+    print(shr(84 as u8, 1 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(shr(84 as u16, 1 as u16));
+    print(',');
+    print(shr(84 as u32, 1 as u32));
+    print(',');
+    print(shr(84 as u64, 1 as u64));
+    print(',');
+    print(shr(84 as usize, 1 as usize));
+}
+
+# test:subtest
 # test:output "e,e,n"
 
 struct IntWrapper: Compare[IntWrapper] {
@@ -304,4 +590,87 @@ func main() {
     test(b, a);
     print(',');
     test(a, a);
+}
+
+# test:subtest
+# test:output "29,23,78,8,2,2,27,25,208,3"
+
+struct IntWrapper:
+    Add[IntWrapper],
+    Sub[IntWrapper],
+    Mul[IntWrapper],
+    Div[IntWrapper],
+    Mod[IntWrapper],
+    BitAnd[IntWrapper],
+    BitOr[IntWrapper],
+    BitXor[IntWrapper],
+    Shl[IntWrapper],
+    Shr[IntWrapper],
+{    
+    var value: i32;
+
+    pub func __add__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value + other.value };
+    }
+
+    pub func __sub__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value - other.value };
+    }
+
+    pub func __mul__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value * other.value };
+    }
+
+    pub func __div__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value / other.value };
+    }
+
+    pub func __mod__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value % other.value };
+    }
+
+    pub func __bitand__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value & other.value };
+    }
+
+    pub func __bitor__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value | other.value };
+    }
+
+    pub func __bitxor__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value ^ other.value };
+    }
+
+    pub func __shl__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value << other.value };
+    }
+
+    pub func __shr__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value >> other.value };
+    }
+}
+
+func main() {
+    var a = IntWrapper { value: 26 };
+    var b = IntWrapper { value: 3 };
+
+    print((a + b).value);
+    print(',');
+    print((a - b).value);
+    print(',');
+    print((a * b).value);
+    print(',');
+    print((a / b).value);
+    print(',');
+    print((a % b).value);
+    print(',');
+    print((a & b).value);
+    print(',');
+    print((a | b).value);
+    print(',');
+    print((a ^ b).value);
+    print(',');
+    print((a << b).value);
+    print(',');
+    print((a >> b).value);
 }

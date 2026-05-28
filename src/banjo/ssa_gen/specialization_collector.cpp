@@ -1,8 +1,8 @@
 #include "banjo/ssa_gen/specialization_collector.hpp"
 
 #include "banjo/sir/magic_methods.hpp"
-#include "banjo/sir/sir.hpp"
 #include "banjo/sir/resource_generator.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
@@ -337,14 +337,7 @@ void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr 
     if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
         if (!entry_stack.empty()) {
             SpecializationCollector::Entry &entry = entry_stack.back();
-            sir::Expr generic_arg = nullptr;
-
-            for (unsigned i = 0; i < entry.params.size(); i++) {
-                if (entry.params[i] == generic_method->param) {
-                    generic_arg = entry.args[i];
-                    break;
-                }
-            }
+            sir::Expr generic_arg = entry.resolve_param(*generic_method->param);
 
             if (auto concrete_struct = generic_arg.match_concrete<sir::StructDef>()) {
                 std::string_view method_name = generic_method->decl->ident.value;
