@@ -21,7 +21,7 @@ pub func free(pointer: addr) {
 }
 
 pub func copy(src: addr, dst: addr, size: usize) {
-    c.memcpy(dst, src, size);
+    c.memmove(dst, src, size);
 }
 
 pub func swap[T](ref mut a: T, ref mut b: T) {
