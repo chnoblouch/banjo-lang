@@ -145,11 +145,19 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concr
         sir::Comparison comparison{[&](sir::Expr lhs, sir::Expr rhs) {
             if (auto pseudo_type = lhs.match<sir::PseudoType>()) {
                 if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
-                    return std::optional<bool>{rhs.is_symbol(&struct_def)};
+                    if (auto concrete_struct = rhs.match_concrete<sir::StructDef>()) {
+                        return std::optional<bool>{concrete_struct->def == &struct_def};
+                    } else {
+                        return std::optional<bool>{false};
+                    }
                 }
             } else if (auto pseudo_type = rhs.match<sir::PseudoType>()) {
                 if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
-                    return std::optional<bool>{lhs.is_symbol(&struct_def)};
+                    if (auto concrete_struct = lhs.match_concrete<sir::StructDef>()) {
+                        return std::optional<bool>{concrete_struct->def == &struct_def};
+                    } else {
+                        return std::optional<bool>{false};
+                    }
                 }
             }
 

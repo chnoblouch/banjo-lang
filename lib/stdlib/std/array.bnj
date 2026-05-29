@@ -2,10 +2,10 @@ use std.{
     memory.{PointerMoveIter, PointerRefIter},
     memory,
     convert,
-    protos.{ToRepr, ToString},
+    protos.{Copy, ToRepr, ToString},
 };
 
-struct Array[T]: ToString, ToRepr {
+struct Array[T]: Copy, ToString, ToRepr {
     var slice: Slice[T];
     var capacity: usize;
 
@@ -36,7 +36,7 @@ struct Array[T]: ToString, ToRepr {
         };
     }
 
-    pub func __deinit__(self) {
+    pub func __deinit__(self) {        
         for i in 0..self.slice.length {
             __builtin_deinit(self.slice.data[i]);
         }
@@ -62,7 +62,7 @@ struct Array[T]: ToString, ToRepr {
         self.slice.length += 1;
     }
 
-    pub func insert(mut self, index: usize, value: T) {
+    pub func insert(mut self, index: usize, @unmanaged value: T) {
         if index > self.slice.length {
             panic(
                 "insertion index out of bounds (index: " +
@@ -77,8 +77,8 @@ struct Array[T]: ToString, ToRepr {
 
         var num_bytes = meta(T).size * (self.slice.length - index);
         memory.copy(&self.slice.data[index], &self.slice.data[index + 1], num_bytes);
+        memory.copy(&value, &self.slice.data[index], meta(T).size);
 
-        self.slice.data[index] = value;
         self.slice.length += 1;
     }
 
@@ -92,6 +92,8 @@ struct Array[T]: ToString, ToRepr {
                 ")",
             );
         }
+
+        __builtin_deinit(self.slice.data[index]);
         
         var num_bytes = meta(T).size * (self.slice.length - index);
         memory.copy(&self.slice.data[index + 1], &self.slice.data[index], num_bytes);
@@ -111,7 +113,16 @@ struct Array[T]: ToString, ToRepr {
     pub func copy(self) -> Array[T] {
         var size = self.slice.length * meta(T).size;
         var data = memory.alloc(size) as *T;
-        memory.copy(self.slice.data, data, size);
+
+        if meta(T).impl_of(Copy) {
+            for i in 0..self.slice.length {
+                data[i] = self.slice.data[i].copy();
+            }
+        } else {
+            panic("cannot copy array (`T` does not implement `Copy`)");
+        }
+
+        # memory.copy(self.slice.data, data, size);
 
         return Array[T] {
             slice: Slice[T].new(data, self.slice.length),
