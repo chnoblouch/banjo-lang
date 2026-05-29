@@ -28,6 +28,14 @@ struct Optional[T]: ToString {
         return self.value;
     }
 
+    pub func as_ref(mut self) -> Optional[*T] {
+        if self.has_value {
+            return Optional[*T].new_some(&self.value);
+        } else {
+            return Optional[*T].new_none();
+        }
+    }
+
     pub func __str__(self) -> String {
         if self.has_value {
             return to_string(self.value);

@@ -41,6 +41,14 @@ struct Result[T, E]: ToString {
         return self.error;
     }
 
+    pub func as_ref(mut self) -> Result[*T, *E] {
+        if self.successful {
+            return Result[*T, *E].new_success(&self.value);
+        } else {
+            return Result[*T, *E].new_failure(&self.error);
+        }
+    }
+
     pub func __str__(self) -> String {
         if self.successful {
             return to_string(self.value);
