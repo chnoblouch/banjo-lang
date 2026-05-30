@@ -60,6 +60,7 @@ private:
     void encode_orr(mcode::Instruction &instr);
     void encode_eor(mcode::Instruction &instr);
     void encode_lsl(mcode::Instruction &instr);
+    void encode_lsr(mcode::Instruction &instr);
     void encode_asr(mcode::Instruction &instr);
     void encode_csel(mcode::Instruction &instr);
     void encode_fmov(mcode::Instruction &instr);

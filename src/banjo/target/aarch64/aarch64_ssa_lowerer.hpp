@@ -18,6 +18,8 @@ public:
 public:
     mcode::Operand lower_value(const ssa::Operand &operand);
     mcode::Operand lower_address(const ssa::Operand &operand);
+    mcode::Operand offset_address(const mcode::Operand &m_operand, unsigned offset);
+
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv);
 
     void lower_load(ssa::Instruction &instr);

@@ -7,3 +7,8 @@ and x15, x23, x6
 # test:encoding "EF02060A"
 
 and w15, w23, w6
+
+# test:subtest
+# test:encoding "EF3E068A"
+
+and x15, x23, x6, lsl #15

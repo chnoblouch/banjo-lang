@@ -34,6 +34,7 @@ const std::unordered_map<mcode::Opcode, std::string> AArch64AsmEmitter::OPCODE_N
     {target::AArch64Opcode::ORR, "orr"},
     {target::AArch64Opcode::EOR, "eor"},
     {target::AArch64Opcode::LSL, "lsl"},
+    {target::AArch64Opcode::LSR, "lsr"},
     {target::AArch64Opcode::ASR, "asr"},
     {target::AArch64Opcode::CSEL, "csel"},
     {target::AArch64Opcode::FMOV, "fmov"},

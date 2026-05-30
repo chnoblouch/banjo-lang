@@ -28,6 +28,7 @@ enum {
     ORR,
     EOR,
     LSL,
+    LSR,
     ASR,
     CSEL,
     FMOV,

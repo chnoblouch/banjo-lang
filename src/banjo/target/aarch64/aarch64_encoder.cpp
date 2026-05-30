@@ -43,6 +43,7 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::ORR: encode_orr(instr); break;
         case AArch64Opcode::EOR: encode_eor(instr); break;
         case AArch64Opcode::LSL: encode_lsl(instr); break;
+        case AArch64Opcode::LSR: encode_lsr(instr); break;
         case AArch64Opcode::ASR: encode_asr(instr); break;
         case AArch64Opcode::CSEL: encode_csel(instr); break;
         case AArch64Opcode::FMOV: encode_fmov(instr); break;
@@ -201,6 +202,10 @@ void AArch64Encoder::encode_eor(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_lsl(mcode::Instruction &instr) {
     encode_lsl_family(instr, {0x1AC02000});
+}
+
+void AArch64Encoder::encode_lsr(mcode::Instruction &instr) {
+    encode_lsl_family(instr, {0x1AC02400});
 }
 
 void AArch64Encoder::encode_asr(mcode::Instruction &instr) {
@@ -621,11 +626,12 @@ void AArch64Encoder::encode_mul_family(mcode::Instruction &instr, std::array<std
 }
 
 void AArch64Encoder::encode_and_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
-    ASSERT(instr.get_operands().size() == 3);
+    ASSERT(instr.get_operands().size() == 3 || instr.get_operands().size() == 4);
 
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_lhs = instr.get_operand(1);
     mcode::Operand &m_rhs = instr.get_operand(2);
+    mcode::Operand *m_shift = instr.try_get_operand(3);
 
     bool sf = instr.get_operand(0).get_size() == 8;
     std::uint32_t r_dst = encode_gp_reg(m_dst.get_physical_reg());
@@ -633,7 +639,8 @@ void AArch64Encoder::encode_and_family(mcode::Instruction &instr, std::array<std
 
     if (m_rhs.is_register()) {
         std::uint32_t r_rhs = encode_gp_reg(m_rhs.get_physical_reg());
-        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+        std::uint32_t shift = m_shift ? encode_imm(m_shift->get_aarch64_left_shift(), 6, 0) : 0;
+        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (shift << 10) | (r_lhs << 5) | r_dst);
     } else if (m_rhs.is_int_immediate()) {
         // TODO: Bitmask immediates
         ASSERT_MESSAGE(false, "cannot encode bitmask immediates");

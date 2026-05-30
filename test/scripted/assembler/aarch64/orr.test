@@ -7,3 +7,8 @@ orr x15, x23, x6
 # test:encoding "EF02062A"
 
 orr w15, w23, w6
+
+# test:subtest
+# test:encoding "EF3E06AA"
+
+orr x15, x23, x6, lsl #15

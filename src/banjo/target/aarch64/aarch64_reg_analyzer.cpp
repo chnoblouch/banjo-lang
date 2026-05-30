@@ -156,6 +156,7 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
         case ORR:
         case EOR: // TODO: I guess we should handle the case where `src` and `dst` are the same register.
         case LSL:
+        case LSR:
         case ASR:
         case CSEL:
         case FADD:

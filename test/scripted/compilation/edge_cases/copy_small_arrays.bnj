@@ -1,0 +1,199 @@
+# test:subtest
+# test:output "A"
+
+func main() {
+    var array: [u8; 1] = ['A'];
+    var copy = array;
+
+    for i in 0..1 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "AB"
+
+func main() {
+    var array: [u8; 2] = ['A', 'B'];
+    var copy = array;
+
+    for i in 0..2 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "ABC"
+
+func main() {
+    var array: [u8; 3] = ['A', 'B', 'C'];
+    var copy = array;
+
+    for i in 0..3 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "ABCD"
+
+func main() {
+    var array: [u8; 4] = ['A', 'B', 'C', 'D'];
+    var copy = array;
+
+    for i in 0..4 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "ABCDE"
+
+func main() {
+    var array: [u8; 5] = ['A', 'B', 'C', 'D', 'E'];
+    var copy = array;
+
+    for i in 0..5 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "ABCDEF"
+
+func main() {
+    var array: [u8; 6] = ['A', 'B', 'C', 'D', 'E', 'F'];
+    var copy = array;
+
+    for i in 0..6 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "ABCDEFG"
+
+func main() {
+    var array: [u8; 7] = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    var copy = array;
+
+    for i in 0..7 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "ABCDEFGH"
+
+func main() {
+    var array: [u8; 8] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    var copy = array;
+
+    for i in 0..8 {
+        print(copy[i]);
+    }
+}
+
+# test:subtest
+# test:output "A"
+
+func f(array: [u8; 1]) {
+    for i in 0..1 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A']);
+}
+
+# test:subtest
+# test:output "AB"
+
+func f(array: [u8; 2]) {
+    for i in 0..2 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B']);
+}
+
+# test:subtest
+# test:output "ABC"
+
+func f(array: [u8; 3]) {
+    for i in 0..3 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B', 'C']);
+}
+
+# test:subtest
+# test:output "ABCD"
+
+func f(array: [u8; 4]) {
+    for i in 0..4 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B', 'C', 'D']);
+}
+
+# test:subtest
+# test:output "ABCDE"
+
+func f(array: [u8; 5]) {
+    for i in 0..5 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B', 'C', 'D', 'E']);
+}
+
+# test:subtest
+# test:output "ABCDEF"
+
+func f(array: [u8; 6]) {
+    for i in 0..6 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B', 'C', 'D', 'E', 'F']);
+}
+
+# test:subtest
+# test:output "ABCDEFG"
+
+func f(array: [u8; 7]) {
+    for i in 0..7 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+}
+
+# test:subtest
+# test:output "ABCDEFGH"
+
+func f(array: [u8; 8]) {
+    for i in 0..8 {
+        print(array[i]);
+    }
+}
+
+func main() {
+    f(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+}
