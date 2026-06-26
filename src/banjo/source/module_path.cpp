@@ -70,6 +70,37 @@ std::string ModulePath::to_string(std::string_view delimiter) const {
     return string;
 }
 
+unsigned ModulePath::num_common_ancestors(const ModulePath &other) const {
+    unsigned end = std::min(value.size(), other.value.size());
+    unsigned depth = 0;
+
+    for (unsigned i = 0; i < end; i++) {
+        if (value[i] != other.value[i]) {
+            return depth;
+        }
+
+        if (value[i] == '.' || i == end - 1) {
+            depth += 1;
+        }
+    }
+
+    return depth;
+}
+
+ModulePath ModulePath::strip(unsigned count) const {
+    unsigned index = 0;
+
+    while (count > 0 && index < value.size()) {
+        if (value[index] == '.') {
+            count -= 1;
+        }
+
+        index += 1;
+    }
+
+    return ModulePath{value.substr(index)};
+}
+
 std::string_view ModulePath::operator[](unsigned index) const {
     unsigned start = 0;
 

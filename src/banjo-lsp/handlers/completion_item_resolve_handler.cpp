@@ -3,6 +3,7 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/lexer/token.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/json.hpp"
 
@@ -34,6 +35,62 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
     }
 
     std::string name = item.symbol.get_name();
+
+    for (sir::Decl &decl : cur_file.sir_mod->block.decls) {
+        if (auto use_decl = decl.match<sir::UseDecl>()) {
+            // TODO: Consider comments.
+
+            std::optional<UseInsertionPoint> point =
+                find_insertion_point(*item.file_to_use->sir_mod, use_decl->root_item, nullptr);
+
+            if (!point) {
+                continue;
+            }
+
+            ModulePath stripped_path = item.file_to_use->mod_path.strip(point->common_ancestor);
+            std::string path;
+
+            if (stripped_path.is_empty()) {
+                path = name;
+            } else {
+                path = std::string{stripped_path.to_string()} + '.' + name;
+            }
+
+            ASTNode *dot_expr = point->top_level_dot_expr->ast_node;
+            ASTNode *rhs = dot_expr->last_child;
+
+            if (rhs->type == AST_IDENTIFIER) {
+                JSONArray edits{
+                    serialize_insertion(cur_file, {point->ident->ident.ast_node->range.end + 1, "{"}),
+                    serialize_insertion(cur_file, {point->top_level_dot_expr->ast_node->range.end, ", " + path + "}"}),
+                };
+
+                JSONObject result = params;
+                result.add("additionalTextEdits", edits);
+                return result;
+            } else if (rhs->type == AST_USE_LIST) {
+                TextPosition position;
+                std::string text;
+
+                unsigned num_children = rhs->num_children();
+                unsigned num_commas = rhs->tokens.size() - 2;
+
+                if (num_children == num_commas) {
+                    Token &trailing_comma = cur_file.tokens.tokens[rhs->tokens[rhs->tokens.size() - 2]];
+                    position = trailing_comma.end();
+                    text = " " + path + ",";
+                } else {
+                    position = rhs->last_child->range.end;
+                    text = ", " + path;
+                }
+
+                JSONObject result = params;
+                result.add("additionalTextEdits", JSONArray{serialize_insertion(cur_file, {position, text})});
+                return result;
+            }
+        }
+    }
+
     std::string_view mod_path = item.file_to_use->mod_path.to_string();
     std::string use_text = "use " + std::string{mod_path} + '.' + name;
 
@@ -53,36 +110,84 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
         }
     }
 
-    TextPosition insert_pos;
+    TextInsertion insertion;
 
     if (last_use) {
-        TextInsertion insertion = insert_line_after(cur_file, last_use, use_text);
-        insert_pos = insertion.position;
-        use_text = insertion.text;
+        insertion = insert_line_after(cur_file, last_use, use_text);
     } else {
-        insert_pos = 0;
-
         std::span<Token> attached_tokens = cur_file.tokens.get_attached_tokens(0);
 
         if (attached_tokens.size() == 0 || !attached_tokens[0].is(TKN_WHITESPACE) ||
             std::ranges::count(attached_tokens[0].value, '\n') == 0) {
             use_text += "\n";
         }
+
+        insertion = {0, use_text};
     }
 
-    JSONObject edit{
-        {"range", ProtocolStructs::range_to_lsp(cur_file.get_content(), {insert_pos, insert_pos})},
-        {"newText", use_text},
-    };
-
     JSONObject result = params;
-    result.add("additionalTextEdits", JSONArray{edit});
+    result.add("additionalTextEdits", JSONArray{serialize_insertion(cur_file, insertion)});
     return result;
 }
 
+std::optional<CompletionItemResolveHandler::UseInsertionPoint> CompletionItemResolveHandler::find_insertion_point(
+    sir::Module &mod,
+    sir::UseItem &use_item,
+    lang::sir::UseDotExpr *top_level_dot_expr
+) {
+    if (auto ident = use_item.match<sir::UseIdent>()) {
+        if (!top_level_dot_expr) {
+            return {};
+        }
+
+        if (auto other_mod = ident->symbol.match<sir::Module>()) {
+            unsigned depth = mod.path.num_common_ancestors(other_mod->path);
+
+            if (depth > 0) {
+                return UseInsertionPoint{
+                    .top_level_dot_expr = top_level_dot_expr,
+                    .ident = ident,
+                    .common_ancestor = depth,
+                };
+            }
+        }
+    } else if (auto dot_expr = use_item.match<sir::UseDotExpr>()) {
+        if (!top_level_dot_expr) {
+            top_level_dot_expr = dot_expr;
+        }
+
+        auto lhs_point = find_insertion_point(mod, dot_expr->rhs, top_level_dot_expr);
+        auto rhs_point = find_insertion_point(mod, dot_expr->lhs, top_level_dot_expr);
+
+        if (lhs_point) {
+            if (rhs_point) {
+                return lhs_point->common_ancestor > rhs_point->common_ancestor ? lhs_point : rhs_point;
+            } else {
+                return lhs_point;
+            }
+        } else {
+            return rhs_point;
+        }
+    } else if (auto list = use_item.match<sir::UseList>()) {
+        std::optional<UseInsertionPoint> current;
+
+        for (sir::UseItem item : list->items) {
+            if (auto point = find_insertion_point(mod, item, nullptr)) {
+                if (!current || point->common_ancestor > current->common_ancestor) {
+                    current = point;
+                }
+            }
+        }
+
+        return current;
+    }
+
+    return {};
+}
+
 CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert_line_after(
-    lang::SourceFile &file,
-    lang::ASTNode *node,
+    SourceFile &file,
+    ASTNode *node,
     const std::string &text
 ) {
     unsigned last_token = file.tokens.last_token_index(node);
@@ -128,6 +233,13 @@ CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert
     return TextInsertion{
         .position = position,
         .text = text,
+    };
+}
+
+JSONObject CompletionItemResolveHandler::serialize_insertion(lang::SourceFile &file, TextInsertion insertion) {
+    return JSONObject{
+        {"range", ProtocolStructs::range_to_lsp(file.get_content(), {insertion.position, insertion.position})},
+        {"newText", insertion.text},
     };
 }
 
