@@ -13,14 +13,14 @@ struct Thread {
         platform.thread_close(self.handle);
     }
 
-    pub func join(self) {
+    pub func join(@byval self) {
         platform.thread_join(self.handle);
     }
 
     func initializer(data: addr) {
         var target = data as *||;
-        memory.free(data);
         (*target)();
+        memory.free(data);
     }
 }
 
