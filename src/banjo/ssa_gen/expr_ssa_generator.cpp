@@ -90,7 +90,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_VISIT_IMPOSSIBLE,                              // dot_expr
         SIR_VISIT_IMPOSSIBLE,                              // pseudo_type
         SIR_VISIT_IMPOSSIBLE,                              // meta_access
-        return generate_meta_field_expr(*inner),           // meta_field_expr
+        return generate_meta_field_expr(*inner, hints),    // meta_field_expr
         SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
@@ -775,15 +775,73 @@ StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr
     ASSERT_UNREACHABLE;
 }
 
-StoredValue ExprSSAGenerator::generate_meta_field_expr(const sir::MetaFieldExpr &meta_field_expr) {
-    if (meta_field_expr.field.value == "size") {
-        target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+StoredValue ExprSSAGenerator::generate_meta_field_expr(
+    const sir::MetaFieldExpr &meta_field_expr,
+    const StorageHints &hints
+) {
+    target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+    sir::Expr sir_type = meta_field_expr.base.as<sir::MetaAccess>().expr;
 
-        sir::Expr sir_type = meta_field_expr.base.as<sir::MetaAccess>().expr;
+    if (auto generic_param = sir_type.match_symbol<sir::GenericParam>()) {
+        sir_type = ctx.get_generic_arg(*generic_param);
+    }
+
+    if (meta_field_expr.field.value == "size") {
         ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(sir_type);
         unsigned size = data_layout.get_size(ssa_type);
 
         return StoredValue::create_value(ssa::Value::from_int_immediate(size, data_layout.get_usize_type()));
+    } else if (meta_field_expr.field.value == "is_enum") {
+        unsigned value = sir_type.is_symbol<sir::EnumDef>() ? 1 : 0;
+        return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
+    } else if (meta_field_expr.field.value == "variants") {
+        utils::Arena arena;
+        std::span<sir::Expr> values;
+
+        if (auto enum_def = sir_type.match_symbol<sir::EnumDef>()) {
+            const sir::StaticArrayType &array_type = meta_field_expr.type.as<sir::StaticArrayType>();
+            const sir::TupleExpr &tuple_type = array_type.base_type.as<sir::TupleExpr>();
+
+            values = arena.allocate_array<sir::Expr>(enum_def->variants.size());
+
+            for (unsigned i = 0; i < enum_def->variants.size(); i++) {
+                sir::Expr name_expr = arena.create<sir::StringLiteral>(sir::StringLiteral{
+                    .ast_node = nullptr,
+                    .type = tuple_type.exprs[0],
+                    .value = enum_def->variants[i]->ident.value,
+                });
+
+                sir::Expr value_expr = arena.create<sir::IntLiteral>(sir::IntLiteral{
+                    .ast_node = nullptr,
+                    .type = tuple_type.exprs[1],
+                    .value = enum_def->variants[i]->value.as<sir::IntLiteral>().value,
+                });
+
+                values[i] = arena.create<sir::TupleExpr>(sir::TupleExpr{
+                    .ast_node = nullptr,
+                    .type = array_type.base_type,
+                    .exprs = arena.create_array({name_expr, value_expr}),
+                });
+            }
+        }
+
+        sir::ArrayLiteral array_literal{
+            .ast_node = nullptr,
+            .type = meta_field_expr.type,
+            .values = values,
+        };
+
+        return generate_array_literal(array_literal, hints);
+    } else if (meta_field_expr.field.value == "num_variants") {
+        unsigned num_variants;
+
+        if (auto enum_def = sir_type.match_symbol<sir::EnumDef>()) {
+            num_variants = enum_def->variants.size();
+        } else {
+            num_variants = 0;
+        }
+
+        return StoredValue::create_value(ssa::Value::from_int_immediate(num_variants, data_layout.get_usize_type()));
     } else {
         ASSERT_UNREACHABLE;
     }

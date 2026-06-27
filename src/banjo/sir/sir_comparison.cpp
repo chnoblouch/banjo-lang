@@ -63,8 +63,8 @@ bool Comparison::compare(Expr lhs, Expr rhs) {
         return false,                                      // bracket_expr
         return false,                                      // dot_expr
         return false,                                      // pseudo_type
-        return false,                                      // meta_access
-        return false,                                      // meta_field_expr
+        return compare(*inner, rhs.as<MetaAccess>()),      // meta_access
+        return compare(*inner, rhs.as<MetaFieldExpr>()),   // meta_field_expr
         return false,                                      // meta_call_expr
         return false,                                      // init_expr
         return false,                                      // move_expr
@@ -137,6 +137,14 @@ bool Comparison::compare(ClosureType &lhs, ClosureType &rhs) {
 
 bool Comparison::compare(ReferenceType &lhs, ReferenceType &rhs) {
     return lhs.mut == rhs.mut && compare(lhs.base_type, rhs.base_type);
+}
+
+bool Comparison::compare(MetaAccess &lhs, MetaAccess &rhs) {
+    return compare(lhs.expr, rhs.expr);
+}
+
+bool Comparison::compare(MetaFieldExpr &lhs, MetaFieldExpr &rhs) {
+    return compare(lhs.base, rhs.base) && lhs.field == rhs.field;
 }
 
 } // namespace banjo::lang::sir

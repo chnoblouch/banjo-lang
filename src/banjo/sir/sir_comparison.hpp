@@ -31,6 +31,8 @@ public:
     bool compare(FuncType &lhs, FuncType &rhs, unsigned first_param = 0);
     bool compare(ClosureType &lhs, ClosureType &rhs);
     bool compare(ReferenceType &lhs, ReferenceType &rhs);
+    bool compare(MetaAccess &lhs, MetaAccess &rhs);
+    bool compare(MetaFieldExpr &lhs, MetaFieldExpr &rhs);
 };
 
 }; // namespace banjo::lang::sir

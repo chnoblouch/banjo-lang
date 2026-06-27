@@ -1973,27 +1973,57 @@ Result ExprAnalyzer::analyze_meta_access(sir::MetaAccess &meta_access) {
 }
 
 Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, sir::Expr &out_expr) {
+    sir::Expr &base = meta_field_expr.base.as<sir::MetaAccess>().expr;
+
+    Result result = analyze(base);
+    RESULT_RETURN_ON_ERROR(result);
+
     if (meta_field_expr.field.value == "size") {
-        Result result = analyze(meta_field_expr.base.as<sir::MetaAccess>().expr);
-        RESULT_RETURN_ON_ERROR(result);
-
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
-        return Result::SUCCESS;
-    }
+    } else if (Utils::is_one_of(meta_field_expr.field.value, {"is_enum"})) {
+        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+    } else if (meta_field_expr.field.value == "variants") {
+        sir::Expr string_type = analyzer.create(
+            sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
+            }
+        );
 
-    if (flags & DONT_EVAL_META_EXPRS) {
+        sir::Expr tuple_type = analyzer.create(
+            sir::TupleExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .exprs = analyzer.create_array({string_type, base}),
+            }
+        );
+
+        sir::Expr array_length = analyzer.create(
+            sir::MetaFieldExpr{
+                .ast_node = nullptr,
+                .type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE),
+                .base = meta_field_expr.base,
+                .field{
+                    .ast_node = nullptr,
+                    .value = "num_variants",
+                },
+            }
+        );
+
+        meta_field_expr.type = analyzer.create(
+            sir::StaticArrayType{
+                .ast_node = nullptr,
+                .base_type = tuple_type,
+                .length = array_length,
+            }
+        );
+    } else if (meta_field_expr.field.value == "num_variants") {
+        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
+    } else if (flags & DONT_EVAL_META_EXPRS) {
         return MetaExprEvaluator(analyzer).evaluate(meta_field_expr, out_expr);
     }
 
-    Result result = analyze(meta_field_expr.base);
-
-    if (meta_field_expr.field.value == "size") {
-        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
-    } else if (Utils::is_one_of(meta_field_expr.field.value, {"is_pointer", "is_struct", "is_enum", "is_resource"})) {
-        meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
-    }
-
-    return result;
+    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr) {

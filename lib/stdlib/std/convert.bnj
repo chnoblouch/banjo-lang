@@ -31,7 +31,9 @@ pub func to_string[T](ref value: T) -> String {
         return char_to_string(value as u8);
     } else if T == bool {
         return bool_to_string(value);
-    }else if meta(T).impl_of(ToString) {
+    } else if meta(T).is_enum {
+        return enum_to_string(value);
+    } else if meta(T).impl_of(ToString) {
         return value.__str__();
     } else if meta(T).impl_of(ToRepr) {
         return value.__repr__(0);
@@ -265,16 +267,15 @@ func bool_to_string(ref value: bool) -> String {
 #     return string;
 # }
 
-# func enum_to_repr[T](enum_: T) -> String {
-#     var variant_name: String;
+# TODO: Remove `ref`
+func enum_to_string[T](ref value: T) -> String {
+    var variants = meta(T).variants;
+    
+    for i in 0..meta(T).num_variants {
+        if memory.compare(__builtin_pointer_to(value), &variants[i].1, 4) {
+            return String.from(StringSlice.of_cstring(variants[i].0));
+        }
+    }
 
-#     meta for variant in meta(T).variants {
-#         # TODO: This cast to 'i32' should not be necessary.
-#         if enum_ as i32 == variant.1 {
-#             variant_name = variant.0;
-#         }
-#     }
-
-#     # TODO: Maybe don't include the enum name.
-#     return meta(T).name + "." + variant_name;
-# }
+    return "";
+}

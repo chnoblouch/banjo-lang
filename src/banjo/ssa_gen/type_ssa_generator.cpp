@@ -4,6 +4,7 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
@@ -110,7 +111,9 @@ ssa::Type TypeSSAGenerator::generate_tuple_type(const sir::TupleExpr &tuple_expr
 }
 
 ssa::Type TypeSSAGenerator::generate_static_array_type(const sir::StaticArrayType &static_array_type) {
-    unsigned length = static_array_type.length.as<sir::IntLiteral>().value.to_u64();
+    // HACK: This could accidentally generate SSA instructions.
+    StoredValue length_value = ExprSSAGenerator{ctx}.generate(static_array_type.length);
+    unsigned length = length_value.get_value().get_int_immediate().to_u64();
 
     ssa::Type type = generate(static_array_type.base_type);
     type.set_array_length(type.get_array_length() * length);
