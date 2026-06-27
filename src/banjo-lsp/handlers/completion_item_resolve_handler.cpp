@@ -75,7 +75,10 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
                 unsigned num_children = rhs->num_children();
                 unsigned num_commas = rhs->tokens.size() - 2;
 
-                if (num_children == num_commas) {
+                if (num_children == 0) {
+                    position = cur_file.tokens.tokens[rhs->tokens[0]].position + 1;
+                    text = path;
+                } else if (num_children == num_commas) {
                     Token &trailing_comma = cur_file.tokens.tokens[rhs->tokens[rhs->tokens.size() - 2]];
                     position = trailing_comma.end();
                     text = " " + path + ",";
