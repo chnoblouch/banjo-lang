@@ -4,7 +4,7 @@
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/config/config.hpp"
-#include "banjo/passes/pass_runner.hpp"
+#include "banjo/passes/pipeline.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
@@ -86,11 +86,14 @@ void Compiler::compile() {
     PROFILE_SECTION_END("FRONTEND");
     PROFILE_SECTION_BEGIN("OPTIMIZATION");
 
-    passes::PassRunner pass_runner;
-    pass_runner.set_opt_level(config.opt_level);
-    pass_runner.set_generate_addr_table(config.hot_reload);
-    pass_runner.set_debug(config.debug);
-    pass_runner.run(ssa_module, target);
+    passes::Pipeline::Config ssa_pipeline_config{
+        .target = target,
+        .opt_level = static_cast<unsigned>(config.opt_level),
+        .generate_addr_table = config.hot_reload,
+        .debug = config.debug,
+    };
+
+    passes::Pipeline{ssa_pipeline_config}.run(ssa_module);
 
     PROFILE_SECTION_END("OPTIMIZATION");
     PROFILE_SECTION_BEGIN("BACKEND");
