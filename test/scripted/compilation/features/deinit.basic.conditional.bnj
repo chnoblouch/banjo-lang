@@ -92,3 +92,35 @@ func main() {
 
     print('b');
 }
+
+# test:subtest
+# test:output "av3bcdv7ev4v8"
+
+func get_false() -> bool {
+    return false;
+}
+
+func get_true() -> bool {
+    return true;
+}
+
+func consume(resource: ValueResource) -> bool {
+    return true;
+}
+
+func main() {
+    var a = ValueResource { value: 3 };
+    var b = ValueResource { value: 8 };
+    var c = ValueResource { value: 4 };
+    var d = ValueResource { value: 7 };
+
+    print('a');
+    if get_true() && consume(a) {}
+    print('b');
+    if get_true() || consume(b) {}
+    print('c');
+    if get_false() && consume(c) {}
+    print('d');
+    if get_false() || consume(d) {}
+    print('e');
+}

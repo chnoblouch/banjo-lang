@@ -1,7 +1,7 @@
 #include "resource_analyzer.hpp"
 
+#include "banjo/sema/result_macros.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
-#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
@@ -308,7 +308,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // map_literal
         SIR_VISIT_IGNORE,                                // closure_literal
         result = analyze_symbol_expr(*inner, expr, ctx), // symbol_expr
-        SIR_VISIT_IGNORE,                                // binary_expr
+        result = analyze_binary_expr(*inner, ctx),       // binary_expr
         result = analyze_unary_expr(*inner, ctx),        // unary_expr
         SIR_VISIT_IGNORE,                                // cast_expr
         SIR_VISIT_IGNORE,                                // index_expr
@@ -375,14 +375,9 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
 
 Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, Context &ctx) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
     for (sir::Expr &value : array_literal.values) {
-        partial_result = analyze_expr(value, true, ctx.conditional);
-
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+        RESULT_MERGE(result, analyze_expr(value, true, ctx.conditional));
     }
 
     return result;
@@ -390,14 +385,23 @@ Result ResourceAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal,
 
 Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
-        partial_result = analyze_expr(entry.value, true, ctx.conditional);
+        RESULT_MERGE(result, analyze_expr(entry.value, true, ctx.conditional));
+    }
 
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+    return result;
+}
+
+Result ResourceAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, Context &ctx) {
+    Result result = Result::SUCCESS;
+
+    if (binary_expr.op == sir::BinaryOp::AND || binary_expr.op == sir::BinaryOp::OR) {
+        RESULT_MERGE(result, analyze_expr(binary_expr.lhs, ctx.moving, ctx.conditional));
+        RESULT_MERGE(result, analyze_expr(binary_expr.rhs, ctx.moving, true));
+    } else {
+        RESULT_MERGE(result, analyze_expr(binary_expr.lhs, ctx));
+        RESULT_MERGE(result, analyze_expr(binary_expr.rhs, ctx));
     }
 
     return result;
@@ -435,14 +439,9 @@ Result ResourceAnalyzer::analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::
 
 Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, Context &ctx) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
     for (sir::Expr &arg : call_expr.args) {
-        partial_result = analyze_expr(arg, true, ctx.conditional);
-
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+        RESULT_MERGE(result, analyze_expr(arg, true, ctx.conditional));
     }
 
     return result;
@@ -499,14 +498,9 @@ Result ResourceAnalyzer::analyze_try_expr(sir::TryExpr &try_expr, Context &ctx) 
 
 Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
     for (sir::Expr &expr : tuple_expr.exprs) {
-        partial_result = analyze_expr(expr, true, ctx.conditional);
-
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+        RESULT_MERGE(result, analyze_expr(expr, true, ctx.conditional));
     }
 
     return result;

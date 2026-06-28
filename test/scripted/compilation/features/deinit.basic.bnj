@@ -1,3 +1,13 @@
+# test:common
+
+struct ValueResource {
+    var value: i32;
+    
+    func __deinit__(self) {
+        print(self.value);
+    }
+}
+
 # test:subtest
 # test:output "ab"
 
@@ -10,6 +20,54 @@ struct Resource {
 func main() {
     var resource = Resource {};
     print('a');
+}
+
+# test:subtest
+# test:output "a7483"
+
+func main() {
+    var a = ValueResource { value: 3 };
+    var b = ValueResource { value: 8 };
+    var c = ValueResource { value: 4 };
+    var d = ValueResource { value: 7 };
+
+    print('a');
+}
+
+# test:subtest
+# test:output "a4b83"
+
+func main() {
+    var a = ValueResource { value: 3 };
+    var b = ValueResource { value: 8 };
+
+    {
+        var c = ValueResource { value: 4 };
+        print('a');
+    }
+
+    print('b');
+}
+
+# test:subtest
+# test:output "a7b4c83"
+
+func main() {
+    var a = ValueResource { value: 3 };
+    var b = ValueResource { value: 8 };
+
+    {
+        var c = ValueResource { value: 4 };
+        
+        {
+            var c = ValueResource { value: 7 };
+            print('a');
+        }
+        
+        print('b');
+    }
+
+    print('c');
 }
 
 # test:subtest

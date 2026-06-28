@@ -216,3 +216,18 @@ func main() {
 
     print('b');
 }
+
+# test:subtest
+# test:output "av8v1v5b"
+
+func main() {
+    print('a');
+
+	for ref value in [
+        ValueResource { value: 8 },
+        ValueResource { value: 1 },
+        ValueResource { value: 5 },
+    ] {}
+
+    print('b');
+}

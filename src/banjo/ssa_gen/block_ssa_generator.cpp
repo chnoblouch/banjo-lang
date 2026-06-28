@@ -11,6 +11,7 @@
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 
+#include <ranges>
 #include <utility>
 
 namespace banjo {
@@ -74,7 +75,7 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
 }
 
 void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
-    for (const auto &[symbol, resource] : block.resources) {
+    for (const auto &[symbol, resource] : std::ranges::reverse_view(block.resources)) {
         generate_deinit(resource, symbol);
     }
 }
@@ -321,8 +322,9 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
 
     if (final_resource.ownership == sir::Ownership::OWNED) {
         generate_deinit_call(final_resource, std::move(ssa_ptr));
-    } else if (final_resource.ownership == sir::Ownership::MOVED_COND ||
-               final_resource.ownership == sir::Ownership::INIT_COND) {
+    } else if (
+        final_resource.ownership == sir::Ownership::MOVED_COND || final_resource.ownership == sir::Ownership::INIT_COND
+    ) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
 
