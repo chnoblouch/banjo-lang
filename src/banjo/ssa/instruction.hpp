@@ -59,6 +59,11 @@ public:
     void set_attr(Attribute attr) { this->attr = attr; }
     void set_attrs_data(unsigned attr_data) { this->attr_data = attr_data; }
 
+    bool might_access_memory() const {
+        return opcode == ssa::Opcode::LOAD || opcode == ssa::Opcode::STORE || opcode == ssa::Opcode::CALL ||
+               opcode == ssa::Opcode::COPY;
+    }
+
     bool is_branching() const {
         return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;
     }

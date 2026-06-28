@@ -2,7 +2,6 @@
 
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
-#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/utils/bit_operations.hpp"
 
@@ -19,7 +18,10 @@ void PeepholeOptimizer::run(ssa::Module &mod) {
 }
 
 void PeepholeOptimizer::run(ssa::Function *func) {
+    stack_slots.clear();
+
     for (ssa::BasicBlock &block : func->get_basic_blocks()) {
+        discard_stack_slot_values();
         run(block, *func);
     }
 }
@@ -34,20 +36,70 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
         }
 
         switch (iter->get_opcode()) {
+            case ssa::Opcode::ALLOCA: process_alloca(iter); break;
+            case ssa::Opcode::LOAD: process_load(iter, block, func); break;
+            case ssa::Opcode::STORE: process_store(iter); break;
             case ssa::Opcode::ADD:
-            case ssa::Opcode::FADD: optimize_add(iter, block, func); break;
+            case ssa::Opcode::FADD: process_add(iter, block, func); break;
             case ssa::Opcode::SUB:
-            case ssa::Opcode::FSUB: optimize_sub(iter, block, func); break;
-            case ssa::Opcode::MUL: optimize_mul(iter, block); break;
-            case ssa::Opcode::UDIV: optimize_udiv(iter, block); break;
-            case ssa::Opcode::FMUL: optimize_fmul(iter, block, func); break;
-            case ssa::Opcode::CALL: optimize_call(iter, block, func); break;
+            case ssa::Opcode::FSUB: process_sub(iter, block, func); break;
+            case ssa::Opcode::MUL: process_mul(iter, block); break;
+            case ssa::Opcode::UDIV: process_udiv(iter, block); break;
+            case ssa::Opcode::FMUL: process_fmul(iter, block, func); break;
+            case ssa::Opcode::CALL: process_call(iter, block, func); break;
             default: break;
+        }
+
+        if (iter->get_opcode() != ssa::Opcode::LOAD && iter->get_opcode() != ssa::Opcode::STORE &&
+            iter->might_access_memory()) {
+            discard_stack_slot_values();
         }
     }
 }
 
-void PeepholeOptimizer::optimize_add(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_alloca(ssa::InstrIter &iter) {
+    stack_slots.emplace(*iter->get_dest(), iter->get_operand(0).get_type());
+}
+
+void PeepholeOptimizer::process_load(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+    ssa::Type type = iter->get_operand(0).get_type();
+    ssa::Value &addr = iter->get_operand(1);
+
+    if (!addr.is_register()) {
+        return;
+    }
+
+    auto stack_slot = stack_slots.find(addr.get_register());
+
+    if (stack_slot == stack_slots.end() || type != stack_slot->second.type) {
+        return;
+    }
+
+    if (stack_slot->second.value) {
+        eliminate(iter, *stack_slot->second.value, block, func);
+    }
+}
+
+void PeepholeOptimizer::process_store(ssa::InstrIter &iter) {
+    ssa::Value &value = iter->get_operand(0);
+    ssa::Value &addr = iter->get_operand(1);
+
+    if (!addr.is_register()) {
+        discard_stack_slot_values();
+        return;
+    }
+
+    auto stack_slot = stack_slots.find(addr.get_register());
+
+    if (stack_slot == stack_slots.end() || value.get_type() != stack_slot->second.type) {
+        discard_stack_slot_values();
+        return;
+    }
+
+    stack_slot->second.value = value;
+}
+
+void PeepholeOptimizer::process_add(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
     if (is_zero(iter->get_operand(0))) {
         eliminate(iter, iter->get_operand(1), block, func);
     } else if (is_zero(iter->get_operand(1))) {
@@ -55,13 +107,13 @@ void PeepholeOptimizer::optimize_add(ssa::InstrIter &iter, ssa::BasicBlock &bloc
     }
 }
 
-void PeepholeOptimizer::optimize_sub(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_sub(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
     if (is_zero(iter->get_operand(1))) {
         eliminate(iter, iter->get_operand(0), block, func);
     }
 }
 
-void PeepholeOptimizer::optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &block) {
+void PeepholeOptimizer::process_mul(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (is_imm(iter->get_operand(0)) && !is_imm(iter->get_operand(1))) {
         ssa::Operand tmp = iter->get_operand(0);
         iter->get_operand(0) = iter->get_operand(1);
@@ -80,7 +132,7 @@ void PeepholeOptimizer::optimize_mul(ssa::InstrIter &iter, ssa::BasicBlock &bloc
     }
 }
 
-void PeepholeOptimizer::optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block) {
+void PeepholeOptimizer::process_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (iter->get_operand(1).is_int_immediate()) {
         std::uint64_t value = iter->get_operand(1).get_int_immediate().to_bits();
 
@@ -93,7 +145,7 @@ void PeepholeOptimizer::optimize_udiv(ssa::InstrIter &iter, ssa::BasicBlock &blo
     }
 }
 
-void PeepholeOptimizer::optimize_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
     if (is_float_one(iter->get_operand(0))) {
         eliminate(iter, iter->get_operand(1), block, func);
     } else if (is_float_one(iter->get_operand(1))) {
@@ -105,7 +157,7 @@ void PeepholeOptimizer::optimize_fmul(ssa::InstrIter &iter, ssa::BasicBlock &blo
     }
 }
 
-void PeepholeOptimizer::optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
     ssa::Value &callee = iter->get_operand(0);
     if (!callee.is_extern_func()) {
         return;
@@ -126,7 +178,7 @@ void PeepholeOptimizer::optimize_call(ssa::InstrIter &iter, ssa::BasicBlock &blo
             }
 
             unsigned size = static_cast<unsigned>(size_operand.get_int_immediate().to_u64());
-            
+
             unsigned usize = get_target()->get_data_layout().get_register_size();
             ssa::Operand size_as_type = ssa::Operand::from_type({ssa::Primitive::U8, size});
 
@@ -169,6 +221,12 @@ void PeepholeOptimizer::eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::Bas
     ssa::InstrIter prev = iter.get_prev();
     block.remove(iter);
     iter = prev;
+}
+
+void PeepholeOptimizer::discard_stack_slot_values() {
+    for (auto &iter : stack_slots) {
+        iter.second.value = {};
+    }
 }
 
 bool PeepholeOptimizer::is_imm(ssa::Operand &operand) {

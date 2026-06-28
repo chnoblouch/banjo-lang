@@ -1,7 +1,7 @@
 # test:pass "stack_to_reg"
 # test:section input
 
-func ms_abi i32 @test():
+func i32 @test():
     %0 = alloca i32
     %1 = alloca i32
     %2 = alloca i32
@@ -17,5 +17,5 @@ func ms_abi i32 @test():
 
 # test:section output
 
-func ms_abi i32 @test():
+func i32 @test():
     ret i32 300

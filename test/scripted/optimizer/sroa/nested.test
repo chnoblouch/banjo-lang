@@ -10,7 +10,7 @@ struct @Sphere:
     field @Vec3 @position
     field f32 @radius
 
-func ms_abi i32 @test():
+func i32 @test():
     %0 = alloca @Sphere
     %1 = memberptr @Sphere, addr %0, void 0
     %2 = memberptr @Vec3, addr %1, void 2
@@ -31,7 +31,7 @@ struct @Sphere:
     field @Vec3 @position
     field f32 @radius
 
-func ms_abi i32 @test():
+func i32 @test():
     %0 = alloca f32
     %1 = alloca f32
     %2 = alloca f32

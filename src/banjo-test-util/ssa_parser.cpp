@@ -92,12 +92,6 @@ const std::unordered_map<std::string_view, ssa::Comparison> COMPARISONS = {
     {"fle", ssa::Comparison::FLE},
 };
 
-const std::unordered_map<std::string_view, ssa::CallingConv> CALLING_CONVS = {
-    {"sysv_abi", ssa::CallingConv::X86_64_SYS_V_ABI},
-    {"ms_abi", ssa::CallingConv::X86_64_MS_ABI},
-    {"aapcs", ssa::CallingConv::AARCH64_AAPCS},
-};
-
 SSAParser::SSAParser() : reader(std::cin) {}
 
 ssa::Module SSAParser::parse() {
@@ -110,7 +104,6 @@ ssa::Module SSAParser::parse() {
         std::string_view start = reader.read_until_whitespace();
 
         if (start == "func") {
-            ssa::CallingConv calling_conv = parse_calling_conv();
             ssa::Type return_type = parse_type();
             std::string name = parse_identifier();
             std::vector<ssa::Type> params = parse_params();
@@ -119,7 +112,7 @@ ssa::Module SSAParser::parse() {
             ssa::FunctionType type{
                 .params = params,
                 .return_type = return_type,
-                .calling_conv = calling_conv,
+                .calling_conv = ssa::CallingConv::NONE,
                 .variadic = false,
                 .first_variadic_index = 0,
             };
@@ -183,7 +176,6 @@ ssa::Module SSAParser::parse() {
         std::string_view start = reader.read_until_whitespace();
 
         if (start == "func") {
-            parse_calling_conv();
             parse_type();
             std::string name = parse_identifier();
 
@@ -298,18 +290,6 @@ std::vector<ssa::Type> SSAParser::parse_params() {
 
     reader.consume();
     return params;
-}
-
-ssa::CallingConv SSAParser::parse_calling_conv() {
-    reader.skip_whitespace();
-
-    std::string string;
-
-    while (LineBasedReader::is_alpha(reader.get()) || reader.get() == '_') {
-        string += reader.consume();
-    }
-
-    return CALLING_CONVS.at(string);
 }
 
 ssa::Instruction SSAParser::parse_instr(std::optional<ssa::VirtualRegister> dst) {

@@ -62,7 +62,11 @@ void Writer::write_func_decl(FunctionDecl &func_decl) {
     const FunctionType &func_type = func_decl.type;
 
     stream << "func ";
-    stream << calling_conv_to_str(func_type.calling_conv) + " ";
+
+    if (func_type.calling_conv != CallingConv::NONE) {
+        stream << calling_conv_to_str(func_type.calling_conv) + " ";
+    }
+
     stream << type_to_str(func_type.return_type) + " ";
     stream << "@" + func_decl.name;
     stream << "(";
@@ -87,7 +91,11 @@ void Writer::write_func_def(Function *func_def) {
     const FunctionType &func_type = func_def->type;
 
     stream << "func ";
-    stream << calling_conv_to_str(func_type.calling_conv) + " ";
+
+    if (func_type.calling_conv != CallingConv::NONE) {
+        stream << calling_conv_to_str(func_type.calling_conv) + " ";
+    }
+
     stream << type_to_str(func_type.return_type) + " ";
     stream << "@" + func_def->name;
     stream << "(";

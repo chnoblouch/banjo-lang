@@ -5,7 +5,7 @@ struct @S:
     field i64 @a
     field f32 @b
 
-func ms_abi f32 @test():
+func f32 @test():
     %0 = alloca @S
     store i64 100, addr %0
     %1 = load f32 %0
@@ -17,7 +17,7 @@ struct @S:
     field i64 @a
     field f32 @b
 
-func ms_abi f32 @test():
+func f32 @test():
     %0 = alloca @S
     store i64 100, addr %0
     %1 = load f32 %0

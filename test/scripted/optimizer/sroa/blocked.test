@@ -6,9 +6,9 @@ struct @Vec3:
     field f32 @y
     field f32 @z
 
-func ms_abi void @use(addr)
+func void @use(addr)
 
-func ms_abi i32 @test():
+func i32 @test():
     %0 = alloca @Vec3
     %1 = memberptr @Vec3, addr %0, void 1
     store f32 5.0, addr %1
@@ -24,9 +24,9 @@ struct @Vec3:
     field f32 @y
     field f32 @z
 
-func ms_abi void @use(addr)
+func void @use(addr)
 
-func ms_abi i32 @test():
+func i32 @test():
     %0 = alloca @Vec3
     %1 = memberptr @Vec3, addr %0, void 1
     store f32 5.0, addr %1

@@ -6,7 +6,7 @@ struct @Struct:
     field f32 @b
     field i64 @c
 
-func ms_abi f32 @test():
+func f32 @test():
     %0 = alloca @Struct
     %1 = memberptr @Struct, addr %0, void 1
     store f32 5.0, addr %1
@@ -21,7 +21,7 @@ struct @Struct:
     field f32 @b
     field i64 @c
 
-func ms_abi f32 @test():
+func f32 @test():
     %0 = alloca i32
     %1 = alloca f32
     %2 = alloca i64

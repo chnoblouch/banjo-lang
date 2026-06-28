@@ -30,7 +30,6 @@ private:
     std::string parse_identifier();
     ssa::Type parse_type();
     std::vector<ssa::Type> parse_params();
-    ssa::CallingConv parse_calling_conv();
 
     ssa::Instruction parse_instr(std::optional<ssa::VirtualRegister> dst);
     ssa::Opcode parse_op();

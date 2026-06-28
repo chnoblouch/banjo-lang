@@ -15,7 +15,7 @@ struct @B:
     field i32 @f1
     field f32 @f2
 
-func ms_abi f32 @test():
+func f32 @test():
     %0 = alloca @S
     %1 = memberptr @A, addr %0, void 2
     store i64 100, addr %0
@@ -39,7 +39,7 @@ struct @B:
     field i32 @f1
     field f32 @f2
 
-func ms_abi f32 @test():
+func f32 @test():
     %0 = alloca @S
     %1 = memberptr @A, addr %0, void 2
     store i64 100, addr %0

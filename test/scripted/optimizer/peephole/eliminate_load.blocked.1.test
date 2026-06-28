@@ -1,0 +1,22 @@
+# test:pass "peephole"
+# test:section input
+
+func i32 @f():
+    %0 = alloca i32
+    %1 = alloca i64
+    store i32 42, addr %0
+    %2 = offsetptr addr %1, u32 2, u8
+    store i32 0, addr %2
+    %3 = load i32, addr %0
+    ret i32 %3
+
+# test:section output
+
+func i32 @f():
+    %0 = alloca i32
+    %1 = alloca i64
+    store i32 42, addr %0
+    %2 = offsetptr addr %1, u32 2, u8
+    store i32 0, addr %2
+    %3 = load i32, addr %0
+    ret i32 %3

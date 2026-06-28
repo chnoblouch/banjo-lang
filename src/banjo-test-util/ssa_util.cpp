@@ -1,6 +1,7 @@
 #include "ssa_util.hpp"
 
 #include "banjo/passes/inlining_pass.hpp"
+#include "banjo/passes/peephole_optimizer.hpp"
 #include "banjo/passes/sroa_pass.hpp"
 #include "banjo/passes/stack_to_reg_pass.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -26,7 +27,9 @@ void SSAUtil::optimize(std::string_view pass_name) {
 
     ssa::Module ssa_mod = SSAParser().parse();
 
-    if (pass_name == "sroa") {
+    if (pass_name == "peephole") {
+        passes::PeepholeOptimizer(target).run(ssa_mod);
+    } else if (pass_name == "sroa") {
         passes::SROAPass(target).run(ssa_mod);
     } else if (pass_name == "stack_to_reg") {
         passes::StackToRegPass(target).run(ssa_mod);

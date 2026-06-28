@@ -10,9 +10,9 @@ struct @Line:
     field @Vec3 @a
     field @Vec3 @b
 
-func ms_abi void @use(addr)
+func void @use(addr)
 
-func ms_abi void @test():
+func void @test():
     %0 = alloca @Line
     %1 = memberptr @Line, addr %0, void 0
     call void @use, addr %1
@@ -30,9 +30,9 @@ struct @Line:
     field @Vec3 @a
     field @Vec3 @b
 
-func ms_abi void @use(addr)
+func void @use(addr)
 
-func ms_abi void @test():
+func void @test():
     %0 = alloca @Vec3
     %1 = alloca @Vec3
     call void @use, addr %0

@@ -6,7 +6,7 @@ struct @Vec3:
     field f32 @y
     field f32 @z
 
-func ms_abi void @test():
+func void @test():
     %0 = alloca @Vec3
     %1 = alloca @Vec3
     %2 = memberptr @Vec3, addr %0, void 1
@@ -20,7 +20,7 @@ struct @Vec3:
     field f32 @y
     field f32 @z
 
-func ms_abi void @test():
+func void @test():
     %0 = alloca f32
     %1 = alloca f32
     %2 = alloca f32

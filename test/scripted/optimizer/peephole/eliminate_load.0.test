@@ -1,0 +1,15 @@
+# test:pass "peephole"
+# test:section input
+
+func i32 @f():
+    %0 = alloca i32
+    store i32 42, addr %0
+    %1 = load i32, addr %0
+    ret i32 %1
+
+# test:section output
+
+func i32 @f():
+    %0 = alloca i32
+    store i32 42, addr %0
+    ret i32 42
