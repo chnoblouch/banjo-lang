@@ -41,6 +41,7 @@ public:
     void append_block(BasicBlockIter block);
     void merge_blocks(BasicBlockIter first, BasicBlockIter second);
     BasicBlockIter split_block_after(BasicBlockIter block, InstrIter instr);
+    BasicBlockIter insert_after(BasicBlockIter block);
     BasicBlockIter find_basic_block(const std::string &label);
     VirtualRegister next_virtual_reg();
     std::string next_float_label();

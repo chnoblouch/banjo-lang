@@ -118,6 +118,8 @@ add_library(banjo STATIC
     "passes/heap_to_stack_pass.hpp"
     "passes/inlining_pass.cpp"
     "passes/inlining_pass.hpp"
+    "passes/legalizer.cpp"
+    "passes/legalizer.hpp"
     "passes/licm_pass.cpp"
     "passes/licm_pass.hpp"
     "passes/loop_analysis.cpp"

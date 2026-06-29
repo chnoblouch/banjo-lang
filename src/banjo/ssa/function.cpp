@@ -43,6 +43,11 @@ BasicBlockIter Function::split_block_after(BasicBlockIter block, InstrIter instr
     return new_block;
 }
 
+BasicBlockIter Function::insert_after(BasicBlockIter block) {
+    std::string label = "block." + std::to_string(block_index++);
+    return basic_blocks.insert_after(block, BasicBlock(label));
+}
+
 BasicBlockIter Function::find_basic_block(const std::string &label) {
     for (BasicBlockIter iter = basic_blocks.begin(); iter != basic_blocks.end(); ++iter) {
         if (iter->get_label() == label) {

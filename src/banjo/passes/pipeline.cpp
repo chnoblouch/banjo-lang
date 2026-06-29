@@ -8,6 +8,7 @@
 #include "banjo/passes/dead_func_elimination_pass.hpp"
 #include "banjo/passes/heap_to_stack_pass.hpp"
 #include "banjo/passes/inlining_pass.hpp"
+#include "banjo/passes/legalizer.hpp"
 #include "banjo/passes/licm_pass.hpp"
 #include "banjo/passes/loop_inversion_pass.hpp"
 #include "banjo/passes/peephole_optimizer.hpp"
@@ -79,6 +80,7 @@ std::vector<Pass *> Pipeline::create_opt_passes() {
         // passes.push_back(new StackSlotMergePass(target));
     }
 
+    passes.push_back(new Legalizer(target));
     return passes;
 }
 
