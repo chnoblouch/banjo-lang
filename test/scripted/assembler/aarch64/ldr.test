@@ -57,3 +57,13 @@ ldr w27, [x10, #55]!
 # test:encoding "5B4D5FF8"
 
 ldr x27, [x10, #-12]!
+
+# test:subtest
+# test:encoding "5B6964B8"
+
+ldr w27, [x10, x4]
+
+# test:subtest
+# test:encoding "5B6964F8"
+
+ldr x27, [x10, x4]

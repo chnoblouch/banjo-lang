@@ -804,6 +804,10 @@ std::uint32_t AArch64Encoder::encode_addr(Address &addr, unsigned imm_shift) {
             std::uint32_t imm = encode_imm(addr.offset_const, 9, 0);
             return 0x00000000 | (imm << 12) | (r_base << 5);
         }
+    } else if (addr.mode == AddressingMode::OFFSET_REG) {
+        // TODO: Shifts
+        std::uint32_t r_off = encode_gp_reg(addr.offset_reg.get_physical_reg());
+        return 0x206800 | (r_off << 16) | (r_base << 5);
     } else if (addr.mode == AddressingMode::OFFSET_SYMBOL) {
         text.add_symbol_use(addr.offset_symbol.name, lower_reloc(addr.offset_symbol.reloc));
         return 0x01000000 | (r_base << 5);
@@ -884,7 +888,7 @@ AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcod
             };
         } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_REG) {
             return Address{
-                .mode = AddressingMode::OFFSET_CONST,
+                .mode = AddressingMode::OFFSET_REG,
                 .base = addr.get_base(),
                 .offset_reg = addr.get_offset_reg(),
             };

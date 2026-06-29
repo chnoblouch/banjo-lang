@@ -178,14 +178,16 @@ mcode::Operand AssemblyUtil::parse_operand() {
             while (LineBasedReader::is_whitespace(string[index])) {
                 index += 1;
             }
-            unsigned offset_start = index;
 
-            ASSERT(string[index] == '#');
+            unsigned offset_start = index;
+            bool is_imm = string[index] == '#';
+
             index += 1;
 
-            while (string[index] == '-' || (string[index] >= '0' && string[index] <= '9')) {
+            while (!LineBasedReader::is_whitespace(string[index]) && string[index] != ']') {
                 index += 1;
             }
+
             unsigned offset_end = index;
 
             while (LineBasedReader::is_whitespace(string[index])) {
@@ -195,12 +197,18 @@ mcode::Operand AssemblyUtil::parse_operand() {
             ASSERT(string[index] == ']');
             index += 1;
 
-            int offset = std::stol(string.substr(offset_start + 1, offset_end - offset_start - 1));
+            if (is_imm) {
+                std::string offset_string = string.substr(offset_start + 1, offset_end - offset_start - 1);
+                int offset = std::stol(offset_string);
 
-            if (string[index] == '!') {
-                addr = target::AArch64Address::new_base_offset_write(base, offset);
+                if (string[index] == '!') {
+                    addr = target::AArch64Address::new_base_offset_write(base, offset);
+                } else {
+                    addr = target::AArch64Address::new_base_offset(base, offset);
+                }
             } else {
-                addr = target::AArch64Address::new_base_offset(base, offset);
+                std::string offset_string = string.substr(offset_start, offset_end - offset_start);
+                addr = target::AArch64Address::new_base_offset(base, convert_register(offset_string));
             }
         } else {
             ASSERT_UNREACHABLE;

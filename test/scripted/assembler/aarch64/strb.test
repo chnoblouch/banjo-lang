@@ -42,3 +42,8 @@ strb w27, [x10, #55]!
 # test:encoding "5B4D1F38"
 
 strb w27, [x10, #-12]!
+
+# test:subtest
+# test:encoding "5B692438"
+
+strb w27, [x10, x4]

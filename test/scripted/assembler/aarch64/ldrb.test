@@ -42,3 +42,8 @@ ldrb w27, [x10, #55]!
 # test:encoding "5B4D5F38"
 
 ldrb w27, [x10, #-12]!
+
+# test:subtest
+# test:encoding "5B696438"
+
+ldrb w27, [x10, x4]

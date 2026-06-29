@@ -57,3 +57,13 @@ str w27, [x10, #55]!
 # test:encoding "5B4D1FF8"
 
 str x27, [x10, #-12]!
+
+# test:subtest
+# test:encoding "5B6924B8"
+
+str w27, [x10, x4]
+
+# test:subtest
+# test:encoding "5B6924F8"
+
+str x27, [x10, x4]
