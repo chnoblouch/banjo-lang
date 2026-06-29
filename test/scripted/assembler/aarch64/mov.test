@@ -72,3 +72,13 @@ mov x10, #281474976710656
 # test:encoding "2AB58492"
 
 mov x10, #-9642
+
+# test:subtest
+# test:encoding "4A098092"
+
+mov x10, #18446744073709551541
+
+# test:subtest
+# test:encoding "EA028012"
+
+mov w10, #4294967272

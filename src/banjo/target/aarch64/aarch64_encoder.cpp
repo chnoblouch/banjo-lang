@@ -101,13 +101,8 @@ void AArch64Encoder::encode_mov(mcode::Instruction &instr) {
 
         // TODO: Support `MOVN` instructions and use them in the SSA lowerer.
 
-        bool inverted = false;
-        if (m_src.get_int_immediate().is_negative()) {
-            inverted = true;
-            bits = ~bits;
-        }
-
         unsigned shift = 0;
+
         if (bits >= (1ull << 48)) {
             shift = 48;
         } else if (bits >= (1ull << 32)) {
@@ -118,7 +113,15 @@ void AArch64Encoder::encode_mov(mcode::Instruction &instr) {
             shift = 0;
         }
 
-        std::uint32_t instr_template = inverted ? 0x12800000 : 0x52800000;
+        bool use_movn = false;
+
+        if ((bits & ((1ull << shift) - 1)) != 0) {
+            use_movn = true;
+            bits = ~bits;
+            shift = 0; // FIXME
+        }
+
+        std::uint32_t instr_template = use_movn ? 0x12800000 : 0x52800000;
         std::uint32_t imm = encode_imm(bits, 16, shift);
         std::uint32_t hw = encode_imm(shift, 2, 4);
         text.write_u32(instr_template | (sf << 31) | (hw << 21) | (imm << 5) | r_dst);
