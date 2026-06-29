@@ -345,6 +345,8 @@ mcode::Opcode X8664RegAnalyzer::get_move_opcode(codegen::RegClass reg_class, uns
 }
 
 void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
+    // FIXME: Merge registers! (use and def of the same register -> use + def)
+    
     if (operand.is_register()) {
         dst.push_back({.reg = operand.get_register(), .usage = usage});
     } else if (operand.is_addr()) {
