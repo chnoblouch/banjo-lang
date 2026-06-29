@@ -429,15 +429,16 @@ void AArch64SSALowerer::lower_fcjmp(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_select(ssa::Instruction &instr) {
-    const ssa::Type &type = instr.get_operand(0).get_type();
+    ssa::Type type_in = instr.get_operand(0).get_type();
+    ssa::Type type_out = instr.get_operand(3).get_type();
 
-    mcode::Opcode cmp_opcode = type.is_floating_point() ? AArch64Opcode::FCMP : AArch64Opcode::CMP;
+    mcode::Opcode cmp_opcode = type_in.is_floating_point() ? AArch64Opcode::FCMP : AArch64Opcode::CMP;
     mcode::Operand m_cmp_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_cmp_rhs = lower_value(instr.get_operand(2));
     AArch64Condition condition = lower_condition(instr.get_operand(1).get_comparison());
     mcode::Operand m_cmp = mcode::Operand::from_aarch64_condition(condition);
 
-    mcode::Opcode sel_opcode = type.is_floating_point() ? AArch64Opcode::FCSEL : AArch64Opcode::CSEL;
+    mcode::Opcode sel_opcode = type_out.is_floating_point() ? AArch64Opcode::FCSEL : AArch64Opcode::CSEL;
     mcode::Operand m_val_true = lower_value(instr.get_operand(3));
     mcode::Operand m_val_false = lower_value(instr.get_operand(4));
     mcode::Operand m_dst = map_vreg_dst(instr, m_val_true.get_size());
