@@ -1,0 +1,75 @@
+# test:common
+
+use std.sort.{sort, sort_by};
+
+func print_array[T](array: Array[T]) {
+    for i in 0..array.length() {
+        if i != 0 {
+            print(',');
+        }
+
+        print(array[i]);
+    }
+}
+
+# test:subtest
+# test:output ""
+
+func main() {
+    var array: Array[i32] = [];
+    sort(array.slice());
+    print_array(array);
+}
+
+# test:subtest
+# test:output "5"
+
+func main() {
+    var array = [5];
+    sort(array.slice());
+    print_array(array);
+}
+
+# test:subtest
+# test:output "1,2,3,4,5"
+
+func main() {
+    var array = [3, 1, 4, 1, 5];
+    array.append(9);
+    array.append(2);
+    array.append(6);
+    sort(array.slice());
+    print_array(array);
+}
+
+# test:subtest
+# test:output "1,1,2,3,4,5,6,9"
+
+func main() {
+    var array = [9, 6, 5, 4, 3, 2, 1, 1];
+    sort(array.slice());
+    print_array(array);
+}
+
+# test:subtest
+# test:output "1,2,3,4,5,6,7,8,9,10"
+
+func main() {
+    var array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    sort(array.slice());
+    print_array(array);
+}
+
+# test:subtest
+# test:output "5,4,3,2,1"
+
+func main() {
+    var array = [1, 2, 3, 4, 5];
+
+    var descending = |ref a: i32, ref b: i32| -> bool {
+        return a > b;
+    };
+
+    sort_by(array.slice(), descending);
+    print_array(array);
+}

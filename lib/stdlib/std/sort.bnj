@@ -1,47 +1,121 @@
 use std.{memory.swap, protos.Order};
 
-pub func sort[T: Order[T]](slice: Slice[T]) {
-    # TODO: Bubblesort algorithm. Very slow.
+const INSERTION_SORT_THRESHOLD: usize = 16;
 
-    if slice.length == 0 {
+pub func sort[T: Order[T]](slice: Slice[T]) {
+    quicksort(slice);
+}
+
+pub func sort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
+    quicksort_by(slice, comparator);
+}
+
+func quicksort[T: Order[T]](slice: Slice[T]) {
+    if slice.length < 2 {
         return;
     }
 
-    while true {
-        var changed = false;
+    if slice.length < INSERTION_SORT_THRESHOLD {
+        insertion_sort(slice);
+        return;
+    }
 
-        for i in 0..slice.length - 1 {
-            if slice[i + 1] < slice[i] {
-                swap(slice[i], slice[i + 1]);
-                changed = true;
-            }
+    var pivot_index = partition(slice);
+    quicksort(slice.sub(0, pivot_index));
+    quicksort(slice.sub(pivot_index + 1, slice.length));
+}
+
+func partition[T: Order[T]](slice: Slice[T]) -> usize {
+    var mid = slice.length / 2;
+    var last = slice.length - 1;
+
+    if slice[mid] < slice[0] {
+        swap(slice[0], slice[mid]);
+    }
+    if slice[last] < slice[0] {
+        swap(slice[0], slice[last]);
+    }
+    if slice[last] < slice[mid] {
+        swap(slice[mid], slice[last]);
+    }
+
+    swap(slice[mid], slice[last]);
+    var pivot_pos = last;
+    var store_index: usize = 0;
+
+    for i in 0..last {
+        if slice[i] < slice[pivot_pos] {
+            swap(slice[i], slice[store_index]);
+            store_index += 1;
         }
+    }
 
-        if !changed {
-            break;
+    swap(slice[store_index], slice[pivot_pos]);
+    return store_index;
+}
+
+func insertion_sort[T: Order[T]](slice: Slice[T]) {
+    for i in 1..slice.length {
+        var j = i;
+
+        while j > 0 && slice[j] < slice[j - 1] {
+            swap(slice[j], slice[j - 1]);
+            j -= 1;
         }
     }
 }
 
-pub func sort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
-    # TODO: Bubblesort algorithm. Very slow.
-
-    if slice.length == 0 {
+func quicksort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
+    if slice.length < 2 {
         return;
     }
 
-    while true {
-        var changed = false;
+    if slice.length < INSERTION_SORT_THRESHOLD {
+        insertion_sort_by(slice, comparator);
+        return;
+    }
 
-        for i in 0..slice.length - 1 {
-            if comparator(slice[i + 1], slice[i]) {
-                swap(slice[i], slice[i + 1]);
-                changed = true;
-            }
+    var pivot_index = partition_by(slice, comparator);
+    quicksort_by(slice.sub(0, pivot_index), comparator);
+    quicksort_by(slice.sub(pivot_index + 1, slice.length), comparator);
+}
+
+func partition_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) -> usize {
+    var mid = slice.length / 2;
+    var last = slice.length - 1;
+
+    if comparator(slice[mid], slice[0]) {
+        swap(slice[0], slice[mid]);
+    }
+    if comparator(slice[last], slice[0]) {
+        swap(slice[0], slice[last]);
+    }
+    if comparator(slice[last], slice[mid]) {
+        swap(slice[mid], slice[last]);
+    }
+
+    swap(slice[mid], slice[last]);
+    var pivot_pos = last;
+    var store_index: usize = 0;
+
+    for i in 0..last {
+        if comparator(slice[i], slice[pivot_pos]) {
+            swap(slice[i], slice[store_index]);
+            store_index += 1;
         }
+    }
 
-        if !changed {
-            break;
+    swap(slice[store_index], slice[pivot_pos]);
+    return store_index;
+}
+
+func insertion_sort_by[T](slice: Slice[T], comparator: |ref a: T, ref b: T| -> bool) {
+    for i in 1..slice.length {
+        var j = i;
+
+        while j > 0 && comparator(slice[j], slice[j - 1]) {
+            swap(slice[j], slice[j - 1]);
+            j -= 1;
         }
     }
 }
