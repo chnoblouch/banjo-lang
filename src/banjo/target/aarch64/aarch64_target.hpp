@@ -6,9 +6,7 @@
 #include "banjo/target/target.hpp"
 #include "banjo/target/target_data_layout.hpp"
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class AArch64Target : public Target {
 
@@ -29,8 +27,6 @@ public:
     codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

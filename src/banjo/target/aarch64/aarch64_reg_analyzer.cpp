@@ -12,7 +12,9 @@ namespace target {
 AArch64RegAnalyzer::AArch64RegAnalyzer() {
     using namespace AArch64Register;
 
-    for (int i = R0; i <= R_LAST; i++) {
+    // TODO: Some operating systems have a reserved register.
+    // TODO: Don't use r30 as a scratch register.
+    for (int i = R0; i <= R29; i++) {
         general_purpose_regs.push_back(i);
     }
 

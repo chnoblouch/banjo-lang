@@ -5,11 +5,9 @@
 #include "banjo/emit/elf/elf_emitter.hpp"
 #include "banjo/emit/macho/macho_emitter.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
-#include "banjo/target/aarch64/aarch64_stack_offset_fixup_pass.hpp"
+#include "banjo/target/aarch64/aarch64_stack_addr_fixup_pass.hpp"
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 AArch64Target::AArch64Target(TargetDescription descr, CodeModel code_model)
   : Target(descr, code_model),
@@ -29,7 +27,7 @@ std::vector<codegen::MachinePass *> AArch64Target::create_pre_passes() {
 }
 
 std::vector<codegen::MachinePass *> AArch64Target::create_post_passes() {
-    return {new AArch64StackOffsetFixupPass()};
+    return {new AArch64StackAddrFixupPass()};
 }
 
 std::string AArch64Target::get_output_file_ext() {
@@ -58,6 +56,4 @@ codegen::Emitter *AArch64Target::create_emitter(mcode::Module &module, std::ostr
     }
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

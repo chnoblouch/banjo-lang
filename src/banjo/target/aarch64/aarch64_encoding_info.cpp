@@ -1,18 +1,18 @@
 #include "aarch64_encoding_info.hpp"
 
+#include "banjo/utils/macros.hpp"
+
 #include <cassert>
 
-namespace banjo {
+namespace banjo::target {
 
-namespace target {
-
-bool AArch64EncodingInfo::is_addr_offset_encodable(int offset, int size) {
+bool AArch64EncodingInfo::is_addr_offset_encodable(int offset, unsigned size) {
     switch (size) {
         case 1: return is_addr_8_offset_encodable(offset);
         case 2: return is_addr_16_offset_encodable(offset);
         case 4: return is_addr_32_offset_encodable(offset);
         case 8: return is_addr_64_offset_encodable(offset);
-        default: assert(false); return false;
+        default: ASSERT_UNREACHABLE;
     }
 }
 
@@ -59,6 +59,4 @@ bool AArch64EncodingInfo::is_addr_64_offset_encodable(int offset) {
     return offset >= 0 && offset <= 32760 && offset % 8 == 0;
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
