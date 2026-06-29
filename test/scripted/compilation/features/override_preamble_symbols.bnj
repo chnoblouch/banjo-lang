@@ -1,7 +1,7 @@
 # test:subtest
 # test:output "test"
 
-use c.lib.stdio.puts;
+use libc.puts;
 
 func println(value: i32) {
     puts("test");

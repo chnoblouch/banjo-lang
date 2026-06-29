@@ -144,7 +144,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "success: 583, failure: Error.ACCESS_DENIED, failure: Error.NOT_FOUND, failure: Error.NOT_FOUND,"
+# test:output "success: 583, failure: ACCESS_DENIED, failure: NOT_FOUND, failure: NOT_FOUND,"
 
 enum Error {
     NOT_FOUND,

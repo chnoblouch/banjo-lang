@@ -174,7 +174,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "ok,Kind.ALREADY_EXISTS"
+# test:output "ok,ALREADY_EXISTS"
 
 func main() {
     var path = Path.from("directory");
@@ -197,7 +197,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "Kind.NOT_FOUND,Kind.NOT_FOUND"
+# test:output "NOT_FOUND,NOT_FOUND"
 
 func main() {
     try _ in Path.from("file").remove_file() {

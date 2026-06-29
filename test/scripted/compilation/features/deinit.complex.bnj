@@ -38,7 +38,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "10,25,"
+# test:output "25,10,"
 
 func main() {
     var tuple = (
@@ -63,7 +63,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "10,40,25,"
+# test:output "25,10,40,"
 
 func main() {
     var tuple = (
@@ -78,7 +78,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "40,10,25,"
+# test:output "10,25,40,"
 
 func main() {
     var tuple = (
