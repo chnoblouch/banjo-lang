@@ -1,0 +1,40 @@
+# test:pass "peephole"
+# test:section input
+
+struct @Point:
+    field i32 @x
+    field i32 @y
+
+struct @Circle:
+    field i64 @radius
+    field @Point @center
+
+func i32 @f():
+    %0 = alloca @Circle
+    %1 = memberptr @Circle, addr %0, void 1
+    %2 = memberptr @Point, addr %1, void 1
+    store i32 42, addr %2
+    %3 = offsetptr addr %0, void 9, u8
+    store i32 0, addr %3
+    %4 = load i32, addr %2
+    ret i32 %4
+
+# test:section output
+
+struct @Point:
+    field i32 @x
+    field i32 @y
+
+struct @Circle:
+    field i64 @radius
+    field @Point @center
+
+func i32 @f():
+    %0 = alloca @Circle
+    %1 = memberptr @Circle, addr %0, void 1
+    %2 = memberptr @Point, addr %1, void 1
+    store i32 42, addr %2
+    %3 = offsetptr addr %0, void 9, u8
+    store i32 0, addr %3
+    %4 = load i32, addr %2
+    ret i32 %4

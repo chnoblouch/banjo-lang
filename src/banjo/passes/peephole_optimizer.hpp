@@ -14,12 +14,18 @@ namespace passes {
 class PeepholeOptimizer : public Pass {
 
 private:
-    struct StackSlotState {
+    struct StackSlotMemberState {
+        unsigned offset;
         ssa::Type type;
         std::optional<ssa::Value> value;
     };
 
+    struct StackSlotState {
+        std::vector<StackSlotMemberState> members;
+    };
+
 private:
+    ssa::Function *func;
     std::unordered_map<ssa::VirtualRegister, StackSlotState> stack_slots;
 
 public:
@@ -39,10 +45,15 @@ private:
     void process_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block);
     void process_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
     void process_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void process_offsetptr(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
+    void process_memberptr(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func);
 
     void eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::BasicBlock &block, ssa::Function &func);
+
+    void collect_members(StackSlotState &slot_state, ssa::Type type, unsigned base_offset);
+    StackSlotMemberState *find_stack_slot_member(ssa::VirtualRegister reg);
     void discard_stack_slot_values();
-    
+
     bool is_imm(ssa::Operand &operand);
     bool is_zero(ssa::Operand &operand);
     bool is_float_one(ssa::Operand &operand);

@@ -1,0 +1,27 @@
+# test:pass "peephole"
+# test:section input
+
+struct @Point:
+    field i32 @x
+    field i32 @y
+
+func i32 @f():
+    %0 = alloca @Point
+    %1 = memberptr @Point, addr %0, void 1
+    store i32 42, addr %1
+    %2 = memberptr @Point, addr %0, void 1
+    %3 = load i32, addr %2
+    ret i32 %3
+
+# test:section output
+
+struct @Point:
+    field i32 @x
+    field i32 @y
+
+func i32 @f():
+    %0 = alloca @Point
+    %1 = memberptr @Point, addr %0, void 1
+    store i32 42, addr %1
+    %2 = memberptr @Point, addr %0, void 1
+    ret i32 42
