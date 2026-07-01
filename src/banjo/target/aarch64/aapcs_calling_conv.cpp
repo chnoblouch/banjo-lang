@@ -1,12 +1,11 @@
 #include "aapcs_calling_conv.hpp"
 
-#include "aarch64_reg_analyzer.hpp"
-#include "banjo/codegen/late_reg_alloc.hpp"
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/ssa/utils.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
@@ -402,22 +401,15 @@ mcode::InstrIter AAPCSCallingConv::fix_up_instr(
         )
     );
 
-    codegen::LateRegAlloc::Range range{.block = basic_block, .start = iter, .end = iter.get_next()};
-    codegen::LateRegAlloc alloc(range, AArch64RegClass::GENERAL_PURPOSE, analyzer);
-    mcode::PhysicalReg new_reg = AArch64Register::R20;
+    mcode::Register sp = mcode::Register::from_physical(target::AArch64Register::SP);
+    mcode::Register new_reg = mcode::Register::from_physical(AArch64RegAnalyzer::SCRATCH_REGISTER);
 
     mcode::Operand &m_dst = iter->get_operand(0);
-    m_dst = mcode::Operand::from_register(mcode::Register::from_physical(new_reg), m_dst.get_size());
+    m_dst = mcode::Operand::from_register(new_reg, m_dst.get_size());
 
     mcode::Operand &m_after_dst = iter.get_next()->get_operand(1);
-
-    m_after_dst = mcode::Operand::from_aarch64_addr(
-        target::AArch64Address::new_base_offset(
-            mcode::Register::from_physical(target::AArch64Register::SP),
-            mcode::Register::from_physical(new_reg)
-        ),
-        m_after_dst.get_size()
-    );
+    AArch64Address addr = target::AArch64Address::new_base_offset(sp, new_reg);
+    m_after_dst = mcode::Operand::from_aarch64_addr(addr, m_after_dst.get_size());
 
     return iter.get_next();
 }

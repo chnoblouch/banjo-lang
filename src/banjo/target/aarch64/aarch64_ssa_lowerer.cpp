@@ -819,12 +819,14 @@ void AArch64SSALowerer::build_address(const mcode::Operand &m_dst, AddrComponent
         case 4: shift = 2; break;
         case 8: shift = 3; break;
         default:
-            mcode::Register scale_reg = create_tmp_reg();
-            mcode::Operand scale_val = mcode::Operand::from_register(scale_reg, 8);
+            mcode::Operand scale_val = create_temp_value(8);
             mcode::Operand imm_val = mcode::Operand::from_int_immediate(addr.reg_offset->scale, 8);
+            mcode::Operand m_tmp = create_temp_value(8);
 
             emit(mcode::Instruction(AArch64Opcode::MOV, {scale_val, imm_val}));
-            emit(mcode::Instruction(AArch64Opcode::MUL, {m_offset, m_offset, scale_val}));
+            emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp, m_offset, scale_val}));
+            m_offset = m_tmp;
+
             break;
     }
 

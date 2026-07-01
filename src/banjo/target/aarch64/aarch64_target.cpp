@@ -4,6 +4,8 @@
 #include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/emit/elf/elf_emitter.hpp"
 #include "banjo/emit/macho/macho_emitter.hpp"
+#include "banjo/mcode/register.hpp"
+#include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 #include "banjo/target/aarch64/aarch64_stack_addr_fixup_pass.hpp"
 
@@ -16,7 +18,8 @@ AArch64Target::AArch64Target(TargetDescription descr, CodeModel code_model)
         .usize_type = ssa::Primitive::U64,
         .max_regs_per_arg = 2,
         .supports_structs_in_regs = true,
-    }} {}
+    }},
+    reg_analyzer{descr.is_darwin() ? AArch64Register::R18 : std::optional<mcode::PhysicalReg>{}} {}
 
 codegen::SSALowerer *AArch64Target::create_ssa_lowerer() {
     return new AArch64SSALowerer(this);

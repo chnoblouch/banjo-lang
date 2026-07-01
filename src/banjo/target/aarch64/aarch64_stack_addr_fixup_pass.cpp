@@ -5,6 +5,7 @@
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 
 namespace banjo::target {
@@ -76,7 +77,7 @@ void AArch64StackAddrFixupPass::process_ldr_str(mcode::BasicBlock &block, mcode:
 
     ASSERT(offset < 4096);
 
-    mcode::Register tmp_reg = mcode::Register::from_physical(AArch64Register::R30);
+    mcode::Register tmp_reg = mcode::Register::from_physical(AArch64RegAnalyzer::SCRATCH_REGISTER);
 
     mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
     mcode::Operand m_sp = mcode::Operand::from_register(mcode::Register::from_physical(AArch64Register::SP), 8);

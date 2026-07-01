@@ -2,23 +2,26 @@
 
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
+namespace banjo::target {
 
-namespace target {
+AArch64RegAnalyzer::AArch64RegAnalyzer(std::optional<mcode::PhysicalReg> fixed_reg) {
+    for (mcode::PhysicalReg reg = AArch64Register::R0; reg <= AArch64Register::R27; reg++) {
+        if (reg == SCRATCH_REGISTER) {
+            continue;
+        }
 
-AArch64RegAnalyzer::AArch64RegAnalyzer() {
-    using namespace AArch64Register;
+        if (fixed_reg && reg == fixed_reg) {
+            continue;
+        }
 
-    // TODO: Some operating systems have a reserved register.
-    // TODO: Don't use r30 as a scratch register.
-    for (int i = R0; i <= R29; i++) {
-        general_purpose_regs.push_back(i);
+        general_purpose_regs.push_back(reg);
     }
 
-    for (int i = V0; i <= V_LAST; i++) {
+    for (unsigned i = AArch64Register::V0; i <= AArch64Register::V30; i++) {
         fp_and_vector_regs.push_back(i);
     }
 }
@@ -206,6 +209,46 @@ void AArch64RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::
     }
 }
 
+void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
+    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).get_size();
+    unsigned reg_size = size == 8 ? 8 : 4;
+
+    mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);
+    mcode::Operand addr = mcode::Operand::from_stack_slot(use.stack_slot, 8);
+
+    mcode::Opcode opcode;
+
+    switch (size) {
+        case 1: opcode = AArch64Opcode::LDRB; break;
+        case 2: opcode = AArch64Opcode::LDRH; break;
+        case 4: opcode = AArch64Opcode::LDR; break;
+        case 8: opcode = AArch64Opcode::LDR; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    use.block.insert_before(use.instr_iter, {opcode, {dst, addr}});
+}
+
+void AArch64RegAnalyzer::insert_store(SpilledRegUse use) {
+    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).get_size();
+    unsigned reg_size = size == 8 ? 8 : 4;
+
+    mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);
+    mcode::Operand addr = mcode::Operand::from_stack_slot(use.stack_slot, 8);
+
+    mcode::Opcode opcode;
+
+    switch (size) {
+        case 1: opcode = AArch64Opcode::STRB; break;
+        case 2: opcode = AArch64Opcode::STRH; break;
+        case 4: opcode = AArch64Opcode::STR; break;
+        case 8: opcode = AArch64Opcode::STR; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    use.block.insert_after(use.instr_iter, {opcode, {src, addr}});
+}
+
 bool AArch64RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
     if (instr.get_opcode() != AArch64Opcode::MOV && instr.get_opcode() != AArch64Opcode::FMOV) {
         return false;
@@ -241,7 +284,7 @@ bool AArch64RegAnalyzer::is_float_instr(mcode::Instruction &instr) {
 
 void AArch64RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
     ASSERT(usage != mcode::RegUsage::KILL);
-    
+
     if (operand.is_register()) {
         for (unsigned i = 0; i < dst.size(); i++) {
             if (dst[i].reg == operand.get_register() && dst[i].usage != usage) {
@@ -264,6 +307,4 @@ void AArch64RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<
     }
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
