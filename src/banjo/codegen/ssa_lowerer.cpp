@@ -145,7 +145,7 @@ mcode::BasicBlock SSALowerer::lower_basic_block(ssa::BasicBlock &basic_block) {
     };
 
     for (ssa::InstrIter iter = basic_block.get_instrs().get_last_iter(); iter != basic_block.get_header(); --iter) {
-        if (iter->get_dest() && context.reg_use_counts[*iter->get_dest()] == 0) {
+        if (iter->get_opcode() != ssa::Opcode::CALL && iter->get_dest() && get_num_uses(*iter->get_dest()) == 0) {
             continue;
         }
 
