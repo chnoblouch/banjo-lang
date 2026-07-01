@@ -370,6 +370,12 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         args_full.assign(specialized_args.begin(), specialized_args.end());
     }
 
+    for (Entry &entry : entry_stack) {
+        if (entry.symbol == symbol && entry.args == args_full) {
+            return;
+        }
+    }
+
     std::vector<Entry> &entries = specializations[symbol];
 
     for (Entry &entry : entries) {
@@ -390,7 +396,13 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         ASSERT_UNREACHABLE;
     }
 
-    entry_stack.push_back(Entry{.params = generic_params, .args = args_full});
+    entry_stack.push_back(
+        Entry{
+            .symbol = symbol,
+            .params = generic_params,
+            .args = args_full,
+        }
+    );
 
     if (auto func_def = symbol.match<sir::FuncDef>()) {
         visit_func_def(*func_def, true);

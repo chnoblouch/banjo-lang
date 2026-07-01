@@ -15,6 +15,7 @@ class SpecializationCollector {
 
 public:
     struct Entry {
+        sir::Symbol symbol;
         std::span<sir::GenericParam *> params;
         std::vector<sir::Expr> args;
         std::unordered_map<const sir::Resource *, sir::Resource> resources;
