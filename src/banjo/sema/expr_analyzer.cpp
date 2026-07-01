@@ -165,7 +165,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_dot_expr(*inner, expr),        // dot_expr
         SIR_VISIT_IGNORE,                               // pseudo_tpe
         result = analyze_meta_access(*inner),           // meta_access
-        result = analyze_meta_field_expr(*inner, expr), // meta_field_expr
+        result = analyze_meta_field_expr(*inner),       // meta_field_expr
         result = analyze_meta_call_expr(*inner, expr),  // meta_call_expr
         SIR_VISIT_IMPOSSIBLE,                           // init_expr
         SIR_VISIT_IMPOSSIBLE,                           // move_expr
@@ -684,7 +684,8 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             is_operator_built_in = true;
         }
     } else if (lhs_type.is<sir::PointerType>()) {
-        is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD;
+        is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD ||
+                               binary_expr.op == sir::BinaryOp::SUB;
     }
 
     if (is_operator_overload) {
@@ -1972,7 +1973,7 @@ Result ExprAnalyzer::analyze_meta_access(sir::MetaAccess &meta_access) {
     return analyze(meta_access.expr);
 }
 
-Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, sir::Expr &out_expr) {
+Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, bool in_call /* = false */) {
     sir::Expr &base = meta_field_expr.base.as<sir::MetaAccess>().expr;
 
     Result result = analyze(base);
@@ -1980,6 +1981,13 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
 
     if (meta_field_expr.field.value == "size") {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
+    } else if (meta_field_expr.field.value == "name") {
+        meta_field_expr.type = analyzer.create(
+            sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
+            }
+        );
     } else if (Utils::is_one_of(meta_field_expr.field.value, {"is_enum"})) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
@@ -2019,8 +2027,9 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
         );
     } else if (meta_field_expr.field.value == "num_variants") {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
-    } else if (flags & DONT_EVAL_META_EXPRS) {
-        return MetaExprEvaluator(analyzer).evaluate(meta_field_expr, out_expr);
+    } else if (!in_call) {
+        analyzer.report_generator.report_err_invalid_meta_field(meta_field_expr);
+        return Result::ERROR;
     }
 
     return Result::SUCCESS;
@@ -2032,47 +2041,40 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, s
     }
 
     Result result = Result::SUCCESS;
-    Result partial_result;
 
-    partial_result = analyze(meta_call_expr.callee);
-
-    if (partial_result != Result::SUCCESS) {
-        result = Result::ERROR;
-    }
+    sir::MetaFieldExpr &meta_field_expr = meta_call_expr.callee.as<sir::MetaFieldExpr>();
+    RESULT_RETURN_ON_ERROR(analyze_meta_field_expr(meta_field_expr, true));
 
     for (sir::Expr &arg : meta_call_expr.args) {
-        partial_result = analyze(arg);
-
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+        RESULT_MERGE(result, analyze(arg));
     }
 
-    if (auto meta_field_expr = meta_call_expr.callee.match<sir::MetaFieldExpr>()) {
-        if (meta_field_expr->field.value == "impl_of") {
-            sir::Expr expr = meta_field_expr->base.as<sir::MetaAccess>().expr;
+    RESULT_RETURN_ON_ERROR(result);
 
-            out_expr = analyzer.create(
-                sir::TypeGuardExpr{
-                    .ast_node = meta_call_expr.ast_node,
-                    .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
-                    .generic_param = &expr.as_symbol<sir::GenericParam>(),
-                    .constraint = meta_call_expr.args[0],
-                }
-            );
+    if (meta_field_expr.field.value == "impl_of") {
+        sir::Expr expr = meta_field_expr.base.as<sir::MetaAccess>().expr;
 
-            type_narrowing = sir::TypeNarrowing{
+        out_expr = analyzer.create(
+            sir::TypeGuardExpr{
+                .ast_node = meta_call_expr.ast_node,
+                .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
                 .generic_param = &expr.as_symbol<sir::GenericParam>(),
                 .constraint = meta_call_expr.args[0],
-            };
+            }
+        );
 
-            meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
-        } else if (meta_field_expr->field.value == "has_method") {
-            meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
-        }
+        type_narrowing = sir::TypeNarrowing{
+            .generic_param = &expr.as_symbol<sir::GenericParam>(),
+            .constraint = meta_call_expr.args[0],
+        };
+
+        meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+    } else {
+        analyzer.report_generator.report_err_invalid_meta_method(meta_call_expr);
+        return Result::ERROR;
     }
 
-    return result;
+    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_completion_token() {

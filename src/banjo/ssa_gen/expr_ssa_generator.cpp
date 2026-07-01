@@ -1,5 +1,6 @@
 #include "expr_ssa_generator.hpp"
 
+#include "banjo/reports/report_texts.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
@@ -791,6 +792,17 @@ StoredValue ExprSSAGenerator::generate_meta_field_expr(
         unsigned size = data_layout.get_size(ssa_type);
 
         return StoredValue::create_value(ssa::Value::from_int_immediate(size, data_layout.get_usize_type()));
+    } else if (meta_field_expr.field.value == "name") {
+        std::string value = ReportText::to_string(sir_type);
+
+        // TODO: Kind of a hack.
+        sir::StringLiteral string_literal{
+            .ast_node = nullptr,
+            .type = meta_field_expr.type,
+            .value = value,
+        };
+
+        return generate_string_literal(string_literal);
     } else if (meta_field_expr.field.value == "is_enum") {
         unsigned value = sir_type.is_symbol<sir::EnumDef>() ? 1 : 0;
         return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));

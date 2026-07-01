@@ -81,7 +81,7 @@ private:
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_meta_access(sir::MetaAccess &meta_access);
-    Result analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, sir::Expr &out_expr);
+    Result analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, bool in_call = false);
     Result analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr);
 
     Result analyze_completion_token();
