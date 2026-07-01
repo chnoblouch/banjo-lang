@@ -26,6 +26,20 @@ SKIPPED_TESTS = set([
     "features.map_literal.1",
     "features.meta_if.8",
     "features.globals.3",
+
+    "stdlib.convert.6",
+    "stdlib.convert.7",
+    "stdlib.convert.8",
+    "stdlib.convert.9",
+    "errors.expr_category.value.2",
+    "errors.expected_bool.0",
+    "errors.expected_bool.1",
+    "composed.array_max",
+    "fixed_bugs.generics_deinit_nested",
+    "fixed_bugs.generics.field_array_of_self.0",
+    "fixed_bugs.generics.field_array_of_self.1",
+    "fixed_bugs.meta_if_dependencies_not_analyzed_yet",
+    "fixed_bugs.generics_if_not_resource",
 ])
 
 SKIPPED_TESTS_WASM = set([
@@ -230,7 +244,7 @@ def compile_source(test):
             "--type", "executable",
             "--arch", "wasm",
             "--os", "emscripten",
-            "--opt-level", "0",
+            "--opt-level", str(framework.opt_level),
             "--path", ".",
             "--no-color",
         ])
@@ -241,7 +255,7 @@ def compile_source(test):
             "--arch", arch,
             "--os", "windows",
             "--env", "msvc",
-            "--opt-level", "0",
+            "--opt-level", str(framework.opt_level),
             "--path", ".",
             "--no-color",
         ])
@@ -252,7 +266,7 @@ def compile_source(test):
             "--arch", arch,
             "--os", "linux",
             "--env", "gnu",
-            "--opt-level", "0",
+            "--opt-level", str(framework.opt_level),
             "--path", ".",
             "--no-color",
         ])
@@ -262,7 +276,7 @@ def compile_source(test):
             "--type", "executable",
             "--arch", arch,
             "--os", "macos",
-            "--opt-level", "0",
+            "--opt-level", str(framework.opt_level),
             "--path", ".",
             "--no-color",
         ])

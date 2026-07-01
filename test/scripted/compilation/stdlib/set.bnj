@@ -55,11 +55,11 @@ func main() {
 func main() {
     var set = Set[i32].of([1, 42, -2]);
     
-    print(set.contains(42));
+    print(set.contains(1));
     print(',');
     print(set.contains(42));
     print(',');
-    print(set.contains(42));
+    print(set.contains(-2));
     print(',');
     print(set.contains(0));
     print(',');

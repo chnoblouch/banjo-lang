@@ -1,0 +1,19 @@
+# test:subtest
+# test:compiles
+
+struct Node {
+    var value: u32;
+    var children: Array[Node];
+}
+
+# test:subtest
+# test:compiles
+
+struct Node {
+    var value: u32;
+    var children: Array[Node];
+}
+
+func main() {
+    var node = Node { value: 0, children: [] }
+}

@@ -12,6 +12,7 @@ CONDITION_PREFIX = "# test:"
 
 install_dir = None
 test_wasm = False
+opt_level = 0
 
 
 class ProcessResult:
@@ -37,16 +38,18 @@ class TestResult:
 
 
 def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
-    global install_dir, test_wasm
+    global install_dir, test_wasm, opt_level
 
     parser = argparse.ArgumentParser()
     parser.add_argument("pattern", nargs="?", default="*")
     parser.add_argument("--install-dir")
     parser.add_argument("--wasm", action="store_true")
+    parser.add_argument("--opt-level", default="0")
     args = parser.parse_args()
 
     install_dir = os.path.abspath(args.install_dir) if args.install_dir else None
     test_wasm = args.wasm
+    opt_level = int(args.opt_level)
 
     os.chdir(os.path.dirname(__file__))
 

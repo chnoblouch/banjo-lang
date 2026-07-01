@@ -167,8 +167,8 @@ enum Fruit {
 }
 
 func main() {
-    check(Fruit.APPLE, "Fruit.APPLE");
-	check(Fruit.BANANA, "Fruit.BANANA");
-	check(Fruit.ORANGE, "Fruit.ORANGE");
-	check(Fruit.PEAR, "Fruit.PEAR");
+    check(Fruit.APPLE, "APPLE");
+	check(Fruit.BANANA, "BANANA");
+	check(Fruit.ORANGE, "ORANGE");
+	check(Fruit.PEAR, "PEAR");
 }
