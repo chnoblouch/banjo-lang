@@ -1,8 +1,8 @@
 # test:output "129,21.47"
 
-use std.protos.Order;
+use std.protos.{Copy, Order};
 
-func max_of[T: Order[T]](array: Array[T]) -> T {
+func max_of[T: Copy + Order[T]](array: Array[T]) -> T {
     var max = array[0];
     
     for value in array {

@@ -34,7 +34,6 @@ SKIPPED_TESTS = set([
     "errors.expr_category.value.2",
     "errors.expected_bool.0",
     "errors.expected_bool.1",
-    "composed.array_max",
     "fixed_bugs.generics_deinit_nested",
     "fixed_bugs.generics.field_array_of_self.0",
     "fixed_bugs.generics.field_array_of_self.1",

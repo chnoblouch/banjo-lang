@@ -1,6 +1,7 @@
 #include "resource_generator.hpp"
 
 #include "banjo/sir/magic_methods.hpp"
+#include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
 
@@ -120,6 +121,14 @@ std::optional<sir::Resource> ResourceGenerator::create_generic_param_resource(
     const sir::GenericParam &generic_param,
     sir::Expr type
 ) {
+    for (sir::Expr component : generic_param.constraint.components) {
+        if (auto concrete_proto = component.match_concrete<sir::ProtoDef>()) {
+            if (concrete_proto->def->role == sir::ProtoDef::Role::COPY) {
+                return {};
+            }
+        }
+    }
+
     if (specialization) {
         sir::Expr resolved_type = specialization->resolve_param(generic_param);
         return create_resource(resolved_type);

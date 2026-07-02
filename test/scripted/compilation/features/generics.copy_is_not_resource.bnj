@@ -1,0 +1,8 @@
+# test:compiles
+
+use std.protos.Copy;
+
+func f[T: Copy](value: T) {
+    var a = value;
+    var b = value;
+}
