@@ -1528,17 +1528,13 @@ std::span<sir::GenericParam *> SIRGenerator::generate_generic_param_list(ASTNode
 
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         ASTNode *name_node = child->first_child;
-        ASTNode *type_node = name_node->next_sibling;
+        ASTNode *kind_node = name_node->next_sibling;
 
         sir::GenericParamKind kind = sir::GenericParamKind::TYPE;
         sir::Expr constraint = nullptr;
 
-        if (type_node) {
-            if (type_node->type == AST_PARAM_SEQUENCE_TYPE) {
-                kind = sir::GenericParamKind::SEQUENCE;
-            } else {
-                constraint = generate_expr(type_node);
-            }
+        if (kind_node && kind_node->type == AST_PARAM_SEQUENCE_TYPE) {
+            kind = sir::GenericParamKind::SEQUENCE;
         }
 
         sir_generic_params[inherited_params.size() + param_index] = create(
@@ -1546,7 +1542,7 @@ std::span<sir::GenericParam *> SIRGenerator::generate_generic_param_list(ASTNode
                 .ast_node = child,
                 .ident = generate_ident(name_node),
                 .kind = kind,
-                .constraint = constraint,
+                .constraint = generate_type_constraint(kind_node),
             }
         );
 
@@ -1554,6 +1550,22 @@ std::span<sir::GenericParam *> SIRGenerator::generate_generic_param_list(ASTNode
     }
 
     return sir_generic_params;
+}
+
+sir::TypeConstraint SIRGenerator::generate_type_constraint(ASTNode *node) {
+    if (!node || node->type == AST_PARAM_SEQUENCE_TYPE) {
+        return sir::TypeConstraint{.components{}};
+    }
+
+    std::span<sir::Expr> sir_components = allocate_array<sir::Expr>(node->num_children());
+    unsigned component_index = 0;
+
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        sir_components[component_index] = generate_expr(child);
+        component_index += 1;
+    }
+
+    return sir::TypeConstraint{.components = sir_components};
 }
 
 sir::Local SIRGenerator::generate_local(ASTNode *ident_node, ASTNode *type_node, sir::Attributes *attrs) {

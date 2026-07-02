@@ -130,6 +130,7 @@ private:
     sir::FuncType generate_func_type(ASTNode *params_node, ASTNode *return_node);
     sir::Param generate_param(ASTNode *node);
     std::span<sir::GenericParam *> generate_generic_param_list(ASTNode *node);
+    sir::TypeConstraint generate_type_constraint(ASTNode *node);
     sir::Local generate_local(ASTNode *ident_node, ASTNode *type_node, sir::Attributes *attrs);
     std::vector<sir::Expr> generate_expr_list(ASTNode *node);
     std::span<sir::Expr> generate_expr_span(ASTNode *node);

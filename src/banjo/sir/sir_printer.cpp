@@ -1120,7 +1120,7 @@ void Printer::print_generic_params(std::span<GenericParam *> generic_params) {
             case GenericParamKind::SEQUENCE: PRINT_FIELD("kind", "SEQUENCE"); break;
         }
 
-        PRINT_EXPR_FIELD("constraint", generic_param->constraint);
+        PRINT_EXPR_LIST_FIELD("constraint", generic_param->constraint.components);
         END_OBJECT();
     }
 

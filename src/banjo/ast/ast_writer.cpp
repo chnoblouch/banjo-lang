@@ -178,6 +178,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_RESULT_TYPE: return "RESULT_TYPE";
         case AST_CLOSURE_TYPE: return "CLOSURE_TYPE";
         case AST_PARAM_SEQUENCE_TYPE: return "PARAM_SEQUENCE_TYPE";
+        case AST_TYPE_CONSTRAINT: return "TYPE_CONSTRAINT";
         case AST_META_ACCESS: return "META_ACCESS";
         case AST_IDENTIFIER: return "IDENTIFIER";
         case AST_BLOCK: return "BLOCK";

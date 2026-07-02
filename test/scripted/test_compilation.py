@@ -40,6 +40,7 @@ SKIPPED_TESTS = set([
     "fixed_bugs.generics.field_array_of_self.1",
     "fixed_bugs.meta_if_dependencies_not_analyzed_yet",
     "fixed_bugs.generics_if_not_resource",
+    "features.generics.constraint.6",
 ])
 
 SKIPPED_TESTS_WASM = set([

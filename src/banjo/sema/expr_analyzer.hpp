@@ -5,6 +5,7 @@
 #include "banjo/sir/sir.hpp"
 
 #include <optional>
+#include <utility>
 
 namespace banjo {
 
@@ -63,7 +64,14 @@ private:
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
     Result analyze_cast_expr(sir::CastExpr &cast_expr);
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);
+
     Result analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr, bool &is_method);
+
+    std::pair<sir::FuncDecl *, sir::Concrete<sir::ProtoDef>> resolve_generic_method_call(
+        sir::GenericParam &generic_param,
+        std::string_view name
+    );
+
     Result analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr);
     Result analyze_range_expr(sir::RangeExpr &range_expr);
     Result analyze_try_expr(sir::TryExpr &try_expr);

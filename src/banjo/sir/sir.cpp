@@ -559,6 +559,7 @@ bool PseudoType::is_struct_by_default() const {
 }
 
 bool TypeGuardExpr::is_satisfied_by(sir::Expr type) const {
+    TypeConstraint constraint{.components{const_cast<sir::Expr *>(&this->constraint), 1}};
     return satisfies_type_constraint(constraint, type);
 }
 

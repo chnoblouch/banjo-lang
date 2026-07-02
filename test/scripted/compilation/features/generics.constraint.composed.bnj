@@ -1,0 +1,99 @@
+# test:subtest
+# test:compiles
+
+proto P1 {}
+proto P2 {}
+
+struct S: P1, P2 {}
+
+func f[T: P1 + P2](t: T) {}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:compiles
+
+proto P1 {}
+proto P2 {}
+proto P3 {}
+
+struct S: P1, P2, P3 {}
+
+func f[T: P1 + P2 + P3](t: T) {}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:output "m1m2"
+
+proto P1 {
+    func m1(self);
+}
+
+proto P2 {
+    func m2(self);
+}
+
+struct S: P1, P2 {
+    pub func m1(self) {
+        print("m1");
+    }
+
+    pub func m2(self) {
+        print("m2");
+    }
+}
+
+func f[T: P1 + P2](t: T) {
+    t.m1();
+    t.m2();
+}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:compiles
+
+proto P1 {}
+proto P2 {}
+
+func f[A: P1 + P2](a: A) {}
+
+func g[B: P1 + P2](b: B) {
+    f(b);
+}
+
+# test:subtest
+# test:compiles
+
+proto P1 {}
+proto P2 {}
+
+func f1[A: P1](a: A) {}
+func f2[A: P2](a: A) {}
+
+func g[B: P1 + P2](b1: B, b2: B) {
+    f1(b1);
+    f2(b2);
+}
+
+# test:subtest
+# test:compiles
+
+proto P1 {}
+proto P2 {}
+proto P3 {}
+
+func f1[A: P1 + P2](a: A) {}
+func f2[A: P3](a: A) {}
+
+func g[B: P1 + P2 + P3](b1: B, b2: B) {
+    f1(b1);
+    f2(b2);
+}

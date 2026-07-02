@@ -83,3 +83,14 @@ func f[A: P[B], B](a: A, b: B) {}
 func main() {
     f(S {}, 0);
 }
+
+# test:subtest
+# test:compiles
+
+proto P[T] {}
+
+func f[T, A: P[T]](a: A) {}
+
+func g[T, B: P[T]](b: B) {
+    f[T, P[T]](b);
+}

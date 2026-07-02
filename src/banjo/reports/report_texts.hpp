@@ -37,6 +37,7 @@ public:
     ReportText &format(sir::ExprCategory expr_category);
     ReportText &format(const std::vector<sir::Expr> &exprs);
     ReportText &format(std::span<sir::GenericParam *> generic_params);
+    ReportText &format(const sir::TypeConstraint &type_constraint);
 
     static std::string to_string(const sir::Expr &expr);
 

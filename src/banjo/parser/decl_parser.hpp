@@ -39,6 +39,7 @@ private:
 
     bool parse_func_head(NodeBuilder &node, bool &generic);
     ParseResult parse_generic_param_list();
+    ParseResult parse_type_constraint();
 };
 
 } // namespace lang

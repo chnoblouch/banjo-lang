@@ -111,6 +111,20 @@ ReportText &ReportText::format(std::span<sir::GenericParam *> generic_params) {
     return format(string);
 }
 
+ReportText &ReportText::format(const sir::TypeConstraint &type_constraint) {
+    std::string string;
+
+    for (unsigned i = 0; i < type_constraint.components.size(); i++) {
+        string += to_string(type_constraint.components[i]);
+
+        if (i != type_constraint.components.size() - 1) {
+            string += " + ";
+        }
+    }
+
+    return format(string);
+}
+
 std::string ReportText::to_string(const sir::Expr &expr) {
     SIR_VISIT_EXPR(
         expr,

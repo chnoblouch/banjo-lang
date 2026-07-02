@@ -592,11 +592,15 @@ enum class GenericParamKind {
     SEQUENCE,
 };
 
+struct TypeConstraint {
+    std::span<Expr> components;
+};
+
 struct GenericParam {
     ASTNode *ast_node;
     Ident ident;
     GenericParamKind kind;
-    Expr constraint;
+    TypeConstraint constraint;
 };
 
 struct GenericArg {

@@ -314,8 +314,8 @@ void DeclInterfaceAnalyzer::analyze_generic_params(std::span<sir::GenericParam *
     }
 
     for (sir::GenericParam *generic_param : generic_params) {
-        if (generic_param->constraint) {
-            ExprAnalyzer{analyzer}.analyze_type(generic_param->constraint);
+        for (sir::Expr &component : generic_param->constraint.components) {
+            ExprAnalyzer{analyzer}.analyze_type(component);
         }
     }
 }

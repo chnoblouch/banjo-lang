@@ -606,31 +606,33 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             case sir::BinaryOp::OR: proto_def = nullptr; break;
         }
 
-        if (auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>()) {
-            if (concrete_proto->def == proto_def && concrete_proto->generic_args[0] == rhs_type) {
-                lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-                rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
+        for (sir::Expr component : generic_param->constraint.components) {
+            if (auto concrete_proto = component.match_concrete<sir::ProtoDef>()) {
+                if (concrete_proto->def == proto_def && concrete_proto->generic_args[0] == rhs_type) {
+                    lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+                    rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
-                RESULT_RETURN_ON_ERROR(lhs_result)
-                RESULT_RETURN_ON_ERROR(rhs_result)
+                    RESULT_RETURN_ON_ERROR(lhs_result)
+                    RESULT_RETURN_ON_ERROR(rhs_result)
 
-                sir::Expr return_type = concrete_proto->def->func_decls[0].get_type().return_type;
-                sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
-                return_type = specializer.specialize_expr(return_type);
+                    sir::Expr return_type = concrete_proto->def->func_decls[0].get_type().return_type;
+                    sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
+                    return_type = specializer.specialize_expr(return_type);
 
-                out_expr = analyzer.create(
-                    sir::PlaceholderExpr{
-                        .ast_node = nullptr,
-                        .type = return_type,
-                        .kind = sir::PlaceholderExpr::BinaryExpr{
-                            .op = binary_expr.op,
-                            .lhs = binary_expr.lhs,
-                            .rhs = binary_expr.rhs,
-                        },
-                    }
-                );
+                    out_expr = analyzer.create(
+                        sir::PlaceholderExpr{
+                            .ast_node = nullptr,
+                            .type = return_type,
+                            .kind = sir::PlaceholderExpr::BinaryExpr{
+                                .op = binary_expr.op,
+                                .lhs = binary_expr.lhs,
+                                .rhs = binary_expr.rhs,
+                            },
+                        }
+                    );
 
-                return Result::SUCCESS;
+                    return Result::SUCCESS;
+                }
             }
         }
     }
@@ -1326,29 +1328,21 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         analyzer.report_generator.report_err_no_method(dot_expr.rhs, *proto_def);
         return Result::ERROR;
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
-        auto concrete_proto = generic_param->constraint.match_concrete<sir::ProtoDef>();
+        std::string_view name = dot_expr.rhs.value;
+        auto [method, concrete_proto] = resolve_generic_method_call(*generic_param, name);
 
-        if (auto type_narrowing = analyzer.scope_stack.top().type_narrowing) {
-            if (type_narrowing->generic_param == generic_param &&
-                type_narrowing->constraint.is_symbol<sir::ProtoDef>()) {
-                concrete_proto = type_narrowing->constraint.as_concrete<sir::ProtoDef>();
-            }
-        }
+        if (method) {
+            // if (!method) {
+            //     analyzer.report_generator.report_err_no_method(dot_expr.rhs, *concrete_proto->def);
+            //     return Result::SUCCESS;
+            // }
 
-        if (concrete_proto) {
-            sir::Symbol method = concrete_proto->def->block.symbol_table->look_up_local(dot_expr.rhs.value);
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, &method);
 
-            if (!method) {
-                analyzer.report_generator.report_err_no_method(dot_expr.rhs, *concrete_proto->def);
-                return Result::SUCCESS;
-            }
+            sir::FuncType *func_type = analyzer.create(method->type);
 
-            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
-
-            sir::FuncType *func_type = analyzer.create(method.as<sir::FuncDecl>().type);
-
-            if (concrete_proto->is_specialization()) {
-                sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
+            if (concrete_proto.is_specialization()) {
+                sir::Specializer specializer{analyzer.mod->trivial_arena, concrete_proto};
                 func_type = specializer.specialize_func_type(*func_type);
             }
 
@@ -1365,9 +1359,9 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
                     .type = func_type,
                     .kind = sir::PlaceholderExpr::GenericMethod{
                         .param = generic_param,
-                        .proto_def = concrete_proto->def,
-                        .decl = &method.as<sir::FuncDecl>(),
-                        .is_copy = concrete_proto->def == analyzer.std_copy_def,
+                        .proto_def = concrete_proto.def,
+                        .decl = method,
+                        .is_copy = concrete_proto.def == analyzer.std_copy_def,
                     },
                 }
             );
@@ -1390,6 +1384,34 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
     is_method = false;
 
     return partial_result;
+}
+
+std::pair<sir::FuncDecl *, sir::Concrete<sir::ProtoDef>> ExprAnalyzer::resolve_generic_method_call(
+    sir::GenericParam &generic_param,
+    std::string_view name
+) {
+    std::vector<sir::Expr> components;
+    components.assign(generic_param.constraint.components.begin(), generic_param.constraint.components.end());
+
+    if (auto narrowing = analyzer.scope_stack.top().type_narrowing) {
+        if (narrowing->generic_param == &generic_param) {
+            components.push_back(narrowing->constraint);
+        }
+    }
+
+    for (sir::Expr component : components) {
+        auto concrete_proto = component.match_concrete<sir::ProtoDef>();
+        sir::Symbol method = concrete_proto->def->block.symbol_table->look_up_local(name);
+
+        if (auto func_decl = method.match<sir::FuncDecl>()) {
+            return {func_decl, *concrete_proto};
+        } else if (method.is<sir::FuncDef>()) {
+            // TODO
+            ASSERT_UNREACHABLE;
+        }
+    }
+
+    return {nullptr, {}};
 }
 
 Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr) {
@@ -2540,14 +2562,10 @@ Result ExprAnalyzer::check_type_constraint(
     sir::GenericParam &param = *params[index];
     sir::Expr arg = args[index];
 
-    if (!param.constraint) {
-        return Result::SUCCESS;
-    }
-
     utils::Arena arena;
     sir::Specializer specializer{arena, params, args};
 
-    if (!param.constraint || satisfies_type_constraint(param.constraint, arg, specializer)) {
+    if (satisfies_type_constraint(param.constraint, arg, specializer)) {
         return Result::SUCCESS;
     } else {
         analyzer.report_generator.report_err_constraint_not_satisfied(ast_node, arg, param);

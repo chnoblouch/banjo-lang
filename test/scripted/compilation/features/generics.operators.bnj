@@ -606,7 +606,7 @@ struct IntWrapper:
     BitXor[IntWrapper],
     Shl[IntWrapper],
     Shr[IntWrapper],
-{    
+{
     var value: i32;
 
     pub func __add__(self, ref other: IntWrapper) -> IntWrapper {
@@ -673,4 +673,71 @@ func main() {
     print((a << b).value);
     print(',');
     print((a >> b).value);
+}
+
+# test:subtest
+# test:output "11,3,7.5"
+
+func add_max[T: Add[T] + Order[T]](a: T, b: T, addend: T) -> T {
+    if a > b {
+        return a + addend;
+    } else {
+        return b + addend;
+    }
+}
+
+func main() {
+    print(add_max(5, 8, 3));
+    print(',');
+    print(add_max(-3, -10, 6));
+    print(',');
+    print(add_max(4.0, 2.5, 3.5));
+}
+
+# test:subtest
+# test:output "11,3"
+
+struct IntWrapper: Add[IntWrapper], Order[IntWrapper] {
+    var value: i32;
+
+    pub func __add__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value + other.value };
+    }
+
+    pub func __gt__(self, ref other: IntWrapper) -> bool {
+        return self.value > other.value;
+    }
+
+    pub func __lt__(self, ref other: IntWrapper) -> bool {
+        return self.value < other.value;
+    }
+
+    pub func __ge__(self, ref other: IntWrapper) -> bool {
+        return self.value >= other.value;
+    }
+
+    pub func __le__(self, ref other: IntWrapper) -> bool {
+        return self.value <= other.value;
+    }
+}
+
+func add_max[T: Add[T] + Order[T]](a: T, b: T, addend: T) -> T {
+    if a > b {
+        return a + addend;
+    } else {
+        return b + addend;
+    }
+}
+
+func main() {
+    var a = IntWrapper { value: 5 };
+    var b = IntWrapper { value: 8 };
+    var c = IntWrapper { value: 3 };
+    var d = IntWrapper { value: -3 };
+    var e = IntWrapper { value: -10 };
+    var f = IntWrapper { value: 6 };
+    
+    print(add_max(a, b, c).value);
+    print(',');
+    print(add_max(d, e, f).value);
 }

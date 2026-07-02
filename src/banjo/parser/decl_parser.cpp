@@ -482,16 +482,36 @@ ParseResult DeclParser::parse_generic_param_list() {
         if (stream.get()->is(TKN_COLON)) {
             node.consume(); // Consume ':'
 
-            ParseResult result = parser.parse_type();
-            if (result.is_valid) {
-                node.append_child(result.node);
-            } else {
-                node.append_child(parser.create_node(AST_ERROR));
-            }
+            ParseResult result = parse_type_constraint();
+            node.append_child(result.node);
         }
 
         return node.build(AST_GENERIC_PARAMETER);
     });
+}
+
+ParseResult DeclParser::parse_type_constraint() {
+    NodeBuilder node = parser.build_node();
+
+    ParseResult result = parser.parse_type();
+    if (result.is_valid) {
+        node.append_child(result.node);
+    } else {
+        node.append_child(parser.create_node(AST_ERROR));
+    }
+
+    while (stream.get()->is(TKN_PLUS)) {
+        stream.consume(); // Consume '+'
+
+        ParseResult result = parser.parse_type();
+        if (result.is_valid) {
+            node.append_child(result.node);
+        } else {
+            node.append_child(parser.create_node(AST_ERROR));
+        }
+    }
+
+    return node.build(AST_TYPE_CONSTRAINT);
 }
 
 } // namespace lang
