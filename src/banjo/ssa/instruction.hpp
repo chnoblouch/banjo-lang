@@ -68,6 +68,8 @@ public:
         return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;
     }
 
+    bool is_cond_branch() const { return opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP; }
+
     Type get_type() const;
 };
 

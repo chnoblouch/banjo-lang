@@ -165,7 +165,7 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
             }
 
             if (callee_instr.get_dest()) {
-                ctx.reg2reg.insert({*callee_instr.get_dest(), next_vreg++});
+                ctx.reg2reg.insert({*callee_instr.get_dest(), func.next_virtual_reg()});
             }
         }
     }
@@ -179,7 +179,7 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
                 inline_block.get_param_types().resize(iter->get_param_regs().size());
 
                 for (unsigned i = 0; i < iter->get_param_regs().size(); i++) {
-                    ssa::VirtualRegister inline_param_reg = next_vreg++;
+                    ssa::VirtualRegister inline_param_reg = func.next_virtual_reg();
                     inline_block.get_param_regs()[i] = inline_param_reg;
                     inline_block.get_param_types()[i] = iter->get_param_types()[i];
                     ctx.reg2reg.insert({iter->get_param_regs()[i], inline_param_reg});

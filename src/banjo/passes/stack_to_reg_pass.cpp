@@ -73,7 +73,7 @@ void StackToRegPass::run(ssa::Function *func) {
                     .stack_slot = reg,
                 });
 
-                ssa::VirtualRegister param_reg = 1000 + func->next_virtual_reg();
+                ssa::VirtualRegister param_reg = func->next_virtual_reg();
                 cfg_node.block->get_param_regs().push_back(param_reg);
                 cfg_node.block->get_param_types().push_back(slot.type);
 

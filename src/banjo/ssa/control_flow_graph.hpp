@@ -80,10 +80,12 @@ public:
     ControlFlowGraph &get_cfg() { return cfg; }
     Node &get_node(unsigned index) { return nodes[index]; }
     Node &get_node(ssa::BasicBlockIter iter) { return nodes[cfg.get_node_index(iter)]; }
+    bool dominates(ssa::BasicBlockIter a, ssa::BasicBlockIter b);
     std::vector<ControlFlowGraph::Node> get_dominance_frontiers(ssa::BasicBlockIter iter);
     void dump(std::ostream &stream);
 
 private:
+    bool dominates(Node &a, Node &b);
     unsigned intersect(unsigned b1, unsigned b2, const std::vector<int> &doms);
     void compute_idoms();
     void compute_dominance_frontiers();

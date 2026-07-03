@@ -5,7 +5,6 @@
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
-
 #include <iostream>
 #include <utility>
 

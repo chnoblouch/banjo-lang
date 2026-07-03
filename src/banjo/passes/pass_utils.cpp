@@ -140,6 +140,24 @@ ssa::InstrIter PassUtils::find_def(ssa::Function &func, ssa::VirtualRegister reg
     return nullptr;
 }
 
+ssa::BasicBlockIter PassUtils::find_def_block(ssa::Function &func, ssa::VirtualRegister reg) {
+    for (ssa::BasicBlockIter block = func.begin(); block != func.end(); ++block) {
+        for (ssa::VirtualRegister param_reg : block->get_param_regs()) {
+            if (param_reg == reg) {
+                return block;
+            }
+        }
+
+        for (ssa::InstrIter instr = block->begin(); instr != block->end(); ++instr) {
+            if (instr->get_dest() && instr->get_dest() == reg) {
+                return block;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 PassUtils::UseMap PassUtils::collect_uses(ssa::Function &func) {
     UseMap uses;
 

@@ -36,7 +36,6 @@ private:
 private:
     std::unordered_set<ssa::Function *> funcs_visited;
     std::set<std::pair<ssa::Function *, ssa::Function *>> inlined_funcs;
-    unsigned next_vreg = 10000;
 
 public:
     InliningPass(target::Target *target);

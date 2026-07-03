@@ -1,6 +1,7 @@
 #ifndef BANJO_PASSES_PASS_UTILS_H
 #define BANJO_PASSES_PASS_UTILS_H
 
+#include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/instruction.hpp"
@@ -32,6 +33,7 @@ void iter_regs(std::vector<ssa::Operand> &operands, std::function<void(ssa::Virt
 void iter_imms(std::vector<ssa::Operand> &operands, std::function<void(ssa::Value &val)> func);
 void replace_block(ssa::Function *func, ssa::ControlFlowGraph &cfg, unsigned node, unsigned replacement);
 ssa::InstrIter find_def(ssa::Function &func, ssa::VirtualRegister reg);
+ssa::BasicBlockIter find_def_block(ssa::Function &func, ssa::VirtualRegister reg);
 UseMap collect_uses(ssa::Function &func);
 
 } // namespace PassUtils

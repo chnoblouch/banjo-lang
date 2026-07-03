@@ -34,6 +34,8 @@ std::optional<ssa::Value> precompute_select(ssa::Instruction &instr);
 std::optional<ssa::Value> precompute_extend(ssa::Instruction &instr);
 std::optional<ssa::Value> precompute_itof(ssa::Instruction &instr);
 std::optional<ssa::Value> precompute_sqrt(ssa::Instruction &instr);
+
+std::optional<bool> try_precompute_cmp(ssa::Value &lhs, ssa::Value &rhs, ssa::Comparison comparison);
 bool precompute_cmp(const ssa::Value &lhs, const ssa::Value &rhs, ssa::Comparison comparison);
 
 } // namespace Precomputing

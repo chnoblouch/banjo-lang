@@ -280,6 +280,19 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
         return slot_name + " + " + std::to_string(offset.addend);
     } else if (operand.is_aarch64_left_shift()) {
         return "lsl #" + std::to_string(operand.get_aarch64_left_shift());
+    } else if (operand.is_aarch64_condition()) {
+        switch (operand.get_aarch64_condition()) {
+            case target::AArch64Condition::EQ: return "eq";
+            case target::AArch64Condition::NE: return "ne";
+            case target::AArch64Condition::HS: return "hs";
+            case target::AArch64Condition::LO: return "lo";
+            case target::AArch64Condition::HI: return "hi";
+            case target::AArch64Condition::LS: return "ls";
+            case target::AArch64Condition::GE: return "ge";
+            case target::AArch64Condition::LT: return "lt";
+            case target::AArch64Condition::GT: return "gt";
+            case target::AArch64Condition::LE: return "le";
+        }
     } else {
         ASSERT_UNREACHABLE;
     }

@@ -167,6 +167,20 @@ void DominatorTree::compute_idoms() {
     }
 }
 
+bool DominatorTree::dominates(Node &a, Node &b) {
+    if (a.index == b.index) {
+        return true;
+    }
+
+    for (unsigned child_index : a.children_indices) {
+        if (dominates(nodes[child_index], b)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 unsigned DominatorTree::intersect(unsigned b1, unsigned b2, const std::vector<int> &doms) {
     while (b1 != b2) {
         if (b1 < b2) {
@@ -201,6 +215,10 @@ void DominatorTree::compute_dominance_frontiers() {
             }
         }
     }
+}
+
+bool DominatorTree::dominates(ssa::BasicBlockIter a, ssa::BasicBlockIter b) {
+    return dominates(get_node(a), get_node(b));
 }
 
 std::vector<ControlFlowGraph::Node> DominatorTree::get_dominance_frontiers(ssa::BasicBlockIter iter) {

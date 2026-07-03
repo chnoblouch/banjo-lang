@@ -1,6 +1,7 @@
 #include "precomputing.hpp"
 
 #include "banjo/passes/pass_utils.hpp"
+#include "banjo/ssa/comparison.hpp"
 
 #include <cmath>
 
@@ -214,6 +215,20 @@ std::optional<ssa::Value> Precomputing::precompute_sqrt(ssa::Instruction &instr)
     } else {
         return {};
     }
+}
+
+std::optional<bool> Precomputing::try_precompute_cmp(ssa::Value &lhs, ssa::Value &rhs, ssa::Comparison comparison) {
+    if (comparison < ssa::Comparison::FEQ) {
+        if (lhs.is_int_immediate() && rhs.is_int_immediate()) {
+            return precompute_cmp(lhs, rhs, comparison);
+        }
+    } else {
+        if (lhs.is_fp_immediate() && rhs.is_fp_immediate()) {
+            return precompute_cmp(lhs, rhs, comparison);
+        }
+    }
+
+    return {};
 }
 
 bool Precomputing::precompute_cmp(const ssa::Value &lhs, const ssa::Value &rhs, ssa::Comparison comparison) {
