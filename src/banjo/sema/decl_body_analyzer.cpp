@@ -11,6 +11,7 @@
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
+
 #include <optional>
 
 namespace banjo {

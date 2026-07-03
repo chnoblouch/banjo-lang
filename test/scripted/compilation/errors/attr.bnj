@@ -1,0 +1,35 @@
+# test:subtest
+# test:error 4:3 "invalid attribute 'itsanerror'"
+
+@[itsanerror]
+func f() {}
+
+# test:subtest
+# test:error 10:3 "invalid attribute 'itsanerror'"
+
+@[itsanerror=somevalue]
+func f() {}
+
+# test:subtest
+# test:error 16:3 "attribute 'exposed' does not take a value"
+
+@[exposed=somevalue]
+func f() {}
+
+# test:subtest
+# test:error 22:3 "missing value for attribute 'link_name'"
+
+@[link_name]
+func f() {}
+
+# test:subtest
+# test:error 28:3 "invalid struct layout 'itsanerror'"
+
+@[layout=itsanerror]
+struct S {}
+
+# test:subtest
+# test:error 34:3 "missing value for attribute 'layout'"
+
+@[layout]
+struct S {}

@@ -1,5 +1,6 @@
 #include "stmt_analyzer.hpp"
 
+#include "banjo/sema/attribute_analyzer.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/expr_finalizer.hpp"
 #include "banjo/sema/expr_property_analyzer.hpp"
@@ -64,6 +65,10 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
 
 void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
     Result partial_result;
+
+    if (var_stmt.local.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*var_stmt.local.attrs);
+    }
 
     // Variables with empty names can be generated during semantic analysis.
     if (!var_stmt.local.name.value.empty()) {

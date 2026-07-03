@@ -171,6 +171,11 @@ public:
     void report_err_invalid_meta_method(const sir::MetaCallExpr &meta_call_expr);
     void report_err_symbol_guarded(ASTNode *ast_node, const sir::GuardedSymbol &guarded_symbol);
 
+    void report_err_invalid_attr(sir::RawAttribute &attr);
+    void report_err_attr_missing_value(sir::RawAttribute &attr);
+    void report_err_attr_redundant_value(sir::RawAttribute &attr);
+    void report_err_attr_invalid_layout(sir::RawAttribute &attr);
+
     void report_warn_unreachable_code(const sir::Stmt &stmt);
     void report_warn_call_result_unused(sir::CallExpr &call_expr);
     void report_warn_try_expr_value_unused(sir::TryExpr &try_expr);

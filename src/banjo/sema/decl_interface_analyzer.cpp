@@ -1,5 +1,6 @@
 #include "decl_interface_analyzer.hpp"
 
+#include "banjo/sema/attribute_analyzer.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
@@ -22,6 +23,11 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     }
 
     analyzer.enter_symbol_table(func_def.block.symbol_table);
+
+    if (func_def.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*func_def.attrs);
+    }
+
     analyze_generic_params(func_def.generic_params);
 
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
@@ -72,6 +78,10 @@ Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &nati
         return Result::SUCCESS;
     }
 
+    if (native_func_decl.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*native_func_decl.attrs);
+    }
+
     for (sir::Param &param : native_func_decl.type.params) {
         ExprAnalyzer(analyzer).analyze_type(param.type);
     }
@@ -101,6 +111,10 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     }
 
     Result partial_result;
+
+    if (struct_def.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*struct_def.attrs);
+    }
 
     analyze_generic_params(struct_def.generic_params);
 
@@ -160,6 +174,10 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
         return Result::SUCCESS;
     }
 
+    if (var_decl.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*var_decl.attrs);
+    }
+
     ExprAnalyzer(analyzer).analyze_type(var_decl.type);
 
     if (auto struct_def = var_decl.parent.match<sir::StructDef>()) {
@@ -188,6 +206,10 @@ Result DeclInterfaceAnalyzer::analyze_native_var_decl(sir::NativeVarDecl &native
         native_var_decl.stage = sir::SemaStage::INTERFACE;
     } else {
         return Result::SUCCESS;
+    }
+
+    if (native_var_decl.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*native_var_decl.attrs);
     }
 
     Result result = ExprAnalyzer(analyzer).analyze_type(native_var_decl.type);
@@ -246,6 +268,10 @@ Result DeclInterfaceAnalyzer::analyze_proto_def(sir::ProtoDef &proto_def) {
 
 void DeclInterfaceAnalyzer::analyze_param(sir::Param &param, unsigned index, sir::Symbol &func_parent) {
     // TODO: Check for duplicate parameter names.
+
+    if (param.attrs) {
+        AttributeAnalyzer{analyzer}.analyze(*param.attrs);
+    }
 
     if (param.is_self()) {
         if (!func_parent.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {

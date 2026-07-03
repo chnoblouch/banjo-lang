@@ -1679,37 +1679,36 @@ std::vector<sir::UnionCaseField> SIRGenerator::generate_union_case_fields(ASTNod
 sir::Attributes *SIRGenerator::generate_attrs(ASTNode *node) {
     sir::Attributes sir_attrs;
 
+    unsigned num_children = node->num_children();
+    sir_attrs.raw_attrs = allocate_array<sir::RawAttribute>(num_children);
+
+    unsigned index = 0;
+
     for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         if (child->type == AST_ATTRIBUTE_TAG) {
-            std::string_view name = child->value;
-
-            if (name == "exposed") sir_attrs.exposed = true;
-            else if (name == "dllexport") sir_attrs.dllexport = true;
-            else if (name == "test") sir_attrs.test = true;
-            else if (name == "unmanaged") sir_attrs.unmanaged = true;
-            else if (name == "byval") sir_attrs.byval = true;
-            else ASSERT_UNREACHABLE;
+            sir_attrs.raw_attrs[index] = sir::RawAttribute{
+                .ast_node = child,
+                .name = child->value,
+                .value = "",
+            };
         } else if (child->type == AST_ATTRIBUTE_VALUE) {
             ASTNode *name_node = child->first_child;
             ASTNode *value_node = name_node->next_sibling;
 
-            std::string_view name = name_node->value;
-            std::string_view value = value_node->value;
-
-            if (name == "link_name") {
-                sir_attrs.link_name = value;
-            } else if (name == "layout") {
-                if (value == "default") sir_attrs.layout = sir::Attributes::Layout::DEFAULT;
-                else if (value == "packed") sir_attrs.layout = sir::Attributes::Layout::PACKED;
-                else if (value == "overlapping") sir_attrs.layout = sir::Attributes::Layout::OVERLAPPING;
-                else if (value == "c") sir_attrs.layout = sir::Attributes::Layout::C;
-                else ASSERT_UNREACHABLE;
-            } else {
-                ASSERT_UNREACHABLE;
-            }
+            sir_attrs.raw_attrs[index] = sir::RawAttribute{
+                .ast_node = child,
+                .name = name_node->value,
+                .value = value_node->value,
+            };
         } else {
-            ASSERT_UNREACHABLE;
+            sir_attrs.raw_attrs[index] = sir::RawAttribute{
+                .ast_node = child,
+                .name{""},
+                .value{},
+            };
         }
+
+        index += 1;
     }
 
     return create(sir_attrs);

@@ -547,6 +547,12 @@ struct GuardedSymbol {
     std::vector<Variant> variants;
 };
 
+struct RawAttribute {
+    ASTNode *ast_node;
+    std::string_view name;
+    std::string_view value;
+};
+
 struct Attributes {
     enum class Layout : std::uint8_t {
         DEFAULT,
@@ -555,6 +561,7 @@ struct Attributes {
         C,
     };
 
+    std::span<RawAttribute> raw_attrs;
     bool exposed = false;
     bool dllexport = false;
     bool test = false;

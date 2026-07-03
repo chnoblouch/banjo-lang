@@ -777,6 +777,22 @@ void ReportGenerator::report_err_symbol_guarded(ASTNode *ast_node, const sir::Gu
     );
 }
 
+void ReportGenerator::report_err_invalid_attr(sir::RawAttribute &attr) {
+    report_error("invalid attribute '$'", attr.ast_node, attr.name);
+}
+
+void ReportGenerator::report_err_attr_missing_value(sir::RawAttribute &attr) {
+    report_error("missing value for attribute '$'", attr.ast_node, attr.name);
+}
+
+void ReportGenerator::report_err_attr_redundant_value(sir::RawAttribute &attr) {
+    report_error("attribute '$' does not take a value", attr.ast_node, attr.name);
+}
+
+void ReportGenerator::report_err_attr_invalid_layout(sir::RawAttribute &attr) {
+    report_error("invalid struct layout '$'", attr.ast_node, attr.value);
+}
+
 void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
     report_warning("unreachable code", stmt.get_ast_node());
 }
