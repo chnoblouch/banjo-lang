@@ -338,6 +338,10 @@ bool InliningPass::is_inlining_beneficial(ssa::Function *caller, ssa::Function *
 }
 
 bool InliningPass::is_inlining_legal(ssa::Function *caller, ssa::Function *callee) {
+    if (callee->never_inline) {
+        return false;
+    }
+
     // Can't inline if this is a recursive function call.
     if (caller == callee) {
         return false;

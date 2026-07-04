@@ -120,6 +120,7 @@ ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const
 
     ssa::Function *ssa_func = new ssa::Function(ssa_name, {});
     ssa_func->global = sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport));
+    ssa_func->never_inline = sir_func.attrs && sir_func.attrs->never_inline;
     ssa_mod.add(ssa_func);
 
     if (attrs && attrs->dllexport && ctx.target->get_descr().is_windows()) {

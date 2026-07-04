@@ -23,6 +23,7 @@ public:
     std::string name;
     FunctionType type;
     bool global = false;
+    bool never_inline = false;
 
     LinkedList<BasicBlock> basic_blocks;
 

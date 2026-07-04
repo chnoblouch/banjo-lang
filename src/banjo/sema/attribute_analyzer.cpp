@@ -30,6 +30,8 @@ void AttributeAnalyzer::analyze_raw_attr(sir::Attributes &attrs, sir::RawAttribu
         attrs.unmanaged = true;
     } else if (name == "byval") {
         attrs.byval = true;
+    } else if (name == "never_inline") {
+        attrs.never_inline = true;
     } else if (name == "link_name") {
         requires_value = true;
         attrs.link_name = value;
