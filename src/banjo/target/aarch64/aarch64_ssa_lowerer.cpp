@@ -138,8 +138,14 @@ mcode::CallingConvention *AArch64SSALowerer::get_calling_convention(ssa::Calling
     }
 }
 
-void AArch64SSALowerer::init_func(ssa::Function & /* func */) {
+void AArch64SSALowerer::init_func(ssa::Function &func) {
     block_arg_tmps.clear();
+
+    for (ssa::BasicBlock &block : func) {
+        for (ssa::VirtualRegister arg_reg : block.get_param_regs()) {
+            block_arg_tmps.emplace(arg_reg, func.next_virtual_reg());
+        }
+    }
 }
 
 void AArch64SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
@@ -147,15 +153,13 @@ void AArch64SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
         ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
         ssa::Type type = block.get_param_types()[i];
 
-        ssa::VirtualRegister tmp_reg = func->next_virtual_reg();
+        ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
         mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
         unsigned reg_size = get_size(type) == 8 ? 8 : 4;
 
         mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
         mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
         emit({opcode, {dst, src}});
-
-        block_arg_tmps.emplace(arg_reg, tmp_reg);
     }
 }
 

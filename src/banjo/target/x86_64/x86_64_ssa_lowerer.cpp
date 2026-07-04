@@ -42,8 +42,14 @@ void X8664SSALowerer::init_module(ssa::Module & /* mod */) {
     );
 }
 
-void X8664SSALowerer::init_func(ssa::Function & /* func */) {
+void X8664SSALowerer::init_func(ssa::Function & func) {
     block_arg_tmps.clear();
+
+    for (ssa::BasicBlock &block : func) {
+        for (ssa::VirtualRegister arg_reg : block.get_param_regs()) {
+            block_arg_tmps.emplace(arg_reg, func.next_virtual_reg());
+        }
+    }
 }
 
 mcode::Operand X8664SSALowerer::lower_address(const ssa::Operand &operand) {
@@ -153,15 +159,13 @@ void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
         ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
         ssa::Type type = block.get_param_types()[i];
 
-        ssa::VirtualRegister tmp_reg = func->next_virtual_reg();
+        ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
         mcode::Opcode opcode = get_move_opcode(type);
         unsigned reg_size = get_size(type) == 8 ? 8 : 4;
 
         mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
         mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
         emit({opcode, {dst, src}});
-
-        block_arg_tmps.emplace(arg_reg, tmp_reg);
     }
 }
 
