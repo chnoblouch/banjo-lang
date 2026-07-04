@@ -3,8 +3,10 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/function_type.hpp"
 #include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
 
@@ -53,6 +55,7 @@ private:
     void lower_jmp(ssa::Instruction &instr) override;
     void lower_cjmp(ssa::Instruction &instr) override;
     void lower_fcjmp(ssa::Instruction &instr) override;
+    void lower_select(ssa::Instruction &instr) override;
     void lower_call(ssa::Instruction &instr) override;
     void lower_ret(ssa::Instruction &instr) override;
     void lower_uextend(ssa::Instruction &instr) override;
@@ -69,9 +72,11 @@ private:
 
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);
     void push_operand(ssa::Operand &operand);
+    void store_branch_args(ssa::BranchTarget &target);
 
     WasmFuncType lower_func_type(ssa::FunctionType type);
     WasmType lower_type(ssa::Type type);
+    mcode::Opcode lower_comparison(ssa::Comparison comparison, bool is_64_bit);
     ssa::Primitive type_as_primitive(ssa::Type type);
     bool is_64_bit_int(ssa::Type type);
 };

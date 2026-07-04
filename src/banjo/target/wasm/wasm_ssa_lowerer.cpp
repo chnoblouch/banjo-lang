@@ -7,6 +7,7 @@
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/utils.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/wasm/wasm_calling_conv.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
@@ -18,7 +19,7 @@ WasmSSALowerer::WasmSSALowerer(target::Target *target) : codegen::SSALowerer(tar
 
 void WasmSSALowerer::init_module(ssa::Module &mod) {
     WasmModData mod_data;
-    
+
     std::unordered_set<std::string_view> existing_funcs;
     std::unordered_set<std::string_view> existing_globals;
 
@@ -78,6 +79,12 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
     }
 
     for (ssa::BasicBlock &block : func) {
+        for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+            unsigned local_index = func.type.params.size() + func_data.locals.size();
+            func_data.locals.push_back(lower_type(block.get_param_types()[i]));
+            vregs2locals.emplace(block.get_param_regs()[i], local_index);
+        }
+
         for (ssa::Instruction &instr : block) {
             if (!instr.get_dest() || instr.get_opcode() == ssa::Opcode::ALLOCA) {
                 continue;
@@ -86,7 +93,7 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
             unsigned local_index = func.type.params.size() + func_data.locals.size();
             ssa::Type type = ssa::get_result_type(instr, ssa::Primitive::U32);
             func_data.locals.push_back(lower_type(type));
-            vregs2locals.insert({*instr.get_dest(), local_index});
+            vregs2locals.emplace(*instr.get_dest(), local_index);
         }
     }
 
@@ -343,33 +350,29 @@ void WasmSSALowerer::lower_shr(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_jmp(ssa::Instruction &instr) {
-    unsigned block_index = block_indices.at(instr.get_operand(0).get_branch_target().block);
+    ssa::BranchTarget &target = instr.get_operand(0).get_branch_target();
 
+    unsigned block_index = block_indices.at(target.block);
+
+    store_branch_args(target);
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index)}});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});
     emit({WasmOpcode::BR, {mcode::Operand::from_int_immediate(block_depth)}});
 }
 
 void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
-    unsigned block_index_true = block_indices.at(instr.get_operand(3).get_branch_target().block);
-    unsigned block_index_false = block_indices.at(instr.get_operand(4).get_branch_target().block);
+    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
+    ssa::BranchTarget &target_true = instr.get_operand(3).get_branch_target();
+    ssa::BranchTarget &target_false = instr.get_operand(4).get_branch_target();
+
+    unsigned block_index_true = block_indices.at(target_true.block);
+    unsigned block_index_false = block_indices.at(target_false.block);
 
     bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
-    mcode::Opcode m_cmp_opcode;
+    mcode::Opcode m_cmp_opcode = lower_comparison(comparison, is_64_bit);
 
-    switch (instr.get_operand(1).get_comparison()) {
-        case ssa::Comparison::EQ: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_EQ : WasmOpcode::I32_EQ; break;
-        case ssa::Comparison::NE: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_NE : WasmOpcode::I32_NE; break;
-        case ssa::Comparison::UGT: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_GT_U : WasmOpcode::I32_GT_U; break;
-        case ssa::Comparison::UGE: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_GE_U : WasmOpcode::I32_GE_U; break;
-        case ssa::Comparison::ULT: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_LT_U : WasmOpcode::I32_LT_U; break;
-        case ssa::Comparison::ULE: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_LE_U : WasmOpcode::I32_LE_U; break;
-        case ssa::Comparison::SGT: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_GT_S : WasmOpcode::I32_GT_S; break;
-        case ssa::Comparison::SGE: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_GE_S : WasmOpcode::I32_GE_S; break;
-        case ssa::Comparison::SLT: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_LT_S : WasmOpcode::I32_LT_S; break;
-        case ssa::Comparison::SLE: m_cmp_opcode = is_64_bit ? WasmOpcode::I64_LE_S : WasmOpcode::I32_LE_S; break;
-        default: ASSERT_UNREACHABLE;
-    }
+    store_branch_args(target_true);
+    store_branch_args(target_false);
 
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_true)}});
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_false)}});
@@ -384,21 +387,18 @@ void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_fcjmp(ssa::Instruction &instr) {
-    unsigned block_index_true = block_indices.at(instr.get_operand(3).get_branch_target().block);
-    unsigned block_index_false = block_indices.at(instr.get_operand(4).get_branch_target().block);
+    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
+    ssa::BranchTarget &target_true = instr.get_operand(3).get_branch_target();
+    ssa::BranchTarget &target_false = instr.get_operand(4).get_branch_target();
+
+    unsigned block_index_true = block_indices.at(target_true.block);
+    unsigned block_index_false = block_indices.at(target_false.block);
 
     bool is_64_bit = instr.get_operand(0).get_type() == ssa::Primitive::F64;
-    mcode::Opcode m_cmp_opcode;
+    mcode::Opcode m_cmp_opcode = lower_comparison(comparison, is_64_bit);
 
-    switch (instr.get_operand(1).get_comparison()) {
-        case ssa::Comparison::FEQ: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_EQ : WasmOpcode::F32_EQ; break;
-        case ssa::Comparison::FNE: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_NE : WasmOpcode::F32_NE; break;
-        case ssa::Comparison::FGT: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_GT : WasmOpcode::F32_GT; break;
-        case ssa::Comparison::FGE: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_GE : WasmOpcode::F32_GE; break;
-        case ssa::Comparison::FLT: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_LT : WasmOpcode::F32_LT; break;
-        case ssa::Comparison::FLE: m_cmp_opcode = is_64_bit ? WasmOpcode::F64_LE : WasmOpcode::F32_LE; break;
-        default: ASSERT_UNREACHABLE;
-    }
+    store_branch_args(target_true);
+    store_branch_args(target_false);
 
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_true)}});
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_false)}});
@@ -410,6 +410,25 @@ void WasmSSALowerer::lower_fcjmp(ssa::Instruction &instr) {
 
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});
     emit({WasmOpcode::BR, {mcode::Operand::from_int_immediate(block_depth)}});
+}
+
+void WasmSSALowerer::lower_select(ssa::Instruction &instr) {
+    ssa::Type input_type = instr.get_operand(0).get_type();
+    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
+
+    bool is_input_64_bit = is_64_bit_int(input_type) || input_type == ssa::Primitive::F64;
+    mcode::Opcode m_cmp_opcode = lower_comparison(comparison, is_input_64_bit);
+
+    push_operand(instr.get_operand(3));
+    push_operand(instr.get_operand(4));
+
+    push_operand(instr.get_operand(0));
+    push_operand(instr.get_operand(2));
+    emit({m_cmp_opcode});
+    emit({WasmOpcode::SELECT});
+
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
 void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
@@ -802,6 +821,14 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     }
 }
 
+void WasmSSALowerer::store_branch_args(ssa::BranchTarget &target) {
+    for (unsigned i = 0; i < target.args.size(); i++) {
+        ssa::VirtualRegister reg = target.block->get_param_regs()[i];
+        push_operand(target.args[i]);
+        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(vregs2locals.at(reg))}});
+    }
+}
+
 mcode::CallingConvention *WasmSSALowerer::get_calling_convention(ssa::CallingConv /*calling_conv*/) {
     return static_cast<mcode::CallingConvention *>(&WasmCallingConv::INSTANCE);
 }
@@ -843,6 +870,27 @@ WasmType WasmSSALowerer::lower_type(ssa::Type type) {
         case ssa::Primitive::F32: return WasmType::F32;
         case ssa::Primitive::F64: return WasmType::F64;
         case ssa::Primitive::ADDR: return WasmType::I32;
+    }
+}
+
+mcode::Opcode WasmSSALowerer::lower_comparison(ssa::Comparison comparison, bool is_64_bit) {
+    switch (comparison) {
+        case ssa::Comparison::EQ: return is_64_bit ? WasmOpcode::I64_EQ : WasmOpcode::I32_EQ;
+        case ssa::Comparison::NE: return is_64_bit ? WasmOpcode::I64_NE : WasmOpcode::I32_NE;
+        case ssa::Comparison::UGT: return is_64_bit ? WasmOpcode::I64_GT_U : WasmOpcode::I32_GT_U;
+        case ssa::Comparison::UGE: return is_64_bit ? WasmOpcode::I64_GE_U : WasmOpcode::I32_GE_U;
+        case ssa::Comparison::ULT: return is_64_bit ? WasmOpcode::I64_LT_U : WasmOpcode::I32_LT_U;
+        case ssa::Comparison::ULE: return is_64_bit ? WasmOpcode::I64_LE_U : WasmOpcode::I32_LE_U;
+        case ssa::Comparison::SGT: return is_64_bit ? WasmOpcode::I64_GT_S : WasmOpcode::I32_GT_S;
+        case ssa::Comparison::SGE: return is_64_bit ? WasmOpcode::I64_GE_S : WasmOpcode::I32_GE_S;
+        case ssa::Comparison::SLT: return is_64_bit ? WasmOpcode::I64_LT_S : WasmOpcode::I32_LT_S;
+        case ssa::Comparison::SLE: return is_64_bit ? WasmOpcode::I64_LE_S : WasmOpcode::I32_LE_S;
+        case ssa::Comparison::FEQ: return is_64_bit ? WasmOpcode::F64_EQ : WasmOpcode::F32_EQ;
+        case ssa::Comparison::FNE: return is_64_bit ? WasmOpcode::F64_NE : WasmOpcode::F32_NE;
+        case ssa::Comparison::FGT: return is_64_bit ? WasmOpcode::F64_GT : WasmOpcode::F32_GT;
+        case ssa::Comparison::FGE: return is_64_bit ? WasmOpcode::F64_GE : WasmOpcode::F32_GE;
+        case ssa::Comparison::FLT: return is_64_bit ? WasmOpcode::F64_LT : WasmOpcode::F32_LT;
+        case ssa::Comparison::FLE: return is_64_bit ? WasmOpcode::F64_LE : WasmOpcode::F32_LE;
     }
 }
 
