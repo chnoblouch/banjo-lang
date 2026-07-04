@@ -1,7 +1,10 @@
 #include "aarch64_ssa_lowerer.hpp"
 
 #include "banjo/mcode/operand.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
+#include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/aarch64/aapcs_calling_conv.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
@@ -13,9 +16,7 @@
 
 #include <variant>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 // FIXME: Relocations for loads and stores are not generated correctly!
 
@@ -35,6 +36,40 @@ void AArch64SSALowerer::lower_fp_operation(mcode::Opcode opcode, ssa::Instructio
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
     emit(mcode::Instruction(opcode, {m_dst, m_lhs, m_rhs}));
+}
+
+void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr) {
+    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
+    ssa::BranchTarget &target_true = instr.get_operand(3).get_branch_target();
+    ssa::BranchTarget &target_false = instr.get_operand(4).get_branch_target();
+
+    mcode::Operand m_cmp_lhs = lower_value(instr.get_operand(0));
+    mcode::Operand m_cmp_rhs = lower_value(instr.get_operand(2));
+
+    mcode::Operand m_target_true = mcode::Operand::from_label(target_true.block->get_label());
+    mcode::Operand m_target_false = mcode::Operand::from_label(target_false.block->get_label());
+
+    if (target_true.block == get_basic_block_iter().get_next()) {
+        AArch64Condition condition = lower_condition(ssa::invert_comparison(comparison));
+        mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + (unsigned)condition;
+
+        move_branch_args(target_false);
+        emit({cmp_opcode, {m_cmp_lhs, m_cmp_rhs}});
+        emit({branch_opcode, {m_target_false}});
+        move_branch_args(target_true);
+    } else {
+        AArch64Condition condition = lower_condition(comparison);
+        mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + (unsigned)condition;
+
+        move_branch_args(target_true);
+        emit({cmp_opcode, {m_cmp_lhs, m_cmp_rhs}});
+        emit({branch_opcode, {m_target_true}});
+        move_branch_args(target_false);
+
+        if (target_false.block != get_basic_block_iter().get_next()) {
+            emit({AArch64Opcode::B, {m_target_false}});
+        }
+    }
 }
 
 mcode::Operand AArch64SSALowerer::lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size) {
@@ -100,6 +135,27 @@ mcode::CallingConvention *AArch64SSALowerer::get_calling_convention(ssa::Calling
         return &AAPCSCallingConv::INSTANCE_APPLE;
     } else {
         return &AAPCSCallingConv::INSTANCE_STANDARD;
+    }
+}
+
+void AArch64SSALowerer::init_func(ssa::Function & /* func */) {
+    block_arg_tmps.clear();
+}
+
+void AArch64SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
+    for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+        ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+        ssa::Type type = block.get_param_types()[i];
+
+        ssa::VirtualRegister tmp_reg = func->next_virtual_reg();
+        mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+        unsigned reg_size = get_size(type) == 8 ? 8 : 4;
+
+        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
+        mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
+        emit({opcode, {dst, src}});
+
+        block_arg_tmps.emplace(arg_reg, tmp_reg);
     }
 }
 
@@ -389,43 +445,11 @@ void AArch64SSALowerer::lower_jmp(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_cjmp(ssa::Instruction &instr) {
-    move_branch_args(instr.get_operand(3).get_branch_target());
-    move_branch_args(instr.get_operand(4).get_branch_target());
-
-    mcode::Operand m_cmp_lhs = lower_value(instr.get_operand(0));
-    mcode::Operand m_cmp_rhs = lower_value(instr.get_operand(2));
-
-    AArch64Condition condition = lower_condition(instr.get_operand(1).get_comparison());
-    mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + (unsigned)condition;
-
-    mcode::Operand m_target_true =
-        mcode::Operand::from_label(instr.get_operand(3).get_branch_target().block->get_label());
-    mcode::Operand m_target_false =
-        mcode::Operand::from_label(instr.get_operand(4).get_branch_target().block->get_label());
-
-    emit(mcode::Instruction(AArch64Opcode::CMP, {m_cmp_lhs, m_cmp_rhs}));
-    emit(mcode::Instruction(branch_opcode, {m_target_true}));
-    emit(mcode::Instruction(AArch64Opcode::B, {m_target_false}));
+    lower_cond_branch(AArch64Opcode::CMP, instr);
 }
 
 void AArch64SSALowerer::lower_fcjmp(ssa::Instruction &instr) {
-    move_branch_args(instr.get_operand(3).get_branch_target());
-    move_branch_args(instr.get_operand(4).get_branch_target());
-
-    mcode::Operand m_cmp_lhs = lower_value(instr.get_operand(0));
-    mcode::Operand m_cmp_rhs = lower_value(instr.get_operand(2));
-
-    AArch64Condition condition = lower_condition(instr.get_operand(1).get_comparison());
-    mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + (unsigned)condition;
-
-    mcode::Operand m_target_true =
-        mcode::Operand::from_label(instr.get_operand(3).get_branch_target().block->get_label());
-    mcode::Operand m_target_false =
-        mcode::Operand::from_label(instr.get_operand(4).get_branch_target().block->get_label());
-
-    emit(mcode::Instruction(AArch64Opcode::FCMP, {m_cmp_lhs, m_cmp_rhs}));
-    emit(mcode::Instruction(branch_opcode, {m_target_true}));
-    emit(mcode::Instruction(AArch64Opcode::B, {m_target_false}));
+    lower_cond_branch(AArch64Opcode::FCMP, instr);
 }
 
 void AArch64SSALowerer::lower_select(ssa::Instruction &instr) {
@@ -863,14 +887,15 @@ AArch64Condition AArch64SSALowerer::lower_condition(ssa::Comparison comparison) 
 void AArch64SSALowerer::move_branch_args(ssa::BranchTarget &target) {
     for (unsigned i = 0; i < target.args.size(); i++) {
         ssa::Value &arg = target.args[i];
+        ssa::VirtualRegister arg_reg = target.block->get_param_regs()[i];
+        ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
 
         mcode::Opcode opcode = arg.get_type().is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
+        unsigned reg_size = get_size(arg.get_type()) == 8 ? 8 : 4;
 
-        unsigned size = get_size(arg.get_type());
-        ssa::VirtualRegister param_reg = target.block->get_param_regs()[i];
-        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(param_reg), size);
-
-        emit(mcode::Instruction(opcode, {dst, lower_value(arg)}, mcode::Instruction::FLAG_CALL_ARG));
+        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
+        mcode::Operand src = lower_value(arg);
+        emit({opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG});
     }
 }
 
@@ -886,6 +911,4 @@ mcode::Operand AArch64SSALowerer::lower_as_move_into_reg(mcode::Register reg, co
     return m_dst;
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

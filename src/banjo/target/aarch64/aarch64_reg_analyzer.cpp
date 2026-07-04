@@ -189,7 +189,10 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
         case B_LE:
         case BLR: collect_regs(instr.get_operand(0), mcode::RegUsage::USE, operands); break;
 
+        case BL:
         case RET: break;
+
+        default: ASSERT_UNREACHABLE;
     }
 
     return operands;

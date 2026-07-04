@@ -31,6 +31,7 @@ LivenessAnalysis LivenessAnalysis::compute(RegAllocFunc &func) {
 void LivenessAnalysis::collect_uses_and_defs(RegAllocBlock &block, BlockLiveness &liveness) {
     for (RegAllocInstr &instr : block.instrs) {
         for (mcode::RegOp &operand : instr.regs) {
+
             if (operand.usage == mcode::RegUsage::DEF) {
                 liveness.defs.insert(operand.reg);
             } else if (operand.usage == mcode::RegUsage::USE && !liveness.defs.contains(operand.reg)) {

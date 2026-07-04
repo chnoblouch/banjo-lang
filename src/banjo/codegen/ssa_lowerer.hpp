@@ -118,8 +118,9 @@ protected:
     void lower_alloca(ssa::Instruction &instr);
 
     virtual void init_module(ssa::Module &mod) {}
-    virtual void analyze_func(ssa::Function &func) {}
+    virtual void init_func(ssa::Function &func) {}
     virtual BlockMap generate_blocks(ssa::Function &func);
+    virtual void emit_block_prologue(ssa::BasicBlock &block) {}
 
     virtual void lower_load(ssa::Instruction &instr);
     virtual void lower_store(ssa::Instruction &instr);

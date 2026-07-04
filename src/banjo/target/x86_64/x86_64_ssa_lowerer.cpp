@@ -18,32 +18,36 @@
 
 #include <iostream>
 
-// clang-format off
-
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 X8664SSALowerer::X8664SSALowerer(Target *target) : SSALowerer(target), addr_lowering(*this), const_lowering(*this) {}
 
-void X8664SSALowerer::init_module(ssa::Module &mod) {
+void X8664SSALowerer::init_module(ssa::Module & /* mod */) {
+    // clang-format off
     mcode::Global::Bytes const_neg_zero{
         0, 0, 0, 1u << 7,
         0, 0, 0, 1u << 7,
         0, 0, 0, 1u << 7,
         0, 0, 0, 1u << 7,
     };
+    // clang-format on
 
-    get_machine_module().add(mcode::Global{
-        .name = "const.neg_zero",
-        .size = 4,
-        .alignment = 16,
-        .value = const_neg_zero,
-    });
+    get_machine_module().add(
+        mcode::Global{
+            .name = "const.neg_zero",
+            .size = 4,
+            .alignment = 16,
+            .value = const_neg_zero,
+        }
+    );
 }
 
-mcode::Operand X8664SSALowerer::lower_address(const ssa::Operand& operand) {
-    return addr_lowering.lower_address(operand); 
+void X8664SSALowerer::init_func(ssa::Function & /* func */) {
+    block_arg_tmps.clear();
+}
+
+mcode::Operand X8664SSALowerer::lower_address(const ssa::Operand &operand) {
+    return addr_lowering.lower_address(operand);
 }
 
 void X8664SSALowerer::append_mov_and_operation(
@@ -60,80 +64,83 @@ void X8664SSALowerer::append_mov_and_operation(
     emit(mcode::Instruction(machine_opcode, {m_dst, m_rhs}));
 }
 
-bool X8664SSALowerer::lower_stored_operation(ssa::Instruction& store) {
+bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
     const ssa::Operand result = store.get_operand(0);
-    if(!result.is_register()) {
+    if (!result.is_register()) {
         return false;
     }
 
     ssa::InstrIter operation_iter = get_producer(result.get_register());
-    if(operation_iter == get_block().end()) {
+    if (operation_iter == get_block().end()) {
         return false;
     }
 
     // int size = get_size(operation_iter->get_operand(0).get_type());
 
     mcode::Opcode machine_opcode;
-    switch(operation_iter->get_opcode()) {
+    switch (operation_iter->get_opcode()) {
         // case ssa::Opcode::ADD: machine_opcode = X8664Opcode::ADD; break;
         // case ssa::Opcode::SUB: machine_opcode = X8664Opcode::SUB; break;
-        //case ssa::Opcode::MUL: machine_opcode = X8664Opcode::IMUL; break;
-        //case ssa::Opcode::FADD: machine_opcode = size == 8 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS; break;
-        //case ssa::Opcode::FSUB: machine_opcode = size == 8 ? X8664Opcode::SUBSD : X8664Opcode::SUBSS; break;
-        //case ssa::Opcode::FMUL: machine_opcode = size == 8 ? X8664Opcode::MULSD : X8664Opcode::MULSS; break;
-        //case ssa::Opcode::FDIV: machine_opcode = size == 8 ? X8664Opcode::DIVSD : X8664Opcode::DIVSS; break;
+        // case ssa::Opcode::MUL: machine_opcode = X8664Opcode::IMUL; break;
+        // case ssa::Opcode::FADD: machine_opcode = size == 8 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS; break;
+        // case ssa::Opcode::FSUB: machine_opcode = size == 8 ? X8664Opcode::SUBSD : X8664Opcode::SUBSS; break;
+        // case ssa::Opcode::FMUL: machine_opcode = size == 8 ? X8664Opcode::MULSD : X8664Opcode::MULSS; break;
+        // case ssa::Opcode::FDIV: machine_opcode = size == 8 ? X8664Opcode::DIVSD : X8664Opcode::DIVSS; break;
         default: return false;
     }
-    
-    const ssa::Operand& lhs = operation_iter->get_operand(0);
-    const ssa::Operand& rhs = operation_iter->get_operand(1);
 
-    if(lhs.is_register() && rhs.is_register()) {
+    const ssa::Operand &lhs = operation_iter->get_operand(0);
+    const ssa::Operand &rhs = operation_iter->get_operand(1);
+
+    if (lhs.is_register() && rhs.is_register()) {
         ssa::InstrIter lhs_producer_iter = get_producer(lhs.get_register());
         ssa::InstrIter rhs_producer_iter = get_producer(lhs.get_register());
-        if(lhs_producer_iter == get_block().end() || rhs_producer_iter == get_block().end()) {
+        if (lhs_producer_iter == get_block().end() || rhs_producer_iter == get_block().end()) {
             return false;
         }
 
-        ssa::Instruction& lhs_producer = *lhs_producer_iter;
-        ssa::Instruction& rhs_producer = *lhs_producer_iter;
+        ssa::Instruction &lhs_producer = *lhs_producer_iter;
+        ssa::Instruction &rhs_producer = *lhs_producer_iter;
 
-        if(lhs_producer.get_opcode() == ssa::Opcode::LOAD && rhs_producer.get_opcode() == ssa::Opcode::LOAD && lhs_producer.get_operand(1) == store.get_operand(1)) {
+        if (lhs_producer.get_opcode() == ssa::Opcode::LOAD && rhs_producer.get_opcode() == ssa::Opcode::LOAD &&
+            lhs_producer.get_operand(1) == store.get_operand(1)) {
             discard_use(*operation_iter->get_dest());
             discard_use(*lhs_producer.get_dest());
 
             mcode::Operand dest = lower_address(store.get_operand(1));
-            if(dest.is_register()) {
+            if (dest.is_register()) {
                 dest = mcode::Operand::from_addr({dest.get_register()});
             }
             dest.set_size(get_size(store.get_operand(0).get_type()));
-            emit(mcode::Instruction(machine_opcode, {
-                dest,
-                map_vreg_as_operand(*rhs_producer.get_dest(), dest.get_size())
-            }));
-            
+            emit(
+                mcode::Instruction(
+                    machine_opcode,
+                    {dest, map_vreg_as_operand(*rhs_producer.get_dest(), dest.get_size())}
+                )
+            );
+
             return true;
         }
-    } else if(lhs.is_register() && rhs.is_immediate()) {
+    } else if (lhs.is_register() && rhs.is_immediate()) {
         ssa::InstrIter lhs_producer_iter = get_producer(lhs.get_register());
-        if(lhs_producer_iter == get_block().end()) {
+        if (lhs_producer_iter == get_block().end()) {
             return false;
         }
 
-        ssa::Instruction& lhs_producer = *lhs_producer_iter;
+        ssa::Instruction &lhs_producer = *lhs_producer_iter;
 
-        if(lhs_producer.get_opcode() == ssa::Opcode::LOAD && lhs_producer.get_operand(1) == store.get_operand(1)) {
+        if (lhs_producer.get_opcode() == ssa::Opcode::LOAD && lhs_producer.get_operand(1) == store.get_operand(1)) {
             discard_use(*operation_iter->get_dest());
             discard_use(*lhs_producer.get_dest());
             discard_use(store.get_operand(1).get_register());
 
             mcode::Operand dst = lower_address(store.get_operand(1));
-            if(dst.is_register()) {
+            if (dst.is_register()) {
                 dst = mcode::Operand::from_addr({dst.get_register()});
             }
             dst.set_size(get_size(store.get_operand(0).get_type()));
             emit(mcode::Instruction(machine_opcode, {dst, lower_as_operand(rhs)}));
-            
+
             return true;
         }
     }
@@ -141,7 +148,24 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction& store) {
     return false;
 }
 
-void X8664SSALowerer::lower_load(ssa::Instruction& instr) {
+void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
+    for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+        ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+        ssa::Type type = block.get_param_types()[i];
+
+        ssa::VirtualRegister tmp_reg = func->next_virtual_reg();
+        mcode::Opcode opcode = get_move_opcode(type);
+        unsigned reg_size = get_size(type) == 8 ? 8 : 4;
+
+        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
+        mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
+        emit({opcode, {dst, src}});
+
+        block_arg_tmps.emplace(arg_reg, tmp_reg);
+    }
+}
+
+void X8664SSALowerer::lower_load(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
 
@@ -149,10 +173,10 @@ void X8664SSALowerer::lower_load(ssa::Instruction& instr) {
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
     mcode::Operand m_src = lower_address(instr.get_operand(1)).with_size(size);
     emit(mcode::Instruction(opcode, {m_dst, m_src}));
-} 
+}
 
-void X8664SSALowerer::lower_store(ssa::Instruction& instr) {
-    if(lower_stored_operation(instr)) {
+void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
+    if (lower_stored_operation(instr)) {
         return;
     }
 
@@ -160,7 +184,8 @@ void X8664SSALowerer::lower_store(ssa::Instruction& instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     mcode::Instruction m_instr;
 
-    if (instr.get_operand(0).is_immediate() && type.is_primitive(ssa::Primitive::F32) && (dst.is_addr() || dst.is_stack_slot())) {
+    if (instr.get_operand(0).is_immediate() && type.is_primitive(ssa::Primitive::F32) &&
+        (dst.is_addr() || dst.is_stack_slot())) {
         float val = (float)instr.get_operand(0).get_fp_immediate();
         mcode::Operand src = mcode::Operand::from_int_immediate(BitOperations::get_bits_32(val), 4);
         dst.set_size(src.get_size());
@@ -169,7 +194,7 @@ void X8664SSALowerer::lower_store(ssa::Instruction& instr) {
         mcode::Operand src = lower_as_operand(instr.get_operand(0));
         dst.set_size(src.get_size());
 
-        if(src.is_symbol()) {
+        if (src.is_symbol()) {
             mcode::Register tmp_reg = create_reg();
             mcode::Operand tmp_val = mcode::Operand::from_register(tmp_reg, src.get_size());
             emit(mcode::Instruction(X8664Opcode::MOV, {tmp_val, src}));
@@ -180,19 +205,19 @@ void X8664SSALowerer::lower_store(ssa::Instruction& instr) {
         m_instr = mcode::Instruction(opcode, {dst, src});
     }
 
-    if(instr.get_attr() == ssa::Instruction::Attribute::SAVE_ARG) {
+    if (instr.get_attr() == ssa::Instruction::Attribute::SAVE_ARG) {
         m_instr.set_flag(mcode::Instruction::FLAG_ARG_STORE);
     }
 
     emit(m_instr);
 }
 
-void X8664SSALowerer::lower_loadarg(ssa::Instruction& instr) {
+void X8664SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();
     unsigned size = get_size(type);
 
-    mcode::CallingConvention* calling_conv = get_machine_func()->get_calling_conv();
+    mcode::CallingConvention *calling_conv = get_machine_func()->get_calling_conv();
     std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type);
     mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
 
@@ -214,7 +239,7 @@ void X8664SSALowerer::lower_loadarg(ssa::Instruction& instr) {
     emit(m_instr);
 }
 
-void X8664SSALowerer::lower_add(ssa::Instruction& instr) {
+void X8664SSALowerer::lower_add(ssa::Instruction &instr) {
     ssa::Operand lhs = instr.get_operand(0);
     ssa::Operand rhs = instr.get_operand(1);
     // int size = get_size(lhs.get_type());
@@ -238,13 +263,13 @@ void X8664SSALowerer::lower_add(ssa::Instruction& instr) {
     append_mov_and_operation(X8664Opcode::ADD, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
-void X8664SSALowerer::lower_sub(ssa::Instruction& instr) {
+void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
     append_mov_and_operation(X8664Opcode::SUB, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
-void X8664SSALowerer::lower_mul(ssa::Instruction& instr) {
-    ssa::Operand& lhs = instr.get_operand(0);
-    ssa::Operand& rhs = instr.get_operand(1);
+void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
+    ssa::Operand &lhs = instr.get_operand(0);
+    ssa::Operand &rhs = instr.get_operand(1);
 
     if (lhs.is_register() && rhs.is_immediate()) {
         unsigned size = get_size(lhs.get_type());
@@ -252,7 +277,7 @@ void X8664SSALowerer::lower_mul(ssa::Instruction& instr) {
         if ((size == 4 || size == 8) && rhs.get_int_immediate() == 3) {
             mcode::Register lhs_reg = map_vreg_as_reg(lhs.get_register());
             mcode::IndirectAddress addr(lhs_reg, lhs_reg, 2);
-            
+
             mcode::Operand m_dst = map_vreg_dst(instr, size);
             mcode::Operand m_src = mcode::Operand::from_addr(addr, size);
             emit(mcode::Instruction(X8664Opcode::LEA, {m_dst, m_src}));
@@ -263,6 +288,8 @@ void X8664SSALowerer::lower_mul(ssa::Instruction& instr) {
 
     append_mov_and_operation(X8664Opcode::IMUL, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
+
+// clang-format off
 
 void X8664SSALowerer::lower_sdiv(ssa::Instruction& instr) {
     unsigned size = get_size(instr.get_operand(0).get_type());
@@ -812,25 +839,20 @@ unsigned X8664SSALowerer::get_condition_code(ssa::Comparison comparison) {
 void X8664SSALowerer::move_branch_args(ssa::BranchTarget &target) {
     for (unsigned i = 0; i < target.args.size(); i++) {
         ssa::Value &arg = target.args[i];
-        ssa::VirtualRegister param_reg = target.block->get_param_regs()[i];
-
-        mcode::Opcode move_opcode;
-        if (arg.get_type().is_primitive(ssa::Primitive::F32)) move_opcode = X8664Opcode::MOVSS;
-        else if (arg.get_type().is_primitive(ssa::Primitive::F64)) move_opcode = X8664Opcode::MOVSD;
-        else move_opcode = X8664Opcode::MOV;
+        ssa::VirtualRegister arg_reg = target.block->get_param_regs()[i];
+        ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
 
         unsigned size = get_size(arg.get_type());
-        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(param_reg), size);
-
+        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), size);
+        
         if (arg.is_int_immediate() && arg.get_int_immediate() == 0) {
-            emit(mcode::Instruction(X8664Opcode::XOR, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG));
+            emit({X8664Opcode::XOR, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
         } else if (arg.is_fp_immediate() && arg.get_fp_immediate() == 0.0) {
-            emit(mcode::Instruction(X8664Opcode::XORPS, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG));
+            emit({X8664Opcode::XORPS, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
         } else {
+            mcode::Opcode opcode = get_move_opcode(arg.get_type());
             mcode::Operand src = lower_as_operand(arg);
-            if (src != dst) {
-                emit(mcode::Instruction(move_opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG));
-            }
+            emit({opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG});
         }
     }
 }
@@ -1093,6 +1115,4 @@ mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size
     }
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

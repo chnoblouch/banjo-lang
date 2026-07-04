@@ -18,6 +18,7 @@ class WasmSSALowerer final : public codegen::SSALowerer {
 
 private:
     std::unordered_map<ssa::VirtualRegister, unsigned> vregs2locals;
+    std::unordered_map<ssa::VirtualRegister, unsigned> block_arg_tmp_locals;
     std::unordered_map<ssa::BasicBlockIter, unsigned> block_indices;
     unsigned stack_pointer_local;
     unsigned block_index_local;
@@ -28,11 +29,13 @@ public:
     WasmSSALowerer(target::Target *target);
 
     void init_module(ssa::Module &mod) override;
-    void analyze_func(ssa::Function &func) override;
+    void init_func(ssa::Function &func) override;
     BlockMap generate_blocks(ssa::Function &func) override;
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 private:
+    void emit_block_prologue(ssa::BasicBlock &block) override;
+
     void lower_load(ssa::Instruction &instr) override;
     void lower_store(ssa::Instruction &instr) override;
     void lower_loadarg(ssa::Instruction &instr) override;

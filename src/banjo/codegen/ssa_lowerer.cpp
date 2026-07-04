@@ -1,6 +1,8 @@
 #include "ssa_lowerer.hpp"
 
+#include "banjo/mcode/instruction.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -89,7 +91,7 @@ void SSALowerer::lower_func(ssa::Function &func) {
         }
     }
 
-    analyze_func(func);
+    init_func(func);
     BlockMap block_map = generate_blocks(func);
     store_graphs(block_map);
 
@@ -144,13 +146,16 @@ mcode::BasicBlock SSALowerer::lower_basic_block(ssa::BasicBlock &basic_block) {
         .regs = {},
     };
 
+    emit_block_prologue(basic_block);
+    mcode::InstrIter insertion_point = machine_basic_block.get_instrs().get_trailer().get_prev();
+
     for (ssa::InstrIter iter = basic_block.get_instrs().get_last_iter(); iter != basic_block.get_header(); --iter) {
         if (iter->get_opcode() != ssa::Opcode::CALL && iter->get_dest() && get_num_uses(*iter->get_dest()) == 0) {
             continue;
         }
 
         instr_iter = iter;
-        basic_block_context.insertion_iter = machine_basic_block.begin();
+        basic_block_context.insertion_iter = insertion_point.get_next();
         lower_instr(*iter);
     }
 

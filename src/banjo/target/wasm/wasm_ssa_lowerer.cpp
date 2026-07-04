@@ -56,12 +56,13 @@ void WasmSSALowerer::init_module(ssa::Module &mod) {
     machine_module.set_target_data(std::move(mod_data));
 }
 
-void WasmSSALowerer::analyze_func(ssa::Function &func) {
+void WasmSSALowerer::init_func(ssa::Function &func) {
     WasmFuncData func_data;
     func_data.type = lower_func_type(func.type);
 
     vregs2locals.clear();
     block_indices.clear();
+    block_arg_tmp_locals.clear();
 
     // Create a local for the stack pointer.
     stack_pointer_local = func_data.type.params.size();
@@ -80,9 +81,14 @@ void WasmSSALowerer::analyze_func(ssa::Function &func) {
 
     for (ssa::BasicBlock &block : func) {
         for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+            WasmType type = lower_type(block.get_param_types()[i]);
             unsigned local_index = func.type.params.size() + func_data.locals.size();
-            func_data.locals.push_back(lower_type(block.get_param_types()[i]));
+
+            func_data.locals.push_back(type);
+            func_data.locals.push_back(type);
+
             vregs2locals.emplace(block.get_param_regs()[i], local_index);
+            block_arg_tmp_locals.emplace(block.get_param_regs()[i], local_index + 1);
         }
 
         for (ssa::Instruction &instr : block) {
@@ -157,6 +163,16 @@ WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
     machine_func->get_basic_blocks().append(std::move(exit_block));
 
     return block_map;
+}
+
+void WasmSSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
+    for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+        ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+        unsigned tmp_local = block_arg_tmp_locals.at(arg_reg);
+
+        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(tmp_local)}});
+        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(vregs2locals.at(arg_reg))}});
+    }
 }
 
 void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
@@ -823,9 +839,11 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
 
 void WasmSSALowerer::store_branch_args(ssa::BranchTarget &target) {
     for (unsigned i = 0; i < target.args.size(); i++) {
-        ssa::VirtualRegister reg = target.block->get_param_regs()[i];
+        ssa::VirtualRegister arg_reg = target.block->get_param_regs()[i];
+        unsigned tmp_local = block_arg_tmp_locals.at(arg_reg);
+
         push_operand(target.args[i]);
-        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(vregs2locals.at(reg))}});
+        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(tmp_local)}});
     }
 }
 

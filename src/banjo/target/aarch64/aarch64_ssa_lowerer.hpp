@@ -2,15 +2,19 @@
 #define BANJO_TARGET_AARCH64_SSA_LOWERER_H
 
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 
-namespace banjo {
+#include <unordered_map>
 
-namespace target {
+namespace banjo::target {
 
 class AArch64SSALowerer : public codegen::SSALowerer {
 
 private:
     unsigned next_const_index = 0;
+    std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
 
 public:
     AArch64SSALowerer(Target *target);
@@ -20,46 +24,51 @@ public:
     mcode::Operand lower_address(const ssa::Operand &operand);
     mcode::Operand offset_address(const mcode::Operand &m_operand, unsigned offset);
 
-    mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv);
+    mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
+    
+    void init_func(ssa::Function &func) override;
+    void emit_block_prologue(ssa::BasicBlock &block) override;
 
-    void lower_load(ssa::Instruction &instr);
-    void lower_store(ssa::Instruction &instr);
-    void lower_loadarg(ssa::Instruction &instr);
-    void lower_add(ssa::Instruction &instr);
-    void lower_sub(ssa::Instruction &instr);
-    void lower_mul(ssa::Instruction &instr);
-    void lower_sdiv(ssa::Instruction &instr);
-    void lower_srem(ssa::Instruction &instr);
-    void lower_udiv(ssa::Instruction &instr);
-    void lower_urem(ssa::Instruction &instr);
-    void lower_fadd(ssa::Instruction &instr);
-    void lower_fsub(ssa::Instruction &instr);
-    void lower_fmul(ssa::Instruction &instr);
-    void lower_fdiv(ssa::Instruction &instr);
-    void lower_and(ssa::Instruction &instr);
-    void lower_or(ssa::Instruction &instr);
-    void lower_xor(ssa::Instruction &instr);
-    void lower_shl(ssa::Instruction &instr);
-    void lower_shr(ssa::Instruction &instr);
-    void lower_jmp(ssa::Instruction &instr);
-    void lower_cjmp(ssa::Instruction &instr);
-    void lower_fcjmp(ssa::Instruction &instr);
-    void lower_select(ssa::Instruction &instr);
-    void lower_call(ssa::Instruction &instr);
-    void lower_ret(ssa::Instruction &instr);
-    void lower_uextend(ssa::Instruction &instr);
-    void lower_sextend(ssa::Instruction &instr);
-    void lower_truncate(ssa::Instruction &instr);
-    void lower_fpromote(ssa::Instruction &instr);
-    void lower_fdemote(ssa::Instruction &instr);
-    void lower_utof(ssa::Instruction &instr);
-    void lower_stof(ssa::Instruction &instr);
-    void lower_ftou(ssa::Instruction &instr);
-    void lower_ftos(ssa::Instruction &instr);
-    void lower_offsetptr(ssa::Instruction &instr);
-    void lower_memberptr(ssa::Instruction &instr);
+    void lower_load(ssa::Instruction &instr) override;
+    void lower_store(ssa::Instruction &instr) override;
+    void lower_loadarg(ssa::Instruction &instr) override;
+    void lower_add(ssa::Instruction &instr) override;
+    void lower_sub(ssa::Instruction &instr) override;
+    void lower_mul(ssa::Instruction &instr) override;
+    void lower_sdiv(ssa::Instruction &instr) override;
+    void lower_srem(ssa::Instruction &instr) override;
+    void lower_udiv(ssa::Instruction &instr) override;
+    void lower_urem(ssa::Instruction &instr) override;
+    void lower_fadd(ssa::Instruction &instr) override;
+    void lower_fsub(ssa::Instruction &instr) override;
+    void lower_fmul(ssa::Instruction &instr) override;
+    void lower_fdiv(ssa::Instruction &instr) override;
+    void lower_and(ssa::Instruction &instr) override;
+    void lower_or(ssa::Instruction &instr) override;
+    void lower_xor(ssa::Instruction &instr) override;
+    void lower_shl(ssa::Instruction &instr) override;
+    void lower_shr(ssa::Instruction &instr) override;
+    void lower_jmp(ssa::Instruction &instr) override;
+    void lower_cjmp(ssa::Instruction &instr) override;
+    void lower_fcjmp(ssa::Instruction &instr) override;
+    void lower_select(ssa::Instruction &instr) override;
+    void lower_call(ssa::Instruction &instr) override;
+    void lower_ret(ssa::Instruction &instr) override;
+    void lower_uextend(ssa::Instruction &instr) override;
+    void lower_sextend(ssa::Instruction &instr) override;
+    void lower_truncate(ssa::Instruction &instr) override;
+    void lower_fpromote(ssa::Instruction &instr) override;
+    void lower_fdemote(ssa::Instruction &instr) override;
+    void lower_utof(ssa::Instruction &instr) override;
+    void lower_stof(ssa::Instruction &instr) override;
+    void lower_ftou(ssa::Instruction &instr) override;
+    void lower_ftos(ssa::Instruction &instr) override;
+    void lower_offsetptr(ssa::Instruction &instr) override;
+    void lower_memberptr(ssa::Instruction &instr) override;
 
     void lower_fp_operation(mcode::Opcode opcode, ssa::Instruction &instr);
+    void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
+
     mcode::Operand lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size);
     mcode::Value move_const_into_register(const ssa::Value &value, ssa::Type type);
     mcode::Value move_int_into_register(LargeInt value, unsigned size);
@@ -74,8 +83,6 @@ public:
     mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

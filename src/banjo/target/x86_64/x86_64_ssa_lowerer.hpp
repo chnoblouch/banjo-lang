@@ -3,16 +3,16 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_addr_lowering.hpp"
 #include "banjo/target/x86_64/x86_64_const_lowering.hpp"
 
 #include <functional>
 #include <optional>
+#include <unordered_map>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class X8664SSALowerer : public codegen::SSALowerer {
 
@@ -24,6 +24,7 @@ private:
 
     X8664AddrLowering addr_lowering;
     X8664ConstLowering const_lowering;
+    std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
     std::optional<std::string> const_neg_zero;
 
 public:
@@ -48,6 +49,8 @@ public:
     bool lower_stored_operation(ssa::Instruction &store);
 
     void init_module(ssa::Module &mod) override;
+    void init_func(ssa::Function &func) override;
+    void emit_block_prologue(ssa::BasicBlock &block) override;
 
     void lower_load(ssa::Instruction &instr) override;
     void lower_store(ssa::Instruction &instr) override;
@@ -114,8 +117,6 @@ public:
     mcode::Operand create_fp_const_load(double value, unsigned size);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif
