@@ -43,10 +43,6 @@ struct Slice[T]: ToString, ToRepr {
         return self.data[index];
     }
 
-    pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
-        return PointerMoveIter[T].new(self.data, self.data + self.length);
-    }
-
     pub func __refiter__(self) -> PointerRefIter[T] {
         return PointerRefIter[T].new(self.data, self.data + self.length);
     }
@@ -64,7 +60,7 @@ struct Slice[T]: ToString, ToRepr {
 
         for i in 0..self.length {
             for j in 0..indent + 1 {
-                string += "  ";
+                string.append("  ");
             }
 
             string.append(convert.to_repr_indent(self.data[i], indent + 1));
@@ -72,7 +68,7 @@ struct Slice[T]: ToString, ToRepr {
         }
 
         for i in 0..indent {
-            string += "  ";
+            string.append("  ");
         }
 
         string.append(']');

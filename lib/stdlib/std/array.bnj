@@ -171,7 +171,7 @@ struct Array[T]: Copy, ToString, ToRepr {
     }
 
     pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
-        return self.slice.__iter__();
+        return PointerMoveIter[T].new(self.slice.data, self.slice.data + self.slice.length);
     }
 
     pub func __refiter__(self) -> PointerRefIter[T] {
