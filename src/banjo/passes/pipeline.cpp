@@ -5,6 +5,7 @@
 #include "banjo/passes/canonicalization_pass.hpp"
 #include "banjo/passes/control_flow_opt_pass.hpp"
 #include "banjo/passes/cse_pass.hpp"
+#include "banjo/passes/dead_code_elimination_pass.hpp"
 #include "banjo/passes/dead_func_elimination_pass.hpp"
 #include "banjo/passes/heap_to_stack_pass.hpp"
 #include "banjo/passes/inlining_pass.hpp"
@@ -52,7 +53,7 @@ std::vector<Pass *> Pipeline::create_opt_passes() {
     }
 
     if (config.opt_level >= 2) {
-        passes.push_back(new LoopInversionPass(target));
+        // passes.push_back(new LoopInversionPass(target));
     }
 
     if (config.opt_level >= 1) {
@@ -77,6 +78,7 @@ std::vector<Pass *> Pipeline::create_opt_passes() {
         passes.push_back(new HeapToStackPass(target));
         passes.push_back(new SROAPass(target));
         passes.push_back(new StackToRegPass(target));
+        passes.push_back(new DeadCodeEliminationPass(target));
         // passes.push_back(new StackSlotMergePass(target));
     }
 
