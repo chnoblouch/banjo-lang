@@ -233,6 +233,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
         {"StringSlice", std_string_slice_def},
         {"Map", std_map_def},
         {"Set", find_std_symbol({"std", "set"}, "Set")},
+        {"Box", find_std_symbol({"std", "box"}, "Box")},
         {"Shared", std_shared_def},
         {"Closure", std_closure_def},
     };
