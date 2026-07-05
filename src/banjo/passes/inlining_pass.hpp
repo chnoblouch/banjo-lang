@@ -24,6 +24,7 @@ private:
     };
 
     struct Context {
+        ssa::Function &caller;
         ssa::InstrIter call_instr;
         bool is_single_block;
         std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> reg2reg;

@@ -125,6 +125,7 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
     }
 
     Context ctx{
+        .caller = func,
         .call_instr = call_iter,
         .is_single_block = is_single_block,
         .end_block = end_block,
@@ -259,7 +260,9 @@ void InliningPass::inline_instr(ssa::InstrIter instr_iter, ssa::BasicBlock &bloc
         }
     }
 
-    if (ctx.is_single_block) {
+    if (inline_instr.get_opcode() == ssa::Opcode::ALLOCA) {
+        block.insert_before(ctx.caller.basic_blocks.get_first().get_instrs().get_first_iter(), inline_instr);
+    } else if (ctx.is_single_block) {
         block.insert_before(ctx.call_instr, inline_instr);
     } else {
         block.append(inline_instr);
@@ -321,6 +324,8 @@ int InliningPass::estimate_gain(ssa::Function &func) {
 }
 
 bool InliningPass::is_inlining_beneficial(ssa::Function *caller, ssa::Function *callee) {
+    return true;
+
     if (call_graph.get_node(callee).preds.size() == 1) {
         return callee->get_basic_blocks().get_size() <= 64;
     }
@@ -334,7 +339,7 @@ bool InliningPass::is_inlining_beneficial(ssa::Function *caller, ssa::Function *
         num_instrs += block.get_instrs().get_size();
     }
 
-    return num_instrs <= 24;
+    return num_instrs <= 48;
 }
 
 bool InliningPass::is_inlining_legal(ssa::Function *caller, ssa::Function *callee) {
