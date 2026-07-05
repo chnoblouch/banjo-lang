@@ -52,11 +52,16 @@ pub func zero[T]() -> T {
 }
 
 struct PointerMoveIter[T] {
+    var data: *T;
     var pointer: *T;
     var end: *T;
 
-    pub func new(pointer: *T, end: *T) -> PointerMoveIter[T] {
-        return PointerMoveIter[T] { pointer, end };
+    pub func new(data: *T, end: *T) -> PointerMoveIter[T] {
+        return PointerMoveIter[T] {
+            data,
+            pointer: data,
+            end,
+        };
     }
 
     func __next__(mut self) -> ?T {
@@ -68,6 +73,10 @@ struct PointerMoveIter[T] {
         copy(self.pointer, &value, meta(T).size);
         self.pointer += 1;
         return value;
+    }
+
+    func __deinit__(self) {
+        free(self.data);
     }
 }
 
