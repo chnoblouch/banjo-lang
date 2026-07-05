@@ -19,7 +19,7 @@ namespace codegen {
 
 RegAllocPass::RegAllocPass(target::TargetRegAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void RegAllocPass::run(mcode::Module &module_) {
+void RegAllocPass::run(mcode::Module &mod) {
     PROFILE_SCOPE("register allocation");
 
     // Things to be done:
@@ -30,7 +30,7 @@ void RegAllocPass::run(mcode::Module &module_) {
     // - Improving weight calculation (e.g. assign a higher score for bundles in loops)
     // - Smarter load/store placement for spilled bundles
 
-    for (mcode::Function *func : module_.get_functions()) {
+    for (mcode::Function *func : mod.get_functions()) {
         run(*func);
     }
 }
@@ -224,20 +224,29 @@ void RegAllocPass::try_coalesce(Context &ctx, Bundle &a, Bundle &b) {
             continue;
         }
 
-        RegAllocPoint end = range_a.end;
-        RegAllocPoint start = range_b.start;
-        if (end.instr != start.instr || end.stage != 0 || start.stage != 1) {
-            continue;
-        }
+        RegAllocBlock &block = ctx.func.blocks[range_a.block];
 
-        mcode::Instruction &instr = *ctx.func.blocks[range_a.block].instrs[end.instr].iter;
-        if (!analyzer.is_move_from(instr, segment_a.reg) || intersect(a, b)) {
-            continue;
-        }
+        bool is_a2b = is_connecting_move(block, segment_a, segment_b);
+        bool is_b2a = is_connecting_move(block, segment_b, segment_a);
+        bool is_connecting = is_a2b || is_b2a;
 
-        a.segments.push_back(segment_b);
-        b.deleted = true;
-        return;
+        if (is_connecting && !intersect(a, b)) {
+            a.segments.push_back(segment_b);
+            b.deleted = true;
+            return;
+        }
+    }
+}
+
+bool RegAllocPass::is_connecting_move(RegAllocBlock &block, const Segment &dst, const Segment &src) {
+    const RegAllocPoint &start = dst.range.start;
+    const RegAllocPoint &end = src.range.end;
+
+    if (start.instr == end.instr && end.stage == 0 && start.stage == 1) {
+        mcode::Instruction &instr = *block.instrs[start.instr].iter;
+        return analyzer.is_move_from(instr, src.reg);
+    } else {
+        return false;
     }
 }
 

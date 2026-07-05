@@ -50,7 +50,7 @@ private:
 
 public:
     RegAllocPass(target::TargetRegAnalyzer &analyzer);
-    void run(mcode::Module &module_);
+    void run(mcode::Module &mod);
     void run(mcode::Function &func);
 
 private:
@@ -62,6 +62,7 @@ private:
     std::vector<Bundle> create_bundles(Context &ctx);
     std::vector<Bundle> coalesce_bundles(Context &ctx, std::vector<Bundle> bundles);
     void try_coalesce(Context &ctx, Bundle &a, Bundle &b);
+    bool is_connecting_move(RegAllocBlock &block, const Segment &dst, const Segment &src);
     bool intersect(const Bundle &a, const Bundle &b);
 
     void alloc_bundle(Context &ctx, Bundle &bundle);

@@ -1,5 +1,6 @@
 #include "aarch64_reg_analyzer.hpp"
 
+#include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
@@ -38,21 +39,22 @@ std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::suggest_regs(
     codegen::RegAllocFunc &func,
     const codegen::Bundle &bundle
 ) {
-    // codegen::LiveRange first_range = group.ranges[0];
-    // codegen::LiveRange last_range = group.ranges[0];
-
-    // mcode::Instruction &first_def = *func.blocks[first_range.block].instrs[first_range.start].iter;
-    // mcode::Instruction &last_use = *func.blocks[last_range.block].instrs[last_range.end].iter;
-
     std::vector<mcode::PhysicalReg> suggested_regs;
 
-    // if (is_move_opcode(first_def.get_opcode()) && first_def.get_operand(1).is_physical_reg()) {
-    //     suggested_regs.push_back(first_def.get_operand(1).get_physical_reg());
-    // }
+    for (const codegen::Segment &segment : bundle.segments) {
+        const codegen::LiveRange &range = segment.range;
 
-    // if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
-    //     suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
-    // }
+        mcode::Instruction &first_def = *func.blocks[range.block].instrs[range.start.instr].iter;
+        mcode::Instruction &last_use = *func.blocks[range.block].instrs[range.end.instr].iter;
+
+        if (is_move_opcode(first_def.get_opcode()) && first_def.get_operand(1).is_physical_reg()) {
+            suggested_regs.push_back(first_def.get_operand(1).get_physical_reg());
+        }
+
+        if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
+            suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
+        }
+    }
 
     return suggested_regs;
 }
@@ -210,6 +212,19 @@ void AArch64RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::
     } else {
         reg_classes.insert({reg, AArch64RegClass::GENERAL_PURPOSE});
     }
+}
+
+bool AArch64RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) {
+    mcode::Opcode opcode = instr.get_opcode();
+
+    switch (opcode) {
+        case AArch64Opcode::MOV:
+        case AArch64Opcode::FMOV: break;
+        default: return false;
+    }
+
+    mcode::Operand &src = instr.get_operand(1);
+    return src.is_virtual_reg() && src.get_virtual_reg() == src_reg;
 }
 
 void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {

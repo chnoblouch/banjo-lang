@@ -61,20 +61,21 @@ std::vector<mcode::PhysicalReg> X8664RegAnalyzer::suggest_regs(
     codegen::RegAllocFunc &func,
     const codegen::Bundle &bundle
 ) {
-    codegen::LiveRange first_range = bundle.segments[0].range;
-    codegen::LiveRange last_range = bundle.segments[0].range;
-
-    mcode::Instruction &first_def = *func.blocks[first_range.block].instrs[first_range.start.instr].iter;
-    mcode::Instruction &last_use = *func.blocks[last_range.block].instrs[last_range.end.instr].iter;
-
     std::vector<mcode::PhysicalReg> suggested_regs;
 
-    if (is_move_opcode(first_def.get_opcode()) && first_def.get_operand(1).is_physical_reg()) {
-        suggested_regs.push_back(first_def.get_operand(1).get_physical_reg());
-    }
+    for (const codegen::Segment &segment : bundle.segments) {
+        const codegen::LiveRange &range = segment.range;
 
-    if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
-        suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
+        mcode::Instruction &first_def = *func.blocks[range.block].instrs[range.start.instr].iter;
+        mcode::Instruction &last_use = *func.blocks[range.block].instrs[range.end.instr].iter;
+
+        if (is_move_opcode(first_def.get_opcode()) && first_def.get_operand(1).is_physical_reg()) {
+            suggested_regs.push_back(first_def.get_operand(1).get_physical_reg());
+        }
+
+        if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
+            suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
+        }
     }
 
     return suggested_regs;
