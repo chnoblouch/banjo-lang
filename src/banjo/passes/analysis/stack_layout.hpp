@@ -37,6 +37,7 @@ public:
     void build(ssa::Function &func);
     Member *find_member(ssa::VirtualRegister reg);
     std::optional<ssa::VirtualRegister> find_base_slot(ssa::VirtualRegister reg);
+    bool is_non_overlapping(ssa::VirtualRegister a, ssa::VirtualRegister b, unsigned size);
 
     unsigned get_num_members() const { return num_members; }
 

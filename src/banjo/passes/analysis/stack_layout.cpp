@@ -9,6 +9,10 @@ namespace banjo::passes {
 StackLayout::StackLayout(target::Target &target) : target{target} {}
 
 void StackLayout::build(ssa::Function &func) {
+    // ASSUMPTION: This analysis assumes that accessing stack memory from another stack slot by
+    // offsetting a stack pointer is impossible. Yes, this means that invalid stack accesses might
+    // result in *undefined behaviour*!
+
     this->func = &func;
     slots.clear();
     num_members = 0;
@@ -131,6 +135,26 @@ std::optional<ssa::VirtualRegister> StackLayout::find_base_slot(ssa::VirtualRegi
     }
 
     return reg;
+}
+
+bool StackLayout::is_non_overlapping(ssa::VirtualRegister a, ssa::VirtualRegister b, unsigned size) {
+    Member *member_a = find_member(a);
+    Member *member_b = find_member(b);
+
+    if (!member_a || !member_b) {
+        return false;
+    }
+
+    if (member_a->slot != member_b->slot) {
+        return true;
+    }
+
+    unsigned start_a = member_a->offset;
+    unsigned start_b = member_b->offset;
+    unsigned end_a = start_a + size;
+    unsigned end_b = start_b + size;
+
+    return !(start_a < end_b && start_b < end_a);
 }
 
 } // namespace banjo::passes

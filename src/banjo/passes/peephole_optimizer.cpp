@@ -1,5 +1,6 @@
 #include "peephole_optimizer.hpp"
 
+#include "banjo/passes/analysis/stack_layout.hpp"
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/structure.hpp"
@@ -7,25 +8,25 @@
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/bit_operations.hpp"
 
-namespace banjo {
+namespace banjo::passes {
 
-namespace passes {
-
-PeepholeOptimizer::PeepholeOptimizer(target::Target *target) : Pass("peephole-opt", target) {}
+PeepholeOptimizer::PeepholeOptimizer(target::Target *target) : Pass{"peephole-opt", target}, stack_layout{*target} {}
 
 void PeepholeOptimizer::run(ssa::Module &mod) {
+    this->mod = &mod;
+
     for (ssa::Function *func : mod.get_functions()) {
-        run(func);
+        run(*func);
     }
 }
 
-void PeepholeOptimizer::run(ssa::Function *func) {
-    this->func = func;
-    stack_slots.clear();
+void PeepholeOptimizer::run(ssa::Function &func) {
+    this->func = &func;
+    stack_layout.build(func);
 
-    for (ssa::BasicBlock &block : func->get_basic_blocks()) {
-        discard_stack_slot_values();
-        run(block, *func);
+    for (ssa::BasicBlock &block : func.get_basic_blocks()) {
+        discard_stack_values();
+        run(block, func);
     }
 }
 
@@ -39,7 +40,6 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
         }
 
         switch (iter->get_opcode()) {
-            case ssa::Opcode::ALLOCA: process_alloca(iter); break;
             case ssa::Opcode::LOAD: process_load(iter, block, func); break;
             case ssa::Opcode::STORE: process_store(iter); break;
             case ssa::Opcode::ADD:
@@ -57,15 +57,9 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
 
         if (iter->get_opcode() != ssa::Opcode::LOAD && iter->get_opcode() != ssa::Opcode::STORE &&
             iter->might_access_memory()) {
-            discard_stack_slot_values();
+            discard_stack_values();
         }
     }
-}
-
-void PeepholeOptimizer::process_alloca(ssa::InstrIter &iter) {
-    StackSlotState state{.members{}};
-    collect_members(state, iter->get_operand(0).get_type(), 0);
-    stack_slots.emplace(*iter->get_dest(), std::move(state));
 }
 
 void PeepholeOptimizer::process_load(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
@@ -76,14 +70,14 @@ void PeepholeOptimizer::process_load(ssa::InstrIter &iter, ssa::BasicBlock &bloc
         return;
     }
 
-    StackSlotMemberState *member = find_stack_slot_member(addr.get_register());
+    StackLayout::Member *member = stack_layout.find_member(addr.get_register());
 
-    if (!member || type != member->type) {
+    if (!member || !types_compatible(type, member->type)) {
         return;
     }
 
-    if (member->value) {
-        eliminate(iter, *member->value, block, func);
+    if (std::optional<ssa::Value> value = stack_values[member->index]) {
+        eliminate(iter, *value, block, func);
     }
 }
 
@@ -92,18 +86,18 @@ void PeepholeOptimizer::process_store(ssa::InstrIter &iter) {
     ssa::Value &addr = iter->get_operand(1);
 
     if (!addr.is_register()) {
-        discard_stack_slot_values();
+        discard_stack_values();
         return;
     }
 
-    StackSlotMemberState *member = find_stack_slot_member(addr.get_register());
+    StackLayout::Member *member = stack_layout.find_member(addr.get_register());
 
-    if (!member || value.get_type() != member->type) {
-        discard_stack_slot_values();
+    if (!member || !types_compatible(value.get_type(), member->type)) {
+        discard_stack_values();
         return;
     }
 
-    member->value = value;
+    stack_values[member->index] = value;
 }
 
 void PeepholeOptimizer::process_add(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
@@ -171,39 +165,9 @@ void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &bloc
     }
 
     if (callee.get_extern_func()->name == "memcpy") {
-        if (iter->get_operands().size() == 4 && !iter->get_dest()) {
-            ssa::Operand dst = iter->get_operand(1);
-            ssa::Operand src = iter->get_operand(2);
-            ssa::Operand size_operand = iter->get_operand(3);
-
-            if (!dst.is_register() || !src.is_register()) {
-                return;
-            }
-
-            if (!size_operand.is_int_immediate() || size_operand.get_int_immediate().is_negative()) {
-                return;
-            }
-
-            unsigned size = static_cast<unsigned>(size_operand.get_int_immediate().to_u64());
-
-            unsigned usize = get_target()->get_data_layout().get_register_size();
-            ssa::Operand size_as_type = ssa::Operand::from_type({ssa::Primitive::U8, size});
-
-            if (size < usize && (size == 1 || size == 2 || size == 4 || size == 8)) {
-                ssa::VirtualRegister tmp_reg = func.next_virtual_reg();
-                ssa::Operand tmp_reg_operand = ssa::Operand::from_register(tmp_reg, size_as_type.get_type());
-
-                ssa::InstrIter load_instr = block.replace(iter, {ssa::Opcode::LOAD, tmp_reg, {size_as_type, src}});
-                ssa::InstrIter store_instr =
-                    block.insert_after(load_instr, {ssa::Opcode::STORE, {tmp_reg_operand, dst}});
-                iter = store_instr;
-                return;
-            }
-
-            ssa::InstrIter prev = iter.get_prev();
-            block.replace(iter, {ssa::Opcode::COPY, {dst, src, size_as_type}});
-            iter = prev;
-        }
+        process_memcpy(iter, block, func);
+    } else if (callee.get_extern_func()->name == "memmove") {
+        process_memmove(iter, block, func);
     } else if (callee.get_extern_func()->name == "sqrtf") {
         // if (iter->get_dest() && iter->get_operands().size() == 2) {
         //     ssa::InstrIter prev = iter.get_prev();
@@ -211,14 +175,7 @@ void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &bloc
         //     iter = prev;
         // }
     } else if (callee.get_extern_func()->name == "strlen") {
-        if (!iter->get_operand(1).is_global()) {
-            return;
-        }
-
-        std::string string = std::get<std::string>(iter->get_operand(1).get_global()->initial_value);
-        unsigned string_length = string.size() - 1;
-        ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::U64);
-        eliminate(iter, value, block, func);
+        process_strlen(iter, block, func);
     }
 }
 
@@ -240,6 +197,86 @@ void PeepholeOptimizer::process_memberptr(ssa::InstrIter &iter, ssa::BasicBlock 
     // }
 }
 
+void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+    if (iter->get_operands().size() != 4 || iter->get_dest()) {
+        return;
+    }
+
+    ssa::Operand dst = iter->get_operand(1);
+    ssa::Operand src = iter->get_operand(2);
+    ssa::Operand size_operand = iter->get_operand(3);
+
+    if (!dst.is_register() || !src.is_register()) {
+        return;
+    }
+
+    if (!size_operand.is_int_immediate() || size_operand.get_int_immediate().is_negative()) {
+        return;
+    }
+
+    unsigned size = static_cast<unsigned>(size_operand.get_int_immediate().to_u64());
+
+    unsigned usize = get_target()->get_data_layout().get_register_size();
+    ssa::Operand size_as_type = ssa::Operand::from_type({ssa::Primitive::U8, size});
+
+    if (size < usize && (size == 1 || size == 2 || size == 4 || size == 8)) {
+        ssa::VirtualRegister tmp_reg = func.next_virtual_reg();
+        ssa::Operand tmp_reg_operand = ssa::Operand::from_register(tmp_reg, size_as_type.get_type());
+
+        ssa::InstrIter load_instr = block.replace(iter, {ssa::Opcode::LOAD, tmp_reg, {size_as_type, src}});
+        ssa::InstrIter store_instr = block.insert_after(load_instr, {ssa::Opcode::STORE, {tmp_reg_operand, dst}});
+        iter = store_instr;
+        return;
+    }
+
+    ssa::InstrIter prev = iter.get_prev();
+    block.replace(iter, {ssa::Opcode::COPY, {dst, src, size_as_type}});
+    iter = prev;
+}
+
+void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+    if (iter->get_operands().size() != 4 || iter->get_dest()) {
+        return;
+    }
+
+    ssa::Value &dst = iter->get_operand(1);
+    ssa::Value &src = iter->get_operand(2);
+    ssa::Value &size_operand = iter->get_operand(3);
+
+    if (!dst.is_register() || !src.is_register() || !size_operand.is_immediate()) {
+        return;
+    }
+
+    unsigned size = size_operand.get_int_immediate().to_u64();
+
+    if (!stack_layout.is_non_overlapping(dst.get_register(), src.get_register(), size)) {
+        return;
+    }
+
+    ssa::FunctionDecl *memcpy_func;
+
+    for (ssa::FunctionDecl *extern_func : mod->get_external_functions()) {
+        if (extern_func->name == "memcpy") {
+            memcpy_func = extern_func;
+            break;
+        }
+    }
+
+    iter->get_operand(0) = ssa::Operand::from_extern_func(memcpy_func);
+    process_memcpy(iter, block, func);
+}
+
+void PeepholeOptimizer::process_strlen(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+    if (iter->get_operands().size() != 2 || !iter->get_dest() || !iter->get_operand(1).is_global()) {
+        return;
+    }
+
+    std::string string = std::get<std::string>(iter->get_operand(1).get_global()->initial_value);
+    unsigned string_length = string.size() - 1;
+    ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::U64);
+    eliminate(iter, value, block, func);
+}
+
 void PeepholeOptimizer::eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::BasicBlock &block, ssa::Function &func) {
     PassUtils::replace_in_func(func, *iter->get_dest(), val);
 
@@ -248,86 +285,26 @@ void PeepholeOptimizer::eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::Bas
     iter = prev;
 }
 
-void PeepholeOptimizer::collect_members(StackSlotState &slot_state, ssa::Type type, unsigned base_offset) {
-    target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-
-    if (type.is_struct()) {
-        ssa::Structure &struct_ = *type.get_struct();
-
-        for (unsigned i = 0; i < struct_.members.size(); i++) {
-            ssa::Type type = struct_.members[i].type;
-            unsigned offset = base_offset + data_layout.get_member_offset(&struct_, i);
-            collect_members(slot_state, type, offset);
-        }
-    } else {
-        slot_state.members.push_back(
-            StackSlotMemberState{
-                .offset = base_offset,
-                .type = type,
-                .value{},
-            }
-        );
-    }
+void PeepholeOptimizer::discard_stack_values() {
+    stack_values = {stack_layout.get_num_members(), std::optional<ssa::Value>{}};
 }
 
-PeepholeOptimizer::StackSlotMemberState *PeepholeOptimizer::find_stack_slot_member(ssa::VirtualRegister reg) {
+bool PeepholeOptimizer::types_compatible(ssa::Type a, ssa::Type b) {
+    // TODO: Move this into the backend.
+
+    if (a.is_struct() || b.is_struct()) {
+        return false;
+    }
+
+    if (a.get_primitive() == b.get_primitive()) {
+        return true;
+    }
+
     target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-    unsigned current_offset = 0;
 
-    while (true) {
-        auto stack_slot = stack_slots.find(reg);
-
-        if (stack_slot != stack_slots.end()) {
-            for (StackSlotMemberState &member : stack_slot->second.members) {
-                if (member.offset == current_offset) {
-                    return &member;
-                }
-            }
-        }
-
-        ssa::InstrIter def = PassUtils::find_def(*func, reg);
-
-        if (!def) {
-            break;
-        }
-
-        if (def->get_opcode() == ssa::Opcode::OFFSETPTR) {
-            ssa::Value &base = def->get_operand(0);
-            ssa::Value &offset = def->get_operand(1);
-            ssa::Type type = def->get_operand(2).get_type();
-
-            if (!base.is_register() || !offset.is_int_immediate()) {
-                break;
-            }
-
-            unsigned type_size = static_cast<unsigned>(data_layout.get_size(type));
-            current_offset += offset.get_int_immediate().to_unsigned() * type_size;
-            reg = base.get_register();
-        } else if (def->get_opcode() == ssa::Opcode::MEMBERPTR) {
-            ssa::Structure &struct_ = *def->get_operand(0).get_type().get_struct();
-            ssa::Value &base = def->get_operand(1);
-            unsigned index = def->get_operand(2).get_int_immediate().to_u64();
-
-            if (!base.is_register()) {
-                break;
-            }
-
-            current_offset += static_cast<unsigned>(data_layout.get_member_offset(&struct_, index));
-            reg = base.get_register();
-        } else {
-            break;
-        }
-    }
-
-    return nullptr;
-}
-
-void PeepholeOptimizer::discard_stack_slot_values() {
-    for (auto &iter : stack_slots) {
-        for (StackSlotMemberState &member : iter.second.members) {
-            member.value = {};
-        }
-    }
+    unsigned size_a = data_layout.get_size(a);
+    unsigned size_b = data_layout.get_size(b);
+    return size_a == size_b && a.is_floating_point() == b.is_floating_point();
 }
 
 bool PeepholeOptimizer::is_imm(ssa::Operand &operand) {
@@ -348,6 +325,4 @@ bool PeepholeOptimizer::is_float_one(ssa::Operand &operand) {
     return operand.is_fp_immediate() && operand.get_fp_immediate() == 1.0;
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
