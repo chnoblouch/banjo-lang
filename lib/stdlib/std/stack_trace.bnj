@@ -50,7 +50,7 @@ pub func print_stack_trace() {
         stack_frame.addr_frame.mode = winapi.ADDR_MODE_FLAT;
 
         var symbol = memory.alloc(meta(winapi.SymbolInfo).size + (MAX_SYMBOL_LENGTH - 1)) as *winapi.SymbolInfo;
-        symbol.size_of_struct = meta(winapi.SymbolInfo).size;
+        symbol.size_of_struct = meta(winapi.SymbolInfo).size as u32;
         symbol.max_name_len = MAX_SYMBOL_LENGTH as u32;
 
         var frames: Array[StackFrame] = [];
