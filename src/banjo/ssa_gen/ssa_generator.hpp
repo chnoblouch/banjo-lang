@@ -55,9 +55,6 @@ private:
     void generate_proto_def(const sir::ProtoDef &sir_proto_def);
     void generate_var_decl(const sir::VarDecl &sir_var_decl);
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
-
-    void push_specialization(SpecializationCollector::Entry &specialization);
-    void pop_specialization(SpecializationCollector::Entry &specialization);
 };
 
 } // namespace lang

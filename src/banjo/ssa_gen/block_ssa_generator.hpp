@@ -37,6 +37,7 @@ private:
     void generate_loop_stmt(const sir::LoopStmt &loop_stmt);
     void generate_continue_stmt(const sir::ContinueStmt &continue_stmt);
     void generate_break_stmt(const sir::BreakStmt &break_stmt);
+    void generate_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt);
 
     void generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value);
     void generate_loop_jump_deinit();

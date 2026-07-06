@@ -29,3 +29,23 @@ func main() {
         print(',');
     }
 }
+
+# test:subtest
+# test:output "3,true,test,;0.5,42,;"
+
+func print_values[T](values: T) {
+    meta for value in values {
+        print(value);
+        print(',');
+    }
+
+    print(';');
+}
+
+func main() {
+    var a = (3, true, "test");
+    var b = (0.5, 42);
+    
+    print_values(a);
+    print_values(b);
+}

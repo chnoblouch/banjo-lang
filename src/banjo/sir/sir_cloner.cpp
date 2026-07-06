@@ -289,9 +289,10 @@ MetaForStmt *Cloner::clone_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
     return mod.create(
         MetaForStmt{
             .ast_node = meta_for_stmt.ast_node,
-            .ident = clone_ident(meta_for_stmt.ident),
+            .local = clone_local(meta_for_stmt.local),
             .range = clone_expr(meta_for_stmt.range),
             .block = clone_meta_block(meta_for_stmt.block),
+            .generic_param = nullptr,
         }
     );
 }

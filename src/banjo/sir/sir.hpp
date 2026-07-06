@@ -1161,9 +1161,10 @@ struct MetaIfStmt {
 
 struct MetaForStmt {
     ASTNode *ast_node;
-    Ident ident;
+    Local local;
     Expr range;
     MetaBlock block;
+    GenericParam *generic_param;
 };
 
 struct ExpandedMetaStmt {};

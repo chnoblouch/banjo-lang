@@ -6,10 +6,12 @@
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
+#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <ranges>
 #include <utility>
@@ -97,7 +99,7 @@ void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt) {
         generate_continue_stmt(*inner),                                 // continue_stmt
         generate_break_stmt(*inner),                                    // break_stmt
         SIR_VISIT_IGNORE,                                               // meta_if_stmt
-        SIR_VISIT_IGNORE,                                               // meta_for_stmt
+        generate_meta_for_stmt(*inner),                                 // meta_for_stmt
         SIR_VISIT_IGNORE,                                               // expanded_meta_stmt
         ExprSSAGenerator(ctx).generate(*inner, StorageHints::unused()), // expr_stmt
         generate_block(*inner),                                         // block_stmt
@@ -289,6 +291,45 @@ void BlockSSAGenerator::generate_continue_stmt(const sir::ContinueStmt & /*conti
 void BlockSSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*/) {
     generate_loop_jump_deinit();
     ctx.append_jmp(ctx.get_loop_context().ssa_break_target);
+}
+
+void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt) {
+    sir::Expr tuple_type = meta_for_stmt.range.get_type();
+
+    if (auto generic_param = tuple_type.match_symbol<sir::GenericParam>()) {
+        tuple_type = ctx.get_generic_arg(*generic_param);
+    }
+
+    std::span<sir::Expr> types = tuple_type.as<sir::TupleExpr>().exprs;
+    ssa::Type tuple_ssa_type = TypeSSAGenerator{ctx}.generate(tuple_type);
+    StoredValue stored_value = ExprSSAGenerator{ctx}.generate_as_reference(meta_for_stmt.range);
+
+    std::vector<SpecializationCollector::Entry> &specializations =
+        ctx.specializations.meta_for_entries.at(&meta_for_stmt);
+
+    for (unsigned i = 0; i < types.size(); i++) {
+        ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(types[i]);
+        ssa::VirtualRegister dst = ctx.append_alloca(ssa_type);
+        ssa::Value member_ptr = ctx.append_memberptr_val(tuple_ssa_type, stored_value.get_ptr(), i);
+        StoredValue::create_reference(member_ptr, ssa_type).copy_to(dst, ctx);
+
+        ctx.ssa_local_regs[&meta_for_stmt.local] = dst;
+
+        SpecializationCollector::Entry *specialization = nullptr;
+
+        for (SpecializationCollector::Entry &candidate : specializations) {
+            if (candidate.args[0] == types[i]) {
+                specialization = &candidate;
+                break;
+            }
+        }
+
+        ASSERT(specialization);
+
+        ctx.push_specialization(*specialization);
+        generate_block_body(*std::get<sir::Block *>(meta_for_stmt.block));
+        ctx.pop_specialization(*specialization);
+    }
 }
 
 void BlockSSAGenerator::generate_loop_jump_deinit() {

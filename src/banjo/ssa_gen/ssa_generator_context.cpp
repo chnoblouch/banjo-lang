@@ -29,6 +29,22 @@ SpecializationCollector::Entry *SSAGeneratorContext::get_specialization() {
     return specialization_stack.empty() ? nullptr : specialization_stack.top();
 }
 
+void SSAGeneratorContext::push_specialization(SpecializationCollector::Entry &specialization) {
+    specialization_stack.push(&specialization);
+
+    for (unsigned i = 0; i < specialization.params.size(); i++) {
+        sir_generic_args.emplace(specialization.params[i], specialization.args[i]);
+    }
+}
+
+void SSAGeneratorContext::pop_specialization(SpecializationCollector::Entry &specialization) {
+    specialization_stack.pop();
+
+    for (sir::GenericParam *param : specialization.params) {
+        sir_generic_args.erase(param);
+    }
+}
+
 sir::Expr SSAGeneratorContext::get_generic_arg(const sir::GenericParam &generic_param) {
     return sir_generic_args.at(&generic_param);
 }

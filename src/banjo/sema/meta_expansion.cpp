@@ -184,27 +184,27 @@ void MetaExpansion::evaluate_meta_for_stmt(sir::Block &block, unsigned &index) {
 
     block.stmts[index] = analyzer.create(sir::ExpandedMetaStmt{});
 
-    sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
-    std::unordered_map<std::string_view, sir::Symbol> saved_symbols = symbol_table.symbols;
+    // sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
+    // std::unordered_map<std::string_view, sir::Symbol> saved_symbols = symbol_table.symbols;
 
-    for (sir::Expr value : values) {
-        sir::GenericArg generic_arg{
-            .ident = meta_for_stmt.ident,
-            .value = value,
-        };
+    // for (sir::Expr value : values) {
+    //     sir::GenericArg generic_arg{
+    //         .ident = meta_for_stmt.ident,
+    //         .value = value,
+    //     };
 
-        symbol_table.symbols[generic_arg.ident.value] = &generic_arg;
+    //     symbol_table.symbols[generic_arg.ident.value] = &generic_arg;
 
-        for (sir::Stmt stmt : std::get<sir::Block *>(meta_for_stmt.block)->stmts) {
-            index += 1;
+    //     for (sir::Stmt stmt : std::get<sir::Block *>(meta_for_stmt.block)->stmts) {
+    //         index += 1;
 
-            sir::Stmt clone = sir::Cloner(analyzer.get_mod()).clone_stmt(stmt);
-            block.stmts.insert(block.stmts.begin() + index, clone);
-            StmtAnalyzer(analyzer).analyze(block, index);
-        }
-    }
+    //         sir::Stmt clone = sir::Cloner(analyzer.get_mod()).clone_stmt(stmt);
+    //         block.stmts.insert(block.stmts.begin() + index, clone);
+    //         StmtAnalyzer(analyzer).analyze(block, index);
+    //     }
+    // }
 
-    symbol_table.symbols = saved_symbols;
+    // symbol_table.symbols = saved_symbols;
 }
 
 Result MetaExpansion::evaluate_meta_for_range(sir::Expr range, std::vector<sir::Expr> &out_values) {

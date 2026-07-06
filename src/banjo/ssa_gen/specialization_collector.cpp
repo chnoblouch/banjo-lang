@@ -24,7 +24,7 @@ sir::Expr SpecializationCollector::Entry::resolve_param(const sir::GenericParam 
 
 SpecializationCollector::SpecializationCollector(utils::Arena &arena) : arena{arena} {}
 
-SpecializationCollector::Map SpecializationCollector::collect(const sir::Unit &unit) {
+SpecializationCollector::List SpecializationCollector::collect(const sir::Unit &unit) {
     for (const sir::Module *mod : unit.mods) {
         visit_decl_block(mod->block);
     }
@@ -72,25 +72,25 @@ void SpecializationCollector::visit_block(const sir::Block &block) {
 void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
     SIR_VISIT_STMT(
         stmt,
-        SIR_VISIT_IGNORE,          // empty
-        visit_var_stmt(*inner),    // var_stmt
-        visit_assign_stmt(*inner), // assign_stmt
-        SIR_VISIT_IMPOSSIBLE,      // comp_assign_stmt
-        visit_return_stmt(*inner), // return_stmt
-        visit_if_stmt(*inner),     // if_stmt
-        visit_switch_stmt(*inner), // switch_stmt
-        SIR_VISIT_IMPOSSIBLE,      // try_stmt
-        SIR_VISIT_IMPOSSIBLE,      // while_stmt
-        SIR_VISIT_IMPOSSIBLE,      // for_stmt
-        visit_loop_stmt(*inner),   // loop_stmt
-        SIR_VISIT_IGNORE,          // continue_stmt
-        SIR_VISIT_IGNORE,          // break_stmt
-        SIR_VISIT_IGNORE,          // meta_if_stmt
-        SIR_VISIT_IGNORE,          // meta_for_stmt
-        SIR_VISIT_IGNORE,          // expanded_meta_stmt
-        visit_expr(*inner),        // expr_stmt
-        visit_block(*inner),       // block_stmt
-        SIR_VISIT_IMPOSSIBLE       // error
+        SIR_VISIT_IGNORE,            // empty
+        visit_var_stmt(*inner),      // var_stmt
+        visit_assign_stmt(*inner),   // assign_stmt
+        SIR_VISIT_IMPOSSIBLE,        // comp_assign_stmt
+        visit_return_stmt(*inner),   // return_stmt
+        visit_if_stmt(*inner),       // if_stmt
+        visit_switch_stmt(*inner),   // switch_stmt
+        SIR_VISIT_IMPOSSIBLE,        // try_stmt
+        SIR_VISIT_IMPOSSIBLE,        // while_stmt
+        SIR_VISIT_IMPOSSIBLE,        // for_stmt
+        visit_loop_stmt(*inner),     // loop_stmt
+        SIR_VISIT_IGNORE,            // continue_stmt
+        SIR_VISIT_IGNORE,            // break_stmt
+        SIR_VISIT_IGNORE,            // meta_if_stmt
+        visit_meta_for_stmt(*inner), // meta_for_stmt
+        SIR_VISIT_IGNORE,            // expanded_meta_stmt
+        visit_expr(*inner),          // expr_stmt
+        visit_block(*inner),         // block_stmt
+        SIR_VISIT_IMPOSSIBLE         // error
     );
 }
 
@@ -134,6 +134,45 @@ void SpecializationCollector::visit_loop_stmt(const sir::LoopStmt &loop_stmt) {
 
     if (loop_stmt.latch) {
         visit_block(*loop_stmt.latch);
+    }
+}
+
+void SpecializationCollector::visit_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt) {
+    std::vector<SpecializationCollector::Entry> &entries = specializations.meta_for_entries[&meta_for_stmt];
+    sir::GenericParam *param = const_cast<sir::GenericParam *>(meta_for_stmt.generic_param);
+
+    sir::Expr tuple_type = meta_for_stmt.range.get_type();
+
+    if (!entry_stack.empty()) {
+        SpecializationCollector::Entry &entry = entry_stack.back();
+        tuple_type = sir::Specializer{arena, entry.params, entry.args}.specialize_expr(tuple_type);
+    }
+
+    for (sir::Expr sir_type : tuple_type.as<sir::TupleExpr>().exprs) {
+        bool found = false;
+
+        for (SpecializationCollector::Entry &entry : entries) {
+            if (entry.args[0] == sir_type) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            continue;
+        }
+
+        SpecializationCollector::Entry specialization{
+            .symbol = nullptr,
+            .params = arena.create_array({param}),
+            .args{sir_type},
+            .resources{},
+        };
+
+        entry_stack.push_back(specialization);
+        visit_block(*std::get<sir::Block *>(meta_for_stmt.block));
+        entries.push_back(std::move(entry_stack.back()));
+        entry_stack.pop_back();
     }
 }
 
@@ -376,7 +415,7 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         }
     }
 
-    std::vector<Entry> &entries = specializations[symbol];
+    std::vector<Entry> &entries = specializations.symbol_entries[symbol];
 
     for (Entry &entry : entries) {
         if (entry.args == args_full) {

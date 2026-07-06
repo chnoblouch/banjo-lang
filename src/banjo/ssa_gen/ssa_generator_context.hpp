@@ -78,7 +78,7 @@ public:
     std::stack<FuncContext> func_contexts;
     std::stack<LoopContext> loop_contexts;
 
-    SpecializationCollector::Map specializations;
+    SpecializationCollector::List specializations;
     std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
     std::unordered_map<const lang::sir::FuncDef *, std::vector<MonoFunc>> ssa_mono_funcs;
     std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
@@ -114,6 +114,8 @@ public:
     void pop_loop_context() { loop_contexts.pop(); }
 
     SpecializationCollector::Entry *get_specialization();
+    void push_specialization(SpecializationCollector::Entry &specialization);
+    void pop_specialization(SpecializationCollector::Entry &specialization);
     sir::Expr get_generic_arg(const sir::GenericParam &generic_param);
     ssa::Function &find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func);
     const sir::Resource &resolve_resource(const sir::Resource &resource);

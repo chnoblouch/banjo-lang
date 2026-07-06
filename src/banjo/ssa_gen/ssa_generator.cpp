@@ -1,7 +1,6 @@
 #include "ssa_generator.hpp"
 
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_printer.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/primitive.hpp"
@@ -90,14 +89,14 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
     }
 
     if (sir_func.is_generic()) {
-        auto iter = ctx.specializations.find(const_cast<sir::FuncDef *>(&sir_func));
+        auto iter = ctx.specializations.symbol_entries.find(const_cast<sir::FuncDef *>(&sir_func));
 
-        if (iter == ctx.specializations.end()) {
+        if (iter == ctx.specializations.symbol_entries.end()) {
             return;
         }
 
         for (SpecializationCollector::Entry &specialization : iter->second) {
-            push_specialization(specialization);
+            ctx.push_specialization(specialization);
             ssa::Function *ssa_func = create_func_def(sir_func, specialization.args);
 
             MonoFunc mono_func{
@@ -106,7 +105,7 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
             };
 
             ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
-            pop_specialization(specialization);
+            ctx.pop_specialization(specialization);
         }
     } else {
         ssa::Function *ssa_func = create_func_def(sir_func, {});
@@ -195,14 +194,14 @@ ssa::Type SSAGenerator::generate_return_type(const sir::Expr &sir_return_type) {
 
 void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
     if (sir_struct.is_generic()) {
-        auto iter = ctx.specializations.find(const_cast<sir::StructDef *>(&sir_struct));
+        auto iter = ctx.specializations.symbol_entries.find(const_cast<sir::StructDef *>(&sir_struct));
 
-        if (iter == ctx.specializations.end()) {
+        if (iter == ctx.specializations.symbol_entries.end()) {
             return;
         }
 
         for (SpecializationCollector::Entry &specialization : iter->second) {
-            push_specialization(specialization);
+            ctx.push_specialization(specialization);
             ssa::Structure *ssa_struct = create_struct_def(sir_struct, specialization.args);
 
             MonoStruct mono_struct{
@@ -211,7 +210,7 @@ void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
             };
 
             ctx.ssa_mono_structs[&sir_struct].push_back(mono_struct);
-            pop_specialization(specialization);
+            ctx.pop_specialization(specialization);
         }
     } else {
         ssa::Structure *ssa_struct = create_struct_def(sir_struct, {});
@@ -373,9 +372,9 @@ void SSAGenerator::generate_struct_def_types(const sir::StructDef &sir_struct) {
         for (MonoStruct &mono_struct : iter->second) {
             ssa::Structure &ssa_struct = *mono_struct.ssa_struct;
 
-            push_specialization(mono_struct.specialization);
+            ctx.push_specialization(mono_struct.specialization);
             generate_struct_def_type(sir_struct, ssa_struct);
-            pop_specialization(mono_struct.specialization);
+            ctx.pop_specialization(mono_struct.specialization);
         }
     } else {
         ssa::Structure *ssa_struct = ctx.ssa_structs.at(&sir_struct);
@@ -440,9 +439,9 @@ void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
         for (MonoFunc &mono_func : iter->second) {
             ssa::Function &ssa_func = *mono_func.ssa_func;
 
-            push_specialization(mono_func.specialization);
+            ctx.push_specialization(mono_func.specialization);
             generate_func_def(sir_func, ssa_func);
-            pop_specialization(mono_func.specialization);
+            ctx.pop_specialization(mono_func.specialization);
         }
     } else {
         ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
@@ -601,22 +600,6 @@ void SSAGenerator::generate_var_decl(const sir::VarDecl &sir_var_decl) {
 void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl) {
     ssa::GlobalDecl *ssa_global = ssa_mod.get_external_globals()[ctx.ssa_extern_globals[&sir_native_var_decl]];
     ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
-}
-
-void SSAGenerator::push_specialization(SpecializationCollector::Entry &specialization) {
-    ctx.specialization_stack.push(&specialization);
-
-    for (unsigned i = 0; i < specialization.params.size(); i++) {
-        ctx.sir_generic_args.emplace(specialization.params[i], specialization.args[i]);
-    }
-}
-
-void SSAGenerator::pop_specialization(SpecializationCollector::Entry &specialization) {
-    ctx.specialization_stack.pop();
-
-    for (sir::GenericParam *param : specialization.params) {
-        ctx.sir_generic_args.erase(param);
-    }
 }
 
 } // namespace lang

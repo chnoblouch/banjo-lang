@@ -594,7 +594,8 @@ void Printer::print_meta_if_stmt(const MetaIfStmt &meta_if_stmt) {
 
 void Printer::print_meta_for_stmt(const MetaForStmt &meta_for_stmt) {
     BEGIN_OBJECT("MetaForStmt");
-    PRINT_FIELD("ident", meta_for_stmt.ident.value);
+    PRINT_FIELD_NAME("local");
+    print_local(meta_for_stmt.local);
     PRINT_EXPR_FIELD("range", meta_for_stmt.range);
     PRINT_META_BLOCK_FIELD("block", meta_for_stmt.block);
     END_OBJECT();

@@ -41,25 +41,25 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
 
     SIR_VISIT_STMT(
         stmt,
-        SIR_VISIT_IMPOSSIBLE,                                         // empty
-        analyze_var_stmt(*inner),                                     // var_stmt
-        analyze_assign_stmt(*inner),                                  // assign_stmt
-        analyze_comp_assign_stmt(*inner, stmt),                       // comp_assign_stmt
-        analyze_return_stmt(*inner),                                  // return_stmt
-        analyze_if_stmt(*inner),                                      // if_stmt
-        analyze_switch_stmt(*inner),                                  // switch_stmt
-        analyze_try_stmt(*inner, stmt),                               // try_stmt
-        analyze_while_stmt(*inner, stmt),                             // while_stmt
-        analyze_for_stmt(*inner, stmt),                               // for_stmt
-        analyze_loop_stmt(*inner),                                    // loop_stmt
-        analyze_continue_stmt(*inner),                                // continue_stmt
-        analyze_break_stmt(*inner),                                   // break_stmt
-        MetaExpansion(analyzer).evaluate_meta_if_stmt(block, index),  // meta_if_stmt
-        MetaExpansion(analyzer).evaluate_meta_for_stmt(block, index), // meta_for_stmt
-        SIR_VISIT_IGNORE,                                             // expanded_meta_stmt
-        analyze_expr_stmt(*inner),                                    // expr_stmt
-        analyze_block(*inner),                                        // block_stmt
-        SIR_VISIT_IGNORE                                              // error
+        SIR_VISIT_IMPOSSIBLE,                                        // empty
+        analyze_var_stmt(*inner),                                    // var_stmt
+        analyze_assign_stmt(*inner),                                 // assign_stmt
+        analyze_comp_assign_stmt(*inner, stmt),                      // comp_assign_stmt
+        analyze_return_stmt(*inner),                                 // return_stmt
+        analyze_if_stmt(*inner),                                     // if_stmt
+        analyze_switch_stmt(*inner),                                 // switch_stmt
+        analyze_try_stmt(*inner, stmt),                              // try_stmt
+        analyze_while_stmt(*inner, stmt),                            // while_stmt
+        analyze_for_stmt(*inner, stmt),                              // for_stmt
+        analyze_loop_stmt(*inner),                                   // loop_stmt
+        analyze_continue_stmt(*inner),                               // continue_stmt
+        analyze_break_stmt(*inner),                                  // break_stmt
+        MetaExpansion(analyzer).evaluate_meta_if_stmt(block, index), // meta_if_stmt
+        analyze_meta_for_stmt(*inner),                               // meta_for_stmt
+        SIR_VISIT_IGNORE,                                            // expanded_meta_stmt
+        analyze_expr_stmt(*inner),                                   // expr_stmt
+        analyze_block(*inner),                                       // block_stmt
+        SIR_VISIT_IGNORE                                             // error
     )
 }
 
@@ -464,6 +464,40 @@ void StmtAnalyzer::analyze_break_stmt(sir::BreakStmt &break_stmt) {
     if (analyzer.loop_depth == 0) {
         analyzer.report_generator.report_err_break_outside_loop(break_stmt);
     }
+}
+
+void StmtAnalyzer::analyze_meta_for_stmt(sir::MetaForStmt &meta_for_stmt) {
+    Result result = ExprAnalyzer{analyzer}.analyze(meta_for_stmt.range);
+    if (result != Result::SUCCESS) {
+        return;
+    }
+
+    meta_for_stmt.generic_param = analyzer.create(
+        sir::GenericParam{
+            .ast_node = nullptr,
+            .ident{
+                .ast_node = nullptr,
+                .value = "T", // TODO
+            },
+            .kind = sir::GenericParamKind::TYPE,
+            .constraint{},
+        }
+    );
+
+    meta_for_stmt.local.type = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .symbol = meta_for_stmt.generic_param,
+        }
+    );
+
+    sir::Block &block = *std::get<sir::Block *>(meta_for_stmt.block);
+
+    analyzer.add_symbol_def(&meta_for_stmt.local);
+    block.symbol_table->insert_local(meta_for_stmt.local.name.value, &meta_for_stmt.local);
+
+    analyze_block(block);
 }
 
 void StmtAnalyzer::analyze_expr_stmt(sir::Expr &expr) {

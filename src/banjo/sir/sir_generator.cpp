@@ -818,9 +818,10 @@ sir::MetaForStmt *SIRGenerator::generate_meta_for_stmt(ASTNode *node, MetaBlockK
     return create(
         sir::MetaForStmt{
             .ast_node = node,
-            .ident = generate_ident(name_node),
+            .local = generate_local(name_node, nullptr, nullptr),
             .range = generate_expr(range_node),
             .block = generate_meta_block(block_node, kind),
+            .generic_param = nullptr,
         }
     );
 }

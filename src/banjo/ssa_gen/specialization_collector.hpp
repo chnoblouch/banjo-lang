@@ -23,17 +23,19 @@ public:
         sir::Expr resolve_param(const sir::GenericParam &param);
     };
 
-public:
-    typedef std::unordered_map<sir::Symbol, std::vector<Entry>> Map;
+    struct List {
+        std::unordered_map<sir::Symbol, std::vector<Entry>> symbol_entries;
+        std::unordered_map<const sir::MetaForStmt *, std::vector<Entry>> meta_for_entries;
+    };
 
 private:
     utils::Arena &arena;
-    Map specializations;
+    List specializations;
     std::vector<Entry> entry_stack;
 
 public:
     SpecializationCollector(utils::Arena &arena);
-    Map collect(const sir::Unit &unit);
+    List collect(const sir::Unit &unit);
 
 private:
     void visit_decl_block(const sir::DeclBlock &decl_block);
@@ -48,6 +50,7 @@ private:
     void visit_if_stmt(const sir::IfStmt &if_stmt);
     void visit_switch_stmt(const sir::SwitchStmt &switch_stmt);
     void visit_loop_stmt(const sir::LoopStmt &loop_stmt);
+    void visit_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt);
 
     void visit_expr(sir::Expr expr);
     void visit_struct_literal(const sir::StructLiteral &struct_literal);
