@@ -482,8 +482,12 @@ ParseResult DeclParser::parse_generic_param_list() {
         if (stream.get()->is(TKN_COLON)) {
             node.consume(); // Consume ':'
 
-            ParseResult result = parse_type_constraint();
-            node.append_child(result.node);
+            if (stream.get()->is(TKN_DOT_DOT_DOT)) {
+                node.append_child(parser.consume_into_node(AST_PARAM_SEQUENCE_TYPE));
+            } else {
+                ParseResult result = parse_type_constraint();
+                node.append_child(result.node);
+            }
         }
 
         return node.build(AST_GENERIC_PARAMETER);

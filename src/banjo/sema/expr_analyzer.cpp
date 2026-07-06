@@ -1121,10 +1121,8 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             Result result = Result::SUCCESS;
 
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                RESULT_MERGE(
-                    result,
-                    check_type_constraint(call_expr.callee.get_ast_node(), func_def->generic_params, generic_args, i)
-                );
+                ASTNode *ast_node = call_expr.callee.get_ast_node();
+                RESULT_MERGE(result, check_type_constraint(ast_node, func_def->generic_params, generic_args, i));
             }
 
             RESULT_RETURN_ON_ERROR(result);
@@ -1895,15 +1893,8 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             }
 
             for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                RESULT_MERGE(
-                    result,
-                    check_type_constraint(
-                        bracket_expr.rhs[i].get_ast_node(),
-                        func_def->generic_params,
-                        bracket_expr.rhs,
-                        i
-                    )
-                );
+                ASTNode *ast_node = bracket_expr.rhs[i].get_ast_node();
+                RESULT_MERGE(result, check_type_constraint(ast_node, func_def->generic_params, bracket_expr.rhs, i));
             }
 
             RESULT_RETURN_ON_ERROR(result);
@@ -2561,6 +2552,10 @@ Result ExprAnalyzer::check_type_constraint(
 ) {
     sir::GenericParam &param = *params[index];
     sir::Expr arg = args[index];
+
+    if (param.kind != sir::GenericParamKind::TYPE) {
+        return Result::SUCCESS;
+    }
 
     utils::Arena arena;
     sir::Specializer specializer{arena, params, args};

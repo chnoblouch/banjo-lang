@@ -245,7 +245,6 @@ ParseResult ExprParser::parse_operand() {
         case TKN_BOOL: return parser.consume_into_node(AST_BOOL);
         case TKN_ADDR: return parser.consume_into_node(AST_ADDR);
         case TKN_VOID: return parser.consume_into_node(AST_VOID);
-        case TKN_DOT_DOT_DOT: return parser.consume_into_node(AST_PARAM_SEQUENCE_TYPE);
         case TKN_FUNC: return parse_func_type();
         case TKN_META: return parse_meta_expr();
         default: {

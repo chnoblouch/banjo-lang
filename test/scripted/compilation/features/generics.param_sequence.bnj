@@ -1,0 +1,50 @@
+# test:subtest
+# test:output "42,test,;true,0.5,;"
+
+func f[T: ...](values: T) {
+    meta for value in values {
+        print(value);
+        print(',');
+    }
+
+    print(';');
+}
+
+func main() {
+    f(42, "test");
+    f(true, 0.5);
+}
+
+# test:subtest
+# test:output "42;0.5,true,"
+
+func f[T: ...](int: i32, values: T) {
+    print(int);
+    print(';');
+    
+    meta for value in values {
+        print(value);
+        print(',');
+    }
+}
+
+func main() {
+    f(42, 0.5, true);
+}
+
+# test:subtest
+# test:output "test;0.5,true,"
+
+func f[F, T: ...](first: F, values: T) {
+    print(first);
+    print(';');
+    
+    meta for value in values {
+        print(value);
+        print(',');
+    }
+}
+
+func main() {
+    f("test", 0.5, true);
+}
