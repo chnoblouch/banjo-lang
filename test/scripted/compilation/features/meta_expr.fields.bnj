@@ -1,0 +1,67 @@
+# test:common
+
+struct Object {
+    var id: i32;
+    var enabled: bool;
+}
+
+struct FloatWrapper {
+    var value: f32;
+}
+
+# test:subtest
+# test:output "id:42,enabled:true,;value:0.5,"
+
+func main() {
+    var object = Object {
+        id: 42,
+        enabled: true,
+    };
+
+    var float = FloatWrapper {
+        value: 0.5,
+    };
+    
+    meta for field in meta(object).fields {
+        print(field.0);
+        print(':');
+        print(field.1);
+        print(',');
+    }
+
+    print(';');
+
+    meta for field in meta(float).fields {
+        print(field.0);
+        print(':');
+        print(field.1);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "id:42,enabled:true,;value:0.5,"
+
+func print_struct[T](value: T) {
+    meta for field in meta(value).fields {
+        print(field.0);
+        print(':');
+        print(field.1);
+        print(',');
+    }
+}
+
+func main() {
+    var object = Object {
+        id: 42,
+        enabled: true,
+    };
+
+    var float = FloatWrapper {
+        value: 0.5,
+    };
+
+    print_struct[Object](object);
+    print(';');
+    print_struct[FloatWrapper](float);
+}

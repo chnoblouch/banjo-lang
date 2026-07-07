@@ -104,11 +104,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
 
 void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets targets) {
     if (auto binary_expr = expr.match<sir::BinaryExpr>()) {
-        sir::Expr type = binary_expr->lhs.get_type();
-
-        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
-            type = ctx.get_generic_arg(*generic_param);
-        }
+        sir::Expr type = ctx.resolve_if_generic(binary_expr->lhs.get_type());
 
         if (type.is_signed_type()) {
             switch (binary_expr->op) {
@@ -346,11 +342,7 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
     ssa::Value ssa_rhs = generate(binary_expr.rhs).turn_into_value(ctx).get_value();
     ssa::VirtualRegister reg;
 
-    sir::Expr lhs_type = binary_expr.lhs.get_type();
-
-    if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
-        lhs_type = ctx.get_generic_arg(*generic_param);
-    }
+    sir::Expr lhs_type = ctx.resolve_if_generic(binary_expr.lhs.get_type());
 
     if (lhs_type.is_int_type()) {
         ssa::Opcode ssa_op;
@@ -467,16 +459,8 @@ StoredValue ExprSSAGenerator::generate_deref(const sir::UnaryExpr &unary_expr) {
 }
 
 StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr) {
-    sir::Expr sir_type_from = cast_expr.value.get_type();
-    sir::Expr sir_type_to = cast_expr.type;
-
-    if (auto generic_param = sir_type_from.match_symbol<sir::GenericParam>()) {
-        sir_type_from = ctx.get_generic_arg(*generic_param);
-    }
-
-    if (auto generic_param = sir_type_to.match_symbol<sir::GenericParam>()) {
-        sir_type_to = ctx.get_generic_arg(*generic_param);
-    }
+    sir::Expr sir_type_from = ctx.resolve_if_generic(cast_expr.value.get_type());
+    sir::Expr sir_type_to = ctx.resolve_if_generic(cast_expr.type);
 
     ssa::Value ssa_val_from = generate(cast_expr.value).turn_into_value(ctx).get_value();
     unsigned size_from = ctx.target->get_data_layout().get_size(ssa_val_from.get_type());
@@ -577,11 +561,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
                 sir::Expr arg = call_expr.args[0].as<sir::UnaryExpr>().value;
                 bool call_method = false;
 
-                sir::Expr arg_type = arg.get_type();
-
-                if (auto generic_param = arg_type.match_symbol<sir::GenericParam>()) {
-                    arg_type = ctx.get_generic_arg(*generic_param);
-                }
+                sir::Expr arg_type = ctx.resolve_if_generic(arg.get_type());
 
                 if (auto struct_def = arg_type.match_symbol<sir::StructDef>()) {
                     call_method = struct_def->has_impl_for(*generic_method->proto_def);
@@ -781,11 +761,9 @@ StoredValue ExprSSAGenerator::generate_meta_field_expr(
     const StorageHints &hints
 ) {
     target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
+    
     sir::Expr sir_type = meta_field_expr.base.as<sir::MetaAccess>().expr;
-
-    if (auto generic_param = sir_type.match_symbol<sir::GenericParam>()) {
-        sir_type = ctx.get_generic_arg(*generic_param);
-    }
+    sir_type = ctx.resolve_if_generic(sir_type);
 
     if (meta_field_expr.field.value == "size") {
         ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(sir_type);

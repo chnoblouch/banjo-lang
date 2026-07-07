@@ -141,14 +141,36 @@ void SpecializationCollector::visit_meta_for_stmt(const sir::MetaForStmt &meta_f
     std::vector<SpecializationCollector::Entry> &entries = specializations.meta_for_entries[&meta_for_stmt];
     sir::GenericParam *param = const_cast<sir::GenericParam *>(meta_for_stmt.generic_param);
 
-    sir::Expr tuple_type = meta_for_stmt.range.get_type();
+    sir::Expr sequence_type = meta_for_stmt.range.get_type();
 
     if (!entry_stack.empty()) {
         SpecializationCollector::Entry &entry = entry_stack.back();
-        tuple_type = sir::Specializer{arena, entry.params, entry.args}.specialize_expr(tuple_type);
+        sequence_type = sir::Specializer{arena, entry.params, entry.args}.specialize_expr(sequence_type);
     }
 
-    for (sir::Expr sir_type : tuple_type.as<sir::TupleExpr>().exprs) {
+    std::span<sir::Expr> sir_types;
+
+    if (auto tuple_type = sequence_type.match<sir::TupleExpr>()) {
+        sir_types = tuple_type->exprs;
+    } else if (auto meta_field_expr = meta_for_stmt.range.match<sir::MetaFieldExpr>()) {
+        sir::Expr base_type = meta_field_expr->base.as<sir::MetaAccess>().expr.get_type();
+
+        if (!entry_stack.empty()) {
+            SpecializationCollector::Entry &entry = entry_stack.back();
+            base_type = sir::Specializer{arena, entry.params, entry.args}.specialize_expr(base_type);
+        }
+
+        sir::StructDef &struct_def = base_type.as_symbol<sir::StructDef>();
+        sir_types = arena.allocate_array<sir::Expr>(struct_def.fields.size());
+
+        for (unsigned i = 0; i < struct_def.fields.size(); i++) {
+            sir_types[i] = struct_def.fields[i]->type;
+        }
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    for (sir::Expr sir_type : sir_types) {
         bool found = false;
 
         for (SpecializationCollector::Entry &entry : entries) {

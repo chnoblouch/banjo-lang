@@ -49,6 +49,14 @@ sir::Expr SSAGeneratorContext::get_generic_arg(const sir::GenericParam &generic_
     return sir_generic_args.at(&generic_param);
 }
 
+sir::Expr SSAGeneratorContext::resolve_if_generic(sir::Expr expr) {
+    if (auto generic_param = expr.match_symbol<sir::GenericParam>()) {
+        return get_generic_arg(*generic_param);
+    } else {
+        return expr;
+    }
+}
+
 ssa::Function &SSAGeneratorContext::find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func) {
     for (const MonoFunc &mono_func : ssa_mono_funcs.at(sir_concrete_func.def)) {
         if (Utils::equal(mono_func.specialization.args, sir_concrete_func.generic_args)) {

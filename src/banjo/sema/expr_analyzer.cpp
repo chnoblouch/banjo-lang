@@ -2040,6 +2040,8 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
         );
     } else if (meta_field_expr.field.value == "num_variants") {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
+    } else if (meta_field_expr.field.value == "fields") {
+        meta_field_expr.type = nullptr;
     } else if (!in_call) {
         analyzer.report_generator.report_err_invalid_meta_field(meta_field_expr);
         return Result::ERROR;

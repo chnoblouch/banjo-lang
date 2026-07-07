@@ -117,6 +117,7 @@ public:
     void push_specialization(SpecializationCollector::Entry &specialization);
     void pop_specialization(SpecializationCollector::Entry &specialization);
     sir::Expr get_generic_arg(const sir::GenericParam &generic_param);
+    sir::Expr resolve_if_generic(sir::Expr expr);
     ssa::Function &find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func);
     const sir::Resource &resolve_resource(const sir::Resource &resource);
 

@@ -484,13 +484,34 @@ void StmtAnalyzer::analyze_meta_for_stmt(sir::MetaForStmt &meta_for_stmt) {
         }
     );
 
-    meta_for_stmt.local.type = analyzer.create(
+    sir::Expr generic_param_expr = analyzer.create(
         sir::SymbolExpr{
             .ast_node = nullptr,
             .type = nullptr,
             .symbol = meta_for_stmt.generic_param,
         }
     );
+
+    if (auto meta_field_expr = meta_for_stmt.range.match<sir::MetaFieldExpr>()) {
+        ASSERT(meta_field_expr->field.value == "fields")
+
+        sir::Expr string_type = analyzer.create(
+            sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
+            }
+        );
+
+        meta_for_stmt.local.type = analyzer.create(
+            sir::TupleExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .exprs = analyzer.create_array({string_type, generic_param_expr}),
+            }
+        );
+    } else {
+        meta_for_stmt.local.type = generic_param_expr;
+    }
 
     sir::Block &block = *std::get<sir::Block *>(meta_for_stmt.block);
 

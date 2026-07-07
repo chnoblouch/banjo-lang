@@ -1,7 +1,9 @@
 #include "block_ssa_generator.hpp"
 
+#include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_printer.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -13,6 +15,7 @@
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <iostream>
 #include <ranges>
 #include <utility>
 
@@ -294,31 +297,106 @@ void BlockSSAGenerator::generate_break_stmt(const sir::BreakStmt & /*break_stmt*
 }
 
 void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt) {
-    sir::Expr tuple_type = meta_for_stmt.range.get_type();
+    utils::Arena arena;
 
-    if (auto generic_param = tuple_type.match_symbol<sir::GenericParam>()) {
-        tuple_type = ctx.get_generic_arg(*generic_param);
+    sir::Expr sequence_type = ctx.resolve_if_generic(meta_for_stmt.range.get_type());
+    std::span<sir::Expr> values;
+    std::span<sir::Expr> generic_args;
+
+    StoredValue ssa_base;
+
+    if (auto tuple_type = sequence_type.match<sir::TupleExpr>()) {
+        values = arena.allocate_array<sir::Expr>(tuple_type->exprs.size());
+        generic_args = arena.allocate_array<sir::Expr>(tuple_type->exprs.size());
+
+        for (unsigned i = 0; i < values.size(); i++) {
+            values[i] = arena.create(
+                sir::FieldExpr{
+                    .ast_node = nullptr,
+                    .type = tuple_type->exprs[i],
+                    .base = meta_for_stmt.range,
+                    .field_index = i,
+                }
+            );
+        }
+
+        ssa_base = ExprSSAGenerator{ctx}.generate_as_reference(meta_for_stmt.range);
+    } else if (auto meta_field_expr = meta_for_stmt.range.match<sir::MetaFieldExpr>()) {
+        sir::Expr base = meta_field_expr->base.as<sir::MetaAccess>().expr;
+        sir::Expr base_type = base.get_type();
+
+        if (auto generic_param = base_type.match_symbol<sir::GenericParam>()) {
+            base_type = ctx.get_generic_arg(*generic_param);
+        }
+
+        sir::StructDef &struct_def = base_type.as_symbol<sir::StructDef>();
+
+        values = arena.allocate_array<sir::Expr>(struct_def.fields.size());
+        generic_args = arena.allocate_array<sir::Expr>(struct_def.fields.size());
+
+        sir::Expr string_type = arena.create(
+            sir::PointerType{
+                .ast_node = nullptr,
+                .base_type = arena.create(sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::U8}),
+            }
+        );
+
+        for (unsigned i = 0; i < values.size(); i++) {
+            sir::Expr string_literal = arena.create(
+                sir::StringLiteral{
+                    .ast_node = nullptr,
+                    .type = string_type,
+                    .value = struct_def.fields[i]->ident.value,
+                }
+            );
+
+            sir::Expr field_expr = arena.create(
+                sir::FieldExpr{
+                    .ast_node = nullptr,
+                    .type = struct_def.fields[i]->type,
+                    .base = base,
+                    .field_index = i,
+                }
+            );
+
+            sir::Expr tuple_type = arena.create(
+                sir::TupleExpr{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .exprs = arena.create_array({string_type, struct_def.fields[i]->type}),
+                }
+            );
+
+            values[i] = arena.create(
+                sir::TupleExpr{
+                    .ast_node = nullptr,
+                    .type = tuple_type,
+                    .exprs = arena.create_array({string_literal, field_expr}),
+                }
+            );
+
+            generic_args[i] = struct_def.fields[i]->type;
+        }
+
+        ssa_base = ExprSSAGenerator{ctx}.generate_as_reference(base);
+    } else {
+        ASSERT_UNREACHABLE;
     }
-
-    std::span<sir::Expr> types = tuple_type.as<sir::TupleExpr>().exprs;
-    ssa::Type tuple_ssa_type = TypeSSAGenerator{ctx}.generate(tuple_type);
-    StoredValue stored_value = ExprSSAGenerator{ctx}.generate_as_reference(meta_for_stmt.range);
 
     std::vector<SpecializationCollector::Entry> &specializations =
         ctx.specializations.meta_for_entries.at(&meta_for_stmt);
 
-    for (unsigned i = 0; i < types.size(); i++) {
-        ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(types[i]);
+    for (unsigned i = 0; i < values.size(); i++) {
+        ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(values[i].get_type());
         ssa::VirtualRegister dst = ctx.append_alloca(ssa_type);
-        ssa::Value member_ptr = ctx.append_memberptr_val(tuple_ssa_type, stored_value.get_ptr(), i);
-        StoredValue::create_reference(member_ptr, ssa_type).copy_to(dst, ctx);
+        ExprSSAGenerator{ctx}.generate_as_reference(values[i]).copy_to(dst, ctx);
 
         ctx.ssa_local_regs[&meta_for_stmt.local] = dst;
 
         SpecializationCollector::Entry *specialization = nullptr;
 
         for (SpecializationCollector::Entry &candidate : specializations) {
-            if (candidate.args[0] == types[i]) {
+            if (candidate.args[0] == generic_args[i]) {
                 specialization = &candidate;
                 break;
             }

@@ -1,8 +1,8 @@
 #ifndef BANJO_UTILS_ARENA_H
 #define BANJO_UTILS_ARENA_H
 
-#include "banjo/utils/utils.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <initializer_list>
 #include <list>
@@ -49,6 +49,12 @@ public:
         cur_offset += total_size;
 
         return std::span<T>{reinterpret_cast<T *>(pointer), length};
+    }
+
+    template <typename T>
+    T *create(T &&value) {
+        T *pointer = allocate_array<T>(1).data();
+        return new (pointer) T(value);
     }
 
     template <typename T, typename... ConstructorArgs>
