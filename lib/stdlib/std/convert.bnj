@@ -31,16 +31,22 @@ pub func to_string[T](ref value: T) -> String {
         return char_to_string(value as u8);
     } else if T == bool {
         return bool_to_string(value);
+    } else if T == addr {
+        return pointer_to_string(value);
+    } else if meta(T).is_pointer {
+        return pointer_to_string(value);
+    } else if meta(T).is_static_array {
+        return static_array_to_repr(value, 0);
+    } else if meta(T).is_tuple {
+        return tuple_to_repr(value, 0);
     } else if meta(T).impl_of(ToString) {
         return value.__str__();
     } else if meta(T).impl_of(ToRepr) {
         return value.__repr__(0);
-    } else if meta(T).is_enum {
-        return enum_to_string(value);
-    } else if meta(T).is_tuple {
-        return tuple_to_repr(value, 0);
     } else if meta(T).is_struct {
         return struct_to_repr(value, 0);
+    } else if meta(T).is_enum {
+        return enum_to_string(value);
     } else {
         return "<?>";
     }
@@ -221,19 +227,23 @@ func bool_to_string(ref value: bool) -> String {
     }
 }
 
-# func pointer_to_string[T](value: T) -> String {
-#     if value == null {
-#         return "null";
-#     }
+# TODO: Remove `ref`
+func pointer_to_string[T](ref value: T) -> String {
+    var address = *(__builtin_pointer_to(value) as *addr);
 
-#     return "0x" + u64_to_string(value as u64, 16);
-# }
+    if address == null {
+        return "null";
+    }
 
-# func static_array_to_repr[T](ref value: T, indent: u32) -> String {
-#     var pointer = __builtin_pointer_to(value[0]);
-#     var slice = Slice[meta(T).array_base].new(pointer, meta(T).array_length);
-#     return slice.__repr__(indent);
-# }
+    return "0x" + u64_to_string(address as u64, 16);
+}
+
+func static_array_to_repr[T](ref value: T, indent: u32) -> String {
+    # var pointer = __builtin_pointer_to(value[0]);
+    # var slice = Slice[meta(T).array_base].new(pointer, meta(T).array_length);
+    # return slice.__repr__(indent);
+    return "<static array>";
+}
 
 func tuple_to_repr[T](ref value: T, indent: u32) -> String {
     var string = "(\n";

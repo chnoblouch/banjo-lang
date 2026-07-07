@@ -781,6 +781,15 @@ StoredValue ExprSSAGenerator::generate_meta_field_expr(
         };
 
         return generate_string_literal(string_literal);
+    } else if (meta_field_expr.field.value == "is_pointer") {
+        unsigned value = sir_type.is<sir::PointerType>() ? 1 : 0;
+        return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
+    } else if (meta_field_expr.field.value == "is_static_array") {
+        unsigned value = sir_type.is<sir::StaticArrayType>() ? 1 : 0;
+        return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
+    } else if (meta_field_expr.field.value == "is_tuple") {
+        unsigned value = sir_type.is<sir::TupleExpr>() ? 1 : 0;
+        return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
     } else if (meta_field_expr.field.value == "is_tuple") {
         unsigned value = sir_type.is<sir::TupleExpr>() ? 1 : 0;
         return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
