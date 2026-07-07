@@ -239,10 +239,23 @@ func pointer_to_string[T](ref value: T) -> String {
 }
 
 func static_array_to_repr[T](ref value: T, indent: u32) -> String {
-    # var pointer = __builtin_pointer_to(value[0]);
-    # var slice = Slice[meta(T).array_base].new(pointer, meta(T).array_length);
-    # return slice.__repr__(indent);
-    return "<static array>";
+    var string = "[\n";
+
+    meta for item in value {
+        for i in 0..indent + 1 {
+            string += "  ";
+        }
+
+        string += to_repr_indent(item, indent + 1);
+        string += ",\n";
+    }
+
+    for i in 0..indent {
+        string += "  ";
+    }
+
+    string += ']';
+    return string;
 }
 
 func tuple_to_repr[T](ref value: T, indent: u32) -> String {

@@ -150,7 +150,9 @@ void SpecializationCollector::visit_meta_for_stmt(const sir::MetaForStmt &meta_f
 
     std::span<sir::Expr> sir_types;
 
-    if (auto tuple_type = sequence_type.match<sir::TupleExpr>()) {
+    if (auto static_array_type = sequence_type.match<sir::StaticArrayType>()) {
+        sir_types = arena.create_array<sir::Expr>({static_array_type->base_type});
+    } else if (auto tuple_type = sequence_type.match<sir::TupleExpr>()) {
         sir_types = tuple_type->exprs;
     } else if (auto meta_field_expr = meta_for_stmt.range.match<sir::MetaFieldExpr>()) {
         sir::Expr base_type = meta_field_expr->base.as<sir::MetaAccess>().expr.get_type();

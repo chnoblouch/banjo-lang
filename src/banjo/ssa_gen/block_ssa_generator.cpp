@@ -305,7 +305,42 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
 
     StoredValue ssa_base;
 
-    if (auto tuple_type = sequence_type.match<sir::TupleExpr>()) {
+    if (auto static_array_type = sequence_type.match<sir::StaticArrayType>()) {
+        sir::Expr base_type = ctx.resolve_if_generic(static_array_type->base_type);
+
+        // HACK: This is horrible
+        unsigned length =
+            ExprSSAGenerator{ctx}.generate(static_array_type->length).get_value().get_int_immediate().to_unsigned();
+
+        values = arena.allocate_array<sir::Expr>(length);
+        generic_args = arena.allocate_array<sir::Expr>(length);
+
+        for (unsigned i = 0; i < values.size(); i++) {
+            values[i] = arena.create(
+                sir::IndexExpr{
+                    .ast_node = nullptr,
+                    .type = base_type,
+                    .base = meta_for_stmt.range,
+                    .index = arena.create(
+                        sir::IntLiteral{
+                            .ast_node = nullptr,
+                            .type = arena.create(
+                                sir::PrimitiveType{
+                                    .ast_node = nullptr,
+                                    .primitive = sir::Primitive::USIZE,
+                                }
+                            ),
+                            .value = i,
+                        }
+                    ),
+                }
+            );
+
+            generic_args[i] = base_type;
+        }
+
+        ssa_base = ExprSSAGenerator{ctx}.generate_as_reference(meta_for_stmt.range);
+    } else if (auto tuple_type = sequence_type.match<sir::TupleExpr>()) {
         values = arena.allocate_array<sir::Expr>(tuple_type->exprs.size());
         generic_args = arena.allocate_array<sir::Expr>(tuple_type->exprs.size());
 

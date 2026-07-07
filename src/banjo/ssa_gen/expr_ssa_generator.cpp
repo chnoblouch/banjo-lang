@@ -515,7 +515,7 @@ StoredValue ExprSSAGenerator::generate_cast_expr(const sir::CastExpr &cast_expr)
 }
 
 StoredValue ExprSSAGenerator::generate_index_expr(const sir::IndexExpr &index_expr) {
-    const sir::Expr &base_type = index_expr.base.get_type();
+    const sir::Expr &base_type = ctx.resolve_if_generic(index_expr.base.get_type());
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(index_expr.type);
     ssa::Value ssa_offset = generate(index_expr.index).turn_into_value(ctx).get_value();
 
