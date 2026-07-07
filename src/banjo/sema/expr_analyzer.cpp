@@ -2001,7 +2001,7 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (Utils::is_one_of(meta_field_expr.field.value, {"is_enum"})) {
+    } else if (Utils::is_one_of(meta_field_expr.field.value, {"is_tuple", "is_struct", "is_enum"})) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
         sir::Expr string_type = analyzer.create(

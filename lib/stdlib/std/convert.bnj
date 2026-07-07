@@ -31,12 +31,16 @@ pub func to_string[T](ref value: T) -> String {
         return char_to_string(value as u8);
     } else if T == bool {
         return bool_to_string(value);
-    } else if meta(T).is_enum {
-        return enum_to_string(value);
     } else if meta(T).impl_of(ToString) {
         return value.__str__();
     } else if meta(T).impl_of(ToRepr) {
         return value.__repr__(0);
+    } else if meta(T).is_enum {
+        return enum_to_string(value);
+    } else if meta(T).is_tuple {
+        return tuple_to_repr(value, 0);
+    } else if meta(T).is_struct {
+        return struct_to_repr(value, 0);
     } else {
         return "<?>";
     }
@@ -49,6 +53,12 @@ pub func to_repr[T](ref value: T) -> String {
 pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     if T == u8 {
         return "\'" + char_to_string(value as u8) + "\'";
+    } else if meta(T).impl_of(ToRepr) {
+        return value.__repr__(indent);
+    } else if meta(T).is_tuple {
+        return tuple_to_repr(value, indent);
+    } else if meta(T).is_struct {
+        return struct_to_repr(value, indent);
     } else if meta(T).impl_of(ToRepr) {
         return value.__repr__(indent);
     } else {
@@ -225,47 +235,47 @@ func bool_to_string(ref value: bool) -> String {
 #     return slice.__repr__(indent);
 # }
 
-# func tuple_to_repr[T](ref value: T, indent: u32) -> String {
-#     var string = "(\n";
+func tuple_to_repr[T](ref value: T, indent: u32) -> String {
+    var string = "(\n";
 
-#     meta for i in 0..meta(T).tuple_num_fields {
-#         for i in 0..indent + 1 {
-#             string += "  ";
-#         }
+    meta for field in value {
+        for i in 0..indent + 1 {
+            string += "  ";
+        }
 
-#         string += to_repr_indent(meta(value).tuple_field(i), indent + 1);
-#         string += ",\n";
-#     }
+        string += to_repr_indent(field, indent + 1);
+        string += ",\n";
+    }
 
-#     for i in 0..indent {
-#         string += "  ";
-#     }
+    for i in 0..indent {
+        string += "  ";
+    }
 
-#     string += ')';
-#     return string;
-# }
+    string += ')';
+    return string;
+}
 
-# func struct_to_repr[T](ref struct_: T, indent: u32) -> String {
-#     var string = meta(T).name + " {\n";
+func struct_to_repr[T](ref value: T, indent: u32) -> String {
+    var string = String.from_cstr(meta(T).name) + " {\n";
 
-#     meta for field_name in meta(T).fields {
-#         for i in 0..indent + 1 {
-#             string += "  ";
-#         }
+    meta for field in meta(value).fields {
+        for i in 0..indent + 1 {
+            string += "  ";
+        }
 
-#         string += field_name;
-#         string += ": ";
-#         string += to_repr_indent(meta(struct_).field(field_name), indent + 1);
-#         string += ",\n";
-#     }
+        string += String.from_cstr(field.0);
+        string += ": ";
+        string += to_repr_indent(field.1, indent + 1);
+        string += ",\n";
+    }
 
-#     for i in 0..indent {
-#         string += "  ";
-#     }
+    for i in 0..indent {
+        string += "  ";
+    }
 
-#     string += '}';
-#     return string;
-# }
+    string += '}';
+    return string;
+}
 
 # TODO: Remove `ref`
 func enum_to_string[T](ref value: T) -> String {

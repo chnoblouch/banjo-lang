@@ -761,7 +761,7 @@ StoredValue ExprSSAGenerator::generate_meta_field_expr(
     const StorageHints &hints
 ) {
     target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
-    
+
     sir::Expr sir_type = meta_field_expr.base.as<sir::MetaAccess>().expr;
     sir_type = ctx.resolve_if_generic(sir_type);
 
@@ -781,6 +781,12 @@ StoredValue ExprSSAGenerator::generate_meta_field_expr(
         };
 
         return generate_string_literal(string_literal);
+    } else if (meta_field_expr.field.value == "is_tuple") {
+        unsigned value = sir_type.is<sir::TupleExpr>() ? 1 : 0;
+        return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
+    } else if (meta_field_expr.field.value == "is_struct") {
+        unsigned value = sir_type.is_symbol<sir::StructDef>() ? 1 : 0;
+        return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
     } else if (meta_field_expr.field.value == "is_enum") {
         unsigned value = sir_type.is_symbol<sir::EnumDef>() ? 1 : 0;
         return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));

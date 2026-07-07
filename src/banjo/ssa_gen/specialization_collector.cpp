@@ -155,19 +155,22 @@ void SpecializationCollector::visit_meta_for_stmt(const sir::MetaForStmt &meta_f
     } else if (auto meta_field_expr = meta_for_stmt.range.match<sir::MetaFieldExpr>()) {
         sir::Expr base_type = meta_field_expr->base.as<sir::MetaAccess>().expr.get_type();
 
+        if (auto reference_type = base_type.match<sir::ReferenceType>()) {
+            base_type = reference_type->base_type;
+        }
+
         if (!entry_stack.empty()) {
             SpecializationCollector::Entry &entry = entry_stack.back();
             base_type = sir::Specializer{arena, entry.params, entry.args}.specialize_expr(base_type);
         }
 
-        sir::StructDef &struct_def = base_type.as_symbol<sir::StructDef>();
-        sir_types = arena.allocate_array<sir::Expr>(struct_def.fields.size());
+        if (auto struct_def = base_type.match_symbol<sir::StructDef>()) {
+            sir_types = arena.allocate_array<sir::Expr>(struct_def->fields.size());
 
-        for (unsigned i = 0; i < struct_def.fields.size(); i++) {
-            sir_types[i] = struct_def.fields[i]->type;
+            for (unsigned i = 0; i < struct_def->fields.size(); i++) {
+                sir_types[i] = struct_def->fields[i]->type;
+            }
         }
-    } else {
-        ASSERT_UNREACHABLE;
     }
 
     for (sir::Expr sir_type : sir_types) {

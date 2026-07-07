@@ -471,7 +471,7 @@ void StmtAnalyzer::analyze_meta_for_stmt(sir::MetaForStmt &meta_for_stmt) {
     if (result != Result::SUCCESS) {
         return;
     }
-
+    
     meta_for_stmt.generic_param = analyzer.create(
         sir::GenericParam{
             .ast_node = nullptr,

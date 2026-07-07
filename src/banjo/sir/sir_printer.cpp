@@ -3,6 +3,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
+#include <sstream>
 
 #define BEGIN_OBJECT(name)                                                                                             \
     stream << name << "\n";                                                                                            \
@@ -1240,6 +1241,12 @@ void Printer::print_error(const Error & /* error */) {
 
 std::string Printer::get_indent() {
     return std::string(2 * indent, ' ');
+}
+
+std::string debugger_to_string(sir::Expr expr) {
+    std::stringstream stream;
+    sir::Printer{stream}.print_expr(expr);
+    return stream.str();
 }
 
 } // namespace sir

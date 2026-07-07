@@ -318,6 +318,8 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
                     .field_index = i,
                 }
             );
+
+            generic_args[i] = tuple_type->exprs[i];
         }
 
         ssa_base = ExprSSAGenerator{ctx}.generate_as_reference(meta_for_stmt.range);
@@ -325,62 +327,62 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
         sir::Expr base = meta_field_expr->base.as<sir::MetaAccess>().expr;
         sir::Expr base_type = base.get_type();
 
-        if (auto generic_param = base_type.match_symbol<sir::GenericParam>()) {
-            base_type = ctx.get_generic_arg(*generic_param);
+        if (auto reference_type = base_type.match<sir::ReferenceType>()) {
+            base_type = reference_type->base_type;
         }
 
-        sir::StructDef &struct_def = base_type.as_symbol<sir::StructDef>();
+        base_type = ctx.resolve_if_generic(base_type);
 
-        values = arena.allocate_array<sir::Expr>(struct_def.fields.size());
-        generic_args = arena.allocate_array<sir::Expr>(struct_def.fields.size());
+        if (auto struct_def = base_type.match_symbol<sir::StructDef>()) {
+            values = arena.allocate_array<sir::Expr>(struct_def->fields.size());
+            generic_args = arena.allocate_array<sir::Expr>(struct_def->fields.size());
 
-        sir::Expr string_type = arena.create(
-            sir::PointerType{
-                .ast_node = nullptr,
-                .base_type = arena.create(sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::U8}),
+            sir::Expr string_type = arena.create(
+                sir::PointerType{
+                    .ast_node = nullptr,
+                    .base_type = arena.create(sir::PrimitiveType{.ast_node = nullptr, .primitive = sir::Primitive::U8}),
+                }
+            );
+
+            for (unsigned i = 0; i < values.size(); i++) {
+                sir::Expr string_literal = arena.create(
+                    sir::StringLiteral{
+                        .ast_node = nullptr,
+                        .type = string_type,
+                        .value = struct_def->fields[i]->ident.value,
+                    }
+                );
+
+                sir::Expr field_expr = arena.create(
+                    sir::FieldExpr{
+                        .ast_node = nullptr,
+                        .type = struct_def->fields[i]->type,
+                        .base = base,
+                        .field_index = i,
+                    }
+                );
+
+                sir::Expr tuple_type = arena.create(
+                    sir::TupleExpr{
+                        .ast_node = nullptr,
+                        .type = nullptr,
+                        .exprs = arena.create_array({string_type, struct_def->fields[i]->type}),
+                    }
+                );
+
+                values[i] = arena.create(
+                    sir::TupleExpr{
+                        .ast_node = nullptr,
+                        .type = tuple_type,
+                        .exprs = arena.create_array({string_literal, field_expr}),
+                    }
+                );
+
+                generic_args[i] = struct_def->fields[i]->type;
             }
-        );
 
-        for (unsigned i = 0; i < values.size(); i++) {
-            sir::Expr string_literal = arena.create(
-                sir::StringLiteral{
-                    .ast_node = nullptr,
-                    .type = string_type,
-                    .value = struct_def.fields[i]->ident.value,
-                }
-            );
-
-            sir::Expr field_expr = arena.create(
-                sir::FieldExpr{
-                    .ast_node = nullptr,
-                    .type = struct_def.fields[i]->type,
-                    .base = base,
-                    .field_index = i,
-                }
-            );
-
-            sir::Expr tuple_type = arena.create(
-                sir::TupleExpr{
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .exprs = arena.create_array({string_type, struct_def.fields[i]->type}),
-                }
-            );
-
-            values[i] = arena.create(
-                sir::TupleExpr{
-                    .ast_node = nullptr,
-                    .type = tuple_type,
-                    .exprs = arena.create_array({string_literal, field_expr}),
-                }
-            );
-
-            generic_args[i] = struct_def.fields[i]->type;
+            ssa_base = ExprSSAGenerator{ctx}.generate_as_reference(base);
         }
-
-        ssa_base = ExprSSAGenerator{ctx}.generate_as_reference(base);
-    } else {
-        ASSERT_UNREACHABLE;
     }
 
     std::vector<SpecializationCollector::Entry> &specializations =
