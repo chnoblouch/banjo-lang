@@ -9,14 +9,10 @@ struct Shared[T] {
     var data: *Data;
 
     pub func new(value: T) -> Shared[T] {
-        var data = Data {
-            value,
-            ref_count: 1,
-        };
+        var data = memory.alloc(meta(T).size) as *Data;
+        *data = Data { value, ref_count: 1 };
 
-        return Shared[T] {
-            data: memory.box(data),
-        };
+        return Shared[T] { data };
     }
 
     pub func get(self) -> *T {

@@ -122,7 +122,6 @@ struct Block;
 struct SymbolTable;
 struct OverloadSet;
 struct GenericParam;
-struct GenericArg;
 struct TypeNarrowing;
 struct GuardedSymbol;
 struct Ident;
@@ -450,8 +449,7 @@ class Symbol : public DynamicPointer<
                    Param,          // 19
                    OverloadSet,    // 20
                    GenericParam,   // 21
-                   GenericArg,     // 22
-                   GuardedSymbol   // 23
+                   GuardedSymbol   // 22
                    > {
 public:
     Symbol() : DynamicPointer() {}
@@ -609,11 +607,6 @@ struct GenericParam {
     Ident ident;
     GenericParamKind kind;
     TypeConstraint constraint;
-};
-
-struct GenericArg {
-    Ident ident;
-    Expr value;
 };
 
 struct TypeNarrowing {

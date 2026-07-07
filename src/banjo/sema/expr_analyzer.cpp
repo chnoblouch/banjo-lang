@@ -907,28 +907,22 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
             std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
             specialize(struct_def, generic_args, out_expr);
         } else {
-            sir::Expr type = analyzer.get_resolved_type(value_type);
-            std::span<sir::Expr> generic_args = analyzer.create_array({type});
+            sir::Concrete<sir::FuncDef> concrete_func{
+                .def = &struct_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
+                .generic_args = analyzer.create_array({analyzer.get_resolved_type(unary_expr.value)}),
+            };
 
-            // FIXME: Checked generics
-            sir::StructDef *specialization =
-                nullptr; // GenericsSpecializer(analyzer).specialize(struct_def, generic_args);
-
-            out_expr = sir::create_call(
-                analyzer.get_mod(),
-                specialization->block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
-                analyzer.create_array({unary_expr.value})
-            );
+            out_expr = sir::create_call(analyzer.get_mod(), concrete_func, analyzer.create_array({unary_expr.value}));
         }
 
         return Result::SUCCESS;
     }
 
-    if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
+    if (auto concrete_struct = value_type.match_concrete<sir::StructDef>()) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
 
         std::string_view impl_name = sir::MagicMethods::look_up(unary_expr.op);
-        sir::Symbol symbol = struct_def->block.symbol_table->look_up_local(impl_name);
+        sir::Symbol symbol = concrete_struct->def->block.symbol_table->look_up_local(impl_name);
 
         if (!symbol) {
             analyzer.report_generator.report_err_operator_overload_not_found(unary_expr);
@@ -936,7 +930,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         }
 
         std::span<sir::Expr> call_args = analyzer.create_array<sir::Expr>({unary_expr.value});
-        return analyze_operator_overload_call(symbol, call_args, out_expr);
+        return analyze_operator_overload_call(symbol, call_args, out_expr, concrete_struct->generic_args);
     }
 
     if (unary_expr.op == sir::UnaryOp::NEG) {
@@ -1778,16 +1772,6 @@ Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &o
         analyzer.add_symbol_use(ident_expr.ast_node, symbol);
     }
 
-    if (auto generic_arg = symbol.match<sir::GenericArg>()) {
-        if (generic_arg->value.is<sir::StringLiteral>()) {
-            out_expr = sir::Cloner{analyzer.get_mod()}.clone_expr(generic_arg->value);
-        } else {
-            out_expr = generic_arg->value;
-        }
-
-        return Result::SUCCESS;
-    }
-
     if (flags & ANALYZE_SYMBOL_INTERFACES) {
         Result partial_result = analyzer.ensure_interface_analyzed(symbol, ident_expr.ast_node);
 
@@ -1825,9 +1809,9 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
     } else {
         sir::Expr value_type = analyzer.get_resolved_type(star_expr.value);
 
-        if (auto struct_def = value_type.match_symbol<sir::StructDef>()) {
+        if (auto concrete_struct = value_type.match_concrete<sir::StructDef>()) {
             std::string_view impl_name = sir::MagicMethods::look_up(sir::UnaryOp::DEREF);
-            sir::Symbol symbol = struct_def->block.symbol_table->look_up_local(impl_name);
+            sir::Symbol symbol = concrete_struct->def->block.symbol_table->look_up_local(impl_name);
 
             if (!symbol) {
                 analyzer.report_generator.report_err_operator_overload_not_found(star_expr);
@@ -1835,7 +1819,7 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
             }
 
             std::span<sir::Expr> call_args = analyzer.create_array<sir::Expr>({star_expr.value});
-            return analyze_operator_overload_call(symbol, call_args, out_expr);
+            return analyze_operator_overload_call(symbol, call_args, out_expr, concrete_struct->generic_args);
         }
 
         if (auto pointer_type = value_type.match<sir::PointerType>()) {
