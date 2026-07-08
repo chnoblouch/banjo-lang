@@ -1,3 +1,30 @@
+# test:common
+
+use std.{convert, protos.ToString};
+
+struct Object: ToString {
+    var id: u32;
+    var name: StringSlice;
+
+    pub func __str__(self) -> String {
+        return "{" + convert.to_string(self.id) + "}";
+    }
+}
+
+func print_flat[T](ref array: Array[T]) {
+	print('[');
+
+	for i in 0..array.length() {
+		print(array[i]);
+		
+		if i != array.length() - 1 {
+			print(',');
+		}
+	}
+
+	print(']');
+}
+
 # test:subtest
 # test:output "2,8,10,3,-3,4,10,10,20,0"
 
@@ -73,7 +100,7 @@ func print_tuple(tuple: (f32, bool)) {
 func main() {
 	var array = [
 		(0.5, true),
-		(2.1, false)
+		(2.1, false),
 	];
 	
 	print_tuple(array[0]);
@@ -81,4 +108,73 @@ func main() {
 	
 	array.append((-1.8, false));
 	print_tuple(array[2]);
+}
+
+# test:subtest
+# test:output "3,none,1,2,0"
+
+func main() {
+	var i = [0, 3, 10, 42, 7, 42];
+
+	var o = [
+		Object { id: 48, name: "red chair" },
+		Object { id: 12, name: "desk" },
+		Object { id: 96, name: "desk lamp" },
+	];
+
+	print(i.find(|value: ref i32| -> bool { return value == 42; }));
+	print(',');
+	print(i.find(|value: ref i32| -> bool { return value == 100; }));
+	print(',');
+	print(i.find(|value: ref i32| -> bool { return value % 2 == 1; }));
+	print(',');
+	print(o.find(|value: ref Object| -> bool { return value.id == 96; }));
+	print(',');
+	print(o.find(|value: ref Object| -> bool { return value.name.starts_with("red"); }));
+}
+
+# test:subtest
+# test:output "[42,42],[3,7],[],[{12},{96}]"
+
+func main() {
+	var i1 = [0, 3, 10, 42, 7, 42];
+	var i2 = [0, 3, 10, 42, 7, 42];
+	var i3 = [0, 3, 10, 42, 7, 42];
+	
+	var o = [
+		Object { id: 48, name: "red chair" },
+		Object { id: 12, name: "desk" },
+		Object { id: 96, name: "desk lamp" },
+	];
+	
+	print_flat(i1.filter(|value: ref i32| -> bool { return value == 42; }));
+	print(',');
+	print_flat(i2.filter(|value: ref i32| -> bool { return value % 2 == 1; }));
+	print(',');
+	print_flat(i3.filter(|value: ref i32| -> bool { return value > 100; }));
+	print(',');
+	print_flat(o.filter(|value: ref Object| -> bool { return value.name.starts_with("desk"); }));
+}
+
+# test:subtest
+# test:output "[1,4,11,43,8,43],[false,false,true,true,false,true],[0.5,3.5,10.5,42.5,7.5,42.5],[47,11,95]"
+
+func main() {
+	var i = [0, 3, 10, 42, 7, 42];
+	
+	var o = [
+		Object { id: 48, name: "red chair" },
+		Object { id: 12, name: "desk" },
+		Object { id: 96, name: "desk lamp" },
+	];
+	
+	# FIXME: Fix nested generic symbols!
+
+	print_flat(Array.map[i32, i32](i, |value: ref i32| -> i32 { return value + 1; }));
+	print(',');
+	print_flat(Array.map[i32, bool](i, |value: ref i32| -> bool { return value >= 10; }));
+	print(',');
+	print_flat(Array.map[i32, f32](i, |value: ref i32| -> f32 { return value as f32 + 0.5; }));
+	print(',');
+	print_flat(Array.map[Object, i32](o, |value: ref Object| -> i32 { return value.id - 1; }));
 }
