@@ -3,6 +3,7 @@
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/target_reg_analyzer.hpp"
 
@@ -42,8 +43,10 @@ public:
 private:
     bool is_move_opcode(mcode::Opcode opcode);
     bool is_float_instr(mcode::Instruction &instr);
+
     void collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst);
     void collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst);
+    void insert_reg(mcode::Register reg, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst);
 };
 
 } // namespace banjo::target

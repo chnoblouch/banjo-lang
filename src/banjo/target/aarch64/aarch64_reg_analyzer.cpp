@@ -10,7 +10,7 @@
 namespace banjo::target {
 
 AArch64RegAnalyzer::AArch64RegAnalyzer(std::optional<mcode::PhysicalReg> fixed_reg) {
-    for (mcode::PhysicalReg reg = AArch64Register::R0; reg <= AArch64Register::R27; reg++) {
+    for (mcode::PhysicalReg reg = AArch64Register::R0; reg <= AArch64Register::R28; reg++) {
         if (reg == SCRATCH_REGISTER) {
             continue;
         }
@@ -301,16 +301,8 @@ bool AArch64RegAnalyzer::is_float_instr(mcode::Instruction &instr) {
 }
 
 void AArch64RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
-    ASSERT(usage != mcode::RegUsage::KILL);
-
     if (operand.is_register()) {
-        for (unsigned i = 0; i < dst.size(); i++) {
-            if (dst[i].reg == operand.get_register() && dst[i].usage != usage) {
-                dst[i].usage = mcode::RegUsage::USE_DEF;
-            }
-        }
-
-        dst.push_back({.reg = operand.get_register(), .usage = usage});
+        insert_reg(operand.get_register(), usage, dst);
     } else if (operand.is_aarch64_addr()) {
         collect_addr_regs(operand, dst);
     }
@@ -318,11 +310,29 @@ void AArch64RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage u
 
 void AArch64RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst) {
     const AArch64Address &addr = operand.get_aarch64_addr();
-    dst.push_back({addr.get_base(), mcode::RegUsage::USE});
+    insert_reg(addr.get_base(), mcode::RegUsage::USE, dst);
 
     if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_REG) {
-        dst.push_back({addr.get_offset_reg(), mcode::RegUsage::KILL});
+        insert_reg(addr.get_offset_reg(), mcode::RegUsage::USE, dst);
     }
+}
+
+void AArch64RegAnalyzer::insert_reg(mcode::Register reg, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
+    ASSERT(usage == mcode::RegUsage::USE || usage == mcode::RegUsage::DEF);
+
+    for (mcode::RegOp &existing : dst) {
+        if (existing.reg != reg) {
+            continue;
+        }
+
+        if (existing.usage != usage) {
+            existing.usage = mcode::RegUsage::USE_DEF;
+        }
+
+        return;
+    }
+
+    dst.push_back({.reg = reg, .usage = usage});
 }
 
 } // namespace banjo::target

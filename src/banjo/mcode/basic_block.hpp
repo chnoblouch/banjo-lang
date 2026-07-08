@@ -35,6 +35,7 @@ public:
 
     LinkedList<Instruction> &get_instrs() { return instrs; }
     std::string get_label() { return label; }
+    std::string get_debug_label() { return label.empty() ? "<entry>" : label; }
     std::vector<PhysicalReg> &get_params() { return params; }
     std::vector<BasicBlockIter> &get_predecessors() { return predecessors; }
     std::vector<BasicBlockIter> &get_successors() { return successors; }

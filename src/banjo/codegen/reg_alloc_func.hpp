@@ -21,6 +21,8 @@ struct RegAllocInstr {
 struct RegAllocPoint {
     unsigned instr;
     unsigned stage; // 0 = use, 1 = def
+
+    unsigned value() const { return 2 * instr + stage; }
 };
 
 struct LiveRange {
@@ -33,11 +35,15 @@ struct LiveRange {
             return false;
         }
 
-        unsigned startA = 2 * start.instr + start.stage;
-        unsigned endA = 2 * end.instr + end.stage;
-        unsigned startB = 2 * other.start.instr + other.start.stage;
-        unsigned endB = 2 * other.end.instr + other.end.stage;
-        return (startA <= endB) && (endA >= startB);
+        return start.value() <= other.end.value() && other.start.value() <= end.value();
+    }
+
+    bool contains(const LiveRange &other) const {
+        if (block != other.block) {
+            return false;
+        }
+
+        return start.value() <= other.start.value() && end.value() >= other.end.value();
     }
 };
 

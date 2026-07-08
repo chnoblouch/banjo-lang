@@ -4,6 +4,7 @@
 #include "banjo/emit/debug_emitter.hpp"
 #include "banjo/mcode/register.hpp"
 
+#include <iomanip>
 #include <iostream>
 
 namespace banjo {
@@ -191,6 +192,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
     unsigned long long interval_spacing = 50;
     std::string header = "vregs: ";
     header += std::string(std::min(interval_spacing - header.size(), interval_spacing), ' ');
+    header += "     ";
 
     std::vector<unsigned> line_widths;
 
@@ -252,6 +254,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
             instr = instr.substr(0, interval_spacing);
 
             std::string spaces = std::string(std::min(interval_spacing - instr.size(), interval_spacing), ' ');
+            stream << std::setfill(' ') << std::setw(5) << j << std::setw(0);
             stream << instr << spaces;
 
             for (unsigned k = 0; k < lines[j].size(); k++) {

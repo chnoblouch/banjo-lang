@@ -323,10 +323,6 @@ bool RegAllocPass::is_alloc_possible(Context &ctx, Bundle &bundle, mcode::Physic
 
         for (const Alloc &alloc : ctx.allocs) {
             for (const Segment &alloc_range : alloc.bundle.segments) {
-                if (alloc_range.range.block != segment.range.block) {
-                    continue;
-                }
-
                 if (alloc.physical_reg == reg && alloc_range.range.intersects(segment.range)) {
                     return false;
                 }
@@ -345,7 +341,7 @@ bool RegAllocPass::try_evict(Context &ctx, Bundle &bundle) {
     for (auto iter = ctx.allocs.begin(); iter != ctx.allocs.end(); ++iter) {
         Alloc &alloc = *iter;
 
-        if (!alloc.bundle.evictable || alloc.bundle.reg_class != bundle.reg_class) {
+        if (!can_evict(bundle, alloc)) {
             continue;
         }
 
@@ -355,6 +351,31 @@ bool RegAllocPass::try_evict(Context &ctx, Bundle &bundle) {
     }
 
     return false;
+}
+
+bool RegAllocPass::can_evict(Bundle &bundle, Alloc &alloc) {
+    if (!alloc.bundle.evictable || alloc.bundle.reg_class != bundle.reg_class) {
+        return false;
+    }
+
+    // For each segment, check that it is inside a segment of the existing allocation to make sure
+    // that the register is actually available in all segments of the bundle.
+    for (Segment &segment : bundle.segments) {
+        bool found_containing_segment = false;
+
+        for (Segment &alloc_segment : alloc.bundle.segments) {
+            if (alloc_segment.range.contains(segment.range)) {
+                found_containing_segment = true;
+                break;
+            }
+        }
+
+        if (!found_containing_segment) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
@@ -530,7 +551,18 @@ void RegAllocPass::write_debug_report(Context &ctx) {
         for (const Segment &segment : alloc.bundle.segments) {
             std::string physical_reg_name = DebugEmitter::get_physical_reg_name(alloc.physical_reg, 8);
             stream << "%" << segment.reg << " -> " << physical_reg_name << " in ";
-            stream << segment.range.start.instr << ":" << segment.range.end.instr << "\n";
+            stream << ctx.func.blocks[segment.range.block].m_block->get_debug_label() << " ";
+            stream << "[" << segment.range.start.instr << ":" << segment.range.end.instr << "]";
+
+            if (alloc.bundle.src_stack_slot) {
+                stream << ", from stack slot %" << *alloc.bundle.src_stack_slot;
+            }
+
+            if (alloc.bundle.dst_stack_slot) {
+                stream << ", to stack slot %" << *alloc.bundle.dst_stack_slot;
+            }
+
+            stream << "\n";
         }
     }
 

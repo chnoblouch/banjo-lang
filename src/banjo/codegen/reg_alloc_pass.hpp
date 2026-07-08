@@ -71,6 +71,7 @@ private:
     bool try_alloc_physical_reg(Context &ctx, Bundle &bundle, mcode::PhysicalReg reg);
     bool is_alloc_possible(Context &ctx, Bundle &bundle, mcode::PhysicalReg reg);
     bool try_evict(Context &ctx, Bundle &bundle);
+    bool can_evict(Bundle &bundle, Alloc &alloc);
     void spill(Context &ctx, Bundle &bundle);
 
     void apply_alloc(Context &ctx, const Alloc &alloc);
