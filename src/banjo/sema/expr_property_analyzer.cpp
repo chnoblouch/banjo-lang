@@ -43,7 +43,9 @@ ExprProperties ExprPropertyAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_ex
         };
     }
 
-    if (auto reference_type = unary_expr.value.get_type().match<sir::ReferenceType>()) {
+    sir::Expr type = unary_expr.value.get_type();
+
+    if (auto reference_type = type.match<sir::ReferenceType>()) {
         if (reference_type->mut) {
             return ExprProperties{
                 .base_value = unary_expr.value,
@@ -61,7 +63,7 @@ ExprProperties ExprPropertyAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_ex
         return ExprProperties{
             .base_value = &unary_expr,
             .mutability = Mutability::MUTABLE,
-            .is_temporary = true,
+            .is_temporary = !type.is<sir::PointerType>(),
         };
     }
 }
