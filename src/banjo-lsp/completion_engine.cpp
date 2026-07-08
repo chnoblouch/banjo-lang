@@ -120,6 +120,16 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
         };
 
         collect_symbol_members(symbol_expr->symbol, options);
+    } else if (auto specialize_expr = lhs.match<sir::SpecializeExpr>()) {
+        Options options{
+            .allow_values = true,
+            .include_parent_scopes = false,
+            .include_uses = false,
+            .create_func_call_template = true,
+            .file_to_use = nullptr,
+        };
+
+        collect_symbol_members(specialize_expr->symbol, options);
     }
 }
 
@@ -171,7 +181,7 @@ void CompletionEngine::complete_after_use_dot(sir::UseItem &lhs) {
 }
 
 void CompletionEngine::complete_in_struct_literal(sir::StructLiteral &struct_literal) {
-    if (auto struct_def = struct_literal.type.match_symbol<sir::StructDef>()) {
+    if (auto concrete_struct = struct_literal.type.match_concrete<sir::StructDef>()) {
         std::set<sir::StructField *> set_fields;
 
         for (sir::StructLiteralEntry &entry : struct_literal.entries) {
@@ -180,7 +190,7 @@ void CompletionEngine::complete_in_struct_literal(sir::StructLiteral &struct_lit
             }
         }
 
-        for (sir::StructField *field : struct_def->fields) {
+        for (sir::StructField *field : concrete_struct->def->fields) {
             if (set_fields.contains(field)) {
                 continue;
             }
