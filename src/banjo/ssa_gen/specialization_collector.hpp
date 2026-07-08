@@ -78,7 +78,7 @@ private:
     void visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr);
 
     void visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args);
-    void visit_resource(const sir::Resource &resource);
+    void visit_resource(const sir::Resource &resource, bool top_level);
 };
 
 } // namespace banjo::lang

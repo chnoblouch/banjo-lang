@@ -1,0 +1,32 @@
+# test:common
+
+func new_undefined[T]() -> T {
+    var value: T;
+    return value;
+}
+
+# test:subtest
+# test:compiles
+
+struct Resource {
+    func __deinit__() {}
+}
+
+func main() {
+    new_undefined[Resource]();
+}
+
+# test:subtest
+# test:compiles
+
+struct Resource {
+    func __deinit__() {}
+}
+
+struct Wrapper {
+    var name: Resource;
+}
+
+func main() {
+    new_undefined[Wrapper]();
+}

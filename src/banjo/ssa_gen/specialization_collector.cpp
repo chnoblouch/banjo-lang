@@ -65,7 +65,7 @@ void SpecializationCollector::visit_block(const sir::Block &block) {
     }
 
     for (const auto &[symbol, resource] : block.resources) {
-        visit_resource(resource);
+        visit_resource(resource, true);
     }
 }
 
@@ -396,7 +396,7 @@ void SpecializationCollector::visit_move_expr(const sir::MoveExpr &move_expr) {
 void SpecializationCollector::visit_deinit_expr(const sir::DeinitExpr &deinit_expr) {
     visit_expr(deinit_expr.type);
     visit_expr(deinit_expr.value);
-    visit_resource(*deinit_expr.resource);
+    visit_resource(*deinit_expr.resource, true); // FIXME: Is this always top-level?
 }
 
 void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {
@@ -482,7 +482,7 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
     entry_stack.pop_back();
 }
 
-void SpecializationCollector::visit_resource(const sir::Resource &resource) {
+void SpecializationCollector::visit_resource(const sir::Resource &resource, bool top_level) {
     std::optional<sir::Resource> specialization;
 
     if (!entry_stack.empty()) {
@@ -502,10 +502,10 @@ void SpecializationCollector::visit_resource(const sir::Resource &resource) {
     }
 
     for (const sir::Resource &sub_resource : final_resource.sub_resources) {
-        visit_resource(sub_resource);
+        visit_resource(sub_resource, false);
     }
 
-    if (specialization) {
+    if (specialization && top_level) {
         entry_stack.back().resources.emplace(&resource, std::move(*specialization));
     }
 }
