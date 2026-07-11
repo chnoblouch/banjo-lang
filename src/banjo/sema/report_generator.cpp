@@ -536,22 +536,30 @@ void ReportGenerator::report_err_too_many_indices(const sir::BracketExpr &bracke
     report_error("expected just one index, got $", bracket_expr.ast_node, bracket_expr.rhs.size());
 }
 
+void ReportGenerator::report_err_missing_generic_args(sir::Expr expr, sir::StructDef &struct_def) {
+    report_err_missing_generic_args(expr, "struct", struct_def.ident, struct_def.generic_params);
+}
+
+void ReportGenerator::report_err_missing_generic_args(sir::Expr expr, sir::ProtoDef &proto_def) {
+    report_err_missing_generic_args(expr, "proto", proto_def.ident, proto_def.generic_params);
+}
+
 void ReportGenerator::report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::FuncDef &func_def) {
-    report_err_unexpected_generic_arg_count(bracket_expr, func_def.generic_params, func_def.ident, "function");
+    report_err_unexpected_generic_arg_count(bracket_expr, "function", func_def.ident, func_def.generic_params);
 }
 
 void ReportGenerator::report_err_unexpected_generic_arg_count(
     sir::BracketExpr &bracket_expr,
     sir::StructDef &struct_def
 ) {
-    report_err_unexpected_generic_arg_count(bracket_expr, struct_def.generic_params, struct_def.ident, "struct");
+    report_err_unexpected_generic_arg_count(bracket_expr, "struct", struct_def.ident, struct_def.generic_params);
 }
 
 void ReportGenerator::report_err_unexpected_generic_arg_count(
     sir::BracketExpr &bracket_expr,
     sir::ProtoDef &proto_def
 ) {
-    report_err_unexpected_generic_arg_count(bracket_expr, proto_def.generic_params, proto_def.ident, "proto");
+    report_err_unexpected_generic_arg_count(bracket_expr, "proto", proto_def.ident, proto_def.generic_params);
 }
 
 void ReportGenerator::report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr) {
@@ -806,6 +814,51 @@ void ReportGenerator::report_warn_try_expr_value_unused(sir::TryExpr &try_expr) 
     report_warning("unused 'try' value (type '$')", try_expr.ast_node, try_expr.type);
 }
 
+void ReportGenerator::report_err_missing_generic_args(
+    sir::Expr expr,
+    std::string_view kind,
+    sir::Ident &ident,
+    std::span<sir::GenericParam *> params
+) {
+    if (params.size() == 1) {
+        build_error("missing generic argument", expr.get_ast_node())
+            .add_note("$ '$' defined here with generic parameter $", ident.ast_node, kind, ident.value, params[0])
+            .report();
+    } else {
+        build_error("missing generic arguments", expr.get_ast_node())
+            .add_note("$ '$' defined here with generic parameters $", ident.ast_node, kind, ident.value, params)
+            .report();
+    }
+}
+
+void ReportGenerator::report_err_unexpected_generic_arg_count(
+    sir::BracketExpr &bracket_expr,
+    std::string_view kind,
+    sir::Ident &ident,
+    std::span<sir::GenericParam *> params
+) {
+    unsigned num_params = params.size();
+    unsigned num_args = bracket_expr.rhs.size();
+
+    std::string format_str;
+
+    if (num_args < num_params) {
+        format_str = "too few generic arguments (expected $, got $)";
+    } else if (num_args > num_params) {
+        format_str = "too many generic arguments (expected $, got $)";
+    }
+
+    ReportBuilder builder = build_error(format_str, bracket_expr.ast_node, num_params, num_args);
+
+    if (num_params == 1) {
+        builder.add_note("$ '$' defined here with generic parameter $", ident.ast_node, kind, ident.value, params[0]);
+    } else {
+        builder.add_note("$ '$' defined here with generic parameters $", ident.ast_node, kind, ident.value, params);
+    }
+
+    builder.report();
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(
     ASTNode *ast_node,
     sir::Expr type,
@@ -834,31 +887,6 @@ void ReportGenerator::report_err_operator_overload_not_found(
     }
 
     builder.report();
-}
-
-void ReportGenerator::report_err_unexpected_generic_arg_count(
-    sir::BracketExpr &bracket_expr,
-    std::span<sir::GenericParam *> generic_params,
-    sir::Ident &decl_ident,
-    std::string_view decl_kind
-) {
-    std::string format_str;
-
-    if (bracket_expr.rhs.size() < generic_params.size()) {
-        format_str = "too few generic arguments (expected $, got $)";
-    } else if (bracket_expr.rhs.size() > generic_params.size()) {
-        format_str = "too many generic arguments (expected $, got $)";
-    }
-
-    build_error(format_str, bracket_expr.ast_node, generic_params.size(), bracket_expr.rhs.size())
-        .add_note(
-            "$ '$' defined here with the following generic parameters: $",
-            decl_ident.ast_node,
-            decl_kind,
-            decl_ident.value,
-            generic_params
-        )
-        .report();
 }
 
 void ReportGenerator::add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr) {

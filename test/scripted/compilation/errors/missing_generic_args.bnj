@@ -1,0 +1,33 @@
+# test:common
+
+struct S[T] {}
+
+struct Pair[A, B] {
+    var a: A;
+    var b: B;
+}
+
+# test:subtest
+# test:error 16:12 "missing generic argument"
+# test:note 3:8 "struct 'S' defined here with generic parameter 'T'"
+# test:error 17:15 "missing generic arguments"
+# test:note 5:8 "struct 'Pair' defined here with generic parameters 'A', 'B'"
+
+func f1(s: S) {}
+func f2(pair: Pair) {}
+
+# test:subtest
+# test:error 24:13 "missing generic argument"
+# test:note 3:8 "struct 'S' defined here with generic parameter 'T'"
+
+func main() {
+    var s = S {};
+}
+
+# test:subtest
+# test:error 33:11 "missing generic arguments"
+# test:note 31:7 "proto 'P' defined here with generic parameters 'A', 'B'"
+
+proto P[A, B] {}
+
+func f[T: P]() {}

@@ -86,6 +86,20 @@ Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
         return Result::ERROR;
     }
 
+    if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
+        if (auto struct_def = symbol_expr->symbol.match<sir::StructDef>()) {
+            if (struct_def->is_generic()) {
+                analyzer.report_generator.report_err_missing_generic_args(expr, *struct_def);
+                return Result::ERROR;
+            }
+        } else if (auto proto_def = symbol_expr->symbol.match<sir::ProtoDef>()) {
+            if (proto_def->is_generic()) {
+                analyzer.report_generator.report_err_missing_generic_args(expr, *proto_def);
+                return Result::ERROR;
+            }
+        }
+    }
+
     return Result::SUCCESS;
 }
 

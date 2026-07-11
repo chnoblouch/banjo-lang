@@ -113,6 +113,8 @@ public:
     void report_err_cannot_negate_unsigned(const sir::UnaryExpr &unary_expr);
     void report_err_expected_index(const sir::BracketExpr &bracket_expr);
     void report_err_too_many_indices(const sir::BracketExpr &bracket_expr);
+    void report_err_missing_generic_args(sir::Expr expr, sir::StructDef &struct_def);
+    void report_err_missing_generic_args(sir::Expr expr, sir::ProtoDef &proto_def);
     void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::FuncDef &func_def);
     void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::StructDef &struct_def);
     void report_err_unexpected_generic_arg_count(sir::BracketExpr &bracket_expr, sir::ProtoDef &proto_def);
@@ -193,19 +195,26 @@ private:
     template <typename... FormatArgs>
     void report_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
+    void report_err_missing_generic_args(
+        sir::Expr expr,
+        std::string_view kind,
+        sir::Ident &ident,
+        std::span<sir::GenericParam *> params
+    );
+
+    void report_err_unexpected_generic_arg_count(
+        sir::BracketExpr &bracket_expr,
+        std::string_view kind,
+        sir::Ident &ident,
+        std::span<sir::GenericParam *> params
+    );
+
     void report_err_operator_overload_not_found(
         ASTNode *ast_node,
         sir::Expr type,
         std::string_view operator_name,
         std::string_view impl_name,
         std::optional<std::string_view> second_impl_name = {}
-    );
-
-    void report_err_unexpected_generic_arg_count(
-        sir::BracketExpr &bracket_expr,
-        std::span<sir::GenericParam *> generic_params,
-        sir::Ident &decl_ident,
-        std::string_view decl_kind
     );
 
     void add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr);

@@ -83,6 +83,10 @@ ReportText &ReportText::format(sir::ExprCategory expr_category) {
     return format(string);
 }
 
+ReportText &ReportText::format(sir::GenericParam *generic_param) {
+    return format("'" + std::string{generic_param->ident.value} + "'");
+}
+
 ReportText &ReportText::format(const std::vector<sir::Expr> &exprs) {
     std::string string;
 

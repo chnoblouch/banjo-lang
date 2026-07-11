@@ -7,11 +7,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -340,14 +336,14 @@ void DeclInterfaceAnalyzer::analyze_generic_params(std::span<sir::GenericParam *
     }
 
     for (sir::GenericParam *generic_param : generic_params) {
-        for (sir::Expr &component : generic_param->constraint.components) {
-            ExprAnalyzer{analyzer}.analyze_type(component);
-        }
+        analyze_type_constraint(generic_param->constraint);
     }
 }
 
-} // namespace sema
+void DeclInterfaceAnalyzer::analyze_type_constraint(sir::TypeConstraint &constraint) {
+    for (sir::Expr &component : constraint.components) {
+        ExprAnalyzer{analyzer}.analyze_type(component);
+    }
+}
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
