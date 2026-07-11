@@ -3,44 +3,40 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
 
-namespace banjo {
+namespace banjo::lang::sir {
 
-namespace lang {
-
-namespace sir {
-
-sir::Expr create_primitive_type(sir::Module &mod, sir::Primitive primitive) {
+Expr create_primitive_type(Module &mod, Primitive primitive) {
     return mod.create(
-        sir::PrimitiveType{
+        PrimitiveType{
             .ast_node = nullptr,
             .primitive = primitive,
         }
     );
 }
 
-sir::Expr create_pseudo_type(sir::Module &mod, sir::PseudoTypeKind kind) {
+Expr create_pseudo_type(Module &mod, PseudoTypeKind kind) {
     return mod.create(
-        sir::PseudoType{
+        PseudoType{
             .ast_node = nullptr,
             .kind = kind,
         }
     );
 }
 
-sir::CallExpr *create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concrete_func, std::span<sir::Expr> args) {
+CallExpr *create_call(Module &mod, Concrete<FuncDef> concrete_func, std::span<Expr> args) {
     if (concrete_func.generic_args.empty()) {
         return create_call(mod, *concrete_func.def, args);
     }
 
-    sir::Specializer specializer{mod.trivial_arena, concrete_func};
-    sir::FuncType *func_type = specializer.specialize_func_type(concrete_func.def->type);
+    Specializer specializer{mod.trivial_arena, concrete_func};
+    FuncType *func_type = specializer.specialize_func_type(concrete_func.def->type);
 
     return mod.create(
-        sir::CallExpr{
+        CallExpr{
             .ast_node = nullptr,
             .type = func_type->return_type,
             .callee = mod.create(
-                sir::SpecializeExpr{
+                SpecializeExpr{
                     .ast_node = nullptr,
                     .type = func_type,
                     .symbol = concrete_func.def,
@@ -52,13 +48,13 @@ sir::CallExpr *create_call(sir::Module &mod, sir::Concrete<sir::FuncDef> concret
     );
 }
 
-sir::CallExpr *create_call(sir::Module &mod, sir::FuncDef &func_def, std::span<sir::Expr> args) {
+CallExpr *create_call(Module &mod, FuncDef &func_def, std::span<Expr> args) {
     return mod.create(
-        sir::CallExpr{
+        CallExpr{
             .ast_node = nullptr,
             .type = func_def.type.return_type,
             .callee = mod.create(
-                sir::SymbolExpr{
+                SymbolExpr{
                     .ast_node = nullptr,
                     .type = &func_def.type,
                     .symbol = &func_def,
@@ -69,36 +65,36 @@ sir::CallExpr *create_call(sir::Module &mod, sir::FuncDef &func_def, std::span<s
     );
 }
 
-sir::Expr create_unary_ref(sir::Module &mod, sir::Expr base_value) {
+Expr create_unary_ref(Module &mod, Expr base_value) {
     return mod.create(
-        sir::UnaryExpr{
+        UnaryExpr{
             .ast_node = nullptr,
             .type = mod.create(
-                sir::PointerType{
+                PointerType{
                     .ast_node = nullptr,
                     .base_type = base_value.get_type(),
                 }
             ),
-            .op = sir::UnaryOp::ADDR,
+            .op = UnaryOp::ADDR,
             .value = base_value,
         }
     );
 }
 
-sir::Expr create_error_value(sir::Module &mod, ASTNode *ast_node) {
+Expr create_error_value(Module &mod, ASTNode *ast_node) {
     return mod.create(
-        sir::Error{
+        Error{
             .ast_node = ast_node,
         }
     );
 }
 
-sir::Stmt create_return_result_success_void(sir::Module &mod, sir::Concrete<sir::StructDef> concrete_struct) {
-    sir::Specializer specializer{mod.trivial_arena, concrete_struct};
-    sir::FuncDef &new_func = concrete_struct.def->block.symbol_table->look_up_local("new_success").as<sir::FuncDef>();
+Expr create_result_success_void(Module &mod, Concrete<StructDef> concrete_struct) {
+    Specializer specializer{mod.trivial_arena, concrete_struct};
+    FuncDef &new_func = concrete_struct.def->block.symbol_table->look_up_local("new_success").as<FuncDef>();
 
-    sir::Expr type = mod.create(
-        sir::SpecializeExpr{
+    Expr type = mod.create(
+        SpecializeExpr{
             .ast_node = nullptr,
             .type = nullptr,
             .symbol = concrete_struct.def,
@@ -106,8 +102,8 @@ sir::Stmt create_return_result_success_void(sir::Module &mod, sir::Concrete<sir:
         }
     );
 
-    sir::Expr callee = mod.create(
-        sir::SpecializeExpr{
+    Expr callee = mod.create(
+        SpecializeExpr{
             .ast_node = nullptr,
             .type = specializer.specialize_func_type(new_func.type),
             .symbol = &new_func,
@@ -115,32 +111,30 @@ sir::Stmt create_return_result_success_void(sir::Module &mod, sir::Concrete<sir:
         }
     );
 
-    sir::Expr value = mod.create(
-        sir::UndefinedLiteral{
+    Expr value = mod.create(
+        UndefinedLiteral{
             .ast_node = nullptr,
             .type = concrete_struct.generic_args[0],
         }
     );
 
-    sir::Expr call_expr = mod.create(
-        sir::CallExpr{
+    return mod.create(
+        CallExpr{
             .ast_node = nullptr,
             .type = type,
             .callee = callee,
-            .args = mod.create_array<sir::Expr>({value}),
-        }
-    );
-
-    return mod.create(
-        sir::ReturnStmt{
-            .ast_node = nullptr,
-            .value = call_expr,
+            .args = mod.create_array<Expr>({value}),
         }
     );
 }
 
-} // namespace sir
+Stmt create_return_result_success_void(Module &mod, Concrete<StructDef> concrete_struct) {
+    return mod.create(
+        ReturnStmt{
+            .ast_node = nullptr,
+            .value = create_result_success_void(mod, concrete_struct),
+        }
+    );
+}
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sir

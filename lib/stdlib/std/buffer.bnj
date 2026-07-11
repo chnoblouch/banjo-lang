@@ -45,7 +45,5 @@ struct Buffer: io.Read, io.Write, io.Seek {
             # TODO: Out of bounds check, casting
             self.position = (self.position as i64 + offset) as usize;
         }
-
-        return undefined;
     }
 }

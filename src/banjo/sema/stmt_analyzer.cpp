@@ -155,8 +155,17 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     if (return_stmt.value) {
         // TODO: Also generate an appropriate error if the function returns `void`.
         ExprAnalyzer(analyzer).analyze_value(return_stmt.value, return_type);
-    } else if (!return_type.is_primitive_type(sir::Primitive::VOID)) {
-        analyzer.report_generator.report_err_return_missing_value(return_stmt, return_type);
+    } else {
+        if (auto result_type = return_type.match_specialization(*analyzer.std_result_def)) {
+            if (result_type->generic_args[0].is_primitive_type(sir::Primitive::VOID)) {
+                return_stmt.value = sir::create_result_success_void(*analyzer.mod, *result_type);
+                return;
+            }
+        }
+
+        if (!return_type.is_primitive_type(sir::Primitive::VOID)) {
+            analyzer.report_generator.report_err_return_missing_value(return_stmt, return_type);
+        }
     }
 
     if (auto unary_expr = return_stmt.value.match<sir::UnaryExpr>()) {
@@ -471,7 +480,7 @@ void StmtAnalyzer::analyze_meta_for_stmt(sir::MetaForStmt &meta_for_stmt) {
     if (result != Result::SUCCESS) {
         return;
     }
-    
+
     meta_for_stmt.generic_param = analyzer.create(
         sir::GenericParam{
             .ast_node = nullptr,

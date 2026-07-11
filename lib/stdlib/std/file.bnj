@@ -122,10 +122,7 @@ struct File: Read, Write, Seek {
         }
 
         var result = c.fseek(self.stream, offset as c.Long, libc_origin);
-
-        if result == 0 {
-            return undefined;
-        } else {
+        if result != 0 {
             return Error.last();
         }
     }

@@ -1,0 +1,27 @@
+# test:subtest
+# test:output "true"
+
+func f() -> void except i32 {
+    return;
+}
+
+func main() {
+    print(f().successful);
+}
+
+# test:subtest
+# test:output "true,false"
+
+func f(value: i32) -> void except i32 {
+    if value == 42 {
+        return;
+    } else {
+        return -1;
+    }
+}
+
+func main() {
+    print(f(42).successful);
+    print(',');
+    print(f(100).successful);
+}
