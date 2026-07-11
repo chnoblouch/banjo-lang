@@ -91,21 +91,19 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
     if (sir_func.is_generic()) {
         auto iter = ctx.specializations.symbol_entries.find(const_cast<sir::FuncDef *>(&sir_func));
 
-        if (iter == ctx.specializations.symbol_entries.end()) {
-            return;
-        }
+        if (iter != ctx.specializations.symbol_entries.end()) {
+            for (SpecializationCollector::Entry &specialization : iter->second) {
+                ctx.push_specialization(specialization);
+                ssa::Function *ssa_func = create_func_def(sir_func, specialization.args);
 
-        for (SpecializationCollector::Entry &specialization : iter->second) {
-            ctx.push_specialization(specialization);
-            ssa::Function *ssa_func = create_func_def(sir_func, specialization.args);
+                MonoFunc mono_func{
+                    .specialization = specialization,
+                    .ssa_func = ssa_func,
+                };
 
-            MonoFunc mono_func{
-                .specialization = specialization,
-                .ssa_func = ssa_func,
-            };
-
-            ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
-            ctx.pop_specialization(specialization);
+                ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
+                ctx.pop_specialization(specialization);
+            }
         }
     } else {
         ssa::Function *ssa_func = create_func_def(sir_func, {});
@@ -196,21 +194,19 @@ void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
     if (sir_struct.is_generic()) {
         auto iter = ctx.specializations.symbol_entries.find(const_cast<sir::StructDef *>(&sir_struct));
 
-        if (iter == ctx.specializations.symbol_entries.end()) {
-            return;
-        }
+        if (iter != ctx.specializations.symbol_entries.end()) {
+            for (SpecializationCollector::Entry &specialization : iter->second) {
+                ctx.push_specialization(specialization);
+                ssa::Structure *ssa_struct = create_struct_def(sir_struct, specialization.args);
 
-        for (SpecializationCollector::Entry &specialization : iter->second) {
-            ctx.push_specialization(specialization);
-            ssa::Structure *ssa_struct = create_struct_def(sir_struct, specialization.args);
+                MonoStruct mono_struct{
+                    .specialization = specialization,
+                    .ssa_struct = ssa_struct,
+                };
 
-            MonoStruct mono_struct{
-                .specialization = specialization,
-                .ssa_struct = ssa_struct,
-            };
-
-            ctx.ssa_mono_structs[&sir_struct].push_back(mono_struct);
-            ctx.pop_specialization(specialization);
+                ctx.ssa_mono_structs[&sir_struct].push_back(mono_struct);
+                ctx.pop_specialization(specialization);
+            }
         }
     } else {
         ssa::Structure *ssa_struct = create_struct_def(sir_struct, {});
