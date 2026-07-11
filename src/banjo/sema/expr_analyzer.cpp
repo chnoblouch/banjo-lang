@@ -15,7 +15,6 @@
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
@@ -2465,30 +2464,18 @@ void ExprAnalyzer::create_method_call(
 ) {
     analyzer.add_symbol_use(rhs.ast_node, method);
 
-    if (auto specialize_expr = lhs.get_type().match<sir::SpecializeExpr>()) {
-        sir::Specializer specializer{
-            analyzer.get_mod().trivial_arena,
-            specialize_expr->symbol.get_generic_params(),
-            specialize_expr->args,
-        };
+    // We used to specialize here using the generic arguments of the left-hand side, but this
+    // crashes when the method itself is generic because in that case not all arguments are known.
+    // Instead, we now leave the symbol expression as-is and let the `self` type be inferred by
+    // generic argument inference.
 
-        call_expr.callee = analyzer.create(
-            sir::SpecializeExpr{
-                .ast_node = rhs.ast_node,
-                .type = specializer.specialize_expr(method.get_type()),
-                .symbol = method,
-                .args = specialize_expr->args,
-            }
-        );
-    } else {
-        call_expr.callee = analyzer.create(
-            sir::SymbolExpr{
-                .ast_node = rhs.ast_node,
-                .type = method.get_type(),
-                .symbol = method,
-            }
-        );
-    }
+    call_expr.callee = analyzer.create(
+        sir::SymbolExpr{
+            .ast_node = rhs.ast_node,
+            .type = method.get_type(),
+            .symbol = method,
+        }
+    );
 
     std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(call_expr.args.size() + 1);
     args[0] = lhs;

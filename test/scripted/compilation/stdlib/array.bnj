@@ -168,13 +168,11 @@ func main() {
 		Object { id: 96, name: "desk lamp" },
 	];
 	
-	# FIXME: Fix nested generic symbols!
-
-	print_flat(Array.map[i32, i32](i, |value: ref i32| -> i32 { return value + 1; }));
+	print_flat(i.map(|value: ref i32| -> i32 { return value + 1; }));
 	print(',');
-	print_flat(Array.map[i32, bool](i, |value: ref i32| -> bool { return value >= 10; }));
+	print_flat(i.map(|value: ref i32| -> bool { return value >= 10; }));
 	print(',');
-	print_flat(Array.map[i32, f32](i, |value: ref i32| -> f32 { return value as f32 + 0.5; }));
+	print_flat(i.map(|value: ref i32| -> f32 { return value as f32 + 0.5; }));
 	print(',');
-	print_flat(Array.map[Object, i32](o, |value: ref Object| -> i32 { return value.id - 1; }));
+	print_flat(o.map(|value: ref Object| -> i32 { return value.id - 1; }));
 }

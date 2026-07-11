@@ -1,6 +1,8 @@
 # test:common
 
-func print_set[T](set: Set[T]) {
+use std.protos.Compare;
+
+func print_set[T: Compare[T]](set: Set[T]) {
     print(set.length());
     print(';');
 
