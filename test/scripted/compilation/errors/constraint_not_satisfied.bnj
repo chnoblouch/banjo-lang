@@ -45,3 +45,43 @@ func f[T: P](a: T) {}
 func test() {
     f(false);
 }
+
+# test:subtest
+# test:error 57:13 "'i32' does not satisfy type constraint 'P'"
+# test:note 55:10 "constraint defined here for generic parameter 'T'"
+
+proto P {}
+
+struct S[T: P] {}
+
+func f(a: S[i32]) {}
+
+# test:subtest
+# test:error 67:16 "'T' does not satisfy type constraint 'P'"
+# test:note 65:10 "constraint defined here for generic parameter 'T'"
+
+proto P {}
+
+struct S[T: P] {}
+
+func f[T](a: S[T]) {}
+
+# test:subtest
+# test:error 77:14 "'i32' does not satisfy type constraint 'P1'"
+# test:note 75:10 "constraint defined here for generic parameter 'T'"
+
+proto P1 {}
+
+proto P2[T: P1] {}
+
+func f[T: P2[i32]]() {}
+
+# test:subtest
+# test:error 87:17 "'A' does not satisfy type constraint 'P1'"
+# test:note 85:10 "constraint defined here for generic parameter 'T'"
+
+proto P1 {}
+
+proto P2[T: P1] {}
+
+func f[A, B: P2[A]]() {}

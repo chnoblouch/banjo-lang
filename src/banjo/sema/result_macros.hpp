@@ -3,8 +3,7 @@
 
 #define RESULT_MERGE(dst, expr)                                                                                        \
     {                                                                                                                  \
-        Result partial_result = ((expr));                                                                              \
-        if (partial_result != Result::SUCCESS) {                                                                       \
+        if (((expr)) != Result::SUCCESS) {                                                                             \
             dst = Result::ERROR;                                                                                       \
         }                                                                                                              \
     }

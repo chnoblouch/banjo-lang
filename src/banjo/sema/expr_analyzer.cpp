@@ -1889,12 +1889,9 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
                 return Result::ERROR;
             }
 
-            for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                ASTNode *ast_node = bracket_expr.rhs[i].get_ast_node();
-                RESULT_MERGE(result, check_type_constraint(ast_node, func_def->generic_params, bracket_expr.rhs, i));
-            }
-
+            check_type_constraints(bracket_expr, func_def->generic_params);
             RESULT_RETURN_ON_ERROR(result);
+
             return specialize(*func_def, bracket_expr.rhs, out_expr);
         }
     } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
@@ -1904,6 +1901,9 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
                 return Result::ERROR;
             }
 
+            check_type_constraints(bracket_expr, struct_def->generic_params);
+            RESULT_RETURN_ON_ERROR(result);
+
             return specialize(*struct_def, bracket_expr.rhs, out_expr);
         }
     } else if (auto proto_def = bracket_expr.lhs.match_symbol<sir::ProtoDef>()) {
@@ -1912,6 +1912,9 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
                 analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, *proto_def);
                 return Result::ERROR;
             }
+
+            check_type_constraints(bracket_expr, proto_def->generic_params);
+            RESULT_RETURN_ON_ERROR(result);
 
             return specialize(*proto_def, bracket_expr.rhs, out_expr);
         }
@@ -1955,6 +1958,18 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         analyzer.report_generator.report_err_expected_generic_or_indexable(bracket_expr.lhs);
         return Result::ERROR;
     }
+}
+
+Result ExprAnalyzer::check_type_constraints(sir::BracketExpr &bracket_expr, std::span<sir::GenericParam *> params) {
+    Result result = Result::SUCCESS;
+
+    for (unsigned i = 0; i < params.size(); i++) {
+        ASTNode *ast_node = bracket_expr.rhs[i].get_ast_node();
+        Result partial_result = check_type_constraint(ast_node, params, bracket_expr.rhs, i);
+        RESULT_MERGE(result, partial_result);
+    }
+
+    return result;
 }
 
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
