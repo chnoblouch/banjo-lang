@@ -1,0 +1,301 @@
+# TODO: Negative tests
+
+# test:common
+
+# TODO: Remove once a `char` primitive is introduced.
+func print_number[T](value: T) {
+    if T == u8 {
+        print(value as u32);
+    } else {
+        print(value);
+    }
+}
+
+# test:subtest
+# test:output "eeeeeeeeeeeeeee"
+
+use std.protos.Compare;
+
+func compare[T: Compare[T]](a: T, b: T) {
+    if a == b {
+        print("e");
+    } else {
+        print("n");
+    }
+}
+
+func main() {
+    compare[i8](42, 42);
+    compare[i16](42, 42);
+    compare[i32](42, 42);
+    compare[i64](42, 42);
+    compare[u8](42, 42);
+    compare[u16](42, 42);
+    compare[u32](42, 42);
+    compare[u64](42, 42);
+    compare[usize](42, 42);
+    compare[f32](42.0, 42.0);
+    compare[f64](42.0, 42.0);
+    compare[bool](true, true);
+    compare[addr](null, null);
+
+    var a: i32 = 0;
+
+    compare[*i32](&a, &a);
+    compare[*Array[i32]](null, null);
+}
+
+# test:subtest
+# test:output "ggggggggggg"
+
+use std.protos.Order;
+
+func order[T: Order[T]](a: T, b: T) {
+    if a > b {
+        print("g");
+    } else {
+        print("l");
+    }
+}
+
+func main() {
+    order[i8](42, 0);
+    order[i16](42, 0);
+    order[i32](42, 0);
+    order[i64](42, 0);
+    order[u8](42, 0);
+    order[u16](42, 0);
+    order[u32](42, 0);
+    order[u64](42, 0);
+    order[usize](42, 0);
+    order[f32](42.0, 0.0);
+    order[f64](42.0, 0.0);
+}
+
+# test:subtest
+# test:output "15,15,15,15,15,15,15,15,15,4.5,4.5,"
+
+use std.protos.Add;
+
+func add[T: Add[T]](a: T, b: T) {
+    print_number(a + b);
+    print(',');
+}
+
+func main() {
+    add[i8](12, 3);
+    add[i16](12, 3);
+    add[i32](12, 3);
+    add[i64](12, 3);
+    add[u8](12, 3);
+    add[u16](12, 3);
+    add[u32](12, 3);
+    add[u64](12, 3);
+    add[usize](12, 3);
+    add[f32](4.0, 0.5);
+    add[f64](4.0, 0.5);
+}
+
+# test:subtest
+# test:output "9,9,9,9,9,9,9,9,9,3.5,3.5,"
+
+use std.protos.Sub;
+
+func sub[T: Sub[T]](a: T, b: T) {
+    print_number(a - b);
+    print(',');
+}
+
+func main() {
+    sub[i8](12, 3);
+    sub[i16](12, 3);
+    sub[i32](12, 3);
+    sub[i64](12, 3);
+    sub[u8](12, 3);
+    sub[u16](12, 3);
+    sub[u32](12, 3);
+    sub[u64](12, 3);
+    sub[usize](12, 3);
+    sub[f32](4.0, 0.5);
+    sub[f64](4.0, 0.5);
+}
+
+# test:subtest
+# test:output "36,36,36,36,36,36,36,36,36,2,2,"
+
+use std.protos.Mul;
+
+func mul[T: Mul[T]](a: T, b: T) {
+    print_number(a * b);
+    print(',');
+}
+
+func main() {
+    mul[i8](12, 3);
+    mul[i16](12, 3);
+    mul[i32](12, 3);
+    mul[i64](12, 3);
+    mul[u8](12, 3);
+    mul[u16](12, 3);
+    mul[u32](12, 3);
+    mul[u64](12, 3);
+    mul[usize](12, 3);
+    mul[f32](4.0, 0.5);
+    mul[f64](4.0, 0.5);
+}
+
+# test:subtest
+# test:output "4,4,4,4,4,4,4,4,4,8,8,"
+
+use std.protos.Div;
+
+func div[T: Div[T]](a: T, b: T) {
+    print_number(a / b);
+    print(',');
+}
+
+func main() {
+    div[i8](12, 3);
+    div[i16](12, 3);
+    div[i32](12, 3);
+    div[i64](12, 3);
+    div[u8](12, 3);
+    div[u16](12, 3);
+    div[u32](12, 3);
+    div[u64](12, 3);
+    div[usize](12, 3);
+    div[f32](4.0, 0.5);
+    div[f64](4.0, 0.5);
+}
+
+# test:subtest
+# test:output "2,2,2,2,2,2,2,2,2,"
+
+use std.protos.Mod;
+
+func mod[T: Mod[T]](a: T, b: T) {
+    print_number(a % b);
+    print(',');
+}
+
+func main() {
+    mod[i8](20, 3);
+    mod[i16](20, 3);
+    mod[i32](20, 3);
+    mod[i64](20, 3);
+    mod[u8](20, 3);
+    mod[u16](20, 3);
+    mod[u32](20, 3);
+    mod[u64](20, 3);
+    mod[usize](20, 3);
+}
+
+# test:subtest
+# test:output "8,8,8,8,8,8,8,8,8,"
+
+use std.protos.BitAnd;
+
+func bit_and[T: BitAnd[T]](a: T, b: T) {
+    print_number(a & b);
+    print(',');
+}
+
+func main() {
+    bit_and[i8](25, 10);
+    bit_and[i16](25, 10);
+    bit_and[i32](25, 10);
+    bit_and[i64](25, 10);
+    bit_and[u8](25, 10);
+    bit_and[u16](25, 10);
+    bit_and[u32](25, 10);
+    bit_and[u64](25, 10);
+    bit_and[usize](25, 10);
+}
+
+# test:subtest
+# test:output "27,27,27,27,27,27,27,27,27,"
+
+use std.protos.BitOr;
+
+func bit_or[T: BitOr[T]](a: T, b: T) {
+    print_number(a | b);
+    print(',');
+}
+
+func main() {
+    bit_or[i8](25, 10);
+    bit_or[i16](25, 10);
+    bit_or[i32](25, 10);
+    bit_or[i64](25, 10);
+    bit_or[u8](25, 10);
+    bit_or[u16](25, 10);
+    bit_or[u32](25, 10);
+    bit_or[u64](25, 10);
+    bit_or[usize](25, 10);
+}
+
+# test:subtest
+# test:output "19,19,19,19,19,19,19,19,19,"
+
+use std.protos.BitXor;
+
+func bit_xor[T: BitXor[T]](a: T, b: T) {
+    print_number(a ^ b);
+    print(',');
+}
+
+func main() {
+    bit_xor[i8](25, 10);
+    bit_xor[i16](25, 10);
+    bit_xor[i32](25, 10);
+    bit_xor[i64](25, 10);
+    bit_xor[u8](25, 10);
+    bit_xor[u16](25, 10);
+    bit_xor[u32](25, 10);
+    bit_xor[u64](25, 10);
+    bit_xor[usize](25, 10);
+}
+
+# test:subtest
+# test:output "40,40,40,40,40,40,40,40,40,"
+
+use std.protos.Shl;
+
+func bit_shl[T: Shl[T]](a: T, b: T) {
+    print_number(a << b);
+    print(',');
+}
+
+func main() {
+    bit_shl[i8](5, 3);
+    bit_shl[i16](5, 3);
+    bit_shl[i32](5, 3);
+    bit_shl[i64](5, 3);
+    bit_shl[u8](5, 3);
+    bit_shl[u16](5, 3);
+    bit_shl[u32](5, 3);
+    bit_shl[u64](5, 3);
+    bit_shl[usize](5, 3);
+}
+
+# test:subtest
+# test:output "4,4,4,4,4,4,4,4,4,"
+
+use std.protos.Shr;
+
+func bit_shr[T: Shr[T]](a: T, b: T) {
+    print_number(a >> b);
+    print(',');
+}
+
+func main() {
+    bit_shr[i8](32, 3);
+    bit_shr[i16](32, 3);
+    bit_shr[i32](32, 3);
+    bit_shr[i64](32, 3);
+    bit_shr[u8](32, 3);
+    bit_shr[u16](32, 3);
+    bit_shr[u32](32, 3);
+    bit_shr[u64](32, 3);
+    bit_shr[usize](32, 3);
+}

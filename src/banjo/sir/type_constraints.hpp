@@ -12,6 +12,7 @@ bool satisfies_type_constraint(TypeConstraint &constraint, Expr type, std::optio
 bool satisfies_type_constraint_component(Expr component, Expr type, std::optional<Specializer> specializer);
 bool contains(TypeConstraint &constraint, Concrete<ProtoDef> proto_def);
 bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def);
+bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> proto_def);
 
 } // namespace banjo::lang::sir
 

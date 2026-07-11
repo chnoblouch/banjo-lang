@@ -38,6 +38,8 @@ bool satisfies_type_constraint_component(Expr component, Expr type, std::optiona
 
     if (auto primitive_type = type.match<PrimitiveType>()) {
         satisfied = primitive_implements(primitive_type->primitive, concrete_proto);
+    } else if (auto pointer_type = type.match<PointerType>()) {
+        satisfied = pointer_implements(*pointer_type, concrete_proto);
     } else if (auto concrete_struct = type.match_concrete<StructDef>()) {
         satisfied = concrete_struct->def->has_impl_for(concrete_proto);
     } else if (auto param = type.match_symbol<GenericParam>()) {
@@ -122,6 +124,20 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def) {
             case Primitive::ADDR:
             case Primitive::VOID: return false;
         }
+    } else {
+        return false;
+    }
+}
+
+bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> proto_def) {
+    // TODO: addition, subtraction, comparisons against address-like types.
+
+    if (pointer_type.base_type.is_symbol<sir::ProtoDef>()) {
+        return false;
+    }
+
+    if (proto_def.def->role == ProtoDef::Role::COMPARE) {
+        return proto_def.generic_args[0] == &pointer_type;
     } else {
         return false;
     }
