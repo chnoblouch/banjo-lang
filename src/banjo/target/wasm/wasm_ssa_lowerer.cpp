@@ -589,7 +589,14 @@ void WasmSSALowerer::lower_truncate(ssa::Instruction &instr) {
         emit({WasmOpcode::I32_WRAP_I64});
     }
 
-    // TODO: Actually truncate
+    // TODO: If the destination is signed, we can use `extend` instructions instead.
+    if (dst_size == 1) {
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0xFF)}});
+        emit({WasmOpcode::I32_AND});
+    } else if (dst_size == 2) {
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0xFFFF)}});
+        emit({WasmOpcode::I32_AND});
+    }
 
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
