@@ -1233,6 +1233,18 @@ sir::Expr SIRGenerator::generate_implicit_dot_expr(ASTNode *node) {
             .ast_node = rhs_node,
             .value = sir::COMPLETION_TOKEN_VALUE,
         };
+    } else if (rhs_node->type == AST_ERROR) {
+        rhs = sir::Ident{
+            .ast_node = rhs_node,
+            .value = sir::ERROR_TOKEN_VALUE,
+        };
+    } else {
+        // TODO: Proper error message
+
+        rhs = sir::Ident{
+            .ast_node = nullptr,
+            .value = "[error]"
+        };
     }
 
     return create(
