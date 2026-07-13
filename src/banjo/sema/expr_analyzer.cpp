@@ -39,21 +39,21 @@ ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, unsigned flags /* = 0x000
     flags{flags} {}
 
 Result ExprAnalyzer::analyze_value(sir::Expr &expr) {
-    Result result = analyze_value_uncoerced(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    Result result = Result::SUCCESS;
 
-    return ExprFinalizer(analyzer).finalize(expr);
+    RESULT_MERGE(result, analyze_value_uncoerced(expr));
+    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(expr));
+
+    return result;
 }
 
 Result ExprAnalyzer::analyze_value(sir::Expr &expr, sir::Expr expected_type) {
-    Result result = analyze_value_uncoerced(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    Result result = Result::SUCCESS;
 
-    return ExprFinalizer(analyzer).finalize_by_coercion(expr, expected_type);
+    RESULT_MERGE(result, analyze_value_uncoerced(expr));
+    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(expr, expected_type));
+
+    return result;
 }
 
 Result ExprAnalyzer::analyze_value_uncoerced(sir::Expr &expr) {
@@ -103,21 +103,21 @@ Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::analyze(sir::Expr &expr) {
-    Result result = analyze_uncoerced(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    Result result = Result::SUCCESS;
 
-    return ExprFinalizer(analyzer).finalize(expr);
+    RESULT_MERGE(result, analyze_uncoerced(expr));
+    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(expr));
+
+    return result;
 }
 
 Result ExprAnalyzer::analyze(sir::Expr &expr, sir::Expr expected_type) {
-    Result result = analyze_uncoerced(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    Result result = Result::SUCCESS;
 
-    return ExprFinalizer(analyzer).finalize_by_coercion(expr, expected_type);
+    RESULT_MERGE(result, analyze_uncoerced(expr));
+    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(expr, expected_type));
+
+    return result;
 }
 
 Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {

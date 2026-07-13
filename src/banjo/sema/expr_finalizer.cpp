@@ -880,6 +880,11 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     Result result = Result::SUCCESS;
     Result partial_result;
 
+    // TODO: We might be able to to some partial analysis in that case.
+    if (struct_literal.type.is<sir::Error>()) {
+        return Result::SUCCESS;
+    }
+
     // FIXME: What if this is not a struct def?
     sir::Concrete<sir::StructDef> concrete_struct = struct_literal.type.as_concrete<sir::StructDef>();
     sir::StructDef &struct_def = *concrete_struct.def;
@@ -893,11 +898,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
     std::unordered_map<sir::StructField *, sir::StructLiteralEntry *> initialized_fields;
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
-        for (sir::StructField *field : struct_def.fields) {
-            if (field->ident.value == entry.ident.value) {
-                entry.field = field;
-            }
-        }
+        entry.field = struct_def.find_field(entry.ident.value);
 
         if (!entry.field) {
             analyzer.report_generator.report_err_no_field(entry.ident, struct_def);

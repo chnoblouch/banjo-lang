@@ -229,19 +229,29 @@ ParseResult Parser::parse_list(
     NodeBuilder node = build_node();
     node.consume(); // Consume starting token
 
+    bool is_valid = true;
+
     while (true) {
         if (stream.get()->is(terminator)) {
             if (consume_terminator) {
                 node.consume();
             }
 
-            return node.build(type);
+            return {node.build(type), is_valid};
         } else {
             ParseResult result = element_parser();
             node.append_child(result.node);
 
             if (!result.is_valid) {
-                return {node.build(type), false};
+                if (stream.get()->is(TKN_COMMA)) {
+                    // If a comma is encountered after a failed element parsing attempt, assume that
+                    // only the current element is incomplete and continue parsing list elements.
+
+                    node.consume();
+                    is_valid = false;
+                } else {
+                    return {node.build(type), false};
+                }
             }
         }
 
