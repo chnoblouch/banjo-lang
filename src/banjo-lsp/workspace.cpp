@@ -52,6 +52,10 @@ std::vector<lang::SourceFile *> Workspace::update(const std::filesystem::path &f
     report_manager.reset();
 
     SourceFile *file = find_file(fs_path);
+    if (!file) {
+        return {};
+    }
+
     file->update_content(std::move(new_content));
     module_manager.reparse(file);
 
