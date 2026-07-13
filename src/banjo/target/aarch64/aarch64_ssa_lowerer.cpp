@@ -51,7 +51,7 @@ void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruc
 
     if (target_true.block == get_basic_block_iter().get_next()) {
         AArch64Condition condition = lower_condition(ssa::invert_comparison(comparison));
-        mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + (unsigned)condition;
+        mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + static_cast<unsigned>(condition);
 
         move_branch_args(target_false);
         emit({cmp_opcode, {m_cmp_lhs, m_cmp_rhs}});
@@ -59,7 +59,7 @@ void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruc
         move_branch_args(target_true);
     } else {
         AArch64Condition condition = lower_condition(comparison);
-        mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + (unsigned)condition;
+        mcode::Opcode branch_opcode = AArch64Opcode::B_EQ + static_cast<unsigned>(condition);
 
         move_branch_args(target_true);
         emit({cmp_opcode, {m_cmp_lhs, m_cmp_rhs}});

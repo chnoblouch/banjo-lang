@@ -1,9 +1,7 @@
 #ifndef BANJO_TARGET_AARCH64_CONDITION_H
 #define BANJO_TARGET_AARCH64_CONDITION_H
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 enum class AArch64Condition {
     EQ,
@@ -18,8 +16,6 @@ enum class AArch64Condition {
     LE,
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

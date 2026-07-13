@@ -170,6 +170,7 @@ private:
     void encode_maxss(mcode::Instruction &instr, mcode::Function *func);
     void encode_sqrtss(mcode::Instruction &instr, mcode::Function *func);
     void encode_ucomiss(mcode::Instruction &instr, mcode::Function *func);
+    void encode_ucomisd(mcode::Instruction &instr, mcode::Function *func);
     void encode_cvtss2sd(mcode::Instruction &instr, mcode::Function *func);
     void encode_cvtsd2ss(mcode::Instruction &instr, mcode::Function *func);
     void encode_cvtsi2ss(mcode::Instruction &instr, mcode::Function *func);

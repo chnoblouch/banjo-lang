@@ -1,13 +1,14 @@
 #include "x86_64_ssa_lowerer.hpp"
 
-#include "banjo/config/config.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/global.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/target/x86_64/ms_abi_calling_conv.hpp"
 #include "banjo/target/x86_64/sys_v_calling_conv.hpp"
+#include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/bit_operations.hpp"
@@ -42,7 +43,7 @@ void X8664SSALowerer::init_module(ssa::Module & /* mod */) {
     );
 }
 
-void X8664SSALowerer::init_func(ssa::Function & func) {
+void X8664SSALowerer::init_func(ssa::Function &func) {
     block_arg_tmps.clear();
 
     for (ssa::BasicBlock &block : func) {
@@ -459,11 +460,11 @@ void X8664SSALowerer::lower_xor(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_shl(ssa::Instruction &instr) {
-    emit_shift(instr, X8664Opcode::SHL);
+    lower_shift(X8664Opcode::SHL, instr);
 }
 
 void X8664SSALowerer::lower_shr(ssa::Instruction &instr) {
-    emit_shift(instr, X8664Opcode::SHR);
+    lower_shift(X8664Opcode::SHR, instr);
 }
 
 void X8664SSALowerer::lower_jmp(ssa::Instruction &instr) {
@@ -478,21 +479,13 @@ void X8664SSALowerer::lower_jmp(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_cjmp(ssa::Instruction &instr) {
-    emit_jcc(instr, [this, &instr]() {
-        ssa::VirtualRegister reg = get_func().next_virtual_reg();
-        append_mov_and_operation(X8664Opcode::CMP, reg, instr.get_operand(0), instr.get_operand(2));
-    });
+    lower_cond_branch(X8664Opcode::CMP, instr);
 }
 
 void X8664SSALowerer::lower_fcjmp(ssa::Instruction &instr) {
-    emit_jcc(instr, [this, &instr]() {
-        emit(
-            mcode::Instruction(
-                X8664Opcode::UCOMISS,
-                {lower_as_operand(instr.get_operand(0)), lower_as_operand(instr.get_operand(2))}
-            )
-        );
-    });
+    ssa::Type type = instr.get_operand(0).get_type();
+    bool is_64_bit = type.is_primitive(ssa::Primitive::F64);
+    lower_cond_branch(is_64_bit ? X8664Opcode::UCOMISD : X8664Opcode::UCOMISS, instr);
 }
 
 void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
@@ -533,7 +526,9 @@ void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
     emit(mcode::Instruction(X8664Opcode::CMP, {lower_as_operand(cmp_lhs), lower_as_operand(cmp_rhs)}));
     emit(mcode::Instruction(X8664Opcode::MOV, {tmp_op, lower_as_operand(val_true)}));
     emit(mcode::Instruction(X8664Opcode::MOV, {m_dst, lower_as_operand(val_false)}));
-    emit(mcode::Instruction(get_cmovcc_opcode(cmp), {m_dst, tmp_op}));
+    
+    mcode::Opcode cmovcc_opcode = X8664Opcode::CMOVCC + static_cast<unsigned>(lower_condition(cmp));
+    emit(mcode::Instruction(cmovcc_opcode, {m_dst, tmp_op}));
 }
 
 void X8664SSALowerer::lower_call(ssa::Instruction &instr) {
@@ -775,68 +770,81 @@ void X8664SSALowerer::copy_block_using_movs(ssa::Instruction &instr, unsigned si
     ASSERT(size == 0);
 }
 
-void X8664SSALowerer::emit_jcc(ssa::Instruction &instr, const std::function<void()> &comparison_emitter) {
-    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
-    ssa::BranchTarget &true_target = instr.get_operand(3).get_branch_target();
-    ssa::BranchTarget &false_target = instr.get_operand(4).get_branch_target();
+void X8664SSALowerer::lower_shift(mcode::Opcode opcode, ssa::Instruction &instr) {
+    unsigned size = get_size(instr.get_operand(0).get_type());
 
-    ssa::BasicBlockIter true_block_iter = true_target.block;
-    ssa::BasicBlockIter false_block_iter = false_target.block;
+    mcode::Register tmp_reg = create_reg();
+    mcode::Operand op0 = mcode::Operand::from_register(tmp_reg, size);
+    emit({X8664Opcode::MOV, {op0, lower_as_operand(instr.get_operand(0))}});
 
-    if (true_block_iter == get_basic_block_iter().get_next()) {
-        move_branch_args(false_target);
+    mcode::Operand op1;
 
-        comparison_emitter();
-        emit(
-            mcode::Instruction(
-                get_jcc_opcode(ssa::invert_comparison(comparison)),
-                {mcode::Operand::from_label(false_block_iter->get_label())}
-            )
-        );
-
-        move_branch_args(true_target);
+    if (instr.get_operand(1).is_int_immediate()) {
+        op1 = mcode::Operand::from_int_immediate(instr.get_operand(1).get_int_immediate(), 1);
     } else {
-        move_branch_args(true_target);
+        mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
+        mcode::Operand rcx8 = mcode::Operand::from_register(rcx, 8);
+        emit({X8664Opcode::MOV, {rcx8, lower_as_operand(instr.get_operand(1)).with_size(8)}});
+        op1 = mcode::Operand::from_register(rcx, 1);
+    }
 
-        comparison_emitter();
-        emit(
-            mcode::Instruction(get_jcc_opcode(comparison), {mcode::Operand::from_label(true_block_iter->get_label())})
-        );
+    emit({opcode, {op0, op1}});
 
-        move_branch_args(false_target);
+    mcode::Operand dst = map_vreg_dst(instr, size);
+    emit({X8664Opcode::MOV, {dst, op0}});
+}
 
-        if (false_block_iter != get_basic_block_iter().get_next()) {
-            emit(mcode::Instruction(X8664Opcode::JMP, {mcode::Operand::from_label(false_block_iter->get_label())}));
+void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr) {
+    ssa::Operand &lhs = instr.get_operand(0);
+    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
+    ssa::Operand &rhs = instr.get_operand(2);
+    ssa::BranchTarget &target_true = instr.get_operand(3).get_branch_target();
+    ssa::BranchTarget &target_false = instr.get_operand(4).get_branch_target();
+
+    mcode::Operand m_target_true = mcode::Operand::from_label(target_true.block->get_label());
+    mcode::Operand m_target_false = mcode::Operand::from_label(target_false.block->get_label());
+
+    if (target_true.block == get_basic_block_iter().get_next()) {
+        X8664Condition condition = lower_condition(ssa::invert_comparison(comparison));
+        mcode::Opcode branch_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
+
+        move_branch_args(target_false);
+        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs);
+        emit({branch_opcode, {m_target_false}});
+        move_branch_args(target_true);
+    } else {
+        X8664Condition condition = lower_condition(comparison);
+        mcode::Opcode branch_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
+
+        move_branch_args(target_true);
+        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs);
+        emit({branch_opcode, {m_target_true}});
+        move_branch_args(target_false);
+
+        if (target_false.block != get_basic_block_iter().get_next()) {
+            emit({X8664Opcode::JMP, {m_target_false}});
         }
     }
 }
 
-mcode::Opcode X8664SSALowerer::get_jcc_opcode(ssa::Comparison comparison) {
-    return X8664Opcode::JCC + get_condition_code(comparison);
-}
-
-mcode::Opcode X8664SSALowerer::get_cmovcc_opcode(ssa::Comparison comparison) {
-    return X8664Opcode::CMOVCC + get_condition_code(comparison);
-}
-
-unsigned X8664SSALowerer::get_condition_code(ssa::Comparison comparison) {
+X8664Condition X8664SSALowerer::lower_condition(ssa::Comparison comparison) {
     switch (comparison) {
-        case ssa::Comparison::EQ: return X8664ConditionCode::E;
-        case ssa::Comparison::NE: return X8664ConditionCode::NE;
-        case ssa::Comparison::UGT: return X8664ConditionCode::A;
-        case ssa::Comparison::UGE: return X8664ConditionCode::AE;
-        case ssa::Comparison::ULT: return X8664ConditionCode::B;
-        case ssa::Comparison::ULE: return X8664ConditionCode::BE;
-        case ssa::Comparison::SGT: return X8664ConditionCode::G;
-        case ssa::Comparison::SGE: return X8664ConditionCode::GE;
-        case ssa::Comparison::SLT: return X8664ConditionCode::L;
-        case ssa::Comparison::SLE: return X8664ConditionCode::LE;
-        case ssa::Comparison::FEQ: return X8664ConditionCode::E;
-        case ssa::Comparison::FNE: return X8664ConditionCode::NE;
-        case ssa::Comparison::FGT: return X8664ConditionCode::A;
-        case ssa::Comparison::FGE: return X8664ConditionCode::AE;
-        case ssa::Comparison::FLT: return X8664ConditionCode::B;
-        case ssa::Comparison::FLE: return X8664ConditionCode::BE;
+        case ssa::Comparison::EQ: return X8664Condition::E;
+        case ssa::Comparison::NE: return X8664Condition::NE;
+        case ssa::Comparison::UGT: return X8664Condition::A;
+        case ssa::Comparison::UGE: return X8664Condition::AE;
+        case ssa::Comparison::ULT: return X8664Condition::B;
+        case ssa::Comparison::ULE: return X8664Condition::BE;
+        case ssa::Comparison::SGT: return X8664Condition::G;
+        case ssa::Comparison::SGE: return X8664Condition::GE;
+        case ssa::Comparison::SLT: return X8664Condition::L;
+        case ssa::Comparison::SLE: return X8664Condition::LE;
+        case ssa::Comparison::FEQ: return X8664Condition::E;
+        case ssa::Comparison::FNE: return X8664Condition::NE;
+        case ssa::Comparison::FGT: return X8664Condition::A;
+        case ssa::Comparison::FGE: return X8664Condition::AE;
+        case ssa::Comparison::FLT: return X8664Condition::B;
+        case ssa::Comparison::FLE: return X8664Condition::BE;
     }
 }
 
@@ -848,7 +856,7 @@ void X8664SSALowerer::move_branch_args(ssa::BranchTarget &target) {
 
         unsigned size = get_size(arg.get_type());
         mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), size);
-        
+
         if (arg.is_int_immediate() && arg.get_int_immediate() == 0) {
             emit({X8664Opcode::XOR, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
         } else if (arg.is_fp_immediate() && arg.get_fp_immediate() == 0.0) {
@@ -860,32 +868,6 @@ void X8664SSALowerer::move_branch_args(ssa::BranchTarget &target) {
         }
     }
 }
-
-void X8664SSALowerer::emit_shift(ssa::Instruction &instr, mcode::Opcode opcode) {
-    unsigned size = get_size(instr.get_operand(0).get_type());
-
-    mcode::Register tmp_reg = create_reg();
-    mcode::Operand op0 = mcode::Operand::from_register(tmp_reg, size);
-    emit(mcode::Instruction(X8664Opcode::MOV, {op0, lower_as_operand(instr.get_operand(0))}));
-
-    mcode::Operand op1;
-
-    if (instr.get_operand(1).is_int_immediate()) {
-        op1 = mcode::Operand::from_int_immediate(instr.get_operand(1).get_int_immediate(), 1);
-    } else {
-        mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
-        mcode::Operand rcx8 = mcode::Operand::from_register(rcx, 8);
-        emit(mcode::Instruction(X8664Opcode::MOV, {rcx8, lower_as_operand(instr.get_operand(1)).with_size(8)}));
-        op1 = mcode::Operand::from_register(rcx, 1);
-    }
-
-    emit(mcode::Instruction(opcode, {op0, op1}));
-
-    mcode::Operand dst = map_vreg_dst(instr, size);
-    emit(mcode::Instruction(X8664Opcode::MOV, {dst, op0}));
-}
-
-// clang-format on
 
 mcode::Operand X8664SSALowerer::lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value) {
     unsigned size = get_size(value.get_type());

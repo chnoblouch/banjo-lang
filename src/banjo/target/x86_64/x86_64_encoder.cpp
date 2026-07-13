@@ -83,6 +83,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case MAXSS: encode_maxss(instr, func); break;
         case SQRTSS: encode_sqrtss(instr, func); break;
         case UCOMISS: encode_ucomiss(instr, func); break;
+        case UCOMISD: encode_ucomisd(instr, func); break;
         case CVTSS2SD: encode_cvtss2sd(instr, func); break;
         case CVTSD2SS: encode_cvtsd2ss(instr, func); break;
         case CVTSI2SS: encode_cvtsi2ss(instr, func); break;
@@ -557,6 +558,20 @@ void X8664Encoder::encode_ucomiss(mcode::Instruction &instr, mcode::Function *fu
     emit_modrm_sib(dst_r, src_roa);
 }
 
+void X8664Encoder::encode_ucomisd(mcode::Instruction &instr, mcode::Function *func) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+
+    RegCode dst_r = reg(dst);
+    RegOrAddr src_roa = roa(src, func);
+
+    emit_rex_rroa(4, dst_r, src_roa);
+    emit_opcode(0x66);
+    emit_opcode(0x0F);
+    emit_opcode(0x2E);
+    emit_modrm_sib(dst_r, src_roa);
+}
+
 void X8664Encoder::encode_cvtss2sd(mcode::Instruction &instr, mcode::Function *func) {
     encode_sse_cvt(instr, func, 0xF3, 0x5A, 0);
 }
@@ -1003,8 +1018,13 @@ void X8664Encoder::emit_modrm_rr(std::uint8_t reg, RegCode rm) {
 }
 
 void X8664Encoder::emit_modrm_sib(std::uint8_t reg, RegOrAddr roa) {
-    if (std::holds_alternative<RegCode>(roa)) emit_modrm_rr(reg, std::get<RegCode>(roa));
-    else if (std::holds_alternative<Address>(roa)) emit_mem_digit(std::get<Address>(roa), reg);
+    if (std::holds_alternative<RegCode>(roa)) {
+        emit_modrm_rr(reg, std::get<RegCode>(roa));
+    } else if (std::holds_alternative<Address>(roa)) {
+        emit_mem_digit(std::get<Address>(roa), reg);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void X8664Encoder::emit_16bit_prefix_if_required(std::uint8_t size) {

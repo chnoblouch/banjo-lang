@@ -6,6 +6,7 @@
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_addr_lowering.hpp"
+#include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_const_lowering.hpp"
 
 #include <functional>
@@ -93,12 +94,13 @@ public:
 
     mcode::Opcode get_move_opcode(ssa::Type type);
     void copy_block_using_movs(ssa::Instruction &instr, unsigned size);
-    void emit_jcc(ssa::Instruction &instr, const std::function<void()> &comparison_emitter);
-    mcode::Opcode get_jcc_opcode(ssa::Comparison comparison);
     mcode::Opcode get_cmovcc_opcode(ssa::Comparison comparison);
-    unsigned get_condition_code(ssa::Comparison comparison);
+    
+    void lower_shift(mcode::Opcode opcode, ssa::Instruction &instr);
+    void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
+
+    X8664Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);
-    void emit_shift(ssa::Instruction &instr, mcode::Opcode opcode);
 
     mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
     mcode::Operand lower_as_move(mcode::Operand m_dst, const ssa::Value &value);
