@@ -115,6 +115,8 @@ public:
     mcode::Operand lower_reg_as_operand(ssa::VirtualRegister src_reg, unsigned size, ValueLowerFlags flags);
     mcode::Operand lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags);
 
+    mcode::Operand build_addr_operand(AddrComponents addr);
+
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
 };

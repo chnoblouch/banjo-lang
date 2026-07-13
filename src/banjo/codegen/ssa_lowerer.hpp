@@ -44,6 +44,10 @@ protected:
         ssa::Operand &base;
         LargeInt const_offset;
         std::optional<RegOffset> reg_offset;
+
+        AddrComponents offset(unsigned offset) {
+            return AddrComponents{.base = base, .const_offset = const_offset + offset, .reg_offset = reg_offset};
+        }
     };
 
     typedef std::unordered_map<ssa::BasicBlockIter, mcode::BasicBlockIter> BlockMap;
