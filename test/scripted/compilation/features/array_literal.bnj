@@ -38,6 +38,19 @@ func main() {
 }
 
 # test:subtest
+# test:output "2,1,4"
+
+func main() {
+    var slice: Slice[i32] = [1, 4];
+    
+    print(slice.length);
+    print(",");
+    print(slice[0]);
+    print(",");
+    print(slice[1]);
+}
+
+# test:subtest
 # test:compiles
 
 func main() {
@@ -49,4 +62,11 @@ func main() {
 
 func main() {
     var array: [i32; 0] = [];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var array: Slice[i32] = [];
 }

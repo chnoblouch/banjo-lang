@@ -6,16 +6,10 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/specializer.hpp"
-#include "banjo/utils/macros.hpp"
 
 #include <unordered_map>
-#include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 ExprFinalizer::ExprFinalizer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -91,7 +85,10 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
     } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         return finalize_coercion(*unary_expr, expected_type);
     } else {
-        analyzer.report_generator.report_err_type_mismatch(expr, expected_type, type);
+        if (type) {
+            analyzer.report_generator.report_err_type_mismatch(expr, expected_type, type);
+        }
+
         return Result::ERROR;
     }
 }
@@ -311,6 +308,13 @@ Result ExprFinalizer::finalize_coercion(sir::ArrayLiteral &array_literal, sir::E
         array_literal.type = type;
         finalize_array_literal_elements(array_literal, element_type);
         create_std_array(array_literal, element_type, out_expr);
+        return Result::SUCCESS;
+    } else if (auto concrete_struct = type.match_specialization(*analyzer.std_slice_def)) {
+        sir::Expr element_type = concrete_struct->generic_args[0];
+
+        array_literal.type = type;
+        finalize_array_literal_elements(array_literal, element_type);
+        create_std_slice(array_literal, element_type, out_expr);
         return Result::SUCCESS;
     } else if (auto static_array_type = type.match<sir::StaticArrayType>()) {
         array_literal.type = type;
@@ -723,11 +727,63 @@ void ExprFinalizer::create_std_array(
     );
 
     sir::StructDef &array_type = *analyzer.std_array_def;
-    std::span<sir::Expr> generic_args = analyzer.create_array({element_type});
 
     sir::Concrete<sir::FuncDef> concrete_func{
         .def = &array_type.block.symbol_table->look_up_local("from").as<sir::FuncDef>(),
-        .generic_args = generic_args,
+        .generic_args = analyzer.create_array({element_type}),
+    };
+
+    std::span<sir::Expr> call_args = analyzer.create_array({data_pointer, length});
+    out_expr = sir::create_call(analyzer.get_mod(), concrete_func, call_args);
+}
+
+void ExprFinalizer::create_std_slice(
+    sir::ArrayLiteral &array_literal,
+    const sir::Expr &element_type,
+    sir::Expr &out_expr
+) {
+    array_literal.type = analyzer.create(
+        sir::StaticArrayType{
+            .ast_node = nullptr,
+            .base_type = element_type,
+            .length = analyzer.create(
+                sir::IntLiteral{
+                    .ast_node = nullptr,
+                    .type = nullptr,
+                    .value = static_cast<unsigned>(array_literal.values.size()),
+                }
+            ),
+        }
+    );
+
+    sir::Expr array_pointer = sir::create_unary_ref(analyzer.get_mod(), &array_literal);
+
+    sir::Expr data_pointer = analyzer.create(
+        sir::CastExpr{
+            .ast_node = nullptr,
+            .type = analyzer.create(
+                sir::PointerType{
+                    .ast_node = nullptr,
+                    .base_type = element_type,
+                }
+            ),
+            .value = array_pointer,
+        }
+    );
+
+    sir::Expr length = analyzer.create(
+        sir::IntLiteral{
+            .ast_node = nullptr,
+            .type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE),
+            .value = static_cast<unsigned>(array_literal.values.size()),
+        }
+    );
+
+    sir::StructDef &slice_type = *analyzer.std_slice_def;
+
+    sir::Concrete<sir::FuncDef> concrete_func{
+        .def = &slice_type.block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
+        .generic_args = analyzer.create_array({element_type}),
     };
 
     std::span<sir::Expr> call_args = analyzer.create_array({data_pointer, length});
@@ -979,8 +1035,4 @@ Result ExprFinalizer::finalize_map_literal_elements(
     return result;
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema

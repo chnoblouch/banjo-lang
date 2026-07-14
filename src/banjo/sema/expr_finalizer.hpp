@@ -4,11 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 class ExprFinalizer {
 
@@ -57,6 +53,7 @@ public:
     void create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void create_std_string_slice(sir::StringLiteral &string_literal, sir::Expr &out_expr);
     void create_std_array(sir::ArrayLiteral &array_literal, const sir::Expr &element_type, sir::Expr &out_expr);
+    void create_std_slice(sir::ArrayLiteral &array_literal, const sir::Expr &element_type, sir::Expr &out_expr);
     void create_std_optional_some(sir::Concrete<sir::StructDef> specialization, sir::Expr &inout_expr);
     void create_std_optional_none(sir::Concrete<sir::StructDef> specialization, sir::Expr &out_expr);
     void create_std_result_success(sir::Concrete<sir::StructDef> specialization, sir::Expr &inout_expr);
@@ -67,10 +64,6 @@ public:
     Result finalize_map_literal_elements(sir::MapLiteral &map_literal, sir::Expr key_type, sir::Expr value_type);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif
