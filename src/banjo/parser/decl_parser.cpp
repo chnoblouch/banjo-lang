@@ -505,7 +505,7 @@ ParseResult DeclParser::parse_type_constraint() {
     }
 
     while (stream.get()->is(TKN_PLUS)) {
-        stream.consume(); // Consume '+'
+        node.consume(); // Consume '+'
 
         ParseResult result = parser.parse_type();
         if (result.is_valid) {

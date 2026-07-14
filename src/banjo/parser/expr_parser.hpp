@@ -49,6 +49,7 @@ private:
     ParseResult parse_anon_struct_literal();
     ParseResult parse_closure();
     ParseResult parse_func_type();
+    ParseResult parse_self();
     ParseResult parse_meta_expr();
 
     ParseResult parse_dot_expr(ASTNode *lhs_node);

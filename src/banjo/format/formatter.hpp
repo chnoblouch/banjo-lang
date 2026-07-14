@@ -85,9 +85,11 @@ private:
     void format_typeless_struct_literal(ASTNode *node, WhitespaceKind whitespace);
     void format_map_literal_entry(ASTNode *node, WhitespaceKind whitespace);
     void format_closure_literal(ASTNode *node, WhitespaceKind whitespace);
+    void format_self_type(ASTNode *node, WhitespaceKind whitespace);
     void format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between = true);
     void format_unary_expr(ASTNode *node, WhitespaceKind whitespace, bool space_between = false);
     void format_call_or_bracket_expr(ASTNode *node, WhitespaceKind whitespace);
+    void format_ref_mut_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_static_array_type(ASTNode *node, WhitespaceKind whitespace);
     void format_func_type(ASTNode *node, WhitespaceKind whitespace);
     void format_closure_type(ASTNode *node, WhitespaceKind whitespace);
@@ -95,6 +97,7 @@ private:
 
     void format_param_list(ASTNode *node, WhitespaceKind whitespace);
     void format_param(ASTNode *node, WhitespaceKind whitespace);
+    void format_type_constraint(ASTNode *node, WhitespaceKind whitespace);
     void format_ref_return(ASTNode *node, WhitespaceKind whitespace);
     void format_generic_param(ASTNode *node, WhitespaceKind whitespace);
     void format_struct_literal_entry(ASTNode *node, WhitespaceKind whitespace);

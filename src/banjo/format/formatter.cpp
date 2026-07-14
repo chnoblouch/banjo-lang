@@ -119,6 +119,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_MAP_LITERAL_ENTRY: format_map_literal_entry(node, whitespace); break;
         case AST_CLOSURE_LITERAL: format_closure_literal(node, whitespace); break;
         case AST_SELF: format_single_token_node(node, whitespace); break;
+        case AST_SELF_TYPE: format_self_type(node, whitespace); break;
         case AST_ADD_EXPR: format_binary_expr(node, whitespace); break;
         case AST_SUB_EXPR: format_binary_expr(node, whitespace); break;
         case AST_MUL_EXPR: format_binary_expr(node, whitespace); break;
@@ -149,6 +150,9 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_IMPLICIT_DOT_EXPR: format_unary_expr(node, whitespace); break;
         case AST_BRACKET_EXPR: format_call_or_bracket_expr(node, whitespace); break;
         case AST_RANGE_EXPR: format_binary_expr(node, whitespace, false); break;
+        case AST_REF_EXPR: format_unary_expr(node, whitespace, true); break;
+        case AST_REF_MUT_EXPR: format_ref_mut_expr(node, whitespace); break;
+        case AST_SHARE_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_TRY_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_TUPLE_EXPR: format_list(node, whitespace); break;
         case AST_I8: format_single_token_node(node, whitespace); break;
@@ -171,6 +175,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_RESULT_TYPE: format_binary_expr(node, whitespace); break;
         case AST_CLOSURE_TYPE: format_closure_type(node, whitespace); break;
         case AST_PARAM_SEQUENCE_TYPE: format_single_token_node(node, whitespace); break;
+        case AST_TYPE_CONSTRAINT: format_type_constraint(node, whitespace); break;
         case AST_META_ACCESS: format_meta_access(node, whitespace); break;
         case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
         case AST_PARAM_LIST: format_param_list(node, whitespace); break;
@@ -975,6 +980,16 @@ void Formatter::format_closure_literal(ASTNode *node, WhitespaceKind whitespace)
     global_scope = was_global_scope;
 }
 
+void Formatter::format_self_type(ASTNode *node, WhitespaceKind whitespace) {
+    unsigned tkn_self = node->tokens[0];
+    unsigned tkn_dot = node->tokens[1];
+    unsigned tkn_type = node->tokens[2];
+
+    ensure_no_space_after(tkn_self);
+    ensure_no_space_after(tkn_dot);
+    ensure_whitespace_after(tkn_type, whitespace);
+}
+
 void Formatter::format_binary_expr(ASTNode *node, WhitespaceKind whitespace, bool spaces_between /* = true */) {
     ASTNode *lhs_node = node->first_child;
     ASTNode *rhs_node = lhs_node->next_sibling;
@@ -1011,6 +1026,17 @@ void Formatter::format_call_or_bracket_expr(ASTNode *node, WhitespaceKind whites
 
     format_node(callee_node, WhitespaceKind::NONE);
     format_node(args_node, whitespace);
+}
+
+void Formatter::format_ref_mut_expr(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *value_node = node->first_child;
+
+    unsigned tkn_ref = node->tokens[0];
+    unsigned tkn_mut = node->tokens[1];
+
+    ensure_space_after(tkn_ref);
+    ensure_space_after(tkn_mut);
+    format_node(value_node, whitespace);
 }
 
 void Formatter::format_static_array_type(ASTNode *node, WhitespaceKind whitespace) {
@@ -1129,6 +1155,16 @@ void Formatter::format_param(ASTNode *node, WhitespaceKind whitespace) {
         }
     } else {
         ASSERT_UNREACHABLE;
+    }
+}
+
+void Formatter::format_type_constraint(ASTNode *node, WhitespaceKind whitespace) {
+    for (unsigned i = 0; i < node->tokens.size(); i++) {
+        ensure_space_after(node->tokens[i]);
+    }
+
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        format_node(child, child->next_sibling ? WhitespaceKind::SPACE : whitespace);
     }
 }
 
