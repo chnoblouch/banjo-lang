@@ -29,6 +29,7 @@ private:
     void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
     void insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def);
     void analyze_generic_params(std::span<sir::GenericParam *> generic_params);
+    void analyze_generic_param(std::span<sir::GenericParam *> generic_params, unsigned index);
     void analyze_type_constraint(sir::TypeConstraint &constraint);
 };
 

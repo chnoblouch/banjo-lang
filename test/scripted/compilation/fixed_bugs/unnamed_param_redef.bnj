@@ -1,0 +1,3 @@
+# test:compiles
+
+native func f(i32, f32);

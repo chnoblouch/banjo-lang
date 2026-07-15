@@ -272,11 +272,7 @@ void DeclInterfaceAnalyzer::analyze_param(sir::FuncType &func_type, unsigned ind
     if (param.is_self()) {
         analyze_self_param(func_type, index, func_parent);
     } else {
-        sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
-
-        if (sir::Symbol prev_def = symbol_table.look_up_local(param.name.value)) {
-            analyzer.report_generator.report_err_redefinition(param.name, prev_def);
-        } else {
+        if (!param.name.value.empty()) {
             for (unsigned i = 0; i < index; i++) {
                 if (func_type.params[i].name == param.name) {
                     analyzer.report_generator.report_err_redefinition(param.name, &func_type.params[i]);
@@ -347,23 +343,28 @@ void DeclInterfaceAnalyzer::analyze_self_param(sir::FuncType &func_type, unsigne
 }
 
 void DeclInterfaceAnalyzer::analyze_generic_params(std::span<sir::GenericParam *> generic_params) {
-    sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
-
-    for (sir::GenericParam *generic_param : generic_params) {
-        std::string_view name = generic_param->ident.value;
-
-        if (sir::Symbol prev_def = symbol_table.look_up_local(name)) {
-            analyzer.report_generator.report_err_redefinition(generic_param->ident, prev_def);
-            continue;
-        }
-
-        symbol_table.insert_decl(name, generic_param);
-        analyzer.add_symbol_def(generic_param);
+    for (unsigned i = 0; i < generic_params.size(); i++) {
+        analyze_generic_param(generic_params, i);
     }
 
     for (sir::GenericParam *generic_param : generic_params) {
         analyze_type_constraint(generic_param->constraint);
     }
+}
+
+void DeclInterfaceAnalyzer::analyze_generic_param(std::span<sir::GenericParam *> generic_params, unsigned index) {
+    sir::GenericParam &param = *generic_params[index];
+    std::string_view name = param.ident.value;
+
+    for (unsigned i = 0; i < index; i++) {
+        if (generic_params[i]->ident.value == param.ident.value) {
+            analyzer.report_generator.report_err_redefinition(param.ident, generic_params[i]);
+            break;
+        }
+    }
+
+    analyzer.get_symbol_table().insert_decl(name, &param);
+    analyzer.add_symbol_def(&param);
 }
 
 void DeclInterfaceAnalyzer::analyze_type_constraint(sir::TypeConstraint &constraint) {

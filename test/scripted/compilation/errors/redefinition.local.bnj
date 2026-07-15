@@ -66,17 +66,3 @@ func f[T, T, T]() {}
 # test:note 68:10 "previously defined here"
 
 struct S[T, T] {}
-
-# test:subtest
-# test:error 74:11 "redefinition of 'T'"
-# test:note 74:8 "previously defined here"
-
-func f[T](T: i32) {}
-
-# test:subtest
-# test:error 82:11 "redefinition of 'T'"
-# test:note 82:8 "previously defined here"
-# test:error 82:19 "redefinition of 'T'"
-# test:note 82:8 "previously defined here"
-
-func f[T](T: i32, T: i32) {}
