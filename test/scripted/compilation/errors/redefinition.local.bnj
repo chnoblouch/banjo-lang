@@ -8,9 +8,75 @@ func main() {
 }
 
 # test:subtest
-# test:error 15:9 "redefinition of 'a'"
-# test:note 14:11 "previously defined here"
+# test:error 18:9 "redefinition of 'a'"
+# test:note 17:9 "previously defined here"
+# test:error 19:9 "redefinition of 'a'"
+# test:note 17:9 "previously defined here"
+
+func main() {
+    var a = 0;
+    var a = 1;
+    var a = 2;
+}
+
+# test:subtest
+# test:error 27:9 "redefinition of 'a'"
+# test:note 26:11 "previously defined here"
 
 func test(a: i32) {
     var a = 0;
 }
+
+# test:subtest
+# test:error 34:19 "redefinition of 'a'"
+# test:note 34:11 "previously defined here"
+
+func test(a: i32, a: i32) {}
+
+# test:subtest
+# test:error 42:19 "redefinition of 'a'"
+# test:note 42:11 "previously defined here"
+# test:error 42:27 "redefinition of 'a'"
+# test:note 42:11 "previously defined here"
+
+func test(a: i32, a: i32, a: i32) {}
+
+# test:subtest
+# test:error 48:26 "redefinition of 'a'"
+# test:note 48:18 "previously defined here"
+
+native func test(a: i32, a: i32);
+
+# test:subtest
+# test:error 54:11 "redefinition of 'T'"
+# test:note 54:8 "previously defined here"
+
+func f[T, T]() {}
+
+# test:subtest
+# test:error 62:11 "redefinition of 'T'"
+# test:note 62:8 "previously defined here"
+# test:error 62:14 "redefinition of 'T'"
+# test:note 62:8 "previously defined here"
+
+func f[T, T, T]() {}
+
+# test:subtest
+# test:error 68:13 "redefinition of 'T'"
+# test:note 68:10 "previously defined here"
+
+struct S[T, T] {}
+
+# test:subtest
+# test:error 74:11 "redefinition of 'T'"
+# test:note 74:8 "previously defined here"
+
+func f[T](T: i32) {}
+
+# test:subtest
+# test:error 82:11 "redefinition of 'T'"
+# test:note 82:8 "previously defined here"
+# test:error 82:19 "redefinition of 'T'"
+# test:note 82:8 "previously defined here"
+
+func f[T](T: i32, T: i32) {}

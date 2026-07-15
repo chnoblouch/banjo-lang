@@ -27,18 +27,18 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     analyze_generic_params(func_def.generic_params);
 
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
-        sir::Param &param = func_def.type.params[i];
-        analyzer.add_symbol_def(&param);
-
-        if (!(func_def.parent.is<sir::ProtoDef>() && func_def.is_method())) {
-            analyzer.get_symbol_table().insert_local(param.name.value, &param);
-        }
-
         if (analyzer.get_closure_ctx() && i == 0) {
             continue;
         }
 
-        analyze_param(param, i, func_def.parent);
+        analyze_param(func_def.type, i, func_def.parent);
+    }
+
+    for (sir::Param &param : func_def.type.params) {
+        if (!(func_def.parent.is<sir::ProtoDef>() && func_def.is_method())) {
+            analyzer.get_symbol_table().insert_local(param.name.value, &param);
+            analyzer.add_symbol_def(&param);
+        }
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
@@ -55,7 +55,7 @@ Result DeclInterfaceAnalyzer::analyze_func_decl(sir::FuncDecl &func_decl) {
     }
 
     for (unsigned i = 0; i < func_decl.type.params.size(); i++) {
-        analyze_param(func_decl.type.params[i], i, func_decl.parent);
+        analyze_param(func_decl.type, i, func_decl.parent);
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_decl.type.return_type);
@@ -78,8 +78,8 @@ Result DeclInterfaceAnalyzer::analyze_native_func_decl(sir::NativeFuncDecl &nati
         AttributeAnalyzer{analyzer}.analyze(*native_func_decl.attrs);
     }
 
-    for (sir::Param &param : native_func_decl.type.params) {
-        ExprAnalyzer(analyzer).analyze_type(param.type);
+    for (unsigned i = 0; i < native_func_decl.type.params.size(); i++) {
+        analyze_param(native_func_decl.type, i, &native_func_decl);
     }
 
     ExprAnalyzer(analyzer).analyze_type(native_func_decl.type.return_type);
@@ -262,76 +262,102 @@ Result DeclInterfaceAnalyzer::analyze_proto_def(sir::ProtoDef &proto_def) {
     return Result::SUCCESS;
 }
 
-void DeclInterfaceAnalyzer::analyze_param(sir::Param &param, unsigned index, sir::Symbol &func_parent) {
-    // TODO: Check for duplicate parameter names.
+void DeclInterfaceAnalyzer::analyze_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent) {
+    sir::Param &param = func_type.params[index];
 
     if (param.attrs) {
         AttributeAnalyzer{analyzer}.analyze(*param.attrs);
     }
 
     if (param.is_self()) {
-        if (!func_parent.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
-            analyzer.report_generator.report_err_self_not_allowed(param);
-            return;
-        }
+        analyze_self_param(func_type, index, func_parent);
+    } else {
+        sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
 
-        if (index != 0) {
-            analyzer.report_generator.report_err_self_not_first(param);
-            return;
-        }
-
-        sir::Expr base_type = nullptr;
-
-        if (auto struct_def = func_parent.match<sir::StructDef>()) {
-            if (struct_def->is_generic()) {
-                std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(struct_def->generic_params.size());
-
-                for (unsigned i = 0; i < args.size(); i++) {
-                    args[i] = analyzer.create(
-                        sir::SymbolExpr{
-                            .ast_node = nullptr,
-                            .type = nullptr,
-                            .symbol = struct_def->generic_params[i],
-                        }
-                    );
+        if (sir::Symbol prev_def = symbol_table.look_up_local(param.name.value)) {
+            analyzer.report_generator.report_err_redefinition(param.name, prev_def);
+        } else {
+            for (unsigned i = 0; i < index; i++) {
+                if (func_type.params[i].name == param.name) {
+                    analyzer.report_generator.report_err_redefinition(param.name, &func_type.params[i]);
+                    break;
                 }
-
-                base_type = analyzer.create(
-                    sir::SpecializeExpr{
-                        .ast_node = nullptr,
-                        .type = nullptr,
-                        .symbol = func_parent,
-                        .args = args,
-                    }
-                );
             }
         }
 
-        if (!base_type) {
+        ExprAnalyzer{analyzer}.analyze_type(param.type);
+    }
+}
+
+void DeclInterfaceAnalyzer::analyze_self_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent) {
+    sir::Param &param = func_type.params[index];
+
+    if (!func_parent.is_one_of<sir::StructDef, sir::UnionDef, sir::ProtoDef>()) {
+        analyzer.report_generator.report_err_self_not_allowed(param);
+        return;
+    }
+
+    if (index != 0) {
+        analyzer.report_generator.report_err_self_not_first(param);
+        return;
+    }
+
+    sir::Expr base_type = nullptr;
+
+    if (auto struct_def = func_parent.match<sir::StructDef>()) {
+        if (struct_def->is_generic()) {
+            std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(struct_def->generic_params.size());
+
+            for (unsigned i = 0; i < args.size(); i++) {
+                args[i] = analyzer.create(
+                    sir::SymbolExpr{
+                        .ast_node = nullptr,
+                        .type = nullptr,
+                        .symbol = struct_def->generic_params[i],
+                    }
+                );
+            }
+
             base_type = analyzer.create(
-                sir::SymbolExpr{
+                sir::SpecializeExpr{
                     .ast_node = nullptr,
                     .type = nullptr,
                     .symbol = func_parent,
+                    .args = args,
                 }
             );
         }
+    }
 
-        if (param.attrs && param.attrs->byval) {
-            param.type = base_type;
-            return;
-        }
+    if (!base_type) {
+        base_type = analyzer.create(
+            sir::SymbolExpr{
+                .ast_node = nullptr,
+                .type = nullptr,
+                .symbol = func_parent,
+            }
+        );
+    }
 
-        param.type.as<sir::ReferenceType>().base_type = base_type;
-        return;
+    if (param.attrs && param.attrs->byval) {
+        param.type = base_type;
     } else {
-        ExprAnalyzer(analyzer).analyze_type(param.type);
+        param.type.as<sir::ReferenceType>().base_type = base_type;
     }
 }
 
 void DeclInterfaceAnalyzer::analyze_generic_params(std::span<sir::GenericParam *> generic_params) {
+    sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
+
     for (sir::GenericParam *generic_param : generic_params) {
-        analyzer.get_symbol_table().insert_decl(generic_param->ident.value, generic_param);
+        std::string_view name = generic_param->ident.value;
+
+        if (sir::Symbol prev_def = symbol_table.look_up_local(name)) {
+            analyzer.report_generator.report_err_redefinition(generic_param->ident, prev_def);
+            continue;
+        }
+
+        symbol_table.insert_decl(name, generic_param);
         analyzer.add_symbol_def(generic_param);
     }
 

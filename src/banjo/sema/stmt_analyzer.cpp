@@ -553,11 +553,8 @@ void StmtAnalyzer::insert_symbol(sir::Ident &ident, sir::Symbol symbol) {
 }
 
 void StmtAnalyzer::insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ident, sir::Symbol symbol) {
-    auto &symbols = symbol_table.symbols;
-
-    auto iter = symbols.find(ident.value);
-    if (iter != symbols.end()) {
-        analyzer.report_generator.report_err_redefinition(ident, iter->second);
+    if (sir::Symbol prev_def = symbol_table.look_up_local(ident.value)) {
+        analyzer.report_generator.report_err_redefinition(ident, prev_def);
         return;
     }
 
