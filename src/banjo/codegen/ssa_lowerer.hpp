@@ -46,7 +46,11 @@ protected:
         std::optional<RegOffset> reg_offset;
 
         AddrComponents offset(unsigned offset) {
-            return AddrComponents{.base = base, .const_offset = const_offset + offset, .reg_offset = reg_offset};
+            return AddrComponents{
+                .base = base,
+                .const_offset = const_offset + offset,
+                .reg_offset = reg_offset,
+            };
         }
     };
 

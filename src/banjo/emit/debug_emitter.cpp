@@ -3,6 +3,7 @@
 #include "banjo/config/config.hpp"
 #include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/emit/nasm_emitter.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
@@ -274,10 +275,10 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
         }
 
         return str;
-    } else if (operand.is_stack_slot_offset()) {
-        const mcode::Operand::StackSlotOffset &offset = operand.get_stack_slot_offset();
-        std::string slot_name = get_stack_slot_name(basic_block.get_func(), offset.slot_index, instr_index);
-        return slot_name + " + " + std::to_string(offset.addend);
+    } else if (operand.is_stack_offset()) {
+        const mcode::StackAddress &stack_addr = operand.get_stack_offset();
+        std::string slot_name = get_stack_slot_name(basic_block.get_func(), stack_addr.slot, instr_index);
+        return slot_name + " + " + std::to_string(stack_addr.offset);
     } else if (operand.is_aarch64_left_shift()) {
         return "lsl #" + std::to_string(operand.get_aarch64_left_shift());
     } else if (operand.is_aarch64_condition()) {

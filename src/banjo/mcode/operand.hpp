@@ -8,28 +8,14 @@
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/utils/large_int.hpp"
+#include "banjo/mcode/stack_address.hpp"
 
 #include <string>
 #include <utility>
-#include <variant>
 
-namespace banjo {
-
-namespace mcode {
+namespace banjo::mcode {
 
 class Operand {
-
-public:
-    struct StackSlotOffset {
-        StackSlotID slot_index;
-        unsigned addend;
-
-        StackSlotOffset(StackSlotID slot_index) : slot_index(slot_index), addend(0) {}
-        StackSlotOffset(StackSlotID slot_index, unsigned addend) : slot_index(slot_index), addend(addend) {}
-
-        friend bool operator==(const StackSlotOffset &lhs, const StackSlotOffset &rhs) = default;
-        friend bool operator!=(const StackSlotOffset &lhs, const StackSlotOffset &rhs) = default;
-    };
 
 private:
     typedef std::variant<
@@ -42,7 +28,7 @@ private:
         Symbol,
         IndirectAddress,
         target::AArch64Address,
-        StackSlotOffset,
+        StackAddress,
         unsigned,
         target::AArch64Condition>
         InternalValue;
@@ -87,7 +73,7 @@ public:
         return Operand{InternalValue{std::in_place_index<8>, addr}, size};
     }
 
-    static Operand from_stack_slot_offset(StackSlotOffset offset, int size = 0) {
+    static Operand from_stack_offset(StackAddress offset, int size = 0) {
         return Operand{InternalValue{std::in_place_index<9>, offset}, size};
     }
 
@@ -114,7 +100,7 @@ public:
     bool is_symbol_deref() const { return value.index() == 6; }
     bool is_addr() const { return value.index() == 7; }
     bool is_aarch64_addr() const { return value.index() == 8; }
-    bool is_stack_slot_offset() const { return value.index() == 9; }
+    bool is_stack_offset() const { return value.index() == 9; }
     bool is_aarch64_left_shift() const { return value.index() == 10; }
     bool is_aarch64_condition() const { return value.index() == 11; }
 
@@ -130,7 +116,7 @@ public:
     Symbol get_deref_symbol() const { return std::get<6>(value); }
     IndirectAddress &get_addr() { return std::get<7>(value); }
     const target::AArch64Address &get_aarch64_addr() const { return std::get<8>(value); }
-    StackSlotOffset get_stack_slot_offset() const { return std::get<9>(value); }
+    StackAddress get_stack_offset() const { return std::get<9>(value); }
     unsigned get_aarch64_left_shift() const { return std::get<10>(value); }
     target::AArch64Condition get_aarch64_condition() const { return std::get<11>(value); }
 
@@ -152,8 +138,6 @@ public:
 
 typedef Operand Value;
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 #endif

@@ -1,5 +1,6 @@
 #include "aarch64_instr_merge_pass.hpp"
 
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -90,16 +91,16 @@ void AArch64InstrMergePass::try_merge_add(mcode::Instruction &instr, RegUsageMap
     RegUsage &producer_usage = usages[instr.get_operand(1).get_virtual_reg()];
     mcode::Instruction &producer = *producer_usage.producer;
 
-    if (producer.get_opcode() != AArch64Opcode::ADD || !producer.get_operand(2).is_stack_slot_offset()) {
+    if (producer.get_opcode() != AArch64Opcode::ADD || !producer.get_operand(2).is_stack_offset()) {
         return;
     }
 
-    mcode::Operand::StackSlotOffset new_offset = producer.get_operand(2).get_stack_slot_offset();
-    new_offset.addend += instr.get_operand(2).get_int_immediate().to_s32();
+    mcode::StackAddress new_addr = producer.get_operand(2).get_stack_offset();
+    new_addr.offset += instr.get_operand(2).get_int_immediate().to_s32();
 
     int size = instr.get_operand(2).get_size();
     instr.get_operand(1) = producer.get_operand(1);
-    instr.get_operand(2) = mcode::Operand::from_stack_slot_offset(new_offset, size);
+    instr.get_operand(2) = mcode::Operand::from_stack_offset(new_addr, size);
     producer_usage.num_consumers--;
 }
 

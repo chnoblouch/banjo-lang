@@ -2,6 +2,7 @@
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
@@ -601,12 +602,12 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
 
         text.add_symbol_use(symbol.name, lower_reloc(symbol.reloc));
         text.write_u32(params[1] | (1 << 31) | (r_lhs << 5) | r_dst);
-    } else if (m_rhs.is_stack_slot_offset()) {
-        mcode::Operand::StackSlotOffset offset = m_rhs.get_stack_slot_offset();
+    } else if (m_rhs.is_stack_offset()) {
+        mcode::StackAddress stack_addr = m_rhs.get_stack_offset();
 
         mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
-        mcode::StackSlot &slot = stack_frame.get_stack_slot(offset.slot_index);
-        std::uint64_t total_offset = slot.get_offset() + offset.addend;
+        mcode::StackSlot &slot = stack_frame.get_stack_slot(stack_addr.slot);
+        std::uint64_t total_offset = slot.get_offset() + stack_addr.offset;
 
         std::uint32_t imm = encode_imm(total_offset, 12, 0);
         text.write_u32(params[1] | (sf << 31) | (imm << 10) | (r_lhs << 5) | r_dst);

@@ -2,7 +2,9 @@
 
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/stack_frame.hpp"
+#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -82,7 +84,7 @@ mcode::Operand AArch64SSALowerer::lower_reg_val(ssa::VirtualRegister virtual_reg
 
         mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
         mcode::Operand m_sp = mcode::Operand::from_register(mcode::Register::from_physical(AArch64Register::SP), 8);
-        mcode::Operand m_offset = mcode::Operand::from_stack_slot_offset({stack_slot, 0});
+        mcode::Operand m_offset = mcode::Operand::from_stack_offset({stack_slot, 0});
         emit(mcode::Instruction(AArch64Opcode::ADD, {m_tmp, m_sp, m_offset}));
 
         return m_tmp;
@@ -115,11 +117,11 @@ mcode::Operand AArch64SSALowerer::lower_address(const ssa::Operand &operand) {
 
 mcode::Operand AArch64SSALowerer::offset_address(const mcode::Operand &m_operand, unsigned offset) {
     if (m_operand.is_stack_slot()) {
-        mcode::Operand::StackSlotOffset m_offset{m_operand.get_stack_slot(), offset};
+        mcode::StackAddress stack_addr{m_operand.get_stack_slot(), offset};
 
         mcode::Operand m_tmp = create_temp_value(8);
         mcode::Operand m_sp = mcode::Operand::from_register(mcode::Register::from_physical(AArch64Register::SP));
-        mcode::Operand m_addend = mcode::Operand::from_stack_slot_offset(m_offset);
+        mcode::Operand m_addend = mcode::Operand::from_stack_offset(stack_addr);
         emit({AArch64Opcode::ADD, {m_tmp, m_sp, m_addend}});
 
         return mcode::Operand::from_aarch64_addr(AArch64Address::new_base(m_tmp.get_register()), 8);
@@ -810,11 +812,11 @@ void AArch64SSALowerer::build_address(const mcode::Operand &m_dst, AddrComponent
         }
 
         if (stack_slot) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, offset.to_unsigned()};
+            mcode::StackAddress stack_addr{*stack_slot, offset.to_unsigned()};
 
             mcode::Register m_sp_reg = mcode::Register::from_physical(AArch64Register::SP);
             mcode::Operand m_sp = mcode::Operand::from_register(m_sp_reg, 8);
-            mcode::Operand m_offset = mcode::Operand::from_stack_slot_offset(stack_slot_offset, 0);
+            mcode::Operand m_offset = mcode::Operand::from_stack_offset(stack_addr, 0);
 
             // Note: Offsets that end up outside the range [0; 4096) during stack frame building will get fixed in the
             // stack offset fixup pass.

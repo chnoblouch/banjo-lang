@@ -25,7 +25,7 @@ public:
     mcode::Operand offset_address(const mcode::Operand &m_operand, unsigned offset);
 
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
-    
+
     void init_func(ssa::Function &func) override;
     void emit_block_prologue(ssa::BasicBlock &block) override;
 

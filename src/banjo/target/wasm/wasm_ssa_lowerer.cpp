@@ -2,6 +2,7 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/operand.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/symbol.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/comparison.hpp"
@@ -203,9 +204,9 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
         ssa::VirtualRegister base = addr.base.get_register();
 
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset.to_unsigned()};
+            mcode::StackAddress stack_addr{*stack_slot, addr.const_offset.to_unsigned()};
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            emit({load_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({load_opcode, {mcode::Operand::from_stack_offset(stack_addr)}});
         } else {
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
             emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
@@ -253,10 +254,10 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
         ssa::VirtualRegister base = addr.base.get_register();
 
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, addr.const_offset.to_unsigned()};
+            mcode::StackAddress stack_addr{*stack_slot, addr.const_offset.to_unsigned()};
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
             push_operand(value);
-            emit({store_opcode, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({store_opcode, {mcode::Operand::from_stack_offset(stack_addr)}});
         } else {
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
             push_operand(value);
@@ -491,7 +492,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
                 ASSERT_UNREACHABLE;
             }
 
-            emit({store_opcode, {mcode::Operand::from_stack_slot_offset(mcode::Operand::StackSlotOffset{slot_index})}});
+            emit({store_opcode, {mcode::Operand::from_stack_offset(mcode::StackAddress{slot_index})}});
         }
 
         for (unsigned i = 1; i < func_type.first_variadic_index + 1; i++) {
@@ -499,10 +500,10 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         }
 
         mcode::StackSlotID first_slot = stack_frame.get_call_arg_slot_indices()[0];
-        mcode::Operand::StackSlotOffset first_slot_offset{first_slot};
+        mcode::StackAddress first_slot_addr{first_slot};
 
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(first_slot_offset)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_offset(first_slot_addr)}});
         emit({WasmOpcode::I32_ADD});
     }
 
@@ -719,9 +720,9 @@ void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
         ssa::VirtualRegister base = addr.base.get_register();
 
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
+            mcode::StackAddress stack_addr{*stack_slot, const_offset};
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_offset(stack_addr)}});
             emit({WasmOpcode::I32_ADD});
         } else {
             unsigned local_index = vregs2locals.at(base);
@@ -772,9 +773,9 @@ void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
         ssa::VirtualRegister base = addr.base.get_register();
 
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot, const_offset};
+            mcode::StackAddress stack_addr{*stack_slot, const_offset};
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_offset(stack_addr)}});
             emit({WasmOpcode::I32_ADD});
         } else {
             unsigned local_index = vregs2locals.at(base);
@@ -815,9 +816,9 @@ void WasmSSALowerer::lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opc
 void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     if (operand.is_register()) {
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(operand.get_register())) {
-            mcode::Operand::StackSlotOffset stack_slot_offset{*stack_slot};
+            mcode::StackAddress stack_addr{*stack_slot};
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_slot_offset(stack_slot_offset)}});
+            emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_offset(stack_addr)}});
             emit({WasmOpcode::I32_ADD});
         } else {
             unsigned local_index = vregs2locals.at(operand.get_register());

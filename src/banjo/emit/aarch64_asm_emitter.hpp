@@ -2,6 +2,7 @@
 #define BANJO_EMIT_AARCH64_ASM_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/target/target_description.hpp"
 
 #include <unordered_map>
@@ -33,7 +34,7 @@ private:
     void emit_stack_slot(mcode::Function *func, int index);
     void emit_symbol(const mcode::Symbol &symbol);
     void emit_addr(const target::AArch64Address &addr);
-    void emit_stack_slot_offset(mcode::Function *func, mcode::Operand::StackSlotOffset offset);
+    void emit_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr);
     void emit_condition(target::AArch64Condition condition);
 };
 

@@ -2,6 +2,7 @@
 
 #include "banjo/emit/wasm/wasm_format.hpp"
 #include "banjo/mcode/function.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/target/wasm/wasm_mcode.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
 #include "banjo/utils/macros.hpp"
@@ -650,10 +651,10 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
         );
 
         write_reloc_placeholder_32(ctx.body);
-    } else if (operand.is_stack_slot_offset()) {
-        const mcode::Operand::StackSlotOffset &offset = operand.get_stack_slot_offset();
-        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(offset.slot_index);
-        LargeInt value = slot.get_offset() + offset.addend;
+    } else if (operand.is_stack_offset()) {
+        const mcode::StackAddress &stack_addr = operand.get_stack_offset();
+        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(stack_addr.slot);
+        LargeInt value = slot.get_offset() + stack_addr.offset;
 
         if (value > 0x7FFFFFFF) {
             value = value - 0xFFFFFFFF - 1;
@@ -680,10 +681,10 @@ void WasmBuilder::encode_i64_const(FuncContext &ctx, mcode::Instruction &instr) 
 void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr) {
     if (addr.is_int_immediate()) {
         ctx.body.write_uleb128(addr.get_int_immediate().to_u64());
-    } else if (addr.is_stack_slot_offset()) {
-        const mcode::Operand::StackSlotOffset &offset = addr.get_stack_slot_offset();
-        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(offset.slot_index);
-        ctx.body.write_uleb128(slot.get_offset() + offset.addend);
+    } else if (addr.is_stack_offset()) {
+        const mcode::StackAddress &stack_addr = addr.get_stack_offset();
+        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(stack_addr.slot);
+        ctx.body.write_uleb128(slot.get_offset() + stack_addr.offset);
     } else if (addr.is_symbol()) {
         ctx.relocs.push_back(
             WasmRelocation{

@@ -2,6 +2,7 @@
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
@@ -39,13 +40,13 @@ void AArch64StackAddrFixupPass::process_add_sub(mcode::BasicBlock &block, mcode:
     mcode::StackFrame &frame = block.get_func()->get_stack_frame();
 
     mcode::Operand &operand = instr->get_operand(2);
-    if (!operand.is_stack_slot_offset() || instr->get_operands().size() == 4) {
+    if (!operand.is_stack_offset() || instr->get_operands().size() == 4) {
         return;
     }
 
-    mcode::Operand::StackSlotOffset offset = operand.get_stack_slot_offset();
-    mcode::StackSlot &stack_slot = frame.get_stack_slot(offset.slot_index);
-    unsigned total_offset = stack_slot.get_offset() + offset.addend;
+    mcode::StackAddress stack_addr = operand.get_stack_offset();
+    mcode::StackSlot &stack_slot = frame.get_stack_slot(stack_addr.slot);
+    unsigned total_offset = stack_slot.get_offset() + stack_addr.offset;
 
     if (total_offset < 4096) {
         return;

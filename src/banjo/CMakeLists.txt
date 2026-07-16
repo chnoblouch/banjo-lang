@@ -86,6 +86,7 @@ add_library(banjo STATIC
     "mcode/module.hpp"
     "mcode/operand.hpp"
     "mcode/register.hpp"
+    "mcode/stack_address.hpp"
     "mcode/stack_frame.cpp"
     "mcode/stack_frame.hpp"
     "mcode/stack_regions.hpp"
