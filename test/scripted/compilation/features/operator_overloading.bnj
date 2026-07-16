@@ -1,5 +1,5 @@
 # test:subtest
-# test:output 5,-2
+# test:output "5,-2"
 
 struct Point {
     var x: i32;
@@ -14,16 +14,8 @@ struct Point {
 }
 
 func main() {
-    var a = Point {
-        x: 3,
-        y: 10,
-    };
-    
-    var b = Point {
-        x: 2,
-        y: -12,
-    };
-    
+    var a = Point { x: 3, y: 10 };
+    var b = Point { x: 2, y: -12 };
     var c = a + b;
     
     print(c.x);
@@ -32,7 +24,7 @@ func main() {
 }
 
 # test:subtest
-# test:output 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+# test:output "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18"
 
 struct S {
     func __add__(self, rhs: i32) -> i32 { return 0; }
@@ -99,7 +91,7 @@ func main() {
 }
 
 # test:subtest
-# test:output 0,1,2,3
+# test:output "0,1,2,3"
 
 struct S {
     func __add__(self, rhs: i32) -> i32 { return 0; }
@@ -121,7 +113,7 @@ func main() {
 }
 
 # test:subtest
-# test:output 0,1,2,3,4,5,6,7,8,9
+# test:output "0,1,2,3,4,5,6,7,8,9"
 
 struct S {
     var value: i32;
@@ -268,4 +260,39 @@ struct S {
 func main() {
     var a = S { f: 42 };
     print(a[]);
+}
+
+# test:subtest
+# test:output "5,-2;3.5,1.75"
+
+use std.protos.Add;
+
+struct Point[T: Add[T]] {
+    var x: T;
+    var y: T;
+    
+    func __add__(self, rhs: Point[T]) -> Point[T] {
+        return Point[T] {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        };
+    }
+}
+
+func main() {
+    var a1 = Point[i32] { x: 3, y: 10 };
+    var b1 = Point[i32] { x: 2, y: -12 };
+    var c1 = a1 + b1;
+
+    var a2 = Point[f32] { x: 1.5, y: 2.0 };
+    var b2 = Point[f32] { x: 2.0, y: -0.25 };
+    var c2 = a2 + b2;
+    
+    print(c1.x);
+    print(",");
+    print(c1.y);
+    print(";");
+    print(c2.x);
+    print(",");
+    print(c2.y);
 }

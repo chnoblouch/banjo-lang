@@ -34,6 +34,10 @@ bool satisfies_type_constraint_component(Expr component, Expr type, std::optiona
         concrete_proto.generic_args = specializer->specialize_expr_list(concrete_proto.generic_args);
     }
 
+    return implements(type, concrete_proto);
+}
+
+bool implements(Expr type, Concrete<ProtoDef> concrete_proto) {
     bool satisfied = false;
 
     if (auto primitive_type = type.match<PrimitiveType>()) {
@@ -54,10 +58,10 @@ bool satisfies_type_constraint_component(Expr component, Expr type, std::optiona
     return satisfied;
 }
 
-bool contains(TypeConstraint &constraint, Concrete<ProtoDef> proto_def) {
+bool contains(TypeConstraint &constraint, Concrete<ProtoDef> concrete_proto) {
     for (sir::Expr component : constraint.components) {
         if (auto other_proto = component.match_concrete<sir::ProtoDef>()) {
-            if (other_proto == proto_def) {
+            if (other_proto == concrete_proto) {
                 return true;
             }
         }
@@ -66,7 +70,7 @@ bool contains(TypeConstraint &constraint, Concrete<ProtoDef> proto_def) {
     return false;
 }
 
-bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def) {
+bool primitive_implements(Primitive primitive, Concrete<ProtoDef> concrete_proto) {
     std::initializer_list<ProtoDef::Role> numeric_protos{
         ProtoDef::Role::ORDER,
         ProtoDef::Role::ADD,
@@ -84,13 +88,13 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def) {
         ProtoDef::Role::SHR,
     };
 
-    if (proto_def.def->role == ProtoDef::Role::COMPARE) {
+    if (concrete_proto.def->role == ProtoDef::Role::COMPARE) {
         if (primitive == Primitive::VOID) {
             return false;
         }
 
-        return proto_def.generic_args[0].is_primitive_type(primitive);
-    } else if (Utils::is_one_of(proto_def.def->role, numeric_protos)) {
+        return concrete_proto.generic_args[0].is_primitive_type(primitive);
+    } else if (Utils::is_one_of(concrete_proto.def->role, numeric_protos)) {
         switch (primitive) {
             case Primitive::I8:
             case Primitive::I16:
@@ -102,12 +106,12 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def) {
             case Primitive::U64:
             case Primitive::USIZE:
             case Primitive::F32:
-            case Primitive::F64: return proto_def.generic_args[0].is_primitive_type(primitive);
+            case Primitive::F64: return concrete_proto.generic_args[0].is_primitive_type(primitive);
             case Primitive::BOOL:
             case Primitive::ADDR:
             case Primitive::VOID: return false;
         }
-    } else if (Utils::is_one_of(proto_def.def->role, int_protos)) {
+    } else if (Utils::is_one_of(concrete_proto.def->role, int_protos)) {
         switch (primitive) {
             case Primitive::I8:
             case Primitive::I16:
@@ -117,7 +121,7 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def) {
             case Primitive::U16:
             case Primitive::U32:
             case Primitive::U64:
-            case Primitive::USIZE: return proto_def.generic_args[0].is_primitive_type(primitive);
+            case Primitive::USIZE: return concrete_proto.generic_args[0].is_primitive_type(primitive);
             case Primitive::F32:
             case Primitive::F64:
             case Primitive::BOOL:
@@ -129,15 +133,15 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> proto_def) {
     }
 }
 
-bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> proto_def) {
+bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> concrete_proto) {
     // TODO: addition, subtraction, comparisons against address-like types.
 
     if (pointer_type.base_type.is_symbol<sir::ProtoDef>()) {
         return false;
     }
 
-    if (proto_def.def->role == ProtoDef::Role::COMPARE) {
-        return proto_def.generic_args[0] == &pointer_type;
+    if (concrete_proto.def->role == ProtoDef::Role::COMPARE) {
+        return concrete_proto.generic_args[0] == &pointer_type;
     } else {
         return false;
     }

@@ -74,20 +74,6 @@ Expr Expr::get_type() const {
     );
 }
 
-Expr Expr::get_resolved_type(std::optional<TypeNarrowing> type_narrowing) {
-    Expr type = get_type();
-
-    if (type_narrowing && !type_narrowing->constraint.is_symbol<sir::ProtoDef>()) {
-        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
-            if (type_narrowing->generic_param == generic_param) {
-                return type_narrowing->constraint;
-            }
-        }
-    }
-
-    return type;
-}
-
 ExprCategory Expr::get_category() const {
     if (is<MetaAccess>()) {
         return ExprCategory::META_ACCESS;
@@ -554,11 +540,6 @@ bool PseudoType::is_struct_by_default() const {
         case PseudoTypeKind::STRING_LITERAL: return true;
         default: return false;
     }
-}
-
-bool TypeGuardExpr::is_satisfied_by(sir::Expr type) const {
-    TypeConstraint constraint{.components{const_cast<sir::Expr *>(&this->constraint), 1}};
-    return satisfies_type_constraint(constraint, type);
 }
 
 Module &FuncDef::find_mod() const {

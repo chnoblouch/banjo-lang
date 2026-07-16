@@ -1,6 +1,8 @@
 #include "ssa_generator_context.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/specializer.hpp"
+#include "banjo/sir/type_constraints.hpp"
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
@@ -79,6 +81,21 @@ const sir::Resource &SSAGeneratorContext::resolve_resource(const sir::Resource &
     }
 
     return resource;
+}
+
+bool SSAGeneratorContext::is_type_guard_satisfied(const sir::TypeGuardExpr &type_guard, sir::Expr type) {
+    sir::TypeConstraint constraint{
+        .components{const_cast<sir::Expr *>(&type_guard.constraint), 1},
+    };
+
+    if (SpecializationCollector::Entry *specialization = get_specialization()) {
+        utils::Arena arena;
+        sir::Specializer specializer{arena, specialization->params, specialization->args};
+
+        return sir::satisfies_type_constraint(constraint, type, specializer);
+    } else {
+        return sir::satisfies_type_constraint(constraint, type);
+    }
 }
 
 ssa::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {

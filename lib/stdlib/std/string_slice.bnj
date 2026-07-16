@@ -1,7 +1,7 @@
-use std.{memory, convert, protos.{ToRepr, ToString}};
+use std.{memory, convert, protos.{Compare, ToRepr, ToString}};
 use libc as c;
 
-struct StringSlice: ToString, ToRepr {
+struct StringSlice: Compare[StringSlice], ToString, ToRepr {
     var data: *u8;
     var length: usize;
 
@@ -105,7 +105,7 @@ struct StringSlice: ToString, ToRepr {
         return none;
     }
 
-    pub func __eq__(self, rhs: StringSlice) -> bool {
+    pub func __eq__(self, ref rhs: StringSlice) -> bool {
         if self.length != rhs.length {
             return false;
         }
@@ -113,7 +113,7 @@ struct StringSlice: ToString, ToRepr {
         return memory.compare(self.data, rhs.data, self.length);
     }
 
-    pub func __ne__(self, rhs: StringSlice) -> bool {
+    pub func __ne__(self, ref rhs: StringSlice) -> bool {
         return !(self == rhs);
     }
 

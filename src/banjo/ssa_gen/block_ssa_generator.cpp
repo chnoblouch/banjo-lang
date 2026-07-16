@@ -1,9 +1,7 @@
 #include "block_ssa_generator.hpp"
 
-#include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_printer.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -15,7 +13,6 @@
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <iostream>
 #include <ranges>
 #include <utility>
 
@@ -161,7 +158,7 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
         if (auto type_guard_expr = sir_branch.condition.match<sir::TypeGuardExpr>()) {
             sir::Expr arg = ctx.get_generic_arg(*type_guard_expr->generic_param);
 
-            if (type_guard_expr->is_satisfied_by(arg)) {
+            if (ctx.is_type_guard_satisfied(*type_guard_expr, arg)) {
                 else_branch = i;
                 break;
             }

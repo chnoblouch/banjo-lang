@@ -885,7 +885,7 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
 
 StoredValue ExprSSAGenerator::generate_type_guard(const sir::TypeGuardExpr &type_guard_expr) {
     sir::Expr arg = ctx.get_generic_arg(*type_guard_expr.generic_param);
-    bool value = type_guard_expr.is_satisfied_by(arg);
+    bool value = ctx.is_type_guard_satisfied(type_guard_expr, arg);
     return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
 }
 

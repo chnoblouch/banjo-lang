@@ -1,10 +1,10 @@
 use std.{
     memory.{PointerMoveIter, PointerRefIter},
     convert,
-    protos.{ToRepr, ToString},
+    protos.{Compare, ToRepr, ToString},
 };
 
-struct Slice[T]: ToString, ToRepr {
+struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     var data: *T;
     var length: usize;
 
@@ -49,6 +49,29 @@ struct Slice[T]: ToString, ToRepr {
 
     pub func __mutiter__(mut self) -> PointerRefIter[T] {
         return PointerRefIter[T].new(self.data, self.data + self.length);
+    }
+
+    pub func __eq__(self, ref rhs: Slice[T]) -> bool {
+        if meta(T).impl_of(Compare[T]) {
+            if self.length != rhs.length {
+                return false;
+            }
+
+            for i in 0..self.length {
+                if self.data[i] != rhs.data[i] {
+                    return false;
+                }
+            }
+
+            return true;
+        } else {
+            panic("cannot compare slices (`T` does not implement `Compare[T]`)");
+            return false;
+        }
+    }
+
+    pub func __ne__(self, ref rhs: Slice[T]) -> bool {
+        return !(self == rhs);
     }
 
     pub func __str__(self) -> String {

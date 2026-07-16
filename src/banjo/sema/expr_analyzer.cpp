@@ -595,7 +595,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     sir::Expr lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
     sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
 
-    if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
+    if (lhs_type.is_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def;
 
         switch (binary_expr.op) {
@@ -619,34 +619,54 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             case sir::BinaryOp::OR: proto_def = nullptr; break;
         }
 
-        for (sir::Expr component : generic_param->constraint.components) {
-            if (auto concrete_proto = component.match_concrete<sir::ProtoDef>()) {
-                if (concrete_proto->def == proto_def && concrete_proto->generic_args[0] == rhs_type) {
-                    lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-                    rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
+        sir::GenericParam *g = nullptr;
+        std::span<sir::Expr> gc;
+        std::optional<sir::TypeNarrowing> type_narrowing = analyzer.scope_stack.top().type_narrowing;
 
-                    RESULT_RETURN_ON_ERROR(lhs_result)
-                    RESULT_RETURN_ON_ERROR(rhs_result)
-
-                    sir::Expr return_type = concrete_proto->def->func_decls[0].get_type().return_type;
-                    sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
-                    return_type = specializer.specialize_expr(return_type);
-
-                    out_expr = analyzer.create(
-                        sir::PlaceholderExpr{
-                            .ast_node = nullptr,
-                            .type = return_type,
-                            .kind = sir::PlaceholderExpr::BinaryExpr{
-                                .op = binary_expr.op,
-                                .lhs = binary_expr.lhs,
-                                .rhs = binary_expr.rhs,
-                            },
-                        }
-                    );
-
-                    return Result::SUCCESS;
+        // FIXME: TERRIBLE AND BROKEN HACK
+        if (type_narrowing) {
+            if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
+                if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
+                    if (type_narrowing->generic_param == generic_param) {
+                        g = generic_param;
+                        gc = generic_param->constraint.components;
+                        generic_param->constraint.components = {new sir::Expr{type_narrowing->constraint}, 1};
+                    }
                 }
             }
+        }
+
+        sir::Concrete<sir::ProtoDef> concrete_proto{proto_def, std::span{&rhs_type, 1}};
+        bool constraint_satisfied = sir::implements(lhs_type, concrete_proto);
+
+        if (g) {
+            g->constraint.components = gc;
+        }
+
+        if (constraint_satisfied) {
+            lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+            rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
+
+            RESULT_RETURN_ON_ERROR(lhs_result)
+            RESULT_RETURN_ON_ERROR(rhs_result)
+
+            sir::Expr return_type = concrete_proto.def->func_decls[0].get_type().return_type;
+            sir::Specializer specializer{analyzer.mod->trivial_arena, concrete_proto};
+            return_type = specializer.specialize_expr(return_type);
+
+            out_expr = analyzer.create(
+                sir::PlaceholderExpr{
+                    .ast_node = nullptr,
+                    .type = return_type,
+                    .kind = sir::PlaceholderExpr::BinaryExpr{
+                        .op = binary_expr.op,
+                        .lhs = binary_expr.lhs,
+                        .rhs = binary_expr.rhs,
+                    },
+                }
+            );
+
+            return Result::SUCCESS;
         }
     }
 
@@ -692,12 +712,10 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             case sir::PseudoTypeKind::MAP_LITERAL: is_operator_overload = true; break;
             case sir::PseudoTypeKind::SELF_TYPE: is_operator_overload = true; break;
         }
-    } else if (auto symbol_expr = lhs_type.match<sir::SymbolExpr>()) {
-        if (symbol_expr->symbol.is<sir::StructDef>()) {
-            is_operator_overload = true;
-        } else if (symbol_expr->symbol.is<sir::EnumDef>()) {
-            is_operator_built_in = true;
-        }
+    } else if (lhs_type.match_concrete<sir::StructDef>()) {
+        is_operator_overload = true;
+    } else if (lhs_type.is_symbol<sir::EnumDef>()) {
+        is_operator_built_in = true;
     } else if (lhs_type.is<sir::PointerType>()) {
         is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD ||
                                binary_expr.op == sir::BinaryOp::SUB;
@@ -709,9 +727,9 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             return Result::ERROR;
         }
 
-        sir::StructDef &struct_def = analyzer.get_resolved_type(binary_expr.lhs).as_symbol<sir::StructDef>();
+        auto concrete_struct = analyzer.get_resolved_type(binary_expr.lhs).match_concrete<sir::StructDef>();
         std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);
-        sir::Symbol symbol = struct_def.block.symbol_table->look_up_local(impl_name);
+        sir::Symbol symbol = concrete_struct->def->block.symbol_table->look_up_local(impl_name);
 
         if (!symbol) {
             analyzer.report_generator.report_err_operator_overload_not_found(binary_expr);
@@ -719,7 +737,8 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
 
         std::span<sir::Expr> call_args = analyzer.create_array<sir::Expr>({binary_expr.lhs, binary_expr.rhs});
-        return analyze_operator_overload_call(symbol, call_args, out_expr);
+        return analyze_operator_overload_call(symbol, call_args, out_expr, concrete_struct->generic_args);
+
     } else if (!is_operator_built_in) {
         analyzer.report_generator.report_err_cannot_apply_operator(binary_expr);
         return Result::ERROR;

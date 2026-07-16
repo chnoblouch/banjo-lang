@@ -1,6 +1,6 @@
-use std.{memory, protos.{Copy, ToRepr, ToString}};
+use std.{memory, protos.{Compare, Copy, ToRepr, ToString}};
 
-struct String: Copy, ToString, ToRepr {
+struct String: Copy, Compare[String], ToString, ToRepr {
     var slice: StringSlice;
     var capacity: usize;
 
@@ -122,17 +122,17 @@ struct String: Copy, ToString, ToRepr {
         return copy;
     }
 
-    pub func __eq__(self, rhs: StringSlice) -> bool {
-        return self.slice == rhs;
-    }
+    # pub func __eq__(self, rhs: StringSlice) -> bool {
+    #     return self.slice == rhs;
+    # }
 
     pub func __eq__(self, ref rhs: String) -> bool {
         return self.slice == rhs.slice;
     }
 
-    pub func __ne__(self, rhs: StringSlice) -> bool {
-        return self.slice != rhs;
-    }
+    # pub func __ne__(self, rhs: StringSlice) -> bool {
+    #     return self.slice != rhs;
+    # }
 
     pub func __ne__(self, ref rhs: String) -> bool {
         return self.slice != rhs.slice;

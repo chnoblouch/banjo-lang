@@ -267,7 +267,22 @@ Result SemanticAnalyzer::ensure_interface_analyzed(sir::Symbol symbol, ASTNode *
 }
 
 sir::Expr SemanticAnalyzer::get_resolved_type(sir::Expr value) {
-    return value.get_resolved_type(scope_stack.top().type_narrowing);
+    sir::Expr type = value.get_type();
+    std::optional<sir::TypeNarrowing> type_narrowing = scope_stack.top().type_narrowing;
+
+    if (type_narrowing) {
+        if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
+            return type;
+        }
+        
+        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+            if (type_narrowing->generic_param == generic_param) {
+                return type_narrowing->constraint;
+            }
+        }
+    }
+
+    return type;
 }
 
 unsigned SemanticAnalyzer::compute_size(sir::Expr type) {

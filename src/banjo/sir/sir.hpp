@@ -284,7 +284,6 @@ public:
     bool operator!=(const Expr &other) const { return !(*this == other); }
 
     Expr get_type() const;
-    Expr get_resolved_type(std::optional<TypeNarrowing> type_narrowing);
 
     ExprCategory get_category() const;
     bool is_type() const;
@@ -996,8 +995,6 @@ struct TypeGuardExpr {
     Expr type;
     GenericParam *generic_param;
     Expr constraint;
-
-    bool is_satisfied_by(sir::Expr type) const;
 };
 
 struct PlaceholderExpr {

@@ -2,10 +2,10 @@ use std.{
     memory.{PointerMoveIter, PointerRefIter},
     memory,
     convert,
-    protos.{Copy, ToRepr, ToString},
+    protos.{Copy, Compare, ToRepr, ToString},
 };
 
-struct Array[T]: Copy, ToString, ToRepr {
+struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
     var slice: Slice[T];
     var capacity: usize;
 
@@ -206,6 +206,14 @@ struct Array[T]: Copy, ToString, ToRepr {
             slice: Slice[T].new(data, length),
             capacity: length,
         };
+    }
+
+    pub func __eq__(self, ref other: Array[T]) -> bool {
+        return self.slice == other.slice;
+    }
+
+    pub func __ne__(self, ref other: Array[T]) -> bool {
+        return self.slice != other.slice;
     }
 
     pub func __str__(self) -> String {
