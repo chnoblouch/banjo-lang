@@ -669,7 +669,7 @@ void Printer::print_expr(const Expr &expr) {
         print_init_expr(*inner),
         print_move_expr(*inner),
         print_deinit_expr(*inner),
-        print_type_guard_expr(*inner),
+        print_type_check_expr(*inner),
         print_placeholder_expr(*inner),
         print_error(*inner)
     );
@@ -1076,11 +1076,11 @@ void Printer::print_deinit_expr(const DeinitExpr &deinit_expr) {
     END_OBJECT();
 }
 
-void Printer::print_type_guard_expr(const TypeGuardExpr &type_guard_expr) {
-    BEGIN_OBJECT("TypeGuardExpr");
-    PRINT_EXPR_FIELD("type", type_guard_expr.type);
-    PRINT_FIELD("generic_param", type_guard_expr.generic_param->ident.value);
-    PRINT_EXPR_FIELD("constraint", type_guard_expr.constraint);
+void Printer::print_type_check_expr(const TypeCheckExpr &type_check_expr) {
+    BEGIN_OBJECT("TypeCheckExpr");
+    PRINT_EXPR_FIELD("type", type_check_expr.type);
+    PRINT_EXPR_FIELD("type_to_check", type_check_expr.type_to_check);
+    PRINT_EXPR_FIELD("constraint", type_check_expr.constraint);
     END_OBJECT();
 }
 

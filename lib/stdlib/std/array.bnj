@@ -114,7 +114,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         var size = self.slice.length * meta(T).size;
         var data = memory.alloc(size) as *T;
 
-        if meta(T).impl_of(Copy) {
+        if T is Copy {
             for i in 0..self.slice.length {
                 data[i] = self.slice.data[i].copy();
             }

@@ -40,6 +40,7 @@ enum TokenType : std::uint8_t {
     TKN_MUT,
     TKN_SHARE,
     TKN_AS,
+    TKN_IS,
     TKN_IF,
     TKN_ELSE,
     TKN_SWITCH,

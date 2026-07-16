@@ -52,7 +52,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     }
 
     pub func __eq__(self, ref rhs: Slice[T]) -> bool {
-        if meta(T).impl_of(Compare[T]) {
+        if T is Compare[T] {
             if self.length != rhs.length {
                 return false;
             }

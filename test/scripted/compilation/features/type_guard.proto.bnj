@@ -1,0 +1,162 @@
+# test:subtest
+# test:output "0,1,0,2"
+
+proto P1 {}
+proto P2 {}
+
+struct S1: P1 {}
+struct S2: P2 {}
+struct S3: P1, P2 {}
+struct S4 {}
+
+func proto_id[T]() -> u32 {
+    if T is P1 {
+        return 0;
+    } else if T is P2 {
+        return 1;
+    } else {
+        return 2;
+    }
+}
+
+func main() {
+    print(proto_id[S1]());
+    print(',');
+    print(proto_id[S2]());
+    print(',');
+    print(proto_id[S3]());
+    print(',');
+    print(proto_id[S4]());
+}
+
+# test:subtest
+# test:output "s1,s2,n"
+
+proto P {
+    func m(self);
+}
+
+struct S1: P {
+    pub func m(self) {
+        print("s1");
+    }
+}
+
+struct S2: P {
+    pub func m(self) {
+        print("s2");
+    }
+}
+
+func f[T](arg: T) {
+    if T is P {
+        arg.m();
+    } else {
+        print('n');
+    }
+}
+
+func main() {
+    f(S1 {});
+    print(',');
+    f(S2 {});
+    print(',');
+    f(0);
+}
+
+# test:subtest
+# test:output "42,0,0"
+
+proto Value[T] {
+    func value(self) -> T;
+}
+
+struct IntStruct: Value[i32] {
+    pub func value(self) -> i32 {
+        return 42;
+    }
+}
+
+struct BoolStruct: Value[bool] {
+    pub func value(self) -> bool {
+        return false;
+    }
+}
+
+func get_int[T](arg: T) -> i32 {
+    if T is Value[i32] {
+        return arg.value();
+    } else {
+        return 0;
+    }
+}
+
+func main() {
+    print(get_int(IntStruct {}));
+    print(',');
+    print(get_int(BoolStruct {}));
+    print(',');
+    print(get_int(0.5));
+}
+
+# test:subtest
+# test:output "12,4.5,3,none"
+
+use std.protos.Add;
+
+struct IntWrapper: Add[IntWrapper] {
+    var value: i32;
+
+    pub func __add__(self, ref other: IntWrapper) -> IntWrapper {
+        return IntWrapper { value: self.value + other.value };
+    }
+}
+
+func try_add[T](a: T, b: T) -> ?T {
+    if T is Add[T] {
+        return a + b;
+    } else {
+        return none;
+    }
+}
+
+func main() {
+    print(try_add[i32](2, 10));
+    print(',');
+    print(try_add[f32](0.5, 4.0));
+    print(',');
+    print(try_add[IntWrapper](IntWrapper { value: -5 }, IntWrapper { value: 8 }).unwrap().value);
+    print(',');
+    print(try_add(true, false));
+}
+
+# test:subtest
+# test:output "false,true;true,false;true,true;false,false"
+
+use std.protos.Mul;
+
+proto P {}
+
+struct S1: P {}
+
+struct S2: P, Mul[S2] {
+    pub func __mul__(self, ref other: S2) -> S2 {
+        return S2 {};
+    }
+}
+
+func check_type[T]() {
+    print(T is P);
+    print(',');
+    print(T is Mul[T]);
+}
+
+func main() {
+    check_type[i32]();
+    print(';');
+    check_type[S1]();
+    print(';');
+    check_type[S2]();
+    print(';');
+    check_type[bool]();
+}

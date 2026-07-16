@@ -253,7 +253,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_init_expr(*inner),         // init_expr
         visit_move_expr(*inner),         // move_expr
         visit_deinit_expr(*inner),       // deinit_expr
-        SIR_VISIT_IGNORE,                // type_guard_expr (TODO)
+        SIR_VISIT_IGNORE,                // type_check_expr (TODO)
         visit_placeholder_expr(*inner),  // placeholder_expr
         SIR_VISIT_IMPOSSIBLE             // error
     )

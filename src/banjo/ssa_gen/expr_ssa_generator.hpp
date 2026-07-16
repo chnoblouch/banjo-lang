@@ -65,7 +65,7 @@ private:
     StoredValue generate_init_expr(const sir::InitExpr &init_expr, const StorageHints &hints);
     StoredValue generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints);
     StoredValue generate_deinit_expr(const sir::DeinitExpr &deinit_expr);
-    StoredValue generate_type_guard(const sir::TypeGuardExpr &type_guard_expr);
+    StoredValue generate_type_check(const sir::TypeCheckExpr &type_check_expr);
     StoredValue generate_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr, const StorageHints &hints);
 
     ssa::VirtualRegister generate_pointer_expr(

@@ -33,16 +33,16 @@ pub func to_string[T](ref value: T) -> String {
         return bool_to_string(value);
     } else if T == addr {
         return pointer_to_string(value);
+    } else if T is ToString {
+        return value.__str__();
+    } else if T is ToRepr {
+        return value.__repr__(0);
     } else if meta(T).is_pointer {
         return pointer_to_string(value);
     } else if meta(T).is_static_array {
         return static_array_to_repr(value, 0);
     } else if meta(T).is_tuple {
         return tuple_to_repr(value, 0);
-    } else if meta(T).impl_of(ToString) {
-        return value.__str__();
-    } else if meta(T).impl_of(ToRepr) {
-        return value.__repr__(0);
     } else if meta(T).is_struct {
         return struct_to_repr(value, 0);
     } else if meta(T).is_enum {
@@ -59,14 +59,14 @@ pub func to_repr[T](ref value: T) -> String {
 pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     if T == u8 {
         return "\'" + char_to_string(value as u8) + "\'";
-    } else if meta(T).impl_of(ToRepr) {
+    } else if T is ToRepr {
+        return value.__repr__(indent);
+    } else if T is ToRepr {
         return value.__repr__(indent);
     } else if meta(T).is_tuple {
         return tuple_to_repr(value, indent);
     } else if meta(T).is_struct {
         return struct_to_repr(value, indent);
-    } else if meta(T).impl_of(ToRepr) {
-        return value.__repr__(indent);
     } else {
         return to_string(value);
     }

@@ -654,7 +654,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_init_expr(*inner),
         return clone_move_expr(*inner),
         return clone_deinit_expr(*inner),
-        return clone_type_guard_expr(*inner),
+        return clone_type_check_expr(*inner),
         return clone_placeholder_expr(*inner),
         return clone_error(*inner)
     );
@@ -1151,13 +1151,13 @@ DeinitExpr *Cloner::clone_deinit_expr(const DeinitExpr &deinit_expr) {
     );
 }
 
-TypeGuardExpr *Cloner::clone_type_guard_expr(const TypeGuardExpr &type_guard_expr) {
+TypeCheckExpr *Cloner::clone_type_check_expr(const TypeCheckExpr &type_check_expr) {
     return mod.create(
-        TypeGuardExpr{
-            .ast_node = type_guard_expr.ast_node,
-            .type = clone_expr(type_guard_expr.type),
-            .generic_param = type_guard_expr.generic_param,
-            .constraint = clone_expr(type_guard_expr.constraint),
+        TypeCheckExpr{
+            .ast_node = type_check_expr.ast_node,
+            .type = clone_expr(type_check_expr.type),
+            .type_to_check = clone_expr(type_check_expr.type_to_check),
+            .constraint = clone_expr(type_check_expr.constraint),
         }
     );
 }

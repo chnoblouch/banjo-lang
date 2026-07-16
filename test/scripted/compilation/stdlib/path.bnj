@@ -118,7 +118,7 @@ func check_contains(paths: *Array[Path], path: StringSlice) {
     
     # FIXME: Iterating over dereferenced pointers to arrays.
     for i in 0..paths.length() {
-        if (*paths)[i].str() == path {
+        if (*paths)[i].str().slice() == path {
             found = true;
             break;
         }

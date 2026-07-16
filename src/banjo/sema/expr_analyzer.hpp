@@ -58,7 +58,7 @@ private:
     Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
 
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
-    Result create_type_guard(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+    Result create_type_check(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
     Result create_type_comparison(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
 
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
@@ -91,6 +91,7 @@ private:
     Result check_type_constraints(sir::BracketExpr &bracket_expr, std::span<sir::GenericParam *> params);
 
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
+    Result analyze_type_check_expr(sir::TypeCheckExpr &type_check_expr);
     Result analyze_meta_access(sir::MetaAccess &meta_access);
     Result analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr, bool in_call = false);
     Result analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, sir::Expr &out_expr);

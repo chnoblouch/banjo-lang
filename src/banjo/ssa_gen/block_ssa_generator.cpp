@@ -155,10 +155,8 @@ void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
     for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
         const sir::IfCondBranch &sir_branch = if_stmt.cond_branches[i];
 
-        if (auto type_guard_expr = sir_branch.condition.match<sir::TypeGuardExpr>()) {
-            sir::Expr arg = ctx.get_generic_arg(*type_guard_expr->generic_param);
-
-            if (ctx.is_type_guard_satisfied(*type_guard_expr, arg)) {
+        if (auto type_check_expr = sir_branch.condition.match<sir::TypeCheckExpr>()) {
+            if (ctx.is_type_check_satisfied(*type_check_expr)) {
                 else_branch = i;
                 break;
             }

@@ -118,6 +118,7 @@ private:
     sir::Expr generate_tuple_expr(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);
     sir::Expr generate_bracket_expr(ASTNode *node);
+    sir::Expr generate_type_check_expr(ASTNode *node);
     sir::Expr generate_primitive_type(ASTNode *node, sir::Primitive primitive);
     sir::Expr generate_static_array_type(ASTNode *node);
     sir::Expr generate_func_type(ASTNode *node);

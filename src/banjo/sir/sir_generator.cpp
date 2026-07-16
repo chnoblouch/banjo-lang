@@ -885,6 +885,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_IMPLICIT_DOT_EXPR: return generate_implicit_dot_expr(node);
         case AST_BRACKET_EXPR: return generate_bracket_expr(node);
         case AST_RANGE_EXPR: return generate_range_expr(node);
+        case AST_TYPE_CHECK_EXPR: return generate_type_check_expr(node);
         case AST_TRY_EXPR: return generate_try_expr(node);
         case AST_TUPLE_EXPR: return generate_tuple_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
@@ -1241,10 +1242,7 @@ sir::Expr SIRGenerator::generate_implicit_dot_expr(ASTNode *node) {
     } else {
         // TODO: Proper error message
 
-        rhs = sir::Ident{
-            .ast_node = nullptr,
-            .value = "[error]"
-        };
+        rhs = sir::Ident{.ast_node = nullptr, .value = "[error]"};
     }
 
     return create(
@@ -1312,6 +1310,20 @@ sir::Expr SIRGenerator::generate_star_expr(ASTNode *node) {
         sir::StarExpr{
             .ast_node = node,
             .value = generate_expr(value_node),
+        }
+    );
+}
+
+sir::Expr SIRGenerator::generate_type_check_expr(ASTNode *node) {
+    ASTNode *type_node = node->first_child;
+    ASTNode *constraint_type = type_node->next_sibling;
+
+    return create(
+        sir::TypeCheckExpr{
+            .ast_node = nullptr,
+            .type = nullptr,
+            .type_to_check = generate_expr(type_node),
+            .constraint = generate_expr(constraint_type),
         }
     );
 }

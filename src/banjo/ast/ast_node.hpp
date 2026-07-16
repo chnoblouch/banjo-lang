@@ -130,6 +130,7 @@ enum ASTNodeType : std::uint8_t {
     AST_TUPLE_EXPR,
     AST_BRACKET_EXPR,
     AST_PAREN_EXPR,
+    AST_TYPE_CHECK_EXPR,
     AST_I8,
     AST_I16,
     AST_I32,

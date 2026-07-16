@@ -83,9 +83,15 @@ const sir::Resource &SSAGeneratorContext::resolve_resource(const sir::Resource &
     return resource;
 }
 
-bool SSAGeneratorContext::is_type_guard_satisfied(const sir::TypeGuardExpr &type_guard, sir::Expr type) {
+bool SSAGeneratorContext::is_type_check_satisfied(const sir::TypeCheckExpr &type_check_expr) {
+    sir::Expr type = type_check_expr.type_to_check;
+
+    if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+        type = get_generic_arg(*generic_param);
+    }
+
     sir::TypeConstraint constraint{
-        .components{const_cast<sir::Expr *>(&type_guard.constraint), 1},
+        .components{const_cast<sir::Expr *>(&type_check_expr.constraint), 1},
     };
 
     if (SpecializationCollector::Entry *specialization = get_specialization()) {

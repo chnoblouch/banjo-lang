@@ -27,19 +27,19 @@ ParseResult ExprParser::parse_type() {
 
 ParseResult ExprParser::parse_range_level() {
     return parse_level(&ExprParser::parse_or_level, [](TokenType type) {
-        return type == TKN_DOT_DOT ? AST_RANGE_EXPR : AST_NONE_LITERAL;
+        return type == TKN_DOT_DOT ? AST_RANGE_EXPR : AST_INVALID;
     });
 }
 
 ParseResult ExprParser::parse_or_level() {
     return parse_level(&ExprParser::parse_and_level, [](TokenType type) {
-        return type == TKN_OR_OR ? AST_OR_EXPR : AST_NONE_LITERAL;
+        return type == TKN_OR_OR ? AST_OR_EXPR : AST_INVALID;
     });
 }
 
 ParseResult ExprParser::parse_and_level() {
     return parse_level(&ExprParser::parse_cmp_level, [](TokenType type) {
-        return type == TKN_AND_AND ? AST_AND_EXPR : AST_NONE_LITERAL;
+        return type == TKN_AND_AND ? AST_AND_EXPR : AST_INVALID;
     });
 }
 
@@ -52,26 +52,26 @@ ParseResult ExprParser::parse_cmp_level() {
             case TKN_LT: return AST_LT_EXPR;
             case TKN_GE: return AST_GE_EXPR;
             case TKN_LE: return AST_LE_EXPR;
-            default: return AST_NONE_LITERAL;
+            default: return AST_INVALID;
         }
     });
 }
 
 ParseResult ExprParser::parse_bit_or_level() {
     return parse_level(&ExprParser::parse_bit_xor_level, [](TokenType type) {
-        return type == TKN_OR ? AST_BIT_OR_EXPR : AST_NONE_LITERAL;
+        return type == TKN_OR ? AST_BIT_OR_EXPR : AST_INVALID;
     });
 }
 
 ParseResult ExprParser::parse_bit_xor_level() {
     return parse_level(&ExprParser::parse_bit_and_level, [](TokenType type) {
-        return type == TKN_CARET ? AST_BIT_XOR_EXPR : AST_NONE_LITERAL;
+        return type == TKN_CARET ? AST_BIT_XOR_EXPR : AST_INVALID;
     });
 }
 
 ParseResult ExprParser::parse_bit_and_level() {
     return parse_level(&ExprParser::parse_bit_shift_level, [](TokenType type) {
-        return type == TKN_AND ? AST_BIT_AND_EXPR : AST_NONE_LITERAL;
+        return type == TKN_AND ? AST_BIT_AND_EXPR : AST_INVALID;
     });
 }
 
@@ -80,7 +80,7 @@ ParseResult ExprParser::parse_bit_shift_level() {
         switch (type) {
             case TKN_SHL: return AST_SHL_EXPR;
             case TKN_SHR: return AST_SHR_EXPR;
-            default: return AST_NONE_LITERAL;
+            default: return AST_INVALID;
         }
     });
 }
@@ -90,7 +90,7 @@ ParseResult ExprParser::parse_add_level() {
         switch (type) {
             case TKN_PLUS: return AST_ADD_EXPR;
             case TKN_MINUS: return AST_SUB_EXPR;
-            default: return AST_NONE_LITERAL;
+            default: return AST_INVALID;
         }
     });
 }
@@ -101,32 +101,19 @@ ParseResult ExprParser::parse_mul_level() {
             case TKN_STAR: return AST_MUL_EXPR;
             case TKN_SLASH: return AST_DIV_EXPR;
             case TKN_PERCENT: return AST_MOD_EXPR;
-            default: return AST_NONE_LITERAL;
+            default: return AST_INVALID;
         }
     });
 }
 
 ParseResult ExprParser::parse_cast_level() {
-    ParseResult result = parse_result_level();
-    if (!result.is_valid) {
-        return result;
-    }
-
-    if (stream.get()->is(TKN_AS)) {
-        NodeBuilder cast_node = parser.build_node();
-        cast_node.append_child(result.node);
-        cast_node.consume(); // Consume 'as'
-
-        result = parser.parse_type();
-        if (!result.is_valid) {
-            return cast_node.build_error();
+    return parse_level(&ExprParser::parse_result_level, [](TokenType type) {
+        switch (type) {
+            case TKN_AS: return AST_CAST_EXPR;
+            case TKN_IS: return AST_TYPE_CHECK_EXPR;
+            default: return AST_INVALID;
         }
-
-        cast_node.append_child(result.node);
-        return cast_node.build_with_inferred_range(AST_CAST_EXPR);
-    } else {
-        return result;
-    }
+    });
 }
 
 ParseResult ExprParser::parse_result_level() {
@@ -559,7 +546,7 @@ ParseResult ExprParser::parse_level(
     ASTNode *current_node = result.node;
     ASTNodeType type = token_checker(stream.get()->type);
 
-    while (type != AST_NONE_LITERAL) {
+    while (type != AST_INVALID) {
         Token *token = stream.consume();
         unsigned token_index = stream.get_position() - 1;
 

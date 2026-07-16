@@ -78,7 +78,7 @@ struct MetaCallExpr;
 struct InitExpr;
 struct MoveExpr;
 struct DeinitExpr;
-struct TypeGuardExpr;
+struct TypeCheckExpr;
 struct PlaceholderExpr;
 struct VarStmt;
 struct AssignStmt;
@@ -213,7 +213,7 @@ class Expr {
         InitExpr *,         // 43
         MoveExpr *,         // 44
         DeinitExpr *,       // 45
-        TypeGuardExpr *,    // 46
+        TypeCheckExpr *,    // 46
         PlaceholderExpr *,  // 47
         Error *,            // 48
         std::nullptr_t>     // 49
@@ -990,10 +990,10 @@ struct DeinitExpr {
     Resource *resource;
 };
 
-struct TypeGuardExpr {
+struct TypeCheckExpr {
     ASTNode *ast_node;
     Expr type;
-    GenericParam *generic_param;
+    Expr type_to_check;
     Expr constraint;
 };
 

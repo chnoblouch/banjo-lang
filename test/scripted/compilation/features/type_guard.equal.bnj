@@ -66,3 +66,20 @@ func main() {
     print(',');
     print(type_id[u8](0));
 }
+
+# test:subtest
+# test:output "true,false;false,true;false,false"
+
+func check_type[T]() {
+    print(T == i32);
+    print(',');
+    print(T == f32);
+}
+
+func main() {
+    check_type[i32]();
+    print(';');
+    check_type[f32]();
+    print(';');
+    check_type[bool]();
+}

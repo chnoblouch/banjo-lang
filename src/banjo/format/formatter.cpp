@@ -103,6 +103,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_META_ELSE_BRANCH: format_else_branch(node, whitespace); break;
         case AST_META_FOR_STMT: format_meta_for_stmt(node, whitespace); break;
         case AST_PAREN_EXPR: format_paren_expr(node, whitespace); break;
+        case AST_TYPE_CHECK_EXPR: format_binary_expr(node, whitespace); break;
         case AST_INT_LITERAL: format_single_token_node(node, whitespace); break;
         case AST_FP_LITERAL: format_single_token_node(node, whitespace); break;
         case AST_CHAR_LITERAL: format_single_token_node(node, whitespace); break;

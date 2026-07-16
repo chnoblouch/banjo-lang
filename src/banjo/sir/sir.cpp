@@ -68,7 +68,7 @@ Expr Expr::get_type() const {
         return inner->type, // init_expr
         return inner->type, // move_expr
         return inner->type, // deinit_expr
-        return inner->type, // type_guard_expr
+        return inner->type, // type_check_expr
         return inner->type, // placeholder_expr
         return nullptr      // error
     );

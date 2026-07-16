@@ -120,7 +120,7 @@ public:
     sir::Expr resolve_if_generic(sir::Expr expr);
     ssa::Function &find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func);
     const sir::Resource &resolve_resource(const sir::Resource &resource);
-    bool is_type_guard_satisfied(const sir::TypeGuardExpr &type_guard, sir::Expr type);
+    bool is_type_check_satisfied(const sir::TypeCheckExpr &type_check_expr);
 
     ssa::Function *get_ssa_func() { return get_func_context().ssa_func; }
     ssa::BasicBlockIter get_ssa_block() { return get_func_context().ssa_block; }

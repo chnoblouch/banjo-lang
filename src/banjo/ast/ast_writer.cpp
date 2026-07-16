@@ -158,6 +158,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_TUPLE_EXPR: return "TUPLE_EXPR";
         case AST_BRACKET_EXPR: return "BRACKET_EXPR";
         case AST_PAREN_EXPR: return "PAREN_EXPR";
+        case AST_TYPE_CHECK_EXPR: return "AST_TYPE_CHECK_EXPR";
         case AST_I8: return "I8";
         case AST_I16: return "I16";
         case AST_I32: return "I32";

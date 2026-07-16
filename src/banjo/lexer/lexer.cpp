@@ -35,6 +35,7 @@ const std::map<std::string_view, TokenType> KEYWORDS{
     {"mut", TKN_MUT},
     {"share", TKN_SHARE},
     {"as", TKN_AS},
+    {"is", TKN_IS},
     {"if", TKN_IF},
     {"else", TKN_ELSE},
     {"switch", TKN_SWITCH},

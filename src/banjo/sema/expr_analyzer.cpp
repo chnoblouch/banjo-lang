@@ -183,7 +183,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                           // init_expr
         SIR_VISIT_IMPOSSIBLE,                           // move_expr
         SIR_VISIT_IMPOSSIBLE,                           // deinit_expr
-        SIR_VISIT_IMPOSSIBLE,                           // type_guard_expr
+        result = analyze_type_check_expr(*inner),       // type_check_expr
         SIR_VISIT_IMPOSSIBLE,                           // placeholder_expr
         result = Result::ERROR                          // error
     );
@@ -585,7 +585,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     }
 
     if (binary_expr.lhs.is_symbol<sir::GenericParam>() && binary_expr.rhs.is_type()) {
-        return create_type_guard(binary_expr, out_expr);
+        return create_type_check(binary_expr, out_expr);
     }
 
     if (binary_expr.lhs.is_type()) {
@@ -831,20 +831,22 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     return Result::SUCCESS;
 }
 
-Result ExprAnalyzer::create_type_guard(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
+Result ExprAnalyzer::create_type_check(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
     out_expr = analyzer.create(
-        sir::TypeGuardExpr{
+        sir::TypeCheckExpr{
             .ast_node = binary_expr.ast_node,
             .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
-            .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
+            .type_to_check = binary_expr.lhs,
             .constraint = binary_expr.rhs,
         }
     );
 
-    type_narrowing = sir::TypeNarrowing{
-        .generic_param = &binary_expr.lhs.as_symbol<sir::GenericParam>(),
-        .constraint = binary_expr.rhs,
-    };
+    if (auto generic_param = binary_expr.lhs.match_symbol<sir::GenericParam>()) {
+        type_narrowing = sir::TypeNarrowing{
+            .generic_param = generic_param,
+            .constraint = binary_expr.rhs,
+        };
+    }
 
     return Result::SUCCESS;
 }
@@ -2013,6 +2015,25 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
     return result;
 }
 
+Result ExprAnalyzer::analyze_type_check_expr(sir::TypeCheckExpr &type_check_expr) {
+    Result result = Result::SUCCESS;
+
+    RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(type_check_expr.type_to_check));
+    RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(type_check_expr.constraint));
+    RESULT_RETURN_ON_ERROR(result);
+
+    type_check_expr.type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL);
+
+    if (auto generic_param = type_check_expr.type_to_check.match_symbol<sir::GenericParam>()) {
+        type_narrowing = sir::TypeNarrowing{
+            .generic_param = generic_param,
+            .constraint = type_check_expr.constraint,
+        };
+    }
+
+    return Result::SUCCESS;
+}
+
 Result ExprAnalyzer::analyze_meta_access(sir::MetaAccess &meta_access) {
     return analyze(meta_access.expr);
 }
@@ -2102,30 +2123,8 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, s
 
     RESULT_RETURN_ON_ERROR(result);
 
-    if (meta_field_expr.field.value == "impl_of") {
-        sir::Expr expr = meta_field_expr.base.as<sir::MetaAccess>().expr;
-
-        out_expr = analyzer.create(
-            sir::TypeGuardExpr{
-                .ast_node = meta_call_expr.ast_node,
-                .type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL),
-                .generic_param = &expr.as_symbol<sir::GenericParam>(),
-                .constraint = meta_call_expr.args[0],
-            }
-        );
-
-        type_narrowing = sir::TypeNarrowing{
-            .generic_param = &expr.as_symbol<sir::GenericParam>(),
-            .constraint = meta_call_expr.args[0],
-        };
-
-        meta_call_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
-    } else {
-        analyzer.report_generator.report_err_invalid_meta_method(meta_call_expr);
-        return Result::ERROR;
-    }
-
-    return Result::SUCCESS;
+    analyzer.report_generator.report_err_invalid_meta_method(meta_call_expr);
+    return Result::ERROR;
 }
 
 Result ExprAnalyzer::analyze_completion_token() {

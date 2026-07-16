@@ -69,7 +69,7 @@ bool Comparison::compare(Expr lhs, Expr rhs) {
         return false,                                      // init_expr
         return false,                                      // move_expr
         return false,                                      // deinit_expr
-        return false,                                      // type_guard_expr
+        return false,                                      // type_check_expr
         return false,                                      // placeholder_expr
         return false                                       // error
     );

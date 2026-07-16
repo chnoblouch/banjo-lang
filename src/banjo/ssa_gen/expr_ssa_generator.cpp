@@ -96,7 +96,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
-        return generate_type_guard(*inner),                // type_guard_expr
+        return generate_type_check(*inner),                // type_check_expr
         return generate_placeholder_expr(*inner, hints),   // placeholder_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
@@ -883,9 +883,8 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
     return ssa_val;
 }
 
-StoredValue ExprSSAGenerator::generate_type_guard(const sir::TypeGuardExpr &type_guard_expr) {
-    sir::Expr arg = ctx.get_generic_arg(*type_guard_expr.generic_param);
-    bool value = ctx.is_type_guard_satisfied(type_guard_expr, arg);
+StoredValue ExprSSAGenerator::generate_type_check(const sir::TypeCheckExpr &type_check_expr) {
+    bool value = ctx.is_type_check_satisfied(type_check_expr);
     return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
 }
 
