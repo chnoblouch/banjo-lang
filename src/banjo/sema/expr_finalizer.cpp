@@ -938,68 +938,65 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
 
     // TODO: We might be able to to some partial analysis in that case.
     if (struct_literal.type.is<sir::Error>()) {
-        return Result::SUCCESS;
+        return Result::ERROR;
     }
 
-    // FIXME: What if this is not a struct def?
-    sir::Concrete<sir::StructDef> concrete_struct = struct_literal.type.as_concrete<sir::StructDef>();
-    sir::StructDef &struct_def = *concrete_struct.def;
+    if (auto concrete_struct = struct_literal.type.match_concrete<sir::StructDef>()) {
+        sir::StructDef &struct_def = *concrete_struct->def;
 
-    bool is_layout_overlapping = struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING;
+        bool is_layout_overlapping = struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING;
 
-    if (is_layout_overlapping && struct_literal.entries.size() != 1) {
-        analyzer.report_generator.report_err_struct_overlapping_not_one_field(struct_literal);
-    }
-
-    std::unordered_map<sir::StructField *, sir::StructLiteralEntry *> initialized_fields;
-
-    for (sir::StructLiteralEntry &entry : struct_literal.entries) {
-        entry.field = struct_def.find_field(entry.ident.value);
-
-        if (!entry.field) {
-            analyzer.report_generator.report_err_no_field(entry.ident, struct_def);
-            result = Result::ERROR;
-            continue;
+        if (is_layout_overlapping && struct_literal.entries.size() != 1) {
+            analyzer.report_generator.report_err_struct_overlapping_not_one_field(struct_literal);
         }
 
-        sir::Expr field_type = entry.field->type;
+        std::unordered_map<sir::StructField *, sir::StructLiteralEntry *> initialized_fields;
 
-        if (!concrete_struct.generic_args.empty()) {
-            sir::Specializer specializer{
-                analyzer.mod->trivial_arena,
-                struct_def.generic_params,
-                concrete_struct.generic_args,
-            };
+        for (sir::StructLiteralEntry &entry : struct_literal.entries) {
+            entry.field = struct_def.find_field(entry.ident.value);
 
-            field_type = specializer.specialize_expr(field_type);
+            if (!entry.field) {
+                analyzer.report_generator.report_err_no_field(entry.ident, struct_def);
+                result = Result::ERROR;
+                continue;
+            }
+
+            sir::Expr field_type = entry.field->type;
+
+            if (!concrete_struct->generic_args.empty()) {
+                sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_struct};
+                field_type = specializer.specialize_expr(field_type);
+            }
+
+            if (!is_layout_overlapping) {
+                auto prev_init = initialized_fields.find(entry.field);
+                if (prev_init != initialized_fields.end()) {
+                    analyzer.report_generator.report_err_duplicate_field(struct_literal, entry, *prev_init->second);
+                }
+
+                initialized_fields.insert({entry.field, &entry});
+            }
+
+            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, field_type);
+            if (partial_result != Result::SUCCESS) {
+                result = Result::ERROR;
+            }
+
+            analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
         }
 
         if (!is_layout_overlapping) {
-            auto prev_init = initialized_fields.find(entry.field);
-            if (prev_init != initialized_fields.end()) {
-                analyzer.report_generator.report_err_duplicate_field(struct_literal, entry, *prev_init->second);
-            }
-
-            initialized_fields.insert({entry.field, &entry});
-        }
-
-        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, field_type);
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
-
-        analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
-    }
-
-    if (!is_layout_overlapping) {
-        for (sir::StructField *field : struct_def.fields) {
-            if (!initialized_fields.contains(field)) {
-                analyzer.report_generator.report_err_missing_field(struct_literal, *field);
+            for (sir::StructField *field : struct_def.fields) {
+                if (!initialized_fields.contains(field)) {
+                    analyzer.report_generator.report_err_missing_field(struct_literal, *field);
+                }
             }
         }
-    }
 
-    return result;
+        return result;
+    } else {
+        return Result::ERROR;
+    }
 }
 
 Result ExprFinalizer::finalize_map_literal_elements(
