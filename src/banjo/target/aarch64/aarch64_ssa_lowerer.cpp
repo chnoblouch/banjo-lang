@@ -15,6 +15,7 @@
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <variant>
 
@@ -115,23 +116,31 @@ mcode::Operand AArch64SSALowerer::lower_address(AddrComponents addr, AddrUsage u
     if (is_stack_slot) {
         mcode::StackSlotID stack_slot = std::get<mcode::StackSlotID>(base);
         mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+        mcode::StackAddress stack_addr{stack_slot, addr.const_offset.to_unsigned()};
 
         if (usage == AddrUsage::MEMORY_ACCESS) {
-            ASSERT(!addr.reg_offset);
+            if (addr.reg_offset) {
+                // TODO: Support shifted register offsets (e.g. ldr x0, [x0, x1, lsl #2])
+                
+                mcode::Operand m_dst = create_temp_value(8);
+                mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
 
-            mcode::StackAddress stack_addr{stack_slot, addr.const_offset.to_unsigned()};
-            AArch64Address m_addr = AArch64Address::new_base_offset(sp, stack_addr);
-            return mcode::Operand::from_aarch64_addr(m_addr);
+                emit({AArch64Opcode::ADD, {m_dst, m_sp, mcode::Operand::from_stack_offset(stack_addr)}});
+                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
+
+                AArch64Address m_addr = AArch64Address::new_base(m_dst.get_register());
+                return mcode::Operand::from_aarch64_addr(m_addr, 8);
+            } else {
+                AArch64Address m_addr = AArch64Address::new_base_offset(sp, stack_addr);
+                return mcode::Operand::from_aarch64_addr(m_addr);
+            }
         } else if (usage == AddrUsage::ADDR_VALUE) {
             mcode::Operand m_dst = create_temp_value(8);
             mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
-            mcode::StackAddress stack_addr{stack_slot, addr.const_offset.to_unsigned()};
             emit({AArch64Opcode::ADD, {m_dst, m_sp, mcode::Operand::from_stack_offset(stack_addr)}});
 
             if (addr.reg_offset) {
-                mcode::Operand m_tmp = create_temp_value(8);
-                emit_add_scaled(m_tmp, m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
-                m_dst = m_tmp;
+                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
             }
 
             return m_dst;
@@ -142,36 +151,38 @@ mcode::Operand AArch64SSALowerer::lower_address(AddrComponents addr, AddrUsage u
         mcode::Register base_reg = std::get<mcode::Register>(base);
 
         if (usage == AddrUsage::MEMORY_ACCESS) {
-            ASSERT(!addr.reg_offset);
+            if (addr.reg_offset) {
+                // TODO: Support shifted register offsets (e.g. ldr x0, [x0, x1, lsl #2])
 
-            if (addr.const_offset == 0) {
-                AArch64Address m_addr = AArch64Address::new_base(base_reg);
+                mcode::Operand m_dst = mcode::Operand::from_register(base_reg, 8);
+
+                if (addr.const_offset != 0) {
+                    m_dst = emit_add_imm(m_dst, addr.const_offset);
+                }
+
+                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
+
+                AArch64Address m_addr = AArch64Address::new_base(m_dst.get_register());
                 return mcode::Operand::from_aarch64_addr(m_addr, 8);
             } else {
-                AArch64Address m_addr = AArch64Address::new_base_offset(base_reg, addr.const_offset.to_unsigned());
-                return mcode::Operand::from_aarch64_addr(m_addr, 8);
+                if (addr.const_offset == 0) {
+                    AArch64Address m_addr = AArch64Address::new_base(base_reg);
+                    return mcode::Operand::from_aarch64_addr(m_addr, 8);
+                } else {
+                    unsigned offset = addr.const_offset.to_unsigned();
+                    AArch64Address m_addr = AArch64Address::new_base_offset(base_reg, offset);
+                    return mcode::Operand::from_aarch64_addr(m_addr, 8);
+                }
             }
         } else if (usage == AddrUsage::ADDR_VALUE) {
             mcode::Operand m_dst = mcode::Operand::from_register(base_reg, 8);
 
             if (addr.const_offset != 0) {
-                mcode::Operand m_tmp = create_temp_value(8);
-
-                if (addr.const_offset >= 0 && addr.const_offset < 4096) {
-                    mcode::Operand m_addend = mcode::Operand::from_int_immediate(addr.const_offset, 8);
-                    emit({AArch64Opcode::ADD, {m_tmp, m_dst, m_addend}});
-                } else {
-                    mcode::Operand m_addend = move_int_into_register(addr.const_offset, 8);
-                    emit({AArch64Opcode::ADD, {m_tmp, m_dst, m_addend}});
-                }
-
-                m_dst = m_tmp;
+                m_dst = emit_add_imm(m_dst, addr.const_offset);
             }
 
             if (addr.reg_offset) {
-                mcode::Operand m_tmp = create_temp_value(8);
-                emit_add_scaled(m_tmp, m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
-                m_dst = m_tmp;
+                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
             }
 
             return m_dst;
@@ -967,12 +978,8 @@ mcode::Operand AArch64SSALowerer::lower_as_move_into_reg(mcode::Register reg, co
     return m_dst;
 }
 
-void AArch64SSALowerer::emit_add_scaled(
-    mcode::Operand m_dst,
-    mcode::Operand m_base,
-    mcode::Register reg,
-    unsigned scale
-) {
+mcode::Operand AArch64SSALowerer::emit_add_scaled(mcode::Operand m_base, mcode::Register reg, unsigned scale) {
+    mcode::Operand m_dst = create_temp_value(8);
     mcode::Operand m_offset = mcode::Operand::from_register(reg, 8);
     unsigned shift = 0;
 
@@ -992,11 +999,26 @@ void AArch64SSALowerer::emit_add_scaled(
         emit({AArch64Opcode::MUL, {m_offset_scaled, m_offset, m_scale}});
         emit({AArch64Opcode::ADD, {std::move(m_dst), std::move(m_base), m_offset_scaled}});
 
-        return;
+        return m_dst;
     }
 
     mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(shift);
     emit({AArch64Opcode::ADD, {std::move(m_dst), std::move(m_base), m_offset, m_shift}});
+    return m_dst;
+}
+
+mcode::Operand AArch64SSALowerer::emit_add_imm(mcode::Operand m_lhs, LargeInt immediate) {
+    mcode::Operand m_dst = create_temp_value(8);
+
+    if (immediate >= 0 && immediate < 4096) {
+        mcode::Operand m_addend = mcode::Operand::from_int_immediate(immediate, 8);
+        emit({AArch64Opcode::ADD, {std::move(m_dst), std::move(m_lhs), m_addend}});
+    } else {
+        mcode::Operand m_addend = move_int_into_register(immediate, 8);
+        emit({AArch64Opcode::ADD, {std::move(m_dst), std::move(m_lhs), m_addend}});
+    }
+
+    return m_dst;
 }
 
 } // namespace banjo::target

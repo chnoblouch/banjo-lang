@@ -26,6 +26,7 @@ public:
 
 public:
     mcode::Operand lower_value(const ssa::Operand &operand);
+
     mcode::Operand lower_address(ssa::Operand &operand, AddrUsage usage);
     mcode::Operand lower_address(AddrComponents addr, AddrUsage usage);
 
@@ -86,7 +87,8 @@ public:
     void move_branch_args(ssa::BranchTarget &target);
 
     mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
-    void emit_add_scaled(mcode::Operand m_dst, mcode::Operand m_base, mcode::Register reg, unsigned scale);
+    mcode::Operand emit_add_scaled(mcode::Operand m_base, mcode::Register reg, unsigned scale);
+    mcode::Operand emit_add_imm(mcode::Operand m_lhs, LargeInt immediate);
 };
 
 } // namespace banjo::target

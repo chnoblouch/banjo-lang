@@ -576,6 +576,7 @@ void SSALowerer::discard_use(ssa::VirtualRegister reg) {
 SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
     ssa::Operand *base = &addr;
     unsigned const_offset = 0;
+    std::optional<RegOffset> reg_offset;
 
     while (base->is_register()) {
         ssa::InstrIter producer = get_producer_globally(base->get_register());
@@ -591,6 +592,16 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
                 base = &producer->get_operand(0);
                 const_offset += get_size(base_type) * offset.get_int_immediate().to_s64();
                 discard_use(*producer->get_dest());
+            } else if (offset.is_register()) {
+                if (!reg_offset) {
+                    mcode::Register reg = mcode::Register::from_virtual(offset.get_register());
+
+                    base = &producer->get_operand(0);
+                    reg_offset = RegOffset{.reg = reg, .scale = get_size(base_type)};
+                    discard_use(*producer->get_dest());
+                } else {
+                    break;
+                }
             } else {
                 break;
             }
@@ -609,6 +620,7 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
     return AddrComponents{
         .base = *base,
         .const_offset = const_offset,
+        .reg_offset = reg_offset,
     };
 }
 
