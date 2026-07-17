@@ -16,8 +16,8 @@ using namespace mcode;
 using namespace codegen;
 
 #define IMMEDIATE(value, size) Operand::from_immediate(std::to_string(value), size)
-#define ADDRESS_BOS(base, offset, scale, size) Operand::from_indirect_addr({base, offset, scale}, size)
-#define ADDRESS_B(base, size) Operand::from_indirect_addr({base}, size)
+#define ADDRESS_BOS(base, offset, scale, size) Operand::from_x86_64_addr({base, offset, scale}, size)
+#define ADDRESS_B(base, size) Operand::from_x86_64_addr({base}, size)
 
 const Register RAX = Register::from_physical(X8664Register::RAX);
 const Register RSP = Register::from_physical(X8664Register::RSP);
@@ -110,7 +110,7 @@ Operand random_sse_reg() {
 
 Operand random_addr(unsigned size = 0) {
     Register reg = Register::from_physical(X8664Register::RAX + std::rand() % 16);
-    return Operand::from_addr(IndirectAddress(reg), size);
+    return Operand::from_x86_64_addr(X8664Address(reg), size);
 }
 
 Operand rax(unsigned size) {
@@ -330,7 +330,7 @@ int main(int, char *[]) {
             for (unsigned scale : std::vector<unsigned>{1, 2, 4, 8}) {
                 Register base_reg = Register::from_physical(base);
                 Register index_reg = Register::from_physical(index);
-                Operand addr = Operand::from_addr({base_reg, index_reg, (int)scale});
+                Operand addr = Operand::from_x86_64_addr({base_reg, index_reg, (int)scale});
                 assemble_instr({X8664Opcode::MOV, {random_gp_reg(8), addr}});
             }
         }

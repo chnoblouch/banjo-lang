@@ -1,14 +1,14 @@
 #ifndef BANJO_MCODE_OPERAND_H
 #define BANJO_MCODE_OPERAND_H
 
-#include "banjo/mcode/indirect_address.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/symbol.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
+#include "banjo/target/x86_64/x86_64_address.hpp"
 #include "banjo/utils/large_int.hpp"
-#include "banjo/mcode/stack_address.hpp"
 
 #include <string>
 #include <utility>
@@ -26,7 +26,7 @@ private:
         Symbol,
         std::string,
         Symbol,
-        IndirectAddress,
+        target::X8664Address,
         target::AArch64Address,
         StackAddress,
         unsigned,
@@ -65,7 +65,7 @@ public:
         return Operand{InternalValue{std::in_place_index<6>, std::move(symbol)}, size};
     }
 
-    static Operand from_addr(IndirectAddress addr, int size = 0) {
+    static Operand from_x86_64_addr(target::X8664Address addr, int size = 0) {
         return Operand{InternalValue{std::in_place_index<7>, addr}, size};
     }
 
@@ -98,7 +98,7 @@ public:
     bool is_symbol() const { return value.index() == 4; }
     bool is_label() const { return value.index() == 5; }
     bool is_symbol_deref() const { return value.index() == 6; }
-    bool is_addr() const { return value.index() == 7; }
+    bool is_x86_64_addr() const { return value.index() == 7; }
     bool is_aarch64_addr() const { return value.index() == 8; }
     bool is_stack_offset() const { return value.index() == 9; }
     bool is_aarch64_left_shift() const { return value.index() == 10; }
@@ -114,7 +114,7 @@ public:
     Symbol get_symbol() const { return std::get<4>(value); }
     std::string get_label() const { return std::get<5>(value); }
     Symbol get_deref_symbol() const { return std::get<6>(value); }
-    IndirectAddress &get_addr() { return std::get<7>(value); }
+    const target::X8664Address &get_x86_64_addr() const { return std::get<7>(value); }
     const target::AArch64Address &get_aarch64_addr() const { return std::get<8>(value); }
     StackAddress get_stack_offset() const { return std::get<9>(value); }
     unsigned get_aarch64_left_shift() const { return std::get<10>(value); }

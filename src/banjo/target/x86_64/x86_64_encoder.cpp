@@ -1165,7 +1165,7 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
         };
     }
 
-    mcode::IndirectAddress &machine_addr = operand.get_addr();
+    const X8664Address &machine_addr = operand.get_x86_64_addr();
 
     RegAddress addr = {
         .scale = 1,
@@ -1210,7 +1210,7 @@ bool X8664Encoder::is_imm(mcode::Operand &operand) {
 }
 
 bool X8664Encoder::is_addr(mcode::Operand &operand) {
-    return operand.is_addr() || operand.is_stack_slot() || operand.is_symbol_deref();
+    return operand.is_x86_64_addr() || operand.is_stack_slot() || operand.is_symbol_deref();
 }
 
 bool X8664Encoder::is_roa(mcode::Operand &operand) {

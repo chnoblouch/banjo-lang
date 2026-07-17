@@ -165,7 +165,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
         case CALL:
             if (instr.get_operand(0).is_register()) {
                 operands.push_back({instr.get_operand(0).get_register(), mcode::RegUsage::USE});
-            } else if (instr.get_operand(0).is_addr()) {
+            } else if (instr.get_operand(0).is_x86_64_addr()) {
                 collect_addr_regs(instr.get_operand(0), operands);
             }
 
@@ -350,13 +350,13 @@ void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usa
     
     if (operand.is_register()) {
         dst.push_back({.reg = operand.get_register(), .usage = usage});
-    } else if (operand.is_addr()) {
+    } else if (operand.is_x86_64_addr()) {
         collect_addr_regs(operand, dst);
     }
 }
 
 void X8664RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst) {
-    mcode::IndirectAddress &addr = operand.get_addr();
+    const X8664Address &addr = operand.get_x86_64_addr();
 
     if (addr.is_base_reg()) {
         dst.push_back({addr.get_base_reg(), mcode::RegUsage::USE});

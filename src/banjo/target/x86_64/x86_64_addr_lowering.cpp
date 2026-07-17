@@ -29,8 +29,8 @@ mcode::Operand X8664AddrLowering::lower_reg_addr(ssa::VirtualRegister vreg) {
     if (std::holds_alternative<mcode::Register>(m_vreg)) {
         return lower_vreg_addr(std::get<mcode::Register>(m_vreg));
     } else if (std::holds_alternative<mcode::StackSlotID>(m_vreg)) {
-        mcode::IndirectAddress m_addr(std::get<mcode::StackSlotID>(m_vreg));
-        return mcode::Operand::from_addr(m_addr, 8);
+        X8664Address m_addr(std::get<mcode::StackSlotID>(m_vreg));
+        return mcode::Operand::from_x86_64_addr(m_addr, 8);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -41,13 +41,13 @@ mcode::Operand X8664AddrLowering::lower_vreg_addr(mcode::Register reg) {
 
     if (producer->get_opcode() == ssa::Opcode::MEMBERPTR) {
         lowerer.discard_use(reg.get_virtual_reg());
-        return mcode::Operand::from_addr(calc_memberptr_addr(*producer), 8);
+        return mcode::Operand::from_x86_64_addr(calc_memberptr_addr(*producer), 8);
     } else if (producer->get_opcode() == ssa::Opcode::OFFSETPTR) {
         lowerer.discard_use(reg.get_virtual_reg());
-        return mcode::Operand::from_addr(calc_offsetptr_addr(*producer), 8);
+        return mcode::Operand::from_x86_64_addr(calc_offsetptr_addr(*producer), 8);
     }
 
-    return mcode::Operand::from_addr(mcode::IndirectAddress(reg), 8);
+    return mcode::Operand::from_x86_64_addr(X8664Address(reg), 8);
 }
 
 mcode::Operand X8664AddrLowering::lower_symbol_addr(const ssa::Operand &operand) {
@@ -67,12 +67,12 @@ mcode::Operand X8664AddrLowering::lower_symbol_addr(const ssa::Operand &operand)
     return lowerer.deref_symbol_addr(symbol, size);
 }
 
-mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &instr) {
+X8664Address X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &instr) {
     ssa::VirtualRegister base = instr.get_operand(0).get_register();
     ssa::Operand &operand = instr.get_operand(1);
     const ssa::Type &base_type = instr.get_operand(2).get_type();
 
-    mcode::IndirectAddress addr(lowerer.map_vreg(base), 0, 1);
+    X8664Address addr(lowerer.map_vreg(base), 0, 1);
 
     if (operand.is_int_immediate()) {
         unsigned int_offset = operand.get_int_immediate().to_s32();
@@ -119,14 +119,14 @@ mcode::IndirectAddress X8664AddrLowering::calc_offsetptr_addr(ssa::Instruction &
                 {mcode::Operand::from_register(tmp_reg, 8), mcode::Operand::from_register(offset_reg, 8)}
             ));
 
-            return mcode::IndirectAddress(tmp_reg);
+            return X8664Address(tmp_reg);
         }
     }
 
     return addr;
 }
 
-mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ssa::Instruction &instr) {
+X8664Address X8664AddrLowering::calc_memberptr_addr(ssa::Instruction &instr) {
     const ssa::Type &type = instr.get_operand(0).get_type();
     const ssa::Operand &base_operand = instr.get_operand(1);
     unsigned int_offset = instr.get_operand(2).get_int_immediate().to_u64();
@@ -145,7 +145,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ssa::Instruction &
                 lowerer.discard_use(base_operand.get_register());
             }
 
-            mcode::IndirectAddress addr = calc_memberptr_addr(*base_producer_iter);
+            X8664Address addr = calc_memberptr_addr(*base_producer_iter);
             addr.set_int_offset(addr.get_int_offset() + byte_offset);
             return addr;
         }
@@ -161,7 +161,7 @@ mcode::IndirectAddress X8664AddrLowering::calc_memberptr_addr(ssa::Instruction &
         base = base_reg;
     }
 
-    return mcode::IndirectAddress(base, byte_offset, 1);
+    return X8664Address(base, byte_offset, 1);
 }
 
 } // namespace target

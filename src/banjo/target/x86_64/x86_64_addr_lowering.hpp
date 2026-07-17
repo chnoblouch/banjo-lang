@@ -1,9 +1,9 @@
 #ifndef BANJO_TARGET_X86_64_ADDR_LOWERING_H
 #define BANJO_TARGET_X86_64_ADDR_LOWERING_H
 
+#include "banjo/mcode/operand.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
-#include "banjo/mcode/operand.hpp"
 
 namespace banjo {
 
@@ -24,10 +24,8 @@ public:
     mcode::Operand lower_vreg_addr(mcode::Register reg);
     mcode::Operand lower_symbol_addr(const ssa::Operand &operand);
 
-    mcode::IndirectAddress calc_offsetptr_addr(ssa::Instruction &instr);
-    mcode::IndirectAddress calc_memberptr_addr(ssa::Instruction &instr);
-
-private:
+    X8664Address calc_offsetptr_addr(ssa::Instruction &instr);
+    X8664Address calc_memberptr_addr(ssa::Instruction &instr);
 };
 
 } // namespace target

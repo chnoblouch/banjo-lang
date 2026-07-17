@@ -486,8 +486,8 @@ void RegAllocPass::try_replace(
         if ((mcode::VirtualReg)operand.get_virtual_reg() == virtual_reg) {
             operand = mcode::Operand::from_register(mcode::Register::from_physical(physical_reg), operand.get_size());
         }
-    } else if (operand.is_addr()) {
-        mcode::IndirectAddress &addr = operand.get_addr();
+    } else if (operand.is_x86_64_addr()) {
+        target::X8664Address addr = operand.get_x86_64_addr();
         mcode::Register reg = mcode::Register::from_virtual(virtual_reg);
 
         if (addr.is_base_reg() && addr.get_base_reg() == reg) {
@@ -497,6 +497,8 @@ void RegAllocPass::try_replace(
         if (addr.has_reg_offset() && addr.get_reg_offset() == reg) {
             addr.set_reg_offset(mcode::Register::from_physical(physical_reg));
         }
+
+        operand = mcode::Operand::from_x86_64_addr(addr, operand.get_size());
     } else if (operand.is_aarch64_addr()) {
         target::AArch64Address addr = operand.get_aarch64_addr();
         mcode::Register reg = mcode::Register::from_virtual(virtual_reg);

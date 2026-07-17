@@ -278,8 +278,8 @@ std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode:
     else if (operand.is_symbol()) return gen_symbol(operand.get_symbol());
     else if (operand.is_label()) return operand.get_label();
     else if (operand.is_symbol_deref()) return "[" + gen_symbol(operand.get_deref_symbol()) + "]";
-    else if (operand.is_addr()) {
-        mcode::IndirectAddress addr = operand.get_addr();
+    else if (operand.is_x86_64_addr()) {
+        const target::X8664Address &addr = operand.get_x86_64_addr();
 
         std::string base;
         if (addr.is_base_reg()) {
