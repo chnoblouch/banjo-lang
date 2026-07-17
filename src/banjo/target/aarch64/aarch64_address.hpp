@@ -23,16 +23,25 @@ public:
         BASE_OFFSET_SYMBOL,
     };
 
+    struct RegOffset {
+        mcode::Register reg;
+        unsigned shift;
+
+        RegOffset() : reg{mcode::Register::from_virtual(0)}, shift{0} {}
+        RegOffset(mcode::Register reg) : reg{reg}, shift{0} {}
+        RegOffset(mcode::Register reg, unsigned shift) : reg{reg}, shift{shift} {}
+
+        bool operator==(const RegOffset &other) const = default;
+        bool operator!=(const RegOffset &other) const = default;
+    };
+
 private:
     Type type;
     mcode::Register base;
 
-    union {
-        int offset_imm;
-        mcode::StackAddress offset_stack_addr{0, 0};
-        mcode::Register offset_reg;
-    };
-
+    int offset_imm;
+    mcode::StackAddress offset_stack_addr{0, 0};
+    RegOffset offset_reg;
     mcode::Symbol offset_symbol = mcode::Symbol("");
 
 public:
@@ -67,7 +76,7 @@ public:
         return addr;
     }
 
-    static AArch64Address new_base_offset(mcode::Register base, mcode::Register offset_reg) {
+    static AArch64Address new_base_offset(mcode::Register base, RegOffset offset_reg) {
         AArch64Address addr;
         addr.type = Type::BASE_OFFSET_REG;
         addr.base = base;
@@ -88,11 +97,11 @@ public:
     mcode::Register get_base() const { return base; }
     int get_offset_imm() const { return offset_imm; }
     mcode::StackAddress get_offset_stack_addr() const { return offset_stack_addr; }
-    mcode::Register get_offset_reg() const { return offset_reg; }
+    const RegOffset &get_offset_reg() const { return offset_reg; }
     const mcode::Symbol &get_offset_symbol() const { return offset_symbol; }
 
     void set_base(mcode::Register base) { this->base = base; }
-    void set_offset_reg(mcode::Register offset_reg) { this->offset_reg = offset_reg; }
+    void set_offset_reg(RegOffset offset_reg) { this->offset_reg = offset_reg; }
 
     friend bool operator==(const AArch64Address &lhs, const AArch64Address &rhs) {
         if (lhs.type != rhs.type || lhs.base != rhs.base) {

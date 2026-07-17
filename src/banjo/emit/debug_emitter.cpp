@@ -266,7 +266,12 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
             case target::AArch64Address::Type::BASE_OFFSET_REG:
                 str += get_reg_name(addr.get_base(), 8);
                 str += ", ";
-                str += get_reg_name(addr.get_offset_reg(), 8);
+                str += get_reg_name(addr.get_offset_reg().reg, 8);
+
+                if (addr.get_offset_reg().shift != 0) {
+                    str += ", lsl #" + std::to_string(addr.get_offset_reg().shift);
+                }
+
                 str += "]";
                 break;
             case target::AArch64Address::Type::BASE_OFFSET_SYMBOL:

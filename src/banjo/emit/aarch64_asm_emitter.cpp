@@ -282,7 +282,12 @@ void AArch64AsmEmitter::emit_addr(mcode::Function *func, const target::AArch64Ad
         case target::AArch64Address::Type::BASE_OFFSET_REG:
             emit_reg(addr.get_base().get_physical_reg(), 8);
             stream << ", ";
-            emit_reg(addr.get_offset_reg().get_physical_reg(), 8);
+            emit_reg(addr.get_offset_reg().reg.get_physical_reg(), 8);
+
+            if (addr.get_offset_reg().shift != 0) {
+                stream << ", lsl #" << addr.get_offset_reg().shift;
+            }
+
             stream << "]";
             break;
         case target::AArch64Address::Type::BASE_OFFSET_SYMBOL:

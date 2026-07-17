@@ -13,11 +13,6 @@ namespace banjo::target {
 class AArch64SSALowerer : public codegen::SSALowerer {
 
 private:
-    enum class AddrUsage {
-        ADDR_VALUE,    // Example: add r0, sp, #12
-        MEMORY_ACCESS, // Example: ldr r0, [sp, #12]
-    };
-
     unsigned next_const_index = 0;
     std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
 
@@ -26,9 +21,10 @@ public:
 
 public:
     mcode::Operand lower_value(const ssa::Operand &operand);
-
-    mcode::Operand lower_address(ssa::Operand &operand, AddrUsage usage);
-    mcode::Operand lower_address(AddrComponents addr, AddrUsage usage);
+    
+    mcode::Operand lower_addr_mem_access(AddrComponents addr, unsigned size);
+    mcode::Operand lower_addr_value(AddrComponents addr);
+    std::variant<mcode::Register, mcode::StackSlotID> lower_addr_base(ssa::Operand &base);
 
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 

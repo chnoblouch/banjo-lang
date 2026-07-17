@@ -7,6 +7,7 @@
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_slot.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/utils/timing.hpp"
 
 #include <iostream>
@@ -507,8 +508,13 @@ void RegAllocPass::try_replace(
             addr.set_base(mcode::Register::from_physical(physical_reg));
         }
 
-        if (addr.get_type() == target::AArch64Address::Type::BASE_OFFSET_REG && addr.get_offset_reg() == reg) {
-            addr.set_offset_reg(mcode::Register::from_physical(physical_reg));
+        if (addr.get_type() == target::AArch64Address::Type::BASE_OFFSET_REG && addr.get_offset_reg().reg == reg) {
+            target::AArch64Address::RegOffset new_offset{
+                mcode::Register::from_physical(physical_reg),
+                addr.get_offset_reg().shift,
+            };
+
+            addr.set_offset_reg(new_offset);
         }
 
         operand = mcode::Operand::from_aarch64_addr(addr, operand.get_size());

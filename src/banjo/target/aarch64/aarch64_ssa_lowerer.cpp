@@ -95,100 +95,116 @@ mcode::Operand AArch64SSALowerer::lower_reg_val(ssa::VirtualRegister virtual_reg
     }
 }
 
-mcode::Operand AArch64SSALowerer::lower_address(ssa::Operand &operand, AddrUsage usage) {
-    AddrComponents addr = collect_addr(operand);
-    return lower_address(addr, usage);
+mcode::Operand AArch64SSALowerer::lower_addr_mem_access(AddrComponents addr, unsigned size) {
+    std::variant<mcode::Register, mcode::StackSlotID> base = lower_addr_base(addr.base);
+    bool is_stack_slot = std::holds_alternative<mcode::StackSlotID>(base);
+
+    if (addr.reg_offset) {
+        mcode::Operand m_dst;
+
+        if (is_stack_slot) {
+            mcode::StackSlotID stack_slot = std::get<mcode::StackSlotID>(base);
+            mcode::StackAddress stack_addr{stack_slot, addr.const_offset.to_unsigned()};
+
+            mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+            mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
+
+            m_dst = create_temp_value(8);
+            emit({AArch64Opcode::ADD, {m_dst, m_sp, mcode::Operand::from_stack_offset(stack_addr)}});
+        } else {
+            mcode::Register base_reg = std::get<mcode::Register>(base);
+            mcode::Operand m_base = mcode::Operand::from_register(base_reg, 8);
+
+            if (addr.const_offset == 0) {
+                m_dst = m_base;
+            } else {
+                m_dst = emit_add_imm(m_base, addr.const_offset);
+            }
+        }
+
+        if (addr.reg_offset->scale == 1 || addr.reg_offset->scale == size) {
+            // Shifting the offset register is only encodable if the shift is equal to the size
+            // of the load/store. For example, the only allowed shift in
+            // `ldrh r0, [r1, r2, lsl #?]` is 2.
+
+            unsigned shift;
+
+            switch (addr.reg_offset->scale) {
+                case 1: shift = 0; break;
+                case 2: shift = 1; break;
+                case 4: shift = 2; break;
+                case 8: shift = 3; break;
+                default: ASSERT_UNREACHABLE;
+            }
+
+            AArch64Address::RegOffset reg_offset{addr.reg_offset->reg, shift};
+            AArch64Address m_addr = AArch64Address::new_base_offset(m_dst.get_register(), reg_offset);
+            return mcode::Operand::from_aarch64_addr(m_addr, 8);
+        } else {
+            m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
+            AArch64Address m_addr = AArch64Address::new_base(m_dst.get_register());
+            return mcode::Operand::from_aarch64_addr(m_addr, 8);
+        }
+    } else {
+        if (is_stack_slot) {
+            mcode::StackSlotID stack_slot = std::get<mcode::StackSlotID>(base);
+            mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+            mcode::StackAddress stack_addr{stack_slot, addr.const_offset.to_unsigned()};
+
+            AArch64Address m_addr = AArch64Address::new_base_offset(sp, stack_addr);
+            return mcode::Operand::from_aarch64_addr(m_addr);
+        } else {
+            mcode::Register base_reg = std::get<mcode::Register>(base);
+
+            if (addr.const_offset == 0) {
+                AArch64Address m_addr = AArch64Address::new_base(base_reg);
+                return mcode::Operand::from_aarch64_addr(m_addr, 8);
+            } else {
+                unsigned offset = addr.const_offset.to_unsigned();
+                AArch64Address m_addr = AArch64Address::new_base_offset(base_reg, offset);
+                return mcode::Operand::from_aarch64_addr(m_addr, 8);
+            }
+        }
+    }
 }
 
-mcode::Operand AArch64SSALowerer::lower_address(AddrComponents addr, AddrUsage usage) {
-    std::variant<mcode::Register, mcode::StackSlotID> base;
-
-    if (addr.base.is_register()) {
-        base = map_vreg(addr.base.get_register());
-    } else if (addr.base.is_symbol()) {
-        base = move_symbol_into_register(addr.base.get_symbol_name());
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-
+mcode::Operand AArch64SSALowerer::lower_addr_value(AddrComponents addr) {
+    std::variant<mcode::Register, mcode::StackSlotID> base = lower_addr_base(addr.base);
     bool is_stack_slot = std::holds_alternative<mcode::StackSlotID>(base);
+
+    mcode::Operand m_dst;
 
     if (is_stack_slot) {
         mcode::StackSlotID stack_slot = std::get<mcode::StackSlotID>(base);
         mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+        mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
         mcode::StackAddress stack_addr{stack_slot, addr.const_offset.to_unsigned()};
 
-        if (usage == AddrUsage::MEMORY_ACCESS) {
-            if (addr.reg_offset) {
-                // TODO: Support shifted register offsets (e.g. ldr x0, [x0, x1, lsl #2])
-                
-                mcode::Operand m_dst = create_temp_value(8);
-                mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
-
-                emit({AArch64Opcode::ADD, {m_dst, m_sp, mcode::Operand::from_stack_offset(stack_addr)}});
-                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
-
-                AArch64Address m_addr = AArch64Address::new_base(m_dst.get_register());
-                return mcode::Operand::from_aarch64_addr(m_addr, 8);
-            } else {
-                AArch64Address m_addr = AArch64Address::new_base_offset(sp, stack_addr);
-                return mcode::Operand::from_aarch64_addr(m_addr);
-            }
-        } else if (usage == AddrUsage::ADDR_VALUE) {
-            mcode::Operand m_dst = create_temp_value(8);
-            mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
-            emit({AArch64Opcode::ADD, {m_dst, m_sp, mcode::Operand::from_stack_offset(stack_addr)}});
-
-            if (addr.reg_offset) {
-                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
-            }
-
-            return m_dst;
-        } else {
-            ASSERT_UNREACHABLE;
-        }
+        m_dst = create_temp_value(8);
+        emit({AArch64Opcode::ADD, {m_dst, m_sp, mcode::Operand::from_stack_offset(stack_addr)}});
     } else {
         mcode::Register base_reg = std::get<mcode::Register>(base);
+        m_dst = mcode::Operand::from_register(base_reg, 8);
 
-        if (usage == AddrUsage::MEMORY_ACCESS) {
-            if (addr.reg_offset) {
-                // TODO: Support shifted register offsets (e.g. ldr x0, [x0, x1, lsl #2])
-
-                mcode::Operand m_dst = mcode::Operand::from_register(base_reg, 8);
-
-                if (addr.const_offset != 0) {
-                    m_dst = emit_add_imm(m_dst, addr.const_offset);
-                }
-
-                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
-
-                AArch64Address m_addr = AArch64Address::new_base(m_dst.get_register());
-                return mcode::Operand::from_aarch64_addr(m_addr, 8);
-            } else {
-                if (addr.const_offset == 0) {
-                    AArch64Address m_addr = AArch64Address::new_base(base_reg);
-                    return mcode::Operand::from_aarch64_addr(m_addr, 8);
-                } else {
-                    unsigned offset = addr.const_offset.to_unsigned();
-                    AArch64Address m_addr = AArch64Address::new_base_offset(base_reg, offset);
-                    return mcode::Operand::from_aarch64_addr(m_addr, 8);
-                }
-            }
-        } else if (usage == AddrUsage::ADDR_VALUE) {
-            mcode::Operand m_dst = mcode::Operand::from_register(base_reg, 8);
-
-            if (addr.const_offset != 0) {
-                m_dst = emit_add_imm(m_dst, addr.const_offset);
-            }
-
-            if (addr.reg_offset) {
-                m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
-            }
-
-            return m_dst;
-        } else {
-            ASSERT_UNREACHABLE;
+        if (addr.const_offset != 0) {
+            m_dst = emit_add_imm(m_dst, addr.const_offset);
         }
+    }
+
+    if (addr.reg_offset) {
+        m_dst = emit_add_scaled(m_dst, addr.reg_offset->reg, addr.reg_offset->scale);
+    }
+
+    return m_dst;
+}
+
+std::variant<mcode::Register, mcode::StackSlotID> AArch64SSALowerer::lower_addr_base(ssa::Operand &base) {
+    if (base.is_register()) {
+        return map_vreg(base.get_register());
+    } else if (base.is_symbol()) {
+        return move_symbol_into_register(base.get_symbol_name());
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
@@ -248,31 +264,31 @@ void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
     if (size == 1) {
-        emit({AArch64Opcode::LDRB, {m_dst, lower_address(addr, AddrUsage::MEMORY_ACCESS)}, flag});
+        emit({AArch64Opcode::LDRB, {m_dst, lower_addr_mem_access(addr, 1)}, flag});
     } else if (size == 2) {
-        emit({AArch64Opcode::LDRH, {m_dst, lower_address(addr, AddrUsage::MEMORY_ACCESS)}, flag});
+        emit({AArch64Opcode::LDRH, {m_dst, lower_addr_mem_access(addr, 2)}, flag});
     } else if (size == 3) {
         mcode::Operand m_reg0 = create_temp_value(4);
         mcode::Operand m_reg1 = create_temp_value(4);
 
-        emit({AArch64Opcode::LDRH, {m_reg0, lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::LDRB, {m_reg1, lower_address(addr.offset(2), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::LDRH, {m_reg0, lower_addr_mem_access(addr, 2)}});
+        emit({AArch64Opcode::LDRB, {m_reg1, lower_addr_mem_access(addr.offset(2), 1)}});
         emit({AArch64Opcode::ORR, {m_dst, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(16)}});
     } else if (size == 4) {
-        emit({AArch64Opcode::LDR, {m_dst, lower_address(addr, AddrUsage::MEMORY_ACCESS)}, flag});
+        emit({AArch64Opcode::LDR, {m_dst, lower_addr_mem_access(addr, 4)}, flag});
     } else if (size == 5) {
         mcode::Operand m_reg0 = create_temp_value(8);
         mcode::Operand m_reg1 = create_temp_value(8);
 
-        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::LDRB, {m_reg1.with_size(4), lower_address(addr.offset(4), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_addr_mem_access(addr, 4)}});
+        emit({AArch64Opcode::LDRB, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(4), 1)}});
         emit({AArch64Opcode::ORR, {m_dst, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(32)}});
     } else if (size == 6) {
         mcode::Operand m_reg0 = create_temp_value(8);
         mcode::Operand m_reg1 = create_temp_value(8);
 
-        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::LDRH, {m_reg1.with_size(4), lower_address(addr.offset(4), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_addr_mem_access(addr, 4)}});
+        emit({AArch64Opcode::LDRH, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
         emit({AArch64Opcode::ORR, {m_dst, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(32)}});
     } else if (size == 7) {
         mcode::Operand m_reg0 = create_temp_value(8);
@@ -280,13 +296,13 @@ void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
         mcode::Operand m_reg2 = create_temp_value(8);
         mcode::Operand m_reg3 = create_temp_value(8);
 
-        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::LDRH, {m_reg1.with_size(4), lower_address(addr.offset(4), AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::LDRB, {m_reg2.with_size(4), lower_address(addr.offset(6), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_addr_mem_access(addr, 4)}});
+        emit({AArch64Opcode::LDRH, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
+        emit({AArch64Opcode::LDRB, {m_reg2.with_size(4), lower_addr_mem_access(addr.offset(6), 1)}});
         emit({AArch64Opcode::ORR, {m_reg3, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(32)}});
         emit({AArch64Opcode::ORR, {m_dst, m_reg3, m_reg2, mcode::Operand::from_aarch64_left_shift(48)}});
     } else if (size == 8) {
-        emit({AArch64Opcode::LDR, {m_dst, lower_address(addr, AddrUsage::MEMORY_ACCESS)}, flag});
+        emit({AArch64Opcode::LDR, {m_dst, lower_addr_mem_access(addr, 8)}, flag});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -304,35 +320,35 @@ void AArch64SSALowerer::lower_store(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
     if (size == 1) {
-        emit({AArch64Opcode::STRB, {m_src, lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STRB, {m_src, lower_addr_mem_access(addr, 1)}});
     } else if (size == 2) {
-        emit({AArch64Opcode::STRH, {m_src, lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STRH, {m_src, lower_addr_mem_access(addr, 2)}});
     } else if (size == 3) {
         mcode::Operand m_reg = create_temp_value(4);
         mcode::Operand m_shift_reg = create_temp_value(4); // TODO: Support immediates in the encoder.
 
         emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(16)}});
         emit({AArch64Opcode::LSR, {m_reg, m_src.with_size(4), m_shift_reg}});
-        emit({AArch64Opcode::STRH, {m_src, lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::STRB, {m_reg.with_size(4), lower_address(addr.offset(2), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STRH, {m_src, lower_addr_mem_access(addr, 2)}});
+        emit({AArch64Opcode::STRB, {m_reg.with_size(4), lower_addr_mem_access(addr.offset(2), 1)}});
     } else if (size == 4) {
-        emit({AArch64Opcode::STR, {m_src, lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STR, {m_src, lower_addr_mem_access(addr, 4)}});
     } else if (size == 5) {
         mcode::Operand m_reg = create_temp_value(8);
         mcode::Operand m_shift_reg = create_temp_value(8); // TODO: Support immediates in the encoder.
 
         emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(32)}});
         emit({AArch64Opcode::LSR, {m_reg, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::STRB, {m_reg.with_size(4), lower_address(addr.offset(4), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_addr_mem_access(addr, 4)}});
+        emit({AArch64Opcode::STRB, {m_reg.with_size(4), lower_addr_mem_access(addr.offset(4), 1)}});
     } else if (size == 6) {
         mcode::Operand m_reg = create_temp_value(8);
         mcode::Operand m_shift_reg = create_temp_value(8); // TODO: Support immediates in the encoder.
 
         emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(32)}});
         emit({AArch64Opcode::LSR, {m_reg, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::STRH, {m_reg.with_size(4), lower_address(addr.offset(4), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_addr_mem_access(addr, 4)}});
+        emit({AArch64Opcode::STRH, {m_reg.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
     } else if (size == 7) {
         mcode::Operand m_reg0 = create_temp_value(8);
         mcode::Operand m_reg1 = create_temp_value(8);
@@ -342,11 +358,11 @@ void AArch64SSALowerer::lower_store(ssa::Instruction &instr) {
         emit({AArch64Opcode::LSR, {m_reg0, m_src.with_size(8), m_shift_reg}});
         emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(48)}});
         emit({AArch64Opcode::LSR, {m_reg1, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::STRH, {m_reg0.with_size(4), lower_address(addr.offset(4), AddrUsage::MEMORY_ACCESS)}});
-        emit({AArch64Opcode::STRB, {m_reg1.with_size(4), lower_address(addr.offset(6), AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_addr_mem_access(addr, 4)}});
+        emit({AArch64Opcode::STRH, {m_reg0.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
+        emit({AArch64Opcode::STRB, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(6), 1)}});
     } else if (size == 8) {
-        emit({AArch64Opcode::STR, {m_src, lower_address(addr, AddrUsage::MEMORY_ACCESS)}});
+        emit({AArch64Opcode::STR, {m_src, lower_addr_mem_access(addr, 8)}});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -671,7 +687,7 @@ void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     }
 
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
-    emit({AArch64Opcode::MOV, {m_dst, lower_address(addr, AddrUsage::ADDR_VALUE)}});
+    emit({AArch64Opcode::MOV, {m_dst, lower_addr_value(addr)}});
 }
 
 void AArch64SSALowerer::lower_memberptr(ssa::Instruction &instr) {
@@ -682,7 +698,7 @@ void AArch64SSALowerer::lower_memberptr(ssa::Instruction &instr) {
     addr.const_offset += get_member_offset(&struct_, member_index);
 
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
-    emit({AArch64Opcode::MOV, {m_dst, lower_address(addr, AddrUsage::ADDR_VALUE)}});
+    emit({AArch64Opcode::MOV, {m_dst, lower_addr_value(addr)}});
 }
 
 mcode::Value AArch64SSALowerer::move_const_into_register(const ssa::Value &value, ssa::Type type) {

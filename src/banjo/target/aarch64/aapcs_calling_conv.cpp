@@ -384,22 +384,22 @@ mcode::InstrIter AAPCSCallingConv::fix_up_instr(
         )
     );
 
-    basic_block.insert_after(
-        iter,
-        mcode::Instruction(
-            target::AArch64Opcode::LDR,
-            {
-                dest,
-                mcode::Operand::from_aarch64_addr(
-                    target::AArch64Address::new_base_offset(
-                        mcode::Register::from_physical(target::AArch64Register::SP),
-                        mcode::Register::from_physical(-1)
-                    ),
-                    8
-                ),
-            }
-        )
-    );
+    // basic_block.insert_after(
+    //     iter,
+    //     mcode::Instruction(
+    //         target::AArch64Opcode::LDR,
+    //         {
+    //             dest,
+    //             mcode::Operand::from_aarch64_addr(
+    //                 target::AArch64Address::new_base_offset(
+    //                     mcode::Register::from_physical(target::AArch64Register::SP),
+    //                     mcode::Register::from_physical(-1)
+    //                 ),
+    //                 8
+    //             ),
+    //         }
+    //     )
+    // );
 
     mcode::Register sp = mcode::Register::from_physical(target::AArch64Register::SP);
     mcode::Register new_reg = mcode::Register::from_physical(AArch64RegAnalyzer::SCRATCH_REGISTER);

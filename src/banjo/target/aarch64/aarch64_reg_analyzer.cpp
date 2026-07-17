@@ -313,7 +313,7 @@ void AArch64RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<
     insert_reg(addr.get_base(), mcode::RegUsage::USE, dst);
 
     if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_REG) {
-        insert_reg(addr.get_offset_reg(), mcode::RegUsage::USE, dst);
+        insert_reg(addr.get_offset_reg().reg, mcode::RegUsage::USE, dst);
     }
 }
 

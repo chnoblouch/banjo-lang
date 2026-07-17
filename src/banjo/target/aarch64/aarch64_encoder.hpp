@@ -3,14 +3,14 @@
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/target/target_description.hpp"
 
 #include <array>
 #include <cstdint>
 
-namespace banjo {
-namespace target {
+namespace banjo::target {
 
 class AArch64Encoder final : public BinaryBuilder {
 
@@ -28,7 +28,7 @@ private:
         mcode::Register base;
 
         LargeInt offset_const{0};
-        mcode::Register offset_reg;
+        AArch64Address::RegOffset offset_reg;
         mcode::Symbol offset_symbol{""};
     };
 
@@ -131,7 +131,6 @@ private:
     void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);
 };
 
-} // namespace target
-} // namespace banjo
+} // namespace banjo::target
 
 #endif
