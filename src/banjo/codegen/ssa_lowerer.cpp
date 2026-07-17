@@ -3,6 +3,7 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+#include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
@@ -593,6 +594,11 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
                 const_offset += get_size(base_type) * offset.get_int_immediate().to_s64();
                 discard_use(*producer->get_dest());
             } else if (offset.is_register()) {
+                // TODO: Temporary fix
+                if (target->get_descr().get_architecture() != target::Architecture::AARCH64) {
+                    break;
+                }
+
                 if (!reg_offset) {
                     mcode::Register reg = mcode::Register::from_virtual(offset.get_register());
 
