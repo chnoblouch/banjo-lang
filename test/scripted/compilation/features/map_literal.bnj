@@ -2,24 +2,24 @@
 # test:output "2,3,5"
 
 func main() {
-    var array = ["three": 3, "five": 5];
-    
-    print(array.length);
+    var map = ["three": 3, "five": 5];
+
+    print(map.length());
     print(",");
-    print(array["three"]);
+    print(map["three"]);
     print(",");
-    print(array["five"]);
+    print(map["five"]);
 }
 
 # test:subtest
 # test:output "2,3,5"
 
 func main() {
-    var array: [String: i32] = ["three": 3, "five": 5];
-    
-    print(array.length);
+    var map: [String: i32] = ["three": 3, "five": 5];
+
+    print(map.length());
     print(",");
-    print(array["three"]);
+    print(map["three"]);
     print(",");
-    print(array["five"]);
+    print(map["five"]);
 }

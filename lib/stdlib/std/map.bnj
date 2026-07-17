@@ -29,14 +29,19 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
         return false;
     }
 
-    pub func __index__(mut self, ref key: K) -> *V {
+    pub func __index__(mut self, ref key: K) -> ref mut V {
         for ref mut element in self.elements {
             if element.0 == key {
-                return &element.1;
+                return ref mut element.1;
             }
         }
 
-        return null;
+        panic("cannot find key `" + convert.to_string(key) + "` in map");
+        return undefined;
+    }
+
+    pub func length(self) -> usize {
+        return self.elements.length();
     }
 
     pub func __str__(self) -> String {

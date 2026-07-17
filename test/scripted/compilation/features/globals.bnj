@@ -74,8 +74,6 @@ func main() {
     print(m);
 }
 
-# TODO: Array and tuple literals don't work currently due to a limitation in the SSA lowerer.
-
 # test:subtest
 # test:output "1,48,127,true,false,false,true,1003847,-23791283"
 
@@ -101,4 +99,22 @@ func main() {
     print(c[0]);
     print(',');
     print(c[1]);
+}
+
+# test:subtest
+# test:output "42,true,0.25,324187,c"
+
+var a: (i32, bool) = (42, true);
+var b: (f32, u64, u8) = (0.25, 324187, 'c');
+
+func main() {
+    print(a.0);
+    print(',');
+    print(a.1);
+    print(',');
+    print(b.0);
+    print(',');
+    print(b.1);
+    print(',');
+    print(b.2);
 }

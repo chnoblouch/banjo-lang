@@ -53,7 +53,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // char_literal
         return expr,                             // null_literal
         return evaluate_non_const(expr),         // none_literal
-        return evaluate_non_const(expr),         // undefined_literal
+        return expr,                             // undefined_literal
         return evaluate_array_literal(*inner),   // array_literal
         return expr,                             // string_literal
         return evaluate_non_const(expr),         // struct_literal
@@ -142,7 +142,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &sym
         return sir::Expr(&symbol_expr),            // local
         return sir::Expr(&symbol_expr),            // param
         SIR_VISIT_IMPOSSIBLE,                      // overload_set
-        return sir::Expr(&symbol_expr)            // generic_param
+        return sir::Expr(&symbol_expr)             // generic_param
     );
 }
 
