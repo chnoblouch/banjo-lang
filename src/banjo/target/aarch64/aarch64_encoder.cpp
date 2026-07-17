@@ -887,6 +887,16 @@ AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcod
                 .base = addr.get_base(),
                 .offset_const = offset,
             };
+        } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_STACK_ADDR) {
+            mcode::StackAddress stack_addr = addr.get_offset_stack_addr();
+
+            ASSERT(!post_operand);
+
+            return Address{
+                .mode = AddressingMode::OFFSET_CONST,
+                .base = addr.get_base(),
+                .offset_const = cur_func->get_stack_frame().offset_of(stack_addr),
+            };
         } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_REG) {
             return Address{
                 .mode = AddressingMode::OFFSET_REG,

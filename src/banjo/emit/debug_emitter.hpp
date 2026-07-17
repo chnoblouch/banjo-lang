@@ -2,6 +2,7 @@
 #define BANJO_EMIT_DEBUG_EMITTER_H
 
 #include "banjo/emit/emitter.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/target/target_description.hpp"
 
@@ -26,15 +27,10 @@ private:
     void gen_basic_block(mcode::BasicBlock &basic_block);
 
     static std::string_view get_opcode_name(mcode::Opcode opcode);
-    static std::string get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand, int instr_index);
-    static std::string get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size, int instr_index);
-
-    static std::string get_stack_slot_name(
-        mcode::Function *func,
-        mcode::StackSlotID stack_slot,
-        int instr_index,
-        bool brackets = true
-    );
+    static std::string get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand);
+    static std::string get_reg_name(mcode::Register reg, unsigned size);
+    static std::string get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot);
+    static std::string build_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr);
 
     static std::string get_size_specifier(int size);
 };

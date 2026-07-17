@@ -8,6 +8,7 @@
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
+#include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 
 namespace banjo::target {
 
@@ -63,19 +64,35 @@ void AArch64StackAddrFixupPass::process_add_sub(mcode::BasicBlock &block, mcode:
 
 void AArch64StackAddrFixupPass::process_ldr_str(mcode::BasicBlock &block, mcode::InstrIter instr, unsigned size) {
     mcode::StackFrame &frame = block.get_func()->get_stack_frame();
-    mcode::Operand &addr = instr->get_operand(1);
+    mcode::Operand &m_addr = instr->get_operand(1);
 
-    if (!addr.is_stack_slot()) {
-        return;
+    if (m_addr.is_stack_slot()) {
+        mcode::StackSlot &stack_slot = frame.get_stack_slot(m_addr.get_stack_slot());
+        unsigned offset = stack_slot.get_offset();
+
+        if (!AArch64EncodingInfo::is_addr_offset_encodable(offset, size)) {
+            m_addr = emit_compute_stack_addr(block, instr, offset);
+        }
+    } else if (m_addr.is_aarch64_addr()) {
+        const AArch64Address &addr = m_addr.get_aarch64_addr();
+
+        if (addr.get_type() != AArch64Address::Type::BASE_OFFSET_STACK_ADDR) {
+            return;
+        }
+
+        unsigned offset = frame.offset_of(addr.get_offset_stack_addr());
+
+        if (!AArch64EncodingInfo::is_addr_offset_encodable(offset, size)) {
+            m_addr = emit_compute_stack_addr(block, instr, offset);
+        }
     }
+}
 
-    mcode::StackSlot &stack_slot = frame.get_stack_slot(addr.get_stack_slot());
-    unsigned offset = stack_slot.get_offset();
-
-    if (AArch64EncodingInfo::is_addr_offset_encodable(offset, size)) {
-        return;
-    }
-
+mcode::Operand AArch64StackAddrFixupPass::emit_compute_stack_addr(
+    mcode::BasicBlock &block,
+    mcode::InstrIter instr,
+    unsigned offset
+) {
     ASSERT(offset < 4096);
 
     mcode::Register tmp_reg = mcode::Register::from_physical(AArch64RegAnalyzer::SCRATCH_REGISTER);
@@ -85,7 +102,7 @@ void AArch64StackAddrFixupPass::process_ldr_str(mcode::BasicBlock &block, mcode:
     mcode::Operand m_offset = mcode::Operand::from_int_immediate(offset);
     block.insert_before(instr, {AArch64Opcode::ADD, {m_tmp, m_sp, m_offset}});
 
-    addr = mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg));
+    return mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg));
 }
 
 } // namespace banjo::target

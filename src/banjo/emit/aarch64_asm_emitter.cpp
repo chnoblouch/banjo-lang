@@ -209,7 +209,7 @@ void AArch64AsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand
     else if (operand.is_stack_slot()) emit_stack_slot(func, operand.get_stack_slot());
     else if (operand.is_symbol()) emit_symbol(operand.get_symbol());
     else if (operand.is_label()) stream << operand.get_label();
-    else if (operand.is_aarch64_addr()) emit_addr(operand.get_aarch64_addr());
+    else if (operand.is_aarch64_addr()) emit_addr(func, operand.get_aarch64_addr());
     else if (operand.is_stack_offset()) emit_stack_offset(func, operand.get_stack_offset());
     else if (operand.is_aarch64_left_shift()) stream << "lsl #" << operand.get_aarch64_left_shift();
     else if (operand.is_aarch64_condition()) emit_condition(operand.get_aarch64_condition());
@@ -259,7 +259,7 @@ void AArch64AsmEmitter::emit_symbol(const mcode::Symbol &symbol) {
     }
 }
 
-void AArch64AsmEmitter::emit_addr(const target::AArch64Address &addr) {
+void AArch64AsmEmitter::emit_addr(mcode::Function *func, const target::AArch64Address &addr) {
     stream << "[";
 
     switch (addr.get_type()) {
@@ -274,6 +274,10 @@ void AArch64AsmEmitter::emit_addr(const target::AArch64Address &addr) {
         case target::AArch64Address::Type::BASE_OFFSET_IMM_WRITE:
             emit_reg(addr.get_base().get_physical_reg(), 8);
             stream << ", #" << addr.get_offset_imm() << "]!";
+            break;
+        case target::AArch64Address::Type::BASE_OFFSET_STACK_ADDR:
+            emit_reg(addr.get_base().get_physical_reg(), 8);
+            stream << ", #" << func->get_stack_frame().offset_of(addr.get_offset_stack_addr()) << "]";
             break;
         case target::AArch64Address::Type::BASE_OFFSET_REG:
             emit_reg(addr.get_base().get_physical_reg(), 8);
@@ -291,10 +295,7 @@ void AArch64AsmEmitter::emit_addr(const target::AArch64Address &addr) {
 }
 
 void AArch64AsmEmitter::emit_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr) {
-    mcode::StackFrame &frame = func->get_stack_frame();
-    mcode::StackSlot &stack_slot = frame.get_stack_slot(stack_addr.slot);
-    int total_offset = stack_slot.get_offset() + stack_addr.offset;
-    stream << "#" << total_offset;
+    stream << "#" << func->get_stack_frame().offset_of(stack_addr);
 }
 
 void AArch64AsmEmitter::emit_condition(target::AArch64Condition condition) {

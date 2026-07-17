@@ -33,7 +33,7 @@ private:
     void emit_reg(int reg, int size);
     void emit_stack_slot(mcode::Function *func, int index);
     void emit_symbol(const mcode::Symbol &symbol);
-    void emit_addr(const target::AArch64Address &addr);
+    void emit_addr(mcode::Function *func, const target::AArch64Address &addr);
     void emit_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr);
     void emit_condition(target::AArch64Condition condition);
 };

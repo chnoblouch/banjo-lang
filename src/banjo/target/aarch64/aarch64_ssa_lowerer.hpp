@@ -13,6 +13,11 @@ namespace banjo::target {
 class AArch64SSALowerer : public codegen::SSALowerer {
 
 private:
+    enum class AddrUsage {
+        ADDR_VALUE,    // Example: add r0, sp, #12
+        MEMORY_ACCESS, // Example: ldr r0, [sp, #12]
+    };
+
     unsigned next_const_index = 0;
     std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
 
@@ -21,8 +26,8 @@ public:
 
 public:
     mcode::Operand lower_value(const ssa::Operand &operand);
-    mcode::Operand lower_address(const ssa::Operand &operand);
-    mcode::Operand offset_address(const mcode::Operand &m_operand, unsigned offset);
+    mcode::Operand lower_address(ssa::Operand &operand, AddrUsage usage);
+    mcode::Operand lower_address(AddrComponents addr, AddrUsage usage);
 
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
@@ -74,13 +79,14 @@ public:
     mcode::Value move_int_into_register(LargeInt value, unsigned size);
     mcode::Value move_float_into_register(double fp, unsigned size);
     void move_elements_into_register(mcode::Value value, std::uint16_t *elements, unsigned count);
-    mcode::Value move_symbol_into_register(const std::string &symbol);
+    mcode::Register move_symbol_into_register(const std::string &symbol);
     void build_address(const mcode::Operand &m_dst, AddrComponents addr);
     mcode::Value create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);
 
     mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
+    void emit_add_scaled(mcode::Operand m_dst, mcode::Operand m_base, mcode::Register reg, unsigned scale);
 };
 
 } // namespace banjo::target

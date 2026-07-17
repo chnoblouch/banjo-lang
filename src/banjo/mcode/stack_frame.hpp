@@ -1,14 +1,12 @@
 #ifndef BANJO_MCODE_STACK_FRAME_H
 #define BANJO_MCODE_STACK_FRAME_H
 
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/stack_slot.hpp"
+
 #include <vector>
 
-namespace banjo {
-
-namespace mcode {
-
-class Function;
+namespace banjo::mcode {
 
 typedef unsigned StackSlotID;
 
@@ -35,10 +33,9 @@ public:
     void set_total_size(int total_size) { this->total_size = total_size; }
 
     StackSlotID create_call_arg_slot(unsigned index, unsigned size, unsigned alignment);
+    unsigned offset_of(StackAddress stack_addr);
 };
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 #endif

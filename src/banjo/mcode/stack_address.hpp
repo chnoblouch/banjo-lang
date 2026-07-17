@@ -1,9 +1,9 @@
 #ifndef BANJO_MCODE_STACK_ADDRESS_H
 #define BANJO_MCODE_STACK_ADDRESS_H
 
-#include "banjo/mcode/stack_frame.hpp"
-
 namespace banjo::mcode {
+
+typedef unsigned StackSlotID;
 
 struct StackAddress {
     StackSlotID slot;

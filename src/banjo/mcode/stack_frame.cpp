@@ -1,8 +1,6 @@
 #include "stack_frame.hpp"
 
-namespace banjo {
-
-namespace mcode {
+namespace banjo::mcode {
 
 StackSlotID StackFrame::new_stack_slot(StackSlot slot) {
     stack_slots.push_back(slot);
@@ -25,6 +23,8 @@ StackSlotID StackFrame::create_call_arg_slot(unsigned index, unsigned size, unsi
     }
 }
 
-} // namespace mcode
+unsigned StackFrame::offset_of(StackAddress stack_addr) {
+    return stack_slots[stack_addr.slot].get_offset() + stack_addr.offset;
+}
 
-} // namespace banjo
+} // namespace banjo::mcode

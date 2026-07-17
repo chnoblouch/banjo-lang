@@ -4,6 +4,8 @@
 #include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/emit/nasm_emitter.hpp"
 #include "banjo/mcode/stack_address.hpp"
+#include "banjo/mcode/stack_frame.hpp"
+#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
@@ -185,7 +187,7 @@ std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode:
             string += std::to_string(operand.get_size()) + "b ";
         }
 
-        string += get_operand_name(basic_block, operand, i);
+        string += get_operand_name(basic_block, operand);
     }
 
     if (instr.get_flags() & mcode::Instruction::FLAG_ARG_STORE) string += " !arg_store";
@@ -211,13 +213,11 @@ std::string_view DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
     return "";
 }
 
-std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand, int instr_index) {
+std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand) {
     if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
     else if (operand.is_fp_immediate()) return std::to_string(operand.get_fp_immediate());
-    else if (operand.is_register())
-        return get_reg_name(basic_block, operand.get_register(), operand.get_size(), instr_index);
-    else if (operand.is_stack_slot())
-        return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot(), instr_index);
+    else if (operand.is_register()) return get_reg_name(operand.get_register(), operand.get_size());
+    else if (operand.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot());
     else if (operand.is_symbol()) return operand.get_symbol().name;
     else if (operand.is_label()) return operand.get_label();
     else if (operand.is_symbol_deref()) return "[" + operand.get_deref_symbol().name + "]";
@@ -226,16 +226,16 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
 
         std::string base;
         if (addr.is_base_reg()) {
-            base = get_reg_name(basic_block, addr.get_base_reg(), 8, instr_index);
+            base = get_reg_name(addr.get_base_reg(), 8);
         } else if (addr.is_base_stack_slot()) {
-            base = get_stack_slot_name(basic_block.get_func(), addr.get_base_stack_slot(), instr_index, false);
+            base = "[" + get_stack_slot_name(basic_block.get_func(), addr.get_base_stack_slot()) + "]";
         } else {
             ASSERT_UNREACHABLE;
         }
 
         if (addr.has_offset()) {
             std::string offset;
-            if (addr.has_reg_offset()) offset = get_reg_name(basic_block, addr.get_reg_offset(), 8, instr_index);
+            if (addr.has_reg_offset()) offset = get_reg_name(addr.get_reg_offset(), 8);
             else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
 
             std::string scaled_offset =
@@ -245,29 +245,32 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
             return "[" + base + "]";
         }
     } else if (operand.is_aarch64_addr()) {
-        target::AArch64Address addr = operand.get_aarch64_addr();
+        const target::AArch64Address &addr = operand.get_aarch64_addr();
         std::string str = "[";
 
         switch (addr.get_type()) {
-            case target::AArch64Address::Type::BASE:
-                str += get_reg_name(basic_block, addr.get_base(), 8, instr_index) + "]";
-                break;
+            case target::AArch64Address::Type::BASE: str += get_reg_name(addr.get_base(), 8) + "]"; break;
             case target::AArch64Address::Type::BASE_OFFSET_IMM:
-                str += get_reg_name(basic_block, addr.get_base(), 8, instr_index);
+                str += get_reg_name(addr.get_base(), 8);
                 str += ", #" + std::to_string(addr.get_offset_imm()) + "]";
                 break;
             case target::AArch64Address::Type::BASE_OFFSET_IMM_WRITE:
-                str += get_reg_name(basic_block, addr.get_base(), 8, instr_index);
+                str += get_reg_name(addr.get_base(), 8);
                 str += ", #" + std::to_string(addr.get_offset_imm()) + "]!";
                 break;
+            case target::AArch64Address::Type::BASE_OFFSET_STACK_ADDR: {
+                str += get_reg_name(addr.get_base(), 8);
+                str += ", " + build_stack_offset(basic_block.get_func(), addr.get_offset_stack_addr()) + "]";
+                break;
+            }
             case target::AArch64Address::Type::BASE_OFFSET_REG:
-                str += get_reg_name(basic_block, addr.get_base(), 8, instr_index);
+                str += get_reg_name(addr.get_base(), 8);
                 str += ", ";
-                str += get_reg_name(basic_block, addr.get_offset_reg(), 8, instr_index);
+                str += get_reg_name(addr.get_offset_reg(), 8);
                 str += "]";
                 break;
             case target::AArch64Address::Type::BASE_OFFSET_SYMBOL:
-                str += get_reg_name(basic_block, addr.get_base(), 8, instr_index);
+                str += get_reg_name(addr.get_base(), 8);
                 str += ", ";
                 str += addr.get_offset_symbol().name;
                 str += "]";
@@ -276,9 +279,7 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
 
         return str;
     } else if (operand.is_stack_offset()) {
-        const mcode::StackAddress &stack_addr = operand.get_stack_offset();
-        std::string slot_name = get_stack_slot_name(basic_block.get_func(), stack_addr.slot, instr_index);
-        return slot_name + " + " + std::to_string(stack_addr.offset);
+        return build_stack_offset(basic_block.get_func(), operand.get_stack_offset());
     } else if (operand.is_aarch64_left_shift()) {
         return "lsl #" + std::to_string(operand.get_aarch64_left_shift());
     } else if (operand.is_aarch64_condition()) {
@@ -299,10 +300,14 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
     }
 }
 
-std::string DebugEmitter::get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size, int instr_index) {
-    if (reg.is_virtual()) return "%" + std::to_string(reg.get_virtual_reg());
-    else if (reg.is_physical()) return get_physical_reg_name(reg.get_physical_reg(), size);
-    else ASSERT_UNREACHABLE;
+std::string DebugEmitter::get_reg_name(mcode::Register reg, unsigned size) {
+    if (reg.is_virtual()) {
+        return "%" + std::to_string(reg.get_virtual_reg());
+    } else if (reg.is_physical()) {
+        return get_physical_reg_name(reg.get_physical_reg(), size);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
@@ -415,15 +420,10 @@ std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
     return "???";
 }
 
-std::string DebugEmitter::get_stack_slot_name(
-    mcode::Function *func,
-    mcode::StackSlotID stack_slot,
-    int instr_index,
-    bool brackets /* = true */
-) {
+std::string DebugEmitter::get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot) {
     mcode::StackFrame &frame = func->get_stack_frame();
     mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
-    int offset = slot.get_offset();
+    unsigned offset = slot.get_offset();
 
     if (offset == mcode::StackSlot::INVALID_OFFSET) {
         return "s" + std::to_string(stack_slot);
@@ -431,13 +431,31 @@ std::string DebugEmitter::get_stack_slot_name(
 
     if (lang::Config::instance().target.get_architecture() == target::Architecture::X86_64) {
         std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);
-        std::string address = "rsp " + offset_str;
-        return brackets ? "[" + address + "]" : address;
+        return "rsp " + offset_str;
     } else if (lang::Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
-        return +"[sp, #" + std::to_string(slot.get_offset()) + "]";
+        std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);
+        return "sp + " + offset_str;
+    } else {
+        return "";
     }
+}
 
-    return "";
+std::string DebugEmitter::build_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr) {
+    mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(stack_addr.slot);
+
+    if (slot.get_offset() == mcode::StackSlot::INVALID_OFFSET) {
+        std::string string = "offset(s" + std::to_string(stack_addr.slot);
+
+        if (stack_addr.offset != 0) {
+            string += (stack_addr.offset > 0 ? " + " : " - ") + std::to_string(stack_addr.offset);
+        }
+
+        string += ")";
+        return string;
+    } else {
+        unsigned offset = func->get_stack_frame().offset_of(stack_addr);
+        return "#" + std::to_string(offset);
+    }
 }
 
 std::string DebugEmitter::get_size_specifier(int size) {
