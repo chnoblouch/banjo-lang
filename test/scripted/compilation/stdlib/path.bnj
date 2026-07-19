@@ -102,23 +102,22 @@ func main() {
 
     print(paths_root.length());
     print(',');
-    check_contains(&paths_root, "root/file_a");
+    check_contains(paths_root, "root/file_a");
     print(',');
-    check_contains(&paths_root, "root/file_b");
+    check_contains(paths_root, "root/file_b");
     print(',');
-    check_contains(&paths_root, "root/sub_dir");
+    check_contains(paths_root, "root/sub_dir");
     print(',');
     print(paths_sub_dir.length());
     print(',');
-    check_contains(&paths_sub_dir, "root/sub_dir/file_c");
+    check_contains(paths_sub_dir, "root/sub_dir/file_c");
 }
 
-func check_contains(paths: *Array[Path], path: StringSlice) {
+func check_contains(ref paths: Array[Path], path: StringSlice) {
     var found = false;
     
-    # FIXME: Iterating over dereferenced pointers to arrays.
-    for i in 0..paths.length() {
-        if (*paths)[i].str().slice() == path {
+    for ref candidate in paths {
+        if candidate.str().slice() == path {
             found = true;
             break;
         }
