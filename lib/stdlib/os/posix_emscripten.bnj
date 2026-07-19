@@ -2,9 +2,9 @@ use std.config;
 use libc as c;
 
 meta if config.OS == config.EMSCRIPTEN {
-    const ENOENT: i32 = 0x02;  # TODO
-    const EACCES: i32 = 0x0D;  # TODO
-    const EEXIST: i32 = 0x11;  # TODO
+    const ENOENT: i32 = 44;
+    const EACCES: i32 = 2;
+    const EEXIST: i32 = 20;
 
     native func __errno_location() -> *i32;
 
