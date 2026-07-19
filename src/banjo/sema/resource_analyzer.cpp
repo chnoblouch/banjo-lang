@@ -32,9 +32,6 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type /*= ScopeType::GENERIC*/) {
-    // FIXME: Deinitialize unused return values of functions
-    // FIXME: Deinitialize right-hand side of logical operators conditionally
-
     // TODO: There are performance issues here when analyzing large numbers of resources.
     // One example is `convert.enum_to_repr` with enums that have lots of variants.
 
@@ -91,25 +88,25 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
     for (sir::Stmt &stmt : block.stmts) {
         SIR_VISIT_STMT(
             stmt,
-            SIR_VISIT_IGNORE,                  // empty
-            analyze_var_stmt(*inner),          // var_stmt
-            analyze_assign_stmt(*inner),       // assign_stmt
-            analyze_comp_assign_stmt(*inner),  // comp_assign_stmt
-            analyze_return_stmt(*inner),       // return_stmt
-            analyze_if_stmt(*inner),           // if_stmt
-            SIR_VISIT_IGNORE,                  // switch_stmt (TODO!)
-            analyze_try_stmt(*inner),          // try_stmt
-            SIR_VISIT_IGNORE,                  // while_stmt
-            SIR_VISIT_IGNORE,                  // for_stmt
-            analyze_loop_stmt(*inner),         // loop_stmt
-            analyze_continue_stmt(*inner),     // continue_stmt
-            analyze_break_stmt(*inner),        // break_stmt
-            SIR_VISIT_IGNORE,                  // meta_if_stmt
-            SIR_VISIT_IGNORE,                  // meta_for_stmt
-            SIR_VISIT_IGNORE,                  // expanded_meta_stmt
-            analyze_expr(*inner, true, false), // expr_stmt
-            analyze_block_stmt(*inner),        // block_stmt
-            SIR_VISIT_IGNORE                   // error
+            SIR_VISIT_IGNORE,                   // empty
+            analyze_var_stmt(*inner),           // var_stmt
+            analyze_assign_stmt(*inner),        // assign_stmt
+            analyze_comp_assign_stmt(*inner),   // comp_assign_stmt
+            analyze_return_stmt(*inner),        // return_stmt
+            analyze_if_stmt(*inner),            // if_stmt
+            SIR_VISIT_IGNORE,                   // switch_stmt (TODO!)
+            analyze_try_stmt(*inner),           // try_stmt
+            SIR_VISIT_IGNORE,                   // while_stmt
+            SIR_VISIT_IGNORE,                   // for_stmt
+            analyze_loop_stmt(*inner),          // loop_stmt
+            analyze_continue_stmt(*inner),      // continue_stmt
+            analyze_break_stmt(*inner),         // break_stmt
+            SIR_VISIT_IGNORE,                   // meta_if_stmt
+            SIR_VISIT_IGNORE,                   // meta_for_stmt
+            SIR_VISIT_IGNORE,                   // expanded_meta_stmt
+            analyze_expr(*inner, false, false), // expr_stmt
+            analyze_block_stmt(*inner),         // block_stmt
+            SIR_VISIT_IGNORE                    // error
         );
     }
 

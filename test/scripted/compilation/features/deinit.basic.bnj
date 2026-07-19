@@ -88,3 +88,22 @@ func main() {
     consume(resource);
     print('c');
 }
+
+# test:subtest
+# test:output "abc"
+
+struct Resource {
+    func __deinit__(self) {
+        print('b');
+    }
+}
+
+func f() -> Resource {
+    return Resource {};
+}
+
+func main() {
+    print('a');
+    f();
+    print('c');
+}
