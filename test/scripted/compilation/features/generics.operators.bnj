@@ -343,30 +343,30 @@ func main() {
 }
 
 # test:subtest
-# test:output "42,42,42,42,42,42,42,42,42"
+# test:output "21,21,21,21,21,21,21,21,21"
 
 func mod[T: Mod[T]](a: T, b: T) -> T {
     return a % b;
 }
 
 func main() {
-    print(mod(128 as i8, 43 as i8));
+    print(mod(64 as i8, 43 as i8));
     print(',');
-    print(mod(128 as i16, 43 as i16));
+    print(mod(64 as i16, 43 as i16));
     print(',');
-    print(mod(128 as i32, 43 as i32));
+    print(mod(64 as i32, 43 as i32));
     print(',');
-    print(mod(128 as i64, 43 as i64));
+    print(mod(64 as i64, 43 as i64));
     print(',');
-    print(mod(128 as u8, 43 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(mod(64 as u8, 43 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
     print(',');
-    print(mod(128 as u16, 43 as u16));
+    print(mod(64 as u16, 43 as u16));
     print(',');
-    print(mod(128 as u32, 43 as u32));
+    print(mod(64 as u32, 43 as u32));
     print(',');
-    print(mod(128 as u64, 43 as u64));
+    print(mod(64 as u64, 43 as u64));
     print(',');
-    print(mod(128 as usize, 43 as usize));
+    print(mod(64 as usize, 43 as usize));
 }
 
 # test:subtest
