@@ -1,0 +1,25 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var a: void = undefined;
+}
+
+# test:subtest
+# test:compiles
+
+func f(arg: void) {}
+
+func main() {
+    f(undefined);
+}
+
+# test:subtest
+# test:compiles
+
+func f(arg: void) {}
+
+func main() {
+    var a: void = undefined;
+    f(a);
+}

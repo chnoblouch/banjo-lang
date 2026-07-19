@@ -180,6 +180,12 @@ void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Type type = instr.get_operand(0).get_type();
 
+    if (type.is_primitive(ssa::Primitive::VOID)) {
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
+        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+        return;
+    }
+
     mcode::Opcode load_opcode;
 
     switch (type_as_primitive(type)) {
@@ -233,7 +239,7 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     mcode::Opcode store_opcode;
 
     switch (type_as_primitive(type)) {
-        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::VOID: return;
         case ssa::Primitive::U8: store_opcode = WasmOpcode::I32_STORE8; break;
         case ssa::Primitive::U16: store_opcode = WasmOpcode::I32_STORE16; break;
         case ssa::Primitive::U32: store_opcode = WasmOpcode::I32_STORE; break;
@@ -884,7 +890,7 @@ WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
 
 WasmType WasmSSALowerer::lower_type(ssa::Type type) {
     switch (type_as_primitive(type)) {
-        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::VOID: return WasmType::I32;
         case ssa::Primitive::U8: return WasmType::I32;
         case ssa::Primitive::U16: return WasmType::I32;
         case ssa::Primitive::U32: return WasmType::I32;
