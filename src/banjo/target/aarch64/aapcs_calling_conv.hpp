@@ -2,16 +2,13 @@
 #define BANJO_TARGET_AARCH64_AAPCS_CALLING_CONV_H
 
 #include "banjo/mcode/calling_convention.hpp"
-#include "banjo/mcode/register.hpp"
 #include "banjo/ssa/function_type.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 
 #include <cstdint>
 #include <functional>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class AAPCSCallingConv : public mcode::CallingConvention {
 
@@ -40,9 +37,6 @@ public:
     int get_alloca_size(mcode::StackRegions &regions);
     std::vector<mcode::Instruction> get_prolog(mcode::Function *func);
     std::vector<mcode::Instruction> get_epilog(mcode::Function *func);
-
-    mcode::InstrIter fix_up_instr(mcode::BasicBlock &block, mcode::InstrIter iter, TargetRegAnalyzer &analyzer);
-
     bool is_func_exit(mcode::Opcode opcode);
 
     std::vector<mcode::ArgStorage> get_arg_storage(const ssa::FunctionType &func_type);
@@ -58,8 +52,6 @@ private:
     void modify_sp(mcode::Opcode opcode, unsigned value, const std::function<void(mcode::Instruction)> &emit);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

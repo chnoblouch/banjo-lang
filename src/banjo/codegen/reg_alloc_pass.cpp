@@ -284,7 +284,10 @@ void RegAllocPass::alloc_bundle(Context &ctx, Bundle &bundle) {
 }
 
 bool RegAllocPass::try_assign_suggested_regs(Context &ctx, Bundle &bundle) {
-    for (mcode::PhysicalReg candidate : analyzer.suggest_regs(ctx.func, bundle)) {
+    suggested_regs.clear();
+    analyzer.suggest_regs(ctx.func, bundle, suggested_regs);
+
+    for (mcode::PhysicalReg candidate : suggested_regs) {
         if (try_alloc_physical_reg(ctx, bundle, candidate)) {
             return true;
         }

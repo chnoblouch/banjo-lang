@@ -43,6 +43,7 @@ private:
     };
 
     target::TargetRegAnalyzer &analyzer;
+    std::vector<mcode::PhysicalReg> suggested_regs;
 
 #if DEBUG_REG_ALLOC
     std::ofstream stream{"liveness.txt"};

@@ -3,23 +3,19 @@
 
 #include "banjo/codegen/machine_pass.hpp"
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class PrologEpilogPass : public MachinePass {
 
 public:
-    void run(mcode::Module &module_);
-    void run(mcode::Function *func);
+    void run(mcode::Module &mod) override;
+    void run(mcode::Function &func);
 
 private:
-    void insert_prolog(mcode::Function *func, std::vector<long> &modified_volatile_regs);
-    void insert_epilog(mcode::Function *func, std::vector<long> &modified_volatile_regs);
+    void insert_prolog(mcode::Function &func);
+    void insert_epilog(mcode::Function &func);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

@@ -3,19 +3,15 @@
 
 #include "banjo/mcode/module.hpp"
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class MachinePass {
 
 public:
     virtual ~MachinePass() = default;
-    virtual void run(mcode::Module &module_) = 0;
+    virtual void run(mcode::Module &mod) = 0;
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

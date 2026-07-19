@@ -6,17 +6,15 @@
 #include "banjo/mcode/register.hpp"
 #include "banjo/ssa/utils.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
-#include "banjo/target/aarch64/aarch64_encoding_info.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
-#include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
-namespace banjo {
+#include <cstdlib>
 
-namespace target {
+namespace banjo::target {
 
 using namespace AArch64Register;
 
@@ -352,68 +350,6 @@ void AAPCSCallingConv::modify_sp(
     }
 }
 
-mcode::InstrIter AAPCSCallingConv::fix_up_instr(
-    mcode::BasicBlock &basic_block,
-    mcode::InstrIter iter,
-    TargetRegAnalyzer &analyzer
-) {
-    if (iter->get_opcode() != target::AArch64Opcode::LDR) {
-        return iter;
-    }
-
-    mcode::Operand dest = iter->get_operand(0);
-    mcode::Operand address = iter->get_operand(1);
-
-    if (!address.is_stack_slot()) {
-        return iter;
-    }
-
-    int index = iter->get_operand(1).get_stack_slot();
-    int offset = basic_block.get_func()->get_stack_frame().get_stack_slot(index).get_offset();
-
-    if (AArch64EncodingInfo::is_addr_offset_encodable(offset, dest.get_size())) {
-        return iter;
-    }
-
-    iter = basic_block.replace(
-        iter,
-        mcode::Instruction(
-            target::AArch64Opcode::MOV,
-            {mcode::Operand::from_register(mcode::Register::from_physical(-1), 8),
-             mcode::Operand::from_int_immediate(offset, 8)}
-        )
-    );
-
-    // basic_block.insert_after(
-    //     iter,
-    //     mcode::Instruction(
-    //         target::AArch64Opcode::LDR,
-    //         {
-    //             dest,
-    //             mcode::Operand::from_aarch64_addr(
-    //                 target::AArch64Address::new_base_offset(
-    //                     mcode::Register::from_physical(target::AArch64Register::SP),
-    //                     mcode::Register::from_physical(-1)
-    //                 ),
-    //                 8
-    //             ),
-    //         }
-    //     )
-    // );
-
-    mcode::Register sp = mcode::Register::from_physical(target::AArch64Register::SP);
-    mcode::Register new_reg = mcode::Register::from_physical(AArch64RegAnalyzer::SCRATCH_REGISTER);
-
-    mcode::Operand &m_dst = iter->get_operand(0);
-    m_dst = mcode::Operand::from_register(new_reg, m_dst.get_size());
-
-    mcode::Operand &m_after_dst = iter.get_next()->get_operand(1);
-    AArch64Address addr = target::AArch64Address::new_base_offset(sp, new_reg);
-    m_after_dst = mcode::Operand::from_aarch64_addr(addr, m_after_dst.get_size());
-
-    return iter.get_next();
-}
-
 bool AAPCSCallingConv::is_func_exit(mcode::Opcode opcode) {
     return opcode == AArch64Opcode::RET;
 }
@@ -454,6 +390,4 @@ int AAPCSCallingConv::get_implicit_stack_bytes(mcode::Function * /*func*/) {
     return 16;
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

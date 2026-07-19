@@ -57,12 +57,11 @@ const std::vector<mcode::PhysicalReg> &X8664RegAnalyzer::get_candidates(codegen:
     }
 }
 
-std::vector<mcode::PhysicalReg> X8664RegAnalyzer::suggest_regs(
+void X8664RegAnalyzer::suggest_regs(
     codegen::RegAllocFunc &func,
-    const codegen::Bundle &bundle
+    const codegen::Bundle &bundle,
+    std::vector<mcode::PhysicalReg> &suggested_regs
 ) {
-    std::vector<mcode::PhysicalReg> suggested_regs;
-
     for (const codegen::Segment &segment : bundle.segments) {
         const codegen::LiveRange &range = segment.range;
 
@@ -77,8 +76,6 @@ std::vector<mcode::PhysicalReg> X8664RegAnalyzer::suggest_regs(
             suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
         }
     }
-
-    return suggested_regs;
 }
 
 bool X8664RegAnalyzer::is_reg_overridden(
@@ -347,7 +344,7 @@ mcode::Opcode X8664RegAnalyzer::get_move_opcode(codegen::RegClass reg_class, uns
 
 void X8664RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {
     // FIXME: Merge registers! (use and def of the same register -> use + def)
-    
+
     if (operand.is_register()) {
         dst.push_back({.reg = operand.get_register(), .usage = usage});
     } else if (operand.is_x86_64_addr()) {

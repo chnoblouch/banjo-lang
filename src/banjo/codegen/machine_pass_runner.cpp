@@ -25,7 +25,7 @@ void MachinePassRunner::create_and_run(mcode::Module &module) {
         passes.push_back(new RegAllocPass(target->get_reg_analyzer()));
     }
 
-    passes.push_back(new StackFramePass(target->get_reg_analyzer()));
+    passes.push_back(new StackFramePass());
     passes.push_back(new PrologEpilogPass());
 
     std::vector<MachinePass *> post_passes = target->create_post_passes();

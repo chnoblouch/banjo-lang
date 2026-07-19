@@ -35,12 +35,11 @@ const std::vector<mcode::PhysicalReg> &AArch64RegAnalyzer::get_candidates(codege
     }
 }
 
-std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::suggest_regs(
+void AArch64RegAnalyzer::suggest_regs(
     codegen::RegAllocFunc &func,
-    const codegen::Bundle &bundle
+    const codegen::Bundle &bundle,
+    std::vector<mcode::PhysicalReg> &suggested_regs
 ) {
-    std::vector<mcode::PhysicalReg> suggested_regs;
-
     for (const codegen::Segment &segment : bundle.segments) {
         const codegen::LiveRange &range = segment.range;
 
@@ -55,8 +54,6 @@ std::vector<mcode::PhysicalReg> AArch64RegAnalyzer::suggest_regs(
             suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
         }
     }
-
-    return suggested_regs;
 }
 
 bool AArch64RegAnalyzer::is_reg_overridden(

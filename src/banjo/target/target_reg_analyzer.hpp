@@ -27,9 +27,10 @@ public:
     virtual ~TargetRegAnalyzer() = default;
     virtual const std::vector<mcode::PhysicalReg> &get_candidates(codegen::RegClass reg_class) = 0;
 
-    virtual std::vector<mcode::PhysicalReg> suggest_regs(
+    virtual void suggest_regs(
         codegen::RegAllocFunc &func,
-        const codegen::Bundle &bundle
+        const codegen::Bundle &bundle,
+        std::vector<mcode::PhysicalReg> &suggested_regs
     ) = 0;
 
     virtual bool is_reg_overridden(

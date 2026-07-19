@@ -28,7 +28,13 @@ public:
     X8664RegAnalyzer();
 
     const std::vector<mcode::PhysicalReg> &get_candidates(codegen::RegClass reg_class) override;
-    std::vector<mcode::PhysicalReg> suggest_regs(codegen::RegAllocFunc &func, const codegen::Bundle &bundle) override;
+
+    void suggest_regs(
+        codegen::RegAllocFunc &func,
+        const codegen::Bundle &bundle,
+        std::vector<mcode::PhysicalReg> &suggested_regs
+    ) override;
+
     bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, mcode::PhysicalReg reg) override;
     std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) override;
     void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) override;
@@ -44,7 +50,6 @@ private:
 
     void collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst);
     void collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst);
-
 };
 
 } // namespace target

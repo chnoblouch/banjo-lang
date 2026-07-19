@@ -11,28 +11,28 @@
 #include <algorithm>
 #include <vector>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 class TargetRegAnalyzer;
-};
+} // namespace banjo::target
 
-namespace codegen {
+namespace banjo::codegen {
 class SSALowerer;
-};
+} // namespace banjo::codegen
 
-namespace mcode {
+namespace banjo::mcode {
 
 class Function;
 class StackFrame;
 
 struct ArgStorage {
     bool in_reg;
+
     union {
-        long reg;
+        PhysicalReg reg;
+
         struct {
             unsigned arg_slot_index;
-            long stack_offset;
+            unsigned stack_offset;
         };
     };
 };
@@ -47,7 +47,7 @@ public:
 
     const std::vector<PhysicalReg> &get_volatile_regs() const { return volatile_regs; }
 
-    bool is_volatile(long reg) const {
+    bool is_volatile(PhysicalReg reg) const {
         return std::find(volatile_regs.begin(), volatile_regs.end(), reg) != volatile_regs.end();
     }
 
@@ -58,18 +58,11 @@ public:
     virtual int get_alloca_size(StackRegions &regions) = 0;
     virtual std::vector<Instruction> get_prolog(Function *func) = 0;
     virtual std::vector<Instruction> get_epilog(Function *func) = 0;
-
-    virtual InstrIter fix_up_instr(BasicBlock &block, InstrIter iter, target::TargetRegAnalyzer &analyzer) {
-        return iter;
-    }
-
     virtual bool is_func_exit(Opcode opcode) = 0;
     virtual std::vector<ArgStorage> get_arg_storage(const ssa::FunctionType &func_type) = 0;
     virtual int get_implicit_stack_bytes(Function *func) = 0;
 };
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 #endif
