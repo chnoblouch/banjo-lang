@@ -146,7 +146,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<union case literal>",
         return "<map literal>",
         return "<closure literal>",
-        return inner->symbol.get_name(),
+        return inner->symbol.get_qualified_name(),
         return binary_expr_to_string(*inner),
         return "<unary expr>",
         return "<cast expr>",
@@ -249,7 +249,7 @@ std::string ReportText::tuple_expr_to_string(const sir::TupleExpr &tuple_expr) {
 }
 
 std::string ReportText::specialize_expr_to_string(const sir::SpecializeExpr &specialize_expr) {
-    std::string str = specialize_expr.symbol.get_name() + "[";
+    std::string str = specialize_expr.symbol.get_qualified_name() + "[";
 
     for (unsigned i = 0; i < specialize_expr.args.size(); i++) {
         str += to_string(specialize_expr.args[i]);

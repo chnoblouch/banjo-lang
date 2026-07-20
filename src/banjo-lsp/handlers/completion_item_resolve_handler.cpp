@@ -34,68 +34,38 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
         return params;
     }
 
-    std::string name = item.symbol.get_name();
+    bool is_root_use = sir::Symbol{item.file_to_use->sir_mod} == item.symbol;
 
-    for (sir::Decl &decl : cur_file.sir_mod->block.decls) {
-        if (auto use_decl = decl.match<sir::UseDecl>()) {
-            // TODO: Consider comments.
+    if (!is_root_use) {
+        for (sir::Decl &decl : cur_file.sir_mod->block.decls) {
+            if (auto use_decl = decl.match<sir::UseDecl>()) {
+                FixedVector<TextInsertion, 2> insertions = try_modify_use(cur_file, item, *use_decl);
+                if (insertions.get_size() == 0) {
+                    continue;
+                }
 
-            std::optional<UseInsertionPoint> point =
-                find_insertion_point(*item.file_to_use->sir_mod, use_decl->root_item, nullptr);
+                JSONArray edits;
 
-            if (!point) {
-                continue;
-            }
-
-            ModulePath stripped_path = item.file_to_use->mod_path.strip(point->common_ancestor);
-            std::string path;
-
-            if (stripped_path.is_empty()) {
-                path = name;
-            } else {
-                path = std::string{stripped_path.to_string()} + '.' + name;
-            }
-
-            ASTNode *dot_expr = point->top_level_dot_expr->ast_node;
-            ASTNode *rhs = dot_expr->last_child;
-
-            if (rhs->type == AST_IDENTIFIER) {
-                JSONArray edits{
-                    serialize_insertion(cur_file, {point->ident->ident.ast_node->range.end + 1, "{"}),
-                    serialize_insertion(cur_file, {point->top_level_dot_expr->ast_node->range.end, ", " + path + "}"}),
-                };
-
-                JSONObject result = params;
-                result.add("additionalTextEdits", edits);
-                return result;
-            } else if (rhs->type == AST_USE_LIST) {
-                TextPosition position;
-                std::string text;
-
-                unsigned num_children = rhs->num_children();
-                unsigned num_commas = rhs->tokens.size() - 2;
-
-                if (num_children == 0) {
-                    position = cur_file.tokens.tokens[rhs->tokens[0]].position + 1;
-                    text = path;
-                } else if (num_children == num_commas) {
-                    Token &trailing_comma = cur_file.tokens.tokens[rhs->tokens[rhs->tokens.size() - 2]];
-                    position = trailing_comma.end();
-                    text = " " + path + ",";
-                } else {
-                    position = rhs->last_child->range.end;
-                    text = ", " + path;
+                for (TextInsertion &insertion : insertions) {
+                    edits.add(serialize_insertion(cur_file, insertion));
                 }
 
                 JSONObject result = params;
-                result.add("additionalTextEdits", JSONArray{serialize_insertion(cur_file, {position, text})});
+                result.add("additionalTextEdits", std::move(edits));
                 return result;
             }
         }
     }
 
+    std::string_view name = item.symbol.get_name();
     std::string_view mod_path = item.file_to_use->mod_path.to_string();
-    std::string use_text = "use " + std::string{mod_path} + '.' + name;
+    std::string use_text;
+
+    if (is_root_use) {
+        use_text = "use " + std::string{mod_path};
+    } else {
+        use_text = "use " + std::string{mod_path} + '.' + std::string{name};
+    }
 
     if (Config::instance().optional_semicolons) {
         use_text += "\n";
@@ -131,6 +101,63 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
     JSONObject result = params;
     result.add("additionalTextEdits", JSONArray{serialize_insertion(cur_file, insertion)});
     return result;
+}
+
+FixedVector<CompletionItemResolveHandler::TextInsertion, 2> CompletionItemResolveHandler::try_modify_use(
+    SourceFile &cur_file,
+    CompletionEngine::Item &item,
+    sir::UseDecl &use_decl
+) {
+    // TODO: Consider comments.
+
+    std::optional<UseInsertionPoint> point =
+        find_insertion_point(*item.file_to_use->sir_mod, use_decl.root_item, nullptr);
+
+    if (!point) {
+        return {};
+    }
+
+    std::string_view name = item.symbol.get_name();
+    ModulePath stripped_path = item.file_to_use->mod_path.strip(point->common_ancestor);
+    std::string path;
+
+    if (stripped_path.is_empty()) {
+        path = name;
+    } else {
+        path = std::string{stripped_path.to_string()} + '.' + std::string{name};
+    }
+
+    ASTNode *dot_expr = point->top_level_dot_expr->ast_node;
+    ASTNode *rhs = dot_expr->last_child;
+
+    if (rhs->type == AST_IDENTIFIER) {
+        return {
+            {point->ident->ident.ast_node->range.end + 1, "{"},
+            {point->top_level_dot_expr->ast_node->range.end, ", " + path + "}"},
+        };
+    } else if (rhs->type == AST_USE_LIST) {
+        TextPosition position;
+        std::string text;
+
+        unsigned num_children = rhs->num_children();
+        unsigned num_commas = rhs->tokens.size() - 2;
+
+        if (num_children == 0) {
+            position = cur_file.tokens.tokens[rhs->tokens[0]].position + 1;
+            text = path;
+        } else if (num_children == num_commas) {
+            Token &trailing_comma = cur_file.tokens.tokens[rhs->tokens[rhs->tokens.size() - 2]];
+            position = trailing_comma.end();
+            text = " " + path + ",";
+        } else {
+            position = rhs->last_child->range.end;
+            text = ", " + path;
+        }
+
+        return {{position, text}};
+    } else {
+        return {};
+    }
 }
 
 std::optional<CompletionItemResolveHandler::UseInsertionPoint> CompletionItemResolveHandler::find_insertion_point(

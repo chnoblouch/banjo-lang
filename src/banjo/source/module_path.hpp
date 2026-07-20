@@ -5,9 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 class ModulePath {
 
@@ -40,6 +38,8 @@ public:
     bool is_empty() const;
     std::string_view to_string() const;
     std::string to_string(std::string_view delimiter) const;
+    std::string_view name() const;
+    std::optional<ModulePath> parent() const;
     unsigned num_common_ancestors(const ModulePath &other) const;
     ModulePath strip(unsigned count) const;
 
@@ -51,9 +51,7 @@ public:
     friend bool operator!=(const ModulePath &rhs, const ModulePath &right) { return !(rhs == right); }
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 template <>
 struct std::hash<banjo::lang::ModulePath> {

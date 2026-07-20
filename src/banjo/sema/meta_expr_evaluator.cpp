@@ -98,7 +98,7 @@ Result MetaExprEvaluator::evaluate(sir::MetaCallExpr &meta_call_expr, sir::Expr 
 
 sir::Expr MetaExprEvaluator::compute_name(sir::Expr &type) {
     if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
-        return create_string_literal(symbol_expr->symbol.get_name());
+        return create_string_literal(symbol_expr->symbol.get_qualified_name());
     } else {
         return create_string_literal("");
     }

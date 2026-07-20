@@ -2,6 +2,7 @@
 
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/source/source_file.hpp"
 #include "banjo/utils/macros.hpp"
 #include "workspace.hpp"
 
@@ -60,6 +61,8 @@ void CompletionEngine::complete_in_block(Request request, sir::SymbolTable &symb
         try_collect_item(symbol.get_name(), symbol, options);
     }
 
+    std::vector<std::pair<sir::Symbol, SourceFile *>> external_symbols;
+
     for (const std::unique_ptr<SourceFile> &mod : workspace.get_mod_list()) {
         if (mod.get() == &request.file) {
             continue;
@@ -74,16 +77,32 @@ void CompletionEngine::complete_in_block(Request request, sir::SymbolTable &symb
                 continue;
             }
 
-            Options options{
-                .allow_values = true,
-                .include_parent_scopes = false,
-                .include_uses = false,
-                .create_func_call_template = true,
-                .file_to_use = mod.get(),
-            };
-
-            try_collect_item(symbol.get_name(), symbol, options);
+            external_symbols.push_back({symbol, mod.get()});
         }
+
+        if (symbol_table.look_up(mod->mod_path.name())) {
+            continue;
+        }
+
+        if (std::optional<ModulePath> parent_path = mod->mod_path.parent()) {
+            if (SourceFile *parent_mod = workspace.find_file(*parent_path)) {
+                external_symbols.push_back({mod.get()->sir_mod, parent_mod});
+            }
+        } else {
+            external_symbols.push_back({mod.get()->sir_mod, mod.get()});
+        }
+    }
+
+    for (auto [symbol, mod] : external_symbols) {
+        Options options{
+            .allow_values = true,
+            .include_parent_scopes = false,
+            .include_uses = false,
+            .create_func_call_template = true,
+            .file_to_use = mod,
+        };
+
+        try_collect_item(symbol.get_name(), symbol, options);
     }
 }
 
@@ -152,7 +171,7 @@ void CompletionEngine::complete_in_use() {
         if (file->mod_path.get_size() == 1) {
             Item item{
                 .kind = Item::Kind::SIMPLE,
-                .name = std::string{file->mod_path[0]},
+                .name = file->mod_path[0],
                 .symbol = file->sir_mod,
                 .file_to_use = nullptr,
             };
@@ -197,7 +216,7 @@ void CompletionEngine::complete_in_struct_literal(sir::StructLiteral &struct_lit
 
             Item item{
                 .kind = Item::Kind::STRUCT_FIELD_TEMPLATE,
-                .name = std::string{field->ident.value},
+                .name = field->ident.value,
                 .symbol = field,
                 .file_to_use = nullptr,
             };
@@ -209,10 +228,10 @@ void CompletionEngine::complete_in_struct_literal(sir::StructLiteral &struct_lit
 
 void CompletionEngine::collect_symbol_members(sir::Symbol &symbol, Options &options) {
     if (auto mod = symbol.match<sir::Module>()) {
-        for (ModulePath &path : workspace.find_file(mod->path)->sub_mod_paths) {
+        for (const ModulePath &path : workspace.find_file(mod->path)->sub_mod_paths) {
             Item item{
                 .kind = Item::Kind::SIMPLE,
-                .name = std::string{path[path.get_size() - 1]},
+                .name = path[path.get_size() - 1],
                 .symbol = symbol,
                 .file_to_use = options.file_to_use,
             };
@@ -238,7 +257,7 @@ void CompletionEngine::collect_value_members(lang::sir::Concrete<lang::sir::Stru
     for (sir::StructField *field : concrete_struct.def->fields) {
         Item item{
             .kind = Item::Kind::SIMPLE,
-            .name = std::string{field->ident.value},
+            .name = field->ident.value,
             .symbol = field,
             .file_to_use = options.file_to_use,
         };
@@ -257,7 +276,7 @@ void CompletionEngine::collect_value_members(lang::sir::Concrete<lang::sir::Stru
         }
 
         if (is_value_member) {
-            try_collect_item(std::string{name}, symbol, options);
+            try_collect_item(name, symbol, options);
         }
     }
 }
@@ -273,10 +292,10 @@ void CompletionEngine::collect_value_members(lang::sir::ProtoDef &proto_def) {
 
     for (auto &[name, symbol] : proto_def.block.symbol_table->symbols) {
         if (symbol.is<sir::FuncDecl>()) {
-            try_collect_item(std::string{name}, symbol, options);
+            try_collect_item(name, symbol, options);
         } else if (auto func_def = symbol.match<sir::FuncDef>()) {
             if (func_def->is_method()) {
-                try_collect_item(std::string{name}, symbol, options);
+                try_collect_item(name, symbol, options);
             }
         }
     }
@@ -284,7 +303,7 @@ void CompletionEngine::collect_value_members(lang::sir::ProtoDef &proto_def) {
 
 void CompletionEngine::collect_items(sir::SymbolTable &symbol_table, Options &options) {
     for (auto &[name, symbol] : symbol_table.symbols) {
-        try_collect_item(std::string{name}, symbol, options);
+        try_collect_item(name, symbol, options);
     }
 
     if (options.include_parent_scopes && symbol_table.parent) {
@@ -292,7 +311,7 @@ void CompletionEngine::collect_items(sir::SymbolTable &symbol_table, Options &op
     }
 }
 
-void CompletionEngine::try_collect_item(const std::string &name, sir::Symbol symbol, Options &options) {
+void CompletionEngine::try_collect_item(std::string_view name, sir::Symbol symbol, Options &options) {
     if (!options.include_uses && symbol.is_one_of<sir::UseIdent, sir::UseRebind>()) {
         return;
     }
@@ -346,7 +365,7 @@ void CompletionEngine::add_item(Item item) {
     }
 
     state.symbols.insert(item.symbol);
-    state.items.push_back(std::move(item));
+    state.items.push_back(item);
 }
 
 } // namespace banjo::lsp

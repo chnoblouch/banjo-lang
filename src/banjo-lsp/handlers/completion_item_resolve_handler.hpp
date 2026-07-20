@@ -6,6 +6,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/source/text_range.hpp"
+#include "banjo/utils/fixed_vector.hpp"
 
 #include "connection.hpp"
 #include "workspace.hpp"
@@ -36,6 +37,12 @@ public:
     JSONValue handle(const JSONObject &params, Connection &connection);
 
 private:
+    FixedVector<TextInsertion, 2> try_modify_use(
+        lang::SourceFile &cur_file,
+        CompletionEngine::Item &item,
+        lang::sir::UseDecl &use_decl
+    );
+
     std::optional<UseInsertionPoint> find_insertion_point(
         lang::sir::Module &mod,
         lang::sir::UseItem &use_item,

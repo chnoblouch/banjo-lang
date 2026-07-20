@@ -350,7 +350,15 @@ Ident &Symbol::get_ident() {
     return const_cast<Ident &>(std::as_const(*this).get_ident());
 }
 
-std::string Symbol::get_name() const {
+std::string_view Symbol::get_name() const {
+    if (auto mod = match<Module>()) {
+        return mod->path.name();
+    } else {
+        return get_ident().value;
+    }
+}
+
+std::string Symbol::get_qualified_name() const {
     if (auto mod = match<Module>()) {
         return std::string{mod->path.to_string()};
     } else {

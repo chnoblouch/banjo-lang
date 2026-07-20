@@ -373,7 +373,7 @@ void Printer::print_block(const Block &block) {
 
         for (const auto &[symbol, resource] : block.resources) {
             INDENT_LIST_ELEMENT();
-            stream << "\"" << symbol.get_name() << "\": ";
+            stream << "\"" << symbol.get_qualified_name() << "\": ";
             print_resource(resource, false);
         }
 
@@ -788,7 +788,7 @@ void Printer::print_closure_literal(const ClosureLiteral &closure_literal) {
 void Printer::print_symbol_expr(const SymbolExpr &symbol_expr) {
     BEGIN_OBJECT("SymbolExpr");
     PRINT_EXPR_FIELD("type", symbol_expr.type);
-    PRINT_FIELD("name", "\"" + symbol_expr.symbol.get_name() + "\"");
+    PRINT_FIELD("name", "\"" + symbol_expr.symbol.get_qualified_name() + "\"");
     END_OBJECT();
 }
 
@@ -883,7 +883,7 @@ void Printer::print_coercion_expr(const CoercionExpr &coercion_expr) {
 void Printer::print_specialize_expr(const SpecializeExpr &specialize_expr) {
     BEGIN_OBJECT("SpecializeExpr");
     PRINT_EXPR_FIELD("type", specialize_expr.type);
-    PRINT_FIELD("symbol", "\"" + specialize_expr.symbol.get_name() + "\"");
+    PRINT_FIELD("symbol", "\"" + specialize_expr.symbol.get_qualified_name() + "\"");
     PRINT_EXPR_LIST_FIELD("args", specialize_expr.args);
     END_OBJECT();
 }

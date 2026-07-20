@@ -61,8 +61,9 @@ JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::I
             return serialize_simple_item(index, item, LSPCompletionItemKind::FUNCTION);
         } else if (item.symbol.is<sir::ConstDef>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::CONSTANT);
-        } else if (item.symbol
-                       .is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()) {
+        } else if (
+            item.symbol.is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()
+        ) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::STRUCT);
         } else if (item.symbol.is_one_of<sir::VarDecl, sir::NativeVarDecl, sir::Local, sir::Param>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::VARIABLE);
@@ -154,7 +155,7 @@ JSONObject CompletionHandler::serialize_func_call_template(
         detail += " -> " + ReportText::to_string(return_type);
     }
 
-    std::string insert_text = item.name + "(";
+    std::string insert_text = std::string{item.name} + "(";
 
     for (unsigned i = is_method ? 1 : 0; i < type.params.size(); i++) {
         std::string_view param_name = type.params[i].name.value;
@@ -192,7 +193,7 @@ JSONObject CompletionHandler::serialize_func_call_template(
 JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item) {
     sir::StructDef &struct_def = item.symbol.as<sir::StructDef>();
 
-    std::string insert_text = item.name + " {\n";
+    std::string insert_text = std::string{item.name} + " {\n";
     std::string detail = " { ";
 
     for (unsigned i = 0; i < struct_def.fields.size(); i++) {
@@ -232,7 +233,7 @@ JSONObject CompletionHandler::serialize_struct_field_template(unsigned index, Co
     JSONObject result{
         {"label", item.name},
         {"kind", LSPCompletionItemKind::FIELD},
-        {"insertText", item.name + ": "},
+        {"insertText", std::string{item.name} + ": "},
         {"insertTextFormat", 2},
         {"data", index},
     };

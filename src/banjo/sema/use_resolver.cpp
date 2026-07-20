@@ -173,7 +173,7 @@ sir::Symbol UseResolver::resolve_symbol(sir::Ident &ident, sir::Symbol &symbol) 
         return new_symbol;
     }
 
-    analyzer.report_generator.report_err_symbol_not_found_in(ident, symbol.get_name());
+    analyzer.report_generator.report_err_symbol_not_found_in(ident, symbol.get_qualified_name());
     return nullptr;
 }
 

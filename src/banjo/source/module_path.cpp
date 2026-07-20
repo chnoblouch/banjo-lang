@@ -1,8 +1,6 @@
 #include "module_path.hpp"
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 ModulePath::ModulePath() {}
 
@@ -68,6 +66,26 @@ std::string ModulePath::to_string(std::string_view delimiter) const {
     }
 
     return string;
+}
+
+std::string_view ModulePath::name() const {
+    std::string::size_type position = value.rfind('.');
+
+    if (position == std::string::npos) {
+        return std::string_view{value};
+    } else {
+        return std::string_view{value}.substr(position + 1);
+    }
+}
+
+std::optional<ModulePath> ModulePath::parent() const {
+    std::string::size_type position = value.rfind('.');
+
+    if (position == std::string::npos) {
+        return {};
+    } else {
+        return ModulePath{value.substr(0, position)};
+    }
 }
 
 unsigned ModulePath::num_common_ancestors(const ModulePath &other) const {
@@ -156,6 +174,4 @@ bool ModulePath::Iterator::operator!=(const Iterator &other) const {
     return !(*this == other);
 }
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

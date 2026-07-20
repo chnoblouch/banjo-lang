@@ -781,7 +781,7 @@ void ReportGenerator::report_err_symbol_guarded(ASTNode *ast_node, const sir::Gu
     report_error(
         "definition of '$' is guarded by different condition than usage",
         ast_node,
-        guarded_symbol.variants[0].symbol.get_name()
+        guarded_symbol.variants[0].symbol.get_qualified_name()
     );
 }
 

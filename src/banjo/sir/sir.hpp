@@ -458,7 +458,8 @@ public:
 
     const Ident &get_ident() const;
     Ident &get_ident();
-    std::string get_name() const;
+    std::string_view get_name() const;
+    std::string get_qualified_name() const;
     Symbol get_parent() const;
     Module &find_mod() const;
     Expr get_type();
