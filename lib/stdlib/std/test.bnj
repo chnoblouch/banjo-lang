@@ -32,4 +32,5 @@ func assert_ne_msg[T: Compare[T]](ref a: T, ref b: T, message: String) {
 
 func fail() {
     print("test failed");
+    exit(1);
 }

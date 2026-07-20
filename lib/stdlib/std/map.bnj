@@ -40,6 +40,16 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
         return undefined;
     }
 
+    pub func try_get(mut self, ref key: K) -> ?ref mut V {
+        for ref mut element in self.elements {
+            if element.0 == key {
+                return ref mut element.1;
+            }
+        }
+
+        return none;
+    }
+
     pub func length(self) -> usize {
         return self.elements.length();
     }
