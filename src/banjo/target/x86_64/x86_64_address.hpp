@@ -2,56 +2,53 @@
 #define BANJO_TARGET_X86_64_ADDRESS_H
 
 #include "banjo/mcode/register.hpp"
-#include "banjo/mcode/stack_frame.hpp"
+#include "banjo/mcode/stack_address.hpp"
+#include "banjo/mcode/symbol.hpp"
 
 #include <variant>
+#include <optional>
 
 namespace banjo::target {
 
-class X8664Address {
+struct X8664Address {
+    struct RegOffset {
+        mcode::Register reg;
+        unsigned scale;
 
-private:
-    std::variant<mcode::Register, mcode::StackSlotID> base;
-    std::variant<std::monostate, mcode::Register, int> offset;
-    int scale;
+        RegOffset() : reg{mcode::Register::from_virtual(0)}, scale{1} {}
+        RegOffset(mcode::Register reg) : reg{reg}, scale{1} {}
+        RegOffset(mcode::Register reg, unsigned scale) : reg{reg}, scale{scale} {}
 
-public:
-    X8664Address(std::variant<mcode::Register, mcode::StackSlotID> base) : base(base) {}
+        bool operator==(const RegOffset &other) const = default;
+        bool operator!=(const RegOffset &other) const = default;
+    };
 
-    X8664Address(std::variant<mcode::Register, mcode::StackSlotID> base, mcode::Register offset, int scale)
-      : base(base),
-        offset(offset),
-        scale(scale) {}
+    typedef std::variant<mcode::Register, mcode::Symbol> Base;
+    typedef std::variant<int, mcode::StackAddress> ConstOffset;
 
-    X8664Address(std::variant<mcode::Register, mcode::StackSlotID> base, int offset, int scale)
-      : base(base),
-        offset(offset),
-        scale(scale) {}
-
-    bool is_base_reg() const { return base.index() == 0; }
-    bool is_base_stack_slot() const { return base.index() == 1; }
+    Base base;
+    ConstOffset offset_const;
+    std::optional<RegOffset> offset_reg;
 
     mcode::Register get_base_reg() const { return std::get<0>(base); }
-    mcode::StackSlotID get_base_stack_slot() const { return std::get<1>(base); }
+    const mcode::Symbol &get_base_symbol() const { return std::get<1>(base); }
 
-    mcode::Register get_reg_offset() const { return std::get<1>(offset); }
-    int get_int_offset() const { return std::get<2>(offset); }
-    bool has_offset() const { return offset.index() != 0; }
-    bool has_reg_offset() const { return offset.index() == 1; }
-    bool has_int_offset() const { return offset.index() == 2; }
-    int get_scale() const { return scale; }
+    bool is_base_reg() const { return base.index() == 0; }
+    bool is_base_symbol() const { return base.index() == 1; }
+
+    int get_offset_imm() const { return std::get<0>(offset_const); }
+    mcode::StackAddress get_offset_stack_addr() const { return std::get<1>(offset_const); }
+    const RegOffset &get_offset_reg() const { return *offset_reg; }
+
+    bool has_offset_imm() const { return offset_const.index() == 0; }
+    bool has_offset_stack_addr() const { return offset_const.index() == 1; }
+    bool has_offset_reg() const { return offset_reg.has_value(); }
 
     void set_base(mcode::Register base) { this->base = base; }
-    void set_no_offset() { this->offset = std::monostate(); }
-    void set_reg_offset(mcode::Register offset) { this->offset = offset; }
-    void set_int_offset(int offset) { this->offset = offset; }
-    void set_scale(int scale) { this->scale = scale; }
+    void set_offset_reg(RegOffset offset_reg) { this->offset_reg = offset_reg; }
 
-    friend bool operator==(const X8664Address &left, const X8664Address &right) {
-        return left.base == right.base && left.offset == right.offset;
-    }
-
-    friend bool operator!=(const X8664Address &left, const X8664Address &right) { return !(left == right); }
+    bool operator==(const X8664Address &rhs) const = default;
+    bool operator!=(const X8664Address &rhs) const = default;
 };
 
 } // namespace banjo::target

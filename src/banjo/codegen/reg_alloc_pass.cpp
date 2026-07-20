@@ -498,8 +498,8 @@ void RegAllocPass::try_replace(
             addr.set_base(mcode::Register::from_physical(physical_reg));
         }
 
-        if (addr.has_reg_offset() && addr.get_reg_offset() == reg) {
-            addr.set_reg_offset(mcode::Register::from_physical(physical_reg));
+        if (addr.has_offset_reg() && addr.get_offset_reg().reg == reg) {
+            addr.set_offset_reg({mcode::Register::from_physical(physical_reg), addr.get_offset_reg().scale});
         }
 
         operand = mcode::Operand::from_x86_64_addr(addr, operand.get_size());

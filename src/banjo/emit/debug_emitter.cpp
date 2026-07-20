@@ -223,27 +223,33 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
     else if (operand.is_symbol_deref()) return "[" + operand.get_deref_symbol().name + "]";
     else if (operand.is_x86_64_addr()) {
         const target::X8664Address &addr = operand.get_x86_64_addr();
+        std::string str;
 
-        std::string base;
         if (addr.is_base_reg()) {
-            base = get_reg_name(addr.get_base_reg(), 8);
-        } else if (addr.is_base_stack_slot()) {
-            base = "[" + get_stack_slot_name(basic_block.get_func(), addr.get_base_stack_slot()) + "]";
+            str = get_reg_name(addr.get_base_reg(), 8);
+        } else if (addr.is_base_symbol()) {
+            str = addr.get_base_symbol().name;
         } else {
             ASSERT_UNREACHABLE;
         }
 
-        if (addr.has_offset()) {
-            std::string offset;
-            if (addr.has_reg_offset()) offset = get_reg_name(addr.get_reg_offset(), 8);
-            else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
-
-            std::string scaled_offset =
-                addr.get_scale() == 1 ? offset : std::to_string(addr.get_scale()) + " * " + offset;
-            return "[" + base + " + " + scaled_offset + "]";
-        } else {
-            return "[" + base + "]";
+        if (addr.has_offset_reg()) {
+            std::string reg_name = get_reg_name(addr.get_offset_reg().reg, 8);
+            unsigned scale = addr.get_offset_reg().scale;
+            str += " + " + (scale == 1 ? reg_name : std::to_string(scale) + " * " + reg_name);
         }
+
+        if (addr.has_offset_imm()) {
+            if (addr.get_offset_imm() != 0) {
+                str += " + " + std::to_string(addr.get_offset_imm());
+            }
+        } else if (addr.has_offset_stack_addr()) {
+            str += " + " + build_stack_offset(basic_block.get_func(), addr.get_offset_stack_addr());
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+
+        return "[" + str + "]";
     } else if (operand.is_aarch64_addr()) {
         const target::AArch64Address &addr = operand.get_aarch64_addr();
         std::string str = "[";

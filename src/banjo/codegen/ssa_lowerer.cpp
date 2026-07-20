@@ -595,7 +595,7 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
                 discard_use(*producer->get_dest());
             } else if (offset.is_register()) {
                 // TODO: Temporary fix
-                if (target->get_descr().get_architecture() != target::Architecture::AARCH64) {
+                if (target->get_descr().get_architecture() == target::Architecture::WASM) {
                     break;
                 }
 

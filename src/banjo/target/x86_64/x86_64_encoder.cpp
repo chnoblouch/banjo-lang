@@ -1175,21 +1175,33 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
     };
 
     if (machine_addr.is_base_reg()) {
-        addr.base = (AddrRegCode)reg(machine_addr.get_base_reg());
-    } else if (machine_addr.is_base_stack_slot()) {
-        addr.base = AddrRegCode::ADDR_ESP;
-        addr.displacement = func->get_stack_frame().get_stack_slot(machine_addr.get_base_stack_slot()).get_offset();
+        addr.base = static_cast<AddrRegCode>(reg(machine_addr.get_base_reg()));
+    } else if (machine_addr.is_base_symbol()) {
+        // FIXME
+        ASSERT(!machine_addr.has_offset_stack_addr() && !machine_addr.has_offset_reg());
+        ASSERT(machine_addr.get_offset_imm() == 0);
+
+        const mcode::Symbol &symbol = machine_addr.get_base_symbol();
+
+        return SymbolAddress{
+            .symbol_index = symbol_indices[symbol.name],
+            .use_kind = use_kind(symbol),
+            .displacement = 0,
+        };
     } else {
         ASSERT_UNREACHABLE;
     }
 
-    if (!machine_addr.has_offset()) {
-        return addr;
-    } else if (machine_addr.has_reg_offset()) {
-        addr.scale = (std::uint8_t)machine_addr.get_scale();
-        addr.index = (AddrRegCode)reg(machine_addr.get_reg_offset());
-    } else if (machine_addr.has_int_offset()) {
-        addr.displacement += machine_addr.get_scale() * machine_addr.get_int_offset();
+    if (machine_addr.has_offset_reg()) {
+        const X8664Address::RegOffset &offset_reg = machine_addr.get_offset_reg();
+        addr.index = static_cast<AddrRegCode>(reg(offset_reg.reg));
+        addr.scale = static_cast<std::uint8_t>(offset_reg.scale);
+    }
+
+    if (machine_addr.has_offset_imm()) {
+        addr.displacement = machine_addr.get_offset_imm();
+    } else if (machine_addr.has_offset_stack_addr()) {
+        addr.displacement = func->get_stack_frame().offset_of(machine_addr.get_offset_stack_addr());
     }
 
     return addr;

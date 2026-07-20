@@ -336,8 +336,6 @@ add_library(banjo STATIC
     "target/x86_64/ms_abi_calling_conv.hpp"
     "target/x86_64/sys_v_calling_conv.cpp"
     "target/x86_64/sys_v_calling_conv.hpp"
-    "target/x86_64/x86_64_addr_lowering.cpp"
-    "target/x86_64/x86_64_addr_lowering.hpp"
     "target/x86_64/x86_64_address.hpp"
     "target/x86_64/x86_64_condition.hpp"
     "target/x86_64/x86_64_const_lowering.cpp"

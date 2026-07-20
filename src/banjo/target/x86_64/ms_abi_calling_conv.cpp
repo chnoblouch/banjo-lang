@@ -1,6 +1,7 @@
 #include "ms_abi_calling_conv.hpp"
 
 #include "banjo/codegen/machine_pass_utils.hpp"
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
@@ -141,7 +142,8 @@ void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operan
     } else if (func_operand.is_register()) {
         ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
         if (producer->get_opcode() == ssa::Opcode::LOAD) {
-            operand = x86_64_lowerer.lower_address(producer->get_operand(1));
+            codegen::SSALowerer::AddrComponents addr = lowerer.collect_addr(producer->get_operand(1));
+            operand = x86_64_lowerer.lower_addr_mem_access(addr);
             lowerer.discard_use(func_operand.get_register());
         } else {
             operand = lowerer.map_vreg_as_operand(func_operand.get_register(), ptr_size);

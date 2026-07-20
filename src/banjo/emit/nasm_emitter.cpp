@@ -272,6 +272,8 @@ void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction 
 }
 
 std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand) {
+    mcode::Function &func = *basic_block.get_func();
+
     if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
     else if (operand.is_register()) return get_reg_name(basic_block, operand.get_register(), operand.get_size());
     else if (operand.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot());
@@ -280,27 +282,33 @@ std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode:
     else if (operand.is_symbol_deref()) return "[" + gen_symbol(operand.get_deref_symbol()) + "]";
     else if (operand.is_x86_64_addr()) {
         const target::X8664Address &addr = operand.get_x86_64_addr();
+        std::string str;
 
-        std::string base;
         if (addr.is_base_reg()) {
-            base = get_reg_name(basic_block, addr.get_base_reg(), 8);
-        } else if (addr.is_base_stack_slot()) {
-            base = get_stack_slot_name(basic_block.get_func(), addr.get_base_stack_slot(), false);
+            str = get_reg_name(basic_block, addr.get_base_reg(), 8);
+        } else if (addr.is_base_symbol()) {
+            str = gen_symbol(addr.get_base_symbol());
         } else {
             ASSERT_UNREACHABLE;
         }
 
-        if (addr.has_offset()) {
-            std::string offset;
-            if (addr.has_reg_offset()) offset = get_reg_name(basic_block, addr.get_reg_offset(), 8);
-            else if (addr.has_int_offset()) offset = std::to_string(addr.get_int_offset());
-
-            std::string scaled_offset =
-                addr.get_scale() == 1 ? offset : std::to_string(addr.get_scale()) + " * " + offset;
-            return "[" + base + " + " + scaled_offset + "]";
-        } else {
-            return "[" + base + "]";
+        if (addr.has_offset_reg()) {
+            std::string reg_name = get_reg_name(basic_block, addr.get_offset_reg().reg, 8);
+            unsigned scale = addr.get_offset_reg().scale;
+            str += " + " + (scale == 1 ? reg_name : std::to_string(scale) + " * " + reg_name);
         }
+
+        if (addr.has_offset_imm()) {
+            if (addr.get_offset_imm() != 0) {
+                str += " + " + std::to_string(addr.get_offset_imm());
+            }
+        } else if (addr.has_offset_stack_addr()) {
+            str += " + " + std::to_string(func.get_stack_frame().offset_of(addr.get_offset_stack_addr()));
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+
+        return "[" + str + "]";
     } else ASSERT_UNREACHABLE;
 }
 

@@ -328,10 +328,10 @@ int main(int, char *[]) {
             }
 
             for (unsigned scale : std::vector<unsigned>{1, 2, 4, 8}) {
-                Register base_reg = Register::from_physical(base);
-                Register index_reg = Register::from_physical(index);
-                Operand addr = Operand::from_x86_64_addr({base_reg, index_reg, (int)scale});
-                assemble_instr({X8664Opcode::MOV, {random_gp_reg(8), addr}});
+                // Register base_reg = Register::from_physical(base);
+                // Register index_reg = Register::from_physical(index);
+                // Operand addr = Operand::from_x86_64_addr({base_reg, index_reg, (int)scale});
+                // assemble_instr({X8664Opcode::MOV, {random_gp_reg(8), addr}});
             }
         }
     }

@@ -1,6 +1,8 @@
 #include "x86_64_const_lowering.hpp"
 
+#include "banjo/mcode/symbol.hpp"
 #include "banjo/passes/pass_utils.hpp"
+#include "banjo/target/x86_64/x86_64_address.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/utils/macros.hpp"
@@ -23,11 +25,14 @@ mcode::Value X8664ConstLowering::load_f32(float value) {
     ConstStorage storage = f32_storage.at(lowerer.get_instr_iter()).at(value);
 
     if (storage.access == ConstStorageAccess::LOAD) {
-        return lowerer.deref_symbol_addr(storage.const_label, 4);
+        X8664Address m_addr{mcode::Symbol{storage.const_label, mcode::Relocation::NONE}};
+        return mcode::Operand::from_x86_64_addr(m_addr, 4);
     } else if (storage.access == ConstStorageAccess::LOAD_INTO_REG) {
+        X8664Address m_addr{mcode::Symbol{storage.const_label, mcode::Relocation::NONE}};
+
         mcode::Operand dst = mcode::Operand::from_register(storage.reg, 4);
-        mcode::Operand src = lowerer.deref_symbol_addr(storage.const_label, 4);
-        lowerer.emit(mcode::Instruction(X8664Opcode::MOVSS, {dst, src}));
+        mcode::Operand src = mcode::Operand::from_x86_64_addr(m_addr, 4);
+        lowerer.emit({X8664Opcode::MOVSS, {dst, src}});
         return dst;
     } else if (storage.access == ConstStorageAccess::READ_REG) {
         return mcode::Operand::from_register(storage.reg, 4);
@@ -45,7 +50,9 @@ mcode::Value X8664ConstLowering::load_f64(double value) {
     };
 
     lowerer.get_machine_module().add(global);
-    return lowerer.deref_symbol_addr(global.name, global.size);
+
+    X8664Address m_addr{mcode::Symbol{global.name, mcode::Relocation::NONE}};
+    return mcode::Operand::from_x86_64_addr(m_addr, global.size);
 }
 
 void X8664ConstLowering::process_block() {

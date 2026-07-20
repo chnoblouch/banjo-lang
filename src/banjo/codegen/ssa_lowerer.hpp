@@ -34,7 +34,7 @@ private:
         std::unordered_map<int, RegUsage> regs;
     };
 
-protected:
+public:
     struct RegOffset {
         mcode::Register reg;
         unsigned scale;

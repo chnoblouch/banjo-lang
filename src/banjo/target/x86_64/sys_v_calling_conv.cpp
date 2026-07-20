@@ -89,7 +89,8 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
     } else if (func_operand.is_register()) {
         ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
         if (producer->get_opcode() == ssa::Opcode::LOAD) {
-            m_callee = x86_64_lowerer.lower_address(producer->get_operand(1));
+            codegen::SSALowerer::AddrComponents addr = lowerer.collect_addr(producer->get_operand(1));
+            m_callee = x86_64_lowerer.lower_addr_mem_access(addr);
             lowerer.discard_use(func_operand.get_register());
         } else {
             m_callee = lowerer.map_vreg_as_operand(func_operand.get_register(), ptr_size);

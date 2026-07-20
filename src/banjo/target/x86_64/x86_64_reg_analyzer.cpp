@@ -359,8 +359,8 @@ void X8664RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<mc
         dst.push_back({addr.get_base_reg(), mcode::RegUsage::USE});
     }
 
-    if (addr.has_reg_offset()) {
-        dst.push_back({addr.get_reg_offset(), mcode::RegUsage::USE});
+    if (addr.has_offset_reg()) {
+        dst.push_back({addr.get_offset_reg().reg, mcode::RegUsage::USE});
     }
 }
 

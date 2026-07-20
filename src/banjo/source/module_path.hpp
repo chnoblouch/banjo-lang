@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
+#include <optional>
 
 namespace banjo::lang {
 

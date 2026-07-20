@@ -670,32 +670,16 @@ void AArch64SSALowerer::lower_ftos(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
-    AddrComponents addr = collect_addr(instr.get_operand(0));
-
-    ssa::Operand &offset = instr.get_operand(1);
-    ssa::Type base_type = instr.get_operand(2).get_type();
-
-    if (offset.is_immediate()) {
-        addr.const_offset += offset.get_int_immediate() * get_size(base_type);
-    } else if (offset.is_register()) {
-        addr.reg_offset = RegOffset{
-            .reg = map_vreg_as_reg(offset.get_register()),
-            .scale = get_size(base_type),
-        };
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+    ssa::Operand ssa_addr = ssa::Operand::from_register(*instr.get_dest(), ssa::Primitive::U64);
+    AddrComponents addr = collect_addr(ssa_addr);
 
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
     emit({AArch64Opcode::MOV, {m_dst, lower_addr_value(addr)}});
 }
 
 void AArch64SSALowerer::lower_memberptr(ssa::Instruction &instr) {
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-
-    ssa::Structure &struct_ = *instr.get_operand(0).get_type().get_struct();
-    unsigned member_index = instr.get_operand(2).get_int_immediate().to_u64();
-    addr.const_offset += get_member_offset(&struct_, member_index);
+    ssa::Operand ssa_addr = ssa::Operand::from_register(*instr.get_dest(), ssa::Primitive::U64);
+    AddrComponents addr = collect_addr(ssa_addr);
 
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
     emit({AArch64Opcode::MOV, {m_dst, lower_addr_value(addr)}});

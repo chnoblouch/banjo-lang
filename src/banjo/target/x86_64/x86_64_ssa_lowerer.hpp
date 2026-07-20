@@ -5,7 +5,6 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
-#include "banjo/target/x86_64/x86_64_addr_lowering.hpp"
 #include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_const_lowering.hpp"
 
@@ -23,7 +22,6 @@ private:
         bool is_callee = false;
     };
 
-    X8664AddrLowering addr_lowering;
     X8664ConstLowering const_lowering;
     std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
     std::optional<std::string> const_neg_zero;
@@ -35,9 +33,7 @@ public:
 
     mcode::Operand into_reg_or_addr(ssa::Operand &operand);
     mcode::Operand read_symbol_addr(const mcode::Symbol &symbol);
-    mcode::Operand deref_symbol_addr(const mcode::Symbol &symbol, unsigned size);
 
-    mcode::Operand lower_address(const ssa::Operand &operand);
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 public:
@@ -115,7 +111,7 @@ public:
     mcode::Operand lower_reg_as_operand(ssa::VirtualRegister src_reg, unsigned size, ValueLowerFlags flags);
     mcode::Operand lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags);
 
-    mcode::Operand build_addr_operand(AddrComponents addr);
+    mcode::Operand lower_addr_mem_access(AddrComponents addr);
 
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
