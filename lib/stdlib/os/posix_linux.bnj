@@ -84,8 +84,11 @@ meta if config.OS == config.LINUX {
     native var stdout: addr;
     native var stderr: addr;
 
-    # FIXME: This size is definitely only 40 on x86-64.
-    type PthreadMutex = [u8; 40];
+    meta if config.ARCH == config.X86_64 {
+        type PthreadMutex = [u8; 40];
+    } else if config.ARCH == config.AARCH64 {
+        type PthreadMutex = [u8; 48];
+    }
 
     type ClockId = u64;
 
