@@ -564,12 +564,16 @@ void X8664SSALowerer::lower_xor(ssa::Instruction &instr) {
     append_mov_and_operation(X8664Opcode::XOR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
-void X8664SSALowerer::lower_shl(ssa::Instruction &instr) {
+void X8664SSALowerer::lower_lshl(ssa::Instruction &instr) {
     lower_shift(X8664Opcode::SHL, instr);
 }
 
-void X8664SSALowerer::lower_shr(ssa::Instruction &instr) {
+void X8664SSALowerer::lower_lshr(ssa::Instruction &instr) {
     lower_shift(X8664Opcode::SHR, instr);
+}
+
+void X8664SSALowerer::lower_ashr(ssa::Instruction &instr) {
+    lower_shift(X8664Opcode::SAR, instr);
 }
 
 void X8664SSALowerer::lower_jmp(ssa::Instruction &instr) {

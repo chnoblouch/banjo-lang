@@ -136,8 +136,9 @@ ssa::Opcode IRParser::parse_opcode() {
     else if (str == "and") return ssa::Opcode::AND;
     else if (str == "or") return ssa::Opcode::OR;
     else if (str == "xor") return ssa::Opcode::XOR;
-    else if (str == "shl") return ssa::Opcode::SHL;
-    else if (str == "shr") return ssa::Opcode::SHR;
+    else if (str == "lshl") return ssa::Opcode::LSHL;
+    else if (str == "lshr") return ssa::Opcode::LSHR;
+    else if (str == "ashr") return ssa::Opcode::ASHR;
     else if (str == "jmp") return ssa::Opcode::JMP;
     else if (str == "cjmp") return ssa::Opcode::CJMP;
     else if (str == "fcjmp") return ssa::Opcode::FCJMP;

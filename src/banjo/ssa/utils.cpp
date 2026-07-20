@@ -22,8 +22,9 @@ Type get_result_type(Instruction &instr, Type addr_type) {
         case Opcode::AND: return instr.get_operand(0).get_type();
         case Opcode::OR: return instr.get_operand(0).get_type();
         case Opcode::XOR: return instr.get_operand(0).get_type();
-        case Opcode::SHL: return instr.get_operand(0).get_type();
-        case Opcode::SHR: return instr.get_operand(0).get_type();
+        case Opcode::LSHL: return instr.get_operand(0).get_type();
+        case Opcode::LSHR: return instr.get_operand(0).get_type();
+        case Opcode::ASHR: return instr.get_operand(0).get_type();
         case Opcode::JMP: return Primitive::VOID;
         case Opcode::CJMP: return Primitive::VOID;
         case Opcode::FCJMP: return Primitive::VOID;

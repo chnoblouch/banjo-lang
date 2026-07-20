@@ -209,8 +209,9 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
         case ssa::Opcode::AND: lower_and(instr); break;
         case ssa::Opcode::OR: lower_or(instr); break;
         case ssa::Opcode::XOR: lower_xor(instr); break;
-        case ssa::Opcode::SHL: lower_shl(instr); break;
-        case ssa::Opcode::SHR: lower_shr(instr); break;
+        case ssa::Opcode::LSHL: lower_lshl(instr); break;
+        case ssa::Opcode::LSHR: lower_lshr(instr); break;
+        case ssa::Opcode::ASHR: lower_ashr(instr); break;
         case ssa::Opcode::JMP: lower_jmp(instr); break;
         case ssa::Opcode::CJMP: lower_cjmp(instr); break;
         case ssa::Opcode::FCJMP: lower_fcjmp(instr); break;
@@ -430,12 +431,16 @@ void SSALowerer::lower_xor(ssa::Instruction &) {
     WARN_UNIMPLEMENTED("xor");
 }
 
-void SSALowerer::lower_shl(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("shl");
+void SSALowerer::lower_lshl(ssa::Instruction &) {
+    WARN_UNIMPLEMENTED("lshl");
 }
 
-void SSALowerer::lower_shr(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("shr");
+void SSALowerer::lower_lshr(ssa::Instruction &) {
+    WARN_UNIMPLEMENTED("lshr");
+}
+
+void SSALowerer::lower_ashr(ssa::Instruction &) {
+    WARN_UNIMPLEMENTED("ashr");
 }
 
 void SSALowerer::lower_jmp(ssa::Instruction &) {

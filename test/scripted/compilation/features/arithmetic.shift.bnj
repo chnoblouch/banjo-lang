@@ -1,0 +1,102 @@
+# test:subtest
+# test:output "56,496,736,6946816"
+
+func main() {
+    var a: u8 = 7;
+    var b: u16 = 31;
+    var c: u32 = 184;
+    var d: u64 = 848;
+
+    print((a << 3) as u32);  # TODO: Unnecessary cast
+    print(',');
+    print(b << 4);
+    print(',');
+    print(c << 2);
+    print(',');
+    print(d << 13);
+}
+
+# test:subtest
+# test:output "24,-752,2148,-39911424"
+
+func main() {
+    var a: i8 = 3;
+    var b: i16 = -47;
+    var c: i32 = 537;
+    var d: i64 = -4872;
+
+    print(a << 3);
+    print(',');
+    print(b << 4);
+    print(',');
+    print(c << 2);
+    print(',');
+    print(d << 13);
+}
+
+# test:subtest
+# test:output "7,31,184,848"
+
+func main() {
+    var a: u8 = 56;
+    var b: u16 = 496;
+    var c: u32 = 736;
+    var d: u64 = 6946816;
+
+    print((a >> 3) as u32);  # TODO: Unnecessary cast
+    print(',');
+    print(b >> 4);
+    print(',');
+    print(c >> 2);
+    print(',');
+    print(d >> 13);
+}
+
+# test:subtest
+# test:output "3,-47,537,-4872"
+
+func main() {
+    var a: i8 = 24;
+    var b: i16 = -752;
+    var c: i32 = 2148;
+    var d: i64 = -39911424;
+
+    print(a >> 3);
+    print(',');
+    print(b >> 4);
+    print(',');
+    print(c >> 2);
+    print(',');
+    print(d >> 13);
+}
+
+# test:subtest
+# test:output "2147483647,-1073741824,9223372036854775807,-4611686018427387904"
+
+func main() {
+    var a: u32 = 4294967295;
+    var b: i32 = -2147483648;
+    var c: u64 = 18446744073709551615;
+    var d: i64 = -9223372036854775808;
+
+    print(a >> 1);
+    print(',');
+    print(b >> 1);
+    print(',');
+    print(c >> 1);
+    print(',');
+    print(d >> 1);
+}
+
+# test:subtest
+# test:output "37,75,75"
+
+func main() {
+    var a: u32 = 75;
+
+    print(a >> 1);
+    print(',');
+    print(a >> 0);
+    print(',');
+    print(a << 0);
+}

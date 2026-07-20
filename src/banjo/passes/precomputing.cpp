@@ -82,8 +82,9 @@ std::optional<ssa::Value> Precomputing::precompute_result(ssa::Instruction &inst
         case ssa::Opcode::AND: return precompute_and(instr);
         case ssa::Opcode::OR: return precompute_or(instr);
         case ssa::Opcode::XOR: return precompute_xor(instr);
-        case ssa::Opcode::SHL: return precompute_shl(instr);
-        case ssa::Opcode::SHR: return precompute_shr(instr);
+        case ssa::Opcode::LSHL: return precompute_lshl(instr);
+        case ssa::Opcode::LSHR: return precompute_lshr(instr);
+        case ssa::Opcode::ASHR: return precompute_ashr(instr);
         case ssa::Opcode::SELECT: return precompute_select(instr);
         case ssa::Opcode::SEXTEND: return precompute_extend(instr);
         case ssa::Opcode::UEXTEND: return precompute_extend(instr);
@@ -150,7 +151,7 @@ std::optional<ssa::Value> Precomputing::precompute_xor(ssa::Instruction &instr) 
     return precompute_binary_int_operation(instr, [](LargeInt lhs, LargeInt rhs) { return lhs ^ rhs; });
 }
 
-std::optional<ssa::Value> Precomputing::precompute_shl(ssa::Instruction &instr) {
+std::optional<ssa::Value> Precomputing::precompute_lshl(ssa::Instruction &instr) {
     // FIXME
 
     return precompute_binary_int_operation(instr, [](LargeInt lhs, LargeInt rhs) {
@@ -158,11 +159,19 @@ std::optional<ssa::Value> Precomputing::precompute_shl(ssa::Instruction &instr) 
     });
 }
 
-std::optional<ssa::Value> Precomputing::precompute_shr(ssa::Instruction &instr) {
+std::optional<ssa::Value> Precomputing::precompute_lshr(ssa::Instruction &instr) {
     // FIXME
 
     return precompute_binary_int_operation(instr, [](LargeInt lhs, LargeInt rhs) {
         return LargeInt{(int)(lhs.to_s64() >> rhs.to_s64())};
+    });
+}
+
+std::optional<ssa::Value> Precomputing::precompute_ashr(ssa::Instruction &instr) {
+    // FIXME
+
+    return precompute_binary_int_operation(instr, [](LargeInt lhs, LargeInt rhs) {
+        return LargeInt{lhs.to_u64() >> rhs.to_u64()};
     });
 }
 

@@ -507,18 +507,25 @@ void AArch64SSALowerer::lower_xor(ssa::Instruction &instr) {
     emit(mcode::Instruction(AArch64Opcode::EOR, {m_dst, m_lhs, m_rhs}));
 }
 
-void AArch64SSALowerer::lower_shl(ssa::Instruction &instr) {
+void AArch64SSALowerer::lower_lshl(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::LSL, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::LSL, {m_dst, m_lhs, m_rhs}});
 }
 
-void AArch64SSALowerer::lower_shr(ssa::Instruction &instr) {
+void AArch64SSALowerer::lower_lshr(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::ASR, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::LSR, {m_dst, m_lhs, m_rhs}});
+}
+
+void AArch64SSALowerer::lower_ashr(ssa::Instruction &instr) {
+    mcode::Operand m_lhs = lower_value(instr.get_operand(0));
+    mcode::Operand m_rhs = lower_value(instr.get_operand(1));
+    mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
+    emit({AArch64Opcode::ASR, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_jmp(ssa::Instruction &instr) {

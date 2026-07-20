@@ -31,8 +31,9 @@ Type Instruction::get_type() const {
         case Opcode::AND:
         case Opcode::OR:
         case Opcode::XOR:
-        case Opcode::SHL:
-        case Opcode::SHR:
+        case Opcode::LSHL:
+        case Opcode::LSHR:
+        case Opcode::ASHR:
         case Opcode::SQRT: return operands[0].get_type();
         case Opcode::UEXTEND: return operands[1].get_type();
         case Opcode::SEXTEND: return operands[1].get_type();

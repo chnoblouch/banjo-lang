@@ -171,8 +171,9 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::AND: opcode = "and"; break;
             case Opcode::OR: opcode = "or"; break;
             case Opcode::XOR: opcode = "xor"; break;
-            case Opcode::SHL: opcode = "shl"; break;
-            case Opcode::SHR: opcode = "shr"; break;
+            case Opcode::LSHL: opcode = "lshl"; break;
+            case Opcode::LSHR: opcode = "lshr"; break;
+            case Opcode::ASHR: opcode = "ashr"; break;
             case Opcode::FADD: opcode = "fadd"; break;
             case Opcode::FSUB: opcode = "fsub"; break;
             case Opcode::FMUL: opcode = "fmul"; break;

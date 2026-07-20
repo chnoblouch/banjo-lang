@@ -3,7 +3,6 @@
 #include "banjo/passes/analysis/stack_layout.hpp"
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
-#include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/bit_operations.hpp"
@@ -128,7 +127,7 @@ void PeepholeOptimizer::process_mul(ssa::InstrIter &iter, ssa::BasicBlock &block
             unsigned shift = BitOperations::get_first_bit_set(value);
             ssa::Operand lhs = iter->get_operand(0);
             ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, lhs.get_type());
-            iter = block.replace(iter, ssa::Instruction(ssa::Opcode::SHL, *iter->get_dest(), {lhs, rhs}));
+            iter = block.replace(iter, ssa::Instruction(ssa::Opcode::LSHL, *iter->get_dest(), {lhs, rhs}));
         }
     }
 }
@@ -141,7 +140,7 @@ void PeepholeOptimizer::process_udiv(ssa::InstrIter &iter, ssa::BasicBlock &bloc
             unsigned shift = BitOperations::get_first_bit_set(value);
             ssa::Operand lhs = iter->get_operand(0);
             ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, lhs.get_type());
-            iter = block.replace(iter, ssa::Instruction(ssa::Opcode::SHR, *iter->get_dest(), {lhs, rhs}));
+            iter = block.replace(iter, ssa::Instruction(ssa::Opcode::LSHR, *iter->get_dest(), {lhs, rhs}));
         }
     }
 }

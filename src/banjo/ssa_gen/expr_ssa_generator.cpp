@@ -345,23 +345,20 @@ StoredValue ExprSSAGenerator::generate_binary_expr(const sir::BinaryExpr &binary
     sir::Expr lhs_type = ctx.resolve_if_generic(binary_expr.lhs.get_type());
 
     if (lhs_type.is_int_type()) {
+        bool is_unsigned = lhs_type.is_unsigned_type();
         ssa::Opcode ssa_op;
 
         switch (binary_expr.op) {
             case sir::BinaryOp::ADD: ssa_op = ssa::Opcode::ADD; break;
             case sir::BinaryOp::SUB: ssa_op = ssa::Opcode::SUB; break;
             case sir::BinaryOp::MUL: ssa_op = ssa::Opcode::MUL; break;
-            case sir::BinaryOp::DIV:
-                ssa_op = lhs_type.is_unsigned_type() ? ssa::Opcode::UDIV : ssa::Opcode::SDIV;
-                break;
-            case sir::BinaryOp::MOD:
-                ssa_op = lhs_type.is_unsigned_type() ? ssa::Opcode::UREM : ssa::Opcode::SREM;
-                break;
+            case sir::BinaryOp::DIV: ssa_op = is_unsigned ? ssa::Opcode::UDIV : ssa::Opcode::SDIV; break;
+            case sir::BinaryOp::MOD: ssa_op = is_unsigned ? ssa::Opcode::UREM : ssa::Opcode::SREM; break;
             case sir::BinaryOp::BIT_AND: ssa_op = ssa::Opcode::AND; break;
             case sir::BinaryOp::BIT_OR: ssa_op = ssa::Opcode::OR; break;
             case sir::BinaryOp::BIT_XOR: ssa_op = ssa::Opcode::XOR; break;
-            case sir::BinaryOp::SHL: ssa_op = ssa::Opcode::SHL; break;
-            case sir::BinaryOp::SHR: ssa_op = ssa::Opcode::SHR; break;
+            case sir::BinaryOp::SHL: ssa_op = ssa::Opcode::LSHL; break;
+            case sir::BinaryOp::SHR: ssa_op = is_unsigned ? ssa::Opcode::LSHR : ssa::Opcode::ASHR; break;
             default: ASSERT_UNREACHABLE;
         }
 

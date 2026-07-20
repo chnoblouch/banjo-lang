@@ -362,14 +362,19 @@ void WasmSSALowerer::lower_xor(ssa::Instruction &instr) {
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_XOR : WasmOpcode::I32_XOR);
 }
 
-void WasmSSALowerer::lower_shl(ssa::Instruction &instr) {
+void WasmSSALowerer::lower_lshl(ssa::Instruction &instr) {
     bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SHL : WasmOpcode::I32_SHL);
 }
 
-void WasmSSALowerer::lower_shr(ssa::Instruction &instr) {
+void WasmSSALowerer::lower_lshr(ssa::Instruction &instr) {
     bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
     lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SHR_S : WasmOpcode::I32_SHR_S);
+}
+
+void WasmSSALowerer::lower_ashr(ssa::Instruction &instr) {
+    bool is_64_bit = is_64_bit_int(instr.get_operand(0).get_type());
+    lower_2_operand_numeric(instr, is_64_bit ? WasmOpcode::I64_SHR_U : WasmOpcode::I32_SHR_U);
 }
 
 void WasmSSALowerer::lower_jmp(ssa::Instruction &instr) {

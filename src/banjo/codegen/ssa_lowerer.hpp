@@ -147,8 +147,9 @@ protected:
     virtual void lower_and(ssa::Instruction &instr);
     virtual void lower_or(ssa::Instruction &instr);
     virtual void lower_xor(ssa::Instruction &instr);
-    virtual void lower_shl(ssa::Instruction &instr);
-    virtual void lower_shr(ssa::Instruction &instr);
+    virtual void lower_lshl(ssa::Instruction &instr);
+    virtual void lower_lshr(ssa::Instruction &instr);
+    virtual void lower_ashr(ssa::Instruction &instr);
     virtual void lower_jmp(ssa::Instruction &instr);
     virtual void lower_cjmp(ssa::Instruction &instr);
     virtual void lower_fcjmp(ssa::Instruction &instr);

@@ -38,6 +38,7 @@ enum {
     XOR,
     SHL,
     SHR,
+    SAR,
     CDQ,
     CQO,
     JMP,

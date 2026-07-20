@@ -32,6 +32,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case XOR: encode_xor(instr, func); break;
         case SHL: encode_shl(instr, func); break;
         case SHR: encode_shr(instr, func); break;
+        case SAR: encode_sar(instr, func); break;
         case CDQ: encode_cdq(); break;
         case CQO: encode_cqo(); break;
         case IMUL: encode_imul(instr, func); break;
@@ -213,6 +214,10 @@ void X8664Encoder::encode_shl(mcode::Instruction &instr, mcode::Function *func) 
 
 void X8664Encoder::encode_shr(mcode::Instruction &instr, mcode::Function *func) {
     encode_shift(instr, func, 5);
+}
+
+void X8664Encoder::encode_sar(mcode::Instruction &instr, mcode::Function *func) {
+    encode_shift(instr, func, 7);
 }
 
 void X8664Encoder::encode_cdq() {
