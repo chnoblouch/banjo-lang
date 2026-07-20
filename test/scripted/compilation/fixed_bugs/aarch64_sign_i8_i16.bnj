@@ -1,0 +1,59 @@
+# test:subtest
+# test:output "-12,-3276"
+
+func main() {
+    var a: i8 = -128;
+    var b: i16 = -32768;
+
+    print(a / 10);
+    print(',');
+    print(b / 10);
+}
+
+# test:subtest
+# test:output "-8,-8"
+
+func main() {
+    var a: i8 = -128;
+    var b: i16 = -32768;
+
+    print(a % 10);
+    print(',');
+    print(b % 10);
+}
+
+# test:subtest
+# test:output "-16,-4096"
+
+func main() {
+    var a: i8 = -128;
+    var b: i16 = -32768;
+
+    print(a >> 3);
+    print(',');
+    print(b >> 3);
+}
+
+# test:subtest
+# test:output "true,true,true,true,true,true,true,true"
+
+func main() {
+    var a: i8 = -127;
+    var b: i16 = -32767;
+
+    print(a < -126);
+    print(',');
+    print(a <= -126);
+    print(',');
+    print(a > -128);
+    print(',');
+    print(a >= -128);
+    print(',');
+    print(b < -32766);
+    print(',');
+    print(b <= -32766);
+    print(',');
+    print(b > -32768);
+    print(',');
+    print(b >= -32768);
+}

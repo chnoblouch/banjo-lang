@@ -38,6 +38,8 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::ADD: encode_add(instr); break;
         case AArch64Opcode::SUB: encode_sub(instr); break;
         case AArch64Opcode::MUL: encode_mul(instr); break;
+        case AArch64Opcode::MADD: encode_madd(instr); break;
+        case AArch64Opcode::MSUB: encode_msub(instr); break;
         case AArch64Opcode::SDIV: encode_sdiv(instr); break;
         case AArch64Opcode::UDIV: encode_udiv(instr); break;
         case AArch64Opcode::AND: encode_and(instr); break;
@@ -182,6 +184,14 @@ void AArch64Encoder::encode_sub(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_mul(mcode::Instruction &instr) {
     encode_mul_family(instr, {0x1B007C00});
+}
+
+void AArch64Encoder::encode_madd(mcode::Instruction &instr) {
+    encode_madd_family(instr, {0x1b000000});
+}
+
+void AArch64Encoder::encode_msub(mcode::Instruction &instr) {
+    encode_madd_family(instr, {0x1b008000});
 }
 
 void AArch64Encoder::encode_sdiv(mcode::Instruction &instr) {
@@ -627,6 +637,21 @@ void AArch64Encoder::encode_mul_family(mcode::Instruction &instr, std::array<std
     std::uint32_t r_rhs = encode_gp_reg(m_rhs.get_physical_reg());
 
     text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (r_lhs << 5) | r_dst);
+}
+
+void AArch64Encoder::encode_madd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_mul_lhs = instr.get_operand(1);
+    mcode::Operand &m_mul_rhs = instr.get_operand(2);
+    mcode::Operand &m_add_sub = instr.get_operand(3);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_dst = encode_gp_reg(m_dst.get_physical_reg());
+    std::uint32_t r_mul_lhs = encode_gp_reg(m_mul_lhs.get_physical_reg());
+    std::uint32_t r_mul_rhs = encode_gp_reg(m_mul_rhs.get_physical_reg());
+    std::uint32_t r_add_sub = encode_gp_reg(m_add_sub.get_physical_reg());
+
+    text.write_u32(params[0] | (sf << 31) | (r_mul_rhs << 16) | (r_add_sub << 10) | (r_mul_lhs << 5) | r_dst);
 }
 
 void AArch64Encoder::encode_and_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

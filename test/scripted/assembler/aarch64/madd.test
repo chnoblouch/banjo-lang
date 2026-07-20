@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "652E179B"
+
+madd x5, x19, x23, x11
+
+# test:subtest
+# test:encoding "652E171B"
+
+madd w5, w19, w23, w11

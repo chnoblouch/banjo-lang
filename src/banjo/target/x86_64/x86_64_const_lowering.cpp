@@ -13,7 +13,7 @@ namespace target {
 
 X8664ConstLowering::X8664ConstLowering(X8664SSALowerer &lowerer) : lowerer(lowerer) {}
 
-mcode::Value X8664ConstLowering::load_f32(float value) {
+mcode::Operand X8664ConstLowering::load_f32(float value) {
     ASSERT(value != 0.0);
 
     if (lowerer.get_basic_block_iter() != last_block) {
@@ -41,7 +41,7 @@ mcode::Value X8664ConstLowering::load_f32(float value) {
     }
 }
 
-mcode::Value X8664ConstLowering::load_f64(double value) {
+mcode::Operand X8664ConstLowering::load_f64(double value) {
     mcode::Global global{
         .name = "float." + std::to_string(cur_id++),
         .size = 8,

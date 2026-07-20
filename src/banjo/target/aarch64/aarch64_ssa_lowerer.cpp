@@ -4,7 +4,6 @@
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_address.hpp"
 #include "banjo/mcode/stack_frame.hpp"
-#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
@@ -15,7 +14,6 @@
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
-#include "banjo/utils/utils.hpp"
 
 #include <variant>
 
@@ -39,7 +37,7 @@ void AArch64SSALowerer::lower_fp_operation(mcode::Opcode opcode, ssa::Instructio
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(opcode, {m_dst, m_lhs, m_rhs}));
+    emit({opcode, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr) {
@@ -49,6 +47,11 @@ void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruc
 
     mcode::Operand m_cmp_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_cmp_rhs = lower_value(instr.get_operand(2));
+
+    if (ssa::is_comparison_signed(comparison)) {
+        m_cmp_lhs = emit_sign_ext(m_cmp_lhs);
+        m_cmp_rhs = emit_sign_ext(m_cmp_rhs);
+    }
 
     mcode::Operand m_target_true = mcode::Operand::from_label(target_true.block->get_label());
     mcode::Operand m_target_false = mcode::Operand::from_label(target_false.block->get_label());
@@ -87,7 +90,7 @@ mcode::Operand AArch64SSALowerer::lower_reg_val(ssa::VirtualRegister virtual_reg
         mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
         mcode::Operand m_sp = mcode::Operand::from_register(mcode::Register::from_physical(AArch64Register::SP), 8);
         mcode::Operand m_offset = mcode::Operand::from_stack_offset({stack_slot, 0});
-        emit(mcode::Instruction(AArch64Opcode::ADD, {m_tmp, m_sp, m_offset}));
+        emit({AArch64Opcode::ADD, {m_tmp, m_sp, m_offset}});
 
         return m_tmp;
     } else {
@@ -256,7 +259,7 @@ void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
         mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
         mcode::Operand m_dst = map_vreg_dst(instr, size);
         mcode::Operand m_zero = mcode::Operand::from_int_immediate(0, 4);
-        emit(mcode::Instruction(opcode, {m_dst, m_zero}));
+        emit({opcode, {m_dst, m_zero}});
         return;
     }
 
@@ -405,14 +408,14 @@ void AArch64SSALowerer::lower_add(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::ADD, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::ADD, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_sub(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::SUB, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::SUB, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_mul(ssa::Instruction &instr) {
@@ -429,33 +432,32 @@ void AArch64SSALowerer::lower_mul(ssa::Instruction &instr) {
     }
 
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::MUL, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::MUL, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_sdiv(ssa::Instruction &instr) {
-    mcode::Operand m_lhs = lower_value(instr.get_operand(0));
-    mcode::Operand m_rhs = lower_value(instr.get_operand(1));
+    mcode::Operand m_lhs = emit_sign_ext(lower_value(instr.get_operand(0)));
+    mcode::Operand m_rhs = emit_sign_ext(lower_value(instr.get_operand(1)));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::SDIV, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::SDIV, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_srem(ssa::Instruction &instr) {
     unsigned size = get_size(instr.get_operand(0).get_type());
-    mcode::Operand m_dividend = lower_value(instr.get_operand(0));
-    mcode::Operand m_divisor = lower_value(instr.get_operand(1));
+    mcode::Operand m_dividend = emit_sign_ext(lower_value(instr.get_operand(0)));
+    mcode::Operand m_divisor = emit_sign_ext(lower_value(instr.get_operand(1)));
     mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
     mcode::Operand m_dst = map_vreg_dst(instr, size);
 
-    emit(mcode::Instruction(AArch64Opcode::SDIV, {m_tmp, m_dividend, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp, m_tmp, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::SUB, {m_dst, m_dividend, m_tmp}));
+    emit({AArch64Opcode::SDIV, {m_tmp, m_dividend, m_divisor}});
+    emit({AArch64Opcode::MSUB, {m_dst, m_tmp, m_divisor, m_dividend}});
 }
 
 void AArch64SSALowerer::lower_udiv(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::UDIV, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::UDIV, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_urem(ssa::Instruction &instr) {
@@ -465,9 +467,8 @@ void AArch64SSALowerer::lower_urem(ssa::Instruction &instr) {
     mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
     mcode::Operand m_dst = map_vreg_dst(instr, size);
 
-    emit(mcode::Instruction(AArch64Opcode::UDIV, {m_tmp, m_dividend, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp, m_tmp, m_divisor}));
-    emit(mcode::Instruction(AArch64Opcode::SUB, {m_dst, m_dividend, m_tmp}));
+    emit({AArch64Opcode::UDIV, {m_tmp, m_dividend, m_divisor}});
+    emit({AArch64Opcode::MSUB, {m_dst, m_tmp, m_divisor, m_dividend}});
 }
 
 void AArch64SSALowerer::lower_fadd(ssa::Instruction &instr) {
@@ -490,21 +491,21 @@ void AArch64SSALowerer::lower_and(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::AND, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::AND, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_or(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::ORR, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::ORR, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_xor(ssa::Instruction &instr) {
     mcode::Operand m_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_rhs = lower_value(instr.get_operand(1));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
-    emit(mcode::Instruction(AArch64Opcode::EOR, {m_dst, m_lhs, m_rhs}));
+    emit({AArch64Opcode::EOR, {m_dst, m_lhs, m_rhs}});
 }
 
 void AArch64SSALowerer::lower_lshl(ssa::Instruction &instr) {
@@ -522,8 +523,8 @@ void AArch64SSALowerer::lower_lshr(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_ashr(ssa::Instruction &instr) {
-    mcode::Operand m_lhs = lower_value(instr.get_operand(0));
-    mcode::Operand m_rhs = lower_value(instr.get_operand(1));
+    mcode::Operand m_lhs = emit_sign_ext(lower_value(instr.get_operand(0)));
+    mcode::Operand m_rhs = emit_sign_ext(lower_value(instr.get_operand(1)));
     mcode::Operand m_dst = map_vreg_dst(instr, m_lhs.get_size());
     emit({AArch64Opcode::ASR, {m_dst, m_lhs, m_rhs}});
 }
@@ -532,7 +533,7 @@ void AArch64SSALowerer::lower_jmp(ssa::Instruction &instr) {
     move_branch_args(instr.get_operand(0).get_branch_target());
 
     mcode::Operand m_target = mcode::Operand::from_label(instr.get_operand(0).get_branch_target().block->get_label());
-    emit(mcode::Instruction(AArch64Opcode::B, {m_target}));
+    emit({AArch64Opcode::B, {m_target}});
 }
 
 void AArch64SSALowerer::lower_cjmp(ssa::Instruction &instr) {
@@ -546,11 +547,18 @@ void AArch64SSALowerer::lower_fcjmp(ssa::Instruction &instr) {
 void AArch64SSALowerer::lower_select(ssa::Instruction &instr) {
     ssa::Type type_in = instr.get_operand(0).get_type();
     ssa::Type type_out = instr.get_operand(3).get_type();
+    ssa::Comparison comparison = instr.get_operand(1).get_comparison();
 
     mcode::Opcode cmp_opcode = type_in.is_floating_point() ? AArch64Opcode::FCMP : AArch64Opcode::CMP;
     mcode::Operand m_cmp_lhs = lower_value(instr.get_operand(0));
     mcode::Operand m_cmp_rhs = lower_value(instr.get_operand(2));
-    AArch64Condition condition = lower_condition(instr.get_operand(1).get_comparison());
+
+    if (ssa::is_comparison_signed(comparison)) {
+        m_cmp_lhs = emit_sign_ext(m_cmp_lhs);
+        m_cmp_rhs = emit_sign_ext(m_cmp_rhs);
+    }
+
+    AArch64Condition condition = lower_condition(comparison);
     mcode::Operand m_cmp = mcode::Operand::from_aarch64_condition(condition);
 
     mcode::Opcode sel_opcode = type_out.is_floating_point() ? AArch64Opcode::FCSEL : AArch64Opcode::CSEL;
@@ -558,8 +566,8 @@ void AArch64SSALowerer::lower_select(ssa::Instruction &instr) {
     mcode::Operand m_val_false = lower_value(instr.get_operand(4));
     mcode::Operand m_dst = map_vreg_dst(instr, m_val_true.get_size());
 
-    emit(mcode::Instruction(cmp_opcode, {m_cmp_lhs, m_cmp_rhs}));
-    emit(mcode::Instruction(sel_opcode, {m_dst, m_val_true, m_val_false, m_cmp}));
+    emit({cmp_opcode, {m_cmp_lhs, m_cmp_rhs}});
+    emit({sel_opcode, {m_dst, m_val_true, m_val_false, m_cmp}});
 }
 
 void AArch64SSALowerer::lower_call(ssa::Instruction &instr) {
@@ -576,10 +584,10 @@ void AArch64SSALowerer::lower_ret(ssa::Instruction &instr) {
         mcode::Operand src = lower_value(instr.get_operand(0));
         dst.set_size(src.get_size());
 
-        emit(mcode::Instruction(opcode, {dst, src}));
+        emit({opcode, {dst, src}});
     }
 
-    emit(mcode::Instruction(AArch64Opcode::RET));
+    emit({AArch64Opcode::RET});
 }
 
 void AArch64SSALowerer::lower_uextend(ssa::Instruction &instr) {
@@ -595,7 +603,7 @@ void AArch64SSALowerer::lower_uextend(ssa::Instruction &instr) {
 
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    emit(mcode::Instruction(opcode, {m_dst, m_src}));
+    emit({opcode, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_sextend(ssa::Instruction &instr) {
@@ -611,14 +619,14 @@ void AArch64SSALowerer::lower_sextend(ssa::Instruction &instr) {
 
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, 8);
-    emit(mcode::Instruction(opcode, {m_dst, m_src}));
+    emit({opcode, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_truncate(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0)).with_size(dst_size);
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-    emit(mcode::Instruction(AArch64Opcode::MOV, {m_dst, m_src}));
+    emit({AArch64Opcode::MOV, {m_dst, m_src}});
 
     // TODO: Use the immediate directly in the `AND` instruction.
     // This requires support for bitmask immediates in the encoder.
@@ -637,13 +645,13 @@ void AArch64SSALowerer::lower_truncate(ssa::Instruction &instr) {
 void AArch64SSALowerer::lower_fpromote(ssa::Instruction &instr) {
     mcode::Operand m_dst = map_vreg_dst(instr, 8);
     mcode::Operand m_src = lower_value(instr.get_operand(0));
-    emit(mcode::Instruction(AArch64Opcode::FCVT, {m_dst, m_src}));
+    emit({AArch64Opcode::FCVT, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_fdemote(ssa::Instruction &instr) {
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
     mcode::Operand m_src = lower_value(instr.get_operand(0));
-    emit(mcode::Instruction(AArch64Opcode::FCVT, {m_dst, m_src}));
+    emit({AArch64Opcode::FCVT, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_utof(ssa::Instruction &instr) {
@@ -652,28 +660,28 @@ void AArch64SSALowerer::lower_utof(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-    emit(mcode::Instruction(AArch64Opcode::UCVTF, {m_dst, m_src}));
+    emit({AArch64Opcode::UCVTF, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_stof(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-    emit(mcode::Instruction(AArch64Opcode::SCVTF, {m_dst, m_src}));
+    emit({AArch64Opcode::SCVTF, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_ftou(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-    emit(mcode::Instruction(AArch64Opcode::FCVTZU, {m_dst, m_src}));
+    emit({AArch64Opcode::FCVTZU, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_ftos(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-    emit(mcode::Instruction(AArch64Opcode::FCVTZS, {m_dst, m_src}));
+    emit({AArch64Opcode::FCVTZS, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
@@ -692,7 +700,7 @@ void AArch64SSALowerer::lower_memberptr(ssa::Instruction &instr) {
     emit({AArch64Opcode::MOV, {m_dst, lower_addr_value(addr)}});
 }
 
-mcode::Value AArch64SSALowerer::move_const_into_register(const ssa::Value &value, ssa::Type type) {
+mcode::Operand AArch64SSALowerer::move_const_into_register(const ssa::Value &value, ssa::Type type) {
     unsigned size = get_size(type);
 
     if (value.is_int_immediate()) return move_int_into_register(value.get_int_immediate(), size);
@@ -700,18 +708,18 @@ mcode::Value AArch64SSALowerer::move_const_into_register(const ssa::Value &value
     else ASSERT_UNREACHABLE;
 }
 
-mcode::Value AArch64SSALowerer::move_int_into_register(LargeInt value, unsigned size) {
+mcode::Operand AArch64SSALowerer::move_int_into_register(LargeInt value, unsigned size) {
     std::uint64_t bits = value.to_bits();
-    mcode::Value result = create_temp_value(size);
+    mcode::Operand result = create_temp_value(size);
 
     // Zero can be moved directly without decomposing because MOVN sets the upper bits to zero.
     if (bits == 0) {
-        emit(mcode::Instruction(AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(0)}));
+        emit({AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(0)}});
         return result;
     }
 
     if (size == 1 || size == 2) {
-        emit(mcode::Instruction(AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(bits)}));
+        emit({AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(bits)}});
     } else if (size == 4) {
         std::uint16_t elements[2];
         AArch64Immediate::decompose_u32_u16(bits, elements);
@@ -727,12 +735,12 @@ mcode::Value AArch64SSALowerer::move_int_into_register(LargeInt value, unsigned 
     return result;
 }
 
-mcode::Value AArch64SSALowerer::move_float_into_register(double value, unsigned size) {
-    mcode::Value result = create_temp_value(size);
+mcode::Operand AArch64SSALowerer::move_float_into_register(double value, unsigned size) {
+    mcode::Operand result = create_temp_value(size);
 
     // Emit FMOV if the value can be represented using 8 bits.
     if (AArch64Immediate::is_float_encodable(value)) {
-        emit(mcode::Instruction(AArch64Opcode::FMOV, {result, mcode::Operand::from_fp_immediate(value)}));
+        emit({AArch64Opcode::FMOV, {result, mcode::Operand::from_fp_immediate(value)}});
         return result;
     }
 
@@ -748,9 +756,9 @@ mcode::Value AArch64SSALowerer::move_float_into_register(double value, unsigned 
         std::uint16_t elements[2];
         AArch64Immediate::decompose_u32_u16(bits, elements);
 
-        mcode::Value bits_value = create_temp_value(size);
+        mcode::Operand bits_value = create_temp_value(size);
         move_elements_into_register(bits_value, elements, 2);
-        emit(mcode::Instruction(AArch64Opcode::FMOV, {result, bits_value}));
+        emit({AArch64Opcode::FMOV, {result, bits_value}});
     } else {
         mcode::Global global{
             .name = "double." + std::to_string(next_const_index++),
@@ -763,61 +771,48 @@ mcode::Value AArch64SSALowerer::move_float_into_register(double value, unsigned 
 
         mcode::Operand symbol_addr = mcode::Operand::from_register(move_symbol_into_register(global.name), 8);
         AArch64Address addr = AArch64Address::new_base(symbol_addr.get_register());
-        mcode::Value m_addr = mcode::Value::from_aarch64_addr(addr);
-        emit(mcode::Instruction(AArch64Opcode::LDR, {result, m_addr}, mcode::Instruction::FLAG_FLOAT));
+        mcode::Operand m_addr = mcode::Operand::from_aarch64_addr(addr);
+        emit({AArch64Opcode::LDR, {result, m_addr}, mcode::Instruction::FLAG_FLOAT});
     }
 
     return result;
 }
 
-// clang-format off
-
-void AArch64SSALowerer::move_elements_into_register(mcode::Value value, std::uint16_t* elements, unsigned count) {
+void AArch64SSALowerer::move_elements_into_register(mcode::Operand value, std::uint16_t *elements, unsigned count) {
     // Count the non-zero elements.
     unsigned num_non_zero_elements = 0;
     unsigned non_zero_element_index = 0;
-    for(int i = 0; i < count; i++) {
-        if(elements[i] != 0) {
+    for (int i = 0; i < count; i++) {
+        if (elements[i] != 0) {
             num_non_zero_elements++;
             non_zero_element_index = i;
         }
     }
 
     // Emit a single MOVZ if all but one element are zero.
-    if(num_non_zero_elements == 1) {
+    if (num_non_zero_elements == 1) {
         unsigned element = elements[non_zero_element_index];
-        emit(mcode::Instruction(AArch64Opcode::MOVZ, {
-            value,
-            mcode::Operand::from_int_immediate(element),
-            mcode::Operand::from_aarch64_left_shift(16 * non_zero_element_index)
-        }));
+        mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(16 * non_zero_element_index);
+        emit({AArch64Opcode::MOVZ, {value, mcode::Operand::from_int_immediate(element), m_shift}});
         return;
     }
-    
-    // Move the lower 16 bits and set all other bits to zero.
-    emit(mcode::Instruction(AArch64Opcode::MOVZ, {
-        value,
-        mcode::Operand::from_int_immediate(elements[0])
-    }));
 
-    for(unsigned i = 0; i < count; i++) {
+    // Move the lower 16 bits and set all other bits to zero.
+    emit({AArch64Opcode::MOVZ, {value, mcode::Operand::from_int_immediate(elements[0])}});
+
+    for (unsigned i = 0; i < count; i++) {
         unsigned element = elements[i];
-        
+
         // Skip zero elements because the bits were already set to zero by the first MOVZ.
-        if(element == 0) {
+        if (element == 0) {
             continue;
         }
 
         // Set the bits by shifting the value by 16 * index to the left and moving them.
-        emit(mcode::Instruction(AArch64Opcode::MOVK, {
-            value,
-            mcode::Operand::from_int_immediate(element),
-            mcode::Operand::from_aarch64_left_shift(16 * i)
-        }));
+        mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(16 * i);
+        emit({AArch64Opcode::MOVK, {value, mcode::Operand::from_int_immediate(element), m_shift}});
     }
 }
-
-// clang-format on
 
 mcode::Register AArch64SSALowerer::move_symbol_into_register(const std::string &symbol) {
     mcode::Register dst_reg = create_tmp_reg();
@@ -860,79 +855,7 @@ mcode::Register AArch64SSALowerer::move_symbol_into_register(const std::string &
     return dst_reg;
 }
 
-void AArch64SSALowerer::build_address(const mcode::Operand &m_dst, AddrComponents addr) {
-    LargeInt offset = addr.const_offset;
-
-    if (addr.const_offset == 0 && !addr.reg_offset) {
-        emit({AArch64Opcode::MOV, {m_dst, lower_value(addr.base)}});
-        return;
-    }
-
-    mcode::Operand m_tmp_dst;
-
-    if (addr.const_offset != 0) {
-        m_tmp_dst = addr.reg_offset ? create_temp_value(8) : m_dst;
-
-        std::optional<mcode::StackSlotID> stack_slot;
-
-        if (addr.base.is_register()) {
-            stack_slot = find_stack_slot(addr.base.get_register());
-        }
-
-        if (stack_slot) {
-            mcode::StackAddress stack_addr{*stack_slot, offset.to_unsigned()};
-
-            mcode::Register m_sp_reg = mcode::Register::from_physical(AArch64Register::SP);
-            mcode::Operand m_sp = mcode::Operand::from_register(m_sp_reg, 8);
-            mcode::Operand m_offset = mcode::Operand::from_stack_offset(stack_addr, 0);
-
-            // Note: Offsets that end up outside the range [0; 4096) during stack frame building will get fixed in the
-            // stack offset fixup pass.
-            emit({AArch64Opcode::ADD, {m_tmp_dst, m_sp, m_offset}});
-        } else {
-            mcode::Operand m_base = lower_value(addr.base);
-
-            if (offset >= 0 && offset < 4096) {
-                mcode::Operand m_offset = mcode::Operand::from_int_immediate(offset, 8);
-                emit({AArch64Opcode::ADD, {m_tmp_dst, m_base, m_offset}});
-            } else {
-                mcode::Value m_offset = move_int_into_register(offset, 8);
-                emit({AArch64Opcode::ADD, {m_tmp_dst, m_base, m_offset}});
-            }
-        }
-    } else {
-        m_tmp_dst = lower_value(addr.base);
-    }
-
-    if (!addr.reg_offset) {
-        return;
-    }
-
-    mcode::Operand m_offset = mcode::Operand::from_register(addr.reg_offset->reg, 8);
-    unsigned shift = 0;
-
-    switch (addr.reg_offset->scale) {
-        case 1: shift = 0; break;
-        case 2: shift = 1; break;
-        case 4: shift = 2; break;
-        case 8: shift = 3; break;
-        default:
-            mcode::Operand scale_val = create_temp_value(8);
-            mcode::Operand imm_val = mcode::Operand::from_int_immediate(addr.reg_offset->scale, 8);
-            mcode::Operand m_tmp = create_temp_value(8);
-
-            emit(mcode::Instruction(AArch64Opcode::MOV, {scale_val, imm_val}));
-            emit(mcode::Instruction(AArch64Opcode::MUL, {m_tmp, m_offset, scale_val}));
-            m_offset = m_tmp;
-
-            break;
-    }
-
-    mcode::Operand m_shift = mcode::Operand::from_aarch64_left_shift(shift);
-    emit({AArch64Opcode::ADD, {m_dst, m_tmp_dst, m_offset, m_shift}});
-}
-
-mcode::Value AArch64SSALowerer::create_temp_value(int size) {
+mcode::Operand AArch64SSALowerer::create_temp_value(int size) {
     ssa::VirtualRegister reg = get_func().next_virtual_reg();
     return mcode::Operand::from_register(mcode::Register::from_virtual(reg), size);
 }
@@ -1026,6 +949,22 @@ mcode::Operand AArch64SSALowerer::emit_add_imm(mcode::Operand m_lhs, LargeInt im
     }
 
     return m_dst;
+}
+
+mcode::Operand AArch64SSALowerer::emit_sign_ext(mcode::Operand m_operand) {
+    // TODO: Fold this into load instructions (`ldrb x1, [x0], sxtb x2, x1` -> `ldrsb x2, [x0]`)
+
+    if (m_operand.get_size() == 1) {
+        mcode::Operand m_tmp = create_temp_value(4);
+        emit({AArch64Opcode::SXTB, {m_tmp, std::move(m_operand)}});
+        return m_tmp;
+    } else if (m_operand.get_size() == 2) {
+        mcode::Operand m_tmp = create_temp_value(4);
+        emit({AArch64Opcode::SXTH, {m_tmp, std::move(m_operand)}});
+        return m_tmp;
+    } else {
+        return m_operand;
+    }
 }
 
 } // namespace banjo::target

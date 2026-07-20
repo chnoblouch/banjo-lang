@@ -28,6 +28,8 @@ const std::unordered_map<mcode::Opcode, std::string> AArch64AsmEmitter::OPCODE_N
     {target::AArch64Opcode::ADD, "add"},
     {target::AArch64Opcode::SUB, "sub"},
     {target::AArch64Opcode::MUL, "mul"},
+    {target::AArch64Opcode::MADD, "madd"},
+    {target::AArch64Opcode::MSUB, "msub"},
     {target::AArch64Opcode::SDIV, "sdiv"},
     {target::AArch64Opcode::UDIV, "udiv"},
     {target::AArch64Opcode::AND, "and"},

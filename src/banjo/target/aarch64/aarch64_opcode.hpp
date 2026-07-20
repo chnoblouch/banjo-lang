@@ -22,6 +22,8 @@ enum {
     ADD,
     SUB,
     MUL,
+    MADD,
+    MSUB,
     SDIV,
     UDIV,
     AND,

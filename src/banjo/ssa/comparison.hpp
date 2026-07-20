@@ -1,9 +1,7 @@
 #ifndef BANJO_SSA_COMPARISON_H
 #define BANJO_SSA_COMPARISON_H
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 enum class Comparison {
     EQ,
@@ -25,9 +23,8 @@ enum class Comparison {
 };
 
 Comparison invert_comparison(Comparison comparison);
+bool is_comparison_signed(Comparison comparison);
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

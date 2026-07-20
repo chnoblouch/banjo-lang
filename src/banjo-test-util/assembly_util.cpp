@@ -31,6 +31,7 @@ const std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
     {"strh", target::AArch64Opcode::STRH},     {"ldp", target::AArch64Opcode::LDP},
     {"stp", target::AArch64Opcode::STP},       {"add", target::AArch64Opcode::ADD},
     {"sub", target::AArch64Opcode::SUB},       {"mul", target::AArch64Opcode::MUL},
+    {"madd", target::AArch64Opcode::MADD},     {"msub", target::AArch64Opcode::MSUB},
     {"sdiv", target::AArch64Opcode::SDIV},     {"udiv", target::AArch64Opcode::UDIV},
     {"and", target::AArch64Opcode::AND},       {"orr", target::AArch64Opcode::ORR},
     {"eor", target::AArch64Opcode::EOR},       {"lsl", target::AArch64Opcode::LSL},

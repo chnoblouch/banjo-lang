@@ -1,8 +1,6 @@
 #include "banjo/ssa/comparison.hpp"
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 Comparison invert_comparison(Comparison comparison) {
     switch (comparison) {
@@ -25,6 +23,14 @@ Comparison invert_comparison(Comparison comparison) {
     }
 }
 
-} // namespace ssa
+bool is_comparison_signed(Comparison comparison) {
+    switch (comparison) {
+        case ssa::Comparison::SGT:
+        case ssa::Comparison::SGE:
+        case ssa::Comparison::SLT:
+        case ssa::Comparison::SLE: return true;
+        default: return false;
+    }
+}
 
-} // namespace banjo
+} // namespace banjo::ssa

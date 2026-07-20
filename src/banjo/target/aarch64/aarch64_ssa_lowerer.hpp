@@ -21,7 +21,7 @@ public:
 
 public:
     mcode::Operand lower_value(const ssa::Operand &operand);
-    
+
     mcode::Operand lower_addr_mem_access(AddrComponents addr, unsigned size);
     mcode::Operand lower_addr_value(AddrComponents addr);
     std::variant<mcode::Register, mcode::StackSlotID> lower_addr_base(ssa::Operand &base);
@@ -73,19 +73,19 @@ public:
     void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
 
     mcode::Operand lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size);
-    mcode::Value move_const_into_register(const ssa::Value &value, ssa::Type type);
-    mcode::Value move_int_into_register(LargeInt value, unsigned size);
-    mcode::Value move_float_into_register(double fp, unsigned size);
-    void move_elements_into_register(mcode::Value value, std::uint16_t *elements, unsigned count);
+    mcode::Operand move_const_into_register(const ssa::Value &value, ssa::Type type);
+    mcode::Operand move_int_into_register(LargeInt value, unsigned size);
+    mcode::Operand move_float_into_register(double fp, unsigned size);
+    void move_elements_into_register(mcode::Operand value, std::uint16_t *elements, unsigned count);
     mcode::Register move_symbol_into_register(const std::string &symbol);
-    void build_address(const mcode::Operand &m_dst, AddrComponents addr);
-    mcode::Value create_temp_value(int size);
+    mcode::Operand create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);
 
     mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
     mcode::Operand emit_add_scaled(mcode::Operand m_base, mcode::Register reg, unsigned scale);
     mcode::Operand emit_add_imm(mcode::Operand m_lhs, LargeInt immediate);
+    mcode::Operand emit_sign_ext(mcode::Operand m_operand);
 };
 
 } // namespace banjo::target

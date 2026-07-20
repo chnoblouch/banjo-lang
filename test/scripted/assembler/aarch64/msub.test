@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "65AE179B"
+
+msub x5, x19, x23, x11
+
+# test:subtest
+# test:encoding "65AE171B"
+
+msub w5, w19, w23, w11

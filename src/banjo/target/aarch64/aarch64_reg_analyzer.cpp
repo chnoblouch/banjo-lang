@@ -174,6 +174,14 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
             collect_regs(instr.get_operand(2), mcode::RegUsage::USE, operands);
             break;
 
+        case MADD:
+        case MSUB:
+            collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands);
+            collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
+            collect_regs(instr.get_operand(2), mcode::RegUsage::USE, operands);
+            collect_regs(instr.get_operand(3), mcode::RegUsage::USE, operands);
+            break;
+
         case B:
         case BR:
         case B_EQ:

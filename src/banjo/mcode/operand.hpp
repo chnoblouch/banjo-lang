@@ -136,8 +136,6 @@ public:
     friend bool operator!=(const Operand &lhs, const Operand &rhs) { return !(lhs == rhs); }
 };
 
-typedef Operand Value;
-
 } // namespace banjo::mcode
 
 #endif

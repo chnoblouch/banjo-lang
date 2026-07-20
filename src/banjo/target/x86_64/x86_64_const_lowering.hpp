@@ -6,7 +6,6 @@
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
 
-
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -42,8 +41,8 @@ private:
 
 public:
     X8664ConstLowering(X8664SSALowerer &lowerer);
-    mcode::Value load_f32(float value);
-    mcode::Value load_f64(double value);
+    mcode::Operand load_f32(float value);
+    mcode::Operand load_f64(double value);
 
 private:
     void process_block();
