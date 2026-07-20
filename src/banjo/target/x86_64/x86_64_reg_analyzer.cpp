@@ -213,9 +213,13 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
 
         case DIV:
         case IDIV:
-            operands.push_back({instr.get_operand(0).get_register(), mcode::RegUsage::USE});
+            collect_regs(instr.get_operand(0), mcode::RegUsage::USE, operands);
             operands.push_back({mcode::Register::from_physical(X8664Register::RAX), mcode::RegUsage::USE_DEF});
-            operands.push_back({mcode::Register::from_physical(X8664Register::RDX), mcode::RegUsage::USE_DEF});
+
+            if (instr.get_operand(0).get_size() != 1) {
+                operands.push_back({mcode::Register::from_physical(X8664Register::RDX), mcode::RegUsage::USE_DEF});
+            }
+
             break;
 
         case CMP:

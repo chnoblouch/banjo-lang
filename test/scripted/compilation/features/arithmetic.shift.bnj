@@ -1,3 +1,5 @@
+# TODO: Unnecessary casts from u8 to u32
+
 # test:subtest
 # test:output "56,496,736,6946816"
 
@@ -7,7 +9,7 @@ func main() {
     var c: u32 = 184;
     var d: u64 = 848;
 
-    print((a << 3) as u32);  # TODO: Unnecessary cast
+    print((a << 3) as u32);
     print(',');
     print(b << 4);
     print(',');
@@ -43,7 +45,7 @@ func main() {
     var c: u32 = 736;
     var d: u64 = 6946816;
 
-    print((a >> 3) as u32);  # TODO: Unnecessary cast
+    print((a >> 3) as u32);
     print(',');
     print(b >> 4);
     print(',');

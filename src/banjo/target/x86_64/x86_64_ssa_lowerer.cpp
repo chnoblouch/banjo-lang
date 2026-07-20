@@ -400,6 +400,8 @@ void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
 // clang-format off
 
 void X8664SSALowerer::lower_sdiv(ssa::Instruction& instr) {
+    // FIXME: Sizes 1 and 2.
+
     unsigned size = get_size(instr.get_operand(0).get_type());
     mcode::Register divisor_reg = mcode::Register::from_physical(X8664Register::RCX);
 
@@ -428,6 +430,8 @@ void X8664SSALowerer::lower_sdiv(ssa::Instruction& instr) {
 }
 
 void X8664SSALowerer::lower_srem(ssa::Instruction& instr) {
+    // FIXME: Sizes 1 and 2.
+
     unsigned size = get_size(instr.get_operand(0).get_type());
     mcode::Register diviser_reg = create_reg();
 
@@ -458,55 +462,71 @@ void X8664SSALowerer::lower_srem(ssa::Instruction& instr) {
 // clang-format on
 
 void X8664SSALowerer::lower_udiv(ssa::Instruction &instr) {
-    unsigned size = get_size(instr.get_operand(0).get_type());
+    ssa::Operand &lhs = instr.get_operand(0);
+    ssa::Operand &rhs = instr.get_operand(1);
+    unsigned size = get_size(lhs.get_type());
 
-    mcode::Register rax_reg = mcode::Register::from_physical(X8664Register::RAX);
-    mcode::Register rcx_reg = mcode::Register::from_physical(X8664Register::RCX);
-    mcode::Register rdx_reg = mcode::Register::from_physical(X8664Register::RDX);
+    mcode::Register rax = mcode::Register::from_physical(X8664Register::RAX);
+    mcode::Register rdx = mcode::Register::from_physical(X8664Register::RDX);
 
-    mcode::Operand dividend = mcode::Operand::from_register(rax_reg, size);
-    mcode::Operand divisor = mcode::Operand::from_register(rcx_reg, size);
-    mcode::Operand quotient = mcode::Operand::from_register(rax_reg, size);
-
-    emit({X8664Opcode::MOV, {dividend, lower_as_operand(instr.get_operand(0))}});
+    mcode::Operand m_rax = mcode::Operand::from_register(rax, size);
+    mcode::Operand m_rdx = mcode::Operand::from_register(rdx, size);
 
     if (size == 1) {
-        // FIXME
+        // Size 1: Dividend and result are stored in `ax`.
+        // `movzx eax, ...` is the most efficient encoding for clearing `ah`.
+
+        emit({X8664Opcode::MOVZX, {m_rax.with_size(4), lower_as_operand(lhs)}});
+    } else if (size == 2 || size == 4 || size == 8) {
+        // Size 2: Dividend and result are stored in `dx` and `ax`.
+        // Size 4: Dividend and result are stored in `edx` and `eax`.
+        // Size 8: Dividend and result are stored in `rdx` and `rax`.
+
+        emit({X8664Opcode::MOV, {m_rax, lower_as_operand(lhs)}});
+        emit({X8664Opcode::XOR, {m_rdx.with_size(4), m_rdx.with_size(4)}});
     } else {
-        mcode::Operand edx = mcode::Operand::from_register(rdx_reg, 4);
-        emit({X8664Opcode::XOR, {edx, edx}});
+        ASSERT_UNREACHABLE;
     }
 
-    emit({X8664Opcode::MOV, {divisor, lower_as_operand(instr.get_operand(1))}});
-    emit({X8664Opcode::DIV, {divisor}});
-    emit({X8664Opcode::MOV, {map_vreg_dst(instr, size), quotient}});
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
+
+    emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(rhs)}});
+    emit({X8664Opcode::DIV, {m_tmp}});
+    emit({X8664Opcode::MOV, {map_vreg_dst(instr, size), m_rax}});
 }
 
 void X8664SSALowerer::lower_urem(ssa::Instruction &instr) {
-    unsigned size = get_size(instr.get_operand(0).get_type());
+    ssa::Operand &lhs = instr.get_operand(0);
+    ssa::Operand &rhs = instr.get_operand(1);
+    unsigned size = get_size(lhs.get_type());
 
-    mcode::Register rax_reg = mcode::Register::from_physical(X8664Register::RAX);
-    mcode::Register rcx_reg = mcode::Register::from_physical(X8664Register::RCX);
-    mcode::Register rdx_reg = mcode::Register::from_physical(X8664Register::RDX);
+    mcode::Register rax = mcode::Register::from_physical(X8664Register::RAX);
+    mcode::Register rdx = mcode::Register::from_physical(X8664Register::RDX);
 
-    mcode::Operand dividend = mcode::Operand::from_register(rax_reg, size);
-    mcode::Operand divisor = mcode::Operand::from_register(rcx_reg, size);
-    mcode::Operand remainder = mcode::Operand::from_register(rdx_reg, size);
-
-    emit({X8664Opcode::MOV, {dividend, lower_as_operand(instr.get_operand(0))}});
+    mcode::Operand m_rax = mcode::Operand::from_register(rax, size);
+    mcode::Operand m_rdx = mcode::Operand::from_register(rdx, size);
 
     if (size == 1) {
-        // FIXME
+        // Size 1: Dividend and result are stored in `ax`.
+        // `movzx eax, ...` is the most efficient encoding for clearing `ah`.
+
+        emit({X8664Opcode::MOVZX, {m_rax.with_size(4), lower_as_operand(lhs)}});
+    } else if (size == 2 || size == 4 || size == 8) {
+        // Size 2: Dividend and result are stored in `dx` and `ax`.
+        // Size 4: Dividend and result are stored in `edx` and `eax`.
+        // Size 8: Dividend and result are stored in `rdx` and `rax`.
+
+        emit({X8664Opcode::MOV, {m_rax, lower_as_operand(lhs)}});
+        emit({X8664Opcode::XOR, {m_rdx.with_size(4), m_rdx.with_size(4)}});
     } else {
-        mcode::Operand edx = mcode::Operand::from_register(rdx_reg, 4);
-        emit({X8664Opcode::XOR, {edx, edx}});
+        ASSERT_UNREACHABLE;
     }
 
-    emit({X8664Opcode::MOV, {divisor, lower_as_operand(instr.get_operand(1))}});
-    emit({X8664Opcode::DIV, {divisor}});
-    emit({X8664Opcode::MOV, {map_vreg_dst(instr, size), remainder}});
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
 
-    // clang-format off
+    emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(rhs)}});
+    emit({X8664Opcode::DIV, {m_tmp}});
+    emit({X8664Opcode::MOV, {map_vreg_dst(instr, size), m_rdx}});
 }
 
 void X8664SSALowerer::lower_fadd(ssa::Instruction &instr) {
@@ -525,7 +545,7 @@ void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
         }
 
         X8664Address const_addr{mcode::Symbol{*const_neg_zero, mcode::Relocation::NONE}};
-        
+
         mcode::Operand m_dst = map_vreg_dst(instr, 4);
         mcode::Operand m_src = lower_as_operand(instr.get_operand(1));
         mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(const_addr, 16);
@@ -635,7 +655,7 @@ void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
     emit(mcode::Instruction(X8664Opcode::CMP, {lower_as_operand(cmp_lhs), lower_as_operand(cmp_rhs)}));
     emit(mcode::Instruction(X8664Opcode::MOV, {tmp_op, lower_as_operand(val_true)}));
     emit(mcode::Instruction(X8664Opcode::MOV, {m_dst, lower_as_operand(val_false)}));
-    
+
     mcode::Opcode cmovcc_opcode = X8664Opcode::CMOVCC + static_cast<unsigned>(lower_condition(cmp));
     emit(mcode::Instruction(cmovcc_opcode, {m_dst, tmp_op}));
 }
