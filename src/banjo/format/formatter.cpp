@@ -1525,7 +1525,7 @@ std::string_view Formatter::ordering_string(ASTNode *node) {
         ASTNode *lhs_node = node->first_child;
         return lhs_node->value;
     } else if (node->type == AST_USE_LIST) {
-        return 0;
+        return "";
     } else {
         ASSERT_UNREACHABLE;
     }
