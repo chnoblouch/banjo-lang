@@ -94,7 +94,9 @@ void Parser::parse_and_append_block_child(NodeBuilder &node) {
     ParseResult result = parse_block_child();
     node.append_child(result.node);
 
-    if (!result.is_valid) {
+    if (skip_stmt_decl_recovery) {
+        skip_stmt_decl_recovery = false;
+    } else if (!result.is_valid) {
         recover();
     }
 }
@@ -266,6 +268,8 @@ ParseResult Parser::parse_list(
             node.consume();
         } else {
             report_generator.report_err_unexpected_token(file, *stream.get());
+            recover();
+            skip_stmt_decl_recovery = true;
             return {node.build(type), false};
         }
     }
@@ -370,8 +374,12 @@ void Parser::recover() {
         stream.consume();
     }
 
-    while (!is_at_recover_punctuation() && !is_at_recover_keyword() && !stream.get()->is(TKN_EOF)) {
+    while (!is_at_recover_keyword() && !stream.get()->is(TKN_EOF)) {
         Token *token = stream.consume();
+
+        if (token->is(TKN_RPAREN) || token->is(TKN_RBRACE) || token->is(TKN_RBRACKET) || token->is(TKN_SEMI)) {
+            break;
+        }
 
         if (token->is(TKN_LBRACE)) {
             int depth = 1;
@@ -388,16 +396,7 @@ void Parser::recover() {
         }
     }
 
-    if (stream.get()->is(TKN_SEMI)) {
-        stream.consume();
-    }
-
     prev_recover_pos = stream.get_position();
-}
-
-bool Parser::is_at_recover_punctuation() {
-    Token *token = stream.get();
-    return token->is(TKN_SEMI) || token->is(TKN_RBRACE);
 }
 
 bool Parser::is_at_recover_keyword() {

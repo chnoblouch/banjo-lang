@@ -38,6 +38,7 @@ private:
 
     std::unique_ptr<ASTModule> mod;
     std::optional<unsigned> prev_recover_pos;
+    bool skip_stmt_decl_recovery = false;
 
     bool running_completion = false;
     ASTNode *completion_node = nullptr;
@@ -80,7 +81,6 @@ private:
     ParseResult check_stmt_terminator(NodeBuilder &builder, ASTNodeType type);
 
     void recover();
-    bool is_at_recover_punctuation();
     bool is_at_recover_keyword();
 
     bool is_at_completion_point();
