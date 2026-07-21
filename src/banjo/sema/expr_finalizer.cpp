@@ -6,7 +6,11 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/specializer.hpp"
+#include "banjo/utils/macros.hpp"
 
+#include <array>
+#include <cstdint>
+#include <limits>
 #include <unordered_map>
 
 namespace banjo::lang::sema {
@@ -278,6 +282,8 @@ Result ExprFinalizer::finalize_coercion(sir::IntLiteral &int_literal, sir::Expr 
     }
 
     int_literal.type = type;
+    check_int_literal_range(int_literal);
+
     return Result::SUCCESS;
 }
 
@@ -498,6 +504,7 @@ Result ExprFinalizer::finalize_default(sir::IntLiteral &int_literal) {
         }
     );
 
+    check_int_literal_range(int_literal);
     return Result::SUCCESS;
 }
 
@@ -1030,6 +1037,47 @@ Result ExprFinalizer::finalize_map_literal_elements(
     }
 
     return result;
+}
+
+void ExprFinalizer::check_int_literal_range(sir::IntLiteral &int_literal) {
+    if (auto primitive_type = int_literal.type.match<sir::PrimitiveType>()) {
+        std::array<LargeInt, 2> range{0, 0};
+
+        switch (primitive_type->primitive) {
+            case sir::Primitive::I8:
+                range = {std::numeric_limits<std::int8_t>::min(), std::numeric_limits<std::int8_t>::max()};
+                break;
+            case sir::Primitive::I16:
+                range = {std::numeric_limits<std::int16_t>::min(), std::numeric_limits<std::int16_t>::max()};
+                break;
+            case sir::Primitive::I32:
+                range = {std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()};
+                break;
+            case sir::Primitive::I64:
+                range = {std::numeric_limits<std::int64_t>::min(), std::numeric_limits<std::int64_t>::max()};
+                break;
+            case sir::Primitive::U8:
+                range = {std::numeric_limits<std::uint8_t>::min(), std::numeric_limits<std::uint8_t>::max()};
+                break;
+            case sir::Primitive::U16:
+                range = {std::numeric_limits<std::uint16_t>::min(), std::numeric_limits<std::uint16_t>::max()};
+                break;
+            case sir::Primitive::U32:
+                range = {std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max()};
+                break;
+            case sir::Primitive::U64: return;   // TODO
+            case sir::Primitive::USIZE: return; // TODO
+            case sir::Primitive::F32: ASSERT_UNREACHABLE;
+            case sir::Primitive::F64: ASSERT_UNREACHABLE;
+            case sir::Primitive::BOOL: ASSERT_UNREACHABLE;
+            case sir::Primitive::ADDR: ASSERT_UNREACHABLE;
+            case sir::Primitive::VOID: ASSERT_UNREACHABLE;
+        }
+
+        if (int_literal.value < range[0] || int_literal.value > range[1]) {
+            analyzer.report_generator.report_err_int_literal_out_of_range(int_literal, range);
+        }
+    }
 }
 
 } // namespace banjo::lang::sema

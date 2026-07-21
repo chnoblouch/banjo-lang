@@ -7,9 +7,7 @@
 
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 class Lexer {
 
@@ -56,11 +54,10 @@ private:
     bool is_whitespace_char(char c);
     bool is_identifier_char(char c);
     bool is_number_char(char c);
+    bool is_number_start_char(char c);
     bool read_if(char c);
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

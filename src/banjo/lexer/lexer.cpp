@@ -8,59 +8,21 @@
 #include <map>
 #include <string_view>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 const std::map<std::string_view, TokenType> KEYWORDS{
-    {"var", TKN_VAR},
-    {"const", TKN_CONST},
-    {"func", TKN_FUNC},
-    {"i8", TKN_I8},
-    {"i16", TKN_I16},
-    {"i32", TKN_I32},
-    {"i64", TKN_I64},
-    {"u8", TKN_U8},
-    {"u16", TKN_U16},
-    {"u32", TKN_U32},
-    {"u64", TKN_U64},
-    {"f32", TKN_F32},
-    {"f64", TKN_F64},
-    {"usize", TKN_USIZE},
-    {"bool", TKN_BOOL},
-    {"addr", TKN_ADDR},
-    {"void", TKN_VOID},
-    {"except", TKN_EXCEPT},
-    {"ref", TKN_REF},
-    {"mut", TKN_MUT},
-    {"share", TKN_SHARE},
-    {"as", TKN_AS},
-    {"is", TKN_IS},
-    {"if", TKN_IF},
-    {"else", TKN_ELSE},
-    {"switch", TKN_SWITCH},
-    {"try", TKN_TRY},
-    {"while", TKN_WHILE},
-    {"for", TKN_FOR},
-    {"in", TKN_IN},
-    {"break", TKN_BREAK},
-    {"continue", TKN_CONTINUE},
-    {"return", TKN_RETURN},
-    {"struct", TKN_STRUCT},
-    {"self", TKN_SELF},
-    {"enum", TKN_ENUM},
-    {"union", TKN_UNION},
-    {"case", TKN_CASE},
-    {"proto", TKN_PROTO},
-    {"false", TKN_FALSE},
-    {"true", TKN_TRUE},
-    {"null", TKN_NULL},
-    {"none", TKN_NONE},
-    {"undefined", TKN_UNDEFINED},
-    {"use", TKN_USE},
-    {"pub", TKN_PUB},
-    {"native", TKN_NATIVE},
-    {"meta", TKN_META},
+    {"var", TKN_VAR},       {"const", TKN_CONST},   {"func", TKN_FUNC},     {"i8", TKN_I8},
+    {"i16", TKN_I16},       {"i32", TKN_I32},       {"i64", TKN_I64},       {"u8", TKN_U8},
+    {"u16", TKN_U16},       {"u32", TKN_U32},       {"u64", TKN_U64},       {"f32", TKN_F32},
+    {"f64", TKN_F64},       {"usize", TKN_USIZE},   {"bool", TKN_BOOL},     {"addr", TKN_ADDR},
+    {"void", TKN_VOID},     {"except", TKN_EXCEPT}, {"ref", TKN_REF},       {"mut", TKN_MUT},
+    {"share", TKN_SHARE},   {"as", TKN_AS},         {"is", TKN_IS},         {"if", TKN_IF},
+    {"else", TKN_ELSE},     {"switch", TKN_SWITCH}, {"try", TKN_TRY},       {"while", TKN_WHILE},
+    {"for", TKN_FOR},       {"in", TKN_IN},         {"break", TKN_BREAK},   {"continue", TKN_CONTINUE},
+    {"return", TKN_RETURN}, {"struct", TKN_STRUCT}, {"self", TKN_SELF},     {"enum", TKN_ENUM},
+    {"union", TKN_UNION},   {"case", TKN_CASE},     {"proto", TKN_PROTO},   {"false", TKN_FALSE},
+    {"true", TKN_TRUE},     {"null", TKN_NULL},     {"none", TKN_NONE},     {"undefined", TKN_UNDEFINED},
+    {"use", TKN_USE},       {"pub", TKN_PUB},       {"native", TKN_NATIVE}, {"meta", TKN_META},
     {"type", TKN_TYPE},
 };
 
@@ -105,7 +67,7 @@ void Lexer::read_token() {
 
     if (is_whitespace_char(c)) read_whitespace();
     else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') read_identifier();
-    else if (c >= '0' && c <= '9') read_number();
+    else if (is_number_start_char(c)) read_number();
     else if (c == '\'') read_character();
     else if (c == '\"') read_string();
     else if (c == '#') read_comment();
@@ -196,6 +158,11 @@ void Lexer::read_comment() {
 }
 
 void Lexer::read_punctuation() {
+    if (reader.get() == '-' && is_number_start_char(reader.peek())) {
+        reader.consume();
+        return read_number();
+    }
+
     TokenType type;
 
     switch (reader.consume()) {
@@ -312,6 +279,10 @@ bool Lexer::is_number_char(char c) {
            c == 'o' || c == '.';
 }
 
+bool Lexer::is_number_start_char(char c) {
+    return c >= '0' && c <= '9';
+}
+
 bool Lexer::read_if(char c) {
     if (reader.get() == c) {
         reader.consume();
@@ -321,6 +292,4 @@ bool Lexer::read_if(char c) {
     return false;
 }
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

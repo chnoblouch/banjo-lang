@@ -7,47 +7,29 @@
 
 namespace banjo {
 
-LargeInt::LargeInt(std::uint64_t magnitude, bool negative) : magnitude(magnitude), negative(negative) {
+LargeInt::LargeInt(std::uint64_t magnitude, bool negative) : magnitude{magnitude}, negative{negative} {
     if (magnitude == 0 && negative) {
         negative = false;
     }
 }
 
 LargeInt::LargeInt(int value) {
-    if (value >= 0) {
-        magnitude = value;
-        negative = false;
-    } else {
-        magnitude = -value;
-        negative = true;
-    }
+    set_from(value);
 }
-
-LargeInt::LargeInt(unsigned value) : magnitude(value), negative(false) {}
 
 LargeInt::LargeInt(long value) {
-    if (value >= 0) {
-        magnitude = value;
-        negative = false;
-    } else {
-        magnitude = -value;
-        negative = true;
-    }
+    set_from(value);
 }
-
-LargeInt::LargeInt(unsigned long value) : magnitude(value), negative(false) {}
 
 LargeInt::LargeInt(long long value) {
-    if (value >= 0) {
-        magnitude = value;
-        negative = false;
-    } else {
-        magnitude = -value;
-        negative = true;
-    }
+    set_from(value);
 }
 
-LargeInt::LargeInt(unsigned long long value) : magnitude(value), negative(false) {}
+LargeInt::LargeInt(unsigned value) : magnitude{value}, negative{false} {}
+
+LargeInt::LargeInt(unsigned long value) : magnitude{value}, negative{false} {}
+
+LargeInt::LargeInt(unsigned long long value) : magnitude{value}, negative{false} {}
 
 LargeInt::LargeInt(const std::string &string) : LargeInt(std::string_view{string}) {}
 
@@ -272,6 +254,16 @@ std::strong_ordering operator<=>(const LargeInt &lhs, const LargeInt &rhs) {
 
 std::ostream &operator<<(std::ostream &stream, const LargeInt &large_int) {
     return stream << large_int.to_string();
+}
+
+void LargeInt::set_from(std::int64_t value) {
+    if (value >= 0) {
+        magnitude = static_cast<std::uint64_t>(value);
+        negative = false;
+    } else {
+        magnitude = static_cast<std::uint64_t>(-(value + 1) + 1); // Prevent overflow
+        negative = true;
+    }
 }
 
 } // namespace banjo

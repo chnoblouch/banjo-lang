@@ -123,6 +123,20 @@ void ReportGenerator::report_err_type_mismatch(
     report_error("type mismatch (expected '$', got '$')", value.get_ast_node(), expected, actual);
 }
 
+void ReportGenerator::report_err_int_literal_out_of_range(
+    sir::IntLiteral &int_literal,
+    std::array<LargeInt, 2> &range
+) {
+    report_error(
+        "integer value '$' does not fit into the type '$' (range is $..=$)",
+        int_literal.ast_node,
+        int_literal.value,
+        int_literal.type,
+        range[0],
+        range[1]
+    );
+}
+
 void ReportGenerator::report_err_cannot_coerce(const sir::Expr &expr, const sir::Expr &expected_type) {
     report_error("cannot coerce value with type '$' to type '$'", expr.get_ast_node(), expr.get_type(), expected_type);
 }

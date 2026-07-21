@@ -44,7 +44,7 @@ meta if config.OS == config.EMSCRIPTEN {
     const S_IFSOCK: u32 = 0o140000;  # TODO
     const S_IFLNK: u32 = 0o120000;  # TODO
     const S_IFREG: u32 = 0o100000;  # TODO
-    const S_IFBLK: u32 = 0o600000;  # TODO
+    const S_IFBLK: u32 = 0o060000;  # TODO
     const S_IFDIR: u32 = 0o040000;  # TODO
     const S_IFCHR: u32 = 0o020000;  # TODO
     const S_IFIFO: u32 = 0o010000;  # TODO

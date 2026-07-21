@@ -62,6 +62,8 @@ public:
     Result finalize_array_literal_elements(sir::ArrayLiteral &array_literal, sir::Expr element_type);
     Result finalize_struct_literal_fields(sir::StructLiteral &struct_literal);
     Result finalize_map_literal_elements(sir::MapLiteral &map_literal, sir::Expr key_type, sir::Expr value_type);
+
+    void check_int_literal_range(sir::IntLiteral &int_literal);
 };
 
 } // namespace banjo::lang::sema

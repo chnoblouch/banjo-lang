@@ -3,7 +3,9 @@
 
 #include "banjo/reports/report.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/large_int.hpp"
 
+#include <array>
 #include <string_view>
 
 namespace banjo {
@@ -53,6 +55,7 @@ public:
     void report_err_redefinition(const sir::Ident &ident, const sir::Symbol &prev_def);
     void report_err_cyclical_definition(ASTNode *ast_node);
     void report_err_type_mismatch(const sir::Expr &value, const sir::Expr &expected, const sir::Expr &actual);
+    void report_err_int_literal_out_of_range(sir::IntLiteral &int_literal, std::array<LargeInt, 2> &range);
     void report_err_cannot_coerce(const sir::Expr &expr, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);

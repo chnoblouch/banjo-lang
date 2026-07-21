@@ -18,10 +18,10 @@ private:
 public:
     LargeInt(std::uint64_t magnitude, bool negative);
     LargeInt(int value);
-    LargeInt(unsigned value);
     LargeInt(long value);
-    LargeInt(unsigned long value);
     LargeInt(long long value);
+    LargeInt(unsigned value);
+    LargeInt(unsigned long value);
     LargeInt(unsigned long long value);
     explicit LargeInt(const std::string &string);
     explicit LargeInt(const char *string);
@@ -62,6 +62,8 @@ public:
 
     friend std::ostream &operator<<(std::ostream &stream, const LargeInt &large_int);
 
+private:
+    void set_from(std::int64_t value);
 };
 
 } // namespace banjo

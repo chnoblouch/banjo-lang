@@ -1,0 +1,65 @@
+# test:subtest
+# test:error 5:17 "integer value '256' does not fit into the type 'u8' (range is 0..=255)"
+
+func main() {
+    var a: u8 = 0x100;
+}
+
+# test:subtest
+# test:error 12:18 "integer value '65536' does not fit into the type 'u16' (range is 0..=65535)"
+
+func main() {
+    var a: u16 = 0x10000;
+}
+
+# test:subtest
+# test:error 19:18 "integer value '4294967296' does not fit into the type 'u32' (range is 0..=4294967295)"
+
+func main() {
+    var a: u32 = 0x100000000;
+}
+
+# test:subtest
+# test:error 27:17 "integer value '-129' does not fit into the type 'i8' (range is -128..=127)"
+# test:error 28:17 "integer value '128' does not fit into the type 'i8' (range is -128..=127)"
+
+func main() {
+    var a: i8 = -0x81;
+    var b: i8 = 0x80;
+}
+
+# test:subtest
+# test:error 36:18 "integer value '-32769' does not fit into the type 'i16' (range is -32768..=32767)"
+# test:error 37:18 "integer value '32768' does not fit into the type 'i16' (range is -32768..=32767)"
+
+func main() {
+    var a: i16 = -0x8001;
+    var b: i16 = 0x8000;
+}
+
+# test:subtest
+# test:error 45:18 "integer value '-2147483649' does not fit into the type 'i32' (range is -2147483648..=2147483647)"
+# test:error 46:18 "integer value '2147483648' does not fit into the type 'i32' (range is -2147483648..=2147483647)"
+
+func main() {
+    var a: i32 = -0x80000001;
+    var b: i32 = 0x80000000;
+}
+
+# test:subtest
+# test:error 54:18 "integer value '-9223372036854775809' does not fit into the type 'i64' (range is -9223372036854775808..=9223372036854775807)"
+# test:error 55:18 "integer value '9223372036854775808' does not fit into the type 'i64' (range is -9223372036854775808..=9223372036854775807)"
+
+func main() {
+    var a: i64 = -0x8000000000000001;
+    var b: i64 = 0x8000000000000000;
+}
+
+# test:subtest
+# test:error 63:13 "integer value '-2147483649' does not fit into the type 'i32' (range is -2147483648..=2147483647)"
+# test:error 64:13 "integer value '2147483648' does not fit into the type 'i32' (range is -2147483648..=2147483647)"
+
+func main() {
+    var a = -0x80000001;
+    var b = 0x80000000;
+}

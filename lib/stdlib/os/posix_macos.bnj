@@ -50,7 +50,7 @@ meta if config.OS == config.MACOS {
     const S_IFSOCK: u16 = 0o140000;
     const S_IFLNK: u16 = 0o120000;
     const S_IFREG: u16 = 0o100000;
-    const S_IFBLK: u16 = 0o600000;
+    const S_IFBLK: u16 = 0o060000;
     const S_IFDIR: u16 = 0o040000;
     const S_IFCHR: u16 = 0o020000;
     const S_IFIFO: u16 = 0o010000;
