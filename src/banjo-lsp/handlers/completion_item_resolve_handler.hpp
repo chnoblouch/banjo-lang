@@ -25,7 +25,7 @@ private:
 
     struct UseInsertionPoint {
         lang::sir::UseDotExpr *top_level_dot_expr;
-        lang::sir::UseIdent *ident;
+        lang::ASTNode *ast_node;
         unsigned common_ancestor;
     };
 

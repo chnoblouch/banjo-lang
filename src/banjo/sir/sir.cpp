@@ -90,8 +90,8 @@ ExprCategory Expr::get_category() const {
     } else if (auto star_expr = match<StarExpr>()) {
         return star_expr->value.get_category();
     } else if (
-        is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() || is<sir::ClosureType>() ||
-        is<sir::ReferenceType>()
+        is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() || is<ClosureType>() ||
+        is<ReferenceType>()
     ) {
         return ExprCategory::TYPE;
     } else if (auto placeholder_expr = match<PlaceholderExpr>()) {
@@ -110,7 +110,7 @@ ExprCategory Expr::get_category() const {
 }
 
 bool Expr::is_type() const {
-    return get_category() == sir::ExprCategory::TYPE;
+    return get_category() == ExprCategory::TYPE;
 }
 
 bool Expr::is_primitive_type(Primitive primitive) const {
@@ -135,7 +135,7 @@ bool Expr::is_int_type() const {
             case Primitive::USIZE: return true;
             default: return false;
         }
-    } else if (is_pseudo_type(sir::PseudoTypeKind::INT_LITERAL)) {
+    } else if (is_pseudo_type(PseudoTypeKind::INT_LITERAL)) {
         return true;
     } else {
         return false;
@@ -188,12 +188,12 @@ bool Expr::is_number_type() const {
 }
 
 bool Expr::is_addr_like_type() const {
-    return is_primitive_type(sir::Primitive::ADDR) || is<sir::PointerType>() || is<sir::FuncType>();
+    return is_primitive_type(Primitive::ADDR) || is<PointerType>() || is<FuncType>();
 }
 
 const ProtoDef *Expr::match_proto_ptr() const {
     if (auto pointer_type = match<PointerType>()) {
-        return pointer_type->base_type.match_symbol<sir::ProtoDef>();
+        return pointer_type->base_type.match_symbol<ProtoDef>();
     } else {
         return nullptr;
     }
@@ -205,13 +205,13 @@ ProtoDef *Expr::match_proto_ptr() {
 
 bool Expr::is_u8_ptr() const {
     if (auto pointer_type = match<PointerType>()) {
-        return pointer_type->base_type.is_primitive_type(sir::Primitive::U8);
+        return pointer_type->base_type.is_primitive_type(Primitive::U8);
     } else {
         return false;
     }
 }
 
-bool Expr::is_symbol(sir::Symbol symbol) const {
+bool Expr::is_symbol(Symbol symbol) const {
     if (auto symbol_expr = match<SymbolExpr>()) {
         return symbol_expr->symbol == symbol;
     } else {
@@ -386,7 +386,7 @@ Symbol Symbol::get_parent() const {
 Module &Symbol::find_mod() const {
     Symbol symbol = *this;
 
-    while (!symbol.is<sir::Module>()) {
+    while (!symbol.is<Module>()) {
         symbol = symbol.get_parent();
     }
 
@@ -459,10 +459,20 @@ DeclBlock *Symbol::get_decl_block() {
     return const_cast<DeclBlock *>(std::as_const(*this).get_decl_block());
 }
 
-std::span<sir::GenericParam *> Symbol::get_generic_params() const {
+std::span<GenericParam *> Symbol::get_generic_params() const {
     if (auto func_def = match<FuncDef>()) return func_def->generic_params;
     else if (auto struct_def = match<StructDef>()) return struct_def->generic_params;
     else return {};
+}
+
+Symbol UseItem::symbol() const {
+    if (auto ident = match<UseIdent>()) {
+        return ident->symbol;
+    } else if (auto rebind = match<UseRebind>()) {
+        return rebind->symbol;
+    } else {
+        return nullptr;
+    }
 }
 
 void SymbolTable::insert_decl(std::string_view name, Symbol symbol) {
@@ -494,42 +504,42 @@ Symbol SymbolTable::look_up_local(std::string_view name) const {
 
 bool BinaryExpr::is_arithmetic_op() {
     switch (op) {
-        case sir::BinaryOp::ADD:
-        case sir::BinaryOp::SUB:
-        case sir::BinaryOp::MUL:
-        case sir::BinaryOp::DIV:
-        case sir::BinaryOp::MOD: return true;
+        case BinaryOp::ADD:
+        case BinaryOp::SUB:
+        case BinaryOp::MUL:
+        case BinaryOp::DIV:
+        case BinaryOp::MOD: return true;
         default: return false;
     }
 }
 
 bool BinaryExpr::is_bitwise_op() {
     switch (op) {
-        case sir::BinaryOp::BIT_AND:
-        case sir::BinaryOp::BIT_OR:
-        case sir::BinaryOp::BIT_XOR:
-        case sir::BinaryOp::SHL:
-        case sir::BinaryOp::SHR: return true;
+        case BinaryOp::BIT_AND:
+        case BinaryOp::BIT_OR:
+        case BinaryOp::BIT_XOR:
+        case BinaryOp::SHL:
+        case BinaryOp::SHR: return true;
         default: return false;
     }
 }
 
 bool BinaryExpr::is_comparison_op() {
     switch (op) {
-        case sir::BinaryOp::EQ:
-        case sir::BinaryOp::NE:
-        case sir::BinaryOp::GT:
-        case sir::BinaryOp::LT:
-        case sir::BinaryOp::GE:
-        case sir::BinaryOp::LE: return true;
+        case BinaryOp::EQ:
+        case BinaryOp::NE:
+        case BinaryOp::GT:
+        case BinaryOp::LT:
+        case BinaryOp::GE:
+        case BinaryOp::LE: return true;
         default: return false;
     }
 }
 
 bool BinaryExpr::is_logical_op() {
     switch (op) {
-        case sir::BinaryOp::AND:
-        case sir::BinaryOp::OR: return true;
+        case BinaryOp::AND:
+        case BinaryOp::OR: return true;
         default: return false;
     }
 }
@@ -553,7 +563,7 @@ bool PseudoType::is_struct_by_default() const {
 Module &FuncDef::find_mod() const {
     Symbol symbol = parent;
 
-    while (!symbol.is<sir::Module>()) {
+    while (!symbol.is<Module>()) {
         symbol = symbol.get_parent();
     }
 
@@ -563,7 +573,7 @@ Module &FuncDef::find_mod() const {
 Module &StructDef::find_mod() const {
     Symbol symbol = parent;
 
-    while (!symbol.is<sir::Module>()) {
+    while (!symbol.is<Module>()) {
         symbol = symbol.get_parent();
         ASSERT(symbol);
     }
@@ -581,9 +591,9 @@ StructField *StructDef::find_field(std::string_view name) const {
     return nullptr;
 }
 
-bool StructDef::has_impl_for(sir::Concrete<sir::ProtoDef> concrete_proto) const {
-    for (const sir::Expr &impl : impls) {
-        if (auto impl_proto = impl.match_concrete<sir::ProtoDef>()) {
+bool StructDef::has_impl_for(Concrete<ProtoDef> concrete_proto) const {
+    for (const Expr &impl : impls) {
+        if (auto impl_proto = impl.match_concrete<ProtoDef>()) {
             if (*impl_proto == concrete_proto) {
                 return true;
             }
@@ -593,9 +603,9 @@ bool StructDef::has_impl_for(sir::Concrete<sir::ProtoDef> concrete_proto) const 
     return false;
 }
 
-bool StructDef::has_impl_for(const sir::ProtoDef &proto_def) const {
+bool StructDef::has_impl_for(const ProtoDef &proto_def) const {
     // TODO: Remove this once it is unused
-    return has_impl_for({const_cast<sir::ProtoDef *>(&proto_def), {}});
+    return has_impl_for({const_cast<ProtoDef *>(&proto_def), {}});
 }
 
 Attributes::Layout StructDef::get_layout() const {
@@ -637,9 +647,9 @@ std::optional<unsigned> ProtoDef::get_index(std::string_view name) const {
 }
 
 ASTNode *ProtoFuncDecl::get_ast_node() const {
-    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+    if (auto func_decl = decl.match<FuncDecl>()) {
         return func_decl->ast_node;
-    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+    } else if (auto func_def = decl.match<FuncDef>()) {
         return func_def->ast_node;
     } else {
         ASSERT_UNREACHABLE;
@@ -647,9 +657,9 @@ ASTNode *ProtoFuncDecl::get_ast_node() const {
 }
 
 const Ident &ProtoFuncDecl::get_ident() const {
-    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+    if (auto func_decl = decl.match<FuncDecl>()) {
         return func_decl->ident;
-    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+    } else if (auto func_def = decl.match<FuncDef>()) {
         return func_def->ident;
     } else {
         ASSERT_UNREACHABLE;
@@ -657,9 +667,9 @@ const Ident &ProtoFuncDecl::get_ident() const {
 }
 
 Symbol ProtoFuncDecl::get_parent() const {
-    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+    if (auto func_decl = decl.match<FuncDecl>()) {
         return func_decl->parent;
-    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+    } else if (auto func_def = decl.match<FuncDef>()) {
         return func_def->parent;
     } else {
         ASSERT_UNREACHABLE;
@@ -667,9 +677,9 @@ Symbol ProtoFuncDecl::get_parent() const {
 }
 
 FuncType &ProtoFuncDecl::get_type() {
-    if (auto func_decl = decl.match<sir::FuncDecl>()) {
+    if (auto func_decl = decl.match<FuncDecl>()) {
         return func_decl->type;
-    } else if (auto func_def = decl.match<sir::FuncDef>()) {
+    } else if (auto func_def = decl.match<FuncDef>()) {
         return func_def->type;
     } else {
         ASSERT_UNREACHABLE;

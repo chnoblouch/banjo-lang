@@ -6,6 +6,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/json.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include "completion_engine.hpp"
 #include "protocol_structs.hpp"
@@ -130,9 +131,9 @@ FixedVector<CompletionItemResolveHandler::TextInsertion, 2> CompletionItemResolv
     ASTNode *dot_expr = point->top_level_dot_expr->ast_node;
     ASTNode *rhs = dot_expr->last_child;
 
-    if (rhs->type == AST_IDENTIFIER) {
+    if (rhs->type == AST_IDENTIFIER || rhs->type == AST_USE_REBIND) {
         return {
-            {point->ident->ident.ast_node->range.end + 1, "{"},
+            {point->ast_node->range.end + 1, "{"},
             {point->top_level_dot_expr->ast_node->range.end, ", " + path + "}"},
         };
     } else if (rhs->type == AST_USE_LIST) {
@@ -163,35 +164,55 @@ FixedVector<CompletionItemResolveHandler::TextInsertion, 2> CompletionItemResolv
 std::optional<CompletionItemResolveHandler::UseInsertionPoint> CompletionItemResolveHandler::find_insertion_point(
     sir::Module &mod,
     sir::UseItem &use_item,
-    lang::sir::UseDotExpr *top_level_dot_expr
+    sir::UseDotExpr *top_level_dot_expr
 ) {
-    if (auto ident = use_item.match<sir::UseIdent>()) {
+    if (auto symbol = use_item.symbol()) {
         if (!top_level_dot_expr) {
             return {};
         }
 
-        if (auto other_mod = ident->symbol.match<sir::Module>()) {
+        if (auto other_mod = symbol.match<sir::Module>()) {
             unsigned depth = mod.path.num_common_ancestors(other_mod->path);
 
-            if (depth > 0) {
-                return UseInsertionPoint{
-                    .top_level_dot_expr = top_level_dot_expr,
-                    .ident = ident,
-                    .common_ancestor = depth,
-                };
+            if (depth == 0) {
+                return {};
             }
+
+            ASTNode *ast_node;
+
+            if (auto use_ident = use_item.match<sir::UseIdent>()) {
+                ast_node = use_ident->ident.ast_node;
+            } else if (auto use_rebind = use_item.match<sir::UseRebind>()) {
+                ast_node = use_rebind->ast_node;
+            } else {
+                ASSERT_UNREACHABLE;
+            }
+
+            return UseInsertionPoint{
+                .top_level_dot_expr = top_level_dot_expr,
+                .ast_node = ast_node,
+                .common_ancestor = depth,
+            };
         }
     } else if (auto dot_expr = use_item.match<sir::UseDotExpr>()) {
         if (!top_level_dot_expr) {
             top_level_dot_expr = dot_expr;
         }
 
-        auto lhs_point = find_insertion_point(mod, dot_expr->rhs, top_level_dot_expr);
-        auto rhs_point = find_insertion_point(mod, dot_expr->lhs, top_level_dot_expr);
+        auto lhs_point = find_insertion_point(mod, dot_expr->lhs, top_level_dot_expr);
+        auto rhs_point = find_insertion_point(mod, dot_expr->rhs, top_level_dot_expr);
+
+        // Fix inserting `a.b.c` into `use a.b;`
+        // This kind of statement should be edited into `use a.{b, b.c};` instead of `use a.b.c;`
+        if (auto other_mod = dot_expr->rhs.symbol().match<sir::Module>()) {
+            if (other_mod->path == mod.path) {
+                rhs_point = {};
+            }
+        }
 
         if (lhs_point) {
             if (rhs_point) {
-                return lhs_point->common_ancestor > rhs_point->common_ancestor ? lhs_point : rhs_point;
+                return lhs_point->common_ancestor >= rhs_point->common_ancestor ? lhs_point : rhs_point;
             } else {
                 return lhs_point;
             }
@@ -266,7 +287,7 @@ CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert
     };
 }
 
-JSONObject CompletionItemResolveHandler::serialize_insertion(lang::SourceFile &file, TextInsertion insertion) {
+JSONObject CompletionItemResolveHandler::serialize_insertion(SourceFile &file, TextInsertion insertion) {
     return JSONObject{
         {"range", ProtocolStructs::range_to_lsp(file.get_content(), {insertion.position, insertion.position})},
         {"newText", insertion.text},

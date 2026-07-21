@@ -12,7 +12,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <list>
 #include <optional>
 #include <span>
 #include <string>
@@ -22,13 +21,11 @@
 #include <variant>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
+namespace banjo::lang {
 struct ASTNode;
+} // namespace banjo::lang
 
-namespace sir {
+namespace banjo::lang::sir {
 
 struct IntLiteral;
 struct FPLiteral;
@@ -297,7 +294,7 @@ public:
     const ProtoDef *match_proto_ptr() const;
     ProtoDef *match_proto_ptr();
     bool is_u8_ptr() const;
-    bool is_symbol(sir::Symbol symbol) const;
+    bool is_symbol(Symbol symbol) const;
     bool is_pseudo_type(PseudoTypeKind kind) const;
 
     ASTNode *get_ast_node() const;
@@ -469,7 +466,7 @@ public:
     SymbolTable *get_symbol_table();
     const DeclBlock *get_decl_block() const;
     DeclBlock *get_decl_block();
-    std::span<sir::GenericParam *> get_generic_params() const;
+    std::span<GenericParam *> get_generic_params() const;
 };
 
 class UseItem : public DynamicPointer<UseIdent, UseRebind, UseDotExpr, UseList, Error> {
@@ -479,6 +476,8 @@ public:
 
     template <typename T>
     UseItem(T value) : DynamicPointer(value) {}
+
+    Symbol symbol() const;
 };
 
 enum class SemaStage {
@@ -502,7 +501,7 @@ enum class Ownership {
 };
 
 struct Resource {
-    sir::Expr type;
+    Expr type;
     bool has_deinit;
     Ownership ownership;
     std::vector<Resource> sub_resources;
@@ -535,11 +534,11 @@ struct OverloadSet {
 };
 
 struct GuardedSymbol {
-    typedef utils::TruthTable<sir::Expr> TruthTable;
+    typedef utils::TruthTable<Expr> TruthTable;
 
     struct Variant {
         TruthTable truth_table;
-        sir::Symbol symbol;
+        Symbol symbol;
     };
 
     std::vector<Variant> variants;
@@ -610,8 +609,8 @@ struct GenericParam {
 };
 
 struct TypeNarrowing {
-    sir::GenericParam *generic_param;
-    sir::Expr constraint;
+    GenericParam *generic_param;
+    Expr constraint;
 };
 
 template <typename T>
@@ -837,7 +836,7 @@ struct SpecializeExpr {
     ASTNode *ast_node;
     Expr type;
     Symbol symbol;
-    std::span<sir::Expr> args;
+    std::span<Expr> args;
 };
 
 enum class Primitive {
@@ -1217,8 +1216,8 @@ struct StructDef {
 
     Module &find_mod() const;
     StructField *find_field(std::string_view name) const;
-    bool has_impl_for(sir::Concrete<sir::ProtoDef> concrete_proto) const;
-    bool has_impl_for(const sir::ProtoDef &proto_def) const;
+    bool has_impl_for(Concrete<ProtoDef> concrete_proto) const;
+    bool has_impl_for(const ProtoDef &proto_def) const;
     Attributes::Layout get_layout() const;
     bool is_generic() const { return !generic_params.empty(); }
 };
@@ -1535,7 +1534,7 @@ std::optional<Concrete<T>> Expr::match_concrete() const {
 
 template <typename T>
 std::optional<Concrete<T>> Expr::match_specialization() {
-    if (auto specialize_expr = match<sir::SpecializeExpr>()) {
+    if (auto specialize_expr = match<SpecializeExpr>()) {
         if (auto symbol = specialize_expr->symbol.match<T>()) {
             return Concrete<T>{
                 .def = symbol,
@@ -1551,7 +1550,7 @@ std::optional<Concrete<T>> Expr::match_specialization() {
 
 template <typename T>
 std::optional<Concrete<T>> Expr::match_specialization(T &symbol) {
-    if (auto specialize_expr = match<sir::SpecializeExpr>()) {
+    if (auto specialize_expr = match<SpecializeExpr>()) {
         if (specialize_expr->symbol == &symbol) {
             return Concrete<T>{
                 .def = &symbol,
@@ -1567,11 +1566,7 @@ std::optional<Concrete<T>> Expr::match_specialization(T &symbol) {
 
 std::strong_ordering operator<=>(const SemaStage &lhs, const SemaStage &rhs);
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sir
 
 template <>
 struct std::hash<banjo::lang::sir::Symbol> {
