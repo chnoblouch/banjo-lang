@@ -235,7 +235,7 @@ ParseResult ExprParser::parse_operand() {
         case TKN_SELF: return parse_self();
         case TKN_META: return parse_meta_expr();
         default: {
-            parser.report_unexpected_token();
+            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
             ASTNode *node = parser.create_node(AST_ERROR, stream.previous()->range());
             return {node, false};
         }
@@ -317,7 +317,7 @@ ParseResult ExprParser::parse_array_literal() {
         } else if (stream.get()->is(TKN_COMMA)) {
             node.consume();
         } else {
-            parser.report_unexpected_token();
+            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
             return {node.build(type), false};
         }
     }
@@ -358,7 +358,7 @@ ParseResult ExprParser::parse_anon_struct_literal() {
     NodeBuilder node = parser.build_node();
 
     if (!allow_struct_literals) {
-        parser.report_unexpected_token();
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
 
@@ -413,7 +413,7 @@ ParseResult ExprParser::parse_func_type() {
     node.consume(); // Consume 'func'
 
     if (!stream.get()->is(TKN_LPAREN)) {
-        parser.report_unexpected_token();
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
 
@@ -522,7 +522,7 @@ ParseResult ExprParser::parse_struct_literal_body() {
             name_node = parser.consume_into_node(AST_IDENTIFIER);
             entry_node.append_child(name_node);
         } else {
-            parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+            parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
             return entry_node.build_error();
         }
 

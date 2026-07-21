@@ -73,16 +73,12 @@ SourceFile *ModuleManager::load(const ModuleFile &location) {
         return nullptr;
     }
 
-    SourceFile *file = module_list.add(std::move(parsed_file));
-    report_manager.merge_result(std::move(file->ast_mod->reports), file->ast_mod->is_valid);
-    return file;
+    return module_list.add(std::move(parsed_file));
 }
 
 void ModuleManager::reparse(SourceFile *file) {
     file->tokens = Lexer{*file, lexer_mode}.tokenize();
-    file->ast_mod = Parser{*file, file->tokens}.parse_module();
-
-    report_manager.merge_result(std::move(file->ast_mod->reports), file->ast_mod->is_valid);
+    file->ast_mod = Parser{*file, file->tokens, report_manager}.parse_module();
 }
 
 std::unique_ptr<ASTModule> ModuleManager::parse_for_completion(SourceFile *file, TextPosition completion_point) {
@@ -90,7 +86,8 @@ std::unique_ptr<ASTModule> ModuleManager::parse_for_completion(SourceFile *file,
     lexer.enable_completion(completion_point);
     TokenList tokens = lexer.tokenize();
 
-    Parser parser{*file, tokens};
+    ReportManager dummy_report_manager;
+    Parser parser{*file, tokens, dummy_report_manager};
     parser.enable_completion();
     return parser.parse_module();
 }
@@ -142,7 +139,7 @@ std::unique_ptr<SourceFile> ModuleManager::parse_module(const ModuleFile &module
 
     std::unique_ptr<SourceFile> file = SourceFile::read(module_file.path, module_file.file_path, stream);
     file->tokens = Lexer{*file, lexer_mode}.tokenize();
-    file->ast_mod = Parser{*file, file->tokens}.parse_module();
+    file->ast_mod = Parser{*file, file->tokens, report_manager}.parse_module();
     return file;
 }
 

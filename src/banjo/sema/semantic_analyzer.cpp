@@ -20,11 +20,7 @@
 
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 SemanticAnalyzer::SemanticAnalyzer(
     sir::Unit &sir_unit,
@@ -32,12 +28,11 @@ SemanticAnalyzer::SemanticAnalyzer(
     ReportManager &report_manager,
     Mode mode /* = Mode::COMPILATION */
 )
-  : symbol_ctx(*this),
-    sir_unit(sir_unit),
-    target(target),
-    report_manager(report_manager),
-    report_generator(*this),
-    mode(mode) {
+  : symbol_ctx{*this},
+    sir_unit{sir_unit},
+    target{target},
+    report_generator{report_manager},
+    mode{mode} {
 
     scope_stack.push(
         Scope{
@@ -274,7 +269,7 @@ sir::Expr SemanticAnalyzer::get_resolved_type(sir::Expr value) {
         if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
             return type;
         }
-        
+
         if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
             if (type_narrowing->generic_param == generic_param) {
                 return type_narrowing->constraint;
@@ -325,8 +320,4 @@ void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol)
     extra_analysis.mods[&get_mod()].symbol_uses.push_back(use);
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema

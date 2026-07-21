@@ -16,15 +16,13 @@ class ASTModule : public ASTNode {
 
 public:
     SourceFile &file;
-    bool is_valid;
-    std::vector<Report> reports;
 
 private:
     utils::TypedArena<ASTNode, 128> node_arena;
     utils::Arena token_index_arena{256};
 
 public:
-    ASTModule(SourceFile &file) : ASTNode(AST_MODULE), file(file), is_valid(true) {}
+    ASTModule(SourceFile &file) : ASTNode{AST_MODULE}, file{file} {}
 
     template <typename... Args>
     ASTNode *create_node(Args... args) {

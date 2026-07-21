@@ -47,7 +47,7 @@ ParseResult StmtParser::parse_ref() {
 
 ParseResult StmtParser::parse_var_or_ref(NodeBuilder &node, ASTNodeType type, ASTNodeType type_typeless) {
     if (!stream.get()->is(TKN_IDENTIFIER)) {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
         return node.build_error();
     }
 
@@ -58,7 +58,7 @@ ParseResult StmtParser::parse_var_or_ref(NodeBuilder &node, ASTNodeType type, AS
     } else if (stream.get()->is(TKN_EQ)) {
         return parse_var_without_type(node, type_typeless);
     } else {
-        parser.report_unexpected_token();
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
 }
@@ -149,7 +149,7 @@ ParseResult StmtParser::parse_if_chain() {
             node.append_child(else_node.build(AST_ELSE_BRANCH));
         } else {
             stream.consume(); // Consume 'else'
-            parser.report_unexpected_token();
+            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
             return node.build(AST_IF_STMT);
         }
     }
@@ -209,14 +209,14 @@ ParseResult StmtParser::parse_try() {
     if (stream.get()->is(TKN_IDENTIFIER)) {
         success_case_node.append_child(parser.consume_into_node(AST_IDENTIFIER));
     } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
         return node.build_error();
     }
 
     if (stream.get()->is(TKN_IN)) {
         success_case_node.consume(); // Consume 'in'
     } else {
-        parser.report_unexpected_token();
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
 
@@ -236,7 +236,7 @@ ParseResult StmtParser::parse_try() {
         if (stream.get()->is(TKN_IDENTIFIER)) {
             error_case_node.append_child(parser.consume_into_node(AST_IDENTIFIER));
         } else {
-            parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+            parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
             return node.build_error();
         }
 
@@ -294,14 +294,14 @@ ParseResult StmtParser::parse_for() {
     if (stream.get()->is(TKN_IDENTIFIER)) {
         node.append_child(parser.consume_into_node(AST_IDENTIFIER));
     } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
         return node.build_error();
     }
 
     if (stream.get()->is(TKN_IN)) {
         node.consume(); // Consume 'in'
     } else {
-        parser.report_unexpected_token();
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
 
@@ -353,7 +353,7 @@ ParseResult StmtParser::parse_meta_stmt() {
     } else if (stream.get()->is(TKN_FOR)) {
         return parse_meta_for(node);
     } else {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_UNEXPECTED);
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
 }
@@ -388,7 +388,7 @@ ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
             branch.append_child(parser.parse_block().node);
             node.append_child(branch.build(AST_META_ELSE_BRANCH));
         } else {
-            parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_UNEXPECTED);
+            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
             return node.build_error();
         }
     }
@@ -400,13 +400,13 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
     node.consume(); // Consume 'for'
 
     if (!stream.get()->is(TKN_IDENTIFIER)) {
-        parser.report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER);
+        parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
         return node.build_error();
     }
     node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
     if (!stream.get()->is(TKN_IN)) {
-        parser.report_unexpected_token();
+        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
         return node.build_error();
     }
     node.consume(); // Consume 'in'

@@ -2,29 +2,35 @@
 
 #include "banjo/ast/ast_module.hpp"
 #include "banjo/ast/ast_node.hpp"
+#include "banjo/lexer/token.hpp"
 #include "banjo/reports/report.hpp"
-#include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_to_text.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <cassert>
+namespace banjo::lang {
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
-
-ReportBuilder::ReportBuilder(SemanticAnalyzer &analyzer, Report::Type type)
-  : analyzer(analyzer),
-    partial_report(type) {}
+ReportBuilder::ReportBuilder(ReportManager &report_manager, Report::Type type)
+  : report_manager{report_manager},
+    partial_report{type} {}
 
 template <typename... FormatArgs>
 ReportBuilder &ReportBuilder::set_message(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
     partial_report.set_message({find_location(node), format_str, format_args...});
+    return *this;
+}
+
+template <typename... FormatArgs>
+ReportBuilder &ReportBuilder::set_message(
+    std::string_view format_str,
+    SourceFile &file,
+    Token &token,
+    FormatArgs... format_args
+) {
+    partial_report.set_message({SourceLocation{&file, token.range()}, format_str, format_args...});
     return *this;
 }
 
@@ -43,15 +49,7 @@ SourceLocation ReportBuilder::find_location(ASTNode *node) {
 }
 
 void ReportBuilder::report() {
-    // std::unordered_map<std::string_view, sir::Expr> &generic_args = analyzer.get_scope().generic_args;
-
-    // if (!generic_args.empty()) {
-    //     for (auto &[name, value] : generic_args) {
-    //         add_note("generic argument '$' = '$'", value.get_ast_node(), name, value);
-    //     }
-    // }
-
-    analyzer.report_manager.insert(partial_report);
+    report_manager.insert(partial_report);
 }
 
 SourceFile &ReportBuilder::find_file(ASTNode *node) {
@@ -63,16 +61,26 @@ SourceFile &ReportBuilder::find_file(ASTNode *node) {
     return static_cast<ASTModule *>(node)->file;
 }
 
-ReportGenerator::ReportGenerator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
+ReportGenerator::ReportGenerator(ReportManager &report_manager) : report_manager{report_manager} {}
 
 template <typename... FormatArgs>
 ReportBuilder ReportGenerator::build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
-    return ReportBuilder(analyzer, Report::Type::ERROR).set_message(format_str, node, format_args...);
+    return ReportBuilder(report_manager, Report::Type::ERROR).set_message(format_str, node, format_args...);
+}
+
+template <typename... FormatArgs>
+ReportBuilder ReportGenerator::build_error(
+    std::string_view format_str,
+    SourceFile &file,
+    Token &token,
+    FormatArgs... format_args
+) {
+    return ReportBuilder(report_manager, Report::Type::ERROR).set_message(format_str, file, token, format_args...);
 }
 
 template <typename... FormatArgs>
 ReportBuilder ReportGenerator::build_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
-    return ReportBuilder(analyzer, Report::Type::WARNING).set_message(format_str, node, format_args...);
+    return ReportBuilder(report_manager, Report::Type::WARNING).set_message(format_str, node, format_args...);
 }
 
 template <typename... FormatArgs>
@@ -81,8 +89,44 @@ void ReportGenerator::report_error(std::string_view format_str, ASTNode *node, F
 }
 
 template <typename... FormatArgs>
+void ReportGenerator::report_error(
+    std::string_view format_str,
+    SourceFile &file,
+    Token &token,
+    FormatArgs... format_args
+) {
+    build_error(format_str, file, token, format_args...).report();
+}
+
+template <typename... FormatArgs>
 void ReportGenerator::report_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
     build_warning(format_str, node, format_args...).report();
+}
+
+void ReportGenerator::report_err_unexpected_token(SourceFile &file, Token &token) {
+    report_error("unexpected token $", file, token, token);
+}
+
+void ReportGenerator::report_err_expected(SourceFile &file, Token &token, TokenType expected_type) {
+    std::string_view expected_token_name;
+
+    switch (expected_type) {
+        case TKN_SEMI: expected_token_name = ";"; break;
+        case TKN_EQ: expected_token_name = "="; break;
+        case TKN_LPAREN: expected_token_name = "("; break;
+        case TKN_LBRACE: expected_token_name = "{"; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    report_error("expected '$', got $", file, token, expected_token_name);
+}
+
+void ReportGenerator::report_err_expected_ident(SourceFile &file, Token &token) {
+    report_error("expected identifier, got $", file, token, token);
+}
+
+void ReportGenerator::report_err_unclosed_block(SourceFile &file, Token &token) {
+    report_error("file ends with unclosed block", file, token);
 }
 
 void ReportGenerator::report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected) {
@@ -912,8 +956,4 @@ void ReportGenerator::add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr 
     }
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

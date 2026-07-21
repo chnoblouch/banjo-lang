@@ -3,11 +3,7 @@
 
 #include "banjo/reports/report.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-class ReportPrinter;
+namespace banjo::lang {
 
 class ReportManager {
 
@@ -20,12 +16,9 @@ public:
     bool is_valid() const { return valid; }
 
     Report &insert(Report report);
-    void merge_result(std::vector<Report> reports, bool is_valid);
     void reset();
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

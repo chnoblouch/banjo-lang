@@ -1,32 +1,30 @@
-#ifndef BANJO_SEMA_REPORT_GENERATOR_H
-#define BANJO_SEMA_REPORT_GENERATOR_H
+#ifndef BANJO_REPORTS_REPORT_GENERATOR_H
+#define BANJO_REPORTS_REPORT_GENERATOR_H
 
 #include "banjo/reports/report.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/large_int.hpp"
 
 #include <array>
 #include <string_view>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
-
-class SemanticAnalyzer;
+namespace banjo::lang {
 
 class ReportBuilder {
 
 private:
-    SemanticAnalyzer &analyzer;
+    ReportManager &report_manager;
     Report partial_report;
 
 public:
-    ReportBuilder(SemanticAnalyzer &analyzer, Report::Type type);
+    ReportBuilder(ReportManager &report_manager, Report::Type type);
 
     template <typename... FormatArgs>
     ReportBuilder &set_message(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+
+    template <typename... FormatArgs>
+    ReportBuilder &set_message(std::string_view format_str, SourceFile &file, Token &token, FormatArgs... format_args);
 
     template <typename... FormatArgs>
     ReportBuilder &add_note(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
@@ -42,10 +40,15 @@ private:
 class ReportGenerator {
 
 private:
-    SemanticAnalyzer &analyzer;
+    ReportManager &report_manager;
 
 public:
-    ReportGenerator(SemanticAnalyzer &analyzer);
+    ReportGenerator(ReportManager &report_manager);
+
+    void report_err_unexpected_token(SourceFile &file, Token &token);
+    void report_err_expected(SourceFile &file, Token &token, TokenType expected_type);
+    void report_err_expected_ident(SourceFile &file, Token &token);
+    void report_err_unclosed_block(SourceFile &file, Token &token);
 
     void report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected);
     void report_err_symbol_not_found(const sir::IdentExpr &ident_expr);
@@ -190,10 +193,16 @@ private:
     ReportBuilder build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
+    ReportBuilder build_error(std::string_view format_str, SourceFile &file, Token &token, FormatArgs... format_args);
+
+    template <typename... FormatArgs>
     ReportBuilder build_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
     void report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+
+    template <typename... FormatArgs>
+    void report_error(std::string_view format_str, SourceFile &file, Token &token, FormatArgs... format_args);
 
     template <typename... FormatArgs>
     void report_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
@@ -223,10 +232,6 @@ private:
     void add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

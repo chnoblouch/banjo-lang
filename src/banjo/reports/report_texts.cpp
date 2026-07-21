@@ -1,5 +1,6 @@
 #include "report_texts.hpp"
 
+#include "banjo/lexer/token.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
@@ -55,6 +56,14 @@ ReportText &ReportText::format(unsigned long long integer) {
 
 ReportText &ReportText::format(LargeInt integer) {
     return format(integer.to_string());
+}
+
+ReportText &ReportText::format(Token &token) {
+    switch (token.type) {
+        case TKN_EOF: return format("end of file");
+        case TKN_STRING: return format(token.value);
+        default: return format("'" + std::string{token.value} + "'");
+    }
 }
 
 ReportText &ReportText::format(ASTNode *node) {

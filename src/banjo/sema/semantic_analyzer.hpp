@@ -1,10 +1,10 @@
 #ifndef BANJO_SEMA_SEMANTIC_ANALYZER_H
 #define BANJO_SEMA_SEMANTIC_ANALYZER_H
 
+#include "banjo/reports/report_generator.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
-#include "banjo/sema/report_generator.hpp"
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
@@ -19,11 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 enum class Mode {
     COMPILATION,
@@ -88,7 +84,6 @@ public:
 private:
     sir::Unit &sir_unit;
     target::Target *target;
-    ReportManager &report_manager;
 
 public:
     ReportGenerator report_generator;
@@ -219,10 +214,6 @@ private:
     std::string_view create_string(std::string_view value) { return get_mod().create_string(value); }
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif

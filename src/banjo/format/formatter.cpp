@@ -4,6 +4,7 @@
 #include "banjo/lexer/lexer.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/parser.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
@@ -24,11 +25,10 @@ EditList Formatter::format() {
     Lexer lexer{file, Lexer::Mode::KEEP_WHITESPACE};
     tokens = lexer.tokenize();
 
-    Parser parser{file, tokens, Parser::Mode::FORMATTING};
+    Parser parser{file, tokens, report_manager, Parser::Mode::FORMATTING};
     std::unique_ptr<ASTModule> ast_mod = parser.parse_module();
-    report_manager.merge_result(ast_mod->reports, ast_mod->is_valid);
 
-    if (!ast_mod->is_valid) {
+    if (!report_manager.is_valid()) {
         return edits;
     }
 

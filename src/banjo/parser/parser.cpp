@@ -34,9 +34,10 @@ const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_NATIVE,
 };
 
-Parser::Parser(SourceFile &file, TokenList &input, Mode mode /*= Mode::COMPILATION*/)
+Parser::Parser(SourceFile &file, TokenList &input, ReportManager &report_manager, Mode mode /*= Mode::COMPILATION*/)
   : file{file},
     stream{input},
+    report_generator{report_manager},
     mode{mode} {}
 
 void Parser::enable_completion() {
@@ -70,7 +71,7 @@ ParseResult Parser::parse_block() {
     if (stream.get()->is(TKN_LBRACE)) {
         node.consume(); // Consume '{'
     } else {
-        report_unexpected_token(Parser::ReportTextType::ERR_PARSE_EXPECTED, "'{'");
+        report_generator.report_err_expected(file, *stream.get(), TKN_LBRACE);
         return node.build_error();
     }
 
@@ -79,7 +80,7 @@ ParseResult Parser::parse_block() {
             node.consume(); // Consume '}'
             break;
         } else if (stream.get()->is(TKN_EOF)) {
-            register_error(stream.previous()->range()).set_message(ReportText("file ends with unclosed block").str());
+            report_generator.report_err_unclosed_block(file, *stream.previous());
             return node.build_error(AST_BLOCK);
         } else {
             parse_and_append_block_child(node);
@@ -264,7 +265,7 @@ ParseResult Parser::parse_list(
         } else if (stream.get()->is(TKN_COMMA)) {
             node.consume();
         } else {
-            report_unexpected_token();
+            report_generator.report_err_unexpected_token(file, *stream.get());
             return {node.build(type), false};
         }
     }
@@ -294,7 +295,7 @@ ParseResult Parser::parse_param() {
         node.append_child(consume_into_node(AST_SELF));
     } else {
         if (is_mut) {
-            report_unexpected_token();
+            report_generator.report_err_unexpected_token(file, *stream.get());
         }
 
         if (stream.get()->is(TKN_REF)) {
@@ -358,56 +359,9 @@ ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type
     } else if (stream.previous()->end_of_line) {
         return builder.build(type);
     } else {
-        report_unexpected_token(ReportTextType::ERR_PARSE_EXPECTED_SEMI);
+        report_generator.report_err_expected(file, *stream.get(), TKN_SEMI);
         return builder.build_error(type);
     }
-}
-
-Report &Parser::register_error(TextRange range) {
-    mod->reports.push_back(Report(Report::Type::ERROR, SourceLocation{&file, range}));
-    mod->is_valid = false;
-    return mod->reports.back();
-}
-
-void Parser::report_unexpected_token() {
-    report_unexpected_token(ReportTextType::ERR_PARSE_UNEXPECTED);
-}
-
-void Parser::report_unexpected_token(ReportTextType report_text_type) {
-    std::string_view format_str;
-
-    switch (report_text_type) {
-        case ReportTextType::ERR_PARSE_UNEXPECTED: format_str = "unexpected token $"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED: format_str = "expected $, got $"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED_SEMI: format_str = "expected ';' after statement"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER: format_str = "expected identifier, got $"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED_TYPE: format_str = "expected type, got $"; break;
-    }
-
-    Token *token = stream.get();
-    register_error(token->range()).set_message(ReportText(format_str).format(token_to_str(token)).str());
-}
-
-void Parser::report_unexpected_token(ReportTextType report_text_type, std::string expected) {
-    std::string_view format_str;
-
-    switch (report_text_type) {
-        case ReportTextType::ERR_PARSE_UNEXPECTED: format_str = "unexpected token $"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED: format_str = "expected $, got $"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED_SEMI: format_str = "expected ';' after statement"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED_IDENTIFIER: format_str = "expected identifier, got $"; break;
-        case ReportTextType::ERR_PARSE_EXPECTED_TYPE: format_str = "expected type, got $"; break;
-    }
-
-    Token *token = stream.get();
-    register_error(token->range())
-        .set_message(ReportText(format_str).format(expected).format(token_to_str(token)).str());
-}
-
-std::string Parser::token_to_str(Token *token) {
-    if (token->is(TKN_EOF)) return "end of file";
-    else if (token->is(TKN_STRING)) return std::string{token->value};
-    else return "'" + std::string{token->value} + "'";
 }
 
 void Parser::recover() {

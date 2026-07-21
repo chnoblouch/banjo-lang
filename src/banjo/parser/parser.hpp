@@ -7,16 +7,14 @@
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/token_stream.hpp"
 #include "banjo/reports/report.hpp"
+#include "banjo/reports/report_generator.hpp"
+#include "banjo/reports/report_manager.hpp"
 #include "banjo/source/source_file.hpp"
 
-#include <algorithm>
 #include <functional>
 #include <memory>
-#include <vector>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 typedef std::function<ParseResult()> ListElementParser;
 
@@ -32,17 +30,10 @@ public:
         FORMATTING,
     };
 
-    enum class ReportTextType {
-        ERR_PARSE_UNEXPECTED,
-        ERR_PARSE_EXPECTED,
-        ERR_PARSE_EXPECTED_SEMI,
-        ERR_PARSE_EXPECTED_IDENTIFIER,
-        ERR_PARSE_EXPECTED_TYPE,
-    };
-
 private:
     SourceFile &file;
     TokenStream stream;
+    ReportGenerator report_generator;
     Mode mode;
 
     std::unique_ptr<ASTModule> mod;
@@ -52,7 +43,7 @@ private:
     ASTNode *completion_node = nullptr;
 
 public:
-    Parser(SourceFile &file, TokenList &input, Mode mode = Mode::COMPILATION);
+    Parser(SourceFile &file, TokenList &input, ReportManager &report_manager, Mode mode = Mode::COMPILATION);
     void enable_completion();
 
     std::unique_ptr<ASTModule> parse_module();
@@ -88,13 +79,6 @@ private:
     ParseResult parse_return_type();
     ParseResult check_stmt_terminator(NodeBuilder &builder, ASTNodeType type);
 
-    Report &register_error(TextRange range);
-
-    void report_unexpected_token();
-    void report_unexpected_token(ReportTextType report_text_type);
-    void report_unexpected_token(ReportTextType report_text_type, std::string expected);
-    std::string token_to_str(Token *token);
-
     void recover();
     bool is_at_recover_punctuation();
     bool is_at_recover_keyword();
@@ -117,8 +101,6 @@ private:
     ASTNode *create_dummy_block();
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif
