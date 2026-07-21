@@ -2379,6 +2379,8 @@ Result ExprAnalyzer::analyze_operator_overload_call(
     // analyzer.add_symbol_use(inout_expr.get_ast_node(), impl);
 
     sir::CallExpr *call_expr = sir::create_call(analyzer.get_mod(), concrete_func, args);
+    call_expr->ast_node = inout_expr.get_ast_node();
+
     sir::FuncType &func_type = call_expr->callee.get_type().as<sir::FuncType>();
 
     partial_result = finalize_call_expr_args(*call_expr, func_type, &func_def);

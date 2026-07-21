@@ -363,10 +363,11 @@ ParseResult ExprParser::parse_anon_struct_literal() {
     }
 
     ParseResult result = parse_struct_literal_body();
+    node.append_child(result.node);
+
     if (!result.is_valid) {
         return node.build_error(AST_TYPELESS_STRUCT_LITERAL);
     }
-    node.append_child(result.node);
 
     return node.build(AST_TYPELESS_STRUCT_LITERAL);
 }
