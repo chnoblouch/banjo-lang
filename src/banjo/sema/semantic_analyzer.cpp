@@ -129,11 +129,17 @@ void SemanticAnalyzer::enter_decl(sir::Symbol decl) {
         decl_block = decl.get_parent().get_decl_block();
     }
 
+    sir::SymbolTable *symbol_table = decl_block->symbol_table;
+
+    if (auto type_alias = decl.match<sir::TypeAlias>()) {
+        symbol_table = type_alias->symbol_table;
+    }
+
     Scope scope{
         .decl = decl,
         .decl_block = decl_block,
         .block = nullptr,
-        .symbol_table = decl_block->symbol_table,
+        .symbol_table = symbol_table,
         .closure_ctx = nullptr,
     };
 

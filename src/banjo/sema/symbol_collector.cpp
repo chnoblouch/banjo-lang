@@ -103,14 +103,14 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
 
     if (auto proto_def = func_def.parent.match<sir::ProtoDef>()) {
         if (func_def.is_method()) {
-            proto_def->func_decls.push_back(
-                sir::ProtoFuncDecl{
-                    .decl = &func_def,
-                }
-            );
+            proto_def->func_decls.push_back(sir::ProtoFuncDecl{.decl = &func_def});
         }
     }
 
+    analyzer.enter_symbol_table(func_def.block.symbol_table);
+    collect_generic_params(func_def.generic_params);
+    analyzer.exit_symbol_table();
+    
     analyzer.exit_decl();
 }
 
@@ -143,6 +143,7 @@ void SymbolCollector::collect_struct_def(sir::StructDef &struct_def) {
     struct_def.parent = analyzer.get_decl();
 
     analyzer.enter_decl(&struct_def);
+    collect_generic_params(struct_def.generic_params);
     collect_in_block(struct_def.block);
     analyzer.exit_decl();
 
@@ -209,6 +210,7 @@ void SymbolCollector::collect_proto_def(sir::ProtoDef &proto_def) {
     analyzer.add_symbol_def(&proto_def);
 
     analyzer.enter_decl(&proto_def);
+    collect_generic_params(proto_def.generic_params);
     collect_in_block(proto_def.block);
     analyzer.exit_decl();
 }
@@ -218,6 +220,10 @@ void SymbolCollector::collect_type_alias(sir::TypeAlias &type_alias) {
 
     add_symbol(type_alias.ident, &type_alias);
     analyzer.add_symbol_def(&type_alias);
+
+    analyzer.enter_decl(&type_alias);
+    collect_generic_params(type_alias.generic_params);
+    analyzer.exit_decl();
 }
 
 void SymbolCollector::collect_use_decl(sir::UseDecl &use_decl) {
@@ -304,6 +310,27 @@ void SymbolCollector::collect_use_list(sir::UseList &use_list, sir::UseDecl &par
     for (sir::UseItem &use_item : use_list.items) {
         collect_use_item(use_item, parent);
     }
+}
+
+void SymbolCollector::collect_generic_params(std::span<sir::GenericParam *> params) {
+    for (unsigned i = 0; i < params.size(); i++) {
+        collect_generic_param(params, i);
+    }
+}
+
+void SymbolCollector::collect_generic_param(std::span<sir::GenericParam *> params, unsigned index) {
+    sir::GenericParam &param = *params[index];
+    std::string_view name = param.ident.value;
+
+    for (unsigned i = 0; i < index; i++) {
+        if (params[i]->ident.value == param.ident.value) {
+            analyzer.report_generator.report_err_redefinition(param.ident, params[i]);
+            break;
+        }
+    }
+
+    analyzer.get_symbol_table().insert_decl(name, &param);
+    analyzer.add_symbol_def(&param);
 }
 
 void SymbolCollector::add_symbol(sir::Ident &ident, sir::Symbol symbol) {

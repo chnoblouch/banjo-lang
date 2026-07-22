@@ -240,6 +240,8 @@ ParseResult DeclParser::parse_proto() {
 }
 
 ParseResult DeclParser::parse_type_alias() {
+    ASTNodeType type = AST_TYPE_ALIAS_DEF;
+
     NodeBuilder node = parser.build_node();
     node.consume(); // Consume 'type'
 
@@ -250,9 +252,20 @@ ParseResult DeclParser::parse_type_alias() {
 
     node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
+    if (stream.get()->is(TKN_LBRACKET)) {
+        ParseResult result = parse_generic_param_list();
+        if (!result.is_valid) {
+            return node.build_error();
+        }
+
+        node.append_child(result.node);
+        type = AST_GENERIC_TYPE_ALIAS_DEF;
+    }
+
     if (!stream.get()->is(TKN_EQ)) {
         parser.report_generator.report_err_expected(parser.file, *stream.get(), TKN_EQ);
-        return node.build_error();
+        node.append_child(parser.create_node(AST_ERROR));
+        return node.build_error(type);
     }
     node.consume(); // Consume '='
 
@@ -260,10 +273,10 @@ ParseResult DeclParser::parse_type_alias() {
     node.append_child(result.node);
 
     if (!result.is_valid) {
-        return node.build_error();
+        return node.build_error(type);
     }
 
-    return parser.check_stmt_terminator(node, AST_TYPE_ALIAS_DEF);
+    return parser.check_stmt_terminator(node, type);
 }
 
 ParseResult DeclParser::parse_use() {

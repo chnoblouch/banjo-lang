@@ -24,7 +24,7 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
         AttributeAnalyzer{analyzer}.analyze(*func_def.attrs);
     }
 
-    analyze_generic_params(func_def.generic_params);
+    analyze_type_constraints(func_def.generic_params);
 
     for (unsigned i = 0; i < func_def.type.params.size(); i++) {
         if (analyzer.get_closure_ctx() && i == 0) {
@@ -112,7 +112,7 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
         AttributeAnalyzer{analyzer}.analyze(*struct_def.attrs);
     }
 
-    analyze_generic_params(struct_def.generic_params);
+    analyze_type_constraints(struct_def.generic_params);
 
     for (sir::Expr &impl : struct_def.impls) {
         partial_result = ExprAnalyzer(analyzer).analyze_type(impl);
@@ -258,7 +258,12 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
 }
 
 Result DeclInterfaceAnalyzer::analyze_proto_def(sir::ProtoDef &proto_def) {
-    analyze_generic_params(proto_def.generic_params);
+    analyze_type_constraints(proto_def.generic_params);
+    return Result::SUCCESS;
+}
+
+Result DeclInterfaceAnalyzer::analyze_type_alias(sir::TypeAlias &type_alias) {
+    analyze_type_constraints(type_alias.generic_params);
     return Result::SUCCESS;
 }
 
@@ -342,29 +347,10 @@ void DeclInterfaceAnalyzer::analyze_self_param(sir::FuncType &func_type, unsigne
     }
 }
 
-void DeclInterfaceAnalyzer::analyze_generic_params(std::span<sir::GenericParam *> generic_params) {
-    for (unsigned i = 0; i < generic_params.size(); i++) {
-        analyze_generic_param(generic_params, i);
-    }
-
-    for (sir::GenericParam *generic_param : generic_params) {
+void DeclInterfaceAnalyzer::analyze_type_constraints(std::span<sir::GenericParam *> params) {
+    for (sir::GenericParam *generic_param : params) {
         analyze_type_constraint(generic_param->constraint);
     }
-}
-
-void DeclInterfaceAnalyzer::analyze_generic_param(std::span<sir::GenericParam *> generic_params, unsigned index) {
-    sir::GenericParam &param = *generic_params[index];
-    std::string_view name = param.ident.value;
-
-    for (unsigned i = 0; i < index; i++) {
-        if (generic_params[i]->ident.value == param.ident.value) {
-            analyzer.report_generator.report_err_redefinition(param.ident, generic_params[i]);
-            break;
-        }
-    }
-
-    analyzer.get_symbol_table().insert_decl(name, &param);
-    analyzer.add_symbol_def(&param);
 }
 
 void DeclInterfaceAnalyzer::analyze_type_constraint(sir::TypeConstraint &constraint) {

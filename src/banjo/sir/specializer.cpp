@@ -1,5 +1,7 @@
 #include "specializer.hpp"
+
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <span>
 
@@ -8,7 +10,9 @@ namespace banjo::lang::sir {
 Specializer::Specializer(utils::Arena &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args)
   : arena{arena},
     params{params},
-    args{args} {}
+    args{args} {
+    ASSERT(params.size() == args.size());
+}
 
 sir::Expr Specializer::specialize_expr(sir::Expr expr) {
     if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
@@ -19,6 +23,8 @@ sir::Expr Specializer::specialize_expr(sir::Expr expr) {
         return specialize_specialize_expr(*specialize_expr);
     } else if (auto pointer_type = expr.match<sir::PointerType>()) {
         return specialize_pointer_type(*pointer_type);
+    } else if (auto static_array_type = expr.match<sir::StaticArrayType>()) {
+        return specialize_static_array_type(*static_array_type);
     } else if (auto func_type = expr.match<sir::FuncType>()) {
         return specialize_func_type(*func_type);
     } else if (auto closure_type = expr.match<sir::ClosureType>()) {
@@ -82,13 +88,11 @@ sir::Expr Specializer::specialize_tuple_expr(sir::TupleExpr &tuple_expr) {
         exprs[i] = specialize_expr(tuple_expr.exprs[i]);
     }
 
-    sir::TupleExpr specialization{
+    return arena.create<sir::TupleExpr>(sir::TupleExpr{
         .ast_node = tuple_expr.ast_node,
         .type = specialize_expr(tuple_expr.type),
         .exprs = exprs,
-    };
-
-    return arena.create<sir::TupleExpr>(specialization);
+    });
 }
 
 sir::Expr Specializer::specialize_specialize_expr(sir::SpecializeExpr &specialize_expr) {
@@ -98,14 +102,12 @@ sir::Expr Specializer::specialize_specialize_expr(sir::SpecializeExpr &specializ
         args[i] = this->specialize_expr(specialize_expr.args[i]);
     }
 
-    sir::SpecializeExpr specialization{
+    return arena.create<sir::SpecializeExpr>(sir::SpecializeExpr{
         .ast_node = specialize_expr.ast_node,
         .type = this->specialize_expr(specialize_expr.type),
         .symbol = specialize_expr.symbol,
         .args = args,
-    };
-
-    return arena.create<sir::SpecializeExpr>(specialization);
+    });
 }
 
 sir::Expr Specializer::specialize_pointer_type(sir::PointerType &pointer_type) {
@@ -114,12 +116,26 @@ sir::Expr Specializer::specialize_pointer_type(sir::PointerType &pointer_type) {
     if (base_type == pointer_type.base_type) {
         return &pointer_type;
     } else {
-        sir::PointerType specialization{
+        return arena.create<sir::PointerType>({
             .ast_node = pointer_type.ast_node,
             .base_type = base_type,
-        };
+        });
+    }
+}
 
-        return arena.create<sir::PointerType>(specialization);
+sir::Expr Specializer::specialize_static_array_type(sir::StaticArrayType &static_array_type) {
+    // TODO: Specialize length (e.g. if it's a meta expression)
+
+    sir::Expr base_type = specialize_expr(static_array_type.base_type);
+
+    if (base_type == static_array_type.base_type) {
+        return &static_array_type;
+    } else {
+        return arena.create<sir::StaticArrayType>({
+            .ast_node = nullptr,
+            .base_type = base_type,
+            .length = static_array_type.length,
+        });
     }
 }
 
@@ -128,13 +144,11 @@ sir::FuncType *Specializer::specialize_func_type(sir::FuncType &func_type) {
 }
 
 sir::Expr Specializer::specialize_closure_type(sir::ClosureType &closure_type) {
-    sir::ClosureType specialization{
+    return arena.create<sir::ClosureType>(sir::ClosureType{
         .ast_node = closure_type.ast_node,
         .func_type = specialize_func_type_directly(closure_type.func_type),
         .underlying_struct = closure_type.underlying_struct,
-    };
-
-    return arena.create<sir::ClosureType>(specialization);
+    });
 }
 
 sir::Expr Specializer::specialize_reference_type(sir::ReferenceType &reference_type) {
@@ -143,13 +157,11 @@ sir::Expr Specializer::specialize_reference_type(sir::ReferenceType &reference_t
     if (base_type == reference_type.base_type) {
         return &reference_type;
     } else {
-        sir::ReferenceType specialization{
+        return arena.create<sir::ReferenceType>(sir::ReferenceType{
             .ast_node = reference_type.ast_node,
             .mut = reference_type.mut,
             .base_type = base_type,
-        };
-
-        return arena.create<sir::ReferenceType>(specialization);
+        });
     }
 }
 

@@ -5,11 +5,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 class TypeAliasResolver final : public DeclVisitor {
 
@@ -18,10 +14,6 @@ public:
     Result analyze_type_alias(sir::TypeAlias &type_alias) override;
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif

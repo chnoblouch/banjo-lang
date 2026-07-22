@@ -63,6 +63,7 @@ private:
     sir::Decl generate_proto(ASTNode *node);
     sir::Decl generate_generic_proto(ASTNode *node);
     sir::Decl generate_type_alias(ASTNode *node);
+    sir::Decl generate_generic_type_alias(ASTNode *node);
     sir::Decl generate_use_decl(ASTNode *node);
     sir::Decl generate_error_decl(ASTNode *node);
 

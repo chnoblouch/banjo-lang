@@ -23,13 +23,13 @@ private:
     Result analyze_enum_variant(sir::EnumVariant &enum_variant) override;
     Result analyze_union_case(sir::UnionCase &union_case) override;
     Result analyze_proto_def(sir::ProtoDef &proto_def) override;
+    Result analyze_type_alias(sir::TypeAlias &type_alias) override;
 
     void analyze_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent);
     void analyze_self_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent);
     void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
     void insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def);
-    void analyze_generic_params(std::span<sir::GenericParam *> generic_params);
-    void analyze_generic_param(std::span<sir::GenericParam *> generic_params, unsigned index);
+    void analyze_type_constraints(std::span<sir::GenericParam *> params);
     void analyze_type_constraint(sir::TypeConstraint &constraint);
 };
 

@@ -7,11 +7,7 @@
 #include <optional>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 class SymbolCollector {
 
@@ -21,7 +17,7 @@ private:
 
 public:
     SymbolCollector(SemanticAnalyzer &analyzer);
-    
+
     void collect(const std::vector<sir::Module *> &mods);
     void collect_in_mod(sir::Module &mod);
     void collect_in_block(sir::DeclBlock &decl_block);
@@ -50,14 +46,13 @@ public:
     void collect_use_dot_expr(sir::UseDotExpr &use_dot_expr, sir::UseDecl &parent);
     void collect_use_list(sir::UseList &use_list, sir::UseDecl &parent);
 
+    void collect_generic_params(std::span<sir::GenericParam *> params);
+    void collect_generic_param(std::span<sir::GenericParam *> params, unsigned index);
+
     void add_symbol(sir::Ident &ident, sir::Symbol symbol);
     sir::SymbolTable &get_symbol_table();
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif

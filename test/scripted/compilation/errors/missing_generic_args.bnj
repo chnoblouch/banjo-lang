@@ -31,3 +31,11 @@ func main() {
 proto P[A, B] {}
 
 func f[T: P]() {}
+
+# test:subtest
+# test:error 41:11 "missing generic arguments"
+# test:note 39:6 "type alias 'Alias' defined here with generic parameters 'A', 'B'"
+
+type Alias[A, B] = (A, B);
+
+func f(a: Alias) {}

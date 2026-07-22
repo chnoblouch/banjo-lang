@@ -54,6 +54,7 @@ private:
     void format_proto_def(ASTNode *node, WhitespaceKind whitespace);
     void format_generic_proto_def(ASTNode *node, WhitespaceKind whitespace);
     void format_type_alias(ASTNode *node, WhitespaceKind whitespace);
+    void format_generic_type_alias(ASTNode *node, WhitespaceKind whitespace);
     void format_use_decl(ASTNode *node, WhitespaceKind whitespace);
     void format_use_rebind(ASTNode *node, WhitespaceKind whitespace);
     void format_use_list(ASTNode *node, WhitespaceKind whitespace);

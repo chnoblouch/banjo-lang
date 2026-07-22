@@ -66,6 +66,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_GENERIC_PROTO_DEF: return "GENERIC_PROTO_DEF";
         case AST_IMPL_LIST: return "IMPL_LIST";
         case AST_TYPE_ALIAS_DEF: return "TYPE_ALIAS_DEF";
+        case AST_GENERIC_TYPE_ALIAS_DEF: return "GENERIC_TYPE_ALIAS_DEF";
         case AST_USE_DECL: return "USE_DECL";
         case AST_USE_LIST: return "USE_LIST";
         case AST_USE_REBIND: return "USE_REBIND";

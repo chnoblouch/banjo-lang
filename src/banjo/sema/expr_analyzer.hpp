@@ -7,17 +7,14 @@
 #include <optional>
 #include <utility>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 class ExprAnalyzer {
 
 public:
     static constexpr unsigned DONT_EVAL_META_EXPRS = 0x00000001;
     static constexpr unsigned ANALYZE_SYMBOL_INTERFACES = 0x00000002;
+    static constexpr unsigned DONT_RESOLVE_TYPE_ALIASES = 0x00000004;
 
 private:
     enum class BinaryOpType {
@@ -115,11 +112,9 @@ private:
     );
 
     Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
+    void resolve_type_aliases(sir::Expr &expr);
 
-    Result specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
-    Result specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
-    Result specialize(sir::ProtoDef &proto_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
-
+    Result specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, const sir::Ident &rhs, sir::Symbol method);
     sir::Expr create_isize_cast(sir::Expr value);
 
@@ -134,10 +129,6 @@ private:
     );
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif

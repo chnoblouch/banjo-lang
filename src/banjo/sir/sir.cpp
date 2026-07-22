@@ -422,7 +422,7 @@ Expr Symbol::get_type() {
 }
 
 ExprCategory Symbol::get_category() const {
-    if (is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef, GenericParam>()) {
+    if (is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef, TypeAlias, GenericParam>()) {
         return ExprCategory::TYPE;
     } else if (is<Module>()) {
         return ExprCategory::MODULE;
@@ -462,6 +462,8 @@ DeclBlock *Symbol::get_decl_block() {
 std::span<GenericParam *> Symbol::get_generic_params() const {
     if (auto func_def = match<FuncDef>()) return func_def->generic_params;
     else if (auto struct_def = match<StructDef>()) return struct_def->generic_params;
+    else if (auto proto_def = match<ProtoDef>()) return proto_def->generic_params;
+    else if (auto type_alias = match<TypeAlias>()) return type_alias->generic_params;
     else return {};
 }
 
@@ -477,14 +479,16 @@ Symbol UseItem::symbol() const {
 
 void SymbolTable::insert_decl(std::string_view name, Symbol symbol) {
     ASSERT(!(symbol.is_one_of<Local, Param>()));
+    // ASSERT(symbols.find(name) == symbols.end());
 
-    symbols.insert({name, symbol});
+    symbols.emplace(name, symbol);
 }
 
 void SymbolTable::insert_local(std::string_view name, Symbol symbol) {
     ASSERT((symbol.is_one_of<Local, Param>()));
+    // ASSERT(symbols.find(name) == symbols.end());
 
-    symbols.insert({name, symbol});
+    symbols.emplace(name, symbol);
     local_symbols_ordered.push_back(symbol);
 }
 

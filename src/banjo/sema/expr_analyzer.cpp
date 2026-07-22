@@ -86,16 +86,9 @@ Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
     }
 
     if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
-        if (auto struct_def = symbol_expr->symbol.match<sir::StructDef>()) {
-            if (struct_def->is_generic()) {
-                analyzer.report_generator.report_err_missing_generic_args(expr, *struct_def);
-                return Result::ERROR;
-            }
-        } else if (auto proto_def = symbol_expr->symbol.match<sir::ProtoDef>()) {
-            if (proto_def->is_generic()) {
-                analyzer.report_generator.report_err_missing_generic_args(expr, *proto_def);
-                return Result::ERROR;
-            }
+        if (!symbol_expr->symbol.get_generic_params().empty()) {
+            analyzer.report_generator.report_err_missing_generic_args(expr, symbol_expr->symbol);
+            return Result::ERROR;
         }
     }
 
@@ -192,8 +185,8 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         return result;
     }
 
-    while (auto type_alias = expr.match_symbol<sir::TypeAlias>()) {
-        expr = type_alias->type;
+    if (!(flags & DONT_RESOLVE_TYPE_ALIASES)) {
+        resolve_type_aliases(expr);
     }
 
     if (!is_ref) {
@@ -939,7 +932,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
 
         if (unary_expr.value.is_type()) {
             std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
-            specialize(struct_def, generic_args, out_expr);
+            specialize(&struct_def, generic_args, out_expr);
         } else {
             sir::Concrete<sir::FuncDef> concrete_func{
                 .def = &struct_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
@@ -1155,7 +1148,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
             RESULT_RETURN_ON_ERROR(result);
 
-            partial_result = specialize(*func_def, generic_args, call_expr.callee);
+            partial_result = specialize(func_def, generic_args, call_expr.callee);
             if (partial_result != Result::SUCCESS) {
                 return partial_result;
             }
@@ -1363,7 +1356,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             //     return Result::SUCCESS;
             // }
 
-            analyzer.add_symbol_use(dot_expr.rhs.ast_node, &method);
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
 
             sir::FuncType *func_type = analyzer.create(method->type);
 
@@ -1537,7 +1530,7 @@ Result ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir
     }
 
     std::span<sir::Expr> generic_args = analyzer.create_array({optional_type.base_type});
-    specialize(*analyzer.std_optional_def, generic_args, out_expr);
+    specialize(analyzer.std_optional_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
@@ -1562,7 +1555,7 @@ Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr
 
     sir::StructDef &struct_def = *analyzer.std_result_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({result_type.value_type, result_type.error_type});
-    specialize(struct_def, generic_args, out_expr);
+    specialize(&struct_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
@@ -1576,7 +1569,7 @@ Result ExprAnalyzer::analyze_array_type(sir::ArrayType &array_type, sir::Expr &o
     }
 
     std::span<sir::Expr> generic_args = analyzer.create_array<sir::Expr>({array_type.base_type});
-    specialize(*analyzer.std_array_def, generic_args, out_expr);
+    specialize(analyzer.std_array_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
@@ -1600,7 +1593,7 @@ Result ExprAnalyzer::analyze_map_type(sir::MapType &map_type, sir::Expr &out_exp
     }
 
     std::span<sir::Expr> generic_args = analyzer.create_array({map_type.key_type, map_type.value_type});
-    specialize(*analyzer.std_map_def, generic_args, out_expr);
+    specialize(analyzer.std_map_def, generic_args, out_expr);
 
     return Result::SUCCESS;
 }
@@ -1887,7 +1880,7 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
     Result result = Result::SUCCESS;
     Result partial_result;
 
-    partial_result = analyze(bracket_expr.lhs);
+    partial_result = ExprAnalyzer{analyzer, DONT_RESOLVE_TYPE_ALIASES}.analyze(bracket_expr.lhs);
     if (partial_result != Result::SUCCESS) {
         return Result::ERROR;
     }
@@ -1903,41 +1896,22 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         return Result::ERROR;
     }
 
-    if (auto func_def = bracket_expr.lhs.match_symbol<sir::FuncDef>()) {
-        if (func_def->is_generic()) {
-            if (bracket_expr.rhs.size() != func_def->generic_params.size()) {
-                analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, *func_def);
+    if (auto symbol_expr = bracket_expr.lhs.match<sir::SymbolExpr>()) {
+        sir::Symbol symbol = symbol_expr->symbol;
+        std::span<sir::GenericParam *> generic_params = symbol.get_generic_params();
+
+        if (!generic_params.empty()) {
+            if (bracket_expr.rhs.size() != generic_params.size()) {
+                analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, symbol);
                 return Result::ERROR;
             }
 
-            check_type_constraints(bracket_expr, func_def->generic_params);
+            check_type_constraints(bracket_expr, generic_params);
             RESULT_RETURN_ON_ERROR(result);
 
-            return specialize(*func_def, bracket_expr.rhs, out_expr);
-        }
-    } else if (auto struct_def = bracket_expr.lhs.match_symbol<sir::StructDef>()) {
-        if (struct_def->is_generic()) {
-            if (bracket_expr.rhs.size() != struct_def->generic_params.size()) {
-                analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, *struct_def);
-                return Result::ERROR;
-            }
-
-            check_type_constraints(bracket_expr, struct_def->generic_params);
-            RESULT_RETURN_ON_ERROR(result);
-
-            return specialize(*struct_def, bracket_expr.rhs, out_expr);
-        }
-    } else if (auto proto_def = bracket_expr.lhs.match_symbol<sir::ProtoDef>()) {
-        if (proto_def->is_generic()) {
-            if (bracket_expr.rhs.size() != proto_def->generic_params.size()) {
-                analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, *proto_def);
-                return Result::ERROR;
-            }
-
-            check_type_constraints(bracket_expr, proto_def->generic_params);
-            RESULT_RETURN_ON_ERROR(result);
-
-            return specialize(*proto_def, bracket_expr.rhs, out_expr);
+            Result result = specialize(symbol, bracket_expr.rhs, out_expr);
+            resolve_type_aliases(out_expr);
+            return result;
         }
     }
 
@@ -2282,7 +2256,9 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             }
         );
 
-        analyzer.add_symbol_use(dot_expr.rhs.ast_node, &field);
+        // TODO
+        // analyzer.add_symbol_use(dot_expr.rhs.ast_node, &field);
+
         return Result::SUCCESS;
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
         std::optional<std::uint64_t> field_parsed = Utils::parse_u64(dot_expr.rhs.value);
@@ -2440,50 +2416,39 @@ Result ExprAnalyzer::finalize_call_expr_args(
     return result;
 }
 
-Result ExprAnalyzer::specialize(sir::FuncDef &func_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
-    ASSERT(func_def.generic_params.size() == generic_args.size());
-
-    sir::Specializer specializer{analyzer.mod->trivial_arena, func_def.generic_params, generic_args};
-
-    inout_expr = analyzer.create(
-        sir::SpecializeExpr{
-            .ast_node = inout_expr.get_ast_node(),
-            .type = specializer.specialize_func_type(func_def.type),
-            .symbol = &func_def,
-            .args = generic_args,
+void ExprAnalyzer::resolve_type_aliases(sir::Expr &expr) {
+    while (auto type_alias = expr.match_concrete<sir::TypeAlias>()) {
+        if (type_alias->generic_args.size() != type_alias->def->generic_params.size()) {
+            // Surprisingly, we don't need to report an error here.
+            // If all arguments are missing, the error will be reported in `analyze_type`.
+            // If the number of arguments is wrong, the error will be reported in `analyze_bracket_expr`.
+            return;
         }
-    );
 
-    return Result::SUCCESS;
+        if (type_alias->def->is_generic()) {
+            sir::Specializer specializer{analyzer.mod->trivial_arena, *type_alias};
+            expr = specializer.specialize_expr(type_alias->def->type);
+        } else {
+            expr = type_alias->def->type;
+        }
+    }
 }
 
-Result ExprAnalyzer::specialize(sir::StructDef &struct_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
-    ASSERT(struct_def.generic_params.size() == generic_args.size());
+Result ExprAnalyzer::specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
+    std::span<sir::GenericParam *> generic_params = symbol.get_generic_params();
+    sir::Specializer specializer{analyzer.mod->trivial_arena, generic_params, generic_args};
 
-    sir::Specializer specializer{analyzer.mod->trivial_arena, struct_def.generic_params, generic_args};
+    sir::Expr type = nullptr;
 
-    inout_expr = analyzer.create(
-        sir::SpecializeExpr{
-            .ast_node = inout_expr.get_ast_node(),
-            .type = nullptr,
-            .symbol = &struct_def,
-            .args = generic_args,
-        }
-    );
-
-    return Result::SUCCESS;
-}
-
-Result ExprAnalyzer::specialize(sir::ProtoDef &proto_def, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
-    ASSERT(proto_def.generic_params.size() == generic_args.size());
-
-    sir::Specializer specializer{analyzer.mod->trivial_arena, proto_def.generic_params, generic_args};
+    if (auto func_def = symbol.match<sir::FuncDef>()) {
+        type = specializer.specialize_func_type(func_def->type);
+    }
 
     inout_expr = analyzer.create(
         sir::SpecializeExpr{
             .ast_node = inout_expr.get_ast_node(),
-            .type = nullptr,
-            .symbol = &proto_def,
+            .type = type,
+            .symbol = symbol,
             .args = generic_args,
         }
     );

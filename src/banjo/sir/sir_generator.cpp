@@ -53,13 +53,13 @@ sir::DeclBlock SIRGenerator::generate_decl_block(ASTNode *node) {
     sir::SymbolTable *symbol_table = create(
         sir::SymbolTable{
             .parent = scopes.empty() ? nullptr : get_scope().symbol_table,
-            .symbols = {},
+            .symbols{},
         }
     );
 
     sir::DeclBlock sir_block{
         .ast_node = node,
-        .decls = {},
+        .decls{},
         .symbol_table = symbol_table,
     };
 
@@ -104,6 +104,7 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
         case AST_PROTO_DEF: return generate_proto(node);
         case AST_GENERIC_PROTO_DEF: return generate_generic_proto(node);
         case AST_TYPE_ALIAS_DEF: return generate_type_alias(node);
+        case AST_GENERIC_TYPE_ALIAS_DEF: return generate_generic_type_alias(node);
         case AST_VAR_DEF: return generate_var_decl(node, attrs);
         case AST_NATIVE_VAR_DECL: return generate_native_var_decl(node, attrs);
         case AST_USE_DECL: return generate_use_decl(node);
@@ -211,11 +212,11 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
         sir::StructDef{
             .ast_node = node,
             .ident = generate_ident(name_node),
-            .block = {},
-            .fields = {},
+            .block{},
+            .fields{},
             .impls = generate_expr_list(impls_node),
             .attrs = attrs,
-            .generic_params = {},
+            .generic_params{},
         }
     );
 
@@ -236,8 +237,8 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
         sir::StructDef{
             .ast_node = node,
             .ident = generate_ident(name_node),
-            .block = {},
-            .fields = {},
+            .block{},
+            .fields{},
             .impls = generate_expr_list(impls_node),
             .generic_params = generate_generic_param_list(generic_params_node),
         }
@@ -325,7 +326,7 @@ sir::Decl SIRGenerator::generate_union(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
-            .cases = {},
+            .cases{},
             .stage = sir::SemaStage::NAME,
         }
     );
@@ -355,8 +356,8 @@ sir::Decl SIRGenerator::generate_proto(ASTNode *node) {
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
             .role = sir::ProtoDef::Role::NONE,
-            .func_decls = {},
-            .generic_params = {},
+            .func_decls{},
+            .generic_params{},
             .stage = sir::SemaStage::NAME,
         }
     );
@@ -372,7 +373,7 @@ sir::Decl SIRGenerator::generate_generic_proto(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .block = generate_decl_block(block_node),
-            .func_decls = {},
+            .func_decls{},
             .generic_params = generate_generic_param_list(generic_params_node),
             .stage = sir::SemaStage::NAME,
         }
@@ -388,6 +389,25 @@ sir::Decl SIRGenerator::generate_type_alias(ASTNode *node) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .type = generate_expr(underlying_type_node),
+            .generic_params{},
+            .symbol_table = create(sir::SymbolTable{.parent = get_scope().symbol_table}),
+            .stage = sir::SemaStage::NAME,
+        }
+    );
+}
+
+sir::Decl SIRGenerator::generate_generic_type_alias(ASTNode *node) {
+    ASTNode *name_node = node->first_child;
+    ASTNode *generic_params_node = name_node->next_sibling;
+    ASTNode *underlying_type_node = generic_params_node->next_sibling;
+
+    return create(
+        sir::TypeAlias{
+            .ast_node = node,
+            .ident = generate_ident(name_node),
+            .type = generate_expr(underlying_type_node),
+            .generic_params = generate_generic_param_list(generic_params_node),
+            .symbol_table = create(sir::SymbolTable{.parent = get_scope().symbol_table}),
             .stage = sir::SemaStage::NAME,
         }
     );
@@ -420,15 +440,13 @@ sir::Ident SIRGenerator::generate_ident(ASTNode *node) {
 }
 
 sir::Block SIRGenerator::generate_block(ASTNode *node) {
-    sir::SymbolTable *symbol_table = create(
-        sir::SymbolTable{
-            .parent = get_scope().symbol_table,
-        }
-    );
+    sir::SymbolTable *symbol_table = create(sir::SymbolTable{
+        .parent = get_scope().symbol_table
+    });
 
     sir::Block sir_block{
         .ast_node = node,
-        .stmts = {},
+        .stmts{},
         .symbol_table = symbol_table,
     };
 

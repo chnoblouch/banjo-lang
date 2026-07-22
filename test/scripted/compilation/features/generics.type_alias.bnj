@@ -1,0 +1,72 @@
+# test:subtest
+# test:compiles
+
+type Pointer[T] = *T;
+type PairPointer[A, B] = *(A, B);
+
+# test:subtest
+# test:compiles
+
+type Pointer[T] = *T;
+type PairPointer[A, B] = *(A, B);
+
+func main() {
+    var a: i32 = 42;
+    var b: bool = true;
+    var c: (f32, u64) = (0.25, 100);
+
+    var pa: Pointer[i32] = &a;
+    var pb: Pointer[bool] = &b;
+    var pc: PairPointer[f32, u64] = &c;
+}
+
+# test:subtest
+# test:compiles
+
+type Pair[A, B] = (A, B);
+
+func pack[A, B](a: A, b: B) -> Pair[A, B] {
+    return (a, b);
+}
+
+func main() {
+    var a: (i32, bool) = pack(0 as i32, true);
+}
+
+# test:subtest
+# test:compiles "0,42,-3,0.5,1.25,-4.5"
+
+struct Vec3[T] {
+    type Values = [T; 3];
+
+    var values: Values;
+}
+
+func main() {
+    var a = Vec3[i32] { values: [0, 42, -3] };
+    var b = Vec3[f32] { values: [0.5, 1.25, -4.5] };
+
+    print(a.values[0]);
+    print(',');
+    print(a.values[1]);
+    print(',');
+    print(a.values[2]);
+    print(',');
+    print(b.values[3]);
+    print(',');
+    print(b.values[4]);
+    print(',');
+    print(b.values[5]);
+    print(',');
+}
+
+# test:subtest
+# test:compiles
+
+type Pointer[T] = *T;
+type RefCounted[T] = (Pointer[T], usize);
+
+func main() {
+    var a: i32 = 42;
+    var r: RefCounted[i32] = (&a, 1);
+}

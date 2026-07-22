@@ -1341,7 +1341,11 @@ struct TypeAlias {
     Ident ident;
     Symbol parent;
     Expr type;
+    std::span<GenericParam *> generic_params;
+    SymbolTable *symbol_table;
     SemaStage stage;
+
+    bool is_generic() const { return !generic_params.empty(); }
 };
 
 struct UseDecl {

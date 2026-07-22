@@ -240,6 +240,8 @@ TypeAlias *Cloner::clone_type_alias(const TypeAlias &type_alias) {
             .ast_node = type_alias.ast_node,
             .ident = clone_ident(type_alias.ident),
             .type = clone_expr(type_alias.type),
+            .generic_params = type_alias.generic_params,
+            .symbol_table = type_alias.symbol_table,
             .stage = SemaStage::NAME,
         }
     );

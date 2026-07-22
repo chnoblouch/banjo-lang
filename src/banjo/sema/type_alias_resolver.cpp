@@ -2,13 +2,10 @@
 
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
+
 #include <algorithm>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 TypeAliasResolver::TypeAliasResolver(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -30,8 +27,4 @@ Result TypeAliasResolver::analyze_type_alias(sir::TypeAlias &type_alias) {
     return result;
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema

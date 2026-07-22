@@ -1070,7 +1070,7 @@ void ExprFinalizer::check_int_literal_range(sir::IntLiteral &int_literal) {
             case sir::Primitive::F32: ASSERT_UNREACHABLE;
             case sir::Primitive::F64: ASSERT_UNREACHABLE;
             case sir::Primitive::BOOL: ASSERT_UNREACHABLE;
-            case sir::Primitive::ADDR: ASSERT_UNREACHABLE;
+            case sir::Primitive::ADDR: return; // TODO
             case sir::Primitive::VOID: ASSERT_UNREACHABLE;
         }
 

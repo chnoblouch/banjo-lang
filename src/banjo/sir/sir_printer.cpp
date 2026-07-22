@@ -310,6 +310,12 @@ void Printer::print_type_alias(const TypeAlias &type_alias) {
     BEGIN_OBJECT("TypeAlias");
     PRINT_FIELD("ident", type_alias.ident.value);
     PRINT_EXPR_FIELD("type", type_alias.type);
+
+    if (type_alias.is_generic()) {
+        PRINT_FIELD_NAME("generic_params")
+        print_generic_params(type_alias.generic_params);
+    }
+
     END_OBJECT();
 }
 
