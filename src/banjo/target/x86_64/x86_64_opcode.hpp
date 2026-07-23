@@ -39,6 +39,7 @@ enum {
     SHL,
     SHR,
     SAR,
+    CWD, // TODO: Currently unused
     CDQ,
     CQO,
     JMP,

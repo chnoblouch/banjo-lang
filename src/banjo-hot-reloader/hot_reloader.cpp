@@ -160,7 +160,7 @@ void HotReloader::reload_file(const std::filesystem::path &file_path) {
     collect_funcs(mod->block, funcs);
 
     for (lang::sir::FuncDef *func : funcs) {
-        std::string name = lang::NameMangling::mangle_func_name(*func);
+        std::string name = lang::NameMangling::mangle_func_name(*func, {});
 
         std::optional<unsigned> index = addr_table.find_index(name);
         if (!index) {

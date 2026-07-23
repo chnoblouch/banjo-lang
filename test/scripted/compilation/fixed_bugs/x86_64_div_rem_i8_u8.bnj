@@ -1,0 +1,49 @@
+# TODO: Unnecessary casts from u8 to u32
+
+# test:subtest
+# test:output "6,4"
+
+func main() {
+    var a: u8 = 42;
+    var b: u8 = 24;
+    
+    print((a / 7) as u32);
+    print(',');
+    print((b / 5) as u32);
+}
+
+# test:subtest
+# test:output "6,4"
+
+func main() {
+    var a: i8 = 42;
+    var b: i8 = 24;
+    
+    print(a / 7);
+    print(',');
+    print(b / 5);
+}
+
+# test:subtest
+# test:output "4,2"
+
+func main() {
+    var a: u8 = 54;
+    var b: u8 = 8;
+    
+    print((a % 10) as u32);
+    print(',');
+    print((b % 3) as u32);
+}
+
+# test:subtest
+# test:output "4,2"
+
+func main() {
+    var a: i8 = 54;
+    var b: i8 = 8;
+    
+    print(a % 10);
+    print(',');
+    print(b % 3);
+}

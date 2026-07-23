@@ -3,6 +3,7 @@
 
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_condition.hpp"
@@ -92,7 +93,12 @@ public:
     mcode::Opcode get_move_opcode(ssa::Type type);
     void copy_block_using_movs(ssa::Instruction &instr, unsigned size);
     mcode::Opcode get_cmovcc_opcode(ssa::Comparison comparison);
-    
+
+    void emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src);
+    void emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src);
+
+    void lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr);
+    void lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_shift(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
 

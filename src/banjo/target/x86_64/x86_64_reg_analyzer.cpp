@@ -205,6 +205,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
             collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
             break;
 
+        case CWD:
         case CDQ:
         case CQO:
             operands.push_back({mcode::Register::from_physical(X8664Register::RAX), mcode::RegUsage::USE});

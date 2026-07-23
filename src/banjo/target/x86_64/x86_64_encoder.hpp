@@ -123,6 +123,7 @@ private:
     void encode_shl(mcode::Instruction &instr, mcode::Function *func);
     void encode_shr(mcode::Instruction &instr, mcode::Function *func);
     void encode_sar(mcode::Instruction &instr, mcode::Function *func);
+    void encode_cwd();
     void encode_cdq();
     void encode_cqo();
     void encode_jmp(mcode::Instruction &instr);
