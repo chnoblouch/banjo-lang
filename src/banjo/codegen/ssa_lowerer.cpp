@@ -581,7 +581,7 @@ void SSALowerer::discard_use(ssa::VirtualRegister reg) {
 
 SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
     ssa::Operand *base = &addr;
-    unsigned const_offset = 0;
+    LargeInt const_offset = 0;
     std::optional<RegOffset> reg_offset;
 
     while (base->is_register()) {
@@ -596,7 +596,7 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
 
             if (offset.is_int_immediate()) {
                 base = &producer->get_operand(0);
-                const_offset += get_size(base_type) * offset.get_int_immediate().to_s64();
+                const_offset += LargeInt{get_size(base_type)} * offset.get_int_immediate();
                 discard_use(*producer->get_dest());
             } else if (offset.is_register()) {
                 // TODO: Temporary fix
