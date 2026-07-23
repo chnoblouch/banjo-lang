@@ -101,7 +101,7 @@ struct File: Read, Write, Seek {
 
         var result = c.ftell(self.stream);
 
-        if result != 0xFFFFFFFF {
+        if result != -1 {
             return result as u64;
         } else {
             return Error.last();
