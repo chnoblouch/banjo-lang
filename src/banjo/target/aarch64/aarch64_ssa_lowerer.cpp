@@ -938,16 +938,19 @@ mcode::Operand AArch64SSALowerer::emit_add_scaled(mcode::Operand m_base, mcode::
 }
 
 mcode::Operand AArch64SSALowerer::emit_add_imm(mcode::Operand m_lhs, LargeInt immediate) {
-    mcode::Operand m_dst = create_temp_value(8);
+    LargeInt abs_value = immediate.abs();
+    mcode::Operand m_addend;
 
-    if (immediate >= 0 && immediate < 4096) {
-        mcode::Operand m_addend = mcode::Operand::from_int_immediate(immediate, 8);
-        emit({AArch64Opcode::ADD, {std::move(m_dst), std::move(m_lhs), m_addend}});
+    if (abs_value < 4096) {
+        m_addend = mcode::Operand::from_int_immediate(abs_value, 8);
     } else {
-        mcode::Operand m_addend = move_int_into_register(immediate, 8);
-        emit({AArch64Opcode::ADD, {std::move(m_dst), std::move(m_lhs), m_addend}});
+        m_addend = move_int_into_register(abs_value, 8);
     }
 
+    mcode::Opcode m_opcode = immediate.is_positive() ? AArch64Opcode::ADD : AArch64Opcode::SUB;
+    mcode::Operand m_dst = create_temp_value(8);
+
+    emit({m_opcode, {m_dst, std::move(m_lhs), m_addend}});
     return m_dst;
 }
 

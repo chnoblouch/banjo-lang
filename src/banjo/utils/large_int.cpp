@@ -136,6 +136,10 @@ std::uint64_t LargeInt::to_bits() const {
     }
 }
 
+LargeInt LargeInt::abs() const {
+    return {magnitude, false};
+}
+
 LargeInt operator-(const LargeInt &large_int) {
     return {large_int.magnitude, !large_int.negative};
 }

@@ -37,6 +37,8 @@ public:
     std::int32_t to_s32() const;
     unsigned to_unsigned() const;
     std::uint64_t to_bits() const;
+    
+    LargeInt abs() const;
 
     friend LargeInt operator-(const LargeInt &large_int);
     friend LargeInt operator+(const LargeInt &lhs, const LargeInt &rhs);
