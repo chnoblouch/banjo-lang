@@ -38,12 +38,19 @@ void SpecializationCollector::visit_decl_block(const sir::DeclBlock &decl_block)
             visit_func_def(*func_def);
         } else if (auto struct_def = decl.match<sir::StructDef>()) {
             visit_struct_def(*struct_def);
+        } else if (auto proto_def = decl.match<sir::ProtoDef>()) {
+            visit_proto_def(*proto_def);
         }
     }
 }
 
 void SpecializationCollector::visit_func_def(const sir::FuncDef &func_def, bool is_specialized /* = false */) {
     if (func_def.is_generic() && !is_specialized) {
+        return;
+    }
+
+    // Default implementations in `proto`s are not analyzed.
+    if (func_def.stage < sir::SemaStage::BODY) {
         return;
     }
 
@@ -57,6 +64,14 @@ void SpecializationCollector::visit_struct_def(const sir::StructDef &struct_def,
     }
 
     visit_decl_block(struct_def.block);
+}
+
+void SpecializationCollector::visit_proto_def(const sir::ProtoDef &proto_def, bool is_specialized /* = false */) {
+    if (proto_def.is_generic() && !is_specialized) {
+        return;
+    }
+
+    visit_decl_block(proto_def.block);
 }
 
 void SpecializationCollector::visit_block(const sir::Block &block) {
@@ -214,7 +229,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         SIR_VISIT_IGNORE,                // null_literal (TODO)
         SIR_VISIT_IMPOSSIBLE,            // none_literal
         SIR_VISIT_IGNORE,                // undefined_literal (TODO)
-        SIR_VISIT_IGNORE,                // array_literal (TODO)
+        visit_array_literal(*inner),     // array_literal
         SIR_VISIT_IGNORE,                // string_literal (TODO)
         visit_struct_literal(*inner),    // struct_literal
         SIR_VISIT_IGNORE,                // union_case_literal (TODO)
@@ -257,6 +272,14 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_placeholder_expr(*inner),  // placeholder_expr
         SIR_VISIT_IMPOSSIBLE             // error
     )
+}
+
+void SpecializationCollector::visit_array_literal(const sir::ArrayLiteral &array_literal) {
+    visit_expr(array_literal.type);
+
+    for (sir::Expr value : array_literal.values) {
+        visit_expr(value);
+    }
 }
 
 void SpecializationCollector::visit_struct_literal(const sir::StructLiteral &struct_literal) {
@@ -342,6 +365,10 @@ void SpecializationCollector::visit_coercion_expr(const sir::CoercionExpr &coerc
 
 void SpecializationCollector::visit_specialize_expr(const sir::SpecializeExpr &specialize_expr) {
     visit_concrete(specialize_expr.symbol, specialize_expr.args);
+
+    for (sir::Expr arg : specialize_expr.args) {
+        visit_expr(arg);
+    }
 }
 
 void SpecializationCollector::visit_pointer_type(const sir::PointerType &pointer_type) {
@@ -474,6 +501,8 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         visit_func_def(*func_def, true);
     } else if (auto struct_def = symbol.match<sir::StructDef>()) {
         visit_struct_def(*struct_def, true);
+    } else if (auto proto_def = symbol.match<sir::ProtoDef>()) {
+        visit_proto_def(*proto_def, true);
     } else {
         ASSERT_UNREACHABLE;
     }

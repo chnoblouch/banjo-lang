@@ -18,6 +18,11 @@ namespace sema {
 ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    // Don't analyze default implementations in `proto`s.
+    if (func_def.parent.is<sir::ProtoDef>() && func_def.is_method()) {
+        return Result::SUCCESS;
+    }
+
     if (func_def.stage < sir::SemaStage::RESOURCES) {
         func_def.stage = sir::SemaStage::RESOURCES;
     } else {

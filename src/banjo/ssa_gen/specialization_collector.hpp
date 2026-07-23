@@ -9,8 +9,6 @@
 
 namespace banjo::lang {
 
-struct Specialization {};
-
 class SpecializationCollector {
 
 public:
@@ -41,6 +39,7 @@ private:
     void visit_decl_block(const sir::DeclBlock &decl_block);
     void visit_func_def(const sir::FuncDef &func_def, bool is_specialized = false);
     void visit_struct_def(const sir::StructDef &struct_def, bool is_specialized = false);
+    void visit_proto_def(const sir::ProtoDef &proto_def, bool is_specialized = false);
 
     void visit_block(const sir::Block &block);
     void visit_stmt(sir::Stmt stmt);
@@ -53,6 +52,7 @@ private:
     void visit_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt);
 
     void visit_expr(sir::Expr expr);
+    void visit_array_literal(const sir::ArrayLiteral &array_literal);
     void visit_struct_literal(const sir::StructLiteral &struct_literal);
     void visit_binary_expr(const sir::BinaryExpr &binary_expr);
     void visit_unary_expr(const sir::UnaryExpr &unary_expr);

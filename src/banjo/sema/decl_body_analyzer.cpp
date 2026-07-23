@@ -23,6 +23,11 @@ namespace sema {
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
 Result DeclBodyAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
+    // Don't analyze default implementations in `proto`s.
+    if (func_def.parent.is<sir::ProtoDef>() && func_def.is_method()) {
+        return Result::SUCCESS;
+    }
+
     if (func_def.stage < sir::SemaStage::BODY) {
         func_def.stage = sir::SemaStage::BODY;
     } else {
