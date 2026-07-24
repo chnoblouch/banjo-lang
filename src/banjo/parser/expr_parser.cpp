@@ -3,13 +3,15 @@
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/node_builder.hpp"
-#include "banjo/reports/report_texts.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
-namespace banjo {
+#include <bit>
+#include <cstdint>
+#include <optional>
 
-namespace lang {
+namespace banjo::lang {
 
 ExprParser::ExprParser(Parser &parser, bool allow_struct_literals /* = false */)
   : parser(parser),
@@ -253,6 +255,31 @@ ParseResult ExprParser::parse_number_literal() {
 ParseResult ExprParser::parse_char_literal() {
     Token *token = stream.consume();
     std::string_view value{token->value.substr(1, token->value.size() - 2)};
+    bool valid = true;
+
+    if (value.size() == 1) {
+        if (std::bit_cast<std::uint8_t>(value[0]) > 127) {
+            parser.report_generator.report_err_invalid_char_literal(parser.file, *token);
+            valid = false;
+        }
+    } else if (value[0] == '\\') {
+        if (std::optional<unsigned> length = validate_escape_sequence(value)) {
+            if (value.size() != *length) {
+                parser.report_generator.report_err_invalid_char_literal(parser.file, *token);
+                valid = false;
+            }
+        } else {
+            parser.report_generator.report_err_invalid_escape_sequence(parser.file, token->position + 1);
+            valid = false;
+        }
+    } else {
+        parser.report_generator.report_err_invalid_char_literal(parser.file, *token);
+        valid = false;
+    }
+
+    if (!valid) {
+        value = "_";
+    }
 
     ASTNode *node = parser.create_node(AST_CHAR_LITERAL, value, token->range());
     node->tokens = parser.mod->create_token_index(stream.get_position() - 1);
@@ -262,6 +289,29 @@ ParseResult ExprParser::parse_char_literal() {
 ParseResult ExprParser::parse_string_literal() {
     Token *token = stream.consume();
     std::string_view value{token->value.substr(1, token->value.size() - 2)};
+
+    unsigned index = 0;
+    bool valid = true;
+
+    while (index < value.size()) {
+        if (value[index] == '\\') {
+            if (std::optional<unsigned> length = validate_escape_sequence(value.substr(index))) {
+                index += *length;
+            } else {
+                unsigned position = token->position + 1 + index;
+
+                parser.report_generator.report_err_invalid_escape_sequence(parser.file, position);
+                valid = false;
+                index += 1;
+            }
+        } else {
+            index += 1;
+        }
+    }
+
+    if (!valid) {
+        value = "_";
+    }
 
     ASTNode *node = parser.create_node(AST_STRING_LITERAL, value, token->range());
     node->tokens = parser.mod->create_token_index(stream.get_position() - 1);
@@ -570,6 +620,26 @@ ParseResult ExprParser::parse_level(
     return current_node;
 }
 
-} // namespace lang
+std::optional<unsigned> ExprParser::validate_escape_sequence(std::string_view value) {
+    if (value.size() == 1) {
+        return {};
+    }
 
-} // namespace banjo
+    if (Utils::is_one_of(value[1], {'n', 'r', 't', '0', '\\', '\'', '\"'})) {
+        return 2;
+    } else if (value[1] == 'x') {
+        if (value.size() >= 4 && is_hex_digit(value[2]) && is_hex_digit(value[3])) {
+            return 4;
+        } else {
+            return {};
+        }
+    } else {
+        return {};
+    }
+}
+
+bool ExprParser::is_hex_digit(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+} // namespace banjo::lang

@@ -1,0 +1,45 @@
+# test:subtest
+# test:error 5:14 "unknown escape sequence"
+
+func main() {
+    var a = '\c';
+}
+
+# test:subtest
+# test:error 15:14 "unknown escape sequence"
+# test:error 16:14 "unknown escape sequence"
+# test:error 17:14 "unknown escape sequence"
+# test:error 18:14 "unknown escape sequence"
+
+func main() {
+    var a = '\x';
+    var b = '\x0';
+    var c = '\xG0';
+    var d = '\x0G';
+}
+
+# test:subtest
+# test:error 26:14 "unknown escape sequence"
+# test:error 27:15 "unknown escape sequence"
+
+func main() {
+    var a = "\c";
+    var b = "a\c";
+}
+
+# test:subtest
+# test:error 34:16 "unknown escape sequence"
+
+func main() {
+    var a = "\\\c";
+}
+
+# test:subtest
+# test:error 44:14 "unknown escape sequence"
+# test:error 44:16 "unknown escape sequence"
+# test:error 44:18 "unknown escape sequence"
+# test:error 44:20 "unknown escape sequence"
+
+func main() {
+    var a = "\c\d\x\x__";
+}

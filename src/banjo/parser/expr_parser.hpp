@@ -5,10 +5,9 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/parser/parser.hpp"
+#include <optional>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 class ExprParser {
 
@@ -59,9 +58,10 @@ private:
 
     ParseResult parse_struct_literal_body();
     ParseResult parse_level(ParseResult (ExprParser::*child_builder)(), ASTNodeType(token_checker)(TokenType type));
-};
 
-} // namespace lang
+    std::optional<unsigned> validate_escape_sequence(std::string_view value);
+    bool is_hex_digit(char c);
+};
 
 } // namespace banjo
 

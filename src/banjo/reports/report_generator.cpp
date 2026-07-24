@@ -9,6 +9,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_to_text.hpp"
 #include "banjo/source/source_file.hpp"
+#include "banjo/source/text_range.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo::lang {
@@ -26,11 +27,10 @@ ReportBuilder &ReportBuilder::set_message(std::string_view format_str, ASTNode *
 template <typename... FormatArgs>
 ReportBuilder &ReportBuilder::set_message(
     std::string_view format_str,
-    SourceFile &file,
-    Token &token,
+    SourceLocation location,
     FormatArgs... format_args
 ) {
-    partial_report.set_message({SourceLocation{&file, token.range()}, format_str, format_args...});
+    partial_report.set_message({location, format_str, format_args...});
     return *this;
 }
 
@@ -64,18 +64,17 @@ SourceFile &ReportBuilder::find_file(ASTNode *node) {
 ReportGenerator::ReportGenerator(ReportManager &report_manager) : report_manager{report_manager} {}
 
 template <typename... FormatArgs>
-ReportBuilder ReportGenerator::build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
-    return ReportBuilder(report_manager, Report::Type::ERROR).set_message(format_str, node, format_args...);
+ReportBuilder ReportGenerator::build_error(
+    std::string_view format_str,
+    SourceLocation location,
+    FormatArgs... format_args
+) {
+    return ReportBuilder(report_manager, Report::Type::ERROR).set_message(format_str, location, format_args...);
 }
 
 template <typename... FormatArgs>
-ReportBuilder ReportGenerator::build_error(
-    std::string_view format_str,
-    SourceFile &file,
-    Token &token,
-    FormatArgs... format_args
-) {
-    return ReportBuilder(report_manager, Report::Type::ERROR).set_message(format_str, file, token, format_args...);
+ReportBuilder ReportGenerator::build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
+    return ReportBuilder(report_manager, Report::Type::ERROR).set_message(format_str, node, format_args...);
 }
 
 template <typename... FormatArgs>
@@ -84,18 +83,13 @@ ReportBuilder ReportGenerator::build_warning(std::string_view format_str, ASTNod
 }
 
 template <typename... FormatArgs>
-void ReportGenerator::report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
-    build_error(format_str, node, format_args...).report();
+void ReportGenerator::report_error(std::string_view format_str, SourceLocation location, FormatArgs... format_args) {
+    build_error(format_str, location, format_args...).report();
 }
 
 template <typename... FormatArgs>
-void ReportGenerator::report_error(
-    std::string_view format_str,
-    SourceFile &file,
-    Token &token,
-    FormatArgs... format_args
-) {
-    build_error(format_str, file, token, format_args...).report();
+void ReportGenerator::report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args) {
+    build_error(format_str, node, format_args...).report();
 }
 
 template <typename... FormatArgs>
@@ -104,7 +98,7 @@ void ReportGenerator::report_warning(std::string_view format_str, ASTNode *node,
 }
 
 void ReportGenerator::report_err_unexpected_token(SourceFile &file, Token &token) {
-    report_error("unexpected token $", file, token, token);
+    report_error("unexpected token $", {&file, token.range()}, token);
 }
 
 void ReportGenerator::report_err_expected(SourceFile &file, Token &token, TokenType expected_type) {
@@ -118,15 +112,24 @@ void ReportGenerator::report_err_expected(SourceFile &file, Token &token, TokenT
         default: ASSERT_UNREACHABLE;
     }
 
-    report_error("expected '$', got $", file, token, expected_token_name, token);
+    report_error("expected '$', got $", {&file, token.range()}, expected_token_name, token);
 }
 
 void ReportGenerator::report_err_expected_ident(SourceFile &file, Token &token) {
-    report_error("expected identifier, got $", file, token, token);
+    report_error("expected identifier, got $", {&file, token.range()}, token);
 }
 
 void ReportGenerator::report_err_unclosed_block(SourceFile &file, Token &token) {
-    report_error("file ends with unclosed block", file, token);
+    report_error("file ends with unclosed block", {&file, token.range()});
+}
+
+void ReportGenerator::report_err_invalid_char_literal(SourceFile &file, Token &token) {
+    report_error("character literals may only contain a single ascii character", {&file, token.range()});
+}
+
+void ReportGenerator::report_err_invalid_escape_sequence(SourceFile &file, TextPosition position) {
+    // TODO: Try to highlight the entire sequence.
+    report_error("unknown escape sequence", {&file, {position, position + 1}});
 }
 
 void ReportGenerator::report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected) {

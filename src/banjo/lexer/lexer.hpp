@@ -41,8 +41,7 @@ private:
     void read_whitespace();
     void read_identifier();
     void read_number();
-    void read_character();
-    void read_string();
+    void read_char_or_string(TokenType type, char terminator);
     void read_comment();
     void read_punctuation();
 

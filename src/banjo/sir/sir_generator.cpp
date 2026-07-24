@@ -1777,6 +1777,8 @@ char SIRGenerator::decode_char(std::string_view value, unsigned &index) {
         else if (c == 't') return 0x09;
         else if (c == '0') return 0x00;
         else if (c == '\\') return '\\';
+        else if (c == '\'') return '\'';
+        else if (c == '\"') return '\"';
         else if (c == 'x') {
             index += 2;
             return (char)std::stoi(std::string(value.substr(index - 2, 2)), nullptr, 16);

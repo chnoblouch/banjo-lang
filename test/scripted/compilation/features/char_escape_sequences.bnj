@@ -1,0 +1,114 @@
+# test:subtest
+# test:output "10,13,9,0,92,39,34"
+
+func main() {
+    var a: u8 = '\n';
+    var b: u8 = '\r';
+    var c: u8 = '\t';
+    var d: u8 = '\0';
+    var e: u8 = '\\';
+    var f: u8 = '\'';
+    var g: u8 = '\"';
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+    print(',');
+    print(d as u32);
+    print(',');
+    print(e as u32);
+    print(',');
+    print(f as u32);
+    print(',');
+    print(g as u32);
+}
+
+# test:subtest
+# test:output "65,97,48"
+
+func main() {
+    var a: u8 = '\x41';
+    var b: u8 = '\x61';
+    var c: u8 = '\x30';
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+}
+
+# test:subtest
+# test:output "10,13,9,0,92,39,34"
+
+func main() {
+    var a: *u8 = "\n";
+    var b: *u8 = "\r";
+    var c: *u8 = "\t";
+    var d: *u8 = "\0";
+    var e: *u8 = "\\";
+    var f: *u8 = "\'";
+    var g: *u8 = "\"";
+
+    print(a[0] as u32);
+    print(',');
+    print(b[0] as u32);
+    print(',');
+    print(c[0] as u32);
+    print(',');
+    print(d[0] as u32);
+    print(',');
+    print(e[0] as u32);
+    print(',');
+    print(f[0] as u32);
+    print(',');
+    print(g[0] as u32);
+}
+
+# test:subtest
+# test:output "65,97,95,95"
+
+func main() {
+    var a: *u8 = "\x41";
+    var b: *u8 = "\x61";
+    var c: *u8 = "\x5f";
+    var d: *u8 = "\x5F";
+
+    print(a[0] as u32);
+    print(',');
+    print(b[0] as u32);
+    print(',');
+    print(c[0] as u32);
+    print(',');
+    print(d[0] as u32);
+}
+
+# test:subtest
+# test:output "10,13,65,97,10,98,13,99,65,100"
+
+func main() {
+    var a: *u8 = "\n\r\x41";
+    var b: *u8 = "a\nb\rc\x41d";
+
+    print(a[0] as u32);
+    print(',');
+    print(a[1] as u32);
+    print(',');
+    print(a[2] as u32);
+    print(',');
+    print(b[0] as u32);
+    print(',');
+    print(b[1] as u32);
+    print(',');
+    print(b[2] as u32);
+    print(',');
+    print(b[3] as u32);
+    print(',');
+    print(b[4] as u32);
+    print(',');
+    print(b[5] as u32);
+    print(',');
+    print(b[6] as u32);
+}

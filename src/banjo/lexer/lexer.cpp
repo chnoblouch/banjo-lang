@@ -68,8 +68,8 @@ void Lexer::read_token() {
     if (is_whitespace_char(c)) read_whitespace();
     else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') read_identifier();
     else if (is_number_start_char(c)) read_number();
-    else if (c == '\'') read_character();
-    else if (c == '\"') read_string();
+    else if (c == '\'') read_char_or_string(TKN_CHARACTER, '\'');
+    else if (c == '\"') read_char_or_string(TKN_STRING, '\"');
     else if (c == '#') read_comment();
     else read_punctuation();
 }
@@ -116,22 +116,7 @@ void Lexer::read_number() {
     finish_token(TKN_LITERAL);
 }
 
-void Lexer::read_character() {
-    reader.consume();
-
-    char c = reader.consume();
-    while (c != SourceFile::EOF_CHAR) {
-        if (c == '\'') {
-            break;
-        }
-
-        c = reader.consume();
-    }
-
-    finish_token(TKN_CHARACTER);
-}
-
-void Lexer::read_string() {
+void Lexer::read_char_or_string(TokenType type, char terminator) {
     reader.consume();
 
     char c = reader.consume();
@@ -139,14 +124,14 @@ void Lexer::read_string() {
         if (c == '\\') {
             c = reader.consume();
             if (c == SourceFile::EOF_CHAR) break;
-        } else if (c == '\"') {
+        } else if (c == terminator) {
             break;
         }
 
         c = reader.consume();
     }
 
-    finish_token(TKN_STRING);
+    finish_token(type);
 }
 
 void Lexer::read_comment() {

@@ -1,0 +1,20 @@
+# test:subtest
+# test:error 5:13 "character literals may only contain a single ascii character"
+
+func main() {
+    var a = 'aa';
+}
+
+# test:subtest
+# test:error 12:13 "character literals may only contain a single ascii character"
+
+func main() {
+    var a = 'ä';
+}
+
+# test:subtest
+# test:error 19:13 "character literals may only contain a single ascii character"
+
+func main() {
+    var a = '\na';
+}

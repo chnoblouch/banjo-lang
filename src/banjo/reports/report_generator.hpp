@@ -4,6 +4,7 @@
 #include "banjo/reports/report.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/source/text_range.hpp"
 #include "banjo/utils/large_int.hpp"
 
 #include <array>
@@ -21,10 +22,10 @@ public:
     ReportBuilder(ReportManager &report_manager, Report::Type type);
 
     template <typename... FormatArgs>
-    ReportBuilder &set_message(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+    ReportBuilder &set_message(std::string_view format_str, SourceLocation location, FormatArgs... format_args);
 
     template <typename... FormatArgs>
-    ReportBuilder &set_message(std::string_view format_str, SourceFile &file, Token &token, FormatArgs... format_args);
+    ReportBuilder &set_message(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
     ReportBuilder &add_note(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
@@ -49,6 +50,8 @@ public:
     void report_err_expected(SourceFile &file, Token &token, TokenType expected_type);
     void report_err_expected_ident(SourceFile &file, Token &token);
     void report_err_unclosed_block(SourceFile &file, Token &token);
+    void report_err_invalid_char_literal(SourceFile &file, Token &token);
+    void report_err_invalid_escape_sequence(SourceFile &file, TextPosition position);
 
     void report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected);
     void report_err_symbol_not_found(const sir::IdentExpr &ident_expr);
@@ -187,19 +190,19 @@ public:
 
 private:
     template <typename... FormatArgs>
-    ReportBuilder build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+    ReportBuilder build_error(std::string_view format_str, SourceLocation location, FormatArgs... format_args);
 
     template <typename... FormatArgs>
-    ReportBuilder build_error(std::string_view format_str, SourceFile &file, Token &token, FormatArgs... format_args);
+    ReportBuilder build_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
     ReportBuilder build_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
-    void report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
+    void report_error(std::string_view format_str, SourceLocation location, FormatArgs... format_args);
 
     template <typename... FormatArgs>
-    void report_error(std::string_view format_str, SourceFile &file, Token &token, FormatArgs... format_args);
+    void report_error(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
 
     template <typename... FormatArgs>
     void report_warning(std::string_view format_str, ASTNode *node, FormatArgs... format_args);
