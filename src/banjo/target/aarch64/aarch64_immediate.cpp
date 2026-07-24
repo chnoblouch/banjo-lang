@@ -4,22 +4,24 @@
 
 #include <cmath>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 static std::unordered_set<std::uint64_t> encodable_pos_floats;
 
-void AArch64Immediate::decompose_u64_u16(std::uint64_t value, std::uint16_t *elements) {
-    elements[0] = (value & 0x000000000000FFFF) >> 0;
-    elements[1] = (value & 0x00000000FFFF0000) >> 16;
-    elements[2] = (value & 0x0000FFFF00000000) >> 32;
-    elements[3] = (value & 0xFFFF000000000000) >> 48;
+std::array<std::uint16_t, 4> AArch64Immediate::decompose_u64_u16(std::uint64_t value) {
+    return {
+        static_cast<std::uint16_t>((value & 0x000000000000FFFF) >> 0),
+        static_cast<std::uint16_t>((value & 0x00000000FFFF0000) >> 16),
+        static_cast<std::uint16_t>((value & 0x0000FFFF00000000) >> 32),
+        static_cast<std::uint16_t>((value & 0xFFFF000000000000) >> 48),
+    };
 }
 
-void AArch64Immediate::decompose_u32_u16(std::uint32_t value, std::uint16_t *elements) {
-    elements[0] = (value & 0x0000FFFF) >> 0;
-    elements[1] = (value & 0xFFFF0000) >> 16;
+std::array<std::uint16_t, 2> AArch64Immediate::decompose_u32_u16(std::uint32_t value) {
+    return {
+        static_cast<std::uint16_t>((value & 0x0000FFFF) >> 0),
+        static_cast<std::uint16_t>((value & 0xFFFF0000) >> 16),
+    };
 }
 
 bool AArch64Immediate::is_float_encodable(double value) {
@@ -43,6 +45,4 @@ const std::unordered_set<std::uint64_t> &AArch64Immediate::get_encodable_pos_flo
     return encodable_pos_floats;
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

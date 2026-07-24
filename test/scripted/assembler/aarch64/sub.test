@@ -32,3 +32,13 @@ sub x7, x10, #100
 # test:encoding "474953D1"
 
 sub x7, x10, #1234, lsl #12
+
+# test:subtest
+# test:encoding "E1633BCB"
+
+sub x1, sp, x27
+
+# test:subtest
+# test:encoding "5F623BCB"
+
+sub sp, x18, x27

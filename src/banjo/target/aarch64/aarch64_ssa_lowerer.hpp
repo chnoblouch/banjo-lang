@@ -6,6 +6,8 @@
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
+#include <cstdint>
+#include <span>
 #include <unordered_map>
 
 namespace banjo::target {
@@ -76,7 +78,7 @@ public:
     mcode::Operand move_const_into_register(const ssa::Value &value, ssa::Type type);
     mcode::Operand move_int_into_register(LargeInt value, unsigned size);
     mcode::Operand move_float_into_register(double fp, unsigned size);
-    void move_elements_into_register(mcode::Operand value, std::uint16_t *elements, unsigned count);
+    void move_elements_into_register(const mcode::Operand &value, std::span<std::uint16_t> elements);
     mcode::Register move_symbol_into_register(const std::string &symbol);
     mcode::Operand create_temp_value(int size);
     AArch64Condition lower_condition(ssa::Comparison comparison);

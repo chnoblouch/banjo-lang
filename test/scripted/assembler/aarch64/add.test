@@ -32,3 +32,13 @@ add x2, x13, #100
 # test:encoding "A2495391"
 
 add x2, x13, #1234, lsl #12
+
+# test:subtest
+# test:encoding "E563368B"
+
+add x5, sp, x22
+
+# test:subtest
+# test:encoding "DF61368B"
+
+add sp, x14, x22

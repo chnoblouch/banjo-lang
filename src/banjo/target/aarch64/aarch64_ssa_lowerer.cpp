@@ -721,13 +721,11 @@ mcode::Operand AArch64SSALowerer::move_int_into_register(LargeInt value, unsigne
     if (size == 1 || size == 2) {
         emit({AArch64Opcode::MOV, {result, mcode::Operand::from_int_immediate(bits)}});
     } else if (size == 4) {
-        std::uint16_t elements[2];
-        AArch64Immediate::decompose_u32_u16(bits, elements);
-        move_elements_into_register(result, elements, 2);
+        std::array<std::uint16_t, 2> elements = AArch64Immediate::decompose_u32_u16(bits);
+        move_elements_into_register(result, elements);
     } else if (size == 8) {
-        std::uint16_t elements[4];
-        AArch64Immediate::decompose_u64_u16(bits, elements);
-        move_elements_into_register(result, elements, 4);
+        std::array<std::uint16_t, 4> elements = AArch64Immediate::decompose_u64_u16(bits);
+        move_elements_into_register(result, elements);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -753,11 +751,10 @@ mcode::Operand AArch64SSALowerer::move_float_into_register(double value, unsigne
 
         float value_f32 = (float)value;
         std::uint32_t bits = BitOperations::get_bits_32(value_f32);
-        std::uint16_t elements[2];
-        AArch64Immediate::decompose_u32_u16(bits, elements);
+        std::array<std::uint16_t, 2> elements = AArch64Immediate::decompose_u32_u16(bits);
 
         mcode::Operand bits_value = create_temp_value(size);
-        move_elements_into_register(bits_value, elements, 2);
+        move_elements_into_register(bits_value, elements);
         emit({AArch64Opcode::FMOV, {result, bits_value}});
     } else {
         mcode::Global global{
@@ -778,11 +775,11 @@ mcode::Operand AArch64SSALowerer::move_float_into_register(double value, unsigne
     return result;
 }
 
-void AArch64SSALowerer::move_elements_into_register(mcode::Operand value, std::uint16_t *elements, unsigned count) {
+void AArch64SSALowerer::move_elements_into_register(const mcode::Operand &value, std::span<std::uint16_t> elements) {
     // Count the non-zero elements.
     unsigned num_non_zero_elements = 0;
     unsigned non_zero_element_index = 0;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < elements.size(); i++) {
         if (elements[i] != 0) {
             num_non_zero_elements++;
             non_zero_element_index = i;
@@ -800,7 +797,7 @@ void AArch64SSALowerer::move_elements_into_register(mcode::Operand value, std::u
     // Move the lower 16 bits and set all other bits to zero.
     emit({AArch64Opcode::MOVZ, {value, mcode::Operand::from_int_immediate(elements[0])}});
 
-    for (unsigned i = 0; i < count; i++) {
+    for (unsigned i = 0; i < elements.size(); i++) {
         unsigned element = elements[i];
 
         // Skip zero elements because the bits were already set to zero by the first MOVZ.

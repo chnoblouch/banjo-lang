@@ -175,11 +175,11 @@ void AArch64Encoder::encode_stp(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_add(mcode::Instruction &instr) {
-    encode_add_family(instr, {0x0B000000, 0x11000000});
+    encode_add_family(instr, {0x0B200000, 0x0B000000, 0x11000000});
 }
 
 void AArch64Encoder::encode_sub(mcode::Instruction &instr) {
-    encode_add_family(instr, {0x4B000000, 0x51000000});
+    encode_add_family(instr, {0x4B200000, 0x4B000000, 0x51000000});
 }
 
 void AArch64Encoder::encode_mul(mcode::Instruction &instr) {
@@ -577,7 +577,7 @@ void AArch64Encoder::encode_ldp_family(mcode::Instruction &instr, std::array<std
     }
 }
 
-void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
+void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 3> params) {
     ASSERT(instr.get_operands().size() == 3 || instr.get_operands().size() == 4);
 
     mcode::Operand &m_dst = instr.get_operand(0);
@@ -591,8 +591,15 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
 
     if (m_rhs.is_register()) {
         std::uint32_t r_rhs = encode_gp_reg(m_rhs.get_physical_reg());
-        std::uint32_t shift = m_shift ? encode_imm(m_shift->get_aarch64_left_shift(), 6, 0) : 0;
-        text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (shift << 10) | (r_lhs << 5) | r_dst);
+
+        if (is_sp(m_dst.get_physical_reg()) || is_sp(m_lhs.get_physical_reg())) {
+            std::uint32_t option = 0b011;
+            text.write_u32(params[0] | (sf << 31) | (r_rhs << 16) | (option << 13) | (r_lhs << 5) | r_dst);
+        } else {
+            std::uint32_t shift = m_shift ? encode_imm(m_shift->get_aarch64_left_shift(), 6, 0) : 0;
+            text.write_u32(params[1] | (sf << 31) | (r_rhs << 16) | (shift << 10) | (r_lhs << 5) | r_dst);
+        }
+
     } else if (m_rhs.is_int_immediate()) {
         bool shifted = false;
 
@@ -603,7 +610,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
         }
 
         std::uint32_t imm = encode_imm(m_rhs.get_int_immediate(), 12, 0);
-        text.write_u32(params[1] | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
+        text.write_u32(params[2] | (sf << 31) | (shifted << 22) | (imm << 10) | (r_lhs << 5) | r_dst);
     } else if (m_rhs.is_symbol()) {
         // TODO: This is only allowed with `add` instructions!
 
@@ -611,7 +618,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
         ASSERT(sf == 1);
 
         text.add_symbol_use(symbol.name, lower_reloc(symbol.reloc));
-        text.write_u32(params[1] | (1 << 31) | (r_lhs << 5) | r_dst);
+        text.write_u32(params[2] | (1 << 31) | (r_lhs << 5) | r_dst);
     } else if (m_rhs.is_stack_offset()) {
         mcode::StackAddress stack_addr = m_rhs.get_stack_offset();
 
@@ -620,7 +627,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
         std::uint64_t total_offset = slot.get_offset() + stack_addr.offset;
 
         std::uint32_t imm = encode_imm(total_offset, 12, 0);
-        text.write_u32(params[1] | (sf << 31) | (imm << 10) | (r_lhs << 5) | r_dst);
+        text.write_u32(params[2] | (sf << 31) | (imm << 10) | (r_lhs << 5) | r_dst);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -962,6 +969,10 @@ bool AArch64Encoder::is_gp_reg(mcode::PhysicalReg reg) {
 
 bool AArch64Encoder::is_fp_reg(mcode::PhysicalReg reg) {
     return reg >= AArch64Register::V0 && reg <= AArch64Register::V30;
+}
+
+bool AArch64Encoder::is_sp(mcode::PhysicalReg reg) {
+    return reg == AArch64Register::SP;
 }
 
 void AArch64Encoder::resolve_internal_symbols() {

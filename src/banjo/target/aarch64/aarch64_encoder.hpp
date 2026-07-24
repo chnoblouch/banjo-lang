@@ -3,6 +3,7 @@
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
 #include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/target/target_description.hpp"
@@ -104,7 +105,7 @@ private:
     void encode_ldr_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_ldrb_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_ldp_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
-    void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
+    void encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 3> params);
     void encode_mul_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_madd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_and_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
@@ -129,6 +130,7 @@ private:
 
     bool is_gp_reg(mcode::PhysicalReg reg);
     bool is_fp_reg(mcode::PhysicalReg reg);
+    bool is_sp(mcode::PhysicalReg reg);
 
     void resolve_internal_symbols() override;
     void resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolUse &use);
