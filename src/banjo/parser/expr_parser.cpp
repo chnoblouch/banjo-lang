@@ -245,11 +245,69 @@ ParseResult ExprParser::parse_operand() {
 }
 
 ParseResult ExprParser::parse_number_literal() {
-    if (stream.get()->value.find('.') != std::string::npos) {
-        return parser.consume_into_node(AST_FP_LITERAL);
+    if (stream.get()->value.find('.') == std::string::npos) {
+        return parse_int_literal();
     } else {
-        return parser.consume_into_node(AST_INT_LITERAL);
+        return parse_fp_literal();
     }
+}
+
+ParseResult ExprParser::parse_fp_literal() {
+    return parser.consume_into_node(AST_FP_LITERAL);
+}
+
+ParseResult ExprParser::parse_int_literal() {
+    std::string_view value = stream.get()->value;
+    bool valid = true;
+
+    if (value[0] == '-') {
+        value = value.substr(1);
+    }
+
+    unsigned base;
+
+    if (value.starts_with("0x")) {
+        base = 16;
+        value = value.substr(2);
+    } else if (value.starts_with("0b")) {
+        base = 2;
+        value = value.substr(2);
+    } else if (value.starts_with("0o")) {
+        base = 8;
+        value = value.substr(2);
+    } else {
+        base = 10;
+    }
+
+    if (value.size() == 0) {
+        parser.report_generator.report_err_invalid_int_literal(parser.file, *stream.get());
+        valid = false;
+    }
+
+    while (value[0] == '0') {
+        value = value.substr(1);
+    }
+
+    for (unsigned i = 0; i < value.size(); i++) {
+        if (!is_hex_digit(value[i]) || hex_digit_value(value[i]) >= base) {
+            parser.report_generator.report_err_invalid_int_literal(parser.file, *stream.get());
+            valid = false;
+            break;
+        }
+    }
+
+    if (valid && !validate_integer_range(value, base)) {
+        parser.report_generator.report_err_int_literal_too_large(parser.file, *stream.get());
+        valid = false;
+    }
+
+    ASTNode *node = parser.consume_into_node(AST_INT_LITERAL);
+
+    if (!valid) {
+        node->value = "0";
+    }
+
+    return node;
 }
 
 ParseResult ExprParser::parse_char_literal() {
@@ -620,6 +678,35 @@ ParseResult ExprParser::parse_level(
     return current_node;
 }
 
+bool ExprParser::validate_integer_range(std::string_view stripped_value, unsigned base) {
+    std::string_view max;
+
+    switch (base) {
+        case 2: max = "1111111111111111111111111111111111111111111111111111111111111111"; break;
+        case 8: max = "1777777777777777777777"; break;
+        case 10: max = "18446744073709551615"; break;
+        case 16: max = "FFFFFFFFFFFFFFFF"; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    if (stripped_value.size() > max.size()) {
+        return false;
+    } else if (stripped_value.size() == max.size()) {
+        for (unsigned i = 0; i < stripped_value.size(); i++) {
+            unsigned digit_val = hex_digit_value(stripped_value[i]);
+            unsigned digit_val_max = hex_digit_value(max[i]);
+
+            if (digit_val > digit_val_max) {
+                return false;
+            } else if (digit_val < digit_val_max) {
+                return true;
+            }
+        }
+    }
+
+    return true;
+}
+
 std::optional<unsigned> ExprParser::validate_escape_sequence(std::string_view value) {
     if (value.size() == 1) {
         return {};
@@ -640,6 +727,18 @@ std::optional<unsigned> ExprParser::validate_escape_sequence(std::string_view va
 
 bool ExprParser::is_hex_digit(char c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+unsigned ExprParser::hex_digit_value(char c) {
+    if (c >= '0' && c <= '9') {
+        return static_cast<unsigned>(c) - static_cast<unsigned>('0');
+    } else if (c >= 'a' && c <= 'f') {
+        return 10 + static_cast<unsigned>(c) - static_cast<unsigned>('a');
+    } else if (c >= 'A' && c <= 'F') {
+        return 10 + static_cast<unsigned>(c) - static_cast<unsigned>('A');
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 } // namespace banjo::lang

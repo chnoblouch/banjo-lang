@@ -1065,7 +1065,7 @@ void ExprFinalizer::check_int_literal_range(sir::IntLiteral &int_literal) {
             case sir::Primitive::U32:
                 range = {std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max()};
                 break;
-            case sir::Primitive::U64: return;   // TODO
+            case sir::Primitive::U64: return;   // Taken care of by the parser.
             case sir::Primitive::USIZE: return; // TODO
             case sir::Primitive::F32: ASSERT_UNREACHABLE;
             case sir::Primitive::F64: ASSERT_UNREACHABLE;

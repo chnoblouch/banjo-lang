@@ -1,0 +1,25 @@
+# test:subtest
+# test:error 9:18 "invalid integer literal"
+# test:error 10:18 "invalid integer literal"
+# test:error 11:18 "invalid integer literal"
+# test:error 12:18 "invalid integer literal"
+# test:error 13:18 "invalid integer literal"
+
+func main() {
+    var a: u64 = 0x;
+    var b: u64 = 0b;
+    var c: u64 = 0o;
+    var d: u64 = 0x1234x;
+    var e: u64 = 0x1234o;
+}
+
+# test:subtest
+# test:error 22:18 "invalid integer literal"
+# test:error 23:18 "invalid integer literal"
+# test:error 24:18 "invalid integer literal"
+
+func main() {
+    var a: u64 = 48234a;
+    var b: u64 = 0b01011102;
+    var c: u64 = 0o31478;
+}

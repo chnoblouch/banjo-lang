@@ -41,6 +41,8 @@ private:
     ParseResult parse_operand();
 
     ParseResult parse_number_literal();
+    ParseResult parse_fp_literal();
+    ParseResult parse_int_literal();
     ParseResult parse_char_literal();
     ParseResult parse_string_literal();
     ParseResult parse_array_literal();
@@ -59,8 +61,11 @@ private:
     ParseResult parse_struct_literal_body();
     ParseResult parse_level(ParseResult (ExprParser::*child_builder)(), ASTNodeType(token_checker)(TokenType type));
 
+    bool validate_integer_range(std::string_view stripped_value, unsigned base);
     std::optional<unsigned> validate_escape_sequence(std::string_view value);
+
     bool is_hex_digit(char c);
+    unsigned hex_digit_value(char c);
 };
 
 } // namespace banjo
