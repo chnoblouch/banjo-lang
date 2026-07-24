@@ -365,10 +365,6 @@ void SpecializationCollector::visit_coercion_expr(const sir::CoercionExpr &coerc
 
 void SpecializationCollector::visit_specialize_expr(const sir::SpecializeExpr &specialize_expr) {
     visit_concrete(specialize_expr.symbol, specialize_expr.args);
-
-    for (sir::Expr arg : specialize_expr.args) {
-        visit_expr(arg);
-    }
 }
 
 void SpecializationCollector::visit_pointer_type(const sir::PointerType &pointer_type) {
