@@ -41,8 +41,8 @@ private:
     ParseResult parse_operand();
 
     ParseResult parse_number_literal();
-    ParseResult parse_fp_literal();
     ParseResult parse_int_literal();
+    ParseResult parse_fp_literal();
     ParseResult parse_char_literal();
     ParseResult parse_string_literal();
     ParseResult parse_array_literal();

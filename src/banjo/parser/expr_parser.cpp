@@ -252,10 +252,6 @@ ParseResult ExprParser::parse_number_literal() {
     }
 }
 
-ParseResult ExprParser::parse_fp_literal() {
-    return parser.consume_into_node(AST_FP_LITERAL);
-}
-
 ParseResult ExprParser::parse_int_literal() {
     std::string_view value = stream.get()->value;
     bool valid = true;
@@ -302,9 +298,44 @@ ParseResult ExprParser::parse_int_literal() {
     }
 
     ASTNode *node = parser.consume_into_node(AST_INT_LITERAL);
-
     if (!valid) {
         node->value = "0";
+    }
+
+    return node;
+}
+
+ParseResult ExprParser::parse_fp_literal() {
+    std::string_view value = stream.get()->value;
+    bool valid = true;
+
+    if (value[0] == '-') {
+        value = value.substr(1);
+    }
+
+    bool dot_found = false;
+
+    for (unsigned i = 0; i < value.size(); i++) {
+        if (value[i] == '.') {
+            if (!dot_found) {
+                dot_found = true;
+            } else {
+                valid = false;
+                break;
+            }
+        } else if (value[i] < '0' || value[i] > '9') {
+            valid = false;
+            break;
+        }
+    }
+
+    if (!valid) {
+        parser.report_generator.report_err_invalid_fp_literal(parser.file, *stream.get());
+    }
+
+    ASTNode *node = parser.consume_into_node(AST_FP_LITERAL);
+    if (!valid) {
+        node->value = "0.0";
     }
 
     return node;

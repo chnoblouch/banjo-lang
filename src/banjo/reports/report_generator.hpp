@@ -54,6 +54,7 @@ public:
     void report_err_invalid_escape_sequence(SourceFile &file, TextPosition position);
     void report_err_invalid_int_literal(SourceFile &file, Token &token);
     void report_err_int_literal_too_large(SourceFile &file, Token &token);
+    void report_err_invalid_fp_literal(SourceFile &file, Token &token);
 
     void report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected);
     void report_err_symbol_not_found(const sir::IdentExpr &ident_expr);

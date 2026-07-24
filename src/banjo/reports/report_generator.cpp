@@ -140,6 +140,10 @@ void ReportGenerator::report_err_int_literal_too_large(SourceFile &file, Token &
     report_error("integer literal does not fit into any integer type", {&file, token.range()});
 }
 
+void ReportGenerator::report_err_invalid_fp_literal(SourceFile &file, Token &token) {
+    report_error("invalid float literal", {&file, token.range()});
+}
+
 void ReportGenerator::report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected) {
     report_error("expected $, got $", expr.get_ast_node(), expected, expr.get_category());
 }

@@ -1,0 +1,13 @@
+# test:error 8:18 "invalid float literal"
+# test:error 9:18 "invalid float literal"
+# test:error 10:18 "invalid float literal"
+# test:error 11:18 "invalid float literal"
+# test:error 12:18 "invalid float literal"
+
+func main() {
+    var a: f64 = 0.5.0;
+    var b: f64 = 0A.0;
+    var c: f64 = 0.b;
+    var d: f64 = 0.x;
+    var e: f64 = -0.5.0;
+}
