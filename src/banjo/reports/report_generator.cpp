@@ -481,7 +481,7 @@ void ReportGenerator::report_err_missing_field(
 void ReportGenerator::report_err_duplicate_field(
     const sir::StructLiteral &struct_literal,
     const sir::StructLiteralEntry &entry,
-    const sir::StructLiteralEntry &previous_entry
+    const sir::StructLiteralEntry &prev_entry
 ) {
     // TODO: Set range to entire entry.
 
@@ -491,7 +491,7 @@ void ReportGenerator::report_err_duplicate_field(
         entry.field->ident.value,
         struct_literal.type.as_concrete<sir::StructDef>().def->ident.value
     )
-        .add_note("value first specified here", previous_entry.ident.ast_node)
+        .add_note("value first specified here", prev_entry.ident.ast_node)
         .report();
 }
 
@@ -728,6 +728,22 @@ void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &value) {
 
 void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {
     report_error("expected proto", expr.get_ast_node());
+}
+
+void ReportGenerator::report_err_duplicate_proto_impl(
+    const sir::StructDef &struct_def,
+    sir::Expr expr,
+    sir::ProtoDef &proto_def,
+    sir::Expr prev_impl
+) {
+    build_error(
+        "proto '$' implemented more than once for struct '$'",
+        expr.get_ast_node(),
+        proto_def.ident.value,
+        struct_def.ident.value
+    )
+        .add_note("previously implemented here", prev_impl.get_ast_node())
+        .report();
 }
 
 void ReportGenerator::report_err_impl_missing_func(

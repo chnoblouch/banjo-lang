@@ -108,7 +108,7 @@ public:
     void report_err_duplicate_field(
         const sir::StructLiteral &struct_literal,
         const sir::StructLiteralEntry &entry,
-        const sir::StructLiteralEntry &previous_entry
+        const sir::StructLiteralEntry &prev_entry
     );
 
     void report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal);
@@ -155,6 +155,14 @@ public:
     void report_err_compile_time_unknown(const sir::Expr &value);
 
     void report_err_expected_proto(const sir::Expr &expr);
+    
+    void report_err_duplicate_proto_impl(
+        const sir::StructDef &struct_def,
+        sir::Expr expr,
+        sir::ProtoDef &proto_def,
+        sir::Expr prev_impl
+    );
+
     void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::ProtoFuncDecl &func_decl);
     void report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::ProtoFuncDecl &func_decl);
 

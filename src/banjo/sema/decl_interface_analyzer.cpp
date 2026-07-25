@@ -114,17 +114,33 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
 
     analyze_type_constraints(struct_def.generic_params);
 
-    for (sir::Expr &impl : struct_def.impls) {
-        partial_result = ExprAnalyzer(analyzer).analyze_type(impl);
+    for (unsigned i = 0; i < struct_def.impls.size(); i++) {
+        sir::Expr &impl = struct_def.impls[i];
 
+        partial_result = ExprAnalyzer{analyzer}.analyze_type(impl);
         if (partial_result != Result::SUCCESS) {
             continue;
         }
 
+        sir::ProtoDef *proto_def;
+
         if (auto concrete_proto = impl.match_concrete<sir::ProtoDef>()) {
+            proto_def = concrete_proto->def;
             analyze_proto_impl(struct_def, *concrete_proto->def);
         } else {
             analyzer.report_generator.report_err_expected_proto(impl);
+            continue;
+        }
+
+        for (unsigned j = 0; j < i; j++) {
+            sir::Expr prev_impl = struct_def.impls[j];
+
+            if (auto prev_proto = prev_impl.match_concrete<sir::ProtoDef>()) {
+                if (prev_proto->def == proto_def) {
+                    analyzer.report_generator.report_err_duplicate_proto_impl(struct_def, impl, *proto_def, prev_impl);
+                    break;
+                }
+            }
         }
     }
 

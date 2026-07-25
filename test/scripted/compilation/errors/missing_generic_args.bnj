@@ -39,3 +39,11 @@ func f[T: P]() {}
 type Alias[A, B] = (A, B);
 
 func f(a: Alias) {}
+
+# test:subtest
+# test:error 49:11 "missing generic arguments"
+# test:note 47:7 "proto 'P' defined here with generic parameters 'A', 'B'"
+
+proto P[A, B] {}
+
+struct I: P {}

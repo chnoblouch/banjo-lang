@@ -1,0 +1,33 @@
+# test:subtest
+# test:error 7:14 "proto 'P' implemented more than once for struct 'S'"
+# test:note 7:11 "previously implemented here"
+
+proto P {}
+
+struct S: P, P {}
+
+# test:subtest
+# test:error 17:14 "proto 'P' implemented more than once for struct 'S'"
+# test:note 17:11 "previously implemented here"
+# test:error 17:17 "proto 'P' implemented more than once for struct 'S'"
+# test:note 17:11 "previously implemented here"
+
+proto P {}
+
+struct S: P, P, P {}
+
+# test:subtest
+# test:error 25:19 "proto 'P' implemented more than once for struct 'S'"
+# test:note 25:11 "previously implemented here"
+
+proto P[T] {}
+
+struct S: P[i32], P[i32] {}
+
+# test:subtest
+# test:error 33:20 "proto 'P' implemented more than once for struct 'S'"
+# test:note 33:11 "previously implemented here"
+
+proto P[T] {}
+
+struct S: P[bool], P[i32] {}
