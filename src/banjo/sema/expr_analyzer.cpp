@@ -1375,6 +1375,11 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
                 }
             }
 
+            if (!Utils::is_one_of(concrete_proto.def->role, {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY})) {
+                analyzer.report_generator.report_err_cannot_call_generic_operator_overload(dot_expr.rhs);
+                return Result::ERROR;
+            }
+
             out_call_expr.callee = analyzer.create(
                 sir::PlaceholderExpr{
                     .ast_node = nullptr,
@@ -1388,14 +1393,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
                 }
             );
 
-            std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(out_call_expr.args.size() + 1);
-            args[0] = lhs;
-
-            for (unsigned i = 0; i < out_call_expr.args.size(); i++) {
-                args[i + 1] = out_call_expr.args[i];
-            }
-
-            out_call_expr.args = args;
+            out_call_expr.args = prepend_arg(lhs, out_call_expr.args);
             is_method = true;
 
             return Result::SUCCESS;

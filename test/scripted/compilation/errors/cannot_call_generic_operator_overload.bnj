@@ -1,0 +1,12 @@
+# test:error 7:18 "cannot call operator overload by name, use the corresponding operator instead"
+# test:error 11:18 "cannot call operator overload by name, use the corresponding operator instead"
+
+use std.protos.{Add, Mul};
+
+func double[T: Add[T]](value: T) -> T {
+    return value.__add__(value);
+}
+
+func square[T: Mul[T]](value: T) -> T {
+    return value.__mul__(value);
+}

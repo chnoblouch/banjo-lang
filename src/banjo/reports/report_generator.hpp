@@ -138,6 +138,7 @@ public:
     );
 
     void report_err_constraint_not_satisfied(ASTNode *ast_node, sir::Expr arg, const sir::GenericParam &generic_param);
+    void report_err_cannot_call_generic_operator_overload(sir::Ident &ident);
 
     void report_err_cannot_use_in_try(const sir::Expr &expr);
     void report_err_cannot_use_in_try_expr(const sir::Expr &expr);
@@ -155,7 +156,7 @@ public:
     void report_err_compile_time_unknown(const sir::Expr &value);
 
     void report_err_expected_proto(const sir::Expr &expr);
-    
+
     void report_err_duplicate_proto_impl(
         const sir::StructDef &struct_def,
         sir::Expr expr,
