@@ -21,12 +21,11 @@
 #include "banjo/utils/macros.hpp"
 
 #include <cassert>
+#include <optional>
 #include <variant>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 ExprSSAGenerator::ExprSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
@@ -708,10 +707,10 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         const sir::Expr &base_type = coercion_expr.value.get_type().as<sir::PointerType>().base_type;
         sir::StructDef &struct_def = const_cast<sir::StructDef &>(base_type.as_symbol<sir::StructDef>());
 
-        unsigned impl_index;
+        std::optional<unsigned> impl_index;
 
         for (unsigned i = 0; i < struct_def.impls.size(); i++) {
-            if (concrete_proto == struct_def.impls[i].match_specialization<sir::ProtoDef>()) {
+            if (concrete_proto == struct_def.impls[i].match_concrete<sir::ProtoDef>()) {
                 impl_index = i;
             }
         }
@@ -725,7 +724,9 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         const std::vector<unsigned> &vtables = ctx.create_vtables(struct_def);
 
         if (!vtables.empty()) {
-            unsigned vtable_global_index = vtables[impl_index];
+            ASSERT(impl_index);
+
+            unsigned vtable_global_index = vtables[*impl_index];
             ssa::Global *vtable_global = ctx.ssa_mod->get_globals()[vtable_global_index];
             ctx.append_store(ssa::Operand::from_global(vtable_global, ssa::Primitive::ADDR), ssa_vtable_ptr_reg);
         } else {
@@ -1085,6 +1086,4 @@ sir::Attributes::Layout ExprSSAGenerator::get_type_layout(const sir::Expr &type)
     }
 }
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

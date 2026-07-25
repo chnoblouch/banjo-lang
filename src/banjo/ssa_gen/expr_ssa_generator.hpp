@@ -8,9 +8,7 @@
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 class ExprSSAGenerator {
 
@@ -99,8 +97,6 @@ private:
     sir::Attributes::Layout get_type_layout(const sir::Expr &type);
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif
