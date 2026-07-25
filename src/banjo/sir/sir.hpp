@@ -291,8 +291,7 @@ public:
     bool is_fp_type() const;
     bool is_number_type() const;
     bool is_addr_like_type() const;
-    const ProtoDef *match_proto_ptr() const;
-    ProtoDef *match_proto_ptr();
+    std::optional<Concrete<ProtoDef>> match_proto_ptr() const;
     bool is_u8_ptr() const;
     bool is_symbol(Symbol symbol) const;
     bool is_pseudo_type(PseudoTypeKind kind) const;
@@ -1180,8 +1179,10 @@ struct FuncDecl {
     Ident ident;
     Symbol parent;
     FuncType type;
+    std::span<GenericParam *> generic_params;
     SemaStage stage;
 
+    bool is_generic() const { return !generic_params.empty(); }
     bool is_method() const { return type.is_func_method(); }
 };
 

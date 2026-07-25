@@ -191,16 +191,12 @@ bool Expr::is_addr_like_type() const {
     return is_primitive_type(Primitive::ADDR) || is<PointerType>() || is<FuncType>();
 }
 
-const ProtoDef *Expr::match_proto_ptr() const {
+std::optional<Concrete<ProtoDef>> Expr::match_proto_ptr() const {
     if (auto pointer_type = match<PointerType>()) {
-        return pointer_type->base_type.match_symbol<ProtoDef>();
+        return pointer_type->base_type.match_concrete<ProtoDef>();
     } else {
-        return nullptr;
+        return {};
     }
-}
-
-ProtoDef *Expr::match_proto_ptr() {
-    return const_cast<ProtoDef *>(std::as_const(*this).match_proto_ptr());
 }
 
 bool Expr::is_u8_ptr() const {
@@ -461,6 +457,7 @@ DeclBlock *Symbol::get_decl_block() {
 
 std::span<GenericParam *> Symbol::get_generic_params() const {
     if (auto func_def = match<FuncDef>()) return func_def->generic_params;
+    else if (auto func_decl = match<FuncDecl>()) return func_decl->generic_params;
     else if (auto struct_def = match<StructDef>()) return struct_def->generic_params;
     else if (auto proto_def = match<ProtoDef>()) return proto_def->generic_params;
     else if (auto type_alias = match<TypeAlias>()) return type_alias->generic_params;

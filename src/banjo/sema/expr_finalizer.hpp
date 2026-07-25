@@ -21,7 +21,13 @@ public:
 
     Result coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type);
     Result coerce_to_union(sir::Expr &inout_expr, sir::Expr union_type);
-    Result coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &proto_def, sir::Expr proto_ptr_type);
+    
+    Result coerce_to_proto_ptr(
+        sir::Expr &inout_expr,
+        sir::Concrete<sir::ProtoDef> concrete_proto,
+        sir::Expr proto_ptr_type
+    );
+
     Result coerce_to_std_optional(sir::Expr &inout_expr, sir::Concrete<sir::StructDef> specialization);
     Result coerce_to_std_result(sir::Expr &inout_expr, sir::Concrete<sir::StructDef> specialization);
 

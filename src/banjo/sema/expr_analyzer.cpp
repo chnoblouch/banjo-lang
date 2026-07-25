@@ -932,7 +932,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
 
         if (unary_expr.value.is_type()) {
             std::span<sir::Expr> generic_args = analyzer.create_array({unary_expr.value});
-            specialize(&struct_def, generic_args, out_expr);
+            out_expr = specialize(&struct_def, generic_args, unary_expr.ast_node);
         } else {
             sir::Concrete<sir::FuncDef> concrete_func{
                 .def = &struct_def.block.symbol_table->look_up_local("new").as<sir::FuncDef>(),
@@ -1148,10 +1148,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
             RESULT_RETURN_ON_ERROR(result);
 
-            partial_result = specialize(func_def, generic_args, call_expr.callee);
-            if (partial_result != Result::SUCCESS) {
-                return partial_result;
-            }
+            call_expr.callee = specialize(func_def, generic_args, call_expr.callee.get_ast_node());
 
             if (func_def->generic_params.back()->kind == sir::GenericParamKind::SEQUENCE) {
                 unsigned num_non_sequence_args = func_def->type.params.size() - 1;
@@ -1248,14 +1245,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
             }
         );
 
-        std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(call_expr.args.size() + 1);
-        args[0] = data_ptr;
-
-        for (unsigned i = 0; i < call_expr.args.size(); i++) {
-            args[i + 1] = call_expr.args[i];
-        }
-
-        call_expr.args = args;
+        call_expr.args = prepend_arg(data_ptr, call_expr.args);
     }
 
     return Result::SUCCESS;
@@ -1277,7 +1267,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
     sir::Expr lhs_type = analyzer.get_resolved_type(dot_expr.lhs);
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
-        if (pointer_type->base_type.match_symbol<sir::ProtoDef>()) {
+        if (pointer_type->base_type.match_concrete<sir::ProtoDef>()) {
             break;
         }
 
@@ -1335,16 +1325,29 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
 
         analyzer.report_generator.report_err_no_method(dot_expr.rhs, *union_def);
         return Result::ERROR;
-    } else if (auto proto_def = lhs_type.match_proto_ptr()) {
-        sir::Symbol method = proto_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
+    } else if (auto concrete_proto = lhs_type.match_proto_ptr()) {
+        sir::Symbol method = concrete_proto->def->block.symbol_table->look_up_local(dot_expr.rhs.value);
 
         if (method) {
-            create_method_call(out_call_expr, lhs, dot_expr.rhs, method);
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
+
+            if (concrete_proto->is_specialization()) {
+                out_call_expr.callee = specialize(method, concrete_proto->generic_args, out_call_expr.ast_node);
+            } else {
+                out_call_expr.callee = analyzer.create<sir::SymbolExpr>({
+                    .ast_node = out_call_expr.ast_node,
+                    .type = method.get_type(),
+                    .symbol = method,
+                });
+            }
+
+            out_call_expr.args = prepend_arg(lhs, out_call_expr.args);
             is_method = true;
+
             return Result::SUCCESS;
         }
 
-        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *proto_def);
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, *concrete_proto->def);
         return Result::ERROR;
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         std::string_view name = dot_expr.rhs.value;
@@ -1530,7 +1533,7 @@ Result ExprAnalyzer::analyze_optional_type(sir::OptionalType &optional_type, sir
     }
 
     std::span<sir::Expr> generic_args = analyzer.create_array({optional_type.base_type});
-    specialize(analyzer.std_optional_def, generic_args, out_expr);
+    out_expr = specialize(analyzer.std_optional_def, generic_args, optional_type.ast_node);
 
     return Result::SUCCESS;
 }
@@ -1555,7 +1558,7 @@ Result ExprAnalyzer::analyze_result_type(sir::ResultType &result_type, sir::Expr
 
     sir::StructDef &struct_def = *analyzer.std_result_def;
     std::span<sir::Expr> generic_args = analyzer.create_array({result_type.value_type, result_type.error_type});
-    specialize(&struct_def, generic_args, out_expr);
+    out_expr = specialize(&struct_def, generic_args, result_type.ast_node);
 
     return Result::SUCCESS;
 }
@@ -1569,7 +1572,7 @@ Result ExprAnalyzer::analyze_array_type(sir::ArrayType &array_type, sir::Expr &o
     }
 
     std::span<sir::Expr> generic_args = analyzer.create_array<sir::Expr>({array_type.base_type});
-    specialize(analyzer.std_array_def, generic_args, out_expr);
+    out_expr = specialize(analyzer.std_array_def, generic_args, array_type.ast_node);
 
     return Result::SUCCESS;
 }
@@ -1593,7 +1596,7 @@ Result ExprAnalyzer::analyze_map_type(sir::MapType &map_type, sir::Expr &out_exp
     }
 
     std::span<sir::Expr> generic_args = analyzer.create_array({map_type.key_type, map_type.value_type});
-    specialize(analyzer.std_map_def, generic_args, out_expr);
+    out_expr = specialize(analyzer.std_map_def, generic_args, map_type.ast_node);
 
     return Result::SUCCESS;
 }
@@ -1909,9 +1912,9 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             check_type_constraints(bracket_expr, generic_params);
             RESULT_RETURN_ON_ERROR(result);
 
-            Result result = specialize(symbol, bracket_expr.rhs, out_expr);
+            out_expr = specialize(symbol, bracket_expr.rhs, bracket_expr.ast_node);
             resolve_type_aliases(out_expr);
-            return result;
+            return Result::SUCCESS;
         }
     }
 
@@ -2434,7 +2437,7 @@ void ExprAnalyzer::resolve_type_aliases(sir::Expr &expr) {
     }
 }
 
-Result ExprAnalyzer::specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, sir::Expr &inout_expr) {
+sir::Expr ExprAnalyzer::specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node) {
     std::span<sir::GenericParam *> generic_params = symbol.get_generic_params();
     sir::Specializer specializer{analyzer.mod->trivial_arena, generic_params, generic_args};
 
@@ -2442,26 +2445,21 @@ Result ExprAnalyzer::specialize(sir::Symbol symbol, std::span<sir::Expr> generic
 
     if (auto func_def = symbol.match<sir::FuncDef>()) {
         type = specializer.specialize_func_type(func_def->type);
+    } else if (auto func_decl = symbol.match<sir::FuncDecl>()) {
+        type = specializer.specialize_func_type(func_decl->type);
     }
 
-    inout_expr = analyzer.create(
+    return analyzer.create(
         sir::SpecializeExpr{
-            .ast_node = inout_expr.get_ast_node(),
+            .ast_node = ast_node,
             .type = type,
             .symbol = symbol,
             .args = generic_args,
         }
     );
-
-    return Result::SUCCESS;
 }
 
-void ExprAnalyzer::create_method_call(
-    sir::CallExpr &call_expr,
-    sir::Expr lhs,
-    const sir::Ident &rhs,
-    sir::Symbol method
-) {
+void ExprAnalyzer::create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident &rhs, sir::Symbol method) {
     analyzer.add_symbol_use(rhs.ast_node, method);
 
     // We used to specialize here using the generic arguments of the left-hand side, but this
@@ -2477,14 +2475,7 @@ void ExprAnalyzer::create_method_call(
         }
     );
 
-    std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(call_expr.args.size() + 1);
-    args[0] = lhs;
-
-    for (unsigned i = 0; i < call_expr.args.size(); i++) {
-        args[i + 1] = call_expr.args[i];
-    }
-
-    call_expr.args = args;
+    call_expr.args = prepend_arg(lhs, call_expr.args);
 }
 
 sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
@@ -2503,6 +2494,17 @@ sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {
             .value = value,
         }
     );
+}
+
+std::span<sir::Expr> ExprAnalyzer::prepend_arg(sir::Expr arg, std::span<sir::Expr> args) {
+    std::span<sir::Expr> result = analyzer.allocate_array<sir::Expr>(args.size() + 1);
+    result[0] = arg;
+
+    for (unsigned i = 0; i < args.size(); i++) {
+        result[i + 1] = args[i];
+    }
+
+    return result;
 }
 
 ExprAnalyzer::BinaryOpType ExprAnalyzer::get_binary_op_type(sir::BinaryOp op) {

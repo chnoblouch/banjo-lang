@@ -48,8 +48,8 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
             return coerce_to_reference(expr, *reference_type);
         } else if (expected_type.is_symbol<sir::UnionDef>()) {
             return coerce_to_union(expr, expected_type);
-        } else if (auto proto_def = expected_type.match_proto_ptr()) {
-            return coerce_to_proto_ptr(expr, *proto_def, expected_type);
+        } else if (auto concrete_proto = expected_type.match_proto_ptr()) {
+            return coerce_to_proto_ptr(expr, *concrete_proto, expected_type);
         } else if (auto concrete_struct = expected_type.match_concrete<sir::StructDef>()) {
             if (concrete_struct->def == analyzer.std_optional_def) {
                 return coerce_to_std_optional(expr, *concrete_struct);
@@ -199,7 +199,11 @@ Result ExprFinalizer::coerce_to_union(sir::Expr &inout_expr, sir::Expr union_typ
     return Result::SUCCESS;
 }
 
-Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &proto_def, sir::Expr proto_ptr_type) {
+Result ExprFinalizer::coerce_to_proto_ptr(
+    sir::Expr &inout_expr,
+    sir::Concrete<sir::ProtoDef> concrete_proto,
+    sir::Expr proto_ptr_type
+) {
     Result partial_result;
 
     partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
@@ -216,7 +220,7 @@ Result ExprFinalizer::coerce_to_proto_ptr(sir::Expr &inout_expr, sir::ProtoDef &
 
     if (auto pointer_type = type.match<sir::PointerType>()) {
         if (auto struct_def = pointer_type->base_type.match_symbol<sir::StructDef>()) {
-            is_valid = struct_def->has_impl_for(proto_def);
+            is_valid = struct_def->has_impl_for(concrete_proto);
         }
     }
 

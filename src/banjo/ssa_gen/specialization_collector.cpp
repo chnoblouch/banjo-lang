@@ -36,6 +36,8 @@ void SpecializationCollector::visit_decl_block(const sir::DeclBlock &decl_block)
     for (sir::Decl decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) {
             visit_func_def(*func_def);
+        } else if (auto func_decl = decl.match<sir::FuncDecl>()) {
+            visit_func_decl(*func_decl);
         } else if (auto struct_def = decl.match<sir::StructDef>()) {
             visit_struct_def(*struct_def);
         } else if (auto proto_def = decl.match<sir::ProtoDef>()) {
@@ -56,6 +58,14 @@ void SpecializationCollector::visit_func_def(const sir::FuncDef &func_def, bool 
 
     visit_func_type(func_def.type);
     visit_block(func_def.block);
+}
+
+void SpecializationCollector::visit_func_decl(const sir::FuncDecl &func_decl, bool is_specialized /* = false */) {
+    if (func_decl.is_generic() && !is_specialized) {
+        return;
+    }
+
+    visit_func_type(func_decl.type);
 }
 
 void SpecializationCollector::visit_struct_def(const sir::StructDef &struct_def, bool is_specialized /* = false */) {
@@ -261,7 +271,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         SIR_VISIT_IMPOSSIBLE,            // star_expr
         SIR_VISIT_IMPOSSIBLE,            // bracket_expr
         SIR_VISIT_IMPOSSIBLE,            // dot_expr
-        SIR_VISIT_IMPOSSIBLE,            // pseudo_type
+        SIR_VISIT_IGNORE,                // pseudo_type
         visit_meta_access(*inner),       // meta_access
         visit_meta_field_expr(*inner),   // meta_field_expr
         visit_meta_call_expr(*inner),    // meta_call_expr
@@ -473,28 +483,18 @@ void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::
         }
     }
 
-    std::span<sir::GenericParam *> generic_params;
-
-    if (auto func_def = symbol.match<sir::FuncDef>()) {
-        generic_params = func_def->generic_params;
-    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
-        generic_params = struct_def->generic_params;
-    } else if (auto proto_def = symbol.match<sir::ProtoDef>()) {
-        generic_params = proto_def->generic_params;
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-
     entry_stack.push_back(
         Entry{
             .symbol = symbol,
-            .params = generic_params,
+            .params = symbol.get_generic_params(),
             .args = args_full,
         }
     );
 
     if (auto func_def = symbol.match<sir::FuncDef>()) {
         visit_func_def(*func_def, true);
+    } else if (auto func_decl = symbol.match<sir::FuncDecl>()) {
+        visit_func_decl(*func_decl, true);
     } else if (auto struct_def = symbol.match<sir::StructDef>()) {
         visit_struct_def(*struct_def, true);
     } else if (auto proto_def = symbol.match<sir::ProtoDef>()) {

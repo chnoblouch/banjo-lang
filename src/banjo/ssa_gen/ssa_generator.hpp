@@ -11,9 +11,7 @@
 
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 class SSAGenerator {
 
@@ -38,6 +36,7 @@ private:
     ssa::Structure *create_struct_def(const sir::StructDef &sir_struct, const std::vector<sir::Expr> &sir_generic_args);
     void create_union_def(const sir::UnionDef &sir_union_def);
     void create_proto_def(const sir::ProtoDef &sir_proto_def);
+    ssa::Structure *create_vtable_type(const sir::ProtoDef &sir_proto_def);
     void create_var_decl(const sir::VarDecl &sir_var_decl);
     void create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
@@ -57,8 +56,6 @@ private:
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

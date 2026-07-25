@@ -93,7 +93,7 @@ ssa::Type TypeSSAGenerator::generate_generic_type(const sir::GenericParam &gener
 }
 
 ssa::Type TypeSSAGenerator::generate_pointer_type(const sir::PointerType &pointer_type) {
-    if (pointer_type.base_type.is_symbol<sir::ProtoDef>()) {
+    if (pointer_type.base_type.match_concrete<sir::ProtoDef>()) {
         return ctx.get_fat_pointer_type();
     } else {
         return ssa::Primitive::ADDR;
@@ -142,13 +142,7 @@ ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &
     }
 
     if (auto struct_def = specialize_type.symbol.match<sir::StructDef>()) {
-        for (const MonoStruct &mono_struct : ctx.ssa_mono_structs.at(struct_def)) {
-            if (Utils::equal(mono_struct.specialization.args, args)) {
-                return mono_struct.ssa_struct;
-            }
-        }
-
-        ASSERT_UNREACHABLE;
+        return ctx.ssa_structs.find({const_cast<sir::StructDef *>(struct_def), args});
     } else {
         ASSERT_UNREACHABLE;
     }

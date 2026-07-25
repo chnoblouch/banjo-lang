@@ -120,8 +120,8 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
 
         if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
             collect_value_members(*concrete_struct);
-        } else if (auto proto_def = type.match_proto_ptr()) {
-            collect_value_members(*proto_def);
+        } else if (auto concrete_proto = type.match_proto_ptr()) {
+            collect_value_members(*concrete_proto->def);
         } else if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
             for (sir::Expr component : generic_param->constraint.components) {
                 if (auto concrete_proto = component.match_concrete<sir::ProtoDef>()) {

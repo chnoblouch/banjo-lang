@@ -38,6 +38,7 @@ public:
 private:
     void visit_decl_block(const sir::DeclBlock &decl_block);
     void visit_func_def(const sir::FuncDef &func_def, bool is_specialized = false);
+    void visit_func_decl(const sir::FuncDecl &func_decl, bool is_specialized = false);
     void visit_struct_def(const sir::StructDef &struct_def, bool is_specialized = false);
     void visit_proto_def(const sir::ProtoDef &proto_def, bool is_specialized = false);
 

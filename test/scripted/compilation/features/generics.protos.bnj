@@ -1,0 +1,87 @@
+# test:subtest
+# test:compiles
+
+proto P[T] {
+    func m(self) -> T;
+}
+
+# test:subtest
+# test:output "42"
+
+proto P[T] {
+    func m(self) -> T;
+}
+
+struct S: P[i32] {
+    func m(self) -> i32 {
+        return 42;
+    }
+}
+
+func main() {
+    var s = S {};
+    var p: *P[i32] = &s;
+
+    print(p.m());
+}
+
+# test:subtest
+# test:output "42,true"
+
+proto P[T] {
+    func m(self) -> T;
+}
+
+struct S1: P[i32] {
+    func m(self) -> i32 {
+        return 42;
+    }
+}
+
+struct S2: P[bool] {
+    func m(self) -> bool {
+        return true;
+    }
+}
+
+func invoke[T](a: *P[T]) {
+    print(a.m());
+}
+
+func main() {
+    var s1 = S1 {};
+    var s2 = S2 {};
+
+    invoke[i32](&s1);
+    print(',');
+    invoke[bool](&s2);
+}
+
+# test:subtest
+# test:output "100,42"
+
+proto P[T] {
+    func m(self, default: T) -> T {
+        return default;
+    }
+}
+
+struct S1: P[i32] {}
+
+struct S2: P[i32] {
+    func m(self, default: i32) -> i32 {
+        return 42;
+    }
+}
+
+func main() {
+    var s1 = S1 {};
+    var s2 = S2 {};
+
+    var p1: *P[i32] = &s1;
+    var p2: *P[i32] = &s2;
+
+    print(p1.m(100));
+    print(',');
+    print(p2.m(100));
+}

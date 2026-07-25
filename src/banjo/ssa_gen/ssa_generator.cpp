@@ -16,11 +16,10 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
+#include <cstdlib>
 #include <utility>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 const ssa::Type SSA_MAIN_ARGC_TYPE = ssa::Primitive::I32;
 const ssa::Type SSA_MAIN_ARGV_TYPE = ssa::Primitive::ADDR;
@@ -95,19 +94,13 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
             for (SpecializationCollector::Entry &specialization : iter->second) {
                 ctx.push_specialization(specialization);
                 ssa::Function *ssa_func = create_func_def(sir_func, specialization.args);
-
-                MonoFunc mono_func{
-                    .specialization = specialization,
-                    .ssa_func = ssa_func,
-                };
-
-                ctx.ssa_mono_funcs[&sir_func].push_back(mono_func);
+                ctx.ssa_funcs.insert(&sir_func, specialization, ssa_func);
                 ctx.pop_specialization(specialization);
             }
         }
     } else {
         ssa::Function *ssa_func = create_func_def(sir_func, {});
-        ctx.ssa_funcs.emplace(&sir_func, ssa_func);
+        ctx.ssa_funcs.insert(&sir_func, ssa_func);
     }
 }
 
@@ -198,19 +191,13 @@ void SSAGenerator::create_struct_defs(const sir::StructDef &sir_struct) {
             for (SpecializationCollector::Entry &specialization : iter->second) {
                 ctx.push_specialization(specialization);
                 ssa::Structure *ssa_struct = create_struct_def(sir_struct, specialization.args);
-
-                MonoStruct mono_struct{
-                    .specialization = specialization,
-                    .ssa_struct = ssa_struct,
-                };
-
-                ctx.ssa_mono_structs[&sir_struct].push_back(mono_struct);
+                ctx.ssa_structs.insert(&sir_struct, specialization, ssa_struct);
                 ctx.pop_specialization(specialization);
             }
         }
     } else {
         ssa::Structure *ssa_struct = create_struct_def(sir_struct, {});
-        ctx.ssa_structs.emplace(&sir_struct, ssa_struct);
+        ctx.ssa_structs.insert(&sir_struct, ssa_struct);
     }
 
     SSAGeneratorContext::DeclContext &decl_context = ctx.push_decl_context();
@@ -233,7 +220,29 @@ void SSAGenerator::create_union_def(const sir::UnionDef &sir_union_def) {
 }
 
 void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
-    ssa::Structure *vtable_type = new ssa::Structure("vtable." + std::string{sir_proto_def.ident.value});
+    if (sir_proto_def.is_generic()) {
+        auto iter = ctx.specializations.symbol_entries.find(const_cast<sir::ProtoDef *>(&sir_proto_def));
+
+        if (iter != ctx.specializations.symbol_entries.end()) {
+            for (SpecializationCollector::Entry &specialization : iter->second) {
+                ctx.push_specialization(specialization);
+                ssa::Structure *vtable_type = create_vtable_type(sir_proto_def);
+                ctx.ssa_proto_vtable_types.insert(&sir_proto_def, specialization, vtable_type);
+                ctx.pop_specialization(specialization);
+            }
+        }
+    } else {
+        ssa::Structure *vtable_type = create_vtable_type(sir_proto_def);
+        ctx.ssa_proto_vtable_types.insert(&sir_proto_def, vtable_type);
+    }
+
+    create_decls(sir_proto_def.block);
+}
+
+ssa::Structure *SSAGenerator::create_vtable_type(const sir::ProtoDef &sir_proto_def) {
+    std::string id = std::to_string(std::rand());
+    std::string name = "vtable." + std::string{sir_proto_def.ident.value} + "." + id;
+    ssa::Structure *vtable_type = new ssa::Structure{name};
 
     for (unsigned i = 0; i < sir_proto_def.func_decls.size(); i++) {
         vtable_type->add(
@@ -245,9 +254,7 @@ void SSAGenerator::create_proto_def(const sir::ProtoDef &sir_proto_def) {
     }
 
     ssa_mod.add(vtable_type);
-    ctx.ssa_vtable_types[&sir_proto_def] = vtable_type;
-
-    create_decls(sir_proto_def.block);
+    return vtable_type;
 }
 
 void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
@@ -321,10 +328,7 @@ void SSAGenerator::generate_runtime() {
         func->get_entry_block().append({
             ssa::Opcode::LOADARG,
             2,
-            {
-                ssa::Operand::from_type(usize_type),
-                ssa::Operand::from_int_immediate(2),
-            },
+            {ssa::Operand::from_type(usize_type), ssa::Operand::from_int_immediate(2)},
         });
 
         ssa::Instruction call{
@@ -359,21 +363,19 @@ void SSAGenerator::generate_types(const sir::DeclBlock &decl_block) {
 
 void SSAGenerator::generate_struct_def_types(const sir::StructDef &sir_struct) {
     if (sir_struct.is_generic()) {
-        auto iter = ctx.ssa_mono_structs.find(&sir_struct);
+        auto iter = ctx.ssa_structs.mono_map.find(&sir_struct);
 
-        if (iter == ctx.ssa_mono_structs.end()) {
+        if (iter == ctx.ssa_structs.mono_map.end()) {
             return;
         }
 
-        for (MonoStruct &mono_struct : iter->second) {
-            ssa::Structure &ssa_struct = *mono_struct.ssa_struct;
-
+        for (auto &mono_struct : iter->second) {
             ctx.push_specialization(mono_struct.specialization);
-            generate_struct_def_type(sir_struct, ssa_struct);
+            generate_struct_def_type(sir_struct, *mono_struct.value);
             ctx.pop_specialization(mono_struct.specialization);
         }
     } else {
-        ssa::Structure *ssa_struct = ctx.ssa_structs.at(&sir_struct);
+        ssa::Structure *ssa_struct = ctx.ssa_structs.find(&sir_struct);
         generate_struct_def_type(sir_struct, *ssa_struct);
     }
 }
@@ -426,21 +428,19 @@ void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
     }
 
     if (sir_func.is_generic()) {
-        auto iter = ctx.ssa_mono_funcs.find(&sir_func);
+        auto iter = ctx.ssa_funcs.mono_map.find(&sir_func);
 
-        if (iter == ctx.ssa_mono_funcs.end()) {
+        if (iter == ctx.ssa_funcs.mono_map.end()) {
             return;
         }
 
-        for (MonoFunc &mono_func : iter->second) {
-            ssa::Function &ssa_func = *mono_func.ssa_func;
-
+        for (auto &mono_func : iter->second) {
             ctx.push_specialization(mono_func.specialization);
-            generate_func_def(sir_func, ssa_func);
+            generate_func_def(sir_func, *mono_func.value);
             ctx.pop_specialization(mono_func.specialization);
         }
     } else {
-        ssa::Function *ssa_func = ctx.ssa_funcs.at(&sir_func);
+        ssa::Function *ssa_func = ctx.ssa_funcs.find(&sir_func);
         generate_func_def(sir_func, *ssa_func);
     }
 }
@@ -598,6 +598,4 @@ void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native
     ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
 }
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

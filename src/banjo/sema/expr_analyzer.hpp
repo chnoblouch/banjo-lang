@@ -114,9 +114,11 @@ private:
     Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
     void resolve_type_aliases(sir::Expr &expr);
 
-    Result specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, sir::Expr &inout_expr);
-    void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, const sir::Ident &rhs, sir::Symbol method);
+    sir::Expr specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node);
+    void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident &rhs, sir::Symbol method);
+    
     sir::Expr create_isize_cast(sir::Expr value);
+    std::span<sir::Expr> prepend_arg(sir::Expr arg, std::span<sir::Expr> args);
 
     BinaryOpType get_binary_op_type(sir::BinaryOp op);
     bool can_be_coerced(sir::Expr value);

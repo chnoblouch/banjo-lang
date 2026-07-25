@@ -517,14 +517,7 @@ void BlockSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa:
         return;
     }
 
-    ssa::Function *ssa_func;
-
-    if (generic_args.empty()) {
-        ssa_func = ctx.ssa_funcs.at(&deinit_symbol.as<sir::FuncDef>());
-    } else {
-        ssa_func = &ctx.find_ssa_func({&deinit_symbol.as<sir::FuncDef>(), generic_args});
-    }
-
+    ssa::Function *ssa_func = ctx.ssa_funcs.find({&deinit_symbol.as<sir::FuncDef>(), generic_args});
     ssa::Value ssa_callee = ssa::Operand::from_func(ssa_func, ssa::Primitive::ADDR);
     ctx.get_ssa_block()->append({ssa::Opcode::CALL, {ssa_callee, std::move(ssa_ptr)}});
 }

@@ -6,6 +6,7 @@
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/module.hpp"
+#include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/target/target.hpp"
@@ -15,9 +16,7 @@
 #include <stack>
 #include <unordered_map>
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 enum class ReturnMethod {
     NO_RETURN_VALUE,
@@ -30,14 +29,42 @@ struct DeferredDeinit {
     ssa::Value ssa_ptr;
 };
 
-struct MonoFunc {
-    SpecializationCollector::Entry &specialization;
-    ssa::Function *ssa_func;
-};
+template <typename Key, typename Value>
+struct MonoDeclMap {
+    struct MonoItem {
+        SpecializationCollector::Entry &specialization;
+        Value value;
+    };
 
-struct MonoStruct {
-    SpecializationCollector::Entry &specialization;
-    ssa::Structure *ssa_struct;
+    std::unordered_map<const Key *, Value> direct_map;
+    std::unordered_map<const Key *, std::vector<MonoItem>> mono_map;
+
+    void insert(const Key *key, Value value) { direct_map.emplace(key, value); }
+
+    void insert(const Key *key, SpecializationCollector::Entry &specialization, Value value) {
+        mono_map[key].push_back({specialization, value});
+    }
+
+    Value &find(const Key *key) { return direct_map.at(key); }
+
+    Value *try_find(const Key *key) {
+        auto iter = direct_map.find(key);
+        return iter == direct_map.end() ? nullptr : &iter->second;
+    }
+
+    Value &find(sir::Concrete<Key> key) {
+        if (key.generic_args.empty()) {
+            return direct_map.at(key.def);
+        }
+
+        for (MonoItem &mono_item : mono_map.at(key.def)) {
+            if (Utils::equal(mono_item.specialization.args, key.generic_args)) {
+                return mono_item.value;
+            }
+        }
+
+        ASSERT_UNREACHABLE;
+    }
 };
 
 const ssa::Type DEINIT_FLAG_TYPE = ssa::Primitive::U8;
@@ -79,17 +106,19 @@ public:
     std::stack<LoopContext> loop_contexts;
 
     SpecializationCollector::List specializations;
-    std::unordered_map<const lang::sir::FuncDef *, ssa::Function *> ssa_funcs;
-    std::unordered_map<const lang::sir::FuncDef *, std::vector<MonoFunc>> ssa_mono_funcs;
+
+    MonoDeclMap<lang::sir::FuncDef, ssa::Function *> ssa_funcs;
+    MonoDeclMap<lang::sir::StructDef, ssa::Structure *> ssa_structs;
+    MonoDeclMap<lang::sir::UnionDef, ssa::Structure *> ssa_unions;
+    MonoDeclMap<lang::sir::UnionCase, ssa::Structure *> ssa_union_cases;
+    MonoDeclMap<lang::sir::ProtoDef, ssa::Structure *> ssa_proto_vtable_types;
+
     std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
     std::unordered_map<const ssa::Function *, std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister>>
         ssa_param_slots;
     std::unordered_map<const lang::sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;
-    std::unordered_map<const void *, ssa::Structure *> ssa_structs;
-    std::unordered_map<const void *, std::vector<MonoStruct>> ssa_mono_structs;
     std::unordered_map<const lang::sir::VarDecl *, unsigned> ssa_globals;
     std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
-    std::unordered_map<const lang::sir::ProtoDef *, ssa::Structure *> ssa_vtable_types;
     std::unordered_map<const lang::sir::StructDef *, std::vector<unsigned>> ssa_vtables;
     std::vector<ssa::Structure *> tuple_structs;
 
@@ -118,7 +147,6 @@ public:
     void pop_specialization(SpecializationCollector::Entry &specialization);
     sir::Expr get_generic_arg(const sir::GenericParam &generic_param);
     sir::Expr resolve_if_generic(sir::Expr expr);
-    ssa::Function &find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func);
     const sir::Resource &resolve_resource(const sir::Resource &resource);
     bool is_type_check_satisfied(const sir::TypeCheckExpr &type_check_expr);
 
@@ -177,8 +205,6 @@ public:
     ssa::Type get_fat_pointer_type();
 };
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang
 
 #endif

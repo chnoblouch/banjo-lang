@@ -5,11 +5,8 @@
 #include "banjo/sir/type_constraints.hpp"
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
-#include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace lang {
+namespace banjo::lang {
 
 SSAGeneratorContext::SSAGeneratorContext(target::Target *target) : target(target) {}
 
@@ -57,16 +54,6 @@ sir::Expr SSAGeneratorContext::resolve_if_generic(sir::Expr expr) {
     } else {
         return expr;
     }
-}
-
-ssa::Function &SSAGeneratorContext::find_ssa_func(sir::Concrete<sir::FuncDef> sir_concrete_func) {
-    for (const MonoFunc &mono_func : ssa_mono_funcs.at(sir_concrete_func.def)) {
-        if (Utils::equal(mono_func.specialization.args, sir_concrete_func.generic_args)) {
-            return *mono_func.ssa_func;
-        }
-    }
-
-    ASSERT_UNREACHABLE;
 }
 
 const sir::Resource &SSAGeneratorContext::resolve_resource(const sir::Resource &resource) {
@@ -280,13 +267,12 @@ ReturnMethod SSAGeneratorContext::get_return_method(const ssa::Type return_type)
 }
 
 ssa::Structure *SSAGeneratorContext::create_struct(const sir::StructDef &sir_struct_def) {
-    return ssa_structs.at(&sir_struct_def);
+    return ssa_structs.find(&sir_struct_def);
 }
 
 ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union_def) {
-    auto iter = ssa_structs.find(&sir_union_def);
-    if (iter != ssa_structs.end()) {
-        return iter->second;
+    if (ssa::Structure **ssa_struct = ssa_unions.try_find(&sir_union_def)) {
+        return *ssa_struct;
     }
 
     ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_union_def.ident.value});
@@ -315,14 +301,13 @@ ssa::Structure *SSAGeneratorContext::create_union(const sir::UnionDef &sir_union
         .type = largest_case_type,
     });
 
-    ssa_structs.insert({&sir_union_def, ssa_struct});
+    ssa_unions.insert(&sir_union_def, ssa_struct);
     return ssa_struct;
 }
 
 ssa::Structure *SSAGeneratorContext::create_union_case(const sir::UnionCase &sir_union_case) {
-    auto iter = ssa_structs.find(&sir_union_case);
-    if (iter != ssa_structs.end()) {
-        return iter->second;
+    if (ssa::Structure **ssa_struct = ssa_union_cases.try_find(&sir_union_case)) {
+        return *ssa_struct;
     }
 
     ssa::Structure *ssa_struct = new ssa::Structure(std::string{sir_union_case.ident.value});
@@ -335,7 +320,7 @@ ssa::Structure *SSAGeneratorContext::create_union_case(const sir::UnionCase &sir
         });
     }
 
-    ssa_structs.insert({&sir_union_case, ssa_struct});
+    ssa_union_cases.insert(&sir_union_case, ssa_struct);
     return ssa_struct;
 }
 
@@ -383,12 +368,12 @@ const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::Stru
 
     for (unsigned i = 0; i < struct_def.impls.size(); i++) {
         const sir::Expr &impl = struct_def.impls[i];
-        const sir::ProtoDef &proto_def = impl.as_symbol<sir::ProtoDef>();
+        sir::Concrete<sir::ProtoDef> concrete_proto = impl.as_concrete<sir::ProtoDef>();
 
         std::string vtable_name = "vtable." + std::string{struct_def.ident.value} + "." + std::to_string(i);
 
-        for (unsigned j = 0; j < proto_def.func_decls.size(); j++) {
-            sir::ProtoFuncDecl func_decl = proto_def.func_decls[j];
+        for (unsigned j = 0; j < concrete_proto.def->func_decls.size(); j++) {
+            sir::ProtoFuncDecl func_decl = concrete_proto.def->func_decls[j];
             const sir::FuncDef &func_def = symbol_table.symbols.at(func_decl.get_ident().value).as<sir::FuncDef>();
 
             std::string vtable_entry_name = vtable_name;
@@ -396,7 +381,7 @@ const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::Stru
                 vtable_entry_name += "." + std::to_string(j);
             }
 
-            ssa::Function *ssa_func = ssa_funcs.at(&func_def);
+            ssa::Function *ssa_func = ssa_funcs.find(&func_def);
 
             ssa_mod->add(new ssa::Global{
                 .name = vtable_entry_name,
@@ -418,6 +403,4 @@ ssa::Type SSAGeneratorContext::get_fat_pointer_type() {
     return get_tuple_struct({ssa::Primitive::ADDR, ssa::Primitive::ADDR});
 }
 
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang

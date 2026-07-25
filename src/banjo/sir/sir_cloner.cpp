@@ -96,6 +96,7 @@ FuncDecl *Cloner::clone_func_decl(const FuncDecl &func_decl) {
             .ast_node = func_decl.ast_node,
             .ident = clone_ident(func_decl.ident),
             .type = clone_func_type_directly(func_decl.type),
+            .generic_params = func_decl.generic_params,
             .stage = SemaStage::NAME,
         }
     );

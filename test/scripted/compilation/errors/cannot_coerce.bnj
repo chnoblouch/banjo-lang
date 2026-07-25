@@ -85,7 +85,7 @@ func main() {
     var a: i32 = "Hi!";
 }
 
-# test:94
+# test:subtest
 # test:error 94:16 "cannot coerce string literal to type 'S'"
 
 struct S {}

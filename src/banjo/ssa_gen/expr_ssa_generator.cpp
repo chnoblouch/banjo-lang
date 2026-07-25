@@ -269,7 +269,7 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
     ASSERT(symbol_expr.type == const_cast<sir::Symbol &>(symbol_expr.symbol).get_type());
 
     if (auto func_def = symbol_expr.symbol.match<sir::FuncDef>()) {
-        ssa::Function *ssa_func = ctx.ssa_funcs.at(func_def);
+        ssa::Function *ssa_func = ctx.ssa_funcs.find(func_def);
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
@@ -533,24 +533,21 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     std::optional<ssa::Value> ssa_proto_self;
 
     sir::Symbol callee_symbol = nullptr;
-    sir::ProtoDef *proto_def = nullptr;
+    std::optional<sir::Concrete<sir::ProtoDef>> concrete_proto;
 
-    if (auto symbol_expr = call_expr.callee.match<sir::SymbolExpr>()) {
-        callee_symbol = symbol_expr->symbol;
+    if (auto concrete_func = call_expr.callee.match_concrete<sir::FuncDef>()) {
+        sir::FuncDef &func_def = *concrete_func->def;
+        callee_symbol = &func_def;
 
-        sir::Symbol callee_symbol_parent = nullptr;
-        bool is_method = false;
-
-        if (auto func_def = callee_symbol.match<sir::FuncDef>()) {
-            callee_symbol_parent = func_def->parent;
-            is_method = func_def->is_method();
-        } else if (auto func_decl = callee_symbol.match<sir::FuncDecl>()) {
-            callee_symbol_parent = func_decl->parent;
-            is_method = func_decl->is_method();
+        if (func_def.parent.is<sir::ProtoDef>() && func_def.is_method()) {
+            concrete_proto = {&func_def.parent.as<sir::ProtoDef>(), concrete_func->generic_args};
         }
+    } else if (auto concrete_func = call_expr.callee.match_concrete<sir::FuncDecl>()) {
+        sir::FuncDecl &func_decl = *concrete_func->def;
+        callee_symbol = &func_decl;
 
-        if (callee_symbol_parent && callee_symbol_parent.is<sir::ProtoDef>() && is_method) {
-            proto_def = &callee_symbol_parent.as<sir::ProtoDef>();
+        if (func_decl.parent.is<sir::ProtoDef>() && func_decl.is_method()) {
+            concrete_proto = {&func_decl.parent.as<sir::ProtoDef>(), concrete_func->generic_args};
         }
     } else if (auto placeholder_expr = call_expr.callee.match<sir::PlaceholderExpr>()) {
         if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr->kind)) {
@@ -574,9 +571,16 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(call_expr.type);
     CallSSABuilder ssa_builder{ctx, ssa_type, hints};
 
-    if (proto_def) {
-        unsigned index = *proto_def->get_index(callee_symbol.get_ident().value);
-        ssa::Type vtable_type = ctx.ssa_vtable_types[proto_def];
+    if (concrete_proto) {
+        utils::Arena arena;
+
+        if (auto specialization = ctx.get_specialization()) {
+            sir::Specializer specializer{arena, specialization->params, specialization->args};
+            concrete_proto->generic_args = specializer.specialize_expr_list(concrete_proto->generic_args);
+        }
+
+        unsigned index = *concrete_proto->def->get_index(callee_symbol.get_ident().value);
+        ssa::Type vtable_type = ctx.ssa_proto_vtable_types.find(*concrete_proto);
 
         ssa_proto_self = generate(call_expr.args[0]).turn_into_reference(ctx).get_ptr();
 
@@ -643,7 +647,7 @@ StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, co
     ssa::Type ssa_error_type = TypeSSAGenerator(ctx).generate(concrete_error_type);
 
     StoredValue ssa_error = CallSSABuilder{ctx, ssa_error_type, StorageHints::none()}
-                                .set_callee(ssa::Operand::from_func(&ctx.find_ssa_func(concrete_unwrap_error_func)))
+                                .set_callee(ssa::Operand::from_func(ctx.ssa_funcs.find(concrete_unwrap_error_func)))
                                 .add_arg(ssa_ptr)
                                 .generate();
 
@@ -653,7 +657,7 @@ StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, co
     ssa::VirtualRegister ssa_return_slot = ctx.get_func_context().ssa_return_slot;
 
     CallSSABuilder{ctx, ssa_result_type, StorageHints::into(ssa_return_slot)}
-        .set_callee(ssa::Operand::from_func(&ctx.find_ssa_func(concrete_error_init_func)))
+        .set_callee(ssa::Operand::from_func(ctx.ssa_funcs.find(concrete_error_init_func)))
         .add_arg(ssa_error)
         .generate()
         .copy_to(ssa_return_slot, ctx);
@@ -664,7 +668,7 @@ StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, co
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(try_expr.type);
 
     return CallSSABuilder{ctx, ssa_type, hints}
-        .set_callee(ssa::Operand::from_func(&ctx.find_ssa_func(concrete_unwrap_func)))
+        .set_callee(ssa::Operand::from_func(ctx.ssa_funcs.find(concrete_unwrap_func)))
         .add_arg(ssa_ptr)
         .generate();
 }
@@ -700,14 +704,14 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         ctx.append_store(ssa::Operand::from_int_immediate(tag, ssa::Primitive::U32), ssa_tag_ptr_reg);
         ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
         return stored_val;
-    } else if (auto proto_def = coercion_expr.type.match_proto_ptr()) {
+    } else if (auto concrete_proto = coercion_expr.type.match_proto_ptr()) {
         const sir::Expr &base_type = coercion_expr.value.get_type().as<sir::PointerType>().base_type;
-        const sir::StructDef &struct_def = base_type.as_symbol<sir::StructDef>();
+        sir::StructDef &struct_def = const_cast<sir::StructDef &>(base_type.as_symbol<sir::StructDef>());
 
         unsigned impl_index;
 
         for (unsigned i = 0; i < struct_def.impls.size(); i++) {
-            if (proto_def == struct_def.impls[i].match_symbol<sir::ProtoDef>()) {
+            if (concrete_proto == struct_def.impls[i].match_specialization<sir::ProtoDef>()) {
                 impl_index = i;
             }
         }
@@ -745,8 +749,8 @@ StoredValue ExprSSAGenerator::generate_specialize_expr(const sir::SpecializeExpr
 
     if (auto func_def = specialize_expr.symbol.match<sir::FuncDef>()) {
         sir::FuncDef *constless_func_def = const_cast<sir::FuncDef *>(func_def);
-        ssa::Function &ssa_func = ctx.find_ssa_func({constless_func_def, args});
-        ssa::Value ssa_value = ssa::Value::from_func(&ssa_func, ssa::Primitive::ADDR);
+        ssa::Function *ssa_func = ctx.ssa_funcs.find({constless_func_def, args});
+        ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     }
 
@@ -895,14 +899,7 @@ StoredValue ExprSSAGenerator::generate_placeholder_expr(
         std::string_view method_name = generic_method->decl->ident.value;
         sir::FuncDef *func_def = &concrete_struct.def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
 
-        ssa::Function *ssa_func;
-
-        if (concrete_struct.is_specialization()) {
-            ssa_func = &ctx.find_ssa_func({func_def, concrete_struct.generic_args});
-        } else {
-            ssa_func = ctx.ssa_funcs.at(func_def);
-        }
-
+        ssa::Function *ssa_func = ctx.ssa_funcs.find({func_def, concrete_struct.generic_args});
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
     } else if (auto binary_expr = std::get_if<sir::PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
