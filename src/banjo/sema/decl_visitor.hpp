@@ -4,11 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 class DeclVisitor {
 
@@ -19,8 +15,8 @@ protected:
 
 public:
     void analyze(const std::vector<sir::Module *> &mods);
-    void analyze_decl_block(sir::DeclBlock &decl_block);
-    Result analyze_decl(sir::Decl &decl);
+    void visit_decl_block(sir::DeclBlock &decl_block);
+    Result visit_decl(sir::Decl &decl);
     void visit_symbol(sir::Symbol symbol);
 
     void visit_func_def(sir::FuncDef &func_def);
@@ -52,12 +48,9 @@ private:
     virtual Result analyze_union_case(sir::UnionCase & /*union_case*/) { return Result::SUCCESS; }
     virtual Result analyze_proto_def(sir::ProtoDef & /*proto_def*/) { return Result::SUCCESS; }
     virtual Result analyze_type_alias(sir::TypeAlias & /*type_alias*/) { return Result::SUCCESS; }
+    virtual void analyze_decl_block(sir::DeclBlock & /*decl_block*/) {}
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif

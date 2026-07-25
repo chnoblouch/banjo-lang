@@ -267,6 +267,27 @@ Result DeclInterfaceAnalyzer::analyze_type_alias(sir::TypeAlias &type_alias) {
     return Result::SUCCESS;
 }
 
+void DeclInterfaceAnalyzer::analyze_decl_block(sir::DeclBlock &decl_block) {
+    for (auto &[name, symbol] : decl_block.symbol_table->symbols) {
+        sir::OverloadSet *overload_set = symbol.match<sir::OverloadSet>();
+        if (!overload_set) {
+            continue;
+        }
+
+        for (unsigned i = 0; i < overload_set->func_defs.size(); i++) {
+            for (unsigned j = 0; j < i; j++) {
+                sir::FuncDef &a = *overload_set->func_defs[i];
+                sir::FuncDef &b = *overload_set->func_defs[j];
+
+                if (compare_overloads(a, b)) {
+                    analyzer.report_generator.report_err_redefinition(a.ident, &b);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void DeclInterfaceAnalyzer::analyze_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent) {
     sir::Param &param = func_type.params[index];
 
@@ -345,6 +366,29 @@ void DeclInterfaceAnalyzer::analyze_self_param(sir::FuncType &func_type, unsigne
     } else {
         param.type.as<sir::ReferenceType>().base_type = base_type;
     }
+}
+
+bool DeclInterfaceAnalyzer::compare_overloads(sir::FuncDef &func_a, sir::FuncDef &func_b) {
+    unsigned first_param_to_compare = 0;
+
+    if (func_a.is_method() && func_b.is_method()) {
+        first_param_to_compare = 1;
+    }
+
+    sir::FuncType &type_a = func_a.type;
+    sir::FuncType &type_b = func_b.type;
+
+    if (type_a.params.size() != type_b.params.size()) {
+        return false;
+    }
+
+    for (unsigned i = first_param_to_compare; i < type_a.params.size(); i++) {
+        if (type_a.params[i].type != type_b.params[i].type) {
+            return false;
+        }
+    }
+
+    return type_a.return_type == type_b.return_type;
 }
 
 void DeclInterfaceAnalyzer::analyze_type_constraints(std::span<sir::GenericParam *> params) {

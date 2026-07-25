@@ -6,23 +6,19 @@
 
 #include <variant>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 DeclVisitor::DeclVisitor(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
 void DeclVisitor::analyze(const std::vector<sir::Module *> &mods) {
     for (sir::Module *mod : mods) {
         analyzer.enter_decl(mod);
-        analyze_decl_block(mod->block);
+        visit_decl_block(mod->block);
         analyzer.exit_decl();
     }
 }
 
-void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
+void DeclVisitor::visit_decl_block(sir::DeclBlock &decl_block) {
     // Declarations created by meta statement expansion are appended at the end of the declaration list
     // and not analyzed here becuse they get analyzed directly during expansion.
     // This also skips generated closure functions that we don't want to analyze.
@@ -35,8 +31,10 @@ void DeclVisitor::analyze_decl_block(sir::DeclBlock &decl_block) {
             return;
         }
 
-        analyze_decl(decl_block.decls[i]);
+        visit_decl(decl_block.decls[i]);
     }
+
+    analyze_decl_block(decl_block);
 }
 
 void DeclVisitor::visit_func_def(sir::FuncDef &func_def) {
@@ -68,7 +66,7 @@ Result DeclVisitor::visit_const_def(sir::ConstDef &const_def) {
 void DeclVisitor::visit_struct_def(sir::StructDef &struct_def) {
     analyzer.enter_decl(&struct_def);
     analyze_struct_def(struct_def);
-    analyze_decl_block(struct_def.block);
+    visit_decl_block(struct_def.block);
     analyzer.exit_decl();
 }
 
@@ -87,7 +85,7 @@ void DeclVisitor::visit_native_var_decl(sir::NativeVarDecl &native_var_decl) {
 void DeclVisitor::visit_enum_def(sir::EnumDef &enum_def) {
     analyzer.enter_decl(&enum_def);
     analyze_enum_def(enum_def);
-    analyze_decl_block(enum_def.block);
+    visit_decl_block(enum_def.block);
     analyzer.exit_decl();
 }
 
@@ -100,7 +98,7 @@ void DeclVisitor::visit_enum_variant(sir::EnumVariant &enum_variant) {
 void DeclVisitor::visit_union_def(sir::UnionDef &union_def) {
     analyzer.enter_decl(&union_def);
     analyze_union_def(union_def);
-    analyze_decl_block(union_def.block);
+    visit_decl_block(union_def.block);
     analyzer.exit_decl();
 }
 
@@ -113,7 +111,7 @@ void DeclVisitor::visit_union_case(sir::UnionCase &union_case) {
 void DeclVisitor::visit_proto_def(sir::ProtoDef &proto_def) {
     analyzer.enter_decl(&proto_def);
     analyze_proto_def(proto_def);
-    analyze_decl_block(proto_def.block);
+    visit_decl_block(proto_def.block);
     analyzer.exit_decl();
 }
 
@@ -133,7 +131,7 @@ void DeclVisitor::visit_closure_def(sir::FuncDef &func_def, ClosureContext &clos
     analyzer.exit_decl();
 }
 
-Result DeclVisitor::analyze_decl(sir::Decl &decl) {
+Result DeclVisitor::visit_decl(sir::Decl &decl) {
     SIR_VISIT_DECL(
         decl,
         SIR_VISIT_IMPOSSIBLE,           // empty
@@ -191,8 +189,4 @@ void DeclVisitor::visit_symbol(sir::Symbol symbol) {
     );
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema

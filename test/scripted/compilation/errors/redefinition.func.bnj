@@ -1,0 +1,60 @@
+# test:subtest
+# test:error 6:6 "redefinition of 'f'"
+# test:note 5:6 "previously defined here"
+
+func f() {} 
+func f() {}
+
+# test:subtest
+# test:error 13:6 "redefinition of 'f'"
+# test:note 12:6 "previously defined here"
+
+func f(a: i32) {} 
+func f(b: i32) {}
+
+# test:subtest
+# test:error 20:6 "redefinition of 'f'"
+# test:note 19:6 "previously defined here"
+
+func f(a: i32, b: u8) -> bool { return false; } 
+func f(c: i32, d: u8) -> bool { return false; }
+
+# test:subtest
+# test:error 29:6 "redefinition of 'f'"
+# test:note 28:6 "previously defined here"
+# test:error 30:6 "redefinition of 'f'"
+# test:note 28:6 "previously defined here"
+
+func f(a: i32, b: u8) -> bool { return false; } 
+func f(c: i32, d: u8) -> bool { return false; }
+func f(e: i32, f: u8) -> bool { return false; }
+
+# test:subtest
+# test:error 38:10 "redefinition of 'm'"
+# test:note 37:10 "previously defined here"
+
+struct S {
+    func m(a: i32) -> bool { return false; }
+    func m(a: i32) -> bool { return false; }
+}
+
+# test:subtest
+# test:error 47:10 "redefinition of 'm'"
+# test:note 46:10 "previously defined here"
+
+struct S {
+    func m(self, a: i32) -> u64 { return 0; }
+    func m(self, a: i32) -> u64 { return 0; }
+}
+
+# test:subtest
+# test:error 58:10 "redefinition of 'm'"
+# test:note 57:10 "previously defined here"
+# test:error 59:10 "redefinition of 'm'"
+# test:note 57:10 "previously defined here"
+
+struct S {
+    func m(self, a: i32) -> u64 { return 0; }
+    func m(mut self, a: i32) -> u64 { return 0; }
+    func m(@byval self, a: i32) -> u64 { return 0; }
+}

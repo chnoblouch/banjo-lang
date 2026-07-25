@@ -1,0 +1,19 @@
+# test:output "fmm"
+
+struct S {
+    pub func f() {
+        print("f");
+    }
+
+    pub func f(self) {
+        print("m");
+    }
+}
+
+func main() {
+    var a = S {};
+
+    S.f();
+    a.f();
+    S.f(a);  # FIXME: Using `ref a` here.
+}

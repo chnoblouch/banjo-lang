@@ -137,7 +137,7 @@ void ReportGenerator::report_err_invalid_int_literal(SourceFile &file, Token &to
 }
 
 void ReportGenerator::report_err_int_literal_too_large(SourceFile &file, Token &token) {
-    report_error("integer literal does not fit into any integer type", {&file, token.range()});
+    report_error("integer value does not fit into any integer type", {&file, token.range()});
 }
 
 void ReportGenerator::report_err_invalid_fp_literal(SourceFile &file, Token &token) {

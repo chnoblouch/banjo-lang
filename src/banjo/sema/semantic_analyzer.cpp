@@ -92,14 +92,14 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
     UseResolver(*this).resolve_in_block(mod.block);
 
     stage = sir::SemaStage::INTERFACE;
-    TypeAliasResolver(*this).analyze_decl_block(mod.block);
-    DeclInterfaceAnalyzer(*this).analyze_decl_block(mod.block);
+    TypeAliasResolver(*this).visit_decl_block(mod.block);
+    DeclInterfaceAnalyzer(*this).visit_decl_block(mod.block);
 
     stage = sir::SemaStage::BODY;
-    DeclBodyAnalyzer(*this).analyze_decl_block(mod.block);
+    DeclBodyAnalyzer(*this).visit_decl_block(mod.block);
 
     stage = sir::SemaStage::RESOURCES;
-    ResourceAnalyzer(*this).analyze_decl_block(mod.block);
+    ResourceAnalyzer(*this).visit_decl_block(mod.block);
 }
 
 void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable *symbol_table) {

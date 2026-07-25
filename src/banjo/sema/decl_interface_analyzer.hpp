@@ -24,9 +24,11 @@ private:
     Result analyze_union_case(sir::UnionCase &union_case) override;
     Result analyze_proto_def(sir::ProtoDef &proto_def) override;
     Result analyze_type_alias(sir::TypeAlias &type_alias) override;
+    void analyze_decl_block(sir::DeclBlock &decl_block) override;
 
     void analyze_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent);
     void analyze_self_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent);
+    bool compare_overloads(sir::FuncDef &func_a, sir::FuncDef &func_b);
     void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
     void insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def);
     void analyze_type_constraints(std::span<sir::GenericParam *> params);
