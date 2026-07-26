@@ -275,13 +275,13 @@ ParseResult ExprParser::parse_int_literal() {
         base = 10;
     }
 
-    if (value.size() == 0) {
+    if (value.size() != 0) {
+        while (value[0] == '0') {
+            value = value.substr(1);
+        }
+    } else {
         parser.report_generator.report_err_invalid_int_literal(parser.file, *stream.get());
         valid = false;
-    }
-
-    while (value[0] == '0') {
-        value = value.substr(1);
     }
 
     for (unsigned i = 0; i < value.size(); i++) {
