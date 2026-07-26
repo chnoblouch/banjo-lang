@@ -612,12 +612,17 @@ struct TypeNarrowing {
     Expr constraint;
 };
 
-template <typename T>
-struct Specialization {
-    T *generic_def;
-    std::span<Expr> args;
-    T *def;
-    SymbolTable *symbol_table;
+struct ConcreteSymbol {
+    Symbol def;
+    std::span<Expr> generic_args;
+
+    bool is_specialization() const { return !generic_args.empty(); }
+
+    bool operator==(const ConcreteSymbol &other) const {
+        return def == other.def && Utils::equal(generic_args, other.generic_args);
+    }
+
+    bool operator!=(const ConcreteSymbol &other) const { return !(*this == other); }
 };
 
 struct FuncType {

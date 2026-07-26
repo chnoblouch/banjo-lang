@@ -730,6 +730,11 @@ void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &value) {
     report_error("value is not known at compile time", value.get_ast_node());
 }
 
+void ReportGenerator::report_err_recursive_struct(sir::StructDef &struct_def) {
+    // TODO: A lot to improve here.
+    report_error("struct contains itself and therefore has infinite size", struct_def.ident.ast_node);
+}
+
 void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {
     report_error("expected proto", expr.get_ast_node());
 }

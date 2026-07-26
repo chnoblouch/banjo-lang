@@ -1,0 +1,75 @@
+# test:subtest
+# test:error 4:8 "struct contains itself and therefore has infinite size"
+
+struct S {
+    var s: S;
+}
+
+# test:subtest
+# test:error 11:8 "struct contains itself and therefore has infinite size"
+
+struct S {
+    var s: (i32, S);
+}
+
+# test:subtest
+# test:error 19:8 "struct contains itself and therefore has infinite size"
+# test:error 23:8 "struct contains itself and therefore has infinite size"
+
+struct A {
+    var b: B;
+}
+
+struct B {
+    var a: A;
+}
+
+# test:subtest
+# test:error 32:8 "struct contains itself and therefore has infinite size"
+# test:error 36:8 "struct contains itself and therefore has infinite size"
+# test:error 40:8 "struct contains itself and therefore has infinite size"
+
+struct A {
+    var b: B;
+}
+
+struct B {
+    var c: (i32, i64, C);
+}
+
+struct C {
+    var a: (bool, (A, i32));
+}
+
+# test:subtest
+# test:error 51:8 "struct contains itself and therefore has infinite size"
+
+struct Wrapper[T] {
+    var value: T;
+}
+
+struct S {
+    var value: Wrapper[S];
+}
+
+# test:subtest
+# test:error 66:8 "struct contains itself and therefore has infinite size"
+
+struct Pair[A, B] {
+    var values: (A, B);
+}
+
+struct Wrapper[T] {
+    var value: T;
+}
+
+struct S {
+    var value: Pair[i32, Wrapper[S]];
+}
+
+# test:subtest
+# test:error 73:8 "struct contains itself and therefore has infinite size"
+
+struct S[T] {
+    var value: S[T];
+}

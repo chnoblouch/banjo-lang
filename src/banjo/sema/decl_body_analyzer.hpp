@@ -5,11 +5,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 class DeclBodyAnalyzer final : public DeclVisitor {
 
@@ -31,12 +27,10 @@ private:
     Result analyze_enum_def(sir::EnumDef &enum_def) override;
 
     void analyze_proto_impl(sir::StructDef &struct_def, sir::Concrete<sir::ProtoDef> concrete_proto);
+    bool is_recursive(sir::StructDef &base, sir::Concrete<sir::StructDef> concrete_struct);
+    bool is_recursive(sir::StructDef &base, sir::Expr type, sir::Concrete<sir::StructDef> &parent);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sema
 
 #endif

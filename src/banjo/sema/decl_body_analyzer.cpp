@@ -14,11 +14,7 @@
 
 #include <optional>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::lang::sema {
 
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -120,6 +116,10 @@ Result DeclBodyAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     // TODO: This should probably be checked during interface analysis.
     if (struct_def.get_layout() == sir::Attributes::Layout::OVERLAPPING && struct_def.fields.empty()) {
         analyzer.report_generator.report_err_struct_overlapping_no_fields(struct_def);
+    }
+
+    if (is_recursive(struct_def, {&struct_def})) {
+        analyzer.report_generator.report_err_recursive_struct(struct_def);
     }
 
     return Result::SUCCESS;
@@ -254,8 +254,42 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
     return Result::SUCCESS;
 }
 
-} // namespace sema
+bool DeclBodyAnalyzer::is_recursive(sir::StructDef &base, sir::Concrete<sir::StructDef> concrete_struct) {
+    for (sir::StructField *field : concrete_struct.def->fields) {
+        if (is_recursive(base, field->type, concrete_struct)) {
+            return true;
+        }
+    }
 
-} // namespace lang
+    return false;
+}
 
-} // namespace banjo
+bool DeclBodyAnalyzer::is_recursive(sir::StructDef &base, sir::Expr type, sir::Concrete<sir::StructDef> &parent) {
+    if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
+        if (*concrete_struct == sir::Concrete<sir::StructDef>{&base}) {
+            return true;
+        } else {
+            return is_recursive(base, *concrete_struct);
+        }
+    } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
+        for (sir::Expr type : tuple_type->exprs) {
+            if (is_recursive(base, type, parent)) {
+                return true;
+            }
+        }
+    } else if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+        if (parent.def->generic_params.size() != parent.generic_args.size()) {
+            return false;
+        }
+
+        for (unsigned i = 0; i < parent.def->generic_params.size(); i++) {
+            if (parent.def->generic_params[i] == generic_param) {
+                return is_recursive(base, parent.generic_args[i], parent);
+            }
+        }
+    }
+
+    return false;
+}
+
+} // namespace banjo::lang::sema
