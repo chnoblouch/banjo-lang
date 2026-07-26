@@ -265,7 +265,7 @@ void LargeInt::set_from(std::int64_t value) {
         magnitude = static_cast<std::uint64_t>(value);
         negative = false;
     } else {
-        magnitude = static_cast<std::uint64_t>(-(value + 1) + 1); // Prevent overflow
+        magnitude = static_cast<std::uint64_t>(-(value + 1)) + 1; // Prevent overflow
         negative = true;
     }
 }
