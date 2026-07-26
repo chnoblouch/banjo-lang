@@ -204,6 +204,8 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_bit_xor_def = &find_std_symbol({"std", "protos"}, "BitXor").as<sir::ProtoDef>();
     std_shl_def = &find_std_symbol({"std", "protos"}, "Shl").as<sir::ProtoDef>();
     std_shr_def = &find_std_symbol({"std", "protos"}, "Shr").as<sir::ProtoDef>();
+    std_neg_def = &find_std_symbol({"std", "protos"}, "Neg").as<sir::ProtoDef>();
+    std_bit_not_def = &find_std_symbol({"std", "protos"}, "BitNot").as<sir::ProtoDef>();
     std_copy_def = &find_std_symbol({"std", "protos"}, "Copy").as<sir::ProtoDef>();
 
     std_compare_def->role = sir::ProtoDef::Role::COMPARE;
@@ -218,6 +220,8 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_bit_xor_def->role = sir::ProtoDef::Role::BIT_XOR;
     std_shl_def->role = sir::ProtoDef::Role::SHL;
     std_shr_def->role = sir::ProtoDef::Role::SHR;
+    std_neg_def->role = sir::ProtoDef::Role::NEG;
+    std_bit_not_def->role = sir::ProtoDef::Role::BIT_NOT;
     std_copy_def->role = sir::ProtoDef::Role::COPY;
 
     preamble_symbols = {

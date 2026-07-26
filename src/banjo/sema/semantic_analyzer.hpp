@@ -120,6 +120,8 @@ public:
     sir::ProtoDef *std_shr_def = nullptr;
     sir::ProtoDef *std_and_def = nullptr;
     sir::ProtoDef *std_or_def = nullptr;
+    sir::ProtoDef *std_neg_def = nullptr;
+    sir::ProtoDef *std_bit_not_def = nullptr;
     sir::ProtoDef *std_copy_def = nullptr;
 
 private:

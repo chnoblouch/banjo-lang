@@ -299,3 +299,42 @@ func main() {
     bit_shr[u64](32, 3);
     bit_shr[usize](32, 3);
 }
+
+# test:subtest
+# test:output "-38,-38,-38,-38,"
+
+use std.protos.Neg;
+
+func neg[T: Neg](a: T) {
+    print_number(-a);
+    print(',');
+}
+
+func main() {
+    neg[i8](38);
+    neg[i16](38);
+    neg[i32](38);
+    neg[i64](38);
+}
+
+# test:subtest
+# test:output "-24,-24,-24,-24,232,65512,4294967272,18446744073709551592,18446744073709551592,"
+
+use std.protos.BitNot;
+
+func bit_not[T: BitNot](a: T) {
+    print_number(~a);
+    print(',');
+}
+
+func main() {
+    bit_not[i8](23);
+    bit_not[i16](23);
+    bit_not[i32](23);
+    bit_not[i64](23);
+    bit_not[u8](23);
+    bit_not[u16](23);
+    bit_not[u32](23);
+    bit_not[u64](23);
+    bit_not[usize](23);
+}

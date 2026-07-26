@@ -453,6 +453,10 @@ void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr 
 
         visit_expr(binary_expr->lhs);
         visit_expr(binary_expr->rhs);
+    } else if (auto unary_expr = std::get_if<sir::PlaceholderExpr::UnaryExpr>(&placeholder_expr.kind)) {
+        // TODO: Specialized operator overloads
+
+        visit_expr(unary_expr->value);
     } else {
         ASSERT_UNREACHABLE;
     }

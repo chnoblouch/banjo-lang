@@ -50,6 +50,14 @@ proto Shr[T] {
     func __shr__(self, ref other: T) -> T;
 }
 
+proto Neg {
+    func __neg__(self) -> self.type;
+}
+
+proto BitNot {
+    func __bitnot__(self) -> self.type;
+}
+
 proto Copy {
     pub func copy(self) -> self.type;
 }

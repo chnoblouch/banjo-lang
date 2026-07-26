@@ -107,9 +107,7 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> concrete_proto
             case Primitive::USIZE:
             case Primitive::F32:
             case Primitive::F64: return concrete_proto.generic_args[0].is_primitive_type(primitive);
-            case Primitive::BOOL:
-            case Primitive::ADDR:
-            case Primitive::VOID: return false;
+            default: return false;
         }
     } else if (Utils::is_one_of(concrete_proto.def->role, int_protos)) {
         switch (primitive) {
@@ -122,11 +120,28 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> concrete_proto
             case Primitive::U32:
             case Primitive::U64:
             case Primitive::USIZE: return concrete_proto.generic_args[0].is_primitive_type(primitive);
-            case Primitive::F32:
-            case Primitive::F64:
-            case Primitive::BOOL:
-            case Primitive::ADDR:
-            case Primitive::VOID: return false;
+            default: return false;
+        }
+    } else if (concrete_proto.def->role == ProtoDef::Role::BIT_NOT) {
+        switch (primitive) {
+            case Primitive::I8:
+            case Primitive::I16:
+            case Primitive::I32:
+            case Primitive::I64:
+            case Primitive::U8:
+            case Primitive::U16:
+            case Primitive::U32:
+            case Primitive::U64:
+            case Primitive::USIZE: return true;
+            default: return false;
+        }
+    } else if (concrete_proto.def->role == ProtoDef::Role::NEG) {
+        switch (primitive) {
+            case Primitive::I8:
+            case Primitive::I16:
+            case Primitive::I32:
+            case Primitive::I64: return true;
+            default: return false;
         }
     } else {
         return false;

@@ -589,28 +589,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
 
     if (lhs_type.is_symbol<sir::GenericParam>()) {
-        sir::ProtoDef *proto_def;
-
-        switch (binary_expr.op) {
-            case sir::BinaryOp::ADD: proto_def = analyzer.std_add_def; break;
-            case sir::BinaryOp::SUB: proto_def = analyzer.std_sub_def; break;
-            case sir::BinaryOp::MUL: proto_def = analyzer.std_mul_def; break;
-            case sir::BinaryOp::DIV: proto_def = analyzer.std_div_def; break;
-            case sir::BinaryOp::MOD: proto_def = analyzer.std_mod_def; break;
-            case sir::BinaryOp::BIT_AND: proto_def = analyzer.std_bit_and_def; break;
-            case sir::BinaryOp::BIT_OR: proto_def = analyzer.std_bit_or_def; break;
-            case sir::BinaryOp::BIT_XOR: proto_def = analyzer.std_bit_xor_def; break;
-            case sir::BinaryOp::SHL: proto_def = analyzer.std_shl_def; break;
-            case sir::BinaryOp::SHR: proto_def = analyzer.std_shr_def; break;
-            case sir::BinaryOp::EQ: proto_def = analyzer.std_compare_def; break;
-            case sir::BinaryOp::NE: proto_def = analyzer.std_compare_def; break;
-            case sir::BinaryOp::GT: proto_def = analyzer.std_order_def; break;
-            case sir::BinaryOp::LT: proto_def = analyzer.std_order_def; break;
-            case sir::BinaryOp::GE: proto_def = analyzer.std_order_def; break;
-            case sir::BinaryOp::LE: proto_def = analyzer.std_order_def; break;
-            case sir::BinaryOp::AND: proto_def = nullptr; break;
-            case sir::BinaryOp::OR: proto_def = nullptr; break;
-        }
+        sir::ProtoDef *proto_def = proto_of(binary_expr.op);
 
         sir::GenericParam *g = nullptr;
         std::span<sir::Expr> gc;
@@ -630,7 +609,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
 
         sir::Concrete<sir::ProtoDef> concrete_proto{proto_def, std::span{&rhs_type, 1}};
-        bool constraint_satisfied = sir::implements(lhs_type, concrete_proto);
+        bool constraint_satisfied = proto_def ? sir::implements(lhs_type, concrete_proto) : false;
 
         if (g) {
             g->constraint.components = gc;
@@ -731,7 +710,6 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
         std::span<sir::Expr> call_args = analyzer.create_array<sir::Expr>({binary_expr.lhs, binary_expr.rhs});
         return analyze_operator_overload_call(symbol, call_args, out_expr, concrete_struct->generic_args);
-
     } else if (!is_operator_built_in) {
         analyzer.report_generator.report_err_cannot_apply_operator(binary_expr);
         return Result::ERROR;
@@ -872,6 +850,54 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     }
 
     sir::Expr value_type = analyzer.get_resolved_type(unary_expr.value);
+
+    if (value_type.is_symbol<sir::GenericParam>()) {
+        sir::ProtoDef *proto_def = proto_of(unary_expr.op);
+
+        sir::GenericParam *g = nullptr;
+        std::span<sir::Expr> gc;
+        std::optional<sir::TypeNarrowing> type_narrowing = analyzer.scope_stack.top().type_narrowing;
+
+        // FIXME: TERRIBLE AND BROKEN HACK
+        if (type_narrowing) {
+            if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
+                if (auto generic_param = value_type.match_symbol<sir::GenericParam>()) {
+                    if (type_narrowing->generic_param == generic_param) {
+                        g = generic_param;
+                        gc = generic_param->constraint.components;
+                        generic_param->constraint.components = {new sir::Expr{type_narrowing->constraint}, 1};
+                    }
+                }
+            }
+        }
+
+        bool constraint_satisfied = proto_def ? sir::implements(value_type, {proto_def}) : false;
+
+        if (g) {
+            g->constraint.components = gc;
+        }
+
+        if (constraint_satisfied) {
+            RESULT_RETURN_ON_ERROR(ExprFinalizer{analyzer}.finalize(unary_expr.value));
+            // sir::Expr return_type = proto_def->func_decls[0].get_type().return_type;
+            
+            // HACK: Currently, all unary protos return `self.type`.
+            sir::Expr return_type = value_type;
+
+            out_expr = analyzer.create(
+                sir::PlaceholderExpr{
+                    .ast_node = nullptr,
+                    .type = return_type,
+                    .kind = sir::PlaceholderExpr::UnaryExpr{
+                        .op = unary_expr.op,
+                        .value = unary_expr.value,
+                    },
+                }
+            );
+
+            return Result::SUCCESS;
+        }
+    }
 
     if (unary_expr.op == sir::UnaryOp::ADDR) {
         ExprFinalizer(analyzer).finalize(unary_expr.value);
@@ -2503,6 +2529,42 @@ std::span<sir::Expr> ExprAnalyzer::prepend_arg(sir::Expr arg, std::span<sir::Exp
     }
 
     return result;
+}
+
+sir::ProtoDef *ExprAnalyzer::proto_of(sir::BinaryOp op) {
+    switch (op) {
+        case sir::BinaryOp::ADD: return analyzer.std_add_def;
+        case sir::BinaryOp::SUB: return analyzer.std_sub_def;
+        case sir::BinaryOp::MUL: return analyzer.std_mul_def;
+        case sir::BinaryOp::DIV: return analyzer.std_div_def;
+        case sir::BinaryOp::MOD: return analyzer.std_mod_def;
+        case sir::BinaryOp::BIT_AND: return analyzer.std_bit_and_def;
+        case sir::BinaryOp::BIT_OR: return analyzer.std_bit_or_def;
+        case sir::BinaryOp::BIT_XOR: return analyzer.std_bit_xor_def;
+        case sir::BinaryOp::SHL: return analyzer.std_shl_def;
+        case sir::BinaryOp::SHR: return analyzer.std_shr_def;
+        case sir::BinaryOp::EQ: return analyzer.std_compare_def;
+        case sir::BinaryOp::NE: return analyzer.std_compare_def;
+        case sir::BinaryOp::GT: return analyzer.std_order_def;
+        case sir::BinaryOp::LT: return analyzer.std_order_def;
+        case sir::BinaryOp::GE: return analyzer.std_order_def;
+        case sir::BinaryOp::LE: return analyzer.std_order_def;
+        case sir::BinaryOp::AND: return nullptr;
+        case sir::BinaryOp::OR: return nullptr;
+    }
+}
+
+sir::ProtoDef *ExprAnalyzer::proto_of(sir::UnaryOp op) {
+    switch (op) {
+        case sir::UnaryOp::NEG: return analyzer.std_neg_def;
+        case sir::UnaryOp::BIT_NOT: return analyzer.std_bit_not_def;
+        case sir::UnaryOp::ADDR: return nullptr;
+        case sir::UnaryOp::DEREF: return nullptr;
+        case sir::UnaryOp::NOT: return nullptr;
+        case sir::UnaryOp::REF: return nullptr;
+        case sir::UnaryOp::REF_MUT: return nullptr;
+        case sir::UnaryOp::SHARE: return nullptr;
+    }
 }
 
 ExprAnalyzer::BinaryOpType ExprAnalyzer::get_binary_op_type(sir::BinaryOp op) {

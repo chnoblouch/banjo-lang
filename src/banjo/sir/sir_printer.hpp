@@ -5,11 +5,7 @@
 
 #include <ostream>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sir {
+namespace banjo::lang::sir {
 
 class Printer {
 
@@ -121,6 +117,7 @@ public:
     void print_attrs(const Attributes &attrs);
     void print_local(const Local &local);
     void print_binary_op(const char *field_name, BinaryOp op);
+    void print_unary_op(const char *field_name, UnaryOp op);
     void print_meta_block(const MetaBlock &meta_block);
     void print_resource(const Resource &resource, bool is_sub_resource);
     void print_error(const Error &error);
@@ -129,10 +126,6 @@ public:
     void new_line();
 };
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sir
 
 #endif

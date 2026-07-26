@@ -1015,7 +1015,12 @@ struct PlaceholderExpr {
         Expr rhs;
     };
 
-    typedef std::variant<GenericMethod, BinaryExpr> Kind;
+    struct UnaryExpr {
+        UnaryOp op;
+        Expr value;
+    };
+
+    typedef std::variant<GenericMethod, BinaryExpr, UnaryExpr> Kind;
 
     ASTNode *ast_node;
     Expr type;
@@ -1317,6 +1322,8 @@ struct ProtoDef {
         SHR,
         AND,
         OR,
+        NEG,
+        BIT_NOT,
         COPY,
     };
 

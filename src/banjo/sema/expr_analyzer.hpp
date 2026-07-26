@@ -120,6 +120,8 @@ private:
     sir::Expr create_isize_cast(sir::Expr value);
     std::span<sir::Expr> prepend_arg(sir::Expr arg, std::span<sir::Expr> args);
 
+    sir::ProtoDef *proto_of(sir::BinaryOp op);
+    sir::ProtoDef *proto_of(sir::UnaryOp op);
     BinaryOpType get_binary_op_type(sir::BinaryOp op);
     bool can_be_coerced(sir::Expr value);
 

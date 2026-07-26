@@ -1176,6 +1176,13 @@ PlaceholderExpr *Cloner::clone_placeholder_expr(const PlaceholderExpr &placehold
             .lhs = clone_expr(binary_expr->lhs),
             .rhs = clone_expr(binary_expr->rhs),
         };
+    } else if (auto unary_expr = std::get_if<PlaceholderExpr::UnaryExpr>(&placeholder_expr.kind)) {
+        kind = PlaceholderExpr::UnaryExpr{
+            .op = unary_expr->op,
+            .value = clone_expr(unary_expr->value),
+        };
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
     return mod.create(

@@ -51,11 +51,7 @@
 
 #define END_OBJECT() indent--;
 
-namespace banjo {
-
-namespace lang {
-
-namespace sir {
+namespace banjo::lang::sir {
 
 Printer::Printer(std::ostream &stream) : stream(stream) {}
 
@@ -301,6 +297,8 @@ void Printer::print_proto_def(const ProtoDef &proto_def) {
         case sir::ProtoDef::Role::SHR: PRINT_FIELD("role", "SHR"); break;
         case sir::ProtoDef::Role::AND: PRINT_FIELD("role", "AND"); break;
         case sir::ProtoDef::Role::OR: PRINT_FIELD("role", "OR"); break;
+        case sir::ProtoDef::Role::NEG: PRINT_FIELD("role", "NEG"); break;
+        case sir::ProtoDef::Role::BIT_NOT: PRINT_FIELD("role", "BIT_NOT"); break;
         case sir::ProtoDef::Role::COPY: PRINT_FIELD("role", "COPY"); break;
     }
 
@@ -815,18 +813,7 @@ void Printer::print_binary_expr(const BinaryExpr &binary_expr) {
 
 void Printer::print_unary_expr(const UnaryExpr &unary_expr) {
     BEGIN_OBJECT("UnaryExpr");
-
-    switch (unary_expr.op) {
-        case UnaryOp::NEG: PRINT_FIELD("op", "NEG"); break;
-        case UnaryOp::BIT_NOT: PRINT_FIELD("op", "BIT_NOT"); break;
-        case UnaryOp::ADDR: PRINT_FIELD("op", "ADDR"); break;
-        case UnaryOp::DEREF: PRINT_FIELD("op", "DEREF"); break;
-        case UnaryOp::NOT: PRINT_FIELD("op", "NOT"); break;
-        case UnaryOp::REF: PRINT_FIELD("op", "REF"); break;
-        case UnaryOp::REF_MUT: PRINT_FIELD("op", "REF_MUT"); break;
-        case UnaryOp::SHARE: PRINT_FIELD("op", "SHARE"); break;
-    }
-
+    print_unary_op("op", unary_expr.op);
     PRINT_EXPR_FIELD("type", unary_expr.type);
     PRINT_EXPR_FIELD("value", unary_expr.value);
     END_OBJECT();
@@ -1114,6 +1101,11 @@ void Printer::print_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
         PRINT_EXPR_FIELD("lhs", binary_expr->lhs);
         PRINT_EXPR_FIELD("rhs", binary_expr->rhs);
         END_OBJECT();
+    } else if (auto unary_expr = std::get_if<PlaceholderExpr::UnaryExpr>(&placeholder_expr.kind)) {
+        BEGIN_OBJECT("UnaryExpr");
+        print_unary_op("op", unary_expr->op);
+        PRINT_EXPR_FIELD("value", unary_expr->value);
+        END_OBJECT();
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1206,6 +1198,19 @@ void Printer::print_binary_op(const char *field_name, BinaryOp op) {
     }
 }
 
+void Printer::print_unary_op(const char *field_name, UnaryOp op) {
+    switch (op) {
+        case UnaryOp::NEG: PRINT_FIELD(field_name, "NEG"); break;
+        case UnaryOp::BIT_NOT: PRINT_FIELD(field_name, "BIT_NOT"); break;
+        case UnaryOp::ADDR: PRINT_FIELD(field_name, "ADDR"); break;
+        case UnaryOp::DEREF: PRINT_FIELD(field_name, "DEREF"); break;
+        case UnaryOp::NOT: PRINT_FIELD(field_name, "NOT"); break;
+        case UnaryOp::REF: PRINT_FIELD(field_name, "REF"); break;
+        case UnaryOp::REF_MUT: PRINT_FIELD(field_name, "REF_MUT"); break;
+        case UnaryOp::SHARE: PRINT_FIELD(field_name, "SHARE"); break;
+    }
+}
+
 void Printer::print_meta_block(const MetaBlock &meta_block) {
     if (auto block = std::get_if<Block *>(&meta_block)) {
         print_block(**block);
@@ -1261,8 +1266,4 @@ std::string debugger_to_string(sir::Expr expr) {
     return stream.str();
 }
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::lang::sir

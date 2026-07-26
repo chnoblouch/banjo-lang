@@ -99,6 +99,8 @@ ExprCategory Expr::get_category() const {
             return ExprCategory::VALUE;
         } else if (std::holds_alternative<PlaceholderExpr::BinaryExpr>(placeholder_expr->kind)) {
             return ExprCategory::VALUE;
+        } else if (std::holds_alternative<PlaceholderExpr::UnaryExpr>(placeholder_expr->kind)) {
+            return ExprCategory::VALUE;
         } else {
             ASSERT_UNREACHABLE;
         }

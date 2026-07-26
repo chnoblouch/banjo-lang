@@ -406,10 +406,12 @@ StoredValue ExprSSAGenerator::generate_neg(const sir::UnaryExpr &unary_expr) {
     ssa::Value ssa_val = generate(unary_expr.value).turn_into_value(ctx).get_value();
     ssa::VirtualRegister ssa_out_reg = ctx.next_vreg();
 
-    if (unary_expr.value.get_type().is_int_type()) {
+    sir::Expr value_type = ctx.resolve_if_generic(unary_expr.value.get_type());
+
+    if (value_type.is_int_type()) {
         ssa::Value ssa_zero = ssa::Value::from_int_immediate(0, ssa_val.get_type());
         ctx.get_ssa_block()->append(ssa::Instruction(ssa::Opcode::SUB, ssa_out_reg, {ssa_zero, ssa_val}));
-    } else if (unary_expr.value.get_type().is_fp_type()) {
+    } else if (value_type.is_fp_type()) {
         ssa::Value ssa_zero = ssa::Value::from_fp_immediate(0.0, ssa_val.get_type());
         ctx.get_ssa_block()->append(ssa::Instruction(ssa::Opcode::FSUB, ssa_out_reg, {ssa_zero, ssa_val}));
     } else {
@@ -895,75 +897,141 @@ StoredValue ExprSSAGenerator::generate_placeholder_expr(
     const StorageHints &hints
 ) {
     if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr.kind)) {
-        sir::Expr generic_arg = ctx.get_generic_arg(*generic_method->param);
-        sir::Concrete<sir::StructDef> concrete_struct = generic_arg.as_concrete<sir::StructDef>();
-        std::string_view method_name = generic_method->decl->ident.value;
-        sir::FuncDef *func_def = &concrete_struct.def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
-
-        ssa::Function *ssa_func = ctx.ssa_funcs.find({func_def, concrete_struct.generic_args});
-        ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
-        return StoredValue::create_value(ssa_value);
+        return generate_generic_method(*generic_method);
     } else if (auto binary_expr = std::get_if<sir::PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
-        sir::GenericParam &generic_param = binary_expr->lhs.get_type().as_symbol<sir::GenericParam>();
-        sir::Expr generic_arg = ctx.get_generic_arg(generic_param);
-
-        if (auto struct_def = generic_arg.match_symbol<sir::StructDef>()) {
-            std::string_view method_name = sir::MagicMethods::look_up(binary_expr->op);
-            sir::FuncDef &method = struct_def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
-
-            sir::SymbolExpr callee{
-                .ast_node = nullptr,
-                .type = &method.type,
-                .symbol = &method,
-            };
-
-            sir::PointerType lhs_type{
-                .ast_node = nullptr,
-                .base_type = binary_expr->lhs.get_type(),
-            };
-
-            sir::PointerType rhs_type{
-                .ast_node = nullptr,
-                .base_type = binary_expr->rhs.get_type(),
-            };
-
-            sir::UnaryExpr lhs{
-                .ast_node = nullptr,
-                .type = &lhs_type,
-                .op = sir::UnaryOp::ADDR,
-                .value = binary_expr->lhs,
-            };
-
-            sir::UnaryExpr rhs{
-                .ast_node = nullptr,
-                .type = &rhs_type,
-                .op = sir::UnaryOp::ADDR,
-                .value = binary_expr->rhs,
-            };
-
-            std::array<sir::Expr, 2> args{&lhs, &rhs};
-
-            sir::CallExpr source_expr{
-                .ast_node = nullptr,
-                .type = placeholder_expr.type,
-                .callee = &callee,
-                .args = args,
-            };
-
-            return generate_call_expr(source_expr, hints);
-        } else {
-            sir::BinaryExpr source_expr{
-                .ast_node = nullptr,
-                .type = placeholder_expr.type,
-                .op = binary_expr->op,
-                .lhs = binary_expr->lhs,
-                .rhs = binary_expr->rhs,
-            };
-
-            return generate_binary_expr(source_expr);
-        }
+        return generate_generic_binary_expr(*binary_expr, placeholder_expr.type, hints);
+    } else if (auto unary_expr = std::get_if<sir::PlaceholderExpr::UnaryExpr>(&placeholder_expr.kind)) {
+        return generate_generic_unary_expr(*unary_expr, placeholder_expr.type, hints);
     } else {
         ASSERT_UNREACHABLE;
+    }
+}
+
+StoredValue ExprSSAGenerator::generate_generic_method(const sir::PlaceholderExpr::GenericMethod &generic_method) {
+    sir::Expr generic_arg = ctx.get_generic_arg(*generic_method.param);
+    sir::Concrete<sir::StructDef> concrete_struct = generic_arg.as_concrete<sir::StructDef>();
+    std::string_view method_name = generic_method.decl->ident.value;
+    sir::FuncDef *func_def = &concrete_struct.def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
+
+    ssa::Function *ssa_func = ctx.ssa_funcs.find({func_def, concrete_struct.generic_args});
+    ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
+    return StoredValue::create_value(ssa_value);
+}
+
+StoredValue ExprSSAGenerator::generate_generic_binary_expr(
+    const sir::PlaceholderExpr::BinaryExpr &binary_expr,
+    sir::Expr sir_type,
+    const StorageHints &hints
+) {
+    sir::GenericParam &generic_param = binary_expr.lhs.get_type().as_symbol<sir::GenericParam>();
+    sir::Expr generic_arg = ctx.get_generic_arg(generic_param);
+
+    if (auto struct_def = generic_arg.match_symbol<sir::StructDef>()) {
+        std::string_view method_name = sir::MagicMethods::look_up(binary_expr.op);
+        sir::FuncDef &method = struct_def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
+
+        sir::SymbolExpr callee{
+            .ast_node = nullptr,
+            .type = &method.type,
+            .symbol = &method,
+        };
+
+        sir::PointerType lhs_type{
+            .ast_node = nullptr,
+            .base_type = binary_expr.lhs.get_type(),
+        };
+
+        sir::PointerType rhs_type{
+            .ast_node = nullptr,
+            .base_type = binary_expr.rhs.get_type(),
+        };
+
+        sir::UnaryExpr lhs{
+            .ast_node = nullptr,
+            .type = &lhs_type,
+            .op = sir::UnaryOp::ADDR,
+            .value = binary_expr.lhs,
+        };
+
+        sir::UnaryExpr rhs{
+            .ast_node = nullptr,
+            .type = &rhs_type,
+            .op = sir::UnaryOp::ADDR,
+            .value = binary_expr.rhs,
+        };
+
+        std::array<sir::Expr, 2> args{&lhs, &rhs};
+
+        sir::CallExpr source_expr{
+            .ast_node = nullptr,
+            .type = sir_type,
+            .callee = &callee,
+            .args = args,
+        };
+
+        return generate_call_expr(source_expr, hints);
+    } else {
+        sir::BinaryExpr source_expr{
+            .ast_node = nullptr,
+            .type = sir_type,
+            .op = binary_expr.op,
+            .lhs = binary_expr.lhs,
+            .rhs = binary_expr.rhs,
+        };
+
+        return generate_binary_expr(source_expr);
+    }
+}
+
+StoredValue ExprSSAGenerator::generate_generic_unary_expr(
+    const sir::PlaceholderExpr::UnaryExpr &unary_expr,
+    sir::Expr sir_type,
+    const StorageHints &hints
+) {
+    sir::GenericParam &generic_param = unary_expr.value.get_type().as_symbol<sir::GenericParam>();
+    sir::Expr generic_arg = ctx.get_generic_arg(generic_param);
+
+    if (auto struct_def = generic_arg.match_symbol<sir::StructDef>()) {
+        std::string_view method_name = sir::MagicMethods::look_up(unary_expr.op);
+        sir::FuncDef &method = struct_def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
+
+        sir::SymbolExpr callee{
+            .ast_node = nullptr,
+            .type = &method.type,
+            .symbol = &method,
+        };
+
+        sir::PointerType value_type{
+            .ast_node = nullptr,
+            .base_type = unary_expr.value.get_type(),
+        };
+
+        sir::UnaryExpr value{
+            .ast_node = nullptr,
+            .type = &value_type,
+            .op = sir::UnaryOp::ADDR,
+            .value = unary_expr.value,
+        };
+
+        std::array<sir::Expr, 1> args{&value};
+
+        sir::CallExpr source_expr{
+            .ast_node = nullptr,
+            .type = sir_type,
+            .callee = &callee,
+            .args = args,
+        };
+
+        return generate_call_expr(source_expr, hints);
+    } else {
+        sir::UnaryExpr source_expr{
+            .ast_node = nullptr,
+            .type = sir_type,
+            .op = unary_expr.op,
+            .value = unary_expr.value,
+        };
+
+        return generate_unary_expr(source_expr);
     }
 }
 

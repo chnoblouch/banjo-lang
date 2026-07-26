@@ -1,6 +1,21 @@
 # test:common
 
-use std.protos.{Compare, Order, Add, Sub, Mul, Div, Mod, BitAnd, BitOr, BitXor, Shl, Shr};
+use std.protos.{
+    Compare,
+    Order,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    BitAnd,
+    BitOr,
+    BitXor,
+    Shl,
+    Shr,
+    Neg,
+    BitNot,
+};
 
 # test:subtest
 # test:output "true,true,true,true,true,true,true,true,true,true,true,true,true;false"
@@ -505,6 +520,50 @@ func main() {
 }
 
 # test:subtest
+# test:output "-47,-47,-47,-47"
+
+func neg[T: Neg](a: T) -> T {
+    return -a;
+}
+
+func main() {
+    print(neg(47 as i8));
+    print(',');
+    print(neg(47 as i16));
+    print(',');
+    print(neg(47 as i32));
+    print(',');
+    print(neg(47 as i64));
+}
+
+# test:subtest
+# test:output "-53,-53,-53,-53,203,65483,4294967243,18446744073709551563,18446744073709551563"
+
+func bit_not[T: BitNot](a: T) -> T {
+    return ~a;
+}
+
+func main() {
+    print(bit_not(52 as i8));
+    print(',');
+    print(bit_not(52 as i16));
+    print(',');
+    print(bit_not(52 as i32));
+    print(',');
+    print(bit_not(52 as i64));
+    print(',');
+    print(bit_not(52 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(',');
+    print(bit_not(52 as u16));
+    print(',');
+    print(bit_not(52 as u32));
+    print(',');
+    print(bit_not(52 as u64));
+    print(',');
+    print(bit_not(52 as usize));
+}
+
+# test:subtest
 # test:output "e,e,n"
 
 struct IntWrapper: Compare[IntWrapper] {
@@ -593,7 +652,7 @@ func main() {
 }
 
 # test:subtest
-# test:output "29,23,78,8,2,2,27,25,208,3"
+# test:output "29,23,78,8,2,2,27,25,208,3,-26,-27"
 
 struct IntWrapper:
     Add[IntWrapper],
@@ -606,6 +665,8 @@ struct IntWrapper:
     BitXor[IntWrapper],
     Shl[IntWrapper],
     Shr[IntWrapper],
+    Neg,
+    BitNot,
 {
     var value: i32;
 
@@ -648,6 +709,14 @@ struct IntWrapper:
     pub func __shr__(self, ref other: IntWrapper) -> IntWrapper {
         return IntWrapper { value: self.value >> other.value };
     }
+
+    pub func __neg__(self) -> IntWrapper {
+        return IntWrapper { value: -self.value };
+    }
+
+    pub func __bitnot__(self) -> IntWrapper {
+        return IntWrapper { value: ~self.value };
+    }
 }
 
 func main() {
@@ -673,6 +742,10 @@ func main() {
     print((a << b).value);
     print(',');
     print((a >> b).value);
+    print(',');
+    print((-a).value);
+    print(',');
+    print((~a).value);
 }
 
 # test:subtest
