@@ -75,8 +75,6 @@ class SemanticAnalyzer {
     friend class MetaExpansion;
     friend class MetaExprEvaluator;
     friend class DeclVisitor;
-    friend class ReportGenerator;
-    friend class ReportBuilder;
     friend class SymbolContext;
 
 public:

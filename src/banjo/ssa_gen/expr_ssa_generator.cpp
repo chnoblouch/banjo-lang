@@ -20,6 +20,7 @@
 #include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <array>
 #include <cassert>
 #include <optional>
 #include <variant>
