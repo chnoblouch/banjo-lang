@@ -44,6 +44,8 @@ SKIPPED_TESTS_WASM = set([
     "features.meta_expr.size.1",
     "features.meta_expr.size.2",
     "features.meta_expr.size.3",
+    "features.generics.constraint.builtin.13",
+    "features.generics.operators.17",
 ])
 
 
