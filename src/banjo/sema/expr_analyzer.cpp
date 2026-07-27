@@ -352,13 +352,10 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
             continue;
         }
 
-        result = analyze_value_uncoerced(entry.value);
-        if (result != Result::SUCCESS) {
-            return result;
-        }
+        RESULT_MERGE(result, analyze_value_uncoerced(entry.value));
     }
 
-    return Result::SUCCESS;
+    return result;
 }
 
 Result ExprAnalyzer::analyze_map_literal(sir::MapLiteral &map_literal, sir::Expr &out_expr) {

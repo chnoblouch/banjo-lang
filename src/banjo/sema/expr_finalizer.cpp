@@ -2,6 +2,7 @@
 
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/expr_property_analyzer.hpp"
+#include "banjo/sema/result_macros.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
@@ -966,7 +967,9 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
         for (sir::StructLiteralEntry &entry : struct_literal.entries) {
             entry.field = struct_def.find_field(entry.ident.value);
 
-            if (!entry.field) {
+            if (entry.field) {
+                analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
+            } else {
                 analyzer.report_generator.report_err_no_field(entry.ident, struct_def);
                 result = Result::ERROR;
                 continue;
@@ -988,12 +991,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
                 initialized_fields.insert({entry.field, &entry});
             }
 
-            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, field_type);
-            if (partial_result != Result::SUCCESS) {
-                result = Result::ERROR;
-            }
-
-            analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
+            RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(entry.value, field_type));
         }
 
         if (!is_layout_overlapping) {
