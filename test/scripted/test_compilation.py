@@ -305,7 +305,7 @@ def run_executable(test):
             "-sALLOW_MEMORY_GROWTH=1",
             "-sASSERTIONS",
             "-g",
-            "-sSTACK_SIZE=1MB",
+            "-sSTACK_SIZE=4MB",
         ])
 
         try:
@@ -336,6 +336,7 @@ def run_executable(test):
             "ws2_32.lib",
             "dbghelp.lib",
             "/SUBSYSTEM:CONSOLE",
+            "/STACK:4194304,4194304",
             "/OUT:test.exe",
         ])
 

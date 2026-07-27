@@ -270,6 +270,8 @@ int MSABICallingConv::get_alloca_size(mcode::StackRegions &regions) {
 }
 
 std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *func) {
+    // FIXME: Insert stack probes for large stack sizes.
+
     std::vector<mcode::Instruction> prolog;
     std::vector<long> modified_volatile_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
