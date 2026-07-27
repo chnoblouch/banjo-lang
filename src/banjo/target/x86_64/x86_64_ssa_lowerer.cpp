@@ -70,7 +70,7 @@ void X8664SSALowerer::append_mov_and_operation(
     mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
     lower_as_move(m_dst, lhs);
-    mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = !m_dst.is_stack_slot()});
+    mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = m_dst.is_register()});
     emit(mcode::Instruction(machine_opcode, {m_dst, m_rhs}));
 }
 
@@ -1015,12 +1015,12 @@ mcode::Operand X8664SSALowerer::lower_fp_imm_as_move(mcode::Operand m_dst, doubl
     mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
     mcode::Operand m_src = create_fp_const_load(value, m_dst.get_size());
 
-    if (!m_dst.is_x86_64_addr() && m_src.is_symbol_deref()) {
+    if (m_dst.is_register()) {
+        emit({m_opcode, {m_dst, m_src}});
+    } else {
         mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), m_dst.get_size());
         emit({m_opcode, {m_tmp, m_src}});
         emit({m_opcode, {m_dst, m_tmp}});
-    } else {
-        emit({m_opcode, {m_dst, m_src}});
     }
 
     return m_dst;
