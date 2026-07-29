@@ -76,7 +76,7 @@ private:
     void execute_new(const ArgumentParser::Result &args);
     void execute_build();
     void execute_run();
-    void execute_test();
+    void execute_test(const ArgumentParser::Result &args);
     void execute_invoke(const ArgumentParser::Result &args);
     void execute_lsp();
     void execute_format(const ArgumentParser::Result &args);

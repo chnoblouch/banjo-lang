@@ -112,6 +112,7 @@ static const ArgumentParser::Option OPTION_DEBUG_COMPILER{
 };
 
 static const ArgumentParser::Positional POSITIONAL_NAME{"name"};
+static const ArgumentParser::Positional POSITIONAL_TEST_NAME{"test name", true};
 static const ArgumentParser::Positional POSITIONAL_TOOL{"tool"};
 static const ArgumentParser::Positional POSITIONAL_TOOLCHAIN_TARGET{"target", true};
 static const ArgumentParser::Positional POSITIONAL_FORMAT_FILE{"file"};
@@ -169,6 +170,7 @@ static const ArgumentParser::Command COMMAND_TEST{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
+    .positional = &POSITIONAL_TEST_NAME,
 };
 
 static const ArgumentParser::Command COMMAND_INVOKE{
@@ -416,7 +418,7 @@ void CLI::run(int argc, const char *argv[]) {
     } else if (args.command == &COMMAND_RUN) {
         execute_run();
     } else if (args.command == &COMMAND_TEST) {
-        execute_test();
+        execute_test(args);
     } else if (args.command == &COMMAND_INVOKE) {
         execute_invoke(args);
     } else if (args.command == &COMMAND_LSP) {
@@ -565,7 +567,9 @@ void CLI::execute_run() {
     }
 }
 
-void CLI::execute_test() {
+void CLI::execute_test(const ArgumentParser::Result &args) {
+    const std::optional<std::string> &name = args.command_positional;
+
     load_config();
 
     extra_compiler_args.push_back("--testing");
@@ -578,7 +582,6 @@ void CLI::execute_test() {
     }
 
     invoke_linker();
-    print_empty_line();
 
     std::string tests_raw = Utils::convert_eol_to_lf(compiler_result.stdout_buffer);
     std::vector<std::string_view> tests = Utils::split_string(tests_raw, '\n');
@@ -589,6 +592,23 @@ void CLI::execute_test() {
         longest_name_length = std::max(longest_name_length, static_cast<unsigned>(test.size()));
     }
 
+    if (name) {
+        bool found = false;
+
+        for (std::string_view test : tests) {
+            if (test == *name) {
+                tests = {test};
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            error("test '" + *name + "' not found");
+        }
+    }
+
+    print_empty_line();
     std::cout << "Tests:\n";
     std::vector<std::pair<std::string_view, std::string>> failures;
 
