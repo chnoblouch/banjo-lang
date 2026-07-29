@@ -13,6 +13,38 @@
 
 namespace banjo::cli {
 
+const ToolchainProperties MSVCToolchain::PROPERTIES{
+    {"tools", "MSVC tools path"},
+    {"lib", "Windows SDK path"},
+};
+
+const ToolchainProperties MinGWToolchain::PROPERTIES{
+    {"linker_path", "Linker path"},
+    {"lib_dirs", "Library directories"},
+};
+
+const ToolchainProperties UnixToolchain::PROPERTIES{
+    {"linker_path", "Linker path"},
+    {"crt_dir", "CRT directory"},
+    {"lib_dirs", "Library directories"},
+    {"linker_args", "Linker arguments"},
+    {"additional_libraries", "Additional libraries"},
+};
+
+const ToolchainProperties MacOSToolchain::PROPERTIES{
+    {"linker_path", "Linker path"},
+    {"sysroot", "Sysroot path"},
+    {"extra_args", "Extra linker arguments"},
+};
+
+const ToolchainProperties WasmToolchain::PROPERTIES{
+    {"linker_path", "Linker path"},
+};
+
+const ToolchainProperties EmscriptenToolchain::PROPERTIES{
+    {"linker_path", "Linker path"},
+};
+
 MSVCToolchain MSVCToolchain::detect() {
     MSVCToolchain toolchain;
 
@@ -403,8 +435,8 @@ MacOSToolchain MacOSToolchain::detect() {
 JSONObject MacOSToolchain::serialize() {
     JSONObject object;
     object.add("linker_path", linker_path);
-    object.add("extra_args", JSONArray{linker_args});
     object.add("sysroot", sysroot_path);
+    object.add("extra_args", JSONArray{linker_args});
     return object;
 }
 

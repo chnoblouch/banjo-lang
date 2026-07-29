@@ -5,11 +5,16 @@
 
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace banjo::cli {
 
+typedef std::vector<std::pair<std::string_view, std::string_view>> ToolchainProperties;
+
 struct MSVCToolchain {
+    static const ToolchainProperties PROPERTIES;
+
     std::string tools_path;
     std::string lib_path;
 
@@ -31,6 +36,8 @@ private:
 };
 
 struct MinGWToolchain {
+    static const ToolchainProperties PROPERTIES;
+
     std::string linker_path;
     std::vector<std::string> lib_dirs;
 
@@ -44,6 +51,8 @@ private:
 };
 
 struct UnixToolchain {
+    static const ToolchainProperties PROPERTIES;
+
     std::string linker_path;
     std::vector<std::string> linker_args;
     std::vector<std::string> extra_libs;
@@ -62,6 +71,8 @@ private:
 };
 
 struct MacOSToolchain {
+    static const ToolchainProperties PROPERTIES;
+
     std::string linker_path;
     std::vector<std::string> linker_args;
     std::string sysroot_path;
@@ -71,6 +82,8 @@ struct MacOSToolchain {
 };
 
 struct WasmToolchain {
+    static const ToolchainProperties PROPERTIES;
+
     std::string linker_path;
 
     static WasmToolchain detect();
@@ -78,6 +91,8 @@ struct WasmToolchain {
 };
 
 struct EmscriptenToolchain {
+    static const ToolchainProperties PROPERTIES;
+
     std::string linker_path;
 
     static EmscriptenToolchain detect();

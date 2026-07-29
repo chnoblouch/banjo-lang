@@ -37,7 +37,7 @@ public:
             letter{},
             description{description} {}
 
-        Option(Type type, std::string_view name, std::string value_placeholder, std::string_view description)
+        Option(Type type, std::string_view name, std::string_view value_placeholder, std::string_view description)
           : type{type},
             name{name},
             letter{},
@@ -87,7 +87,7 @@ public:
     int argc;
     const char **argv;
     int arg_index = 1;
-    std::string name;
+    std::string_view name;
     std::vector<const Option *> options;
     std::vector<const Command *> commands;
     HashMap<const Command *, const Command *> command_parents;

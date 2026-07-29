@@ -69,6 +69,7 @@ public:
 private:
     void execute_targets();
     void execute_toolchain_list();
+    void execute_toolchain_info(const ArgumentParser::Result &args);
     void execute_toolchain_remove(const ArgumentParser::Result &args);
     void execute_version();
     void execute_new(const ArgumentParser::Result &args);
@@ -87,6 +88,7 @@ private:
     void load_manifest(const Manifest &manifest);
     void load_package(std::string_view name);
 
+    bool load_cached_toolchain();
     void set_up_toolchain();
 
     Manifest parse_manifest(const std::filesystem::path &path);

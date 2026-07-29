@@ -206,7 +206,7 @@ const ArgumentParser::Command *ArgumentParser::find_command(const Command *paren
 
 void ArgumentParser::print_help() {
     std::cout << "\n";
-    std::cout << "Usage: " + name + " [command]";
+    std::cout << "Usage: " + std::string{name} + " [command]";
 
     if (!options.empty()) {
         std::cout << " [options]";
@@ -294,7 +294,7 @@ void ArgumentParser::print_options(const std::vector<const Option *> &options) {
 
         if (has_letter_option) {
             if (option->letter) {
-                name_column = std::string("-") + *option->letter + ", ";
+                name_column = std::string{"-"} + *option->letter + ", ";
             } else {
                 name_column = "    ";
             }

@@ -201,6 +201,19 @@ static const ArgumentParser::Command COMMAND_TOOLCHAIN_LIST{
     },
 };
 
+static const ArgumentParser::Command COMMAND_TOOLCHAIN_INFO{
+    .name = "info",
+    .description = "Print information about a toolchain",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
+    },
+    .positionals{
+        &POSITIONAL_TARGET,
+    },
+};
+
 static const ArgumentParser::Command COMMAND_TOOLCHAIN_REMOVE{
     .name = "remove",
     .description = "Remove a toolchain",
@@ -216,7 +229,7 @@ static const ArgumentParser::Command COMMAND_TOOLCHAIN_REMOVE{
 
 static const ArgumentParser::Command COMMAND_TOOLCHAIN{
     .name = "toolchain",
-    .description = "Interact with system toolchains",
+    .description = "Manage system toolchains",
     .options{
         &OPTION_HELP,
         &OPTION_QUIET,
@@ -224,6 +237,7 @@ static const ArgumentParser::Command COMMAND_TOOLCHAIN{
     },
     .subcommands{
         &COMMAND_TOOLCHAIN_LIST,
+        &COMMAND_TOOLCHAIN_INFO,
         &COMMAND_TOOLCHAIN_REMOVE,
     },
 };
@@ -389,6 +403,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_targets();
     } else if (args.command == &COMMAND_TOOLCHAIN_LIST) {
         execute_toolchain_list();
+    } else if (args.command == &COMMAND_TOOLCHAIN_INFO) {
+        execute_toolchain_info(args);
     } else if (args.command == &COMMAND_TOOLCHAIN_REMOVE) {
         execute_toolchain_remove(args);
     } else if (args.command == &COMMAND_NEW) {
@@ -446,7 +462,49 @@ void CLI::execute_toolchain_list() {
 
     for (std::filesystem::path path : std::filesystem::directory_iterator(toolchains_dir)) {
         if (std::filesystem::is_regular_file(path) && path.extension() == ".json") {
-            std::cout << "  - " << path.filename().string() << "\n";
+            std::cout << "  - " << path.stem().string() << "\n";
+        }
+    }
+
+    std::cout << "\n";
+}
+
+void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
+    target = parse_target(args.command_positionals[0]);
+
+    if (!load_cached_toolchain()) {
+        error("failed to load toolchain for target '" + target.to_string() + "'");
+    }
+
+    std::cout << "\n";
+    std::cout << "Target: " << target.to_string() << "\n";
+    std::cout << "Config path: " << get_toolchain_path().string() << "\n";
+
+    const ToolchainProperties *properties = nullptr;
+
+    if (target.os == "windows") {
+        properties = target.env == "msvc" ? &MSVCToolchain::PROPERTIES : &MinGWToolchain::PROPERTIES;
+    } else if (target.os == "linux") {
+        properties = &UnixToolchain::PROPERTIES;
+    } else if (target.os == "macos") {
+        properties = &MacOSToolchain::PROPERTIES;
+    } else if (target.arch == "wasm") {
+        properties = target.os == "emscripten" ? &EmscriptenToolchain::PROPERTIES : &WasmToolchain::PROPERTIES;
+    } else {
+        return;
+    }
+
+    for (const auto &[key, name] : *properties) {
+        const JSONValue &value = toolchain.properties.get(std::string{key});
+
+        if (value.is_string()) {
+            std::cout << "\n" << name << ":\n  \"" << value.as_string() << "\"\n";
+        } else if (value.is_array()) {
+            std::cout << "\n" << name << ":\n";
+
+            for (const JSONValue &element : value.as_array()) {
+                std::cout << "  - \"" << element.as_string() << "\"\n";
+            }
         }
     }
 
@@ -454,14 +512,10 @@ void CLI::execute_toolchain_list() {
 }
 
 void CLI::execute_toolchain_remove(const ArgumentParser::Result &args) {
-    const std::string &target = args.command_positionals[0];
-    parse_target(target);
-
-    std::filesystem::path toolchains_dir = paths::toolchains_dir();
-    std::filesystem::path path = toolchains_dir / (target + ".json");
+    target = parse_target(args.command_positionals[0]);
 
     std::error_code error;
-    std::filesystem::remove(path, error);
+    std::filesystem::remove(get_toolchain_path(), error);
 }
 
 void CLI::execute_version() {
@@ -748,19 +802,7 @@ void CLI::load_config() {
 }
 
 void CLI::load_toolchain() {
-    std::filesystem::path toolchain_path = get_toolchain_path();
-
-    if (std::filesystem::exists(toolchain_path)) {
-        std::optional<std::string> toolchain_string = Utils::read_string_file(toolchain_path);
-
-        if (!toolchain_string) {
-            error("failed to load cached toolchain file for target " + target.to_string());
-        }
-
-        toolchain = Toolchain{
-            .properties = JSONParser(*toolchain_string).parse_object(),
-        };
-    } else {
+    if (!load_cached_toolchain()) {
         set_up_toolchain();
     }
 }
@@ -823,6 +865,19 @@ void CLI::load_package(std::string_view name) {
     if (std::filesystem::is_directory(target_lib_path)) {
         library_paths.push_back(target_lib_path.string());
     }
+}
+
+bool CLI::load_cached_toolchain() {
+    std::optional<std::string> toolchain_string = Utils::read_string_file(get_toolchain_path());
+    if (!toolchain_string) {
+        return false;
+    }
+
+    toolchain = Toolchain{
+        .properties = JSONParser(*toolchain_string).parse_object(),
+    };
+
+    return true;
 }
 
 void CLI::set_up_toolchain() {
