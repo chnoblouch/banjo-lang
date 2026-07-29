@@ -7,9 +7,11 @@
 #include "manifest.hpp"
 #include "process.hpp"
 #include "target.hpp"
+#include "toolchains.hpp"
 
 #include <chrono>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -19,8 +21,13 @@ namespace banjo::cli {
 class CLI {
 
 private:
-    struct Toolchain {
-        JSONObject properties;
+    enum class ToolchainKind {
+        MSVC,
+        MINGW,
+        UNIX,
+        MACOS,
+        WASM,
+        EMSCRIPTEN,
     };
 
     enum class BuildConfig {
@@ -42,7 +49,7 @@ private:
     ArgumentParser arg_parser;
 
     Target target;
-    Toolchain toolchain;
+    std::unique_ptr<Toolchain> toolchain = nullptr;
     Manifest manifest;
 
     std::optional<Target> target_override;
@@ -89,6 +96,7 @@ private:
     void load_manifest(const Manifest &manifest);
     void load_package(std::string_view name);
 
+    ToolchainKind toolchain_kind();
     bool load_cached_toolchain();
     void set_up_toolchain();
 

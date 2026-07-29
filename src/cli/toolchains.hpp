@@ -2,6 +2,7 @@
 #define BANJO_CLI_TOOLCHAINS_H
 
 #include "banjo/utils/json.hpp"
+#include "target.hpp"
 
 #include <filesystem>
 #include <string>
@@ -12,14 +13,29 @@ namespace banjo::cli {
 
 typedef std::vector<std::pair<std::string_view, std::string_view>> ToolchainProperties;
 
-struct MSVCToolchain {
+class Toolchain {
+
+public:
+    virtual ~Toolchain() = default;
+    virtual const ToolchainProperties &properties() = 0;
+    virtual JSONObject serialize() = 0;
+    virtual void remove(const Target &target) {}
+};
+
+class MSVCToolchain final : public Toolchain {
+
+private:
     static const ToolchainProperties PROPERTIES;
 
+public:
     std::string tools_path;
     std::string lib_path;
 
     static MSVCToolchain detect();
-    JSONObject serialize();
+    static MSVCToolchain deserialize(JSONObject &object);
+
+    const ToolchainProperties &properties() override { return PROPERTIES; }
+    JSONObject serialize() override;
 
 private:
     void find_msvc();
@@ -35,14 +51,20 @@ private:
     std::optional<std::string> get_max_version(const std::vector<std::string> &versions, unsigned num_components);
 };
 
-struct MinGWToolchain {
+class MinGWToolchain final : public Toolchain {
+
+private:
     static const ToolchainProperties PROPERTIES;
 
+public:
     std::string linker_path;
     std::vector<std::string> lib_dirs;
 
     static MinGWToolchain detect();
-    JSONObject serialize();
+    static MinGWToolchain deserialize(JSONObject &object);
+
+    const ToolchainProperties &properties() override { return PROPERTIES; }
+    JSONObject serialize() override;
 
 private:
     void find_linker();
@@ -50,9 +72,12 @@ private:
     std::filesystem::path find_c_compiler();
 };
 
-struct UnixToolchain {
+class UnixToolchain final : public Toolchain {
+
+private:
     static const ToolchainProperties PROPERTIES;
 
+public:
     std::string linker_path;
     std::vector<std::string> linker_args;
     std::vector<std::string> extra_libs;
@@ -61,43 +86,71 @@ struct UnixToolchain {
 
     static UnixToolchain detect();
     static UnixToolchain install(std::string arch);
-    JSONObject serialize();
+    static UnixToolchain deserialize(JSONObject &object);
+
+    const ToolchainProperties &properties() override { return PROPERTIES; }
+    JSONObject serialize() override;
+    void remove(const Target &target) override;
 
 private:
     void find_linker();
     void find_lib_dirs();
     void find_crt_dir();
     std::filesystem::path find_c_compiler();
+
+    static std::filesystem::path cross_sysroot_path(const std::string &arch);
 };
 
-struct MacOSToolchain {
+class MacOSToolchain final : public Toolchain {
+
+private:
     static const ToolchainProperties PROPERTIES;
 
+public:
     std::string linker_path;
     std::vector<std::string> linker_args;
     std::string sysroot_path;
 
     static MacOSToolchain detect();
     static MacOSToolchain install();
-    JSONObject serialize();
+    static MacOSToolchain deserialize(JSONObject &object);
+
+    const ToolchainProperties &properties() override { return PROPERTIES; }
+    JSONObject serialize() override;
+    void remove(const Target &target) override;
+
+private:
+    static std::filesystem::path cross_sysroot_path();
 };
 
-struct WasmToolchain {
+class WasmToolchain final : public Toolchain {
+
+private:
     static const ToolchainProperties PROPERTIES;
 
+public:
     std::string linker_path;
 
     static WasmToolchain detect();
-    JSONObject serialize();
+    static WasmToolchain deserialize(JSONObject &object);
+
+    const ToolchainProperties &properties() override { return PROPERTIES; }
+    JSONObject serialize() override;
 };
 
-struct EmscriptenToolchain {
+class EmscriptenToolchain final : public Toolchain {
+
+private:
     static const ToolchainProperties PROPERTIES;
 
+public:
     std::string linker_path;
 
     static EmscriptenToolchain detect();
-    JSONObject serialize();
+    static EmscriptenToolchain deserialize(JSONObject &object);
+
+    const ToolchainProperties &properties() override { return PROPERTIES; }
+    JSONObject serialize() override;
 };
 
 std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output);

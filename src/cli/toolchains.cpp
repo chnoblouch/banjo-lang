@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <system_error>
 #include <utility>
 
 namespace banjo::cli {
@@ -236,6 +237,13 @@ std::optional<std::string> MSVCToolchain::get_max_version(
     return std::string(parsed_versions.back().first);
 }
 
+MSVCToolchain MSVCToolchain::deserialize(JSONObject &object) {
+    MSVCToolchain toolchain;
+    toolchain.tools_path = object.get_string("tools");
+    toolchain.lib_path = object.get_string("lib");
+    return toolchain;
+}
+
 JSONObject MSVCToolchain::serialize() {
     JSONObject object;
     object.add("tools", tools_path);
@@ -288,6 +296,13 @@ std::filesystem::path MinGWToolchain::find_c_compiler() {
     error("failed to find mingw c compiler");
 }
 
+MinGWToolchain MinGWToolchain::deserialize(JSONObject &object) {
+    MinGWToolchain toolchain;
+    toolchain.linker_path = object.get_string("linker_path");
+    toolchain.lib_dirs = object.get_string_array("lib_dirs");
+    return toolchain;
+}
+
 JSONObject MinGWToolchain::serialize() {
     JSONObject object;
     object.add("linker_path", linker_path);
@@ -311,7 +326,7 @@ UnixToolchain UnixToolchain::install(std::string arch) {
     toolchain.find_linker();
 
     std::filesystem::path toolchains_dir = paths::toolchains_dir();
-    std::filesystem::path sysroot_dir = toolchains_dir / ("sysroot-" + arch + "-linux-gnu");
+    std::filesystem::path sysroot_dir = cross_sysroot_path(arch);
 
     if (std::filesystem::exists(sysroot_dir)) {
         print_step("  Using existing Linux sysroot");
@@ -390,6 +405,20 @@ std::filesystem::path UnixToolchain::find_c_compiler() {
     error("failed to find system c compiler");
 }
 
+std::filesystem::path UnixToolchain::cross_sysroot_path(const std::string &arch) {
+    return paths::toolchains_dir() / ("sysroot-" + arch + "-linux-gnu");
+}
+
+UnixToolchain UnixToolchain::deserialize(JSONObject &object) {
+    UnixToolchain toolchain;
+    toolchain.linker_path = object.get_string("linker_path");
+    toolchain.linker_args = object.get_string_array("linker_args");
+    toolchain.extra_libs = object.get_string_array("additional_libraries");
+    toolchain.lib_dirs = object.get_string_array("lib_dirs");
+    toolchain.crt_dir = object.get_string("crt_dir");
+    return toolchain;
+}
+
 JSONObject UnixToolchain::serialize() {
     JSONObject object;
     object.add("linker_path", linker_path);
@@ -398,6 +427,11 @@ JSONObject UnixToolchain::serialize() {
     object.add("lib_dirs", JSONArray{lib_dirs});
     object.add("crt_dir", crt_dir);
     return object;
+}
+
+void UnixToolchain::remove(const Target &target) {
+    std::error_code error_code;
+    std::filesystem::remove_all(cross_sysroot_path(target.arch), error_code);
 }
 
 MacOSToolchain MacOSToolchain::detect() {
@@ -445,7 +479,7 @@ MacOSToolchain MacOSToolchain::install() {
     }
 
     std::filesystem::path toolchains_dir = paths::toolchains_dir();
-    std::filesystem::path sysroot_dir = toolchains_dir / ("sysroot-aarch64-macos");
+    std::filesystem::path sysroot_dir = cross_sysroot_path();
 
     if (std::filesystem::exists(sysroot_dir)) {
         print_step("  Using existing macOS sysroot");
@@ -458,12 +492,29 @@ MacOSToolchain MacOSToolchain::install() {
     return toolchain;
 }
 
+std::filesystem::path MacOSToolchain::cross_sysroot_path() {
+    return paths::toolchains_dir() / ("sysroot-aarch64-macos");
+}
+
+MacOSToolchain MacOSToolchain::deserialize(JSONObject &object) {
+    MacOSToolchain toolchain;
+    toolchain.linker_path = object.get_string("linker_path");
+    toolchain.sysroot_path = object.get_string("sysroot");
+    toolchain.linker_args = object.get_string_array("extra_args");
+    return toolchain;
+}
+
 JSONObject MacOSToolchain::serialize() {
     JSONObject object;
     object.add("linker_path", linker_path);
     object.add("sysroot", sysroot_path);
     object.add("extra_args", JSONArray{linker_args});
     return object;
+}
+
+void MacOSToolchain::remove(const Target & /* target */) {
+    std::error_code error_code;
+    std::filesystem::remove_all(cross_sysroot_path(), error_code);
 }
 
 WasmToolchain WasmToolchain::detect() {
@@ -479,6 +530,12 @@ WasmToolchain WasmToolchain::detect() {
     print_step("  Found WebAssembly linker: " + wasm_ld_path->string());
     toolchain.linker_path = wasm_ld_path->string();
 
+    return toolchain;
+}
+
+WasmToolchain WasmToolchain::deserialize(JSONObject &object) {
+    WasmToolchain toolchain;
+    toolchain.linker_path = object.get_string("linker_path");
     return toolchain;
 }
 
@@ -501,6 +558,12 @@ EmscriptenToolchain EmscriptenToolchain::detect() {
     print_step("  Found Emscripten linker: " + emcc_path->string());
     toolchain.linker_path = emcc_path->string();
 
+    return toolchain;
+}
+
+EmscriptenToolchain EmscriptenToolchain::deserialize(JSONObject &object) {
+    EmscriptenToolchain toolchain;
+    toolchain.linker_path = object.get_string("linker_path");
     return toolchain;
 }
 

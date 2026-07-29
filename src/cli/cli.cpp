@@ -20,6 +20,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string_view>
 #include <system_error>
@@ -484,22 +485,11 @@ void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
     std::cout << "Target: " << target.to_string() << "\n";
     std::cout << "Config path: " << get_toolchain_path().string() << "\n";
 
-    const ToolchainProperties *properties = nullptr;
+    const ToolchainProperties &properties = toolchain->properties();
+    JSONObject serialized = toolchain->serialize();
 
-    if (target.os == "windows") {
-        properties = target.env == "msvc" ? &MSVCToolchain::PROPERTIES : &MinGWToolchain::PROPERTIES;
-    } else if (target.os == "linux") {
-        properties = &UnixToolchain::PROPERTIES;
-    } else if (target.os == "macos") {
-        properties = &MacOSToolchain::PROPERTIES;
-    } else if (target.arch == "wasm") {
-        properties = target.os == "emscripten" ? &EmscriptenToolchain::PROPERTIES : &WasmToolchain::PROPERTIES;
-    } else {
-        return;
-    }
-
-    for (const auto &[key, name] : *properties) {
-        const JSONValue &value = toolchain.properties.get(std::string{key});
+    for (const auto &[key, name] : properties) {
+        const JSONValue &value = serialized.get(std::string{key});
 
         if (value.is_string()) {
             std::cout << "\n" << name << ":\n  \"" << value.as_string() << "\"\n";
@@ -522,6 +512,12 @@ void CLI::execute_toolchain_setup(const ArgumentParser::Result &args) {
 
 void CLI::execute_toolchain_remove(const ArgumentParser::Result &args) {
     target = args.command_positional ? parse_target(*args.command_positional) : Target::host();
+
+    if (!load_cached_toolchain()) {
+        return;
+    }
+
+    toolchain->remove(target);
 
     std::error_code error;
     std::filesystem::remove(get_toolchain_path(), error);
@@ -884,15 +880,60 @@ void CLI::load_package(std::string_view name) {
     }
 }
 
+CLI::ToolchainKind CLI::toolchain_kind() {
+    if (target.os == "windows") {
+        if (target.env == "msvc") {
+            return ToolchainKind::MSVC;
+        } else if (target.env == "gnu") {
+            return ToolchainKind::MINGW;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else if (target.os == "linux") {
+        return ToolchainKind::UNIX;
+    } else if (target.os == "macos") {
+        return ToolchainKind::MACOS;
+    } else if (target.arch == "wasm") {
+        if (target.os == "emscripten") {
+            return ToolchainKind::EMSCRIPTEN;
+        } else if (target.os == "unknown") {
+            return ToolchainKind::WASM;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
 bool CLI::load_cached_toolchain() {
     std::optional<std::string> toolchain_string = Utils::read_string_file(get_toolchain_path());
     if (!toolchain_string) {
         return false;
     }
 
-    toolchain = Toolchain{
-        .properties = JSONParser(*toolchain_string).parse_object(),
-    };
+    JSONObject serialized = JSONParser(*toolchain_string).parse_object();
+
+    switch (toolchain_kind()) {
+        case ToolchainKind::MSVC:
+            toolchain = std::make_unique<MSVCToolchain>(MSVCToolchain::deserialize(serialized));
+            break;
+        case ToolchainKind::MINGW:
+            toolchain = std::make_unique<MinGWToolchain>(MinGWToolchain::deserialize(serialized));
+            break;
+        case ToolchainKind::UNIX:
+            toolchain = std::make_unique<UnixToolchain>(UnixToolchain::deserialize(serialized));
+            break;
+        case ToolchainKind::MACOS:
+            toolchain = std::make_unique<MacOSToolchain>(MacOSToolchain::deserialize(serialized));
+            break;
+        case ToolchainKind::EMSCRIPTEN:
+            toolchain = std::make_unique<EmscriptenToolchain>(EmscriptenToolchain::deserialize(serialized));
+            break;
+        case ToolchainKind::WASM:
+            toolchain = std::make_unique<WasmToolchain>(WasmToolchain::deserialize(serialized));
+            break;
+    }
 
     return true;
 }
@@ -902,34 +943,28 @@ void CLI::set_up_toolchain() {
 
     print_step("Setting up toolchain for target " + target.to_string());
 
-    Target host = Target::host();
+    ToolchainKind kind = toolchain_kind();
 
-    if (target.os == "windows") {
-        if (target.env == "msvc") {
-            toolchain.properties = MSVCToolchain::detect().serialize();
-        } else if (target.env == "gnu") {
-            toolchain.properties = MinGWToolchain::detect().serialize();
+    if (kind == ToolchainKind::MSVC) {
+        toolchain = std::make_unique<MSVCToolchain>(MSVCToolchain::detect());
+    } else if (kind == ToolchainKind::MINGW) {
+        toolchain = std::make_unique<MinGWToolchain>(MinGWToolchain::detect());
+    } else if (kind == ToolchainKind::UNIX) {
+        if (Target::host().os == target.os) {
+            toolchain = std::make_unique<UnixToolchain>(UnixToolchain::detect());
         } else {
-            ASSERT_UNREACHABLE;
+            toolchain = std::make_unique<UnixToolchain>(UnixToolchain::install(target.arch));
         }
-    } else if (target.os == "linux") {
-        if (host.os == "linux") {
-            toolchain.properties = UnixToolchain::detect().serialize();
+    } else if (kind == ToolchainKind::MACOS) {
+        if (Target::host().os == target.os) {
+            toolchain = std::make_unique<MacOSToolchain>(MacOSToolchain::detect());
         } else {
-            toolchain.properties = UnixToolchain::install(target.arch).serialize();
+            toolchain = std::make_unique<MacOSToolchain>(MacOSToolchain::install());
         }
-    } else if (target.os == "macos") {
-        if (host.os == "macos") {
-            toolchain.properties = MacOSToolchain::detect().serialize();
-        } else {
-            toolchain.properties = MacOSToolchain::install().serialize();
-        }
-    } else if (target.arch == "wasm") {
-        if (target.os == "emscripten") {
-            toolchain.properties = EmscriptenToolchain::detect().serialize();
-        } else {
-            toolchain.properties = WasmToolchain::detect().serialize();
-        }
+    } else if (kind == ToolchainKind::EMSCRIPTEN) {
+        toolchain = std::make_unique<EmscriptenToolchain>(EmscriptenToolchain::detect());
+    } else if (kind == ToolchainKind::WASM) {
+        toolchain = std::make_unique<WasmToolchain>(WasmToolchain::detect());
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -940,7 +975,7 @@ void CLI::set_up_toolchain() {
     std::filesystem::create_directories(toolchain_path.parent_path());
 
     std::ofstream toolchain_stream(toolchain_path, std::ios::binary);
-    JSONSerializer(toolchain_stream).serialize(toolchain.properties);
+    JSONSerializer(toolchain_stream).serialize(toolchain->serialize());
 }
 
 Manifest CLI::parse_manifest(const std::filesystem::path &path) {
@@ -1293,8 +1328,10 @@ void CLI::invoke_linker() {
 }
 
 void CLI::invoke_msvc_linker() {
-    std::filesystem::path msvc_tools_root_path(toolchain.properties.get_string("tools"));
-    std::filesystem::path msvc_lib_root_path(toolchain.properties.get_string("lib"));
+    MSVCToolchain &toolchain = *static_cast<MSVCToolchain *>(this->toolchain.get());
+
+    std::filesystem::path msvc_tools_root_path(toolchain.tools_path);
+    std::filesystem::path msvc_lib_root_path(toolchain.lib_path);
 
     std::filesystem::path msvc_tools_path = msvc_tools_root_path / "bin" / "Hostx64" / "x64";
     std::filesystem::path msvc_lib_path = msvc_tools_root_path / "lib" / "x64";
@@ -1348,8 +1385,10 @@ void CLI::invoke_msvc_linker() {
 }
 
 void CLI::invoke_mingw_linker() {
-    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
-    std::vector<std::string> lib_dirs = toolchain.properties.get_string_array("lib_dirs");
+    MinGWToolchain &toolchain = *static_cast<MinGWToolchain *>(this->toolchain.get());
+
+    std::filesystem::path linker_path(toolchain.linker_path);
+    std::vector<std::string> lib_dirs = toolchain.lib_dirs;
 
     std::vector<std::string> args;
     args.push_back("output.o");
@@ -1399,11 +1438,13 @@ void CLI::invoke_mingw_linker() {
 }
 
 void CLI::invoke_unix_linker() {
-    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
-    std::vector<std::string> linker_args = toolchain.properties.get_string_array("linker_args");
-    std::vector<std::string> additional_libraries = toolchain.properties.get_string_array("additional_libraries");
-    std::vector<std::string> lib_dirs = toolchain.properties.get_string_array("lib_dirs");
-    std::filesystem::path crt_dir(toolchain.properties.get_string("crt_dir"));
+    UnixToolchain &toolchain = *static_cast<UnixToolchain *>(this->toolchain.get());
+
+    std::filesystem::path linker_path(toolchain.linker_path);
+    std::vector<std::string> &linker_args = toolchain.linker_args;
+    std::vector<std::string> &additional_libraries = toolchain.extra_libs;
+    std::vector<std::string> &lib_dirs = toolchain.lib_dirs;
+    std::filesystem::path crt_dir(toolchain.crt_dir);
 
     std::vector<std::string> args;
     args.insert(args.end(), linker_args.begin(), linker_args.end());
@@ -1470,9 +1511,11 @@ void CLI::invoke_unix_linker() {
 }
 
 void CLI::invoke_darwin_linker() {
-    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
-    std::vector<std::string> linker_args = toolchain.properties.get_string_array("extra_args");
-    std::filesystem::path sysroot_path(toolchain.properties.get_string("sysroot"));
+    MacOSToolchain &toolchain = *static_cast<MacOSToolchain *>(this->toolchain.get());
+
+    std::filesystem::path linker_path(toolchain.linker_path);
+    std::vector<std::string> &linker_args = toolchain.linker_args;
+    std::filesystem::path sysroot_path(toolchain.sysroot_path);
 
     std::vector<std::string> args;
     args.insert(args.end(), linker_args.begin(), linker_args.end());
@@ -1524,7 +1567,9 @@ void CLI::invoke_darwin_linker() {
 }
 
 void CLI::invoke_wasm_linker() {
-    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
+    WasmToolchain &toolchain = *static_cast<WasmToolchain *>(this->toolchain.get());
+
+    std::filesystem::path linker_path(toolchain.linker_path);
 
     std::vector<std::string> args;
     args.push_back("output.o");
@@ -1557,7 +1602,9 @@ void CLI::invoke_wasm_linker() {
 }
 
 void CLI::invoke_emscripten_linker() {
-    std::filesystem::path linker_path(toolchain.properties.get_string("linker_path"));
+    EmscriptenToolchain &toolchain = *static_cast<EmscriptenToolchain *>(this->toolchain.get());
+
+    std::filesystem::path linker_path(toolchain.linker_path);
 
     std::vector<std::string> args;
     args.push_back("output.o");
