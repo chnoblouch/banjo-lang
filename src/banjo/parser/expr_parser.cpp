@@ -275,11 +275,11 @@ ParseResult ExprParser::parse_int_literal() {
         base = 10;
     }
 
-    if (value.size() != 0) {
-        while (value[0] == '0') {
-            value = value.substr(1);
-        }
-    } else {
+    while (value.size() > 1 && value[0] == '0') {
+        value = value.substr(1);
+    }
+
+    if (value.size() == 0) {
         parser.report_generator.report_err_invalid_int_literal(parser.file, *stream.get());
         valid = false;
     }
