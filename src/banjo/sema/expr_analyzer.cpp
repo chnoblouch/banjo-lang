@@ -334,7 +334,7 @@ Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) 
 }
 
 Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) {
-    Result result;
+    Result result = Result::SUCCESS;
 
     if (struct_literal.type) {
         result = analyze_type(struct_literal.type);
