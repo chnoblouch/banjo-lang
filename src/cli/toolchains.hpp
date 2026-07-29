@@ -78,6 +78,7 @@ struct MacOSToolchain {
     std::string sysroot_path;
 
     static MacOSToolchain detect();
+    static MacOSToolchain install();
     JSONObject serialize();
 };
 

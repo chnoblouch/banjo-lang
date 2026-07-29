@@ -919,7 +919,11 @@ void CLI::set_up_toolchain() {
             toolchain.properties = UnixToolchain::install(target.arch).serialize();
         }
     } else if (target.os == "macos") {
-        toolchain.properties = MacOSToolchain::detect().serialize();
+        if (host.os == "macos") {
+            toolchain.properties = MacOSToolchain::detect().serialize();
+        } else {
+            toolchain.properties = MacOSToolchain::install().serialize();
+        }
     } else if (target.arch == "wasm") {
         if (target.os == "emscripten") {
             toolchain.properties = EmscriptenToolchain::detect().serialize();

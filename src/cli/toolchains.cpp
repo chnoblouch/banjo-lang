@@ -306,6 +306,27 @@ UnixToolchain UnixToolchain::detect() {
     return toolchain;
 }
 
+UnixToolchain UnixToolchain::install(std::string arch) {
+    UnixToolchain toolchain;
+    toolchain.find_linker();
+
+    std::filesystem::path toolchains_dir = paths::toolchains_dir();
+    std::filesystem::path sysroot_dir = toolchains_dir / ("sysroot-" + arch + "-linux-gnu");
+
+    if (std::filesystem::exists(sysroot_dir)) {
+        print_step("  Using existing Linux sysroot");
+    } else {
+        print_step("  Installing Linux sysroot...");
+        run_utility_script("install_sysroot_linux.py", {std::move(arch), toolchains_dir.string()});
+    }
+
+    toolchain.lib_dirs = {sysroot_dir.string()};
+    toolchain.crt_dir = {sysroot_dir.string()};
+    toolchain.extra_libs = {"c_nonshared", "gcc"};
+
+    return toolchain;
+}
+
 void UnixToolchain::find_linker() {
     std::optional<std::filesystem::path> lld_path = find_tool("lld");
     if (lld_path) {
@@ -369,27 +390,6 @@ std::filesystem::path UnixToolchain::find_c_compiler() {
     error("failed to find system c compiler");
 }
 
-UnixToolchain UnixToolchain::install(std::string arch) {
-    UnixToolchain toolchain;
-    toolchain.find_linker();
-
-    std::filesystem::path toolchains_dir = paths::toolchains_dir();
-    std::filesystem::path toolchain_dir = toolchains_dir / ("sysroot-" + arch + "-linux-gnu");
-
-    if (std::filesystem::exists(toolchain_dir)) {
-        print_step("  Using existing Linux sysroot");
-    } else {
-        print_step("  Installing Linux sysroot...");
-        run_utility_script("install_sysroot_linux.py", {std::move(arch), toolchains_dir.string()});
-    }
-
-    toolchain.lib_dirs = {toolchain_dir.string()};
-    toolchain.crt_dir = {toolchain_dir.string()};
-    toolchain.extra_libs = {"c_nonshared", "gcc"};
-
-    return toolchain;
-}
-
 JSONObject UnixToolchain::serialize() {
     JSONObject object;
     object.add("linker_path", linker_path);
@@ -429,6 +429,32 @@ MacOSToolchain MacOSToolchain::detect() {
     print_step("  Found macOS SDK: " + sysroot_path.string());
     toolchain.sysroot_path = sysroot_path.string();
 
+    return toolchain;
+}
+
+MacOSToolchain MacOSToolchain::install() {
+    MacOSToolchain toolchain;
+
+    if (std::optional<std::filesystem::path> lld_path = find_tool("lld")) {
+        print_step("  Found LLD: " + lld_path->string());
+
+        toolchain.linker_path = lld_path->string();
+        toolchain.linker_args = {"-flavor", "darwin"};
+    } else {
+        error("failed to find system linker");
+    }
+
+    std::filesystem::path toolchains_dir = paths::toolchains_dir();
+    std::filesystem::path sysroot_dir = toolchains_dir / ("sysroot-aarch64-macos");
+
+    if (std::filesystem::exists(sysroot_dir)) {
+        print_step("  Using existing macOS sysroot");
+    } else {
+        print_step("  Installing macOS sysroot...");
+        run_utility_script("install_sysroot_macos.py", {toolchains_dir.string()});
+    }
+
+    toolchain.sysroot_path = sysroot_dir.string();
     return toolchain;
 }
 
