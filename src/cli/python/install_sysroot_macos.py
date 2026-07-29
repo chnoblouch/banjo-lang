@@ -7,13 +7,13 @@ import urllib.request
 from pathlib import Path
 
 
-BASE_URL = "https://banjo-storage.s3.amazonaws.com"
+BASE_URL = "https://marinohimself.ch/banjo/storage"
 PRETTY = True
 
 
 def install_sysroot(destination):
     sysroot_name = f"sysroot-aarch64-macos"
-    spec_file_name = f"sysroot_macos.json"
+    spec_file_name = f"sysroot-macos-api.json"
 
     print(f"    Downloading {spec_file_name}...")
 
@@ -117,6 +117,5 @@ if __name__ == "__main__":
 
     try:
         install_sysroot(sys.argv[1])
-    except Exception as e:
-        print(e)
+    except Exception:
         sys.exit(1)

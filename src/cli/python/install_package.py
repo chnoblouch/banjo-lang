@@ -4,7 +4,7 @@ import io
 import urllib.request
 
 
-BASE_URL = "https://banjo-storage.s3.amazonaws.com"
+BASE_URL = "https://marinohimself.ch/banjo/package"
 
 
 def install_package(package, destination):
