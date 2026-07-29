@@ -113,7 +113,7 @@ static const ArgumentParser::Option OPTION_DEBUG_COMPILER{
 
 static const ArgumentParser::Positional POSITIONAL_NAME{"name"};
 static const ArgumentParser::Positional POSITIONAL_TOOL{"tool"};
-static const ArgumentParser::Positional POSITIONAL_TARGET{"target"};
+static const ArgumentParser::Positional POSITIONAL_TOOLCHAIN_TARGET{"target", true};
 static const ArgumentParser::Positional POSITIONAL_FORMAT_FILE{"file"};
 static const ArgumentParser::Positional POSITIONAL_BINDGEN_SOURCE{"file"};
 
@@ -123,9 +123,7 @@ static const ArgumentParser::Command COMMAND_NEW{
     .options{
         &OPTION_HELP,
     },
-    .positionals{
-        &POSITIONAL_NAME,
-    },
+    .positional = &POSITIONAL_NAME,
 };
 
 static const ArgumentParser::Command COMMAND_BUILD{
@@ -186,9 +184,7 @@ static const ArgumentParser::Command COMMAND_INVOKE{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
-    .positionals{
-        &POSITIONAL_TOOL,
-    },
+    .positional = &POSITIONAL_TOOL,
 };
 
 static const ArgumentParser::Command COMMAND_TOOLCHAIN_LIST{
@@ -209,9 +205,18 @@ static const ArgumentParser::Command COMMAND_TOOLCHAIN_INFO{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
-    .positionals{
-        &POSITIONAL_TARGET,
+    .positional = &POSITIONAL_TOOLCHAIN_TARGET,
+};
+
+static const ArgumentParser::Command COMMAND_TOOLCHAIN_SETUP{
+    .name = "setup",
+    .description = "Set up a toolchain by scanning the system for tools and downloading required libraries",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
+    .positional = &POSITIONAL_TOOLCHAIN_TARGET,
 };
 
 static const ArgumentParser::Command COMMAND_TOOLCHAIN_REMOVE{
@@ -222,9 +227,7 @@ static const ArgumentParser::Command COMMAND_TOOLCHAIN_REMOVE{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
-    .positionals{
-        &POSITIONAL_TARGET,
-    },
+    .positional = &POSITIONAL_TOOLCHAIN_TARGET,
 };
 
 static const ArgumentParser::Command COMMAND_TOOLCHAIN{
@@ -238,6 +241,7 @@ static const ArgumentParser::Command COMMAND_TOOLCHAIN{
     .subcommands{
         &COMMAND_TOOLCHAIN_LIST,
         &COMMAND_TOOLCHAIN_INFO,
+        &COMMAND_TOOLCHAIN_SETUP,
         &COMMAND_TOOLCHAIN_REMOVE,
     },
 };
@@ -271,9 +275,7 @@ static const ArgumentParser::Command COMMAND_FORMAT{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
-    .positionals{
-        &POSITIONAL_FORMAT_FILE,
-    }
+    .positional = &POSITIONAL_FORMAT_FILE,
 };
 
 static const ArgumentParser::Command COMMAND_BINDGEN{
@@ -286,9 +288,7 @@ static const ArgumentParser::Command COMMAND_BINDGEN{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
-    .positionals{
-        &POSITIONAL_BINDGEN_SOURCE,
-    },
+    .positional = &POSITIONAL_BINDGEN_SOURCE,
 };
 
 static const ArgumentParser::Command COMMAND_HELP{
@@ -405,6 +405,8 @@ void CLI::run(int argc, const char *argv[]) {
         execute_toolchain_list();
     } else if (args.command == &COMMAND_TOOLCHAIN_INFO) {
         execute_toolchain_info(args);
+    } else if (args.command == &COMMAND_TOOLCHAIN_SETUP) {
+        execute_toolchain_setup(args);
     } else if (args.command == &COMMAND_TOOLCHAIN_REMOVE) {
         execute_toolchain_remove(args);
     } else if (args.command == &COMMAND_NEW) {
@@ -470,7 +472,7 @@ void CLI::execute_toolchain_list() {
 }
 
 void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
-    target = parse_target(args.command_positionals[0]);
+    target = args.command_positional ? parse_target(*args.command_positional) : Target::host();
 
     if (!load_cached_toolchain()) {
         error("failed to load toolchain for target '" + target.to_string() + "'");
@@ -511,8 +513,13 @@ void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
     std::cout << "\n";
 }
 
+void CLI::execute_toolchain_setup(const ArgumentParser::Result &args) {
+    target = args.command_positional ? parse_target(*args.command_positional) : Target::host();
+    set_up_toolchain();
+}
+
 void CLI::execute_toolchain_remove(const ArgumentParser::Result &args) {
-    target = parse_target(args.command_positionals[0]);
+    target = args.command_positional ? parse_target(*args.command_positional) : Target::host();
 
     std::error_code error;
     std::filesystem::remove(get_toolchain_path(), error);
@@ -523,12 +530,7 @@ void CLI::execute_version() {
 }
 
 void CLI::execute_new(const ArgumentParser::Result &args) {
-    if (args.command_positionals.empty()) {
-        error("missing positional argument 'new'");
-        return;
-    }
-
-    const std::string &name = args.command_positionals[0];
+    const std::string &name = *args.command_positional;
     std::filesystem::path package_path = name;
     std::filesystem::path src_path = package_path / "src";
     std::filesystem::path main_path = src_path / "main.bnj";
@@ -642,12 +644,7 @@ void CLI::execute_test() {
 }
 
 void CLI::execute_invoke(const ArgumentParser::Result &args) {
-    if (args.command_positionals.empty()) {
-        error("missing positional argument 'tool'");
-        return;
-    }
-
-    const std::string &tool = args.command_positionals[0];
+    const std::string &tool = *args.command_positional;
 
     if (tool == "compiler") {
         load_config();
@@ -683,7 +680,7 @@ void CLI::execute_lsp() {
 }
 
 void CLI::execute_format(const ArgumentParser::Result &args) {
-    std::string path = args.command_positionals[0];
+    std::string path = *args.command_positional;
 
     if (!std::filesystem::is_regular_file(path)) {
         error("source file '" + path + "' not found");
@@ -772,7 +769,7 @@ void CLI::execute_bindgen(const ArgumentParser::Result &args) {
         }
     }
 
-    bindgen_args.push_back(args.command_positionals[0]);
+    bindgen_args.push_back(*args.command_positional);
 
     Command bindgen_command{
         .executable = python_path.string(),

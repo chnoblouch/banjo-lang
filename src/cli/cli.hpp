@@ -70,6 +70,7 @@ private:
     void execute_targets();
     void execute_toolchain_list();
     void execute_toolchain_info(const ArgumentParser::Result &args);
+    void execute_toolchain_setup(const ArgumentParser::Result &args);
     void execute_toolchain_remove(const ArgumentParser::Result &args);
     void execute_version();
     void execute_new(const ArgumentParser::Result &args);

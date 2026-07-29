@@ -60,15 +60,16 @@ public:
 
     struct Positional {
         std::string_view name;
+        bool optional;
 
-        Positional(std::string_view name) : name{name} {}
+        Positional(std::string_view name, bool optional = false) : name{name}, optional{optional} {}
     };
 
     struct Command {
         std::string_view name;
         std::string_view description;
         std::vector<const Option *> options{};
-        std::vector<const Positional *> positionals{};
+        const Positional *positional = nullptr;
         std::vector<const Command *> subcommands{};
     };
 
@@ -81,7 +82,7 @@ public:
         std::vector<OptionValue> global_options;
         const Command *command;
         std::vector<OptionValue> command_options;
-        std::vector<std::string> command_positionals;
+        std::optional<std::string> command_positional;
     };
 
     int argc;

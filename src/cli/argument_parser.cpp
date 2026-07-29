@@ -14,7 +14,7 @@ ArgumentParser::Result ArgumentParser::parse() {
         .global_options{},
         .command = nullptr,
         .command_options{},
-        .command_positionals{},
+        .command_positional{},
     };
 
     while (arg_index < argc) {
@@ -68,9 +68,11 @@ ArgumentParser::Result ArgumentParser::parse() {
 
         if (arg.starts_with('-')) {
             result.command_options.push_back(parse_option(result.command->options));
-        } else {
-            result.command_positionals.push_back(std::string{arg});
+        } else if (!result.command_positional && result.command->positional) {
+            result.command_positional = std::string{arg};
             arg_index += 1;
+        } else {
+            error("extra positional argument '" + std::string{arg} + "'");
         }
     }
 
@@ -80,12 +82,9 @@ ArgumentParser::Result ArgumentParser::parse() {
 
     if (!result.command->subcommands.empty()) {
         error("missing subcommand");
-    } else if (result.command_positionals.size() < result.command->positionals.size()) {
-        std::string_view name = result.command->positionals[result.command_positionals.size()]->name;
+    } else if (!result.command_positional && result.command->positional && !result.command->positional->optional) {
+        std::string_view name = result.command->positional->name;
         error("missing positional argument '" + std::string{name} + "'");
-    } else if (result.command_positionals.size() > result.command->positionals.size()) {
-        const std::string &value = result.command_positionals[result.command->positionals.size()];
-        error("extra positional argument '" + value + "'");
     }
 
     return result;
@@ -239,9 +238,11 @@ void ArgumentParser::print_command_help(const Command &command) {
 
     if (!command.subcommands.empty()) {
         std::cout << " [command]";
-    } else if (!command.positionals.empty()) {
-        for (const Positional *positional : command.positionals) {
-            std::cout << " [" << positional->name << "]";
+    } else if (command.positional) {
+        if (command.positional->optional) {
+            std::cout << " [optional " << command.positional->name << "]";
+        } else {
+            std::cout << " [" << command.positional->name << "]";
         }
     }
 
