@@ -1,7 +1,6 @@
-#include "banjo/utils/paths.hpp"
 #include "banjo/utils/platform.hpp"
 
-#include <cstdlib>
+#include "cli.hpp"
 
 #ifdef OS_WINDOWS
 #    include <windows.h>
@@ -9,33 +8,11 @@
 #    include <sys/wait.h>
 #endif
 
-int main(int argc, char *argv[]) {
-    using namespace banjo;
-
+int main(int argc, const char *argv[]) {
 #ifdef OS_WINDOWS
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
-    std::filesystem::path exec_path = Paths::executable();
-    std::filesystem::path script_path = exec_path.parent_path().parent_path() / "scripts" / "cli" / "cli.py";
-
-#ifdef OS_WINDOWS
-    std::string command = "python ";
-#else
-    std::string command = "python3 ";
-#endif
-
-    command += script_path.string();
-
-    for (unsigned i = 1; i < argc; i++) {
-        command += " " + std::string(argv[i]);
-    }
-
-    int exit_code = system(command.c_str());
-
-#ifdef OS_WINDOWS
-    return exit_code;
-#else
-    return WEXITSTATUS(exit_code);
-#endif
+    banjo::cli::CLI().run(argc, argv);
+    return 0;
 }

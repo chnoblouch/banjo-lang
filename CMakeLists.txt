@@ -60,6 +60,7 @@ endif()
 
 # add_compile_options(-fsanitize=address,undefined)
 # add_link_options(-fsanitize=address,undefined)
+# add_compile_definitions(-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
 
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")
@@ -80,7 +81,6 @@ install(TARGETS banjo-lsp RUNTIME DESTINATION bin)
 install(TARGETS banjo-format RUNTIME DESTINATION bin)
 install(TARGETS banjo-test-util RUNTIME DESTINATION bin)
 install(TARGETS cli RUNTIME DESTINATION bin)
-install(TARGETS cli2 RUNTIME DESTINATION bin)
 
 if(BUILD_HOT_RELOADER)
     install(TARGETS banjo-hot-reloader RUNTIME DESTINATION bin)
@@ -91,7 +91,6 @@ if(WIN32)
     install(FILES $<TARGET_PDB_FILE:banjo-lsp> DESTINATION bin OPTIONAL)
     install(FILES $<TARGET_PDB_FILE:banjo-format> DESTINATION bin OPTIONAL)
     install(FILES $<TARGET_PDB_FILE:cli> DESTINATION bin OPTIONAL)
-    install(FILES $<TARGET_PDB_FILE:cli2> DESTINATION bin OPTIONAL)
 
     if(BUILD_HOT_RELOADER)
         install(FILES $<TARGET_PDB_FILE:banjo-hot-reloader> DESTINATION bin OPTIONAL)
@@ -99,7 +98,6 @@ if(WIN32)
 endif()
 
 install(DIRECTORY src/cli/python/ DESTINATION scripts/cli)
-install(DIRECTORY src/cli/python2/ DESTINATION scripts/cli2)
 install(DIRECTORY src/bindgen DESTINATION scripts)
 
 install(DIRECTORY lib/stdlib DESTINATION lib)

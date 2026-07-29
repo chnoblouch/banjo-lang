@@ -149,7 +149,7 @@ std::string get_python_executable() {
 void run_utility_script(const std::string &name, const std::vector<std::string> &args) {
     std::vector<std::string> full_args;
 
-    std::filesystem::path script_path = paths::installation_dir() / "scripts" / "cli2" / name;
+    std::filesystem::path script_path = paths::installation_dir() / "scripts" / "cli" / name;
     full_args.push_back(script_path.string());
 
     full_args.insert(full_args.end(), args.begin(), args.end());
