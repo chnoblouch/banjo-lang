@@ -7,8 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 struct MSVCToolchain {
     std::string tools_path;
@@ -87,7 +86,6 @@ struct EmscriptenToolchain {
 
 std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output);
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli
 
 #endif

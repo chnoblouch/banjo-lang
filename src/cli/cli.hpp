@@ -14,8 +14,7 @@
 #include <string_view>
 #include <vector>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 class CLI {
 
@@ -69,7 +68,8 @@ public:
 
 private:
     void execute_targets();
-    void execute_toolchains();
+    void execute_toolchain_list();
+    void execute_toolchain_remove(const ArgumentParser::Result &args);
     void execute_version();
     void execute_new(const ArgumentParser::Result &args);
     void execute_build();
@@ -127,7 +127,6 @@ private:
     std::filesystem::path get_output_dir();
 };
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli
 
 #endif

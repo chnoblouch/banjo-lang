@@ -22,11 +22,11 @@
 #include <iostream>
 #include <sstream>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 static const ArgumentParser::Option OPTION_HELP{
     ArgumentParser::Option::Type::FLAG,
@@ -111,168 +111,189 @@ static const ArgumentParser::Option OPTION_DEBUG_COMPILER{
     "Emit internal data for debugging the compiler",
 };
 
-static const ArgumentParser::Positional POSITIONAL_NAME{
-    "name",
-};
-
-static const ArgumentParser::Positional POSITIONAL_TOOL{
-    "tool",
-};
-
-static const ArgumentParser::Positional POSITIONAL_FORMAT_FILE{
-    "file",
-};
-
-static const ArgumentParser::Positional POSITIONAL_BINDGEN_SOURCE{
-    "file",
-};
+static const ArgumentParser::Positional POSITIONAL_NAME{"name"};
+static const ArgumentParser::Positional POSITIONAL_TOOL{"tool"};
+static const ArgumentParser::Positional POSITIONAL_TARGET{"target"};
+static const ArgumentParser::Positional POSITIONAL_FORMAT_FILE{"file"};
+static const ArgumentParser::Positional POSITIONAL_BINDGEN_SOURCE{"file"};
 
 static const ArgumentParser::Command COMMAND_NEW{
-    "new",
-    "Create a new package in the current working directory",
-    {
-        OPTION_HELP,
+    .name = "new",
+    .description = "Create a new package in the current working directory",
+    .options{
+        &OPTION_HELP,
     },
-    {
-        POSITIONAL_NAME,
+    .positionals{
+        &POSITIONAL_NAME,
     },
 };
 
 static const ArgumentParser::Command COMMAND_BUILD{
-    "build",
-    "Build the current package",
-    {
-        OPTION_HELP,
-        OPTION_TARGET,
-        OPTION_CONFIG,
-        OPTION_OPT_LEVEL,
-        OPTION_FORCE_ASM,
-        OPTION_DEBUG_COMPILER,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "build",
+    .description = "Build the current package",
+    .options{
+        &OPTION_HELP,
+        &OPTION_TARGET,
+        &OPTION_CONFIG,
+        &OPTION_OPT_LEVEL,
+        &OPTION_FORCE_ASM,
+        &OPTION_DEBUG_COMPILER,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_RUN{
-    "run",
-    "Build and run the current package",
-    {
-        OPTION_HELP,
-        OPTION_TARGET,
-        OPTION_HOT_RELOAD,
-        OPTION_CONFIG,
-        OPTION_OPT_LEVEL,
-        OPTION_FORCE_ASM,
-        OPTION_DEBUG_COMPILER,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "run",
+    .description = "Build and run the current package",
+    .options{
+        &OPTION_HELP,
+        &OPTION_TARGET,
+        &OPTION_HOT_RELOAD,
+        &OPTION_CONFIG,
+        &OPTION_OPT_LEVEL,
+        &OPTION_FORCE_ASM,
+        &OPTION_DEBUG_COMPILER,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_TEST{
-    "test",
-    "Build and run tests of the current package",
-    {
-        OPTION_HELP,
-        OPTION_CONFIG,
-        OPTION_OPT_LEVEL,
-        OPTION_FORCE_ASM,
-        OPTION_DEBUG_COMPILER,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "test",
+    .description = "Build and run tests of the current package",
+    .options{
+        &OPTION_HELP,
+        &OPTION_CONFIG,
+        &OPTION_OPT_LEVEL,
+        &OPTION_FORCE_ASM,
+        &OPTION_DEBUG_COMPILER,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_INVOKE{
-    "invoke",
-    "Run a program from the toolchain (compiler, assembler, or linker)",
-    {
-        OPTION_HELP,
-        OPTION_TARGET,
-        OPTION_CONFIG,
-        OPTION_OPT_LEVEL,
-        OPTION_FORCE_ASM,
-        OPTION_DEBUG_COMPILER,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "invoke",
+    .description = "Run a program from the toolchain (compiler, assembler, or linker)",
+    .options{
+        &OPTION_HELP,
+        &OPTION_TARGET,
+        &OPTION_CONFIG,
+        &OPTION_OPT_LEVEL,
+        &OPTION_FORCE_ASM,
+        &OPTION_DEBUG_COMPILER,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
-    {
-        POSITIONAL_TOOL,
+    .positionals{
+        &POSITIONAL_TOOL,
     },
 };
 
-static const ArgumentParser::Command COMMAND_TOOLCHAINS{
-    "toolchains",
-    "Print the cached toolchains",
-    {},
+static const ArgumentParser::Command COMMAND_TOOLCHAIN_LIST{
+    .name = "list",
+    .description = "Print cached toolchains",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
+    },
+};
+
+static const ArgumentParser::Command COMMAND_TOOLCHAIN_REMOVE{
+    .name = "remove",
+    .description = "Remove a toolchain",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
+    },
+    .positionals{
+        &POSITIONAL_TARGET,
+    },
+};
+
+static const ArgumentParser::Command COMMAND_TOOLCHAIN{
+    .name = "toolchain",
+    .description = "Interact with system toolchains",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
+    },
+    .subcommands{
+        &COMMAND_TOOLCHAIN_LIST,
+        &COMMAND_TOOLCHAIN_REMOVE,
+    },
 };
 
 static const ArgumentParser::Command COMMAND_TARGETS{
-    "targets",
-    "Print the supported targets",
-    {
-        OPTION_HELP,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "targets",
+    .description = "Print the supported targets",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_LSP{
-    "lsp",
-    "Launch the language server",
-    {
-        OPTION_HELP,
-        OPTION_TARGET,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "lsp",
+    .description = "Launch the language server",
+    .options{
+        &OPTION_HELP,
+        &OPTION_TARGET,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_FORMAT{
-    "format",
-    "Format source files",
-    {
-        OPTION_HELP,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "format",
+    .description = "Format source files",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
-    {
-        POSITIONAL_FORMAT_FILE,
+    .positionals{
+        &POSITIONAL_FORMAT_FILE,
     }
 };
 
 static const ArgumentParser::Command COMMAND_BINDGEN{
-    "bindgen",
-    "Generate bindings to C libraries",
-    {
-        OPTION_HELP,
-        OPTION_BINDGEN_GENERATOR,
-        OPTION_BINDGEN_INCLUDE_PATH,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "bindgen",
+    .description = "Generate bindings to C libraries",
+    .options{
+        &OPTION_HELP,
+        &OPTION_BINDGEN_GENERATOR,
+        &OPTION_BINDGEN_INCLUDE_PATH,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
-    {
-        POSITIONAL_BINDGEN_SOURCE,
+    .positionals{
+        &POSITIONAL_BINDGEN_SOURCE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_HELP{
-    "help",
-    "Print help and exit",
-    {
-        OPTION_HELP,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "help",
+    .description = "Print help and exit",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
 static const ArgumentParser::Command COMMAND_VERSION{
-    "version",
-    "Print version and exit",
-    {
-        OPTION_HELP,
-        OPTION_QUIET,
-        OPTION_VERBOSE,
+    .name = "version",
+    .description = "Print version and exit",
+    .options{
+        &OPTION_HELP,
+        &OPTION_QUIET,
+        &OPTION_VERBOSE,
     },
 };
 
@@ -281,35 +302,35 @@ void CLI::run(int argc, const char *argv[]) {
         .argc = argc,
         .argv = argv,
         .name = "banjo",
-        .options{OPTION_HELP, OPTION_VERSION, OPTION_QUIET, OPTION_VERBOSE},
+        .options{&OPTION_HELP, &OPTION_VERSION, &OPTION_QUIET, &OPTION_VERBOSE},
         .commands{
-            COMMAND_NEW,
-            COMMAND_BUILD,
-            COMMAND_RUN,
-            COMMAND_TEST,
-            COMMAND_INVOKE,
-            COMMAND_TARGETS,
-            COMMAND_LSP,
-            COMMAND_FORMAT,
-            COMMAND_BINDGEN,
-            COMMAND_TOOLCHAINS,
-            COMMAND_HELP,
-            COMMAND_VERSION,
+            &COMMAND_NEW,
+            &COMMAND_BUILD,
+            &COMMAND_RUN,
+            &COMMAND_TEST,
+            &COMMAND_INVOKE,
+            &COMMAND_TARGETS,
+            &COMMAND_LSP,
+            &COMMAND_FORMAT,
+            &COMMAND_BINDGEN,
+            &COMMAND_TOOLCHAIN,
+            &COMMAND_HELP,
+            &COMMAND_VERSION,
         },
     };
 
     ArgumentParser::Result args = arg_parser.parse();
 
     for (const ArgumentParser::OptionValue &option_value : args.global_options) {
-        if (option_value.option->name == OPTION_HELP.name) {
+        if (option_value.option == &OPTION_HELP) {
             execute_help();
             return;
-        } else if (option_value.option->name == OPTION_VERSION.name) {
+        } else if (option_value.option == &OPTION_VERSION) {
             execute_version();
             return;
-        } else if (option_value.option->name == OPTION_QUIET.name) {
+        } else if (option_value.option == &OPTION_QUIET) {
             quiet = true;
-        } else if (option_value.option->name == OPTION_VERBOSE.name) {
+        } else if (option_value.option == &OPTION_VERBOSE) {
             verbose = true;
             single_line_output = false;
         }
@@ -321,11 +342,11 @@ void CLI::run(int argc, const char *argv[]) {
     }
 
     for (const ArgumentParser::OptionValue &option_value : args.command_options) {
-        std::string_view name = option_value.option->name;
+        const ArgumentParser::Option *option = option_value.option;
 
-        if (name == OPTION_TARGET.name) {
+        if (option == &OPTION_TARGET) {
             target_override = parse_target(*option_value.value);
-        } else if (name == OPTION_CONFIG.name) {
+        } else if (option == &OPTION_CONFIG) {
             if (option_value.value == "debug") {
                 build_config = BuildConfig::DEBUG;
             } else if (option_value.value == "release") {
@@ -333,7 +354,7 @@ void CLI::run(int argc, const char *argv[]) {
             } else {
                 error("unexpected build config '" + *option_value.value + "'");
             }
-        } else if (name == OPTION_OPT_LEVEL.name) {
+        } else if (option == &OPTION_OPT_LEVEL) {
             if (option_value.value == "0") {
                 opt_level = 0;
             } else if (option_value.value == "1") {
@@ -343,50 +364,52 @@ void CLI::run(int argc, const char *argv[]) {
             } else {
                 error("unexpected optimization level '" + *option_value.value + "'");
             }
-        } else if (name == OPTION_FORCE_ASM.name) {
+        } else if (option == &OPTION_FORCE_ASM) {
             force_assembler = true;
-        } else if (name == OPTION_HOT_RELOAD.name) {
+        } else if (option == &OPTION_HOT_RELOAD) {
             hot_reloading_enabled = true;
-        } else if (name == OPTION_DEBUG_COMPILER.name) {
+        } else if (option == &OPTION_DEBUG_COMPILER) {
             extra_compiler_args.push_back("--debug");
-        } else if (name == OPTION_HELP.name) {
+        } else if (option == &OPTION_HELP) {
             arg_parser.print_command_help(*args.command);
             return;
-        } else if (name == OPTION_QUIET.name) {
+        } else if (option == &OPTION_QUIET) {
             quiet = true;
-        } else if (name == OPTION_VERBOSE.name) {
+        } else if (option == &OPTION_VERBOSE) {
             verbose = true;
             single_line_output = false;
         }
     }
 
-    if (Utils::is_one_of(args.command->name, {COMMAND_BUILD.name, COMMAND_RUN.name})) {
+    if (Utils::is_one_of(args.command, {&COMMAND_BUILD, &COMMAND_RUN})) {
         start_time = std::chrono::steady_clock::now();
     }
 
-    if (args.command->name == COMMAND_TARGETS.name) {
+    if (args.command == &COMMAND_TARGETS) {
         execute_targets();
-    } else if (args.command->name == COMMAND_TOOLCHAINS.name) {
-        execute_toolchains();
-    } else if (args.command->name == COMMAND_NEW.name) {
+    } else if (args.command == &COMMAND_TOOLCHAIN_LIST) {
+        execute_toolchain_list();
+    } else if (args.command == &COMMAND_TOOLCHAIN_REMOVE) {
+        execute_toolchain_remove(args);
+    } else if (args.command == &COMMAND_NEW) {
         execute_new(args);
-    } else if (args.command->name == COMMAND_BUILD.name) {
+    } else if (args.command == &COMMAND_BUILD) {
         execute_build();
-    } else if (args.command->name == COMMAND_RUN.name) {
+    } else if (args.command == &COMMAND_RUN) {
         execute_run();
-    } else if (args.command->name == COMMAND_TEST.name) {
+    } else if (args.command == &COMMAND_TEST) {
         execute_test();
-    } else if (args.command->name == COMMAND_INVOKE.name) {
+    } else if (args.command == &COMMAND_INVOKE) {
         execute_invoke(args);
-    } else if (args.command->name == COMMAND_LSP.name) {
+    } else if (args.command == &COMMAND_LSP) {
         execute_lsp();
-    } else if (args.command->name == COMMAND_FORMAT.name) {
+    } else if (args.command == &COMMAND_FORMAT) {
         execute_format(args);
-    } else if (args.command->name == COMMAND_BINDGEN.name) {
+    } else if (args.command == &COMMAND_BINDGEN) {
         execute_bindgen(args);
-    } else if (args.command->name == COMMAND_HELP.name) {
+    } else if (args.command == &COMMAND_HELP) {
         execute_help();
-    } else if (args.command->name == COMMAND_VERSION.name) {
+    } else if (args.command == &COMMAND_VERSION) {
         execute_version();
     }
 }
@@ -410,7 +433,7 @@ void CLI::execute_targets() {
     std::cout << "\n";
 }
 
-void CLI::execute_toolchains() {
+void CLI::execute_toolchain_list() {
     std::cout << "\n";
     std::cout << "Available toolchains:\n";
 
@@ -428,6 +451,17 @@ void CLI::execute_toolchains() {
     }
 
     std::cout << "\n";
+}
+
+void CLI::execute_toolchain_remove(const ArgumentParser::Result &args) {
+    const std::string &target = args.command_positionals[0];
+    parse_target(target);
+
+    std::filesystem::path toolchains_dir = paths::toolchains_dir();
+    std::filesystem::path path = toolchains_dir / (target + ".json");
+
+    std::error_code error;
+    std::filesystem::remove(path, error);
 }
 
 void CLI::execute_version() {
@@ -675,10 +709,10 @@ void CLI::execute_bindgen(const ArgumentParser::Result &args) {
     bindgen_args.push_back((bindgen_path / "bindgen.py").string());
 
     for (const ArgumentParser::OptionValue &value : args.command_options) {
-        if (value.option->name == OPTION_BINDGEN_GENERATOR.name) {
+        if (value.option == &OPTION_BINDGEN_GENERATOR) {
             bindgen_args.push_back("--generator");
             bindgen_args.push_back(*value.value);
-        } else if (value.option->name == OPTION_BINDGEN_INCLUDE_PATH.name) {
+        } else if (value.option == &OPTION_BINDGEN_INCLUDE_PATH) {
             bindgen_args.push_back("-I");
             bindgen_args.push_back(*value.value);
         }
@@ -1639,5 +1673,4 @@ std::filesystem::path CLI::get_output_dir() {
     return std::filesystem::path("out") / (target.to_string() + "-debug");
 }
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli

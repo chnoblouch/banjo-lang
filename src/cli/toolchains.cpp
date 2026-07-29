@@ -11,8 +11,7 @@
 #include <filesystem>
 #include <utility>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 MSVCToolchain MSVCToolchain::detect() {
     MSVCToolchain toolchain;
@@ -485,5 +484,4 @@ std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output)
     return Utils::remove_duplicates(lib_dirs);
 }
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli

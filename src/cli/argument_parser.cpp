@@ -5,11 +5,17 @@
 
 #include <iostream>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 ArgumentParser::Result ArgumentParser::parse() {
-    Result result;
+    record_parents(commands);
+
+    Result result{
+        .global_options{},
+        .command = nullptr,
+        .command_options{},
+        .command_positionals{},
+    };
 
     while (arg_index < argc) {
         std::string_view arg = argv[arg_index];
@@ -21,11 +27,40 @@ ArgumentParser::Result ArgumentParser::parse() {
         }
     }
 
-    result.command = parse_command();
-    arg_index += 1;
+    if (contains_help_option(result.global_options)) {
+        return result;
+    }
 
+    result.command = parse_command(nullptr);
     if (!result.command) {
         return result;
+    }
+
+    while (!result.command->subcommands.empty()) {
+        while (arg_index < argc) {
+            std::string_view arg = argv[arg_index];
+
+            if (arg.starts_with('-')) {
+                result.command_options.push_back(parse_option(result.command->options));
+            } else {
+                break;
+            }
+        }
+
+        if (contains_help_option(result.command_options)) {
+            return result;
+        }
+
+        if (arg_index >= argc) {
+            break;
+        }
+
+        const Command *subcommand = parse_command(result.command);
+        if (!subcommand) {
+            break;
+        }
+
+        result.command = subcommand;
     }
 
     while (arg_index < argc) {
@@ -34,18 +69,20 @@ ArgumentParser::Result ArgumentParser::parse() {
         if (arg.starts_with('-')) {
             result.command_options.push_back(parse_option(result.command->options));
         } else {
-            result.command_positionals.push_back(std::string(arg));
+            result.command_positionals.push_back(std::string{arg});
             arg_index += 1;
         }
     }
 
-    if (contains_help_option(result.global_options) || contains_help_option(result.command_options)) {
+    if (contains_help_option(result.command_options)) {
         return result;
     }
 
-    if (result.command_positionals.size() < result.command->positionals.size()) {
-        const std::string &name = result.command->positionals[result.command_positionals.size()].name;
-        error("missing positional argument '" + name + "'");
+    if (!result.command->subcommands.empty()) {
+        error("missing subcommand");
+    } else if (result.command_positionals.size() < result.command->positionals.size()) {
+        std::string_view name = result.command->positionals[result.command_positionals.size()]->name;
+        error("missing positional argument '" + std::string{name} + "'");
     } else if (result.command_positionals.size() > result.command->positionals.size()) {
         const std::string &value = result.command_positionals[result.command->positionals.size()];
         error("extra positional argument '" + value + "'");
@@ -54,7 +91,17 @@ ArgumentParser::Result ArgumentParser::parse() {
     return result;
 }
 
-ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Option> &options) {
+void ArgumentParser::record_parents(const std::vector<const Command *> &commands) {
+    for (const Command *command : commands) {
+        for (const Command *sub_command : command->subcommands) {
+            command_parents.insert(sub_command, command);
+        }
+
+        record_parents(command->subcommands);
+    }
+}
+
+ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<const Option *> &options) {
     std::string_view arg = argv[arg_index];
 
     if (arg == "-" || arg == "--") {
@@ -95,7 +142,7 @@ ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Optio
         return OptionValue{.option = option, .value = {}};
     } else if (option->type == Option::Type::VALUE) {
         if (arg_index == argc || std::string_view(argv[arg_index]).starts_with("-")) {
-            error("missing value for option '--" + option->name + "'");
+            error("missing value for option '--" + std::string{option->name} + "'");
         }
 
         std::string value = argv[arg_index];
@@ -106,45 +153,51 @@ ArgumentParser::OptionValue ArgumentParser::parse_option(const std::vector<Optio
     }
 }
 
-const ArgumentParser::Command *ArgumentParser::parse_command() {
+const ArgumentParser::Command *ArgumentParser::parse_command(const Command *parent_command) {
     if (arg_index == argc) {
         return nullptr;
     }
 
     std::string_view arg = argv[arg_index];
-    const Command *command = find_command(arg);
+    const Command *command = find_command(parent_command, arg);
 
     if (!command) {
         error("unknown command '" + std::string(arg) + "'");
     }
 
+    arg_index += 1;
     return command;
 }
 
-const ArgumentParser::Option *ArgumentParser::find_option(std::string_view name, const std::vector<Option> &options) {
-    for (const Option &option : options) {
-        if (option.name == name) {
-            return &option;
+const ArgumentParser::Option *ArgumentParser::find_option(
+    std::string_view name,
+    const std::vector<const Option *> &options
+) {
+    for (const Option *option : options) {
+        if (option->name == name) {
+            return option;
         }
     }
 
     return nullptr;
 }
 
-const ArgumentParser::Option *ArgumentParser::find_option(char letter, const std::vector<Option> &options) {
-    for (const Option &option : options) {
-        if (option.letter == letter) {
-            return &option;
+const ArgumentParser::Option *ArgumentParser::find_option(char letter, const std::vector<const Option *> &options) {
+    for (const Option *option : options) {
+        if (option->letter == letter) {
+            return option;
         }
     }
 
     return nullptr;
 }
 
-const ArgumentParser::Command *ArgumentParser::find_command(std::string_view name) {
-    for (const Command &command : commands) {
-        if (command.name == name) {
-            return &command;
+const ArgumentParser::Command *ArgumentParser::find_command(const Command *parent_command, std::string_view name) {
+    const std::vector<const Command *> &list = parent_command ? parent_command->subcommands : commands;
+
+    for (const Command *command : list) {
+        if (command->name == name) {
+            return command;
         }
     }
 
@@ -176,17 +229,19 @@ void ArgumentParser::print_help() {
 
 void ArgumentParser::print_command_help(const Command &command) {
     std::cout << "\n";
-    std::cout << "Description: " + command.description << "\n";
+    std::cout << "Description: " << command.description << "\n";
     std::cout << "\n";
-    std::cout << "Usage: " << name << " " << command.name;
+    std::cout << "Usage: " << name << " " << full_name(command);
 
     if (!command.options.empty()) {
         std::cout << " [options]";
     }
 
-    if (!command.positionals.empty()) {
-        for (const Positional &positional : command.positionals) {
-            std::cout << " [" << positional.name << "]";
+    if (!command.subcommands.empty()) {
+        std::cout << " [command]";
+    } else if (!command.positionals.empty()) {
+        for (const Positional *positional : command.positionals) {
+            std::cout << " [" << positional->name << "]";
         }
     }
 
@@ -197,27 +252,32 @@ void ArgumentParser::print_command_help(const Command &command) {
         print_options(command.options);
     }
 
+    if (!command.subcommands.empty()) {
+        std::cout << "\n";
+        print_commands(command.subcommands);
+    }
+
     std::cout << "\n";
 }
 
-void ArgumentParser::print_options(const std::vector<Option> &options) {
+void ArgumentParser::print_options(const std::vector<const Option *> &options) {
     std::cout << "Options:\n";
 
     unsigned longest_option_length = 0;
     bool has_letter_option = false;
 
-    for (const Option &option : options) {
-        if (option.letter) {
+    for (const Option *option : options) {
+        if (option->letter) {
             has_letter_option = true;
             break;
         }
     }
 
-    for (const Option &option : options) {
-        unsigned option_length = 2 + static_cast<unsigned>(option.name.size());
+    for (const Option *option : options) {
+        unsigned option_length = 2 + static_cast<unsigned>(option->name.size());
 
-        if (option.value_placeholder) {
-            option_length += 1 + static_cast<unsigned>(option.value_placeholder->size());
+        if (option->value_placeholder) {
+            option_length += 1 + static_cast<unsigned>(option->value_placeholder->size());
         }
 
         if (has_letter_option) {
@@ -227,47 +287,61 @@ void ArgumentParser::print_options(const std::vector<Option> &options) {
         longest_option_length = std::max(longest_option_length, option_length);
     }
 
-    for (const Option &option : options) {
+    for (const Option *option : options) {
         std::cout << "  ";
 
         std::string name_column;
 
         if (has_letter_option) {
-            if (option.letter) {
-                name_column = std::string("-") + *option.letter + ", ";
+            if (option->letter) {
+                name_column = std::string("-") + *option->letter + ", ";
             } else {
                 name_column = "    ";
             }
         }
 
-        name_column += "--" + option.name;
+        name_column += "--" + std::string{option->name};
 
-        if (option.value_placeholder) {
-            name_column += " " + *option.value_placeholder;
+        if (option->value_placeholder) {
+            name_column += " " + std::string{*option->value_placeholder};
         }
 
         std::cout << name_column;
         std::cout << std::string(longest_option_length + 3 - name_column.size(), ' ');
-        std::cout << option.description;
+        std::cout << option->description;
         std::cout << "\n";
     }
 }
 
-void ArgumentParser::print_commands(const std::vector<Command> &commands) {
+void ArgumentParser::print_commands(const std::vector<const Command *> &commands) {
     std::cout << "Commands:\n";
 
     unsigned longest_command_length = 0;
 
-    for (const Command &command : commands) {
-        longest_command_length = std::max(longest_command_length, static_cast<unsigned>(command.name.size()));
+    for (const Command *command : commands) {
+        longest_command_length = std::max(longest_command_length, static_cast<unsigned>(command->name.size()));
     }
 
-    for (const Command &command : commands) {
-        std::cout << "  " << command.name;
-        std::cout << std::string(longest_command_length + 3 - command.name.length(), ' ');
-        std::cout << command.description;
+    for (const Command *command : commands) {
+        std::cout << "  " << command->name;
+        std::cout << std::string(longest_command_length + 3 - command->name.length(), ' ');
+        std::cout << command->description;
         std::cout << "\n";
     }
+}
+
+std::string ArgumentParser::full_name(const Command &command) {
+    std::string full_name{command.name};
+    const Command *current = &command;
+
+    while (const Command **parent = command_parents.try_find(current)) {
+        current = *parent;
+
+        full_name.insert(0, " ");
+        full_name.insert(0, current->name);
+    }
+
+    return full_name;
 }
 
 bool ArgumentParser::contains_help_option(const std::vector<OptionValue> &option_values) {
@@ -280,5 +354,4 @@ bool ArgumentParser::contains_help_option(const std::vector<OptionValue> &option
     return false;
 }
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli

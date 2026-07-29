@@ -360,6 +360,7 @@ add_library(banjo STATIC
     "utils/box.hpp"
     "utils/dynamic_pointer.hpp"
     "utils/fixed_vector.hpp"
+    "utils/hash_map.hpp"
     "utils/heap_array.hpp"
     "utils/json.cpp"
     "utils/json.hpp"
