@@ -1,4 +1,5 @@
 use std.{convert.to_string, protos.ToString};
+use internal.std_panics.{panic_unwrap_result, panic_unwrap_error_result};
 
 struct Result[T, E]: ToString {
     var successful: bool;
@@ -27,7 +28,7 @@ struct Result[T, E]: ToString {
 
     pub func unwrap(@[byval, unmanaged] self) -> T {
         if !self.successful {
-            panic("tried to unwrap error result: " + to_string(self.error));
+            panic_unwrap_result(self.error);
         }
 
         return self.value;
@@ -35,7 +36,7 @@ struct Result[T, E]: ToString {
 
     pub func unwrap_error(@[byval, unmanaged] self) -> E {
         if self.successful {
-            panic("tried to unwrap successful result to error");
+            panic_unwrap_error_result();
         }
 
         return self.error;

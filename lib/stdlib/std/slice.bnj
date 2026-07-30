@@ -1,8 +1,10 @@
 use std.{
     memory.{PointerMoveIter, PointerRefIter},
-    convert,
     protos.{Compare, ToRepr, ToString},
+    convert,
 };
+
+use internal.std_panics.{panic_out_of_bounds_array, panic_cannot_compare_slice};
 
 struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     var data: *T;
@@ -65,7 +67,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
 
             return true;
         } else {
-            panic("cannot compare slices (`T` does not implement `Compare[T]`)");
+            panic_cannot_compare_slice();
             return false;
         }
     }
@@ -100,13 +102,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
 
     func check_bounds(self, index: usize) {
         if index >= self.length {
-            panic(
-                "index out of bounds (index: " +
-                convert.to_string(index) +
-                ", array length: " +
-                convert.to_string(self.length) +
-                ")",
-            );
+            panic_out_of_bounds_array(index, self.length);
         }
     }
 }

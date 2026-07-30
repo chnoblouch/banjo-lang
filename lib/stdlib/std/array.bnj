@@ -5,6 +5,12 @@ use std.{
     protos.{Copy, Compare, ToRepr, ToString},
 };
 
+use internal.std_panics.{
+    panic_out_of_bounds_insert_array,
+    panic_out_of_bounds_remove_array,
+    panic_cannot_copy_array,
+};
+
 struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
     var slice: Slice[T];
     var capacity: usize;
@@ -64,13 +70,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
 
     pub func insert(mut self, index: usize, @unmanaged value: T) {
         if index > self.slice.length {
-            panic(
-                "insertion index out of bounds (index: " +
-                convert.to_string(index) +
-                ", array length: " +
-                convert.to_string(self.slice.length) +
-                ")",
-            );
+            panic_out_of_bounds_insert_array(index, self.slice.length);
         }
 
         self.ensure_capacity(self.slice.length + 1);
@@ -84,13 +84,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
 
     pub func remove(mut self, index: usize) {
         if index >= self.slice.length {
-            panic(
-                "index to remove out of bounds (index: " +
-                convert.to_string(index) +
-                ", array length: " +
-                convert.to_string(self.slice.length) +
-                ")",
-            );
+            panic_out_of_bounds_remove_array(index, self.slice.length);
         }
 
         __builtin_deinit(self.slice.data[index]);
@@ -119,7 +113,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
                 data[i] = self.slice.data[i].copy();
             }
         } else {
-            panic("cannot copy array (`T` does not implement `Copy`)");
+            panic_cannot_copy_array();
         }
 
         # memory.copy(self.slice.data, data, size);

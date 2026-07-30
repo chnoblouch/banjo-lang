@@ -1,10 +1,10 @@
 use libc as c;
 
-# var alloc_counter: u32 = 0;
-# var free_counter: u32 = 0;
+var alloc_counter: u32 = 0;
+var free_counter: u32 = 0;
 
 pub func alloc(size: usize) -> addr {
-    # alloc_counter += 1;
+    alloc_counter += 1;
 
     var pointer = c.malloc(size);
     return pointer;
@@ -15,7 +15,7 @@ pub func realloc(pointer: addr, size: usize) -> addr {
 }
 
 pub func free(pointer: addr) {
-    # free_counter += 1;
+    free_counter += 1;
 
     c.free(pointer);
 }

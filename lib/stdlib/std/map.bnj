@@ -1,4 +1,5 @@
 use std.{convert, protos.{Compare, ToRepr, ToString}};
+use internal.std_panics.panic_cannot_find_key_map;
 
 struct Map[K: Compare[K], V]: ToString, ToRepr {
     var elements: Array[(K, V)];
@@ -36,7 +37,7 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
             }
         }
 
-        panic("cannot find key `" + convert.to_string(key) + "` in map");
+        panic_cannot_find_key_map(key);
         return undefined;
     }
 

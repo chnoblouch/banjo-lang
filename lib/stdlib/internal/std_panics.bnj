@@ -1,0 +1,56 @@
+use std.convert.to_string as str;
+
+@never_inline
+func panic_assertion_failed(message: String) {
+    panic("assertion failed: " + message);
+}
+
+@never_inline
+func panic_unwrap_optional() {
+    panic("optional does not have a value");
+}
+
+@never_inline
+func panic_unwrap_result[E](ref error: E) {
+    panic("tried to unwrap error result: " + str(error));
+}
+
+@never_inline
+func panic_unwrap_error_result() {
+    panic("tried to unwrap successful result to error");
+}
+
+@never_inline
+func panic_out_of_bounds_array(index: usize, length: usize) {
+    panic("index out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_out_of_bounds_string(index: usize, length: usize) {
+    panic("index out of bounds (index: " + str(index) + ", string length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_out_of_bounds_insert_array(index: usize, length: usize) {
+    panic("insertion index out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_out_of_bounds_remove_array(index: usize, length: usize) {
+    panic("index to remove out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_cannot_find_key_map[K](ref key: K) {
+    panic("cannot find key '" + str(key) + "'' in map");
+}
+
+@never_inline
+func panic_cannot_copy_array() {
+    panic("cannot copy array ('T' does not implement 'Copy')");
+}
+
+@never_inline
+func panic_cannot_compare_slice() {
+    panic("cannot compare slices ('T' does not implement 'Compare[T]')");
+}

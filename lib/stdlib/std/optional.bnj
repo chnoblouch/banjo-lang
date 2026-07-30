@@ -1,4 +1,5 @@
 use std.{convert.to_string, protos.ToString};
+use internal.std_panics.panic_unwrap_optional;
 
 struct Optional[T]: ToString {
     var has_value: bool;
@@ -22,7 +23,7 @@ struct Optional[T]: ToString {
 
     pub func unwrap(@[byval, unmanaged] self) -> T {
         if !self.has_value {
-            panic("optional does not have a value");
+            panic_unwrap_optional();
         }
 
         return self.value;

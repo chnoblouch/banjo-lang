@@ -1,6 +1,7 @@
 use std.{config, convert, stack_trace};
 use libc as c;
 use os;
+use internal.std_panics.panic_assertion_failed;
 
 meta if os.IS_WINDOWS {
     use os.winapi;
@@ -27,7 +28,7 @@ pub func exit(status: i32) {
 
 pub func assert(condition: bool, message: String) {
     if !condition {
-        panic("assertion failed: " + message);
+        panic_assertion_failed(message);
     }
 }
 
