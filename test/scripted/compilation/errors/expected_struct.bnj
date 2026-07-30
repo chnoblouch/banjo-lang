@@ -1,0 +1,15 @@
+# test:subtest
+# test:error 5:13 "expected struct, got 'i32'"
+
+func main() {
+    var a = i32 {};
+}
+
+# test:subtest
+# test:error 14:13 "expected struct, got 'E'"
+
+enum E {}
+
+func main() {
+    var a = E {};
+}

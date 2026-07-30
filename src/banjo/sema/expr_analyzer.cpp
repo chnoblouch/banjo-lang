@@ -337,9 +337,10 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
     Result result = Result::SUCCESS;
 
     if (struct_literal.type) {
-        result = analyze_type(struct_literal.type);
-        if (result != Result::SUCCESS) {
-            return result;
+        RESULT_RETURN_ON_ERROR(analyze_type(struct_literal.type));
+
+        if (!struct_literal.type.match_concrete<sir::StructDef>()) {
+            analyzer.report_generator.report_err_expected_struct(struct_literal.type);
         }
     }
 
@@ -877,7 +878,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         if (constraint_satisfied) {
             RESULT_RETURN_ON_ERROR(ExprFinalizer{analyzer}.finalize(unary_expr.value));
             // sir::Expr return_type = proto_def->func_decls[0].get_type().return_type;
-            
+
             // HACK: Currently, all unary protos return `self.type`.
             sir::Expr return_type = value_type;
 

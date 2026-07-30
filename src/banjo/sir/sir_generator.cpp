@@ -1669,6 +1669,18 @@ std::span<sir::StructLiteralEntry> SIRGenerator::generate_struct_literal_entries
             };
 
             continue;
+        } else if (child->type == AST_ERROR) {
+            entries[index] = sir::StructLiteralEntry{
+                .ident{.ast_node = nullptr, .value = sir::ERROR_TOKEN_VALUE},
+                .value = create(
+                    sir::Error{
+                        .ast_node = nullptr,
+                    }
+                ),
+                .field = nullptr,
+            };
+
+            continue;
         }
 
         ASTNode *name_node = child->first_child;

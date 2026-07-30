@@ -414,6 +414,10 @@ void ReportGenerator::report_err_expected_bool(const sir::Expr &expr) {
     report_error("expected 'bool', got '$'", expr.get_ast_node(), expr.get_type());
 }
 
+void ReportGenerator::report_err_expected_struct(sir::Expr type) {
+    report_error("expected struct, got '$'", type.get_ast_node(), type);
+}
+
 void ReportGenerator::report_err_expected_generic_or_indexable(sir::Expr &expr) {
     report_error("expected generic declaration or indexable value", expr.get_ast_node());
 }

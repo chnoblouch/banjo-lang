@@ -946,7 +946,6 @@ Result ExprFinalizer::finalize_array_literal_elements(sir::ArrayLiteral &array_l
 
 Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_literal) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
     // TODO: We might be able to to some partial analysis in that case.
     if (struct_literal.type.is<sir::Error>()) {
