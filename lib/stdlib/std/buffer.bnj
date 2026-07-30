@@ -17,6 +17,8 @@ struct Buffer: io.Read, io.Write, io.Seek {
         }
 
         memory.copy(&self.data[self.position], data.data, data.length);
+        self.position += data.length;
+
         return data.length;
     }
 
