@@ -20,7 +20,7 @@ func f32 @test():
     %1 = memberptr @A, addr %0, void 2
     store i64 100, addr %0
     %2 = memberptr @B, addr %0, void 2
-    %3 = load f32 %0
+    %3 = load f32, addr %0
     ret f32 %3
 
 # test:section output
@@ -44,5 +44,5 @@ func f32 @test():
     %1 = memberptr @A, addr %0, void 2
     store i64 100, addr %0
     %2 = memberptr @B, addr %0, void 2
-    %3 = load f32 %0
+    %3 = load f32, addr %0
     ret f32 %3

@@ -8,7 +8,7 @@ struct @S:
 func f32 @test():
     %0 = alloca @S
     store i64 100, addr %0
-    %1 = load f32 %0
+    %1 = load f32, addr %0
     ret f32 %1
 
 # test:section output
@@ -20,5 +20,5 @@ struct @S:
 func f32 @test():
     %0 = alloca @S
     store i64 100, addr %0
-    %1 = load f32 %0
+    %1 = load f32, addr %0
     ret f32 %1

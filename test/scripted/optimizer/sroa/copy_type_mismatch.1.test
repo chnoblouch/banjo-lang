@@ -1,0 +1,36 @@
+# test:pass "sroa"
+# test:section input
+
+struct @S:
+    field i64 @a
+    field i64 @b
+
+struct @Wrapper:
+    field @S @value
+
+func void @wrap():
+    %0 = alloca @Wrapper
+    %1 = alloca @S
+    copy addr %0, addr %1, @S
+    ret
+
+# test:section output
+
+struct @S:
+    field i64 @a
+    field i64 @b
+
+struct @Wrapper:
+    field @S @value
+
+func void @wrap():
+    %0 = alloca @Wrapper
+    %1 = alloca i64
+    %2 = alloca i64
+    %3 = memberptr @S, addr %0, void 0
+    %4 = load i64, addr %1
+    store i64 %4, addr %3
+    %5 = memberptr @S, addr %0, void 1
+    %6 = load i64, addr %2
+    store i64 %6, addr %5
+    ret

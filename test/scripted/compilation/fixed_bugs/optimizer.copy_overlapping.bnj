@@ -1,0 +1,16 @@
+# test:compiles
+
+struct S {
+    var a: i32;
+    var b: i64;
+}
+
+@[layout=overlapping]
+struct Wrapper {
+    var value: S;
+}
+
+func main() {
+    var s: S;
+    var wrapper = Wrapper { value: s };
+}
