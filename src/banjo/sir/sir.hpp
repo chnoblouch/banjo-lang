@@ -762,6 +762,7 @@ struct BinaryExpr {
 
     bool is_arithmetic_op();
     bool is_bitwise_op();
+    bool is_numeric_op();
     bool is_comparison_op();
     bool is_logical_op();
 };

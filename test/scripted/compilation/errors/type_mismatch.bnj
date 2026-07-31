@@ -38,3 +38,15 @@ func main() {
         value: true,
     };
 }
+
+# test:subtest
+# test:error 50:19 "type mismatch (expected 'f64', got 'bool')"
+# test:error 51:18 "type mismatch (expected 'u8', got 'bool')"
+
+func main() {
+    var a = 0;
+    var b = 1;
+
+    var c1: f64 = a == b;
+    var c2: u8 = a > b;
+}

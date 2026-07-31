@@ -527,6 +527,22 @@ bool BinaryExpr::is_bitwise_op() {
     }
 }
 
+bool BinaryExpr::is_numeric_op() {
+    switch (op) {
+        case BinaryOp::ADD:
+        case BinaryOp::SUB:
+        case BinaryOp::MUL:
+        case BinaryOp::DIV:
+        case BinaryOp::MOD:
+        case BinaryOp::BIT_AND:
+        case BinaryOp::BIT_OR:
+        case BinaryOp::BIT_XOR:
+        case BinaryOp::SHL:
+        case BinaryOp::SHR: return true;
+        default: return false;
+    }
+}
+
 bool BinaryExpr::is_comparison_op() {
     switch (op) {
         case BinaryOp::EQ:

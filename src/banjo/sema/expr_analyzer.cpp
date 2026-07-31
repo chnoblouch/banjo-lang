@@ -721,28 +721,20 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
     } else if (can_lhs_be_coerced && !can_rhs_be_coerced) {
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
-
-        if (rhs_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
-
+        RESULT_RETURN_ON_ERROR(rhs_result);
         lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, rhs_type);
     } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
         lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-
-        if (lhs_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
-
+        RESULT_RETURN_ON_ERROR(lhs_result);
         rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, lhs_type);
     } else {
-        if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
+        if (binary_expr.is_numeric_op()) {
             binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
             return Result::SUCCESS;
+        } else {
+            lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
+            rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
         }
-
-        lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-        rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
     }
 
     if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
@@ -763,7 +755,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         }
     }
 
-    if (binary_expr.is_arithmetic_op() || binary_expr.is_bitwise_op()) {
+    if (binary_expr.is_numeric_op()) {
         if (!types_equal) {
             analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
             return Result::ERROR;
@@ -771,12 +763,12 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
         binary_expr.type = lhs_type;
     } else if (binary_expr.is_comparison_op()) {
+        binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+
         if (!types_equal) {
             analyzer.report_generator.report_err_type_mismatch(binary_expr.rhs, lhs_type, rhs_type);
             return Result::ERROR;
         }
-
-        binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (binary_expr.is_logical_op()) {
         if (!lhs_type.is_primitive_type(sir::Primitive::BOOL)) {
             analyzer.report_generator.report_err_expected_bool(binary_expr.lhs);
@@ -788,11 +780,11 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             rhs_result = Result::ERROR;
         }
 
+        binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
+
         if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
             return Result::ERROR;
         }
-
-        binary_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else {
         ASSERT_UNREACHABLE;
     }

@@ -444,18 +444,30 @@ Result ExprFinalizer::finalize_coercion(sir::MapLiteral &map_literal, sir::Expr 
 }
 
 Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr type) {
-    if (!binary_expr.type.is<sir::PseudoType>()) {
-        return Result::SUCCESS;
+    if (binary_expr.is_numeric_op()) {
+        if (!binary_expr.type.is<sir::PseudoType>()) {
+            return Result::SUCCESS;
+        }
+
+        Result lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, type);
+        Result rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, type);
+
+        if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
+            return Result::ERROR;
+        }
+
+        binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
+    } else {
+        // If the expression returns a boolean, the operands have already been analyzed in the first
+        // phase of expression analysis.
+        ASSERT(binary_expr.is_comparison_op() || binary_expr.is_logical_op());
     }
 
-    Result lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, type);
-    Result rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, type);
-
-    if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
+    if (binary_expr.type != type) {
+        analyzer.report_generator.report_err_type_mismatch(&binary_expr, type, binary_expr.type);
         return Result::ERROR;
     }
 
-    binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
     return Result::SUCCESS;
 }
 
