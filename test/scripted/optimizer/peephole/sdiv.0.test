@@ -1,0 +1,13 @@
+# test:pass "peephole"
+# test:section input
+
+func i32 @f(i32):
+    %0 = loadarg i32, void 0
+    %1 = sdiv i32 %0, i32 1
+    ret i32 %1
+
+# test:section output
+
+func i32 @f(i32):
+    %0 = loadarg i32, void 0
+    ret i32 %0

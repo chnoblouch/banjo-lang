@@ -7,6 +7,8 @@
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/bit_operations.hpp"
 
+#include <utility>
+
 namespace banjo::passes {
 
 PeepholeOptimizer::PeepholeOptimizer(target::Target *target) : Pass{"peephole-opt", target}, stack_layout{*target} {}
@@ -25,11 +27,11 @@ void PeepholeOptimizer::run(ssa::Function &func) {
 
     for (ssa::BasicBlock &block : func.get_basic_blocks()) {
         discard_stack_values();
-        run(block, func);
+        run(block);
     }
 }
 
-void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::run(ssa::BasicBlock &block) {
     // TODO: canonicalization
     for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
         std::optional<ssa::Value> value = Precomputing::precompute_result(*iter);
@@ -39,18 +41,17 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
         }
 
         switch (iter->get_opcode()) {
-            case ssa::Opcode::LOAD: process_load(iter, block, func); break;
+            case ssa::Opcode::LOAD: process_load(iter, block); break;
             case ssa::Opcode::STORE: process_store(iter); break;
-            case ssa::Opcode::ADD:
-            case ssa::Opcode::FADD: process_add(iter, block, func); break;
-            case ssa::Opcode::SUB:
-            case ssa::Opcode::FSUB: process_sub(iter, block, func); break;
+            case ssa::Opcode::ADD: process_add(iter, block); break;
+            case ssa::Opcode::SUB: process_sub(iter, block); break;
             case ssa::Opcode::MUL: process_mul(iter, block); break;
+            case ssa::Opcode::SDIV: process_sdiv(iter, block); break;
             case ssa::Opcode::UDIV: process_udiv(iter, block); break;
-            case ssa::Opcode::FMUL: process_fmul(iter, block, func); break;
-            case ssa::Opcode::CALL: process_call(iter, block, func); break;
-            case ssa::Opcode::OFFSETPTR: process_offsetptr(iter, block, func); break;
-            case ssa::Opcode::MEMBERPTR: process_memberptr(iter, block, func); break;
+            case ssa::Opcode::FMUL: process_fmul(iter, block); break;
+            case ssa::Opcode::CALL: process_call(iter, block); break;
+            case ssa::Opcode::OFFSETPTR: process_offsetptr(iter, block); break;
+            case ssa::Opcode::MEMBERPTR: process_memberptr(iter, block); break;
             default: break;
         }
 
@@ -61,7 +62,7 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block, ssa::Function &func) {
     }
 }
 
-void PeepholeOptimizer::process_load(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_load(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     ssa::Type type = iter->get_operand(0).get_type();
     ssa::Value &addr = iter->get_operand(1);
 
@@ -76,7 +77,7 @@ void PeepholeOptimizer::process_load(ssa::InstrIter &iter, ssa::BasicBlock &bloc
     }
 
     if (std::optional<ssa::Value> value = stack_values[member->index]) {
-        eliminate(iter, *value, block, func);
+        eliminate(iter, *value, block);
     }
 }
 
@@ -99,74 +100,116 @@ void PeepholeOptimizer::process_store(ssa::InstrIter &iter) {
     stack_values[member->index] = value;
 }
 
-void PeepholeOptimizer::process_add(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
-    if (is_zero(iter->get_operand(0))) {
-        eliminate(iter, iter->get_operand(1), block, func);
-    } else if (is_zero(iter->get_operand(1))) {
-        eliminate(iter, iter->get_operand(0), block, func);
+void PeepholeOptimizer::process_add(ssa::InstrIter &iter, ssa::BasicBlock &block) {
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Operand &rhs = iter->get_operand(1);
+
+    if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
+        std::swap(lhs, rhs);
+    }
+
+    if (rhs.is_int_immediate()) {
+        if (rhs.get_int_immediate() == 0) {
+            eliminate(iter, lhs, block);
+        }
     }
 }
 
-void PeepholeOptimizer::process_sub(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
-    if (is_zero(iter->get_operand(1))) {
-        eliminate(iter, iter->get_operand(0), block, func);
+void PeepholeOptimizer::process_sub(ssa::InstrIter &iter, ssa::BasicBlock &block) {
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Operand &rhs = iter->get_operand(1);
+
+    if (rhs.is_int_immediate()) {
+        if (rhs.get_int_immediate() == 0) {
+            eliminate(iter, lhs, block);
+        }
     }
 }
 
 void PeepholeOptimizer::process_mul(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    if (is_imm(iter->get_operand(0)) && !is_imm(iter->get_operand(1))) {
-        ssa::Operand tmp = iter->get_operand(0);
-        iter->get_operand(0) = iter->get_operand(1);
-        iter->get_operand(1) = tmp;
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Operand &rhs = iter->get_operand(1);
+    ssa::Type type = lhs.get_type();
+
+    if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
+        std::swap(lhs, rhs);
     }
 
-    if (iter->get_operand(1).is_int_immediate()) {
-        std::uint64_t value = iter->get_operand(1).get_int_immediate().to_bits();
+    if (rhs.is_int_immediate()) {
+        std::uint64_t value = rhs.get_int_immediate().to_bits();
 
-        if (BitOperations::is_power_of_two(value)) {
+        if (value == 0) {
+            ssa::Value value = ssa::Operand::from_int_immediate(0, type);
+            eliminate(iter, value, block);
+        } else if (value == 1) {
+            eliminate(iter, lhs, block);
+        } else if (BitOperations::is_power_of_two(value)) {
             unsigned shift = BitOperations::get_first_bit_set(value);
-            ssa::Operand lhs = iter->get_operand(0);
-            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, lhs.get_type());
-            iter = block.replace(iter, ssa::Instruction(ssa::Opcode::LSHL, *iter->get_dest(), {lhs, rhs}));
+            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, type);
+            iter = block.replace(iter, {ssa::Opcode::LSHL, *iter->get_dest(), {lhs, rhs}});
+        }
+    }
+}
+
+void PeepholeOptimizer::process_sdiv(ssa::InstrIter &iter, ssa::BasicBlock &block) {
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Operand &rhs = iter->get_operand(1);
+    ssa::Type type = lhs.get_type();
+
+    if (rhs.is_int_immediate()) {
+        std::uint64_t value = rhs.get_int_immediate().to_bits();
+
+        if (value == 1) {
+            eliminate(iter, lhs, block);
+        } else if (BitOperations::is_power_of_two(value)) {
+            unsigned shift = BitOperations::get_first_bit_set(value);
+            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, type);
+            iter = block.replace(iter, {ssa::Opcode::ASHR, *iter->get_dest(), {lhs, rhs}});
         }
     }
 }
 
 void PeepholeOptimizer::process_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    if (iter->get_operand(1).is_int_immediate()) {
-        std::uint64_t value = iter->get_operand(1).get_int_immediate().to_bits();
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Operand &rhs = iter->get_operand(1);
+    ssa::Type type = lhs.get_type();
 
-        if (BitOperations::is_power_of_two(value)) {
+    if (rhs.is_int_immediate()) {
+        std::uint64_t value = rhs.get_int_immediate().to_bits();
+
+        if (value == 1) {
+            eliminate(iter, lhs, block);
+        } else if (BitOperations::is_power_of_two(value)) {
             unsigned shift = BitOperations::get_first_bit_set(value);
-            ssa::Operand lhs = iter->get_operand(0);
-            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, lhs.get_type());
-            iter = block.replace(iter, ssa::Instruction(ssa::Opcode::LSHR, *iter->get_dest(), {lhs, rhs}));
+            ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, type);
+            iter = block.replace(iter, {ssa::Opcode::LSHR, *iter->get_dest(), {lhs, rhs}});
         }
     }
 }
 
-void PeepholeOptimizer::process_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
-    if (is_float_one(iter->get_operand(0))) {
-        eliminate(iter, iter->get_operand(1), block, func);
-    } else if (is_float_one(iter->get_operand(1))) {
-        eliminate(iter, iter->get_operand(0), block, func);
-    } else if (is_imm(iter->get_operand(0)) && !is_imm(iter->get_operand(1))) {
-        ssa::Operand tmp = iter->get_operand(0);
-        iter->get_operand(0) = iter->get_operand(1);
-        iter->get_operand(1) = tmp;
+void PeepholeOptimizer::process_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block) {
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Operand &rhs = iter->get_operand(1);
+
+    if (is_float_one(lhs)) {
+        eliminate(iter, rhs, block);
+    } else if (is_float_one(rhs)) {
+        eliminate(iter, lhs, block);
+    } else if (lhs.is_fp_immediate() && !rhs.is_fp_immediate()) {
+        std::swap(lhs, rhs);
     }
 }
 
-void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     ssa::Value &callee = iter->get_operand(0);
     if (!callee.is_extern_func()) {
         return;
     }
 
     if (callee.get_extern_func()->name == "memcpy") {
-        process_memcpy(iter, block, func);
+        process_memcpy(iter, block);
     } else if (callee.get_extern_func()->name == "memmove") {
-        process_memmove(iter, block, func);
+        process_memmove(iter, block);
     } else if (callee.get_extern_func()->name == "sqrtf") {
         // if (iter->get_dest() && iter->get_operands().size() == 2) {
         //     ssa::InstrIter prev = iter.get_prev();
@@ -174,29 +217,29 @@ void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &bloc
         //     iter = prev;
         // }
     } else if (callee.get_extern_func()->name == "strlen") {
-        process_strlen(iter, block, func);
+        process_strlen(iter, block);
     }
 }
 
-void PeepholeOptimizer::process_offsetptr(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_offsetptr(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     // ssa::Value &base = iter->get_operand(0);
     // ssa::Value &offset = iter->get_operand(1);
 
     // if (offset.is_int_immediate() && offset.get_int_immediate() == 0) {
-    //     eliminate(iter, base, block, func);
+    //     eliminate(iter, base, block);
     // }
 }
 
-void PeepholeOptimizer::process_memberptr(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_memberptr(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     // ssa::Value &base = iter->get_operand(1);
     // unsigned index = iter->get_operand(2).get_int_immediate().to_u64();
 
     // if (index == 0) {
-    //     eliminate(iter, base, block, func);
+    //     eliminate(iter, base, block);
     // }
 }
 
-void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (iter->get_operands().size() != 4 || iter->get_dest()) {
         return;
     }
@@ -219,7 +262,7 @@ void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &bl
     ssa::Operand size_as_type = ssa::Operand::from_type({ssa::Primitive::U8, size});
 
     if (size < usize && (size == 1 || size == 2 || size == 4 || size == 8)) {
-        ssa::VirtualRegister tmp_reg = func.next_virtual_reg();
+        ssa::VirtualRegister tmp_reg = func->next_virtual_reg();
         ssa::Operand tmp_reg_operand = ssa::Operand::from_register(tmp_reg, size_as_type.get_type());
 
         ssa::InstrIter load_instr = block.replace(iter, {ssa::Opcode::LOAD, tmp_reg, {size_as_type, src}});
@@ -233,7 +276,7 @@ void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &bl
     iter = prev;
 }
 
-void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (iter->get_operands().size() != 4 || iter->get_dest()) {
         return;
     }
@@ -262,10 +305,10 @@ void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &b
     }
 
     iter->get_operand(0) = ssa::Operand::from_extern_func(memcpy_func);
-    process_memcpy(iter, block, func);
+    process_memcpy(iter, block);
 }
 
-void PeepholeOptimizer::process_strlen(ssa::InstrIter &iter, ssa::BasicBlock &block, ssa::Function &func) {
+void PeepholeOptimizer::process_strlen(ssa::InstrIter &iter, ssa::BasicBlock &block) {
     if (iter->get_operands().size() != 2 || !iter->get_dest() || !iter->get_operand(1).is_global()) {
         return;
     }
@@ -273,11 +316,11 @@ void PeepholeOptimizer::process_strlen(ssa::InstrIter &iter, ssa::BasicBlock &bl
     std::string string = std::get<std::string>(iter->get_operand(1).get_global()->initial_value);
     unsigned string_length = string.size() - 1;
     ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::U64);
-    eliminate(iter, value, block, func);
+    eliminate(iter, value, block);
 }
 
-void PeepholeOptimizer::eliminate(ssa::InstrIter &iter, ssa::Value val, ssa::BasicBlock &block, ssa::Function &func) {
-    PassUtils::replace_in_func(func, *iter->get_dest(), val);
+void PeepholeOptimizer::eliminate(ssa::InstrIter &iter, ssa::Value value, ssa::BasicBlock &block) {
+    PassUtils::replace_in_func(*func, *iter->get_dest(), std::move(value));
 
     ssa::InstrIter prev = iter.get_prev();
     block.remove(iter);
@@ -304,10 +347,6 @@ bool PeepholeOptimizer::types_compatible(ssa::Type a, ssa::Type b) {
     unsigned size_a = data_layout.get_size(a);
     unsigned size_b = data_layout.get_size(b);
     return size_a == size_b && a.is_floating_point() == b.is_floating_point();
-}
-
-bool PeepholeOptimizer::is_imm(ssa::Operand &operand) {
-    return operand.is_immediate();
 }
 
 bool PeepholeOptimizer::is_zero(ssa::Operand &operand) {
