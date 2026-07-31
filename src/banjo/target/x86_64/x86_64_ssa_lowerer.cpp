@@ -482,12 +482,12 @@ void X8664SSALowerer::lower_ashr(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_jmp(ssa::Instruction &instr) {
     ssa::BranchTarget target = instr.get_operand(0).get_branch_target();
-    ssa::BasicBlockIter block_iter = target.block;
 
     move_branch_args(target);
 
-    if (block_iter != get_basic_block_iter().get_next()) {
-        emit(mcode::Instruction(X8664Opcode::JMP, {mcode::Operand::from_label(block_iter->get_label())}));
+    if (target.block != get_basic_block_iter().get_next()) {
+        mcode::Operand m_block = mcode::Operand::from_basic_block(*block_map.at(target.block));
+        emit({X8664Opcode::JMP, {m_block}});
     }
 }
 
@@ -889,8 +889,8 @@ void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instructi
     ssa::BranchTarget &target_true = instr.get_operand(3).get_branch_target();
     ssa::BranchTarget &target_false = instr.get_operand(4).get_branch_target();
 
-    mcode::Operand m_target_true = mcode::Operand::from_label(target_true.block->get_label());
-    mcode::Operand m_target_false = mcode::Operand::from_label(target_false.block->get_label());
+    mcode::Operand m_target_true = mcode::Operand::from_basic_block(*block_map.at(target_true.block));
+    mcode::Operand m_target_false = mcode::Operand::from_basic_block(*block_map.at(target_false.block));
 
     if (target_true.block == get_basic_block_iter().get_next()) {
         X8664Condition condition = lower_condition(ssa::invert_comparison(comparison));

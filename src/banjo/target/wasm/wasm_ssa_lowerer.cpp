@@ -111,7 +111,7 @@ void WasmSSALowerer::init_func(ssa::Function &func) {
     machine_func->set_target_data(func_data);
 }
 
-WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
+void WasmSSALowerer::generate_blocks(ssa::Function &func) {
     mcode::BasicBlock entry_block{machine_func};
     mcode::BasicBlock exit_block{machine_func};
 
@@ -137,18 +137,14 @@ WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     entry_block.append({WasmOpcode::BR_TABLE, std::move(branch_targets)});
     entry_block.append({WasmOpcode::END_BLOCK});
-    machine_func->get_basic_blocks().append(std::move(entry_block));
+    machine_func->get_basic_blocks().insert_before(machine_func->get_basic_blocks().get_first_iter(), std::move(entry_block));
 
-    BlockMap block_map;
     block_depth = func.get_basic_blocks().get_size();
 
-    for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
-        basic_block_iter = iter;
-        mcode::BasicBlock m_block = lower_basic_block(*iter);
-        m_block.append({WasmOpcode::END_BLOCK});
-
-        mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
-        block_map.insert({iter, m_iter});
+    for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
+        mcode::BasicBlockIter m_block = block_map.at(ssa_block);
+        generate_basic_block(ssa_block, *m_block);
+        m_block->append({WasmOpcode::END_BLOCK});
 
         block_depth -= 1;
     }
@@ -162,8 +158,6 @@ WasmSSALowerer::BlockMap WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     exit_block.append({WasmOpcode::END_FUNCTION});
     machine_func->get_basic_blocks().append(std::move(exit_block));
-
-    return block_map;
 }
 
 void WasmSSALowerer::emit_block_prologue(ssa::BasicBlock &block) {

@@ -238,10 +238,10 @@ void X8664Encoder::encode_cqo() {
 void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
     mcode::Operand &target = instr.get_operand(0);
 
-    if (target.is_label()) {
+    if (target.is_basic_block()) {
         text.create_relaxable_slice();
         emit_opcode(0xEB);
-        text.add_symbol_use(target.get_label(), BinSymbolUseKind::REL32, 0);
+        text.add_symbol_use(target.get_basic_block().get_label(), BinSymbolUseKind::REL32, 0);
         text.write_u8(0);
         text.end_relaxable_slice();
     }
@@ -699,10 +699,10 @@ void X8664Encoder::encode_shift(mcode::Instruction &instr, mcode::Function *func
 void X8664Encoder::encode_jcc(mcode::Instruction &instr, std::uint8_t opcode) {
     mcode::Operand &target = instr.get_operand(0);
 
-    if (target.is_label()) {
+    if (target.is_basic_block()) {
         text.create_relaxable_slice();
         emit_opcode(opcode);
-        text.add_symbol_use(target.get_label(), BinSymbolUseKind::REL32, 0);
+        text.add_symbol_use(target.get_basic_block().get_label(), BinSymbolUseKind::REL32, 0);
         text.write_i8(0);
         text.end_relaxable_slice();
     }

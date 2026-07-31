@@ -30,7 +30,7 @@ public:
 
     void init_module(ssa::Module &mod) override;
     void init_func(ssa::Function &func) override;
-    BlockMap generate_blocks(ssa::Function &func) override;
+    void generate_blocks(ssa::Function &func) override;
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 private:

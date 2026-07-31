@@ -10,10 +10,11 @@
 #include "banjo/target/x86_64/x86_64_address.hpp"
 #include "banjo/utils/large_int.hpp"
 
-#include <string>
 #include <utility>
 
 namespace banjo::mcode {
+
+class BasicBlock;
 
 class Operand {
 
@@ -24,7 +25,7 @@ private:
         Register,
         StackSlotID,
         Symbol,
-        std::string,
+        BasicBlock *,
         Symbol,
         target::X8664Address,
         target::AArch64Address,
@@ -57,8 +58,8 @@ public:
         return Operand{InternalValue{std::in_place_index<4>, std::move(symbol)}, size};
     }
 
-    static Operand from_label(std::string label, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<5>, std::move(label)}, size};
+    static Operand from_basic_block(BasicBlock &basic_block, int size = 0) {
+        return Operand{InternalValue{std::in_place_index<5>, &basic_block}, size};
     }
 
     static Operand from_symbol_deref(Symbol symbol, int size = 0) {
@@ -96,7 +97,7 @@ public:
     bool is_register() const { return value.index() == 2; }
     bool is_stack_slot() const { return value.index() == 3; }
     bool is_symbol() const { return value.index() == 4; }
-    bool is_label() const { return value.index() == 5; }
+    bool is_basic_block() const { return value.index() == 5; }
     bool is_symbol_deref() const { return value.index() == 6; }
     bool is_x86_64_addr() const { return value.index() == 7; }
     bool is_aarch64_addr() const { return value.index() == 8; }
@@ -112,7 +113,7 @@ public:
     Register get_register() const { return std::get<2>(value); }
     StackSlotID get_stack_slot() const { return std::get<3>(value); }
     Symbol get_symbol() const { return std::get<4>(value); }
-    std::string get_label() const { return std::get<5>(value); }
+    BasicBlock &get_basic_block() const { return *std::get<5>(value); }
     Symbol get_deref_symbol() const { return std::get<6>(value); }
     const target::X8664Address &get_x86_64_addr() const { return std::get<7>(value); }
     const target::AArch64Address &get_aarch64_addr() const { return std::get<8>(value); }

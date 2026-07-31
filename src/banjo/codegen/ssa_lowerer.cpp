@@ -93,8 +93,15 @@ void SSALowerer::lower_func(ssa::Function &func) {
     }
 
     init_func(func);
-    BlockMap block_map = generate_blocks(func);
-    store_graphs(block_map);
+
+    block_map.clear();
+
+    for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
+        create_basic_block(ssa_block);
+    }
+
+    generate_blocks(func);
+    store_graphs();
 
     machine_module.add(machine_func);
 
@@ -103,17 +110,10 @@ void SSALowerer::lower_func(ssa::Function &func) {
     }
 }
 
-SSALowerer::BlockMap SSALowerer::generate_blocks(ssa::Function &func) {
-    BlockMap block_map;
-
-    for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
-        basic_block_iter = iter;
-        mcode::BasicBlock m_block = lower_basic_block(*iter);
-        mcode::BasicBlockIter m_iter = machine_func->get_basic_blocks().append(m_block);
-        block_map.insert({iter, m_iter});
+void SSALowerer::generate_blocks(ssa::Function &func) {
+    for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
+        generate_basic_block(ssa_block, *block_map.at(ssa_block));
     }
-
-    return block_map;
 }
 
 mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func) {
@@ -132,25 +132,31 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
     }
 }
 
-mcode::BasicBlock SSALowerer::lower_basic_block(ssa::BasicBlock &basic_block) {
-    mcode::BasicBlock machine_basic_block(basic_block.get_label(), machine_func);
+void SSALowerer::create_basic_block(ssa::BasicBlockIter ssa_block) {
+    mcode::BasicBlock m_block(ssa_block->get_label(), machine_func);
 
-    for (ssa::VirtualRegister reg : basic_block.get_param_regs()) {
-        machine_basic_block.get_params().push_back(reg);
+    for (ssa::VirtualRegister reg : ssa_block->get_param_regs()) {
+        m_block.get_params().push_back(reg);
     }
 
-    this->machine_basic_block = &machine_basic_block;
+    mcode::BasicBlockIter m_block_iter = machine_func->get_basic_blocks().append(m_block);
+    block_map.insert({ssa_block, m_block_iter});
+}
+
+void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlock &m_block) {
+    this->basic_block_iter = ssa_block;
+    this->machine_basic_block = &m_block;
 
     basic_block_context = {
-        .basic_block = &machine_basic_block,
-        .insertion_iter = machine_basic_block.begin(),
+        .basic_block = &m_block,
+        .insertion_iter = m_block.begin(),
         .regs = {},
     };
 
-    emit_block_prologue(basic_block);
-    mcode::InstrIter insertion_point = machine_basic_block.get_instrs().get_trailer().get_prev();
+    emit_block_prologue(*ssa_block);
+    mcode::InstrIter insertion_point = m_block.get_instrs().get_trailer().get_prev();
 
-    for (ssa::InstrIter iter = basic_block.get_instrs().get_last_iter(); iter != basic_block.get_header(); --iter) {
+    for (ssa::InstrIter iter = ssa_block->get_instrs().get_last_iter(); iter != ssa_block->get_header(); --iter) {
         if (iter->get_opcode() != ssa::Opcode::CALL && iter->get_dest() && get_num_uses(*iter->get_dest()) == 0) {
             continue;
         }
@@ -159,11 +165,9 @@ mcode::BasicBlock SSALowerer::lower_basic_block(ssa::BasicBlock &basic_block) {
         basic_block_context.insertion_iter = insertion_point.get_next();
         lower_instr(*iter);
     }
-
-    return machine_basic_block;
 }
 
-void SSALowerer::store_graphs(const BlockMap &block_map) {
+void SSALowerer::store_graphs() {
     ssa::ControlFlowGraph cfg(func);
     ssa::DominatorTree domtree(cfg);
 

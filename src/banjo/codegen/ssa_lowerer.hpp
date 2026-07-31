@@ -72,6 +72,7 @@ protected:
     mcode::Module machine_module;
     mcode::Function *machine_func;
     mcode::BasicBlock *machine_basic_block;
+    BlockMap block_map;
 
 public:
     SSALowerer(target::Target *target);
@@ -114,8 +115,9 @@ public:
 protected:
     void lower_func(ssa::Function &func);
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
-    mcode::BasicBlock lower_basic_block(ssa::BasicBlock &basic_block);
-    void store_graphs(const BlockMap &block_map);
+    void create_basic_block(ssa::BasicBlockIter ssa_block);
+    void generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlock &m_block);
+    void store_graphs();
     void lower_instr(ssa::Instruction &instr);
 
     void lower_globals();
@@ -127,7 +129,7 @@ protected:
 
     virtual void init_module(ssa::Module &mod) {}
     virtual void init_func(ssa::Function &func) {}
-    virtual BlockMap generate_blocks(ssa::Function &func);
+    virtual void generate_blocks(ssa::Function &func);
     virtual void emit_block_prologue(ssa::BasicBlock &block) {}
 
     virtual void lower_load(ssa::Instruction &instr);

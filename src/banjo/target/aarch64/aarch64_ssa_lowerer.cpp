@@ -53,8 +53,8 @@ void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruc
         m_cmp_rhs = emit_sign_ext(m_cmp_rhs);
     }
 
-    mcode::Operand m_target_true = mcode::Operand::from_label(target_true.block->get_label());
-    mcode::Operand m_target_false = mcode::Operand::from_label(target_false.block->get_label());
+    mcode::Operand m_target_true = mcode::Operand::from_basic_block(*block_map.at(target_true.block));
+    mcode::Operand m_target_false = mcode::Operand::from_basic_block(*block_map.at(target_false.block));
 
     if (target_true.block == get_basic_block_iter().get_next()) {
         AArch64Condition condition = lower_condition(ssa::invert_comparison(comparison));
@@ -530,10 +530,14 @@ void AArch64SSALowerer::lower_ashr(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_jmp(ssa::Instruction &instr) {
-    move_branch_args(instr.get_operand(0).get_branch_target());
+    ssa::BranchTarget &target = instr.get_operand(0).get_branch_target();
 
-    mcode::Operand m_target = mcode::Operand::from_label(instr.get_operand(0).get_branch_target().block->get_label());
-    emit({AArch64Opcode::B, {m_target}});
+    move_branch_args(target);
+
+    if (target.block != get_basic_block_iter().get_next()) {
+        mcode::Operand m_block = mcode::Operand::from_basic_block(*block_map.at(target.block));
+        emit({AArch64Opcode::B, {m_block}});
+    }
 }
 
 void AArch64SSALowerer::lower_cjmp(ssa::Instruction &instr) {

@@ -391,7 +391,7 @@ void AArch64Encoder::encode_fcmp(mcode::Instruction &instr) {
 void AArch64Encoder::encode_b(mcode::Instruction &instr) {
     mcode::Operand &m_target = instr.get_operand(0);
 
-    text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::LABEL_BRANCH);
+    text.add_symbol_use(m_target.get_basic_block().get_label(), BinSymbolUseKind::LABEL_BRANCH);
     text.write_u32(0x14000000);
 }
 
@@ -755,7 +755,7 @@ void AArch64Encoder::encode_b_cond_family(mcode::Instruction &instr, AArch64Cond
 
     std::uint32_t cond_bits = encode_cond(cond);
 
-    text.add_symbol_use(m_target.get_label(), BinSymbolUseKind::LABEL_BRANCH);
+    text.add_symbol_use(m_target.get_basic_block().get_label(), BinSymbolUseKind::LABEL_BRANCH);
     text.write_u32(0x54000000 | cond_bits);
 }
 

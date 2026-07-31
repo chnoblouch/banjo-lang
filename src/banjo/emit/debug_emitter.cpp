@@ -219,7 +219,7 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
     else if (operand.is_register()) return get_reg_name(operand.get_register(), operand.get_size());
     else if (operand.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot());
     else if (operand.is_symbol()) return operand.get_symbol().name;
-    else if (operand.is_label()) return operand.get_label();
+    else if (operand.is_basic_block()) return operand.get_basic_block().get_debug_label();
     else if (operand.is_symbol_deref()) return "[" + operand.get_deref_symbol().name + "]";
     else if (operand.is_x86_64_addr()) {
         const target::X8664Address &addr = operand.get_x86_64_addr();

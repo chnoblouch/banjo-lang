@@ -210,7 +210,7 @@ void AArch64AsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand
     else if (operand.is_physical_reg()) emit_reg(operand.get_physical_reg(), operand.get_size());
     else if (operand.is_stack_slot()) emit_stack_slot(func, operand.get_stack_slot());
     else if (operand.is_symbol()) emit_symbol(operand.get_symbol());
-    else if (operand.is_label()) stream << operand.get_label();
+    else if (operand.is_basic_block()) stream << operand.get_basic_block().get_label();
     else if (operand.is_aarch64_addr()) emit_addr(func, operand.get_aarch64_addr());
     else if (operand.is_stack_offset()) emit_stack_offset(func, operand.get_stack_offset());
     else if (operand.is_aarch64_left_shift()) stream << "lsl #" << operand.get_aarch64_left_shift();
