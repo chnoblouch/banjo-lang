@@ -1793,7 +1793,14 @@ std::string CLI::get_output_path() {
 }
 
 std::filesystem::path CLI::get_output_dir() {
-    return std::filesystem::path("out") / (target.to_string() + "-debug");
+    std::string build_config_string;
+
+    switch (build_config) {
+        case BuildConfig::DEBUG: build_config_string = "debug"; break;
+        case BuildConfig::RELEASE: build_config_string = "release"; break;
+    }
+
+    return std::filesystem::path("out") / (target.to_string() + "-" + build_config_string);
 }
 
 } // namespace banjo::cli
