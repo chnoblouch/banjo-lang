@@ -158,15 +158,15 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return self.slice.__hash__();
     }
 
-    func ensure_capacity(mut self, required: usize) {
-        if self.capacity >= required {
+    func ensure_capacity(mut self, capacity: usize) {
+        if self.capacity >= capacity {
             return;
         }
 
         if self.capacity == 0 {
-            self.capacity = required;
+            self.capacity = capacity;
         } else {
-            while self.capacity < required {
+            while self.capacity < capacity {
                 self.capacity = 2 * self.capacity;
             }
         }

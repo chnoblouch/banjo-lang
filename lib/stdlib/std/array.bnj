@@ -226,7 +226,9 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         if self.capacity == 0 {
             self.capacity = capacity;
         } else {
-            self.capacity = 2 * self.capacity;
+            while self.capacity < capacity {
+                self.capacity = 2 * self.capacity;
+            }
         }
 
         var size = self.capacity * meta(T).size;
