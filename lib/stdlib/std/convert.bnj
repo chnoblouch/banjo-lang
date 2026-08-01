@@ -61,8 +61,6 @@ pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
         return "\'" + char_to_string(value as u8) + "\'";
     } else if T is ToRepr {
         return value.__repr__(indent);
-    } else if T is ToRepr {
-        return value.__repr__(indent);
     } else if meta(T).is_tuple {
         return tuple_to_repr(value, indent);
     } else if meta(T).is_struct {

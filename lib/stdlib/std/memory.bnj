@@ -15,7 +15,9 @@ pub func realloc(pointer: addr, size: usize) -> addr {
 }
 
 pub func free(pointer: addr) {
-    free_counter += 1;
+    if pointer != null {
+        free_counter += 1;
+    }
 
     c.free(pointer);
 }
