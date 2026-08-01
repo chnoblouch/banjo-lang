@@ -6,8 +6,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 ArgumentParser &ArgumentParser::add_value(std::string name, std::string default_value) {
     values.insert({name, {.default_value = default_value}});
     return *this;
@@ -63,7 +61,5 @@ ParsedArgs ArgumentParser::create_default_args() {
 
     return args;
 }
-
-} // namespace lang
 
 } // namespace banjo

@@ -13,7 +13,7 @@
 #include <string_view>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 class SourceFile {
 
@@ -39,6 +39,6 @@ public:
     std::string_view get_content() const;
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

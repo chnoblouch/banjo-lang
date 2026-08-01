@@ -3,9 +3,7 @@
 #include "banjo/config/config.hpp"
 #include "uri.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 InitializeHandler::InitializeHandler() {}
 
@@ -70,18 +68,16 @@ void InitializeHandler::init_config(const JSONValue &workspace_folders) {
         std::string uri = roots.get_object(i).get_string("uri");
         std::filesystem::path root_path = URI::decode_to_path(uri);
 
-        lang::Config::instance().paths.push_back(root_path / "src");
+        Config::instance().paths.push_back(root_path / "src");
 
         std::filesystem::path packages_path = root_path / "packages";
 
         if (std::filesystem::is_directory(packages_path)) {
             for (const std::filesystem::path &package_path : std::filesystem::directory_iterator(packages_path)) {
-                lang::Config::instance().paths.push_back(package_path / "src");
+                Config::instance().paths.push_back(package_path / "src");
             }
         }
     }
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

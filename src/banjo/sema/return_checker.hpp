@@ -6,9 +6,7 @@
 
 #include <cstdint>
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 class ReturnChecker {
 
@@ -31,8 +29,6 @@ private:
     void check_if_stmt_branch(sir::Block &block, bool &returns_always, bool &has_any_return);
 };
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

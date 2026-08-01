@@ -35,7 +35,7 @@ void MachinePassRunner::create_and_run(mcode::Module &module) {
 }
 
 void MachinePassRunner::run_all(std::vector<MachinePass *> passes, mcode::Module &module) {
-    if (lang::Config::instance().debug) {
+    if (Config::instance().debug) {
         emit(module, "mcode.input");
     }
 
@@ -43,7 +43,7 @@ void MachinePassRunner::run_all(std::vector<MachinePass *> passes, mcode::Module
         passes[i]->run(module);
         delete passes[i];
 
-        if (lang::Config::instance().debug) {
+        if (Config::instance().debug) {
             emit(module, "mcode.pass" + std::to_string(i));
         }
     }

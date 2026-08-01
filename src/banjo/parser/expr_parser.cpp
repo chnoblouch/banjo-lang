@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace banjo::lang {
+namespace banjo {
 
 ExprParser::ExprParser(Parser &parser, bool allow_struct_literals /* = false */)
   : parser(parser),
@@ -772,4 +772,4 @@ unsigned ExprParser::hex_digit_value(char c) {
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

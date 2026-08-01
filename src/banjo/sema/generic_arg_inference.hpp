@@ -7,11 +7,7 @@
 #include <span>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 class GenericArgInference {
 
@@ -46,10 +42,6 @@ private:
     Result infer_on_reference_type(sir::ReferenceType &reference_type, sir::Expr arg_type);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

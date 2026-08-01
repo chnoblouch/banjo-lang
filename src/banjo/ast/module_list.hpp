@@ -12,8 +12,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class ModuleList {
 
 private:
@@ -62,8 +60,6 @@ public:
     std::list<std::unique_ptr<SourceFile>>::const_iterator begin() const { return mods.begin(); }
     std::list<std::unique_ptr<SourceFile>>::const_iterator end() const { return mods.end(); }
 };
-
-} // namespace lang
 
 } // namespace banjo
 

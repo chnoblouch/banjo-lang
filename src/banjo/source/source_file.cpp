@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <utility>
 
-namespace banjo::lang {
+namespace banjo {
 
 std::unique_ptr<SourceFile> SourceFile::read(
     ModulePath mod_path,
@@ -51,4 +51,4 @@ std::string_view SourceFile::get_content() const {
     return std::string_view{buffer}.substr(0, buffer.size() - EOF_ZONE_SIZE);
 }
 
-} // namespace banjo::lang
+} // namespace banjo

@@ -6,15 +6,11 @@
 #include "connection.hpp"
 #include "workspace.hpp"
 
-namespace banjo {
+namespace banjo::lsp {
 
-namespace lsp {
+void publish_diagnostics(Connection &connection, Workspace &workspace, const std::vector<SourceFile *> &files);
+void publish_diagnostics(Connection &connection, Workspace &workspace, SourceFile &file);
 
-void publish_diagnostics(Connection &connection, Workspace &workspace, const std::vector<lang::SourceFile *> &files);
-void publish_diagnostics(Connection &connection, Workspace &workspace, lang::SourceFile &file);
-
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

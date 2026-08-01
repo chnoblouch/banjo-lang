@@ -7,11 +7,7 @@
 
 #include <algorithm>
 
-namespace banjo {
-
-namespace lsp {
-
-using namespace lang;
+namespace banjo::lsp {
 
 SemanticTokensHandler::SemanticTokensHandler(Workspace &workspace) : workspace(workspace) {}
 
@@ -21,7 +17,7 @@ JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &co
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
-    lang::SourceFile *file = workspace.find_file(fs_path);
+    SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
         return JSONObject{{"data", JSONArray{}}};
     }
@@ -52,7 +48,7 @@ std::vector<LSPSemanticToken> SemanticTokensHandler::tokens_to_lsp(
     const std::vector<SemanticToken> &tokens
 ) {
     std::vector<LSPSemanticToken> lsp_tokens;
-    lang::TextPosition position = 0;
+    TextPosition position = 0;
 
     for (const SemanticToken &token : tokens) {
         int delta_line = 0;
@@ -106,13 +102,9 @@ void SemanticTokensHandler::add_symbol_token(
         tokens.push_back({range, SemanticTokenType::FUNCTION, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::ConstDef>()) {
         tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::READONLY});
-    } else if (symbol.is_one_of<
-                   sir::StructDef,
-                   sir::EnumDef,
-                   sir::UnionDef,
-                   sir::UnionCase,
-                   sir::ProtoDef,
-                   sir::TypeAlias>()) {
+    } else if (
+        symbol.is_one_of<sir::StructDef, sir::EnumDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()
+    ) {
         tokens.push_back({range, SemanticTokenType::STRUCT, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::StructField>()) {
         tokens.push_back({range, SemanticTokenType::PROPERTY, SemanticTokenModifiers::NONE});
@@ -127,6 +119,4 @@ void SemanticTokensHandler::add_symbol_token(
     }
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

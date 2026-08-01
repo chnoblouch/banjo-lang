@@ -143,24 +143,24 @@ bool HotReloader::has_changed(const std::filesystem::path &file_path) {
 void HotReloader::reload_file(const std::filesystem::path &file_path) {
     log("reloading file '" + file_path.string() + "'...");
 
-    JITCompiler compiler(lang::Config::instance(), addr_table);
+    JITCompiler compiler(Config::instance(), addr_table);
     if (!compiler.build_ir()) {
         log("failed to reload file");
         return;
     }
 
     std::filesystem::path absolute_path = std::filesystem::absolute(file_path);
-    lang::sir::Module *mod = compiler.find_mod(absolute_path);
+    sir::Module *mod = compiler.find_mod(absolute_path);
 
     if (!mod) {
         return;
     }
 
-    std::vector<lang::sir::FuncDef *> funcs;
+    std::vector<sir::FuncDef *> funcs;
     collect_funcs(mod->block, funcs);
 
-    for (lang::sir::FuncDef *func : funcs) {
-        std::string name = lang::NameMangling::mangle_func_name(*func, {});
+    for (sir::FuncDef *func : funcs) {
+        std::string name = NameMangling::mangle_func_name(*func, {});
 
         std::optional<unsigned> index = addr_table.find_index(name);
         if (!index) {
@@ -173,13 +173,13 @@ void HotReloader::reload_file(const std::filesystem::path &file_path) {
     }
 }
 
-void HotReloader::collect_funcs(lang::sir::DeclBlock &block, std::vector<lang::sir::FuncDef *> &out_funcs) {
-    for (lang::sir::Decl decl : block.decls) {
-        if (auto func_def = decl.match<lang::sir::FuncDef>()) {
+void HotReloader::collect_funcs(sir::DeclBlock &block, std::vector<sir::FuncDef *> &out_funcs) {
+    for (sir::Decl decl : block.decls) {
+        if (auto func_def = decl.match<sir::FuncDef>()) {
             out_funcs.push_back(func_def);
-        } else if (auto struct_def = decl.match<lang::sir::StructDef>()) {
+        } else if (auto struct_def = decl.match<sir::StructDef>()) {
             collect_funcs(struct_def->block, out_funcs);
-        } else if (auto union_def = decl.match<lang::sir::UnionDef>()) {
+        } else if (auto union_def = decl.match<sir::UnionDef>()) {
             collect_funcs(union_def->block, out_funcs);
         }
     }
@@ -267,7 +267,7 @@ void HotReloader::write_section(TargetProcess::Address address, const WriteBuffe
     }
 }
 
-void HotReloader::update_func_addr(lang::sir::FuncDef &func_def, unsigned index, TargetProcess::Address new_addr) {
+void HotReloader::update_func_addr(sir::FuncDef &func_def, unsigned index, TargetProcess::Address new_addr) {
     TargetProcess::Address item_addr = addr_table_ptr + addr_table.compute_offset(index);
     bool result = process->write_memory(item_addr, &new_addr, sizeof(TargetProcess::Address));
 
@@ -287,21 +287,21 @@ void HotReloader::log(const std::string &message) {
     std::exit(1);
 }
 
-std::string HotReloader::symbol_to_string(lang::sir::Symbol symbol) {
+std::string HotReloader::symbol_to_string(sir::Symbol symbol) {
     std::string result;
 
-    lang::sir::Symbol parent = symbol.get_parent();
+    sir::Symbol parent = symbol.get_parent();
     if (parent) {
         result += symbol_to_string(parent) + '.';
     }
 
-    if (auto mod = symbol.match<lang::sir::Module>()) {
+    if (auto mod = symbol.match<sir::Module>()) {
         result += mod->path.to_string();
-    } else if (auto func_def = symbol.match<lang::sir::FuncDef>()) {
+    } else if (auto func_def = symbol.match<sir::FuncDef>()) {
         result += func_def->ident.value;
-    } else if (auto struct_def = symbol.match<lang::sir::StructDef>()) {
+    } else if (auto struct_def = symbol.match<sir::StructDef>()) {
         result += struct_def->ident.value;
-    } else if (auto union_def = symbol.match<lang::sir::UnionDef>()) {
+    } else if (auto union_def = symbol.match<sir::UnionDef>()) {
         result += union_def->ident.value;
     }
 

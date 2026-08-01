@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 GlobalSSAGenerator::GlobalSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
 ssa::Global::Value GlobalSSAGenerator::generate_value(const sir::Expr &value) {
@@ -104,7 +102,5 @@ void GlobalSSAGenerator::pad_bytes(WriteBuffer &buffer, unsigned alignment) {
         buffer.write_u8(0);
     }
 }
-
-} // namespace lang
 
 } // namespace banjo

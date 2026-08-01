@@ -6,7 +6,7 @@
 #include <functional>
 #include <optional>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 class Comparison {
 
@@ -35,6 +35,6 @@ public:
     bool compare(MetaFieldExpr &lhs, MetaFieldExpr &rhs);
 };
 
-}; // namespace banjo::lang::sir
+}; // namespace banjo::sir
 
 #endif

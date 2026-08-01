@@ -26,7 +26,7 @@
 #include <variant>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 ExprSSAGenerator::ExprSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
@@ -1155,4 +1155,4 @@ sir::Attributes::Layout ExprSSAGenerator::get_type_layout(const sir::Expr &type)
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

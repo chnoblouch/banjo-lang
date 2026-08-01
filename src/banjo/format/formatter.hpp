@@ -11,7 +11,7 @@
 #include <functional>
 #include <string>
 
-namespace banjo::lang {
+namespace banjo {
 
 class Formatter {
 
@@ -136,6 +136,6 @@ private:
     static unsigned ordering_value(char c);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

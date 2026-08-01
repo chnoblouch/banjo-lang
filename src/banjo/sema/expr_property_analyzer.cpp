@@ -2,9 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 ExprProperties ExprPropertyAnalyzer::analyze(sir::Expr expr) {
     if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
@@ -72,6 +70,4 @@ ExprProperties ExprPropertyAnalyzer::analyze_field_expr(sir::FieldExpr &field_ex
     return analyze(field_expr.base);
 }
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema

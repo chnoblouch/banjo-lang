@@ -5,11 +5,7 @@
 
 #include <string_view>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sir {
+namespace banjo::sir {
 
 namespace MagicMethods {
 
@@ -48,10 +44,6 @@ std::string_view look_up_iter(sir::IterKind kind);
 
 } // namespace MagicMethods
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sir
 
 #endif

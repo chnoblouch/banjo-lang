@@ -6,7 +6,7 @@
 
 #include <variant>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 DeclVisitor::DeclVisitor(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -189,4 +189,4 @@ void DeclVisitor::visit_symbol(sir::Symbol symbol) {
     );
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

@@ -10,8 +10,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class SourceFile;
 
 struct SourceLocation {
@@ -61,8 +59,6 @@ public:
     Report &set_message(ReportMessage message);
     Report &add_note(ReportMessage note);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

@@ -5,8 +5,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class DeclParser {
 
 private:
@@ -41,8 +39,6 @@ private:
     ParseResult parse_generic_param_list();
     ParseResult parse_type_constraint();
 };
-
-} // namespace lang
 
 } // namespace banjo
 

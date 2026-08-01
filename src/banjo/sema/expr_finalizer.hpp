@@ -4,7 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class ExprFinalizer {
 
@@ -72,6 +72,6 @@ public:
     void check_int_literal_range(sir::IntLiteral &int_literal);
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

@@ -8,11 +8,7 @@
 #include <variant>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sir {
+namespace banjo::sir {
 
 Cloner::Cloner(Module &mod) : mod(mod) {}
 
@@ -1269,8 +1265,4 @@ Error *Cloner::clone_error(const Error &error) {
     );
 }
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sir

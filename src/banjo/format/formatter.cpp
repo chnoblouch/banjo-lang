@@ -14,7 +14,7 @@
 #include <cstdarg>
 #include <span>
 
-namespace banjo::lang {
+namespace banjo {
 
 Formatter::Formatter(ReportManager &report_manager, SourceFile &file)
   : report_manager{report_manager},
@@ -1567,4 +1567,4 @@ unsigned Formatter::ordering_value(char c) {
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

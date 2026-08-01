@@ -7,7 +7,7 @@
 #include <optional>
 #include <utility>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class ExprAnalyzer {
 
@@ -133,6 +133,6 @@ private:
     );
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

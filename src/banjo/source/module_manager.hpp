@@ -17,8 +17,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class ModuleLoader;
 class ReportManager;
 
@@ -53,8 +51,6 @@ public:
 private:
     std::unique_ptr<SourceFile> parse_module(const ModuleFile &module_file);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

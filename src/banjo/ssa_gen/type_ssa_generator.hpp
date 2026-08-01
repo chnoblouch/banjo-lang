@@ -1,13 +1,11 @@
 #ifndef BANJO_SSA_GENERATOR_TYPE_SSA_GENERATOR_H
 #define BANJO_SSA_GENERATOR_TYPE_SSA_GENERATOR_H
 
-#include "banjo/ssa/type.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa/type.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 
 namespace banjo {
-
-namespace lang {
 
 class TypeSSAGenerator {
 
@@ -34,8 +32,6 @@ private:
     ssa::Type generate_reference_type();
     ssa::Type generate_specialize_type(const sir::SpecializeExpr &specialize_type);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

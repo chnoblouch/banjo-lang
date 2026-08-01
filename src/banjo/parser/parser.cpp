@@ -14,8 +14,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 const std::unordered_set<TokenType> RECOVER_KEYWORDS{
     TKN_EOF,
     TKN_IF,
@@ -415,7 +413,5 @@ ASTNode *Parser::parse_completion_point() {
 ASTNode *Parser::create_dummy_block() {
     return create_node(AST_BLOCK, TextRange{stream.get()->position, stream.get()->position});
 }
-
-} // namespace lang
 
 } // namespace banjo

@@ -7,7 +7,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 DeclInterfaceAnalyzer::DeclInterfaceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -419,4 +419,4 @@ void DeclInterfaceAnalyzer::analyze_type_constraint(sir::TypeConstraint &constra
     }
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

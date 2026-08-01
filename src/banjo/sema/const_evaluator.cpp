@@ -9,11 +9,7 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -473,8 +469,4 @@ sir::Expr ConstEvaluator::clone(sir::Expr expr) {
     return sir::Cloner(analyzer.get_mod()).clone_expr(expr);
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

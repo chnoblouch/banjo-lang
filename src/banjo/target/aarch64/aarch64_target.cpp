@@ -34,7 +34,7 @@ std::vector<codegen::MachinePass *> AArch64Target::create_post_passes() {
 }
 
 std::string AArch64Target::get_output_file_ext() {
-    if (lang::Config::instance().force_asm) {
+    if (Config::instance().force_asm) {
         return "s";
     }
 
@@ -48,7 +48,7 @@ std::string AArch64Target::get_output_file_ext() {
 }
 
 codegen::Emitter *AArch64Target::create_emitter(mcode::Module &module, std::ostream &stream) {
-    if (lang::Config::instance().force_asm) {
+    if (Config::instance().force_asm) {
         return new codegen::AArch64AsmEmitter(module, stream, descr);
     }
 

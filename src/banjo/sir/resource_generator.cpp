@@ -5,7 +5,7 @@
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 ResourceGenerator::ResourceGenerator(utils::Arena &arena)
   : arena{arena},
@@ -142,4 +142,4 @@ std::optional<sir::Resource> ResourceGenerator::create_generic_param_resource(
     }
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

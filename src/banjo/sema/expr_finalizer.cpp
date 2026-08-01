@@ -14,7 +14,7 @@
 #include <limits>
 #include <unordered_map>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 ExprFinalizer::ExprFinalizer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -1093,4 +1093,4 @@ void ExprFinalizer::check_int_literal_range(sir::IntLiteral &int_literal) {
     }
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

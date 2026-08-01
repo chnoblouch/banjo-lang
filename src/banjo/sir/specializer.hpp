@@ -6,7 +6,7 @@
 
 #include <span>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 class Specializer {
 
@@ -36,6 +36,6 @@ public:
     sir::Expr specialize_reference_type(sir::ReferenceType &reference_type);
 };
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir
 
 #endif

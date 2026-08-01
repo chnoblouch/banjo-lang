@@ -8,12 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
-struct ModuleParseResult {
-    bool exists;
-};
-
 class Compiler {
 
 private:
@@ -26,8 +20,6 @@ public:
     Compiler(const Config &config);
     void compile();
 };
-
-} // namespace lang
 
 } // namespace banjo
 

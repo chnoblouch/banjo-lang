@@ -1,7 +1,7 @@
 #include "lowering_tester.hpp"
 
-#include "banjo/target/x86_64/x86_64_target.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
+#include "banjo/target/x86_64/x86_64_target.hpp"
 
 #include <filesystem>
 #include <iomanip>
@@ -13,7 +13,7 @@ int LoweringTester::run() {
     std::filesystem::path tests_dir(TESTS_DIR);
 
     std::cout << "running tests..." << std::endl;
-    target::X8664Target arch_descr(target::CodeModel::LARGE, lang::OperatingSystem::WINDOWS);
+    target::X8664Target arch_descr(target::CodeModel::LARGE, OperatingSystem::WINDOWS);
 
     std::vector<std::filesystem::path> test_files;
     for (const std::filesystem::path &test_file : std::filesystem::directory_iterator(tests_dir)) {
@@ -22,7 +22,7 @@ int LoweringTester::run() {
 
     for (unsigned i = 0; i < test_files.size(); i++) {
         unsigned padding = std::to_string(test_files.size()).size();
-        std::cout << std::setfill('0') << "[" << std::setw(padding) << i << " / " << test_files.size() << "] "; 
+        std::cout << std::setfill('0') << "[" << std::setw(padding) << i << " / " << test_files.size() << "] ";
 
         const std::filesystem::path &test_file = test_files[i];
         std::cout << test_file.stem().string() << " ";
@@ -58,7 +58,6 @@ ssa::Module LoweringTester::load_ir_section(std::ifstream &stream) {
             cur_func = new ssa::Function("name", {}, ssa::Primitive::VOID, ssa::CallingConv::X86_64_MS_ABI);
             ir_module.add(cur_func);
         } else if (line.starts_with("  ")) {
-            
         }
     }
 

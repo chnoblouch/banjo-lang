@@ -35,7 +35,7 @@ std::vector<codegen::MachinePass *> X8664Target::create_post_passes() {
 }
 
 std::string X8664Target::get_output_file_ext() {
-    if (lang::Config::instance().force_asm) {
+    if (Config::instance().force_asm) {
         return descr.get_environment() == Environment::MSVC ? "asm" : "s";
     }
 
@@ -43,7 +43,7 @@ std::string X8664Target::get_output_file_ext() {
 }
 
 codegen::Emitter *X8664Target::create_emitter(mcode::Module &module, std::ostream &stream) {
-    if (lang::Config::instance().force_asm) {
+    if (Config::instance().force_asm) {
         return new codegen::NASMEmitter(module, stream, descr);
     }
 

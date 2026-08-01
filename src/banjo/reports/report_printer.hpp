@@ -10,8 +10,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class ReportPrinter {
 
 private:
@@ -51,8 +49,6 @@ private:
     unsigned char_width(int c);
     void set_color(std::string_view color);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

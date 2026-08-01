@@ -7,11 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 struct ExtraAnalysis {
     struct SymbolDef {
@@ -32,10 +28,6 @@ struct ExtraAnalysis {
     std::unordered_map<sir::Module *, ModuleAnalysis> mods;
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

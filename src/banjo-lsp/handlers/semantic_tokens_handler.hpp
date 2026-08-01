@@ -6,12 +6,10 @@
 #include "index.hpp"
 #include "workspace.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 struct SemanticToken {
-    lang::TextRange range;
+    TextRange range;
     int type;
     int modifiers;
 };
@@ -38,11 +36,9 @@ public:
     JSONArray serialize(const std::vector<LSPSemanticToken> &lsp_tokens);
 
 private:
-    void add_symbol_token(std::vector<SemanticToken> &tokens, lang::TextRange range, const lang::sir::Symbol &symbol);
+    void add_symbol_token(std::vector<SemanticToken> &tokens, TextRange range, const sir::Symbol &symbol);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

@@ -20,8 +20,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 ModuleManager::ModuleManager(ReportManager &report_manager, Lexer::Mode lexer_mode /* = Lexer::Mode::COMPILATION */)
   : report_manager{report_manager},
     lexer_mode{lexer_mode} {}
@@ -142,7 +140,5 @@ std::unique_ptr<SourceFile> ModuleManager::parse_module(const ModuleFile &module
     file->ast_mod = Parser{*file, file->tokens, report_manager}.parse_module();
     return file;
 }
-
-} // namespace lang
 
 } // namespace banjo

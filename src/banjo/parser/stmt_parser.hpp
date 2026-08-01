@@ -6,8 +6,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class StmtParser {
 
 private:
@@ -37,8 +35,6 @@ private:
     ParseResult parse_meta_if(NodeBuilder &node);
     ParseResult parse_meta_for(NodeBuilder &node);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

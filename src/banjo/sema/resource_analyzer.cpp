@@ -9,11 +9,7 @@
 
 #include <ranges>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -721,8 +717,4 @@ void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope
     }
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

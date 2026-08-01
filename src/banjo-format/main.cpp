@@ -16,21 +16,21 @@ int main(int argc, char *argv[]) {
     }
 
     std::string file_path = argv[argc - 1];
-    banjo::lang::Config::instance() = banjo::lang::ConfigParser().parse(argc, argv);
+    banjo::Config::instance() = banjo::ConfigParser().parse(argc, argv);
 
-    banjo::lang::ReportManager report_manager;
+    banjo::ReportManager report_manager;
 
     std::ifstream stream{file_path, std::ios::binary};
-    std::unique_ptr<banjo::lang::SourceFile> file = banjo::lang::SourceFile::read({}, file_path, stream);
-    banjo::lang::Formatter{report_manager, *file}.format().apply_edits();
+    std::unique_ptr<banjo::SourceFile> file = banjo::SourceFile::read({}, file_path, stream);
+    banjo::Formatter{report_manager, *file}.format().apply_edits();
 
     if (report_manager.is_valid()) {
         std::ofstream{file_path, std::ios::binary} << file->get_content();
     }
 
-    banjo::lang::ReportPrinter report_printer;
+    banjo::ReportPrinter report_printer;
 
-    if (banjo::lang::Config::instance().color_diagnostics) {
+    if (banjo::Config::instance().color_diagnostics) {
         report_printer.enable_colors();
     }
 

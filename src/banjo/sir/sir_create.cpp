@@ -3,7 +3,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 Expr create_primitive_type(Module &mod, Primitive primitive) {
     return mod.create(
@@ -137,4 +137,4 @@ Stmt create_return_result_success_void(Module &mod, Concrete<StructDef> concrete
     );
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

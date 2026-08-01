@@ -8,8 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class BlockSSAGenerator {
 
 private:
@@ -45,8 +43,6 @@ private:
     void generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr);
     void generate_deinit_call(const sir::Resource &resource, ssa::Value ssa_ptr);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

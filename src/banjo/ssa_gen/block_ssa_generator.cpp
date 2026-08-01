@@ -18,8 +18,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 BlockSSAGenerator::BlockSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
 void BlockSSAGenerator::generate_block(const sir::Block &block) {
@@ -521,7 +519,5 @@ void BlockSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa:
     ssa::Value ssa_callee = ssa::Operand::from_func(ssa_func, ssa::Primitive::ADDR);
     ctx.get_ssa_block()->append({ssa::Opcode::CALL, {ssa_callee, std::move(ssa_ptr)}});
 }
-
-} // namespace lang
 
 } // namespace banjo

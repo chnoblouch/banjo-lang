@@ -9,8 +9,6 @@
 
 namespace banjo::lsp {
 
-using namespace lang;
-
 FormattingHandler::FormattingHandler(Workspace &workspace) : workspace(workspace) {}
 
 FormattingHandler::~FormattingHandler() {}

@@ -6,8 +6,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 StoredValue StoredValue::create_value(ssa::Value value) {
     return {Kind::VALUE, value.get_type(), std::move(value)};
 }
@@ -127,7 +125,5 @@ void StoredValue::copy_to(const ssa::Value &dst, SSAGeneratorContext &ctx) {
 void StoredValue::copy_to(const ssa::VirtualRegister &dst, SSAGeneratorContext &ctx) {
     copy_to(ssa::Value::from_register(dst, ssa::Primitive::ADDR), ctx);
 }
-
-} // namespace lang
 
 } // namespace banjo

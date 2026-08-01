@@ -19,13 +19,13 @@ class CompletionItemResolveHandler : public RequestHandler {
 
 private:
     struct TextInsertion {
-        lang::TextPosition position;
+        TextPosition position;
         std::string text;
     };
 
     struct UseInsertionPoint {
-        lang::sir::UseDotExpr *top_level_dot_expr;
-        lang::ASTNode *ast_node;
+        sir::UseDotExpr *top_level_dot_expr;
+        ASTNode *ast_node;
         unsigned common_ancestor;
     };
 
@@ -38,19 +38,19 @@ public:
 
 private:
     FixedVector<TextInsertion, 2> try_modify_use(
-        lang::SourceFile &cur_file,
+        SourceFile &cur_file,
         CompletionEngine::Item &item,
-        lang::sir::UseDecl &use_decl
+        sir::UseDecl &use_decl
     );
 
     std::optional<UseInsertionPoint> find_insertion_point(
-        lang::sir::Module &mod,
-        lang::sir::UseItem &use_item,
-        lang::sir::UseDotExpr *top_level_dot_expr
+        sir::Module &mod,
+        sir::UseItem &use_item,
+        sir::UseDotExpr *top_level_dot_expr
     );
 
-    TextInsertion insert_line_after(lang::SourceFile &file, lang::ASTNode *node, const std::string &text);
-    JSONObject serialize_insertion(lang::SourceFile &file, TextInsertion insertion);
+    TextInsertion insert_line_after(SourceFile &file, ASTNode *node, const std::string &text);
+    JSONObject serialize_insertion(SourceFile &file, TextInsertion insertion);
 };
 
 } // namespace banjo::lsp

@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 Comparison::Comparison(std::optional<OverrideFunc> override_func /* = {} */)
   : override_func{std::move(override_func)} {}
@@ -147,4 +147,4 @@ bool Comparison::compare(MetaFieldExpr &lhs, MetaFieldExpr &rhs) {
     return compare(lhs.base, rhs.base) && lhs.field == rhs.field;
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

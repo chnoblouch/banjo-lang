@@ -6,11 +6,7 @@
 
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 class UseResolver {
 
@@ -37,10 +33,6 @@ private:
     sir::Symbol resolve_module(sir::Ident &ident, sir::Symbol &symbol);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

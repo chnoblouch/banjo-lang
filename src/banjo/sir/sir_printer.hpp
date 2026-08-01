@@ -5,7 +5,7 @@
 
 #include <ostream>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 class Printer {
 
@@ -126,6 +126,6 @@ public:
     void new_line();
 };
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir
 
 #endif

@@ -17,8 +17,6 @@
 
 namespace banjo::lsp {
 
-using namespace lang;
-
 CompletionItemResolveHandler::CompletionItemResolveHandler(Workspace &workspace) : workspace(workspace) {}
 
 JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connection & /*connection*/) {

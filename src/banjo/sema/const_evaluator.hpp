@@ -7,11 +7,7 @@
 #include <cstddef>
 #include <optional>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 class ConstEvaluator {
 
@@ -62,10 +58,6 @@ private:
     sir::Expr clone(sir::Expr expr);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

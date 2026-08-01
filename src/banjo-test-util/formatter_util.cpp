@@ -10,8 +10,6 @@
 namespace banjo::test {
 
 void FormatterUtil::format(std::string source) {
-    using namespace lang;
-
     SourceFile source_file{
         .mod_path{"test"},
         .sub_mod_paths{},

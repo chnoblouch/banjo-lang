@@ -6,7 +6,7 @@
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 SSAGeneratorContext::SSAGeneratorContext(target::Target *target) : target(target) {}
 
@@ -403,4 +403,4 @@ ssa::Type SSAGeneratorContext::get_fat_pointer_type() {
     return get_tuple_struct({ssa::Primitive::ADDR, ssa::Primitive::ADDR});
 }
 
-} // namespace banjo::lang
+} // namespace banjo

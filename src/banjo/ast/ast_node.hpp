@@ -9,7 +9,7 @@
 #include <span>
 #include <string_view>
 
-namespace banjo::lang {
+namespace banjo {
 
 enum ASTNodeType : std::uint8_t {
     AST_MODULE,
@@ -199,6 +199,6 @@ struct ASTNode {
     void set_range_from_children();
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

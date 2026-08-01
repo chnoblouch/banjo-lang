@@ -8,7 +8,7 @@
 #include <map>
 #include <string_view>
 
-namespace banjo::lang {
+namespace banjo {
 
 const std::map<std::string_view, TokenType> KEYWORDS{
     {"var", TKN_VAR},       {"const", TKN_CONST},   {"func", TKN_FUNC},     {"i8", TKN_I8},
@@ -277,4 +277,4 @@ bool Lexer::read_if(char c) {
     return false;
 }
 
-} // namespace banjo::lang
+} // namespace banjo

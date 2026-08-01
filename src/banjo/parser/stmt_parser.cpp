@@ -8,8 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 StmtParser::StmtParser(Parser &parser) : parser(parser), stream(parser.stream) {}
 
 ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
@@ -421,7 +419,5 @@ ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
 
     return node.build(AST_META_FOR_STMT);
 }
-
-} // namespace lang
 
 } // namespace banjo

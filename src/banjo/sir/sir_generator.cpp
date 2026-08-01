@@ -11,8 +11,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 sir::Unit SIRGenerator::generate(ModuleList &mods) {
     PROFILE_SCOPE("sir generator");
 
@@ -1891,7 +1889,5 @@ sir::UseItem SIRGenerator::generate_error_use_item(ASTNode *node) {
         }
     );
 }
-
-} // namespace lang
 
 } // namespace banjo

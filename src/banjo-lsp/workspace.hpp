@@ -22,27 +22,25 @@
 #include <unordered_set>
 #include <vector>
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 struct CompletionInfo {
-    lang::sir::Module sir_mod;
-    lang::sema::CompletionContext context;
-    std::vector<lang::sir::Symbol> preamble_symbols;
+    sir::Module sir_mod;
+    sema::CompletionContext context;
+    std::vector<sir::Symbol> preamble_symbols;
 };
 
 class Workspace {
 
 private:
-    lang::ModuleManager module_manager;
-    lang::ReportManager report_manager;
+    ModuleManager module_manager;
+    ReportManager report_manager;
 
-    lang::sir::Unit sir_unit;
-    std::unordered_map<lang::sir::Symbol, SymbolKey> symbol_defs;
+    sir::Unit sir_unit;
+    std::unordered_map<sir::Symbol, SymbolKey> symbol_defs;
     Index index;
 
-    lang::Config &config;
+    Config &config;
     std::unique_ptr<target::Target> target;
 
 public:
@@ -51,31 +49,25 @@ public:
 public:
     Workspace();
 
-    std::vector<lang::SourceFile *> initialize();
-    std::vector<lang::SourceFile *> update(const std::filesystem::path &fs_path, std::string new_content);
+    std::vector<SourceFile *> initialize();
+    std::vector<SourceFile *> update(const std::filesystem::path &fs_path, std::string new_content);
 
-    CompletionInfo run_completion(
-        lang::SourceFile *file,
-        lang::TextPosition completion_point,
-        lang::sir::Module &out_sir_mod
-    );
+    CompletionInfo run_completion(SourceFile *file, TextPosition completion_point, sir::Module &out_sir_mod);
 
-    lang::SourceFile *find_file(const std::filesystem::path &fs_path);
-    lang::SourceFile *find_file(const lang::ModulePath &mod_path);
+    SourceFile *find_file(const std::filesystem::path &fs_path);
+    SourceFile *find_file(const ModulePath &mod_path);
 
     Index &get_index() { return index; }
-    ModuleIndex *find_index(lang::sir::Module *mod);
+    ModuleIndex *find_index(sir::Module *mod);
     const SymbolRef &get_index_symbol(const SymbolKey &key);
 
-    const lang::ModuleList &get_mod_list() { return module_manager.get_module_list(); }
+    const ModuleList &get_mod_list() { return module_manager.get_module_list(); }
 
 private:
-    void build_index(lang::sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods);
-    void collect_dependents(lang::sir::Module &mod, std::unordered_set<lang::ModulePath> &dependents);
+    void build_index(sema::ExtraAnalysis &analysis, const std::vector<sir::Module *> &mods);
+    void collect_dependents(sir::Module &mod, std::unordered_set<ModulePath> &dependents);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

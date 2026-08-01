@@ -2,11 +2,9 @@
 
 #include "ast_navigation.hpp"
 
-namespace banjo {
+namespace banjo::lsp {
 
-namespace lsp {
-
-JSONObject ProtocolStructs::range_to_lsp(std::string_view source, lang::TextRange range) {
+JSONObject ProtocolStructs::range_to_lsp(std::string_view source, TextRange range) {
     LSPTextPosition start = ASTNavigation::pos_to_lsp(source, range.start);
     LSPTextPosition end = ASTNavigation::pos_to_lsp(source, range.end);
 
@@ -16,13 +14,11 @@ JSONObject ProtocolStructs::range_to_lsp(std::string_view source, lang::TextRang
     };
 }
 
-DiagnosticSeverity ProtocolStructs::report_type_to_lsp(lang::Report::Type type) {
+DiagnosticSeverity ProtocolStructs::report_type_to_lsp(Report::Type type) {
     switch (type) {
-        case lang::Report::Type::ERROR: return DiagnosticSeverity::ERROR;
-        case lang::Report::Type::WARNING: return DiagnosticSeverity::WARNING;
+        case Report::Type::ERROR: return DiagnosticSeverity::ERROR;
+        case Report::Type::WARNING: return DiagnosticSeverity::WARNING;
     }
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

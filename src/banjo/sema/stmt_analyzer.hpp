@@ -6,11 +6,7 @@
 
 #include <optional>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 class StmtAnalyzer {
 
@@ -47,10 +43,6 @@ private:
     sir::Ident create_ident(std::string_view value);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

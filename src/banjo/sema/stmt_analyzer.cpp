@@ -14,11 +14,7 @@
 
 #include <optional>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -915,8 +911,4 @@ sir::Ident StmtAnalyzer::create_ident(std::string_view value) {
     };
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

@@ -6,7 +6,7 @@
 
 #include <optional>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 bool satisfies_type_constraint(TypeConstraint &constraint, Expr type, std::optional<Specializer> specializer = {});
 bool satisfies_type_constraint_component(Expr component, Expr type, std::optional<Specializer> specializer);
@@ -15,6 +15,6 @@ bool contains(TypeConstraint &constraint, Concrete<ProtoDef> concrete_proto);
 bool primitive_implements(Primitive primitive, Concrete<ProtoDef> concrete_proto);
 bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> concrete_proto);
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir
 
 #endif

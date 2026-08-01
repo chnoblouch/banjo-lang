@@ -8,8 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class ASTWriter {
 
 private:
@@ -24,8 +22,6 @@ private:
     void write(ASTNode *node, unsigned indentation);
     const char *get_type_name(ASTNodeType type);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

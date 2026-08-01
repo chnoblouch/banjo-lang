@@ -5,9 +5,7 @@
 
 #include <string_view>
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 struct LSPTextPosition {
     int line;
@@ -21,15 +19,13 @@ struct LSPTextRange {
 
 namespace ASTNavigation {
 
-lang::TextPosition pos_from_lsp(std::string_view source, int line, int column);
-LSPTextPosition pos_to_lsp(std::string_view source, lang::TextPosition position);
+TextPosition pos_from_lsp(std::string_view source, int line, int column);
+LSPTextPosition pos_to_lsp(std::string_view source, TextPosition position);
 
-lang::ASTNode *get_node_at(lang::ASTNode *node, lang::TextPosition position);
+ASTNode *get_node_at(ASTNode *node, TextPosition position);
 
 } // namespace ASTNavigation
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

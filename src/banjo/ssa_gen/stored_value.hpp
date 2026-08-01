@@ -10,8 +10,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct StoredValue {
     enum class Kind {
         VALUE,
@@ -48,8 +46,6 @@ struct StoredValue {
     void copy_to(const ssa::Value &dst, SSAGeneratorContext &ctx);
     void copy_to(const ssa::VirtualRegister &dst, SSAGeneratorContext &ctx);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

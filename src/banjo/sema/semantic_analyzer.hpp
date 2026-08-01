@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 enum class Mode {
     COMPILATION,
@@ -215,6 +215,6 @@ private:
     std::string_view create_string(std::string_view value) { return get_mod().create_string(value); }
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

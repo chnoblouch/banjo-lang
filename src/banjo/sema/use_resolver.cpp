@@ -1,11 +1,7 @@
 #include "use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 UseResolver::UseResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -189,8 +185,4 @@ sir::Symbol UseResolver::resolve_module(sir::Ident &ident, sir::Symbol &symbol) 
     return mod;
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

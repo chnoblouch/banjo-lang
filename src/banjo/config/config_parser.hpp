@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class ConfigParser {
 
 private:
@@ -22,8 +20,6 @@ private:
     Config create_config(const ParsedArgs &args);
     target::TargetDescription create_target(const ParsedArgs &args);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

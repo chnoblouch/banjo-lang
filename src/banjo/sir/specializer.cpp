@@ -5,7 +5,7 @@
 
 #include <span>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 Specializer::Specializer(utils::Arena &arena, std::span<sir::GenericParam *> params, std::span<sir::Expr> args)
   : arena{arena},
@@ -165,4 +165,4 @@ sir::Expr Specializer::specialize_reference_type(sir::ReferenceType &reference_t
     }
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

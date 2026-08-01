@@ -11,8 +11,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class SIRGenerator {
 
 private:
@@ -173,8 +171,6 @@ private:
     std::string_view create_string(std::string_view value) { return cur_sir_mod->create_string(value); }
     sir::IdentExpr *generate_completion_token(ASTNode *node);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

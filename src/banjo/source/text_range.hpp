@@ -3,8 +3,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct Token;
 
 typedef unsigned TextPosition;
@@ -20,8 +18,6 @@ struct TextRange {
         return left.start == right.start && left.end == right.end;
     }
 };
-
-} // namespace lang
 
 } // namespace banjo
 

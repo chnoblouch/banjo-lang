@@ -9,8 +9,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct ParseResult {
     ASTNode *node;
     bool is_valid;
@@ -61,8 +59,6 @@ public:
         return ParseResult{node, false};
     }
 };
-
-} // namespace lang
 
 } // namespace banjo
 

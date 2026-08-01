@@ -4,7 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class OverloadResolver {
 
@@ -20,6 +20,6 @@ private:
     bool is_coercible(sir::Expr arg_type, sir::Expr param_type);
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

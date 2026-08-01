@@ -12,7 +12,7 @@
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 ReportBuilder::ReportBuilder(ReportManager &report_manager, Report::Type type)
   : report_manager{report_manager},
@@ -986,4 +986,4 @@ std::string_view ReportGenerator::symbol_kind_name(sir::Symbol symbol) {
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

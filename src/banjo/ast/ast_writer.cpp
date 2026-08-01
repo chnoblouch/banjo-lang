@@ -4,8 +4,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 ASTWriter::ASTWriter(std::ostream &stream) : stream(stream) {}
 
 void ASTWriter::write(ASTNode *node) {
@@ -206,7 +204,5 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_INVALID: return "INVALID";
     }
 }
-
-} // namespace lang
 
 } // namespace banjo

@@ -15,11 +15,7 @@
 #include <unordered_map>
 #include <utility>
 
-namespace banjo {
-
-namespace lsp {
-
-using namespace lang;
+namespace banjo::lsp {
 
 Workspace::Workspace()
   : module_manager(report_manager, Lexer::Mode::KEEP_WHITESPACE),
@@ -27,7 +23,7 @@ Workspace::Workspace()
     target(target::Target::create(config.target, target::CodeModel::LARGE)),
     completion_engine(*this) {}
 
-std::vector<lang::SourceFile *> Workspace::initialize() {
+std::vector<SourceFile *> Workspace::initialize() {
     module_manager.add_standard_stdlib_search_path();
     module_manager.add_config_search_paths(config);
     module_manager.load_all();
@@ -38,17 +34,17 @@ std::vector<lang::SourceFile *> Workspace::initialize() {
     analyzer.analyze();
     build_index(analyzer.get_extra_analysis(), sir_unit.mods);
 
-    std::vector<lang::SourceFile *> files;
+    std::vector<SourceFile *> files;
     files.reserve(module_manager.get_module_list().get_size());
 
-    for (const std::unique_ptr<lang::SourceFile> &file : module_manager.get_module_list()) {
+    for (const std::unique_ptr<SourceFile> &file : module_manager.get_module_list()) {
         files.push_back(file.get());
     }
 
     return files;
 }
 
-std::vector<lang::SourceFile *> Workspace::update(const std::filesystem::path &fs_path, std::string new_content) {
+std::vector<SourceFile *> Workspace::update(const std::filesystem::path &fs_path, std::string new_content) {
     report_manager.reset();
 
     SourceFile *file = find_file(fs_path);
@@ -59,18 +55,18 @@ std::vector<lang::SourceFile *> Workspace::update(const std::filesystem::path &f
     file->update_content(std::move(new_content));
     module_manager.reparse(file);
 
-    std::unordered_set<lang::ModulePath> paths_to_analyze;
+    std::unordered_set<ModulePath> paths_to_analyze;
     paths_to_analyze.insert(file->mod_path);
     collect_dependents(*file->sir_mod, paths_to_analyze);
 
-    std::vector<lang::SourceFile *> files_to_analyze;
-    std::vector<lang::sir::Module *> mods_to_analyze;
+    std::vector<SourceFile *> files_to_analyze;
+    std::vector<sir::Module *> mods_to_analyze;
 
     files_to_analyze.reserve(files_to_analyze.size());
     mods_to_analyze.reserve(paths_to_analyze.size());
 
-    for (const lang::ModulePath &path : paths_to_analyze) {
-        lang::SourceFile *file = find_file(path);
+    for (const ModulePath &path : paths_to_analyze) {
+        SourceFile *file = find_file(path);
         SIRGenerator().regenerate_mod(sir_unit, file->ast_mod.get());
 
         files_to_analyze.push_back(file);
@@ -84,11 +80,7 @@ std::vector<lang::SourceFile *> Workspace::update(const std::filesystem::path &f
     return files_to_analyze;
 }
 
-CompletionInfo Workspace::run_completion(
-    lang::SourceFile *file,
-    TextPosition completion_point,
-    lang::sir::Module &out_sir_mod
-) {
+CompletionInfo Workspace::run_completion(SourceFile *file, TextPosition completion_point, sir::Module &out_sir_mod) {
     std::unique_ptr<ASTModule> ast_mod = module_manager.parse_for_completion(file, completion_point);
     ASSERT(ast_mod);
 
@@ -97,7 +89,7 @@ CompletionInfo Workspace::run_completion(
     sema::SemanticAnalyzer analyzer(sir_unit, target.get(), report_manager, sema::Mode::COMPLETION);
     analyzer.analyze(out_sir_mod);
 
-    std::vector<lang::sir::Symbol> preamble_symbols;
+    std::vector<sir::Symbol> preamble_symbols;
     preamble_symbols.reserve(analyzer.get_preamble_symbols().size());
 
     for (const auto &[name, symbol] : analyzer.get_preamble_symbols()) {
@@ -111,15 +103,15 @@ CompletionInfo Workspace::run_completion(
     };
 }
 
-lang::SourceFile *Workspace::find_file(const std::filesystem::path &fs_path) {
+SourceFile *Workspace::find_file(const std::filesystem::path &fs_path) {
     return module_manager.get_module_list().find(fs_path);
 }
 
-lang::SourceFile *Workspace::find_file(const lang::ModulePath &mod_path) {
+SourceFile *Workspace::find_file(const ModulePath &mod_path) {
     return module_manager.get_module_list().find(mod_path);
 }
 
-ModuleIndex *Workspace::find_index(lang::sir::Module *mod) {
+ModuleIndex *Workspace::find_index(sir::Module *mod) {
     auto iter = index.mods.find(mod);
     return iter == index.mods.end() ? nullptr : &iter->second;
 }
@@ -128,8 +120,8 @@ const SymbolRef &Workspace::get_index_symbol(const SymbolKey &key) {
     return index.get_symbol(key);
 }
 
-void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lang::sir::Module *> &mods) {
-    for (lang::sir::Module *mod : mods) {
+void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<sir::Module *> &mods) {
+    for (sir::Module *mod : mods) {
         index.mods.erase(mod);
     }
 
@@ -207,10 +199,10 @@ void Workspace::build_index(sema::ExtraAnalysis &analysis, const std::vector<lan
     }
 }
 
-void Workspace::collect_dependents(lang::sir::Module &mod, std::unordered_set<lang::ModulePath> &dependents) {
+void Workspace::collect_dependents(sir::Module &mod, std::unordered_set<ModulePath> &dependents) {
     ModuleIndex &mod_index = index.mods[&mod];
 
-    for (const lang::ModulePath &path : mod_index.dependents) {
+    for (const ModulePath &path : mod_index.dependents) {
         if (dependents.contains(path)) {
             continue;
         }
@@ -220,6 +212,4 @@ void Workspace::collect_dependents(lang::sir::Module &mod, std::unordered_set<la
     }
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

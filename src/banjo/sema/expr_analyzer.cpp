@@ -28,11 +28,7 @@
 #include <string_view>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 ExprAnalyzer::ExprAnalyzer(SemanticAnalyzer &analyzer, unsigned flags /* = 0x00000000 */)
   : analyzer{analyzer},
@@ -2612,8 +2608,4 @@ Result ExprAnalyzer::check_type_constraint(
     }
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

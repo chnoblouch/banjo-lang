@@ -1,6 +1,6 @@
 #include "module_path.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 ModulePath::ModulePath() {}
 
@@ -174,4 +174,4 @@ bool ModulePath::Iterator::operator!=(const Iterator &other) const {
     return !(*this == other);
 }
 
-} // namespace banjo::lang
+} // namespace banjo

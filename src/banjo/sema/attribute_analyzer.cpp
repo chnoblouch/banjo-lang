@@ -1,7 +1,7 @@
 #include "attribute_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 AttributeAnalyzer::AttributeAnalyzer(SemanticAnalyzer &analyzer) : analyzer{analyzer} {}
 
@@ -63,4 +63,4 @@ void AttributeAnalyzer::analyze_raw_attr(sir::Attributes &attrs, sir::RawAttribu
     }
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

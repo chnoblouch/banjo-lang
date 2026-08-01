@@ -4,9 +4,7 @@
 #include "connection.hpp"
 #include "workspace.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 class ReferencesHandler : public RequestHandler {
 
@@ -20,12 +18,10 @@ public:
     JSONValue handle(const JSONObject &params, Connection &connection);
 
 private:
-    const lang::SourceFile *find_file(const JSONObject &params);
-    const SymbolRef *find_symbol(const lang::SourceFile &file, const JSONObject &params);
+    const SourceFile *find_file(const JSONObject &params);
+    const SymbolRef *find_symbol(const SourceFile &file, const JSONObject &params);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

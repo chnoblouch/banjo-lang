@@ -10,7 +10,7 @@
 
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 sir::Expr SpecializationCollector::Entry::resolve_param(const sir::GenericParam &param) {
     for (unsigned i = 0; i < params.size(); i++) {
@@ -539,4 +539,4 @@ void SpecializationCollector::visit_resource(const sir::Resource &resource, bool
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

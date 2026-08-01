@@ -12,8 +12,6 @@
 
 #include <string_view>
 
-using namespace banjo::lang;
-
 namespace banjo::lsp {
 
 CompletionHandler::CompletionHandler(Workspace &workspace) : workspace(workspace) {}
@@ -22,7 +20,7 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
-    lang::SourceFile *file = workspace.find_file(fs_path);
+    SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
         return JSONObject{{"data", JSONArray{}}};
     }

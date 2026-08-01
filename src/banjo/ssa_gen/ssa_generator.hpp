@@ -11,7 +11,7 @@
 
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 class SSAGenerator {
 
@@ -56,6 +56,6 @@ private:
     void generate_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

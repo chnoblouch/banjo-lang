@@ -8,8 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct StorageHints {
     std::optional<ssa::Value> dst;
     bool is_prefer_reference;
@@ -21,8 +19,6 @@ struct StorageHints {
     static StorageHints prefer_reference() { return {{}, true, false}; }
     static StorageHints unused() { return {{}, false, true}; }
 };
-
-} // namespace lang
 
 } // namespace banjo
 

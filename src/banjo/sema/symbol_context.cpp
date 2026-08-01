@@ -5,7 +5,7 @@
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 SymbolContext::SymbolContext(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -188,4 +188,4 @@ SymbolLookupResult SymbolContext::resolve_if_guarded(SymbolLookupResult result, 
     }
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

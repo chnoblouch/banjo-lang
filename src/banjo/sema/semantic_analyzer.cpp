@@ -20,7 +20,7 @@
 
 #include <vector>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 SemanticAnalyzer::SemanticAnalyzer(
     sir::Unit &sir_unit,
@@ -330,4 +330,4 @@ void SemanticAnalyzer::add_symbol_use(ASTNode *ast_node, sir::Symbol sir_symbol)
     extra_analysis.mods[&get_mod()].symbol_uses.push_back(use);
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

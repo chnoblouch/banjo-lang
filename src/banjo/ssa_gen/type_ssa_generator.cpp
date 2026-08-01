@@ -11,8 +11,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 TypeSSAGenerator::TypeSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
 
 ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
@@ -147,7 +145,5 @@ ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &
         ASSERT_UNREACHABLE;
     }
 }
-
-} // namespace lang
 
 } // namespace banjo

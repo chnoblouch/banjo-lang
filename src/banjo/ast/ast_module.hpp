@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 class SourceFile;
 
@@ -40,6 +40,6 @@ public:
     ASTNode *get_block() { return first_child; }
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

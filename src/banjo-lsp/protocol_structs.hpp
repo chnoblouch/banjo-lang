@@ -7,9 +7,7 @@
 
 #include <string_view>
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 enum SemanticTokenType {
     NAMESPACE,
@@ -60,13 +58,11 @@ enum DiagnosticSeverity {
 
 namespace ProtocolStructs {
 
-JSONObject range_to_lsp(std::string_view source, lang::TextRange range);
-DiagnosticSeverity report_type_to_lsp(lang::Report::Type type);
+JSONObject range_to_lsp(std::string_view source, TextRange range);
+DiagnosticSeverity report_type_to_lsp(Report::Type type);
 
 } // namespace ProtocolStructs
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

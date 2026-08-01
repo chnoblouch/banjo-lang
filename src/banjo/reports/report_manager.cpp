@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace banjo::lang {
+namespace banjo {
 
 Report &ReportManager::insert(Report report) {
     if (report.get_type() == Report::Type::ERROR) {
@@ -18,4 +18,4 @@ void ReportManager::reset() {
     valid = true;
 }
 
-} // namespace banjo::lang
+} // namespace banjo

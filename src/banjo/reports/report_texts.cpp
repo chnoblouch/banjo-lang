@@ -8,8 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 ReportText::ReportText(std::string_view format_str) : text(format_str) {}
 
 ReportText &ReportText::format(std::string_view string) {
@@ -334,7 +332,5 @@ std::string ReportText::pseudo_type_to_string(sir::PseudoTypeKind pseudo_type) {
         case sir::PseudoTypeKind::SELF_TYPE: return "self.type";
     }
 }
-
-} // namespace lang
 
 } // namespace banjo

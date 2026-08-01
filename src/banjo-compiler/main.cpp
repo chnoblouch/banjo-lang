@@ -13,16 +13,14 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    using namespace banjo;
-
 #ifdef OS_WINDOWS
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
-    lang::ArgumentParser arg_parser;
+    banjo::ArgumentParser arg_parser;
     arg_parser.add_flag("version");
     arg_parser.add_flag("timing");
-    lang::ParsedArgs args = arg_parser.parse(argc, argv);
+    banjo::ParsedArgs args = arg_parser.parse(argc, argv);
 
     if (args.flags["version"]) {
         std::cout << BANJO_VERSION << std::endl;
@@ -30,13 +28,13 @@ int main(int argc, char *argv[]) {
     }
 
     PROFILE_SECTION_BEGIN("TOTAL");
-    lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
-    lang::Compiler(lang::Config::instance()).compile();
+    banjo::Config::instance() = banjo::ConfigParser().parse(argc, argv);
+    banjo::Compiler(banjo::Config::instance()).compile();
     PROFILE_SECTION_END("CLEANUP");
     PROFILE_SECTION_END("TOTAL");
 
     if (args.flags["timing"]) {
-        ScopeTimer::dump_results();
+        banjo::ScopeTimer::dump_results();
     }
 
     return 0;

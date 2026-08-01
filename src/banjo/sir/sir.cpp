@@ -8,11 +8,7 @@
 #include <utility>
 #include <variant>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sir {
+namespace banjo::sir {
 
 bool Expr::operator==(const Expr &other) const {
     return Comparison{}.compare(*this, other);
@@ -774,8 +770,4 @@ std::strong_ordering operator<=>(const SemaStage &lhs, const SemaStage &rhs) {
     return static_cast<unsigned>(lhs) <=> static_cast<unsigned>(rhs);
 }
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sir

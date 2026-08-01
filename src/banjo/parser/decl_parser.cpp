@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 DeclParser::DeclParser(Parser &parser) : parser(parser), stream(parser.stream) {}
 
 ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
@@ -532,7 +530,5 @@ ParseResult DeclParser::parse_type_constraint() {
 
     return node.build(AST_TYPE_CONSTRAINT);
 }
-
-} // namespace lang
 
 } // namespace banjo

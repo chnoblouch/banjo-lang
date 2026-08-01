@@ -1,8 +1,6 @@
 #include "return_checker.hpp"
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 ReturnChecker::ReturnChecker(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -63,6 +61,4 @@ void ReturnChecker::check_if_stmt_branch(sir::Block &block, bool &returns_always
     }
 }
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema

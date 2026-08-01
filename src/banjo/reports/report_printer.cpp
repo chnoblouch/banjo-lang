@@ -6,8 +6,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 constexpr unsigned MAX_PRINTED_REPORTS = 256;
 
 ReportPrinter::ReportPrinter() : stream{std::cerr} {}
@@ -235,7 +233,5 @@ void ReportPrinter::set_color(std::string_view color) {
         stream << '\u001b' << color;
     }
 }
-
-} // namespace lang
 
 } // namespace banjo

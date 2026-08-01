@@ -8,11 +8,7 @@
 #include <stack>
 #include <unordered_map>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 class ResourceAnalyzer final : public DeclVisitor {
 
@@ -110,10 +106,6 @@ private:
     static void merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

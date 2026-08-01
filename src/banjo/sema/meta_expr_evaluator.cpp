@@ -8,11 +8,7 @@
 #include <string_view>
 #include <vector>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 MetaExprEvaluator::MetaExprEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -308,8 +304,4 @@ sir::Expr MetaExprEvaluator::unwrap_expr(sir::Expr expr) {
     }
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

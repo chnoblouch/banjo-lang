@@ -5,7 +5,7 @@
 
 #include <string_view>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 std::string_view to_text(BinaryOp binary_op);
 

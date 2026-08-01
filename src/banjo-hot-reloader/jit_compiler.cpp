@@ -16,7 +16,7 @@ namespace banjo {
 
 namespace hot_reloader {
 
-JITCompiler::JITCompiler(lang::Config &config, ssa::AddrTable &addr_table)
+JITCompiler::JITCompiler(Config &config, ssa::AddrTable &addr_table)
   : config(config),
     addr_table(addr_table),
     target(target::Target::create(config.target, target::CodeModel::LARGE)),
@@ -35,11 +35,11 @@ bool JITCompiler::build_ir() {
     module_manager.clear();
     module_manager.load_all();
 
-    sir_unit = lang::SIRGenerator().generate(module_manager.get_module_list());
-    lang::sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
+    sir_unit = SIRGenerator().generate(module_manager.get_module_list());
+    sema::SemanticAnalyzer(sir_unit, target, report_manager).analyze();
 
     if (!report_manager.is_valid()) {
-        lang::ReportPrinter report_printer;
+        ReportPrinter report_printer;
         if (config.color_diagnostics) {
             report_printer.enable_colors();
         }
@@ -48,15 +48,15 @@ bool JITCompiler::build_ir() {
         return false;
     }
 
-    ssa_module = lang::SSAGenerator(sir_unit, target).generate();
+    ssa_module = SSAGenerator(sir_unit, target).generate();
     ssa_module.set_addr_table(addr_table);
     passes::AddrTablePass(target).run(ssa_module);
 
     return true;
 }
 
-lang::sir::Module *JITCompiler::find_mod(const std::filesystem::path &absolute_path) {
-    for (const std::unique_ptr<lang::SourceFile> &ast_mod : module_manager.get_module_list()) {
+sir::Module *JITCompiler::find_mod(const std::filesystem::path &absolute_path) {
+    for (const std::unique_ptr<SourceFile> &ast_mod : module_manager.get_module_list()) {
         if (std::filesystem::absolute(ast_mod->fs_path) == absolute_path) {
             return sir_unit.mods_by_path[ast_mod->mod_path];
         }

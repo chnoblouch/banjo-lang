@@ -7,11 +7,7 @@
 #include <span>
 #include <string_view>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 class MetaExprEvaluator {
 
@@ -45,10 +41,6 @@ private:
     sir::Expr unwrap_expr(sir::Expr expr);
 };
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

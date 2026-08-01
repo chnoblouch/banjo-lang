@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class SemanticAnalyzer;
 struct ClosureContext;
@@ -56,6 +56,6 @@ private:
     SymbolLookupResult resolve_if_guarded(SymbolLookupResult result, ASTNode *ast_node);
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

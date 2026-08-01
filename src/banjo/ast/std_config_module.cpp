@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 enum ConfigArch {
     X86_64 = 0,
     AARCH64 = 1,
@@ -113,7 +111,5 @@ void StdConfigModule::add_const_enum(
     const_def->append_child(const_value_dot_expr);
     block->append_child(const_def);
 }
-
-} // namespace lang
 
 } // namespace banjo

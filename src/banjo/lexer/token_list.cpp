@@ -2,7 +2,7 @@
 
 #include "banjo/ast/ast_node.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 std::span<Token> TokenList::get_attached_tokens(unsigned token_index) {
     TokenList::Span span = attachments[token_index];
@@ -26,4 +26,4 @@ unsigned TokenList::last_token_index(ASTNode *node) {
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

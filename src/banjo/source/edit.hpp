@@ -8,7 +8,7 @@
 #include <string_view>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 struct Edit {
     TextRange range;
@@ -35,6 +35,6 @@ public:
     std::string apply_edits_to_source_copy(TextRange range);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

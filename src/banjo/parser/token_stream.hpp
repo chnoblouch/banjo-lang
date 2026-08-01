@@ -4,7 +4,7 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/lexer/token_list.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 class TokenStream {
 
@@ -23,6 +23,6 @@ public:
     void seek(unsigned position);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

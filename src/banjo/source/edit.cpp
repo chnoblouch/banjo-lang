@@ -1,7 +1,7 @@
 #include "edit.hpp"
 #include "banjo/source/text_range.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 EditList::EditList(SourceFile &file) : file{&file} {
     file_content = file.get_content();
@@ -95,4 +95,4 @@ std::string EditList::apply_edits_to_source_copy(TextRange range) {
     return output;
 }
 
-} // namespace banjo::lang
+} // namespace banjo

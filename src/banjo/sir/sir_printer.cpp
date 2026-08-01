@@ -51,7 +51,7 @@
 
 #define END_OBJECT() indent--;
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 Printer::Printer(std::ostream &stream) : stream(stream) {}
 
@@ -1266,4 +1266,4 @@ std::string debugger_to_string(sir::Expr expr) {
     return stream.str();
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

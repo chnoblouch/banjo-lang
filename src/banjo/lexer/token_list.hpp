@@ -6,7 +6,7 @@
 #include <span>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 struct ASTNode;
 
@@ -26,6 +26,6 @@ struct TokenList {
     unsigned last_token_index(ASTNode *node);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

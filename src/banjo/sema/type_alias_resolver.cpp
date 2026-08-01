@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 TypeAliasResolver::TypeAliasResolver(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -27,4 +27,4 @@ Result TypeAliasResolver::analyze_type_alias(sir::TypeAlias &type_alias) {
     return result;
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

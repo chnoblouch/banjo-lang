@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 TestDriverGenerator::TestDriverGenerator(sir::Unit &unit, target::Target *target, ReportManager &report_manager)
   : unit(unit),
     target(target),
@@ -310,7 +308,5 @@ sir::Module *TestDriverGenerator::generate() {
 
     return mod;
 }
-
-} // namespace lang
 
 } // namespace banjo

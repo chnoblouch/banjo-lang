@@ -21,11 +21,11 @@
 #include <variant>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 struct ASTNode;
-} // namespace banjo::lang
+} // namespace banjo
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 struct IntLiteral;
 struct FPLiteral;
@@ -1584,11 +1584,11 @@ std::optional<Concrete<T>> Expr::match_specialization(T &symbol) {
 
 std::strong_ordering operator<=>(const SemaStage &lhs, const SemaStage &rhs);
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir
 
 template <>
-struct std::hash<banjo::lang::sir::Symbol> {
-    std::size_t operator()(const banjo::lang::sir::Symbol &symbol) const noexcept { return symbol.compute_hash(); }
+struct std::hash<banjo::sir::Symbol> {
+    std::size_t operator()(const banjo::sir::Symbol &symbol) const noexcept { return symbol.compute_hash(); }
 };
 
 #endif

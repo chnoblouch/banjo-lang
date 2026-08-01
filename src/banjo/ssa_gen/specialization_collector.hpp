@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 class SpecializationCollector {
 
@@ -82,6 +82,6 @@ private:
     void visit_resource(const sir::Resource &resource, bool top_level);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

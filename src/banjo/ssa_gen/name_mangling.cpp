@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 namespace NameMangling {
 
 static void mangle_symbol_name(std::string &string, sir::Symbol symbol);
@@ -135,7 +133,5 @@ std::string mangle_func_name(const sir::FuncDef &func, const std::vector<sir::Ex
 }
 
 } // namespace NameMangling
-
-} // namespace lang
 
 } // namespace banjo

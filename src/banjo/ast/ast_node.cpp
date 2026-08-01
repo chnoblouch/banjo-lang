@@ -6,8 +6,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 ASTNode::ASTNode() : type(AST_INVALID), value(""), range(0, 0) {}
 
 ASTNode::ASTNode(ASTNodeType type) : type(type), value(""), range(0, 0) {}
@@ -53,7 +51,5 @@ void ASTNode::set_range_from_children() {
         range.end = child->range.end;
     }
 }
-
-} // namespace lang
 
 } // namespace banjo

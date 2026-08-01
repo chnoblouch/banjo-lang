@@ -10,8 +10,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct Config {
     target::TargetDescription target;
     bool optional_semicolons = false;
@@ -30,8 +28,6 @@ struct Config {
 
     bool is_stdlib_enabled();
 };
-
-} // namespace lang
 
 } // namespace banjo
 

@@ -7,7 +7,7 @@
 
 #include <initializer_list>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 bool satisfies_type_constraint(
     TypeConstraint &constraint,
@@ -162,4 +162,4 @@ bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> concrete_p
     }
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

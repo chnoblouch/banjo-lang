@@ -10,13 +10,10 @@
 
 namespace banjo {
 
-namespace lang {
-
 class TestDriverGenerator {
 
 private:
-    class Visitor : sema::DeclVisitor {
-    };
+    class Visitor : sema::DeclVisitor {};
 
 private:
     sir::Unit &unit;
@@ -27,8 +24,6 @@ public:
     TestDriverGenerator(sir::Unit &unit, target::Target *target, ReportManager &report_manager);
     sir::Module *generate();
 };
-
-} // namespace lang
 
 } // namespace banjo
 

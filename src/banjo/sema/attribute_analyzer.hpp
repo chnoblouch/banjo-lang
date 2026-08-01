@@ -4,7 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class AttributeAnalyzer {
 
@@ -19,6 +19,6 @@ private:
     void analyze_raw_attr(sir::Attributes &attrs, sir::RawAttribute &raw_attr);    
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

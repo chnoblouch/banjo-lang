@@ -3,8 +3,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 static const std::string ARG_ARCH = "arch";
 static const std::string ARG_OS = "os";
 static const std::string ARG_ENV = "env";
@@ -98,7 +96,5 @@ target::TargetDescription ConfigParser::create_target(const ParsedArgs &args) {
 
     return target::TargetDescription(arch, os, env);
 }
-
-} // namespace lang
 
 } // namespace banjo

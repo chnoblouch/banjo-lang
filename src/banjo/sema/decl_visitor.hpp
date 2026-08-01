@@ -4,7 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class DeclVisitor {
 
@@ -51,6 +51,6 @@ private:
     virtual void analyze_decl_block(sir::DeclBlock & /*decl_block*/) {}
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

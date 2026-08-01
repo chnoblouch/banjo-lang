@@ -3,7 +3,7 @@
 
 #include "banjo/reports/report.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 class ReportManager {
 
@@ -19,6 +19,6 @@ public:
     void reset();
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

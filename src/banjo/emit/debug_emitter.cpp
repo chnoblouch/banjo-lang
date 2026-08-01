@@ -200,7 +200,7 @@ std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode:
 }
 
 std::string_view DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
-    target::Architecture arch = lang::Config::instance().target.get_architecture();
+    target::Architecture arch = Config::instance().target.get_architecture();
 
     if (arch == target::Architecture::X86_64) {
         return NASMEmitter::OPCODE_NAMES.at(opcode);
@@ -326,7 +326,7 @@ std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
         size = 4;
     }
 
-    if (lang::Config::instance().target.get_architecture() == target::Architecture::X86_64) {
+    if (Config::instance().target.get_architecture() == target::Architecture::X86_64) {
         if (reg >= target::X8664Register::RAX && reg <= target::X8664Register::RBX) {
             char letter;
             switch (reg) {
@@ -407,7 +407,7 @@ std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
                 case target::X8664Register::XMM15: return "xmm15";
             }
         }
-    } else if (lang::Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
+    } else if (Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
         if (reg >= target::AArch64Register::R0 && reg <= target::AArch64Register::R_LAST) {
             return (size == 8 ? "x" : "w") + std::to_string(reg - target::AArch64Register::R0);
         } else if (reg >= target::AArch64Register::V0 && reg <= target::AArch64Register::V_LAST) {
@@ -440,10 +440,10 @@ std::string DebugEmitter::get_stack_slot_name(mcode::Function *func, mcode::Stac
         return "s" + std::to_string(stack_slot);
     }
 
-    if (lang::Config::instance().target.get_architecture() == target::Architecture::X86_64) {
+    if (Config::instance().target.get_architecture() == target::Architecture::X86_64) {
         std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);
         return "rsp " + offset_str;
-    } else if (lang::Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
+    } else if (Config::instance().target.get_architecture() == target::Architecture::AARCH64) {
         std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);
         return "sp + " + offset_str;
     } else {

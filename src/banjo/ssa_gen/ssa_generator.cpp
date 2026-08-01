@@ -19,7 +19,7 @@
 #include <cstdlib>
 #include <utility>
 
-namespace banjo::lang {
+namespace banjo {
 
 const ssa::Type SSA_MAIN_ARGC_TYPE = ssa::Primitive::I32;
 const ssa::Type SSA_MAIN_ARGV_TYPE = ssa::Primitive::ADDR;
@@ -598,4 +598,4 @@ void SSAGenerator::generate_native_var_decl(const sir::NativeVarDecl &sir_native
     ssa_global->type = TypeSSAGenerator(ctx).generate(sir_native_var_decl.type);
 }
 
-} // namespace banjo::lang
+} // namespace banjo

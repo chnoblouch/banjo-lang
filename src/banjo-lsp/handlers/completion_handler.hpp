@@ -7,9 +7,7 @@
 #include "connection.hpp"
 #include "workspace.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 class CompletionHandler : public RequestHandler {
 
@@ -44,19 +42,11 @@ public:
 private:
     JSONObject serialize_item(unsigned index, CompletionEngine::Item item);
     JSONObject serialize_simple_item(unsigned index, CompletionEngine::Item item, LSPCompletionItemKind kind);
-
-    JSONObject serialize_func_call_template(
-        unsigned index,
-        CompletionEngine::Item &item,
-        const lang::sir::FuncType &type
-    );
-
+    JSONObject serialize_func_call_template(unsigned index, CompletionEngine::Item &item, const sir::FuncType &type);
     JSONObject serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item);
     JSONObject serialize_struct_field_template(unsigned index, CompletionEngine::Item &item);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

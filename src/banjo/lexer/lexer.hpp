@@ -7,7 +7,7 @@
 
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 class Lexer {
 
@@ -57,6 +57,6 @@ private:
     bool read_if(char c);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

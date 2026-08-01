@@ -7,8 +7,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class GlobalSSAGenerator {
 
 private:
@@ -29,8 +27,6 @@ private:
     void generate_bytes(WriteBuffer &buffer, unsigned size, const ssa::Global::Value &value);
     void pad_bytes(WriteBuffer &buffer, unsigned alignment);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

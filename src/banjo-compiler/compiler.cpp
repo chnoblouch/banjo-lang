@@ -22,8 +22,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 Compiler::Compiler(const Config &config) : config(config), module_manager(report_manager) {}
 
 void Compiler::compile() {
@@ -113,7 +111,5 @@ void Compiler::compile() {
 
     delete target;
 }
-
-} // namespace lang
 
 } // namespace banjo

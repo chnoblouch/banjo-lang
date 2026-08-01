@@ -10,7 +10,7 @@
 #include <array>
 #include <string_view>
 
-namespace banjo::lang {
+namespace banjo {
 
 class ReportBuilder {
 
@@ -233,6 +233,6 @@ private:
     std::string_view symbol_kind_name(sir::Symbol symbol);
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

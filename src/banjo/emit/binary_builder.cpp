@@ -106,7 +106,7 @@ void BinaryBuilder::bake_symbol_defs(BinModule &module_) {
 
         std::string name;
 
-        if (lang::Config::instance().target.is_darwin()) {
+        if (Config::instance().target.is_darwin()) {
             // TODO: Move this somewhere else!
             name = "_" + std::move(def.name);
         } else {

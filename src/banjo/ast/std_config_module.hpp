@@ -11,8 +11,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class StdConfigModule : public ASTModule {
 
 private:
@@ -35,8 +33,6 @@ private:
 
     ASTNode *create_enum_variant(std::string_view name);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

@@ -7,7 +7,7 @@
 #include "banjo/parser/parser.hpp"
 #include <optional>
 
-namespace banjo::lang {
+namespace banjo {
 
 class ExprParser {
 

@@ -4,8 +4,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 Report::Report(Type type) : type(type) {}
 
 Report::Report(Type type, ReportMessage message) : type(type), message(std::move(message)) {}
@@ -32,7 +30,5 @@ Report &Report::add_note(ReportMessage note) {
     notes.push_back(std::move(note));
     return *this;
 }
-
-} // namespace lang
 
 } // namespace banjo

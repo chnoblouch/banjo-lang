@@ -9,11 +9,7 @@
 #include <stack>
 #include <unordered_map>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sir {
+namespace banjo::sir {
 
 class Cloner {
 
@@ -138,10 +134,6 @@ public:
     Error *clone_error(const Error &error);
 };
 
-} // namespace sir
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sir
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 Expr create_primitive_type(Module &mod, Primitive primitive);
 Expr create_pseudo_type(Module &mod, PseudoTypeKind kind);
@@ -14,6 +14,6 @@ Expr create_error_value(Module &mod, ASTNode *ast_node);
 Expr create_result_success_void(Module &mod, Concrete<StructDef> concrete_struct);
 Stmt create_return_result_success_void(Module &mod, Concrete<StructDef> concrete_struct);
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir
 
 #endif

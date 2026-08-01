@@ -1,6 +1,6 @@
 #include "sir_to_text.hpp"
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 std::string_view to_text(BinaryOp binary_op) {
     switch (binary_op) {
@@ -25,4 +25,4 @@ std::string_view to_text(BinaryOp binary_op) {
     }
 }
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir

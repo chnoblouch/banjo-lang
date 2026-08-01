@@ -1,9 +1,7 @@
 #include "pointer_escape_checker.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 PointerEscapeChecker::PointerEscapeChecker(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -35,6 +33,4 @@ void PointerEscapeChecker::check_escaping_value(sir::Stmt stmt, sir::Expr value)
     }
 }
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema

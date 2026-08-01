@@ -5,11 +5,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 SymbolCollector::SymbolCollector(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -110,7 +106,7 @@ void SymbolCollector::collect_func_def(sir::FuncDef &func_def) {
     analyzer.enter_symbol_table(func_def.block.symbol_table);
     collect_generic_params(func_def.generic_params);
     analyzer.exit_symbol_table();
-    
+
     analyzer.exit_decl();
 }
 
@@ -378,8 +374,4 @@ sir::SymbolTable &SymbolCollector::get_symbol_table() {
     return analyzer.get_symbol_table();
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

@@ -11,8 +11,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct ValueArgParser {
     std::string default_value;
 };
@@ -39,8 +37,6 @@ public:
 private:
     ParsedArgs create_default_args();
 };
-
-} // namespace lang
 
 } // namespace banjo
 

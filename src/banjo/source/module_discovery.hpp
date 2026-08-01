@@ -10,8 +10,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 struct ModuleFile {
     ModulePath path;
     std::filesystem::path file_path;
@@ -44,8 +42,6 @@ private:
     ModuleTreeNode node_from_file(const std::filesystem::path &file_path, const ModulePath &prefix);
     ModuleTreeNode node_from_dir(const std::filesystem::path &dir_path, const ModulePath &prefix);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

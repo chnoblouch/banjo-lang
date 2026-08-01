@@ -8,8 +8,6 @@
 
 #include <utility>
 
-using namespace banjo::lang;
-
 namespace banjo::lsp {
 
 CompletionEngine::CompletionEngine(Workspace &workspace) : workspace(workspace) {}
@@ -152,7 +150,7 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
     }
 }
 
-void CompletionEngine::complete_after_implicit_dot(lang::sir::Expr type) {
+void CompletionEngine::complete_after_implicit_dot(sir::Expr type) {
     if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
         Options options{
             .allow_values = true,
@@ -245,7 +243,7 @@ void CompletionEngine::collect_symbol_members(sir::Symbol &symbol, Options &opti
     }
 }
 
-void CompletionEngine::collect_value_members(lang::sir::Concrete<lang::sir::StructDef> &concrete_struct) {
+void CompletionEngine::collect_value_members(sir::Concrete<sir::StructDef> &concrete_struct) {
     Options options{
         .allow_values = false,
         .include_parent_scopes = false,
@@ -281,7 +279,7 @@ void CompletionEngine::collect_value_members(lang::sir::Concrete<lang::sir::Stru
     }
 }
 
-void CompletionEngine::collect_value_members(lang::sir::ProtoDef &proto_def) {
+void CompletionEngine::collect_value_members(sir::ProtoDef &proto_def) {
     Options options{
         .allow_values = false,
         .include_parent_scopes = false,

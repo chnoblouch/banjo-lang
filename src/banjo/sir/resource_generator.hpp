@@ -7,7 +7,7 @@
 
 #include <optional>
 
-namespace banjo::lang::sir {
+namespace banjo::sir {
 
 class ResourceGenerator {
 
@@ -26,6 +26,6 @@ public:
     std::optional<sir::Resource> create_generic_param_resource(const sir::GenericParam &generic_param, sir::Expr type);
 };
 
-} // namespace banjo::lang::sir
+} // namespace banjo::sir
 
 #endif

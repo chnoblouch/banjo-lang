@@ -14,7 +14,7 @@
 
 #include <optional>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 DeclBodyAnalyzer::DeclBodyAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
 
@@ -292,4 +292,4 @@ bool DeclBodyAnalyzer::is_recursive(sir::StructDef &base, sir::Expr type, sir::C
     return false;
 }
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema

@@ -10,8 +10,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class ReportText {
 
 private:
@@ -53,8 +51,6 @@ private:
     static std::string reference_type_to_string(const sir::ReferenceType &reference_type);
     static std::string pseudo_type_to_string(sir::PseudoTypeKind pseudo_type);
 };
-
-} // namespace lang
 
 } // namespace banjo
 

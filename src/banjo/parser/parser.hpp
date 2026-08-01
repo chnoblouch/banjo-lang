@@ -14,7 +14,7 @@
 #include <functional>
 #include <memory>
 
-namespace banjo::lang {
+namespace banjo {
 
 typedef std::function<ParseResult()> ListElementParser;
 
@@ -101,6 +101,6 @@ private:
     ASTNode *create_dummy_block();
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

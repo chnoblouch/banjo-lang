@@ -5,11 +5,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 GenericArgInference::GenericArgInference(
     SemanticAnalyzer &analyzer,
@@ -186,8 +182,4 @@ Result GenericArgInference::infer_on_reference_type(sir::ReferenceType &referenc
     }
 }
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema

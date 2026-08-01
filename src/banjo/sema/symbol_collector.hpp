@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class SymbolCollector {
 
@@ -53,6 +53,6 @@ public:
     sir::SymbolTable &get_symbol_table();
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

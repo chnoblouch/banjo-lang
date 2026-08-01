@@ -44,7 +44,7 @@ void Server::start() {
     connection.on_request("shutdown", &shutdown_handler);
 
     connection.on_notification("initialized", [&](JSONObject &) {
-        std::vector<lang::SourceFile *> mods = workspace.initialize();
+        std::vector<SourceFile *> mods = workspace.initialize();
         publish_diagnostics(connection, workspace, mods);
     });
 
@@ -59,9 +59,9 @@ void Server::start() {
         const JSONObject& lsp_position = params.get_object("position");
         int line = lsp_position.get_number("line");
         int column = lsp_position.get_number("character");
-        lang::TextPosition position = ASTNavigation::pos_from_lsp(file.source, line, column);
+        TextPosition position = ASTNavigation::pos_from_lsp(file.source, line, column);
 
-        lang::ASTNode* hovered_node = ASTNavigation::get_node_at(file.module_node, position);
+        ASTNode* hovered_node = ASTNavigation::get_node_at(file.module_node, position);
         return JSONObject { {"contents", "HOVER"} };
     });
     */
@@ -82,7 +82,7 @@ void Server::start() {
         const JSONObject &last_change = changes.get_object(changes.length() - 1);
         std::string new_content = last_change.get_string("text");
 
-        std::vector<lang::SourceFile *> files = workspace.update(fs_path, new_content);
+        std::vector<SourceFile *> files = workspace.update(fs_path, new_content);
         publish_diagnostics(connection, workspace, files);
     });
 

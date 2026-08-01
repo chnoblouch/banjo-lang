@@ -1,6 +1,6 @@
 #include "call_ssa_builder.hpp"
 
-namespace banjo::lang {
+namespace banjo {
 
 CallSSABuilder::CallSSABuilder(SSAGeneratorContext &ctx, ssa::Type ssa_return_type, const StorageHints &hints)
   : ctx{ctx},
@@ -59,4 +59,4 @@ StoredValue CallSSABuilder::generate() {
     }
 }
 
-} // namespace banjo::lang
+} // namespace banjo

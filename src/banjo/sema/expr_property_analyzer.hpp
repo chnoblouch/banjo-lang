@@ -3,9 +3,7 @@
 
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 enum class Mutability {
     MUTABLE,
@@ -29,8 +27,6 @@ private:
     ExprProperties analyze_field_expr(sir::FieldExpr &field_expr);
 };
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

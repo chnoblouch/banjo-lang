@@ -6,11 +6,9 @@
 #include <thread>
 
 int main(int argc, char *argv[]) {
-    using namespace banjo;
-
     // std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
-    lsp::Server().start();
+    banjo::Config::instance() = banjo::ConfigParser().parse(argc, argv);
+    banjo::lsp::Server().start();
     return 0;
 }

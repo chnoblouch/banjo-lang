@@ -2,9 +2,7 @@
 
 #include "banjo/sir/sir.hpp"
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 OverloadResolver::OverloadResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
@@ -61,6 +59,4 @@ bool OverloadResolver::is_coercible(sir::Expr arg_type, sir::Expr param_type) {
     }
 }
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema

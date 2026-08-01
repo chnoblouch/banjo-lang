@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace banjo::lang {
+namespace banjo {
 
 class CallSSABuilder {
 
@@ -28,6 +28,6 @@ public:
     StoredValue generate();
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

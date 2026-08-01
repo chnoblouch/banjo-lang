@@ -16,7 +16,7 @@
 #include <stack>
 #include <unordered_map>
 
-namespace banjo::lang {
+namespace banjo {
 
 enum class ReturnMethod {
     NO_RETURN_VALUE,
@@ -107,19 +107,19 @@ public:
 
     SpecializationCollector::List specializations;
 
-    MonoDeclMap<lang::sir::FuncDef, ssa::Function *> ssa_funcs;
-    MonoDeclMap<lang::sir::StructDef, ssa::Structure *> ssa_structs;
-    MonoDeclMap<lang::sir::UnionDef, ssa::Structure *> ssa_unions;
-    MonoDeclMap<lang::sir::UnionCase, ssa::Structure *> ssa_union_cases;
-    MonoDeclMap<lang::sir::ProtoDef, ssa::Structure *> ssa_proto_vtable_types;
+    MonoDeclMap<sir::FuncDef, ssa::Function *> ssa_funcs;
+    MonoDeclMap<sir::StructDef, ssa::Structure *> ssa_structs;
+    MonoDeclMap<sir::UnionDef, ssa::Structure *> ssa_unions;
+    MonoDeclMap<sir::UnionCase, ssa::Structure *> ssa_union_cases;
+    MonoDeclMap<sir::ProtoDef, ssa::Structure *> ssa_proto_vtable_types;
 
-    std::unordered_map<const lang::sir::Local *, ssa::VirtualRegister> ssa_local_regs;
-    std::unordered_map<const ssa::Function *, std::unordered_map<const lang::sir::Param *, ssa::VirtualRegister>>
+    std::unordered_map<const sir::Local *, ssa::VirtualRegister> ssa_local_regs;
+    std::unordered_map<const ssa::Function *, std::unordered_map<const sir::Param *, ssa::VirtualRegister>>
         ssa_param_slots;
-    std::unordered_map<const lang::sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;
-    std::unordered_map<const lang::sir::VarDecl *, unsigned> ssa_globals;
-    std::unordered_map<const lang::sir::NativeVarDecl *, unsigned> ssa_extern_globals;
-    std::unordered_map<const lang::sir::StructDef *, std::vector<unsigned>> ssa_vtables;
+    std::unordered_map<const sir::NativeFuncDecl *, ssa::FunctionDecl *> ssa_native_funcs;
+    std::unordered_map<const sir::VarDecl *, unsigned> ssa_globals;
+    std::unordered_map<const sir::NativeVarDecl *, unsigned> ssa_extern_globals;
+    std::unordered_map<const sir::StructDef *, std::vector<unsigned>> ssa_vtables;
     std::vector<ssa::Structure *> tuple_structs;
 
     std::stack<SpecializationCollector::Entry *> specialization_stack;
@@ -205,6 +205,6 @@ public:
     ssa::Type get_fat_pointer_type();
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 #endif

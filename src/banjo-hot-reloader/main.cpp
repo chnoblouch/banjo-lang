@@ -9,21 +9,19 @@
 #endif
 
 int main(int argc, char *argv[]) {
-    using namespace banjo;
-
 #ifdef OS_WINDOWS
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
-    lang::Config::instance() = lang::ConfigParser().parse(argc, argv);
-    lang::Config::instance().hot_reload = true;
+    banjo::Config::instance() = banjo::ConfigParser().parse(argc, argv);
+    banjo::Config::instance().hot_reload = true;
 
-    lang::ArgumentParser arg_parser;
+    banjo::ArgumentParser arg_parser;
     arg_parser.add_value("executable", "");
     arg_parser.add_value("dir", "");
-    lang::ParsedArgs args = arg_parser.parse(argc, argv);
+    banjo::ParsedArgs args = arg_parser.parse(argc, argv);
 
-    hot_reloader::HotReloader hot_reloader;
+    banjo::hot_reloader::HotReloader hot_reloader;
     hot_reloader.run(args.values["executable"], args.values["dir"]);
     return 0;
 }

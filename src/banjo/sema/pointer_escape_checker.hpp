@@ -3,9 +3,7 @@
 
 #include "banjo/sema/semantic_analyzer.hpp"
 
-namespace banjo {
-namespace lang {
-namespace sema {
+namespace banjo::sema {
 
 class PointerEscapeChecker {
 
@@ -20,8 +18,6 @@ private:
     void check_escaping_value(sir::Stmt stmt, sir::Expr value);
 };
 
-} // namespace sema
-} // namespace lang
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

@@ -5,7 +5,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-namespace banjo::lang::sema {
+namespace banjo::sema {
 
 class DeclInterfaceAnalyzer final : public DeclVisitor {
 
@@ -35,6 +35,6 @@ private:
     void analyze_type_constraint(sir::TypeConstraint &constraint);
 };
 
-} // namespace banjo::lang::sema
+} // namespace banjo::sema
 
 #endif

@@ -8,8 +8,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 enum TokenType : std::uint8_t {
     TKN_IDENTIFIER,
     TKN_LITERAL,
@@ -135,8 +133,6 @@ struct Token {
 
     bool is(TokenType type) const { return this->type == type; }
 };
-
-} // namespace lang
 
 } // namespace banjo
 

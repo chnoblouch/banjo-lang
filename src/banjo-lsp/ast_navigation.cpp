@@ -1,11 +1,9 @@
 #include "ast_navigation.hpp"
 
-namespace banjo {
+namespace banjo::lsp {
 
-namespace lsp {
-
-lang::TextPosition ASTNavigation::pos_from_lsp(std::string_view source, int line, int column) {
-    lang::TextPosition offset = 0;
+TextPosition ASTNavigation::pos_from_lsp(std::string_view source, int line, int column) {
+    TextPosition offset = 0;
 
     for (int source_line = 0; source_line < line; source_line++) {
         while (source[offset] != '\n') {
@@ -21,10 +19,10 @@ lang::TextPosition ASTNavigation::pos_from_lsp(std::string_view source, int line
     return offset;
 }
 
-LSPTextPosition ASTNavigation::pos_to_lsp(std::string_view source, lang::TextPosition position) {
+LSPTextPosition ASTNavigation::pos_to_lsp(std::string_view source, TextPosition position) {
     LSPTextPosition lsp_position{.line = 0, .column = 0};
 
-    for (lang::TextPosition offset = 0; offset < position; offset++) {
+    for (TextPosition offset = 0; offset < position; offset++) {
         if (source[offset] == '\n') {
             lsp_position.line++;
             lsp_position.column = 0;
@@ -36,8 +34,8 @@ LSPTextPosition ASTNavigation::pos_to_lsp(std::string_view source, lang::TextPos
     return lsp_position;
 }
 
-lang::ASTNode *ASTNavigation::get_node_at(lang::ASTNode *node, lang::TextPosition position) {
-    for (lang::ASTNode *child = node->first_child; child; child = child->next_sibling) {
+ASTNode *ASTNavigation::get_node_at(ASTNode *node, TextPosition position) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
         if (position >= child->range.start && position <= child->range.end) {
             return get_node_at(child, position);
         }
@@ -46,6 +44,4 @@ lang::ASTNode *ASTNavigation::get_node_at(lang::ASTNode *node, lang::TextPositio
     return node;
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

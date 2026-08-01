@@ -3,17 +3,15 @@
 #include "protocol_structs.hpp"
 #include "uri.hpp"
 
-namespace banjo {
+namespace banjo::lsp {
 
-namespace lsp {
-
-void publish_diagnostics(Connection &connection, Workspace &workspace, const std::vector<lang::SourceFile *> &files) {
-    for (lang::SourceFile *file : files) {
+void publish_diagnostics(Connection &connection, Workspace &workspace, const std::vector<SourceFile *> &files) {
+    for (SourceFile *file : files) {
         publish_diagnostics(connection, workspace, *file);
     }
 }
 
-void publish_diagnostics(Connection &connection, Workspace &workspace, lang::SourceFile &file) {
+void publish_diagnostics(Connection &connection, Workspace &workspace, SourceFile &file) {
     ModuleIndex *index = workspace.find_index(file.sir_mod);
     if (!index) {
         return;
@@ -21,8 +19,8 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::Sou
 
     JSONArray diagnostics;
 
-    for (const lang::Report &report : index->reports) {
-        const lang::SourceLocation &location = *report.get_message().location;
+    for (const Report &report : index->reports) {
+        const SourceLocation &location = *report.get_message().location;
         std::string message = report.get_message().text;
 
         JSONObject diagnostic{
@@ -34,8 +32,8 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::Sou
         if (!report.get_notes().empty()) {
             JSONArray related_information;
 
-            for (const lang::ReportMessage &note : report.get_notes()) {
-                lang::SourceFile *note_file = note.location->file;
+            for (const ReportMessage &note : report.get_notes()) {
+                SourceFile *note_file = note.location->file;
                 if (!note_file) {
                     continue;
                 }
@@ -64,6 +62,4 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, lang::Sou
     connection.send_notification("textDocument/publishDiagnostics", notification);
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

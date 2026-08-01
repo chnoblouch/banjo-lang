@@ -5,11 +5,7 @@
 
 #include <variant>
 
-namespace banjo {
-
-namespace lang {
-
-namespace sema {
+namespace banjo::sema {
 
 struct CompleteInDeclBlock {
     sir::DeclBlock *decl_block;
@@ -48,10 +44,6 @@ typedef std::variant<
     CompleteInStructLiteral>
     CompletionContext;
 
-} // namespace sema
-
-} // namespace lang
-
-} // namespace banjo
+} // namespace banjo::sema
 
 #endif

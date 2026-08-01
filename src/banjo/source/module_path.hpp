@@ -6,7 +6,7 @@
 #include <string_view>
 #include <optional>
 
-namespace banjo::lang {
+namespace banjo {
 
 class ModulePath {
 
@@ -52,11 +52,11 @@ public:
     friend bool operator!=(const ModulePath &rhs, const ModulePath &right) { return !(rhs == right); }
 };
 
-} // namespace banjo::lang
+} // namespace banjo
 
 template <>
-struct std::hash<banjo::lang::ModulePath> {
-    std::size_t operator()(const banjo::lang::ModulePath &path) const noexcept {
+struct std::hash<banjo::ModulePath> {
+    std::size_t operator()(const banjo::ModulePath &path) const noexcept {
         return std::hash<std::string_view>{}(path.to_string());
     }
 };

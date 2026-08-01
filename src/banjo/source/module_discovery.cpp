@@ -11,8 +11,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 std::vector<ModuleTreeNode> ModuleDiscovery::find_all_modules() {
     std::vector<ModuleTreeNode> modules;
 
@@ -140,7 +138,5 @@ std::vector<ModulePath> ModuleDiscovery::find_sub_modules(const ModuleFile &modu
 
     return sub_paths;
 }
-
-} // namespace lang
 
 } // namespace banjo

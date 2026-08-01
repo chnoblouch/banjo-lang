@@ -5,8 +5,6 @@
 
 namespace banjo {
 
-namespace lang {
-
 class SourceReader {
 
 private:
@@ -24,8 +22,6 @@ public:
     unsigned get_position() { return position; }
     std::string_view value(unsigned start) { return std::string_view{&buffer[start], &buffer[position]}; }
 };
-
-} // namespace lang
 
 } // namespace banjo
 
