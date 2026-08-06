@@ -381,33 +381,14 @@ void SSAGenerator::generate_struct_def_types(const sir::StructDef &sir_struct) {
 }
 
 void SSAGenerator::generate_struct_def_type(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct) {
-    if (sir_struct.get_layout() == sir::Attributes::Layout::DEFAULT) {
-        for (sir::StructField *sir_field : sir_struct.fields) {
-            ssa_struct.add({
-                .name = std::string{sir_field->ident.value},
-                .type = TypeSSAGenerator(ctx).generate(sir_field->type),
-            });
-        }
-    } else if (sir_struct.get_layout() == sir::Attributes::Layout::OVERLAPPING) {
-        ssa::Type largest_type = ssa::Primitive::VOID;
-        unsigned largest_size = 0;
-
-        for (sir::StructField *sir_field : sir_struct.fields) {
-            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(sir_field->type);
-            unsigned size = ctx.target->get_data_layout().get_size(ssa_type);
-
-            if (size > largest_size) {
-                largest_type = ssa_type;
-                largest_size = size;
-            }
-        }
-
+    for (sir::StructField *sir_field : sir_struct.fields) {
         ssa_struct.add({
-            .name = "data",
-            .type = largest_type,
+            .name = std::string{sir_field->ident.value},
+            .type = TypeSSAGenerator(ctx).generate(sir_field->type),
         });
     }
 
+    ssa_struct.is_union = sir_struct.get_layout() == sir::Attributes::Layout::OVERLAPPING;
     generate_types(sir_struct.block);
 }
 

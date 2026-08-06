@@ -3,6 +3,8 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
+#include <algorithm>
+
 namespace banjo::target {
 
 StandardDataLayout::StandardDataLayout(Params params) : TargetDataLayout(params) {}
@@ -25,18 +27,24 @@ unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
         }
     } else if (type.is_struct()) {
         ssa::Structure &struct_ = *type.get_struct();
+        unsigned size = 0;
 
-        unsigned offset = 0;
-        for (const ssa::StructureMember &member : struct_.members) {
-            unsigned size = get_size(member.type);
-            unsigned alignment = get_alignment(member.type);
-            offset = Utils::align(offset, alignment) + size;
+        if (!struct_.is_union) {
+            for (const ssa::StructureMember &member : struct_.members) {
+                unsigned member_size = get_size(member.type);
+                unsigned member_alignment = get_alignment(member.type);
+                size = Utils::align(size, member_alignment) + member_size;
+            }
+        } else {
+            for (const ssa::StructureMember &member : struct_.members) {
+                size = std::max(size, get_size(member.type));
+            }
         }
 
         unsigned struct_alignment = get_alignment(type);
-        offset = Utils::align(offset, struct_alignment);
+        size = Utils::align(size, struct_alignment);
 
-        return offset * type.get_array_length();
+        return size * type.get_array_length();
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -59,6 +67,8 @@ unsigned StandardDataLayout::get_alignment(const ssa::Type &type) const {
 }
 
 unsigned StandardDataLayout::get_member_offset(ssa::Structure *struct_, unsigned index) const {
+    ASSERT(!struct_->is_union);
+
     unsigned offset = 0;
 
     for (unsigned i = 0; i < index; i++) {

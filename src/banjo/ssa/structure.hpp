@@ -7,9 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 struct StructureMember {
     std::string name;
@@ -21,15 +19,14 @@ struct Structure {
 public:
     std::string name;
     std::vector<StructureMember> members;
+    bool is_union;
 
 public:
-    Structure(std::string name) : name(std::move(name)) {}
+    Structure(std::string name) : name{std::move(name)} {}
 
     void add(const StructureMember &member) { this->members.push_back(member); }
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

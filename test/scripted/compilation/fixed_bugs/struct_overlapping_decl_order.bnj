@@ -1,0 +1,15 @@
+# test:output "8"
+
+@[layout=overlapping]
+struct O {
+    var a: i32;
+    var s: S;
+}
+
+struct S {
+    var a: i64;
+}
+
+func main() {
+    print(meta(O).size);
+}

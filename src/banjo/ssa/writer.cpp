@@ -11,6 +11,10 @@ Writer::Writer(std::ostream &stream) : stream(stream) {}
 void Writer::write(Module &mod) {
     if (!mod.get_structures().empty()) {
         for (ssa::Structure *struct_ : mod.get_structures()) {
+            if (struct_->is_union) {
+                stream << "union ";
+            }
+
             stream << "struct @" << struct_->name << ":\n";
             for (const StructureMember &member : struct_->members) {
                 stream << "    field " << type_to_str(member.type) << " @" << member.name << "\n";
