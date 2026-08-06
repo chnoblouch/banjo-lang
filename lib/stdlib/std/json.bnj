@@ -1,0 +1,570 @@
+use std.{
+    buffer.Buffer,
+    convert.{parse_f64, parse_i64, parse_u64, to_repr, to_string},
+    protos.{ToRepr, ToString},
+};
+
+struct Value: ToString, ToRepr {
+    enum Kind { NULL, BOOL, U64, I64, F64, STRING, ARRAY, OBJECT }
+
+    @[layout=overlapping]
+    struct Data {
+        var value_bool: bool;
+        var value_u64: u64;
+        var value_i64: i64;
+        var value_f64: f64;
+        var value_string: String;
+        var value_array: Array[Value];
+        var value_object: Map[String, Value];
+    }
+
+    var kind: Kind;
+
+    @unmanaged
+    var data: Data;
+
+    pub func new_null() -> Value {
+        return Value { kind: .NULL, data: undefined };
+    }
+
+    pub func new_bool(value: bool) -> Value {
+        return Value { kind: .BOOL, data: Data { value_bool: value } };
+    }
+
+    pub func new_u64(value: u64) -> Value {
+        return Value { kind: .U64, data: Data { value_u64: value } };
+    }
+
+    pub func new_i64(value: i64) -> Value {
+        return Value { kind: .I64, data: Data { value_i64: value } };
+    }
+
+    pub func new_f64(value: f64) -> Value {
+        return Value { kind: .F64, data: Data { value_f64: value } };
+    }
+
+    pub func new_string(value: String) -> Value {
+        return Value { kind: .STRING, data: Data { value_string: value } };
+    }
+
+    pub func new_array(value: Array[Value]) -> Value {
+        return Value { kind: .ARRAY, data: Data { value_array: value } };
+    }
+
+    pub func new_object(value: Map[String, Value]) -> Value {
+        return Value { kind: .OBJECT, data: Data { value_object: value } };
+    }
+
+    pub func decode(buffer: StringSlice) -> Value except Decoder.Error {
+        return Decoder.new(buffer).decode();
+    }
+
+    pub func is_null(self) -> bool {
+        return self.kind == .NULL;
+    }
+
+    pub func is_bool(self) -> bool {
+        return self.kind == .BOOL;
+    }
+
+    pub func is_u64(self) -> bool {
+        return self.kind == .U64;
+    }
+
+    pub func is_i64(self) -> bool {
+        return self.kind == .I64;
+    }
+
+    pub func is_f64(self) -> bool {
+        return self.kind == .F64;
+    }
+
+    pub func is_number(self) -> bool {
+        return self.kind == .U64 || self.kind == .I64 || self.kind == .F64;
+    }
+
+    pub func is_string(self) -> bool {
+        return self.kind == .STRING;
+    }
+
+    pub func is_array(self) -> bool {
+        return self.kind == .ARRAY;
+    }
+
+    pub func is_object(self) -> bool {
+        return self.kind == .OBJECT;
+    }
+
+    pub func as_bool(self) -> ?bool {
+        if self.kind == .BOOL {
+            return self.data.value_bool;
+        } else {
+            return none;
+        }
+    }
+
+    pub func as_u64(self) -> ?u64 {
+        if self.kind == .U64 {
+            return self.data.value_u64;
+        } else {
+            return none;
+        }
+    }
+
+    pub func as_i64(self) -> ?i64 {
+        if self.kind == .I64 {
+            return self.data.value_i64;
+        } else {
+            return none;
+        }
+    }
+
+    pub func as_f64(self) -> ?f64 {
+        if self.kind == .F64 {
+            return self.data.value_f64;
+        } else {
+            return none;
+        }
+    }
+
+    pub func as_string(mut self) -> ?*String {
+        if self.kind == .STRING {
+            return &self.data.value_string;
+        } else {
+            return none;
+        }
+    }
+
+    pub func as_array(mut self) -> ?*Array[Value] {
+        if self.kind == .ARRAY {
+            return &self.data.value_array;
+        } else {
+            return none;
+        }
+    }
+
+    pub func as_object(mut self) -> ?*Map[String, Value] {
+        if self.kind == .OBJECT {
+            return &self.data.value_object;
+        } else {
+            return none;
+        }
+    }
+
+    pub func to_u64(mut self) -> ?u64 {
+        if self.kind == .U64 {
+            return self.data.value_u64;
+        } else if self.kind == .I64 {
+            return self.data.value_i64 as u64;
+        } else if self.kind == .F64 {
+            return self.data.value_f64 as u64;
+        } else {
+            return none;
+        }
+    }
+
+    pub func to_i64(mut self) -> ?i64 {
+        if self.kind == .U64 {
+            return self.data.value_u64 as i64;
+        } else if self.kind == .I64 {
+            return self.data.value_i64;
+        } else if self.kind == .F64 {
+            return self.data.value_f64 as i64;
+        } else {
+            return none;
+        }
+    }
+
+    pub func to_f64(mut self) -> ?f64 {
+        if self.kind == .U64 {
+            return self.data.value_u64 as f64;
+        } else if self.kind == .I64 {
+            return self.data.value_i64 as f64;
+        } else if self.kind == .F64 {
+            return self.data.value_f64;
+        } else {
+            return none;
+        }
+    }
+
+    pub func encode(self) -> String {
+        return Encoder.new().encode_into_string(self);
+    }
+
+    pub func __deinit__(self) {
+        if self.kind == .STRING {
+            __builtin_deinit(self.data.value_string);
+        } else if self.kind == .ARRAY {
+            __builtin_deinit(self.data.value_array);
+        } else if self.kind == .OBJECT {
+            __builtin_deinit(self.data.value_object);
+        }
+    }
+
+    pub func __str__(self) -> String {
+        return self.encode();
+    }
+
+    pub func __repr__(self, indent: u32) -> String {
+        var encoder = Encoder { string: "", indent: indent as u64 };
+        return encoder.encode_into_string(self);
+    }
+}
+
+struct Encoder {
+    var string: String;
+    var indent: u64;
+
+    pub func new() -> Encoder {
+        return Encoder {
+            string: "",
+            indent: 0,
+        };
+    }
+
+    pub func encode_into_string(@byval self, value: ref Value) -> String {
+        self.encode(value);
+        return self.string;
+    }
+
+    pub func encode(mut self, value: ref Value) {
+        if value.kind == .NULL {
+            self.encode_null();
+        } else if value.kind == .BOOL {
+            self.encode_bool(value.data.value_bool);
+        } else if value.kind == .U64 {
+            self.encode_u64(value.data.value_u64);
+        } else if value.kind == .I64 {
+            self.encode_i64(value.data.value_i64);
+        } else if value.kind == .F64 {
+            self.encode_f64(value.data.value_f64);
+        } else if value.kind == .STRING {
+            self.encode_string(value.data.value_string);
+        } else if value.kind == .ARRAY {
+            self.encode_array(value.data.value_array);
+        } else if value.kind == .OBJECT {
+            self.encode_object(value.data.value_object);
+        }
+    }
+
+    func encode_null(mut self) {
+        self.emit("null");
+    }
+
+    func encode_bool(mut self, value: bool) {
+        if value {
+            self.emit("true");
+        } else {
+            self.emit("false");
+        }
+    }
+
+    func encode_u64(mut self, value: u64) {
+        self.emit(to_string(value).slice());
+    }
+
+    func encode_i64(mut self, value: i64) {
+        self.emit(to_string(value).slice());
+    }
+
+    func encode_f64(mut self, value: f64) {
+        self.emit(to_string(value).slice());
+    }
+
+    func encode_string(mut self, value: ref String) {
+        self.emit(to_repr(value).slice());
+    }
+
+    func encode_array(mut self, value: ref Array[Value]) {
+        if value.length() == 0 {
+            self.emit("[]");
+            return;
+        }
+
+        self.emit("[\n");
+        self.indent += 1;
+
+        for i in 0..value.length() {
+            self.emit_indent();
+            self.encode(ref value[i]);
+
+            if i != value.length() - 1 {
+                self.emit(",\n");
+            }
+        }
+
+        self.indent -= 1;
+        self.emit("\n");
+        self.emit_indent();
+        self.emit("]");
+    }
+
+    func encode_object(mut self, value: ref Map[String, Value]) {
+        if value.length() == 0 {
+            self.emit("{}");
+            return;
+        }
+
+        self.emit("{\n");
+        self.indent += 1;
+
+        for i in 0..value.length() {
+            self.emit_indent();
+            self.encode_string(ref value.elements[i].0);
+            self.emit(": ");
+            self.encode(ref value.elements[i].1);
+
+            if i != value.length() - 1 {
+                self.emit(",\n");
+            }
+        }
+
+        self.indent -= 1;
+        self.emit("\n");
+        self.emit_indent();
+        self.emit("}");
+    }
+
+    func emit_indent(mut self) {
+        for i in 0..self.indent {
+            self.emit("  ");
+        }
+    }
+
+    func emit(mut self, value: StringSlice) {
+        self.string.append(value);
+    }
+}
+
+struct Decoder {
+    struct Error {}
+
+    var buffer: StringSlice;
+    var position: usize;
+
+    pub func new(buffer: StringSlice) -> Decoder {
+        return Decoder {
+            buffer,
+            position: 0,
+        };
+    }
+
+    pub func decode(mut self) -> Value except Error {
+        self.skip_whitespace();
+        var value = try self.decode_value();
+        self.skip_whitespace();
+
+        if self.position == self.buffer.length {
+            return value;
+        } else {
+            return Error {};
+        }
+    }
+
+    func decode_value(mut self) -> Value except Error {
+        var c = try self.get();
+
+        if c == 'n' {
+            return self.decode_null();
+        } else if c == 'f' {
+            return self.decode_false();
+        } else if c == 't' {
+            return self.decode_true();
+        } else if c == '-' || (c >= '0' && c <= '9') {
+            return self.decode_number();
+        } else if c == '\"' {
+            return self.decode_string();
+        } else if c == '[' {
+            return self.decode_array();
+        } else if c == '{' {
+            return self.decode_object();
+        } else {
+            return Error {};
+        }
+    }
+
+    func decode_null(mut self) -> Value except Error {
+        if try self.read(4) == "null" {
+            return Value.new_null();
+        } else {
+            return Error {};
+        }
+    }
+
+    func decode_false(mut self) -> Value except Error {
+        if try self.read(5) == "false" {
+            return Value.new_bool(false);
+        } else {
+            return Error {};
+        }
+    }
+
+    func decode_true(mut self) -> Value except Error {
+        if try self.read(4) == "true" {
+            return Value.new_bool(true);
+        } else {
+            return Error {};
+        }
+    }
+
+    func decode_number(mut self) -> Value except Error {
+        var start = self.position;
+        var kind = Value.Kind.U64;
+
+        while self.position < self.buffer.length {
+            var c = try self.get();
+
+            if c == '-' && self.position == start {
+                kind = .I64;
+            } else if c == '.' && kind != .F64 {
+                kind = .F64;
+            } else if c < '0' || c > '9' {
+                break;
+            }
+
+            self.position += 1;
+        }
+
+        var slice = self.buffer.substring(start, self.position);
+
+        if kind == .U64 {
+            try value in parse_u64(slice) {
+                return Value.new_u64(value);
+            } else {
+                return Error {};
+            }
+        } else if kind == .I64 {
+            try value in parse_i64(slice) {
+                return Value.new_i64(value);
+            } else {
+                return Error {};
+            }
+        } else {
+            try value in parse_f64(slice) {
+                return Value.new_f64(value);
+            } else {
+                return Error {};
+            }
+        }
+    }
+
+    func decode_string(mut self) -> Value except Error {
+        var value = try self.decode_raw_string();
+        return Value.new_string(value);
+    }
+
+    func decode_array(mut self) -> Value except Error {
+        self.position += 1;
+
+        if try self.get() == ']' {
+            self.position += 1;
+            return Value.new_array(Array[Value].new());
+        }
+
+        var elements = Array[Value].new();
+
+        while true {
+            self.skip_whitespace();
+            elements.append(try self.decode_value());
+            self.skip_whitespace();
+
+            var c = try self.get();
+            self.position += 1;
+
+            if c == ']' {
+                break;
+            } else if c != ',' {
+                return Error {};
+            }
+        }
+
+        return Value.new_array(elements);
+    }
+
+    func decode_object(mut self) -> Value except Error {
+        self.position += 1;
+
+        if try self.get() == '}' {
+            self.position += 1;
+            return Value.new_object(Map[String, Value].new());
+        }
+
+        var elements = Map[String, Value].new();
+
+        while true {
+            self.skip_whitespace();
+            var name = try self.decode_raw_string();
+            self.skip_whitespace();
+
+            if try self.get() == ':' {
+                self.position += 1;
+            } else {
+                return Error {};
+            }
+
+            self.skip_whitespace();
+            elements.insert(name, try self.decode_value());
+            self.skip_whitespace();
+
+            var c = try self.get();
+            self.position += 1;
+
+            if c == '}' {
+                break;
+            } else if c != ',' {
+                return Error {};
+            }
+        }
+
+        return Value.new_object(elements);
+    }
+
+    func decode_raw_string(mut self) -> String except Error {
+        self.position += 1;
+        var start = self.position;
+
+        while self.position < self.buffer.length {
+            var c = self.buffer[self.position];
+            self.position += 1;
+
+            if c == '\\' {
+                continue;
+            } else if c == '\"' {
+                var slice = self.buffer.substring(start, self.position - 1);
+                return String.from(slice);
+            }
+        }
+
+        return Error {};
+    }
+
+    func skip_whitespace(mut self) {
+        while self.position < self.buffer.length {
+            var c = self.buffer[self.position];
+
+            if c != ' ' && c != '\n' && c != '\r' && c != '\t' {
+                break;
+            }
+
+            self.position += 1;
+        }
+    }
+
+    func get(mut self) -> u8 except Error {
+        if self.position < self.buffer.length {
+            return self.buffer[self.position];
+        } else {
+            return Error {};
+        }
+    }
+
+    func read(mut self, size: usize) -> StringSlice except Error {
+        if self.position + size <= self.buffer.length {
+            var slice = self.buffer.substring(self.position, self.position + size);
+            self.position += size;
+            return slice;
+        } else {
+            return Error {};
+        }
+    }
+}
