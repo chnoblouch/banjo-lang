@@ -6,9 +6,11 @@
 #include "banjo/target/target.hpp"
 #include "banjo/target/target_data_layout.hpp"
 
+#include <memory>
+
 namespace banjo::target {
 
-class AArch64Target : public Target {
+class AArch64Target final : public Target {
 
 private:
     StandardDataLayout data_layout;
@@ -17,14 +19,12 @@ private:
 public:
     AArch64Target(TargetDescription descr, CodeModel code_model);
 
-    TargetDataLayout &get_data_layout() { return data_layout; }
-    AArch64RegAnalyzer &get_reg_analyzer() { return reg_analyzer; }
+    TargetDataLayout &get_data_layout() override { return data_layout; }
 
-    codegen::SSALowerer *create_ssa_lowerer();
-    std::vector<codegen::MachinePass *> create_pre_passes();
-    std::vector<codegen::MachinePass *> create_post_passes();
-    std::string get_output_file_ext();
-    codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream);
+    codegen::SSALowerer *create_ssa_lowerer() override;
+    std::vector<std::unique_ptr<codegen::MachinePass>> create_passes() override;
+    std::string get_output_file_ext() override;
+    codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream) override;
 };
 
 } // namespace banjo::target

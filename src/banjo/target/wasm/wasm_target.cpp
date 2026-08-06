@@ -1,5 +1,7 @@
 #include "wasm_target.hpp"
 
+#include "banjo/codegen/prolog_epilog_pass.hpp"
+#include "banjo/codegen/stack_frame_pass.hpp"
 #include "banjo/emit/wasm/wasm_emitter.hpp"
 #include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target_data_layout.hpp"
@@ -20,12 +22,11 @@ codegen::SSALowerer *WasmTarget::create_ssa_lowerer() {
     return new WasmSSALowerer(this);
 }
 
-std::vector<codegen::MachinePass *> WasmTarget::create_pre_passes() {
-    return {};
-}
-
-std::vector<codegen::MachinePass *> WasmTarget::create_post_passes() {
-    return {};
+std::vector<std::unique_ptr<codegen::MachinePass>> WasmTarget::create_passes() {
+    std::vector<std::unique_ptr<codegen::MachinePass>> passes;
+    passes.emplace_back(std::make_unique<codegen::StackFramePass>());
+    passes.emplace_back(std::make_unique<codegen::PrologEpilogPass>());
+    return passes;
 }
 
 std::string WasmTarget::get_output_file_ext() {

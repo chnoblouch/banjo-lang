@@ -6,11 +6,11 @@
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/target/x86_64/x86_64_reg_analyzer.hpp"
 
-namespace banjo {
+#include <memory>
 
-namespace target {
+namespace banjo::target {
 
-class X8664Target : public Target {
+class X8664Target final : public Target {
 
 private:
     StandardDataLayout data_layout;
@@ -19,18 +19,14 @@ private:
 public:
     X8664Target(TargetDescription descr, CodeModel code_model);
 
-    TargetDataLayout &get_data_layout() { return data_layout; }
-    TargetRegAnalyzer &get_reg_analyzer() { return reg_analyzer; }
+    TargetDataLayout &get_data_layout() override { return data_layout; }
 
-    codegen::SSALowerer *create_ssa_lowerer();
-    std::vector<codegen::MachinePass *> create_pre_passes();
-    std::vector<codegen::MachinePass *> create_post_passes();
-    std::string get_output_file_ext();
-    codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream);
+    codegen::SSALowerer *create_ssa_lowerer() override;
+    std::vector<std::unique_ptr<codegen::MachinePass>> create_passes() override;
+    std::string get_output_file_ext() override;
+    codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream) override;
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

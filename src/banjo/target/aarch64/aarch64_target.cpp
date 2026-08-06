@@ -1,5 +1,8 @@
 #include "aarch64_target.hpp"
 
+#include "banjo/codegen/prolog_epilog_pass.hpp"
+#include "banjo/codegen/reg_alloc_pass.hpp"
+#include "banjo/codegen/stack_frame_pass.hpp"
 #include "banjo/config/config.hpp"
 #include "banjo/emit/aarch64_asm_emitter.hpp"
 #include "banjo/emit/elf/elf_emitter.hpp"
@@ -25,12 +28,13 @@ codegen::SSALowerer *AArch64Target::create_ssa_lowerer() {
     return new AArch64SSALowerer(this);
 }
 
-std::vector<codegen::MachinePass *> AArch64Target::create_pre_passes() {
-    return {};
-}
-
-std::vector<codegen::MachinePass *> AArch64Target::create_post_passes() {
-    return {new AArch64StackAddrFixupPass()};
+std::vector<std::unique_ptr<codegen::MachinePass>> AArch64Target::create_passes() {
+    std::vector<std::unique_ptr<codegen::MachinePass>> passes;
+    passes.emplace_back(std::make_unique<codegen::RegAllocPass>(reg_analyzer));
+    passes.emplace_back(std::make_unique<codegen::StackFramePass>());
+    passes.emplace_back(std::make_unique<codegen::PrologEpilogPass>());
+    passes.emplace_back(std::make_unique<AArch64StackAddrFixupPass>());
+    return passes;
 }
 
 std::string AArch64Target::get_output_file_ext() {

@@ -1,16 +1,12 @@
 #ifndef BANJO_CODEGEN_MACHINE_PASS_RUNNER_H
 #define BANJO_CODEGEN_MACHINE_PASS_RUNNER_H
 
-#include "banjo/codegen/machine_pass.hpp"
 #include "banjo/mcode/module.hpp"
 #include "banjo/target/target.hpp"
 
 #include <string>
-#include <vector>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class MachinePassRunner {
 
@@ -19,15 +15,12 @@ private:
 
 public:
     MachinePassRunner(target::Target *target);
-    void create_and_run(mcode::Module &module);
+    void create_and_run(mcode::Module &mod);
 
 private:
-    void run_all(std::vector<MachinePass *> passes, mcode::Module &module);
-    void emit(mcode::Module &module, std::string file_name);
+    void emit(mcode::Module &mod, const std::string &file_name);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif
