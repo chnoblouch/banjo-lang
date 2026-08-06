@@ -41,6 +41,11 @@ func panic_out_of_bounds_remove_array(index: usize, length: usize) {
 }
 
 @never_inline
+func panic_out_of_memory(alloc_size: usize) {
+    panic("out of heap memory (failed to allocate " + str(alloc_size) + " bytes)");
+}
+
+@never_inline
 func panic_cannot_find_key_map[K](ref key: K) {
     panic("cannot find key '" + str(key) + "' in map");
 }

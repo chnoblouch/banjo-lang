@@ -1,4 +1,5 @@
 use libc as c;
+use internal.std_panics.panic_out_of_memory;
 
 var alloc_counter: u32 = 0;
 var free_counter: u32 = 0;
@@ -7,6 +8,10 @@ pub func alloc(size: usize) -> addr {
     alloc_counter += 1;
 
     var pointer = c.malloc(size);
+    if pointer == null {
+        panic_out_of_memory(size);
+    }
+
     return pointer;
 }
 
