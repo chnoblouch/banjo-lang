@@ -16,19 +16,19 @@ def parse(filename, include_paths):
 class ASTConverter:
     PRIMITIVE_TYPES = {
         cindex.TypeKind.VOID: "void",
-        cindex.TypeKind.BOOL: "u8",
+        cindex.TypeKind.BOOL: "bool",
         cindex.TypeKind.CHAR_U: "u8",
         cindex.TypeKind.UCHAR: "u8",
         cindex.TypeKind.CHAR16: "u16",
         cindex.TypeKind.CHAR32: "u32",
         cindex.TypeKind.USHORT: "u16",
         cindex.TypeKind.UINT: "u32",
-        cindex.TypeKind.ULONG: "u32", # TODO: depends on OS
+        cindex.TypeKind.ULONG: "u64", # TODO: depends on OS
         cindex.TypeKind.ULONGLONG: "u64",
         cindex.TypeKind.CHAR_S: "u8",
         cindex.TypeKind.SHORT: "i16",
         cindex.TypeKind.INT: "i32",
-        cindex.TypeKind.LONG: "i32", # TODO: depends on OS
+        cindex.TypeKind.LONG: "i64", # TODO: depends on OS
         cindex.TypeKind.LONGLONG: "i64",
         cindex.TypeKind.FLOAT: "f32",
         cindex.TypeKind.DOUBLE: "f64",

@@ -6,6 +6,7 @@ from generator import Generator
 
 import importlib.util
 import sys
+from pathlib import Path
 from argparse import ArgumentParser
 
 
@@ -47,6 +48,7 @@ def run(source_file_path, generator_path, include_paths):
     generator.filter_symbol = symbols.get("filter_symbol", lambda symbol: True)
     generator.rename_symbol = symbols.get("rename_symbol", lambda symbol: symbol.name)
 
+    include_paths.append(Path(__file__).parent / "headers")
     generate(source_file_path, generator, include_paths)
 
 
