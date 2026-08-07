@@ -4,7 +4,7 @@ import io
 import urllib.request
 
 
-BASE_URL = "https://marinohimself.ch/banjo/package"
+BASE_URL = "https://marinohimself.ch/banjo/storage"
 
 
 def install_package(package, destination):
@@ -28,5 +28,6 @@ if __name__ == "__main__":
 
     try:
         install_package(sys.argv[1], sys.argv[2])
-    except Exception:
+    except Exception as e:
+        print(e, file=sys.stderr)
         sys.exit(1)

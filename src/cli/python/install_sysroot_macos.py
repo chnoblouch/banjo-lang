@@ -117,5 +117,6 @@ if __name__ == "__main__":
 
     try:
         install_sysroot(sys.argv[1])
-    except Exception:
+    except Exception as e:
+        print(e, file=sys.stderr)
         sys.exit(1)
