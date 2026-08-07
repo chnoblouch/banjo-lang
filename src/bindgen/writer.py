@@ -22,7 +22,11 @@ KEYWORDS = set([
     "addr",
     "void",
     "except",
+    "ref",
+    "mut",
+    "share",
     "as",
+    "is",
     "if",
     "else",
     "switch",
@@ -58,14 +62,7 @@ class Writer:
         self.file = open(filename, "w")
 
     def write(self):
-        last_type = None
-
         for symbol in self.bindings.symbols:
-            if last_type != type(symbol):
-                if last_type not in (None, Struct, Union, Enum):
-                    self.file.write("\n")
-                last_type = type(symbol)
-
             if type(symbol) is Function:
                 self.write_func(symbol)
             elif type(symbol) is Constant:
@@ -81,13 +78,13 @@ class Writer:
 
     def write_func(self, func: Function):
         self.file.write(f"@[link_name={func.original_name}]\nnative func ")
-        self.write_identifier(utils.to_snake_case(func.name))
+        self.write_identifier(func.name)
 
         self.file.write("(")
         self.write_params(func.params)
         self.file.write(")")
 
-        if not (type(func.result) == IdentifierType and func.result.name == "void"):
+        if not self.is_void(func.result):
             self.file.write(" -> ")
             self.write_type(func.result)
 
@@ -105,14 +102,17 @@ class Writer:
     def write_struct(self, struct: Struct):
         self.file.write("struct ")
         self.write_identifier(struct.name)
-        self.file.write(" {\n")
+        self.file.write(" {")
 
-        for field in struct.fields:
-            self.file.write("    var ")
-            self.write_identifier(field.name)
-            self.file.write(": ")
-            self.write_field_type(field.type)
-            self.file.write(";\n")
+        if len(struct.fields) > 0:
+            self.file.write("\n")
+
+            for field in struct.fields:
+                self.file.write("    var ")
+                self.write_identifier(field.name)
+                self.file.write(": ")
+                self.write_field_type(field.type)
+                self.file.write(";\n")
 
         self.file.write("}\n\n")
 
@@ -142,9 +142,7 @@ class Writer:
             if variant.value:
                 self.file.write(f" = {variant.value}")
 
-            if i != len(enum.variants) - 1:
-                self.file.write(",")
-            self.file.write("\n")
+            self.file.write(",\n")
 
         self.file.write("}\n\n")
 
@@ -176,7 +174,7 @@ class Writer:
             self.write_params(type_.params)
             self.file.write(")")
 
-            if not (type(type_.result) == IdentifierType and type_.result.name == "void"):
+            if not self.is_void(type_.result):
                 self.file.write(" -> ")
                 self.write_type(type_.result)
         elif type(type_) == PtrType:
@@ -222,11 +220,12 @@ class Writer:
 
     def write_params(self, params):
         for i, param in enumerate(params):
-            if type(param.type) == IdentifierType and param.type.name == "void":
+            if self.is_void(param.type):
                 continue
 
             if param.name is not None and param.name != "":
-                self.write_identifier(f"{utils.to_snake_case(param.name)}: ")
+                self.write_identifier(param.name)
+                self.file.write(": ")
 
             self.write_type(param.type)
 
@@ -244,3 +243,6 @@ class Writer:
             identifier += "_"
 
         self.file.write(identifier)
+
+    def is_void(self, type_):
+        return type(type_) == PrimitiveType and type_.name == "void"

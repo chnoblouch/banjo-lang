@@ -1,5 +1,5 @@
 from bindings import *
-from generator import Generator, get_symbol_info
+from generator import Generator
 
 
 def filter_symbols(bindings: Bindings, generator: Generator):
@@ -11,5 +11,4 @@ def filter_symbol(symbol, generator: Generator):
     if not symbol.name:
         return False
 
-    info = get_symbol_info(symbol)
-    return generator.filter_symbol(info) if info else True
+    return generator.filter_symbol(symbol)

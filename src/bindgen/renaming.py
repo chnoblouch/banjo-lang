@@ -1,5 +1,5 @@
 from bindings import *
-from generator import Generator, get_symbol_info
+from generator import Generator
 
 
 def rename_symbols(bindings: Bindings, generator: Generator):
@@ -14,22 +14,12 @@ def rename_symbols(bindings: Bindings, generator: Generator):
 
 def rename_symbol(symbol, type_name_map, generator: Generator):
     is_type = type(symbol) in (Struct, Union, Enum, TypeAlias)
-
-    info = get_symbol_info(symbol)
-    if info:
-        generator.rename_symbol(info)
+    c_name = symbol.name
+    
+    generator.rename_symbol(symbol)
 
     if is_type:
-        type_name_map[symbol.name] = info.name
-
-    symbol.name = info.name
-
-    if type(symbol) in (Struct, Union):
-        for i in range(len(symbol.fields)):
-            symbol.fields[i].name = info.fields[i].name
-    elif type(symbol) == Enum:
-        for i in range(len(symbol.variants)):
-            symbol.variants[i].name = info.variants[i].name
+        type_name_map[c_name] = symbol.name
 
     return True
 
