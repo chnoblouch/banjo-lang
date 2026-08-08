@@ -9,6 +9,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/type_alias_resolver.hpp"
+#include "banjo/sema/type_constraint_checker.hpp"
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
@@ -79,6 +80,7 @@ void SemanticAnalyzer::analyze(const std::vector<sir::Module *> &mods) {
 
     stage = sir::SemaStage::BODY;
     DeclBodyAnalyzer(*this).analyze(mods);
+    TypeConstraintChecker{*this}.check(type_substitutions);
 
     stage = sir::SemaStage::RESOURCES;
     ResourceAnalyzer(*this).analyze(mods);
@@ -97,6 +99,7 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
 
     stage = sir::SemaStage::BODY;
     DeclBodyAnalyzer(*this).visit_decl_block(mod.block);
+    TypeConstraintChecker{*this}.check(type_substitutions);
 
     stage = sir::SemaStage::RESOURCES;
     ResourceAnalyzer(*this).visit_decl_block(mod.block);

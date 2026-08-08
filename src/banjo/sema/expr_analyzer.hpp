@@ -83,10 +83,7 @@ private:
     Result analyze_reference_type(sir::ReferenceType &reference_type);
     Result analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr);
     Result analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_expr);
-
     Result analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr);
-    Result check_type_constraints(sir::BracketExpr &bracket_expr, std::span<sir::GenericParam *> params);
-
     Result analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_type_check_expr(sir::TypeCheckExpr &type_check_expr);
     Result analyze_meta_access(sir::MetaAccess &meta_access);
@@ -116,7 +113,7 @@ private:
 
     sir::Expr specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node);
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident &rhs, sir::Symbol method);
-    
+
     sir::Expr create_isize_cast(sir::Expr value);
     std::span<sir::Expr> prepend_arg(sir::Expr arg, std::span<sir::Expr> args);
 
@@ -124,13 +121,6 @@ private:
     sir::ProtoDef *proto_of(sir::UnaryOp op);
     BinaryOpType get_binary_op_type(sir::BinaryOp op);
     bool can_be_coerced(sir::Expr value);
-
-    Result check_type_constraint(
-        ASTNode *ast_node,
-        std::span<sir::GenericParam *> params,
-        std::span<sir::Expr> args,
-        unsigned index
-    );
 };
 
 } // namespace banjo::sema

@@ -1,4 +1,5 @@
 #include "attribute_analyzer.hpp"
+
 #include "banjo/sir/sir.hpp"
 
 namespace banjo::sema {

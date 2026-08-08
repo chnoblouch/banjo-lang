@@ -1151,14 +1151,11 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                 return Result::ERROR;
             }
 
-            Result result = Result::SUCCESS;
-
-            for (unsigned i = 0; i < func_def->generic_params.size(); i++) {
-                ASTNode *ast_node = call_expr.callee.get_ast_node();
-                RESULT_MERGE(result, check_type_constraint(ast_node, func_def->generic_params, generic_args, i));
-            }
-
-            RESULT_RETURN_ON_ERROR(result);
+            analyzer.type_substitutions.push_back({
+                .ast_node = call_expr.callee.get_ast_node(),
+                .params = func_def->generic_params,
+                .args = generic_args,
+            });
 
             call_expr.callee = specialize(func_def, generic_args, call_expr.callee.get_ast_node());
 
@@ -1919,8 +1916,11 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
                 return Result::ERROR;
             }
 
-            check_type_constraints(bracket_expr, generic_params);
-            RESULT_RETURN_ON_ERROR(result);
+            analyzer.type_substitutions.push_back({
+                .ast_node = nullptr,
+                .params = generic_params,
+                .args = bracket_expr.rhs,
+            });
 
             out_expr = specialize(symbol, bracket_expr.rhs, bracket_expr.ast_node);
             resolve_type_aliases(out_expr);
@@ -1966,18 +1966,6 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
         analyzer.report_generator.report_err_expected_generic_or_indexable(bracket_expr.lhs);
         return Result::ERROR;
     }
-}
-
-Result ExprAnalyzer::check_type_constraints(sir::BracketExpr &bracket_expr, std::span<sir::GenericParam *> params) {
-    Result result = Result::SUCCESS;
-
-    for (unsigned i = 0; i < params.size(); i++) {
-        ASTNode *ast_node = bracket_expr.rhs[i].get_ast_node();
-        Result partial_result = check_type_constraint(ast_node, params, bracket_expr.rhs, i);
-        RESULT_MERGE(result, partial_result);
-    }
-
-    return result;
 }
 
 Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
@@ -2040,12 +2028,10 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (
-        Utils::is_one_of(
-            meta_field_expr.field.value,
-            {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
-        )
-    ) {
+    } else if (Utils::is_one_of(
+                   meta_field_expr.field.value,
+                   {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
+               )) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
         sir::Expr string_type = analyzer.create(
@@ -2582,30 +2568,6 @@ bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
     }
 
     return analyzer.get_resolved_type(value).is<sir::PseudoType>();
-}
-
-Result ExprAnalyzer::check_type_constraint(
-    ASTNode *ast_node,
-    std::span<sir::GenericParam *> params,
-    std::span<sir::Expr> args,
-    unsigned index
-) {
-    sir::GenericParam &param = *params[index];
-    sir::Expr arg = args[index];
-
-    if (param.kind != sir::GenericParamKind::TYPE) {
-        return Result::SUCCESS;
-    }
-
-    utils::Arena arena;
-    sir::Specializer specializer{arena, params, args};
-
-    if (satisfies_type_constraint(param.constraint, arg, specializer)) {
-        return Result::SUCCESS;
-    } else {
-        analyzer.report_generator.report_err_constraint_not_satisfied(ast_node, arg, param);
-        return Result::ERROR;
-    }
 }
 
 } // namespace banjo::sema

@@ -6,6 +6,7 @@
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
 #include "banjo/sema/symbol_context.hpp"
+#include "banjo/sema/type_constraint_checker.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/target/target.hpp"
@@ -63,6 +64,7 @@ class SemanticAnalyzer {
     friend class GenericParamAnalyzer;
     friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;
+    friend class TypeConstraintChecker;
     friend class ReturnChecker;
     friend class PointerEscapeChecker;
     friend class ResourceAnalyzer;
@@ -79,6 +81,7 @@ class SemanticAnalyzer {
 
 public:
     SymbolContext symbol_ctx;
+    std::vector<TypeConstraintChecker::Substitution> type_substitutions;
 
 private:
     sir::Unit &sir_unit;

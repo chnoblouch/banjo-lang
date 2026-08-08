@@ -1,0 +1,9 @@
+# test:compiles
+
+struct Wrapper[T: P[T]] {}
+
+func f(a: Wrapper[S]) {}
+
+struct S: P[S] {}
+
+proto P[T] {}

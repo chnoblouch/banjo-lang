@@ -198,6 +198,8 @@ add_library(banjo STATIC
     "sema/symbol_context.hpp"
     "sema/type_alias_resolver.cpp"
     "sema/type_alias_resolver.hpp"
+    "sema/type_constraint_checker.cpp"
+    "sema/type_constraint_checker.hpp"
     "sema/use_resolver.cpp"
     "sema/use_resolver.hpp"
     "sir/magic_methods.cpp"
