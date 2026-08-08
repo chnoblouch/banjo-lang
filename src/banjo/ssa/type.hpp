@@ -6,9 +6,7 @@
 
 #include <cassert>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 struct Structure;
 
@@ -53,6 +51,7 @@ public:
     bool is_primitive(Primitive primitive) const;
     bool is_floating_point() const;
     bool is_integer() const;
+    bool is_struct_aggregate() const;
 
     friend bool operator==(const Type &left, const Type &right) {
         if (left.kind != right.kind || left.array_length != right.array_length) {
@@ -71,8 +70,6 @@ public:
     friend bool operator!=(const Type &left, const Type &right) { return !(left == right); }
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

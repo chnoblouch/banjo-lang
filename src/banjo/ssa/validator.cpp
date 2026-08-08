@@ -51,7 +51,7 @@ bool Validator::validate(ssa::Module &mod, ssa::Function &func) {
             }
 
             switch (instr.get_opcode()) {
-                case ssa::Opcode::MEMBERPTR: valid = valid && validate_memberptr(instr); break;
+                case ssa::Opcode::MEMBERPTR: valid &= validate_memberptr(instr); break;
                 default: break;
             }
         }
@@ -66,10 +66,19 @@ bool Validator::validate_memberptr(ssa::Instruction &instr) {
 
     if (type.is_struct()) {
         ssa::Structure &struct_ = *type.get_struct();
-        if (index >= struct_.members.size()) {
-            stream << "out of bounds memberptr";
+
+        if (struct_.is_union) {
+            stream << "memberptr into union struct\n";
             return false;
         }
+
+        if (index >= struct_.members.size()) {
+            stream << "out of bounds memberptr\n";
+            return false;
+        }
+    } else {
+        stream << "memberptr into non-struct\n";
+        return false;
     }
 
     return true;

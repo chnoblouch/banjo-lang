@@ -35,7 +35,7 @@ void StackLayout::build(ssa::Function &func) {
 void StackLayout::collect_members(ssa::VirtualRegister slot_reg, Slot &slot, ssa::Type type, unsigned base_offset) {
     target::TargetDataLayout &data_layout = target.get_data_layout();
 
-    if (type.is_struct()) {
+    if (type.is_struct_aggregate()) {
         ssa::Structure &struct_ = *type.get_struct();
 
         for (unsigned i = 0; i < struct_.members.size(); i++) {

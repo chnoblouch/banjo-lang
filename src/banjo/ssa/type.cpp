@@ -1,11 +1,10 @@
 #include "type.hpp"
 
 #include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa/structure.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 Type Type::sized(unsigned size) {
     switch (size) {
@@ -38,6 +37,8 @@ bool Type::is_integer() const {
     return array_length == 1 && !is_floating_point();
 }
 
-} // namespace ssa
+bool Type::is_struct_aggregate() const {
+    return is_struct() && !struct_->is_union && array_length == 1;
+}
 
-} // namespace banjo
+} // namespace banjo::ssa

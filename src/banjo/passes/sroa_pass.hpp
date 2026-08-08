@@ -61,7 +61,6 @@ private:
     std::optional<unsigned> look_up_stack_value_index(ssa::VirtualRegister reg);
     void check_load_store_type(ssa::Operand &operand, ssa::Type type);
     void disable_parent_splitting(StackValue &value);
-    bool is_aggregate(const ssa::Type &type);
 
     void dump(ssa::Function &func);
     void dump_stack_values();

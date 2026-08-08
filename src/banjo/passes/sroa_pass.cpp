@@ -64,8 +64,8 @@ void SROAPass::collect_stack_values(ssa::BasicBlockIter block_iter) {
             continue;
         }
 
-        const ssa::Type &type = iter->get_operand(0).get_type();
-        if (!is_aggregate(type)) {
+        ssa::Type type = iter->get_operand(0).get_type();
+        if (!type.is_struct_aggregate()) {
             continue;
         }
 
@@ -107,7 +107,7 @@ void SROAPass::collect_members(unsigned val_index) {
         stack_values.push_back(member_value);
         stack_values[val_index].members->push_back(member_index);
 
-        if (is_aggregate(member.type)) {
+        if (member.type.is_struct_aggregate()) {
             collect_members(member_index);
         }
     }
@@ -224,9 +224,9 @@ void SROAPass::split_copies(ssa::Function *func, ssa::BasicBlock &block) {
 
         const ssa::Operand &dst = iter->get_operand(0);
         const ssa::Operand &src = iter->get_operand(1);
-        const ssa::Type &type = iter->get_operand(2).get_type();
+        ssa::Type type = iter->get_operand(2).get_type();
 
-        if (!is_aggregate(type)) {
+        if (!type.is_struct_aggregate()) {
             continue;
         }
 
@@ -258,12 +258,12 @@ void SROAPass::split_copies(ssa::Function *func, ssa::BasicBlock &block) {
 
 void SROAPass::copy_members(InsertionContext &ctx, Ref dst, Ref src, const ssa::Type &type) {
     for (unsigned i = 0; i < type.get_struct()->members.size(); i++) {
-        const ssa::Type &member_type = type.get_struct()->members[i].type;
+        ssa::Type member_type = type.get_struct()->members[i].type;
 
         Ref member_dst = create_member_pointer(ctx, dst, type, i);
         Ref member_src = create_member_pointer(ctx, src, type, i);
 
-        if (is_aggregate(member_type)) {
+        if (member_type.is_struct_aggregate()) {
             copy_members(ctx, member_dst, member_src, member_type);
             continue;
         }
@@ -381,10 +381,6 @@ void SROAPass::disable_parent_splitting(StackValue &value) {
     } else {
         value.members = {};
     }
-}
-
-bool SROAPass::is_aggregate(const ssa::Type &type) {
-    return type.is_struct() && type.get_array_length() == 1;
 }
 
 void SROAPass::dump(ssa::Function &func) {
