@@ -8,7 +8,7 @@ Type = typing.Union[
     "ArrayType",
     "Struct",
     "Union",
-    "Enum"
+    "Enum",
 ]
 
 
@@ -35,6 +35,7 @@ class ArrayType:
 
 @dataclass
 class Param:
+    kind = "param"
     name: typing.Optional[str]
     type: Type
 

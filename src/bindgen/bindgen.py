@@ -44,9 +44,10 @@ def run(source_file_path, generator_path, include_paths):
         sys.dont_write_bytecode = dont_write_bytecode
 
     generator = Generator()
-    generator.filter_file_path = symbols.get("filter_file_path", lambda path: True)
-    generator.filter_symbol = symbols.get("filter_symbol", lambda symbol: True)
-    generator.rename_symbol = symbols.get("rename_symbol", lambda symbol: symbol.name)
+    generator.filter_file_path = symbols.get("filter_file_path", generator.filter_file_path)
+    generator.filter_symbol = symbols.get("filter_symbol", generator.filter_symbol)
+    generator.rename_symbol = symbols.get("rename_symbol", generator.rename_symbol)
+    generator.enum_variants_with_common_prefix = symbols.get("enum_variants_with_common_prefix", generator.enum_variants_with_common_prefix)
 
     include_paths.append(Path(__file__).parent / "headers")
     generate(source_file_path, generator, include_paths)

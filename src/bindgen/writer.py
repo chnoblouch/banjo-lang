@@ -62,7 +62,12 @@ class Writer:
         self.file = open(filename, "w")
 
     def write(self):
+        last_symbol_type = None
+
         for symbol in self.bindings.symbols:
+            if type(symbol) != last_symbol_type and last_symbol_type in (Constant, TypeAlias):
+                self.file.write("\n")
+
             if type(symbol) is Function:
                 self.write_func(symbol)
             elif type(symbol) is Constant:
@@ -75,6 +80,8 @@ class Writer:
                 self.write_enum(symbol)
             elif type(symbol) is TypeAlias:
                 self.write_type_alias(symbol)
+
+            last_symbol_type = type(symbol)
 
     def write_func(self, func: Function):
         self.file.write(f"@[link_name={func.original_name}]\nnative func ")

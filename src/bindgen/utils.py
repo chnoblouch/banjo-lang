@@ -42,15 +42,3 @@ def to_pascal_case(identifier):
             pascal_identifier += char.lower()
     
     return pascal_identifier
-
-
-def common_prefix_len(strings):
-    if not strings:
-        return 0
-
-    for i in range(min([len(s) for s in strings])):
-        c = strings[0][i]
-        for s in strings:
-            if s[i] != c:
-                return i
-    return i
