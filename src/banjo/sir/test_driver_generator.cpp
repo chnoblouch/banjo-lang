@@ -100,7 +100,7 @@ sir::Module *TestDriverGenerator::generate() {
                         ),
                         .rhs{
                             .ast_node = nullptr,
-                            .value = "from_cstr",
+                            .value = "from_cstring",
                         }
                     }
                 ),

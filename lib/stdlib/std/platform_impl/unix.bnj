@@ -32,7 +32,7 @@ meta if IS_UNIX {
     }
 
     pub func error_message(error: ErrorCode) -> String {
-        return String.from_cstr(c.strerror(error));
+        return String.from_cstring(c.strerror(error));
     }
 
     pub func io_get_stdin_stream() -> addr {
@@ -99,7 +99,7 @@ meta if IS_UNIX {
         var file_names: Array[String] = [];
 
         while entry != null {
-            var file_name_string = String.from(&entry.name[0]);
+            var file_name_string = String.from_cstring(&entry.name[0]);
 
             if file_name_string != "." && file_name_string != ".." {
                 file_names.append(file_name_string);

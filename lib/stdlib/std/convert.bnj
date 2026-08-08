@@ -6,7 +6,7 @@ pub func to_string[T](ref value: T) -> String {
     if T == String {
         return value.copy();
     } else if T == *u8 {
-        return String.from(value as *u8);
+        return String.from_cstring(value as *u8);
     } else if T == i8{
         return i64_to_string(value as i64, 10);
     } else if T == i16 {
@@ -207,7 +207,7 @@ func u64_to_string(value: u64, base: u64) -> String {
 func f64_to_string(value: f64) -> String {
     var buffer: [u8; 64];
     runtime.f64_to_string(value, &buffer[0], 64);
-    return String.from(&buffer[0]);
+    return String.from_cstring(&buffer[0]);
 }
 
 func char_to_string(value: u8) -> String {
@@ -277,14 +277,14 @@ func tuple_to_repr[T](ref value: T, indent: u32) -> String {
 }
 
 func struct_to_repr[T](ref value: T, indent: u32) -> String {
-    var string = String.from_cstr(meta(T).name) + " {\n";
+    var string = String.from_cstring(meta(T).name) + " {\n";
 
     meta for field in meta(value).fields {
         for i in 0..indent + 1 {
             string += "  ";
         }
 
-        string += String.from_cstr(field.0);
+        string += String.from_cstring(field.0);
         string += ": ";
         string += to_repr_indent(field.1, indent + 1);
         string += ",\n";
@@ -304,7 +304,7 @@ func enum_to_string[T](ref value: T) -> String {
     
     for i in 0..meta(T).num_variants {
         if memory.compare(__builtin_pointer_to(value), &variants[i].1, 4) {
-            return String.from(StringSlice.of_cstring(variants[i].0));
+            return String.from_cstring(variants[i].0);
         }
     }
 

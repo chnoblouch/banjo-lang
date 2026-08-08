@@ -650,7 +650,7 @@ Result ExprFinalizer::finalize_default(sir::DotExpr &dot_expr) {
 
 void ExprFinalizer::create_std_string(sir::StringLiteral &string_literal, sir::Expr &out_expr) {
     sir::StructDef &struct_def = *analyzer.std_string_def;
-    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up_local("from_cstr").as<sir::FuncDef>();
+    sir::FuncDef &func_def = struct_def.block.symbol_table->look_up_local("from_cstring").as<sir::FuncDef>();
 
     sir::Expr callee = analyzer.create(
         sir::SymbolExpr{
@@ -753,7 +753,7 @@ void ExprFinalizer::create_std_array(
     sir::StructDef &array_type = *analyzer.std_array_def;
 
     sir::Concrete<sir::FuncDef> concrete_func{
-        .def = &array_type.block.symbol_table->look_up_local("from").as<sir::FuncDef>(),
+        .def = &array_type.block.symbol_table->look_up_local("__make__").as<sir::FuncDef>(),
         .generic_args = analyzer.create_array({element_type}),
     };
 
@@ -928,7 +928,7 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
     std::span<sir::Expr> generic_args = analyzer.create_array({key_type, value_type});
 
     sir::Concrete<sir::FuncDef> concrete_func{
-        .def = &map_type.block.symbol_table->look_up_local("from").as<sir::FuncDef>(),
+        .def = &map_type.block.symbol_table->look_up_local("__make__").as<sir::FuncDef>(),
         .generic_args = generic_args,
     };
 

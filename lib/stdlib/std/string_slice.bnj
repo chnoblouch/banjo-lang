@@ -28,6 +28,14 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         };
     }
 
+    pub func data(self) -> *u8 {
+        return self.data;
+    }
+
+    pub func length(self) -> usize {
+        return self.length;
+    }
+
     pub func substring(self, start: usize, end: usize) -> StringSlice {
         return StringSlice {
             data: self.pointer(start),

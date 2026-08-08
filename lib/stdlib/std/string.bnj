@@ -11,10 +11,6 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         };
     }
 
-    pub func from(cstr: *u8) -> String {
-        return from_cstr(cstr);
-    }
-
     pub func from(slice: StringSlice) -> String {
         var data = memory.alloc(slice.length) as *u8;
         memory.copy(slice.data, data, slice.length);
@@ -28,8 +24,8 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         };
     }
 
-    pub func from_cstr(cstr: *u8) -> String {
-        return from(StringSlice.of_cstring(cstr));
+    pub func from_cstring(data: *u8) -> String {
+        return from(StringSlice.of_cstring(data));
     }
 
     pub func concat(ref a: String, ref b: String) -> String {
@@ -113,7 +109,15 @@ struct String: Copy, Compare[String], ToString, ToRepr {
     }
 
     pub func __add__(self, ref rhs: String) -> String {
-        return concat(self, rhs);
+        var copy = self.copy();
+        copy.append(rhs.copy());
+        return copy;
+    }
+
+    pub func __add__(self, ref rhs: StringSlice) -> String {
+        var copy = self.copy();
+        copy.append(rhs);
+        return copy;
     }
 
     pub func __add__(self, rhs: u8) -> String {

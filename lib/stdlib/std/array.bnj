@@ -22,14 +22,14 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         };
     }
 
-    pub func from(pointer: *T, length: usize) -> Array[T] {
-        var size = length * meta(T).size;
+    pub func from(slice: Slice[T]) -> Array[T] {
+        var size = slice.length * meta(T).size;
         var data = memory.alloc(size) as *T;
-        memory.copy(pointer, data, size);
+        memory.copy(slice.data, data, size);
 
         return Array[T] {
-            slice: Slice[T].new(data, length),
-            capacity: length,
+            slice: Slice[T].new(data, slice.length),
+            capacity: slice.length,
         };
     }
 
@@ -40,6 +40,10 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
             slice: Slice[T].new(data, length),
             capacity: length,
         };
+    }
+
+    func __make__(pointer: *T, length: usize) -> Array[T] {
+        return from(Slice[T].new(pointer, length));
     }
 
     pub func __deinit__(self) {        

@@ -21,6 +21,14 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
         };
     }
 
+    pub func data(self) -> *T {
+        return self.data;
+    }
+
+    pub func length(self) -> usize {
+        return self.length;
+    }
+
     pub func as_bytes(self) -> Slice[u8] {
         return Slice[u8] {
             data: self.data as *u8,
@@ -28,7 +36,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
         };
     }
 
-    pub func sub(mut self, start: usize, end: usize) -> Slice[T] {
+    pub func subslice(mut self, start: usize, end: usize) -> Slice[T] {
         return Slice[T] {
             data: &self.data[start],
             length: end - start,
@@ -81,6 +89,10 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     }
 
     pub func __repr__(self, indent: u32) -> String {
+        if T == u8 {
+            return "[<data>]";
+        }
+
         var string = "[\n";
 
         for i in 0..self.length {

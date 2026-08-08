@@ -86,6 +86,8 @@ Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr
 Result GenericArgInference::infer(sir::Expr &param_type, sir::Expr arg_type) {
     if (auto symbol_expr = param_type.match<sir::SymbolExpr>()) {
         return infer_on_symbol_expr(*symbol_expr, arg_type);
+    } else if (auto tuple_expr = param_type.match<sir::TupleExpr>()) {
+        return infer_on_tuple_expr(*tuple_expr, arg_type);
     } else if (auto specialize_expr = param_type.match<sir::SpecializeExpr>()) {
         return infer_on_specialize_expr(*specialize_expr, arg_type);
     } else if (auto pointer_type = param_type.match<sir::PointerType>()) {
@@ -122,6 +124,20 @@ Result GenericArgInference::infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, s
     }
 
     return Result::SUCCESS;
+}
+
+Result GenericArgInference::infer_on_tuple_expr(sir::TupleExpr &tuple_expr, sir::Expr arg_type) {
+    if (auto arg_tuple_expr = arg_type.match<sir::TupleExpr>()) {
+        Result result = Result::SUCCESS;
+
+        for (unsigned i = 0; i < std::min(tuple_expr.exprs.size(), arg_tuple_expr->exprs.size()); i++) {
+            RESULT_MERGE(result, infer(tuple_expr.exprs[i], arg_tuple_expr->exprs[i]));
+        }
+
+        return result;
+    } else {
+        return Result::SUCCESS;
+    }
 }
 
 Result GenericArgInference::infer_on_specialize_expr(sir::SpecializeExpr &specialize_expr, sir::Expr arg_type) {

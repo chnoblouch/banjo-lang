@@ -119,7 +119,7 @@ meta if IS_WINDOWS {
         var more_paths = true;
 
         while more_paths {
-            var file_name_string = String.from(&find_data.file_name[0]);
+            var file_name_string = String.from_cstring(&find_data.file_name[0]);
 
             if file_name_string != "." && file_name_string != ".." {
                 file_names.append(file_name_string);

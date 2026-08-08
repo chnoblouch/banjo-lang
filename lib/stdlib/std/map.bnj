@@ -10,10 +10,14 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
         };
     }
 
-    pub func from(pointer: *(K, V), length: usize) -> Map[K, V] {
+    pub func from(slice: Slice[(K, V)]) -> Map[K, V] {
         return Map[K, V] {
-            elements: Array[(K, V)].from(pointer, length),
+            elements: Array[(K, V)].from(slice),
         };
+    }
+
+    pub func __make__(pointer: *(K, V), length: usize) -> Map[K, V] {
+        return from(Slice[(K, V)].new(pointer, length));
     }
 
     pub func insert(mut self, key: K, value: V) {

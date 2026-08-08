@@ -8,7 +8,7 @@ proto Read {
         var num_bytes: usize = 0;
 
         while num_bytes < data.length {
-            var sub_slice = data.sub(num_bytes, data.length - num_bytes);
+            var sub_slice = data.subslice(num_bytes, data.length - num_bytes);
             var new_bytes = try self.read(sub_slice);
         
             if new_bytes == 0 {
