@@ -1,11 +1,11 @@
 use libc as c;
 use internal.std_panics.panic_out_of_memory;
 
-var alloc_counter: u32 = 0;
-var free_counter: u32 = 0;
+# var alloc_counter: u32 = 0;
+# var free_counter: u32 = 0;
 
 pub func alloc(size: usize) -> addr {
-    alloc_counter += 1;
+    # alloc_counter += 1;
 
     var pointer = c.malloc(size);
     if pointer == null {
@@ -20,9 +20,9 @@ pub func realloc(pointer: addr, size: usize) -> addr {
 }
 
 pub func free(pointer: addr) {
-    if pointer != null {
-        free_counter += 1;
-    }
+    # if pointer != null {
+    #     free_counter += 1;
+    # }
 
     c.free(pointer);
 }
