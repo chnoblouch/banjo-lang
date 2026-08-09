@@ -41,7 +41,7 @@ var null_ptr: *i32 = null;
 
 ## Structs
 
-Structs are types that contain multiple values that are called fields:
+Structs are types that group multiple values together. A value that is stored in a struct is called a field:
 
 ```banjo
 use std.math.sqrt;
@@ -53,7 +53,7 @@ struct Vec2 {
     pub func new(x: f32, y: f32) -> Vec2 {
         return Vec2 {
             x: x,
-            y: y
+            y: y,
         };
     }
 
@@ -65,13 +65,13 @@ struct Vec2 {
 
 ## Enums
 
-Enums store one of a set of possible values.
+Enums store one of a set of possible values:
 
 ```banjo
 enum Fruit {
     APPLE = 0,
     BANANA = 1,
-    ORANGE = 2
+    ORANGE = 2,
 }
 
 func main() {
@@ -151,7 +151,7 @@ println(array[0]);
 array[0] = 20;
 
 # Iterating over the elements
-for value in array {
+for ref value in array {
     println(value);
 }
 
@@ -159,8 +159,8 @@ for value in array {
 array.append(4);
 
 # Arrays can be iterated over by reference to modify values
-for *value in array {
-    *value = 100;
+for ref mut value in array {
+    value = 100;
 }
 ```
 
@@ -176,7 +176,7 @@ func main() {
     println(opt1.value);  # 100
 
     # Initializing an empty optional
-    var opt2 = none;
+    var opt2: ?u64 = none;
     println(opt2.has_value);  # false
 }
 ```

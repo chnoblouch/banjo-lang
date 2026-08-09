@@ -114,7 +114,7 @@ use engine.graphics.renderer.VulkanRenderer;
 # Importing multiple nested symbols
 use engine.{
     physics.rigid_body.RigidBody,
-    math.{vec3.Vec3, mat4.Mat4}
+    math.{vec3.Vec3, mat4.Mat4},
 };
 ```
 
@@ -124,19 +124,27 @@ Here are the most important modules of the standard library:
 
 - `std`
     - `array`: Implementation of arrays in the language
+    - `box`: A type wrapping a heap allocation
+    - `buffer`: In-memory data stream
+    - `closure`: Implementation of closures in the language
     - `config`: Compile-time constants
     - `convert`: Conversions
     - `file`: Reading and writing files
     - `io`: I/O functionality
+    - `json`: Encoding/decoding JSON values
     - `map`: Implementation of maps in the language
-    - `memory`: Dynamically allocating and deallocing memory
+    - `memory`: Allocating and modifying memory
     - `mutex`: OS mutexes and locks
+    - `numeric`: Numeric constants and converting numbers from/to bytes
     - `optional`: Implementation of optionals in the language
     - `path`: Access to filesystem paths
+    - `protos`: Built-in `proto`s (e.g. for operator overloads)
     - `result`: Implementation of results in the language
     - `set`: Sets
+    - `shared`: A reference counted heap allocation type
     - `slice`: A type combining a pointer to some data and a length
     - `socket`: Network sockets
+    - `stack_trace`: Stack traces (Currently only implemented on Windows)
     - `string`: Strings
     - `test`: Assertions for tests
     - `thread`: OS threads

@@ -52,11 +52,11 @@ func main() {
         return value * factor;
     };
     
-    println(apply(2, multiplier));  # 20
-    println(apply(-5, multiplier));  # -50
+    println(apply(2, ref multiplier));  # 20
+    println(apply(-5, ref multiplier));  # -50
 }
 
-func apply(value: i32, operation: |value: i32| -> i32) -> i32 {
+func apply(value: i32, operation: ref |value: i32| -> i32) -> i32 {
     return operation(value);
 }
 ```

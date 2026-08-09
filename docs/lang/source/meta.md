@@ -4,17 +4,24 @@ Banjo provides compile-time features through the `meta` system. Meta expressions
 compile-time, generating runtime code. These constructs can only access compile-time values like `const` values or type
 information.
 
-The size of a type can be accessed using `meta(T).size`.
+The size of a type can be accessed using `meta(T).size`:
 
 ```banjo
-println(meta(i32).size);  # 4
-println(meta(f64).size);  # 8
-println(meta(Array[i8]).size);  # 24 on 64-bit targets
+struct User {
+    var id: u32;
+    var name: String;
+}
+
+func main() {
+    println(meta(i32).size);  # 4
+    println(meta(f64).size);  # 8
+    println(meta(User).size);  # 32 on 64-bit targets
+}
 ```
 
 ## Type Reflection
 
-Type reflection is possible using type expressions.
+You can access the name of a type as well as its fields using `meta(T)` expressions:
 
 ```banjo
 struct Circle {
@@ -26,62 +33,39 @@ struct Circle {
 
 func main() {
     println(meta(Circle).name);  # "Circle"
-    println(meta(Circle).fields);  # ["x", "y", "radius", "color"]
 
     var circle = Circle {
         x: 10.0,
         y: 5.0,
         radius: 3.5,
-        color: 0xFF0000FF
+        color: 0xFF0000FF,
     };
-    
-    println(meta(circle).field("radius"));  # 3.5
-    
-    meta(circle).field("y") = 25.0;
-    println(circle.y);  # 25
+
+    # "x: 10, y: 5, radius: 3.5, color: 4278190335;"
+    meta for field in meta(circle).fields {
+        print(field.0);
+        print(": ");
+        print(field.1);
+        print("; ");
+    }
+
+    println("");
 }
 ```
 
 ## meta if
 
-Conditions can be evaluated at compile-time using `meta if` statements.
+Conditions can be evaluated at compile-time using `meta if` statements:
 
 ```banjo
 use std.config;
 
-meta if config.OS == config.ANDROID {
-    use android;
+meta if config.OS == config.EMSCRIPTEN {
+    use web;
 
-    func load_asset(name: *u8) -> (*u8, usize) {
-        return android.asset_manager.read(name);
+    func load_asset(name: StringSlice) -> Array[u8] {
+        return web.download_file(name);
     }
-}
-```
-
-## meta for
-
-Repetitive code can be generated at compile-time using `meta for` statements.
-
-```banjo
-struct Point {
-    var x: i32;
-    var y: i32;
-}
-
-func main() {
-    var map = [
-        "x": 10,
-        "y": 20
-    ];
-    
-    var point: Point;
-    
-    meta for field_name in meta(Point).fields {
-        meta(point).field(field_name) = map[field_name];
-    }
-    
-    println(point.x);  # 10
-    println(point.y);  # 20
 }
 ```
 
@@ -90,8 +74,8 @@ func main() {
 The standard library features a built-in module called `std.module` that provides information about the current build.
 These constants are currently available:
 
-| Name         | Description             | Values                         |
-|--------------|-------------------------|--------------------------------|
-| BUILD_CONFIG | Build configuration     | DEBUG, RELEASE                 |
-| ARCH         | Target architecture     | X86_64, AARCH64                |
-| OS           | Target operating system | WINDOWS, LINUX, MACOS, ANDROID |
+| Name         | Description             | Values                            |
+|--------------|-------------------------|-----------------------------------|
+| BUILD_CONFIG | Build configuration     | DEBUG, RELEASE                    |
+| ARCH         | Target architecture     | X86_64, AARCH64, WAS              |
+| OS           | Target operating system | WINDOWS, LINUX, MACOS, EMSCRIPTEN |

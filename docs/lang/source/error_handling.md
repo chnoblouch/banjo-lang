@@ -32,8 +32,8 @@ the operation was successful and stores the value in a variable. If there was an
 use std.file.File;
 
 func main() {
-    try file in File.open("somefile.txt") {
-        println(file.read_as_string());
+    try file in File.open("somefile.txt", File.Mode.READ) {
+        println(file.read_u8());
     }
 }
 ```
@@ -44,8 +44,8 @@ The error value can be accessed inside an `except` branch:
 use std.{file.File, io.Error};
 
 func main() {
-    try file in File.open("somefile.txt") {
-        println(file.read_as_string());
+    try file in File.open("somefile.txt", File.Mode.READ) {
+        println(file.read_u8());
     } except error: Error {
         print("failed to open: ");
         println(error);
@@ -59,8 +59,8 @@ If you don't care about the error value, add an `else` branch instead:
 use std.file.File;
 
 func main() {
-    try file in File.open("somefile.txt") {
-        println(file.read_as_string());
+    try file in File.open("somefile.txt", File.Mode.READ) {
+        println(file.read_u8());
     } else {
         println("failed to open");
     }
@@ -74,7 +74,7 @@ success and exits the program on failure.
 use std.file.File;
 
 func main() {
-    var file = File.open("somefile.txt").unwrap();
+    var file = File.open("somefile.txt", File.Mode.READ).unwrap();
 }
 ```
 

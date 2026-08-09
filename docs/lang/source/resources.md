@@ -5,7 +5,7 @@ method is referred to as a destructor and takes care of releasing memory, file h
 associated with the object once it is no longer used.
 
 ```banjo
-use c.lib.stdio.{fopen, fclose};
+use libc.{fopen, fclose};
 
 struct File {
     var handle: addr;
@@ -79,14 +79,16 @@ func main() {
 If a resource is moved in a conditional branch, it can no longer be used after the `if` statement:
 
 ```banjo
+func consume(array: Array[i32]) {}
+
 func f(print_array: bool) {
     var array = [1, 2, 4];
 
     if print_array {
-        println(array);
+        consume(array);
     }
 
-    # ERROR: The array value is moved in the `if` statement.
+    # ERROR: The array value is moved in the call to `consume` inside the `if` statement.
     println(array[0]);
 }
 ```
@@ -99,15 +101,17 @@ struct Entry {
     var value: String;
 }
 
+func consume(entry: Entry) {}
+
 func main() {
     var entry = Entry {
         key: "language",
         value: "banjo",
     };
 
-    println(entry);
+    consume(entry);
 
-    # ERROR: `Entry` is a resource and is moved in the first call to `print`.
+    # ERROR: `Entry` is a resource and is moved in the call to `consume`.
     println(entry);
 }
 ```

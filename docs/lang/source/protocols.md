@@ -1,6 +1,6 @@
 # Protocols
 
-A protocol defines a collection of methods that are implemented by multiple types:
+A protocol defines a group of methods with their name and type:
 
 ```banjo
 proto DataSink {
@@ -14,7 +14,7 @@ A struct can implement a protocol by defining the required methods. In the follo
 
 ```banjo
 proto InputDevice {
-    func name(self) -> *u8;
+    func name(self) -> StringSlice;
     func move_direction(self) -> (f32, f32);
 }
 
@@ -24,7 +24,7 @@ struct Keyboard: InputDevice {
     var s_pressed: bool;
     var d_pressed: bool;
 
-    func name(self) -> *u8 {
+    func name(self) -> StringSlice {
         return "Keyboard";
     }
 
@@ -41,11 +41,11 @@ struct Keyboard: InputDevice {
 }
 
 struct Gamepad: InputDevice {
-    var name: *u8;
+    var name: StringSlice;
     var axis_x: f32;
     var axis_y: f32;
 
-    func name(self) -> *u8 {
+    func name(self) -> StringSlice {
         return self.name;
     }
 
@@ -63,7 +63,7 @@ func main() {
     var gamepad = Gamepad {
         name: "USB Controller",
         axis_x: -0.5,
-        axis_y: 0.8
+        axis_y: 0.8,
     };
 
     var device: *InputDevice = &gamepad;

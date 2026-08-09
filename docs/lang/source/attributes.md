@@ -93,5 +93,9 @@ native func clear_color(r: f32, g: f32, b: f32, a: f32);
 
 ## dllexport
 
-``dllexport`` exports the symbol when building a shared library on Windows. This makes the symbol
+`dllexport` exports the symbol when building a shared library on Windows. This makes the symbol
 visible to applications using the library.
+
+## never_inline
+
+`never_inline` prevents the optimizer from inlining a function.

@@ -35,7 +35,7 @@ def filter_file_path(path)
 # Returns true if bindings should be generated for this symbol.
 def filter_symbol(sym)
 
-# Renames symbols by updating their 'name' attribute.
+# Returns a new name for a symbol if it should be renamed.
 def rename_symbol(sym)
 ```
 

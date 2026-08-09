@@ -13,11 +13,13 @@
 ### macOS
 - Python 3 with pip
 - Xcode
-- For x86_64: NASM assembler
 
 ## Install Script
 
-You can use the install script to automatically download the latest release, extract it to `$HOME/.banjo/`, and add it to the `PATH` environment variable.
+The easiest way to install Banjo is using the install script, which does the following:
+1. Downloads the latest release
+2. Extracts it to `$HOME/.banjo/`
+3. Adds it to the `PATH` environment variable
 
 ### Windows (Powershell)
 

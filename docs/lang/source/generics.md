@@ -5,7 +5,9 @@ Generic functions and structs are used to write pieces of code that can be reuse
 Here's a generic function that returns the larger of two numbers:
 
 ```banjo
-func max[T](a: T, b: T) -> T {
+use std.protos.Order;
+
+func max[T: Order[T]](a: T, b: T) -> T {
     if a > b {
         return a;
     } else {
@@ -48,12 +50,11 @@ struct Pair[A, B] {
 func main() {
     var pair1 = Pair[f32, bool] {
         a: 0.5,
-        b: true
+        b: true,
     };
     
     var pair2 = Pair[String, i32].new("text", 10);
 }
-
 ```
 
 If you want a function to take an arbitrary number of parameters, you can use parameter sequences:

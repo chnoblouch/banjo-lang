@@ -96,16 +96,15 @@ libraries.
 
 When building for a target, the build system tries to auto-detect toolchains based on standard
 paths, environment variables and the Windows registry. If a toolchain can't be found (for example if
-you are cross-compiling), the build system tries to download it. If this also fails, the toolchain
-has to be added manually by running the `toolchain add` command and specifying the config
-parameters:
+you are cross-compiling), the build system tries to download it. You can print information about a
+toolchain using the `toolchain info` command:
 
 ```sh
-banjo toolchain add x86_64-windows-msvc
-banjo toolchain add aarch64-macos
+banjo toolchain info  # Print info for the host toolchain
+banjo toolchain info aarch64-linux-gnu  # Print info for the toolchain for AArch64 Linux 
 ```
 
-The stored toolchains can be listed using the `toolchain list` command:
+Toolchains can be listed using the `toolchain list` command:
 
 ```sh
 banjo toolchain list
@@ -117,10 +116,12 @@ There are some pre-built packages available that bind to native libraries. These
 automatically downloaded by adding them to the `packages` list of `banjo.json`. Here's the current
 list of available packages:
 
-| Name      | Description                                                                                  | Platforms             |
-| --------- | -------------------------------------------------------------------------------------------- | --------------------- |
-| `windows` | Bindings to pretty much the entire [Windows API](https://github.com/microsoft/win32metadata) | Windows               |
-| `glfw`    | Bindings to [GLFW](https://www.glfw.org/)                                                    | Windows, Linux, macOS |
-| `vulkan`  | Bindings to [Vulkan](https://en.wikipedia.org/wiki/Vulkan)                                   | Windows, Linux        |
-| `webgpu`  | Bindings to [`wgpu-native`](https://github.com/gfx-rs/wgpu-native)                           | Windows, Linux, macOS |
-| `stbi`    | Bindings to [`stb_image`](https://github.com/nothings/stb/blob/master/stb_image.h)           | Windows, Linux, macOS |
+| Name      | Description                                                                                                                 |
+| --------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `windows` | Bindings to pretty much the entire [Windows API](https://github.com/microsoft/win32metadata)                                |
+| `sdl`     | Bindings to [SDL3](https://libsdl.org/)                                                                                     |
+| `vulkan`  | Bindings to [Vulkan](https://en.wikipedia.org/wiki/Vulkan)                                                                  |
+| `glfw`    | Bindings to [GLFW](https://www.glfw.org/)                                                                                   |
+| `joltc`   | Bindings to a [C wrapper](https://github.com/amerkoleci/joltc/) for [Jolt Physics](https://github.com/jrouwe/JoltPhysics) |
+| `webgpu`  | Bindings to [wgpu-native](https://github.com/gfx-rs/wgpu-native)                                                          |
+| `stbi`    | Bindings to [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)                                          |
