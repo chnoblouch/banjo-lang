@@ -6,17 +6,17 @@ A small low-level programming language I use for personal projects. The language
 
 ## Features
 
-- Compiling to a binary executable
+- Compiles to a binary executable
 - Static typing
 - Built-in types for tuples, arrays, maps, strings, optionals and results
-- Memory management using RAII and "move semantics"
+- Memory management using RAII and move semantics
 - A hopefully more sane standard library than C++
 - Metaprogramming
 - Built-in support for unit testing
 - Cross-compilation for Linux, Windows, macOS, and WebAssembly
 - Fast compile times
-- Performance in the ballpark of C/C++
-- Automatic generating of bindings for C libraries
+- Currently reaches about 50% of the performance of C/C++
+- Includes a tool to generate bindings for C libraries
 - Built-in language server
 - Hot reloading (on Windows and Linux)
 - Half-baked package management
@@ -36,7 +36,8 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=install
 cmake --build build --target install
 ```
 
-After building, add the `install/bin` directory to your `PATH` variable. Now you can start using the `banjo` command.
+After building, add the `install/bin` directory to your `PATH` variable. After that, you can start using the `banjo`
+command.
 
 ## Toolchain
 
@@ -69,11 +70,6 @@ The language server currently supports these LSP features:
 
 The hot reloader is a tool that watches source files for changes, recompiles them, and injects them into a running process. For this to work, the code has to be compiled with support for hot reloading. The compiler generates an address table that contains a list of all functions. Functions are called indirectly by looking up their address in this address table. This allows the hot reloader to allocate some memory in the target process for functions that have changed, store the freshly compiled code there, and update the pointer in the address table. Future calls to the function will then run the updated code.
 
-## Annoyances
-
-- Some optimization passes are unstable and can produce broken code.
-- Values that fit into two registers are passed by reference on the System-V ABI even though they should be passed by splitting them into two registers.
-
 ## Directory Structure
 
 - `src`: Main C++ and Python source code
@@ -86,6 +82,7 @@ The hot reloader is a tool that watches source files for changes, recompiles the
             - `macho`: Generating Mach-O binaries (the binary format of macOS)
             - `pe`: Generating PE binaries (the binary format of Windows)
             - `wasm`: Generating binary WebAssembly modules
+        - `format`: Formatting source code
         - `lexer`: Tokenizing source code
         - `mcode`: Intermediate representation for target machine instructions
         - `parser`: Parsing tokens into an AST
@@ -102,6 +99,7 @@ The hot reloader is a tool that watches source files for changes, recompiles the
             - `x86_64`: x86-64/AMD64 backend
         - `utils`: Utility functions and classes
     - `banjo-compiler`: The compiler
+    - `banjo-format`: The formatter
     - `banjo-lsp`: The language server
     - `banjo-hot-reloader`: The hot reloader
     - `bindgen`: Tool for generating bindings for C libraries
@@ -109,6 +107,6 @@ The hot reloader is a tool that watches source files for changes, recompiles the
 - `lib`: Libraries used by the compiler
     - `stdlib`: The standard library
 - `test`: Test cases
-    - `compiled`: Tests written in C++ that have to be compiled first
+    - `compiled`: Tests written in C++
     - `scripted`: Tests written in Python that invoke the compiler with some input and an expected output 
 - `docs`: Online documentation
