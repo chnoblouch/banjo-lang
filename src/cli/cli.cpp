@@ -1035,7 +1035,8 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
         } else if (member_name == "libraries") {
             libraries = unwrap_json_string_array(member_name, member_value);
         } else if (member_name == "library_paths") {
-            // TODO
+            std::vector<std::string> new_paths = unwrap_json_string_array(member_name, member_value);
+            library_paths.insert(library_paths.end(), new_paths.begin(), new_paths.end());
         } else if (member_name == "packages") {
             packages = unwrap_json_string_array(member_name, member_value);
         } else if (member_name == "targets") {
@@ -1304,26 +1305,13 @@ void CLI::invoke_linker() {
     print_step("Linking...");
     std::filesystem::create_directories(get_output_dir());
 
-    if (target.os == "windows") {
-        if (target.env == "msvc") {
-            invoke_msvc_linker();
-        } else if (target.env == "gnu") {
-            invoke_mingw_linker();
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    } else if (target.os == "linux") {
-        invoke_unix_linker();
-    } else if (target.os == "macos") {
-        invoke_darwin_linker();
-    } else if (target.arch == "wasm") {
-        if (target.os == "emscripten") {
-            invoke_emscripten_linker();
-        } else {
-            invoke_wasm_linker();
-        }
-    } else {
-        ASSERT_UNREACHABLE;
+    switch (toolchain_kind()) {
+        case ToolchainKind::MSVC: invoke_msvc_linker(); break;
+        case ToolchainKind::MINGW: invoke_mingw_linker(); break;
+        case ToolchainKind::UNIX: invoke_unix_linker(); break;
+        case ToolchainKind::MACOS: invoke_darwin_linker(); break;
+        case ToolchainKind::EMSCRIPTEN: invoke_emscripten_linker(); break;
+        case ToolchainKind::WASM: invoke_wasm_linker(); break;
     }
 }
 
