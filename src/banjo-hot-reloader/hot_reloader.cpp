@@ -217,7 +217,7 @@ TargetProcess::Address HotReloader::alloc_section(
     std::optional<TargetProcess::Address> addr = process->allocate_memory(size, protection);
 
     if (addr) {
-        return reinterpret_cast<TargetProcess::Address>(*addr);
+        return *addr;
     } else {
         abort("failed to allocate memory for section");
     }
