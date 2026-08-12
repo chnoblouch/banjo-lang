@@ -57,7 +57,7 @@ private:
 #if OS_WINDOWS
     std::string read_all(HANDLE file);
 #elif OS_LINUX || OS_MACOS
-    std::string read_all(int fd);
+    std::string read_to_end(int fd);
 #endif
 };
 
