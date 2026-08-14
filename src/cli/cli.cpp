@@ -950,7 +950,7 @@ void CLI::set_up_toolchain() {
     } else if (kind == ToolchainKind::MINGW) {
         toolchain = std::make_unique<MinGWToolchain>(MinGWToolchain::detect());
     } else if (kind == ToolchainKind::UNIX) {
-        if (Target::host().os == target.os) {
+        if (Target::host() == target) {
             toolchain = std::make_unique<UnixToolchain>(UnixToolchain::detect());
         } else {
             toolchain = std::make_unique<UnixToolchain>(UnixToolchain::install(target.arch));
