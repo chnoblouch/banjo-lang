@@ -1,12 +1,13 @@
 #include "process.hpp"
 
+#include <thread>
+
 #include "common.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 std::optional<Process> Process::spawn(const Command &command) {
     Process process;
@@ -155,16 +156,30 @@ std::optional<Process> Process::spawn(const Command &command) {
 }
 
 ProcessResult Process::wait() {
-    WaitForSingleObject(process, INFINITE);
+    std::string stdout_buffer;
+    std::string stderr_buffer;
+
+    if (stdout_read_handle && stderr_read_handle) {
+        std::thread stdout_reader{[&] { stdout_buffer = read_to_end(stdout_read_handle); }};
+        std::thread stderr_reader{[&] { stderr_buffer = read_to_end(stderr_read_handle); }};
+
+        stdout_reader.join();
+        stderr_reader.join();
+    } else if (stdout_read_handle) {
+        stdout_buffer = read_to_end(stdout_read_handle);
+    } else if (stderr_read_handle) {
+        stderr_buffer = read_to_end(stderr_read_handle);
+    }
+
+    if (WaitForSingleObject(process, INFINITE) != WAIT_OBJECT_0) {
+        error("`WaitForSingleObject` failed");
+    }
 
     DWORD exit_code;
 
     if (!GetExitCodeProcess(process, &exit_code)) {
         error("failed to get exit code of subprocess");
     }
-
-    std::string stdout_buffer = stdout_read_handle ? read_all(stdout_read_handle) : "";
-    std::string stderr_buffer = stderr_read_handle ? read_all(stderr_read_handle) : "";
 
     if (stdin_write_handle && !CloseHandle(stdin_write_handle)) {
         error("`CloseHandle` failed");
@@ -193,7 +208,7 @@ ProcessResult Process::wait() {
     };
 }
 
-std::string Process::read_all(HANDLE file) {
+std::string Process::read_to_end(HANDLE file) {
     std::string result;
     std::string buffer(4096, '\0');
 
@@ -208,11 +223,10 @@ std::string Process::read_all(HANDLE file) {
             break;
         }
 
-        result += std::string_view(buffer).substr(0, bytes_read);
+        result += std::string_view{&buffer[0], &buffer[bytes_read]};
     }
 
     return result;
 }
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli

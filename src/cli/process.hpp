@@ -8,11 +8,12 @@
 #include <vector>
 
 #if OS_WINDOWS
+#    include <thread>
+
 typedef void *HANDLE;
 #endif
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 struct Command {
     enum class Stream {
@@ -55,13 +56,12 @@ public:
 
 private:
 #if OS_WINDOWS
-    std::string read_all(HANDLE file);
+    std::string read_to_end(HANDLE file);
 #elif OS_LINUX || OS_MACOS
     std::string read_to_end(int fd);
 #endif
 };
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli
 
 #endif
