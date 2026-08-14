@@ -175,7 +175,7 @@ std::optional<TargetProcess::Address> TargetProcess::find_section(std::string_vi
         return {};
     }
 
-    TargetProcess::Address base_address = static_cast<TargetProcess::Address>(module_info.lpBaseOfDll);
+    TargetProcess::Address base_address = reinterpret_cast<TargetProcess::Address>(module_info.lpBaseOfDll);
     return base_address + (*virtual_address);
 }
 
