@@ -2,6 +2,7 @@
 
 #include "banjo/utils/json.hpp"
 #include "banjo/utils/json_parser.hpp"
+#include "banjo/utils/platform.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include "common.hpp"
@@ -9,8 +10,15 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <initializer_list>
+#include <string>
 #include <system_error>
 #include <utility>
+
+#if OS_WINDOWS
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
+#endif
 
 namespace banjo::cli {
 
@@ -175,6 +183,47 @@ std::optional<std::filesystem::path> MSVCToolchain::find_winsdk_root() {
             return winsdk_root_path;
         }
     }
+
+#if OS_WINDOWS
+    for (HKEY key : std::initializer_list<HKEY>{HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER}) {
+        LPCSTR sub_key = "SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows\\v10.0";
+        LPCSTR value = "InstallationFolder";
+        DWORD flags = RRF_RT_REG_SZ;
+
+        HKEY handle;
+
+        if (RegOpenKeyEx(key, sub_key, 0, KEY_READ | KEY_WOW64_32KEY, &handle) != ERROR_SUCCESS) {
+            continue;
+        }
+
+        DWORD type = 0;
+        DWORD data_size = 0;
+
+        if (RegGetValue(handle, NULL, value, flags, &type, NULL, &data_size) != ERROR_SUCCESS) {
+            RegCloseKey(handle);
+            continue;
+        }
+
+        std::string data(static_cast<std::string::size_type>(data_size), '\0');
+
+        if (RegGetValue(handle, NULL, value, flags, NULL, data.data(), &data_size) != ERROR_SUCCESS) {
+            RegCloseKey(handle);
+            continue;
+        }
+
+        RegCloseKey(handle);
+
+        if (data_size == 0) {
+            continue;
+        }
+
+        std::filesystem::path path{std::string_view{&data[0], &data[data_size - 1]}};
+
+        if (std::filesystem::is_directory(path)) {
+            return path;
+        }
+    }
+#endif
 
     return {};
 }
