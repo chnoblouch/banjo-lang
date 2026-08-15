@@ -1,0 +1,5 @@
+# test:compiles
+
+native func f(s: S);
+
+struct S {}

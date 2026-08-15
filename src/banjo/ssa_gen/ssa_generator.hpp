@@ -4,7 +4,6 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/structure.hpp"
-#include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/target/target.hpp"
 #include "banjo/utils/arena.hpp"
@@ -49,6 +48,7 @@ private:
     void generate_decls(const sir::DeclBlock &decl_block);
     void generate_func_defs(const sir::FuncDef &sir_func);
     void generate_func_def(const sir::FuncDef &sir_func, ssa::Function &ssa_func);
+    void generate_native_func_decl(const sir::NativeFuncDecl &sir_func);
     void generate_struct_defs(const sir::StructDef &sir_struct);
     void generate_union_def(const sir::UnionDef &sir_union_def);
     void generate_proto_def(const sir::ProtoDef &sir_proto_def);

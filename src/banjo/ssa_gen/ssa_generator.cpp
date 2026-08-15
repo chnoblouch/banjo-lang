@@ -121,17 +121,8 @@ ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const
 }
 
 void SSAGenerator::create_native_func_decl(const sir::NativeFuncDecl &sir_func) {
-    std::string ssa_name = NameMangling::get_link_name(sir_func);
-
-    ssa::FunctionType ssa_func_type{
-        .params = generate_params(sir_func.type),
-        .return_type = generate_return_type(sir_func.type.return_type),
-        .calling_conv = ctx.target->get_default_calling_conv(),
-    };
-
     ssa::FunctionDecl *ssa_func = new ssa::FunctionDecl{
-        .name = ssa_name,
-        .type = ssa_func_type,
+        .name = NameMangling::get_link_name(sir_func),
     };
 
     ssa_mod.add(ssa_func);
@@ -395,11 +386,12 @@ void SSAGenerator::generate_struct_def_type(const sir::StructDef &sir_struct, ss
 void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
         if (auto func_def = decl.match<sir::FuncDef>()) generate_func_defs(*func_def);
+        else if (auto native_func = decl.match<sir::NativeFuncDecl>()) generate_native_func_decl(*native_func);
         else if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_defs(*struct_def);
         else if (auto union_def = decl.match<sir::UnionDef>()) generate_union_def(*union_def);
         else if (auto proto_def = decl.match<sir::ProtoDef>()) generate_proto_def(*proto_def);
         else if (auto var_decl = decl.match<sir::VarDecl>()) generate_var_decl(*var_decl);
-        else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) generate_native_var_decl(*native_var_decl);
+        else if (auto native_var = decl.match<sir::NativeVarDecl>()) generate_native_var_decl(*native_var);
     }
 }
 
@@ -550,6 +542,16 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
     }
 
     ctx.pop_func_context();
+}
+
+void SSAGenerator::generate_native_func_decl(const sir::NativeFuncDecl &sir_func) {
+    ssa::FunctionType ssa_func_type{
+        .params = generate_params(sir_func.type),
+        .return_type = generate_return_type(sir_func.type.return_type),
+        .calling_conv = ctx.target->get_default_calling_conv(),
+    };
+
+    ctx.ssa_native_funcs.at(&sir_func)->type = ssa_func_type;
 }
 
 void SSAGenerator::generate_struct_defs(const sir::StructDef &sir_struct) {
