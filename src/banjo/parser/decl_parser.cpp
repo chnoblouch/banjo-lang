@@ -4,6 +4,7 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/expr_parser.hpp"
 #include "banjo/parser/node_builder.hpp"
+#include "banjo/parser/stmt_parser.hpp"
 
 namespace banjo {
 
@@ -429,6 +430,7 @@ ParseResult DeclParser::parse_pub() {
         case TKN_TYPE: return parse_type_alias();
         case TKN_NATIVE: return parse_native();
         case TKN_USE: return parse_use();
+        case TKN_VAR: return StmtParser{parser}.parse_var();
         default:
             parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
             return {parser.create_node(AST_ERROR), false};

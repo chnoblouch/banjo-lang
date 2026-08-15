@@ -1,0 +1,8 @@
+# test:compiles
+
+pub var test: i32 = 0;
+
+struct Object {
+    pub var id: u64;
+    var name: *u8;
+}

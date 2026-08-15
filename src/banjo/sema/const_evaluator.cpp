@@ -64,7 +64,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return evaluate_non_const(expr),         // call_expr
         return evaluate_non_const(expr),         // field_expr
         return evaluate_range_expr(*inner),      // range_expr
-        return evaluate_non_const(*inner),       // try_expr
+        return evaluate_non_const(expr),         // try_expr
         return evaluate_tuple_expr(*inner),      // tuple_expr
         return evaluate_non_const(expr),         // coercion_expr
         return expr,                             // specialize_expr
