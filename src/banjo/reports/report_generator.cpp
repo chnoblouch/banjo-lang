@@ -444,6 +444,19 @@ void ReportGenerator::report_err_unexpected_arg_count(
     return builder.report();
 }
 
+void ReportGenerator::report_err_unexpected_arg_count_variadic(
+    sir::CallExpr &call_expr,
+    unsigned min_count,
+    sir::NativeFuncDecl *func_decl
+) {
+    unsigned count = call_expr.args.size();
+    sir::Expr type{&func_decl->type};
+
+    return build_error("too few arguments (expected at least $, got $)", call_expr.ast_node, min_count, count)
+        .add_note("native variadic function declared with type '$'", func_decl->ident.ast_node, type)
+        .report();
+}
+
 void ReportGenerator::report_err_no_members(const sir::DotExpr &dot_expr) {
     report_error("type '$' doesn't have members", dot_expr.ast_node, dot_expr.lhs.get_type());
 }

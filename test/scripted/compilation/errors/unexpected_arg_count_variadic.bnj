@@ -1,0 +1,21 @@
+# test:subtest
+# test:error 9:5 "too few arguments (expected at least 3, got 2)"
+# test:note 6:13 "native variadic function declared with type 'func(i32, bool, f32)'"
+
+@c_variadic
+native func f(i32, bool, f32);
+
+func main() {
+    f(0, true);
+}
+
+# test:subtest
+# test:error 20:5 "too few arguments (expected at least 2, got 0)"
+# test:note 17:13 "native variadic function declared with type 'func(bool, u64)'"
+
+@c_variadic
+native func f(bool, u64);
+
+func main() {
+    f();
+}

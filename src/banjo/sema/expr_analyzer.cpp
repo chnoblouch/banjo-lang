@@ -333,7 +333,7 @@ Result ExprAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_literal) 
     Result result = Result::SUCCESS;
 
     if (struct_literal.type) {
-        RESULT_RETURN_ON_ERROR(analyze_type(struct_literal.type));
+        RESULT_PROPAGATE(analyze_type(struct_literal.type));
 
         if (!struct_literal.type.match_concrete<sir::StructDef>()) {
             analyzer.report_generator.report_err_expected_struct(struct_literal.type);
@@ -613,8 +613,8 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
             rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
 
-            RESULT_RETURN_ON_ERROR(lhs_result)
-            RESULT_RETURN_ON_ERROR(rhs_result)
+            RESULT_PROPAGATE(lhs_result)
+            RESULT_PROPAGATE(rhs_result)
 
             sir::Expr return_type = concrete_proto.def->func_decls[0].get_type().return_type;
             sir::Specializer specializer{analyzer.mod->trivial_arena, concrete_proto};
@@ -717,11 +717,11 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
     } else if (can_lhs_be_coerced && !can_rhs_be_coerced) {
         rhs_result = ExprFinalizer(analyzer).finalize(binary_expr.rhs);
-        RESULT_RETURN_ON_ERROR(rhs_result);
+        RESULT_PROPAGATE(rhs_result);
         lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, rhs_type);
     } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
         lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
-        RESULT_RETURN_ON_ERROR(lhs_result);
+        RESULT_PROPAGATE(lhs_result);
         rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, lhs_type);
     } else {
         if (binary_expr.is_numeric_op()) {
@@ -866,7 +866,7 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
         }
 
         if (constraint_satisfied) {
-            RESULT_RETURN_ON_ERROR(ExprFinalizer{analyzer}.finalize(unary_expr.value));
+            RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(unary_expr.value));
             // sir::Expr return_type = proto_def->func_decls[0].get_type().return_type;
 
             // HACK: Currently, all unary protos return `self.type`.
@@ -1222,9 +1222,39 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         return Result::ERROR;
     }
 
-    partial_result = finalize_call_expr_args(call_expr, *callee_func_type, callee_func_def);
-    if (partial_result != Result::SUCCESS) {
-        return Result::ERROR;
+    sir::NativeFuncDecl *variadic_native_func_decl = nullptr;
+    std::optional<unsigned> first_variadic_arg_index;
+
+    if (auto native_func_decl = call_expr.callee.match_symbol<sir::NativeFuncDecl>()) {
+        if (native_func_decl->attrs && native_func_decl->attrs->c_variadic) {
+            variadic_native_func_decl = native_func_decl;
+            first_variadic_arg_index = native_func_decl->type.params.size();
+        }
+    }
+
+    if (!first_variadic_arg_index) {
+        RESULT_PROPAGATE(finalize_call_expr_args(call_expr, *callee_func_type, callee_func_def));
+    } else {
+        if (call_expr.args.size() < *first_variadic_arg_index) {
+            analyzer.report_generator.report_err_unexpected_arg_count_variadic(
+                call_expr,
+                *first_variadic_arg_index,
+                variadic_native_func_decl
+            );
+
+            return Result::ERROR;
+        }
+
+        for (unsigned i = 0; i < first_variadic_arg_index; i++) {
+            sir::Expr &arg = call_expr.args[i];
+            sir::Expr expected_type = callee_func_type->params[i].type;
+            RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize_by_coercion(arg, expected_type));
+        }
+
+        for (unsigned i = *first_variadic_arg_index; i < call_expr.args.size(); i++) {
+            sir::Expr &arg = call_expr.args[i];
+            RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(arg));
+        }
     }
 
     call_expr.type = callee_func_type->return_type;
@@ -1999,7 +2029,7 @@ Result ExprAnalyzer::analyze_type_check_expr(sir::TypeCheckExpr &type_check_expr
 
     RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(type_check_expr.type_to_check));
     RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(type_check_expr.constraint));
-    RESULT_RETURN_ON_ERROR(result);
+    RESULT_PROPAGATE(result);
 
     type_check_expr.type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL);
 
@@ -2021,7 +2051,7 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
     sir::Expr &base = meta_field_expr.base.as<sir::MetaAccess>().expr;
 
     Result result = analyze(base);
-    RESULT_RETURN_ON_ERROR(result);
+    RESULT_PROPAGATE(result);
 
     if (meta_field_expr.field.value == "size") {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::USIZE);
@@ -2092,13 +2122,13 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, s
     Result result = Result::SUCCESS;
 
     sir::MetaFieldExpr &meta_field_expr = meta_call_expr.callee.as<sir::MetaFieldExpr>();
-    RESULT_RETURN_ON_ERROR(analyze_meta_field_expr(meta_field_expr, true));
+    RESULT_PROPAGATE(analyze_meta_field_expr(meta_field_expr, true));
 
     for (sir::Expr &arg : meta_call_expr.args) {
         RESULT_MERGE(result, analyze(arg));
     }
 
-    RESULT_RETURN_ON_ERROR(result);
+    RESULT_PROPAGATE(result);
 
     analyzer.report_generator.report_err_invalid_meta_method(meta_call_expr);
     return Result::ERROR;
@@ -2376,9 +2406,6 @@ Result ExprAnalyzer::finalize_call_expr_args(
     sir::FuncType &func_type,
     sir::FuncDef *func_def
 ) {
-    Result result = Result::SUCCESS;
-    Result partial_result;
-
     if (call_expr.args.size() != func_type.params.size()) {
         analyzer.report_generator.report_err_unexpected_arg_count(call_expr, func_type.params.size(), func_def);
         return Result::ERROR;
@@ -2410,13 +2437,10 @@ Result ExprAnalyzer::finalize_call_expr_args(
             );
         }
 
-        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(arg, expected_type);
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+        RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize_by_coercion(arg, expected_type));
     }
 
-    return result;
+    return Result::SUCCESS;
 }
 
 void ExprAnalyzer::resolve_type_aliases(sir::Expr &expr) {

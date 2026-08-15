@@ -604,6 +604,12 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
         ssa_builder.add_arg(generate(call_expr.args[i]));
     }
 
+    if (auto native_func = call_expr.callee.match_symbol<sir::NativeFuncDecl>()) {
+        if (native_func->attrs && native_func->attrs->c_variadic) {
+            ssa_builder.make_variadic(native_func->type.params.size());
+        }
+    }
+
     return ssa_builder.generate();
 }
 

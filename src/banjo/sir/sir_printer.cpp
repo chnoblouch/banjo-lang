@@ -1172,6 +1172,9 @@ void Printer::print_attrs(const Attributes &attrs) {
         PRINT_FIELD("layout", value);
     }
 
+    PRINT_FIELD("c_variadic", attrs.c_variadic ? "true" : "false");
+    PRINT_FIELD("never_inline", attrs.never_inline ? "true" : "false");
+
     END_OBJECT();
 }
 

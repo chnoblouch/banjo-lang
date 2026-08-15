@@ -565,6 +565,7 @@ struct Attributes {
     bool unmanaged = false;
     bool byval = false;
     std::optional<Layout> layout = {};
+    bool c_variadic = false;
     bool never_inline = false;
 };
 

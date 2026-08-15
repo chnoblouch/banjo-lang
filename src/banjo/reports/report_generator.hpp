@@ -100,6 +100,11 @@ public:
     void report_err_expected_struct(sir::Expr type);
     void report_err_expected_generic_or_indexable(sir::Expr &expr);
     void report_err_unexpected_arg_count(sir::CallExpr &call_expr, unsigned expected_count, sir::FuncDef *func_def);
+    void report_err_unexpected_arg_count_variadic(
+        sir::CallExpr &call_expr,
+        unsigned min_count,
+        sir::NativeFuncDecl *func_decl
+    );
     void report_err_no_members(const sir::DotExpr &dot_expr);
     void report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def);
     void report_err_no_field(const sir::Ident &field_ident, const sir::UnionCase &union_case);

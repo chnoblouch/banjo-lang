@@ -8,7 +8,7 @@
         }                                                                                                              \
     }
 
-#define RESULT_RETURN_ON_ERROR(result)                                                                                 \
+#define RESULT_PROPAGATE(result)                                                                                       \
     if (((result)) != Result::SUCCESS) {                                                                               \
         return Result::ERROR;                                                                                          \
     }

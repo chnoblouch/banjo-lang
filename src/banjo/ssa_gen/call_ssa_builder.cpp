@@ -1,5 +1,7 @@
 #include "call_ssa_builder.hpp"
 
+#include "banjo/ssa/instruction.hpp"
+
 namespace banjo {
 
 CallSSABuilder::CallSSABuilder(SSAGeneratorContext &ctx, ssa::Type ssa_return_type, const StorageHints &hints)
@@ -42,21 +44,36 @@ CallSSABuilder &CallSSABuilder::add_arg(StoredValue value) {
     return *this;
 }
 
+CallSSABuilder &CallSSABuilder::make_variadic(unsigned first_variadic_index) {
+    this->first_variadic_index = first_variadic_index;
+    return *this;
+}
+
 StoredValue CallSSABuilder::generate() {
+    ssa::InstrIter instr;
+    StoredValue value;
+
     if (return_method == ReturnMethod::NO_RETURN_VALUE || hints.is_unused) {
         // assert(!hints.dst);
-        ctx.get_ssa_block()->append({ssa::Opcode::CALL, std::move(ssa_operands)});
-        return StoredValue::create_value({});
+        instr = ctx.get_ssa_block()->append({ssa::Opcode::CALL, std::move(ssa_operands)});
+        value = StoredValue::create_value({});
     } else if (return_method == ReturnMethod::IN_REGISTER) {
         ssa::VirtualRegister dst = ctx.next_vreg();
-        ctx.get_ssa_block()->append({ssa::Opcode::CALL, dst, std::move(ssa_operands)});
-        return StoredValue::create_value(dst, ssa_return_type);
+        instr = ctx.get_ssa_block()->append({ssa::Opcode::CALL, dst, std::move(ssa_operands)});
+        value = StoredValue::create_value(dst, ssa_return_type);
     } else if (return_method == ReturnMethod::VIA_POINTER_ARG) {
-        ctx.get_ssa_block()->append({ssa::Opcode::CALL, std::move(ssa_operands)});
-        return return_value_ptr;
+        instr = ctx.get_ssa_block()->append({ssa::Opcode::CALL, std::move(ssa_operands)});
+        value = return_value_ptr;
     } else {
         ASSERT_UNREACHABLE;
     }
+
+    if (first_variadic_index) {
+        instr->set_attr(ssa::Instruction::Attribute::VARIADIC);
+        instr->set_attrs_data(*first_variadic_index);
+    }
+
+    return value;
 }
 
 } // namespace banjo
