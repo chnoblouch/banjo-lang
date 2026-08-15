@@ -206,7 +206,7 @@ func u64_to_string(value: u64, base: u64) -> String {
 
 func f64_to_string(value: f64) -> String {
     var buffer: [u8; 64];
-    runtime.f64_to_string(value, &buffer[0], 64);
+    c.snprintf(&buffer[0], 64, "%g\0", value);
     return String.from_cstring(&buffer[0]);
 }
 

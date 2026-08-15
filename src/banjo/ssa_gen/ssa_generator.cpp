@@ -61,8 +61,6 @@ ssa::Module SSAGenerator::generate() {
         ctx.pop_decl_context();
     }
 
-    generate_runtime();
-
     for (const sir::Module *sir_mod : sir_unit.mods) {
         generate_decls(sir_mod->block);
     }
@@ -273,79 +271,6 @@ void SSAGenerator::create_native_var_decl(const sir::NativeVarDecl &sir_native_v
     });
 }
 
-void SSAGenerator::generate_runtime() {
-    ssa::Type usize_type = ctx.target->get_data_layout().get_usize_type();
-
-    ssa::FunctionDecl *func_snprintf = new ssa::FunctionDecl{
-        .name = "snprintf",
-        .type{
-            .params{ssa::Primitive::ADDR, usize_type, ssa::Primitive::ADDR},
-            .return_type = ssa::Primitive::I32,
-            .calling_conv = ctx.target->get_default_calling_conv(),
-            .variadic = true,
-        },
-    };
-
-    ssa::Global *global_format_string = new ssa::Global{
-        .name = "___runtime_f64_format",
-        .type = ssa::Primitive::ADDR,
-        .initial_value = std::string("%g\0", 3),
-        .external = false,
-    };
-
-    for (ssa::Function *func : ssa_mod.get_functions()) {
-        if (func->name != "___runtime_f64_to_string") {
-            continue;
-        }
-
-        func->get_entry_block().append({
-            ssa::Opcode::LOADARG,
-            0,
-            {
-                ssa::Operand::from_type(ssa::Primitive::F64),
-                ssa::Operand::from_int_immediate(0),
-            },
-        });
-
-        func->get_entry_block().append({
-            ssa::Opcode::LOADARG,
-            1,
-            {
-                ssa::Operand::from_type(ssa::Primitive::ADDR),
-                ssa::Operand::from_int_immediate(1),
-            },
-        });
-
-        func->get_entry_block().append({
-            ssa::Opcode::LOADARG,
-            2,
-            {ssa::Operand::from_type(usize_type), ssa::Operand::from_int_immediate(2)},
-        });
-
-        ssa::Instruction call{
-            ssa::Opcode::CALL,
-            {
-                ssa::Operand::from_extern_func(func_snprintf, ssa::Primitive::VOID),
-                ssa::Operand::from_register(1, ssa::Primitive::ADDR),
-                ssa::Operand::from_register(2, usize_type),
-                ssa::Operand::from_global(global_format_string, ssa::Primitive::ADDR),
-                ssa::Operand::from_register(0, ssa::Primitive::F64),
-            }
-        };
-
-        call.set_attr(ssa::Instruction::Attribute::VARIADIC);
-        call.set_attrs_data(3);
-
-        func->get_entry_block().append(call);
-        func->get_entry_block().append({ssa::Opcode::RET});
-
-        func->last_virtual_reg = 3;
-    }
-
-    ssa_mod.add(func_snprintf);
-    ssa_mod.add(global_format_string);
-}
-
 void SSAGenerator::generate_types(const sir::DeclBlock &decl_block) {
     for (const sir::Decl &decl : decl_block.decls) {
         if (auto struct_def = decl.match<sir::StructDef>()) generate_struct_def_types(*struct_def);
@@ -438,10 +363,6 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
     }
 
     ssa_func.type = ssa_func_type;
-
-    if (ssa_func.name == "___runtime_f64_to_string") {
-        return;
-    }
 
     ctx.push_func_context(sir_func, &ssa_func);
     ctx.get_func_context().ssa_func_exit = ctx.create_block();

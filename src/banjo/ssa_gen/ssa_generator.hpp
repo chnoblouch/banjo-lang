@@ -39,8 +39,6 @@ private:
     void create_var_decl(const sir::VarDecl &sir_var_decl);
     void create_native_var_decl(const sir::NativeVarDecl &sir_native_var_decl);
 
-    void generate_runtime();
-
     void generate_types(const sir::DeclBlock &decl_block);
     void generate_struct_def_types(const sir::StructDef &sir_struct);
     void generate_struct_def_type(const sir::StructDef &sir_struct, ssa::Structure &ssa_struct);
