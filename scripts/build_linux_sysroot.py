@@ -116,11 +116,15 @@ if __name__ == "__main__":
     subprocess.run(["make", "-j8", "install-target-libgcc"], cwd=gcc_build_path)
 
     out_dir = Path(f"sysroot-{arch}-linux-gnu").absolute()
-    
+    glibc_licenses_dir = out_dir / "licenses" / "glibc"
+    gcc_licenses_dir = out_dir / "licenses" / "gcc"
+
     if out_dir.exists():
         shutil.rmtree(out_dir)
 
     out_dir.mkdir()
+    glibc_licenses_dir.mkdir(parents=True)
+    gcc_licenses_dir.mkdir(parents=True)
 
     for file in GLIBC_LIBRARIES:
         if type(file) is str:
@@ -134,3 +138,9 @@ if __name__ == "__main__":
         shutil.copy(gcc_lib_dir / file, out_dir / file)
 
     shutil.copy(gcc_install_path / "lib64" / "libgcc_s.so.1", out_dir / "libgcc_s.so")
+
+    for file in ["COPYINGv2", "COPYING.LESSERv2", "COPYINGv3", "COPYING.LIB", "LICENSES"]:
+        shutil.copy(glibc_source_path / file, glibc_licenses_dir / file)
+
+    for file in ["COPYING", "COPYING.LIB", "COPYING.RUNTIME", "COPYING3", "COPYING3.LIB"]:
+        shutil.copy(gcc_source_path / file, gcc_licenses_dir / file)
