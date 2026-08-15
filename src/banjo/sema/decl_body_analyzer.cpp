@@ -86,7 +86,8 @@ Result DeclBodyAnalyzer::analyze_const_def(sir::ConstDef &const_def) {
     }
 
     analyzer.decl_stack.push_back(&const_def);
-    ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate(const_def.value);
+    ConstEvaluator::Output evaluated =
+        ConstEvaluator{analyzer, ConstEvaluator::Usage::CONST_VALUE}.evaluate(const_def.value);
     analyzer.decl_stack.pop_back();
 
     if (evaluated.result != Result::SUCCESS) {
@@ -195,7 +196,9 @@ Result DeclBodyAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl & /*
             return Result::ERROR;
         }
 
-        ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate(var_decl.value);
+        ConstEvaluator::Output evaluated =
+            ConstEvaluator{analyzer, ConstEvaluator::Usage::GLOBAL_VALUE}.evaluate(var_decl.value);
+
         if (evaluated.result != Result::SUCCESS) {
             return Result::ERROR;
         }
@@ -228,7 +231,9 @@ Result DeclBodyAnalyzer::analyze_enum_def(sir::EnumDef &enum_def) {
                 continue;
             }
 
-            ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate(variant->value);
+            ConstEvaluator::Output evaluated =
+                ConstEvaluator{analyzer, ConstEvaluator::Usage::GLOBAL_VALUE}.evaluate(variant->value);
+
             if (evaluated.result != Result::SUCCESS) {
                 continue;
             }

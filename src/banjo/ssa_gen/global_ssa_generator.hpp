@@ -21,7 +21,9 @@ private:
     ssa::Global::Value generate_fp_literal(const sir::FPLiteral &fp_literal);
     ssa::Global::Value generate_bool_literal(const sir::BoolLiteral &bool_literal);
     ssa::Global::Value generate_char_literal(const sir::CharLiteral &char_literal);
+    ssa::Global::Value generate_null_literal();
     ssa::Global::Value generate_array_literal(const sir::ArrayLiteral &array_literal);
+    ssa::Global::Value generate_struct_literal(const sir::StructLiteral &struct_literal);
     ssa::Global::Value generate_tuple_literal(const sir::TupleExpr &tuple_literal);
 
     void generate_bytes(WriteBuffer &buffer, unsigned size, const ssa::Global::Value &value);

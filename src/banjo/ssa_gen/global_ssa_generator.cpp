@@ -1,6 +1,7 @@
 #include "global_ssa_generator.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa/global.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/macros.hpp"
@@ -14,7 +15,9 @@ ssa::Global::Value GlobalSSAGenerator::generate_value(const sir::Expr &value) {
     else if (auto fp_literal = value.match<sir::FPLiteral>()) return generate_fp_literal(*fp_literal);
     else if (auto bool_literal = value.match<sir::BoolLiteral>()) return generate_bool_literal(*bool_literal);
     else if (auto char_literal = value.match<sir::CharLiteral>()) return generate_char_literal(*char_literal);
+    else if (value.is<sir::NullLiteral>()) return generate_null_literal();
     else if (auto array_literal = value.match<sir::ArrayLiteral>()) return generate_array_literal(*array_literal);
+    else if (auto struct_literal = value.match<sir::StructLiteral>()) return generate_struct_literal(*struct_literal);
     else if (auto tuple_literal = value.match<sir::TupleExpr>()) return generate_tuple_literal(*tuple_literal);
     else ASSERT_UNREACHABLE;
 }
@@ -35,6 +38,10 @@ ssa::Global::Value GlobalSSAGenerator::generate_char_literal(const sir::CharLite
     return static_cast<unsigned>(char_literal.value);
 }
 
+ssa::Global::Value GlobalSSAGenerator::generate_null_literal() {
+    return 0;
+}
+
 ssa::Global::Value GlobalSSAGenerator::generate_array_literal(const sir::ArrayLiteral &array_literal) {
     if (array_literal.values.empty()) {
         return ssa::Global::None{};
@@ -50,6 +57,27 @@ ssa::Global::Value GlobalSSAGenerator::generate_array_literal(const sir::ArrayLi
         generate_bytes(buffer, size, generate_value(value));
         pad_bytes(buffer, alignment);
     }
+
+    return buffer.move_data();
+}
+
+ssa::Global::Value GlobalSSAGenerator::generate_struct_literal(const sir::StructLiteral &struct_literal) {
+    if (struct_literal.entries.empty()) {
+        return ssa::Global::None{};
+    }
+
+    WriteBuffer buffer;
+
+    for (sir::StructLiteralEntry &entry : struct_literal.entries) {
+        ssa::Type type = TypeSSAGenerator(ctx).generate(entry.value.get_type());
+        unsigned size = ctx.target->get_data_layout().get_size(type);
+
+        pad_bytes(buffer, ctx.target->get_data_layout().get_alignment(type));
+        generate_bytes(buffer, size, generate_value(entry.value));
+    }
+
+    ssa::Type type = TypeSSAGenerator(ctx).generate(struct_literal.type);
+    pad_bytes(buffer, ctx.target->get_data_layout().get_alignment(type));
 
     return buffer.move_data();
 }

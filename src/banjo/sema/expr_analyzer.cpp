@@ -809,7 +809,9 @@ Result ExprAnalyzer::create_type_check(sir::BinaryExpr &binary_expr, sir::Expr &
 }
 
 Result ExprAnalyzer::create_type_comparison(sir::BinaryExpr &binary_expr, sir::Expr &out_expr) {
-    ConstEvaluator::Output evaluated = ConstEvaluator{analyzer}.evaluate_binary_expr(binary_expr);
+    ConstEvaluator::Output evaluated =
+        ConstEvaluator{analyzer, ConstEvaluator::Usage::OTHER}.evaluate_binary_expr(binary_expr);
+
     if (evaluated.result != Result::SUCCESS) {
         return evaluated.result;
     }
@@ -1487,7 +1489,9 @@ Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_arra
         return Result::ERROR;
     }
 
-    ConstEvaluator::Output length_evaluated = ConstEvaluator{analyzer}.evaluate(static_array_type.length);
+    ConstEvaluator::Output length_evaluated =
+        ConstEvaluator{analyzer, ConstEvaluator::Usage::OTHER}.evaluate(static_array_type.length);
+
     if (length_evaluated.result != Result::SUCCESS) {
         return Result::ERROR;
     }

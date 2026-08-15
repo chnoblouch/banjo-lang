@@ -1,0 +1,49 @@
+# test:subtest
+# test:error 4:16 "cannot use this value in a const context"
+
+const A: i32 = f();
+
+func f() -> i32 {
+    return 0;
+}
+
+# test:subtest
+# test:error 20:28 "cannot use this value in a const context"
+# test:error 21:31 "cannot use this value in a const context"
+# test:error 22:28 "cannot use this value in a const context"
+
+struct S {
+    var a: bool;
+    var b: i32;
+}
+
+const A: [i32; 3] = [0, 1, f()];
+const B: (bool, i32) = (true, f());
+const C: S = { a: true, b: f() };
+
+func f() -> i32 {
+    return 0;
+}
+
+# test:subtest
+# test:error 31:14 "cannot use this value in a const context"
+
+var a: i32 = f();
+
+func f() -> i32 {
+    return 0;
+}
+
+# test:subtest
+# test:error 40:21 "cannot use this value in a const context"
+
+enum E { A = 0, B = f() }
+
+func f() -> i32 {
+    return 0;
+}
+
+# test:subtest
+# test:error 49:14 "cannot use this value in a const context"
+
+var a: *u8 = "test";

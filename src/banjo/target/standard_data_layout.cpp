@@ -56,6 +56,10 @@ unsigned StandardDataLayout::get_alignment(const ssa::Type &type) const {
     } else if (type.is_struct()) {
         ssa::Structure &struct_ = *type.get_struct();
 
+        if (struct_.members.empty()) {
+            return 1;
+        }
+
         unsigned alignment = 0;
         for (const ssa::StructureMember &member : struct_.members) {
             alignment = std::max(alignment, get_alignment(member.type));

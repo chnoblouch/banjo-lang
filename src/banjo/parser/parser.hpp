@@ -58,7 +58,6 @@ private:
     void parse_and_append_block_child(NodeBuilder &node);
 
     ParseResult parse_block_child();
-    ASTNode *parse_expression();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
     ParseResult parse_try();

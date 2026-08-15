@@ -85,7 +85,9 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::DeclBlock &decl_block, unsigned &
             return;
         }
 
-        if (ConstEvaluator{analyzer}.evaluate_to_bool(cond_branch.condition) /* || is_guard */) {
+        ConstEvaluator evaluator{analyzer, ConstEvaluator::Usage::OTHER};
+
+        if (evaluator.evaluate_to_bool(cond_branch.condition) /* || is_guard */) {
             // if (is_guard) {
             //     analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
             // }
@@ -144,7 +146,9 @@ void MetaExpansion::evaluate_meta_if_stmt(sir::Block &block, unsigned &index) {
             return;
         }
 
-        if (ConstEvaluator{analyzer}.evaluate_to_bool(cond_branch.condition) || is_guard) {
+        ConstEvaluator evaluator{analyzer, ConstEvaluator::Usage::OTHER};
+
+        if (evaluator.evaluate_to_bool(cond_branch.condition) || is_guard) {
             if (is_guard) {
                 analyzer.symbol_ctx.add_next_meta_condition(cond_branch.condition);
             }

@@ -130,10 +130,6 @@ ParseResult Parser::parse_block_child() {
     }
 }
 
-ASTNode *Parser::parse_expression() {
-    return ExprParser(*this).parse().node;
-}
-
 ParseResult Parser::parse_expr_or_assign() {
     NodeBuilder node = build_node();
 

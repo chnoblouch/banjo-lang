@@ -1,3 +1,6 @@
+# TODO: Add tests for empty tuple literals once they're supported.
+# TODO: Add tests for nested arrays/tuples.
+
 # test:subtest
 # test:output "42"
 
@@ -117,4 +120,75 @@ func main() {
     print(b.1);
     print(',');
     print(b.2);
+}
+
+# test:subtest
+# test:output "null"
+
+var a: *i32 = null;
+
+func main() {
+    print(a);
+
+    var v = 42;
+    a = &v;
+}
+
+# test:subtest
+# test:output "4,-13;-27,5,47,83416203013894"
+
+struct Point {
+    var x: i8;
+    var y: i8;
+}
+
+struct Circle {
+    var center: Point;
+    var radius: u32;
+    var id: u64;
+}
+
+var a: Point = Point { x: 4, y: -13 };
+var b: Circle = Circle { center: { x: -27, y: 5 }, radius: 47, id: 83416203013894 };
+
+func main() {
+    print(a.x);
+    print(',');
+    print(a.y);
+    print(';');
+    print(b.center.x);
+    print(',');
+    print(b.center.y);
+    print(',');
+    print(b.radius);
+    print(',');
+    print(b.id);
+}
+
+# test:subtest
+# test:output "8,true"
+
+struct S {
+    var a: i32;
+    var b: bool;
+}
+
+var a: S = { a: 8, b: true };
+
+func main() {
+    print(a.a);
+    print(',');
+    print(a.b);
+}
+
+# test:subtest
+# test:output "42"
+
+struct Empty {}
+
+var a: Empty = Empty {};
+var b: i32 = 42;
+
+func main() {
+    print(b);
 }

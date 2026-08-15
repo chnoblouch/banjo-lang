@@ -154,7 +154,7 @@ public:
         sir::FuncDef &func_def
     );
 
-    void report_err_compile_time_unknown(const sir::Expr &value);
+    void report_err_value_non_const(const sir::Expr &value);
 
     void report_err_recursive_struct(sir::StructDef &struct_def);
     void report_err_expected_proto(const sir::Expr &expr);

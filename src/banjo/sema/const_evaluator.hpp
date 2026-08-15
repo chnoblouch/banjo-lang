@@ -12,6 +12,12 @@ namespace banjo::sema {
 class ConstEvaluator {
 
 public:
+    enum class Usage {
+        GLOBAL_VALUE,
+        CONST_VALUE,
+        OTHER,
+    };
+
     struct Output {
         Result result;
         sir::Expr expr;
@@ -25,15 +31,18 @@ public:
 
 private:
     SemanticAnalyzer &analyzer;
+    Usage usage;
 
 public:
-    ConstEvaluator(SemanticAnalyzer &analyzer);
+    ConstEvaluator(SemanticAnalyzer &analyzer, Usage usage);
 
     LargeInt evaluate_to_int(sir::Expr &expr);
     bool evaluate_to_bool(sir::Expr &expr);
     Output evaluate(sir::Expr &expr);
 
     Output evaluate_array_literal(sir::ArrayLiteral &array_literal);
+    Output evaluate_string_literal(sir::StringLiteral &string_literal);
+    Output evaluate_struct_literal(sir::StructLiteral &struct_literal);
     Output evaluate_symbol_expr(sir::SymbolExpr &symbol_expr);
     Output evaluate_const_def_value(sir::ConstDef &const_def);
     Output evaluate_binary_expr(sir::BinaryExpr &binary_expr);

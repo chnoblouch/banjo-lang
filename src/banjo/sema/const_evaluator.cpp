@@ -11,7 +11,7 @@
 
 namespace banjo::sema {
 
-ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
+ConstEvaluator::ConstEvaluator(SemanticAnalyzer &analyzer, Usage usage) : analyzer{analyzer}, usage{usage} {}
 
 LargeInt ConstEvaluator::evaluate_to_int(sir::Expr &expr) {
     Output evaluated = evaluate(expr);
@@ -49,10 +49,10 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // char_literal
         return expr,                             // null_literal
         return evaluate_non_const(expr),         // none_literal
-        return expr,                             // undefined_literal
+        return evaluate_non_const(expr),         // undefined_literal
         return evaluate_array_literal(*inner),   // array_literal
-        return expr,                             // string_literal
-        return evaluate_non_const(expr),         // struct_literal
+        return evaluate_string_literal(*inner),  // string_literal
+        return evaluate_struct_literal(*inner),  // struct_literal
         return evaluate_non_const(expr),         // union_case_literal
         return evaluate_non_const(expr),         // map_literal
         return evaluate_non_const(expr),         // closure_literal
@@ -64,7 +64,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return evaluate_non_const(expr),         // call_expr
         return evaluate_non_const(expr),         // field_expr
         return evaluate_range_expr(*inner),      // range_expr
-        return expr,                             // try_expr
+        return evaluate_non_const(*inner),       // try_expr
         return evaluate_tuple_expr(*inner),      // tuple_expr
         return evaluate_non_const(expr),         // coercion_expr
         return expr,                             // specialize_expr
@@ -112,6 +112,39 @@ ConstEvaluator::Output ConstEvaluator::evaluate_array_literal(sir::ArrayLiteral 
     }
 
     return {Result::SUCCESS, analyzer.create(result)};
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_string_literal(sir::StringLiteral &string_literal) {
+    if (usage == Usage::CONST_VALUE) {
+        return {Result::SUCCESS, &string_literal};
+    } else {
+        return evaluate_non_const(&string_literal);
+    }
+}
+
+ConstEvaluator::Output ConstEvaluator::evaluate_struct_literal(sir::StructLiteral &struct_literal) {
+    sir::StructLiteral result{
+        .ast_node = struct_literal.ast_node,
+        .type = clone(struct_literal.type),
+        .entries = analyzer.allocate_array<sir::StructLiteralEntry>(struct_literal.entries.size()),
+    };
+
+    for (unsigned i = 0; i < struct_literal.entries.size(); i++) {
+        sir::StructLiteralEntry &entry = struct_literal.entries[i];
+
+        Output value = evaluate(entry.value);
+        if (value.result != Result::SUCCESS) {
+            return value.result;
+        }
+
+        result.entries[i] = sir::StructLiteralEntry{
+            .ident = entry.ident,
+            .value = value.expr,
+            .field = entry.field,
+        };
+    }
+
+    return sir::Expr{analyzer.create(result)};
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
@@ -431,7 +464,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_meta_call_expr(sir::MetaCallExpr
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_non_const(sir::Expr value) {
-    analyzer.report_generator.report_err_compile_time_unknown(value);
+    analyzer.report_generator.report_err_value_non_const(value);
     return Result::ERROR;
 }
 

@@ -1,0 +1,147 @@
+# test:subtest
+# test:output "424,-98,427912738479127349,0.75,-2.5,true,g,null,test_string"
+
+const A: u32 = 424;
+const B: i8 = -98;
+const C: i64 = 427912738479127349;
+const D: f32 = 0.75;
+const E: f64 = -2.5;
+const F: bool = true;
+const G: u8 = 'g';
+const H: *i32 = null;
+const I: *u8 = "test_string";
+
+func main() {
+    print(A);
+    print(',');
+    print(B);
+    print(',');
+    print(C);
+    print(',');
+    print(D);
+    print(',');
+    print(E);
+    print(',');
+    print(F);
+    print(',');
+    print(G);
+    print(',');
+    print(H);
+    print(',');
+    print(I);
+}
+
+# test:subtest
+# test:output "1,48,127,true,false,false,true,1003847,-23791283,one,two,three"
+
+const A: [i32; 3] = [1, 48, 127];
+const B: [bool; 4] = [true, false, false, true];
+const C: [i64; 2] = [1003847, -23791283];
+const D: [*u8; 3] = ["one", "two", "three"];
+
+func main() {
+    print(A[0]);
+    print(',');
+    print(A[1]);
+    print(',');
+    print(A[2]);
+    print(',');
+    print(B[0]);
+    print(',');
+    print(B[1]);
+    print(',');
+    print(B[2]);
+    print(',');
+    print(B[3]);
+    print(',');
+    print(C[0]);
+    print(',');
+    print(C[1]);
+    print(',');
+    print(D[0]);
+    print(',');
+    print(D[1]);
+    print(',');
+    print(D[2]);
+}
+
+# test:subtest
+# test:output "42,true,0.25,324187,c,null,some_string"
+
+const A: (i32, bool) = (42, true);
+const B: (f32, u64, u8) = (0.25, 324187, 'c');
+const C: (*i32, *u8) = (null, "some_string");
+
+func main() {
+    print(A.0);
+    print(',');
+    print(A.1);
+    print(',');
+    print(B.0);
+    print(',');
+    print(B.1);
+    print(',');
+    print(B.2);
+    print(',');
+    print(C.0);
+    print(',');
+    print(C.1);
+}
+
+# test:subtest
+# test:output "4,-13;-27,5,47,red"
+
+struct Point {
+    var x: i8;
+    var y: i8;
+}
+
+struct Circle {
+    var center: Point;
+    var radius: u32;
+    var color: *u8;
+}
+
+const A: Point = Point { x: 4, y: -13 };
+const B: Circle = Circle { center: { x: -27, y: 5 }, radius: 47, color: "red" };
+
+func main() {
+    print(A.x);
+    print(',');
+    print(A.y);
+    print(';');
+    print(B.center.x);
+    print(',');
+    print(B.center.y);
+    print(',');
+    print(B.radius);
+    print(',');
+    print(B.color);
+}
+
+# test:subtest
+# test:output "8,true"
+
+struct S {
+    var a: i32;
+    var b: bool;
+}
+
+const A: S = { a: 8, b: true };
+
+func main() {
+    print(A.a);
+    print(',');
+    print(A.b);
+}
+
+# test:subtest
+# test:compiles
+
+struct Empty {}
+
+const A: Empty = Empty {};
+
+func main() {
+    var a = A;
+}

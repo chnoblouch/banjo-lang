@@ -730,8 +730,8 @@ void ReportGenerator::report_err_try_expr_return_error_mismatch(
         .report();
 }
 
-void ReportGenerator::report_err_compile_time_unknown(const sir::Expr &value) {
-    report_error("value is not known at compile time", value.get_ast_node());
+void ReportGenerator::report_err_value_non_const(const sir::Expr &value) {
+    report_error("cannot use this value in a const context", value.get_ast_node());
 }
 
 void ReportGenerator::report_err_recursive_struct(sir::StructDef &struct_def) {

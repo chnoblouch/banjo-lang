@@ -89,7 +89,7 @@ ParseResult DeclParser::parse_const() {
     }
 
     node.consume(); // Consume '='
-    node.append_child(parser.parse_expression());
+    node.append_child(ExprParser{parser, true}.parse().node);
 
     return parser.check_stmt_terminator(node, AST_CONST_DEF);
 }
