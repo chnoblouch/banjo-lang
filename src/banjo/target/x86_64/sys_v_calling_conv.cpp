@@ -187,7 +187,7 @@ int SysVCallingConv::get_alloca_size(mcode::StackRegions &regions) {
     int saved_reg_bytes = regions.implicit_region.saved_reg_size;
 
     int minimum_size = arg_store_bytes + generic_bytes + call_arg_bytes;
-    return Utils::align(minimum_size + saved_reg_bytes, 16) - saved_reg_bytes;
+    return utils::align(minimum_size + saved_reg_bytes, 16) - saved_reg_bytes;
 }
 
 std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *func) {

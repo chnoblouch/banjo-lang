@@ -398,7 +398,7 @@ void CLI::run(int argc, const char *argv[]) {
         }
     }
 
-    if (Utils::is_one_of(args.command, {&COMMAND_BUILD, &COMMAND_RUN})) {
+    if (utils::is_one_of(args.command, {&COMMAND_BUILD, &COMMAND_RUN})) {
         start_time = std::chrono::steady_clock::now();
     }
 
@@ -537,8 +537,8 @@ void CLI::execute_new(const ArgumentParser::Result &args) {
     std::filesystem::create_directory(package_path);
     std::filesystem::create_directory(src_path);
 
-    Utils::write_string_file("func main() {\n    println(\"Hello, World!\");\n}\n", main_path);
-    Utils::write_string_file("{\n  \"name\": \"" + name + "\",\n  \"type\": \"executable\"\n}\n", manifest_path);
+    utils::write_string_file("func main() {\n    println(\"Hello, World!\");\n}\n", main_path);
+    utils::write_string_file("{\n  \"name\": \"" + name + "\",\n  \"type\": \"executable\"\n}\n", manifest_path);
 }
 
 void CLI::execute_build() {
@@ -579,8 +579,8 @@ void CLI::execute_test(const ArgumentParser::Result &args) {
 
     invoke_linker();
 
-    std::string tests_raw = Utils::convert_eol_to_lf(compiler_result.stdout_buffer);
-    std::vector<std::string_view> tests = Utils::split_string(tests_raw, '\n');
+    std::string tests_raw = utils::convert_eol_to_lf(compiler_result.stdout_buffer);
+    std::vector<std::string_view> tests = utils::split_string(tests_raw, '\n');
 
     unsigned longest_name_length = 0;
 
@@ -907,7 +907,7 @@ CLI::ToolchainKind CLI::toolchain_kind() {
 }
 
 bool CLI::load_cached_toolchain() {
-    std::optional<std::string> toolchain_string = Utils::read_string_file(get_toolchain_path());
+    std::optional<std::string> toolchain_string = utils::read_string_file(get_toolchain_path());
     if (!toolchain_string) {
         return false;
     }
@@ -1147,7 +1147,7 @@ Target CLI::parse_target(std::string_view string) {
         error("invalid target '" + std::string(string) + "'");
     }
 
-    if (!Utils::contains(Target::list_available(), target)) {
+    if (!utils::contains(Target::list_available(), target)) {
         error("target '" + std::string(string) + "' is not supported");
     }
 
@@ -1441,9 +1441,32 @@ void CLI::invoke_unix_linker() {
     std::vector<std::string> &lib_dirs = toolchain.lib_dirs;
     std::filesystem::path crt_dir(toolchain.crt_dir);
 
+    // Notes about linking order:
+    // First are crt1.o and crti.o from glibc, then crtbegin.o from GCC,
+    // then the object file, then crtend.o from GCC, and finally crtn.o from
+    // glibc. See: http://wiki.osdev.org/Calling_Global_Constructors
+    // TODO: What about crtfastmath.o?
+
     std::vector<std::string> args;
     args.insert(args.end(), linker_args.begin(), linker_args.end());
+
+    if (package_type == PackageType::EXECUTABLE) {
+        args.push_back((crt_dir / "crt1.o").string());
+        args.push_back((crt_dir / "crti.o").string());
+
+        // TODO
+        // args.push_back((crt_dir / "crtbegin.o").string());
+    }
+
     args.push_back("output.o");
+
+    if (package_type == PackageType::EXECUTABLE) {
+        // TODO
+        // args.push_back((crt_dir / "crtend.o").string());
+
+        args.push_back((crt_dir / "crtn.o").string());
+    }
+
     args.push_back("-o");
     args.push_back(get_output_path());
 
@@ -1473,11 +1496,7 @@ void CLI::invoke_unix_linker() {
     args.push_back("-z");
     args.push_back("noexecstack");
 
-    if (package_type == PackageType::EXECUTABLE) {
-        args.push_back((crt_dir / "crt1.o").string());
-        args.push_back((crt_dir / "crti.o").string());
-        args.push_back((crt_dir / "crtn.o").string());
-    } else if (package_type == PackageType::SHARED_LIBRARY) {
+    if (package_type == PackageType::SHARED_LIBRARY) {
         args.push_back("-shared");
     }
 

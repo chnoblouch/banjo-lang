@@ -739,7 +739,7 @@ std::optional<unsigned> ExprParser::validate_escape_sequence(std::string_view va
         return {};
     }
 
-    if (Utils::is_one_of(value[1], {'n', 'r', 't', '0', '\\', '\'', '\"'})) {
+    if (utils::is_one_of(value[1], {'n', 'r', 't', '0', '\\', '\'', '\"'})) {
         return 2;
     } else if (value[1] == 'x') {
         if (value.size() >= 4 && is_hex_digit(value[2]) && is_hex_digit(value[3])) {

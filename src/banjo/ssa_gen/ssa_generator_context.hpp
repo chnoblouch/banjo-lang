@@ -58,7 +58,7 @@ struct MonoDeclMap {
         }
 
         for (MonoItem &mono_item : mono_map.at(key.def)) {
-            if (Utils::equal(mono_item.specialization.args, key.generic_args)) {
+            if (utils::equal(mono_item.specialization.args, key.generic_args)) {
                 return mono_item.value;
             }
         }

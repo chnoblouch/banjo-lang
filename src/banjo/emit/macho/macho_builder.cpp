@@ -166,7 +166,7 @@ void MachOBuilder::process_uses(const std::vector<BinSymbolUse> &uses) {
 }
 
 void MachOBuilder::process_use(const BinSymbolUse &use) {
-    bool pc_rel = Utils::is_one_of(
+    bool pc_rel = utils::is_one_of(
         use.kind,
         {
             BinSymbolUseKind::BRANCH26,

@@ -9,14 +9,12 @@
 #include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
-#include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include <cstdint>
 
-namespace banjo {
-namespace target {
+namespace banjo::target {
 
 AArch64Encoder::AArch64Encoder(target::TargetDescription target) : target(target) {}
 
@@ -806,7 +804,7 @@ std::uint32_t AArch64Encoder::encode_imm(LargeInt imm, unsigned num_bits, unsign
 }
 
 std::uint32_t AArch64Encoder::encode_f32_imm(float value) {
-    std::uint32_t bits = BitOperations::get_bits_32(value);
+    std::uint32_t bits = utils::get_bits_32(value);
 
     ASSERT((bits & 0x0007FFFF) == 0);
     [[maybe_unused]] std::uint32_t b_bits = (bits & 0x7E000000) >> 25;
@@ -816,7 +814,7 @@ std::uint32_t AArch64Encoder::encode_f32_imm(float value) {
 }
 
 std::uint32_t AArch64Encoder::encode_f64_imm(double value) {
-    std::uint64_t bits = BitOperations::get_bits_64(value);
+    std::uint64_t bits = utils::get_bits_64(value);
 
     ASSERT((bits & 0x0000FFFFFFFFFFFF) == 0);
     [[maybe_unused]] std::uint32_t b_bits = (bits & 0x7FC0000000000000) >> 54;
@@ -990,7 +988,7 @@ void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolU
         BinSymbolUseKind::BRANCH26,
     };
 
-    if (!Utils::is_one_of(use.kind, resolvable_kinds)) {
+    if (!utils::is_one_of(use.kind, resolvable_kinds)) {
         return;
     }
 
@@ -1029,5 +1027,4 @@ void AArch64Encoder::resolve_symbol(SectionBuilder::SectionSlice &slice, SymbolU
     }
 }
 
-} // namespace target
-} // namespace banjo
+} // namespace banjo::target

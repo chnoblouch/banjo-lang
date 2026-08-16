@@ -9,9 +9,7 @@
 #include <cstdlib>
 #include <fstream>
 
-namespace banjo {
-
-namespace Utils {
+namespace banjo::utils {
 
 std::optional<std::uint64_t> parse_u64(std::string_view string) {
     std::uint64_t value = 0;
@@ -166,6 +164,4 @@ std::optional<std::string_view> get_env(const std::string &name) {
     }
 }
 
-} // namespace Utils
-
-} // namespace banjo
+} // namespace banjo::utils

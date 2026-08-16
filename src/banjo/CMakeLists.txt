@@ -355,8 +355,6 @@ add_library(banjo STATIC
     "target/x86_64/x86_64_target.cpp"
     "target/x86_64/x86_64_target.hpp"
     "utils/arena.hpp"
-    "utils/bit_operations.cpp"
-    "utils/bit_operations.hpp"
     "utils/bit_set.cpp"
     "utils/bit_set.hpp"
     "utils/box.hpp"

@@ -5,7 +5,7 @@
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_data_layout.hpp"
-#include "banjo/utils/bit_operations.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <utility>
 
@@ -143,8 +143,8 @@ void PeepholeOptimizer::process_mul(ssa::InstrIter &iter, ssa::BasicBlock &block
             eliminate(iter, value, block);
         } else if (value == 1) {
             eliminate(iter, lhs, block);
-        } else if (BitOperations::is_power_of_two(value)) {
-            unsigned shift = BitOperations::get_first_bit_set(value);
+        } else if (utils::is_power_of_two(value)) {
+            unsigned shift = utils::first_bit_set(value);
             ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, type);
             iter = block.replace(iter, {ssa::Opcode::LSHL, *iter->get_dest(), {lhs, rhs}});
         }
@@ -161,8 +161,8 @@ void PeepholeOptimizer::process_sdiv(ssa::InstrIter &iter, ssa::BasicBlock &bloc
 
         if (value == 1) {
             eliminate(iter, lhs, block);
-        } else if (BitOperations::is_power_of_two(value)) {
-            unsigned shift = BitOperations::get_first_bit_set(value);
+        } else if (utils::is_power_of_two(value)) {
+            unsigned shift = utils::first_bit_set(value);
             ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, type);
             iter = block.replace(iter, {ssa::Opcode::ASHR, *iter->get_dest(), {lhs, rhs}});
         }
@@ -179,8 +179,8 @@ void PeepholeOptimizer::process_udiv(ssa::InstrIter &iter, ssa::BasicBlock &bloc
 
         if (value == 1) {
             eliminate(iter, lhs, block);
-        } else if (BitOperations::is_power_of_two(value)) {
-            unsigned shift = BitOperations::get_first_bit_set(value);
+        } else if (utils::is_power_of_two(value)) {
+            unsigned shift = utils::first_bit_set(value);
             ssa::Operand rhs = ssa::Operand::from_int_immediate(shift, type);
             iter = block.replace(iter, {ssa::Opcode::LSHR, *iter->get_dest(), {lhs, rhs}});
         }

@@ -4,16 +4,15 @@
 #include "banjo/emit/macho/macho_builder.hpp"
 #include "banjo/emit/macho/macho_format.hpp"
 #include "banjo/target/aarch64/aarch64_encoder.hpp"
-#include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cstdint>
 #include <ranges>
 #include <utility>
 #include <variant>
 
-namespace banjo {
-namespace codegen {
+namespace banjo::codegen {
 
 void MachOEmitter::generate() {
     markers.clear();
@@ -87,18 +86,18 @@ void MachOEmitter::emit_segment_header(const MachOSegment &segment) {
     std::uint64_t total_size = 0;
 
     for (const MachOSection &section : segment.sections) {
-        emit_name_padded(section.name);                                // section name
-        emit_name_padded(section.segment_name);                        // segment name
-        emit_u64(section.address);                                     // address in memory
-        emit_u64(section.data.size());                                 // size in memory
-        emit_placeholder_u32();                                        // offset in file (placeholder)
-        emit_u32(BitOperations::get_first_bit_set(section.alignment)); // alignment
-        emit_placeholder_u32();                 // offset in file of relocation entries (placeholder)
-        emit_u32(section.relocations.size());   // number of relocation entries
-        emit_u32(section.type | section.flags); // type + flags
-        emit_u32(0);                            // reserved 1
-        emit_u32(0);                            // reserved 2
-        emit_u32(0);                            // reserved 3
+        emit_name_padded(section.name);                    // section name
+        emit_name_padded(section.segment_name);            // segment name
+        emit_u64(section.address);                         // address in memory
+        emit_u64(section.data.size());                     // size in memory
+        emit_placeholder_u32();                            // offset in file (placeholder)
+        emit_u32(utils::first_bit_set(section.alignment)); // alignment
+        emit_placeholder_u32();                            // offset in file of relocation entries (placeholder)
+        emit_u32(section.relocations.size());              // number of relocation entries
+        emit_u32(section.type | section.flags);            // type + flags
+        emit_u32(0);                                       // reserved 1
+        emit_u32(0);                                       // reserved 2
+        emit_u32(0);                                       // reserved 3
 
         total_size += section.data.size();
     }
@@ -182,7 +181,7 @@ void MachOEmitter::emit_segment_data(const MachOSegment &segment) {
 
             std::uint32_t value_bits = relocation.value;
             std::uint32_t pc_rel_bits = relocation.pc_rel << 24;
-            std::uint32_t length_bits = (BitOperations::get_first_bit_set(relocation.length)) << 25;
+            std::uint32_t length_bits = (utils::first_bit_set(relocation.length)) << 25;
             std::uint32_t external_bits = relocation.external << 27;
             std::uint32_t type_bits = relocation.type << 28;
             emit_u32(value_bits | pc_rel_bits | length_bits | external_bits | type_bits);
@@ -275,5 +274,4 @@ std::size_t MachOEmitter::consume_marker() {
     return markers[marker_index++];
 }
 
-} // namespace codegen
-} // namespace banjo
+} // namespace banjo::codegen

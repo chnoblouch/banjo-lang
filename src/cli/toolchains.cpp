@@ -93,9 +93,9 @@ void MSVCToolchain::find_msvc() {
 std::optional<std::filesystem::path> MSVCToolchain::find_vswhere() {
     std::filesystem::path program_files_path;
 
-    if (std::optional<std::string_view> env = Utils::get_env("ProgramFiles(x86)")) {
+    if (std::optional<std::string_view> env = utils::get_env("ProgramFiles(x86)")) {
         program_files_path = *env;
-    } else if (std::optional<std::string_view> env = Utils::get_env("ProgramFiles")) {
+    } else if (std::optional<std::string_view> env = utils::get_env("ProgramFiles")) {
         program_files_path = *env;
     } else {
         return {};
@@ -174,7 +174,7 @@ void MSVCToolchain::find_winsdk() {
 
 std::optional<std::filesystem::path> MSVCToolchain::find_winsdk_root() {
     for (const std::string &env_name : std::initializer_list<std::string>{"ProgramFiles(x86)", "ProgramFiles"}) {
-        std::optional<std::string_view> env = Utils::get_env(env_name);
+        std::optional<std::string_view> env = utils::get_env(env_name);
 
         if (!env) {
             continue;
@@ -252,7 +252,7 @@ std::optional<std::string> MSVCToolchain::get_max_version(
     std::vector<std::pair<std::string_view, std::vector<std::uint64_t>>> parsed_versions;
 
     for (const std::string &version : versions) {
-        std::vector<std::string_view> string_components = Utils::split_string(version, '.');
+        std::vector<std::string_view> string_components = utils::split_string(version, '.');
 
         if (string_components.size() != num_components) {
             continue;
@@ -262,7 +262,7 @@ std::optional<std::string> MSVCToolchain::get_max_version(
         bool is_valid = true;
 
         for (unsigned i = 0; i < num_components; i++) {
-            if (auto number = Utils::parse_u64(string_components[i])) {
+            if (auto number = utils::parse_u64(string_components[i])) {
                 number_components.push_back(*number);
             } else {
                 is_valid = false;
@@ -626,7 +626,7 @@ json::Object EmscriptenToolchain::serialize() {
 }
 
 std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output) {
-    std::vector<std::string_view> search_dirs_lines = Utils::split_string(search_dirs_output, '\n');
+    std::vector<std::string_view> search_dirs_lines = utils::split_string(search_dirs_output, '\n');
     std::vector<std::string_view> raw_lib_search_dirs;
 
     for (std::string_view line : search_dirs_lines) {
@@ -640,7 +640,7 @@ std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output)
             line = line.substr(1);
         }
 
-        raw_lib_search_dirs = Utils::split_string(line, ':');
+        raw_lib_search_dirs = utils::split_string(line, ':');
     }
 
     std::vector<std::string> lib_dirs;
@@ -654,7 +654,7 @@ std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output)
         lib_dirs.push_back(std::filesystem::canonical(raw_lib_search_dir).string());
     }
 
-    return Utils::remove_duplicates(lib_dirs);
+    return utils::remove_duplicates(lib_dirs);
 }
 
 } // namespace banjo::cli

@@ -12,8 +12,8 @@
 #include "banjo/target/aarch64/aarch64_immediate.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
-#include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <variant>
 
@@ -754,7 +754,7 @@ mcode::Operand AArch64SSALowerer::move_float_into_register(double value, unsigne
         // could just return the general-purpose register with the bits directly.
 
         float value_f32 = (float)value;
-        std::uint32_t bits = BitOperations::get_bits_32(value_f32);
+        std::uint32_t bits = utils::get_bits_32(value_f32);
         std::array<std::uint16_t, 2> elements = AArch64Immediate::decompose_u32_u16(bits);
 
         mcode::Operand bits_value = create_temp_value(size);

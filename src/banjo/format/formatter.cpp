@@ -1274,7 +1274,7 @@ void Formatter::format_attribute_wrapper(ASTNode *node, WhitespaceKind whitespac
 
     unsigned tkn_at = node->tokens[0];
 
-    if (Utils::is_one_of(wrapped_node->type, {AST_PARAM, AST_REF_PARAM, AST_REF_MUT_PARAM})) {
+    if (utils::is_one_of(wrapped_node->type, {AST_PARAM, AST_REF_PARAM, AST_REF_MUT_PARAM})) {
         ensure_no_space_after(tkn_at);
         format_node(attrs_node, WhitespaceKind::SPACE);
         format_node(wrapped_node, whitespace);
@@ -1479,7 +1479,7 @@ void Formatter::format_comment_text(Token &comment_token) {
     std::optional<unsigned> trailing_whitespace_start;
 
     for (unsigned i = 0; i < text.size(); i++) {
-        if (Utils::is_one_of(text[i], {' ', '\r', '\t'})) {
+        if (utils::is_one_of(text[i], {' ', '\r', '\t'})) {
             if (!trailing_whitespace_start) {
                 trailing_whitespace_start = i;
             }

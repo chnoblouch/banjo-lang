@@ -5,7 +5,6 @@
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_address.hpp"
-#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/mcode/symbol.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
@@ -17,7 +16,6 @@
 #include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
-#include "banjo/utils/bit_operations.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -297,8 +295,8 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
 
     if (instr.get_operand(0).is_immediate() && type.is_primitive(ssa::Primitive::F32) &&
         (dst.is_x86_64_addr() || dst.is_stack_slot())) {
-        float val = (float)instr.get_operand(0).get_fp_immediate();
-        mcode::Operand src = mcode::Operand::from_int_immediate(BitOperations::get_bits_32(val), 4);
+        float val = static_cast<float>(instr.get_operand(0).get_fp_immediate());
+        mcode::Operand src = mcode::Operand::from_int_immediate(utils::get_bits_32(val), 4);
         dst.set_size(src.get_size());
         m_instr = mcode::Instruction(X8664Opcode::MOV, {dst, src});
     } else {
@@ -1226,7 +1224,7 @@ mcode::Operand X8664SSALowerer::lower_addr_mem_access(AddrComponents addr) {
     }
 
     if (addr.reg_offset) {
-        if (Utils::is_one_of(addr.reg_offset->scale, {1, 2, 4, 8})) {
+        if (utils::is_one_of(addr.reg_offset->scale, {1, 2, 4, 8})) {
             m_addr.offset_reg = X8664Address::RegOffset{addr.reg_offset->reg, addr.reg_offset->scale};
         } else {
             mcode::Register tmp_reg = create_tmp_reg();

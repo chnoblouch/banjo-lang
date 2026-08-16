@@ -231,7 +231,7 @@ std::optional<TargetProcess::Address> TargetProcess::allocate_memory(Size size, 
     struct user_regs_struct new_regs = orig_regs;
     new_regs.rax = SYS_mmap;                      // Set system call number to sys_mmap.
     new_regs.rdi = 0x0;                           // Set `addr` parameter to NULL.
-    new_regs.rsi = Utils::align(size, page_size); // Set the allocation size (a multiple of the page size).
+    new_regs.rsi = utils::align(size, page_size); // Set the allocation size (a multiple of the page size).
     new_regs.rdx = permissions;                   // Set the memory protection of the pages.
     new_regs.r10 = MAP_PRIVATE | MAP_ANONYMOUS;   // Create a private mapping not backed by a file (anonymous).
     new_regs.r8 = -1;                             // Set fd to -1 because this is an anonymous mapping.

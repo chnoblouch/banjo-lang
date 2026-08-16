@@ -266,7 +266,7 @@ int MSABICallingConv::get_alloca_size(mcode::StackRegions &regions) {
         return minimum_size;
     }
 
-    return Utils::align(minimum_size + implicit_bytes, 16) - implicit_bytes;
+    return utils::align(minimum_size + implicit_bytes, 16) - implicit_bytes;
 }
 
 std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *func) {

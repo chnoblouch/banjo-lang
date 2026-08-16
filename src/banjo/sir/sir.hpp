@@ -154,7 +154,7 @@ struct Concrete {
     bool is_specialization() const { return !generic_args.empty(); }
 
     bool operator==(const Concrete<T> &other) const {
-        return def == other.def && Utils::equal(generic_args, other.generic_args);
+        return def == other.def && utils::equal(generic_args, other.generic_args);
     }
 
     bool operator!=(const Concrete<T> &other) const { return !(*this == other); }
@@ -620,7 +620,7 @@ struct ConcreteSymbol {
     bool is_specialization() const { return !generic_args.empty(); }
 
     bool operator==(const ConcreteSymbol &other) const {
-        return def == other.def && Utils::equal(generic_args, other.generic_args);
+        return def == other.def && utils::equal(generic_args, other.generic_args);
     }
 
     bool operator!=(const ConcreteSymbol &other) const { return !(*this == other); }

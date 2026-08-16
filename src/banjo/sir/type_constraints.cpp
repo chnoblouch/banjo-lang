@@ -94,7 +94,7 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> concrete_proto
         }
 
         return concrete_proto.generic_args[0].is_primitive_type(primitive);
-    } else if (Utils::is_one_of(concrete_proto.def->role, numeric_protos)) {
+    } else if (utils::is_one_of(concrete_proto.def->role, numeric_protos)) {
         switch (primitive) {
             case Primitive::I8:
             case Primitive::I16:
@@ -109,7 +109,7 @@ bool primitive_implements(Primitive primitive, Concrete<ProtoDef> concrete_proto
             case Primitive::F64: return concrete_proto.generic_args[0].is_primitive_type(primitive);
             default: return false;
         }
-    } else if (Utils::is_one_of(concrete_proto.def->role, int_protos)) {
+    } else if (utils::is_one_of(concrete_proto.def->role, int_protos)) {
         switch (primitive) {
             case Primitive::I8:
             case Primitive::I16:

@@ -173,7 +173,7 @@ int AAPCSCallingConv::get_alloca_size(mcode::StackRegions &regions) {
     int call_arg_bytes = regions.call_arg_region.size;
 
     int minimum_size = arg_store_bytes + generic_bytes + call_arg_bytes;
-    return Utils::align(minimum_size, 16) + 16;
+    return utils::align(minimum_size, 16) + 16;
 }
 
 std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *func) {

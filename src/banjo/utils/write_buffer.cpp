@@ -117,12 +117,12 @@ void WriteBuffer::write_cstr(const char *cstr) {
 }
 
 void WriteBuffer::write_uleb128(std::uint64_t value) {
-    Utils::LEB128Buffer encoding = Utils::encode_uleb128(value);
+    utils::LEB128Buffer encoding = utils::encode_uleb128(value);
     write_data(encoding.get_data(), encoding.get_size());
 }
 
 void WriteBuffer::write_sleb128(LargeInt value) {
-    Utils::LEB128Buffer encoding = Utils::encode_sleb128(value);
+    utils::LEB128Buffer encoding = utils::encode_sleb128(value);
     write_data(encoding.get_data(), encoding.get_size());
 }
 

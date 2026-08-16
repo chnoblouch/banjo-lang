@@ -5,16 +5,16 @@
 #include "banjo/utils/large_int.hpp"
 
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <initializer_list>
 #include <optional>
-#include <span>
 #include <string_view>
 #include <vector>
 
-namespace banjo {
+namespace banjo::utils {
 
-namespace utils {
+typedef FixedVector<unsigned char, 16> LEB128Buffer;
 
 template <typename T>
 T div_ceil(T divident, T divisor) {
@@ -22,15 +22,39 @@ T div_ceil(T divident, T divisor) {
 }
 
 template <typename T>
-void extend(std::vector<T> &dst, const std::vector<T> &src) {
-    dst.insert(dst.end(), src.begin(), src.end());
+std::uint32_t get_bits_32(T value) {
+    static_assert(sizeof(T) == 4, "type size is not 32 bits");
+
+    std::uint32_t bits;
+    std::memcpy(&bits, &value, sizeof(std::uint32_t));
+    return bits;
 }
 
-} // namespace utils
+template <typename T>
+std::uint64_t get_bits_64(T value) {
+    static_assert(sizeof(T) == 8, "type size is not 64 bits");
 
-namespace Utils {
+    std::uint64_t bits;
+    std::memcpy(&bits, &value, sizeof(std::uint64_t));
+    return bits;
+}
 
-typedef FixedVector<unsigned char, 16> LEB128Buffer;
+template <typename T>
+bool is_power_of_two(T value) {
+    return (value & (value - 1)) == 0;
+}
+
+template <typename T>
+unsigned first_bit_set(T value) {
+    int shift = -1;
+
+    while (value != 0) {
+        value = value >> 1;
+        shift += 1;
+    }
+
+    return static_cast<unsigned>(shift);
+}
 
 template <typename T, typename B>
 T align(T value, B boundary) {
@@ -53,13 +77,6 @@ bool is_one_of(T value, std::initializer_list<C> candidates) {
     return false;
 }
 
-std::optional<std::uint64_t> parse_u64(std::string_view string);
-std::vector<std::string_view> split_string(std::string_view string, char delimiter);
-std::string convert_eol_to_lf(std::string_view string);
-
-LEB128Buffer encode_uleb128(std::uint64_t value);
-LEB128Buffer encode_sleb128(LargeInt value);
-
 template <typename A, typename B>
 bool equal(const A &lhs, const B &rhs) {
     if (lhs.size() != rhs.size()) {
@@ -78,6 +95,11 @@ bool equal(const A &lhs, const B &rhs) {
 template <typename Iterable, typename T>
 bool contains(const Iterable &iterable, const T &value) {
     return std::find(iterable.begin(), iterable.end(), value) != iterable.end();
+}
+
+template <typename T>
+void extend(std::vector<T> &dst, const std::vector<T> &src) {
+    dst.insert(dst.end(), src.begin(), src.end());
 }
 
 template <typename T>
@@ -102,12 +124,17 @@ std::vector<T> remove_duplicates(const std::vector<T> &array) {
     return result;
 }
 
+std::optional<std::uint64_t> parse_u64(std::string_view string);
+std::vector<std::string_view> split_string(std::string_view string, char delimiter);
+std::string convert_eol_to_lf(std::string_view string);
+
+LEB128Buffer encode_uleb128(std::uint64_t value);
+LEB128Buffer encode_sleb128(LargeInt value);
+
 std::optional<std::string> read_string_file(const std::filesystem::path &path);
 bool write_string_file(std::string_view contents, const std::filesystem::path &path);
 std::optional<std::string_view> get_env(const std::string &name);
 
-} // namespace Utils
-
-} // namespace banjo
+} // namespace banjo::utils
 
 #endif

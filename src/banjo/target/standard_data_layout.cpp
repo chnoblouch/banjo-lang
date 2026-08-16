@@ -33,7 +33,7 @@ unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
             for (const ssa::StructureMember &member : struct_.members) {
                 unsigned member_size = get_size(member.type);
                 unsigned member_alignment = get_alignment(member.type);
-                size = Utils::align(size, member_alignment) + member_size;
+                size = utils::align(size, member_alignment) + member_size;
             }
         } else {
             for (const ssa::StructureMember &member : struct_.members) {
@@ -42,7 +42,7 @@ unsigned StandardDataLayout::get_size(const ssa::Type &type) const {
         }
 
         unsigned struct_alignment = get_alignment(type);
-        size = Utils::align(size, struct_alignment);
+        size = utils::align(size, struct_alignment);
 
         return size * type.get_array_length();
     } else {
@@ -79,12 +79,12 @@ unsigned StandardDataLayout::get_member_offset(ssa::Structure *struct_, unsigned
         const ssa::Type &type = struct_->members[i].type;
         unsigned size = get_size(type);
         unsigned alignment = get_alignment(type);
-        offset = Utils::align(offset, alignment) + size;
+        offset = utils::align(offset, alignment) + size;
     }
 
     const ssa::Type &type = struct_->members[index].type;
     unsigned alignment = get_alignment(type);
-    return Utils::align(offset, alignment);
+    return utils::align(offset, alignment);
 }
 
 } // namespace banjo::target

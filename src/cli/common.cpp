@@ -73,7 +73,7 @@ std::optional<std::filesystem::path> find_tool(std::string_view name, std::strin
     file_name += windows_ext;
 #endif
 
-    std::optional<std::string_view> path_env = Utils::get_env("PATH");
+    std::optional<std::string_view> path_env = utils::get_env("PATH");
     if (!path_env) {
         return {};
     }
@@ -84,7 +84,7 @@ std::optional<std::filesystem::path> find_tool(std::string_view name, std::strin
     char delimiter = ':';
 #endif
 
-    std::vector<std::string_view> search_paths = Utils::split_string(*path_env, delimiter);
+    std::vector<std::string_view> search_paths = utils::split_string(*path_env, delimiter);
 
     for (std::string_view search_path : search_paths) {
         std::filesystem::path tool_path = std::filesystem::absolute(search_path) / file_name;

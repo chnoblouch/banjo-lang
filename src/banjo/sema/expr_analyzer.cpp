@@ -1416,7 +1416,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
                 }
             }
 
-            if (!Utils::is_one_of(concrete_proto.def->role, {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY})) {
+            if (!utils::is_one_of(concrete_proto.def->role, {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY})) {
                 analyzer.report_generator.report_err_cannot_call_generic_operator_overload(dot_expr.rhs);
                 return Result::ERROR;
             }
@@ -2062,7 +2062,7 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (Utils::is_one_of(
+    } else if (utils::is_one_of(
                    meta_field_expr.field.value,
                    {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
                )) {
@@ -2294,7 +2294,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
 
         return Result::SUCCESS;
     } else if (auto tuple_expr = lhs_type.match<sir::TupleExpr>()) {
-        std::optional<std::uint64_t> field_parsed = Utils::parse_u64(dot_expr.rhs.value);
+        std::optional<std::uint64_t> field_parsed = utils::parse_u64(dot_expr.rhs.value);
 
         if (!field_parsed) {
             analyzer.report_generator.report_err_no_field(dot_expr.rhs, *tuple_expr);

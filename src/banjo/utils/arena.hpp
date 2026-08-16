@@ -34,7 +34,7 @@ public:
         static_assert(std::is_trivially_destructible<T>(), "T has to be trivially destructible");
         ASSERT_MESSAGE(sizeof(T) < min_block_size, "size of T has to be less than block size");
 
-        cur_offset = Utils::align(cur_offset, static_cast<unsigned>(alignof(T)));
+        cur_offset = utils::align(cur_offset, static_cast<unsigned>(alignof(T)));
 
         unsigned total_size = length * sizeof(T);
 

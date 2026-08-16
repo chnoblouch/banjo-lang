@@ -1,6 +1,6 @@
 #include "aarch64_immediate.hpp"
 
-#include "banjo/utils/bit_operations.hpp"
+#include "banjo/utils/utils.hpp"
 
 #include <cmath>
 
@@ -26,7 +26,7 @@ std::array<std::uint16_t, 2> AArch64Immediate::decompose_u32_u16(std::uint32_t v
 
 bool AArch64Immediate::is_float_encodable(double value) {
     double positive = std::fabs(value);
-    std::uint64_t bits = BitOperations::get_bits_64(positive);
+    std::uint64_t bits = utils::get_bits_64(positive);
     return get_encodable_pos_floats().count(bits);
 }
 

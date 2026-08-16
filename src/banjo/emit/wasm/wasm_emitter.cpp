@@ -195,7 +195,7 @@ void WasmEmitter::emit_reloc_section(const RelocSection &section) {
         data.write_uleb128(reloc.offset); // relocation offset
         data.write_uleb128(reloc.index);  // symbol index
 
-        if (Utils::is_one_of(
+        if (utils::is_one_of(
                 reloc.type,
                 {
                     WasmRelocType::MEMORY_ADDR_LEB,
@@ -228,7 +228,7 @@ void WasmEmitter::write_symbol_table_subsection(WriteBuffer &buffer, const std::
         data.write_u8(symbol.type);       // symbol type
         data.write_uleb128(symbol.flags); // symbol flags
 
-        if (Utils::is_one_of(symbol.type, {WasmSymbolType::FUNCTION, WasmSymbolType::GLOBAL, WasmSymbolType::TABLE})) {
+        if (utils::is_one_of(symbol.type, {WasmSymbolType::FUNCTION, WasmSymbolType::GLOBAL, WasmSymbolType::TABLE})) {
             data.write_uleb128(symbol.index); // element index
 
             if (!(symbol.flags & WasmSymbolFlags::UNDEFINED)) {
@@ -257,7 +257,7 @@ void WasmEmitter::emit_section(std::uint8_t id, const WriteBuffer &data) {
 }
 
 void WasmEmitter::emit_uleb128(std::uint64_t value) {
-    Utils::LEB128Buffer encoding = Utils::encode_uleb128(value);
+    utils::LEB128Buffer encoding = utils::encode_uleb128(value);
     emit_data(encoding.get_data(), encoding.get_size());
 }
 
