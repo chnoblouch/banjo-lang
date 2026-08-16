@@ -69,15 +69,37 @@ Enums store one of a set of possible values:
 
 ```banjo
 enum Fruit {
-    APPLE = 0,
-    BANANA = 1,
-    ORANGE = 2,
+    APPLE,
+    BANANA,
+    ORANGE,
 }
 
 func main() {
     var fruit = Fruit.BANANA;
     println(fruit);
     println(fruit as u32);
+}
+```
+
+In most situations, the enum type can be inferred from context:
+
+```banjo
+enum Format { BINARY, JSON, XML }
+
+func main() {
+    var extension = extension_of(.JSON);
+}
+
+func extension_of(format: Format) -> StringSlice {
+    if format == .BINARY {
+        return ".bin";
+    } else if format == .JSON {
+        return ".json";
+    } else if format == .XML {
+        return ".xml";
+    } else {
+        return "";
+    }
 }
 ```
 

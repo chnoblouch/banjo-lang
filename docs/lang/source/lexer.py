@@ -5,13 +5,16 @@ KEYWORDS = [
     "var",
     "const",
     "func",
+    "except",
+    "ref",
+    "mut",
+    "share",
     "as",
+    "is",
     "if",
     "else",
     "switch",
-    "case",
     "try",
-    "except",
     "while",
     "for",
     "in",
@@ -19,8 +22,10 @@ KEYWORDS = [
     "continue",
     "return",
     "struct",
+    "self",
     "enum",
     "union",
+    "case",
     "proto",
     "false",
     "true",
@@ -31,7 +36,7 @@ KEYWORDS = [
     "pub",
     "native",
     "meta",
-    "type"
+    "type",
 ]
 
 class BanjoLexer(RegexLexer):
