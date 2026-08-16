@@ -1,6 +1,5 @@
 use std.{memory, protos.{ToRepr, ToString}};
 use libc as c;
-use internal.runtime;
 
 pub func to_string[T](ref value: T) -> String {
     if T == String {
