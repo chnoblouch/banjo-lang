@@ -4,7 +4,6 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/source/text_range.hpp"
 
-#include <cassert>
 #include <cstdint>
 #include <span>
 #include <string_view>

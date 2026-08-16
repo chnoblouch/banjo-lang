@@ -2,8 +2,6 @@
 
 #include "banjo/utils/macros.hpp"
 
-#include <cassert>
-
 namespace banjo {
 
 StoredValue StoredValue::create_value(ssa::Value value) {

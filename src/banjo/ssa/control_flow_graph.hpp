@@ -38,7 +38,7 @@ private:
 public:
     ControlFlowGraph();
     ControlFlowGraph(ssa::Function *func);
-    
+
     std::vector<Node> &get_nodes() { return nodes; }
     unsigned get_node_index(ssa::BasicBlockIter iter) { return blocks2nodes[iter]; }
     Node &get_node(unsigned index) { return nodes[index]; }
@@ -90,7 +90,6 @@ private:
     void compute_idoms();
     void compute_dominance_frontiers();
     void dump_tree(std::ostream &stream, Node &node, unsigned indentation);
-    std::string get_debug_label(ssa::BasicBlockIter block);
 
 }; // namespace DominatorTree
 

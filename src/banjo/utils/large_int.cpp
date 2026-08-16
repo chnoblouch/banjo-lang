@@ -3,7 +3,6 @@
 #include "banjo/utils/macros.hpp"
 
 #include <algorithm>
-#include <cassert>
 
 namespace banjo {
 

@@ -2,8 +2,6 @@
 
 #include "banjo/utils/macros.hpp"
 
-#include <cassert>
-
 namespace banjo::target {
 
 bool AArch64EncodingInfo::is_addr_offset_encodable(int offset, unsigned size) {

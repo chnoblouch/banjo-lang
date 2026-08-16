@@ -1,7 +1,8 @@
 #ifndef BANJO_UTILS_LINKED_LIST_H
 #define BANJO_UTILS_LINKED_LIST_H
 
-#include <cassert>
+#include "banjo/utils/macros.hpp"
+
 #include <utility>
 
 namespace banjo {
@@ -138,7 +139,7 @@ public:
     }
 
     void remove(LinkedListIter<T> iter) {
-        assert(iter != header && iter != trailer);
+        ASSERT(iter != header && iter != trailer);
 
         iter.node->prev->next = iter.node->next;
         iter.node->next->prev = iter.node->prev;
@@ -148,7 +149,7 @@ public:
     }
 
     LinkedListIter<T> replace(LinkedListIter<T> iter, LinkedListIter<T> new_iter) {
-        assert(iter != header && iter != trailer);
+        ASSERT(iter != header && iter != trailer);
 
         new_iter.node->prev = iter.node->prev;
         new_iter.node->next = iter.node->next;

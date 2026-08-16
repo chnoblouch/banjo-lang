@@ -9,9 +9,7 @@
 #include <limits>
 #include <variant>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) {
     using namespace target::X8664Opcode;
@@ -1152,10 +1150,9 @@ X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
             .value = 0,
             .symbol_index = symbol_indices[operand.get_symbol().name],
         };
+    } else {
+        ASSERT_UNREACHABLE;
     }
-
-    assert(!"not an immediate");
-    return {};
 }
 
 X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Function *func) {
@@ -1407,6 +1404,4 @@ bool X8664Encoder::fits_in_32_bits(Immediate imm) {
     return imm.value <= std::numeric_limits<std::uint32_t>::min();
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

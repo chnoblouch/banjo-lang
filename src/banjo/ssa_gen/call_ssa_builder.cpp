@@ -54,7 +54,7 @@ StoredValue CallSSABuilder::generate() {
     StoredValue value;
 
     if (return_method == ReturnMethod::NO_RETURN_VALUE || hints.is_unused) {
-        // assert(!hints.dst);
+        // ASSERT(!hints.dst);
         instr = ctx.get_ssa_block()->append({ssa::Opcode::CALL, std::move(ssa_operands)});
         value = StoredValue::create_value({});
     } else if (return_method == ReturnMethod::IN_REGISTER) {

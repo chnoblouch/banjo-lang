@@ -4,8 +4,6 @@
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <cassert>
-
 namespace banjo::ssa {
 
 struct Structure;
@@ -27,7 +25,7 @@ public:
     Type(Primitive primitive, unsigned array_length = 1) : primitive(primitive), kind(0), array_length(array_length) {}
 
     Type(Structure *struct_, unsigned array_length = 1) : struct_(struct_), kind(1), array_length(array_length) {
-        assert(struct_);
+        ASSERT(struct_);
     }
 
     Type() : Type(Primitive::VOID) {}
@@ -36,12 +34,12 @@ public:
     bool is_struct() const { return kind == 1; }
 
     Primitive get_primitive() const {
-        assert(is_primitive());
+        ASSERT(is_primitive());
         return primitive;
     }
 
     Structure *get_struct() const {
-        assert(is_struct());
+        ASSERT(is_struct());
         return struct_;
     }
 

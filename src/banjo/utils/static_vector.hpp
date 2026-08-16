@@ -3,7 +3,6 @@
 
 #include "banjo/utils/macros.hpp"
 
-#include <cassert>
 #include <cstddef>
 #include <initializer_list>
 

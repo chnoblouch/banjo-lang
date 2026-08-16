@@ -1,10 +1,8 @@
 #include "control_flow_graph.hpp"
 
-#include <cassert>
+#include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 ControlFlowGraph::ControlFlowGraph() {}
 
@@ -15,7 +13,7 @@ ControlFlowGraph::ControlFlowGraph(ssa::Function *func) {
 }
 
 void ControlFlowGraph::create_nodes(ssa::BasicBlockIter block) {
-    assert(block->get_size() != 0 && "block is empty");
+    ASSERT(block->get_size() != 0 && "block is empty");
 
     if (blocks2nodes.contains(block)) {
         return;
@@ -34,7 +32,7 @@ void ControlFlowGraph::create_nodes(ssa::BasicBlockIter block) {
             create_edge(block, last_instr.get_operand(4).get_branch_target().block);
             break;
         case ssa::Opcode::RET: break;
-        default: assert(!"block does not end in branch instruction"); break;
+        default: ASSERT(!"block does not end in branch instruction"); break;
     }
 }
 
@@ -53,7 +51,7 @@ void ControlFlowGraph::sort_in_post_order() {
     unsigned cur_new_index = 0;
     collect_nodes_in_post_order(entry_index, index_map, cur_new_index);
 
-    assert(nodes.size() == index_map.size());
+    ASSERT(nodes.size() == index_map.size());
 
     std::vector<Node> nodes_sorted;
     nodes_sorted.resize(index_map.size());
@@ -184,10 +182,10 @@ bool DominatorTree::dominates(Node &a, Node &b) {
 unsigned DominatorTree::intersect(unsigned b1, unsigned b2, const std::vector<int> &doms) {
     while (b1 != b2) {
         if (b1 < b2) {
-            assert(doms[b1] != -1);
+            ASSERT(doms[b1] != -1);
             b1 = doms[b1];
         } else {
-            assert(doms[b2] != -1);
+            ASSERT(doms[b2] != -1);
             b2 = doms[b2];
         }
     }
@@ -240,13 +238,13 @@ void DominatorTree::dump(std::ostream &stream) {
 
 void DominatorTree::dump_tree(std::ostream &stream, Node &node, unsigned indentation) {
     stream << std::string(2 * indentation, ' ') << " - ";
-    stream << get_debug_label(cfg.get_nodes()[node.index].block);
+    stream << cfg.get_nodes()[node.index].block->get_debug_label();
 
     if (!node.dominance_frontiers.empty()) {
         stream << " [ ";
 
         for (unsigned i = 0; i < node.dominance_frontiers.size(); i++) {
-            stream << get_debug_label(cfg.get_nodes()[node.dominance_frontiers[i]].block);
+            stream << cfg.get_nodes()[node.dominance_frontiers[i]].block->get_debug_label();
             if (i != node.dominance_frontiers.size() - 1) {
                 stream << ", ";
             }
@@ -262,10 +260,4 @@ void DominatorTree::dump_tree(std::ostream &stream, Node &node, unsigned indenta
     }
 }
 
-std::string DominatorTree::get_debug_label(ssa::BasicBlockIter block) {
-    return block->get_label().empty() ? "<entry>" : block->get_label();
-}
-
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa

@@ -4,7 +4,6 @@
 #include "banjo/utils/macros.hpp"
 #include "sir.hpp"
 
-#include <cassert>
 #include <variant>
 #include <vector>
 

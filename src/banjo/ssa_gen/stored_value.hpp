@@ -5,8 +5,7 @@
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
-
-#include <cassert>
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -29,12 +28,12 @@ struct StoredValue {
     static StoredValue alloc(const ssa::Type &type, const StorageHints &hints, SSAGeneratorContext &ctx);
 
     const ssa::Value &get_value() const {
-        assert(kind == Kind::VALUE);
+        ASSERT(kind == Kind::VALUE);
         return value_or_ptr;
     }
 
     const ssa::Value &get_ptr() const {
-        assert(kind == Kind::REFERENCE);
+        ASSERT(kind == Kind::REFERENCE);
         return value_or_ptr;
     }
 

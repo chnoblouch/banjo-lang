@@ -13,13 +13,10 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <cassert>
 #include <unordered_map>
 #include <unordered_set>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 DebugEmitter::DebugEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
   : Emitter(module, stream),
@@ -164,7 +161,7 @@ void DebugEmitter::gen_basic_block(mcode::BasicBlock &basic_block) {
 
     std::unordered_set<mcode::MachineInstrNode *> nodes;
     for (mcode::InstrIter iter = basic_block.begin(); iter != basic_block.end(); ++iter) {
-        assert(!nodes.contains(iter.get_node()));
+        ASSERT(!nodes.contains(iter.get_node()));
         nodes.insert(iter.get_node());
     }
 
@@ -473,6 +470,4 @@ std::string DebugEmitter::get_size_specifier(int size) {
     return "i" + std::to_string(8 * size);
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
