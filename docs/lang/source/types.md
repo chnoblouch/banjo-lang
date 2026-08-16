@@ -202,3 +202,103 @@ func main() {
     println(opt2.has_value);  # false
 }
 ```
+
+## Slices
+
+Slices store a pointer to some data and its length. There are multiple ways of
+creating a slice:
+
+```banjo
+func main() {
+    # Initializing a slice directly from a pointer and a length
+    var value: (i32, i32) = (2, -1);
+    var slice_1 = Slice[i32].new(&value.0, 2);
+
+    # Creating a slice from a dynamic array
+    var array = [0, 1, 2];
+    var slice_2 = array.slice();
+
+    # Creating a slice from an array literal
+    var slice_3: Slice[i32] = [0, 1, 2];
+}
+```
+
+Slices are used in a similar way to arrays. You can access their elements and
+iterate over them:
+
+```banjo
+func main() {
+    var slice: Slice[f32] = [1.2, 0.5, -3.8];
+
+    # Getting an element from the slice
+    println(slice[1]);  # 0.5
+
+    # Getting the length of a slice
+    println(slice.length());  # 3
+
+    # Iterating over the elements in the slice
+    for ref value in slice {
+        println(value);
+    }
+
+    # Getting a subslice (using a start and end index)
+    var subslice = slice.subslice(1, 3);
+    println(subslice[0]);  # 0.5
+    println(subslice[1]);  # -3.8
+
+    # Getting the bytes in the slice
+    var bytes: Slice[u8] = slice.as_bytes();
+}
+```
+
+Importantly, slices don't own the data, they just _point_ to it. This means a
+slice cannot becomes invalid after the backing data is deallocated:
+
+```banjo
+func bad_slice() -> Slice[bool] {
+    var slice: Slice[bool] = [false, true];
+    return slice;  # BROKEN: Returning a slice to stack-allocated data.
+}
+```
+
+## String Slices
+
+String slices are similar to normal slices, but they reference string data
+instead of a generic sequence of values. Creating them is analogous to normal
+slices:
+
+```banjo
+func main() {
+    # Initializing a string slice directly from a pointer and a length
+    var value: *u8 = "c string";
+    var string_slice_1 = StringSlice.new(&value[0], 4);
+
+    # Creating a slice from a string
+    var string = "owned string";
+    var string_slice_2 = string.slice();
+
+    # Creating a slice from a string literal
+    var string_slice_3: StringSlice = "literal";
+}
+```
+
+String slices are used like strings:
+
+```banjo
+func main() {
+    var str: StringSlice = "some text";
+
+    # Printing the string slice
+    println(str);  "some text"
+
+    # Getting the length of the string slice
+    println(str.length());  # 9
+
+    # Checking the value of the string slice
+    println(str == "some text");  # true
+
+    # Getting a substring (using a start and end index)
+    var substring = str.substring(5, 9);
+    println(substring);  # "text"
+}
+```
