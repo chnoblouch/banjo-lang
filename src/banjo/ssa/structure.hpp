@@ -19,7 +19,7 @@ struct Structure {
 public:
     std::string name;
     std::vector<StructureMember> members;
-    bool is_union;
+    bool is_union = false;
 
 public:
     Structure(std::string name) : name{std::move(name)} {}
