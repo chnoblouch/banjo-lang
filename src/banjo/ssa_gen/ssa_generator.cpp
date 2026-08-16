@@ -472,6 +472,11 @@ void SSAGenerator::generate_native_func_decl(const sir::NativeFuncDecl &sir_func
         .calling_conv = ctx.target->get_default_calling_conv(),
     };
 
+    if (sir_func.attrs && sir_func.attrs->c_variadic) {
+        ssa_func_type.variadic = true;
+        ssa_func_type.first_variadic_index = sir_func.type.params.size();
+    }
+
     ctx.ssa_native_funcs.at(&sir_func)->type = ssa_func_type;
 }
 
