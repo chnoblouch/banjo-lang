@@ -5,23 +5,19 @@
 
 #include <string>
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 struct Request {
     std::string id;
     std::string method;
-    JSONObject params;
+    json::Object params;
 };
 
 struct Notification {
     std::string method;
-    JSONValue params;
+    json::Value params;
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

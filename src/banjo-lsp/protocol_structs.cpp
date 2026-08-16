@@ -4,13 +4,13 @@
 
 namespace banjo::lsp {
 
-JSONObject ProtocolStructs::range_to_lsp(std::string_view source, TextRange range) {
+json::Object ProtocolStructs::range_to_lsp(std::string_view source, TextRange range) {
     LSPTextPosition start = ASTNavigation::pos_to_lsp(source, range.start);
     LSPTextPosition end = ASTNavigation::pos_to_lsp(source, range.end);
 
-    return JSONObject{
-        {"start", JSONObject{{"line", start.line}, {"character", start.column}}},
-        {"end", JSONObject{{"line", end.line}, {"character", end.column}}}
+    return json::Object{
+        {"start", json::Object{{"line", start.line}, {"character", start.column}}},
+        {"end", json::Object{{"line", end.line}, {"character", end.column}}}
     };
 }
 

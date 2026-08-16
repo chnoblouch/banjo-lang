@@ -1,14 +1,10 @@
 #ifndef BANJO_LSP_MESSAGE_STREAM_H
 #define BANJO_LSP_MESSAGE_STREAM_H
 
-#include "message.hpp"
-
 #include <functional>
 #include <string>
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 struct BaseMessage {
     unsigned long long content_length;
@@ -38,8 +34,6 @@ private:
     void read_content(BaseMessage &message);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

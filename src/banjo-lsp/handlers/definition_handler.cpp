@@ -11,21 +11,21 @@ DefinitionHandler::DefinitionHandler(Workspace &workspace) : workspace(workspace
 
 DefinitionHandler::~DefinitionHandler() {}
 
-JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*connection*/) {
+json::Value DefinitionHandler::handle(const json::Object &params, Connection & /*connection*/) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
     SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
-        return JSONObject{{"data", JSONArray{}}};
+        return json::Object{{"data", json::Array{}}};
     }
 
     ModuleIndex *index = workspace.find_index(file->sir_mod);
     if (!index) {
-        return JSONObject{{"data", JSONArray{}}};
+        return json::Object{{"data", json::Array{}}};
     }
 
-    const JSONObject &lsp_position = params.get_object("position");
+    const json::Object &lsp_position = params.get_object("position");
     int line = lsp_position.get_int("line");
     int column = lsp_position.get_int("character");
     TextPosition position = ASTNavigation::pos_from_lsp(file->buffer, line, column);
@@ -39,7 +39,7 @@ JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*con
 
             SourceFile *target_file = workspace.find_file(symbol_ref.def_mod->path);
 
-            return {JSONObject{
+            return {json::Object{
                 {"targetUri", URI::encode_from_path(target_file->fs_path)},
                 {"targetRange", ProtocolStructs::range_to_lsp(target_file->buffer, symbol_ref.def_range)},
                 {"targetSelectionRange", ProtocolStructs::range_to_lsp(target_file->buffer, symbol_ref.def_range)}
@@ -47,7 +47,7 @@ JSONValue DefinitionHandler::handle(const JSONObject &params, Connection & /*con
         }
     }
 
-    return JSONArray{};
+    return json::Array{};
 }
 
 } // namespace banjo::lsp

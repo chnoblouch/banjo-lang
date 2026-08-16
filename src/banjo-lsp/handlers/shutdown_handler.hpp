@@ -3,18 +3,14 @@
 
 #include "connection.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 class ShutdownHandler : public RequestHandler {
 
 public:
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

@@ -15,7 +15,7 @@ public:
     FormattingHandler(Workspace &workspace);
     ~FormattingHandler();
 
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 };
 
 } // namespace banjo::lsp

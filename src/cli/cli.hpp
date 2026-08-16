@@ -102,9 +102,9 @@ private:
 
     Manifest parse_manifest(const std::filesystem::path &path);
     std::optional<Manifest> try_parse_manifest(const std::filesystem::path &path);
-    Manifest parse_manifest(const JSONObject &json);
-    std::string unwrap_json_string(const std::string &name, const JSONValue &value);
-    std::vector<std::string> unwrap_json_string_array(const std::string &name, const JSONValue &value);
+    Manifest parse_manifest(const json::Object &json);
+    std::string unwrap_json_string(const std::string &name, const json::Value &value);
+    std::vector<std::string> unwrap_json_string_array(const std::string &name, const json::Value &value);
     Target parse_target(std::string_view string);
 
     void install_package(std::string_view package);

@@ -43,43 +43,43 @@ void Server::start() {
     connection.on_request("textDocument/semanticTokens/full", &semantic_tokens_handler);
     connection.on_request("shutdown", &shutdown_handler);
 
-    connection.on_notification("initialized", [&](JSONObject &) {
+    connection.on_notification("initialized", [&](json::Object &) {
         std::vector<SourceFile *> mods = workspace.initialize();
         publish_diagnostics(connection, workspace, mods);
     });
 
-    connection.on_notification("exit", [](JSONObject &) { std::exit(0); });
+    connection.on_notification("exit", [](json::Object &) { std::exit(0); });
 
     /*
-    connection.on_request("textDocument/hover", [&source_manager](JSONObject& params) {
-        const JSONObject& document = params.get_object("textDocument");
+    connection.on_request("textDocument/hover", [&source_manager](json::Object& params) {
+        const json::Object& document = params.get_object("textDocument");
         std::filesystem::path path = URI::decode_to_path(document.get_string("uri"));
         const SourceFile& file = source_manager.get_file(path);
 
-        const JSONObject& lsp_position = params.get_object("position");
+        const json::Object& lsp_position = params.get_object("position");
         int line = lsp_position.get_number("line");
         int column = lsp_position.get_number("character");
         TextPosition position = ASTNavigation::pos_from_lsp(file.source, line, column);
 
         ASTNode* hovered_node = ASTNavigation::get_node_at(file.module_node, position);
-        return JSONObject { {"contents", "HOVER"} };
+        return json::Object { {"contents", "HOVER"} };
     });
     */
 
     /*
-    connection.on_notification("textDocument/didOpen", [&source_manager](JSONObject &params) {
-        const JSONObject &document = params.get_object("textDocument");
+    connection.on_notification("textDocument/didOpen", [&source_manager](json::Object &params) {
+        const json::Object &document = params.get_object("textDocument");
         std::filesystem::path path = URI::decode_to_path(document.get_string("uri"));
         std::string text = document.get_string("text");
     });
     */
 
-    connection.on_notification("textDocument/didChange", [&](JSONObject &params) {
-        const JSONObject &document = params.get_object("textDocument");
+    connection.on_notification("textDocument/didChange", [&](json::Object &params) {
+        const json::Object &document = params.get_object("textDocument");
         std::filesystem::path fs_path = URI::decode_to_path(document.get_string("uri"));
 
-        const JSONArray &changes = params.get_array("contentChanges");
-        const JSONObject &last_change = changes.get_object(changes.length() - 1);
+        const json::Array &changes = params.get_array("contentChanges");
+        const json::Object &last_change = changes.get_object(changes.length() - 1);
         std::string new_content = last_change.get_string("text");
 
         std::vector<SourceFile *> files = workspace.update(fs_path, new_content);

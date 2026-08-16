@@ -18,7 +18,7 @@ class Toolchain {
 public:
     virtual ~Toolchain() = default;
     virtual const ToolchainProperties &properties() = 0;
-    virtual JSONObject serialize() = 0;
+    virtual json::Object serialize() = 0;
     virtual void remove(const Target &target) {}
 };
 
@@ -32,16 +32,16 @@ public:
     std::string lib_path;
 
     static MSVCToolchain detect();
-    static MSVCToolchain deserialize(JSONObject &object);
+    static MSVCToolchain deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
-    JSONObject serialize() override;
+    json::Object serialize() override;
 
 private:
     void find_msvc();
     std::optional<std::filesystem::path> find_vswhere();
     std::optional<std::filesystem::path> find_vs_installation(const std::filesystem::path &vswhere_path);
-    JSONArray run_vswhere(const std::filesystem::path &vswhere_path, const std::vector<std::string> &args);
+    json::Array run_vswhere(const std::filesystem::path &vswhere_path, const std::vector<std::string> &args);
     std::optional<std::string> find_latest_msvc_version(const std::filesystem::path &versions_path);
 
     void find_winsdk();
@@ -61,10 +61,10 @@ public:
     std::vector<std::string> lib_dirs;
 
     static MinGWToolchain detect();
-    static MinGWToolchain deserialize(JSONObject &object);
+    static MinGWToolchain deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
-    JSONObject serialize() override;
+    json::Object serialize() override;
 
 private:
     void find_linker();
@@ -86,10 +86,10 @@ public:
 
     static UnixToolchain detect();
     static UnixToolchain install(std::string arch);
-    static UnixToolchain deserialize(JSONObject &object);
+    static UnixToolchain deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
-    JSONObject serialize() override;
+    json::Object serialize() override;
     void remove(const Target &target) override;
 
 private:
@@ -113,10 +113,10 @@ public:
 
     static MacOSToolchain detect();
     static MacOSToolchain install();
-    static MacOSToolchain deserialize(JSONObject &object);
+    static MacOSToolchain deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
-    JSONObject serialize() override;
+    json::Object serialize() override;
     void remove(const Target &target) override;
 
 private:
@@ -132,10 +132,10 @@ public:
     std::string linker_path;
 
     static WasmToolchain detect();
-    static WasmToolchain deserialize(JSONObject &object);
+    static WasmToolchain deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
-    JSONObject serialize() override;
+    json::Object serialize() override;
 };
 
 class EmscriptenToolchain final : public Toolchain {
@@ -147,10 +147,10 @@ public:
     std::string linker_path;
 
     static EmscriptenToolchain detect();
-    static EmscriptenToolchain deserialize(JSONObject &object);
+    static EmscriptenToolchain deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
-    JSONObject serialize() override;
+    json::Object serialize() override;
 };
 
 std::vector<std::string> parse_gcc_lib_dirs(std::string_view search_dirs_output);

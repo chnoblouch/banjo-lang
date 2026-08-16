@@ -19,7 +19,7 @@ namespace banjo::lsp {
 
 CompletionItemResolveHandler::CompletionItemResolveHandler(Workspace &workspace) : workspace(workspace) {}
 
-JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connection & /*connection*/) {
+json::Value CompletionItemResolveHandler::handle(const json::Object &params, Connection & /*connection*/) {
     std::optional<unsigned> index = params.try_get_int("data");
 
     if (!index || *index >= workspace.completion_engine.state.items.size()) {
@@ -43,13 +43,13 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
                     continue;
                 }
 
-                JSONArray edits;
+                json::Array edits;
 
                 for (TextInsertion &insertion : insertions) {
                     edits.add(serialize_insertion(cur_file, insertion));
                 }
 
-                JSONObject result = params;
+                json::Object result = params;
                 result.add("additionalTextEdits", std::move(edits));
                 return result;
             }
@@ -97,8 +97,8 @@ JSONValue CompletionItemResolveHandler::handle(const JSONObject &params, Connect
         insertion = {0, use_text};
     }
 
-    JSONObject result = params;
-    result.add("additionalTextEdits", JSONArray{serialize_insertion(cur_file, insertion)});
+    json::Object result = params;
+    result.add("additionalTextEdits", json::Array{serialize_insertion(cur_file, insertion)});
     return result;
 }
 
@@ -285,8 +285,8 @@ CompletionItemResolveHandler::TextInsertion CompletionItemResolveHandler::insert
     };
 }
 
-JSONObject CompletionItemResolveHandler::serialize_insertion(SourceFile &file, TextInsertion insertion) {
-    return JSONObject{
+json::Object CompletionItemResolveHandler::serialize_insertion(SourceFile &file, TextInsertion insertion) {
+    return json::Object{
         {"range", ProtocolStructs::range_to_lsp(file.get_content(), {insertion.position, insertion.position})},
         {"newText", insertion.text},
     };

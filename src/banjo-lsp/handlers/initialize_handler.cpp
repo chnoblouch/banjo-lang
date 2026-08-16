@@ -9,35 +9,35 @@ InitializeHandler::InitializeHandler() {}
 
 InitializeHandler::~InitializeHandler() {}
 
-JSONValue InitializeHandler::handle(const JSONObject &params, Connection &) {
-    JSONValue workspace_folders = params.get("workspaceFolders");
+json::Value InitializeHandler::handle(const json::Object &params, Connection &) {
+    json::Value workspace_folders = params.get("workspaceFolders");
     // init_config(workspace_folders);
 
-    return JSONObject{
+    return json::Object{
         {"capabilities",
-         JSONObject{
-             {"textDocumentSync", JSONObject{{"openClose", true}, {"change", 1}, {"save", true}}},
+         json::Object{
+             {"textDocumentSync", json::Object{{"openClose", true}, {"change", 1}, {"save", true}}},
              {"completionProvider",
-              JSONObject{
-                  {"triggerCharacters", JSONArray{"."}},
+              json::Object{
+                  {"triggerCharacters", json::Array{"."}},
                   {"resolveProvider", true},
-                  {"completionItem", JSONObject{{"labelDetailsSupport", true}}}
+                  {"completionItem", json::Object{{"labelDetailsSupport", true}}}
               }},
              {"definitionProvider", true},
              {"referencesProvider", true},
              {"renameProvider", true},
              {"documentFormattingProvider", true},
              {"semanticTokensProvider",
-              JSONObject{
+              json::Object{
                   {"legend",
-                   JSONObject{
+                   json::Object{
                        {"tokenTypes",
-                        JSONArray{"namespace",     "type",      "class",    "enum",     "interface",  "struct",
-                                  "typeParameter", "parameter", "variable", "property", "enumMember", "event",
-                                  "function",      "method",    "macro",    "keyword",  "modifier",   "comment",
-                                  "string",        "number",    "regexp",   "operator", "decorator"}},
+                        json::Array{"namespace",     "type",      "class",    "enum",     "interface",  "struct",
+                                    "typeParameter", "parameter", "variable", "property", "enumMember", "event",
+                                    "function",      "method",    "macro",    "keyword",  "modifier",   "comment",
+                                    "string",        "number",    "regexp",   "operator", "decorator"}},
                        {"tokenModifiers",
-                        JSONArray{
+                        json::Array{
                             "declaration",
                             "definition",
                             "readonly",
@@ -53,16 +53,16 @@ JSONValue InitializeHandler::handle(const JSONObject &params, Connection &) {
                   {"full", true}
               }}
          }},
-        {"serverInfo", JSONObject{{"name", "Banjo Language Server"}, {"version", "1.0"}}}
+        {"serverInfo", json::Object{{"name", "Banjo Language Server"}, {"version", "1.0"}}}
     };
 }
 
-void InitializeHandler::init_config(const JSONValue &workspace_folders) {
+void InitializeHandler::init_config(const json::Value &workspace_folders) {
     if (workspace_folders.is_null()) {
         return;
     }
 
-    const JSONArray &roots = workspace_folders.as_array();
+    const json::Array &roots = workspace_folders.as_array();
 
     for (int i = 0; i < roots.length(); i++) {
         std::string uri = roots.get_object(i).get_string("uri");

@@ -13,21 +13,21 @@ FormattingHandler::FormattingHandler(Workspace &workspace) : workspace(workspace
 
 FormattingHandler::~FormattingHandler() {}
 
-JSONValue FormattingHandler::handle(const JSONObject &params, Connection & /*connection*/) {
+json::Value FormattingHandler::handle(const json::Object &params, Connection & /*connection*/) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
     SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
-        return JSONObject{{"data", JSONArray{}}};
+        return json::Object{{"data", json::Array{}}};
     }
 
     ReportManager report_manager;
     EditList edits = Formatter{report_manager, *file}.format();
-    JSONArray lsp_edits;
+    json::Array lsp_edits;
 
     for (const Edit &edit : edits.get_elements()) {
-        JSONObject lsp_edit{
+        json::Object lsp_edit{
             {"range", ProtocolStructs::range_to_lsp(file->get_content(), edit.range)},
             {"newText", edit.replacement},
         };

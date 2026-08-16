@@ -58,7 +58,7 @@ enum DiagnosticSeverity {
 
 namespace ProtocolStructs {
 
-JSONObject range_to_lsp(std::string_view source, TextRange range);
+json::Object range_to_lsp(std::string_view source, TextRange range);
 DiagnosticSeverity report_type_to_lsp(Report::Type type);
 
 } // namespace ProtocolStructs

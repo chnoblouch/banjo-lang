@@ -3,9 +3,7 @@
 
 #include "connection.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 class InitializeHandler : public RequestHandler {
 
@@ -13,14 +11,12 @@ public:
     InitializeHandler();
     ~InitializeHandler();
 
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 
 private:
-    void init_config(const JSONValue &workspace_folders);
+    void init_config(const json::Value &workspace_folders);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

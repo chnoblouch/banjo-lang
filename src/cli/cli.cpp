@@ -486,17 +486,17 @@ void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
     std::cout << "Config path: " << get_toolchain_path().string() << "\n";
 
     const ToolchainProperties &properties = toolchain->properties();
-    JSONObject serialized = toolchain->serialize();
+    json::Object serialized = toolchain->serialize();
 
     for (const auto &[key, name] : properties) {
-        const JSONValue &value = serialized.get(std::string{key});
+        const json::Value &value = serialized.get(std::string{key});
 
         if (value.is_string()) {
             std::cout << "\n" << name << ":\n  \"" << value.as_string() << "\"\n";
         } else if (value.is_array()) {
             std::cout << "\n" << name << ":\n";
 
-            for (const JSONValue &element : value.as_array()) {
+            for (const json::Value &element : value.as_array()) {
                 std::cout << "  - \"" << element.as_string() << "\"\n";
             }
         }
@@ -912,7 +912,7 @@ bool CLI::load_cached_toolchain() {
         return false;
     }
 
-    JSONObject serialized = JSONParser(*toolchain_string).parse_object();
+    json::Object serialized = json::Parser(*toolchain_string).parse()->as_object();
 
     switch (toolchain_kind()) {
         case ToolchainKind::MSVC:
@@ -975,7 +975,7 @@ void CLI::set_up_toolchain() {
     std::filesystem::create_directories(toolchain_path.parent_path());
 
     std::ofstream toolchain_stream(toolchain_path, std::ios::binary);
-    JSONSerializer(toolchain_stream).serialize(toolchain->serialize());
+    json::Serializer(toolchain_stream).serialize(toolchain->serialize());
 }
 
 Manifest CLI::parse_manifest(const std::filesystem::path &path) {
@@ -986,7 +986,7 @@ Manifest CLI::parse_manifest(const std::filesystem::path &path) {
     if (std::optional<Manifest> manifest = try_parse_manifest(path)) {
         return std::move(*manifest);
     } else {
-        error("could not open manifest at '" + path.string() + "'");
+        error("could not read manifest at '" + path.string() + "'");
     }
 }
 
@@ -1008,11 +1008,18 @@ std::optional<Manifest> CLI::try_parse_manifest(const std::filesystem::path &pat
         return {};
     }
 
-    JSONObject json = JSONParser(buffer).parse_object();
-    return parse_manifest(json);
+    if (std::optional<json::Value> json = json::Parser(buffer).parse()) {
+        if (json->is_object()) {
+            return parse_manifest(json->as_object());
+        } else {
+            return {};
+        }
+    } else {
+        return {};
+    }
 }
 
-Manifest CLI::parse_manifest(const JSONObject &json) {
+Manifest CLI::parse_manifest(const json::Object &json) {
     std::optional<std::string> name;
     std::string type = "executable";
     std::vector<std::string> args;
@@ -1073,7 +1080,7 @@ Manifest CLI::parse_manifest(const JSONObject &json) {
     };
 }
 
-std::string CLI::unwrap_json_string(const std::string &name, const JSONValue &value) {
+std::string CLI::unwrap_json_string(const std::string &name, const json::Value &value) {
     if (value.is_string()) {
         return value.as_string();
     } else {
@@ -1081,12 +1088,12 @@ std::string CLI::unwrap_json_string(const std::string &name, const JSONValue &va
     }
 }
 
-std::vector<std::string> CLI::unwrap_json_string_array(const std::string &name, const JSONValue &value) {
+std::vector<std::string> CLI::unwrap_json_string_array(const std::string &name, const json::Value &value) {
     std::vector<std::string> values;
     bool valid = true;
 
     if (value.is_array()) {
-        for (const JSONValue &member : value.as_array()) {
+        for (const json::Value &member : value.as_array()) {
             if (member.is_string()) {
                 values.push_back(member.as_string());
             } else {

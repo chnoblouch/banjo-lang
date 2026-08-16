@@ -16,23 +16,23 @@ namespace banjo::lsp {
 
 CompletionHandler::CompletionHandler(Workspace &workspace) : workspace(workspace) {}
 
-JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*connection*/) {
+json::Value CompletionHandler::handle(const json::Object &params, Connection & /*connection*/) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
     SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
-        return JSONObject{{"data", JSONArray{}}};
+        return json::Object{{"data", json::Array{}}};
     }
 
-    const JSONObject &lsp_position = params.get_object("position");
+    const json::Object &lsp_position = params.get_object("position");
     int line = lsp_position.get_int("line");
     int column = lsp_position.get_int("character");
     TextPosition position = ASTNavigation::pos_from_lsp(file->buffer, line, column);
 
     sir::Module sir_mod;
     CompletionInfo completion_info = workspace.run_completion(file, position, sir_mod);
-    JSONArray items_serialized;
+    json::Array items_serialized;
 
     workspace.completion_engine.complete(
         CompletionEngine::Request{
@@ -51,7 +51,7 @@ JSONValue CompletionHandler::handle(const JSONObject &params, Connection & /*con
     return items_serialized;
 }
 
-JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::Item item) {
+json::Object CompletionHandler::serialize_item(unsigned index, CompletionEngine::Item item) {
     if (item.kind == CompletionEngine::Item::Kind::SIMPLE) {
         if (item.symbol.is<sir::Module>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::MODULE);
@@ -59,9 +59,8 @@ JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::I
             return serialize_simple_item(index, item, LSPCompletionItemKind::FUNCTION);
         } else if (item.symbol.is<sir::ConstDef>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::CONSTANT);
-        } else if (
-            item.symbol.is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()
-        ) {
+        } else if (item.symbol
+                       .is_one_of<sir::StructDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::STRUCT);
         } else if (item.symbol.is_one_of<sir::VarDecl, sir::NativeVarDecl, sir::Local, sir::Param>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::VARIABLE);
@@ -96,12 +95,12 @@ JSONObject CompletionHandler::serialize_item(unsigned index, CompletionEngine::I
     }
 }
 
-JSONObject CompletionHandler::serialize_simple_item(
+json::Object CompletionHandler::serialize_simple_item(
     unsigned index,
     CompletionEngine::Item item,
     LSPCompletionItemKind kind
 ) {
-    JSONObject result{
+    json::Object result{
         {"label", item.name},
         {"kind", kind},
         {"insertText", item.name},
@@ -111,13 +110,13 @@ JSONObject CompletionHandler::serialize_simple_item(
 
     if (item.file_to_use) {
         std::string path{item.file_to_use->mod_path.to_string()};
-        result.add("labelDetails", JSONObject{{"description", path}});
+        result.add("labelDetails", json::Object{{"description", path}});
     }
 
     return result;
 }
 
-JSONObject CompletionHandler::serialize_func_call_template(
+json::Object CompletionHandler::serialize_func_call_template(
     unsigned index,
     CompletionEngine::Item &item,
     const sir::FuncType &type
@@ -169,16 +168,16 @@ JSONObject CompletionHandler::serialize_func_call_template(
 
     insert_text += ")";
 
-    JSONObject serialized_details;
+    json::Object serialized_details;
 
     if (item.file_to_use) {
         std::string path{item.file_to_use->mod_path.to_string()};
-        serialized_details = JSONObject{{"detail", detail}, {"description", path}};
+        serialized_details = json::Object{{"detail", detail}, {"description", path}};
     } else {
-        serialized_details = JSONObject{{"detail", detail}};
+        serialized_details = json::Object{{"detail", detail}};
     }
 
-    return JSONObject{
+    return json::Object{
         {"label", item.name},
         {"labelDetails", serialized_details},
         {"kind", is_method ? LSPCompletionItemKind::METHOD : LSPCompletionItemKind::FUNCTION},
@@ -188,7 +187,7 @@ JSONObject CompletionHandler::serialize_func_call_template(
     };
 }
 
-JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item) {
+json::Object CompletionHandler::serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item) {
     sir::StructDef &struct_def = item.symbol.as<sir::StructDef>();
 
     std::string insert_text = std::string{item.name} + " {\n";
@@ -208,16 +207,16 @@ JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, 
     insert_text += "}";
     detail += " }";
 
-    JSONObject serialized_details;
+    json::Object serialized_details;
 
     if (item.file_to_use) {
         std::string path{item.file_to_use->mod_path.to_string()};
-        serialized_details = JSONObject{{"detail", detail}, {"description", path}};
+        serialized_details = json::Object{{"detail", detail}, {"description", path}};
     } else {
-        serialized_details = JSONObject{{"detail", detail}};
+        serialized_details = json::Object{{"detail", detail}};
     }
 
-    return JSONObject{
+    return json::Object{
         {"label", struct_def.ident.value},
         {"labelDetails", serialized_details},
         {"kind", LSPCompletionItemKind::STRUCT},
@@ -227,8 +226,8 @@ JSONObject CompletionHandler::serialize_struct_literal_template(unsigned index, 
     };
 }
 
-JSONObject CompletionHandler::serialize_struct_field_template(unsigned index, CompletionEngine::Item &item) {
-    JSONObject result{
+json::Object CompletionHandler::serialize_struct_field_template(unsigned index, CompletionEngine::Item &item) {
+    json::Object result{
         {"label", item.name},
         {"kind", LSPCompletionItemKind::FIELD},
         {"insertText", std::string{item.name} + ": "},
@@ -238,7 +237,7 @@ JSONObject CompletionHandler::serialize_struct_field_template(unsigned index, Co
 
     if (item.file_to_use) {
         std::string path{item.file_to_use->mod_path.to_string()};
-        result.add("labelDetails", JSONObject{{"description", path}});
+        result.add("labelDetails", json::Object{{"description", path}});
     }
 
     return result;

@@ -1,15 +1,11 @@
 #include "shutdown_handler.hpp"
 
-namespace banjo {
+namespace banjo::lsp {
 
-namespace lsp {
-
-JSONValue ShutdownHandler::handle(const JSONObject &, Connection &) {
+json::Value ShutdownHandler::handle(const json::Object &, Connection &) {
     return {
-        {"result", JSONValue(nullptr)},
+        {"result", json::Value{nullptr}},
     };
 }
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp

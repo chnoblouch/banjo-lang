@@ -11,18 +11,18 @@ ReferencesHandler::ReferencesHandler(Workspace &workspace) : workspace(workspace
 
 ReferencesHandler::~ReferencesHandler() {}
 
-JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*connection*/) {
+json::Value ReferencesHandler::handle(const json::Object &params, Connection & /*connection*/) {
     const SourceFile *file = find_file(params);
     if (!file) {
-        return JSONArray{};
+        return json::Array{};
     }
 
     const SymbolRef *symbol_def = find_symbol(*file, params);
     if (!symbol_def) {
-        return JSONArray{};
+        return json::Array{};
     }
 
-    JSONArray array;
+    json::Array array;
 
     for (const auto &[mod, mod_index] : workspace.get_index().mods) {
         for (const SymbolRef &symbol_ref : mod_index.symbol_refs) {
@@ -40,7 +40,7 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*con
             }
 
             array.add(
-                JSONObject{
+                json::Object{
                     {"uri", URI::encode_from_path(file->fs_path)},
                     {"range", ProtocolStructs::range_to_lsp(file->buffer, symbol_ref.range)}
                 }
@@ -51,19 +51,19 @@ JSONValue ReferencesHandler::handle(const JSONObject &params, Connection & /*con
     return array;
 }
 
-const SourceFile *ReferencesHandler::find_file(const JSONObject &params) {
+const SourceFile *ReferencesHandler::find_file(const json::Object &params) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
     return workspace.find_file(fs_path);
 }
 
-const SymbolRef *ReferencesHandler::find_symbol(const SourceFile &file, const JSONObject &params) {
+const SymbolRef *ReferencesHandler::find_symbol(const SourceFile &file, const json::Object &params) {
     ModuleIndex *index = workspace.find_index(file.sir_mod);
     if (!index) {
         return nullptr;
     }
 
-    const JSONObject &lsp_position = params.get_object("position");
+    const json::Object &lsp_position = params.get_object("position");
     int line = lsp_position.get_int("line");
     int column = lsp_position.get_int("character");
     TextPosition position = ASTNavigation::pos_from_lsp(file.buffer, line, column);

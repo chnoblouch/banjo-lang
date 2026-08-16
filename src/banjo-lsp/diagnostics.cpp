@@ -17,20 +17,20 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, SourceFil
         return;
     }
 
-    JSONArray diagnostics;
+    json::Array diagnostics;
 
     for (const Report &report : index->reports) {
         const SourceLocation &location = *report.get_message().location;
         std::string message = report.get_message().text;
 
-        JSONObject diagnostic{
+        json::Object diagnostic{
             {"range", ProtocolStructs::range_to_lsp(file.buffer, location.range)},
             {"severity", static_cast<unsigned>(ProtocolStructs::report_type_to_lsp(report.get_type()))},
             {"message", message},
         };
 
         if (!report.get_notes().empty()) {
-            JSONArray related_information;
+            json::Array related_information;
 
             for (const ReportMessage &note : report.get_notes()) {
                 SourceFile *note_file = note.location->file;
@@ -38,13 +38,13 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, SourceFil
                     continue;
                 }
 
-                JSONObject location{
+                json::Object location{
                     {"uri", URI::encode_from_path(note_file->fs_path)},
                     {"range", ProtocolStructs::range_to_lsp(note_file->buffer, note.location->range)}
                 };
 
                 related_information.add(
-                    JSONObject{
+                    json::Object{
                         {"location", location},
                         {"message", note.text},
                     }
@@ -58,7 +58,7 @@ void publish_diagnostics(Connection &connection, Workspace &workspace, SourceFil
     }
 
     std::string uri = URI::encode_from_path(file.fs_path);
-    JSONObject notification{{"uri", uri}, {"diagnostics", diagnostics}};
+    json::Object notification{{"uri", uri}, {"diagnostics", diagnostics}};
     connection.send_notification("textDocument/publishDiagnostics", notification);
 }
 

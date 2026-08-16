@@ -31,9 +31,9 @@ public:
     SemanticTokensHandler(Workspace &workspace);
     ~SemanticTokensHandler();
 
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
     std::vector<LSPSemanticToken> tokens_to_lsp(const std::string &source, const std::vector<SemanticToken> &tokens);
-    JSONArray serialize(const std::vector<LSPSemanticToken> &lsp_tokens);
+    json::Array serialize(const std::vector<LSPSemanticToken> &lsp_tokens);
 
 private:
     void add_symbol_token(std::vector<SemanticToken> &tokens, TextRange range, const sir::Symbol &symbol);

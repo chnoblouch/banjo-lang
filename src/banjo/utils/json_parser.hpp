@@ -3,27 +3,40 @@
 
 #include "banjo/utils/json.hpp"
 
-#include <sstream>
+#include <string_view>
 
-namespace banjo {
+namespace banjo::json {
 
-class JSONParser {
+class Parser {
 
 private:
-    std::stringstream stream;
+    std::string_view buffer;
+    unsigned position;
 
 public:
-    JSONParser(std::string string);
-    JSONObject parse_object();
-    JSONArray parse_array();
+    Parser(std::string_view buffer);
+    std::optional<Value> parse();
 
 private:
     std::string parse_key();
-    JSONValue parse_value();
+    std::optional<Value> parse_value();
 
+    std::optional<Value> parse_null();
+    std::optional<Value> parse_false();
+    std::optional<Value> parse_true();
+    std::optional<Value> parse_number();
+    std::optional<Value> parse_string();
+    std::optional<Value> parse_array();
+    std::optional<Value> parse_object();
+
+    std::optional<std::string> parse_string_raw();
     void skip_whitespace();
+
+    std::optional<char> get();
+    std::optional<char> consume();
+    std::optional<std::string_view> consume_n(unsigned count);
 };
 
-} // namespace banjo
+} // namespace banjo::json
 
 #endif

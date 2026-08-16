@@ -112,7 +112,7 @@ std::optional<std::filesystem::path> MSVCToolchain::find_vswhere() {
 }
 
 std::optional<std::filesystem::path> MSVCToolchain::find_vs_installation(const std::filesystem::path &vswhere_path) {
-    JSONArray result;
+    json::Array result;
 
     // Look for a full Visual Studio installation.
     result = run_vswhere(vswhere_path, {"-latest"});
@@ -133,11 +133,14 @@ std::optional<std::filesystem::path> MSVCToolchain::find_vs_installation(const s
     return {};
 }
 
-JSONArray MSVCToolchain::run_vswhere(const std::filesystem::path &vswhere_path, const std::vector<std::string> &args) {
+json::Array MSVCToolchain::run_vswhere(
+    const std::filesystem::path &vswhere_path,
+    const std::vector<std::string> &args
+) {
     std::vector<std::string> full_args{"-format", "json"};
     full_args.insert(full_args.end(), args.begin(), args.end());
     std::string output = get_tool_output(vswhere_path, full_args);
-    return JSONParser(output).parse_array();
+    return json::Parser{output}.parse()->as_array();
 }
 
 std::optional<std::string> MSVCToolchain::find_latest_msvc_version(const std::filesystem::path &versions_path) {
@@ -286,15 +289,15 @@ std::optional<std::string> MSVCToolchain::get_max_version(
     return std::string(parsed_versions.back().first);
 }
 
-MSVCToolchain MSVCToolchain::deserialize(JSONObject &object) {
+MSVCToolchain MSVCToolchain::deserialize(json::Object &object) {
     MSVCToolchain toolchain;
     toolchain.tools_path = object.get_string("tools");
     toolchain.lib_path = object.get_string("lib");
     return toolchain;
 }
 
-JSONObject MSVCToolchain::serialize() {
-    JSONObject object;
+json::Object MSVCToolchain::serialize() {
+    json::Object object;
     object.add("tools", tools_path);
     object.add("lib", lib_path);
     return object;
@@ -345,17 +348,17 @@ std::filesystem::path MinGWToolchain::find_c_compiler() {
     error("failed to find mingw c compiler");
 }
 
-MinGWToolchain MinGWToolchain::deserialize(JSONObject &object) {
+MinGWToolchain MinGWToolchain::deserialize(json::Object &object) {
     MinGWToolchain toolchain;
     toolchain.linker_path = object.get_string("linker_path");
     toolchain.lib_dirs = object.get_string_array("lib_dirs");
     return toolchain;
 }
 
-JSONObject MinGWToolchain::serialize() {
-    JSONObject object;
+json::Object MinGWToolchain::serialize() {
+    json::Object object;
     object.add("linker_path", linker_path);
-    object.add("lib_dirs", JSONArray{lib_dirs});
+    object.add("lib_dirs", json::Array{lib_dirs});
     return object;
 }
 
@@ -458,7 +461,7 @@ std::filesystem::path UnixToolchain::cross_sysroot_path(const std::string &arch)
     return paths::toolchains_dir() / ("sysroot-" + arch + "-linux-gnu");
 }
 
-UnixToolchain UnixToolchain::deserialize(JSONObject &object) {
+UnixToolchain UnixToolchain::deserialize(json::Object &object) {
     UnixToolchain toolchain;
     toolchain.linker_path = object.get_string("linker_path");
     toolchain.linker_args = object.get_string_array("linker_args");
@@ -468,12 +471,12 @@ UnixToolchain UnixToolchain::deserialize(JSONObject &object) {
     return toolchain;
 }
 
-JSONObject UnixToolchain::serialize() {
-    JSONObject object;
+json::Object UnixToolchain::serialize() {
+    json::Object object;
     object.add("linker_path", linker_path);
-    object.add("linker_args", JSONArray{linker_args});
-    object.add("additional_libraries", JSONArray{extra_libs});
-    object.add("lib_dirs", JSONArray{lib_dirs});
+    object.add("linker_args", json::Array{linker_args});
+    object.add("additional_libraries", json::Array{extra_libs});
+    object.add("lib_dirs", json::Array{lib_dirs});
     object.add("crt_dir", crt_dir);
     return object;
 }
@@ -545,7 +548,7 @@ std::filesystem::path MacOSToolchain::cross_sysroot_path() {
     return paths::toolchains_dir() / ("sysroot-aarch64-macos");
 }
 
-MacOSToolchain MacOSToolchain::deserialize(JSONObject &object) {
+MacOSToolchain MacOSToolchain::deserialize(json::Object &object) {
     MacOSToolchain toolchain;
     toolchain.linker_path = object.get_string("linker_path");
     toolchain.sysroot_path = object.get_string("sysroot");
@@ -553,11 +556,11 @@ MacOSToolchain MacOSToolchain::deserialize(JSONObject &object) {
     return toolchain;
 }
 
-JSONObject MacOSToolchain::serialize() {
-    JSONObject object;
+json::Object MacOSToolchain::serialize() {
+    json::Object object;
     object.add("linker_path", linker_path);
     object.add("sysroot", sysroot_path);
-    object.add("extra_args", JSONArray{linker_args});
+    object.add("extra_args", json::Array{linker_args});
     return object;
 }
 
@@ -582,14 +585,14 @@ WasmToolchain WasmToolchain::detect() {
     return toolchain;
 }
 
-WasmToolchain WasmToolchain::deserialize(JSONObject &object) {
+WasmToolchain WasmToolchain::deserialize(json::Object &object) {
     WasmToolchain toolchain;
     toolchain.linker_path = object.get_string("linker_path");
     return toolchain;
 }
 
-JSONObject WasmToolchain::serialize() {
-    JSONObject object;
+json::Object WasmToolchain::serialize() {
+    json::Object object;
     object.add("linker_path", linker_path);
     return object;
 }
@@ -610,14 +613,14 @@ EmscriptenToolchain EmscriptenToolchain::detect() {
     return toolchain;
 }
 
-EmscriptenToolchain EmscriptenToolchain::deserialize(JSONObject &object) {
+EmscriptenToolchain EmscriptenToolchain::deserialize(json::Object &object) {
     EmscriptenToolchain toolchain;
     toolchain.linker_path = object.get_string("linker_path");
     return toolchain;
 }
 
-JSONObject EmscriptenToolchain::serialize() {
-    JSONObject object;
+json::Object EmscriptenToolchain::serialize() {
+    json::Object object;
     object.add("linker_path", linker_path);
     return object;
 }

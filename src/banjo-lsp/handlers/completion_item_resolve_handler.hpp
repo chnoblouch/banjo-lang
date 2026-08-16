@@ -34,7 +34,7 @@ private:
 public:
     CompletionItemResolveHandler(Workspace &workspace);
 
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 
 private:
     FixedVector<TextInsertion, 2> try_modify_use(
@@ -50,7 +50,7 @@ private:
     );
 
     TextInsertion insert_line_after(SourceFile &file, ASTNode *node, const std::string &text);
-    JSONObject serialize_insertion(SourceFile &file, TextInsertion insertion);
+    json::Object serialize_insertion(SourceFile &file, TextInsertion insertion);
 };
 
 } // namespace banjo::lsp

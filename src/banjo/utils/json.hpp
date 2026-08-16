@@ -11,101 +11,98 @@
 #include <variant>
 #include <vector>
 
-namespace banjo {
+namespace banjo::json {
 
-class JSONValue;
-typedef std::string JSONString;
-typedef long long JSONInt;
-typedef double JSONFloat;
-typedef bool JSONBool;
-class JSONObject;
-class JSONArray;
-typedef std::nullptr_t JSONNull;
+class Value;
+typedef std::string String;
+typedef long long Int;
+typedef double Float;
+typedef bool Bool;
+class Object;
+class Array;
+typedef std::nullptr_t Null;
 
-class JSONValue {
+class Value {
 
 private:
-    std::variant<JSONString, JSONInt, JSONFloat, JSONBool, Box<JSONObject>, Box<JSONArray>, JSONNull> value;
+    std::variant<String, Int, Float, Bool, Box<Object>, Box<Array>, Null> value;
 
 public:
-    JSONValue(JSONString value) : value(value) {}
-    JSONValue(const char *value) : value(std::string(value)) {}
-    JSONValue(std::string_view value) : value(std::string(value)) {}
-    JSONValue(long long value) : value(value) {}
-    JSONValue(int value) : value(static_cast<JSONInt>(value)) {}
-    JSONValue(unsigned value) : value(static_cast<JSONInt>(value)) {}
-    JSONValue(double value) : value(value) {}
-    JSONValue(JSONBool value) : value(value) {}
-    JSONValue(JSONObject value);
-    JSONValue(JSONArray value);
-    JSONValue(std::nullptr_t value) : value(value) {}
+    Value(String value) : value(value) {}
+    Value(const char *value) : value(std::string(value)) {}
+    Value(std::string_view value) : value(std::string(value)) {}
+    Value(long long value) : value(value) {}
+    Value(int value) : value(static_cast<Int>(value)) {}
+    Value(unsigned value) : value(static_cast<Int>(value)) {}
+    Value(double value) : value(value) {}
+    Value(Bool value) : value(value) {}
+    Value(Object value);
+    Value(Array value);
+    Value(std::nullptr_t value) : value(value) {}
 
-    const JSONString &as_string() const { return std::get<JSONString>(value); }
-    JSONInt as_int() const { return std::get<JSONInt>(value); }
-    JSONFloat as_float() const { return std::get<JSONFloat>(value); }
-    JSONBool as_bool() const { return std::get<JSONBool>(value); }
-    const JSONObject &as_object() const { return *std::get<Box<JSONObject>>(value); }
-    const JSONArray &as_array() const { return *std::get<Box<JSONArray>>(value); }
+    const String &as_string() const { return std::get<String>(value); }
+    Int as_int() const { return std::get<Int>(value); }
+    Float as_float() const { return std::get<Float>(value); }
+    Bool as_bool() const { return std::get<Bool>(value); }
+    const Object &as_object() const { return *std::get<Box<Object>>(value); }
+    const Array &as_array() const { return *std::get<Box<Array>>(value); }
 
-    bool is_string() const { return std::holds_alternative<JSONString>(value); }
-    bool is_int() const { return std::holds_alternative<JSONInt>(value); }
-    bool is_float() const { return std::holds_alternative<JSONFloat>(value); }
-    bool is_bool() const { return std::holds_alternative<JSONBool>(value); }
-    bool is_object() const { return std::holds_alternative<Box<JSONObject>>(value); }
-    bool is_array() const { return std::holds_alternative<Box<JSONArray>>(value); }
-    bool is_null() const { return std::holds_alternative<JSONNull>(value); }
+    bool is_string() const { return std::holds_alternative<String>(value); }
+    bool is_int() const { return std::holds_alternative<Int>(value); }
+    bool is_float() const { return std::holds_alternative<Float>(value); }
+    bool is_bool() const { return std::holds_alternative<Bool>(value); }
+    bool is_object() const { return std::holds_alternative<Box<Object>>(value); }
+    bool is_array() const { return std::holds_alternative<Box<Array>>(value); }
+    bool is_null() const { return std::holds_alternative<Null>(value); }
 };
 
-class JSONObject {
-
-    friend class JSONSerializer;
+class Object {
 
 private:
-    std::unordered_map<std::string, JSONValue> values;
+    std::unordered_map<std::string, Value> values;
 
 public:
-    JSONObject();
-    JSONObject(std::initializer_list<std::pair<std::string, JSONValue>> values);
+    Object();
+    Object(std::initializer_list<std::pair<std::string, Value>> values);
 
-    const JSONValue &get(std::string key) const;
-    const JSONString &get_string(std::string key) const;
-    JSONInt get_int(std::string key) const;
-    JSONFloat get_float(std::string key) const;
-    JSONBool get_bool(std::string key) const;
-    const JSONObject &get_object(std::string key) const;
-    const JSONArray &get_array(std::string key) const;
+    const Value &get(const std::string &key) const;
+    const String &get_string(const std::string &key) const;
+    Int get_int(const std::string &key) const;
+    Float get_float(const std::string &key) const;
+    Bool get_bool(const std::string &key) const;
+    const Object &get_object(const std::string &key) const;
+    const Array &get_array(const std::string &key) const;
 
-    const JSONValue *try_get(const std::string &key) const;
-    const JSONString *try_get_string(const std::string &key) const;
-    std::optional<JSONInt> try_get_int(const std::string &key) const;
-    std::optional<JSONFloat> try_get_float(const std::string &key) const;
-    std::optional<JSONBool> try_get_bool(const std::string &key) const;
-    const JSONObject *try_get_object(const std::string &key) const;
-    const JSONArray *try_get_array(const std::string &key) const;
+    const Value *try_get(const std::string &key) const;
+    const String *try_get_string(const std::string &key) const;
+    std::optional<Int> try_get_int(const std::string &key) const;
+    std::optional<Float> try_get_float(const std::string &key) const;
+    std::optional<Bool> try_get_bool(const std::string &key) const;
+    const Object *try_get_object(const std::string &key) const;
+    const Array *try_get_array(const std::string &key) const;
 
     std::vector<std::string> get_string_array(const std::string &key) const;
     std::string get_string_or(const std::string &key, const std::string &default_value) const;
 
-    bool contains(std::string key) const;
-    void add(std::string key, JSONValue value);
+    unsigned length() const { return values.size(); }
+    bool contains(const std::string &key) const { return values.count(key); }
+    void add(std::string key, Value value) { values.emplace(std::move(key), std::move(value)); }
 
-    std::unordered_map<std::string, JSONValue>::const_iterator begin() const { return values.begin(); }
-    std::unordered_map<std::string, JSONValue>::const_iterator end() const { return values.end(); }
+    std::unordered_map<std::string, Value>::const_iterator begin() const { return values.begin(); }
+    std::unordered_map<std::string, Value>::const_iterator end() const { return values.end(); }
 };
 
-class JSONArray {
-
-    friend class JSONSerializer;
+class Array {
 
 private:
-    std::vector<JSONValue> values;
+    std::vector<Value> values;
 
 public:
-    JSONArray();
-    JSONArray(std::initializer_list<JSONValue> values);
+    Array();
+    Array(std::initializer_list<Value> values);
 
     template <typename T>
-    JSONArray(std::vector<T> values) {
+    Array(std::vector<T> values) {
         this->values.reserve(values.size());
 
         for (T value : values) {
@@ -113,21 +110,21 @@ public:
         }
     }
 
-    const JSONValue &get(int index) const;
-    const JSONString &get_string(int index) const;
-    JSONInt get_int(int index) const;
-    JSONFloat get_float(int index) const;
-    JSONBool get_bool(int index) const;
-    const JSONObject &get_object(int index) const;
-    const JSONArray &get_array(int index) const;
+    const Value &get(unsigned index) const;
+    const String &get_string(unsigned index) const;
+    Int get_int(unsigned index) const;
+    Float get_float(unsigned index) const;
+    Bool get_bool(unsigned index) const;
+    const Object &get_object(unsigned index) const;
+    const Array &get_array(unsigned index) const;
 
-    int length() const;
-    void add(JSONValue value);
+    unsigned length() const { return values.size(); }
+    void add(Value value) { values.push_back(std::move(value)); }
 
-    std::vector<JSONValue>::const_iterator begin() const { return values.begin(); }
-    std::vector<JSONValue>::const_iterator end() const { return values.end(); }
+    std::vector<Value>::const_iterator begin() const { return values.begin(); }
+    std::vector<Value>::const_iterator end() const { return values.end(); }
 };
 
-} // namespace banjo
+} // namespace banjo::json
 
 #endif

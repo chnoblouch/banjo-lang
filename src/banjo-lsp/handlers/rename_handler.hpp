@@ -15,11 +15,11 @@ public:
     RenameHandler(Workspace &workspace);
     ~RenameHandler();
 
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 
 private:
-    const SourceFile *find_file(const JSONObject &params);
-    const SymbolRef *find_symbol(const SourceFile &file, const JSONObject &params);
+    const SourceFile *find_file(const json::Object &params);
+    const SymbolRef *find_symbol(const SourceFile &file, const json::Object &params);
 };
 
 } // namespace banjo::lsp

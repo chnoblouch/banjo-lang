@@ -4,9 +4,7 @@
 #include "connection.hpp"
 #include "workspace.hpp"
 
-namespace banjo {
-
-namespace lsp {
+namespace banjo::lsp {
 
 class DefinitionHandler : public RequestHandler {
 
@@ -17,11 +15,9 @@ public:
     DefinitionHandler(Workspace &workspace);
     ~DefinitionHandler();
 
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 };
 
-} // namespace lsp
-
-} // namespace banjo
+} // namespace banjo::lsp
 
 #endif

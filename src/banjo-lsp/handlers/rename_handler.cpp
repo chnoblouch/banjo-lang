@@ -11,19 +11,19 @@ RenameHandler::RenameHandler(Workspace &workspace) : workspace(workspace) {}
 
 RenameHandler::~RenameHandler() {}
 
-JSONValue RenameHandler::handle(const JSONObject &params, Connection & /*connection*/) {
+json::Value RenameHandler::handle(const json::Object &params, Connection & /*connection*/) {
     const SourceFile *file = find_file(params);
     if (!file) {
-        return JSONObject{{"changes", JSONObject{}}};
+        return json::Object{{"changes", json::Object{}}};
     }
 
     const SymbolRef *symbol_def = find_symbol(*file, params);
     if (!symbol_def) {
-        return JSONObject{{"changes", JSONObject{}}};
+        return json::Object{{"changes", json::Object{}}};
     }
 
     const std::string &new_name = params.get_string("newName");
-    JSONObject changes;
+    json::Object changes;
 
     for (const auto &[mod, mod_index] : workspace.get_index().mods) {
         SourceFile *use_file = workspace.find_file(mod->path);
@@ -31,7 +31,7 @@ JSONValue RenameHandler::handle(const JSONObject &params, Connection & /*connect
             continue;
         }
 
-        JSONArray edits;
+        json::Array edits;
 
         for (const SymbolRef &symbol_ref : mod_index.symbol_refs) {
             if (symbol_ref.symbol != symbol_def->symbol) {
@@ -39,7 +39,7 @@ JSONValue RenameHandler::handle(const JSONObject &params, Connection & /*connect
             }
 
             edits.add(
-                JSONObject{
+                json::Object{
                     {"range", ProtocolStructs::range_to_lsp(use_file->buffer, symbol_ref.range)},
                     {"newText", new_name},
                 }
@@ -52,22 +52,22 @@ JSONValue RenameHandler::handle(const JSONObject &params, Connection & /*connect
         }
     }
 
-    return JSONObject{{"changes", changes}};
+    return json::Object{{"changes", changes}};
 }
 
-const SourceFile *RenameHandler::find_file(const JSONObject &params) {
+const SourceFile *RenameHandler::find_file(const json::Object &params) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
     return workspace.find_file(fs_path);
 }
 
-const SymbolRef *RenameHandler::find_symbol(const SourceFile &file, const JSONObject &params) {
+const SymbolRef *RenameHandler::find_symbol(const SourceFile &file, const json::Object &params) {
     ModuleIndex *index = workspace.find_index(file.sir_mod);
     if (!index) {
         return nullptr;
     }
 
-    const JSONObject &lsp_position = params.get_object("position");
+    const json::Object &lsp_position = params.get_object("position");
     int line = lsp_position.get_int("line");
     int column = lsp_position.get_int("character");
     TextPosition position = ASTNavigation::pos_from_lsp(file.buffer, line, column);

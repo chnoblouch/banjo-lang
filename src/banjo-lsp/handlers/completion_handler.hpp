@@ -37,14 +37,14 @@ private:
 
 public:
     CompletionHandler(Workspace &workspace);
-    JSONValue handle(const JSONObject &params, Connection &connection);
+    json::Value handle(const json::Object &params, Connection &connection);
 
 private:
-    JSONObject serialize_item(unsigned index, CompletionEngine::Item item);
-    JSONObject serialize_simple_item(unsigned index, CompletionEngine::Item item, LSPCompletionItemKind kind);
-    JSONObject serialize_func_call_template(unsigned index, CompletionEngine::Item &item, const sir::FuncType &type);
-    JSONObject serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item);
-    JSONObject serialize_struct_field_template(unsigned index, CompletionEngine::Item &item);
+    json::Object serialize_item(unsigned index, CompletionEngine::Item item);
+    json::Object serialize_simple_item(unsigned index, CompletionEngine::Item item, LSPCompletionItemKind kind);
+    json::Object serialize_func_call_template(unsigned index, CompletionEngine::Item &item, const sir::FuncType &type);
+    json::Object serialize_struct_literal_template(unsigned index, CompletionEngine::Item &item);
+    json::Object serialize_struct_field_template(unsigned index, CompletionEngine::Item &item);
 };
 
 } // namespace banjo::lsp

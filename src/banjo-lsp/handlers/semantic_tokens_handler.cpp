@@ -13,18 +13,18 @@ SemanticTokensHandler::SemanticTokensHandler(Workspace &workspace) : workspace(w
 
 SemanticTokensHandler::~SemanticTokensHandler() {}
 
-JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &connection) {
+json::Value SemanticTokensHandler::handle(const json::Object &params, Connection &connection) {
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
     SourceFile *file = workspace.find_file(fs_path);
     if (!file) {
-        return JSONObject{{"data", JSONArray{}}};
+        return json::Object{{"data", json::Array{}}};
     }
 
     ModuleIndex *index = workspace.find_index(file->sir_mod);
     if (!index) {
-        return JSONObject{{"data", JSONArray{}}};
+        return json::Object{{"data", json::Array{}}};
     }
 
     std::vector<SemanticToken> tokens;
@@ -38,9 +38,9 @@ JSONValue SemanticTokensHandler::handle(const JSONObject &params, Connection &co
     });
 
     std::vector<LSPSemanticToken> lsp_tokens = tokens_to_lsp(file->buffer, tokens);
-    JSONArray data = serialize(lsp_tokens);
+    json::Array data = serialize(lsp_tokens);
 
-    return JSONObject{{"data", data}};
+    return json::Object{{"data", data}};
 }
 
 std::vector<LSPSemanticToken> SemanticTokensHandler::tokens_to_lsp(
@@ -77,8 +77,8 @@ std::vector<LSPSemanticToken> SemanticTokensHandler::tokens_to_lsp(
     return lsp_tokens;
 }
 
-JSONArray SemanticTokensHandler::serialize(const std::vector<LSPSemanticToken> &lsp_tokens) {
-    JSONArray data;
+json::Array SemanticTokensHandler::serialize(const std::vector<LSPSemanticToken> &lsp_tokens) {
+    json::Array data;
 
     for (const LSPSemanticToken &lsp_token : lsp_tokens) {
         data.add(lsp_token.delta_line);
@@ -102,9 +102,13 @@ void SemanticTokensHandler::add_symbol_token(
         tokens.push_back({range, SemanticTokenType::FUNCTION, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::ConstDef>()) {
         tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::READONLY});
-    } else if (
-        symbol.is_one_of<sir::StructDef, sir::EnumDef, sir::UnionDef, sir::UnionCase, sir::ProtoDef, sir::TypeAlias>()
-    ) {
+    } else if (symbol.is_one_of<
+                   sir::StructDef,
+                   sir::EnumDef,
+                   sir::UnionDef,
+                   sir::UnionCase,
+                   sir::ProtoDef,
+                   sir::TypeAlias>()) {
         tokens.push_back({range, SemanticTokenType::STRUCT, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::StructField>()) {
         tokens.push_back({range, SemanticTokenType::PROPERTY, SemanticTokenModifiers::NONE});
