@@ -3,7 +3,7 @@
 # test:error 10:18 "integer value does not fit into any integer type"
 # test:error 11:18 "integer value does not fit into any integer type"
 # test:error 12:18 "integer value does not fit into any integer type"
-# test:error 13:18 "integer value does not fit into any integer type"
+# test:error 13:19 "integer value does not fit into any integer type"
 
 func main() {
     var a: u64 = 184467440737095516150;
@@ -15,7 +15,7 @@ func main() {
 
 # test:subtest
 # test:error 21:18 "integer value does not fit into any integer type"
-# test:error 22:18 "integer value does not fit into any integer type"
+# test:error 22:19 "integer value does not fit into any integer type"
 
 func main() {
     var a: u64 = 0xFFFFFFFFFFFFFFFF0;
@@ -24,7 +24,7 @@ func main() {
 
 # test:subtest
 # test:error 30:18 "integer value does not fit into any integer type"
-# test:error 31:18 "integer value does not fit into any integer type"
+# test:error 31:19 "integer value does not fit into any integer type"
 
 func main() {
     var a: u64 = 0b11111111111111111111111111111111111111111111111111111111111111110;
@@ -34,7 +34,7 @@ func main() {
 # test:subtest
 # test:error 40:18 "integer value does not fit into any integer type"
 # test:error 41:18 "integer value does not fit into any integer type"
-# test:error 42:18 "integer value does not fit into any integer type"
+# test:error 42:19 "integer value does not fit into any integer type"
 
 func main() {
     var a: u64 = 0o17777777777777777777770;
@@ -43,7 +43,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 49:19 "integer value does not fit into any integer type"
+# test:error 49:20 "integer value does not fit into any integer type"
 
 func main() {
     var a: u64 = --0x1FFFFFFFFFFFFFFFF;

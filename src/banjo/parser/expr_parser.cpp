@@ -256,10 +256,6 @@ ParseResult ExprParser::parse_int_literal() {
     std::string_view value = stream.get()->value;
     bool valid = true;
 
-    if (value[0] == '-') {
-        value = value.substr(1);
-    }
-
     unsigned base;
 
     if (value.starts_with("0x")) {

@@ -143,11 +143,6 @@ void Lexer::read_comment() {
 }
 
 void Lexer::read_punctuation() {
-    if (reader.get() == '-' && is_number_start_char(reader.peek())) {
-        reader.consume();
-        return read_number();
-    }
-
     TokenType type;
 
     switch (reader.consume()) {

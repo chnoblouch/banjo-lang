@@ -936,7 +936,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
     }
 }
 
-sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
+sir::IntLiteral *SIRGenerator::generate_int_literal(ASTNode *node) {
     return create(
         sir::IntLiteral{
             .ast_node = node,
@@ -946,7 +946,7 @@ sir::Expr SIRGenerator::generate_int_literal(ASTNode *node) {
     );
 }
 
-sir::Expr SIRGenerator::generate_fp_literal(ASTNode *node) {
+sir::FPLiteral *SIRGenerator::generate_fp_literal(ASTNode *node) {
     return create(
         sir::FPLiteral{
             .ast_node = node,
@@ -1135,6 +1135,21 @@ sir::Expr SIRGenerator::generate_binary_expr(ASTNode *node, sir::BinaryOp op) {
 
 sir::Expr SIRGenerator::generate_unary_expr(ASTNode *node, sir::UnaryOp op) {
     ASTNode *value_node = node->first_child;
+
+    // HACK: Move this into the expr analyzer.
+    if (op == sir::UnaryOp::NEG) {
+        if (value_node->type == AST_INT_LITERAL) {
+            sir::IntLiteral *literal = generate_int_literal(value_node);
+            literal->ast_node = node;
+            literal->value = -literal->value;
+            return literal;
+        } else if (value_node->type == AST_FP_LITERAL) {
+            sir::FPLiteral *literal = generate_fp_literal(value_node);
+            literal->ast_node = node;
+            literal->value = -literal->value;
+            return literal;
+        }
+    }
 
     return create(
         sir::UnaryExpr{

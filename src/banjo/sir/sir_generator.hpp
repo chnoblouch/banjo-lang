@@ -90,8 +90,8 @@ private:
     sir::Stmt generate_error_stmt(ASTNode *node);
 
     sir::Expr generate_expr(ASTNode *node);
-    sir::Expr generate_int_literal(ASTNode *node);
-    sir::Expr generate_fp_literal(ASTNode *node);
+    sir::IntLiteral *generate_int_literal(ASTNode *node);
+    sir::FPLiteral *generate_fp_literal(ASTNode *node);
     sir::Expr generate_bool_literal(ASTNode *node, bool value);
     sir::Expr generate_char_literal(ASTNode *node);
     sir::Expr generate_null_literal(ASTNode *node);
