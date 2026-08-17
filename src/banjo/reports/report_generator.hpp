@@ -118,10 +118,9 @@ public:
     );
 
     void report_err_struct_overlapping_not_one_field(const sir::StructLiteral &struct_literal);
-    void report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def);
-    void report_err_no_method(const sir::Ident &method_ident, const sir::UnionDef &union_def);
-    void report_err_no_method(const sir::Ident &method_ident, const sir::ProtoDef &proto_def);
+    void report_err_no_method(sir::Ident &method_ident, sir::Symbol parent);
     void report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set);
+    void report_err_not_a_method(sir::Ident &ident, sir::Symbol symbol, std::string_view parent_name);
     void report_err_continue_outside_loop(const sir::ContinueStmt &continue_stmt);
     void report_err_break_outside_loop(const sir::BreakStmt &break_stmt);
     void report_err_unexpected_array_length_type(const sir::Expr &expr);

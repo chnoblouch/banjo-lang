@@ -9,12 +9,44 @@ func main() {
 }
 
 # test:subtest
-# test:error 19:13 "struct 'S' has no method named 'test'"
+# test:error 19:7 "struct 'S' has no method named 'test'"
 
 struct S {}
 
 func main() {
     var s = S {};
-    var pointer = &s;
-    pointer.test();
+    var p = &s;
+    p.test();
+}
+
+# test:subtest
+# test:error 31:7 "union 'U' has no method named 'test'"
+
+union U {
+    case C ();
+}
+
+func main() {
+    var u: U = U.C();
+    u.test();
+}
+
+# test:subtest
+# test:error 44:7 "proto 'P' has no method named 'test'"
+
+proto P {}
+
+struct S: P {}
+
+func main() {
+    var s = S {};
+    var p: *P = &s;
+    p.test();
+}
+
+# test:subtest
+# test:error 51:7 "type parameter 'T' has no method named 'test'"
+
+func f[T](a: T) {
+    a.test();
 }

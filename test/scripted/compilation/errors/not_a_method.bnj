@@ -1,0 +1,72 @@
+# test:subtest
+# test:error 13:7 "'C' is not a method of 'S'"
+# test:error 14:7 "'E' is not a method of 'S'"
+
+struct S {
+    enum E {}
+ 
+    const C: i32 = 0;   
+}
+
+pub func main() {
+    var s = S {};
+    s.C();
+    s.E();
+}
+
+# test:subtest
+# test:error 27:7 "'f' is not a method of 'S'"
+# test:note 22:10 "the function does not have a 'self' parameter"
+
+struct S {
+    func f() {}
+}
+
+pub func main() {
+    var s = S {};
+    s.f();
+}
+
+# test:subtest
+# test:error 40:7 "'f' is not a method of 'S'"
+
+struct S {
+    func f(a: i32) {}
+    func f(a: bool) {}
+}
+
+pub func main() {
+    var s = S {};
+    s.f(10);
+}
+
+# test:subtest
+# test:error 55:7 "'f' is not a method of 'U'"
+# test:note 50:10 "the function does not have a 'self' parameter"
+
+union U {
+    case C();
+
+    func f() {}
+}
+
+pub func main() {
+    var u: U = U.C();
+    u.f();
+}
+
+# test:subtest
+# test:error 71:7 "'f' is not a method of 'P'"
+# test:note 63:10 "the function does not have a 'self' parameter"
+
+proto P {
+    func f() {}
+}
+
+struct S: P {}
+
+pub func main() {
+    var s = S {};
+    var p: *P = &s;
+    p.f();
+}

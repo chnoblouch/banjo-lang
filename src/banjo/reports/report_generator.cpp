@@ -535,31 +535,12 @@ void ReportGenerator::report_err_struct_overlapping_not_one_field(const sir::Str
         .report();
 }
 
-void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::StructDef &struct_def) {
+void ReportGenerator::report_err_no_method(sir::Ident &method_ident, sir::Symbol parent) {
     report_error(
-        "struct '$' has no method named '$'",
+        "$ '$' has no method named '$'",
         method_ident.ast_node,
-        struct_def.ident.ast_node,
-        method_ident.value
-    );
-}
-
-void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::UnionDef &union_def) {
-    // TODO: Test
-
-    report_error(
-        "union '$' has no method named '$'",
-        method_ident.ast_node,
-        union_def.ident.ast_node,
-        method_ident.value
-    );
-}
-
-void ReportGenerator::report_err_no_method(const sir::Ident &method_ident, const sir::ProtoDef &proto_def) {
-    report_error(
-        "proto '$' has no method named '$'",
-        method_ident.ast_node,
-        proto_def.ident.ast_node,
+        symbol_kind_name(parent),
+        parent.get_ident().ast_node,
         method_ident.value
     );
 }
@@ -573,6 +554,16 @@ void ReportGenerator::report_err_no_matching_overload(const sir::Expr &expr, sir
             overload->ident.ast_node,
             sir::Expr(&overload->type)
         );
+    }
+
+    builder.report();
+}
+
+void ReportGenerator::report_err_not_a_method(sir::Ident &ident, sir::Symbol symbol, std::string_view parent_name) {
+    ReportBuilder builder = build_error("'$' is not a method of '$'", ident.ast_node, ident.value, parent_name);
+
+    if (symbol.is<sir::FuncDef>()) {
+        builder.add_note("the function does not have a 'self' parameter", symbol.get_ident().ast_node);
     }
 
     builder.report();
@@ -990,10 +981,14 @@ std::string_view ReportGenerator::symbol_kind_name(sir::Symbol symbol) {
         return "function";
     } else if (symbol.is<sir::StructDef>()) {
         return "struct";
+    } else if (symbol.is<sir::UnionDef>()) {
+        return "union";
     } else if (symbol.is<sir::ProtoDef>()) {
         return "proto";
     } else if (symbol.is<sir::TypeAlias>()) {
         return "type alias";
+    } else if (symbol.is<sir::GenericParam>()) {
+        return "type parameter";
     } else {
         ASSERT_UNREACHABLE;
     }

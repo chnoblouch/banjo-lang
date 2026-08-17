@@ -121,6 +121,7 @@ private:
     sir::ProtoDef *proto_of(sir::UnaryOp op);
     BinaryOpType get_binary_op_type(sir::BinaryOp op);
     bool can_be_coerced(sir::Expr value);
+    bool is_method(sir::Symbol symbol);
 };
 
 } // namespace banjo::sema
