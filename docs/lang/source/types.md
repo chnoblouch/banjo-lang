@@ -252,12 +252,12 @@ func main() {
 ```
 
 Importantly, slices don't own the data, they just _point_ to it. This means a
-slice cannot becomes invalid after the backing data is deallocated:
+slice becomes invalid after the backing data is deallocated:
 
 ```banjo
 func bad_slice() -> Slice[bool] {
     var slice: Slice[bool] = [false, true];
-    return slice;  # BROKEN: Returning a slice to stack-allocated data.
+    return slice;  # BROKEN: Returning a slice to stack-allocated data
 }
 ```
 
@@ -273,11 +273,11 @@ func main() {
     var value: *u8 = "c string";
     var string_slice_1 = StringSlice.new(&value[0], 4);
 
-    # Creating a slice from a string
+    # Creating a string slice from a string
     var string = "owned string";
     var string_slice_2 = string.slice();
 
-    # Creating a slice from a string literal
+    # Creating a string slice from a string literal
     var string_slice_3: StringSlice = "literal";
 }
 ```

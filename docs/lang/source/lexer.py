@@ -52,11 +52,16 @@ class BanjoLexer(RegexLexer):
             (r"(0x|0b)?[0-9]+(\.[0-9])*", token.Number.Integer),
             (r"\bself\b", token.Name.Builtin),
             (r"\"", token.String, "string"),
+            (r"\'", token.String, "character"),
             (r"#.+", token.Comment.SingleLine),
             (r"@(\[[a-zA-Z0-9_\=]+\]|[a-zA-Z0-9_\=]+)", token.Name.Attribute)
         ],
         "string": [
             (r"\"", token.String, "root"),
             (r"[^\"]+", token.String)
+        ],
+        "character": [
+            (r"\'", token.String, "root"),
+            (r"[^\']+", token.String)
         ]
     }
