@@ -33,6 +33,25 @@ func main() {
 }
 
 # test:subtest
+# test:output "m"
+
+proto P {
+    func m(self) {
+        print('m');
+    }
+}
+
+struct S: P {}
+
+func f[T: P](t: T) {
+    t.m();
+}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
 # test:compiles
 
 proto P {}

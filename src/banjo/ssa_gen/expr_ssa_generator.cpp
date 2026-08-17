@@ -552,7 +552,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
         }
     } else if (auto placeholder_expr = call_expr.callee.match<sir::PlaceholderExpr>()) {
         if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr->kind)) {
-            if (generic_method->is_copy) {
+            if (generic_method->proto_def->role == sir::ProtoDef::Role::COPY) {
                 sir::Expr arg = call_expr.args[0].as<sir::UnaryExpr>().value;
                 bool call_method = false;
 
@@ -916,7 +916,7 @@ StoredValue ExprSSAGenerator::generate_placeholder_expr(
 StoredValue ExprSSAGenerator::generate_generic_method(const sir::PlaceholderExpr::GenericMethod &generic_method) {
     sir::Expr generic_arg = ctx.get_generic_arg(*generic_method.param);
     sir::Concrete<sir::StructDef> concrete_struct = generic_arg.as_concrete<sir::StructDef>();
-    std::string_view method_name = generic_method.decl->ident.value;
+    std::string_view method_name = generic_method.symbol_name;
     sir::FuncDef *func_def = &concrete_struct.def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
 
     ssa::Function *ssa_func = ctx.ssa_funcs.find({func_def, concrete_struct.generic_args});

@@ -1092,8 +1092,7 @@ void Printer::print_placeholder_expr(const PlaceholderExpr &placeholder_expr) {
         BEGIN_OBJECT("GenericMethod");
         PRINT_FIELD("param", generic_method->param->ident.value);
         PRINT_FIELD("proto_def", generic_method->proto_def->ident.value);
-        PRINT_FIELD("decl", generic_method->decl->ident.value);
-        PRINT_FIELD("is_copy", generic_method->is_copy ? "true" : "false");
+        PRINT_FIELD("decl", generic_method->symbol_name);
         END_OBJECT();
     } else if (auto binary_expr = std::get_if<PlaceholderExpr::BinaryExpr>(&placeholder_expr.kind)) {
         BEGIN_OBJECT("BinaryExpr");

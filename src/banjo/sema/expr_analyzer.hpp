@@ -24,6 +24,12 @@ private:
         LOGICAL,
     };
 
+    struct ResolvedGenericMethod {
+        sir::Symbol symbol;
+        sir::FuncType *type;
+        sir::ProtoDef *proto_def;
+    };
+
     SemanticAnalyzer &analyzer;
     unsigned flags;
 
@@ -63,8 +69,7 @@ private:
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);
 
     Result analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr, bool &is_method);
-
-    std::pair<sir::FuncDecl *, sir::Concrete<sir::ProtoDef>> resolve_generic_method_call(
+    std::optional<ResolvedGenericMethod> resolve_generic_method_call(
         sir::GenericParam &generic_param,
         std::string_view name
     );

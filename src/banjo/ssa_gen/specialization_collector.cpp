@@ -439,7 +439,7 @@ void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr 
             sir::Expr generic_arg = entry.resolve_param(*generic_method->param);
 
             if (auto concrete_struct = generic_arg.match_concrete<sir::StructDef>()) {
-                std::string_view method_name = generic_method->decl->ident.value;
+                std::string_view method_name = generic_method->symbol_name;
                 sir::Symbol func_def = concrete_struct->def->block.symbol_table->look_up(method_name);
 
                 // TODO: The method should always be defined?

@@ -1007,8 +1007,7 @@ struct PlaceholderExpr {
     struct GenericMethod {
         GenericParam *param;
         ProtoDef *proto_def;
-        FuncDecl *decl;
-        bool is_copy;
+        std::string_view symbol_name;
     };
 
     struct BinaryExpr {

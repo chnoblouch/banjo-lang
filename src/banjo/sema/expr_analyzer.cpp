@@ -1394,26 +1394,11 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
         }
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         std::string_view name = dot_expr.rhs.value;
-        auto [method, concrete_proto] = resolve_generic_method_call(*generic_param, name);
 
-        if (method) {
-            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
+        if (auto method = resolve_generic_method_call(*generic_param, name)) {
+            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method->symbol);
 
-            sir::FuncType *func_type = analyzer.create(method->type);
-
-            if (concrete_proto.is_specialization()) {
-                sir::Specializer specializer{analyzer.mod->trivial_arena, concrete_proto};
-                func_type = specializer.specialize_func_type(*func_type);
-            }
-
-            // TODO: generics
-            if (auto pseudo_type = func_type->return_type.match<sir::PseudoType>()) {
-                if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
-                    func_type->return_type = lhs_type;
-                }
-            }
-
-            if (!utils::is_one_of(concrete_proto.def->role, {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY})) {
+            if (!utils::is_one_of(method->proto_def->role, {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY})) {
                 analyzer.report_generator.report_err_cannot_call_generic_operator_overload(dot_expr.rhs);
                 return Result::ERROR;
             }
@@ -1421,12 +1406,11 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
             out_call_expr.callee = analyzer.create(
                 sir::PlaceholderExpr{
                     .ast_node = nullptr,
-                    .type = func_type,
+                    .type = method->type,
                     .kind = sir::PlaceholderExpr::GenericMethod{
                         .param = generic_param,
-                        .proto_def = concrete_proto.def,
-                        .decl = method,
-                        .is_copy = concrete_proto.def == analyzer.std_copy_def,
+                        .proto_def = method->proto_def,
+                        .symbol_name = method->symbol.get_name(),
                     },
                 }
             );
@@ -1446,7 +1430,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
     }
 }
 
-std::pair<sir::FuncDecl *, sir::Concrete<sir::ProtoDef>> ExprAnalyzer::resolve_generic_method_call(
+std::optional<ExprAnalyzer::ResolvedGenericMethod> ExprAnalyzer::resolve_generic_method_call(
     sir::GenericParam &generic_param,
     std::string_view name
 ) {
@@ -1459,20 +1443,52 @@ std::pair<sir::FuncDecl *, sir::Concrete<sir::ProtoDef>> ExprAnalyzer::resolve_g
         }
     }
 
-    for (sir::Expr component : components) {
-        auto concrete_proto = component.match_concrete<sir::ProtoDef>();
-        sir::Symbol method = concrete_proto->def->block.symbol_table->look_up_local(name);
+    std::optional<sir::Concrete<sir::ProtoDef>> concrete_proto;
+    sir::Symbol symbol = nullptr;
+    sir::FuncType *func_type = nullptr;
 
-        if (auto func_decl = method.match<sir::FuncDecl>()) {
+    for (sir::Expr component : components) {
+        concrete_proto = component.match_concrete<sir::ProtoDef>();
+        sir::Symbol candidate = concrete_proto->def->block.symbol_table->look_up_local(name);
+
+        if (auto func_decl = candidate.match<sir::FuncDecl>()) {
             if (func_decl->is_method()) {
-                return {func_decl, *concrete_proto};
+                symbol = candidate;
+                func_type = &func_decl->type;
+                break;
             }
-        } else if (method.is<sir::FuncDef>()) {
-            // TODO
+        } else if (auto func_def = candidate.match<sir::FuncDef>()) {
+            if (func_def->is_method()) {
+                symbol = candidate;
+                func_type = &func_def->type;
+                break;
+            }
         }
     }
 
-    return {nullptr, {}};
+    if (!symbol) {
+        return {};
+    }
+
+    func_type = analyzer.create(*func_type);
+
+    if (concrete_proto->is_specialization()) {
+        sir::Specializer specializer{analyzer.mod->trivial_arena, *concrete_proto};
+        func_type = specializer.specialize_func_type(*func_type);
+    }
+
+    // TODO: generics
+    if (auto pseudo_type = func_type->return_type.match<sir::PseudoType>()) {
+        if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
+            func_type->return_type = analyzer.create<sir::SymbolExpr>({
+                .ast_node = nullptr,
+                .type = nullptr,
+                .symbol = &generic_param,
+            });
+        }
+    }
+
+    return ResolvedGenericMethod{symbol, func_type, concrete_proto->def};
 }
 
 Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr) {

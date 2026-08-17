@@ -27,7 +27,7 @@ SKIPPED_TESTS = set([
     "errors.cannot_iter.4",
     "errors.recursive_struct.6",
     "features.meta_if.8",
-    "features.generics.constraint.6",
+    "features.generics.constraint.7",
     "features.meta_for.0",
     "features.generics.protos.3",
     "fixed_bugs.generics.field_array_of_self.0",
