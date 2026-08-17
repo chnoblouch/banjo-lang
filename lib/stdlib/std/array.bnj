@@ -117,7 +117,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
                 data[i] = self.slice.data[i].copy();
             }
         } else {
-            panic_cannot_copy_array();
+            panic_cannot_copy_array[T]();
         }
 
         # memory.copy(self.slice.data, data, size);

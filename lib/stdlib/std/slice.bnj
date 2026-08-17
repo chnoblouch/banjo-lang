@@ -4,7 +4,7 @@ use std.{
     convert,
 };
 
-use internal.std_panics.{panic_out_of_bounds_array, panic_cannot_compare_slice};
+use internal.std_panics.{panic_out_of_bounds_array, panic_cannot_compare_slices};
 
 struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     var data: *T;
@@ -75,7 +75,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
 
             return true;
         } else {
-            panic_cannot_compare_slice();
+            panic_cannot_compare_slices[T]();
             return false;
         }
     }

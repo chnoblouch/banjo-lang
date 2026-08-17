@@ -51,11 +51,16 @@ func panic_cannot_find_key_map[K](ref key: K) {
 }
 
 @never_inline
-func panic_cannot_copy_array() {
-    panic("cannot copy array ('T' does not implement 'Copy')");
+func panic_cannot_copy_array[T]() {
+    panic("cannot copy array (type '" + str(meta(T).name) + "' does not implement 'Copy')");
 }
 
 @never_inline
-func panic_cannot_compare_slice() {
-    panic("cannot compare slices ('T' does not implement 'Compare[T]')");
+func panic_cannot_compare_slices[T]() {
+    panic("cannot compare slices (type '" + str(meta(T).name) + "' does not implement 'Compare')");
+}
+
+@never_inline
+func panic_cannot_convert_to_path[T]() {
+    panic("cannot create path from type '" + str(meta(T).name) + "'");
 }

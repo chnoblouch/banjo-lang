@@ -1,4 +1,5 @@
 use std.{platform, io.Error, protos.{ToRepr, ToString}};
+use internal.std_panics.panic_cannot_convert_to_path;
 
 struct Path: ToString, ToRepr {
     var path: String;
@@ -16,6 +17,8 @@ struct Path: ToString, ToRepr {
             path = Path { path: value.copy() };
         } else if T == *u8 {
             path = Path { path: String.from_cstring(value as *u8) };
+        } else {
+            panic_cannot_convert_to_path[T]();
         }
 
         path.normalize();
