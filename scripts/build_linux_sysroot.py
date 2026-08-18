@@ -41,8 +41,9 @@ GCC_LIBRARIES = [
 
 
 if __name__ == "__main__":
-    glibc_version = sys.argv[1] if len(sys.argv) > 1 else "2.43"
-    gcc_version = sys.argv[2] if len(sys.argv) > 2 else "16.2.0"
+    # Defaults are based on libraries available on Ubuntu 24.04
+    glibc_version = sys.argv[1] if len(sys.argv) > 1 else "2.39"
+    gcc_version = sys.argv[2] if len(sys.argv) > 2 else "13.4.0"
 
     print(f"Building glibc version {glibc_version}")
     print(f"Building libgcc version {gcc_version}")
@@ -92,6 +93,8 @@ if __name__ == "__main__":
             f"{glibc_source_path}/configure",
             f"--prefix={glibc_install_path}",
             f"--libdir={glibc_install_path}/lib",
+            f"--build={target}",
+            f"--host={target}",
             "--disable-werror",
             "--disable-mathvec",
         ],
@@ -126,7 +129,14 @@ if __name__ == "__main__":
     glibc_licenses_dir.mkdir(parents=True)
     gcc_licenses_dir.mkdir(parents=True)
 
-    for file in GLIBC_LIBRARIES:
+    glibc_libraries = GLIBC_LIBRARIES
+
+    if arch == "x86_64":
+        glibc_libraries.append("ld-linux-x86-64.so.2")
+    if arch == "aarch64":
+        glibc_libraries.append("ld-linux-aarch64.so.1")
+
+    for file in glibc_libraries:
         if type(file) is str:
             shutil.copy(glibc_install_path / "lib" / file, out_dir / file)
         elif type(file) is tuple:
@@ -140,7 +150,10 @@ if __name__ == "__main__":
     shutil.copy(gcc_install_path / "lib64" / "libgcc_s.so.1", out_dir / "libgcc_s.so")
 
     for file in ["COPYINGv2", "COPYING.LESSERv2", "COPYINGv3", "COPYING.LIB", "LICENSES"]:
-        shutil.copy(glibc_source_path / file, glibc_licenses_dir / file)
+        src = glibc_source_path / file
+
+        if Path(src).is_file():
+            shutil.copy(src, glibc_licenses_dir / file)
 
     for file in ["COPYING", "COPYING.LIB", "COPYING.RUNTIME", "COPYING3", "COPYING3.LIB"]:
         shutil.copy(gcc_source_path / file, gcc_licenses_dir / file)

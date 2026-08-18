@@ -1481,6 +1481,16 @@ void CLI::invoke_unix_linker() {
     args.push_back("-lpthread");
     args.push_back("-lc_nonshared");
 
+    if (target.arch == "aarch64") {
+        // Explicitly link against the dynamic linker on AArch64 because it
+        // provides the symbol `__stack_chk_guard` for libraries that use stack
+        // protection.
+        // When building on for the host, `libc.so` is a linker script that
+        // automatically links `ld-linux-aarch64.so.1`, but when cross-compiling
+        // with our custom sysroot, this has to be done manually.
+        args.push_back("-l:ld-linux-aarch64.so.1");
+    }
+
     for (const std::string &lib : additional_libraries) {
         args.push_back("-l" + lib);
     }
