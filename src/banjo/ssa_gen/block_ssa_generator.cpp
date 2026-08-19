@@ -434,8 +434,11 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
 
         ASSERT(specialization);
 
+        sir::Block &block = *std::get<sir::Block *>(meta_for_stmt.block);
+
         ctx.push_specialization(*specialization);
-        generate_block_body(*std::get<sir::Block *>(meta_for_stmt.block));
+        generate_block_allocas(block);
+        generate_block_body(block);
         ctx.pop_specialization(*specialization);
     }
 }
@@ -471,9 +474,8 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
 
     if (final_resource.ownership == sir::Ownership::OWNED) {
         generate_deinit_call(final_resource, std::move(ssa_ptr));
-    } else if (
-        final_resource.ownership == sir::Ownership::MOVED_COND || final_resource.ownership == sir::Ownership::INIT_COND
-    ) {
+    } else if (final_resource.ownership == sir::Ownership::MOVED_COND ||
+               final_resource.ownership == sir::Ownership::INIT_COND) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
 

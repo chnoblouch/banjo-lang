@@ -1,0 +1,17 @@
+# test:output "abcd"
+
+func f[Args: ...](args: Args) {
+    meta for arg in args {
+        var a: [i64; 4] = [0, 1, 2, 3];
+    }
+}
+
+func main() {
+    print("a");
+    f();
+    print("b");
+    f(42);
+    print("c");
+    f(42, true, 0.5, 'x');
+    print("d");
+}
