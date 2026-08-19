@@ -230,6 +230,8 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     preamble_symbols = {
         {"print", find_std_symbol({"internal", "preamble"}, "print")},
         {"println", find_std_symbol({"internal", "preamble"}, "println")},
+        {"fprint", find_std_symbol({"internal", "preamble"}, "fprint")},
+        {"fprintln", find_std_symbol({"internal", "preamble"}, "fprintln")},
         {"assert", find_std_symbol({"internal", "preamble"}, "assert")},
         {"exit", find_std_symbol({"internal", "preamble"}, "exit")},
         {"panic", find_std_symbol({"internal", "preamble"}, "panic")},
