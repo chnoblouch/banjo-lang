@@ -122,7 +122,7 @@ def check_output(test, conditions):
 def check_exit_code(test, conditions):
     for condition, args in conditions:
         if condition == "exitcode":
-            expected_exit_code = args[0]
+            expected_exit_code = int(args[0])
             break
 
     result = run_executable(test)

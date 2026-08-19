@@ -292,7 +292,7 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
     } else if (auto enum_variant = symbol_expr.symbol.match<sir::EnumVariant>()) {
         return generate(enum_variant->value).turn_into_value(ctx);
     } else if (auto local = symbol_expr.symbol.match<sir::Local>()) {
-        ssa::VirtualRegister reg = ctx.ssa_local_regs[local];
+        ssa::VirtualRegister reg = ctx.ssa_local_regs.at(local);
         ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         return StoredValue::create_reference(ssa_ptr, ssa_type);

@@ -19,7 +19,7 @@ public:
     BlockSSAGenerator(SSAGeneratorContext &ctx);
 
     void generate_block(const sir::Block &block);
-    void generate_block_allocas(const sir::Block &block);
+    void generate_block_allocas(const sir::Block &block, const sir::Local *excluded = nullptr);
     void generate_resource_flags(const sir::Resource &resource);
     void generate_block_body(const sir::Block &block);
     void generate_block_deinit(const sir::Block &block);

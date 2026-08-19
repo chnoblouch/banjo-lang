@@ -1,0 +1,73 @@
+# test:common
+
+use std.format.format;
+
+# test:subtest
+# test:output "string"
+
+func main() {
+    print(format("string"));
+}
+
+# test:subtest
+# test:output "i: 42"
+
+func main() {
+    print(format("i: {}", 42));
+}
+
+# test:subtest
+# test:output "i: 42, end"
+
+func main() {
+    print(format("i: {}, end", 42));
+}
+
+# test:subtest
+# test:output "i: 42, b: true"
+
+func main() {
+    print(format("i: {}, b: {}", 42, true));
+}
+
+# test:subtest
+# test:output "i: 42, b: true, f: 0.5, end"
+
+func main() {
+    print(format("i: {}, b: {}, f: {}, end", 42, true, 0.5));
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {}", 0, 1);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {, end");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {", 0);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: }");
+}

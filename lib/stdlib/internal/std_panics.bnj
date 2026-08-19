@@ -61,6 +61,11 @@ func panic_cannot_compare_slices[T]() {
 }
 
 @never_inline
+func panic_invalid_format_template() {
+    panic("invalid format template");
+}
+
+@never_inline
 func panic_cannot_convert_to_path[T]() {
     panic("cannot create path from type '" + str(meta(T).name) + "'");
 }

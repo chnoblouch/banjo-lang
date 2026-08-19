@@ -1,0 +1,35 @@
+use std.convert;
+use internal.std_panics.panic_invalid_format_template;
+
+pub func format[Args: ...](template: String, args: Args) -> String {
+    return format_packed(template, args);
+}
+
+func format_packed[Args](template: String, args: Args) -> String {
+    var result = "";
+    var index: usize = 0;
+
+    meta for arg in args {
+        var substring = template.slice().substring(index, template.length());
+
+        var lbrace = substring.find('{');
+        var rbrace = substring.find('}');
+
+        if !lbrace.has_value || !rbrace.has_value || lbrace.value + 1 != rbrace.value {
+            panic_invalid_format_template();
+        }
+
+        index += lbrace.value + 2;
+        result += substring.substring(0, lbrace.value);
+        result += convert.to_string(arg);
+    }
+
+    var substring = template.slice().substring(index, template.length());
+
+    if substring.find('{').has_value || substring.find('}').has_value {
+        panic_invalid_format_template();
+    }
+
+    result += substring;
+    return result;
+}

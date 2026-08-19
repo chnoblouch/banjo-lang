@@ -25,9 +25,13 @@ void BlockSSAGenerator::generate_block(const sir::Block &block) {
     generate_block_body(block);
 }
 
-void BlockSSAGenerator::generate_block_allocas(const sir::Block &block) {
+void BlockSSAGenerator::generate_block_allocas(const sir::Block &block, const sir::Local *excluded /* = nullptr */) {
     for (const auto &[name, symbol] : block.symbol_table->symbols) {
         if (auto local = symbol.match<sir::Local>()) {
+            if (local == excluded) {
+                continue;
+            }
+
             ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
             ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
             ctx.ssa_local_regs[local] = reg;
@@ -117,7 +121,7 @@ void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt) {
 
 void BlockSSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {
     if (var_stmt.value) {
-        ssa::VirtualRegister reg = ctx.ssa_local_regs[&var_stmt.local];
+        ssa::VirtualRegister reg = ctx.ssa_local_regs.at(&var_stmt.local);
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         ExprSSAGenerator(ctx).generate_into_dst(var_stmt.value, ssa_ptr);
     }
@@ -233,7 +237,7 @@ void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt)
         ssa::Type ssa_case_type = TypeSSAGenerator(ctx).generate(sir_branch.local.type);
         ssa::VirtualRegister ssa_data_ptr_reg = ctx.append_memberptr(ssa_value.value_type, ssa_value.get_ptr(), 1);
         StoredValue ssa_data_ptr = StoredValue::create_reference(ssa_data_ptr_reg, ssa_case_type);
-        ssa::VirtualRegister ssa_local_reg = ctx.ssa_local_regs[&sir_branch.local];
+        ssa::VirtualRegister ssa_local_reg = ctx.ssa_local_regs.at(&sir_branch.local);
         ssa_data_ptr.copy_to(ssa_local_reg, ctx);
 
         generate_block_body(*sir_branch.block);
@@ -417,11 +421,8 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
         ctx.specializations.meta_for_entries.at(&meta_for_stmt);
 
     for (unsigned i = 0; i < values.size(); i++) {
-        ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(values[i].get_type());
-        ssa::VirtualRegister dst = ctx.append_alloca(ssa_type);
-        ExprSSAGenerator{ctx}.generate_as_reference(values[i]).copy_to(dst, ctx);
-
-        ctx.ssa_local_regs[&meta_for_stmt.local] = dst;
+        StoredValue dst = ExprSSAGenerator{ctx}.generate_as_reference(values[i]);
+        ctx.ssa_local_regs[&meta_for_stmt.local] = dst.get_ptr().get_register();
 
         SpecializationCollector::Entry *specialization = nullptr;
 
@@ -437,7 +438,7 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
         sir::Block &block = *std::get<sir::Block *>(meta_for_stmt.block);
 
         ctx.push_specialization(*specialization);
-        generate_block_allocas(block);
+        generate_block_allocas(block, &meta_for_stmt.local);
         generate_block_body(block);
         ctx.pop_specialization(*specialization);
     }
