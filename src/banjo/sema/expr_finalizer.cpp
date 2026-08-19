@@ -445,18 +445,15 @@ Result ExprFinalizer::finalize_coercion(sir::MapLiteral &map_literal, sir::Expr 
 
 Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr type) {
     if (binary_expr.is_numeric_op()) {
-        if (!binary_expr.type.is<sir::PseudoType>()) {
-            return Result::SUCCESS;
-        }
+        Result result = Result::SUCCESS;
 
-        Result lhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.lhs, type);
-        Result rhs_result = ExprFinalizer(analyzer).finalize_by_coercion(binary_expr.rhs, type);
-
-        if (lhs_result != Result::SUCCESS || rhs_result != Result::SUCCESS) {
-            return Result::ERROR;
+        if (binary_expr.type.is<sir::PseudoType>()) {
+            RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(binary_expr.lhs, type));
+            RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(binary_expr.rhs, type));
         }
 
         binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
+        RESULT_PROPAGATE(result);
     } else {
         // If the expression returns a boolean, the operands have already been analyzed in the first
         // phase of expression analysis.
@@ -472,21 +469,19 @@ Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr 
 }
 
 Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr type) {
-    Result partial_result;
+    Result result = Result::SUCCESS;
 
     if (unary_expr.op == sir::UnaryOp::NEG || unary_expr.op == sir::UnaryOp::BIT_NOT) {
-        partial_result = ExprFinalizer(analyzer).finalize_by_coercion(unary_expr.value, type);
+        RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(unary_expr.value, type));
     } else {
-        partial_result = ExprFinalizer(analyzer).finalize(unary_expr.value);
+        RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(unary_expr.value));
     }
 
     if (unary_expr.type.is<sir::PseudoType>()) {
         unary_expr.type = analyzer.get_resolved_type(unary_expr.value);
     }
 
-    if (partial_result != Result::SUCCESS) {
-        return Result::ERROR;
-    }
+    RESULT_PROPAGATE(result);
 
     if (unary_expr.type != type) {
         analyzer.report_generator.report_err_type_mismatch(&unary_expr, type, unary_expr.type);

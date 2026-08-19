@@ -174,5 +174,5 @@ func main() {
 	print(',');
 	print_flat(i.map(|value: ref i32| -> f32 { return value as f32 + 0.5; }));
 	print(',');
-	print_flat(o.map(|value: ref Object| -> i32 { return value.id - 1; }));
+	print_flat(o.map(|value: ref Object| -> u32 { return value.id - 1; }));
 }

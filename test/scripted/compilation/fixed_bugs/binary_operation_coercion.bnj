@@ -1,0 +1,42 @@
+# test:subtest
+# test:error 6:18 "type mismatch (expected 'i32', got 'i64')"
+
+func main() {
+    var a: i64 = 0;
+    var b: i32 = a + 1;
+}
+
+# test:subtest
+# test:error 14:18 "type mismatch (expected 'u64', got 'u32')"
+
+func main() {
+    var a: u32 = 0;
+    var b: u64 = a + 1;
+}
+
+# test:subtest
+# test:error 22:18 "type mismatch (expected 'f32', got 'f64')"
+
+func main() {
+    var a: f64 = 0.0;
+    var b: f32 = a + 1.0;
+}
+
+# test:subtest
+# test:error 31:18 "type mismatch (expected 'i16', got 'i32')"
+
+func main() {
+    var a: i32 = 0;
+    var b: i32 = 1;
+    var c: i16 = a + b;
+}
+
+# test:subtest
+# test:error 41:16 "type mismatch (expected 'S', got 'i32')"
+
+struct S {}
+
+func main() {
+    var a: i32 = 0;
+    var b: S = a + 1;
+}
