@@ -5,7 +5,6 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-#include <stack>
 #include <unordered_map>
 
 namespace banjo::sema {
@@ -84,11 +83,14 @@ private:
     Result analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx);
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, Context &ctx);
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, Context &ctx);
+    Result analyze_cast_expr(sir::CastExpr &cast_expr, Context &ctx);
+    Result analyze_index_expr(sir::IndexExpr &index_expr, Context &ctx);
     Result analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_call_expr(sir::CallExpr &call_expr, Context &ctx);
     Result analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_try_expr(sir::TryExpr &try_expr, Context &ctx);
     Result analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx);
+    Result analyze_coercion_expr(sir::CoercionExpr &coercion_expr, Context &ctx);
     Result analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr);
 
     Result analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx);

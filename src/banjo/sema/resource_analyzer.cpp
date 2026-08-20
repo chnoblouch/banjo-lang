@@ -288,7 +288,6 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, bool moving, bool conditi
 Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
     Result result = Result::SUCCESS;
 
-    // FIXME: Not all expression types are handled.
     SIR_VISIT_EXPR(
         expr,
         SIR_VISIT_IGNORE,                                // empty
@@ -304,18 +303,18 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_struct_literal(*inner, ctx),    // struct_literal
         SIR_VISIT_IGNORE,                                // union_case_literal
         SIR_VISIT_IGNORE,                                // map_literal
-        SIR_VISIT_IGNORE,                                // closure_literal
+        SIR_VISIT_IGNORE,                                // closure_literal (TODO)
         result = analyze_symbol_expr(*inner, expr, ctx), // symbol_expr
         result = analyze_binary_expr(*inner, ctx),       // binary_expr
         result = analyze_unary_expr(*inner, ctx),        // unary_expr
-        SIR_VISIT_IGNORE,                                // cast_expr
-        SIR_VISIT_IGNORE,                                // index_expr
+        result = analyze_cast_expr(*inner, ctx),         // cast_expr
+        result = analyze_index_expr(*inner, ctx),        // index_expr
         result = analyze_call_expr(*inner, ctx),         // call_expr
         result = analyze_field_expr(*inner, expr, ctx),  // field_expr
         SIR_VISIT_IGNORE,                                // range_expr
         result = analyze_try_expr(*inner, ctx),          // try_expr
         result = analyze_tuple_expr(*inner, ctx),        // tuple_expr
-        SIR_VISIT_IGNORE,                                // coercion_expr
+        result = analyze_coercion_expr(*inner, ctx),     // coercion_expr
         SIR_VISIT_IGNORE,                                // specialize_expr
         SIR_VISIT_IGNORE,                                // primitive_type
         SIR_VISIT_IGNORE,                                // pointer_type
@@ -332,14 +331,14 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                // bracket_expr
         SIR_VISIT_IGNORE,                                // dot_expr
         SIR_VISIT_IGNORE,                                // pseudo_tpe
-        SIR_VISIT_IGNORE,                                // meta_access
-        SIR_VISIT_IGNORE,                                // meta_field_expr
-        SIR_VISIT_IGNORE,                                // meta_call_expr
+        SIR_VISIT_IGNORE,                                // meta_access (TODO)
+        SIR_VISIT_IGNORE,                                // meta_field_expr (TODO)
+        SIR_VISIT_IGNORE,                                // meta_call_expr (TODO)
         SIR_VISIT_IGNORE,                                // init_expr
         SIR_VISIT_IGNORE,                                // move_expr
         result = analyze_deinit_expr(*inner, expr),      // deinit_expr
         SIR_VISIT_IGNORE,                                // type_check_expr
-        SIR_VISIT_IGNORE,                                // placeholder_expr
+        SIR_VISIT_IGNORE,                                // placeholder_expr (TODO)
         SIR_VISIT_IGNORE                                 // error
     );
 
@@ -425,6 +424,19 @@ Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, Context 
     }
 }
 
+Result ResourceAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr, Context &ctx) {
+    return analyze_expr(cast_expr.value, false, ctx.conditional);
+}
+
+Result ResourceAnalyzer::analyze_index_expr(sir::IndexExpr &index_expr, Context &ctx) {
+    Result result = Result::SUCCESS;
+
+    RESULT_MERGE(result, analyze_expr(index_expr.base, false, ctx.conditional));
+    RESULT_MERGE(result, analyze_expr(index_expr.index, false, ctx.conditional));
+
+    return result;
+}
+
 Result ResourceAnalyzer::analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx) {
     auto resource_iter = resources_by_symbols.find(symbol_expr.symbol);
     if (resource_iter == resources_by_symbols.end()) {
@@ -437,6 +449,8 @@ Result ResourceAnalyzer::analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::
 
 Result ResourceAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, Context &ctx) {
     Result result = Result::SUCCESS;
+
+    RESULT_MERGE(result, analyze_expr(call_expr.callee, false, ctx.conditional));
 
     for (sir::Expr &arg : call_expr.args) {
         RESULT_MERGE(result, analyze_expr(arg, true, ctx.conditional));
@@ -502,6 +516,10 @@ Result ResourceAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context 
     }
 
     return result;
+}
+
+Result ResourceAnalyzer::analyze_coercion_expr(sir::CoercionExpr &coercion_expr, Context &ctx) {
+    return analyze_expr(coercion_expr.value, false, ctx.conditional);
 }
 
 Result ResourceAnalyzer::analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr) {

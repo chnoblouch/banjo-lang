@@ -1,0 +1,269 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('r');
+    }
+}
+
+struct ValueResource {
+    var value: i32;
+    
+    func __deinit__(self) {
+        print('v');
+        print(self.value);
+    }
+}
+
+# test:subtest
+# test:output "abv0bv1c"
+
+func consume(r: ValueResource) -> i32 {
+    print('b');
+    return 0;
+}
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    var i = consume(a) + consume(b);
+    print('c');
+}
+
+# test:subtest
+# test:output "abrc"
+
+func consume(r: Resource) -> i32 {
+    print('b');
+    return 0;
+}
+
+func main() {
+    var r = Resource {};
+
+    print('a');
+    var i = -consume(r);
+    print('c');
+}
+
+# test:subtest
+# test:output "abrc"
+
+func consume(r: Resource) -> i32 {
+    print('b');
+    return 0;
+}
+
+func main() {
+    var r = Resource {};
+
+    print('a');
+    var i = consume(r) as i64;
+    print('c');
+}
+
+# test:subtest
+# test:output "abrc"
+
+func consume(r: Resource) -> usize {
+    print('b');
+    return 0;
+}
+
+func main() {
+    var r = Resource {};
+    var a: [i32; 3] = [0, 1, 2];
+
+    print('a');
+    var i = a[consume(r)];
+    print('c');
+}
+
+# test:subtest
+# test:output "abrc"
+
+func f() {}
+
+func consume(r: Resource) -> func() {
+    print('b');
+    return f;
+}
+
+func main() {
+    var r = Resource {};
+
+    print('a');
+    (consume(r))();
+    print('c');
+}
+
+# test:subtest
+# test:output "abv0bv1c"
+
+func f(a: i32, b: i32) {}
+
+func consume(r: ValueResource) -> i32 {
+    print('b');
+    return 0;
+}
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    f(consume(a), consume(b));
+    print('c');
+}
+
+# test:subtest
+# test:output "abv0bv1c"
+
+func consume(r: ValueResource, value: i32) -> i32 {
+    print('b');
+    return value;
+}
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    for _ in consume(a, 0)..consume(b, 10) {}
+    print('c');
+}
+
+# test:subtest
+# test:output "abv0bv1c"
+
+func consume_ok(r: ValueResource) -> i32 except bool {
+    print('b');
+    return 0;
+}
+
+func consume_err(r: ValueResource) -> i32 except bool {
+    print('b');
+    return false;
+}
+
+func f() -> i32 except bool {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    var ra = try consume_ok(a);
+    var rb = try consume_err(b);
+
+    return 0;
+}
+
+func main() {
+    print('a');
+    var _ = f();
+    print('c');
+}
+
+# test:subtest
+# test:output "abv0v1v2"
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+    var c = ValueResource { value: 2 };
+
+    print('a');
+    var array: [ValueResource; 2] = [a, b, c];
+    print('b');
+}
+
+# test:subtest
+# test:output "abv0v1"
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    var tuple = (a, b);
+    print('b');
+}
+
+# test:subtest
+# test:output "abv0v1"
+
+struct S {
+    var a: ValueResource;
+    var b: ValueResource;
+}
+
+func main() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    var s = S { a, b };
+    print('b');
+}
+
+# test:subtest
+# test:output "abrc"
+
+func consume(r: Resource, p: *i32) -> *i32 {
+    print('b');
+    return p;
+}
+
+func main() {
+    var r = Resource {};
+    var i = 0;
+
+    print('a');
+    var a: addr = consume(r, &i);
+    print('c');
+}
+
+# test:subtest
+# test:output "abv0bv1c"
+
+use std.protos.Add;
+
+func consume(r: ValueResource) -> i32 {
+    print('b');
+    return 0;
+}
+
+func f[T: Add[T]]() {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    var i = consume(a) + consume(b);
+    print('c');
+}
+
+func main() {
+    f[i32]();
+}
+
+# test:subtest
+# test:output "abrc"
+
+use std.protos.Neg;
+
+func consume(r: Resource) -> i32 {
+    print('b');
+    return 0;
+}
+
+func f[T: Neg]() {
+    var r = Resource {};
+
+    print('a');
+    var i = -consume(r);
+    print('c');
+}
+
+func main() {
+    f[i32]();
+}
