@@ -1,0 +1,33 @@
+# test:common
+
+func f(arg: i32) -> i32 {
+    print("f");
+    return arg;
+}
+
+# test:subtest
+# test:output "f01234"
+
+func main() {
+    for i in f(0)..5 {
+        print(i);
+    }
+}
+
+# test:subtest
+# test:output "f01234"
+
+func main() {
+    for i in 0..f(5) {
+        print(i);
+    }
+}
+
+# test:subtest
+# test:output "ff01234"
+
+func main() {
+    for i in f(0)..f(5) {
+        print(i);
+    }
+}

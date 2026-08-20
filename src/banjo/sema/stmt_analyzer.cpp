@@ -562,103 +562,95 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 
     ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
 
-    sir::Block *block = analyzer.create(
-        sir::Block{
-            .ast_node = nullptr,
-            .stmts = {},
-            .symbol_table = analyzer.create(
-                sir::SymbolTable{
-                    .parent = &analyzer.get_symbol_table(),
-                    .symbols = {},
-                }
-            ),
-        }
-    );
+    sir::Block *block = analyzer.create<sir::Block>({
+        .ast_node = nullptr,
+        .stmts = {},
+        .symbol_table = analyzer.create(
+            sir::SymbolTable{
+                .parent = &analyzer.get_symbol_table(),
+                .symbols = {},
+            }
+        ),
+    });
 
-    sir::VarStmt *var_stmt = analyzer.create(
-        sir::VarStmt{
-            .ast_node = nullptr,
-            .local{
-                .name = for_stmt.ident,
-                .type = range.lhs.get_type(),
-            },
-            .value = range.lhs,
-        }
-    );
+    sir::VarStmt *var_stmt = analyzer.create<sir::VarStmt>({
+        .ast_node = nullptr,
+        .local{
+            .name = for_stmt.ident,
+            .type = range.lhs.get_type(),
+        },
+        .value = range.lhs,
+    });
 
-    sir::IdentExpr *var_ref_expr = analyzer.create(
-        sir::IdentExpr{
-            .ast_node = nullptr,
-            .value = analyzer.create_string(for_stmt.ident.value),
-        }
-    );
+    sir::VarStmt *end_var_stmt = analyzer.create<sir::VarStmt>({
+        .ast_node = nullptr,
+        .local{
+            .name{.ast_node = nullptr, .value = ".end"},
+            .type = range.rhs.get_type(),
+        },
+        .value = range.rhs,
+    });
 
-    sir::BinaryExpr *loop_condition = analyzer.create(
-        sir::BinaryExpr{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .op = sir::BinaryOp::LT,
-            .lhs = var_ref_expr,
-            .rhs = range.rhs,
-        }
-    );
+    sir::IdentExpr *var_ref_expr = analyzer.create<sir::IdentExpr>({
+        .ast_node = nullptr,
+        .value = analyzer.create_string(for_stmt.ident.value),
+    });
 
-    sir::Block *loop_block = analyzer.create(
-        sir::Block{
-            .ast_node = for_stmt.block->ast_node,
-            .stmts = std::move(for_stmt.block->stmts),
-            .symbol_table = for_stmt.block->symbol_table,
-        }
-    );
+    sir::BinaryExpr *loop_condition = analyzer.create<sir::BinaryExpr>({
+        .ast_node = nullptr,
+        .type = nullptr,
+        .op = sir::BinaryOp::LT,
+        .lhs = var_ref_expr,
+        .rhs = analyzer.create<sir::IdentExpr>({
+            .ast_node = nullptr,
+            .value = analyzer.create_string(end_var_stmt->local.name.value),
+        }),
+    });
+
+    sir::Block *loop_block = analyzer.create<sir::Block>({
+        .ast_node = for_stmt.block->ast_node,
+        .stmts = std::move(for_stmt.block->stmts),
+        .symbol_table = for_stmt.block->symbol_table,
+    });
 
     loop_block->symbol_table->parent = block->symbol_table;
 
-    sir::AssignStmt *inc_stmt = analyzer.create(
-        sir::AssignStmt{
+    sir::AssignStmt *inc_stmt = analyzer.create<sir::AssignStmt>({
+        .ast_node = nullptr,
+        .lhs = var_ref_expr,
+        .rhs = analyzer.create<sir::BinaryExpr>({
             .ast_node = nullptr,
+            .type = nullptr,
+            .op = sir::BinaryOp::ADD,
             .lhs = var_ref_expr,
-            .rhs = analyzer.create(
-                sir::BinaryExpr{
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .op = sir::BinaryOp::ADD,
-                    .lhs = var_ref_expr,
-                    .rhs = analyzer.create(
-                        sir::IntLiteral{
-                            .ast_node = nullptr,
-                            .type = nullptr,
-                            .value = 1,
-                        }
-                    ),
-                }
-            ),
-        }
-    );
+            .rhs = analyzer.create<sir::IntLiteral>({
+                .ast_node = nullptr,
+                .type = nullptr,
+                .value = 1,
+            }),
+        }),
+    });
 
-    sir::Block *loop_latch = analyzer.create(
-        sir::Block{
-            .ast_node = nullptr,
-            .stmts = {inc_stmt},
-            .symbol_table = analyzer.create(
-                sir::SymbolTable{
-                    .parent = block->symbol_table,
-                    .symbols = {},
-                }
-            ),
-        }
-    );
+    sir::Block *loop_latch = analyzer.create<sir::Block>({
+        .ast_node = nullptr,
+        .stmts = {inc_stmt},
+        .symbol_table = analyzer.create<sir::SymbolTable>({
+            .parent = block->symbol_table,
+            .symbols = {},
+        }),
+    });
 
-    sir::LoopStmt *loop_stmt = analyzer.create(
-        sir::LoopStmt{
-            .ast_node = nullptr,
-            .condition = loop_condition,
-            .block = loop_block,
-            .latch = loop_latch,
-        }
-    );
+    sir::LoopStmt *loop_stmt = analyzer.create<sir::LoopStmt>({
+        .ast_node = nullptr,
+        .condition = loop_condition,
+        .block = loop_block,
+        .latch = loop_latch,
+    });
 
-    block->stmts = {var_stmt, loop_stmt};
+    block->stmts = {var_stmt, end_var_stmt, loop_stmt};
+
     block->symbol_table->insert_local(var_stmt->local.name.value, &var_stmt->local);
+    block->symbol_table->insert_local(end_var_stmt->local.name.value, &end_var_stmt->local);
 
     analyzer.enter_block(*block);
     analyze_loop_stmt(*loop_stmt);
