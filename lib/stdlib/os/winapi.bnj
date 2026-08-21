@@ -154,6 +154,23 @@ meta if os.IS_WINDOWS {
     @[link_name=GetStdHandle]
     native func get_std_handle(std_handle: Dword) -> addr;
 
+    # --- consoleapi.h ---
+
+    @[link_name=GetConsoleMode]
+    native func get_console_mode(
+        console_handle: Handle, 
+        mode: *Dword,
+    ) -> Bool;
+
+    @[link_name=WriteConsoleW]
+    native func write_console(
+        console_output: Handle,
+        buffer: addr,
+        number_of_chars_to_write: Dword,
+        number_of_chars_written: *Dword,
+        reserved: addr,
+    ) -> Bool;
+
     # --- synchapi.h ---
 
     const INFINITE: Dword = 0xFFFFFFFF;

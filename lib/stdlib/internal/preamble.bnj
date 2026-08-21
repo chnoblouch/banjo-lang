@@ -4,6 +4,7 @@ use os;
 use internal.std_panics.panic_assertion_failed;
 
 meta if os.IS_WINDOWS {
+    use std.unicode;
     use os.winapi;
 } else if os.IS_UNIX {
     use os.posix;
@@ -11,28 +12,28 @@ meta if os.IS_WINDOWS {
 
 pub func print[T](ref value: T) {
     var string = convert.to_string(value);
-    write_to_stdout(string.bytes(), string.length());
+    write_to_stdout(string.slice());
 }
 
 pub func println[T](ref value: T) {
     var string = convert.to_string(value);
-    write_to_stdout(string.bytes(), string.length());
+    write_to_stdout(string.slice());
 
     var line_ending: u8 = '\n';
-    write_to_stdout(&line_ending, 1);
+    write_to_stdout(StringSlice.new(&line_ending, 1));
 }
 
 pub func fprint[Args: ...](template: StringSlice, args: Args) {
     var string = format.format_packed(template, args);
-    write_to_stdout(string.bytes(), string.length());
+    write_to_stdout(string.slice());
 }
 
 pub func fprintln[Args: ...](template: StringSlice, args: Args) {
     var string = format.format_packed(template, args);
-    write_to_stdout(string.bytes(), string.length());
+    write_to_stdout(string.slice());
 
     var line_ending: u8 = '\n';
-    write_to_stdout(&line_ending, 1);
+    write_to_stdout(StringSlice.new(&line_ending, 1));
 }
 
 pub func exit(status: i32) {
@@ -59,16 +60,36 @@ pub func panic(message: String) {
     exit(1);
 }
 
-func write_to_stdout(data: *u8, size: usize) {
+func write_to_stdout(string: StringSlice) {
     meta if os.IS_WINDOWS {
         var handle = winapi.get_std_handle(winapi.STD_OUTPUT_HANDLE);
         if handle == winapi.INVALID_HANDLE_VALUE {
             return;
         }
 
-        var bytes_written: winapi.Dword;
-        winapi.write_file(handle, data, size as winapi.Dword, &bytes_written, null);
+        var console_mode: winapi.Dword = undefined;
+        var bytes_written: winapi.Dword = undefined;
+
+        if winapi.get_console_mode(handle, &console_mode) != 0 {
+            var data_utf16 = unicode.utf8_string_to_utf16(string);
+
+            winapi.write_console(
+                handle,
+                data_utf16.data(),
+                data_utf16.length() as winapi.Dword,
+                &bytes_written,
+                null,
+            );
+        } else {
+            winapi.write_file(
+                handle,
+                string.data,
+                string.length as winapi.Dword,
+                &bytes_written,
+                null,
+            );
+        }
     } else if os.IS_UNIX {
-        c.fwrite(data, size, 1, posix.stdout);
+        c.fwrite(string.data, string.length, 1, posix.stdout);
     }
 }
