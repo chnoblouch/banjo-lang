@@ -290,56 +290,56 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
 
     SIR_VISIT_EXPR(
         expr,
-        SIR_VISIT_IGNORE,                                // empty
-        SIR_VISIT_IGNORE,                                // int_literal
-        SIR_VISIT_IGNORE,                                // fp_literal
-        SIR_VISIT_IGNORE,                                // bool_literal
-        SIR_VISIT_IGNORE,                                // char_literal
-        SIR_VISIT_IGNORE,                                // null_literal
-        SIR_VISIT_IGNORE,                                // none_literal
-        SIR_VISIT_IGNORE,                                // undefined_literal
-        result = analyze_array_literal(*inner, ctx),     // array_literal
-        SIR_VISIT_IGNORE,                                // string_literal
-        result = analyze_struct_literal(*inner, ctx),    // struct_literal
-        SIR_VISIT_IGNORE,                                // union_case_literal
-        SIR_VISIT_IGNORE,                                // map_literal
-        SIR_VISIT_IGNORE,                                // closure_literal (TODO)
-        result = analyze_symbol_expr(*inner, expr, ctx), // symbol_expr
-        result = analyze_binary_expr(*inner, ctx),       // binary_expr
-        result = analyze_unary_expr(*inner, ctx),        // unary_expr
-        result = analyze_cast_expr(*inner, ctx),         // cast_expr
-        result = analyze_index_expr(*inner, ctx),        // index_expr
-        result = analyze_call_expr(*inner, ctx),         // call_expr
-        result = analyze_field_expr(*inner, expr, ctx),  // field_expr
-        SIR_VISIT_IGNORE,                                // range_expr
-        result = analyze_try_expr(*inner, ctx),          // try_expr
-        result = analyze_tuple_expr(*inner, ctx),        // tuple_expr
-        result = analyze_coercion_expr(*inner, ctx),     // coercion_expr
-        SIR_VISIT_IGNORE,                                // specialize_expr
-        SIR_VISIT_IGNORE,                                // primitive_type
-        SIR_VISIT_IGNORE,                                // pointer_type
-        SIR_VISIT_IGNORE,                                // static_array_type
-        SIR_VISIT_IGNORE,                                // func_type
-        SIR_VISIT_IGNORE,                                // optional_type
-        SIR_VISIT_IGNORE,                                // result_type
-        SIR_VISIT_IGNORE,                                // array_type
-        SIR_VISIT_IGNORE,                                // map_type
-        SIR_VISIT_IGNORE,                                // closure_type
-        SIR_VISIT_IGNORE,                                // reference_type
-        SIR_VISIT_IGNORE,                                // ident_expr
-        SIR_VISIT_IGNORE,                                // star_expr
-        SIR_VISIT_IGNORE,                                // bracket_expr
-        SIR_VISIT_IGNORE,                                // dot_expr
-        SIR_VISIT_IGNORE,                                // pseudo_tpe
-        SIR_VISIT_IGNORE,                                // meta_access (TODO)
-        SIR_VISIT_IGNORE,                                // meta_field_expr (TODO)
-        SIR_VISIT_IGNORE,                                // meta_call_expr (TODO)
-        SIR_VISIT_IGNORE,                                // init_expr
-        SIR_VISIT_IGNORE,                                // move_expr
-        result = analyze_deinit_expr(*inner, expr),      // deinit_expr
-        SIR_VISIT_IGNORE,                                // type_check_expr
-        SIR_VISIT_IGNORE,                                // placeholder_expr (TODO)
-        SIR_VISIT_IGNORE                                 // error
+        SIR_VISIT_IGNORE,                                 // empty
+        SIR_VISIT_IGNORE,                                 // int_literal
+        SIR_VISIT_IGNORE,                                 // fp_literal
+        SIR_VISIT_IGNORE,                                 // bool_literal
+        SIR_VISIT_IGNORE,                                 // char_literal
+        SIR_VISIT_IGNORE,                                 // null_literal
+        SIR_VISIT_IGNORE,                                 // none_literal
+        SIR_VISIT_IGNORE,                                 // undefined_literal
+        result = analyze_array_literal(*inner, ctx),      // array_literal
+        SIR_VISIT_IGNORE,                                 // string_literal
+        result = analyze_struct_literal(*inner, ctx),     // struct_literal
+        result = analyze_union_case_literal(*inner, ctx), // union_case_literal
+        SIR_VISIT_IGNORE,                                 // map_literal
+        SIR_VISIT_IGNORE,                                 // closure_literal (TODO)
+        result = analyze_symbol_expr(*inner, expr, ctx),  // symbol_expr
+        result = analyze_binary_expr(*inner, ctx),        // binary_expr
+        result = analyze_unary_expr(*inner, ctx),         // unary_expr
+        result = analyze_cast_expr(*inner, ctx),          // cast_expr
+        result = analyze_index_expr(*inner, ctx),         // index_expr
+        result = analyze_call_expr(*inner, ctx),          // call_expr
+        result = analyze_field_expr(*inner, expr, ctx),   // field_expr
+        SIR_VISIT_IGNORE,                                 // range_expr
+        result = analyze_try_expr(*inner, ctx),           // try_expr
+        result = analyze_tuple_expr(*inner, ctx),         // tuple_expr
+        result = analyze_coercion_expr(*inner, ctx),      // coercion_expr
+        SIR_VISIT_IGNORE,                                 // specialize_expr
+        SIR_VISIT_IGNORE,                                 // primitive_type
+        SIR_VISIT_IGNORE,                                 // pointer_type
+        SIR_VISIT_IGNORE,                                 // static_array_type
+        SIR_VISIT_IGNORE,                                 // func_type
+        SIR_VISIT_IGNORE,                                 // optional_type
+        SIR_VISIT_IGNORE,                                 // result_type
+        SIR_VISIT_IGNORE,                                 // array_type
+        SIR_VISIT_IGNORE,                                 // map_type
+        SIR_VISIT_IGNORE,                                 // closure_type
+        SIR_VISIT_IGNORE,                                 // reference_type
+        SIR_VISIT_IGNORE,                                 // ident_expr
+        SIR_VISIT_IGNORE,                                 // star_expr
+        SIR_VISIT_IGNORE,                                 // bracket_expr
+        SIR_VISIT_IGNORE,                                 // dot_expr
+        SIR_VISIT_IGNORE,                                 // pseudo_tpe
+        SIR_VISIT_IGNORE,                                 // meta_access (TODO)
+        SIR_VISIT_IGNORE,                                 // meta_field_expr (TODO)
+        SIR_VISIT_IGNORE,                                 // meta_call_expr (TODO)
+        SIR_VISIT_IGNORE,                                 // init_expr
+        SIR_VISIT_IGNORE,                                 // move_expr
+        result = analyze_deinit_expr(*inner, expr),       // deinit_expr
+        SIR_VISIT_IGNORE,                                 // type_check_expr
+        SIR_VISIT_IGNORE,                                 // placeholder_expr (TODO)
+        SIR_VISIT_IGNORE                                  // error
     );
 
     if (ctx.cur_resource && ctx.cur_resource->has_deinit) {
@@ -385,6 +385,16 @@ Result ResourceAnalyzer::analyze_struct_literal(sir::StructLiteral &struct_liter
 
     for (sir::StructLiteralEntry &entry : struct_literal.entries) {
         RESULT_MERGE(result, analyze_expr(entry.value, true, ctx.conditional));
+    }
+
+    return result;
+}
+
+Result ResourceAnalyzer::analyze_union_case_literal(sir::UnionCaseLiteral &union_case_literal, Context &ctx) {
+    Result result = Result::SUCCESS;
+
+    for (sir::Expr &arg : union_case_literal.args) {
+        RESULT_MERGE(result, analyze_expr(arg, true, ctx.conditional));
     }
 
     return result;

@@ -81,6 +81,7 @@ private:
     Result analyze_expr(sir::Expr &expr, Context &ctx);
     Result analyze_array_literal(sir::ArrayLiteral &array_literal, Context &ctx);
     Result analyze_struct_literal(sir::StructLiteral &struct_literal, Context &ctx);
+    Result analyze_union_case_literal(sir::UnionCaseLiteral &union_case_literal, Context &ctx);
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, Context &ctx);
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, Context &ctx);
     Result analyze_cast_expr(sir::CastExpr &cast_expr, Context &ctx);
