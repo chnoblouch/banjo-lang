@@ -1,9 +1,9 @@
-# test:error 8:12 "static resource arrays are currently unsupported"
+# test:error 8:16 "static resource arrays are currently unsupported"
 
 struct Resource {
     func __deinit__(self) {}
 }
 
 func main() {
-    var s: [Resource; 3] = [Resource {}, Resource {}, Resource {}];
+    var array: [Resource; 3] = [Resource {}, Resource {}, Resource {}];
 }

@@ -4,6 +4,7 @@
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
+#include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 
@@ -261,7 +262,11 @@ Result DeclInterfaceAnalyzer::analyze_union_case(sir::UnionCase &union_case) {
     }
 
     for (sir::UnionCaseField &field : union_case.fields) {
-        ExprAnalyzer(analyzer).analyze_type(field.type);
+        ExprAnalyzer{analyzer}.analyze_type(field.type);
+
+        if (sir::ResourceGenerator::is_resource(field.type)) {
+            analyzer.report_generator.report_err_resource_union_unsupported(field);
+        }
     }
 
     if (auto union_def = union_case.parent.match<sir::UnionDef>()) {

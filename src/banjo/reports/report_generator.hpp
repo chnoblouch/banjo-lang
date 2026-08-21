@@ -203,6 +203,7 @@ public:
     void report_err_attr_invalid_layout(sir::RawAttribute &attr);
 
     void report_err_resource_array_unsupported(sir::StaticArrayType &type);
+    void report_err_resource_union_unsupported(sir::UnionCaseField &field);
 
     void report_warn_unreachable_code(const sir::Stmt &stmt);
     void report_warn_call_result_unused(sir::CallExpr &call_expr);

@@ -1,0 +1,11 @@
+# test:error 9:15 "unions containing resources are currently unsupported"
+# test:error 10:23 "unions containing resources are currently unsupported"
+
+struct Resource {
+    func __deinit__(self) {}
+}
+
+union U {
+    case A(a: Resource);
+    case B(a: i32, b: Resource);
+}
