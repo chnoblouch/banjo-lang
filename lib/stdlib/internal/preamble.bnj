@@ -22,12 +22,12 @@ pub func println[T](ref value: T) {
     write_to_stdout(&line_ending, 1);
 }
 
-pub func fprint[Args: ...](template: String, args: Args) {
+pub func fprint[Args: ...](template: StringSlice, args: Args) {
     var string = format.format_packed(template, args);
     write_to_stdout(string.bytes(), string.length());
 }
 
-pub func fprintln[Args: ...](template: String, args: Args) {
+pub func fprintln[Args: ...](template: StringSlice, args: Args) {
     var string = format.format_packed(template, args);
     write_to_stdout(string.bytes(), string.length());
 
