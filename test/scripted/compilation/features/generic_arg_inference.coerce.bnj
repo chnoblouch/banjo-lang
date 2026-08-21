@@ -1,0 +1,47 @@
+# test:subtest
+# test:output "42"
+
+func f[T](g: T, arg: i16) {
+    print(arg);
+}
+
+func main() {
+    f(0, 42);
+}
+
+# test:subtest
+# test:output "42,none"
+
+func f[T](g: T, arg: ?i64) {
+    print(arg);
+}
+
+func main() {
+    f(0, 42);
+    print(',');
+    f(0, none);
+}
+
+# test:subtest
+# test:output "C"
+
+enum E { A, B, C }
+
+func f[T](g: T, arg: E) {
+    print(arg);
+}
+
+func main() {
+    f(0, .C);
+}
+
+# test:subtest
+# test:output "string"
+
+func f[T](g: T, arg: StringSlice) {
+    print(arg);
+}
+
+func main() {
+    f(0, "string");
+}

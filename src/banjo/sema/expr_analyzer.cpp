@@ -1058,7 +1058,6 @@ Result ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
 }
 
 Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr) {
-    Result partial_result;
     Result result = Result::SUCCESS;
     bool is_method = false;
 
@@ -1099,13 +1098,9 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     }
 
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
-        partial_result = analyze_dot_expr_callee(*dot_expr, call_expr, is_method);
+        RESULT_PROPAGATE(analyze_dot_expr_callee(*dot_expr, call_expr, is_method));
     } else {
-        partial_result = analyze_value(call_expr.callee);
-    }
-
-    if (partial_result != Result::SUCCESS) {
-        return partial_result;
+        RESULT_PROPAGATE(analyze_value(call_expr.callee));
     }
 
     if (call_expr.callee.is_symbol<sir::UnionCase>()) {
@@ -1116,42 +1111,31 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
     for (unsigned i = first_arg_to_analyze; i < call_expr.args.size(); i++) {
         sir::Expr &arg = call_expr.args[i];
-
-        partial_result = analyze_value_uncoerced(arg);
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+        RESULT_MERGE(result, analyze_value_uncoerced(arg));
     }
 
-    if (result != Result::SUCCESS) {
-        return Result::ERROR;
-    }
+    RESULT_PROPAGATE(result);
 
     sir::FuncDef *callee_func_def = nullptr;
 
     if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
         if (func_def->is_generic()) {
-            partial_result = Result::SUCCESS;
-
             for (unsigned i = first_arg_to_analyze; i < call_expr.args.size(); i++) {
                 sir::Expr &arg = call_expr.args[i];
+                sir::Expr param_type = func_def->type.params[i].type;
 
-                partial_result = ExprFinalizer(analyzer).finalize(arg);
-                if (partial_result != Result::SUCCESS) {
-                    result = Result::ERROR;
+                if (is_non_generic(param_type)) {
+                    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(arg, param_type));
+                } else {
+                    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(arg));
                 }
             }
 
-            if (partial_result != Result::SUCCESS) {
-                return Result::ERROR;
-            }
+            RESULT_PROPAGATE(result);
 
             std::span<sir::Expr> generic_args;
-
-            partial_result = GenericArgInference(analyzer, &call_expr, *func_def).infer(call_expr.args, generic_args);
-            if (partial_result != Result::SUCCESS) {
-                return Result::ERROR;
-            }
+            GenericArgInference inference{analyzer, &call_expr, *func_def};
+            RESULT_PROPAGATE(inference.infer(call_expr.args, generic_args));
 
             analyzer.type_substitutions.push_back({
                 .ast_node = call_expr.callee.get_ast_node(),
@@ -2608,6 +2592,29 @@ bool ExprAnalyzer::can_be_coerced(sir::Expr value) {
     }
 
     return analyzer.get_resolved_type(value).is<sir::PseudoType>();
+}
+
+bool ExprAnalyzer::is_non_generic(sir::Expr type) {
+    // TODO: Generalize.
+    if (type.is<sir::PrimitiveType>()) {
+        return true;
+    } else if (auto symbol_expr = type.match<sir::SymbolExpr>()) {
+        return !symbol_expr->symbol.is<sir::GenericParam>() && !symbol_expr->symbol.is<sir::TypeAlias>();
+    } else if (auto specialize_expr = type.match<sir::SpecializeExpr>()) {
+        if (specialize_expr->symbol.is<sir::GenericParam>()) {
+            return false;
+        }
+
+        for (sir::Expr generic_arg : specialize_expr->args) {
+            if (!is_non_generic(generic_arg)) {
+                return false;
+            }
+        }
+
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool ExprAnalyzer::is_method(sir::Symbol symbol) {
