@@ -41,3 +41,46 @@ pub func utf8_string_to_utf16(string: StringSlice) -> Array[u16] {
 
     return result;
 }
+
+pub func utf16_to_utf8_string(array: Slice[u16]) -> String {
+    var result: Array[u8] = [];
+    var index: usize = 0;
+
+    while index < array.length() {
+        var c = array[index];
+
+        if c < 0xD800 || c > 0xDFFF {
+            if c < 0x0080 {
+                result.append(c as u8);
+            } else if c < 0x0800 {
+                result.append((0xC0 | ((c >> 6) & 0x1F)) as u8);
+                result.append((0x80 | (c & 0x3F)) as u8);
+            } else {
+                result.append((0xE0) | ((c >> 12) & 0x0F) as u8);
+                result.append((0x80 | ((c >> 6) & 0x3F)) as u8);
+                result.append((0x80 | (c & 0x3F)) as u8);
+            }
+
+            index += 1;
+        } else {
+            var c1 = c as u32;
+            var c2 = array[index + 1] as u32;
+
+            if c1 > 0xDBFF || c2 < 0xDC00 || c2 > 0xDFFF {
+                panic("invalid utf-16 sequence");
+            }
+
+            var value = ((c1 - 0xD800) << 10) | (c2 - 0xDC00);
+            var code_point = value + 0x10000;
+
+            result.append((0xF0 | ((code_point >> 18) & 0x7F)) as u8);
+            result.append((0x80 | ((code_point >> 12) & 0x3F)) as u8);
+            result.append((0x80 | ((code_point >> 6) & 0x3F)) as u8);
+            result.append((0x80 | (code_point & 0x3F)) as u8);
+
+            index += 2;
+        }
+    }
+
+    return String.from(StringSlice.new(result.data(), result.length()));
+}
