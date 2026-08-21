@@ -9,28 +9,9 @@
 #include "banjo/source/source_file.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <unordered_set>
 #include <utility>
 
 namespace banjo {
-
-const std::unordered_set<TokenType> RECOVER_KEYWORDS{
-    TKN_EOF,
-    TKN_IF,
-    TKN_WHILE,
-    TKN_FOR,
-    TKN_BREAK,
-    TKN_CONTINUE,
-    TKN_RETURN,
-    TKN_VAR,
-    TKN_CONST,
-    TKN_FUNC,
-    TKN_STRUCT,
-    TKN_ENUM,
-    TKN_UNION,
-    TKN_PUB,
-    TKN_NATIVE,
-};
 
 Parser::Parser(SourceFile &file, TokenList &input, ReportManager &report_manager, Mode mode /*= Mode::COMPILATION*/)
   : file{file},
@@ -363,38 +344,69 @@ ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type
 }
 
 void Parser::recover() {
+    if (stream.get()->is(TKN_EOF)) {
+        return;
+    }
+
     // Ensure forward progress.
     if (stream.get_position() == prev_recover_pos) {
         stream.consume();
     }
 
-    while (!is_at_recover_keyword() && !stream.get()->is(TKN_EOF)) {
-        Token *token = stream.consume();
+    bool consuming = true;
 
-        if (token->is(TKN_RPAREN) || token->is(TKN_RBRACE) || token->is(TKN_RBRACKET) || token->is(TKN_SEMI)) {
-            break;
-        }
+    while (consuming) {
+        switch (stream.get()->type) {
+            case TKN_EOF:
+            case TKN_IF:
+            case TKN_WHILE:
+            case TKN_FOR:
+            case TKN_BREAK:
+            case TKN_CONTINUE:
+            case TKN_RETURN:
+            case TKN_VAR:
+            case TKN_CONST:
+            case TKN_FUNC:
+            case TKN_STRUCT:
+            case TKN_ENUM:
+            case TKN_UNION:
+            case TKN_PUB:
+            case TKN_NATIVE: {
+                consuming = false;
+                break;
+            }
 
-        if (token->is(TKN_LBRACE)) {
-            int depth = 1;
+            case TKN_RPAREN:
+            case TKN_RBRACE:
+            case TKN_RBRACKET:
+            case TKN_SEMI: {
+                stream.consume();
+                break;
+            }
 
-            while (depth > 0 && !stream.get()->is(TKN_EOF)) {
-                token = stream.consume();
+            case TKN_LBRACE: {
+                unsigned depth = 1;
 
-                if (token->is(TKN_LBRACE)) {
-                    depth++;
-                } else if (token->is(TKN_RBRACE)) {
-                    depth--;
+                while (depth > 0) {
+                    stream.consume();
+
+                    switch (stream.get()->type) {
+                        case TKN_LBRACE: depth++; break;
+                        case TKN_RBRACE: depth--; break;
+                        case TKN_EOF: depth = 0; break;
+                        default: break;
+                    }
                 }
+            }
+
+            default: {
+                stream.consume();
+                break;
             }
         }
     }
 
     prev_recover_pos = stream.get_position();
-}
-
-bool Parser::is_at_recover_keyword() {
-    return RECOVER_KEYWORDS.contains(stream.get()->type);
 }
 
 bool Parser::is_at_completion_point() {

@@ -80,7 +80,6 @@ private:
     ParseResult check_stmt_terminator(NodeBuilder &builder, ASTNodeType type);
 
     void recover();
-    bool is_at_recover_keyword();
 
     bool is_at_completion_point();
     ASTNode *parse_completion_point();
