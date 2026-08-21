@@ -1407,7 +1407,7 @@ void Formatter::ensure_whitespace_after(unsigned token_index, WhitespaceKind whi
     if (whitespace == WhitespaceKind::INDENT_ALLOW_EMPTY_LINE) {
         unsigned num_newlines = 0;
 
-        if (attached_tokens[0].is(TKN_WHITESPACE)) {
+        if (!attached_tokens.empty() && attached_tokens[0].is(TKN_WHITESPACE)) {
             num_newlines = std::ranges::count(attached_tokens[0].value, '\n');
         }
 
