@@ -408,7 +408,7 @@ Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, Context 
     if (unary_expr.op == sir::UnaryOp::DEREF) {
         Result result;
 
-        if (ctx.moving && is_resource(unary_expr.type)) {
+        if (ctx.moving && sir::ResourceGenerator::is_resource(unary_expr.type)) {
             analyzer.report_generator.report_err_move_out_pointer(&unary_expr);
             result = Result::ERROR;
         } else {
@@ -480,7 +480,7 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     }
 
     if (!ctx.cur_resource) {
-        if (ctx.moving && ctx.in_pointer && is_resource(field_expr.type)) {
+        if (ctx.moving && ctx.in_pointer && sir::ResourceGenerator::is_resource(field_expr.type)) {
             analyzer.report_generator.report_err_move_out_pointer(out_expr);
             return Result::ERROR;
         }
@@ -688,12 +688,6 @@ unsigned ResourceAnalyzer::get_scope_depth() {
 
 std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
     return sir::ResourceGenerator{analyzer.mod->trivial_arena}.create_resource(type);
-}
-
-bool ResourceAnalyzer::is_resource(sir::Expr type) {
-    // TODO: Optimize
-    utils::Arena arena;
-    return sir::ResourceGenerator{arena}.create_resource(type).has_value();
 }
 
 void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional) {

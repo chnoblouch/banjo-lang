@@ -13,17 +13,19 @@ class ResourceGenerator {
 
 private:
     utils::Arena &arena;
-    sir::Ownership ownership;
+    Ownership ownership;
     SpecializationCollector::Entry *specialization;
 
 public:
-    ResourceGenerator(utils::Arena &arena);
-    ResourceGenerator(utils::Arena &arena, sir::Ownership ownership, SpecializationCollector::Entry &specialization);
+    static bool is_resource(Expr type);
 
-    std::optional<sir::Resource> create_resource(sir::Expr type);
-    std::optional<sir::Resource> create_struct_resource(sir::Concrete<sir::StructDef> concrete_struct, sir::Expr type);
-    std::optional<sir::Resource> create_tuple_resource(sir::TupleExpr &tuple_type, sir::Expr type);
-    std::optional<sir::Resource> create_generic_param_resource(const sir::GenericParam &generic_param, sir::Expr type);
+    ResourceGenerator(utils::Arena &arena);
+    ResourceGenerator(utils::Arena &arena, Ownership ownership, SpecializationCollector::Entry &specialization);
+
+    std::optional<Resource> create_resource(Expr type);
+    std::optional<Resource> create_struct_resource(Concrete<StructDef> concrete_struct, Expr type);
+    std::optional<Resource> create_tuple_resource(TupleExpr &tuple_type, Expr type);
+    std::optional<Resource> create_generic_param_resource(const GenericParam &generic_param, Expr type);
 };
 
 } // namespace banjo::sir

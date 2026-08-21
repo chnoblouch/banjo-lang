@@ -7,6 +7,12 @@
 
 namespace banjo::sir {
 
+bool ResourceGenerator::is_resource(Expr type) {
+    // TODO: Optimize
+    utils::Arena arena;
+    return ResourceGenerator{arena}.create_resource(type).has_value();
+}
+
 ResourceGenerator::ResourceGenerator(utils::Arena &arena)
   : arena{arena},
     ownership{Ownership::OWNED},
@@ -14,44 +20,41 @@ ResourceGenerator::ResourceGenerator(utils::Arena &arena)
 
 ResourceGenerator::ResourceGenerator(
     utils::Arena &arena,
-    sir::Ownership ownership,
+    Ownership ownership,
     SpecializationCollector::Entry &specialization
 )
   : arena{arena},
     ownership{ownership},
     specialization{&specialization} {}
 
-std::optional<sir::Resource> ResourceGenerator::create_resource(sir::Expr type) {
-    if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
+std::optional<Resource> ResourceGenerator::create_resource(Expr type) {
+    if (auto concrete_struct = type.match_concrete<StructDef>()) {
         return create_struct_resource(*concrete_struct, type);
-    } else if (auto tuple_type = type.match<sir::TupleExpr>()) {
+    } else if (auto tuple_type = type.match<TupleExpr>()) {
         return create_tuple_resource(*tuple_type, type);
-    } else if (auto closure_type = type.match<sir::ClosureType>()) {
+    } else if (auto closure_type = type.match<ClosureType>()) {
         return create_struct_resource({closure_type->underlying_struct}, type);
-    } else if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+    } else if (auto generic_param = type.match_symbol<GenericParam>()) {
         return create_generic_param_resource(*generic_param, type);
     } else {
         return {};
     }
 }
 
-std::optional<sir::Resource> ResourceGenerator::create_struct_resource(
-    sir::Concrete<sir::StructDef> concrete_struct,
-    sir::Expr type
-) {
+std::optional<Resource> ResourceGenerator::create_struct_resource(Concrete<StructDef> concrete_struct, Expr type) {
     if (specialization) {
-        sir::Specializer specializer{arena, specialization->params, specialization->args};
+        Specializer specializer{arena, specialization->params, specialization->args};
         concrete_struct.generic_args = specializer.specialize_expr_list(concrete_struct.generic_args);
         type = specializer.specialize_expr(type);
     }
 
-    std::optional<sir::Resource> resource;
+    std::optional<Resource> resource;
 
-    sir::SymbolTable &symbol_table = *concrete_struct.def->block.symbol_table;
-    auto iter = symbol_table.symbols.find(sir::MagicMethods::DEINIT);
+    SymbolTable &symbol_table = *concrete_struct.def->block.symbol_table;
+    auto iter = symbol_table.symbols.find(MagicMethods::DEINIT);
 
-    if (iter != symbol_table.symbols.end() && iter->second.is<sir::FuncDef>()) {
-        resource = sir::Resource{
+    if (iter != symbol_table.symbols.end() && iter->second.is<FuncDef>()) {
+        resource = Resource{
             .type = type,
             .has_deinit = true,
             .ownership = ownership,
@@ -60,24 +63,24 @@ std::optional<sir::Resource> ResourceGenerator::create_struct_resource(
     }
 
     for (unsigned i = 0; i < concrete_struct.def->fields.size(); i++) {
-        sir::StructField &field = *concrete_struct.def->fields[i];
+        StructField &field = *concrete_struct.def->fields[i];
         if (field.attrs && field.attrs->unmanaged) {
             continue;
         }
 
-        sir::Expr field_type = field.type;
+        Expr field_type = field.type;
 
         if (concrete_struct.is_specialization()) {
-            field_type = sir::Specializer{arena, concrete_struct}.specialize_expr(field_type);
+            field_type = Specializer{arena, concrete_struct}.specialize_expr(field_type);
         }
 
-        std::optional<sir::Resource> sub_resource = create_resource(field_type);
+        std::optional<Resource> sub_resource = create_resource(field_type);
         if (!sub_resource) {
             continue;
         }
 
         if (!resource) {
-            resource = sir::Resource{
+            resource = Resource{
                 .type = type,
                 .has_deinit = false,
                 .ownership = ownership,
@@ -92,17 +95,17 @@ std::optional<sir::Resource> ResourceGenerator::create_struct_resource(
     return resource;
 }
 
-std::optional<sir::Resource> ResourceGenerator::create_tuple_resource(sir::TupleExpr &tuple_type, sir::Expr type) {
-    std::optional<sir::Resource> resource;
+std::optional<Resource> ResourceGenerator::create_tuple_resource(TupleExpr &tuple_type, Expr type) {
+    std::optional<Resource> resource;
 
     for (unsigned i = 0; i < tuple_type.exprs.size(); i++) {
-        std::optional<sir::Resource> sub_resource = create_resource(tuple_type.exprs[i]);
+        std::optional<Resource> sub_resource = create_resource(tuple_type.exprs[i]);
         if (!sub_resource) {
             continue;
         }
 
         if (!resource) {
-            resource = sir::Resource{
+            resource = Resource{
                 .type = type,
                 .has_deinit = false,
                 .ownership = ownership,
@@ -117,23 +120,20 @@ std::optional<sir::Resource> ResourceGenerator::create_tuple_resource(sir::Tuple
     return resource;
 }
 
-std::optional<sir::Resource> ResourceGenerator::create_generic_param_resource(
-    const sir::GenericParam &generic_param,
-    sir::Expr type
-) {
-    for (sir::Expr component : generic_param.constraint.components) {
-        if (auto concrete_proto = component.match_concrete<sir::ProtoDef>()) {
-            if (concrete_proto->def->role == sir::ProtoDef::Role::COPY) {
+std::optional<Resource> ResourceGenerator::create_generic_param_resource(const GenericParam &generic_param, Expr type) {
+    for (Expr component : generic_param.constraint.components) {
+        if (auto concrete_proto = component.match_concrete<ProtoDef>()) {
+            if (concrete_proto->def->role == ProtoDef::Role::COPY) {
                 return {};
             }
         }
     }
 
     if (specialization) {
-        sir::Expr resolved_type = specialization->resolve_param(generic_param);
+        Expr resolved_type = specialization->resolve_param(generic_param);
         return create_resource(resolved_type);
     } else {
-        return sir::Resource{
+        return Resource{
             .type = type,
             .has_deinit = false,
             .ownership = ownership,

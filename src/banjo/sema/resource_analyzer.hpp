@@ -104,7 +104,6 @@ private:
     unsigned get_scope_depth();
 
     std::optional<sir::Resource> create_resource(sir::Expr type);
-    static bool is_resource(sir::Expr type);
     static void merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional);
 };
 

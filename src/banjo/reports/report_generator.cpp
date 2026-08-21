@@ -924,6 +924,10 @@ void ReportGenerator::report_err_attr_invalid_layout(sir::RawAttribute &attr) {
     report_error("invalid struct layout '$'", attr.ast_node, attr.value);
 }
 
+void ReportGenerator::report_err_resource_array_unsupported(sir::StaticArrayType &type) {
+    report_error("static resource arrays are currently unsupported", type.ast_node);
+}
+
 void ReportGenerator::report_warn_unreachable_code(const sir::Stmt &stmt) {
     report_warning("unreachable code", stmt.get_ast_node());
 }

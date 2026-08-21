@@ -14,13 +14,13 @@
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/magic_methods.hpp"
+#include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/sir/type_constraints.hpp"
 #include "banjo/source/module_path.hpp"
-#include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
@@ -1523,24 +1523,20 @@ Result ExprAnalyzer::analyze_union_case_literal(sir::CallExpr &call_expr, sir::E
 
 Result ExprAnalyzer::analyze_static_array_type(sir::StaticArrayType &static_array_type) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
-    partial_result = analyze_type(static_array_type.base_type);
-    if (partial_result != Result::SUCCESS) {
-        result = Result::ERROR;
-    }
+    RESULT_MERGE(result, analyze_type(static_array_type.base_type));
+    RESULT_MERGE(result, analyze_value(static_array_type.length));
+    RESULT_PROPAGATE(result);
 
-    partial_result = analyze_value(static_array_type.length);
-    if (partial_result != Result::SUCCESS) {
+    if (sir::ResourceGenerator::is_resource(static_array_type.base_type)) {
+        analyzer.report_generator.report_err_resource_array_unsupported(static_array_type);
         return Result::ERROR;
     }
 
     ConstEvaluator::Output length_evaluated =
         ConstEvaluator{analyzer, ConstEvaluator::Usage::OTHER}.evaluate(static_array_type.length);
 
-    if (length_evaluated.result != Result::SUCCESS) {
-        return Result::ERROR;
-    }
+    RESULT_PROPAGATE(length_evaluated.result);
 
     // TODO: Maybe only allow unsigned types as array lengths?
     // This requires better literal coercion though, so int literals can be coerced to

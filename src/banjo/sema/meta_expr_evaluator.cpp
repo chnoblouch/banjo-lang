@@ -129,8 +129,7 @@ sir::Expr MetaExprEvaluator::compute_fields(sir::Expr &type) {
 }
 
 sir::Expr MetaExprEvaluator::compute_is_resource(sir::Expr &type) {
-    utils::Arena arena;
-    bool is_resource = sir::ResourceGenerator{arena}.create_resource(type).has_value();
+    bool is_resource = sir::ResourceGenerator::is_resource(type);
     return create_bool_literal(is_resource);
 }
 
