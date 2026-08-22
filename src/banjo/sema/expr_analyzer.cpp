@@ -1122,6 +1122,12 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         if (func_def->is_generic()) {
             for (unsigned i = first_arg_to_analyze; i < call_expr.args.size(); i++) {
                 sir::Expr &arg = call_expr.args[i];
+
+                if (i >= func_def->type.params.size()) {
+                    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(arg));
+                    continue;
+                }
+
                 sir::Expr param_type = func_def->type.params[i].type;
 
                 if (is_non_generic(param_type)) {
