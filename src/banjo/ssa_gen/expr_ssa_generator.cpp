@@ -558,8 +558,8 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
 
                 sir::Expr arg_type = ctx.resolve_if_generic(arg.get_type());
 
-                if (auto struct_def = arg_type.match_symbol<sir::StructDef>()) {
-                    call_method = struct_def->has_impl_for(*generic_method->proto_def);
+                if (auto struct_def = arg_type.match_concrete<sir::StructDef>()) {
+                    call_method = struct_def->def->has_impl_for(*generic_method->proto_def);
                 }
 
                 if (!call_method) {
