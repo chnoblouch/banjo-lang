@@ -1,5 +1,5 @@
 use os.{IS_WINDOWS, winapi, msvcrt};
-use std.{io, convert.to_string};
+use std.{memory, io, unicode, convert.to_string, math.{min, max}};
 
 meta if IS_WINDOWS {
     type ErrorCode = winapi.Dword;
@@ -13,6 +13,12 @@ meta if IS_WINDOWS {
     const SOCKET_TYPE_DATAGRAM: i32 = winapi.SOCK_DGRAM;
     const SOCKET_PROTOCOL_TCP: i32 = winapi.IPPROTO_TCP;
     const SOCKET_PROTOCOL_UDP: i32 = winapi.IPPROTO_UDP;
+
+    struct StdioStream {
+        var handle: winapi.Handle;
+        var buffer: [u8; 4];
+        var buffer_size: usize;
+    }
 
     var wsa_initialized: bool = false;
 
@@ -52,16 +58,127 @@ meta if IS_WINDOWS {
         return string;
     }
 
-    pub func io_get_stdin_stream() -> addr {
-        return msvcrt.acrt_iob_func(0);
+    pub func io_get_stdin_stream() -> StdioStream {
+        return StdioStream {
+            handle: winapi.get_std_handle(winapi.STD_INPUT_HANDLE),
+            buffer: undefined,
+            buffer_size: 0,
+        };
     }
 
-    pub func io_get_stdout_stream() -> addr {
-        return msvcrt.acrt_iob_func(1);
+    pub func io_get_stdout_stream() -> StdioStream {
+        return StdioStream {
+            handle: winapi.get_std_handle(winapi.STD_OUTPUT_HANDLE),
+            buffer: undefined,
+            buffer_size: 0,
+        };
     }
 
-    pub func io_get_stderr_stream() -> addr {
-        return msvcrt.acrt_iob_func(2);
+    pub func io_get_stderr_stream() -> StdioStream {
+        return StdioStream {
+            handle: winapi.get_std_handle(winapi.STD_ERROR_HANDLE),
+            buffer: undefined,
+            buffer_size: 0,
+        };
+    }
+
+    pub func io_stdio_read(stream: *StdioStream, data: Slice[u8]) -> usize except ErrorCode {
+        if stream.handle == null || stream.handle == winapi.INVALID_HANDLE_VALUE || data.length == 0 {
+            return 0 as usize;
+        }
+
+        if !is_console(stream.handle) {
+            return read_file(stream.handle, data);
+        }
+
+        var size: usize = 0;
+        var returned_bytes = min(data.length, stream.buffer_size);
+        var buffered_bytes = stream.buffer_size - returned_bytes;
+
+        # Take as many bytes as possible from the UTF-8 buffer and return them.
+        memory.copy(&stream.buffer[0], &data[0], returned_bytes);
+        memory.copy(&stream.buffer[returned_bytes], &stream.buffer[0], buffered_bytes);
+
+        size += returned_bytes;
+        stream.buffer_size = buffered_bytes;
+
+        # Return if the UTF-8 buffer was large enough to fill the output buffer.
+        if size == data.length {
+            return size;
+        }
+
+        # The maximum number of UTF-8 bytes per UTF-16 value is 3.
+        # We also want to read at least one character even if there is not
+        # enough space in the output buffer because we can put the bytes into
+        # the internal UTF-8 buffer.
+        var utf16_values_to_read = max((data.length - size) / 3, 1 as usize);
+
+        var utf16_buffer = Array[u16].sized(utf16_values_to_read);
+        var utf16_values_read = try read_console_utf16(stream.handle, utf16_buffer.slice());
+        utf16_buffer.resize(utf16_values_read);
+
+        if utf16_buffer.length() == 0 {
+            return size;
+        }
+
+        var last_utf16_value: u16 = utf16_buffer[utf16_buffer.length() - 1];
+
+        # If the read UTF-16 data ends with an unpaired surrogate, read one more
+        # value to complete it.
+        if last_utf16_value >= 0xD800 && last_utf16_value <= 0xDBFF {
+            var surrogate_buffer: Slice[u16] = [0];
+            utf16_values_read = try read_console_utf16(stream.handle, surrogate_buffer);
+
+            if utf16_values_read != 0 {
+                utf16_buffer.append(surrogate_buffer[0]);
+            }
+        }
+
+        var index: usize = 0;
+
+        while index < utf16_buffer.length() {
+            var utf16_slice = utf16_buffer.slice().subslice(index, utf16_buffer.length());
+            var decoded = unicode.decode_utf16(utf16_slice);
+            var utf8 = unicode.encode_utf8(decoded.codepoint);
+
+            var returned_bytes = min(utf8.length, data.length - size);
+            var buffered_bytes = utf8.length - returned_bytes;
+
+            # Return as many bytes as possible. If the number of bytes is larger
+            # than the output buffer, put the remaining bytes into the internal
+            # UTF-8 buffer.
+            memory.copy(&utf8.bytes[0], &data[0], returned_bytes);
+            memory.copy(&utf8.bytes[returned_bytes], &stream.buffer[0], buffered_bytes);
+
+            index += decoded.num_consumed;
+            size += returned_bytes;
+            stream.buffer_size = buffered_bytes;
+        }
+
+        return size;
+    }
+
+    pub func io_stdio_write(stream: *StdioStream, data: Slice[u8]) -> usize except ErrorCode {
+        if stream.handle == null || stream.handle == winapi.INVALID_HANDLE_VALUE || data.length == 0 {
+            return 0 as usize;
+        }
+
+        var console_mode: winapi.Dword = undefined;
+        var bytes_written: winapi.Dword = undefined;
+
+        if !is_console(stream.handle) {
+            return write_file(stream.handle, data);
+        }
+
+        var string = StringSlice.new(data.data, data.length);
+        var data_utf16 = unicode.utf8_string_to_utf16(string);
+
+        try result in write_console_utf16(stream.handle, data_utf16.slice()) {
+            # TODO: Calculate to actual number of bytes written.
+            return data.length;
+        } except error: ErrorCode {
+            return error;
+        }
     }
 
     pub func path_exists(path: *String) -> bool except ErrorCode {
@@ -69,7 +186,7 @@ meta if IS_WINDOWS {
 
         if attributes != winapi.INVALID_FILE_ATTRIBUTES {
             return true;
-        } else { 
+        } else {
             var error = error_last();
 
             if error == winapi.ERROR_FILE_NOT_FOUND {
@@ -303,5 +420,82 @@ meta if IS_WINDOWS {
     pub func socket_close(socket: Socket) {
         winapi.shutdown(socket, winapi.SD_BOTH);
         winapi.closesocket(socket);
+    }
+
+    func read_file(handle: winapi.Handle, data: Slice[u8]) -> usize except ErrorCode {
+        var bytes_read: winapi.Dword = undefined;
+
+        var result = winapi.read_file(
+            handle,
+            data.data,
+            data.length as winapi.Dword,
+            &bytes_read,
+            null,
+        );
+
+        if result != 0 {
+            return bytes_read as usize;
+        } else {
+            return error_last();
+        }
+    }
+
+    func write_file(handle: winapi.Handle, data: Slice[u8]) -> usize except ErrorCode {
+        var bytes_written: winapi.Dword = undefined;
+
+        var result = winapi.write_file(
+            handle,
+            data.data,
+            data.length as winapi.Dword,
+            &bytes_written,
+            null,
+        );
+
+        if result != 0 {
+            return bytes_written as usize;
+        } else {
+            return error_last();
+        }
+    }
+
+    func read_console_utf16(handle: winapi.Handle, data: Slice[u16]) -> usize except ErrorCode {
+        var utf16_values_read: winapi.Dword = undefined;
+
+        var result = winapi.read_console(
+            handle,
+            data.data(),
+            data.length() as winapi.Dword,
+            &utf16_values_read,
+            null,
+        );
+
+        if result != 0 {
+            return utf16_values_read as usize;
+        } else {
+            return error_last();
+        }
+    }
+
+    func write_console_utf16(handle: winapi.Handle, data: Slice[u16]) -> usize except ErrorCode {
+        var utf16_values_written: winapi.Dword = undefined;
+
+        var result = winapi.write_console(
+            handle,
+            data.data(),
+            data.length() as winapi.Dword,
+            &utf16_values_written,
+            null,
+        );
+
+        if result != 0 {
+            return utf16_values_written as usize;
+        } else {
+            return error_last();
+        }
+    }
+
+    func is_console(handle: winapi.Handle) -> bool {
+        var console_mode: winapi.Dword = undefined;
+        return winapi.get_console_mode(handle, &console_mode) != 0;
     }
 }

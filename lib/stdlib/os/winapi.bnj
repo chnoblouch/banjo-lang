@@ -162,6 +162,15 @@ meta if os.IS_WINDOWS {
         mode: *Dword,
     ) -> Bool;
 
+    @[link_name=ReadConsoleW]
+    native func read_console(
+        console_input: Handle,
+        buffer: addr,
+        number_of_chars_to_read: Dword,
+        number_of_chars_read: *Dword,
+        input_control: addr,
+    ) -> Bool;
+
     @[link_name=WriteConsoleW]
     native func write_console(
         console_output: Handle,

@@ -1,14 +1,9 @@
-use std.{config, convert, format, stack_trace};
+use std.{config, convert, format, io, stack_trace};
 use libc as c;
-use os;
 use internal.std_panics.panic_assertion_failed;
 
-meta if os.IS_WINDOWS {
-    use std.unicode;
-    use os.winapi;
-} else if os.IS_UNIX {
-    use os.posix;
-}
+var stdout: io.StdWriteStream;
+var stdout_initialized: bool = false;
 
 pub func print[T](ref value: T) {
     var string = convert.to_string(value);
@@ -61,35 +56,11 @@ pub func panic(message: String) {
 }
 
 func write_to_stdout(string: StringSlice) {
-    meta if os.IS_WINDOWS {
-        var handle = winapi.get_std_handle(winapi.STD_OUTPUT_HANDLE);
-        if handle == winapi.INVALID_HANDLE_VALUE {
-            return;
-        }
-
-        var console_mode: winapi.Dword = undefined;
-        var bytes_written: winapi.Dword = undefined;
-
-        if winapi.get_console_mode(handle, &console_mode) != 0 {
-            var data_utf16 = unicode.utf8_string_to_utf16(string);
-
-            winapi.write_console(
-                handle,
-                data_utf16.data(),
-                data_utf16.length() as winapi.Dword,
-                &bytes_written,
-                null,
-            );
-        } else {
-            winapi.write_file(
-                handle,
-                string.data,
-                string.length as winapi.Dword,
-                &bytes_written,
-                null,
-            );
-        }
-    } else if os.IS_UNIX {
-        c.fwrite(string.data, string.length, 1, posix.stdout);
+    if !stdout_initialized {
+        stdout = io.stdout();
+        stdout_initialized = true;
     }
+
+    var data = Slice[u8].new(string.data, string.length);
+    stdout.write(data).unwrap();
 }

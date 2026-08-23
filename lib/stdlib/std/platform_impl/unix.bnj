@@ -4,6 +4,7 @@ use libc as c;
 
 meta if IS_UNIX {
     type ErrorCode = i32;
+    type StdioStream = addr;
     type Mutex = *posix.PthreadMutex;
     type Socket = i32;
 
@@ -45,6 +46,26 @@ meta if IS_UNIX {
 
     pub func io_get_stderr_stream() -> addr {
         return posix.stderr;
+    }
+
+    pub func io_stdio_read(stream: *StdioStream, data: Slice[u8]) -> usize except ErrorCode {
+        var result = c.fread(data.data, 1, data.length, *stream);
+
+        if result == data.length || c.feof(*stream) != 0 {
+            return result;
+        } else {
+            return error_last();
+        }
+    }
+
+    pub func io_stdio_write(stream: *StdioStream, data: Slice[u8]) -> usize except ErrorCode {
+        var result = c.fwrite(data.data, 1, data.length, *stream);
+
+        if result == data.length {
+            return result;
+        } else {
+            return error_last();
+        }
     }
 
     pub func path_exists(path: *String) -> bool except ErrorCode {
