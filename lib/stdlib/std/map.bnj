@@ -1,7 +1,7 @@
-use std.{convert, protos.{Compare, ToRepr, ToString}};
-use internal.std_panics.panic_cannot_find_key_map;
+use std.{convert, protos.{Copy, Compare, ToRepr, ToString}};
+use internal.std_panics.{panic_cannot_find_key_map, panic_cannot_copy_map};
 
-struct Map[K: Compare[K], V]: ToString, ToRepr {
+struct Map[K: Compare[K], V]: Copy, ToString, ToRepr {
     var elements: Array[(K, V)];
 
     pub func new() -> Map[K, V] {
@@ -32,6 +32,25 @@ struct Map[K: Compare[K], V]: ToString, ToRepr {
         }
 
         return false;
+    }
+
+    pub func copy(self) -> Map[K, V] {
+        var elements = Array[(K, V)].sized(self.elements.length());
+
+        if K is Copy {
+            if V is Copy {
+                for i in 0..self.elements.length() {
+                    var element = ref self.elements[i];
+                    elements[i] = ((element.0).copy(), (element.1).copy());
+                }
+            } else {
+                panic_cannot_copy_map[V]();
+            }
+        } else {
+            panic_cannot_copy_map[K]();
+        }
+
+        return Map[K, V] { elements };
     }
 
     pub func __index__(mut self, ref key: K) -> ref mut V {

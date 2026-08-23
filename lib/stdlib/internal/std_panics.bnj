@@ -56,6 +56,11 @@ func panic_cannot_copy_array[T]() {
 }
 
 @never_inline
+func panic_cannot_copy_map[T]() {
+    panic("cannot copy map (type '" + str(meta(T).name) + "' does not implement 'Copy')");
+}
+
+@never_inline
 func panic_cannot_compare_slices[T]() {
     panic("cannot compare slices (type '" + str(meta(T).name) + "' does not implement 'Compare')");
 }
