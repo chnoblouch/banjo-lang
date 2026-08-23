@@ -19,6 +19,7 @@
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 #include "banjo/utils/timing.hpp"
 
+#include <ranges>
 #include <vector>
 
 namespace banjo::sema {
@@ -35,7 +36,7 @@ SemanticAnalyzer::SemanticAnalyzer(
     report_generator{report_manager},
     mode{mode} {
 
-    scope_stack.push(
+    scope_stack.push_back(
         Scope{
             .decl = nullptr,
             .block = nullptr,
@@ -106,7 +107,7 @@ void SemanticAnalyzer::analyze(sir::Module &mod) {
 }
 
 void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable *symbol_table) {
-    Scope &current = scope_stack.top();
+    Scope &current = scope_stack.back();
 
     Scope scope{
         .decl = current.decl,
@@ -116,11 +117,11 @@ void SemanticAnalyzer::enter_symbol_table(sir::SymbolTable *symbol_table) {
         .closure_ctx = current.closure_ctx,
     };
 
-    scope_stack.push(scope);
+    scope_stack.push_back(scope);
 }
 
 void SemanticAnalyzer::exit_symbol_table() {
-    scope_stack.pop();
+    scope_stack.pop_back();
 }
 
 void SemanticAnalyzer::enter_decl(sir::Symbol decl) {
@@ -146,38 +147,48 @@ void SemanticAnalyzer::enter_decl(sir::Symbol decl) {
         .closure_ctx = nullptr,
     };
 
-    scope_stack.push(scope);
+    scope_stack.push_back(scope);
 }
 
 void SemanticAnalyzer::exit_decl() {
-    scope_stack.pop();
-    sir::Symbol decl = scope_stack.top().decl;
+    scope_stack.pop_back();
+    sir::Symbol decl = scope_stack.back().decl;
     mod = decl ? &decl.find_mod() : nullptr;
 }
 
 void SemanticAnalyzer::enter_block(sir::Block &block) {
     Scope scope{
-        .decl = scope_stack.top().decl,
-        .decl_block = scope_stack.top().decl_block,
+        .decl = scope_stack.back().decl,
+        .decl_block = scope_stack.back().decl_block,
         .block = &block,
         .symbol_table = block.symbol_table,
-        .closure_ctx = scope_stack.top().closure_ctx,
-        .type_narrowing = scope_stack.top().type_narrowing,
+        .closure_ctx = scope_stack.back().closure_ctx,
+        .type_narrowing{},
     };
 
-    scope_stack.push(scope);
+    scope_stack.push_back(scope);
 }
 
 void SemanticAnalyzer::enter_closure_ctx(ClosureContext &closure_ctx) {
     Scope scope{
-        .decl = scope_stack.top().decl,
-        .decl_block = scope_stack.top().decl_block,
-        .block = scope_stack.top().block,
-        .symbol_table = scope_stack.top().symbol_table,
+        .decl = scope_stack.back().decl,
+        .decl_block = scope_stack.back().decl_block,
+        .block = scope_stack.back().block,
+        .symbol_table = scope_stack.back().symbol_table,
         .closure_ctx = &closure_ctx,
     };
 
-    scope_stack.push(scope);
+    scope_stack.push_back(scope);
+}
+
+sir::TypeNarrowing *SemanticAnalyzer::find_type_narrowing(sir::GenericParam &generic_param) {
+    for (Scope &scope : std::ranges::reverse_view(scope_stack)) {
+        if (scope.type_narrowing && scope.type_narrowing->generic_param == &generic_param) {
+            return &*scope.type_narrowing;
+        }
+    }
+
+    return nullptr;
 }
 
 void SemanticAnalyzer::populate_preamble_symbols() {
@@ -278,20 +289,16 @@ Result SemanticAnalyzer::ensure_interface_analyzed(sir::Symbol symbol, ASTNode *
 
 sir::Expr SemanticAnalyzer::get_resolved_type(sir::Expr value) {
     sir::Expr type = value.get_type();
-    std::optional<sir::TypeNarrowing> type_narrowing = scope_stack.top().type_narrowing;
 
-    if (type_narrowing) {
-        if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-            return type;
-        }
-
-        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
-            if (type_narrowing->generic_param == generic_param) {
-                return type_narrowing->constraint;
+    if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+        if (sir::TypeNarrowing *narrowing = find_type_narrowing(*generic_param)) {
+            if (!narrowing->constraint.match_concrete<sir::ProtoDef>()) {
+                return narrowing->constraint;
+            } else {
+                // TODO: Search for another type narrowing further up.
             }
         }
     }
-
     return type;
 }
 

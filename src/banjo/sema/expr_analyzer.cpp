@@ -582,23 +582,18 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     sir::Expr lhs_type = analyzer.get_resolved_type(binary_expr.lhs);
     sir::Expr rhs_type = analyzer.get_resolved_type(binary_expr.rhs);
 
-    if (lhs_type.is_symbol<sir::GenericParam>()) {
+    if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def = proto_of(binary_expr.op);
 
         sir::GenericParam *g = nullptr;
         std::span<sir::Expr> gc;
-        std::optional<sir::TypeNarrowing> type_narrowing = analyzer.scope_stack.top().type_narrowing;
 
         // FIXME: TERRIBLE AND BROKEN HACK
-        if (type_narrowing) {
-            if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-                if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
-                    if (type_narrowing->generic_param == generic_param) {
-                        g = generic_param;
-                        gc = generic_param->constraint.components;
-                        generic_param->constraint.components = {new sir::Expr{type_narrowing->constraint}, 1};
-                    }
-                }
+        if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(*generic_param)) {
+            if (narrowing->constraint.match_concrete<sir::ProtoDef>()) {
+                g = generic_param;
+                gc = generic_param->constraint.components;
+                generic_param->constraint.components = {new sir::Expr{narrowing->constraint}, 1};
             }
         }
 
@@ -839,23 +834,18 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
 
     sir::Expr value_type = analyzer.get_resolved_type(unary_expr.value);
 
-    if (value_type.is_symbol<sir::GenericParam>()) {
+    if (auto generic_param = value_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def = proto_of(unary_expr.op);
 
         sir::GenericParam *g = nullptr;
         std::span<sir::Expr> gc;
-        std::optional<sir::TypeNarrowing> type_narrowing = analyzer.scope_stack.top().type_narrowing;
 
         // FIXME: TERRIBLE AND BROKEN HACK
-        if (type_narrowing) {
-            if (type_narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-                if (auto generic_param = value_type.match_symbol<sir::GenericParam>()) {
-                    if (type_narrowing->generic_param == generic_param) {
-                        g = generic_param;
-                        gc = generic_param->constraint.components;
-                        generic_param->constraint.components = {new sir::Expr{type_narrowing->constraint}, 1};
-                    }
-                }
+        if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(*generic_param)) {
+            if (narrowing->constraint.match_concrete<sir::ProtoDef>()) {
+                g = generic_param;
+                gc = generic_param->constraint.components;
+                generic_param->constraint.components = {new sir::Expr{narrowing->constraint}, 1};
             }
         }
 
@@ -1427,10 +1417,8 @@ std::optional<ExprAnalyzer::ResolvedGenericMethod> ExprAnalyzer::resolve_generic
     std::vector<sir::Expr> components;
     components.assign(generic_param.constraint.components.begin(), generic_param.constraint.components.end());
 
-    if (auto narrowing = analyzer.scope_stack.top().type_narrowing) {
-        if (narrowing->generic_param == &generic_param) {
-            components.push_back(narrowing->constraint);
-        }
+    if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(generic_param)) {
+        components.push_back(narrowing->constraint);
     }
 
     std::optional<sir::Concrete<sir::ProtoDef>> concrete_proto;

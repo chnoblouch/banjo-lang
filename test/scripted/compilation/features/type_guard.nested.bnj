@@ -1,0 +1,103 @@
+# test:subtest
+# test:output "0,1,2,3"
+
+func f[A, B]() -> u32 {
+    if A == i32 {
+        if B == bool {
+            return 0;
+        } else {
+            return 1;
+        }
+    } else {
+        if B == bool {
+            return 2;
+        } else {
+            return 3;
+        }
+    }
+}
+
+func main() {
+    print(f[i32, bool]());
+    print(',');
+    print(f[i32, u8]());
+    print(',');
+    print(f[u64, bool]());
+    print(',');
+    print(f[u64, u8]());
+}
+
+# test:subtest
+# test:output "64,42,0"
+
+proto P {
+    func v(self) -> i32;
+}
+
+struct S: P {
+    pub func v(self) -> i32 {
+        return 22;
+    }
+}
+
+func f[A, B](a: A, b: B) -> i32 {
+    if A == i32 {
+        if B is P {
+            return a + b.v();
+        } else {
+            return a;
+        }
+    } else {
+        return 0;
+    }
+}
+
+func main() {
+    print(f[i32, S](42, S {}));
+    print(',');
+    print(f[i32, bool](42, false));
+    print(',');
+    print(f[i16, bool](42, false));
+}
+
+# test:subtest
+# test:output "i42!p2!p1"
+
+proto P1 {
+    func v(self) -> i32;
+}
+
+proto P2 {
+    func m(self, v: i32);
+}
+
+struct S1: P1 {
+    pub func v(self) -> i32 {
+        return 42;
+    }
+}
+
+struct S2: P2 {
+    pub func m(self, v: i32) {
+        print("i");
+        print(v);
+    }
+}
+
+func f[A, B](a: A, b: B) {
+    if A is P1 {
+        if B is P2 {
+            b.m(a.v());
+        } else {
+            print("!p2");
+        }
+    } else {
+        print("!p1");
+    }
+}
+
+func main() {
+    f[S1, S2](S1 {}, S2 {});
+    f[S1, i32](S1 {}, 0);
+    f[i32, i32](0, 0);
+}

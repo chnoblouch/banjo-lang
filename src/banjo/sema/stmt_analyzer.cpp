@@ -22,7 +22,7 @@ void StmtAnalyzer::analyze_block(sir::Block &block, std::optional<sir::TypeNarro
     analyzer.enter_block(block);
 
     if (type_narrowing) {
-        analyzer.scope_stack.top().type_narrowing = type_narrowing;
+        analyzer.scope_stack.back().type_narrowing = type_narrowing;
     }
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
