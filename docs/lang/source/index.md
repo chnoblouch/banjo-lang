@@ -12,7 +12,7 @@ modules
 error_handling
 protocols
 magic_methods
-resources
+ownership
 closures
 generics
 meta
