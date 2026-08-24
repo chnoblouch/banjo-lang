@@ -105,6 +105,10 @@ void WriteBuffer::write_data(const WriteBuffer &buffer) {
 }
 
 void WriteBuffer::write_zeroes(std::size_t size) {
+    if (size == 0) {
+        return;
+    }
+
     ensure_size(data.size() + size);
     std::memset(&this->data[position], 0, size);
     position += size;
