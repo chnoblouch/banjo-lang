@@ -56,5 +56,5 @@ struct S {
 struct S {
     func m(self, a: i32) -> u64 { return 0; }
     func m(mut self, a: i32) -> u64 { return 0; }
-    func m(@byval self, a: i32) -> u64 { return 0; }
+    func m(move self, a: i32) -> u64 { return 0; }
 }

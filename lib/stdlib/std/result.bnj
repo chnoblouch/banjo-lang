@@ -26,7 +26,7 @@ struct Result[T, E]: ToString {
         };
     }
 
-    pub func unwrap(@[byval, unmanaged] self) -> T {
+    pub func unwrap(@unmanaged move self) -> T {
         if !self.successful {
             panic_unwrap_result(self.error);
         }
@@ -34,7 +34,7 @@ struct Result[T, E]: ToString {
         return self.value;
     }
 
-    pub func unwrap_error(@[byval, unmanaged] self) -> E {
+    pub func unwrap_error(@unmanaged move self) -> E {
         if self.successful {
             panic_unwrap_error_result();
         }

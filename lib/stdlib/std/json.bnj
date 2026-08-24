@@ -222,7 +222,7 @@ struct Encoder {
         };
     }
 
-    pub func encode_into_string(@byval self, value: ref Value) -> String {
+    pub func encode_into_string(move self, value: ref Value) -> String {
         self.encode(value);
         return self.string;
     }

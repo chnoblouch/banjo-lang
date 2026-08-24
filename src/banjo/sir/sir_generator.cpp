@@ -1537,12 +1537,27 @@ sir::Param SIRGenerator::generate_param(ASTNode *node) {
             .attrs = attrs,
         };
     } else if (name_node->type == AST_SELF) {
-        ASSERT(node->type == AST_REF_PARAM || node->type == AST_REF_MUT_PARAM);
-
         sir::Ident sir_ident{
             .ast_node = nullptr,
             .value = "self",
         };
+
+        if (node->type == AST_MOVE_PARAM) {
+            if (!attrs) {
+                attrs = create<sir::Attributes>({});
+            }
+
+            attrs->byval = true;
+
+            return sir::Param{
+                .ast_node = node,
+                .name = sir_ident,
+                .type = nullptr,
+                .attrs = attrs,
+            };
+        }
+
+        ASSERT(node->type == AST_REF_PARAM || node->type == AST_REF_MUT_PARAM);
 
         sir::Expr sir_type = create(
             sir::ReferenceType{

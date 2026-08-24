@@ -13,7 +13,7 @@ struct Thread {
         platform.thread_close(self.handle);
     }
 
-    pub func join(@byval self) {
+    pub func join(move self) {
         platform.thread_join(self.handle);
     }
 

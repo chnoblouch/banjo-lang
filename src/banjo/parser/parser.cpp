@@ -262,6 +262,18 @@ ParseResult Parser::parse_param() {
         return parse_attribute_wrapper(std::bind(&Parser::parse_param, this));
     }
 
+    if (stream.get()->is(TKN_MOVE)) {
+        node.consume(); // Consume 'move'
+
+        if (!stream.get()->is(TKN_SELF)) {
+            report_generator.report_err_expected(file, *stream.get(), TKN_SELF);
+            return node.build_error();
+        }
+
+        node.append_child(consume_into_node(AST_SELF));
+        return node.build(AST_MOVE_PARAM);
+    }
+
     bool is_mut = false;
 
     if (stream.get()->is(TKN_MUT)) {

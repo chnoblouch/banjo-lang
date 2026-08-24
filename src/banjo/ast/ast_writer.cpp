@@ -186,6 +186,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_PARAM: return "PARAM";
         case AST_REF_PARAM: return "REF_PARAM";
         case AST_REF_MUT_PARAM: return "REF_MUT_PARAM";
+        case AST_MOVE_PARAM: return "MOVE_PARAM";
         case AST_REF_RETURN: return "REF_RETURN";
         case AST_REF_MUT_RETURN: return "REF_MUT_RETURN";
         case AST_GENERIC_PARAM_LIST: return "GENERIC_PARAM_LIST";

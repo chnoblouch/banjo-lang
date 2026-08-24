@@ -40,7 +40,7 @@ func main() {
 # test:output "cm"
 
 struct Resource {
-    pub func consume(@[byval, unmanaged] self) {
+    pub func consume(@unmanaged move self) {
         print('c');
     }
  

@@ -21,7 +21,7 @@ struct Optional[T]: ToString {
         };
     }
 
-    pub func unwrap(@[byval, unmanaged] self) -> T {
+    pub func unwrap(@unmanaged move self) -> T {
         if !self.has_value {
             panic_unwrap_optional();
         }

@@ -36,6 +36,7 @@ enum TokenType : std::uint8_t {
     TKN_EXCEPT,
     TKN_REF,
     TKN_MUT,
+    TKN_MOVE,
     TKN_SHARE,
     TKN_AS,
     TKN_IS,

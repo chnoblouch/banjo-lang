@@ -157,6 +157,7 @@ enum ASTNodeType : std::uint8_t {
     AST_PARAM,
     AST_REF_PARAM,
     AST_REF_MUT_PARAM,
+    AST_MOVE_PARAM,
     AST_REF_RETURN,
     AST_REF_MUT_RETURN,
     AST_GENERIC_PARAM_LIST,

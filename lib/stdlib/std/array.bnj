@@ -138,7 +138,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         return none;
     }
 
-    pub func filter(@byval self, predicate: |value: ref T| -> bool) -> Array[T] {
+    pub func filter(move self, predicate: |value: ref T| -> bool) -> Array[T] {
         var result: Array[T] = [];
         
         for value in self {
@@ -168,7 +168,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         return self.slice.__mutindex__(index);
     }
 
-    pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
+    pub func __iter__(@unmanaged move self) -> PointerMoveIter[T] {
         return PointerMoveIter[T].new(self.slice.data, self.slice.data + self.slice.length);
     }
 

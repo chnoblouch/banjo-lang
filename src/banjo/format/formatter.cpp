@@ -182,8 +182,9 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
         case AST_PARAM_LIST: format_param_list(node, whitespace); break;
         case AST_PARAM: format_param(node, whitespace); break;
-        case AST_REF_PARAM: format_param(node, whitespace); break;
-        case AST_REF_MUT_PARAM: format_param(node, whitespace); break;
+        case AST_REF_PARAM: format_ref_param(node, whitespace); break;
+        case AST_REF_MUT_PARAM: format_ref_mut_param(node, whitespace); break;
+        case AST_MOVE_PARAM: format_move_param(node, whitespace); break;
         case AST_REF_RETURN: format_ref_return(node, whitespace); break;
         case AST_REF_MUT_RETURN: format_ref_return(node, whitespace); break;
         case AST_GENERIC_PARAM_LIST: format_list(node, whitespace); break;
@@ -1138,47 +1139,63 @@ void Formatter::format_param(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *name_node = node->first_child;
     ASTNode *expr_node = name_node->next_sibling;
 
-    if (node->type == AST_PARAM) {
-        if (name_node->type == AST_EMPTY) {
-            format_node(expr_node, whitespace);
-        } else {
-            unsigned tkn_colon = node->tokens[0];
-
-            format_node(name_node, WhitespaceKind::NONE);
-            ensure_space_after(tkn_colon);
-            format_node(expr_node, whitespace);
-        }
-    } else if (node->type == AST_REF_PARAM) {
-        if (name_node->type == AST_SELF) {
-            format_node(name_node, whitespace);
-        } else {
-            unsigned tkn_ref = node->tokens[0];
-            unsigned tkn_colon = node->tokens[1];
-
-            ensure_space_after(tkn_ref);
-            format_node(name_node, WhitespaceKind::NONE);
-            ensure_space_after(tkn_colon);
-            format_node(expr_node, whitespace);
-        }
-    } else if (node->type == AST_REF_MUT_PARAM) {
-        if (name_node->type == AST_SELF) {
-            unsigned tkn_mut = node->tokens[0];
-            ensure_space_after(tkn_mut);
-            format_node(name_node, whitespace);
-        } else {
-            unsigned tkn_ref = node->tokens[0];
-            unsigned tkn_mut = node->tokens[1];
-            unsigned tkn_colon = node->tokens[2];
-
-            ensure_space_after(tkn_ref);
-            ensure_space_after(tkn_mut);
-            format_node(name_node, WhitespaceKind::NONE);
-            ensure_space_after(tkn_colon);
-            format_node(expr_node, whitespace);
-        }
+    if (name_node->type == AST_EMPTY) {
+        format_node(expr_node, whitespace);
     } else {
-        ASSERT_UNREACHABLE;
+        unsigned tkn_colon = node->tokens[0];
+
+        format_node(name_node, WhitespaceKind::NONE);
+        ensure_space_after(tkn_colon);
+        format_node(expr_node, whitespace);
     }
+}
+
+void Formatter::format_ref_param(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+
+    if (name_node->type == AST_SELF) {
+        format_node(name_node, whitespace);
+    } else {
+        ASTNode *expr_node = name_node->next_sibling;
+
+        unsigned tkn_ref = node->tokens[0];
+        unsigned tkn_colon = node->tokens[1];
+
+        ensure_space_after(tkn_ref);
+        format_node(name_node, WhitespaceKind::NONE);
+        ensure_space_after(tkn_colon);
+        format_node(expr_node, whitespace);
+    }
+}
+
+void Formatter::format_ref_mut_param(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+
+    if (name_node->type == AST_SELF) {
+        unsigned tkn_mut = node->tokens[0];
+        ensure_space_after(tkn_mut);
+        format_node(name_node, whitespace);
+    } else {
+        ASTNode *expr_node = name_node->next_sibling;
+
+        unsigned tkn_ref = node->tokens[0];
+        unsigned tkn_mut = node->tokens[1];
+        unsigned tkn_colon = node->tokens[2];
+
+        ensure_space_after(tkn_ref);
+        ensure_space_after(tkn_mut);
+        format_node(name_node, WhitespaceKind::NONE);
+        ensure_space_after(tkn_colon);
+        format_node(expr_node, whitespace);
+    }
+}
+
+void Formatter::format_move_param(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *name_node = node->first_child;
+
+    unsigned tkn_move = node->tokens[0];
+    ensure_space_after(tkn_move);
+    format_node(name_node, whitespace);
 }
 
 void Formatter::format_type_constraint(ASTNode *node, WhitespaceKind whitespace) {

@@ -56,11 +56,11 @@ struct Set[T: Compare[T]]: ToString, ToRepr {
         return self.elements.length();
     }
 
-    pub func to_array(@[byval, unmanaged] self) -> Array[T] {
+    pub func to_array(@unmanaged move self) -> Array[T] {
         return self.elements;
     }
 
-    pub func __iter__(@[byval, unmanaged] self) -> PointerMoveIter[T] {
+    pub func __iter__(@unmanaged move self) -> PointerMoveIter[T] {
         return self.elements.__iter__();
     }
 

@@ -585,24 +585,18 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
     if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def = proto_of(binary_expr.op);
 
-        sir::GenericParam *g = nullptr;
-        std::span<sir::Expr> gc;
+        std::span<sir::Expr> actual_constraints = generic_param->constraint.components;
 
         // FIXME: TERRIBLE AND BROKEN HACK
         if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(*generic_param)) {
             if (narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-                g = generic_param;
-                gc = generic_param->constraint.components;
                 generic_param->constraint.components = {new sir::Expr{narrowing->constraint}, 1};
             }
         }
 
         sir::Concrete<sir::ProtoDef> concrete_proto{proto_def, std::span{&rhs_type, 1}};
         bool constraint_satisfied = proto_def ? sir::implements(lhs_type, concrete_proto) : false;
-
-        if (g) {
-            g->constraint.components = gc;
-        }
+        generic_param->constraint.components = actual_constraints;
 
         if (constraint_satisfied) {
             lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
@@ -837,23 +831,17 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
     if (auto generic_param = value_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def = proto_of(unary_expr.op);
 
-        sir::GenericParam *g = nullptr;
-        std::span<sir::Expr> gc;
+        std::span<sir::Expr> actual_constraints = generic_param->constraint.components;
 
         // FIXME: TERRIBLE AND BROKEN HACK
         if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(*generic_param)) {
             if (narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-                g = generic_param;
-                gc = generic_param->constraint.components;
                 generic_param->constraint.components = {new sir::Expr{narrowing->constraint}, 1};
             }
         }
 
         bool constraint_satisfied = proto_def ? sir::implements(value_type, {proto_def}) : false;
-
-        if (g) {
-            g->constraint.components = gc;
-        }
+        generic_param->constraint.components = actual_constraints;
 
         if (constraint_satisfied) {
             RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(unary_expr.value));
@@ -2407,7 +2395,7 @@ Result ExprAnalyzer::finalize_call_expr_args(
 
         // If we're calling a method on a generic type, the type of the `self` parameter
         // is the type that is substituted for `T` and not a pointer to a `proto`.
-        // FIXME: `mut self`, `@byval self`
+        // FIXME: `mut self`, `move self`
         if (i == 0 && call_expr.callee.is<sir::PlaceholderExpr>()) {
             auto &generic_method =
                 std::get<sir::PlaceholderExpr::GenericMethod>(call_expr.callee.as<sir::PlaceholderExpr>().kind);
