@@ -3,6 +3,7 @@
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/utils/arena.hpp"
+#include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include <initializer_list>
@@ -14,13 +15,25 @@ bool satisfies_type_constraint(
     Expr type,
     std::optional<Specializer> specializer /* = {} */
 ) {
-    for (Expr component : constraint.components) {
-        if (!satisfies_type_constraint_component(component, type, specializer)) {
-            return false;
+    if (constraint.kind == TypeConstraint::Kind::INTERSECTION) {
+        for (Expr component : constraint.components) {
+            if (!satisfies_type_constraint_component(component, type, specializer)) {
+                return false;
+            }
         }
-    }
 
-    return true;
+        return true;
+    } else if (constraint.kind == TypeConstraint::Kind::UNION) {
+        for (Expr component : constraint.components) {
+            if (satisfies_type_constraint_component(component, type, specializer)) {
+                return true;
+            }
+        }
+
+        return false;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 bool satisfies_type_constraint_component(Expr component, Expr type, std::optional<Specializer> specializer) {
@@ -29,7 +42,6 @@ bool satisfies_type_constraint_component(Expr component, Expr type, std::optiona
     }
 
     Concrete<ProtoDef> concrete_proto = component.as_concrete<ProtoDef>();
-
     if (specializer) {
         concrete_proto.generic_args = specializer->specialize_expr_list(concrete_proto.generic_args);
     }
@@ -47,7 +59,7 @@ bool implements(Expr type, Concrete<ProtoDef> concrete_proto) {
     } else if (auto concrete_struct = type.match_concrete<StructDef>()) {
         satisfied = concrete_struct->def->has_impl_for(concrete_proto);
     } else if (auto param = type.match_symbol<GenericParam>()) {
-        satisfied = contains(param->constraint, concrete_proto);
+        satisfied = implements(param->constraint, concrete_proto);
     }
 
     if (!satisfied && concrete_proto.def->role == ProtoDef::Role::COPY) {
@@ -58,7 +70,7 @@ bool implements(Expr type, Concrete<ProtoDef> concrete_proto) {
     return satisfied;
 }
 
-bool contains(TypeConstraint &constraint, Concrete<ProtoDef> concrete_proto) {
+bool implements(TypeConstraint &constraint, Concrete<ProtoDef> concrete_proto) {
     for (sir::Expr component : constraint.components) {
         if (auto other_proto = component.match_concrete<sir::ProtoDef>()) {
             if (other_proto == concrete_proto) {

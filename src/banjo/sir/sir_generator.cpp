@@ -1634,6 +1634,14 @@ sir::TypeConstraint SIRGenerator::generate_type_constraint(ASTNode *node) {
         return sir::TypeConstraint{.components{}};
     }
 
+    sir::TypeConstraint::Kind kind;
+
+    switch (node->type) {
+        case AST_TYPE_CONSTRAINT_INTERSECTION: kind = sir::TypeConstraint::Kind::INTERSECTION; break;
+        case AST_TYPE_CONSTRAINT_UNION: kind = sir::TypeConstraint::Kind::UNION; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
     std::span<sir::Expr> sir_components = allocate_array<sir::Expr>(node->num_children());
     unsigned component_index = 0;
 
@@ -1642,7 +1650,10 @@ sir::TypeConstraint SIRGenerator::generate_type_constraint(ASTNode *node) {
         component_index += 1;
     }
 
-    return sir::TypeConstraint{.components = sir_components};
+    return sir::TypeConstraint{
+        .kind = kind,
+        .components = sir_components,
+    };
 }
 
 sir::Local SIRGenerator::generate_local(ASTNode *ident_node, ASTNode *type_node, sir::Attributes *attrs) {

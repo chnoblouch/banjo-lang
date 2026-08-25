@@ -118,20 +118,13 @@ Result DeclInterfaceAnalyzer::analyze_struct_def(sir::StructDef &struct_def) {
     for (unsigned i = 0; i < struct_def.impls.size(); i++) {
         sir::Expr &impl = struct_def.impls[i];
 
-        partial_result = ExprAnalyzer{analyzer}.analyze_type(impl);
+        partial_result = ExprAnalyzer{analyzer}.analyze(impl, sir::ExprCategory::PROTO);
         if (partial_result != Result::SUCCESS) {
             continue;
         }
 
-        sir::ProtoDef *proto_def;
-
-        if (auto concrete_proto = impl.match_concrete<sir::ProtoDef>()) {
-            proto_def = concrete_proto->def;
-            analyze_proto_impl(struct_def, *concrete_proto->def);
-        } else {
-            analyzer.report_generator.report_err_expected_proto(impl);
-            continue;
-        }
+        sir::ProtoDef *proto_def = impl.as_concrete<sir::ProtoDef>().def;
+        analyze_proto_impl(struct_def, *proto_def);
 
         for (unsigned j = 0; j < i; j++) {
             sir::Expr prev_impl = struct_def.impls[j];
@@ -419,8 +412,15 @@ void DeclInterfaceAnalyzer::analyze_type_constraints(std::span<sir::GenericParam
 }
 
 void DeclInterfaceAnalyzer::analyze_type_constraint(sir::TypeConstraint &constraint) {
+    sir::ExprCategory component_category;
+
+    switch (constraint.kind) {
+        case sir::TypeConstraint::Kind::INTERSECTION: component_category = sir::ExprCategory::PROTO; break;
+        case sir::TypeConstraint::Kind::UNION: component_category = sir::ExprCategory::TYPE; break;
+    }
+
     for (sir::Expr &component : constraint.components) {
-        ExprAnalyzer{analyzer}.analyze_type(component);
+        ExprAnalyzer{analyzer}.analyze(component, component_category);
     }
 }
 

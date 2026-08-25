@@ -177,7 +177,8 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_RESULT_TYPE: format_binary_expr(node, whitespace); break;
         case AST_CLOSURE_TYPE: format_closure_type(node, whitespace); break;
         case AST_PARAM_SEQUENCE_TYPE: format_single_token_node(node, whitespace); break;
-        case AST_TYPE_CONSTRAINT: format_type_constraint(node, whitespace); break;
+        case AST_TYPE_CONSTRAINT_INTERSECTION: format_type_constraint(node, whitespace); break;
+        case AST_TYPE_CONSTRAINT_UNION: format_type_constraint(node, whitespace); break;
         case AST_META_ACCESS: format_meta_access(node, whitespace); break;
         case AST_IDENTIFIER: format_single_token_node(node, whitespace); break;
         case AST_PARAM_LIST: format_param_list(node, whitespace); break;

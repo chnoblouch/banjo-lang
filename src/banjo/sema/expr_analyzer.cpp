@@ -91,6 +91,29 @@ Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
     return Result::SUCCESS;
 }
 
+Result ExprAnalyzer::analyze(sir::Expr &expr, sir::ExprCategory expected_category) {
+    Result result = analyze(expr);
+    if (result != Result::SUCCESS) {
+        return result;
+    }
+
+    sir::ExprCategory category = expr.get_category();
+
+    if (category != expected_category) {
+        analyzer.report_generator.report_err_expr_category(expr, expected_category);
+        return Result::ERROR;
+    }
+
+    if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
+        if (!symbol_expr->symbol.get_generic_params().empty()) {
+            analyzer.report_generator.report_err_missing_generic_args(expr, symbol_expr->symbol);
+            return Result::ERROR;
+        }
+    }
+
+    return Result::SUCCESS;
+}
+
 Result ExprAnalyzer::analyze(sir::Expr &expr) {
     Result result = Result::SUCCESS;
 
@@ -584,19 +607,20 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
 
     if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def = proto_of(binary_expr.op);
+        sir::TypeConstraint constraint = generic_param->constraint;
 
-        std::span<sir::Expr> actual_constraints = generic_param->constraint.components;
-
-        // FIXME: TERRIBLE AND BROKEN HACK
+        // TODO: Don't just override the constraint.
         if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(*generic_param)) {
             if (narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-                generic_param->constraint.components = {new sir::Expr{narrowing->constraint}, 1};
+                constraint = sir::TypeConstraint{
+                    .kind = sir::TypeConstraint::Kind::INTERSECTION,
+                    .components{&narrowing->constraint, 1},
+                };
             }
         }
 
         sir::Concrete<sir::ProtoDef> concrete_proto{proto_def, std::span{&rhs_type, 1}};
-        bool constraint_satisfied = proto_def ? sir::implements(lhs_type, concrete_proto) : false;
-        generic_param->constraint.components = actual_constraints;
+        bool constraint_satisfied = proto_def ? sir::implements(constraint, concrete_proto) : false;
 
         if (constraint_satisfied) {
             lhs_result = ExprFinalizer(analyzer).finalize(binary_expr.lhs);
@@ -830,18 +854,19 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
 
     if (auto generic_param = value_type.match_symbol<sir::GenericParam>()) {
         sir::ProtoDef *proto_def = proto_of(unary_expr.op);
+        sir::TypeConstraint constraint = generic_param->constraint;
 
-        std::span<sir::Expr> actual_constraints = generic_param->constraint.components;
-
-        // FIXME: TERRIBLE AND BROKEN HACK
+        // TODO: Don't just override the constraint.
         if (sir::TypeNarrowing *narrowing = analyzer.find_type_narrowing(*generic_param)) {
             if (narrowing->constraint.match_concrete<sir::ProtoDef>()) {
-                generic_param->constraint.components = {new sir::Expr{narrowing->constraint}, 1};
+                constraint = sir::TypeConstraint{
+                    .kind = sir::TypeConstraint::Kind::INTERSECTION,
+                    .components{&narrowing->constraint, 1},
+                };
             }
         }
 
-        bool constraint_satisfied = proto_def ? sir::implements(value_type, {proto_def}) : false;
-        generic_param->constraint.components = actual_constraints;
+        bool constraint_satisfied = proto_def ? sir::implements(constraint, {proto_def}) : false;
 
         if (constraint_satisfied) {
             RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(unary_expr.value));
@@ -1078,11 +1103,19 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
         RESULT_PROPAGATE(analyze_dot_expr_callee(*dot_expr, call_expr, is_method));
     } else {
-        RESULT_PROPAGATE(analyze_value(call_expr.callee));
+        RESULT_PROPAGATE(analyze(call_expr.callee));
     }
 
     if (call_expr.callee.is_symbol<sir::UnionCase>()) {
         return analyze_union_case_literal(call_expr, out_expr);
+    }
+
+    sir::ExprCategory callee_category = call_expr.callee.get_category();
+
+    if (callee_category != sir::ExprCategory::VALUE && callee_category != sir::ExprCategory::OVERLOAD_SET) {
+        // TODO: Custom error.
+        analyzer.report_generator.report_err_expr_category(call_expr.callee, sir::ExprCategory::VALUE);
+        return Result::ERROR;
     }
 
     unsigned first_arg_to_analyze = is_method ? 1 : 0;
@@ -1183,10 +1216,7 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     } else if (auto closure_type = callee_type.match<sir::ClosureType>()) {
         callee_func_type = &closure_type->func_type;
     } else {
-        if (callee_type) {
-            analyzer.report_generator.report_err_cannot_call(call_expr.callee);
-        }
-
+        analyzer.report_generator.report_err_cannot_call(call_expr.callee);
         return Result::ERROR;
     }
 
@@ -1848,7 +1878,9 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
         return result;
     }
 
-    if (star_expr.value.is_type()) {
+    sir::ExprCategory expr_category = star_expr.value.get_category();
+
+    if (expr_category == sir::ExprCategory::TYPE || expr_category == sir::ExprCategory::PROTO) {
         out_expr = analyzer.create(
             sir::PointerType{
                 .ast_node = star_expr.ast_node,
@@ -2006,7 +2038,7 @@ Result ExprAnalyzer::analyze_type_check_expr(sir::TypeCheckExpr &type_check_expr
     Result result = Result::SUCCESS;
 
     RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(type_check_expr.type_to_check));
-    RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(type_check_expr.constraint));
+    RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze(type_check_expr.constraint));
     RESULT_PROPAGATE(result);
 
     type_check_expr.type = sir::create_primitive_type(*analyzer.mod, sir::Primitive::BOOL);

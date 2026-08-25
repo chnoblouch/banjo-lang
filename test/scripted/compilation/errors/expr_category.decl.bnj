@@ -30,40 +30,39 @@ const C2: i32 = i32;
 
 # test:subtest
 # test:error 36:12 "expected type, got value"
-# test:error 40:12 "expected type, got value"
+# test:error 39:12 "expected proto, got value"
 
 struct S1 {
     var f: 0;
 }
 
-# TODO: The error message should probably be something like "expected proto, got value"
 struct S2: 0 {}
 
 # test:subtest
-# test:error 45:8 "expected type, got value"
+# test:error 44:8 "expected type, got value"
 
 var v: 0;
 
 # test:subtest
-# test:error 50:15 "expected type, got value"
+# test:error 49:15 "expected type, got value"
 
 native var v: 0;
 
 # test:subtest
-# test:error 56:9 "expected value, got type"
+# test:error 55:9 "expected value, got type"
 
 enum E {
     V = i32,
 }
 
 # test:subtest
-# test:error 63:15 "expected type, got value"
+# test:error 62:15 "expected type, got value"
 
 union U {
     case C(f: 0);
 }
 
 # test:subtest
-# test:error 69:10 "expected type, got value"
+# test:error 68:10 "expected type, got value"
 
 type A = 0;

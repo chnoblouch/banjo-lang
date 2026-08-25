@@ -71,40 +71,59 @@ Expr Expr::get_type() const {
 }
 
 ExprCategory Expr::get_category() const {
-    if (is<MetaAccess>()) {
-        return ExprCategory::META_ACCESS;
-    } else if (auto symbol_expr = match<SymbolExpr>()) {
-        return symbol_expr->symbol.get_category();
-    } else if (auto tuple_expr = match<TupleExpr>()) {
-        if (tuple_expr->exprs.empty()) {
-            return ExprCategory::VALUE_OR_TYPE;
-        } else {
-            return tuple_expr->exprs[0].get_category();
-        }
-    } else if (auto specialize_expr = match<SpecializeExpr>()) {
-        return specialize_expr->symbol.get_category();
-    } else if (auto star_expr = match<StarExpr>()) {
-        return star_expr->value.get_category();
-    } else if (
-        is<PrimitiveType>() || is<PointerType>() || is<StaticArrayType>() || is<FuncType>() || is<ClosureType>() ||
-        is<ReferenceType>()
-    ) {
-        return ExprCategory::TYPE;
-    } else if (auto placeholder_expr = match<PlaceholderExpr>()) {
-        if (std::holds_alternative<PlaceholderExpr::GenericMethod>(placeholder_expr->kind)) {
-            return ExprCategory::VALUE;
-        } else if (std::holds_alternative<PlaceholderExpr::BinaryExpr>(placeholder_expr->kind)) {
-            return ExprCategory::VALUE;
-        } else if (std::holds_alternative<PlaceholderExpr::UnaryExpr>(placeholder_expr->kind)) {
-            return ExprCategory::VALUE;
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    } else if (is<PseudoType>()) {
-        return ExprCategory::TYPE;
-    } else {
-        return ExprCategory::VALUE;
-    }
+    SIR_VISIT_EXPR(
+        *this,
+        return ExprCategory::OTHER,          // empty
+        return ExprCategory::VALUE,          // int_literal
+        return ExprCategory::VALUE,          // fp_literal
+        return ExprCategory::VALUE,          // bool_literal
+        return ExprCategory::VALUE,          // char_literal
+        return ExprCategory::VALUE,          // null_literal
+        return ExprCategory::VALUE,          // none_literal
+        return ExprCategory::VALUE,          // undefined_literal
+        return ExprCategory::VALUE,          // array_literal
+        return ExprCategory::VALUE,          // string_literal
+        return ExprCategory::VALUE,          // struct_literal
+        return ExprCategory::VALUE,          // union_case_literal
+        return ExprCategory::VALUE,          // map_literal
+        return ExprCategory::VALUE,          // closure_literal
+        return inner->symbol.get_category(), // symbol_expr
+        return ExprCategory::VALUE,          // binary_expr
+        return ExprCategory::VALUE,          // unary_expr
+        return ExprCategory::VALUE,          // cast_expr
+        return ExprCategory::VALUE,          // index_expr
+        return ExprCategory::VALUE,          // call_expr
+        return ExprCategory::VALUE,          // field_expr
+        return ExprCategory::VALUE,          // range_expr
+        return ExprCategory::VALUE,          // try_expr
+        return inner->get_category(),        // tuple_expr
+        return ExprCategory::VALUE,          // type_coercion
+        return inner->symbol.get_category(), // specialize_expr
+        return ExprCategory::TYPE,           // primitive_type
+        return ExprCategory::TYPE,           // pointer_type
+        return ExprCategory::TYPE,           // static_array_type
+        return ExprCategory::TYPE,           // func_type
+        return ExprCategory::TYPE,           // optional_type
+        return ExprCategory::TYPE,           // result_type
+        return ExprCategory::TYPE,           // array_type
+        return ExprCategory::TYPE,           // map_type
+        return ExprCategory::TYPE,           // closure_type
+        return ExprCategory::TYPE,           // reference_type
+        return ExprCategory::OTHER,          // ident_expr
+        return ExprCategory::OTHER,          // star_expr
+        return ExprCategory::OTHER,          // bracket_expr
+        return inner->get_category(),        // dot_expr
+        return ExprCategory::TYPE,           // pseudo_type
+        return ExprCategory::META_ACCESS,    // meta_access
+        return ExprCategory::VALUE_OR_TYPE,  // meta_field_expr
+        return ExprCategory::VALUE_OR_TYPE,  // meta_call_expr
+        return ExprCategory::VALUE,          // init_expr
+        return ExprCategory::VALUE,          // move_expr
+        return ExprCategory::VALUE,          // deinit_expr
+        return ExprCategory::VALUE,          // type_check_expr
+        return ExprCategory::VALUE,          // placeholder_expr
+        return ExprCategory::OTHER           // error
+    );
 }
 
 bool Expr::is_type() const {
@@ -416,13 +435,31 @@ Expr Symbol::get_type() {
 }
 
 ExprCategory Symbol::get_category() const {
-    if (is_one_of<StructDef, EnumDef, UnionDef, UnionCase, ProtoDef, TypeAlias, GenericParam>()) {
-        return ExprCategory::TYPE;
-    } else if (is<Module>()) {
-        return ExprCategory::MODULE;
-    } else {
-        return ExprCategory::VALUE;
-    }
+    SIR_VISIT_SYMBOL(
+        *this,
+        return ExprCategory::OTHER,        // empty
+        return ExprCategory::OTHER,        // module
+        return ExprCategory::VALUE,        // func_def
+        return ExprCategory::VALUE,        // func_decl
+        return ExprCategory::VALUE,        // native_func_decl
+        return ExprCategory::VALUE,        // const_def
+        return ExprCategory::TYPE,         // struct_def
+        return ExprCategory::VALUE,        // struct_field
+        return ExprCategory::VALUE,        // var_decl
+        return ExprCategory::VALUE,        // native_var_decl
+        return ExprCategory::TYPE,         // enum_def
+        return ExprCategory::VALUE,        // enum_variant
+        return ExprCategory::TYPE,         // union_def
+        return ExprCategory::TYPE,         // union_case
+        return ExprCategory::PROTO,        // proto_def
+        return ExprCategory::TYPE,         // type_alias
+        return ExprCategory::OTHER,        // use_ident
+        return ExprCategory::OTHER,        // use_rebind
+        return ExprCategory::VALUE,        // local
+        return ExprCategory::VALUE,        // param
+        return ExprCategory::OVERLOAD_SET, // overload_set
+        return ExprCategory::TYPE          // generic_param
+    );
 }
 
 Symbol Symbol::resolve() const {
@@ -556,6 +593,23 @@ bool BinaryExpr::is_logical_op() {
         case BinaryOp::AND:
         case BinaryOp::OR: return true;
         default: return false;
+    }
+}
+
+ExprCategory TupleExpr::get_category() const {
+    if (exprs.empty()) {
+        return ExprCategory::VALUE_OR_TYPE;
+    } else {
+        return exprs[0].get_category();
+    }
+}
+
+ExprCategory DotExpr::get_category() const {
+    if (!lhs) {
+        // If the left-hand side is implicit, this is an enum variant access.
+        return ExprCategory::VALUE;
+    } else {
+        return ExprCategory::OTHER;
     }
 }
 

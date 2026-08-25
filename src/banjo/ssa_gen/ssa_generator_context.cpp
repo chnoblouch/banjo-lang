@@ -78,6 +78,7 @@ bool SSAGeneratorContext::is_type_check_satisfied(const sir::TypeCheckExpr &type
     }
 
     sir::TypeConstraint constraint{
+        .kind = sir::TypeConstraint::Kind::INTERSECTION,
         .components{const_cast<sir::Expr *>(&type_check_expr.constraint), 1},
     };
 

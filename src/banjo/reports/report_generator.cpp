@@ -8,6 +8,7 @@
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_to_text.hpp"
+#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/macros.hpp"
@@ -144,8 +145,8 @@ void ReportGenerator::report_err_invalid_fp_literal(SourceFile &file, Token &tok
     report_error("invalid float literal", {&file, token.range()});
 }
 
-void ReportGenerator::report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected) {
-    report_error("expected $, got $", expr.get_ast_node(), expected, expr.get_category());
+void ReportGenerator::report_err_expr_category(sir::Expr expr, sir::ExprCategory expected) {
+    report_error("expected $, got $", expr.get_ast_node(), expr_category_name(expected), expr_kind_name(expr));
 }
 
 void ReportGenerator::report_err_symbol_not_found(const sir::IdentExpr &ident_expr) {
@@ -743,10 +744,6 @@ void ReportGenerator::report_err_recursive_struct(sir::StructDef &struct_def) {
     report_error("struct contains itself and therefore has infinite size", struct_def.ident.ast_node);
 }
 
-void ReportGenerator::report_err_expected_proto(const sir::Expr &expr) {
-    report_error("expected proto", expr.get_ast_node());
-}
-
 void ReportGenerator::report_err_duplicate_proto_impl(
     const sir::StructDef &struct_def,
     sir::Expr expr,
@@ -984,22 +981,54 @@ void ReportGenerator::add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr 
     }
 }
 
-std::string_view ReportGenerator::symbol_kind_name(sir::Symbol symbol) {
-    if (symbol.is<sir::FuncDef>()) {
-        return "function";
-    } else if (symbol.is<sir::StructDef>()) {
-        return "struct";
-    } else if (symbol.is<sir::UnionDef>()) {
-        return "union";
-    } else if (symbol.is<sir::ProtoDef>()) {
-        return "proto";
-    } else if (symbol.is<sir::TypeAlias>()) {
-        return "type alias";
-    } else if (symbol.is<sir::GenericParam>()) {
-        return "type parameter";
+std::string_view ReportGenerator::expr_kind_name(sir::Expr expr) {
+    if (auto symbol_expr = expr.match<sir::SymbolExpr>()) {
+        return symbol_kind_name(symbol_expr->symbol);
+    } else if (auto specialize_expr = expr.match<sir::SpecializeExpr>()) {
+        return symbol_kind_name(specialize_expr->symbol);
     } else {
-        ASSERT_UNREACHABLE;
+        return expr_category_name(expr.get_category());
     }
+}
+
+std::string_view ReportGenerator::expr_category_name(sir::ExprCategory category) {
+    switch (category) {
+        case sir::ExprCategory::VALUE: return "value";
+        case sir::ExprCategory::TYPE: return "type";
+        case sir::ExprCategory::VALUE_OR_TYPE: return "value or type";
+        case sir::ExprCategory::PROTO: return "proto";
+        case sir::ExprCategory::OVERLOAD_SET: return "overload set";
+        case sir::ExprCategory::META_ACCESS: return "meta access";
+        case sir::ExprCategory::OTHER: return "other";
+    }
+}
+
+std::string_view ReportGenerator::symbol_kind_name(sir::Symbol symbol) {
+    SIR_VISIT_SYMBOL(
+        symbol,
+        return "<empty>",              // empty,
+        return "module",               // module,
+        return "function",             // func_def,
+        return "function declaration", // func_decl,
+        return "native function",      // native_func_decl,
+        return "const",                // const_def,
+        return "struct",               // struct_def,
+        return "struct field",         // struct_field,
+        return "variable",             // var_decl,
+        return "native variable",      // native_var_decl,
+        return "enum",                 // enum_def,
+        return "enum variatn",         // enum_variant,
+        return "union",                // union_def,
+        return "union case",           // union_case,
+        return "proto",                // proto_def,
+        return "type alias",           // type_alias,
+        return "<use identifier>",     // use_ident,
+        return "<use rebinding>",      // use_rebind,
+        return "local",                // local,
+        return "parameter",            // param,
+        return "overload set",         // overload_set,
+        return "type parameter"        // generic_param
+    );
 }
 
 } // namespace banjo

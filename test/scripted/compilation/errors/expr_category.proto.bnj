@@ -1,0 +1,23 @@
+# test:subtest
+# test:error 4:11 "expected proto, got type"
+
+struct S: i32 {}
+
+# test:subtest
+# test:error 10:11 "expected proto, got struct"
+
+struct A {}
+struct B: A {}
+
+# test:subtest
+# test:error 15:11 "expected proto, got type"
+
+func f[T: i32]() {}
+
+# test:subtest
+# test:error 23:11 "expected proto, got type"
+# test:error 23:17 "expected proto, got const"
+
+const C: i32 = 0;
+
+func f[T: i32 + C]() {}

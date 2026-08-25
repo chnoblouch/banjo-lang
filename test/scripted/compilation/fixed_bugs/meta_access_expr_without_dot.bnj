@@ -1,4 +1,4 @@
-# test:error 4:13 "expected value, got meta expression"
+# test:error 4:13 "expected value, got meta access"
 
 func main() {
     var a = meta(i32);

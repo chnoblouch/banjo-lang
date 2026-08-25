@@ -519,8 +519,21 @@ ParseResult DeclParser::parse_type_constraint() {
         node.append_child(parser.create_node(AST_ERROR));
     }
 
-    while (stream.get()->is(TKN_PLUS)) {
-        node.consume(); // Consume '+'
+    ASTNodeType type;
+    TokenType infix_token;
+
+    if (stream.get()->is(TKN_PLUS)) {
+        type = AST_TYPE_CONSTRAINT_INTERSECTION;
+        infix_token = TKN_PLUS;
+    } else if (stream.get()->is(TKN_OR)) {
+        type = AST_TYPE_CONSTRAINT_UNION;
+        infix_token = TKN_OR;
+    } else {
+        return node.build(AST_TYPE_CONSTRAINT_INTERSECTION);
+    }
+
+    while (stream.get()->is(infix_token)) {
+        node.consume(); // Consume '+' or '|'
 
         ParseResult result = parser.parse_type();
         if (result.is_valid) {
@@ -530,7 +543,7 @@ ParseResult DeclParser::parse_type_constraint() {
         }
     }
 
-    return node.build(AST_TYPE_CONSTRAINT);
+    return node.build(type);
 }
 
 } // namespace banjo

@@ -41,6 +41,7 @@ public:
     Result analyze_value(sir::Expr &expr, sir::Expr expected_type);
     Result analyze_value_uncoerced(sir::Expr &expr);
     Result analyze_type(sir::Expr &expr);
+    Result analyze(sir::Expr &expr, sir::ExprCategory expected_category);
 
     Result analyze(sir::Expr &expr);
     Result analyze(sir::Expr &expr, sir::Expr expected_type);

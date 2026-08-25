@@ -1,0 +1,33 @@
+# test:subtest
+# test:compiles
+
+func f[T: i32 | bool](t: T) {}
+
+func main() {
+    f[i32](42);
+    f[bool](true);
+}
+
+# test:subtest
+# test:compiles
+
+struct S {}
+
+func f[T: S | *i16 | [i32; 3]](t: T) {}
+
+func main() {
+    var a: i16 = 100;
+
+    f[*i16](&a);
+    f[[i32; 3]]([0, 1, 2]);
+    f[S](S {});
+}
+
+# test:subtest
+# test:compiles
+
+func f[A: bool | f32](a: A) {}
+
+func g[B: bool | f32](b: B) {
+    f(b);
+}

@@ -76,20 +76,6 @@ ReportText &ReportText::format(sir::Expr &expr) {
     return format(to_string(expr));
 }
 
-ReportText &ReportText::format(sir::ExprCategory expr_category) {
-    std::string string;
-
-    switch (expr_category) {
-        case sir::ExprCategory::VALUE: string = "value"; break;
-        case sir::ExprCategory::TYPE: string = "type"; break;
-        case sir::ExprCategory::VALUE_OR_TYPE: string = "value or type"; break;
-        case sir::ExprCategory::MODULE: string = "module"; break;
-        case sir::ExprCategory::META_ACCESS: string = "meta expression"; break;
-    }
-
-    return format(string);
-}
-
 ReportText &ReportText::format(sir::GenericParam *generic_param) {
     return format("'" + std::string{generic_param->ident.value} + "'");
 }
@@ -129,7 +115,10 @@ ReportText &ReportText::format(const sir::TypeConstraint &type_constraint) {
         string += to_string(type_constraint.components[i]);
 
         if (i != type_constraint.components.size() - 1) {
-            string += " + ";
+            switch (type_constraint.kind) {
+                case sir::TypeConstraint::Kind::INTERSECTION: string += " + "; break;
+                case sir::TypeConstraint::Kind::UNION: string += " | "; break;
+            }
         }
     }
 

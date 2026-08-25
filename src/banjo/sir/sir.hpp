@@ -142,8 +142,10 @@ enum class ExprCategory : std::uint8_t {
     VALUE,
     TYPE,
     VALUE_OR_TYPE,
-    MODULE,
+    PROTO,
+    OVERLOAD_SET,
     META_ACCESS,
+    OTHER,
 };
 
 template <typename T>
@@ -598,6 +600,12 @@ enum class GenericParamKind {
 };
 
 struct TypeConstraint {
+    enum class Kind {
+        INTERSECTION,
+        UNION,
+    };
+
+    Kind kind;
     std::span<Expr> components;
 };
 
@@ -830,6 +838,8 @@ struct TupleExpr {
     ASTNode *ast_node;
     Expr type;
     std::span<Expr> exprs;
+
+    ExprCategory get_category() const;
 };
 
 struct CoercionExpr {
@@ -934,6 +944,8 @@ struct DotExpr {
     ASTNode *ast_node;
     Expr lhs;
     Ident rhs;
+
+    ExprCategory get_category() const;
 };
 
 enum class PseudoTypeKind {

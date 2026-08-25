@@ -56,7 +56,7 @@ public:
     void report_err_int_literal_too_large(SourceFile &file, Token &token);
     void report_err_invalid_fp_literal(SourceFile &file, Token &token);
 
-    void report_err_expr_category(const sir::Expr &expr, sir::ExprCategory expected);
+    void report_err_expr_category(sir::Expr expr, sir::ExprCategory expected);
     void report_err_symbol_not_found(const sir::IdentExpr &ident_expr);
     void report_err_symbol_not_found(const sir::Ident &ident);
     void report_err_symbol_not_found_in(const sir::Ident &member_ident, const std::string &base_name);
@@ -161,15 +161,12 @@ public:
     void report_err_value_non_const(const sir::Expr &value);
 
     void report_err_recursive_struct(sir::StructDef &struct_def);
-    void report_err_expected_proto(const sir::Expr &expr);
-
     void report_err_duplicate_proto_impl(
         const sir::StructDef &struct_def,
         sir::Expr expr,
         sir::ProtoDef &proto_def,
         sir::Expr prev_impl
     );
-
     void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::ProtoFuncDecl &func_decl);
     void report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::ProtoFuncDecl &func_decl);
 
@@ -237,6 +234,8 @@ private:
     );
 
     void add_immut_sub_expr_note(ReportBuilder &builder, sir::Expr immut_sub_expr);
+    std::string_view expr_kind_name(sir::Expr expr);
+    std::string_view expr_category_name(sir::ExprCategory category);
     std::string_view symbol_kind_name(sir::Symbol symbol);
 };
 
