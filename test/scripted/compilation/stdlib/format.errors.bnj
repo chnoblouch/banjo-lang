@@ -41,12 +41,47 @@ func main() {
 # test:exitcode 1
 
 func main() {
-    format("test: {?}");
+    format("test: {x}", 0);
 }
 
 # test:subtest
 # test:exitcode 1
 
 func main() {
-    format("test: {x");
+    format("test: {:");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {::}");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {:a", 0);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {:xx}", 0);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {:xb}", 0);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {:xb}", 0);
 }

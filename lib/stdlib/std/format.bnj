@@ -40,41 +40,107 @@ func format_packed[Args](template: StringSlice, args: Args) -> String {
 func format_arg[T](format: StringSlice, arg: T) -> String {
     var base: u64 = 10;
     var upper: bool = false;
+    var width: usize = 0;
+    var padding_char: u8 = ' ';
+
+    var parsing_format: bool = false;
+    var base_set: bool = false;
+    var width_set: bool = false;
+    var padding_char_set: bool = false;
 
     for i in 1..format.length() - 1 {
         var c = format[i];
         
-        if c == 'b' {
-            base = 2;
-        } else if c == 'o' {
-            base = 8;
-        } else if c == 'x' {
-            base = 16;
-        } else if c == 'X' {
-            base = 16;
-            upper = true;
+        if parsing_format {
+            if c == 'b' && !base_set {
+                base = 2;
+                base_set = true;
+            } else if c == 'o' && !base_set {
+                base = 8;
+                base_set = true;
+            } else if c == 'x' && !base_set {
+                base = 16;
+                base_set = true;
+            } else if c == 'X' && !base_set {
+                base = 16;
+                upper = true;
+                base_set = true;
+            } else if c == '0' && !padding_char_set {
+                padding_char = '0';
+                padding_char_set = true;
+            } else if c >= '1' && c <= '9' && !width_set {
+                var start_index = i;
+                i += 1;
+
+                while format[i] >= '0' && format[i] <= '9' {
+                    i += 1;
+                }
+
+                var substring = format.substring(start_index, i);
+                width = convert.parse_u64(substring).unwrap() as usize;
+                width_set = true;
+            } else {
+                panic_invalid_format_template();
+            }
         } else {
-            panic_invalid_format_template();
+            if c == ':' {
+                parsing_format = true;
+            } else {
+                panic_invalid_format_template();
+            }
         }
     }
 
+    var string: String;
+    var is_number = false;
+
     if T == i8 {
-        return convert.i64_to_string(arg as i64, base, upper);
+        string = convert.i64_to_string(arg as i64, base, upper);
+        is_number = true;
     } else if T == i16 {
-        return convert.i64_to_string(arg as i64, base, upper);
+        string = convert.i64_to_string(arg as i64, base, upper);
+        is_number = true;
     } else if T == i32 {
-        return convert.i64_to_string(arg as i64, base, upper);
+        string = convert.i64_to_string(arg as i64, base, upper);
+        is_number = true;
     } else if T == i64 {
-        return convert.i64_to_string(arg as i64, base, upper);
+        string = convert.i64_to_string(arg as i64, base, upper);
+        is_number = true;
     } else if T == u16 {
-        return convert.u64_to_string(arg as u64, base, upper);
+        string = convert.u64_to_string(arg as u64, base, upper);
+        is_number = true;
     } else if T == u32 {
-        return convert.u64_to_string(arg as u64, base, upper);
+        string = convert.u64_to_string(arg as u64, base, upper);
+        is_number = true;
     } else if T == u64 {
-        return convert.u64_to_string(arg as u64, base, upper);
+        string = convert.u64_to_string(arg as u64, base, upper);
+        is_number = true;
     } else if T == usize {
-        return convert.u64_to_string(arg as u64, base, upper);
+        string = convert.u64_to_string(arg as u64, base, upper);
+        is_number = true;
     } else {
-        return convert.to_string(arg);
+        string = convert.to_string(arg);
+    }
+
+    if string.length() >= width {
+        return string;
+    } else {
+        var result = "";
+
+        if is_number && padding_char == '0' && string[0] == '-' {
+            result = "-";
+        }
+
+        for i in 0..width - string.length() {
+            result.append(padding_char);
+        }
+
+        if result[0] == '-' {
+            result.append(string.slice().substring(1, string.length()));
+        } else {
+            result.append(string);
+        }
+
+        return result;
     }
 }

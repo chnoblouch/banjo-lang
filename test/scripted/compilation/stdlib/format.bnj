@@ -24,6 +24,13 @@ func main() {
 }
 
 # test:subtest
+# test:output "i: 42"
+
+func main() {
+    print(format("i: {:}", 42));
+}
+
+# test:subtest
 # test:output "i: 42, b: true"
 
 func main() {
@@ -41,26 +48,47 @@ func main() {
 # test:output "11000,10111001,-10110110010100100010100111101"
 
 func main() {
-    print(format("{b},{b},{b}", 24 as i32, 185 as u16, -382354749 as i64));
+    print(format("{:b},{:b},{:b}", 24 as i32, 185 as u16, -382354749 as i64));
 }
 
 # test:subtest
 # test:output "30,271,-2662442475"
 
 func main() {
-    print(format("{o},{o},{o}", 24 as i32, 185 as u16, -382354749 as i64));
+    print(format("{:o},{:o},{:o}", 24 as i32, 185 as u16, -382354749 as i64));
 }
 
 # test:subtest
 # test:output "18,b9,-16ca453d"
 
 func main() {
-    print(format("{x},{x},{x}", 24 as i32, 185 as u16, -382354749 as i64));
+    print(format("{:x},{:x},{:x}", 24 as i32, 185 as u16, -382354749 as i64));
 }
 
 # test:subtest
 # test:output "18,B9,-16CA453D"
 
 func main() {
-    print(format("{X},{X},{X}", 24 as i32, 185 as u16, -382354749 as i64));
+    print(format("{:X},{:X},{:X}", 24 as i32, 185 as u16, -382354749 as i64));
+}
+
+# test:subtest
+# test:output "(  42, 128, -29,1057,5492734)"
+
+func main() {
+    print(format("({:4},{:4},{:4},{:4},{:4})", 42, 128, -29, 1057, 5492734));
+}
+
+# test:subtest
+# test:output "(0042,0128,-029,1057,5492734)"
+
+func main() {
+    print(format("({:04},{:04},{:04},{:04},{:04})", 42, 128, -29, 1057, 5492734));
+}
+
+# test:subtest
+# test:output "0000000003"
+
+func main() {
+    print(format("{:010}", 3));
 }
