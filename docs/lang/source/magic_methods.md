@@ -7,7 +7,7 @@ by the programmer but rather by the compiler.
 
 The destructor (`__deinit__`) is called when an object goes out of scope. This can for example be
 used to automatically deallocate memory owned by the object when it is no longer needed. Adding a
-destructor to a struct turns it into a [resource](resources.md).
+destructor to a struct turns it into a resource.
 
 ```banjo
 use std.memory;

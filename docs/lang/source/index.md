@@ -20,7 +20,7 @@ attributes
 build_system
 testing
 hot_reloading
-bindgen
+c_interop
 ```
 
 Welcome to the docs for the Banjo language! The language and toolchain are very much a work in progress, so expect
