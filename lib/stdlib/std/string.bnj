@@ -1,4 +1,8 @@
-use std.{memory, protos.{Compare, Copy, ToRepr, ToString}};
+use std.{
+    memory,
+    protos.{Compare, Copy, ToRepr, ToString},
+    unicode,
+};
 
 struct String: Copy, Compare[String], ToString, ToRepr {
     var slice: StringSlice;
@@ -26,6 +30,24 @@ struct String: Copy, Compare[String], ToString, ToRepr {
 
     pub func from_cstring(data: *u8) -> String {
         return from(StringSlice.of_cstring(data));
+    }
+
+    pub func from_utf16(slice: Slice[u16]) -> String {
+        var result: Array[u8] = [];
+        var index: usize = 0;
+
+        while index < slice.length() {
+            var decoded = unicode.decode_utf16(slice.subslice(index, slice.length()));
+            var utf8 = unicode.encode_utf8(decoded.codepoint);
+
+            for i in 0..utf8.length {
+                result.append(utf8.bytes[i]);
+            }
+
+            index += decoded.num_consumed;
+        }
+
+        return from(StringSlice.new(result.data(), result.length()));
     }
 
     func __internal_make(pointer: *u8, length: usize) -> String {
@@ -110,6 +132,26 @@ struct String: Copy, Compare[String], ToString, ToRepr {
             slice: Slice[u8].new(data, size),
             capacity: size,
         };
+    }
+
+    pub func to_utf16(self) -> Array[u16] {
+        var slice = Slice[u8].new(self.bytes(), self.length());
+
+        var result: Array[u16] = [];
+        var index: usize = 0;
+
+        while index < self.length() {
+            var decoded = unicode.decode_utf8(slice.subslice(index, slice.length()));
+            var utf16 = unicode.encode_utf16(decoded.codepoint);
+
+            for i in 0..utf16.length {
+                result.append(utf16.values[i]);
+            }
+
+            index += decoded.num_consumed;
+        }
+
+        return result;
     }
 
     pub func __add__(self, ref rhs: String) -> String {
