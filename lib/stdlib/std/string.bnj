@@ -123,35 +123,11 @@ struct String: Copy, Compare[String], ToString, ToRepr {
     }
 
     pub func to_cstring(self) -> Array[u8] {
-        var size = self.slice.length + 1;
-        var data = memory.alloc(size) as *u8;
-        memory.copy(self.slice.data, data, self.slice.length);
-        data[self.slice.length] = '\0';
-
-        return Array[u8] {
-            slice: Slice[u8].new(data, size),
-            capacity: size,
-        };
+        return self.slice.to_cstring();
     }
 
     pub func to_utf16(self) -> Array[u16] {
-        var slice = Slice[u8].new(self.bytes(), self.length());
-
-        var result: Array[u16] = [];
-        var index: usize = 0;
-
-        while index < self.length() {
-            var decoded = unicode.decode_utf8(slice.subslice(index, slice.length()));
-            var utf16 = unicode.encode_utf16(decoded.codepoint);
-
-            for i in 0..utf16.length {
-                result.append(utf16.values[i]);
-            }
-
-            index += decoded.num_consumed;
-        }
-
-        return result;
+        return self.slice.to_utf16();
     }
 
     pub func __add__(self, ref rhs: String) -> String {

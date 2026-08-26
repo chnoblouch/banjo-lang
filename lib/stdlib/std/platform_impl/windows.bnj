@@ -171,7 +171,7 @@ meta if IS_WINDOWS {
         }
 
         var string = StringSlice.new(data.data, data.length);
-        var data_utf16 = unicode.utf8_string_to_utf16(string);
+        var data_utf16 = string.to_utf16();
 
         try result in write_console_utf16(stream.handle, data_utf16.slice()) {
             # TODO: Calculate to actual number of bytes written.

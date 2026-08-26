@@ -138,6 +138,38 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         return none;
     }
 
+    pub func to_cstring(self) -> Array[u8] {
+        var size = self.length + 1;
+        var data = memory.alloc(size) as *u8;
+        memory.copy(self.data, data, self.length);
+        data[self.length] = '\0';
+
+        return Array[u8] {
+            slice: Slice[u8].new(data, size),
+            capacity: size,
+        };
+    }
+
+    pub func to_utf16(self) -> Array[u16] {
+        var slice = Slice[u8].new(self.data, self.length);
+
+        var result: Array[u16] = [];
+        var index: usize = 0;
+
+        while index < self.length {
+            var decoded = unicode.decode_utf8(slice.subslice(index, slice.length()));
+            var utf16 = unicode.encode_utf16(decoded.codepoint);
+
+            for i in 0..utf16.length {
+                result.append(utf16.values[i]);
+            }
+
+            index += decoded.num_consumed;
+        }
+
+        return result;
+    }
+
     pub func __eq__(self, ref rhs: StringSlice) -> bool {
         if self.length != rhs.length {
             return false;
