@@ -42,7 +42,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         };
     }
 
-    func __make__(pointer: *T, length: usize) -> Array[T] {
+    func __internal_make(pointer: *T, length: usize) -> Array[T] {
         return from(Slice[T].new(pointer, length));
     }
 

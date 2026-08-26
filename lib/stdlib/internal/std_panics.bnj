@@ -41,6 +41,11 @@ func panic_out_of_bounds_remove_array(index: usize, length: usize) {
 }
 
 @never_inline
+func panic_invalid_utf8() {
+    panic("invalid utf-8 sequence");
+}
+
+@never_inline
 func panic_out_of_memory(alloc_size: usize) {
     panic("out of heap memory (failed to allocate " + str(alloc_size) + " bytes)");
 }

@@ -16,7 +16,7 @@ struct Map[K: Compare[K], V]: Copy, ToString, ToRepr {
         };
     }
 
-    pub func __make__(pointer: *(K, V), length: usize) -> Map[K, V] {
+    pub func __internal_make(pointer: *(K, V), length: usize) -> Map[K, V] {
         return from(Slice[(K, V)].new(pointer, length));
     }
 

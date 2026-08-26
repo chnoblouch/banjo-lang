@@ -1,0 +1,97 @@
+# test:common
+
+use std.unicode;
+
+func validate_utf8(slice: Slice[u8]) {
+    if unicode.validate_utf8(slice) {
+        print("v");
+    } else {
+        print("f");
+    }
+}
+
+# test:subtest
+# test:output "vvvvvvvvvvvv"
+
+func main() {
+    validate_utf8([]);
+
+    validate_utf8([0x41]);  # "A"
+    validate_utf8([0x74, 0x65, 0x73, 0x74]);  # "test"
+
+    validate_utf8([0xC3, 0x80]);  # "À"
+    validate_utf8([0xCF, 0x84, 0xCE, 0xB5, 0xCF, 0x83, 0xCF, 0x84]);  # "τεστ"
+    
+    validate_utf8([0xE0, 0xA4, 0x85]);  # "अ"
+    validate_utf8([0xE3, 0x81, 0x93, 0xE3, 0x82, 0x93, 0xE3, 0x81, 0xAB, 0xE3, 0x81, 0xA1, 0xE3, 0x81, 0xAF]);  # "こんにちは"
+    
+    validate_utf8([0xF0, 0x9F, 0xAA, 0x95]); # "🪕"
+    validate_utf8([0xF0, 0x9F, 0xAA, 0x95, 0xF0, 0x9F, 0x94, 0xA5]); # "🪕🔥"
+
+    # Almost non-shortest forms
+    validate_utf8([0xC2, 0x80]);
+    validate_utf8([0xE0, 0xA0, 0x80]);
+    validate_utf8([0xF0, 0x90, 0x80, 0x80]);
+}
+
+# test:subtest
+# test:output "fff"
+
+func main() {
+    # Invalid leading byte
+    validate_utf8([0xFF]);
+    validate_utf8([0xF8]);
+    validate_utf8([0xFC]);
+}
+
+# test:subtest
+# test:output "fffffff"
+
+func main() {
+    # Missing continuation bytes
+    validate_utf8([0xC3]);
+    validate_utf8([0xE0, 0xA4]);
+    validate_utf8([0xF0, 0x9F, 0xAA]);
+
+    # Invalid continuation bytes
+    validate_utf8([0xC3, 0x00]);
+    validate_utf8([0xE0, 0xA4, 0x00]);
+    validate_utf8([0xF0, 0x9F, 0xAA, 0x00]);
+
+    # Too many continuation bytes
+    validate_utf8([0xC3, 0x80, 0x80]);
+}
+
+# test:subtest
+# test:output "ffff"
+
+func main() {
+    # Non-shortest forms
+    validate_utf8([0xC0, 0x80]);
+    validate_utf8([0xC1, 0x80]);
+    validate_utf8([0xE0, 0x80, 0x80]);
+    validate_utf8([0xF0, 0x80, 0x80, 0x80]);
+}
+
+# test:subtest
+# test:output "ffff"
+
+func main() {
+    # Surrogate characters
+    validate_utf8([0xED, 0xA0, 0x80]);
+    validate_utf8([0xED, 0xAF, 0xBF]);
+    validate_utf8([0xED, 0xB0, 0x80]);
+    validate_utf8([0xED, 0xBF, 0xbF]);
+}
+
+# test:subtest
+# test:output "fffff"
+
+func main() {
+    # Decoded values larger than U+10FFFF
+    validate_utf8([0xF4, 0x90, 0x80, 0x80]);
+    validate_utf8([0xF4, 0xA0, 0x80, 0x80]);
+    validate_utf8([0xF5, 0x80, 0x80, 0x80]);
+    validate_utf8([0xF6, 0x80, 0x80, 0x80]);
+    validate_utf8([0xF7, 0x80, 0x80, 0x80]);
+}

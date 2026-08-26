@@ -60,12 +60,12 @@ pub func encode_utf8(codepoint: u32) -> EncodeUtf8Result {
 pub func decode_utf8(slice: Slice[u8]) -> DecodeResult {
     var c = slice[0];
 
-    if (c & 0x80 == 0) {
+    if c & 0x80 == 0 {
         return DecodeResult {
             codepoint: c as u32,
             num_consumed: 1,
         };
-    } else if (c & 0xE0 == 0xC0) {
+    } else if c & 0xE0 == 0xC0 {
         var c1 = c as u32;
         var c2 = slice[1] as u32;
 
@@ -73,7 +73,7 @@ pub func decode_utf8(slice: Slice[u8]) -> DecodeResult {
             codepoint: ((c1 & 0x1F) << 6) | (c2 & 0x3F),
             num_consumed: 2,
         };
-    } else if (c & 0xF0 == 0xE0) {
+    } else if c & 0xF0 == 0xE0 {
         var c1 = c as u32;
         var c2 = slice[1] as u32;
         var c3 = slice[2] as u32;
@@ -83,7 +83,7 @@ pub func decode_utf8(slice: Slice[u8]) -> DecodeResult {
             num_consumed: 3,
         };
     } else {
-        if (c & 0xF8 != 0xF0) {
+        if c & 0xF8 != 0xF0 {
             panic("invalid utf-8 sequence");
         }
 
@@ -144,6 +144,88 @@ pub func decode_utf16(slice: Slice[u16]) -> DecodeResult {
             num_consumed: 2,
         };
     }
+}
+
+pub func validate_utf8(slice: Slice[u8]) -> bool {
+    # For reference: https://unicode.org/mail-arch/unicode-ml/y2003-m02/att-0467/01-The_Algorithm_to_Valide_an_UTF-8_String
+
+    var index: usize = 0;
+
+    while index < slice.length() {
+        var c1 = slice[index];
+
+        if c1 & 0x80 == 0 {
+            index += 1;
+        } else if c1 & 0xE0 == 0xC0 {
+            if index >= slice.length() - 1 {
+                return false;
+            }
+
+            var c2 = slice[index + 1];
+
+            if c2 & 0xC0 != 0x80 {
+                return false;
+            }
+
+            # Non-shortest forms are illegal.
+            if c1 == 0xC0 || c1 == 0xC1 {
+                return false;
+            }
+
+            index += 2;
+        } else if c1 & 0xF0 == 0xE0 {
+            if index >= slice.length() - 2 {
+                return false;
+            }
+
+            var c2 = slice[index + 1];
+            var c3 = slice[index + 2];
+
+            if c2 & 0xC0 != 0x80 || c3 & 0xC0 != 0x80 {
+                return false;
+            }
+
+            # Non-shortest forms are illegal.
+            if c1 == 0xE0 && c2 < 0xA0 {
+                return false;
+            }
+
+            # Encoding surrogates is illegal.
+            if c1 == 0xED && c2 > 0x99 {
+                return false;
+            }
+
+            index += 3;
+        } else if c1 & 0xF8 == 0xF0 {
+            if index >= slice.length() - 3 {
+                return false;
+            }
+
+            var c2 = slice[index + 1];
+            var c3 = slice[index + 2];
+            var c4 = slice[index + 3];
+
+            if c2 & 0xC0 != 0x80 || c3 & 0xC0 != 0x80 || c4 & 0xC0 != 0x80 {
+                return false;
+            }
+
+            # Non-shortest forms are illegal.
+            if c1 == 0xF0 && c2 < 0x90 {
+                return false;
+            }
+
+            # Encoding values larger than U+10FFFF is illegal.
+            if (c1 == 0xF4 && c2 > 0x8F) || c1 > 0xF4 {
+                return false;
+            }
+
+            index += 4;
+        } else {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 pub func utf8_string_to_utf16(string: StringSlice) -> Array[u16] {

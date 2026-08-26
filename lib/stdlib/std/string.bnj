@@ -28,6 +28,10 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return from(StringSlice.of_cstring(data));
     }
 
+    func __internal_make(pointer: *u8, length: usize) -> String {
+        return from(StringSlice.__internal_make(pointer, length));
+    }
+
     pub func concat(ref a: String, ref b: String) -> String {
         var copy = a.copy();
         copy.append(b.copy());
