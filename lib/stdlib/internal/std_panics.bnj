@@ -21,16 +21,6 @@ func panic_unwrap_error_result() {
 }
 
 @never_inline
-func panic_out_of_bounds_array(index: usize, length: usize) {
-    panic("index out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
-}
-
-@never_inline
-func panic_out_of_bounds_string(index: usize, length: usize) {
-    panic("index out of bounds (index: " + str(index) + ", string length: " + str(length) + ")");
-}
-
-@never_inline
 func panic_out_of_bounds_insert_array(index: usize, length: usize) {
     panic("insertion index out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
 }
@@ -38,6 +28,51 @@ func panic_out_of_bounds_insert_array(index: usize, length: usize) {
 @never_inline
 func panic_out_of_bounds_remove_array(index: usize, length: usize) {
     panic("index to remove out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_slice_out_of_bounds(index: usize, length: usize) {
+    panic("index out of bounds (index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_slice_start_greater_than_end(start: usize, end: usize) {
+    panic("subslice start greater than end (start index: " + str(start) + ", end index: " + str(end) + ")");
+}
+
+@never_inline
+func panic_slice_start_out_of_bounds(index: usize, length: usize) {
+    panic("subslice start out of bounds (start index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_slice_end_out_of_bounds(index: usize, length: usize) {
+    panic("subslice end out of bounds (end index: " + str(index) + ", array length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_slice_cannot_compare[T]() {
+    panic("cannot compare slices (type '" + str(meta(T).name) + "' does not implement 'Compare')");
+}
+
+@never_inline
+func panic_string_out_of_bounds(index: usize, length: usize) {
+    panic("index out of bounds (index: " + str(index) + ", string length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_string_start_greater_than_end(start: usize, end: usize) {
+    panic("substring start greater than end (start index: " + str(start) + ", end index: " + str(end) + ")");
+}
+
+@never_inline
+func panic_string_start_out_of_bounds(index: usize, length: usize) {
+    panic("substring start out of bounds (start index: " + str(index) + ", string length: " + str(length) + ")");
+}
+
+@never_inline
+func panic_string_end_out_of_bounds(index: usize, length: usize) {
+    panic("substring end out of bounds (end index: " + str(index) + ", string length: " + str(length) + ")");
 }
 
 @never_inline
@@ -68,11 +103,6 @@ func panic_cannot_copy_array[T]() {
 @never_inline
 func panic_cannot_copy_map[T]() {
     panic("cannot copy map (type '" + str(meta(T).name) + "' does not implement 'Copy')");
-}
-
-@never_inline
-func panic_cannot_compare_slices[T]() {
-    panic("cannot compare slices (type '" + str(meta(T).name) + "' does not implement 'Compare')");
 }
 
 @never_inline

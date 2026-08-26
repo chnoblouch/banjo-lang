@@ -42,15 +42,12 @@ pub func assert(condition: bool, message: String) {
 }
 
 pub func panic(message: String) {
-    println("\n================================================================");
     print("panic: ");
     println(message);
 
     meta if config.BUILD_CONFIG == config.DEBUG {
         stack_trace.print_stack_trace();
     }
-
-    println("================================================================\n");
 
     exit(1);
 }

@@ -4,7 +4,13 @@ use std.{
     convert,
 };
 
-use internal.std_panics.{panic_out_of_bounds_array, panic_cannot_compare_slices};
+use internal.std_panics.{
+    panic_slice_out_of_bounds,
+    panic_slice_start_greater_than_end,
+    panic_slice_start_out_of_bounds,
+    panic_slice_end_out_of_bounds,
+    panic_slice_cannot_compare,
+};
 
 struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     var data: *T;
@@ -37,6 +43,18 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     }
 
     pub func subslice(mut self, start: usize, end: usize) -> Slice[T] {
+        if start > end {
+            panic_slice_start_greater_than_end(start, end);
+        }
+
+        if start >= self.length {
+            panic_slice_start_out_of_bounds(start, self.length);
+        }
+
+        if end > self.length {
+            panic_slice_end_out_of_bounds(end, self.length);
+        }
+
         return Slice[T] {
             data: &self.data[start],
             length: end - start,
@@ -44,12 +62,18 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
     }
 
     pub func __index__(self, index: usize) -> ref T {
-        self.check_bounds(index);
+        if index >= self.length {
+            panic_slice_out_of_bounds(index, self.length);
+        }
+
         return self.data[index];
     }
 
     pub func __mutindex__(mut self, index: usize) -> ref mut T {
-        self.check_bounds(index);
+        if index >= self.length {
+            panic_slice_out_of_bounds(index, self.length);
+        }
+
         return self.data[index];
     }
 
@@ -75,7 +99,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
 
             return true;
         } else {
-            panic_cannot_compare_slices[T]();
+            panic_slice_cannot_compare[T]();
             return false;
         }
     }
@@ -110,11 +134,5 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
 
         string.append(']');
         return string;
-    }
-
-    func check_bounds(self, index: usize) {
-        if index >= self.length {
-            panic_out_of_bounds_array(index, self.length);
-        }
     }
 }
