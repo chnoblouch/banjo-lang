@@ -38,36 +38,29 @@ func main() {
 }
 
 # test:subtest
-# test:exitcode 1
+# test:output "11000,10111001,-10110110010100100010100111101"
 
 func main() {
-    format("test: {}", 0, 1);
+    print(format("{b},{b},{b}", 24 as i32, 185 as u16, -382354749 as i64));
 }
 
 # test:subtest
-# test:exitcode 1
+# test:output "30,271,-2662442475"
 
 func main() {
-    format("test: {, end");
+    print(format("{o},{o},{o}", 24 as i32, 185 as u16, -382354749 as i64));
 }
 
 # test:subtest
-# test:exitcode 1
+# test:output "18,b9,-16ca453d"
 
 func main() {
-    format("test: {");
+    print(format("{x},{x},{x}", 24 as i32, 185 as u16, -382354749 as i64));
 }
 
 # test:subtest
-# test:exitcode 1
+# test:output "18,B9,-16CA453D"
 
 func main() {
-    format("test: {", 0);
-}
-
-# test:subtest
-# test:exitcode 1
-
-func main() {
-    format("test: }");
+    print(format("{X},{X},{X}", 24 as i32, 185 as u16, -382354749 as i64));
 }

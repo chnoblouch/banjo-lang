@@ -1,0 +1,52 @@
+# test:common
+
+use std.format.format;
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {}", 0, 1);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {, end");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {", 0);
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: }");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {?}");
+}
+
+# test:subtest
+# test:exitcode 1
+
+func main() {
+    format("test: {x");
+}

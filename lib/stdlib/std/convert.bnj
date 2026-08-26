@@ -6,22 +6,22 @@ pub func to_string[T](ref value: T) -> String {
         return value.copy();
     } else if T == *u8 {
         return String.from_cstring(value as *u8);
-    } else if T == i8{
-        return i64_to_string(value as i64, 10);
+    } else if T == i8 {
+        return i64_to_string(value as i64, 10, false);
     } else if T == i16 {
-        return i64_to_string(value as i64, 10);
+        return i64_to_string(value as i64, 10, false);
     } else if T == i32 {
-        return i64_to_string(value as i64, 10);
+        return i64_to_string(value as i64, 10, false);
     } else if T == i64 {
-        return i64_to_string(value as i64, 10);
+        return i64_to_string(value as i64, 10, false);
     } else if T == u16 {
-        return u64_to_string(value as u64, 10);
+        return u64_to_string(value as u64, 10, false);
     } else if T == u32 {
-        return u64_to_string(value as u64, 10);
+        return u64_to_string(value as u64, 10, false);
     } else if T == u64 {
-        return u64_to_string(value as u64, 10);
+        return u64_to_string(value as u64, 10, false);
     } else if T == usize {
-        return u64_to_string(value as u64, 10);
+        return u64_to_string(value as u64, 10, false);
     } else if T == f32 {
         return f64_to_string(value as f64);
     } else if T == f64 {
@@ -144,7 +144,7 @@ pub func parse_f64(string: StringSlice) -> ?f64 {
     return result;
 }
 
-func i64_to_string(value: i64, base: u64) -> String {
+func i64_to_string(value: i64, base: u64, upper: bool) -> String {
     var capacity: usize = 32;
     var buffer: [u8; 32];
     var length: usize = 0;
@@ -160,7 +160,13 @@ func i64_to_string(value: i64, base: u64) -> String {
         negative = true;
     }
 
-    var chars: *u8 = "0123456789ABCDEF";
+    var chars: *u8;
+
+    if upper {
+        chars = "0123456789ABCDEF";
+    } else {
+        chars = "0123456789abcdef";
+    }
 
     while true {
         length += 1;
@@ -181,13 +187,19 @@ func i64_to_string(value: i64, base: u64) -> String {
     return String.from(slice);
 }
 
-func u64_to_string(value: u64, base: u64) -> String {
+func u64_to_string(value: u64, base: u64, upper: bool) -> String {
     var capacity: usize = 32;
     var buffer: [u8; 32];
     var length: usize = 0;
 
     var remainder = value;
-    var chars: *u8 = "0123456789ABCDEF";
+    var chars: *u8;
+
+    if upper {
+        chars = "0123456789ABCDEF";
+    } else {
+        chars = "0123456789abcdef";
+    }
 
     while true {
         length += 1;
@@ -232,7 +244,7 @@ func pointer_to_string[T](ref value: T) -> String {
         return "null";
     }
 
-    return "0x" + u64_to_string(address as u64, 16);
+    return "0x" + u64_to_string(address as u64, 16, true);
 }
 
 func static_array_to_repr[T](ref value: T, indent: u32) -> String {

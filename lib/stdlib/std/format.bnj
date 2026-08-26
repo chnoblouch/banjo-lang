@@ -15,13 +15,13 @@ func format_packed[Args](template: StringSlice, args: Args) -> String {
         var lbrace = substring.find('{');
         var rbrace = substring.find('}');
 
-        if !lbrace.has_value || !rbrace.has_value || lbrace.value + 1 != rbrace.value {
+        if !lbrace.has_value || !rbrace.has_value {
             panic_invalid_format_template();
         }
 
-        index += lbrace.value + 2;
+        index += rbrace.value + 1;
         result += substring.substring(0, lbrace.value);
-        result += convert.to_string(arg);
+        result += format_arg(substring.substring(lbrace.value, rbrace.value + 1), arg);
     }
 
     if index < template.length() {
@@ -35,4 +35,46 @@ func format_packed[Args](template: StringSlice, args: Args) -> String {
     }
 
     return result;
+}
+
+func format_arg[T](format: StringSlice, arg: T) -> String {
+    var base: u64 = 10;
+    var upper: bool = false;
+
+    for i in 1..format.length() - 1 {
+        var c = format[i];
+        
+        if c == 'b' {
+            base = 2;
+        } else if c == 'o' {
+            base = 8;
+        } else if c == 'x' {
+            base = 16;
+        } else if c == 'X' {
+            base = 16;
+            upper = true;
+        } else {
+            panic_invalid_format_template();
+        }
+    }
+
+    if T == i8 {
+        return convert.i64_to_string(arg as i64, base, upper);
+    } else if T == i16 {
+        return convert.i64_to_string(arg as i64, base, upper);
+    } else if T == i32 {
+        return convert.i64_to_string(arg as i64, base, upper);
+    } else if T == i64 {
+        return convert.i64_to_string(arg as i64, base, upper);
+    } else if T == u16 {
+        return convert.u64_to_string(arg as u64, base, upper);
+    } else if T == u32 {
+        return convert.u64_to_string(arg as u64, base, upper);
+    } else if T == u64 {
+        return convert.u64_to_string(arg as u64, base, upper);
+    } else if T == usize {
+        return convert.u64_to_string(arg as u64, base, upper);
+    } else {
+        return convert.to_string(arg);
+    }
 }
