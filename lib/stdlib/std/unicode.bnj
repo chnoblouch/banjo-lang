@@ -228,6 +228,10 @@ pub func validate_utf8(slice: Slice[u8]) -> bool {
     return true;
 }
 
+pub func is_utf8_char_boundary(c: u8) -> bool {
+    return c & 0x80 == 0 || c & 0xC0 == 0xC0;
+}
+
 pub func utf8_string_to_utf16(string: StringSlice) -> Array[u16] {
     var slice = Slice[u8].new(string.data(), string.length());
 

@@ -46,6 +46,11 @@ func panic_invalid_utf8() {
 }
 
 @never_inline
+func panic_utf8_not_at_boundary(index: usize) {
+    panic("index is not at a utf-8 character boundary (index: " + str(index) + ")");
+}
+
+@never_inline
 func panic_out_of_memory(alloc_size: usize) {
     panic("out of heap memory (failed to allocate " + str(alloc_size) + " bytes)");
 }
