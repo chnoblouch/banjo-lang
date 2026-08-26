@@ -52,6 +52,7 @@ public:
     void report_err_unclosed_block(SourceFile &file, Token &token);
     void report_err_invalid_char_literal(SourceFile &file, Token &token);
     void report_err_invalid_escape_sequence(SourceFile &file, TextPosition position);
+    void report_err_invalid_utf8(sir::StringLiteral &string_literal);
     void report_err_invalid_int_literal(SourceFile &file, Token &token);
     void report_err_int_literal_too_large(SourceFile &file, Token &token);
     void report_err_invalid_fp_literal(SourceFile &file, Token &token);

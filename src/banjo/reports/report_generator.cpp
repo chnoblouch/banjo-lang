@@ -133,6 +133,11 @@ void ReportGenerator::report_err_invalid_escape_sequence(SourceFile &file, TextP
     report_error("unknown escape sequence", {&file, {position, position + 1}});
 }
 
+void ReportGenerator::report_err_invalid_utf8(sir::StringLiteral &string_literal) {
+    // TODO: Highlight the faulty character.
+    report_error("invalid utf-8 sequence in string literal", string_literal.ast_node);
+}
+
 void ReportGenerator::report_err_invalid_int_literal(SourceFile &file, Token &token) {
     report_error("invalid integer literal", {&file, token.range()});
 }
