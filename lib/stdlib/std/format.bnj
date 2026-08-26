@@ -24,12 +24,15 @@ func format_packed[Args](template: StringSlice, args: Args) -> String {
         result += convert.to_string(arg);
     }
 
-    var substring = template.substring(index, template.length());
+    if index < template.length() {
+        var substring = template.substring(index, template.length());
 
-    if substring.find('{').has_value || substring.find('}').has_value {
-        panic_invalid_format_template();
+        if substring.find('{').has_value || substring.find('}').has_value {
+            panic_invalid_format_template();
+        }
+
+        result += substring;
     }
 
-    result += substring;
     return result;
 }
