@@ -108,8 +108,10 @@ func main() {
 
 proto P[T] {}
 
-func f[T, A: P[T]](a: A) {}
+struct S[T]: P[T] {}
 
-func g[T, B: P[T]](b: B) {
-    f[T, P[T]](b);
+func f[T, B: P[T]](b: B) {}
+
+func g[T, A: P[T]](a: A) {
+    f[T, A](a);
 }

@@ -49,11 +49,22 @@ func main() {
 # }
 
 # test:subtest
-# test:error 60:11 "expected type, got proto"
-# test:error 60:15 "expected type, got const"
+# test:error 59:11 "expected type, got proto"
+# test:error 59:15 "expected type, got const"
 
 proto P {}
 
 const C: i32 = 0;
 
-func f[T: P + C]() {}
+func f[T: P | C]() {}
+
+# test:subtest
+# test:error 69:7 "expected type, got proto"
+
+proto P {}
+
+func f[T]() {}
+
+func main() {
+    f[P]();
+}

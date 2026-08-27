@@ -53,10 +53,7 @@ Result ExprAnalyzer::analyze_value(sir::Expr &expr, sir::Expr expected_type) {
 }
 
 Result ExprAnalyzer::analyze_value_uncoerced(sir::Expr &expr) {
-    Result result = analyze_uncoerced(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    RESULT_PROPAGATE(analyze_uncoerced(expr));
 
     sir::ExprCategory category = expr.get_category();
 
@@ -69,10 +66,7 @@ Result ExprAnalyzer::analyze_value_uncoerced(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
-    Result result = analyze(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    RESULT_PROPAGATE(analyze(expr));
 
     sir::ExprCategory category = expr.get_category();
 
@@ -92,10 +86,7 @@ Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::analyze(sir::Expr &expr, sir::ExprCategory expected_category) {
-    Result result = analyze(expr);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    RESULT_PROPAGATE(analyze(expr));
 
     sir::ExprCategory category = expr.get_category();
 
@@ -1938,29 +1929,21 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
 
 Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::Expr &out_expr) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
-    partial_result = ExprAnalyzer{analyzer, DONT_RESOLVE_TYPE_ALIASES}.analyze(bracket_expr.lhs);
-    if (partial_result != Result::SUCCESS) {
-        return Result::ERROR;
-    }
-
-    for (sir::Expr &expr : bracket_expr.rhs) {
-        partial_result = analyze(expr);
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
-    }
-
-    if (result != Result::SUCCESS) {
-        return Result::ERROR;
-    }
+    ExprAnalyzer lhs_analyzer{analyzer, DONT_RESOLVE_TYPE_ALIASES};
+    RESULT_PROPAGATE(lhs_analyzer.analyze(bracket_expr.lhs));
 
     if (auto symbol_expr = bracket_expr.lhs.match<sir::SymbolExpr>()) {
         sir::Symbol symbol = symbol_expr->symbol;
         std::span<sir::GenericParam *> generic_params = symbol.get_generic_params();
 
         if (!generic_params.empty()) {
+            for (sir::Expr &expr : bracket_expr.rhs) {
+                RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze_type(expr));
+            }
+
+            RESULT_PROPAGATE(result);
+
             if (bracket_expr.rhs.size() != generic_params.size()) {
                 analyzer.report_generator.report_err_unexpected_generic_arg_count(bracket_expr, symbol);
                 return Result::ERROR;
@@ -1977,6 +1960,12 @@ Result ExprAnalyzer::analyze_bracket_expr(sir::BracketExpr &bracket_expr, sir::E
             return Result::SUCCESS;
         }
     }
+
+    for (sir::Expr &expr : bracket_expr.rhs) {
+        RESULT_MERGE(result, ExprAnalyzer{analyzer}.analyze(expr));
+    }
+
+    RESULT_PROPAGATE(result);
 
     sir::Expr lhs_type = analyzer.get_resolved_type(bracket_expr.lhs);
 
