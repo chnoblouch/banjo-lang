@@ -31,3 +31,35 @@ func f[A: bool | f32](a: A) {}
 func g[B: bool | f32](b: B) {
     f(b);
 }
+
+# test:subtest
+# test:compiles
+
+func f[A: bool | f32 | i64](a: A) {}
+
+func g[B: bool | f32](b: B) {
+    f(b);
+}
+
+# test:subtest
+# test:compiles
+
+struct S {}
+
+func f[A: u8 | S | (u16, f64) | [i32; 3]](a: A) {}
+
+func g[B: [i32; 3] | S](b: B) {
+    f(b);
+}
+
+# test:subtest
+# test:compiles
+
+struct S[T] {}
+
+func f[T, B: S[T] | i32]() {}
+
+func g[T, A: S[T] | i32]() {
+    f[T, A]();
+}
+

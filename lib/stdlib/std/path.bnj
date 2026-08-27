@@ -1,5 +1,4 @@
 use std.{platform, io.Error, protos.{ToRepr, ToString}};
-use internal.std_panics.panic_cannot_convert_to_path;
 
 struct Path: ToString, ToRepr {
     var path: String;
@@ -8,17 +7,17 @@ struct Path: ToString, ToRepr {
         return Path { path: "" };
     }
 
-    pub func from[T](ref value: T) -> Path {
+    pub func from[T: Path | String | StringSlice | *u8](ref value: T) -> Path {
         var path: Path = undefined;
 
         if T == Path {
             path = value.copy();
         } else if T == String {
             path = Path { path: value.copy() };
+        } else if T == StringSlice {
+            path = Path { path: String.from(*__builtin_pointer_to(value)) };
         } else if T == *u8 {
             path = Path { path: String.from_cstring(value as *u8) };
-        } else {
-            panic_cannot_convert_to_path[T]();
         }
 
         path.normalize();

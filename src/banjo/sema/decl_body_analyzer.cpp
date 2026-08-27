@@ -149,7 +149,7 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concr
             decl_type = specializer.specialize_func_type(*decl_type);
         }
 
-        sir::Comparison comparison{[&](sir::Expr lhs, sir::Expr rhs) {
+        sir::Comparison comparison{[&](sir::Comparison &, sir::Expr lhs, sir::Expr rhs) {
             if (auto pseudo_type = lhs.match<sir::PseudoType>()) {
                 if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
                     if (auto concrete_struct = rhs.match_concrete<sir::StructDef>()) {

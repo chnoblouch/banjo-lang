@@ -11,7 +11,7 @@ namespace banjo::sir {
 class Comparison {
 
 private:
-    typedef std::function<std::optional<bool>(Expr lhs, Expr rhs)> OverrideFunc;
+    typedef std::function<std::optional<bool>(Comparison &self, Expr lhs, Expr rhs)> OverrideFunc;
 
     std::optional<OverrideFunc> override_func;
 

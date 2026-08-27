@@ -136,7 +136,7 @@ meta if os.IS_UNIX {
     native func pthread_mutex_lock(mutex: *PthreadMutex) -> i32;
     native func pthread_mutex_unlock(mutex: *PthreadMutex) -> i32;
     native func pthread_mutex_destroy(mutex: *PthreadMutex) -> i32;
-    native func nanosleep(req: *Timespec, rem: *Timespec);
+    native func nanosleep(req: *Timespec, rem: *Timespec) -> i32;
     native func get_nprocs() -> i32;
     native func clock_gettime(clk_id: ClockId, tp: *Timespec) -> i32;
     native func socket(socket_family: i32, socket_type: i32, protocol: i32) -> i32;

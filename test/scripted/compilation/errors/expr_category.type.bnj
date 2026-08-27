@@ -47,3 +47,13 @@ func main() {
 #     var a: [0: i32];
 #     var b: [i32: 0];
 # }
+
+# test:subtest
+# test:error 60:11 "expected type, got proto"
+# test:error 60:15 "expected type, got const"
+
+proto P {}
+
+const C: i32 = 0;
+
+func f[T: P + C]() {}

@@ -28,7 +28,7 @@ void TypeConstraintChecker::check(Substitution &substitution, unsigned index) {
     utils::Arena arena;
     sir::Specializer specializer{arena, substitution.params, substitution.args};
 
-    if (sir::satisfies_type_constraint(param.constraint, arg, specializer)) {
+    if (sir::satisfies_type_constraint(param.constraint, arg, &specializer)) {
         return; // Result::SUCCESS;
     } else {
         ASTNode *ast_node = substitution.ast_node;

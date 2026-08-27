@@ -11,7 +11,7 @@ Comparison::Comparison(std::optional<OverrideFunc> override_func /* = {} */)
 
 bool Comparison::compare(Expr lhs, Expr rhs) {
     if (override_func) {
-        if (auto result = (*override_func)(lhs, rhs)) {
+        if (auto result = (*override_func)(*this, lhs, rhs)) {
             return *result;
         }
     }

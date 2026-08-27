@@ -2,6 +2,7 @@
 
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_comparison.hpp"
 #include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
@@ -13,7 +14,7 @@ namespace banjo::sir {
 bool satisfies_type_constraint(
     TypeConstraint &constraint,
     Expr type,
-    std::optional<Specializer> specializer /* = {} */
+    Specializer *specializer /* = nullptr */
 ) {
     if (constraint.kind == TypeConstraint::Kind::INTERSECTION) {
         for (Expr component : constraint.components) {
@@ -24,6 +25,10 @@ bool satisfies_type_constraint(
 
         return true;
     } else if (constraint.kind == TypeConstraint::Kind::UNION) {
+        if (auto generic_param = type.match_symbol<sir::GenericParam>()) {
+            return is_superset(constraint, generic_param->constraint, specializer);
+        }
+
         for (Expr component : constraint.components) {
             if (satisfies_type_constraint_component(component, type, specializer)) {
                 return true;
@@ -36,17 +41,16 @@ bool satisfies_type_constraint(
     }
 }
 
-bool satisfies_type_constraint_component(Expr component, Expr type, std::optional<Specializer> specializer) {
-    if (!component.match_concrete<ProtoDef>()) {
+bool satisfies_type_constraint_component(Expr component, Expr type, Specializer *specializer) {
+    if (auto concrete_proto = component.match_concrete<ProtoDef>()) {
+        if (specializer) {
+            concrete_proto->generic_args = specializer->specialize_expr_list(concrete_proto->generic_args);
+        }
+
+        return implements(type, *concrete_proto);
+    } else {
         return type == component;
     }
-
-    Concrete<ProtoDef> concrete_proto = component.as_concrete<ProtoDef>();
-    if (specializer) {
-        concrete_proto.generic_args = specializer->specialize_expr_list(concrete_proto.generic_args);
-    }
-
-    return implements(type, concrete_proto);
 }
 
 bool implements(Expr type, Concrete<ProtoDef> concrete_proto) {
@@ -172,6 +176,49 @@ bool pointer_implements(PointerType &pointer_type, Concrete<ProtoDef> concrete_p
     } else {
         return false;
     }
+}
+
+bool is_superset(TypeConstraint &a, TypeConstraint &b, Specializer *specializer) {
+    if (a.kind != TypeConstraint::Kind::UNION || b.kind != TypeConstraint::Kind::UNION) {
+        return false;
+    }
+
+    Comparison comparison{[&](Comparison &self, Expr lhs, Expr rhs) -> std::optional<bool> {
+        auto lhs_specialize_expr = lhs.match<sir::SpecializeExpr>();
+        auto rhs_specialize_expr = rhs.match<sir::SpecializeExpr>();
+
+        if (lhs_specialize_expr && rhs_specialize_expr) {
+            utils::Arena arena;
+
+            if (lhs_specialize_expr->symbol != rhs_specialize_expr->symbol) {
+                return false;
+            }
+
+            std::span<Expr> lhs_args = specializer->specialize_expr_list(lhs_specialize_expr->args);
+            std::span<Expr> rhs_args = specializer->specialize_expr_list(rhs_specialize_expr->args);
+
+            return self.compare(lhs_args, rhs_args);
+        } else {
+            return {};
+        }
+    }};
+
+    for (Expr b_component : b.components) {
+        bool found = false;
+
+        for (Expr a_component : a.components) {
+            if (comparison.compare(a_component, b_component)) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace banjo::sir

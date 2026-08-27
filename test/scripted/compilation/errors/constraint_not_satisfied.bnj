@@ -85,3 +85,61 @@ proto P1 {}
 proto P2[T: P1] {}
 
 func f[A, B: P2[A]]() {}
+
+# test:subtest
+# test:error 104:7 "'S1' does not satisfy type constraint 'P1 + P2'"
+# test:note 101:8 "constraint defined here for generic parameter 'T'"
+# test:error 105:7 "'S2' does not satisfy type constraint 'P1 + P2'"
+# test:note 101:8 "constraint defined here for generic parameter 'T'"
+
+proto P1 {}
+proto P2 {}
+
+struct S1: P1 {}
+struct S2: P2 {}
+
+func f[T: P1 + P2]() {}
+
+func main() {
+    f[S1]();
+    f[S2]();
+}
+
+# test:subtest
+# test:error 120:7 "'T' does not satisfy type constraint 'P1 + P2'"
+# test:note 117:8 "constraint defined here for generic parameter 'T'"
+# test:error 124:7 "'T' does not satisfy type constraint 'P1 + P2'"
+# test:note 117:8 "constraint defined here for generic parameter 'T'"
+
+proto P1 {}
+proto P2 {}
+
+func f[T: P1 + P2]() {}
+
+func g1[T: P1]() {
+    f[T]();
+}
+
+func g2[T: P2]() {
+    f[T]();
+}
+
+# test:subtest
+# test:error 134:7 "'f32' does not satisfy type constraint 'i32 | bool'"
+# test:note 131:8 "constraint defined here for generic parameter 'T'"
+
+func f[T: i32 | bool]() {}
+
+func main() {
+    f[f32]();
+}
+
+# test:subtest
+# test:error 144:7 "'T' does not satisfy type constraint 'i32 | bool'"
+# test:note 141:8 "constraint defined here for generic parameter 'T'"
+
+func f[T: i32 | bool]() {}
+
+func g[T: i32 | bool | f32]() {
+    f[T]();
+}

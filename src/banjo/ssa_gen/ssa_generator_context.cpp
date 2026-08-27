@@ -86,7 +86,7 @@ bool SSAGeneratorContext::is_type_check_satisfied(const sir::TypeCheckExpr &type
         utils::Arena arena;
         sir::Specializer specializer{arena, specialization->params, specialization->args};
 
-        return sir::satisfies_type_constraint(constraint, type, specializer);
+        return sir::satisfies_type_constraint(constraint, type, &specializer);
     } else {
         return sir::satisfies_type_constraint(constraint, type);
     }

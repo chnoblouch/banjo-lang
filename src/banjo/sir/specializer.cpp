@@ -75,7 +75,12 @@ sir::Expr Specializer::specialize_symbol_expr(sir::SymbolExpr &symbol_expr) {
             }
         }
 
-        ASSERT_UNREACHABLE;
+        // ASSERT_UNREACHABLE;
+
+        // TODO: This should actually be unreachable, but we can't completely
+        // specialize when comparing constraints of generic parameters in
+        // sir::type_constraints
+        return &symbol_expr;
     } else {
         return &symbol_expr;
     }

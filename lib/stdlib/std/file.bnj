@@ -20,7 +20,7 @@ struct File: Read, Write, Seek {
 
     var stream: addr;
 
-    pub func open[P](path: P, mode: Mode) -> File except Error {
+    pub func open[PathLike: Path | String | StringSlice | *u8](path: PathLike, mode: Mode) -> File except Error {
         var c_mode: *u8;
 
         if mode == Mode.READ {
@@ -47,7 +47,7 @@ struct File: Read, Write, Seek {
         return File { stream };
     }
 
-    pub func read_all[P](path: P) -> Array[u8] except Error {
+    pub func read_all[PathLike: Path | String | StringSlice | *u8](path: PathLike) -> Array[u8] except Error {
         var file = try open(path, File.Mode.READ);
         try file.seek(0, .END);
         var size = try file.position() as usize;
@@ -58,7 +58,7 @@ struct File: Read, Write, Seek {
         return buffer;
     }
 
-    pub func read_all_string[P](path: P) -> String except Error {
+    pub func read_all_string[PathLike: Path | String | StringSlice | *u8](path: PathLike) -> String except Error {
         var file = try open(path, File.Mode.READ);
         try file.seek(0, .END);
         var size = try file.position() as usize;
