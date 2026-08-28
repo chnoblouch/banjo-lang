@@ -94,3 +94,39 @@ func get_closure() -> |i32| {
 func main() {
 	run_closure(get_closure());
 }
+
+# test:subtest
+# test:output "42,0.5,false,"
+
+func f[T](value: T) {
+    var closure = || {
+        print(value);
+        print(',');
+    };
+
+    closure();
+}
+
+func main() {
+    f(42);
+    f(0.5);
+    f(false);
+}
+
+# test:subtest
+# test:output "i32:42,f32:1.75"
+
+use std.protos.Add;
+
+func adder[V: Add[V], M](message: M) -> |a: V, b: V| -> V {
+    return |a: V, b: V| -> V {
+        print(message);
+        return a + b;
+    };
+}
+
+func main() {
+    print(adder[i32, StringSlice]("i32:")(32, 10));
+    print(',');
+    print(adder[f32, StringSlice]("f32:")(0.5, 1.25));
+}

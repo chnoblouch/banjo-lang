@@ -33,23 +33,24 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     sir::SymbolTable &symbol_table = analyzer.get_symbol_table();
     ClosureContext *closure_ctx = analyzer.get_closure_ctx();
 
-    std::string_view name = ident_expr.value;
-
     SymbolLookupResult result{
         .kind = SymbolLookupResult::Kind::SUCCESS,
         .guarded = false,
-        .symbol = symbol_table.look_up(name),
+        .symbol = nullptr,
     };
 
-    if (!result.symbol && closure_ctx) {
-        // FIXME: If there is a global symbol it will be prioritized over the symbol to capture!
+    std::string_view name = ident_expr.value;
+    sir::SymbolTable *current_symbol_table = &symbol_table;
 
-        result.symbol = closure_ctx->parent_block->symbol_table->look_up(name);
+    while (!result.symbol && current_symbol_table) {
+        result.symbol = current_symbol_table->look_up_local(name);
 
-        if (result.symbol) {
+        if (closure_ctx && current_symbol_table == closure_ctx->parent_symbol_table && result.symbol) {
             result.kind = SymbolLookupResult::Kind::CAPTURED;
             result.closure_ctx = closure_ctx;
         }
+
+        current_symbol_table = current_symbol_table->parent;
     }
 
     if (!result.symbol) {

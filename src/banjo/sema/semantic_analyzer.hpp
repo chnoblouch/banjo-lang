@@ -32,6 +32,7 @@ struct ClosureContext {
     std::vector<sir::Symbol> captured_vars;
     sir::TupleExpr *data_type;
     sir::Block *parent_block;
+    sir::SymbolTable *parent_symbol_table;
 };
 
 enum class Result {
