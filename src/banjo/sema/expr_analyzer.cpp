@@ -1010,31 +1010,22 @@ Result ExprAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &o
 
 Result ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
     Result result = Result::SUCCESS;
-    Result partial_result;
 
-    partial_result = analyze_value(cast_expr.value);
-    if (partial_result != Result::SUCCESS) {
-        result = partial_result;
-    }
-
-    partial_result = analyze_type(cast_expr.type);
-    if (partial_result != Result::SUCCESS) {
-        result = partial_result;
-    }
-
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    RESULT_MERGE(result, analyze_value(cast_expr.value));
+    RESULT_MERGE(result, analyze_type(cast_expr.type));
+    RESULT_PROPAGATE(result);
 
     sir::Expr from = analyzer.get_resolved_type(cast_expr.value);
     sir::Expr to = cast_expr.type;
     bool is_cast_possible;
 
     if (from.is_int_type()) {
-        is_cast_possible =
-            to.is_int_type() || to.is_fp_type() || to.is_addr_like_type() || to.is_symbol<sir::EnumDef>();
+        is_cast_possible = to.is_int_type() || to.is_fp_type() || to.is_primitive_type(sir::Primitive::CHAR) ||
+                           to.is_addr_like_type() || to.is_symbol<sir::EnumDef>();
     } else if (from.is_fp_type()) {
         is_cast_possible = to.is_int_type() || to.is_fp_type();
+    } else if (from.is_primitive_type(sir::Primitive::CHAR)) {
+        is_cast_possible = to.is_int_type();
     } else if (from.is_addr_like_type()) {
         is_cast_possible = to.is_int_type() || to.is_addr_like_type();
     } else if (from.is_symbol<sir::EnumDef>()) {
