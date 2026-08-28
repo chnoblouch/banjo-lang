@@ -21,7 +21,7 @@ public:
 
     Result coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceType &reference_type);
     Result coerce_to_union(sir::Expr &inout_expr, sir::Expr union_type);
-    
+
     Result coerce_to_proto_ptr(
         sir::Expr &inout_expr,
         sir::Concrete<sir::ProtoDef> concrete_proto,
@@ -33,6 +33,7 @@ public:
 
     Result finalize_coercion(sir::IntLiteral &int_literal, sir::Expr type);
     Result finalize_coercion(sir::FPLiteral &fp_literal, sir::Expr type);
+    Result finalize_coercion(sir::CharLiteral &char_literal, sir::Expr type);
     Result finalize_coercion(sir::NullLiteral &null_literal, sir::Expr type);
     Result finalize_coercion(sir::ArrayLiteral &array_literal, sir::Expr type, sir::Expr &out_expr);
     Result finalize_coercion(sir::StringLiteral &string_literal, sir::Expr type, sir::Expr &out_expr);
@@ -44,6 +45,7 @@ public:
 
     Result finalize_default(sir::IntLiteral &int_literal);
     Result finalize_default(sir::FPLiteral &fp_literal);
+    Result finalize_default(sir::CharLiteral &char_literal);
     Result finalize_default(sir::NullLiteral &null_literal);
     Result finalize_default(sir::NoneLiteral &none_literal);
     Result finalize_default(sir::UndefinedLiteral &undefined_literal);

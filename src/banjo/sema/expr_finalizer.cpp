@@ -78,6 +78,8 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
         return finalize_coercion(*int_literal, expected_type);
     } else if (auto fp_literal = expr.match<sir::FPLiteral>()) {
         return finalize_coercion(*fp_literal, expected_type);
+    } else if (auto char_literal = expr.match<sir::CharLiteral>()) {
+        return finalize_coercion(*char_literal, expected_type);
     } else if (auto null_literal = expr.match<sir::NullLiteral>()) {
         return finalize_coercion(*null_literal, expected_type);
     } else if (auto none_literal = expr.match<sir::NoneLiteral>()) {
@@ -302,6 +304,20 @@ Result ExprFinalizer::finalize_coercion(sir::FPLiteral &fp_literal, sir::Expr ty
     return Result::SUCCESS;
 }
 
+Result ExprFinalizer::finalize_coercion(sir::CharLiteral &char_literal, sir::Expr type) {
+    if (auto primitive_type = type.match<sir::PrimitiveType>()) {
+        sir::Primitive primitive = primitive_type->primitive;
+
+        if (primitive == sir::Primitive::CHAR || primitive == sir::Primitive::U8) {
+            char_literal.type = type;
+            return Result::SUCCESS;
+        }
+    }
+
+    analyzer.report_generator.report_err_cannot_coerce(char_literal, type);
+    return Result::ERROR;
+}
+
 Result ExprFinalizer::finalize_coercion(sir::NullLiteral &null_literal, sir::Expr type) {
     if (!type.is_addr_like_type()) {
         analyzer.report_generator.report_err_cannot_coerce(null_literal, type);
@@ -494,6 +510,7 @@ Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr ty
 Result ExprFinalizer::finalize(sir::Expr &expr) {
     if (auto int_literal = expr.match<sir::IntLiteral>()) return finalize_default(*int_literal);
     else if (auto fp_literal = expr.match<sir::FPLiteral>()) return finalize_default(*fp_literal);
+    else if (auto char_literal = expr.match<sir::CharLiteral>()) return finalize_default(*char_literal);
     else if (auto null_literal = expr.match<sir::NullLiteral>()) return finalize_default(*null_literal);
     else if (auto none_literal = expr.match<sir::NoneLiteral>()) return finalize_default(*none_literal);
     else if (auto undefined_literal = expr.match<sir::UndefinedLiteral>()) return finalize_default(*undefined_literal);
@@ -509,35 +526,38 @@ Result ExprFinalizer::finalize(sir::Expr &expr) {
 }
 
 Result ExprFinalizer::finalize_default(sir::IntLiteral &int_literal) {
-    int_literal.type = analyzer.create(
-        sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::I32,
-        }
-    );
+    int_literal.type = analyzer.create<sir::PrimitiveType>({
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::I32,
+    });
 
     check_int_literal_range(int_literal);
     return Result::SUCCESS;
 }
 
 Result ExprFinalizer::finalize_default(sir::FPLiteral &fp_literal) {
-    fp_literal.type = analyzer.create(
-        sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::F32,
-        }
-    );
+    fp_literal.type = analyzer.create<sir::PrimitiveType>({
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::F32,
+    });
+
+    return Result::SUCCESS;
+}
+
+Result ExprFinalizer::finalize_default(sir::CharLiteral &char_literal) {
+    char_literal.type = analyzer.create<sir::PrimitiveType>({
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::CHAR,
+    });
 
     return Result::SUCCESS;
 }
 
 Result ExprFinalizer::finalize_default(sir::NullLiteral &null_literal) {
-    null_literal.type = analyzer.create(
-        sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::ADDR,
-        }
-    );
+    null_literal.type = analyzer.create<sir::PrimitiveType>({
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::ADDR,
+    });
 
     return Result::SUCCESS;
 }

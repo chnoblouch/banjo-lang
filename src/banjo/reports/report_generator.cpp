@@ -214,6 +214,10 @@ void ReportGenerator::report_err_cannot_coerce(const sir::FPLiteral &fp_literal,
     report_error("cannot coerce float literal to type '$'", fp_literal.ast_node, expected_type);
 }
 
+void ReportGenerator::report_err_cannot_coerce(const sir::CharLiteral &char_literal, const sir::Expr &expected_type) {
+    report_error("cannot coerce character literal to type '$'", char_literal.ast_node, expected_type);
+}
+
 void ReportGenerator::report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type) {
     report_error("cannot coerce `null` to type '$'", null_literal.ast_node, expected_type);
 }

@@ -46,6 +46,13 @@ bool OverloadResolver::is_coercible(sir::Expr arg_type, sir::Expr param_type) {
             return param_type.is_int_type() || param_type.is_addr_like_type();
         } else if (pseudo_type->kind == sir::PseudoTypeKind::FP_LITERAL) {
             return param_type.is_fp_type();
+        } else if (pseudo_type->kind == sir::PseudoTypeKind::CHAR_LITERAL) {
+            if (auto primitive_type = param_type.match<sir::PrimitiveType>()) {
+                sir::Primitive primitive = primitive_type->primitive;
+                return primitive == sir::Primitive::CHAR || primitive == sir::Primitive::U8;
+            } else {
+                return false;
+            }
         } else if (pseudo_type->kind == sir::PseudoTypeKind::NULL_LITERAL) {
             return param_type.is_addr_like_type();
         } else if (pseudo_type->kind == sir::PseudoTypeKind::STRING_LITERAL) {

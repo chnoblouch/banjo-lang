@@ -69,6 +69,7 @@ public:
     void report_err_cannot_coerce(const sir::Expr &expr, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce(const sir::CharLiteral &char_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::NoneLiteral &none_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::ArrayLiteral &array_literal, const sir::Expr &expected_type);

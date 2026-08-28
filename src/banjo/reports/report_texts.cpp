@@ -313,6 +313,7 @@ std::string ReportText::pseudo_type_to_string(sir::PseudoTypeKind pseudo_type) {
     switch (pseudo_type) {
         case sir::PseudoTypeKind::INT_LITERAL: return "integer literal";
         case sir::PseudoTypeKind::FP_LITERAL: return "float literal";
+        case sir::PseudoTypeKind::CHAR_LITERAL: return "char literal";
         case sir::PseudoTypeKind::NULL_LITERAL: return "null";
         case sir::PseudoTypeKind::NONE_LITERAL: return "none";
         case sir::PseudoTypeKind::UNDEFINED_LITERAL: return "undefined";

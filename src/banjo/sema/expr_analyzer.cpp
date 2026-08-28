@@ -216,34 +216,28 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::analyze_int_literal(sir::IntLiteral &int_literal) {
-    int_literal.type = analyzer.create(
-        sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::INT_LITERAL,
-        }
-    );
+    int_literal.type = analyzer.create<sir::PseudoType>({
+        .ast_node = nullptr,
+        .kind = sir::PseudoTypeKind::INT_LITERAL,
+    });
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_fp_literal(sir::FPLiteral &fp_literal) {
-    fp_literal.type = analyzer.create(
-        sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::FP_LITERAL,
-        }
-    );
+    fp_literal.type = analyzer.create<sir::PseudoType>({
+        .ast_node = nullptr,
+        .kind = sir::PseudoTypeKind::FP_LITERAL,
+    });
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
-    bool_literal.type = analyzer.create(
-        sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::BOOL,
-        }
-    );
+    bool_literal.type = analyzer.create<sir::PrimitiveType>({
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::BOOL,
+    });
 
     return Result::SUCCESS;
 }
@@ -251,45 +245,37 @@ Result ExprAnalyzer::analyze_bool_literal(sir::BoolLiteral &bool_literal) {
 Result ExprAnalyzer::analyze_char_literal(sir::CharLiteral &char_literal) {
     // TODO: Error handling for characters with size != 1
 
-    char_literal.type = analyzer.create(
-        sir::PrimitiveType{
-            .ast_node = nullptr,
-            .primitive = sir::Primitive::U8,
-        }
-    );
+    char_literal.type = analyzer.create<sir::PseudoType>({
+        .ast_node = nullptr,
+        .kind = sir::PseudoTypeKind::CHAR_LITERAL,
+    });
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_null_literal(sir::NullLiteral &null_literal) {
-    null_literal.type = analyzer.create(
-        sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::NULL_LITERAL,
-        }
-    );
+    null_literal.type = analyzer.create<sir::PseudoType>({
+        .ast_node = nullptr,
+        .kind = sir::PseudoTypeKind::NULL_LITERAL,
+    });
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_none_literal(sir::NoneLiteral &none_literal) {
-    none_literal.type = analyzer.create(
-        sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::NONE_LITERAL,
-        }
-    );
+    none_literal.type = analyzer.create<sir::PseudoType>({
+        .ast_node = nullptr,
+        .kind = sir::PseudoTypeKind::NONE_LITERAL,
+    });
 
     return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_undefined_literal(sir::UndefinedLiteral &undefined_literal) {
-    undefined_literal.type = analyzer.create(
-        sir::PseudoType{
-            .ast_node = nullptr,
-            .kind = sir::PseudoTypeKind::UNDEFINED_LITERAL,
-        }
-    );
+    undefined_literal.type = analyzer.create<sir::PseudoType>({
+        .ast_node = nullptr,
+        .kind = sir::PseudoTypeKind::UNDEFINED_LITERAL,
+    });
 
     return Result::SUCCESS;
 }
@@ -674,6 +660,9 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
                 break;
             case sir::PseudoTypeKind::NULL_LITERAL:
                 is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || binary_expr.op == sir::BinaryOp::ADD;
+                break;
+            case sir::PseudoTypeKind::CHAR_LITERAL:
+                is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP;
                 break;
             case sir::PseudoTypeKind::NONE_LITERAL: break;
             case sir::PseudoTypeKind::UNDEFINED_LITERAL: break;
