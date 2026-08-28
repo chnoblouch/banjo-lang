@@ -1,4 +1,4 @@
-use std.{memory, protos.{ToRepr, ToString}};
+use std.{memory, protos.{ToRepr, ToString}, unicode};
 use libc as c;
 
 pub func to_string[T](ref value: T) -> String {
@@ -27,9 +27,11 @@ pub func to_string[T](ref value: T) -> String {
     } else if T == f64 {
         return f64_to_string(value as f64);
     } else if T == u8 {
-        return char_to_string(value as u8);
+        return u8_char_to_string(value as u8);
     } else if T == bool {
         return bool_to_string(value);
+    } else if T == char {
+        return char_to_string(value);
     } else if T == addr {
         return pointer_to_string(value);
     } else if T is ToString {
@@ -57,7 +59,7 @@ pub func to_repr[T](ref value: T) -> String {
 
 pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
     if T == u8 {
-        return "\'" + char_to_string(value as u8) + "\'";
+        return "\'" + u8_char_to_string(value as u8) + "\'";
     } else if T is ToRepr {
         return value.__repr__(indent);
     } else if meta(T).is_tuple {
@@ -221,7 +223,7 @@ func f64_to_string(value: f64) -> String {
     return String.from_cstring(&buffer[0]);
 }
 
-func char_to_string(value: u8) -> String {
+func u8_char_to_string(value: u8) -> String {
     var string = String.new();
     string.append(value);
     return string;
@@ -234,6 +236,12 @@ func bool_to_string(ref value: bool) -> String {
     } else {
         return "false";
     }
+}
+
+# TODO: Remove `ref`
+func char_to_string(ref value: char) -> String {
+    var encoded = unicode.encode_utf8(value as u32);
+    return String.from(StringSlice.new(&encoded.bytes[0], encoded.length));
 }
 
 # TODO: Remove `ref`
