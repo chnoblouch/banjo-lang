@@ -273,6 +273,7 @@ std::string ReportText::primitive_to_string(sir::Primitive primitive) {
         case sir::Primitive::F32: return "f32";
         case sir::Primitive::F64: return "f64";
         case sir::Primitive::BOOL: return "bool";
+        case sir::Primitive::CHAR: return "char";
         case sir::Primitive::ADDR: return "addr";
         case sir::Primitive::VOID: return "void";
     }

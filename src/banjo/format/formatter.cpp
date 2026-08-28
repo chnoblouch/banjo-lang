@@ -169,6 +169,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_F64: format_single_token_node(node, whitespace); break;
         case AST_USIZE: format_single_token_node(node, whitespace); break;
         case AST_BOOL: format_single_token_node(node, whitespace); break;
+        case AST_CHAR: format_single_token_node(node, whitespace); break;
         case AST_ADDR: format_single_token_node(node, whitespace); break;
         case AST_VOID: format_single_token_node(node, whitespace); break;
         case AST_STATIC_ARRAY_TYPE: format_static_array_type(node, whitespace); break;

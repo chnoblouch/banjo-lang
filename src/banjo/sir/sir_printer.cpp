@@ -903,6 +903,7 @@ void Printer::print_primitive_type(const PrimitiveType &primitive_type) {
         case Primitive::F32: PRINT_FIELD("primitive", "F32"); break;
         case Primitive::F64: PRINT_FIELD("primitive", "F64"); break;
         case Primitive::BOOL: PRINT_FIELD("primitive", "BOOL"); break;
+        case Primitive::CHAR: PRINT_FIELD("primitive", "CHAR"); break;
         case Primitive::ADDR: PRINT_FIELD("primitive", "ADDR"); break;
         case Primitive::VOID: PRINT_FIELD("primitive", "VOID"); break;
     }

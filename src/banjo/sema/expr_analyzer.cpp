@@ -588,7 +588,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
         return create_type_check(binary_expr, out_expr);
     }
 
-    if (binary_expr.lhs.is_type()) {
+    if (binary_expr.lhs.is_type() && binary_expr.rhs.is_type()) {
         return create_type_comparison(binary_expr, out_expr);
     }
 
@@ -662,6 +662,7 @@ Result ExprAnalyzer::analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr
             case sir::Primitive::BOOL:
                 is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP || op_type == BinaryOpType::LOGICAL;
                 break;
+            case sir::Primitive::CHAR: is_operator_built_in = op_type == BinaryOpType::EQUALITY_COMP; break;
             case sir::Primitive::VOID: break;
         }
     } else if (auto pseudo_type = lhs_type.match<sir::PseudoType>()) {

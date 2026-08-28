@@ -141,6 +141,7 @@ enum ASTNodeType : std::uint8_t {
     AST_F64,
     AST_USIZE,
     AST_BOOL,
+    AST_CHAR,
     AST_ADDR,
     AST_VOID,
     AST_STATIC_ARRAY_TYPE,

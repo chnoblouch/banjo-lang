@@ -31,6 +31,7 @@ enum TokenType : std::uint8_t {
     TKN_F64,
     TKN_USIZE,
     TKN_BOOL,
+    TKN_CHAR,
     TKN_ADDR,
     TKN_VOID,
     TKN_EXCEPT,

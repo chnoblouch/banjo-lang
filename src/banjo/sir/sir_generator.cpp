@@ -922,6 +922,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_F64: return generate_primitive_type(node, sir::Primitive::F64);
         case AST_USIZE: return generate_primitive_type(node, sir::Primitive::USIZE);
         case AST_BOOL: return generate_primitive_type(node, sir::Primitive::BOOL);
+        case AST_CHAR: return generate_primitive_type(node, sir::Primitive::CHAR);
         case AST_ADDR: return generate_primitive_type(node, sir::Primitive::ADDR);
         case AST_VOID: return generate_primitive_type(node, sir::Primitive::VOID);
         case AST_STATIC_ARRAY_TYPE: return generate_static_array_type(node);

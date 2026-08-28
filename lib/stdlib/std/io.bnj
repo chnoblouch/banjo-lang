@@ -84,12 +84,12 @@ proto Read {
 
         var line = "";
 
-        var char: u8;
-        try self.read_full(Slice[u8].new(&char, 1));
+        var c: u8;
+        try self.read_full(Slice[u8].new(&c, 1));
 
-        while char != '\r' && char != '\n' {
-            line += char;
-            try self.read_full(Slice[u8].new(&char, 1));
+        while c != '\r' && c != '\n' {
+            line += c;
+            try self.read_full(Slice[u8].new(&c, 1));
         }
 
         return line;

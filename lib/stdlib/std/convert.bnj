@@ -77,13 +77,13 @@ pub func parse_u64(string: StringSlice) -> ?u64 {
     var value: u64 = 0;
 
     while index >= 0 {
-        var char = string.data[index];
+        var c = string.data[index];
 
-        if !(char >= '0' && char <= '9') {
+        if !(c >= '0' && c <= '9') {
             return none;
         }
 
-        value += place_value * (char - '0') as u64;
+        value += place_value * (c - '0') as u64;
         place_value *= 10;
         index -= 1;
     }
@@ -107,13 +107,13 @@ pub func parse_i64(string: StringSlice) -> ?i64 {
     var value: i64 = 0;
 
     while index >= last_index {
-        var char = string.data[index];
+        var c = string.data[index];
 
-        if !(char >= '0' && char <= '9') {
+        if !(c >= '0' && c <= '9') {
             return none;
         }
 
-        value += place_value * (char - '0') as i64;
+        value += place_value * (c - '0') as i64;
         place_value *= 10;
         index -= 1;
     }

@@ -170,6 +170,7 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_F64: return "F64";
         case AST_USIZE: return "USIZE";
         case AST_BOOL: return "BOOL";
+        case AST_CHAR: return "CHAR";
         case AST_ADDR: return "ADDR";
         case AST_VOID: return "VOID";
         case AST_STATIC_ARRAY_TYPE: return "STATIC_ARRAY_TYPE";

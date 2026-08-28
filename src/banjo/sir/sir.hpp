@@ -868,6 +868,7 @@ enum class Primitive {
     F32,
     F64,
     BOOL,
+    CHAR,
     ADDR,
     VOID,
 };

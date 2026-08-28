@@ -48,6 +48,7 @@ static void mangle_type(std::string &string, const sir::Expr &type) {
             case sir::Primitive::F32: string += "f0"; break;
             case sir::Primitive::F64: string += "f1"; break;
             case sir::Primitive::BOOL: string += "b0"; break;
+            case sir::Primitive::CHAR: string += "c0"; break;
             case sir::Primitive::ADDR: string += "a0"; break;
             case sir::Primitive::VOID: string += "v0"; break;
         }

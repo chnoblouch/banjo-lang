@@ -27,6 +27,7 @@ const std::map<std::string_view, TokenType> KEYWORDS{
     {"f64", TKN_F64},
     {"usize", TKN_USIZE},
     {"bool", TKN_BOOL},
+    {"char", TKN_CHAR},
     {"addr", TKN_ADDR},
     {"void", TKN_VOID},
     {"except", TKN_EXCEPT},

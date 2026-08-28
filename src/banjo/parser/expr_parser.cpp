@@ -231,6 +231,7 @@ ParseResult ExprParser::parse_operand() {
         case TKN_F64: return parser.consume_into_node(AST_F64);
         case TKN_USIZE: return parser.consume_into_node(AST_USIZE);
         case TKN_BOOL: return parser.consume_into_node(AST_BOOL);
+        case TKN_CHAR: return parser.consume_into_node(AST_CHAR);
         case TKN_ADDR: return parser.consume_into_node(AST_ADDR);
         case TKN_VOID: return parser.consume_into_node(AST_VOID);
         case TKN_FUNC: return parse_func_type();

@@ -53,6 +53,7 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
         case sir::Primitive::F32: return ssa::Primitive::F32;
         case sir::Primitive::F64: return ssa::Primitive::F64;
         case sir::Primitive::BOOL: return ssa::Primitive::U8;
+        case sir::Primitive::CHAR: return ssa::Primitive::U32;
         case sir::Primitive::ADDR: return ssa::Primitive::ADDR;
         case sir::Primitive::VOID: return ssa::Primitive::VOID;
     }

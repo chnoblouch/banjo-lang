@@ -99,9 +99,9 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         return memory.compare(self.pointer(self.length - other.length), other.data, other.length);
     }
 
-    pub func find(self, char: u8) -> ?usize {
+    pub func find(self, c: u8) -> ?usize {
         for i in 0..self.length {
-            if self.data[i] == char {
+            if self.data[i] == c {
                 return i;
             }
         }
@@ -109,11 +109,11 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         return none;
     }
 
-    pub func rfind(self, char: u8) -> ?usize {
+    pub func rfind(self, c: u8) -> ?usize {
         var i = self.length - 1;
 
         while i >= 0 {
-            if self.data[i] == char {
+            if self.data[i] == c {
                 return i;
             }
 
@@ -234,19 +234,19 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         var result = "\"";
 
         for i in 0..self.length {
-            var char = self.data[i];
+            var c = self.data[i];
 
-            if char == '\n' {
+            if c == '\n' {
                 result.append('\\');
                 result.append('n');
-            } else if char == '\r' {
+            } else if c == '\r' {
                 result.append('\\');
                 result.append('r');
-            } else if char == '\t' {
+            } else if c == '\t' {
                 result.append('\\');
                 result.append('t');
             } else {
-                result.append(char);
+                result.append(c);
             }
         }
 

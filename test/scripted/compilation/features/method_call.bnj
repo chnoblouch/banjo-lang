@@ -15,11 +15,11 @@ struct Char {
 }
 
 func main() {
-    var char = Char {
+    var c = Char {
         field: 'f',
     };
     
-    char.out('g');
+    c.out('g');
 }
 
 # test:subtest
@@ -35,11 +35,11 @@ struct Char {
 }
 
 func main() {
-    var char = Char {
+    var c = Char {
         field: 'f',
     };
     
-    var a = &char;
+    var a = &c;
     a.out('g');
 }
 
@@ -56,11 +56,11 @@ struct Char {
 }
 
 func main() {
-    var char = Char {
+    var c = Char {
         field: 'f',
     };
     
-    var a = &char;
+    var a = &c;
     var b = &a;
     
     b.out('g');
@@ -75,8 +75,8 @@ union Char {
 
     func out(self, arg: u8) {
         switch self {
-            case char: Lower { putchar(char.value as i32); }
-            case char: Upper { putchar(char.value as i32); }
+            case c: Lower { putchar(c.value as i32); }
+            case c: Upper { putchar(c.value as i32); }
         }
         
         putchar(arg as i32);
@@ -84,8 +84,8 @@ union Char {
 }
 
 func main() {
-    var char: Char = Char.Upper('A');
-    char.out('b');
+    var c: Char = Char.Upper('A');
+    c.out('b');
 }
 
 # test:subtest
@@ -97,15 +97,15 @@ union Char {
 
     func out(self) {
         switch self {
-            case char: Lower { putchar(char.value as i32); }
-            case char: Upper { putchar(char.value as i32); }
+            case c: Lower { putchar(c.value as i32); }
+            case c: Upper { putchar(c.value as i32); }
         }
     }
 }
 
 func main() {
-    var char: Char = Char.Lower('a');
-    var a = &char;
+    var c: Char = Char.Lower('a');
+    var a = &c;
     a.out();
 }
 
