@@ -88,7 +88,7 @@ proto Read {
         try self.read_full(Slice[u8].new(&c, 1));
 
         while c != '\r' && c != '\n' {
-            line += c;
+            line.append(c as char);
             try self.read_full(Slice[u8].new(&c, 1));
         }
 

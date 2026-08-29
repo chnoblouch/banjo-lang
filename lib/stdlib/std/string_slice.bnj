@@ -56,6 +56,20 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         return self.length;
     }
 
+    pub func at(self, index: usize) -> char {
+        if index >= self.length {
+            panic_string_out_of_bounds(index, self.length);
+        }
+
+        if !unicode.is_utf8_char_boundary(self.data[index]) {
+            panic_utf8_not_at_boundary(index);
+        }
+
+        var slice = Slice[u8].new(self.pointer(index), self.length - index);
+        var decoded = unicode.decode_utf8(slice);
+        return decoded.codepoint;
+    }
+
     pub func substring(self, start: usize, end: usize) -> StringSlice {
         if start > end {
             panic_string_start_greater_than_end(start, end);
@@ -99,60 +113,45 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         return memory.compare(self.pointer(self.length - other.length), other.data, other.length);
     }
 
-    pub func find(self, c: u8) -> ?usize {
-        for i in 0..self.length {
-            if self.data[i] == c {
-                return i;
-            }
-        }
-
-        return none;
+    pub func find(self, c: char) -> ?usize {
+        return self.find(unicode.encode_utf8(c).slice());
     }
 
-    pub func rfind(self, c: u8) -> ?usize {
-        var i = self.length - 1;
-
-        while i >= 0 {
-            if self.data[i] == c {
-                return i;
-            }
-
-            if i == 0 {
-                break;
-            }
-
-            i -= 1;
-        }
-
-        return none;
+    pub func rfind(self, c: char) -> ?usize {
+        return self.rfind(unicode.encode_utf8(c).slice());
     }
 
-    pub func find(self, substr: StringSlice) -> ?usize {
-        if substr.length > self.length {
+    pub func find(self, string: StringSlice) -> ?usize {
+        if string.length > self.length {
             return none;
         }
 
-        var i: usize = 0;
+        for i in 0..self.length - string.length + 1 {
+            if memory.compare(self.pointer(i), string.data, string.length) {
+                return i;
+            }
+        }
 
-        while i <= self.length - substr.length {
-            if self.data[i] == substr.data[0] {
-                var j: usize = 1;
-                var matching = true;
+        return none;
+    }
 
-                while j < substr.length {
-                    if self.data[i + j] != substr.data[j] {
-                        matching = false;
-                    }
+    pub func rfind(self, string: StringSlice) -> ?usize {
+        if string.length > self.length {
+            return none;
+        }
 
-                    j = j + 1;
-                }
+        var i = self.length - string.length;
 
-                if matching {
-                    return i;
-                }
+        while true {
+            if memory.compare(self.pointer(i), string.data, string.length) {
+                return i;
             }
 
-            i = i + 1;
+            if i != 0 {
+                i -= 1;
+            } else {
+                break;
+            }
         }
 
         return none;
@@ -202,30 +201,6 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         return !(self == rhs);
     }
 
-    pub func __index__(self, index: usize) -> ref u8 {
-        if index >= self.length {
-            panic_string_out_of_bounds(index, self.length);
-        }
-
-        if !unicode.is_utf8_char_boundary(self.data[index]) {
-            panic_utf8_not_at_boundary(index);
-        }
-
-        return self.data[index];
-    }
-
-    pub func __mutindex__(mut self, index: usize) -> ref mut u8 {
-        if index >= self.length {
-            panic_string_out_of_bounds(index, self.length);
-        }
-
-        if !unicode.is_utf8_char_boundary(self.data[index]) {
-            panic_utf8_not_at_boundary(index);
-        }
-
-        return self.data[index];
-    }
-
     pub func __str__(self) -> String {
         return String.from(self);
     }
@@ -246,7 +221,7 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
                 result.append('\\');
                 result.append('t');
             } else {
-                result.append(c);
+                result.append(c as char);
             }
         }
 

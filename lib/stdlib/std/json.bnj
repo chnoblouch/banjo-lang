@@ -524,7 +524,7 @@ struct Decoder {
         var start = self.position;
 
         while self.position < self.buffer.length {
-            var c = self.buffer[self.position];
+            var c = self.buffer.data[self.position];
             self.position += 1;
 
             if c == '\\' {
@@ -540,7 +540,7 @@ struct Decoder {
 
     func skip_whitespace(mut self) {
         while self.position < self.buffer.length {
-            var c = self.buffer[self.position];
+            var c = self.buffer.data[self.position];
 
             if c != ' ' && c != '\n' && c != '\r' && c != '\t' {
                 break;
@@ -552,7 +552,7 @@ struct Decoder {
 
     func get(mut self) -> u8 except Error {
         if self.position < self.buffer.length {
-            return self.buffer[self.position];
+            return self.buffer.data[self.position];
         } else {
             return Error {};
         }

@@ -234,7 +234,7 @@ func bool_to_string(ref value: bool) -> String {
 
 # TODO: Remove `ref`
 func char_to_string(ref value: char) -> String {
-    var encoded = unicode.encode_utf8(value as u32);
+    var encoded = unicode.encode_utf8(*__builtin_pointer_to(value));
     return String.from(StringSlice.new(&encoded.bytes[0], encoded.length));
 }
 

@@ -49,7 +49,7 @@ func format_arg[T](format: StringSlice, arg: T) -> String {
     var padding_char_set: bool = false;
 
     for i in 1..format.length() - 1 {
-        var c = format[i];
+        var c = format.data[i] as u8;
         
         if parsing_format {
             if c == 'b' && !base_set {
@@ -72,7 +72,7 @@ func format_arg[T](format: StringSlice, arg: T) -> String {
                 var start_index = i;
                 i += 1;
 
-                while format[i] >= '0' && format[i] <= '9' {
+                while format.data[i] >= '0' && format.data[i] <= '9' {
                     i += 1;
                 }
 
@@ -127,15 +127,15 @@ func format_arg[T](format: StringSlice, arg: T) -> String {
     } else {
         var result = "";
 
-        if is_number && padding_char == '0' && string[0] == '-' {
+        if is_number && padding_char == '0' && string.slice.data[0] == '-' {
             result = "-";
         }
 
         for i in 0..width - string.length() {
-            result.append(padding_char);
+            result.append(padding_char as char);
         }
 
-        if result[0] == '-' {
+        if result.slice.data[0] == '-' {
             result.append(string.slice().substring(1, string.length()));
         } else {
             result.append(string);

@@ -54,12 +54,6 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return from(StringSlice.__internal_make(pointer, length));
     }
 
-    pub func concat(ref a: String, ref b: String) -> String {
-        var copy = a.copy();
-        copy.append(b.copy());
-        return copy;
-    }
-
     pub func __deinit__(mut self) {
         memory.free(self.slice.data);
     }
@@ -80,13 +74,6 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return String.from(self.slice);
     }
 
-    pub func append(mut self, c: u8) {
-        var new_length = self.slice.length + 1;
-        self.ensure_capacity(new_length);
-        self.slice.data[self.slice.length] = c;
-        self.slice.length = new_length;
-    }
-
     pub func append(mut self, slice: StringSlice) {
         var new_length = self.slice.length + slice.length;
         self.ensure_capacity(new_length);
@@ -94,8 +81,16 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         self.slice.length = new_length;
     }
 
+    pub func append(mut self, c: char) {
+        self.append(unicode.encode_utf8(c).slice());
+    }
+
     pub func append(mut self, other: String) {
         self.append(other.slice);
+    }
+
+    pub func at(self, index: usize) -> char {
+        return self.slice.at(index);
     }
 
     pub func substring(self, start: usize, end: usize) -> String {
@@ -110,16 +105,20 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return self.slice.ends_with(other);
     }
 
-    pub func find(self, c: u8) -> ?usize {
+    pub func find(self, c: char) -> ?usize {
         return self.slice.find(c);
     }
 
-    pub func rfind(self, c: u8) -> ?usize {
+    pub func find(self, string: StringSlice) -> ?usize {
+        return self.slice.find(string);
+    }
+
+    pub func rfind(self, c: char) -> ?usize {
         return self.slice.rfind(c);
     }
 
-    pub func find(self, substr: StringSlice) -> ?usize {
-        return self.slice.find(substr);
+    pub func rfind(self, string: StringSlice) -> ?usize {
+        return self.slice.rfind(string);
     }
 
     pub func to_cstring(self) -> Array[u8] {
@@ -142,7 +141,7 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return copy;
     }
 
-    pub func __add__(self, rhs: u8) -> String {
+    pub func __add__(self, rhs: char) -> String {
         var copy = self.copy();
         copy.append(rhs);
         return copy;
@@ -162,14 +161,6 @@ struct String: Copy, Compare[String], ToString, ToRepr {
 
     pub func __ne__(self, ref rhs: String) -> bool {
         return self.slice != rhs.slice;
-    }
-
-    pub func __index__(self, index: usize) -> ref u8 {
-        return self.slice.__index__(index);
-    }
-
-    pub func __mutindex__(mut self, index: usize) -> ref mut u8 {
-        return self.slice.__mutindex__(index);
     }
 
     pub func __str__(self) -> String {
