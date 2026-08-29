@@ -39,6 +39,7 @@ private:
 
     void generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value);
     void generate_loop_jump_deinit();
+    void generate_deferred_deinits();
     void generate_deinit(const sir::Resource &resource, sir::Symbol symbol);
     void generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr);
     void generate_deinit_call(const sir::Resource &resource, ssa::Value ssa_ptr);

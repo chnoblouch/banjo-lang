@@ -108,15 +108,7 @@ void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt) {
         return                                                          // error
     );
 
-    if (ctx.get_ssa_block()->is_branching()) {
-        return;
-    }
-
-    for (DeferredDeinit &deferred_deinit : ctx.get_func_context().cur_deferred_deinits) {
-        generate_deinit(*deferred_deinit.resource, deferred_deinit.ssa_ptr);
-    }
-
-    ctx.get_func_context().cur_deferred_deinits.clear();
+    generate_deferred_deinits();
 }
 
 void BlockSSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {
@@ -138,6 +130,11 @@ void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt)
     if (return_stmt.value) {
         ExprSSAGenerator(ctx).generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
     }
+
+    // Generate the deferred deinit call of the return statement explicitly
+    // because `generate_stmt` doesn't insert them if the block is already
+    // terminated (which it will be due to the branch to the exit block).
+    generate_deferred_deinits();
 
     for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
         generate_block_deinit(**iter);
@@ -455,6 +452,18 @@ void BlockSSAGenerator::generate_loop_jump_deinit() {
             break;
         }
     }
+}
+
+void BlockSSAGenerator::generate_deferred_deinits() {
+    if (ctx.get_ssa_block()->is_branching()) {
+        return;
+    }
+
+    for (DeferredDeinit &deferred_deinit : ctx.get_func_context().cur_deferred_deinits) {
+        generate_deinit(*deferred_deinit.resource, deferred_deinit.ssa_ptr);
+    }
+
+    ctx.get_func_context().cur_deferred_deinits.clear();
 }
 
 void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, sir::Symbol symbol) {

@@ -110,3 +110,27 @@ func main() {
     consume(create().1);
     print("m,");
 }
+
+# test:subtest
+# test:output "0,1,2,"
+
+struct Resource {
+    var value: i32;
+
+    pub func new(value: i32) -> Resource {
+        return Resource { value };
+    } 
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+func f(a: *Resource, b: *Resource, c: *Resource) -> i32 {
+    return 0;
+}
+
+func main() {
+    f(&Resource.new(0), &Resource.new(1), &Resource.new(2));
+}
