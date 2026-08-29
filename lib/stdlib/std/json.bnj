@@ -272,7 +272,32 @@ struct Encoder {
     }
 
     func encode_string(mut self, value: ref String) {
-        self.emit(to_repr(value).slice());
+        self.emit_char('\"');
+
+        for i in 0..value.length() {
+            var c = value.bytes()[i];
+
+            if c == '\"' {
+                self.emit("\\\"");
+            } else if c == '\\' {
+                self.emit("\\\\");
+            } else if c == 0x08 {
+                self.emit("\\b");
+            } else if c == 0x0C {
+                self.emit("\\f");
+            } else if c == '\n' {
+                self.emit("\\n");
+            } else if c == '\r' {
+                self.emit("\\r");
+            } else if c == '\t' {
+                self.emit("\\t");
+            } else {
+                # TODO: \u
+                self.emit_char(c as char);
+            }
+        }
+
+        self.emit_char('\"');
     }
 
     func encode_array(mut self, value: ref Array[Value]) {
@@ -332,6 +357,10 @@ struct Encoder {
     }
 
     func emit(mut self, value: StringSlice) {
+        self.string.append(value);
+    }
+
+    func emit_char(mut self, value: char) {
         self.string.append(value);
     }
 }
@@ -455,6 +484,7 @@ struct Decoder {
 
     func decode_array(mut self) -> Value except Error {
         self.position += 1;
+        self.skip_whitespace();
 
         if try self.get() == ']' {
             self.position += 1;
@@ -464,7 +494,6 @@ struct Decoder {
         var elements = Array[Value].new();
 
         while true {
-            self.skip_whitespace();
             elements.append(try self.decode_value());
             self.skip_whitespace();
 
@@ -483,6 +512,7 @@ struct Decoder {
 
     func decode_object(mut self) -> Value except Error {
         self.position += 1;
+        self.skip_whitespace();
 
         if try self.get() == '}' {
             self.position += 1;
@@ -492,7 +522,6 @@ struct Decoder {
         var elements = Map[String, Value].new();
 
         while true {
-            self.skip_whitespace();
             var name = try self.decode_raw_string();
             self.skip_whitespace();
 
@@ -521,21 +550,44 @@ struct Decoder {
 
     func decode_raw_string(mut self) -> String except Error {
         self.position += 1;
-        var start = self.position;
+        var string = "";
 
-        while self.position < self.buffer.length {
-            var c = self.buffer.data[self.position];
+        while true {
+            var c = try self.get();
             self.position += 1;
 
             if c == '\\' {
-                continue;
+                c = try self.get();
+                self.position += 1;
+                
+                if c == '\"' {
+                    string.append('\"');
+                } else if c == '\\' {
+                    string.append('\\');
+                } else if c == '/' {
+                    string.append('/');
+                } else if c == 'b' {
+                    string.append('\x08');
+                } else if c == 'f' {
+                    string.append('\x0C');
+                } else if c == 'n' {
+                    string.append('\n');
+                } else if c == 'r' {
+                    string.append('\r');
+                } else if c == 't' {
+                    string.append('\t');
+                } else {
+                    # TODO: \u
+                    return Error {};
+                }
             } else if c == '\"' {
-                var slice = self.buffer.substring(start, self.position - 1);
-                return String.from(slice);
+                break;
+            } else {
+                string.append(c as char);
             }
         }
 
-        return Error {};
+        return string;
     }
 
     func skip_whitespace(mut self) {

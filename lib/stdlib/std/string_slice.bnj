@@ -220,6 +220,12 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
             } else if c == '\t' {
                 result.append('\\');
                 result.append('t');
+            } else if c == '\'' {
+                result.append('\\');
+                result.append('\'');
+            } else if c == '\"' {
+                result.append('\\');
+                result.append('\"');
             } else {
                 result.append(c as char);
             }
