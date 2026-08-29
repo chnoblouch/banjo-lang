@@ -28,12 +28,22 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         };
     }
 
-    pub func from_cstring(data: *u8) -> String {
-        return from(StringSlice.of_cstring(data));
+    pub func from_chars(slice: Slice[char]) -> String {
+        var bytes: Array[u8] = [];
+        
+        for i in 0..slice.length() {
+            var utf8 = unicode.encode_utf8(slice[i]);
+
+            for i in 0..utf8.length {
+                bytes.append(utf8.bytes[i]);
+            }
+        }
+
+        return from(StringSlice.new(bytes.data(), bytes.length()));
     }
 
     pub func from_utf16(slice: Slice[u16]) -> String {
-        var result: Array[u8] = [];
+        var bytes: Array[u8] = [];
         var index: usize = 0;
 
         while index < slice.length() {
@@ -41,13 +51,17 @@ struct String: Copy, Compare[String], ToString, ToRepr {
             var utf8 = unicode.encode_utf8(decoded.codepoint);
 
             for i in 0..utf8.length {
-                result.append(utf8.bytes[i]);
+                bytes.append(utf8.bytes[i]);
             }
 
             index += decoded.num_consumed;
         }
 
-        return from(StringSlice.new(result.data(), result.length()));
+        return from(StringSlice.new(bytes.data(), bytes.length()));
+    }
+
+    pub func from_cstring(data: *u8) -> String {
+        return from(StringSlice.of_cstring(data));
     }
 
     func __internal_make(pointer: *u8, length: usize) -> String {
@@ -121,12 +135,27 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return self.slice.rfind(string);
     }
 
-    pub func to_cstring(self) -> Array[u8] {
-        return self.slice.to_cstring();
+    pub func to_chars(self) -> Array[char] {
+        var chars: Array[char] = [];
+        var index: usize = 0;
+
+        while index < self.length() {
+            var slice = Slice[u8].new(self.slice.pointer(index), self.slice.length - index);
+            var decoded = unicode.decode_utf8(slice);
+            
+            chars.append(decoded.codepoint);
+            index += decoded.num_consumed;
+        }
+
+        return chars;
     }
 
     pub func to_utf16(self) -> Array[u16] {
         return self.slice.to_utf16();
+    }
+
+    pub func to_cstring(self) -> Array[u8] {
+        return self.slice.to_cstring();
     }
 
     pub func __add__(self, ref rhs: String) -> String {
