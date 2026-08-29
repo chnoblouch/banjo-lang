@@ -27,13 +27,13 @@ func main() {
 
     print(s.a);
     print(',');
-    print(s.b.0);
+    print(s.b.0 as char);
     print(',');
-    print(s.b.1);
+    print(s.b.1 as char);
     print(',');
-    print(s.b.2);
+    print(s.b.2 as char);
     print(',');
-    print(s.b.3);
+    print(s.b.3 as char);
 }
 
 # test:subtest

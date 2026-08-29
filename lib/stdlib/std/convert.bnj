@@ -14,6 +14,8 @@ pub func to_string[T](ref value: T) -> String {
         return i64_to_string(value as i64, 10, false);
     } else if T == i64 {
         return i64_to_string(value as i64, 10, false);
+    } else if T == u8 {
+        return u64_to_string(value as u64, 10, false);
     } else if T == u16 {
         return u64_to_string(value as u64, 10, false);
     } else if T == u32 {
@@ -26,8 +28,6 @@ pub func to_string[T](ref value: T) -> String {
         return f64_to_string(value as f64);
     } else if T == f64 {
         return f64_to_string(value as f64);
-    } else if T == u8 {
-        return u8_char_to_string(value as u8);
     } else if T == bool {
         return bool_to_string(value);
     } else if T == char {
@@ -58,8 +58,8 @@ pub func to_repr[T](ref value: T) -> String {
 }
 
 pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
-    if T == u8 {
-        return "\'" + u8_char_to_string(value as u8) + "\'";
+    if T == char {
+        return "\'" + char_to_string(value) + "\'";
     } else if T is ToRepr {
         return value.__repr__(indent);
     } else if meta(T).is_tuple {
@@ -221,12 +221,6 @@ func f64_to_string(value: f64) -> String {
     var buffer: [u8; 64];
     c.snprintf(&buffer[0], 64, "%g\0", value);
     return String.from_cstring(&buffer[0]);
-}
-
-func u8_char_to_string(value: u8) -> String {
-    var string = String.new();
-    string.append(value);
-    return string;
 }
 
 # TODO: Remove `ref`

@@ -18,7 +18,7 @@ use std.protos.{
 };
 
 # test:subtest
-# test:output "true,true,true,true,true,true,true,true,true,true,true,true,true;false"
+# test:output "true,true,true,true,true,true,true,true,true,true,true,true,true,true;false"
 
 func eq[T: Compare[T]](a: T, b: T) -> bool {
     return a == b;
@@ -49,13 +49,15 @@ func main() {
     print(',');
     print(eq(false, false));
     print(',');
+    print(eq('b', 'b'));
+    print(',');
     print(eq(null, null));
     print(';');
     print(eq(0, 1));
 }
 
 # test:subtest
-# test:output "true,true,true,true,true,true,true,true,true,true,true,true,true;false"
+# test:output "true,true,true,true,true,true,true,true,true,true,true,true,true,true;false"
 
 func ne[T: Compare[T]](a: T, b: T) -> bool {
     return a != b;
@@ -87,6 +89,8 @@ func main() {
     print(ne(1.0 as f64, 0.0 as f64));
     print(',');
     print(ne(true, false));
+    print(',');
+    print(ne('b', 'a'));
     print(',');
     print(ne(&value as addr, null));
     print(';');
@@ -249,7 +253,7 @@ func main() {
     print(',');
     print(add(27 as i64, 15 as i64));
     print(',');
-    print(add(27 as u8, 15 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(add(27 as u8, 15 as u8));
     print(',');
     print(add(27 as u16, 15 as u16));
     print(',');
@@ -280,7 +284,7 @@ func main() {
     print(',');
     print(sub(93 as i64, 51 as i64));
     print(',');
-    print(sub(93 as u8, 51 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(sub(93 as u8, 51 as u8));
     print(',');
     print(sub(93 as u16, 51 as u16));
     print(',');
@@ -311,7 +315,7 @@ func main() {
     print(',');
     print(mul(6 as i64, 7 as i64));
     print(',');
-    print(mul(6 as u8, 7 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(mul(6 as u8, 7 as u8));
     print(',');
     print(mul(6 as u16, 7 as u16));
     print(',');
@@ -342,7 +346,7 @@ func main() {
     print(',');
     print(div(126 as i64, 3 as i64));
     print(',');
-    print(div(126 as u8, 3 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(div(126 as u8, 3 as u8));
     print(',');
     print(div(126 as u16, 3 as u16));
     print(',');
@@ -373,7 +377,7 @@ func main() {
     print(',');
     print(mod(64 as i64, 43 as i64));
     print(',');
-    print(mod(64 as u8, 43 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(mod(64 as u8, 43 as u8));
     print(',');
     print(mod(64 as u16, 43 as u16));
     print(',');
@@ -400,7 +404,7 @@ func main() {
     print(',');
     print(bit_and(0x3A as i64, 0x2F as i64));
     print(',');
-    print(bit_and(0x3A as u8, 0x2F as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(bit_and(0x3A as u8, 0x2F as u8));
     print(',');
     print(bit_and(0x3A as u16, 0x2F as u16));
     print(',');
@@ -427,7 +431,7 @@ func main() {
     print(',');
     print(bit_or(0x28 as i64, 0x02 as i64));
     print(',');
-    print(bit_or(0x28 as u8, 0x02 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(bit_or(0x28 as u8, 0x02 as u8));
     print(',');
     print(bit_or(0x28 as u16, 0x02 as u16));
     print(',');
@@ -454,7 +458,7 @@ func main() {
     print(',');
     print(bit_xor(0x35 as i64, 0x1F as i64));
     print(',');
-    print(bit_xor(0x35 as u8, 0x1F as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(bit_xor(0x35 as u8, 0x1F as u8));
     print(',');
     print(bit_xor(0x35 as u16, 0x1F as u16));
     print(',');
@@ -481,7 +485,7 @@ func main() {
     print(',');
     print(shl(21 as i64, 1 as i64));
     print(',');
-    print(shl(21 as u8, 1 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(shl(21 as u8, 1 as u8));
     print(',');
     print(shl(21 as u16, 1 as u16));
     print(',');
@@ -508,7 +512,7 @@ func main() {
     print(',');
     print(shr(84 as i64, 1 as i64));
     print(',');
-    print(shr(84 as u8, 1 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(shr(84 as u8, 1 as u8));
     print(',');
     print(shr(84 as u16, 1 as u16));
     print(',');
@@ -552,7 +556,7 @@ func main() {
     print(',');
     print(bit_not(52 as i64));
     print(',');
-    print(bit_not(52 as u8) as u32);  # TODO: In the future, `u8` won't be printed as chars anymore.
+    print(bit_not(52 as u8));
     print(',');
     print(bit_not(52 as u16));
     print(',');

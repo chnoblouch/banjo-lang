@@ -177,14 +177,14 @@ func main() {
 # test:output "mim"
 
 struct S {
-    var a: u8;
-    var b: u8;
+    var a: char;
+    var b: char;
 
-    pub func __index__(self, index: i32) -> ref u8 {
+    pub func __index__(self, index: i32) -> ref char {
         return self.a;
     }
 
-    pub func __mutindex__(self, index: i32) -> ref u8 {
+    pub func __mutindex__(self, index: i32) -> ref char {
         return self.b;
     }
 }

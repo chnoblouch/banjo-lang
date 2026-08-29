@@ -11,12 +11,11 @@ func main() {
     c[0] = 2;
     d[0] = 3;
 
-    # TODO: Unnecessary casts
-    print(a[0] as u32);
+    print(a[0]);
     print(',');
-    print(b[0] as u32);
+    print(b[0]);
     print(',');
-    print(c[0] as u32);
+    print(c[0]);
     print(',');
-    print(d[0] as u32);
+    print(d[0]);
 }

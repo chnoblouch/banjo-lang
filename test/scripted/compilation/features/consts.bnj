@@ -7,7 +7,7 @@ const C: i64 = 427912738479127349;
 const D: f32 = 0.75;
 const E: f64 = -2.5;
 const F: bool = true;
-const G: u8 = 'g';
+const G: char = 'g';
 const H: *i32 = null;
 const I: *u8 = "test_string";
 
@@ -69,7 +69,7 @@ func main() {
 # test:output "42,true,0.25,324187,c,null,some_string"
 
 const A: (i32, bool) = (42, true);
-const B: (f32, u64, u8) = (0.25, 324187, 'c');
+const B: (f32, u64, char) = (0.25, 324187, 'c');
 const C: (*i32, *u8) = (null, "some_string");
 
 func main() {

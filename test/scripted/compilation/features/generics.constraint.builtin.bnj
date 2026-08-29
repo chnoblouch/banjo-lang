@@ -1,16 +1,5 @@
 # TODO: Negative tests
 
-# test:common
-
-# TODO: Remove once a `char` primitive is introduced.
-func print_number[T](value: T) {
-    if T == u8 {
-        print(value as u32);
-    } else {
-        print(value);
-    }
-}
-
 # test:subtest
 # test:output "eeeeeeeeeeeeeee"
 
@@ -78,7 +67,7 @@ func main() {
 use std.protos.Add;
 
 func add[T: Add[T]](a: T, b: T) {
-    print_number(a + b);
+    print(a + b);
     print(',');
 }
 
@@ -102,7 +91,7 @@ func main() {
 use std.protos.Sub;
 
 func sub[T: Sub[T]](a: T, b: T) {
-    print_number(a - b);
+    print(a - b);
     print(',');
 }
 
@@ -126,7 +115,7 @@ func main() {
 use std.protos.Mul;
 
 func mul[T: Mul[T]](a: T, b: T) {
-    print_number(a * b);
+    print(a * b);
     print(',');
 }
 
@@ -150,7 +139,7 @@ func main() {
 use std.protos.Div;
 
 func div[T: Div[T]](a: T, b: T) {
-    print_number(a / b);
+    print(a / b);
     print(',');
 }
 
@@ -174,7 +163,7 @@ func main() {
 use std.protos.Mod;
 
 func mod[T: Mod[T]](a: T, b: T) {
-    print_number(a % b);
+    print(a % b);
     print(',');
 }
 
@@ -196,7 +185,7 @@ func main() {
 use std.protos.BitAnd;
 
 func bit_and[T: BitAnd[T]](a: T, b: T) {
-    print_number(a & b);
+    print(a & b);
     print(',');
 }
 
@@ -218,7 +207,7 @@ func main() {
 use std.protos.BitOr;
 
 func bit_or[T: BitOr[T]](a: T, b: T) {
-    print_number(a | b);
+    print(a | b);
     print(',');
 }
 
@@ -240,7 +229,7 @@ func main() {
 use std.protos.BitXor;
 
 func bit_xor[T: BitXor[T]](a: T, b: T) {
-    print_number(a ^ b);
+    print(a ^ b);
     print(',');
 }
 
@@ -262,7 +251,7 @@ func main() {
 use std.protos.Shl;
 
 func bit_shl[T: Shl[T]](a: T, b: T) {
-    print_number(a << b);
+    print(a << b);
     print(',');
 }
 
@@ -284,7 +273,7 @@ func main() {
 use std.protos.Shr;
 
 func bit_shr[T: Shr[T]](a: T, b: T) {
-    print_number(a >> b);
+    print(a >> b);
     print(',');
 }
 
@@ -306,7 +295,7 @@ func main() {
 use std.protos.Neg;
 
 func neg[T: Neg](a: T) {
-    print_number(-a);
+    print(-a);
     print(',');
 }
 
@@ -323,7 +312,7 @@ func main() {
 use std.protos.BitNot;
 
 func bit_not[T: BitNot](a: T) {
-    print_number(~a);
+    print(~a);
     print(',');
 }
 

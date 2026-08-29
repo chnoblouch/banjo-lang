@@ -22,6 +22,6 @@ func main() {
 	
 	var object = Object { tags: tags };
 	
-	print(object.tags[0].value.data[2]);
-	print(object.tags[1].value.data[3]);
+	print(object.tags[0].value.data[2] as char);
+	print(object.tags[1].value.data[3] as char);
 }

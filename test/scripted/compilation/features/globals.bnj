@@ -47,7 +47,7 @@ var i: f32 = 0.5821;
 var j: f64 = -192.47;
 var k: bool = false;
 var l: bool = true;
-var m: u8 = 'x';
+var m: char = 'x';
 
 func main() {
     print(a as u32);
@@ -108,7 +108,7 @@ func main() {
 # test:output "42,true,0.25,324187,c"
 
 var a: (i32, bool) = (42, true);
-var b: (f32, u64, u8) = (0.25, 324187, 'c');
+var b: (f32, u64, char) = (0.25, 324187, 'c');
 
 func main() {
     print(a.0);

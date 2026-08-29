@@ -30,14 +30,16 @@ func main() {
 }
 
 # test:subtest
-# test:output "ee"
+# test:output "eee"
 
 func main() {
-    var a: u16 = 50172;
-    var b: u32 = 3678983983;
+    var a: u8 = 174;
+	var b: u16 = 50172;
+    var c: u32 = 3678983983;
 
-	check(a, "50172");
-	check(b, "3678983983");
+	check(a, "174");
+	check(b, "50172");
+	check(c, "3678983983");
 }
 
 # test:subtest
@@ -59,9 +61,9 @@ func main() {
 # test:output "eee"
 
 func main() {
-    var a: u8 = 'c';
-    var b: u8 = '0';
-    var c: u8 = '.';
+    var a: char = 'c';
+    var b: char = '0';
+    var c: char = '.';
 
     check(a, "c");
 	check(b, "0");
