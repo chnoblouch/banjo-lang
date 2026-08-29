@@ -308,9 +308,17 @@ Result ExprFinalizer::finalize_coercion(sir::CharLiteral &char_literal, sir::Exp
     if (auto primitive_type = type.match<sir::PrimitiveType>()) {
         sir::Primitive primitive = primitive_type->primitive;
 
-        if (primitive == sir::Primitive::CHAR || primitive == sir::Primitive::U8) {
+        if (primitive == sir::Primitive::CHAR) {
             char_literal.type = type;
             return Result::SUCCESS;
+        } else if (primitive == sir::Primitive::U8) {
+            if (char_literal.value < 0x80) {
+                char_literal.type = type;
+                return Result::SUCCESS;
+            } else {
+                analyzer.report_generator.report_err_cannot_coerce_multibyte(char_literal, type);
+                return Result::ERROR;
+            }
         }
     }
 

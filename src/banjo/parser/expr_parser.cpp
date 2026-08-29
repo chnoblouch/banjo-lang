@@ -4,11 +4,11 @@
 #include "banjo/lexer/token.hpp"
 #include "banjo/parser/node_builder.hpp"
 #include "banjo/source/text_range.hpp"
+#include "banjo/utils/escaped_string.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/unicode.hpp"
 #include "banjo/utils/utils.hpp"
 
-#include <bit>
-#include <cstdint>
 #include <optional>
 
 namespace banjo {
@@ -343,23 +343,19 @@ ParseResult ExprParser::parse_char_literal() {
     std::string_view value{token->value.substr(1, token->value.size() - 2)};
     bool valid = true;
 
-    if (value.size() == 1) {
-        if (std::bit_cast<std::uint8_t>(value[0]) > 127) {
-            parser.report_generator.report_err_invalid_char_literal(parser.file, *token);
-            valid = false;
-        }
-    } else if (value[0] == '\\') {
-        if (std::optional<unsigned> length = validate_escape_sequence(value)) {
-            if (value.size() != *length) {
-                parser.report_generator.report_err_invalid_char_literal(parser.file, *token);
+    if (auto result = escaped_string::decode(value)) {
+        if (std::optional<unsigned> length = unicode::validate_utf8(result.value())) {
+            if (length != 1) {
+                parser.report_generator.report_err_char_literal_length(parser.file, *token);
                 valid = false;
             }
         } else {
-            parser.report_generator.report_err_invalid_escape_sequence(parser.file, token->position + 1);
+            parser.report_generator.report_err_invalid_utf8_char(parser.file, *token);
             valid = false;
         }
     } else {
-        parser.report_generator.report_err_invalid_char_literal(parser.file, *token);
+        TextPosition position = token->position + 1 + result.error();
+        parser.report_generator.report_err_invalid_escape_sequence(parser.file, position);
         valid = false;
     }
 
@@ -375,24 +371,17 @@ ParseResult ExprParser::parse_char_literal() {
 ParseResult ExprParser::parse_string_literal() {
     Token *token = stream.consume();
     std::string_view value{token->value.substr(1, token->value.size() - 2)};
-
-    unsigned index = 0;
     bool valid = true;
 
-    while (index < value.size()) {
-        if (value[index] == '\\') {
-            if (std::optional<unsigned> length = validate_escape_sequence(value.substr(index))) {
-                index += *length;
-            } else {
-                unsigned position = token->position + 1 + index;
-
-                parser.report_generator.report_err_invalid_escape_sequence(parser.file, position);
-                valid = false;
-                index += 1;
-            }
-        } else {
-            index += 1;
+    if (auto result = escaped_string::decode(value)) {
+        if (!unicode::validate_utf8(result.value())) {
+            parser.report_generator.report_err_invalid_utf8_string(parser.file, *token);
+            valid = false;
         }
+    } else {
+        TextPosition position = token->position + 1 + result.error();
+        parser.report_generator.report_err_invalid_escape_sequence(parser.file, position);
+        valid = false;
     }
 
     if (!valid) {

@@ -41,8 +41,8 @@ func main() {
 func main() {
     var path = Path.from("test.txt");
     var file = File.open(path, File.Mode.WRITE).unwrap();
-    var data = ['F', 'i', 'l', 'e'];
-    file.write(data.slice);
+    var data: Slice[u8] = ['F', 'i', 'l', 'e'];
+    file.write(data).unwrap();
 }
 
 # test:subtest

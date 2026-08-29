@@ -2,7 +2,7 @@
 
 #include "banjo/reports/report.hpp"
 #include "banjo/source/source_file.hpp"
-#include "banjo/utils/utf8_encoding.hpp"
+#include "banjo/utils/unicode.hpp"
 
 namespace banjo {
 
@@ -224,7 +224,7 @@ unsigned ReportPrinter::char_width(int c) {
     if (c == '\t') {
         return 4;
     } else {
-        return UTF8Encoding::is_first_byte_of_char(c) ? 1 : 0;
+        return unicode::is_utf8_boundary(c) ? 1 : 0;
     }
 }
 

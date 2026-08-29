@@ -22,6 +22,7 @@
 #include "banjo/sir/type_constraints.hpp"
 #include "banjo/source/module_path.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/unicode.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include <optional>
@@ -319,12 +320,6 @@ Result ExprAnalyzer::analyze_array_literal(sir::ArrayLiteral &array_literal, sir
 }
 
 Result ExprAnalyzer::analyze_string_literal(sir::StringLiteral &string_literal) {
-    // TODO: This should be done in the parser for consistency.
-    if (!utils::validate_utf8(string_literal.value)) {
-        analyzer.report_generator.report_err_invalid_utf8(string_literal);
-        string_literal.value = "_";
-    }
-
     string_literal.type = analyzer.create(
         sir::PseudoType{
             .ast_node = nullptr,

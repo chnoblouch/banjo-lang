@@ -50,9 +50,10 @@ public:
     void report_err_expected(SourceFile &file, Token &token, TokenType expected_type);
     void report_err_expected_ident(SourceFile &file, Token &token);
     void report_err_unclosed_block(SourceFile &file, Token &token);
-    void report_err_invalid_char_literal(SourceFile &file, Token &token);
+    void report_err_char_literal_length(SourceFile &file, Token &token);
     void report_err_invalid_escape_sequence(SourceFile &file, TextPosition position);
-    void report_err_invalid_utf8(sir::StringLiteral &string_literal);
+    void report_err_invalid_utf8_char(SourceFile &file, Token &token);
+    void report_err_invalid_utf8_string(SourceFile &file, Token &token);
     void report_err_invalid_int_literal(SourceFile &file, Token &token);
     void report_err_int_literal_too_large(SourceFile &file, Token &token);
     void report_err_invalid_fp_literal(SourceFile &file, Token &token);
@@ -70,6 +71,7 @@ public:
     void report_err_cannot_coerce(const sir::IntLiteral &int_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::FPLiteral &fp_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::CharLiteral &char_literal, const sir::Expr &expected_type);
+    void report_err_cannot_coerce_multibyte(sir::CharLiteral &char_literal, sir::Expr expected_type);
     void report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::NoneLiteral &none_literal, const sir::Expr &expected_type);
     void report_err_cannot_coerce(const sir::ArrayLiteral &array_literal, const sir::Expr &expected_type);

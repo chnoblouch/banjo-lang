@@ -124,8 +124,12 @@ void ReportGenerator::report_err_unclosed_block(SourceFile &file, Token &token) 
     report_error("file ends with unclosed block", {&file, token.range()});
 }
 
-void ReportGenerator::report_err_invalid_char_literal(SourceFile &file, Token &token) {
-    report_error("character literals may only contain a single ascii character", {&file, token.range()});
+void ReportGenerator::report_err_char_literal_length(SourceFile &file, Token &token) {
+    if (token.value.size() == 2) {
+        report_error("empty character literal", {&file, token.range()});
+    } else {
+        report_error("character literal contains more than one character", {&file, token.range()});
+    }
 }
 
 void ReportGenerator::report_err_invalid_escape_sequence(SourceFile &file, TextPosition position) {
@@ -133,9 +137,14 @@ void ReportGenerator::report_err_invalid_escape_sequence(SourceFile &file, TextP
     report_error("unknown escape sequence", {&file, {position, position + 1}});
 }
 
-void ReportGenerator::report_err_invalid_utf8(sir::StringLiteral &string_literal) {
+void ReportGenerator::report_err_invalid_utf8_char(SourceFile &file, Token &token) {
     // TODO: Highlight the faulty character.
-    report_error("invalid utf-8 sequence in string literal", string_literal.ast_node);
+    report_error("invalid utf-8 sequence in character literal", {&file, token.range()});
+}
+
+void ReportGenerator::report_err_invalid_utf8_string(SourceFile &file, Token &token) {
+    // TODO: Highlight the faulty character.
+    report_error("invalid utf-8 sequence in string literal", {&file, token.range()});
 }
 
 void ReportGenerator::report_err_invalid_int_literal(SourceFile &file, Token &token) {
@@ -216,6 +225,10 @@ void ReportGenerator::report_err_cannot_coerce(const sir::FPLiteral &fp_literal,
 
 void ReportGenerator::report_err_cannot_coerce(const sir::CharLiteral &char_literal, const sir::Expr &expected_type) {
     report_error("cannot coerce character literal to type '$'", char_literal.ast_node, expected_type);
+}
+
+void ReportGenerator::report_err_cannot_coerce_multibyte(sir::CharLiteral &char_literal, sir::Expr expected_type) {
+    report_error("cannot coerce multibyte character literal to type '$'", char_literal.ast_node, expected_type);
 }
 
 void ReportGenerator::report_err_cannot_coerce(const sir::NullLiteral &null_literal, const sir::Expr &expected_type) {

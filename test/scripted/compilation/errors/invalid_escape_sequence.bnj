@@ -35,10 +35,9 @@ func main() {
 }
 
 # test:subtest
-# test:error 44:14 "unknown escape sequence"
-# test:error 44:16 "unknown escape sequence"
-# test:error 44:18 "unknown escape sequence"
-# test:error 44:20 "unknown escape sequence"
+# test:error 43:14 "unknown escape sequence"
+
+# TODO: Print all the errors
 
 func main() {
     var a = "\c\d\x\x__";

@@ -1,0 +1,27 @@
+# test:subtest
+# test:error 5:13 "empty character literal"
+
+func main() {
+    var a = '';
+}
+
+# test:subtest
+# test:error 12:13 "character literal contains more than one character"
+
+func main() {
+    var a = 'a_';
+}
+
+# test:subtest
+# test:error 19:13 "character literal contains more than one character"
+
+func main() {
+    var a = '\xC3\xa4a';
+}
+
+# test:subtest
+# test:error 26:13 "character literal contains more than one character"
+
+func main() {
+    var a = '\na';
+}

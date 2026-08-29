@@ -1,70 +1,81 @@
 # test:subtest
-# test:error 7:13 "invalid utf-8 sequence in string literal"
-# test:error 8:13 "invalid utf-8 sequence in string literal"
-# test:error 9:13 "invalid utf-8 sequence in string literal"
+# test:error 7:13 "invalid utf-8 sequence in character literal"
+# test:error 8:13 "invalid utf-8 sequence in character literal"
+# test:error 9:13 "invalid utf-8 sequence in character literal"
+
+func main() {
+    var a = '\xFF';
+    var b = '\xF8';
+    var c = '\xFC';
+}
+
+# test:subtest
+# test:error 22:13 "invalid utf-8 sequence in character literal"
+# test:error 23:13 "invalid utf-8 sequence in character literal"
+# test:error 24:13 "invalid utf-8 sequence in character literal"
+# test:error 25:13 "invalid utf-8 sequence in character literal"
+# test:error 26:13 "invalid utf-8 sequence in character literal"
+# test:error 27:13 "invalid utf-8 sequence in character literal"
+# test:error 28:13 "invalid utf-8 sequence in character literal"
+
+func main() {
+    var a = '\xC3';
+    var b = '\xE0\xA4';
+    var c = '\xF0\x9F\xAA';
+    var d = '\xC3\x00';
+    var e = '\xE0\xA4\x00';
+    var f = '\xF0\x9F\xAA\x00';
+    var g = '\xC3\x80\x80';
+}
+
+# test:subtest
+# test:error 38:13 "invalid utf-8 sequence in character literal"
+# test:error 39:13 "invalid utf-8 sequence in character literal"
+# test:error 40:13 "invalid utf-8 sequence in character literal"
+# test:error 41:13 "invalid utf-8 sequence in character literal"
+
+func main() {
+    var a = '\xC0\x80';
+    var b = '\xC1\x80';
+    var c = '\xE0\x80\x80';
+    var d = '\xF0\x80\x80\x80';
+}
+
+# test:subtest
+# test:error 51:13 "invalid utf-8 sequence in character literal"
+# test:error 52:13 "invalid utf-8 sequence in character literal"
+# test:error 53:13 "invalid utf-8 sequence in character literal"
+# test:error 54:13 "invalid utf-8 sequence in character literal"
+
+func main() {
+    var a = '\xED\xA0\x80';
+    var b = '\xED\xAF\xBF';
+    var c = '\xED\xB0\x80';
+    var d = '\xED\xBF\xbF';
+}
+
+# test:subtest
+# test:error 65:13 "invalid utf-8 sequence in character literal"
+# test:error 66:13 "invalid utf-8 sequence in character literal"
+# test:error 67:13 "invalid utf-8 sequence in character literal"
+# test:error 68:13 "invalid utf-8 sequence in character literal"
+# test:error 69:13 "invalid utf-8 sequence in character literal"
+
+func main() {
+    var a = '\xF4\x90\x80\x80';
+    var b = '\xF4\xA0\x80\x80';
+    var c = '\xF5\x80\x80\x80';
+    var d = '\xF6\x80\x80\x80';
+    var e = '\xF7\x80\x80\x80';
+}
+
+# test:subtest
+# test:error 78:13 "invalid utf-8 sequence in string literal"
+# test:error 79:13 "invalid utf-8 sequence in string literal"
+# test:error 80:13 "invalid utf-8 sequence in string literal"
 
 func main() {
     var a = "\xFF";
-    var b = "\xF8";
-    var c = "\xFC";
-}
-
-# test:subtest
-# test:error 22:13 "invalid utf-8 sequence in string literal"
-# test:error 23:13 "invalid utf-8 sequence in string literal"
-# test:error 24:13 "invalid utf-8 sequence in string literal"
-# test:error 25:13 "invalid utf-8 sequence in string literal"
-# test:error 26:13 "invalid utf-8 sequence in string literal"
-# test:error 27:13 "invalid utf-8 sequence in string literal"
-# test:error 28:13 "invalid utf-8 sequence in string literal"
-
-func main() {
-    var a = "\xC3";
-    var b = "\xE0\xA4";
-    var c = "\xF0\x9F\xAA";
-    var d = "\xC3\x00";
-    var e = "\xE0\xA4\x00";
-    var f = "\xF0\x9F\xAA\x00";
-    var g = "\xC3\x80\x80";
-}
-
-# test:subtest
-# test:error 38:13 "invalid utf-8 sequence in string literal"
-# test:error 39:13 "invalid utf-8 sequence in string literal"
-# test:error 40:13 "invalid utf-8 sequence in string literal"
-# test:error 41:13 "invalid utf-8 sequence in string literal"
-
-func main() {
-    var a = "\xC0\x80";
-    var b = "\xC1\x80";
-    var c = "\xE0\x80\x80";
-    var d = "\xF0\x80\x80\x80";
-}
-
-# test:subtest
-# test:error 51:13 "invalid utf-8 sequence in string literal"
-# test:error 52:13 "invalid utf-8 sequence in string literal"
-# test:error 53:13 "invalid utf-8 sequence in string literal"
-# test:error 54:13 "invalid utf-8 sequence in string literal"
-
-func main() {
-    var a = "\xED\xA0\x80";
-    var b = "\xED\xAF\xBF";
-    var c = "\xED\xB0\x80";
-    var d = "\xED\xBF\xbF";
-}
-
-# test:subtest
-# test:error 65:13 "invalid utf-8 sequence in string literal"
-# test:error 66:13 "invalid utf-8 sequence in string literal"
-# test:error 67:13 "invalid utf-8 sequence in string literal"
-# test:error 68:13 "invalid utf-8 sequence in string literal"
-# test:error 69:13 "invalid utf-8 sequence in string literal"
-
-func main() {
-    var a = "\xF4\x90\x80\x80";
-    var b = "\xF4\xA0\x80\x80";
-    var c = "\xF5\x80\x80\x80";
-    var d = "\xF6\x80\x80\x80";
-    var e = "\xF7\x80\x80\x80";
+    var b = "a\xFF";
+    var c = "\xFFa";
 }

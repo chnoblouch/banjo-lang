@@ -669,7 +669,7 @@ struct BoolLiteral {
 struct CharLiteral {
     ASTNode *ast_node;
     Expr type;
-    char value;
+    unsigned value;
 };
 
 struct NullLiteral {

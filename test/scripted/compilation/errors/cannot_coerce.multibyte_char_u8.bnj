@@ -1,0 +1,17 @@
+# test:subtest
+# test:error 7:17 "cannot coerce multibyte character literal to type 'u8'"
+# test:error 8:17 "cannot coerce multibyte character literal to type 'u8'"
+# test:error 9:17 "cannot coerce multibyte character literal to type 'u8'"
+
+func main() {
+    var a: u8 = 'à';
+    var b: u8 = '⊂';
+    var c: u8 = '🍕';
+}
+
+# test:subtest
+# test:error 16:17 "cannot coerce multibyte character literal to type 'u8'"
+
+func main() {
+    var a: u8 = '\xC2\x80';
+}

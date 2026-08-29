@@ -127,7 +127,6 @@ std::vector<T> remove_duplicates(const std::vector<T> &array) {
 std::optional<std::uint64_t> parse_u64(std::string_view string);
 std::vector<std::string_view> split_string(std::string_view string, char delimiter);
 std::string convert_eol_to_lf(std::string_view string);
-bool validate_utf8(std::string_view string);
 
 LEB128Buffer encode_uleb128(std::uint64_t value);
 LEB128Buffer encode_sleb128(LargeInt value);

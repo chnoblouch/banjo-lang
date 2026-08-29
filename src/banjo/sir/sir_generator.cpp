@@ -2,9 +2,10 @@
 
 #include "banjo/ast/ast_node.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/escaped_string.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
-#include "banjo/utils/utils.hpp"
+#include "banjo/utils/unicode.hpp"
 
 #include <string>
 #include <vector>
@@ -968,14 +969,15 @@ sir::Expr SIRGenerator::generate_bool_literal(ASTNode *node, bool value) {
 }
 
 sir::Expr SIRGenerator::generate_char_literal(ASTNode *node) {
-    unsigned index = 0;
-    char value = decode_char(node->value, index);
+    std::string string = escaped_string::decode(node->value).value();
+    std::optional<unsigned> value = unicode::decode_utf8(string);
+    ASSERT(value);
 
     return create(
         sir::CharLiteral{
             .ast_node = node,
             .type = nullptr,
-            .value = value,
+            .value = *value,
         }
     );
 }
@@ -1026,12 +1028,7 @@ sir::Expr SIRGenerator::generate_array_literal(ASTNode *node) {
 }
 
 sir::Expr SIRGenerator::generate_string_literal(ASTNode *node) {
-    unsigned index = 0;
-    std::string value = "";
-
-    while (index < node->value.length()) {
-        value += decode_char(node->value, index);
-    }
+    std::string value = escaped_string::decode(node->value).value();
 
     return create(
         sir::StringLiteral{
@@ -1822,28 +1819,6 @@ sir::IdentExpr *SIRGenerator::generate_completion_token(ASTNode *node) {
             .value = sir::COMPLETION_TOKEN_VALUE,
         }
     );
-}
-
-char SIRGenerator::decode_char(std::string_view value, unsigned &index) {
-    char c = value[index++];
-
-    if (c == '\\') {
-        c = value[index++];
-
-        if (c == 'n') return 0x0A;
-        else if (c == 'r') return 0x0D;
-        else if (c == 't') return 0x09;
-        else if (c == '0') return 0x00;
-        else if (c == '\\') return '\\';
-        else if (c == '\'') return '\'';
-        else if (c == '\"') return '\"';
-        else if (c == 'x') {
-            index += 2;
-            return (char)std::stoi(std::string(value.substr(index - 2, 2)), nullptr, 16);
-        }
-    }
-
-    return c;
 }
 
 sir::UseItem SIRGenerator::generate_use_item(ASTNode *node) {

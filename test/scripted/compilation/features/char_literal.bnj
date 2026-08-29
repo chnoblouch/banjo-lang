@@ -1,0 +1,83 @@
+# test:subtest
+# test:output "65,56,43"
+
+func main() {
+    var a: char = 'A';
+    var b: char = '8';
+    var c: char = '+';
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+}
+
+# test:subtest
+# test:output "1060,2437,129409"
+
+func main() {
+    var a: char = 'Ф';
+    var b: char = 'অ';
+    var c: char = '🦁';
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+}
+
+# test:subtest
+# test:output "10,13,9,0,92,39,34"
+
+func main() {
+    var a: char = '\n';
+    var b: char = '\r';
+    var c: char = '\t';
+    var d: char = '\0';
+    var e: char = '\\';
+    var f: char = '\'';
+    var g: char = '\"';
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+    print(',');
+    print(d as u32);
+    print(',');
+    print(e as u32);
+    print(',');
+    print(f as u32);
+    print(',');
+    print(g as u32);
+}
+
+# test:subtest
+# test:output "65,1060,1060,2437,2437,129409,129409"
+
+func main() {
+    var a: char = '\x41';
+    var b1: char = '\xd0\xa4';
+    var b2: char = '\xD0\xA4';
+    var c1: char = '\xE0\xA6\x85';
+    var c2: char = '\xe0\xa6\x85';
+    var d1: char = '\xf0\x9f\xa6\x81';
+    var d2: char = '\xF0\x9F\xA6\x81';
+
+    print(a as u32);
+    print(',');
+    print(b1 as u32);
+    print(',');
+    print(b2 as u32);
+    print(',');
+    print(c1 as u32);
+    print(',');
+    print(c2 as u32);
+    print(',');
+    print(d1 as u32);
+    print(',');
+    print(d2 as u32);
+}
