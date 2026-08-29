@@ -1,14 +1,19 @@
 #include "overload_resolver.hpp"
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/utils/arena.hpp"
 
 namespace banjo::sema {
 
-OverloadResolver::OverloadResolver(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
+OverloadResolver::OverloadResolver(SemanticAnalyzer &analyzer) : analyzer{analyzer} {}
 
-sir::FuncDef *OverloadResolver::resolve(sir::OverloadSet &set, std::span<sir::Expr> args) {
+sir::FuncDef *OverloadResolver::resolve(
+    sir::OverloadSet &set,
+    std::span<sir::Expr> args,
+    std::span<sir::Expr> generic_args
+) {
     for (sir::FuncDef *func_def : set.func_defs) {
-        if (is_matching_overload(*func_def, args)) {
+        if (is_matching_overload(*func_def, args, generic_args)) {
             return func_def;
         }
     }
@@ -16,24 +21,35 @@ sir::FuncDef *OverloadResolver::resolve(sir::OverloadSet &set, std::span<sir::Ex
     return nullptr;
 }
 
-bool OverloadResolver::is_matching_overload(sir::FuncDef &func_def, std::span<sir::Expr> args) {
+bool OverloadResolver::is_matching_overload(
+    sir::FuncDef &func_def,
+    std::span<sir::Expr> args,
+    std::span<sir::Expr> generic_args
+) {
     if (func_def.type.params.size() != args.size()) {
         return false;
     }
 
-    for (unsigned i = 0; i < args.size(); i++) {
+    sir::FuncType type = func_def.type;
+    utils::Arena arena;
+
+    if (!generic_args.empty()) {
+        type = *sir::Specializer{arena, func_def.generic_params, generic_args}.specialize_func_type(type);
+    }
+
+    unsigned first_param = func_def.is_method() ? 1 : 0;
+
+    for (unsigned i = first_param; i < args.size(); i++) {
         sir::Expr arg_type = analyzer.get_resolved_type(args[i]);
-        sir::Expr param_type = func_def.type.params[i].type;
+        sir::Expr param_type = type.params[i].type;
 
         // FIXME: Prioritize overloads that use references.
         if (auto reference_type = param_type.match<sir::ReferenceType>()) {
             if (arg_type != reference_type->base_type && !is_coercible(arg_type, reference_type->base_type)) {
                 return false;
             }
-        } else {
-            if (arg_type != param_type && !is_coercible(arg_type, param_type)) {
-                return false;
-            }
+        } else if (arg_type != param_type && !is_coercible(arg_type, param_type)) {
+            return false;
         }
     }
 

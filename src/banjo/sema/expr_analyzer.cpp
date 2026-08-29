@@ -1096,67 +1096,10 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     sir::FuncDef *callee_func_def = nullptr;
 
     if (auto func_def = call_expr.callee.match_symbol<sir::FuncDef>()) {
-        if (func_def->is_generic()) {
-            for (unsigned i = first_arg_to_analyze; i < call_expr.args.size(); i++) {
-                sir::Expr &arg = call_expr.args[i];
-
-                if (i >= func_def->type.params.size()) {
-                    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(arg));
-                    continue;
-                }
-
-                sir::Expr param_type = func_def->type.params[i].type;
-
-                if (is_non_generic(param_type)) {
-                    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(arg, param_type));
-                } else {
-                    RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(arg));
-                }
-            }
-
-            RESULT_PROPAGATE(result);
-
-            std::span<sir::Expr> generic_args;
-            GenericArgInference inference{analyzer, &call_expr, *func_def};
-            RESULT_PROPAGATE(inference.infer(call_expr.args, generic_args));
-
-            analyzer.type_substitutions.push_back({
-                .ast_node = call_expr.callee.get_ast_node(),
-                .params = func_def->generic_params,
-                .args = generic_args,
-            });
-
-            call_expr.callee = specialize(func_def, generic_args, call_expr.callee.get_ast_node());
-
-            if (func_def->generic_params.back()->kind == sir::GenericParamKind::SEQUENCE) {
-                unsigned num_non_sequence_args = func_def->type.params.size() - 1;
-                unsigned num_sequence_args = call_expr.args.size() - num_non_sequence_args;
-
-                std::span<sir::Expr> sequence_args = analyzer.allocate_array<sir::Expr>(num_sequence_args);
-                for (unsigned i = 0; i < num_sequence_args; i++) {
-                    sequence_args[i] = call_expr.args[num_non_sequence_args + i];
-                }
-
-                std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(num_non_sequence_args + 1);
-                for (unsigned i = 0; i < num_non_sequence_args; i++) {
-                    args[i] = call_expr.args[i];
-                }
-
-                args[num_non_sequence_args] = analyzer.create(
-                    sir::TupleExpr{
-                        .ast_node = nullptr,
-                        .type = generic_args.back(),
-                        .exprs = sequence_args,
-                    }
-                );
-
-                call_expr.args = args;
-            }
-        }
-
         callee_func_def = func_def;
     } else if (auto overload_set = call_expr.callee.match_symbol<sir::OverloadSet>()) {
-        callee_func_def = OverloadResolver(analyzer).resolve(*overload_set, call_expr.args);
+        // TODO: Generic arguments.
+        callee_func_def = OverloadResolver(analyzer).resolve(*overload_set, call_expr.args, {});
 
         if (!callee_func_def) {
             analyzer.report_generator.report_err_no_matching_overload(call_expr.callee, *overload_set);
@@ -1172,6 +1115,64 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                 .symbol = callee_func_def,
             }
         );
+    }
+
+    if (callee_func_def && callee_func_def->is_generic()) {
+        for (unsigned i = first_arg_to_analyze; i < call_expr.args.size(); i++) {
+            sir::Expr &arg = call_expr.args[i];
+
+            if (i >= callee_func_def->type.params.size()) {
+                RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(arg));
+                continue;
+            }
+
+            sir::Expr param_type = callee_func_def->type.params[i].type;
+
+            if (is_non_generic(param_type)) {
+                RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize_by_coercion(arg, param_type));
+            } else {
+                RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(arg));
+            }
+        }
+
+        RESULT_PROPAGATE(result);
+
+        std::span<sir::Expr> generic_args;
+        GenericArgInference inference{analyzer, &call_expr, *callee_func_def};
+        RESULT_PROPAGATE(inference.infer(call_expr.args, generic_args));
+
+        analyzer.type_substitutions.push_back({
+            .ast_node = call_expr.callee.get_ast_node(),
+            .params = callee_func_def->generic_params,
+            .args = generic_args,
+        });
+
+        call_expr.callee = specialize(callee_func_def, generic_args, call_expr.callee.get_ast_node());
+
+        if (callee_func_def->generic_params.back()->kind == sir::GenericParamKind::SEQUENCE) {
+            unsigned num_non_sequence_args = callee_func_def->type.params.size() - 1;
+            unsigned num_sequence_args = call_expr.args.size() - num_non_sequence_args;
+
+            std::span<sir::Expr> sequence_args = analyzer.allocate_array<sir::Expr>(num_sequence_args);
+            for (unsigned i = 0; i < num_sequence_args; i++) {
+                sequence_args[i] = call_expr.args[num_non_sequence_args + i];
+            }
+
+            std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(num_non_sequence_args + 1);
+            for (unsigned i = 0; i < num_non_sequence_args; i++) {
+                args[i] = call_expr.args[i];
+            }
+
+            args[num_non_sequence_args] = analyzer.create(
+                sir::TupleExpr{
+                    .ast_node = nullptr,
+                    .type = generic_args.back(),
+                    .exprs = sequence_args,
+                }
+            );
+
+            call_expr.args = args;
+        }
     }
 
     sir::Expr callee_type = analyzer.get_resolved_type(call_expr.callee);
@@ -2321,7 +2322,7 @@ Result ExprAnalyzer::analyze_operator_overload_call(
     if (auto func_def = symbol.match<sir::FuncDef>()) {
         impl = func_def;
     } else if (auto overload_set = symbol.match<sir::OverloadSet>()) {
-        impl = OverloadResolver(analyzer).resolve(*overload_set, args);
+        impl = OverloadResolver{analyzer}.resolve(*overload_set, args, generic_args);
 
         if (!impl) {
             analyzer.report_generator.report_err_no_matching_overload(inout_expr, *overload_set);
