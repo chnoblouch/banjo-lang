@@ -60,7 +60,16 @@ endif()
 
 # add_compile_options(-fsanitize=address,undefined)
 # add_link_options(-fsanitize=address,undefined)
-# add_compile_definitions(-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    if(TARGET_OS STREQUAL "linux")
+        message(STATUS "Libstdc++ hardening enabled")
+        add_compile_definitions(-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC)
+    elseif(TARGET_OS STREQUAL "macos")
+        message(STATUS "Libc++ hardening enabled")
+        add_compile_definitions(-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG)
+    endif()
+endif()
 
 string(TIMESTAMP VERSION "%Y-%m-%d")
 add_compile_definitions(BANJO_VERSION="${VERSION}")
