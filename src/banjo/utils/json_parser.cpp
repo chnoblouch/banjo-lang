@@ -207,6 +207,8 @@ std::optional<std::string> Parser::parse_string_raw() {
                 value += '\"';
             } else if (c == '\\') {
                 value += '\\';
+            } else if (c == '/') {
+                value += '/';
             } else if (c == 'b') {
                 value += '\b';
             } else if (c == 'f') {
