@@ -36,8 +36,8 @@ const ToolchainProperties MinGWToolchain::PROPERTIES{
 
 const ToolchainProperties UnixToolchain::PROPERTIES{
     {"linker_path", "Linker path"},
-    {"crt_dir", "CRT directory"},
     {"lib_dirs", "Library directories"},
+    {"crt_files", "CRT files"},
     {"linker_args", "Linker arguments"},
     {"extra_libs", "Additional libraries"},
 };
@@ -415,7 +415,7 @@ UnixToolchain UnixToolchain::detect() {
     print_step("Locating Unix toolchain...");
     toolchain.find_linker();
     toolchain.find_lib_dirs();
-    toolchain.find_crt_dir();
+    toolchain.find_crt_files();
 
     return toolchain;
 }
@@ -435,7 +435,7 @@ UnixToolchain UnixToolchain::install(std::string arch) {
     }
 
     toolchain.lib_dirs = {sysroot_dir.string()};
-    toolchain.crt_dir = {sysroot_dir.string()};
+    toolchain.find_crt_files();
     toolchain.extra_libs = {"c_nonshared", "gcc"};
 
     return toolchain;
@@ -476,16 +476,32 @@ void UnixToolchain::find_lib_dirs() {
     }
 }
 
-void UnixToolchain::find_crt_dir() {
+void UnixToolchain::find_crt_files() {
+    crt_files = {
+        find_crt_file("crt1.o").string(),
+        find_crt_file("crti.o").string(),
+        find_crt_file("crtbegin.o").string(),
+        find_crt_file("crtend.o").string(),
+        find_crt_file("crtn.o").string(),
+    };
+
+    print_step("  Found CRT files:");
+
+    for (const std::string &file : crt_files) {
+        print_step("    - " + file);
+    }
+}
+
+std::filesystem::path UnixToolchain::find_crt_file(const std::string &name) {
     for (const std::string &search_dir : lib_dirs) {
-        if (std::filesystem::is_regular_file(std::filesystem::path(search_dir) / "crt1.o")) {
-            print_step("  CRT directory: " + search_dir);
-            crt_dir = search_dir;
-            return;
+        std::filesystem::path file = std::filesystem::path{search_dir} / name;
+
+        if (std::filesystem::is_regular_file(file)) {
+            return std::filesystem::canonical(file);
         }
     }
 
-    error("failed to find system crt directory");
+    error("failed to find system crt file " + name);
 }
 
 std::filesystem::path UnixToolchain::find_c_compiler() {
@@ -513,9 +529,13 @@ std::unique_ptr<UnixToolchain> UnixToolchain::deserialize(json::Object &object) 
     auto linker_args = object.try_get_string_array("linker_args");
     auto extra_libs = object.try_get_string_array("extra_libs");
     auto lib_dirs = object.try_get_string_array("lib_dirs");
-    auto crt_dir = object.try_get_string("crt_dir");
+    auto crt_files = object.try_get_string_array("crt_files");
 
-    if (!linker_path || !linker_args || !extra_libs || !lib_dirs || !crt_dir) {
+    if (!linker_path || !linker_args || !extra_libs || !lib_dirs || !crt_files) {
+        return nullptr;
+    }
+
+    if (crt_files->size() != 5) {
         return nullptr;
     }
 
@@ -524,7 +544,7 @@ std::unique_ptr<UnixToolchain> UnixToolchain::deserialize(json::Object &object) 
     toolchain.linker_args = *linker_args;
     toolchain.extra_libs = *extra_libs;
     toolchain.lib_dirs = *lib_dirs;
-    toolchain.crt_dir = *crt_dir;
+    toolchain.crt_files = *crt_files;
 
     return std::make_unique<UnixToolchain>(toolchain);
 }
@@ -535,7 +555,7 @@ json::Object UnixToolchain::serialize() {
     object.add("linker_args", json::Array{linker_args});
     object.add("extra_libs", json::Array{extra_libs});
     object.add("lib_dirs", json::Array{lib_dirs});
-    object.add("crt_dir", crt_dir);
+    object.add("crt_files", json::Array{crt_files});
     return object;
 }
 

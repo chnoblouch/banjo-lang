@@ -84,7 +84,7 @@ public:
     std::vector<std::string> linker_args;
     std::vector<std::string> extra_libs;
     std::vector<std::string> lib_dirs;
-    std::string crt_dir;
+    std::vector<std::string> crt_files;
 
     static UnixToolchain detect();
     static UnixToolchain install(std::string arch);
@@ -97,7 +97,8 @@ public:
 private:
     void find_linker();
     void find_lib_dirs();
-    void find_crt_dir();
+    void find_crt_files();
+    std::filesystem::path find_crt_file(const std::string &name);
     std::filesystem::path find_c_compiler();
 
     static std::filesystem::path cross_sysroot_path(const std::string &arch);

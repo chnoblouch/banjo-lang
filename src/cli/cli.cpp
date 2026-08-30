@@ -1388,9 +1388,6 @@ void CLI::invoke_msvc_linker() {
 void CLI::invoke_mingw_linker() {
     MinGWToolchain &toolchain = *static_cast<MinGWToolchain *>(this->toolchain.get());
 
-    std::filesystem::path linker_path(toolchain.linker_path);
-    std::vector<std::string> lib_dirs = toolchain.lib_dirs;
-
     std::vector<std::string> args;
     args.push_back("output.o");
     args.push_back("-o");
@@ -1402,7 +1399,7 @@ void CLI::invoke_mingw_linker() {
         args.push_back("-shared");
     }
 
-    for (const std::string &lib_dir : lib_dirs) {
+    for (const std::string &lib_dir : toolchain.lib_dirs) {
         args.push_back("-L" + lib_dir);
     }
 
@@ -1425,7 +1422,7 @@ void CLI::invoke_mingw_linker() {
     args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
-        .executable = linker_path.string(),
+        .executable = toolchain.linker_path,
         .args = args,
     };
 
@@ -1441,12 +1438,6 @@ void CLI::invoke_mingw_linker() {
 void CLI::invoke_unix_linker() {
     UnixToolchain &toolchain = *static_cast<UnixToolchain *>(this->toolchain.get());
 
-    std::filesystem::path linker_path(toolchain.linker_path);
-    std::vector<std::string> &linker_args = toolchain.linker_args;
-    std::vector<std::string> &additional_libraries = toolchain.extra_libs;
-    std::vector<std::string> &lib_dirs = toolchain.lib_dirs;
-    std::filesystem::path crt_dir(toolchain.crt_dir);
-
     // Notes about linking order:
     // First are crt1.o and crti.o from glibc, then crtbegin.o from GCC,
     // then the object file, then crtend.o from GCC, and finally crtn.o from
@@ -1454,29 +1445,25 @@ void CLI::invoke_unix_linker() {
     // TODO: What about crtfastmath.o?
 
     std::vector<std::string> args;
-    args.insert(args.end(), linker_args.begin(), linker_args.end());
+    args.insert(args.end(), toolchain.linker_args.begin(), toolchain.linker_args.end());
 
     if (package_type == PackageType::EXECUTABLE) {
-        args.push_back((crt_dir / "crt1.o").string());
-        args.push_back((crt_dir / "crti.o").string());
-
-        // TODO
-        // args.push_back((crt_dir / "crtbegin.o").string());
+        args.push_back(toolchain.crt_files[0]);
+        args.push_back(toolchain.crt_files[1]);
+        args.push_back(toolchain.crt_files[2]);
     }
 
     args.push_back("output.o");
 
     if (package_type == PackageType::EXECUTABLE) {
-        // TODO
-        // args.push_back((crt_dir / "crtend.o").string());
-
-        args.push_back((crt_dir / "crtn.o").string());
+        args.push_back(toolchain.crt_files[3]);
+        args.push_back(toolchain.crt_files[4]);
     }
 
     args.push_back("-o");
     args.push_back(get_output_path());
 
-    for (const std::string &lib_dir : lib_dirs) {
+    for (const std::string &lib_dir : toolchain.lib_dirs) {
         args.push_back("-L" + lib_dir);
     }
 
@@ -1497,7 +1484,7 @@ void CLI::invoke_unix_linker() {
         args.push_back("-l:ld-linux-aarch64.so.1");
     }
 
-    for (const std::string &lib : additional_libraries) {
+    for (const std::string &lib : toolchain.extra_libs) {
         args.push_back("-l" + lib);
     }
 
@@ -1524,10 +1511,10 @@ void CLI::invoke_unix_linker() {
         args.push_back("-l" + library);
     }
 
-    args.insert(args.end(), this->linker_args.begin(), this->linker_args.end());
+    args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
-        .executable = linker_path.string(),
+        .executable = toolchain.linker_path,
         .args = args,
     };
 
@@ -1599,8 +1586,6 @@ void CLI::invoke_darwin_linker() {
 void CLI::invoke_wasm_linker() {
     WasmToolchain &toolchain = *static_cast<WasmToolchain *>(this->toolchain.get());
 
-    std::filesystem::path linker_path(toolchain.linker_path);
-
     std::vector<std::string> args;
     args.push_back("output.o");
     args.push_back("-o");
@@ -1618,7 +1603,7 @@ void CLI::invoke_wasm_linker() {
     args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
-        .executable = linker_path.string(),
+        .executable = toolchain.linker_path,
         .args = args,
     };
 
@@ -1633,8 +1618,6 @@ void CLI::invoke_wasm_linker() {
 
 void CLI::invoke_emscripten_linker() {
     EmscriptenToolchain &toolchain = *static_cast<EmscriptenToolchain *>(this->toolchain.get());
-
-    std::filesystem::path linker_path(toolchain.linker_path);
 
     std::vector<std::string> args;
     args.push_back("output.o");
@@ -1655,7 +1638,7 @@ void CLI::invoke_emscripten_linker() {
     args.insert(args.end(), linker_args.begin(), linker_args.end());
 
     Command command{
-        .executable = linker_path.string(),
+        .executable = toolchain.linker_path,
         .args = args,
     };
 
