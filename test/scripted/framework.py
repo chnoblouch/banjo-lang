@@ -132,7 +132,7 @@ def load_test_file(name, file_path):
     tests = [Test(name, "")]
     has_subtests = False
     
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         for i, line in enumerate(f.readlines()):
             if line.startswith(CONDITION_PREFIX + "subtest"):
                 if not has_subtests:

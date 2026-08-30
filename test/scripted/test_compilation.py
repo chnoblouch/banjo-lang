@@ -223,8 +223,8 @@ def check_reports(test, conditions):
 
 
 def compile_source(test):
-    with open("tmp.bnj", "w") as f:
-        f.write(test.source)
+    with open("tmp.bnj", "wb") as f:
+        f.write(test.source.encode("utf-8"))
 
     compiler_path = find_executable("banjo-compiler")
 
