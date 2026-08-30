@@ -180,6 +180,11 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
     mcode::Register fp = mcode::Register::from_physical(AArch64Register::R29);
     mcode::Register lr = mcode::Register::from_physical(AArch64Register::R30);
     mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+
+    mcode::Operand m_fp = mcode::Operand::from_register(fp, 8);
+    mcode::Operand m_lr = mcode::Operand::from_register(lr, 8);
+    mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
+
     int size = func->get_stack_frame().get_size();
 
     std::vector<mcode::Instruction> prolog;
@@ -199,14 +204,9 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
         );
     }
 
-    prolog.push_back(
-        mcode::Instruction(
-            AArch64Opcode::STP,
-            {mcode::Operand::from_register(fp, 8),
-             mcode::Operand::from_register(lr, 8),
-             mcode::Operand::from_aarch64_addr(AArch64Address::new_base_offset_write(sp, -16))}
-        )
-    );
+    AArch64Address stp_addr = AArch64Address::new_base_offset_write(sp, -16);
+    prolog.push_back({AArch64Opcode::STP, {m_fp, m_lr, mcode::Operand::from_aarch64_addr(stp_addr)}});
+    prolog.push_back({AArch64Opcode::MOV, {m_fp, m_sp}});
 
     modify_sp(AArch64Opcode::SUB, size, [&prolog](mcode::Instruction instr) {
         instr.set_flag(mcode::Instruction::FLAG_ALLOCA);
@@ -260,24 +260,26 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
 }
 
 std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *func) {
-    mcode::Register fp = mcode::Register::from_physical(AArch64Register::R0 + 29);
-    mcode::Register lr = mcode::Register::from_physical(AArch64Register::R0 + 30);
+    mcode::Register fp = mcode::Register::from_physical(AArch64Register::R29);
+    mcode::Register lr = mcode::Register::from_physical(AArch64Register::R30);
     mcode::Register sp = mcode::Register::from_physical(AArch64Register::SP);
+
+    mcode::Operand m_fp = mcode::Operand::from_register(fp, 8);
+    mcode::Operand m_lr = mcode::Operand::from_register(lr, 8);
+
     int size = func->get_stack_frame().get_size();
 
     std::vector<mcode::Instruction> epilog;
 
     modify_sp(AArch64Opcode::ADD, size, [&epilog](mcode::Instruction instr) { epilog.push_back(std::move(instr)); });
 
-    epilog.push_back(
-        mcode::Instruction(
-            AArch64Opcode::LDP,
-            {mcode::Operand::from_register(fp, 8),
-             mcode::Operand::from_register(lr, 8),
-             mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
-             mcode::Operand::from_int_immediate(16)}
-        )
-    );
+    epilog.push_back({
+        AArch64Opcode::LDP,
+        {m_fp,
+         m_lr,
+         mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
+         mcode::Operand::from_int_immediate(16)},
+    });
 
     std::vector<long> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
     for (auto it = modified_regs.rbegin(); it != modified_regs.rend(); it++) {

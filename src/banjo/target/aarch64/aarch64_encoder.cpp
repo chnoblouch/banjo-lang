@@ -93,10 +93,13 @@ void AArch64Encoder::encode_mov(mcode::Instruction &instr) {
     std::uint32_t r_dst = encode_gp_reg(m_dst.get_physical_reg());
 
     if (m_src.is_register()) {
-        // TODO: Move to/from SP.
-
-        std::uint32_t r_src = encode_gp_reg(m_src.get_physical_reg());
-        text.write_u32(0x2A0003E0 | (sf << 31) | (r_src << 16) | r_dst);
+        if (is_sp(m_dst.get_physical_reg()) || is_sp(m_src.get_physical_reg())) {
+            std::uint32_t r_src = encode_gp_reg(m_src.get_physical_reg());
+            text.write_u32(0x11000000 | (sf << 31) | (r_src << 5) | r_dst);
+        } else {
+            std::uint32_t r_src = encode_gp_reg(m_src.get_physical_reg());
+            text.write_u32(0x2A0003E0 | (sf << 31) | (r_src << 16) | r_dst);
+        }
     } else if (m_src.is_int_immediate()) {
         std::uint64_t bits = m_src.get_int_immediate().to_bits();
 
