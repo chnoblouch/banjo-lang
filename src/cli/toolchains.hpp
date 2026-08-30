@@ -112,6 +112,7 @@ public:
     std::string linker_path;
     std::vector<std::string> linker_args;
     std::string sysroot_path;
+    std::optional<std::string> runtime_library;
 
     static MacOSToolchain detect();
     static MacOSToolchain install();
@@ -122,6 +123,7 @@ public:
     void remove(const Target &target) override;
 
 private:
+    static std::optional<std::string> find_latest_runtime_version(const std::filesystem::path &versions_path);
     static std::filesystem::path cross_sysroot_path();
 };
 

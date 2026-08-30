@@ -493,8 +493,14 @@ void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
 
         if (value.is_string()) {
             std::cout << "\n" << name << ":\n  \"" << value.as_string() << "\"\n";
+        } else if (value.is_null()) {
+            std::cout << "\n" << name << ":\n  none\n";
         } else if (value.is_array()) {
             std::cout << "\n" << name << ":\n";
+
+            if (value.as_array().length() == 0) {
+                std::cout << "  none\n";
+            }
 
             for (const json::Value &element : value.as_array()) {
                 std::cout << "  - \"" << element.as_string() << "\"\n";
@@ -1537,12 +1543,8 @@ void CLI::invoke_unix_linker() {
 void CLI::invoke_darwin_linker() {
     MacOSToolchain &toolchain = *static_cast<MacOSToolchain *>(this->toolchain.get());
 
-    std::filesystem::path linker_path(toolchain.linker_path);
-    std::vector<std::string> &linker_args = toolchain.linker_args;
-    std::filesystem::path sysroot_path(toolchain.sysroot_path);
-
     std::vector<std::string> args;
-    args.insert(args.end(), linker_args.begin(), linker_args.end());
+    args.insert(args.end(), toolchain.linker_args.begin(), toolchain.linker_args.end());
     args.push_back("output.o");
     args.push_back("-o");
     args.push_back(get_output_path());
@@ -1553,9 +1555,13 @@ void CLI::invoke_darwin_linker() {
     args.push_back("14.0.0");
     args.push_back("14.0.0");
     args.push_back("-syslibroot");
-    args.push_back(sysroot_path.string());
+    args.push_back(toolchain.sysroot_path);
     args.push_back("-lSystem.B");
     args.push_back("-lobjc.A");
+
+    if (toolchain.runtime_library) {
+        args.push_back(*toolchain.runtime_library);
+    }
 
     if (package_type == PackageType::SHARED_LIBRARY) {
         args.push_back("-dylib");
@@ -1577,7 +1583,7 @@ void CLI::invoke_darwin_linker() {
     args.insert(args.end(), this->linker_args.begin(), this->linker_args.end());
 
     Command command{
-        .executable = linker_path.string(),
+        .executable = toolchain.linker_path,
         .args = args,
     };
 

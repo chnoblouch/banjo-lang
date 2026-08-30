@@ -15,6 +15,7 @@
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 #if OS_WINDOWS
 #    define WIN32_LEAN_AND_MEAN
@@ -38,13 +39,14 @@ const ToolchainProperties UnixToolchain::PROPERTIES{
     {"crt_dir", "CRT directory"},
     {"lib_dirs", "Library directories"},
     {"linker_args", "Linker arguments"},
-    {"additional_libraries", "Additional libraries"},
+    {"extra_libs", "Additional libraries"},
 };
 
 const ToolchainProperties MacOSToolchain::PROPERTIES{
     {"linker_path", "Linker path"},
     {"sysroot", "Sysroot path"},
-    {"extra_args", "Extra linker arguments"},
+    {"linker_args", "Linker arguments"},
+    {"runtime_library", "Runtime library path"},
 };
 
 const ToolchainProperties WasmToolchain::PROPERTIES{
@@ -54,6 +56,34 @@ const ToolchainProperties WasmToolchain::PROPERTIES{
 const ToolchainProperties EmscriptenToolchain::PROPERTIES{
     {"linker_path", "Linker path"},
 };
+
+static std::optional<std::string_view> max_version(std::string_view a, std::string_view b) {
+    if (a.empty()) {
+        return b;
+    } else if (b.empty()) {
+        return a;
+    }
+
+    std::vector<std::string_view> components_a = utils::split_string(a, '.');
+    std::vector<std::string_view> components_b = utils::split_string(b, '.');
+
+    for (unsigned i = 0; i < std::min(components_a.size(), components_b.size()); i++) {
+        std::optional<std::uint64_t> value_b = utils::parse_u64(components_a[i]);
+        std::optional<std::uint64_t> value_a = utils::parse_u64(components_b[i]);
+
+        if (!value_a || !value_b) {
+            return {};
+        }
+
+        if (*value_a > *value_b) {
+            return a;
+        } else if (*value_b == *value_b) {
+            return b;
+        }
+    }
+
+    return {};
+}
 
 MSVCToolchain MSVCToolchain::detect() {
     MSVCToolchain toolchain;
@@ -543,7 +573,35 @@ MacOSToolchain MacOSToolchain::detect() {
     print_step("  Found macOS SDK: " + sysroot_path.string());
     toolchain.sysroot_path = sysroot_path.string();
 
+    std::string toolchain_path_raw = get_tool_output(xcrun_path->string(), {"-show-toolchain-path"});
+    std::filesystem::path toolchain_path = std::filesystem::canonical(toolchain_path_raw);
+    std::filesystem::path runtimes_dir = toolchain_path / "usr" / "lib" / "clang";
+
+    if (auto runtime_version = find_latest_runtime_version(runtimes_dir)) {
+        std::filesystem::path runtime_dir = runtimes_dir / *runtime_version / "lib" / "darwin";
+        std::filesystem::path runtime_library = runtime_dir / "libclang_rt.osx.a";
+
+        if (std::filesystem::is_regular_file(runtime_library)) {
+            print_step("  Found runtime library: " + runtime_library.string());
+            toolchain.runtime_library = runtime_library.string();
+        }
+    }
+
     return toolchain;
+}
+
+std::optional<std::string> MacOSToolchain::find_latest_runtime_version(const std::filesystem::path &versions_path) {
+    std::string latest_version;
+
+    for (std::filesystem::path version_dir : std::filesystem::directory_iterator(versions_path)) {
+        std::string version = version_dir.filename().string();
+
+        if (auto latest = max_version(version, latest_version)) {
+            latest_version = *latest;
+        }
+    }
+
+    return latest_version.empty() ? std::optional<std::string>{} : latest_version;
 }
 
 MacOSToolchain MacOSToolchain::install() {
@@ -580,6 +638,7 @@ std::unique_ptr<MacOSToolchain> MacOSToolchain::deserialize(json::Object &object
     auto linker_path = object.try_get_string("linker_path");
     auto sysroot = object.try_get_string("sysroot");
     auto linker_args = object.try_get_string_array("linker_args");
+    auto runtime_library = object.try_get_string("runtime_library");
 
     if (!linker_path || !sysroot || !linker_args) {
         return nullptr;
@@ -590,6 +649,10 @@ std::unique_ptr<MacOSToolchain> MacOSToolchain::deserialize(json::Object &object
     toolchain.sysroot_path = *sysroot;
     toolchain.linker_args = *linker_args;
 
+    if (runtime_library) {
+        toolchain.runtime_library = *runtime_library;
+    }
+
     return std::make_unique<MacOSToolchain>(toolchain);
 }
 
@@ -598,6 +661,7 @@ json::Object MacOSToolchain::serialize() {
     object.add("linker_path", linker_path);
     object.add("sysroot", sysroot_path);
     object.add("linker_args", json::Array{linker_args});
+    object.add("runtime_library", runtime_library ? *runtime_library : json::Value{nullptr});
     return object;
 }
 
