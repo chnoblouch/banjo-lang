@@ -5,6 +5,8 @@
 #include "target.hpp"
 
 #include <filesystem>
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,7 +34,7 @@ public:
     std::string lib_path;
 
     static MSVCToolchain detect();
-    static MSVCToolchain deserialize(json::Object &object);
+    static std::unique_ptr<MSVCToolchain> deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
     json::Object serialize() override;
@@ -61,7 +63,7 @@ public:
     std::vector<std::string> lib_dirs;
 
     static MinGWToolchain detect();
-    static MinGWToolchain deserialize(json::Object &object);
+    static std::unique_ptr<MinGWToolchain> deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
     json::Object serialize() override;
@@ -86,7 +88,7 @@ public:
 
     static UnixToolchain detect();
     static UnixToolchain install(std::string arch);
-    static UnixToolchain deserialize(json::Object &object);
+    static std::unique_ptr<UnixToolchain> deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
     json::Object serialize() override;
@@ -113,7 +115,7 @@ public:
 
     static MacOSToolchain detect();
     static MacOSToolchain install();
-    static MacOSToolchain deserialize(json::Object &object);
+    static std::unique_ptr<MacOSToolchain> deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
     json::Object serialize() override;
@@ -132,7 +134,7 @@ public:
     std::string linker_path;
 
     static WasmToolchain detect();
-    static WasmToolchain deserialize(json::Object &object);
+    static std::unique_ptr<WasmToolchain> deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
     json::Object serialize() override;
@@ -147,7 +149,7 @@ public:
     std::string linker_path;
 
     static EmscriptenToolchain detect();
-    static EmscriptenToolchain deserialize(json::Object &object);
+    static std::unique_ptr<EmscriptenToolchain> deserialize(json::Object &object);
 
     const ToolchainProperties &properties() override { return PROPERTIES; }
     json::Object serialize() override;

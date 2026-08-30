@@ -477,7 +477,7 @@ void CLI::execute_toolchain_list() {
 void CLI::execute_toolchain_info(const ArgumentParser::Result &args) {
     target = args.command_positional ? parse_target(*args.command_positional) : Target::host();
 
-    if (!load_cached_toolchain()) {
+    if (load_cached_toolchain() != ToolchainState::CACHED) {
         error("failed to load toolchain for target '" + target.to_string() + "'");
     }
 
@@ -513,11 +513,11 @@ void CLI::execute_toolchain_setup(const ArgumentParser::Result &args) {
 void CLI::execute_toolchain_remove(const ArgumentParser::Result &args) {
     target = args.command_positional ? parse_target(*args.command_positional) : Target::host();
 
-    if (!load_cached_toolchain()) {
-        return;
+    switch (load_cached_toolchain()) {
+        case ToolchainState::CACHED: toolchain->remove(target); break;
+        case ToolchainState::NOT_CACHED: return;
+        case ToolchainState::INVALID: break;
     }
-
-    toolchain->remove(target);
 
     std::error_code error;
     std::filesystem::remove(get_toolchain_path(), error);
@@ -815,8 +815,14 @@ void CLI::load_config() {
 }
 
 void CLI::load_toolchain() {
-    if (!load_cached_toolchain()) {
-        set_up_toolchain();
+    switch (load_cached_toolchain()) {
+        case ToolchainState::CACHED: break;
+        case ToolchainState::NOT_CACHED: set_up_toolchain(); break;
+        case ToolchainState::INVALID:
+            single_line_output = false;
+            print_step("Cached toolchain is invalid, running setup...");
+            set_up_toolchain();
+            break;
     }
 }
 
@@ -906,36 +912,30 @@ CLI::ToolchainKind CLI::toolchain_kind() {
     }
 }
 
-bool CLI::load_cached_toolchain() {
+CLI::ToolchainState CLI::load_cached_toolchain() {
     std::optional<std::string> toolchain_string = utils::read_string_file(get_toolchain_path());
     if (!toolchain_string) {
-        return false;
+        return ToolchainState::NOT_CACHED;
     }
 
-    json::Object serialized = json::Parser(*toolchain_string).parse()->as_object();
+    std::optional<json::Value> json_value = json::Parser{*toolchain_string}.parse();
+    if (!json_value || !json_value->is_object()) {
+        return ToolchainState::INVALID;
+    }
+
+    json::Object serialized = json_value->as_object();
+    toolchain = nullptr;
 
     switch (toolchain_kind()) {
-        case ToolchainKind::MSVC:
-            toolchain = std::make_unique<MSVCToolchain>(MSVCToolchain::deserialize(serialized));
-            break;
-        case ToolchainKind::MINGW:
-            toolchain = std::make_unique<MinGWToolchain>(MinGWToolchain::deserialize(serialized));
-            break;
-        case ToolchainKind::UNIX:
-            toolchain = std::make_unique<UnixToolchain>(UnixToolchain::deserialize(serialized));
-            break;
-        case ToolchainKind::MACOS:
-            toolchain = std::make_unique<MacOSToolchain>(MacOSToolchain::deserialize(serialized));
-            break;
-        case ToolchainKind::EMSCRIPTEN:
-            toolchain = std::make_unique<EmscriptenToolchain>(EmscriptenToolchain::deserialize(serialized));
-            break;
-        case ToolchainKind::WASM:
-            toolchain = std::make_unique<WasmToolchain>(WasmToolchain::deserialize(serialized));
-            break;
+        case ToolchainKind::MSVC: toolchain = MSVCToolchain::deserialize(serialized); break;
+        case ToolchainKind::MINGW: toolchain = MinGWToolchain::deserialize(serialized); break;
+        case ToolchainKind::UNIX: toolchain = UnixToolchain::deserialize(serialized); break;
+        case ToolchainKind::MACOS: toolchain = MacOSToolchain::deserialize(serialized); break;
+        case ToolchainKind::WASM: toolchain = WasmToolchain::deserialize(serialized); break;
+        case ToolchainKind::EMSCRIPTEN: toolchain = EmscriptenToolchain::deserialize(serialized); break;
     }
 
-    return true;
+    return toolchain ? ToolchainState::CACHED : ToolchainState::INVALID;
 }
 
 void CLI::set_up_toolchain() {

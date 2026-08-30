@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <initializer_list>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -289,11 +290,19 @@ std::optional<std::string> MSVCToolchain::get_max_version(
     return std::string(parsed_versions.back().first);
 }
 
-MSVCToolchain MSVCToolchain::deserialize(json::Object &object) {
+std::unique_ptr<MSVCToolchain> MSVCToolchain::deserialize(json::Object &object) {
+    auto tools_path = object.try_get_string("tools");
+    auto lib_path = object.try_get_string("lib");
+
+    if (!tools_path || !lib_path) {
+        return nullptr;
+    }
+
     MSVCToolchain toolchain;
-    toolchain.tools_path = object.get_string("tools");
-    toolchain.lib_path = object.get_string("lib");
-    return toolchain;
+    toolchain.tools_path = *tools_path;
+    toolchain.lib_path = *lib_path;
+
+    return std::make_unique<MSVCToolchain>(toolchain);
 }
 
 json::Object MSVCToolchain::serialize() {
@@ -348,11 +357,19 @@ std::filesystem::path MinGWToolchain::find_c_compiler() {
     error("failed to find mingw c compiler");
 }
 
-MinGWToolchain MinGWToolchain::deserialize(json::Object &object) {
+std::unique_ptr<MinGWToolchain> MinGWToolchain::deserialize(json::Object &object) {
+    auto linker_path = object.try_get_string("linker_path");
+    auto lib_dirs = object.try_get_string_array("lib_dirs");
+
+    if (!linker_path || !lib_dirs) {
+        return nullptr;
+    }
+
     MinGWToolchain toolchain;
-    toolchain.linker_path = object.get_string("linker_path");
-    toolchain.lib_dirs = object.get_string_array("lib_dirs");
-    return toolchain;
+    toolchain.linker_path = *linker_path;
+    toolchain.lib_dirs = *lib_dirs;
+
+    return std::make_unique<MinGWToolchain>(toolchain);
 }
 
 json::Object MinGWToolchain::serialize() {
@@ -461,21 +478,32 @@ std::filesystem::path UnixToolchain::cross_sysroot_path(const std::string &arch)
     return paths::toolchains_dir() / ("sysroot-" + arch + "-linux-gnu");
 }
 
-UnixToolchain UnixToolchain::deserialize(json::Object &object) {
+std::unique_ptr<UnixToolchain> UnixToolchain::deserialize(json::Object &object) {
+    auto linker_path = object.try_get_string("linker_path");
+    auto linker_args = object.try_get_string_array("linker_args");
+    auto extra_libs = object.try_get_string_array("extra_libs");
+    auto lib_dirs = object.try_get_string_array("lib_dirs");
+    auto crt_dir = object.try_get_string("crt_dir");
+
+    if (!linker_path || !linker_args || !extra_libs || !lib_dirs || !crt_dir) {
+        return nullptr;
+    }
+
     UnixToolchain toolchain;
-    toolchain.linker_path = object.get_string("linker_path");
-    toolchain.linker_args = object.get_string_array("linker_args");
-    toolchain.extra_libs = object.get_string_array("additional_libraries");
-    toolchain.lib_dirs = object.get_string_array("lib_dirs");
-    toolchain.crt_dir = object.get_string("crt_dir");
-    return toolchain;
+    toolchain.linker_path = *linker_path;
+    toolchain.linker_args = *linker_args;
+    toolchain.extra_libs = *extra_libs;
+    toolchain.lib_dirs = *lib_dirs;
+    toolchain.crt_dir = *crt_dir;
+
+    return std::make_unique<UnixToolchain>(toolchain);
 }
 
 json::Object UnixToolchain::serialize() {
     json::Object object;
     object.add("linker_path", linker_path);
     object.add("linker_args", json::Array{linker_args});
-    object.add("additional_libraries", json::Array{extra_libs});
+    object.add("extra_libs", json::Array{extra_libs});
     object.add("lib_dirs", json::Array{lib_dirs});
     object.add("crt_dir", crt_dir);
     return object;
@@ -548,19 +576,28 @@ std::filesystem::path MacOSToolchain::cross_sysroot_path() {
     return paths::toolchains_dir() / ("sysroot-aarch64-macos");
 }
 
-MacOSToolchain MacOSToolchain::deserialize(json::Object &object) {
+std::unique_ptr<MacOSToolchain> MacOSToolchain::deserialize(json::Object &object) {
+    auto linker_path = object.try_get_string("linker_path");
+    auto sysroot = object.try_get_string("sysroot");
+    auto linker_args = object.try_get_string_array("linker_args");
+
+    if (!linker_path || !sysroot || !linker_args) {
+        return nullptr;
+    }
+
     MacOSToolchain toolchain;
-    toolchain.linker_path = object.get_string("linker_path");
-    toolchain.sysroot_path = object.get_string("sysroot");
-    toolchain.linker_args = object.get_string_array("extra_args");
-    return toolchain;
+    toolchain.linker_path = *linker_path;
+    toolchain.sysroot_path = *sysroot;
+    toolchain.linker_args = *linker_args;
+
+    return std::make_unique<MacOSToolchain>(toolchain);
 }
 
 json::Object MacOSToolchain::serialize() {
     json::Object object;
     object.add("linker_path", linker_path);
     object.add("sysroot", sysroot_path);
-    object.add("extra_args", json::Array{linker_args});
+    object.add("linker_args", json::Array{linker_args});
     return object;
 }
 
@@ -585,10 +622,16 @@ WasmToolchain WasmToolchain::detect() {
     return toolchain;
 }
 
-WasmToolchain WasmToolchain::deserialize(json::Object &object) {
+std::unique_ptr<WasmToolchain> WasmToolchain::deserialize(json::Object &object) {
+    auto linker_path = object.try_get_string("linker_path");
+    if (!linker_path) {
+        return nullptr;
+    }
+
     WasmToolchain toolchain;
-    toolchain.linker_path = object.get_string("linker_path");
-    return toolchain;
+    toolchain.linker_path = *linker_path;
+
+    return std::make_unique<WasmToolchain>(toolchain);
 }
 
 json::Object WasmToolchain::serialize() {
@@ -613,10 +656,16 @@ EmscriptenToolchain EmscriptenToolchain::detect() {
     return toolchain;
 }
 
-EmscriptenToolchain EmscriptenToolchain::deserialize(json::Object &object) {
+std::unique_ptr<EmscriptenToolchain> EmscriptenToolchain::deserialize(json::Object &object) {
+    auto linker_path = object.try_get_string("linker_path");
+    if (!linker_path) {
+        return nullptr;
+    }
+
     EmscriptenToolchain toolchain;
-    toolchain.linker_path = object.get_string("linker_path");
-    return toolchain;
+    toolchain.linker_path = *linker_path;
+
+    return std::make_unique<EmscriptenToolchain>(toolchain);
 }
 
 json::Object EmscriptenToolchain::serialize() {

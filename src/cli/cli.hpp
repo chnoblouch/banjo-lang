@@ -41,6 +41,12 @@ private:
         SHARED_LIBRARY,
     };
 
+    enum class ToolchainState {
+        CACHED,
+        NOT_CACHED,
+        INVALID,
+    };
+
     enum class ToolErrorMessageSource {
         STDOUT,
         STDERR,
@@ -97,7 +103,7 @@ private:
     void load_package(std::string_view name);
 
     ToolchainKind toolchain_kind();
-    bool load_cached_toolchain();
+    ToolchainState load_cached_toolchain();
     void set_up_toolchain();
 
     Manifest parse_manifest(const std::filesystem::path &path);

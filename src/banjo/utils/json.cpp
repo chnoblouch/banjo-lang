@@ -49,41 +49,52 @@ const Value *Object::try_get(const std::string &key) const {
 
 const String *Object::try_get_string(const std::string &key) const {
     const Value *value = try_get(key);
-    return value ? &value->as_string() : nullptr;
+    return value && value->is_string() ? &value->as_string() : nullptr;
 }
 
 std::optional<Int> Object::try_get_int(const std::string &key) const {
     const Value *value = try_get(key);
-    return value ? value->as_int() : std::optional<Int>{};
+    return value && value->is_int() ? value->as_int() : std::optional<Int>{};
 }
 
 std::optional<Float> Object::try_get_float(const std::string &key) const {
     const Value *value = try_get(key);
-    return value ? value->as_float() : std::optional<Float>{};
+    return value && value->is_float() ? value->as_float() : std::optional<Float>{};
 }
 
 std::optional<Bool> Object::try_get_bool(const std::string &key) const {
     const Value *value = try_get(key);
-    return value ? value->as_bool() : std::optional<Bool>{};
+    return value && value->is_bool() ? value->as_bool() : std::optional<Bool>{};
 }
 
 const Object *Object::try_get_object(const std::string &key) const {
     const Value *value = try_get(key);
-    return value ? &value->as_object() : nullptr;
+    return value && value->is_object() ? &value->as_object() : nullptr;
 }
 
 const Array *Object::try_get_array(const std::string &key) const {
     const Value *value = try_get(key);
-    return value ? &value->as_array() : nullptr;
+    return value && value->is_array() ? &value->as_array() : nullptr;
 }
 
 std::vector<std::string> Object::get_string_array(const std::string &key) const {
-    const Array &json_array = get_array(key);
+    return *try_get_string_array(key);
+}
 
-    std::vector<std::string> array(json_array.length());
+std::optional<std::vector<std::string>> Object::try_get_string_array(const std::string &key) const {
+    const Array *json_array = try_get_array(key);
+    if (!json_array) {
+        return {};
+    }
 
-    for (unsigned i = 0; i < json_array.length(); i++) {
-        array[i] = json_array.get_string(i);
+    std::vector<std::string> array(json_array->length());
+
+    for (unsigned i = 0; i < json_array->length(); i++) {
+        if (const std::string *value = json_array->try_get_string(i)) {
+            array[i] = *value;
+        } else {
+            return {};
+        }
     }
 
     return array;
@@ -128,6 +139,40 @@ const Object &Array::get_object(unsigned index) const {
 
 const Array &Array::get_array(unsigned index) const {
     return get(index).as_array();
+}
+
+const Value *Array::try_get(unsigned index) const {
+    return index < length() ? &values[index] : nullptr;
+}
+
+const String *Array::try_get_string(unsigned index) const {
+    const Value *value = try_get(index);
+    return value && value->is_string() ? &value->as_string() : nullptr;
+}
+
+std::optional<Int> Array::try_get_int(unsigned index) const {
+    const Value *value = try_get(index);
+    return value && value->is_int() ? value->as_int() : std::optional<Int>{};
+}
+
+std::optional<Float> Array::try_get_float(unsigned index) const {
+    const Value *value = try_get(index);
+    return value && value->is_float() ? value->as_float() : std::optional<Float>{};
+}
+
+std::optional<Bool> Array::try_get_bool(unsigned index) const {
+    const Value *value = try_get(index);
+    return value && value->is_bool() ? value->as_bool() : std::optional<Bool>{};
+}
+
+const Object *Array::try_get_object(unsigned index) const {
+    const Value *value = try_get(index);
+    return value && value->is_object() ? &value->as_object() : nullptr;
+}
+
+const Array *Array::try_get_array(unsigned index) const {
+    const Value *value = try_get(index);
+    return value && value->is_array() ? &value->as_array() : nullptr;
 }
 
 } // namespace banjo::json

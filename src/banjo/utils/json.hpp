@@ -82,6 +82,7 @@ public:
     const Array *try_get_array(const std::string &key) const;
 
     std::vector<std::string> get_string_array(const std::string &key) const;
+    std::optional<std::vector<std::string>> try_get_string_array(const std::string &key) const;
     std::string get_string_or(const std::string &key, const std::string &default_value) const;
 
     unsigned length() const { return values.size(); }
@@ -117,6 +118,14 @@ public:
     Bool get_bool(unsigned index) const;
     const Object &get_object(unsigned index) const;
     const Array &get_array(unsigned index) const;
+
+    const Value *try_get(unsigned index) const;
+    const String *try_get_string(unsigned index) const;
+    std::optional<Int> try_get_int(unsigned index) const;
+    std::optional<Float> try_get_float(unsigned index) const;
+    std::optional<Bool> try_get_bool(unsigned index) const;
+    const Object *try_get_object(unsigned index) const;
+    const Array *try_get_array(unsigned index) const;
 
     unsigned length() const { return values.size(); }
     void add(Value value) { values.push_back(std::move(value)); }
