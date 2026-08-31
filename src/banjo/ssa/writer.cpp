@@ -201,6 +201,7 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::OFFSETPTR: opcode = "offsetptr"; break;
             case Opcode::COPY: opcode = "copy"; break;
             case Opcode::SQRT: opcode = "sqrt"; break;
+            case Opcode::FRAME_ADDRESS: opcode = "frame_address"; break;
         }
 
         stream << opcode;

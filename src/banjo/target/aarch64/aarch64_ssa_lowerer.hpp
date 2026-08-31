@@ -70,6 +70,7 @@ public:
     void lower_ftos(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
+    void lower_frame_address(ssa::Instruction &instr) override;
 
     void lower_fp_operation(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);

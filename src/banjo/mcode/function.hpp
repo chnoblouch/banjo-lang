@@ -10,9 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace banjo {
-
-namespace mcode {
+namespace banjo::mcode {
 
 class CallingConvention;
 
@@ -37,6 +35,9 @@ private:
     std::any target_data;
 
 public:
+    std::string debug_name;
+
+public:
     Function(std::string name, CallingConvention *calling_conv);
 
     const std::string &get_name() { return name; }
@@ -53,8 +54,6 @@ public:
     BasicBlockIter end() { return basic_blocks.end(); }
 };
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 #endif

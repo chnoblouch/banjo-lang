@@ -422,6 +422,10 @@ meta if IS_WINDOWS {
         winapi.closesocket(socket);
     }
 
+    pub func exec_debug_section() -> ?Slice[u8] {
+        return none;
+    }
+
     func read_file(handle: winapi.Handle, data: Slice[u8]) -> usize except ErrorCode {
         var bytes_read: winapi.Dword = undefined;
 

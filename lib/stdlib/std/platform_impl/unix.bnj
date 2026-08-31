@@ -316,10 +316,10 @@ meta if IS_UNIX {
             var address = &(header as *u8)[meta(dyld.MachHeader64).size];
 
             for i in 0..header.ncmds {
-                var command = address as *dyld.LoadCommand
+                var command = address as *dyld.LoadCommand;
 
                 if command.cmd == dyld.LC_SEGMENT_64 {
-                    var segment = command as *dyld.SegmentCommand64
+                    var segment = command as *dyld.SegmentCommand64;
                     var sections = &address[meta(dyld.SegmentCommand64).size] as *dyld.Section64;
 
                     for i in 0..segment.nsects {
@@ -333,7 +333,7 @@ meta if IS_UNIX {
                     }
                 }
 
-                address = &address[command.cmdsize]
+                address = &address[command.cmdsize];
             }
         }
 

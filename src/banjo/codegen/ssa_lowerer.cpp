@@ -56,7 +56,10 @@ void SSALowerer::lower_func(ssa::Function &func) {
     this->func = &func;
 
     mcode::CallingConvention *calling_conv = get_calling_convention(func.type.calling_conv);
+
     mcode::Function *machine_func = new mcode::Function(func.name, calling_conv);
+    machine_func->debug_name = func.debug_name;
+
     this->machine_func = machine_func;
 
     context = {};
@@ -196,6 +199,7 @@ void SSALowerer::store_graphs() {
 
 void SSALowerer::lower_instr(ssa::Instruction &instr) {
     switch (instr.get_opcode()) {
+        case ssa::Opcode::ALLOCA: break;
         case ssa::Opcode::LOAD: lower_load(instr); break;
         case ssa::Opcode::STORE: lower_store(instr); break;
         case ssa::Opcode::LOADARG: lower_loadarg(instr); break;
@@ -235,7 +239,7 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
         case ssa::Opcode::MEMBERPTR: lower_memberptr(instr); break;
         case ssa::Opcode::COPY: lower_copy(instr); break;
         case ssa::Opcode::SQRT: lower_sqrt(instr); break;
-        default: break;
+        case ssa::Opcode::FRAME_ADDRESS: lower_frame_address(instr); break;
     }
 }
 
@@ -538,6 +542,10 @@ void SSALowerer::lower_sqrt(ssa::Instruction &instr) {
 
     ssa::Instruction call_instr(ssa::Opcode::CALL, output_reg, {func_operand, input_operand});
     lower_call(call_instr);
+}
+
+void SSALowerer::lower_frame_address(ssa::Instruction &) {
+    WARN_UNIMPLEMENTED("frame_address");
 }
 
 ssa::InstrIter SSALowerer::get_producer(ssa::VirtualRegister reg) {

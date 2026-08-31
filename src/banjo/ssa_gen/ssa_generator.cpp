@@ -111,6 +111,16 @@ ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const
     ssa_func->never_inline = sir_func.attrs && sir_func.attrs->never_inline;
     ssa_mod.add(ssa_func);
 
+    if (!attrs || !attrs->link_name) {
+        ssa_func->debug_name = std::string{sir_func.ident.value};
+        sir::Symbol parent = sir_func.parent;
+
+        while (!parent.is<sir::Module>()) {
+            ssa_func->debug_name = std::string{parent.get_name()} + '.' + ssa_func->debug_name;
+            parent = parent.get_parent();
+        }
+    }
+
     if (attrs && attrs->dllexport && ctx.target->get_descr().is_windows()) {
         ssa_mod.add_dll_export(ssa_name);
     }

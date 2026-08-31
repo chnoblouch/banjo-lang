@@ -267,7 +267,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         SIR_VISIT_IMPOSSIBLE,            // map_type
         SIR_VISIT_IGNORE,                // closure_type (TODO)
         visit_reference_type(*inner),    // reference_type
-        SIR_VISIT_IMPOSSIBLE,            // ident_expr
+        SIR_VISIT_IGNORE,                // ident_expr (FIXME: Not impossible due to __builtins)
         SIR_VISIT_IMPOSSIBLE,            // star_expr
         SIR_VISIT_IMPOSSIBLE,            // bracket_expr
         SIR_VISIT_IMPOSSIBLE,            // dot_expr

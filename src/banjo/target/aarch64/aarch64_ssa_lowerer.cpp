@@ -704,6 +704,12 @@ void AArch64SSALowerer::lower_memberptr(ssa::Instruction &instr) {
     emit({AArch64Opcode::MOV, {m_dst, lower_addr_value(addr)}});
 }
 
+void AArch64SSALowerer::lower_frame_address(ssa::Instruction &instr) {
+    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
+    mcode::Register fp = mcode::Register::from_physical(AArch64Register::R29);
+    emit({AArch64Opcode::MOV, {m_dst, mcode::Operand::from_register(fp)}});
+}
+
 mcode::Operand AArch64SSALowerer::move_const_into_register(const ssa::Value &value, ssa::Type type) {
     unsigned size = get_size(type);
 

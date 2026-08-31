@@ -20,20 +20,16 @@ struct DebugInfo {
         for i in 0..num_functions as usize {
             var current = *(&slice[8 + 16 * i] as *u64);
 
-            if current as u64 <= address as u64 {
+            if current <= address as u64 {
                 function_index = i;
             } else {
                 break;
-            }
-
-            if i == num_functions as usize - 1 {
-                return none;
             }
         }
 
         try index in function_index {
             var name_offset = *(&slice[8 + 16 * index + 8] as *u64);
-            var pointer = &slice[name_offset as usize] as *u8
+            var pointer = &slice[name_offset as usize] as *u8;
             return StringSlice.of_cstring(pointer);
         } else {
             return none;

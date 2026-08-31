@@ -567,6 +567,13 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
                 }
             }
         }
+    } else if (auto ident_expr = call_expr.callee.match<sir::IdentExpr>()) {
+        if (ident_expr->value == "__builtin_frame_address") {
+            ssa::VirtualRegister reg = ctx.next_vreg();
+            ctx.get_ssa_block()->append({ssa::Opcode::FRAME_ADDRESS, reg, {}});
+            ssa::Type type = ctx.target->get_data_layout().get_usize_type();
+            return StoredValue::create_value(ssa::Value::from_register(reg, type));
+        }
     }
 
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(call_expr.type);

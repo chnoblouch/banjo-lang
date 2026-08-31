@@ -11,9 +11,7 @@
 #include <unordered_map>
 #include <variant>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 struct SSALoweringContext {
     std::unordered_map<ssa::VirtualRegister, mcode::StackSlotID> stack_regs;
@@ -171,10 +169,9 @@ protected:
     virtual void lower_memberptr(ssa::Instruction &instr);
     virtual void lower_copy(ssa::Instruction &instr);
     virtual void lower_sqrt(ssa::Instruction &instr);
+    virtual void lower_frame_address(ssa::Instruction &instr);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

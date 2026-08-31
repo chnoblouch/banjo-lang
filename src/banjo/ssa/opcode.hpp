@@ -1,9 +1,7 @@
 #ifndef BANJO_SSA_OPCODE_H
 #define BANJO_SSA_OPCODE_H
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 enum class Opcode {
     ALLOCA,
@@ -46,10 +44,9 @@ enum class Opcode {
     OFFSETPTR,
     COPY,
     SQRT,
+    FRAME_ADDRESS,
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

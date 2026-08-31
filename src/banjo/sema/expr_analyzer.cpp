@@ -1035,32 +1035,33 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         if (ident_expr->value == "__builtin_deinit") {
             analyze_value(call_expr.args[0]);
 
-            out_expr = analyzer.create(
-                sir::DeinitExpr{
-                    .ast_node = nullptr,
-                    .type = analyzer.get_resolved_type(call_expr.args[0]),
-                    .value = call_expr.args[0],
-                    .resource = nullptr,
-                }
-            );
+            out_expr = analyzer.create<sir::DeinitExpr>({
+                .ast_node = nullptr,
+                .type = analyzer.get_resolved_type(call_expr.args[0]),
+                .value = call_expr.args[0],
+                .resource = nullptr,
+            });
 
             return Result::SUCCESS;
         } else if (ident_expr->value == "__builtin_pointer_to") {
             analyze_value(call_expr.args[0]);
 
-            out_expr = analyzer.create(
-                sir::UnaryExpr{
+            out_expr = analyzer.create<sir::UnaryExpr>({
+                .ast_node = nullptr,
+                .type = analyzer.create<sir::PointerType>({
                     .ast_node = nullptr,
-                    .type = analyzer.create(
-                        sir::PointerType{
-                            .ast_node = nullptr,
-                            .base_type = analyzer.get_resolved_type(call_expr.args[0]),
-                        }
-                    ),
-                    .op = sir::UnaryOp::ADDR,
-                    .value = call_expr.args[0],
-                }
-            );
+                    .base_type = analyzer.get_resolved_type(call_expr.args[0]),
+                }),
+                .op = sir::UnaryOp::ADDR,
+                .value = call_expr.args[0],
+            });
+
+            return Result::SUCCESS;
+        } else if (ident_expr->value == "__builtin_frame_address") {
+            call_expr.type = analyzer.create<sir::PrimitiveType>({
+                .ast_node = nullptr,
+                .primitive = sir::Primitive::ADDR,
+            });
 
             return Result::SUCCESS;
         }

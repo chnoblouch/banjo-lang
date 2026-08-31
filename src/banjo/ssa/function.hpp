@@ -7,9 +7,7 @@
 
 #include <string>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 struct FunctionDecl {
     std::string name;
@@ -24,11 +22,11 @@ public:
     FunctionType type;
     bool global = false;
     bool never_inline = false;
+    std::string debug_name;
 
     LinkedList<BasicBlock> basic_blocks;
 
     ssa::VirtualRegister last_virtual_reg = 0;
-    int last_float_label_id = 0;
 
 public:
     Function(std::string name, FunctionType type);
@@ -52,8 +50,6 @@ public:
     BasicBlockIter end() { return basic_blocks.end(); }
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

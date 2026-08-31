@@ -51,6 +51,7 @@ Type Instruction::get_type() const {
             unsigned member_index = operands[2].get_int_immediate().to_unsigned();
             return struct_.members[member_index].type;
         }
+        case Opcode::FRAME_ADDRESS: return ssa::Primitive::ADDR;
     }
 }
 

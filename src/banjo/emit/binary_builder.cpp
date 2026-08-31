@@ -241,16 +241,18 @@ void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
     debug_section->write_u64(m_mod.get_functions().size());
 
     for (unsigned i = 0; i < m_mod.get_functions().size(); i++) {
-        const std::string &name = m_mod.get_functions()[i]->get_name();
+        mcode::Function &func = *m_mod.get_functions()[i];
+        const std::string &name = func.get_name();
+        const std::string &debug_name = func.debug_name.empty() ? name : func.debug_name;
 
         debug_section->seek(header_size + 16 * i);
-        debug_section->add_symbol_use(symbol_indices[name], BinSymbolUseKind::ABS64);
+        debug_section->add_symbol_use(symbol_indices.at(name), BinSymbolUseKind::ABS64);
         debug_section->write_u64(0);
         debug_section->write_u64(string_buffer_position);
 
         debug_section->seek(string_buffer_position);
-        debug_section->write_cstr(name.c_str());
-        string_buffer_position += name.size() + 1;
+        debug_section->write_cstr(debug_name.c_str());
+        string_buffer_position += debug_name.size() + 1;
     }
 }
 
