@@ -2,6 +2,7 @@
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/emit/binary_builder_symbol.hpp"
+#include "banjo/emit/binary_module.hpp"
 
 #include <utility>
 
@@ -18,7 +19,7 @@ void SectionBuilder::add_symbol_def(std::string name, BinSymbolKind kind, bool g
             .kind = kind,
             .global = global,
             .slice_index = static_cast<std::uint32_t>(slices.size() - 1),
-            .local_offset = static_cast<std::uint32_t>(slices.back().buffer.get_size()),
+            .local_offset = static_cast<std::uint32_t>(slices.back().buffer.tell()),
         }
     );
 }
@@ -26,14 +27,14 @@ void SectionBuilder::add_symbol_def(std::string name, BinSymbolKind kind, bool g
 void SectionBuilder::attach_symbol_def(std::uint32_t index) {
     SymbolDef &def = bin_builder.defs[index];
     def.slice_index = static_cast<std::uint32_t>(slices.size() - 1);
-    def.local_offset = static_cast<std::uint32_t>(slices.back().buffer.get_size());
+    def.local_offset = static_cast<std::uint32_t>(slices.back().buffer.tell());
 }
 
 void SectionBuilder::add_symbol_use(std::uint32_t index, BinSymbolUseKind kind, std::int32_t addend) {
     slices.back().uses.push_back(
         SymbolUse{
             .index = index,
-            .local_offset = static_cast<std::uint32_t>(slices.back().buffer.get_size()),
+            .local_offset = static_cast<std::uint32_t>(slices.back().buffer.tell()),
             .kind = kind,
             .addend = addend,
         }

@@ -1,0 +1,42 @@
+use std.platform;
+
+struct DebugInfo {
+    var slice: Slice[u8];
+
+    pub func load() -> ?DebugInfo {
+        try slice in platform.exec_debug_section() {
+            return DebugInfo { slice };
+        } else {
+            return none;
+        }
+    }
+
+    pub func symbol_name(self, address: addr) -> ?StringSlice {
+        var slice = self.slice;
+
+        var num_functions = *(&slice[0] as *u64);
+        var function_index: ?usize = none;
+
+        for i in 0..num_functions as usize {
+            var current = *(&slice[8 + 16 * i] as *u64);
+
+            if current as u64 <= address as u64 {
+                function_index = i;
+            } else {
+                break;
+            }
+
+            if i == num_functions as usize - 1 {
+                return none;
+            }
+        }
+
+        try index in function_index {
+            var name_offset = *(&slice[8 + 16 * index + 8] as *u64);
+            var pointer = &slice[name_offset as usize] as *u8
+            return StringSlice.of_cstring(pointer);
+        } else {
+            return none;
+        }
+    }
+}

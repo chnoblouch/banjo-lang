@@ -45,7 +45,6 @@ public:
     BasicBlockIter insert_after(BasicBlockIter block);
     BasicBlockIter find_basic_block(const std::string &label);
     VirtualRegister next_virtual_reg();
-    std::string next_float_label();
 
     void set_next_reg(ssa::VirtualRegister reg) { last_virtual_reg = reg; }
 

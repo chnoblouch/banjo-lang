@@ -46,6 +46,7 @@ pub func panic(message: String) {
     println(message);
 
     meta if config.BUILD_CONFIG == config.DEBUG {
+        println("\nstack trace:");
         stack_trace.print_stack_trace();
     }
 

@@ -36,6 +36,7 @@ public:
     void write_cstr(const char *cstr);
     void write_uleb128(std::uint64_t value);
     void write_sleb128(LargeInt value);
+    void align_with_zeroes(unsigned alignment);
 
     void read_data(void *data, std::size_t size);
     std::uint32_t read_u32();

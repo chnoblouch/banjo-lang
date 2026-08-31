@@ -49,6 +49,7 @@ enum class BinSymbolUseKind {
 enum class BinSectionKind {
     TEXT,
     DATA,
+    BNJDBG,
     BNJATBL,
 };
 
@@ -82,6 +83,7 @@ struct BinModule {
     std::vector<BinSymbolDef> symbol_defs;
     std::vector<BinSymbolUse> symbol_uses;
     std::vector<BinUnwindInfo> unwind_info;
+    std::optional<WriteBuffer> bnjdbg_data;
     std::optional<WriteBuffer> bnjatbl_data;
 
     // PE-specific variables:

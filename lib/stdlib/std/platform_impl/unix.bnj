@@ -1,6 +1,10 @@
 use std.{memory, io, convert.to_string};
-use os.{IS_UNIX, posix};
+use os.{IS_UNIX, IS_DARWIN, posix};
 use libc as c;
+
+meta if IS_DARWIN {
+    use os.dyld;
+}
 
 meta if IS_UNIX {
     type ErrorCode = i32;
@@ -301,5 +305,38 @@ meta if IS_UNIX {
     pub func socket_close(socket: Socket) {
         posix.shutdown(socket, posix.SHUT_RDWR);
         posix.close(socket);
+    }
+
+    pub func exec_debug_section() -> ?Slice[u8] {
+        meta if IS_DARWIN {
+            # This assumes the executable is the first image in the list.
+            var header = dyld.get_image_header(0);
+            var base = dyld.get_image_vmaddr_slide(0) as *u8;
+
+            var address = &(header as *u8)[meta(dyld.MachHeader64).size];
+
+            for i in 0..header.ncmds {
+                var command = address as *dyld.LoadCommand
+
+                if command.cmd == dyld.LC_SEGMENT_64 {
+                    var segment = command as *dyld.SegmentCommand64
+                    var sections = &address[meta(dyld.SegmentCommand64).size] as *dyld.Section64;
+
+                    for i in 0..segment.nsects {
+                        var section = &sections[i];
+
+                        if StringSlice.of_cstring(&section.sectname[0]) == "__bnjdbg" {
+                            var data = &base[section.addr_] as *u8;
+                            var length = section.size as usize;
+                            return Slice[u8].new(data, length);
+                        }
+                    }
+                }
+
+                address = &address[command.cmdsize]
+            }
+        }
+
+        return none;
     }
 }

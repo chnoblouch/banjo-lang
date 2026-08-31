@@ -1,0 +1,61 @@
+use os;
+
+meta if os.IS_DARWIN {
+    pub struct MachHeader64 {
+        var magic: u32;
+        var cputype: u32;
+        var cpusubtype: u32;
+        var filetype: u32;
+        var ncmds: u32;
+        var sizeofcmds: u32;
+        var flags: u32;
+        var reserved: u32;
+    }
+
+    pub struct LoadCommand {
+        var cmd: u32;
+        var cmdsize: u32;
+    }
+
+    pub struct SegmentCommand64 {
+        var cmd: u32;
+        var cmdsize: u32;
+        var segname: [u8; 16];
+        var vmaddr: u64;
+        var vmsize: u64;
+        var fileoff: u64;
+        var filesize: u64;
+        var maxprot: u32;
+        var initprot: u32;
+        var nsects: u32;
+        var flags: u32;
+    }
+
+    pub struct Section64 {
+        var sectname: [u8; 16];
+        var segname: [u8; 16];
+        var addr_: u64;
+        var size: u64;
+        var offset: u32;
+        var align: u32;
+        var reloff: u32;
+        var nreloc: u32;
+        var flags: u32;
+        var reserved1: u32;
+        var reserved2: u32;
+    }
+
+    pub const LC_SEGMENT_64: u32 = 0x19;
+
+    @[link_name=_dyld_image_count]
+    pub native func image_count() -> u32;
+
+    @[link_name=_dyld_get_image_header]
+    pub native func get_image_header(image_index: u32) -> *MachHeader64;
+
+    @[link_name=_dyld_get_image_vmaddr_slide]
+    pub native func get_image_vmaddr_slide(image_index: u32) -> addr;
+
+    @[link_name=_dyld_get_image_name]
+    pub native func get_image_name(image_index: u32) -> *u8;
+}

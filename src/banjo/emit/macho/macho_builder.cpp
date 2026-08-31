@@ -14,8 +14,10 @@ MachOFile MachOBuilder::build(BinModule mod) {
     // The way clang seems to do this is by adjusting the memory address of the
     // section, but this complicates other calculations in the emitter, so for
     // now we'll just add some padding to the data in the __text section.
-    while (mod.text.get_data().size() % 16 != 0) {
-        mod.text.write_u8(0);
+    mod.text.align_with_zeroes(16);
+
+    if (mod.bnjdbg_data) {
+        mod.data.align_with_zeroes(8);
     }
 
     text_section = MachOSection{
@@ -24,7 +26,7 @@ MachOFile MachOBuilder::build(BinModule mod) {
         .address = 0,
         .data = mod.text.move_data(),
         .alignment = 4,
-        .relocations = {},
+        .relocations{},
         .type = MachOSectionType::REGULAR,
         .flags = MachOSectionFlags::SOME_INSTRUCTIONS | MachOSectionFlags::PURE_INSTRUCTIONS,
     };
@@ -35,13 +37,35 @@ MachOFile MachOBuilder::build(BinModule mod) {
         .address = text_section.data.size(), // TODO: Is this the right way to calculate the address?
         .data = mod.data.move_data(),
         .alignment = 16,
-        .relocations = {},
+        .relocations{},
         .type = MachOSectionType::REGULAR,
         .flags = 0x00000000,
     };
 
+    if (mod.bnjdbg_data) {
+        bnjdbg_section = MachOSection{
+            .name = "__bnjdbg",
+            .segment_name = "__DATA",
+            .address = data_section.address + data_section.data.size(),
+            .data = mod.bnjdbg_data->move_data(),
+            .alignment = 8,
+            .relocations{},
+            .type = MachOSectionType::REGULAR,
+            .flags = 0x00000000,
+        };
+    }
+
     process_defs(mod.symbol_defs);
     process_uses(mod.symbol_uses);
+
+    std::vector<MachOSection> sections{
+        text_section,
+        data_section,
+    };
+
+    if (bnjdbg_section) {
+        sections.push_back(*std::move(bnjdbg_section));
+    }
 
     return MachOFile{
         .cpu_type = MachOCPUType::ARM64,
@@ -51,10 +75,7 @@ MachOFile MachOBuilder::build(BinModule mod) {
                 .name = "",
                 .maximum_vm_prot = MachOVMProt::READ | MachOVMProt::WRITE | MachOVMProt::EXECUTE,
                 .initial_vm_prot = MachOVMProt::READ | MachOVMProt::WRITE | MachOVMProt::EXECUTE,
-                .sections{
-                    text_section,
-                    data_section,
-                },
+                .sections = sections,
             },
             MachOSymtabCommand{
                 .symbols = symbols,
@@ -184,12 +205,11 @@ void MachOBuilder::process_use(const BinSymbolUse &use) {
         .type = to_relocation_type(use.kind),
     };
 
-    if (use.section == BinSectionKind::TEXT) {
-        text_section.relocations.push_back(relocation);
-    } else if (use.section == BinSectionKind::DATA) {
-        data_section.relocations.push_back(relocation);
-    } else {
-        ASSERT_UNREACHABLE;
+    switch (use.section) {
+        case BinSectionKind::TEXT: text_section.relocations.push_back(relocation); break;
+        case BinSectionKind::DATA: data_section.relocations.push_back(relocation); break;
+        case BinSectionKind::BNJDBG: bnjdbg_section->relocations.push_back(relocation); break;
+        case BinSectionKind::BNJATBL: ASSERT_UNREACHABLE;
     }
 }
 

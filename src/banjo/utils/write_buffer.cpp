@@ -130,6 +130,12 @@ void WriteBuffer::write_sleb128(LargeInt value) {
     write_data(encoding.get_data(), encoding.get_size());
 }
 
+void WriteBuffer::align_with_zeroes(unsigned alignment) {
+    while (data.size() % alignment != 0) {
+        write_u8(0);
+    }
+}
+
 void WriteBuffer::read_data(void *data, std::size_t size) {
     std::memcpy(data, &this->data[position], size);
     position += size;

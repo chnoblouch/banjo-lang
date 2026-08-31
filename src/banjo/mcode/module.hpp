@@ -9,9 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace banjo {
-
-namespace mcode {
+namespace banjo::mcode {
 
 struct AddrTable {
     std::vector<std::string> entries;
@@ -27,8 +25,6 @@ private:
     std::vector<std::string> dll_exports;
     std::optional<AddrTable> addr_table;
     std::any target_data;
-
-    int last_float_label_id = 0;
 
 public:
     Module() {}
@@ -54,12 +50,8 @@ public:
     void add_dll_export(std::string dll_export) { dll_exports.push_back(std::move(dll_export)); }
     void set_addr_table(AddrTable addr_table) { this->addr_table = std::move(addr_table); }
     void set_target_data(std::any target_data) { this->target_data = std::move(target_data); }
-
-    std::string next_float_label();
 };
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 #endif

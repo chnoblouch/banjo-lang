@@ -20,6 +20,7 @@ private:
 
     MachOSection text_section;
     MachOSection data_section;
+    std::optional<MachOSection> bnjdbg_section;
 
 public:
     MachOFile build(BinModule mod);

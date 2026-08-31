@@ -48,6 +48,7 @@ public:
     void write_data(const WriteBuffer &buffer) { cur_buffer().write_data(buffer); }
     void write_zeroes(std::size_t size) { cur_buffer().write_zeroes(size); }
     void write_cstr(const char *cstr) { cur_buffer().write_cstr(cstr); }
+    void seek(std::uint32_t position) { cur_buffer().seek(position); }
 
     void add_symbol_def(std::string name, BinSymbolKind kind, bool global);
     void attach_symbol_def(std::uint32_t index);

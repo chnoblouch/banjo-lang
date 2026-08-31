@@ -8,6 +8,7 @@
 
 #include <optional>
 #include <unordered_map>
+#include <vector>
 
 namespace banjo {
 
@@ -33,6 +34,7 @@ protected:
 
     SectionBuilder text;
     SectionBuilder data;
+    std::optional<SectionBuilder> debug_section;
     std::optional<SectionBuilder> addr_table;
 
     std::vector<SymbolDef> defs;
@@ -56,6 +58,7 @@ protected:
 
     void generate_external_symbols(mcode::Module &m_mod);
     void generate_data_slices(mcode::Module &m_mod);
+    void generate_debug_section(mcode::Module &m_mod);
     void generate_addr_table_slices(mcode::Module &m_mod);
 
     void add_func_symbol(std::string name, mcode::Module &m_mod);

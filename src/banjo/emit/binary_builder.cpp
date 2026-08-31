@@ -2,6 +2,7 @@
 
 #include "banjo/config/config.hpp"
 #include "banjo/emit/binary_module.hpp"
+#include "banjo/emit/section_builder.hpp"
 
 #include <utility>
 
@@ -27,6 +28,7 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
     }
 
     generate_data_slices(m_mod);
+    generate_debug_section(m_mod);
     generate_addr_table_slices(m_mod);
 
     std::uint32_t symbol_index = first_text_symbol_index;
@@ -68,6 +70,10 @@ BinModule BinaryBuilder::create_module() {
 
     bin_mod.text = text.bake(bin_mod.symbol_uses);
     bin_mod.data = data.bake(bin_mod.symbol_uses);
+
+    if (debug_section) {
+        bin_mod.bnjdbg_data = debug_section->bake(bin_mod.symbol_uses);
+    }
 
     if (addr_table) {
         bin_mod.bnjatbl_data = addr_table->bake(bin_mod.symbol_uses);
@@ -155,6 +161,10 @@ void BinaryBuilder::compute_slice_offsets() {
     text.compute_slice_offsets();
     data.compute_slice_offsets();
 
+    if (debug_section) {
+        debug_section->compute_slice_offsets();
+    }
+
     if (addr_table) {
         addr_table->compute_slice_offsets();
     }
@@ -218,6 +228,29 @@ void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
         } else {
             ASSERT_UNREACHABLE;
         }
+    }
+}
+
+void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
+    debug_section.emplace(*this, BinSectionKind::BNJDBG);
+
+    unsigned header_size = 8;
+    unsigned table_size = 16 * m_mod.get_functions().size();
+    unsigned string_buffer_position = header_size + table_size;
+
+    debug_section->write_u64(m_mod.get_functions().size());
+
+    for (unsigned i = 0; i < m_mod.get_functions().size(); i++) {
+        const std::string &name = m_mod.get_functions()[i]->get_name();
+
+        debug_section->seek(header_size + 16 * i);
+        debug_section->add_symbol_use(symbol_indices[name], BinSymbolUseKind::ABS64);
+        debug_section->write_u64(0);
+        debug_section->write_u64(string_buffer_position);
+
+        debug_section->seek(string_buffer_position);
+        debug_section->write_cstr(name.c_str());
+        string_buffer_position += name.size() + 1;
     }
 }
 

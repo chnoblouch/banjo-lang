@@ -62,10 +62,6 @@ VirtualRegister Function::next_virtual_reg() {
     return VirtualRegister(last_virtual_reg++);
 }
 
-std::string Function::next_float_label() {
-    return "float." + std::to_string(last_float_label_id++);
-}
-
 } // namespace ssa
 
 } // namespace banjo
