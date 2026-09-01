@@ -75,7 +75,7 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
             panic_string_start_greater_than_end(start, end);
         }
 
-        if start >= self.length {
+        if start > self.length {
             panic_string_start_out_of_bounds(start, self.length);
         }
 
@@ -155,6 +155,54 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
         }
 
         return none;
+    }
+
+    pub func split(self, c: char) -> Array[StringSlice] {
+        return self.split(unicode.encode_utf8(c).slice());
+    }
+
+    pub func split(self, string: StringSlice) -> Array[StringSlice] {
+        var result: Array[StringSlice] = [];
+        var slice = self;
+
+        while true {
+            try index in slice.find(string) {
+                result.append(slice.substring(0, index));
+                slice = slice.substring(index + 1, slice.length());
+            } else {
+                result.append(slice);
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    pub func split_skipping(self, c: char) -> Array[StringSlice] {
+        return self.split_skipping(unicode.encode_utf8(c).slice());
+    }
+
+    pub func split_skipping(self, string: StringSlice) -> Array[StringSlice] {
+        var result: Array[StringSlice] = [];
+        var slice = self;
+
+        while true {
+            try index in slice.find(string) {
+                if index > 0 {
+                    result.append(slice.substring(0, index));
+                }
+
+                slice = slice.substring(index + 1, slice.length());
+            } else {
+                if slice.length() > 0 {
+                    result.append(slice);
+                }
+
+                break;
+            }
+        }
+
+        return result;
     }
 
     pub func to_cstring(self) -> Array[u8] {

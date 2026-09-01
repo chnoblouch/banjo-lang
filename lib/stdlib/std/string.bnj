@@ -135,6 +135,22 @@ struct String: Copy, Compare[String], ToString, ToRepr {
         return self.slice.rfind(string);
     }
 
+    pub func split(self, c: char) -> Array[StringSlice] {
+        return self.slice.split(c);
+    }
+
+    pub func split(self, string: StringSlice) -> Array[StringSlice] {
+        return self.slice.split(string);
+    }
+
+    pub func split_skipping(self, c: char) -> Array[StringSlice] {
+        return self.slice.split_skipping(c);
+    }
+
+    pub func split_skipping(self, string: StringSlice) -> Array[StringSlice] {
+        return self.slice.split_skipping(string);
+    }
+
     pub func to_chars(self) -> Array[char] {
         var chars: Array[char] = [];
         var index: usize = 0;

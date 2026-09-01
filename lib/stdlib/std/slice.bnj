@@ -47,7 +47,7 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
             panic_slice_start_greater_than_end(start, end);
         }
 
-        if start >= self.length {
+        if start > self.length {
             panic_slice_start_out_of_bounds(start, self.length);
         }
 
