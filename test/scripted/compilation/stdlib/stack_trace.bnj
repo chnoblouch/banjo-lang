@@ -1,0 +1,66 @@
+# test:common
+
+use std.{debug.DebugInfo, stack_trace.acquire_stack_trace};
+
+func trace() {
+    var debug_info = DebugInfo.load().unwrap();
+    var frames = acquire_stack_trace();
+
+    for i in 1..frames.length() {
+        try name in debug_info.symbol_name(frames[i]) {
+            print(name);
+            print(',');
+            
+            if name == "main" {
+                break;
+            }
+        }
+    }
+}
+
+# test:subtest
+# test:output "main,"
+
+func main() {
+    trace();
+}
+
+# test:subtest
+# test:output "f2,f1,main,"
+
+func main() {
+    f1();
+}
+
+func f1() {
+    f2();
+}
+
+func f2() {
+    trace();
+}
+
+# test:subtest
+# test:output "S2.S3.f,S1.f,f,main,"
+
+struct S1 {
+    func f() {
+        S2.S3.f();
+    }
+}
+
+struct S2 {
+    struct S3 {
+        func f() {
+            trace();
+        }
+    }
+}
+
+func f() {
+    S1.f();
+}
+
+func main() {
+    f();
+}

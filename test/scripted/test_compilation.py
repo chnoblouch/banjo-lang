@@ -43,6 +43,9 @@ SKIPPED_TESTS_WASM = set([
     "features.meta_expr.size.3",
     "features.generics.constraint.builtin.13",
     "features.generics.operators.17",
+    "stdlib.stack_trace.0",
+    "stdlib.stack_trace.1",
+    "stdlib.stack_trace.2",
 ])
 
 
