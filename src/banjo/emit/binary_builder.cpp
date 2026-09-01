@@ -29,7 +29,7 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
 
     generate_data_slices(m_mod);
 
-    if (Config::instance().target.is_linux() || Config::instance().target.is_darwin()) {
+    if (!Config::instance().target.is_wasm()) {
         generate_debug_section(m_mod);
     }
 

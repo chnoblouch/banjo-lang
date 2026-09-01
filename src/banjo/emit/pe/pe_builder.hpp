@@ -17,6 +17,7 @@ private:
     PEFile file;
 
     unsigned drectve_section_index;
+    unsigned bnjdbg_section_index;
     unsigned bnjatbl_section_index;
 
     unsigned num_section_symbols;

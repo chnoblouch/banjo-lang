@@ -1351,7 +1351,6 @@ void CLI::invoke_msvc_linker() {
     args.push_back("gdi32.lib");
     args.push_back("shell32.lib");
     args.push_back("ws2_32.lib");
-    args.push_back("dbghelp.lib");
     args.push_back("legacy_stdio_definitions.lib");
     args.push_back("/SUBSYSTEM:CONSOLE");
     args.push_back("/MACHINE:x64");

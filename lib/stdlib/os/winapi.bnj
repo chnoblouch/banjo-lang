@@ -8,6 +8,7 @@ meta if os.IS_WINDOWS {
     type Dword64 = u64;
     type LargeInteger = u64;
     type Int = i32;
+    type Ushort = u16;
     type Ulong = u32;
     type Ulong64 = u64;
 
@@ -58,6 +59,14 @@ meta if os.IS_WINDOWS {
         size: Dword,
         arguments: addr,
     ) -> u32;
+
+    @[link_name=RtlCaptureStackBackTrace]
+    native func capture_stack_back_trace(
+        frames_to_skip: Ulong,
+        frames_to_capture: Ulong,
+        back_trace: *addr,
+        back_trace_hash: *Ulong,
+    ) -> Ushort;
 
     # --- minwindef.h ---
 
@@ -381,115 +390,4 @@ meta if os.IS_WINDOWS {
 
     @[link_name=freeaddrinfo]
     native func freeaddrinfo(addr_info: *Addrinfo);
-
-    # --- dbghelp.h ---
-
-    type ReadProcessMemoryRoutine64 = func(
-        process: Handle,
-        base_address: Dword64,
-        buffer: addr,
-        size: Dword,
-        number_of_bytes_read: *Dword,
-    ) -> Bool;
-
-    type FunctionTableAccessRoutine64 = func(
-        process: Handle,
-        addr_base: Dword64,
-    ) -> addr;
-
-    type GetModuleBaseRoutine64 = func(
-        process: Handle,
-        address: Dword64,
-    ) -> Dword64;
-
-    type TranslateAddressRoutine64 = func(
-        process: Handle,
-        thread: Handle,
-        addr: *Address64,
-    ) -> Dword64;
-
-    struct Address64 {
-        var offset: u64;
-        var segment: u16;
-        var mode: u32;
-    }
-
-    struct StackFrame64 {
-        var addr_pc: Address64;
-        var addr_return: Address64;
-        var addr_frame: Address64;
-        var addr_stack: Address64;
-        var addr_bstore: Address64;
-        var func_table_entry: addr;
-        var params: [Dword64; 4];
-        var far: Bool;
-        var virtual: Bool;
-        var reserved: [Dword64; 3];
-        var kd_help: [u64; 14];
-    }
-
-    struct SymbolInfo {
-        var size_of_struct: Ulong;
-        var type_index: Ulong;
-        var reserved: [Ulong64; 2];
-        var index: Ulong;
-        var size: Ulong;
-        var mod_base: Ulong64;
-        var flags: Ulong;
-        var value: Ulong64;
-        var address: Ulong64;
-        var register: Ulong;
-        var scope: Ulong;
-        var tag: Ulong;
-        var name_len: Ulong;
-        var max_name_len: Ulong;
-        var name: u8;
-    }
-
-    const ADDR_MODE_FLAT: u32 = 3;
-    const SYMOPT_UNDNAME: u32 = 0x2;
-    const SYMOPT_DEFERRED_LOADS: u32 = 0x4;
-
-    @[link_name=SymSetOptions]
-    native func sym_set_options(sym_options: Dword) -> Dword;
-
-    @[link_name=SymInitialize]
-    native func sym_initialize(
-        process: Handle,
-        user_search_path: *u8,
-        invade_process: Bool,
-    ) -> Bool;
-
-    @[link_name=SymFromAddr]
-    native func sym_from_addr(
-        process: Handle,
-        address: Dword64,
-        displacement: *Dword64,
-        symbol: *SymbolInfo,
-    ) -> Bool;
-
-    @[link_name=SymGetModuleBase64]
-    native func sym_get_module_base_64(
-        process: Handle,
-        addr_: Dword64,
-    ) -> Dword64;
-
-    @[link_name=SymFunctionTableAccess64]
-    native func sym_function_table_access_64(
-        process: Handle,
-        addr_base: Dword64,
-    ) -> addr;
-
-    @[link_name=StackWalk64]
-    native func stack_walk_64(
-        machine_type: Dword,
-        process: Handle,
-        thread: Handle,
-        stack_frame: *StackFrame64,
-        context_record: addr,
-        read_memory_routine: ReadProcessMemoryRoutine64,
-        function_table_access_routine: FunctionTableAccessRoutine64,
-        get_module_base_routine: GetModuleBaseRoutine64,
-        translate_address: TranslateAddressRoutine64,
-    ) -> u32;
 }

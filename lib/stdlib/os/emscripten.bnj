@@ -1,0 +1,6 @@
+use os;
+
+meta if os.IS_EMSCRIPTEN {
+    @[link_name=emscripten_run_script]
+    native func run_script(script: *u8);
+}

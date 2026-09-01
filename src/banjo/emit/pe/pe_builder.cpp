@@ -70,6 +70,19 @@ void PEBuilder::create_sections(BinModule &module_) {
         );
     }
 
+    if (module_.bnjdbg_data) {
+        bnjdbg_section_index = file.sections.size();
+
+        file.sections.push_back(
+            PESection{
+                .name = {'.', 'b', 'n', 'j', 'd', 'b', 'g', '\0'},
+                .data = {},
+                .relocations = {},
+                .flags = INITIALIZED_DATA | ALIGN_8BYTES | READ,
+            }
+        );
+    }
+
     if (module_.bnjatbl_data) {
         bnjatbl_section_index = file.sections.size();
 
@@ -106,10 +119,11 @@ void PEBuilder::process_x86_64_symbol_def(const BinSymbolDef &def) {
     std::int16_t section_number;
     switch (def.kind) {
         case BinSymbolKind::TEXT_FUNC: section_number = get_section_number(TEXT_SECTION_INDEX); break;
+        case BinSymbolKind::TEXT_LABEL: ASSERT_UNREACHABLE;
         case BinSymbolKind::DATA_LABEL: section_number = get_section_number(DATA_SECTION_INDEX); break;
+        case BinSymbolKind::DEBUG_INFO: section_number = get_section_number(bnjdbg_section_index); break;
         case BinSymbolKind::ADDR_TABLE: section_number = get_section_number(bnjatbl_section_index); break;
         case BinSymbolKind::UNKNOWN: section_number = 0; break;
-        default: ASSERT_UNREACHABLE;
     }
 
     file.add_symbol(
@@ -151,6 +165,17 @@ void PEBuilder::process_x86_64_symbol_use(const BinSymbolUse &use, BinModule &mo
         module_.data.write_i64(0);
 
         file.sections[DATA_SECTION_INDEX].relocations.push_back(
+            PERelocation{
+                .virt_addr = use.address,
+                .symbol_index = use.symbol_index + num_section_symbols,
+                .type = PERelocationType::AMD64_ADDR64
+            }
+        );
+    } else if (use.section == BinSectionKind::BNJDBG) {
+        module_.bnjdbg_data->seek(use.address);
+        module_.bnjdbg_data->write_i64(0);
+
+        file.sections[bnjdbg_section_index].relocations.push_back(
             PERelocation{
                 .virt_addr = use.address,
                 .symbol_index = use.symbol_index + num_section_symbols,
@@ -264,6 +289,10 @@ void PEBuilder::move_section_data(BinModule &module_) {
 
     if (module_.drectve_data) {
         file.sections[drectve_section_index].data = module_.drectve_data->move_data();
+    }
+
+    if (module_.bnjdbg_data) {
+        file.sections[bnjdbg_section_index].data = module_.bnjdbg_data->move_data();
     }
 
     if (module_.bnjatbl_data) {
