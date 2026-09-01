@@ -232,6 +232,10 @@ void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
 }
 
 void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
+    if (!Config::instance().target.is_darwin()) {
+        return;
+    }
+
     debug_section.emplace(*this, BinSectionKind::BNJDBG);
 
     unsigned header_size = 8;
