@@ -13,6 +13,7 @@ enum class BinSymbolKind {
     TEXT_FUNC,
     TEXT_LABEL,
     DATA_LABEL,
+    DEBUG_INFO,
     ADDR_TABLE,
     UNKNOWN,
 };

@@ -448,7 +448,7 @@ void AArch64Encoder::encode_bl(mcode::Instruction &instr) {
 
     // TODO: This relocation should be set by the SSA lowerer.
 
-    if (target.is_unix()) {
+    if (target.is_linux()) {
         text.add_symbol_use(m_callee.get_symbol().name, BinSymbolUseKind::CALL26);
     } else if (target.is_darwin()) {
         text.add_symbol_use(m_callee.get_symbol().name, BinSymbolUseKind::BRANCH26);

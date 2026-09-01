@@ -101,7 +101,7 @@ pub func print_stack_trace() {
             print("\x1B[0;0m");
             fflush(msvcrt.acrt_iob_func(1));
         }
-    } else if config.OS == config.MACOS {
+    } else if config.ARCH == config.AARCH64 {
         var frames: Array[addr] = [];
         var fp = __builtin_frame_address() as *u64;
 
@@ -110,19 +110,21 @@ pub func print_stack_trace() {
             fp = fp[0] as *u64;
         }
 
-        try debug_info in DebugInfo.load() {
-            for i in 0..frames.length() {
-                var name: StringSlice = "";
+        var debug_info = DebugInfo.load();
 
-                try symbol in debug_info.symbol_name(frames[i]) {
+        for i in 0..frames.length() {
+            var name: StringSlice = "<unknown>";
+
+            if debug_info.has_value {
+                try symbol in debug_info.value.symbol_name(frames[i]) {
                     name = symbol;
                 }
+            }
 
-                fprintln("  #{:03}  0x{:016X}  {}", i, frames[i] as u64, name);
+            fprintln("  #{:03}  0x{:016X}  {}", i, frames[i] as u64, name);
 
-                if name == "main" {
-                    break;
-                }
+            if name == "main" {
+                break;
             }
         }
     } else if config.OS == config.EMSCRIPTEN {

@@ -1131,7 +1131,7 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
     const std::string &symbol_name = value.get_symbol_name();
 
     mcode::Relocation reloc = mcode::Relocation::NONE;
-    if (target->get_descr().is_unix()) {
+    if (target->get_descr().is_linux()) {
         if (value.is_extern_func()) {
             // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to not
             // use it? Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592
@@ -1190,7 +1190,7 @@ mcode::Operand X8664SSALowerer::lower_addr_mem_access(AddrComponents addr) {
             m_addr.offset_const = static_cast<int>(addr.const_offset.to_s64());
         }
     } else if (addr.base.is_symbol()) {
-        if (target->get_descr().is_unix()) {
+        if (target->get_descr().is_linux()) {
             if (addr.base.is_extern_func()) {
                 // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to skip
                 // it? Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592

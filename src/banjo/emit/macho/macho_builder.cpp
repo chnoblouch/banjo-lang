@@ -153,18 +153,29 @@ void MachOBuilder::process_def(const BinSymbolDef &def, unsigned index) {
     std::uint8_t section_number;
     std::uint64_t value;
 
-    if (def.kind == BinSymbolKind::TEXT_FUNC) {
-        type = MachOSymbolType::SECTION;
-        section_number = 1;
-        value = text_section.address + def.offset;
-    } else if (def.kind == BinSymbolKind::DATA_LABEL) {
-        type = MachOSymbolType::SECTION;
-        section_number = 2;
-        value = data_section.address + def.offset;
-    } else {
-        type = MachOSymbolType::UNDEFINED;
-        section_number = 0;
-        value = 0;
+    switch (def.kind) {
+        case BinSymbolKind::TEXT_FUNC:
+            type = MachOSymbolType::SECTION;
+            section_number = 1;
+            value = text_section.address + def.offset;
+            break;
+        case BinSymbolKind::TEXT_LABEL: ASSERT_UNREACHABLE;
+        case BinSymbolKind::DATA_LABEL:
+            type = MachOSymbolType::SECTION;
+            section_number = 2;
+            value = data_section.address + def.offset;
+            break;
+        case BinSymbolKind::DEBUG_INFO:
+            type = MachOSymbolType::SECTION;
+            section_number = 3;
+            value = bnjdbg_section->address + def.offset;
+            break;
+        case BinSymbolKind::ADDR_TABLE: ASSERT_UNREACHABLE;
+        case BinSymbolKind::UNKNOWN:
+            type = MachOSymbolType::UNDEFINED;
+            section_number = 0;
+            value = 0;
+            break;
     }
 
     symbol_index_map[index] = symbols.size();

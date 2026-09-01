@@ -28,7 +28,11 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
     }
 
     generate_data_slices(m_mod);
-    generate_debug_section(m_mod);
+
+    if (Config::instance().target.is_linux() || Config::instance().target.is_darwin()) {
+        generate_debug_section(m_mod);
+    }
+
     generate_addr_table_slices(m_mod);
 
     std::uint32_t symbol_index = first_text_symbol_index;
@@ -232,16 +236,13 @@ void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
 }
 
 void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
-    if (!Config::instance().target.is_darwin()) {
-        return;
-    }
-
     debug_section.emplace(*this, BinSectionKind::BNJDBG);
 
     unsigned header_size = 8;
     unsigned table_size = 16 * m_mod.get_functions().size();
     unsigned string_buffer_position = header_size + table_size;
 
+    debug_section->add_symbol_def("__bnjdbg_start", BinSymbolKind::DEBUG_INFO, true);
     debug_section->write_u64(m_mod.get_functions().size());
 
     for (unsigned i = 0; i < m_mod.get_functions().size(); i++) {
@@ -258,6 +259,8 @@ void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
         debug_section->write_cstr(debug_name.c_str());
         string_buffer_position += debug_name.size() + 1;
     }
+
+    debug_section->add_symbol_def("__bnjdbg_end", BinSymbolKind::DEBUG_INFO, true);
 }
 
 void BinaryBuilder::generate_addr_table_slices(mcode::Module &m_mod) {

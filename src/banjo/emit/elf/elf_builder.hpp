@@ -24,6 +24,8 @@ private:
     ELFSection symtab_section;
     ELFSection text_rela_section;
     ELFSection data_rela_section;
+    std::optional<ELFSection> bnjdbg_section;
+    std::optional<ELFSection> bnjdbg_rela_section;
     std::optional<ELFSection> bnjatbl_section;
     std::optional<ELFSection> bnjatbl_rela_section;
 

@@ -1,11 +1,19 @@
-use std.platform;
+use std.config;
+
+meta if config.OS == config.LINUX || config.OS == config.MACOS {
+    native var __bnjdbg_start: u64;
+    native var __bnjdbg_end: u64;
+}
 
 struct DebugInfo {
     var slice: Slice[u8];
 
     pub func load() -> ?DebugInfo {
-        try slice in platform.exec_debug_section() {
-            return DebugInfo { slice };
+        meta if config.OS == config.LINUX || config.OS == config.MACOS {
+            var pointer = &__bnjdbg_start as *u8;
+            var size = &__bnjdbg_end as usize - &__bnjdbg_start as usize;
+
+            return DebugInfo { slice: Slice[u8].new(pointer, size) };
         } else {
             return none;
         }

@@ -3,9 +3,7 @@
 
 #include <string>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 enum class Architecture {
     INVALID,
@@ -54,13 +52,11 @@ public:
     std::string to_string() const;
 
     bool is_windows() const;
-    bool is_unix() const;
+    bool is_linux() const;
     bool is_darwin() const;
     bool is_wasm() const;
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

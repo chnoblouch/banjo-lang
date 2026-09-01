@@ -105,6 +105,26 @@ ELFFile ELFBuilder::build(BinModule module_) {
         .data = ELFSection::RelocationList{},
     };
 
+    if (module_.bnjdbg_data) {
+        bnjdbg_section = ELFSection{
+            .name_offset = add_string(shstrtab_section, ".bnjdbg"),
+            .type = ELFSectionType::PROGBITS,
+            .flags = ELFSectionFlags::ALLOC | ELFSectionFlags::WRITE,
+            .alignment = 16,
+            .data = module_.bnjdbg_data->move_data(),
+        };
+
+        bnjdbg_rela_section = ELFSection{
+            .name_offset = add_string(shstrtab_section, ".rela.bnjdbg"),
+            .type = ELFSectionType::RELA,
+            .link = 5,
+            .info = 8,
+            .alignment = 8,
+            .entry_size = 24,
+            .data = ELFSection::RelocationList{},
+        };
+    }
+
     if (module_.bnjatbl_data) {
         bnjatbl_section = ELFSection{
             .name_offset = add_string(shstrtab_section, ".bnjatbl"),
@@ -137,6 +157,11 @@ ELFFile ELFBuilder::build(BinModule module_) {
         std::move(text_rela_section),
         std::move(data_rela_section),
     };
+
+    if (bnjdbg_section) {
+        file.sections.push_back(std::move(*bnjdbg_section));
+        file.sections.push_back(std::move(*bnjdbg_rela_section));
+    }
 
     if (bnjatbl_section) {
         file.sections.push_back(std::move(*bnjatbl_section));
@@ -185,19 +210,23 @@ void ELFBuilder::process_def(const BinSymbolDef &def) {
             type = ELFSymbolType::FUNC;
             section_index = 1;
             break;
+        case BinSymbolKind::TEXT_LABEL: ASSERT_UNREACHABLE;
         case BinSymbolKind::DATA_LABEL:
             type = ELFSymbolType::OBJECT;
             section_index = 2;
             break;
-        case BinSymbolKind::ADDR_TABLE:
+        case BinSymbolKind::DEBUG_INFO:
             type = ELFSymbolType::NOTYPE;
             section_index = 8;
+            break;
+        case BinSymbolKind::ADDR_TABLE:
+            type = ELFSymbolType::NOTYPE;
+            section_index = bnjdbg_section ? 10 : 8;
             break;
         case BinSymbolKind::UNKNOWN:
             type = ELFSymbolType::NOTYPE;
             section_index = 0;
             break;
-        default: ASSERT_UNREACHABLE;
     }
 
     symbols.push_back(
@@ -219,6 +248,7 @@ void ELFBuilder::process_uses(const std::vector<BinSymbolUse> &uses) {
         switch (use.section) {
             case BinSectionKind::TEXT: section = &text_rela_section; break;
             case BinSectionKind::DATA: section = &data_rela_section; break;
+            case BinSectionKind::BNJDBG: section = &*bnjdbg_rela_section; break;
             case BinSectionKind::BNJATBL: section = &*bnjatbl_rela_section; break;
         }
 

@@ -1,21 +1,19 @@
 #include "target_description.hpp"
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 TargetDescription::TargetDescription()
-  : architecture(Architecture::INVALID),
-    operating_system(OperatingSystem::INVALID) {}
+  : architecture{Architecture::INVALID},
+    operating_system{OperatingSystem::INVALID} {}
 
 TargetDescription::TargetDescription(
     Architecture architecture,
     OperatingSystem operating_system,
     Environment environment /* = Environment::NONE */
 )
-  : architecture(architecture),
-    operating_system(operating_system),
-    environment(environment) {}
+  : architecture{architecture},
+    operating_system{operating_system},
+    environment{environment} {}
 
 std::string TargetDescription::to_string() const {
     std::string arch_name;
@@ -56,8 +54,8 @@ bool TargetDescription::is_windows() const {
     return operating_system == OperatingSystem::WINDOWS;
 }
 
-bool TargetDescription::is_unix() const {
-    return operating_system == OperatingSystem::LINUX || operating_system == OperatingSystem::EMSCRIPTEN;
+bool TargetDescription::is_linux() const {
+    return operating_system == OperatingSystem::LINUX;
 }
 
 bool TargetDescription::is_darwin() const {
@@ -68,6 +66,4 @@ bool TargetDescription::is_wasm() const {
     return architecture == Architecture::WASM;
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
