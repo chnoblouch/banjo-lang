@@ -89,6 +89,7 @@ public:
     void lower_memberptr(ssa::Instruction &instr) override;
     void lower_copy(ssa::Instruction &instr) override;
     void lower_sqrt(ssa::Instruction &instr) override;
+    void lower_frame_address(ssa::Instruction &instr) override;
 
     mcode::Opcode get_move_opcode(ssa::Type type);
     void copy_block_using_movs(ssa::Instruction &instr, unsigned size);

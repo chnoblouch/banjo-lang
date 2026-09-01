@@ -109,7 +109,7 @@ ELFFile ELFBuilder::build(BinModule module_) {
         bnjdbg_section = ELFSection{
             .name_offset = add_string(shstrtab_section, ".bnjdbg"),
             .type = ELFSectionType::PROGBITS,
-            .flags = ELFSectionFlags::ALLOC | ELFSectionFlags::WRITE,
+            .flags = ELFSectionFlags::ALLOC,
             .alignment = 16,
             .data = module_.bnjdbg_data->move_data(),
         };

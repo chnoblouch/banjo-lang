@@ -194,15 +194,6 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
     std::vector<mcode::Instruction> prolog;
     std::vector<long> modified_volatile_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
-    // Push modified non-volatile general-purpose registers.
-    for (mcode::PhysicalReg reg : modified_volatile_regs) {
-        if (reg >= RAX && reg <= R15) {
-            mcode::Operand operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
-            prolog.push_back({X8664Opcode::PUSH, {operand}});
-            prolog.push_back({mcode::PseudoOpcode::EH_PUSHREG, {operand}});
-        }
-    }
-
     if (func->get_stack_frame().get_size() > 0 || true) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
@@ -213,6 +204,15 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
 
         // Set frame pointer to stack pointer.
         prolog.push_back({X8664Opcode::MOV, {rbp, rsp}});
+
+        // Push modified non-volatile general-purpose registers.
+        for (mcode::PhysicalReg reg : modified_volatile_regs) {
+            if (reg >= RAX && reg <= R15) {
+                mcode::Operand operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
+                prolog.push_back({X8664Opcode::PUSH, {operand}});
+                prolog.push_back({mcode::PseudoOpcode::EH_PUSHREG, {operand}});
+            }
+        }
 
         // Allocate stack frame.
         prolog.push_back({X8664Opcode::SUB, {rsp, frame_size}, mcode::Instruction::FLAG_ALLOCA});
@@ -260,18 +260,18 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
         // Deallocate stack frame.
         epilog.push_back({X8664Opcode::ADD, {rsp, frame_size}});
 
+        // Pop modified non-volatile general-purpose registers.
+        for (int i = modified_volatile_regs.size() - 1; i >= 0; i--) {
+            mcode::PhysicalReg reg = modified_volatile_regs[i];
+
+            if (reg >= RAX && reg <= R15) {
+                mcode::Operand reg_operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
+                epilog.push_back({X8664Opcode::POP, {reg_operand}});
+            }
+        }
+
         // Pop frame pointer.
         epilog.push_back({X8664Opcode::POP, {rbp}});
-    }
-
-    // Pop modified non-volatile general-purpose registers.
-    for (int i = modified_volatile_regs.size() - 1; i >= 0; i--) {
-        mcode::PhysicalReg reg = modified_volatile_regs[i];
-
-        if (reg >= RAX && reg <= R15) {
-            mcode::Operand reg_operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
-            epilog.push_back({X8664Opcode::POP, {reg_operand}});
-        }
     }
 
     return epilog;

@@ -682,6 +682,12 @@ void X8664SSALowerer::lower_sqrt(ssa::Instruction &instr) {
     emit(mcode::Instruction(opcode, {m_dst, m_src}));
 }
 
+void X8664SSALowerer::lower_frame_address(ssa::Instruction &instr) {
+    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
+    mcode::Register rbp = mcode::Register::from_physical(X8664Register::RBP);
+    emit({X8664Opcode::MOV, {m_dst, mcode::Operand::from_register(rbp)}});
+}
+
 mcode::Operand X8664SSALowerer::into_reg_or_addr(ssa::Operand &operand) {
     if (operand.is_register()) {
         ssa::InstrIter producer = get_producer(operand.get_register());
