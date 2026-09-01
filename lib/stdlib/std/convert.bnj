@@ -72,7 +72,19 @@ pub func to_repr_indent[T](ref value: T, indent: u32) -> String {
 }
 
 pub func parse_u64(string: StringSlice) -> ?u64 {
+    return parse_u64_base(string, 10);
+}
+
+pub func parse_i64(string: StringSlice) -> ?i64 {
+    return parse_i64_base(string, 10);
+}
+
+pub func parse_u64_base(string: StringSlice, base: u64) -> ?u64 {
     # TODO: Better validation (overflow)
+
+    if base > 16 {
+        return none;
+    }
 
     var index: i32 = string.length as i32 - 1;
     var place_value: u64 = 1;
@@ -80,21 +92,36 @@ pub func parse_u64(string: StringSlice) -> ?u64 {
 
     while index >= 0 {
         var c = string.data[index];
+        var digit: u64 = 0;
 
-        if !(c >= '0' && c <= '9') {
+        if c >= '0' && c <= '9' {
+            digit = (c - '0') as u64;
+        } else if c >= 'a' && c <= 'f' {
+            digit = 10 + (c - 'a') as u64;
+        } else if c >= 'A' && c <= 'F' {
+            digit = 10 + (c - 'A') as u64;
+        } else {
             return none;
         }
 
-        value += place_value * (c - '0') as u64;
-        place_value *= 10;
+        if digit > base {
+            return none;
+        }
+
+        value += place_value * digit;
+        place_value *= base;
         index -= 1;
     }
 
     return value;
 }
 
-pub func parse_i64(string: StringSlice) -> ?i64 {
+pub func parse_i64_base(string: StringSlice, base: u64) -> ?i64 {
     # TODO: Better validation (overflow)
+
+    if base > 16 {
+        return none;
+    }
 
     var sign: i64 = 1;
     var last_index = 0;
@@ -110,13 +137,24 @@ pub func parse_i64(string: StringSlice) -> ?i64 {
 
     while index >= last_index {
         var c = string.data[index];
+        var digit: i64 = 0;
 
-        if !(c >= '0' && c <= '9') {
+        if c >= '0' && c <= '9' {
+            digit = (c - '0') as i64;
+        } else if c >= 'a' && c <= 'f' {
+            digit = 10 + (c - 'a') as i64;
+        } else if c >= 'A' && c <= 'F' {
+            digit = 10 + (c - 'A') as i64;
+        } else {
             return none;
         }
 
-        value += place_value * (c - '0') as i64;
-        place_value *= 10;
+        if digit > base as i64 {
+            return none;
+        }
+
+        value += place_value * digit;
+        place_value *= base as i64;
         index -= 1;
     }
 
@@ -314,7 +352,7 @@ func struct_to_repr[T](ref value: T, indent: u32) -> String {
 # TODO: Remove `ref`
 func enum_to_string[T](ref value: T) -> String {
     var variants = meta(T).variants;
-    
+
     for i in 0..meta(T).num_variants {
         if memory.compare(__builtin_pointer_to(value), &variants[i].1, 4) {
             return String.from_cstring(variants[i].0);
