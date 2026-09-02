@@ -64,6 +64,14 @@ struct PEStringTable {
     std::uint32_t size = 4; // the string table size includes the 4 bytes that indicate the size itself
 };
 
+namespace PEUnwindOp {
+enum : std::uint8_t {
+    PUSH_NONVOL = 0,
+    ALLOC_LARGE = 1,
+    ALLOC_SMALL = 2,
+};
+}
+
 struct PEFile {
     std::vector<PESection> sections;
     std::vector<PESymbol> symbols;

@@ -209,7 +209,7 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
             PERelocation{
                 .virt_addr = (std::uint32_t)pdata_buf.get_size(),
                 .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
-                .type = PERelocationType::AMD64_ADDR32NB
+                .type = PERelocationType::AMD64_ADDR32NB,
             }
         );
         pdata_buf.write_i32(frame_info.start_addr);
@@ -219,7 +219,7 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
             PERelocation{
                 .virt_addr = (std::uint32_t)pdata_buf.get_size(),
                 .symbol_index = get_section_symbol_index(TEXT_SECTION_INDEX),
-                .type = PERelocationType::AMD64_ADDR32NB
+                .type = PERelocationType::AMD64_ADDR32NB,
             }
         );
         pdata_buf.write_i32(frame_info.end_addr);
@@ -229,58 +229,45 @@ void PEBuilder::create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info
             PERelocation{
                 .virt_addr = (std::uint32_t)pdata_buf.get_size(),
                 .symbol_index = get_section_symbol_index(XDATA_SECTION_INDEX),
-                .type = PERelocationType::AMD64_ADDR32NB
+                .type = PERelocationType::AMD64_ADDR32NB,
             }
         );
         pdata_buf.write_i32(xdata_buf.get_size());
 
         std::uint32_t alloca_offset = frame_info.alloca_instr_end - frame_info.start_addr;
+        unsigned num_slots = 3 + frame_info.pushed_regs.size();
 
-        xdata_buf.write_u8(1);             // version and flags (current version, no flags)
+        xdata_buf.write_u8(1);             // version and flags (version 1, no flags)
         xdata_buf.write_u8(alloca_offset); // size of prolog
-        unsigned num_slots_pos = xdata_buf.tell();
-        xdata_buf.write_u8(0); // number of unwind code slots
-        xdata_buf.write_u8(0); // frame register and frame register offset (none)
-
+        xdata_buf.write_u8(num_slots);     // number of unwind code slots
+        xdata_buf.write_u8(0);             // frame register and frame register offset (none)
         xdata_buf.write_u8(alloca_offset); // offset
 
-        std::uint8_t operation_code = 1;
-        // std::uint8_t operation_info = (frame_info.alloca_size - 8) / 8;
+        std::uint8_t operation_code = PEUnwindOp::ALLOC_LARGE;
         std::uint8_t operation_info = 1;
-        xdata_buf.write_u8((operation_info << 4) | operation_code); // operation code + info
 
+        // TODO: Use a smaller encoding if possible.
+        xdata_buf.write_u8((operation_info << 4) | operation_code);
         xdata_buf.write_u8(frame_info.alloca_size);
         xdata_buf.write_u8(frame_info.alloca_size >> 8);
         xdata_buf.write_u8(frame_info.alloca_size >> 16);
         xdata_buf.write_u8(frame_info.alloca_size >> 24);
 
-        unsigned num_slots = 3;
-
         for (const BinPushedRegInfo &pushed_reg : frame_info.pushed_regs) {
-            xdata_buf.write_u8(pushed_reg.instr_end);
-            std::uint8_t operation_code = 0;
+            std::uint8_t operation_code = PEUnwindOp::PUSH_NONVOL;
             std::uint8_t operation_info = pushed_reg.reg;
-            xdata_buf.write_u8((operation_info << 4) | operation_code); // operation code + info
-            num_slots += 1;
+            xdata_buf.write_u8(pushed_reg.instr_end - frame_info.start_addr);
+            xdata_buf.write_u8((operation_info << 4) | operation_code);
         }
 
         if (num_slots % 2 == 0) {
             xdata_buf.write_u8(0);
             xdata_buf.write_u8(0);
         }
-
-        unsigned pos = xdata_buf.tell();
-        xdata_buf.seek(num_slots_pos);
-        xdata_buf.write_u8(num_slots);
-        xdata_buf.seek(pos);
     }
 
     pdata.data = pdata_buf.move_data();
     xdata.data = xdata_buf.move_data();
-}
-
-void PEBuilder::create_debug_info() {
-    // structure taken from: https://lists.llvm.org/pipermail/llvm-dev/2015-October/091847.html
 }
 
 void PEBuilder::move_section_data(BinModule &module_) {

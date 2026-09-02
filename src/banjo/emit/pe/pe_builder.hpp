@@ -33,7 +33,6 @@ private:
     void process_x86_64_symbol_use(const BinSymbolUse &use, BinModule &module_);
 
     void create_unwind_info(const std::vector<BinUnwindInfo> &unwind_info);
-    void create_debug_info();
     void move_section_data(BinModule &module_);
 
     std::int16_t get_section_number(unsigned section_index);
