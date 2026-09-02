@@ -359,7 +359,7 @@ def run_executable(test):
             return ProcessResult("", "", 1)
 
         if is_linux:
-            subprocess.run(["clang", "-fuse-ld=lld", "-lm", "-otest", "output.o"])
+            subprocess.run(["clang", "-fuse-ld=lld", "-lm", "-Wl,-no-pie", "-otest", "output.o"])
         else:
             subprocess.run(["clang", "-otest", "output.o"])
 
