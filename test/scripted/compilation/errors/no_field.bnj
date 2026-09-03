@@ -115,7 +115,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 131:11 "type 'S[i32, bool]' has no field named 'c'"
+# test:error 131:7 "type 'S[i32, bool]' has no field named 'c'"
 
 struct S[A, B] {
     var a: A;

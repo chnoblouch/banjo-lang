@@ -1,10 +1,10 @@
 # test:common
 
-use std.{debug.DebugInfo, stack_trace.acquire_stack_trace};
+use std.{debug.{DebugInfo, trace_stack}};
 
 func trace() {
     var debug_info = DebugInfo.load().unwrap();
-    var frames = acquire_stack_trace();
+    var frames = trace_stack();
 
     for i in 1..frames.length() {
         try name in debug_info.symbol_name(frames[i]) {

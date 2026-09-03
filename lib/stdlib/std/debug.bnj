@@ -1,4 +1,10 @@
-use std.config;
+use std.{config, memory};
+
+meta if config.OS == config.WINDOWS {
+    use os.winapi;
+} else if config.OS == config.EMSCRIPTEN {
+    use os.emscripten;
+}
 
 meta if config.ARCH != config.WASM {
     native var __bnjdbg_start: u64;
@@ -43,4 +49,71 @@ struct DebugInfo {
             return none;
         }
     }
+}
+
+pub func print_stack() {
+    println("stack trace:");
+
+    meta if config.OS == config.EMSCRIPTEN {
+        emscripten.run_script("console.trace();");
+    } else {
+        var frames = trace_stack();
+        var debug_info = DebugInfo.load();
+
+        for i in 1..frames.length() {
+            var name: StringSlice = "<unknown>";
+
+            if debug_info.has_value {
+                try symbol in debug_info.value.symbol_name(frames[i]) {
+                    name = symbol;
+                }
+            }
+
+            fprintln("  #{:03}  0x{:016X}  {}", i, frames[i] as u64, name);
+
+            if name == "main" {
+                break;
+            }
+        }
+    }
+}
+
+pub func trace_stack() -> Array[addr] {
+    var frames: Array[addr] = [];
+
+    meta if config.OS == config.WINDOWS {
+        var max_frame_count: usize = 4096;
+        var winapi_frames = memory.alloc(max_frame_count * meta(addr).size) as *addr;
+
+        var frame_count = winapi.capture_stack_back_trace(
+            1,
+            max_frame_count as winapi.Ulong,
+            winapi_frames,
+            null,
+        );
+
+        frames = Array[addr].sized(frame_count as usize);
+
+        for i in 0..frame_count as usize {
+            frames[i] = winapi_frames[i];
+        }
+
+        memory.free(winapi_frames);
+    } else if config.ARCH == config.X86_64 {
+        var fp = __builtin_frame_address() as *addr;
+
+        while fp != null {
+            frames.append(fp[1]);
+            fp = fp[0] as *addr;
+        }
+    } else if config.ARCH == config.AARCH64 {
+        var fp = __builtin_frame_address() as *addr;
+
+        while fp != null {
+            frames.append(fp[1]);
+            fp = fp[0] as *addr;
+        }
+    }
+
+    return frames;
 }

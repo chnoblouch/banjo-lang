@@ -21,7 +21,7 @@ func format_packed[Args](template: StringSlice, args: Args) -> String {
 
         index += rbrace.value + 1;
         result += substring.substring(0, lbrace.value);
-        result += format_arg(substring.substring(lbrace.value, rbrace.value + 1), arg);
+        result += format_arg(substring.substring(lbrace.value, rbrace.value + 1), ref arg);
     }
 
     if index < template.length() {
@@ -37,7 +37,7 @@ func format_packed[Args](template: StringSlice, args: Args) -> String {
     return result;
 }
 
-func format_arg[T](format: StringSlice, arg: T) -> String {
+func format_arg[T](format: StringSlice, arg: ref T) -> String {
     var base: u64 = 10;
     var upper: bool = false;
     var width: usize = 0;

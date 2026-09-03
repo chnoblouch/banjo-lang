@@ -1,4 +1,4 @@
-use std.{config, convert, format, io, stack_trace};
+use std.{config, convert, debug, format, io};
 use libc as c;
 use internal.std_panics.panic_assertion_failed;
 
@@ -42,12 +42,10 @@ pub func assert(condition: bool, message: String) {
 }
 
 pub func panic(message: String) {
-    print("panic: ");
-    println(message);
+    fprintln("panic: {}\n", message);
 
     meta if config.BUILD_CONFIG == config.DEBUG {
-        println("\nstack trace:");
-        stack_trace.print_stack_trace();
+        debug.print_stack();
     }
 
     exit(1);
