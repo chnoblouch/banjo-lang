@@ -1,9 +1,7 @@
 #ifndef BANJO_SSA_PRIMITIVE_H
 #define BANJO_SSA_PRIMITIVE_H
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 enum class Primitive {
     VOID,
@@ -20,8 +18,6 @@ enum class Primitive {
     ADDR,
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

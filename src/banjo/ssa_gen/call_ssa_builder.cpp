@@ -1,6 +1,12 @@
 #include "call_ssa_builder.hpp"
 
 #include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/opcode.hpp"
+#include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa/virtual_register.hpp"
+#include <optional>
+#include <utility>
 
 namespace banjo {
 
@@ -53,6 +59,12 @@ StoredValue CallSSABuilder::generate() {
     ssa::InstrIter instr;
     StoredValue value;
 
+    if (first_variadic_index) {
+        for (unsigned i = *first_variadic_index; i < ssa_operands.size(); i++) {
+            promote_variadic_arg(ssa_operands[i]);
+        }
+    }
+
     if (return_method == ReturnMethod::NO_RETURN_VALUE || hints.is_unused) {
         // ASSERT(!hints.dst);
         instr = ctx.get_ssa_block()->append({ssa::Opcode::CALL, std::move(ssa_operands)});
@@ -74,6 +86,32 @@ StoredValue CallSSABuilder::generate() {
     }
 
     return value;
+}
+
+void CallSSABuilder::promote_variadic_arg(ssa::Operand &arg) {
+    ssa::Type type = arg.get_type();
+
+    if (!type.is_primitive() || type.get_array_length() != 1) {
+        return;
+    }
+
+    std::optional<std::pair<ssa::Opcode, ssa::Primitive>> promotion;
+
+    switch (arg.get_type().get_primitive()) {
+        case ssa::Primitive::F32: promotion = {ssa::Opcode::FPROMOTE, ssa::Primitive::F64}; break;
+        case ssa::Primitive::I8: promotion = {ssa::Opcode::SEXTEND, ssa::Primitive::I32}; break;
+        case ssa::Primitive::I16: promotion = {ssa::Opcode::SEXTEND, ssa::Primitive::I32}; break;
+        case ssa::Primitive::U8: promotion = {ssa::Opcode::UEXTEND, ssa::Primitive::U32}; break;
+        case ssa::Primitive::U16: promotion = {ssa::Opcode::UEXTEND, ssa::Primitive::U32}; break;
+        default: break;
+    }
+
+    if (promotion) {
+        ssa::VirtualRegister dst = ctx.next_vreg();
+        ssa::Operand type_arg = ssa::Operand::from_type(promotion->second);
+        ctx.get_ssa_block()->append({promotion->first, dst, {arg, type_arg}});
+        arg = ssa::Operand::from_register(dst, promotion->second);
+    }
 }
 
 } // namespace banjo

@@ -6,8 +6,8 @@ have at our disposal to call into native code.
 
 ## Calling Native Code
 
-In order to call a function defined in C or another language that follows the
-C ABI, we declare a _native function_:
+In order to call a function defined in C or in any language that follows the C
+ABI, we declare a _native function_:
 
 ```banjo
 native func puts(message: *u8) -> i32;
@@ -22,8 +22,7 @@ func main() {
 ```
 
 To declare a variadic native function, we add the `c_variadic` attribute to the
-declaration. Variadic functions currently require casting all integer arguments
-to `i64` and floating-point arguments to `f64` due to platform ABI constraints:
+declaration:
 
 ```banjo
 @c_variadic
@@ -120,15 +119,15 @@ curl/
 └── lib/
     ├── x86_64-windows-msvc/
     │   ├── libcurl.lib
-    │   ├── ibssl.lib
+    │   ├── libssl.lib
     │   ├── zstd_static.lib
-    │   └── <other libraries that curl depends on...>
+    │   └── <...>
     ├── x86_64-linux-gnu/
     │   ├── libcurl.a
     │   ├── libssl.a
     │   ├── libzstd.lib
     │   └── <...>
-    └── <directories containing libraries for other platforms...>
+    └── <other targets...>
 ```
 
 `banjo.json` defines what libraries to link for each target platform:
@@ -143,7 +142,7 @@ curl/
         "zstd_static",
         "ws2_32",
         "bcrypt",
-        "<other libraries...>"
+        "<...>"
       ]
     },
     "x86_64-linux-gnu": {
@@ -177,7 +176,7 @@ the_project/
     └── curl/
         ├── banjo.json
         ├── src/
-        ├── curl.bnj
+        │   └── curl.bnj
         └── lib/
             └── ...
 ```
@@ -219,7 +218,7 @@ func main() {
 }
 ```
 
-Compiling and running returns:
+Compiling and running returns the following:
 
 ```text
 $ banjo run

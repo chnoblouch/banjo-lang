@@ -1,0 +1,34 @@
+# test:common
+
+use libc.printf;
+
+# test:subtest
+# test:output "s: test, i: 42, f: 0.75"
+
+func main() {
+    var s: *u8 = "test";
+    var i: i32 = 42;
+    var f: f64 = 0.75;
+
+    printf("s: %s, i: %d, f: %g", s, i, f);
+}
+
+# test:subtest
+# test:output "-47,-29532,156,49637,0.75"
+
+func main() {
+    var i1: i8 = -47;
+    var i2: i16 = -29532;
+    var u1: u8 = 156;
+    var u2: u16 = 49637;
+    var f: f32 = 0.75;
+
+    printf("%d,%d,%u,%u,%g", i1, i2, u1, u2, f);
+}
+
+# test:subtest
+# test:output "empty"
+
+func main() {
+    printf("empty");
+}

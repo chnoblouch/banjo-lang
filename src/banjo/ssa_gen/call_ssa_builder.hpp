@@ -29,6 +29,9 @@ public:
     CallSSABuilder &add_arg(StoredValue value);
     CallSSABuilder &make_variadic(unsigned first_variadic_index);
     StoredValue generate();
+
+private:
+    void promote_variadic_arg(ssa::Operand &arg);
 };
 
 } // namespace banjo
