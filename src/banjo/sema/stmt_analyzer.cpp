@@ -66,11 +66,6 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
         AttributeAnalyzer{analyzer}.analyze(*var_stmt.local.attrs);
     }
 
-    // Variables with empty names can be generated during semantic analysis.
-    if (!var_stmt.local.name.value.empty()) {
-        insert_symbol(var_stmt.local.name, &var_stmt.local);
-    }
-
     if (var_stmt.local.type) {
         bool is_typeless_ref = false;
 
@@ -99,6 +94,11 @@ void StmtAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
     } else {
         ExprAnalyzer(analyzer).analyze_value(var_stmt.value);
         var_stmt.local.type = var_stmt.value.get_type();
+    }
+
+    // Variables with empty names can be generated during semantic analysis.
+    if (!var_stmt.local.name.value.empty()) {
+        insert_symbol(var_stmt.local.name, &var_stmt.local);
     }
 
     analyzer.add_symbol_def(&var_stmt.local);

@@ -978,7 +978,7 @@ Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_
             if (entry.field) {
                 analyzer.add_symbol_use(entry.ident.ast_node, entry.field);
             } else {
-                analyzer.report_generator.report_err_no_field(entry.ident, struct_def);
+                analyzer.report_generator.report_err_no_field(entry.ident, struct_literal.type);
                 result = Result::ERROR;
                 continue;
             }

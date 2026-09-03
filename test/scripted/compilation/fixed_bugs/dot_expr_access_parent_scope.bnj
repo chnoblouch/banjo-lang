@@ -10,7 +10,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 21:7 "struct 'S' has no method named 'f'"
+# test:error 21:7 "type 'S' has no method named 'f'"
 
 struct S {}
 

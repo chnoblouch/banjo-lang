@@ -213,6 +213,7 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
             .ast_node = node,
             .ident = generate_ident(name_node),
             .block{},
+            .role = sir::StructDef::Role::NONE,
             .fields{},
             .impls = generate_expr_list(impls_node),
             .attrs = attrs,

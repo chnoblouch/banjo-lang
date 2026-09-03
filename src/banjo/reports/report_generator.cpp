@@ -484,26 +484,8 @@ void ReportGenerator::report_err_no_members(const sir::DotExpr &dot_expr) {
     report_error("type '$' doesn't have members", dot_expr.ast_node, dot_expr.lhs.get_type());
 }
 
-void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, const sir::StructDef &struct_def) {
-    report_error(
-        "struct '$' has no field named '$'",
-        field_ident.ast_node,
-        struct_def.ident.ast_node,
-        field_ident.value
-    );
-}
-
-void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, const sir::UnionCase &union_case) {
-    report_error(
-        "union case '$' has no field named '$'",
-        field_ident.ast_node,
-        union_case.ident.ast_node,
-        field_ident.value
-    );
-}
-
-void ReportGenerator::report_err_no_field(const sir::Ident &field_ident, sir::TupleExpr &tuple_expr) {
-    report_error("tuple '$' has no field named '$'", field_ident.ast_node, sir::Expr(&tuple_expr), field_ident.value);
+void ReportGenerator::report_err_no_field(sir::Ident &field_ident, sir::Expr lhs) {
+    report_error("type '$' has no field named '$'", field_ident.ast_node, lhs, field_ident.value);
 }
 
 void ReportGenerator::report_err_missing_field(
@@ -558,14 +540,9 @@ void ReportGenerator::report_err_struct_overlapping_not_one_field(const sir::Str
         .report();
 }
 
-void ReportGenerator::report_err_no_method(sir::Ident &method_ident, sir::Symbol parent) {
-    report_error(
-        "$ '$' has no method named '$'",
-        method_ident.ast_node,
-        symbol_kind_name(parent),
-        parent.get_ident().ast_node,
-        method_ident.value
-    );
+void ReportGenerator::report_err_no_method(sir::Ident &method_ident, sir::Expr lhs) {
+    // TODO: Bring back symbol kinds.
+    report_error("type '$' has no method named '$'", method_ident.ast_node, lhs, method_ident.value);
 }
 
 void ReportGenerator::report_err_no_matching_overload(const sir::Expr &expr, sir::OverloadSet &overload_set) {
@@ -582,8 +559,8 @@ void ReportGenerator::report_err_no_matching_overload(const sir::Expr &expr, sir
     builder.report();
 }
 
-void ReportGenerator::report_err_not_a_method(sir::Ident &ident, sir::Symbol symbol, std::string_view parent_name) {
-    ReportBuilder builder = build_error("'$' is not a method of '$'", ident.ast_node, ident.value, parent_name);
+void ReportGenerator::report_err_not_a_method(sir::Ident &ident, sir::Symbol symbol, std::string_view lhs_name) {
+    ReportBuilder builder = build_error("'$' is not a method of '$'", ident.ast_node, ident.value, lhs_name);
 
     if (symbol.is<sir::FuncDef>()) {
         builder.add_note("the function does not have a 'self' parameter", symbol.get_ident().ast_node);

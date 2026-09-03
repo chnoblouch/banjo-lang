@@ -1,5 +1,5 @@
 # test:subtest
-# test:warning 9:5 "unused function call result (type 'Result[i32, bool]')"
+# test:warning 9:5 "unused function call result (type 'i32 expcept bool')"
 
 func f0() -> i32 except bool {
     return 0;

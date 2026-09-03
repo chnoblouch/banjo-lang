@@ -129,6 +129,7 @@ StructDef *Cloner::clone_struct_def(const StructDef &struct_def) {
             .ast_node = struct_def.ast_node,
             .ident = clone_ident(struct_def.ident),
             .block = clone_decl_block(struct_def.block),
+            .role = struct_def.role,
             .fields = {},
             .impls = clone_expr_list(struct_def.impls),
             .attrs = clone_attrs(struct_def.attrs),

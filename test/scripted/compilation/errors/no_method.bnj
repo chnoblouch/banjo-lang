@@ -1,5 +1,5 @@
 # test:subtest
-# test:error 8:7 "struct 'S' has no method named 'test'"
+# test:error 8:7 "type 'S' has no method named 'test'"
 
 struct S {}
 
@@ -9,7 +9,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 19:7 "struct 'S' has no method named 'test'"
+# test:error 19:7 "type 'S' has no method named 'test'"
 
 struct S {}
 
@@ -20,7 +20,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 31:7 "union 'U' has no method named 'test'"
+# test:error 31:7 "type 'U' has no method named 'test'"
 
 union U {
     case C ();
@@ -32,7 +32,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 44:7 "proto 'P' has no method named 'test'"
+# test:error 44:7 "type '*P' has no method named 'test'"
 
 proto P {}
 
@@ -45,8 +45,18 @@ func main() {
 }
 
 # test:subtest
-# test:error 51:7 "type parameter 'T' has no method named 'test'"
+# test:error 51:7 "type 'T' has no method named 'test'"
 
 func f[T](a: T) {
     a.test();
+}
+
+# test:subtest
+# test:error 61:7 "type 'S[i32, bool]' has no method named 'test'"
+
+struct S[A, B] {}
+
+func main() {
+    var s = S[i32, bool] {};
+    s.test();
 }

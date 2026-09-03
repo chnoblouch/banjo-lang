@@ -1,0 +1,15 @@
+# TODO: Add a custom error message for this case.
+
+# test:subtest
+# test:error 7:13 "cannot find 'a'" 
+
+func main() {
+    var a = a.test;
+}
+
+# test:subtest
+# test:error 14:12 "cannot find 'a'" 
+
+func main() {
+    var a: a.T;
+}

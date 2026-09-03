@@ -1230,10 +1230,17 @@ struct ConstDef {
 };
 
 struct StructDef {
+    enum class Role {
+        NONE,
+        OPTIONAL,
+        RESULT,
+    };
+
     ASTNode *ast_node;
     Ident ident;
     Symbol parent;
     DeclBlock block;
+    Role role;
     std::vector<StructField *> fields;
     std::vector<Expr> impls;
     Attributes *attrs = nullptr;

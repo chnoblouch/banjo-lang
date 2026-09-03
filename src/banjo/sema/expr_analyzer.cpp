@@ -1312,7 +1312,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
 
             return Result::SUCCESS;
         } else {
-            analyzer.report_generator.report_err_no_method(dot_expr.rhs, &struct_def);
+            analyzer.report_generator.report_err_no_method(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
     } else if (auto union_def = lhs_type.match_symbol<sir::UnionDef>()) {
@@ -1326,7 +1326,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
                 return Result::ERROR;
             }
         } else {
-            analyzer.report_generator.report_err_no_method(dot_expr.rhs, union_def);
+            analyzer.report_generator.report_err_no_method(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
     } else if (auto concrete_proto = lhs_type.match_proto_ptr()) {
@@ -1355,7 +1355,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
 
             return Result::SUCCESS;
         } else {
-            analyzer.report_generator.report_err_no_method(dot_expr.rhs, &proto_def);
+            analyzer.report_generator.report_err_no_method(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
     } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
@@ -1386,7 +1386,7 @@ Result ExprAnalyzer::analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallEx
 
             return Result::SUCCESS;
         } else {
-            analyzer.report_generator.report_err_no_method(dot_expr.rhs, generic_param);
+            analyzer.report_generator.report_err_no_method(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
     } else {
@@ -1974,10 +1974,7 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
         return Result::SUCCESS;
     }
 
-    Result result = analyze(dot_expr.lhs);
-    if (result != Result::SUCCESS) {
-        return result;
-    }
+    RESULT_PROPAGATE(analyze(dot_expr.lhs));
 
     if (analyzer.mode == Mode::COMPLETION && dot_expr.rhs.is_completion_token()) {
         analyzer.completion_context = CompleteAfterDot{
@@ -1987,8 +1984,7 @@ Result ExprAnalyzer::analyze_dot_expr(sir::DotExpr &dot_expr, sir::Expr &out_exp
         return Result::SUCCESS;
     }
 
-    result = analyze_dot_expr_rhs(dot_expr, out_expr);
-    return result;
+    return analyze_dot_expr_rhs(dot_expr, out_expr);
 }
 
 Result ExprAnalyzer::analyze_type_check_expr(sir::TypeCheckExpr &type_check_expr) {
@@ -2210,7 +2206,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         sir::StructField *field = struct_def->find_field(dot_expr.rhs.value);
 
         if (!field) {
-            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *struct_def);
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
 
@@ -2241,7 +2237,7 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         std::optional<unsigned> field_index = union_case->find_field(dot_expr.rhs.value);
 
         if (!field_index) {
-            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *union_case);
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
 
@@ -2264,14 +2260,14 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         std::optional<std::uint64_t> field_parsed = utils::parse_u64(dot_expr.rhs.value);
 
         if (!field_parsed) {
-            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *tuple_expr);
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
 
         unsigned field_index = static_cast<unsigned>(*field_parsed);
 
         if (field_index >= tuple_expr->exprs.size()) {
-            analyzer.report_generator.report_err_no_field(dot_expr.rhs, *tuple_expr);
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, lhs_type);
             return Result::ERROR;
         }
 
@@ -2285,10 +2281,10 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
         );
 
         return Result::SUCCESS;
+    } else {
+        analyzer.report_generator.report_err_no_members(dot_expr);
+        return Result::ERROR;
     }
-
-    analyzer.report_generator.report_err_no_members(dot_expr);
-    return Result::ERROR;
 }
 
 Result ExprAnalyzer::analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr) {

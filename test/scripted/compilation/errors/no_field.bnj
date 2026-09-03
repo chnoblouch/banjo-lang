@@ -1,5 +1,5 @@
 # test:subtest
-# test:error 13:9 "struct 'Point' has no field named 'a'"
+# test:error 13:9 "type 'Point' has no field named 'a'"
 # test:error 12:17 "missing value for field 'x' of struct 'Point'"
 # test:error 12:17 "missing value for field 'y' of struct 'Point'"
 
@@ -15,7 +15,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 29:9 "struct 'Point' has no field named 'a'"
+# test:error 29:9 "type 'Point' has no field named 'a'"
 # test:error 28:24 "missing value for field 'x' of struct 'Point'"
 # test:error 28:24 "missing value for field 'y' of struct 'Point'"
 
@@ -31,8 +31,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 46:9 "struct 'Point' has no field named 'a'"
-# test:error 47:9 "struct 'Point' has no field named 'b'"
+# test:error 46:9 "type 'Point' has no field named 'a'"
+# test:error 47:9 "type 'Point' has no field named 'b'"
 # test:error 45:17 "missing value for field 'x' of struct 'Point'"
 # test:error 45:17 "missing value for field 'y' of struct 'Point'"
 
@@ -49,7 +49,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 65:11 "struct 'Point' has no field named 'a'"
+# test:error 65:11 "type 'Point' has no field named 'a'"
 
 struct Point {
     var x: i32;
@@ -66,7 +66,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 83:13 "struct 'Point' has no field named 'a'"
+# test:error 83:13 "type 'Point' has no field named 'a'"
 
 struct Point {
     var x: i32;
@@ -84,7 +84,7 @@ func main() {
 }
 
 # test:subtest
-# test:error 96:15 "union case 'A' has no field named 'test'"
+# test:error 96:15 "type 'A' has no field named 'test'"
 
 union U {
     case A(a: i32);
@@ -97,8 +97,8 @@ func main() {
 }
 
 # test:subtest
-# test:error 105:15 "tuple '(i32, bool)' has no field named '2'"
-# test:error 106:15 "tuple '(i32, bool)' has no field named '3'"
+# test:error 105:15 "type '(i32, bool)' has no field named '2'"
+# test:error 106:15 "type '(i32, bool)' has no field named '3'"
 
 func main() {
     var a = (5, true);
@@ -107,9 +107,26 @@ func main() {
 }
 
 # test:subtest
-# test:error 114:15 "tuple '(i32, bool)' has no field named 'test'"
+# test:error 114:15 "type '(i32, bool)' has no field named 'test'"
 
 func main() {
     var a = (5, true);
     var b = a.test;
+}
+
+# test:subtest
+# test:error 131:11 "type 'S[i32, bool]' has no field named 'c'"
+
+struct S[A, B] {
+    var a: A;
+    var b: B;
+}
+
+func main() {
+    var s = S[i32, bool] {
+        a: 2,
+        b: true,
+    };
+    
+    s.c = 0.5;
 }

@@ -222,6 +222,9 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_bit_not_def = &find_std_symbol({"std", "protos"}, "BitNot").as<sir::ProtoDef>();
     std_copy_def = &find_std_symbol({"std", "protos"}, "Copy").as<sir::ProtoDef>();
 
+    std_optional_def->role = sir::StructDef::Role::OPTIONAL;
+    std_result_def->role = sir::StructDef::Role::RESULT;
+
     std_compare_def->role = sir::ProtoDef::Role::COMPARE;
     std_order_def->role = sir::ProtoDef::Role::ORDER;
     std_add_def->role = sir::ProtoDef::Role::ADD;
