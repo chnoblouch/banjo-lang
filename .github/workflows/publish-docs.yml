@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Install Sphinx
-        run: sudo apt-get install python3-sphinx
+        run: sudo apt-get update && sudo apt-get install python3-sphinx
       
       - name: Install MyST parser
         run: pip3 install myst-parser
