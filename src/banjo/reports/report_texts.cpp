@@ -245,12 +245,22 @@ std::string ReportText::tuple_expr_to_string(const sir::TupleExpr &tuple_expr) {
 }
 
 std::string ReportText::specialize_expr_to_string(const sir::SpecializeExpr &specialize_expr) {
+    std::span<sir::Expr> args = specialize_expr.args;
+
+    if (auto struct_def = specialize_expr.symbol.match<sir::StructDef>()) {
+        switch (struct_def->role) {
+            case sir::StructDef::Role::NONE: break;
+            case sir::StructDef::Role::OPTIONAL: return "?" + to_string(args[0]);
+            case sir::StructDef::Role::RESULT: return to_string(args[0]) + " except " + to_string(args[1]);
+        }
+    }
+
     std::string str = specialize_expr.symbol.get_qualified_name() + "[";
 
-    for (unsigned i = 0; i < specialize_expr.args.size(); i++) {
-        str += to_string(specialize_expr.args[i]);
+    for (unsigned i = 0; i < args.size(); i++) {
+        str += to_string(args[i]);
 
-        if (i != specialize_expr.args.size() - 1) {
+        if (i != args.size() - 1) {
             str += ", ";
         }
     }
