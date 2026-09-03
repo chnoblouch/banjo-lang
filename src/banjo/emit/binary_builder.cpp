@@ -256,7 +256,8 @@ void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
         debug_section->write_u64(string_buffer_position);
 
         debug_section->seek(string_buffer_position);
-        debug_section->write_cstr(debug_name.c_str());
+        debug_section->write_data(debug_name.data(), debug_name.size());
+        debug_section->write_u8(0);
         string_buffer_position += debug_name.size() + 1;
     }
 
