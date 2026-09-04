@@ -1,16 +1,16 @@
 use std.memory;
 
-struct Shared[T] {
-    struct Data {
-        var value: T;
-        var ref_count: u32;
-    }
+struct Data[T] {
+    var value: T;
+    var ref_count: u32;
+}
 
-    var data: *Data;
+struct Shared[T] {
+    var data: *Data[T];
 
     pub func new(value: T) -> Shared[T] {
-        var data = memory.alloc(meta(T).size) as *Data;
-        *data = Data { value, ref_count: 1 };
+        var data = memory.alloc(meta(T).size) as *Data[T];
+        *data = Data[T] { value, ref_count: 1 };
         return Shared[T] { data };
     }
 

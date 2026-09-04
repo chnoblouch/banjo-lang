@@ -7,11 +7,11 @@ func main() {
 
     print(a.successful);
     print(",");
-    print(a.value);
+    print(a.data.value);
     print(",");    
     print(b.successful);
     print(",");
-    print(b.error);
+    print(b.data.error);
 }
 
 # test:subtest
@@ -42,11 +42,11 @@ func main() {
         z: 3,
     };
     
-    print(a.value.x);
+    print(a.data.value.x);
     print(",");
-    print(a.value.y);
+    print(a.data.value.y);
     print(",");
-    print(a.value.z);
+    print(a.data.value.z);
 }
 
 # test:subtest

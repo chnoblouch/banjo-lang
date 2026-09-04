@@ -1160,8 +1160,8 @@ ssa::Value ExprSSAGenerator::generate_field_access(
 }
 
 sir::Attributes::Layout ExprSSAGenerator::get_type_layout(const sir::Expr &type) {
-    if (auto struct_def = type.match_symbol<sir::StructDef>()) {
-        return struct_def->get_layout();
+    if (auto concrete_struct = type.match_concrete<sir::StructDef>()) {
+        return concrete_struct->def->get_layout();
     } else {
         return sir::Attributes::Layout::DEFAULT;
     }

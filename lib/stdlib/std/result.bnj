@@ -1,37 +1,41 @@
 use std.{convert.to_string, protos.ToString};
 use internal.std_panics.{panic_unwrap_result, panic_unwrap_error_result};
 
-struct Result[T, E]: ToString {
-    var successful: bool;
-
+@[layout=overlapping]
+struct Data[T, E] {
     @unmanaged
     var value: T;
 
     @unmanaged
     var error: E;
+}
+
+struct Result[T, E]: ToString {
+    var successful: bool;
+
+    @unmanaged
+    var data: Data[T, E];
 
     pub func new_success(value: T) -> Result[T, E] {
         return Result[T, E] {
             successful: true,
-            value,
-            error: undefined,
+            data: Data[T, E] { value },
         };
     }
 
     pub func new_failure(error: E) -> Result[T, E] {
         return Result[T, E] {
             successful: false,
-            value: undefined,
-            error,
+            data: Data[T, E] { error },
         };
     }
 
     pub func unwrap(@unmanaged move self) -> T {
         if !self.successful {
-            panic_unwrap_result(self.error);
+            panic_unwrap_result(self.data.error);
         }
 
-        return self.value;
+        return self.data.value;
     }
 
     pub func unwrap_error(@unmanaged move self) -> E {
@@ -39,30 +43,30 @@ struct Result[T, E]: ToString {
             panic_unwrap_error_result();
         }
 
-        return self.error;
+        return self.data.error;
     }
 
     pub func as_ref(mut self) -> Result[*T, *E] {
         if self.successful {
-            return Result[*T, *E].new_success(&self.value);
+            return Result[*T, *E].new_success(&self.data.value);
         } else {
-            return Result[*T, *E].new_failure(&self.error);
+            return Result[*T, *E].new_failure(&self.data.error);
         }
     }
 
     pub func __str__(self) -> String {
         if self.successful {
-            return to_string(self.value);
+            return to_string(self.data.value);
         } else {
-            return to_string(self.error);
+            return to_string(self.data.error);
         }
     }
 
     pub func __deinit__(self) {
         if self.successful {
-            __builtin_deinit(self.value);
+            __builtin_deinit(self.data.value);
         } else {
-            __builtin_deinit(self.error);
+            __builtin_deinit(self.data.error);
         }
     }
 }

@@ -91,12 +91,12 @@ sir::Decl SIRGenerator::generate_decl(ASTNode *node) {
 
     switch (node->type) {
         case AST_FUNC_DEF: return generate_func_def(node, attrs);
-        case AST_GENERIC_FUNC_DEF: return generate_generic_func(node);
+        case AST_GENERIC_FUNC_DEF: return generate_generic_func(node, attrs);
         case AST_FUNC_DECL: return generate_func_decl(node);
         case AST_NATIVE_FUNC_DECL: return generate_native_func(node, attrs);
         case AST_CONST_DEF: return generate_const(node);
         case AST_STRUCT_DEF: return generate_struct(node, attrs);
-        case AST_GENERIC_STRUCT_DEF: return generate_generic_struct(node);
+        case AST_GENERIC_STRUCT_DEF: return generate_generic_struct(node, attrs);
         case AST_ENUM_DEF: return generate_enum(node);
         case AST_UNION_DEF: return generate_union(node);
         case AST_UNION_CASE: return generate_union_case(node);
@@ -134,7 +134,7 @@ sir::Decl SIRGenerator::generate_func_def(ASTNode *node, sir::Attributes *attrs)
     );
 }
 
-sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
+sir::Decl SIRGenerator::generate_generic_func(ASTNode *node, sir::Attributes *attrs) {
     ASTNode *qualifiers_node = node->first_child;
     ASTNode *name_node = qualifiers_node->next_sibling;
     ASTNode *generic_params_node = name_node->next_sibling;
@@ -148,6 +148,7 @@ sir::Decl SIRGenerator::generate_generic_func(ASTNode *node) {
             .ident = generate_ident(name_node),
             .type = generate_func_type(params_node, return_type_node),
             .block = generate_block(block_node),
+            .attrs = attrs,
             .generic_params = generate_generic_param_list(generic_params_node),
             .stage = sir::SemaStage::NAME,
         }
@@ -217,7 +218,7 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
             .fields{},
             .impls = generate_expr_list(impls_node),
             .attrs = attrs,
-            .generic_params{},
+            .generic_params = get_scope().generic_params,
         }
     );
 
@@ -228,7 +229,7 @@ sir::Decl SIRGenerator::generate_struct(ASTNode *node, sir::Attributes *attrs) {
     return struct_def;
 }
 
-sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
+sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node, sir::Attributes *attrs) {
     ASTNode *name_node = node->first_child;
     ASTNode *generic_params_node = name_node->next_sibling;
     ASTNode *impls_node = generic_params_node->next_sibling;
@@ -241,6 +242,7 @@ sir::Decl SIRGenerator::generate_generic_struct(ASTNode *node) {
             .block{},
             .fields{},
             .impls = generate_expr_list(impls_node),
+            .attrs = attrs,
             .generic_params = generate_generic_param_list(generic_params_node),
         }
     );
