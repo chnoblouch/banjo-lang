@@ -130,7 +130,7 @@ curl/
     └── <other targets...>
 ```
 
-`banjo.json` defines what libraries to link for each target platform:
+`banjo.json` defines the libraries to link for each target platform:
 
 ```json
 {
@@ -153,7 +153,7 @@ curl/
         "<...>"
       ]
     },
-    "<other platforms...>": {}
+    "<other targets...>": {}
   }
 }
 ```

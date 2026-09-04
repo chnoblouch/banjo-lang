@@ -46,7 +46,7 @@ class BanjoLexer(RegexLexer):
         "root": [
             (r"\s+", token.Whitespace),
             (rf"\b({'|'.join(KEYWORDS)})\b", token.Keyword),
-            (r"\bi8|i16|i32|i64|u8|u16|u32|u64|f32|f64|usize|bool|addr|void\b", token.Keyword.Type),
+            (r"\b(?<!_)(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|usize|bool|addr|void)\b", token.Keyword.Type),
             (r"[+\-*/%&|!\^~=><.;(){}\[\]:,?]", token.Punctuation),
             (r"[a-zA-Z0-9_]", token.Name),
             (r"(0x|0b)?[0-9]+(\.[0-9])*", token.Number.Integer),
