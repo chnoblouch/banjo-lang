@@ -215,39 +215,41 @@ struct Error: ToString {
 }
 
 struct StdReadStream: Read {
-    var stream: Box[platform.StdioStream];
+    var stream: platform.StdioStream;
 
     pub func from(stream: platform.StdioStream) -> StdReadStream {
-        return StdReadStream {
-            stream: Box[platform.StdioStream].new(stream),
-        };
+        return StdReadStream { stream };
     }
 
-    pub func read(self, data: Slice[u8]) -> usize except Error {
-        try result in platform.io_stdio_read(self.stream.data, data) {
+    pub func read(mut self, data: Slice[u8]) -> usize except Error {
+        try result in platform.io_stdio_read(&self.stream, data) {
             return result;
         } except error: platform.ErrorCode {
             return Error.from_platform(error);
         }
     }
+
+    # Streams are owned values.
+    pub func __deinit__(self) {}
 }
 
 struct StdWriteStream: Write {
-    var stream: Box[platform.StdioStream];
+    var stream: platform.StdioStream;
 
     pub func from(stream: platform.StdioStream) -> StdWriteStream {
-        return StdWriteStream {
-            stream: Box[platform.StdioStream].new(stream),
-        };
+        return StdWriteStream { stream };
     }
 
-    pub func write(self, data: Slice[u8]) -> usize except Error {
-        try result in platform.io_stdio_write(self.stream.data, data) {
+    pub func write(mut self, data: Slice[u8]) -> usize except Error {
+        try result in platform.io_stdio_write(&self.stream, data) {
             return result;
         } except error: platform.ErrorCode {
             return Error.from_platform(error);
         }
     }
+
+    # Streams are owned values.
+    pub func __deinit__(self) {}
 }
 
 pub func stdin() -> StdReadStream {

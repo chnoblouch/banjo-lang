@@ -657,7 +657,8 @@ void X8664SSALowerer::lower_memberptr(ssa::Instruction &instr) {
 void X8664SSALowerer::lower_copy(ssa::Instruction &instr) {
     unsigned size = get_size(instr.get_operand(2).get_type());
 
-    if (size <= 64) {
+    // TODO
+    if (size <= 64 && instr.get_operand(0).is_register() && instr.get_operand(1).is_register()) {
         copy_block_using_movs(instr, size);
         return;
     }
