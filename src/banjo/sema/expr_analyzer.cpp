@@ -1139,8 +1139,8 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         RESULT_PROPAGATE(result);
 
         std::span<sir::Expr> generic_args;
-        GenericArgInference inference{analyzer, &call_expr, *callee_func_def};
-        RESULT_PROPAGATE(inference.infer(call_expr.args, generic_args));
+        GenericArgInference inference{analyzer, call_expr, *callee_func_def};
+        RESULT_PROPAGATE(inference.infer(generic_args));
 
         analyzer.type_substitutions.push_back({
             .ast_node = call_expr.callee.get_ast_node(),

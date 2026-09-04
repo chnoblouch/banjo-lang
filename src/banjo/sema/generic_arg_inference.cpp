@@ -7,38 +7,29 @@
 
 namespace banjo::sema {
 
-GenericArgInference::GenericArgInference(
-    SemanticAnalyzer &analyzer,
-    const sir::Expr &expr,
-    std::span<sir::GenericParam *> generic_params,
-    std::span<sir::Param> params
-)
-  : analyzer(analyzer),
-    expr(expr),
-    generic_params(generic_params),
-    params(params),
+GenericArgInference::GenericArgInference(SemanticAnalyzer &analyzer, sir::CallExpr &call_expr, sir::FuncDef &func_def)
+  : analyzer{analyzer},
+    call_expr{call_expr},
+    func_def{func_def},
+    generic_params{func_def.generic_params},
+    params{func_def.type.params},
     generic_args(generic_params.size(), nullptr),
-    inference_sources(generic_params.size(), nullptr) {}
-
-GenericArgInference::GenericArgInference(
-    SemanticAnalyzer &analyzer,
-    const sir::Expr &expr,
-    const sir::FuncDef &func_def
-)
-  : GenericArgInference(analyzer, expr, func_def.generic_params, func_def.type.params) {
+    inference_sources(generic_params.size(), nullptr) {
     ASSERT(func_def.is_generic());
 }
 
-Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr> &out_generic_args) {
+Result GenericArgInference::infer(std::span<sir::Expr> &out_generic_args) {
     Result result = Result::SUCCESS;
     Result partial_result;
+
+    std::span<sir::Expr> args = call_expr.args;
 
     bool has_sequence = generic_params.back()->kind == sir::GenericParamKind::SEQUENCE;
     unsigned non_sequence_end = has_sequence ? params.size() - 1 : params.size();
     unsigned num_sequence_args = has_sequence ? args.size() - (params.size() - 1) : 0;
 
     if (args.size() < non_sequence_end) {
-        analyzer.report_generator.report_err_too_few_args_to_infer_generic_args(expr);
+        analyzer.report_generator.report_err_unexpected_arg_count(call_expr, non_sequence_end, &func_def);
         return Result::ERROR;
     }
 
@@ -73,7 +64,7 @@ Result GenericArgInference::infer(std::span<sir::Expr> args, std::span<sir::Expr
 
     for (unsigned i = 0; i < generic_args.size(); i++) {
         if (!generic_args[i]) {
-            analyzer.report_generator.report_err_cannot_infer_generic_arg(expr, *generic_params[i]);
+            analyzer.report_generator.report_err_cannot_infer_generic_arg(&call_expr, *generic_params[i]);
             result = Result::ERROR;
         }
     }
@@ -115,7 +106,7 @@ Result GenericArgInference::infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, s
 
         if (generic_args[i] && generic_args[i] != arg_type) {
             analyzer.report_generator
-                .report_err_generic_arg_inference_conflict(expr, *generic_param, inference_sources[i], *cur_arg);
+                .report_err_generic_arg_inference_conflict(&call_expr, *generic_param, inference_sources[i], *cur_arg);
             return Result::ERROR;
         }
 

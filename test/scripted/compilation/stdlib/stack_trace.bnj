@@ -1,6 +1,6 @@
 # test:common
 
-use std.{debug.{DebugInfo, trace_stack}};
+use std.debug.{DebugInfo, trace_stack};
 
 func trace() {
     var debug_info = DebugInfo.load().unwrap();
@@ -63,4 +63,24 @@ func f() {
 
 func main() {
     f();
+}
+
+# test:subtest
+# test:output "a,b,a,b,a,b,a,main,"
+
+func a(value: i32) {
+    if value == 0 {
+        trace();
+        return;
+    }
+
+    b(value - 1);
+}
+
+func b(value: i32) {
+    a(value);
+}
+
+func main() {
+    a(3);
 }

@@ -13,7 +13,8 @@ class GenericArgInference {
 
 private:
     SemanticAnalyzer &analyzer;
-    const sir::Expr &expr;
+    sir::CallExpr &call_expr;
+    sir::FuncDef &func_def;
     std::span<sir::GenericParam *> generic_params;
     std::span<sir::Param> params;
 
@@ -22,16 +23,8 @@ private:
     const sir::Expr *cur_arg;
 
 public:
-    GenericArgInference(
-        SemanticAnalyzer &analyzer,
-        const sir::Expr &expr,
-        std::span<sir::GenericParam *> generic_params,
-        std::span<sir::Param> params
-    );
-
-    GenericArgInference(SemanticAnalyzer &analyzer, const sir::Expr &expr, const sir::FuncDef &func_def);
-
-    Result infer(std::span<sir::Expr> args, std::span<sir::Expr> &out_generic_args);
+    GenericArgInference(SemanticAnalyzer &analyzer, sir::CallExpr &call_expr, sir::FuncDef &func_def);
+    Result infer(std::span<sir::Expr> &out_generic_args);
 
 private:
     Result infer(sir::Expr &param_type, sir::Expr arg_type);

@@ -453,7 +453,12 @@ void ReportGenerator::report_err_unexpected_arg_count(
     std::string format_str;
 
     if (call_expr.args.size() < expected_count) {
-        format_str = "too few arguments (expected $, got $)";
+        if (func_def && func_def->is_generic() &&
+            func_def->generic_params.back()->kind == sir::GenericParamKind::SEQUENCE) {
+            format_str = "too few arguments (expected at least $, got $)";
+        } else {
+            format_str = "too few arguments (expected $, got $)";
+        }
     } else if (call_expr.args.size() > expected_count) {
         format_str = "too many arguments (expected $, got $)";
     }
@@ -660,8 +665,12 @@ void ReportGenerator::report_err_unexpected_generic_arg_count(sir::BracketExpr &
     builder.report();
 }
 
-void ReportGenerator::report_err_too_few_args_to_infer_generic_args(const sir::Expr &expr) {
-    report_error("too few arguments to infer generic parameter values", expr.get_ast_node());
+void ReportGenerator::report_err_too_few_args_to_infer_generic_args(
+    sir::CallExpr &call_expr,
+    unsigned min_count,
+    sir::FuncDef &func_def
+) {
+    build_error("too few arguments (expected $, got $)", call_expr.ast_node, min_count, call_expr.args.size());
 }
 
 void ReportGenerator::report_err_cannot_infer_generic_arg(
