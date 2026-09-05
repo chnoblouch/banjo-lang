@@ -182,7 +182,48 @@ meta if IS_WINDOWS {
     }
 
     pub func path_canonical(path: StringSlice) -> String except ErrorCode {
-        return String.from(path);
+        var handle = winapi.create_file(
+            path.to_cstring().data(),
+            0,
+            0,
+            null,
+            winapi.OPEN_EXISTING,
+
+            # This flag allows us to open directories.
+            winapi.FILE_FLAG_BACKUP_SEMANTICS,
+            
+            null,
+        );
+
+        if handle == winapi.INVALID_HANDLE_VALUE {
+            return error_last();
+        }
+
+        var buffer = memory.alloc(winapi.MAX_PATH as usize) as *u8;
+
+        var result = winapi.get_final_path_name_by_handle(
+            handle,
+            &buffer[0],
+            winapi.MAX_PATH,
+            winapi.FILE_NAME_NORMALIZED | winapi.VOLUME_NAME_DOS,
+        );
+
+        winapi.close_handle(handle);
+
+        if result == 0 {
+            return error_last();
+        }
+
+        var slice = StringSlice.of_cstring(&buffer[0]);
+
+        if slice.starts_with("\\\\?\\") || slice.starts_with("\\\\.\\") {
+            slice = slice.substring(4, slice.length());
+        }
+
+        var string = String.from(slice);
+        memory.free(buffer);
+
+        return string;
     }
 
     pub func path_exists(path: *String) -> bool except ErrorCode {
