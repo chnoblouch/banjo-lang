@@ -1403,6 +1403,11 @@ void CLI::invoke_mingw_linker() {
     }
 
     args.push_back("-lmsvcrt");
+    args.push_back("-lmingw32");
+    args.push_back("-lmingwex");
+    args.push_back("-lgcc");
+    args.push_back("-lgcc_eh");
+    args.push_back("-lmsvcrt");
     args.push_back("-lkernel32");
     args.push_back("-luser32");
     args.push_back("-lgdi32");
