@@ -95,16 +95,16 @@ void DebugEmitter::generate(mcode::Function *func) {
             if (!slot.is_defined()) {
                 stream << "?";
             } else {
-                if (slot.get_offset() >= 0) {
+                if (slot.offset >= 0) {
                     stream << "+";
                 }
-                stream << slot.get_offset();
+                stream << slot.offset;
             }
             stream << ", ";
 
-            stream << slot.get_size() << ", ";
+            stream << slot.size << ", ";
 
-            switch (slot.get_type()) {
+            switch (slot.type) {
                 case mcode::StackSlot::Type::GENERIC: stream << "generic"; break;
                 case mcode::StackSlot::Type::ARG_STORE: stream << "arg_store"; break;
                 case mcode::StackSlot::Type::CALL_ARG: stream << "call_arg"; break;
@@ -431,7 +431,7 @@ std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
 std::string DebugEmitter::get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot) {
     mcode::StackFrame &frame = func->get_stack_frame();
     mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
-    unsigned offset = slot.get_offset();
+    unsigned offset = slot.offset;
 
     if (offset == mcode::StackSlot::INVALID_OFFSET) {
         return "s" + std::to_string(stack_slot);
@@ -451,7 +451,7 @@ std::string DebugEmitter::get_stack_slot_name(mcode::Function *func, mcode::Stac
 std::string DebugEmitter::build_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr) {
     mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(stack_addr.slot);
 
-    if (slot.get_offset() == mcode::StackSlot::INVALID_OFFSET) {
+    if (slot.offset == mcode::StackSlot::INVALID_OFFSET) {
         std::string string = "offset(s" + std::to_string(stack_addr.slot);
 
         if (stack_addr.offset != 0) {

@@ -625,7 +625,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
 
         mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
         mcode::StackSlot &slot = stack_frame.get_stack_slot(stack_addr.slot);
-        std::uint64_t total_offset = slot.get_offset() + stack_addr.offset;
+        std::uint64_t total_offset = slot.offset + stack_addr.offset;
 
         std::uint32_t imm = encode_imm(total_offset, 12, 0);
         text.write_u32(params[2] | (sf << 31) | (imm << 10) | (r_lhs << 5) | r_dst);
@@ -879,7 +879,7 @@ AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcod
         return Address{
             .mode = AddressingMode::OFFSET_CONST,
             .base = mcode::Register::from_physical(AArch64Register::SP),
-            .offset_const = slot.get_offset(),
+            .offset_const = slot.offset,
         };
     } else if (operand.is_aarch64_addr()) {
         const target::AArch64Address &addr = operand.get_aarch64_addr();

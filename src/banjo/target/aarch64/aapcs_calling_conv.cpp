@@ -16,19 +16,64 @@
 
 namespace banjo::target {
 
-using namespace AArch64Register;
+AAPCSCallingConv AAPCSCallingConv::INSTANCE_STANDARD{AAPCSCallingConv::Variant::STANDARD};
+AAPCSCallingConv AAPCSCallingConv::INSTANCE_APPLE{AAPCSCallingConv::Variant::APPLE};
 
-AAPCSCallingConv AAPCSCallingConv::INSTANCE_STANDARD(AAPCSCallingConv::Variant::STANDARD);
-AAPCSCallingConv AAPCSCallingConv::INSTANCE_APPLE(AAPCSCallingConv::Variant::APPLE);
+std::vector<int> const AAPCSCallingConv::ARG_REGS_INT = {
+    AArch64Register::R0,
+    AArch64Register::R1,
+    AArch64Register::R2,
+    AArch64Register::R3,
+    AArch64Register::R4,
+    AArch64Register::R5,
+    AArch64Register::R6,
+    AArch64Register::R7,
+};
 
-std::vector<int> const AAPCSCallingConv::ARG_REGS_INT = {R0, R1, R2, R3, R4, R5, R6, R7};
-std::vector<int> const AAPCSCallingConv::ARG_REGS_FP = {V0, V1, V2, V3, V4, V5, V6, V7};
+std::vector<int> const AAPCSCallingConv::ARG_REGS_FP = {
+    AArch64Register::V0,
+    AArch64Register::V1,
+    AArch64Register::V2,
+    AArch64Register::V3,
+    AArch64Register::V4,
+    AArch64Register::V5,
+    AArch64Register::V6,
+    AArch64Register::V7,
+};
 
 AAPCSCallingConv::AAPCSCallingConv(Variant variant) : variant(variant) {
+    // clang-format off
     volatile_regs = {
-        R0,  R1,  R2,  R3,  R4,  R5, R6, R7, R8, R9, R10, R11, R12, R13,
-        R14, R15, R16, R17, R18, V0, V1, V2, V3, V4, V5,  V6,  V7,  SP,
+        AArch64Register::R0,
+        AArch64Register::R1,
+        AArch64Register::R2,
+        AArch64Register::R3,
+        AArch64Register::R4,
+        AArch64Register::R5,
+        AArch64Register::R6,
+        AArch64Register::R7,
+        AArch64Register::R8,
+        AArch64Register::R9,
+        AArch64Register::R10,
+        AArch64Register::R11,
+        AArch64Register::R12,
+        AArch64Register::R13,
+        AArch64Register::R14,
+        AArch64Register::R15,
+        AArch64Register::R16,
+        AArch64Register::R17,
+        AArch64Register::R18,
+        AArch64Register::V0,
+        AArch64Register::V1,
+        AArch64Register::V2,
+        AArch64Register::V3,
+        AArch64Register::V4,
+        AArch64Register::V5,
+        AArch64Register::V6,
+        AArch64Register::V7,
+        AArch64Register::SP,
     };
+    // clang-format on
 }
 
 void AAPCSCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
@@ -135,15 +180,15 @@ void AAPCSCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::
 
     for (int i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
-        if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::ARG_STORE) {
-            region.size -= slot.get_size();
+        if (!slot.is_defined() && slot.type == mcode::StackSlot::Type::ARG_STORE) {
+            region.size -= slot.size;
             region.offsets.insert({i, region.size});
         }
     }
 }
 
 void AAPCSCallingConv::create_call_arg_region(
-    mcode::Function *func,
+    mcode::Function *,
     mcode::StackFrame &frame,
     mcode::StackRegions &regions
 ) {
@@ -152,14 +197,14 @@ void AAPCSCallingConv::create_call_arg_region(
 
     for (int index : frame.get_call_arg_slot_indices()) {
         mcode::StackSlot &slot = frame.get_stack_slot(index);
-        slot.set_offset(8 * slot.get_call_arg_index());
+        slot.offset = 8 * slot.call_arg_index;
         region.size += 8;
     }
 }
 
 void AAPCSCallingConv::create_implicit_region(
     mcode::Function *func,
-    mcode::StackFrame &frame,
+    mcode::StackFrame &,
     mcode::StackRegions &regions
 ) {
     unsigned saved_reg_space_size = 8 * codegen::MachinePassUtils::get_modified_volatile_regs(func).size();
@@ -387,7 +432,7 @@ std::vector<mcode::ArgStorage> AAPCSCallingConv::get_arg_storage(const ssa::Func
     return result;
 }
 
-int AAPCSCallingConv::get_implicit_stack_bytes(mcode::Function * /*func*/) {
+int AAPCSCallingConv::get_implicit_stack_bytes(mcode::Function *) {
     // Frame pointer (x29) + link register (x30)
     return 16;
 }

@@ -3,6 +3,7 @@
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
@@ -10,42 +11,62 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
-/*
-============
-Stack Layout
-============
+// Stack layout:
+//
+// +--------------------------+
+// | Callee argument storage  |
+// +--------------------------+
+// | Return address (8 bytes) |
+// +--------------------------+
+// | Pushed regs              |
+// +--------------------------+
+// | Generic region (RSP)     |
+// +--------------------------+
+// | Caller argument storage  |
+// +--------------------------+
+//
+// The stack pointer is aligned to 16 bytes. If the function is not a leaf
+// function, at least 32 bytes of argument storage have to be allocated. Callees
+// store their register arguments in this argument storage. Volatile
+// general-purpose registers are pushed to the stack before allocating the
+// generic region.
 
-+--------------------------+
-| Callee argument storage  |
-+--------------------------+
-| Return address (8 bytes) |
-+--------------------------+
-| Pushed regs              |
-+--------------------------+
-| Generic region (RSP)     |
-+--------------------------+
-| Caller argument storage  |
-+--------------------------+
+namespace banjo::target {
 
-The stack pointer is aligned to 16 bytes.
-If the function is not a leaf function, at least 32 bytes of argument storage have to be allocated.
-Callees store their register arguments in this argument storage.
-Volatile general-purpose registers are pushed to the stack before allocating the generic region.
+MSABICallingConv const MSABICallingConv::INSTANCE{};
 
-*/
+std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_INT{
+    X8664Register::RCX,
+    X8664Register::RDX,
+    X8664Register::R8,
+    X8664Register::R9,
+};
 
-namespace banjo {
-
-namespace target {
-
-using namespace X8664Register;
-
-MSABICallingConv const MSABICallingConv::INSTANCE = MSABICallingConv();
-std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_INT = {RCX, RDX, R8, R9};
-std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_FP = {XMM0, XMM1, XMM2, XMM3};
+std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_FP = {
+    X8664Register::XMM0,
+    X8664Register::XMM1,
+    X8664Register::XMM2,
+    X8664Register::XMM3,
+};
 
 MSABICallingConv::MSABICallingConv() {
-    volatile_regs = {RAX, RCX, RDX, RSP, RBP, R8, R9, R10, R11, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5};
+    volatile_regs = {
+        X8664Register::RAX,
+        X8664Register::RCX,
+        X8664Register::RDX,
+        X8664Register::RSP,
+        X8664Register::RBP,
+        X8664Register::R8,
+        X8664Register::R9,
+        X8664Register::R10,
+        X8664Register::R11,
+        X8664Register::XMM0,
+        X8664Register::XMM1,
+        X8664Register::XMM2,
+        X8664Register::XMM3,
+        X8664Register::XMM4,
+        X8664Register::XMM5,
+    };
 }
 
 void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
@@ -118,9 +139,14 @@ void MSABICallingConv::emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Op
     mcode::StackSlotID slot_index;
 
     if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
-        mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
-        stack_slot.set_call_arg_index(arg_slot_index);
-        slot_index = stack_frame.new_stack_slot(stack_slot);
+        mcode::StackSlot slot{
+            .type = mcode::StackSlot::Type::CALL_ARG,
+            .size = 8,
+            .alignment = 8,
+            .call_arg_index = arg_slot_index,
+        };
+
+        slot_index = stack_frame.new_stack_slot(slot);
     } else {
         slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
     }
@@ -196,7 +222,7 @@ void MSABICallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::
 
     for (int i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
-        if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::ARG_STORE) {
+        if (!slot.is_defined() && slot.type == mcode::StackSlot::Type::ARG_STORE) {
             region.offsets.insert({i, arg_store_offset});
             arg_store_offset += 8;
         }
@@ -229,7 +255,7 @@ void MSABICallingConv::create_call_arg_region(
 
     for (int index : frame.get_call_arg_slot_indices()) {
         mcode::StackSlot &slot = frame.get_stack_slot(index);
-        slot.set_offset(32 + 8 * slot.get_call_arg_index());
+        slot.offset = 32 + 8 * slot.call_arg_index;
         region.size += 8;
     }
 }
@@ -240,11 +266,17 @@ void MSABICallingConv::create_implicit_region(
     mcode::StackRegions &regions
 ) {
     unsigned saved_reg_space_size = 0;
+
     for (mcode::PhysicalReg reg : codegen::MachinePassUtils::get_modified_volatile_regs(func)) {
-        if (reg >= RAX && reg <= R15) {
+        if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
             saved_reg_space_size += 8;
         } else {
-            unsigned index = frame.new_stack_slot({mcode::StackSlot::Type::GENERIC, 8, 8});
+            mcode::StackSlotID index = frame.new_stack_slot({
+                .type = mcode::StackSlot::Type::GENERIC,
+                .size = 8,
+                .alignment = 8,
+            });
+
             frame.get_reg_save_slot_indices().push_back(index);
         }
     }
@@ -277,7 +309,7 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
 
     // Push modified non-volatile general-purpose registers.
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
-        if (reg >= RAX && reg <= R15) {
+        if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
             mcode::Operand operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
             prolog.push_back(mcode::Instruction(X8664Opcode::PUSH, {operand}));
             prolog.push_back(mcode::Instruction(mcode::PseudoOpcode::EH_PUSHREG, {operand}));
@@ -301,7 +333,7 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
     // Push modified non-volatile SSE registers.
     unsigned sse_slot_index = 0;
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
-        if (reg >= XMM0 && reg <= XMM15) {
+        if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand m_dst = mcode::Operand::from_stack_slot(slot_index, 8);
@@ -322,7 +354,7 @@ std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *fu
 
     unsigned sse_slot_index = 0;
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
-        if (reg >= XMM0 && reg <= XMM15) {
+        if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
@@ -347,15 +379,9 @@ std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *fu
     // Pop modified non-volatile general-purpose registers.
     for (int i = modified_volatile_regs.size() - 1; i >= 0; i--) {
         mcode::PhysicalReg reg = modified_volatile_regs[i];
-        if (reg >= RAX && reg <= R15) {
-            epilog.push_back(
-                mcode::Instruction(
-                    X8664Opcode::POP,
-                    {
-                        mcode::Operand::from_register(mcode::Register::from_physical(reg), 8),
-                    }
-                )
-            );
+        if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
+            mcode::Operand m_reg = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
+            epilog.push_back({X8664Opcode::POP, {m_reg}});
         }
     }
 
@@ -384,10 +410,8 @@ std::vector<mcode::ArgStorage> MSABICallingConv::get_arg_storage(const ssa::Func
     return result;
 }
 
-int MSABICallingConv::get_implicit_stack_bytes(mcode::Function *func) {
-    return 8; // CALL instruction return address
+int MSABICallingConv::get_implicit_stack_bytes(mcode::Function *) {
+    return 8; // `call` instruction return address
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

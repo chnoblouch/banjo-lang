@@ -2,6 +2,7 @@
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/section_builder.hpp"
+#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
@@ -1157,11 +1158,13 @@ X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
 
 X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Function *func) {
     if (operand.is_stack_slot()) {
+        mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(operand.get_stack_slot());
+
         return RegAddress{
             .scale = 1,
             .index = AddrRegCode::ADDR_NO_INDEX,
             .base = AddrRegCode::ADDR_ESP,
-            .displacement = func->get_stack_frame().get_stack_slot(operand.get_stack_slot()).get_offset(),
+            .displacement = static_cast<std::int32_t>(slot.offset),
         };
     }
 

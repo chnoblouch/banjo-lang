@@ -233,7 +233,7 @@ bool AArch64RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualReg
 }
 
 void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).get_size();
+    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
     unsigned reg_size = size == 8 ? 8 : 4;
 
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);
@@ -253,7 +253,7 @@ void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
 }
 
 void AArch64RegAnalyzer::insert_store(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).get_size();
+    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
     unsigned reg_size = size == 8 ? 8 : 4;
 
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);

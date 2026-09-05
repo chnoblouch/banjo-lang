@@ -418,7 +418,7 @@ std::string NASMEmitter::
     get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot, bool brackets /*= true*/) {
     mcode::StackFrame &frame = func->get_stack_frame();
     mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
-    int offset = slot.get_offset();
+    int offset = slot.offset;
     std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);
 
     std::string address = "rsp " + offset_str;

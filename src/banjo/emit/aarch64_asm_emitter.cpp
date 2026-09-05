@@ -241,7 +241,7 @@ void AArch64AsmEmitter::emit_reg(int reg, int size) {
 
 void AArch64AsmEmitter::emit_stack_slot(mcode::Function *func, int index) {
     mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(index);
-    stream << "[sp, #" << slot.get_offset() << "]";
+    stream << "[sp, #" << slot.offset << "]";
 }
 
 void AArch64AsmEmitter::emit_symbol(const mcode::Symbol &symbol) {

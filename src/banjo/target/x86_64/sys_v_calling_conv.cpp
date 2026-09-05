@@ -11,21 +11,63 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
-namespace banjo {
+namespace banjo::target {
 
-namespace target {
+SysVCallingConv const SysVCallingConv::INSTANCE{};
 
-using namespace X8664Register;
+std::vector<int> const SysVCallingConv::ARG_REGS_INT = {
+    X8664Register::RDI,
+    X8664Register::RSI,
+    X8664Register::RDX,
+    X8664Register::RCX,
+    X8664Register::R8,
+    X8664Register::R9,
+};
 
-SysVCallingConv const SysVCallingConv::INSTANCE = SysVCallingConv();
-std::vector<int> const SysVCallingConv::ARG_REGS_INT = {RDI, RSI, RDX, RCX, R8, R9};
-std::vector<int> const SysVCallingConv::ARG_REGS_FLOAT = {XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7, XMM8};
+std::vector<int> const SysVCallingConv::ARG_REGS_FLOAT = {
+    X8664Register::XMM0,
+    X8664Register::XMM1,
+    X8664Register::XMM2,
+    X8664Register::XMM3,
+    X8664Register::XMM4,
+    X8664Register::XMM5,
+    X8664Register::XMM6,
+    X8664Register::XMM7,
+    X8664Register::XMM8,
+};
 
 SysVCallingConv::SysVCallingConv() {
+    // clang-format off
     volatile_regs = {
-        RAX,  RDI,  RSI,  RDX,  RCX,  RSP,  RBP,  R8,    R9,    R10,   R11,   XMM0,  XMM1,  XMM2,
-        XMM3, XMM4, XMM5, XMM6, XMM7, XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15,
+        X8664Register::RAX,
+        X8664Register::RDI,
+        X8664Register::RSI,
+        X8664Register::RDX,
+        X8664Register::RCX,
+        X8664Register::RSP,
+        X8664Register::RBP,
+        X8664Register::R8,
+        X8664Register::R9,
+        X8664Register::R10,
+        X8664Register::R11,
+        X8664Register::XMM0,
+        X8664Register::XMM1,
+        X8664Register::XMM2,
+        X8664Register::XMM3,
+        X8664Register::XMM4,
+        X8664Register::XMM5,
+        X8664Register::XMM6,
+        X8664Register::XMM7,
+        X8664Register::XMM8,
+        X8664Register::XMM9,
+        X8664Register::XMM10,
+        X8664Register::XMM11,
+        X8664Register::XMM12,
+        X8664Register::XMM13,
+        X8664Register::XMM14,
+        X8664Register::XMM15,
     };
+    // clang-format on
 }
 
 void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
@@ -69,9 +111,14 @@ mcode::Operand SysVCallingConv::get_arg_dst(mcode::ArgStorage &storage, codegen:
     if (storage.in_reg) {
         return mcode::Operand::from_register(mcode::Register::from_physical(storage.reg));
     } else if (stack_frame.get_call_arg_slot_indices().size() <= storage.arg_slot_index) {
-        mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
-        stack_slot.set_call_arg_index(storage.arg_slot_index);
-        return mcode::Operand::from_stack_slot(stack_frame.new_stack_slot(stack_slot));
+        mcode::StackSlot slot{
+            .type = mcode::StackSlot::Type::CALL_ARG,
+            .size = 8,
+            .alignment = 8,
+            .call_arg_index = storage.arg_slot_index,
+        };
+
+        return mcode::Operand::from_stack_slot(stack_frame.new_stack_slot(slot));
     } else {
         mcode::StackSlotID slot_index = stack_frame.get_call_arg_slot_indices()[storage.arg_slot_index];
         return mcode::Operand::from_stack_slot(slot_index);
@@ -139,15 +186,15 @@ void SysVCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::S
 
     for (int i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
-        if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::ARG_STORE) {
-            region.size -= slot.get_size();
+        if (!slot.is_defined() && slot.type == mcode::StackSlot::Type::ARG_STORE) {
+            region.size -= slot.size;
             region.offsets.insert({i, region.size});
         }
     }
 }
 
 void SysVCallingConv::create_call_arg_region(
-    mcode::Function *func,
+    mcode::Function *,
     mcode::StackFrame &frame,
     mcode::StackRegions &regions
 ) {
@@ -156,7 +203,7 @@ void SysVCallingConv::create_call_arg_region(
 
     for (int index : frame.get_call_arg_slot_indices()) {
         mcode::StackSlot &slot = frame.get_stack_slot(index);
-        slot.set_offset(8 * slot.get_call_arg_index());
+        slot.offset = 8 * slot.call_arg_index;
         region.size += 8;
     }
 }
@@ -168,10 +215,15 @@ void SysVCallingConv::create_implicit_region(
 ) {
     unsigned saved_reg_space_size = 0;
     for (mcode::PhysicalReg reg : codegen::MachinePassUtils::get_modified_volatile_regs(func)) {
-        if (reg >= RAX && reg <= R15) {
+        if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
             saved_reg_space_size += 8;
         } else {
-            unsigned index = frame.new_stack_slot({mcode::StackSlot::Type::GENERIC, 8, 0});
+            mcode::StackSlotID index = frame.new_stack_slot({
+                .type = mcode::StackSlot::Type::GENERIC,
+                .size = 8,
+                .alignment = 8,
+            });
+
             frame.get_reg_save_slot_indices().push_back(index);
         }
     }
@@ -207,7 +259,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
 
         // Push modified non-volatile general-purpose registers.
         for (mcode::PhysicalReg reg : modified_volatile_regs) {
-            if (reg >= RAX && reg <= R15) {
+            if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
                 mcode::Operand operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
                 prolog.push_back({X8664Opcode::PUSH, {operand}});
                 prolog.push_back({mcode::PseudoOpcode::EH_PUSHREG, {operand}});
@@ -222,7 +274,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
     unsigned sse_slot_index = 0;
 
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
-        if (reg >= XMM0 && reg <= XMM15) {
+        if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand slot_operand = mcode::Operand::from_stack_slot(slot_index, 8);
@@ -243,7 +295,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
 
     unsigned sse_slot_index = 0;
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
-        if (reg >= XMM0 && reg <= XMM15) {
+        if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
             unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand reg_operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
@@ -264,7 +316,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
         for (int i = modified_volatile_regs.size() - 1; i >= 0; i--) {
             mcode::PhysicalReg reg = modified_volatile_regs[i];
 
-            if (reg >= RAX && reg <= R15) {
+            if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
                 mcode::Operand reg_operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
                 epilog.push_back({X8664Opcode::POP, {reg_operand}});
             }
@@ -308,10 +360,8 @@ std::vector<mcode::ArgStorage> SysVCallingConv::get_arg_storage(const ssa::Funct
     return result;
 }
 
-int SysVCallingConv::get_implicit_stack_bytes(mcode::Function *func) {
+int SysVCallingConv::get_implicit_stack_bytes(mcode::Function *) {
     return 16; // CALL instruction return address + RBP
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

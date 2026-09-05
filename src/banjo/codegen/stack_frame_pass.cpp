@@ -46,7 +46,7 @@ void StackFramePass::run(mcode::Function &func) {
         // we have to add the size to get the offset after the alloca instruction.
 
         int offset = pre_alloca_offset.second + alloca_size;
-        frame.get_stack_slot(pre_alloca_offset.first).set_offset(offset);
+        frame.get_stack_slot(pre_alloca_offset.first).offset = offset;
     }
 
     frame.set_total_size(total_size);
@@ -71,7 +71,7 @@ void StackFramePass::run(mcode::Function &func) {
 
         mcode::StackSlot &slot = frame.get_stack_slot(std::get<mcode::StackSlotID>(param.storage));
         unsigned sp_offset = arg_storage[i].stack_offset;
-        slot.set_offset(frame.get_total_size() + sp_offset);
+        slot.offset = frame.get_total_size() + sp_offset;
     }
 
     func.get_unwind_info().alloc_size = func.get_stack_frame().get_size();
@@ -88,8 +88,8 @@ void StackFramePass::create_generic_region(
 
     for (int i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
-        if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::GENERIC) {
-            generic_slot_offset -= utils::align(slot.get_size(), 8);
+        if (!slot.is_defined() && slot.type == mcode::StackSlot::Type::GENERIC) {
+            generic_slot_offset -= utils::align(slot.size, 8);
             pre_alloca_offsets.insert({i, generic_slot_offset});
         }
     }

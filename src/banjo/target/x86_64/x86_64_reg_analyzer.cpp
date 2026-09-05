@@ -279,7 +279,7 @@ bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegis
 }
 
 void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).get_size();
+    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
     mcode::Operand src = mcode::Operand::from_stack_slot(use.stack_slot, size);
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
 
@@ -293,7 +293,7 @@ void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
 }
 
 void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).get_size();
+    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
     mcode::Operand dst = mcode::Operand::from_stack_slot(use.stack_slot, size);
 

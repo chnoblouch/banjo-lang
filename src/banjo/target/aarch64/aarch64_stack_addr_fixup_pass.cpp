@@ -51,7 +51,7 @@ void AArch64StackAddrFixupPass::process_add_sub(mcode::InstrIter instr) {
 
     mcode::StackAddress stack_addr = m_offset.get_stack_offset();
     mcode::StackSlot &stack_slot = frame.get_stack_slot(stack_addr.slot);
-    unsigned total_offset = stack_slot.get_offset() + stack_addr.offset;
+    unsigned total_offset = stack_slot.offset + stack_addr.offset;
 
     if (total_offset >= 4096) {
         m_offset = emit_imm_mov(instr, total_offset);
@@ -64,7 +64,7 @@ void AArch64StackAddrFixupPass::process_ldr_str(mcode::InstrIter instr, unsigned
 
     if (m_addr.is_stack_slot()) {
         mcode::StackSlot &stack_slot = frame.get_stack_slot(m_addr.get_stack_slot());
-        unsigned offset = stack_slot.get_offset();
+        unsigned offset = stack_slot.offset;
 
         if (!AArch64EncodingInfo::is_addr_offset_encodable(offset, size)) {
             m_addr = emit_compute_stack_addr(instr, offset);

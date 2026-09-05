@@ -470,7 +470,12 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         mcode::StackFrame &stack_frame = machine_func->get_stack_frame();
 
         // TODO: Reuse the buffer for different calls.
-        mcode::StackSlotID buffer = stack_frame.new_stack_slot({mcode::StackSlot::Type::GENERIC, 0, 8});
+        mcode::StackSlotID buffer = stack_frame.new_stack_slot({
+            .type = mcode::StackSlot::Type::GENERIC,
+            .size = 0,
+            .alignment = 8,
+        });
+
         unsigned offset = 0;
 
         for (unsigned i = 1 + func_type.first_variadic_index; i < instr.get_operands().size(); i++) {

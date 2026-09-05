@@ -1,6 +1,7 @@
 #include "ssa_lowerer.hpp"
 
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/stack_address.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_description.hpp"
@@ -126,7 +127,11 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
             .storage = mcode::Register::from_physical(storage.reg),
         };
     } else {
-        mcode::StackSlot slot(mcode::StackSlot::Type::GENERIC, 8, 1);
+        mcode::StackSlot slot{
+            .type = mcode::StackSlot::Type::GENERIC,
+            .size = 8,
+            .alignment = 1,
+        };
 
         return mcode::Parameter{
             .type = type,
@@ -365,9 +370,9 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
     unsigned size = std::max(get_size(instr.get_operand(0).get_type()), 8u);
     bool is_arg_store = instr.get_attr() == ssa::Instruction::Attribute::ARG_STORE;
     mcode::StackSlot::Type type = is_arg_store ? mcode::StackSlot::Type::ARG_STORE : mcode::StackSlot::Type::GENERIC;
-    mcode::StackSlot slot(type, size, 1);
+    mcode::StackSlot slot{.type = type, .size = size, .alignment = 1};
 
-    long index = get_machine_func()->get_stack_frame().new_stack_slot(slot);
+    mcode::StackSlotID index = get_machine_func()->get_stack_frame().new_stack_slot(slot);
     context.stack_regs.insert({*instr.get_dest(), index});
 }
 

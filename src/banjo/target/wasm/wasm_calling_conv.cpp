@@ -22,7 +22,7 @@ void WasmCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::S
     for (mcode::StackSlotID i = 0; i < frame.get_stack_slots().size(); i++) {
         mcode::StackSlot &slot = frame.get_stack_slots()[i];
 
-        if (!slot.is_defined() && slot.get_type() == mcode::StackSlot::Type::ARG_STORE) {
+        if (!slot.is_defined() && slot.type == mcode::StackSlot::Type::ARG_STORE) {
             region.size -= 8;
             region.offsets.insert({i, region.size});
         }
@@ -36,7 +36,7 @@ void WasmCallingConv::create_call_arg_region(
 ) {
     for (unsigned index : frame.get_call_arg_slot_indices()) {
         mcode::StackSlot &slot = frame.get_stack_slot(index);
-        slot.set_offset(8 * slot.get_call_arg_index());
+        slot.offset = 8 * slot.call_arg_index;
         regions.call_arg_region.size += 8;
     }
 }

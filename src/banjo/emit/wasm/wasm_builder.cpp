@@ -654,7 +654,7 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
     } else if (operand.is_stack_offset()) {
         const mcode::StackAddress &stack_addr = operand.get_stack_offset();
         mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(stack_addr.slot);
-        LargeInt value = slot.get_offset() + stack_addr.offset;
+        LargeInt value = slot.offset + stack_addr.offset;
 
         if (value > 0x7FFFFFFF) {
             value = value - 0xFFFFFFFF - 1;
@@ -684,7 +684,7 @@ void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr)
     } else if (addr.is_stack_offset()) {
         const mcode::StackAddress &stack_addr = addr.get_stack_offset();
         mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(stack_addr.slot);
-        ctx.body.write_uleb128(slot.get_offset() + stack_addr.offset);
+        ctx.body.write_uleb128(slot.offset + stack_addr.offset);
     } else if (addr.is_symbol()) {
         ctx.relocs.push_back(
             WasmRelocation{

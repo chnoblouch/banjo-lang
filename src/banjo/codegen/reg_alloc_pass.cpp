@@ -384,7 +384,12 @@ bool RegAllocPass::can_evict(Bundle &bundle, Alloc &alloc) {
 
 void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
     mcode::StackFrame &stack_frame = ctx.func.m_func.get_stack_frame();
-    mcode::StackSlotID stack_slot = stack_frame.new_stack_slot({mcode::StackSlot::Type::GENERIC, 8, 1});
+
+    mcode::StackSlotID stack_slot = stack_frame.new_stack_slot({
+        .type = mcode::StackSlot::Type::GENERIC,
+        .size = 8,
+        .alignment = 1,
+    });
 
     for (Segment &range : bundle.segments) {
         const RegAllocBlock &block = ctx.func.blocks[range.range.block];
