@@ -72,6 +72,17 @@ meta if IS_UNIX {
         }
     }
 
+    pub func path_canonical(path: StringSlice) -> String except ErrorCode {
+        var canonical = posix.realpath(path.to_cstring().data(), null);
+        if canonical == null {
+            return error_last();
+        }
+
+        var string = String.from_cstring(canonical);
+        c.free(canonical);
+        return string;
+    }
+
     pub func path_exists(path: *String) -> bool except ErrorCode {
         var result = posix.access(path.to_cstring().data(), posix.F_OK);
         

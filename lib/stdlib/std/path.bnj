@@ -29,6 +29,14 @@ struct Path: ToString, ToRepr {
         self.path.append(component);
     }
 
+    pub func canonical(self) -> Path except Error {
+        try string in platform.path_canonical(self.path.slice()) {
+            return Path.from(string);
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
+        }
+    }
+
     pub func file_name(self) -> String {
         # TODO: Error handling
 

@@ -121,6 +121,7 @@ meta if config.OS == config.LINUX {
 }
 
 meta if os.IS_UNIX {
+    native func realpath(path: *u8, resolved_path: *u8) -> *u8;
     native func stat(pathname: *u8, statbuf: *Stat) -> i32;
     native func access(pathname: *u8, mode: i32) -> i32;
     native func close(fd: i32) -> i32;

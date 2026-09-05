@@ -181,6 +181,10 @@ meta if IS_WINDOWS {
         }
     }
 
+    pub func path_canonical(path: StringSlice) -> String except ErrorCode {
+        return String.from(path);
+    }
+
     pub func path_exists(path: *String) -> bool except ErrorCode {
         var attributes = winapi.get_file_attributes(path.to_cstring().data());
 
