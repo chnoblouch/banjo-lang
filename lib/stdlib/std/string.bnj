@@ -235,16 +235,4 @@ struct String: Copy, Compare[String], ToString, ToRepr {
 
         self.slice.data = memory.realloc(self.slice.data, self.capacity) as *u8;
     }
-
-    func reverse_in_place(mut self) {
-        for i1 in 0..self.slice.length / 2 {
-            var i2 = self.slice.length - 1 - i1;
-
-            var c1 = self.slice.data[i1];
-            var c2 = self.slice.data[i2];
-
-            self.slice.data[i1] = c2;
-            self.slice.data[i2] = c1;
-        }
-    }
 }

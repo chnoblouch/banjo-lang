@@ -1,4 +1,4 @@
-use os.{IS_WINDOWS, winapi, msvcrt};
+use os.{IS_WINDOWS, winapi};
 use std.{memory, io, unicode, convert.to_string, math.{min, max}};
 
 meta if IS_WINDOWS {
