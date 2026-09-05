@@ -3,6 +3,7 @@
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/stack_address.hpp"
+#include "banjo/mcode/stack_slot.hpp"
 #include "banjo/mcode/symbol.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/comparison.hpp"
@@ -13,6 +14,7 @@
 #include "banjo/target/wasm/wasm_mcode.hpp"
 #include "banjo/target/wasm/wasm_opcode.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
 namespace banjo::target {
 
@@ -137,7 +139,10 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     entry_block.append({WasmOpcode::BR_TABLE, std::move(branch_targets)});
     entry_block.append({WasmOpcode::END_BLOCK});
-    machine_func->get_basic_blocks().insert_before(machine_func->get_basic_blocks().get_first_iter(), std::move(entry_block));
+    machine_func->get_basic_blocks().insert_before(
+        machine_func->get_basic_blocks().get_first_iter(),
+        std::move(entry_block)
+    );
 
     block_depth = func.get_basic_blocks().get_size();
 
@@ -464,51 +469,42 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
     } else {
         mcode::StackFrame &stack_frame = machine_func->get_stack_frame();
 
-        for (unsigned i = 1 + func_type.first_variadic_index; i < instr.get_operands().size(); i++) {
-            unsigned arg_slot_index = i - 1 - func_type.first_variadic_index;
-            mcode::StackSlotID slot_index;
+        // TODO: Reuse the buffer for different calls.
+        mcode::StackSlotID buffer = stack_frame.new_stack_slot({mcode::StackSlot::Type::GENERIC, 0, 8});
+        unsigned offset = 0;
 
-            if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
-                mcode::StackSlot stack_slot(mcode::StackSlot::Type::CALL_ARG, 8, 1);
-                stack_slot.set_call_arg_index(arg_slot_index);
-                slot_index = stack_frame.new_stack_slot(stack_slot);
-            } else {
-                slot_index = stack_frame.get_call_arg_slot_indices()[arg_slot_index];
-            }
+        for (unsigned i = 1 + func_type.first_variadic_index; i < instr.get_operands().size(); i++) {
+            ssa::Type type = instr.get_operand(i).get_type();
+            unsigned size = get_size(type);
+            unsigned alignment = get_alignment(type);
 
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
             push_operand(instr.get_operand(i));
 
-            ssa::Type type = instr.get_operand(i).get_type();
-            unsigned size = get_size(type);
             mcode::Opcode store_opcode;
 
             if (type.is_integer()) {
-                switch (size) {
-                    case 1: store_opcode = WasmOpcode::I32_STORE8; break;
-                    case 2: store_opcode = WasmOpcode::I32_STORE16; break;
-                    case 4: store_opcode = WasmOpcode::I32_STORE; break;
-                    case 8: store_opcode = WasmOpcode::I64_STORE; break;
-                    default: ASSERT_UNREACHABLE;
-                }
+                ASSERT(size == 4 || size == 8);
+                store_opcode = size == 8 ? WasmOpcode::I64_STORE : WasmOpcode::I32_STORE;
             } else if (type.is_floating_point()) {
                 store_opcode = type == ssa::Primitive::F64 ? WasmOpcode::F64_STORE : WasmOpcode::F32_STORE;
             } else {
                 ASSERT_UNREACHABLE;
             }
 
-            emit({store_opcode, {mcode::Operand::from_stack_offset(mcode::StackAddress{slot_index})}});
+            offset = utils::align(offset, alignment);
+            emit({store_opcode, {mcode::Operand::from_stack_offset({buffer, offset})}});
+            offset += size;
         }
 
-        for (unsigned i = 1; i < func_type.first_variadic_index + 1; i++) {
-            push_operand(instr.get_operand(i));
-        }
+        stack_frame.get_stack_slot(buffer).size = offset;
 
-        mcode::StackSlotID first_slot = stack_frame.get_call_arg_slot_indices()[0];
-        mcode::StackAddress first_slot_addr{first_slot};
+        for (unsigned i = 0; i < func_type.first_variadic_index; i++) {
+            push_operand(instr.get_operand(i + 1));
+        }
 
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_offset(first_slot_addr)}});
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_stack_offset({buffer, 0})}});
         emit({WasmOpcode::I32_ADD});
     }
 

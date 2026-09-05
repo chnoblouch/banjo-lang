@@ -1,9 +1,7 @@
 #ifndef BANJO_MCODE_STACK_SLOT_H
 #define BANJO_MCODE_STACK_SLOT_H
 
-namespace banjo {
-
-namespace mcode {
+namespace banjo::mcode {
 
 class StackSlot {
 
@@ -12,7 +10,7 @@ public:
 
     static constexpr int INVALID_OFFSET = 0xFFFFFFFF;
 
-private:
+public:
     Type type;
     int size;
     int alignment;
@@ -34,8 +32,6 @@ public:
     void set_call_arg_index(int call_arg_index) { this->call_arg_index = call_arg_index; }
 };
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 #endif
