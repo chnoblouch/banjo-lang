@@ -2025,10 +2025,12 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (utils::is_one_of(
-                   meta_field_expr.field.value,
-                   {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
-               )) {
+    } else if (
+        utils::is_one_of(
+            meta_field_expr.field.value,
+            {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
+        )
+    ) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
         sir::Expr string_type = analyzer.create(
@@ -2137,22 +2139,18 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
                     specialize_expr->args,
                 };
 
-                out_expr = analyzer.create(
-                    sir::SpecializeExpr{
-                        .ast_node = dot_expr.ast_node,
-                        .type = specializer.specialize_expr(lookup_result.symbol.get_type()),
-                        .symbol = lookup_result.symbol,
-                        .args = specialize_expr->args,
-                    }
-                );
+                out_expr = analyzer.create<sir::SpecializeExpr>({
+                    .ast_node = dot_expr.ast_node,
+                    .type = specializer.specialize_expr(lookup_result.symbol.get_type()),
+                    .symbol = lookup_result.symbol,
+                    .args = specialize_expr->args,
+                });
             } else {
-                out_expr = analyzer.create(
-                    sir::SymbolExpr{
-                        .ast_node = dot_expr.ast_node,
-                        .type = lookup_result.symbol.get_type(),
-                        .symbol = lookup_result.symbol,
-                    }
-                );
+                out_expr = analyzer.create<sir::SymbolExpr>({
+                    .ast_node = dot_expr.ast_node,
+                    .type = lookup_result.symbol.get_type(),
+                    .symbol = lookup_result.symbol,
+                });
             }
 
             return Result::SUCCESS;
@@ -2166,13 +2164,11 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             if (sub_mod) {
                 analyzer.add_symbol_use(dot_expr.rhs.ast_node, sub_mod);
 
-                out_expr = analyzer.create(
-                    sir::SymbolExpr{
-                        .ast_node = dot_expr.ast_node,
-                        .type = nullptr,
-                        .symbol = sub_mod,
-                    }
-                );
+                out_expr = analyzer.create<sir::SymbolExpr>({
+                    .ast_node = dot_expr.ast_node,
+                    .type = nullptr,
+                    .symbol = sub_mod,
+                });
 
                 return Result::SUCCESS;
             }
@@ -2187,14 +2183,12 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
     sir::Expr lhs_type = analyzer.get_resolved_type(dot_expr.lhs);
 
     while (auto pointer_type = lhs_type.match<sir::PointerType>()) {
-        lhs = analyzer.create(
-            sir::UnaryExpr{
-                .ast_node = nullptr,
-                .type = pointer_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = lhs,
-            }
-        );
+        lhs = analyzer.create<sir::UnaryExpr>({
+            .ast_node = nullptr,
+            .type = pointer_type->base_type,
+            .op = sir::UnaryOp::DEREF,
+            .value = lhs,
+        });
 
         lhs_type = pointer_type->base_type;
     }
@@ -2222,14 +2216,12 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             field_type = specializer.specialize_expr(field_type);
         }
 
-        out_expr = analyzer.create(
-            sir::FieldExpr{
-                .ast_node = dot_expr.ast_node,
-                .type = field_type,
-                .base = lhs,
-                .field_index = field->index,
-            }
-        );
+        out_expr = analyzer.create<sir::FieldExpr>({
+            .ast_node = dot_expr.ast_node,
+            .type = field_type,
+            .base = lhs,
+            .field_index = field->index,
+        });
 
         analyzer.add_symbol_use(dot_expr.rhs.ast_node, field);
         return Result::SUCCESS;
@@ -2243,14 +2235,12 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
 
         sir::UnionCaseField &field = union_case->fields[*field_index];
 
-        out_expr = analyzer.create(
-            sir::FieldExpr{
-                .ast_node = dot_expr.ast_node,
-                .type = field.type,
-                .base = lhs,
-                .field_index = *field_index,
-            }
-        );
+        out_expr = analyzer.create<sir::FieldExpr>({
+            .ast_node = dot_expr.ast_node,
+            .type = field.type,
+            .base = lhs,
+            .field_index = *field_index,
+        });
 
         // TODO
         // analyzer.add_symbol_use(dot_expr.rhs.ast_node, &field);
@@ -2271,16 +2261,22 @@ Result ExprAnalyzer::analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out
             return Result::ERROR;
         }
 
-        out_expr = analyzer.create(
-            sir::FieldExpr{
-                .ast_node = dot_expr.ast_node,
-                .type = tuple_expr->exprs[field_index],
-                .base = lhs,
-                .field_index = field_index,
-            }
-        );
+        out_expr = analyzer.create<sir::FieldExpr>({
+            .ast_node = dot_expr.ast_node,
+            .type = tuple_expr->exprs[field_index],
+            .base = lhs,
+            .field_index = field_index,
+        });
 
         return Result::SUCCESS;
+    } else if (auto static_array_type = lhs_type.match<sir::StaticArrayType>()) {
+        if (dot_expr.rhs.value == "length") {
+            out_expr = static_array_type->length;
+            return Result::SUCCESS;
+        } else {
+            analyzer.report_generator.report_err_no_field(dot_expr.rhs, lhs_type);
+            return Result::ERROR;
+        }
     } else {
         analyzer.report_generator.report_err_no_members(dot_expr);
         return Result::ERROR;

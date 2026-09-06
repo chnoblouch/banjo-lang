@@ -5,6 +5,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/source/source_file.hpp"
 
+#include <memory>
 #include <string_view>
 #include <unordered_set>
 
@@ -54,6 +55,11 @@ public:
     Workspace &workspace;
     State state;
 
+private:
+    std::unique_ptr<sir::PrimitiveType> array_length_type;
+    std::unique_ptr<sir::StructField> array_length_symbol;
+
+public:
     CompletionEngine(Workspace &workspace);
     void complete(Request request);
 

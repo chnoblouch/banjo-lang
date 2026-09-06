@@ -26,6 +26,21 @@ func main() {
 }
 
 # test:subtest
+# test:output "3,4,12"
+
+func main() {
+	var a: [i32; 3] = [2, 4, 10];
+	var b: [char; 4] = ['t', 'e', 'x', 't'];
+	var c: [u8; 12] = [19, 114, 100, 133, 1, 57, 120, 176, 95, 252, 64, 124];
+
+	print(a.length);
+	print(',');
+	print(b.length);
+	print(',');
+	print(c.length);
+}
+
+# test:subtest
 # test:output "2,4,10,"
 
 func main() {

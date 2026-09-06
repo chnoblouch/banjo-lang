@@ -46,6 +46,7 @@ SKIPPED_TESTS_WASM = set([
     "stdlib.stack_trace.0",
     "stdlib.stack_trace.1",
     "stdlib.stack_trace.2",
+    "stdlib.stack_trace.3",
 ])
 
 

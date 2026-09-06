@@ -6,11 +6,25 @@
 #include "banjo/utils/macros.hpp"
 #include "workspace.hpp"
 
+#include <memory>
 #include <utility>
 
 namespace banjo::lsp {
 
-CompletionEngine::CompletionEngine(Workspace &workspace) : workspace(workspace) {}
+CompletionEngine::CompletionEngine(Workspace &workspace) : workspace{workspace} {
+    array_length_type = std::make_unique<sir::PrimitiveType>(sir::PrimitiveType{
+        .ast_node = nullptr,
+        .primitive = sir::Primitive::USIZE,
+    });
+
+    array_length_symbol = std::make_unique<sir::StructField>(sir::StructField{
+        .ast_node = nullptr,
+        .ident{.ast_node = nullptr, .value = "length"},
+        .type = array_length_type.get(),
+        .attrs = nullptr,
+        .index = 0,
+    });
+}
 
 void CompletionEngine::complete(Request request) {
     state.file = &request.file;
@@ -126,6 +140,15 @@ void CompletionEngine::complete_after_dot(sir::Expr lhs) {
                     collect_value_members(*concrete_proto->def);
                 }
             }
+        } else if (type.match<sir::StaticArrayType>()) {
+            Item item{
+                .kind = Item::Kind::SIMPLE,
+                .name = array_length_symbol->ident.value,
+                .symbol = array_length_symbol.get(),
+                .file_to_use = nullptr,
+            };
+
+            add_item(item);
         }
     } else if (auto symbol_expr = lhs.match<sir::SymbolExpr>()) {
         Options options{
