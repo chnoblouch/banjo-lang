@@ -1,25 +1,29 @@
 use std.platform;
 
-struct Mutex {
+struct Mutex[T] {
     var handle: platform.Mutex;
+    var value: T;
 
-    pub func new() -> Mutex {
-        return Mutex {
+    pub func new(value: T) -> Mutex[T] {
+        return Mutex[T] {
             handle: platform.mutex_create(),
+            value,
         };
     }
 
-    pub func lock(self) -> Lock {
+    pub func lock(mut self) -> Lock[T] {
         platform.mutex_lock(self.handle);
 
-        return Lock {
+        return Lock[T] {
             handle: self.handle,
+            value: ref mut self.value,
         };
     }
 }
 
-struct Lock {
+struct Lock[T] {
     var handle: platform.Mutex;
+    var value: ref mut T;
 
     pub func __deinit__(self) {
         platform.mutex_unlock(self.handle);
@@ -41,7 +45,7 @@ struct Condition {
         platform.condition_notify_all(self.handle);
     }
 
-    pub func wait(self, lock: ref Lock) {
+    pub func wait[T](self, lock: ref Lock[T]) {
         platform.condition_wait(self.handle, lock.handle);
     }
 
