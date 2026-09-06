@@ -1,20 +1,29 @@
-use std.{platform, memory};
+use std.{platform, memory, sync.Mutex};
+use internal.std_panics.panic_thread_not_joined;
 
 struct Thread {
     var handle: usize;
+    var joined: Mutex[bool];
 
     pub func spawn(target: ||) -> Thread {
         var argument = memory.box(target) as addr;
         var handle = platform.thread_spawn(initializer, argument);
-        return Thread { handle: handle };
+        
+        return Thread {
+            handle,
+            joined: Mutex[bool].new(false),
+        };
     }
 
-    pub func __deinit__(self) {
-        platform.thread_close(self.handle);
+    pub func __deinit__(mut self) {
+        if !self.joined.lock().value {
+            panic_thread_not_joined();
+        }
     }
 
     pub func join(move self) {
         platform.thread_join(self.handle);
+        self.joined.lock().value = true;
     }
 
     func initializer(data: addr) {

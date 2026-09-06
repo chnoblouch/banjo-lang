@@ -329,9 +329,6 @@ meta if IS_WINDOWS {
 
     pub func thread_join(handle: usize) {
         winapi.wait_for_single_object(handle as addr, 0xFFFFFFFF);
-    }
-
-    pub func thread_close(handle: usize) {
         winapi.close_handle(handle as addr);
     }
 
