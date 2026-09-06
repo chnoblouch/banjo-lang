@@ -16,7 +16,8 @@ bool ResourceGenerator::is_resource(Expr type) {
 ResourceGenerator::ResourceGenerator(utils::Arena &arena)
   : arena{arena},
     ownership{Ownership::OWNED},
-    specialization{nullptr} {}
+    specialization{nullptr},
+    non_resources{nullptr} {}
 
 ResourceGenerator::ResourceGenerator(
     utils::Arena &arena,
@@ -25,7 +26,14 @@ ResourceGenerator::ResourceGenerator(
 )
   : arena{arena},
     ownership{ownership},
-    specialization{&specialization} {}
+    specialization{&specialization},
+    non_resources{nullptr} {}
+
+ResourceGenerator::ResourceGenerator(utils::Arena &arena, std::vector<sir::GenericParam *> &non_resources)
+  : arena{arena},
+    ownership{Ownership::OWNED},
+    specialization{nullptr},
+    non_resources{&non_resources} {}
 
 std::optional<Resource> ResourceGenerator::create_resource(Expr type) {
     if (auto concrete_struct = type.match_concrete<StructDef>()) {
@@ -124,6 +132,14 @@ std::optional<Resource> ResourceGenerator::create_generic_param_resource(const G
     for (Expr component : generic_param.constraint.components) {
         if (auto concrete_proto = component.match_concrete<ProtoDef>()) {
             if (concrete_proto->def->role == ProtoDef::Role::COPY) {
+                return {};
+            }
+        }
+    }
+
+    if (non_resources) {
+        for (sir::GenericParam *non_resource : *non_resources) {
+            if (non_resource == &generic_param) {
                 return {};
             }
         }

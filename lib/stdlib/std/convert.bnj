@@ -261,8 +261,7 @@ func f64_to_string(value: f64) -> String {
     return String.from_cstring(&buffer[0]);
 }
 
-# TODO: Remove `ref`
-func bool_to_string(ref value: bool) -> String {
+func bool_to_string(value: bool) -> String {
     if value {
         return "true";
     } else {
@@ -270,8 +269,7 @@ func bool_to_string(ref value: bool) -> String {
     }
 }
 
-# TODO: Remove `ref`
-func char_to_string(ref value: char) -> String {
+func char_to_string(value: char) -> String {
     var encoded = unicode.encode_utf8(*__builtin_pointer_to(value));
     return String.from(StringSlice.new(&encoded.bytes[0], encoded.length));
 }

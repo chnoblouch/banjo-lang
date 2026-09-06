@@ -6,6 +6,7 @@
 #include "banjo/utils/arena.hpp"
 
 #include <optional>
+#include <vector>
 
 namespace banjo::sir {
 
@@ -15,12 +16,14 @@ private:
     utils::Arena &arena;
     Ownership ownership;
     SpecializationCollector::Entry *specialization;
+    std::vector<sir::GenericParam *> *non_resources;
 
 public:
     static bool is_resource(Expr type);
 
     ResourceGenerator(utils::Arena &arena);
     ResourceGenerator(utils::Arena &arena, Ownership ownership, SpecializationCollector::Entry &specialization);
+    ResourceGenerator(utils::Arena &arena, std::vector<sir::GenericParam *> &non_resources);
 
     std::optional<Resource> create_resource(Expr type);
     std::optional<Resource> create_struct_resource(Concrete<StructDef> concrete_struct, Expr type);

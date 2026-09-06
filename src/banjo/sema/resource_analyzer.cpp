@@ -39,7 +39,6 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
     scopes.push_back({
         .type = type,
         .block = &block,
-        .move_states{},
     });
 
     for (sir::Symbol symbol : block.symbol_table->local_symbols_ordered) {
@@ -211,7 +210,22 @@ void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
         bool conditional = i != 0;
         analyze_expr(cond_branch.condition, true, conditional);
 
-        child_scopes[i] = analyze_block(*cond_branch.block);
+        bool non_resource_added = false;
+
+        if (auto type_check = cond_branch.condition.match<sir::TypeCheckExpr>()) {
+            if (auto generic_param = type_check->type_to_check.match_symbol<sir::GenericParam>()) {
+                if (!is_resource(type_check->constraint)) {
+                    non_resources.push_back(generic_param);
+                    non_resource_added = true;
+                }
+            }
+        }
+
+        child_scopes[i] = analyze_block(*cond_branch.block, ScopeType::GENERIC);
+
+        if (non_resource_added) {
+            non_resources.pop_back();
+        }
     }
 
     if (if_stmt.else_branch) {
@@ -418,7 +432,7 @@ Result ResourceAnalyzer::analyze_unary_expr(sir::UnaryExpr &unary_expr, Context 
     if (unary_expr.op == sir::UnaryOp::DEREF) {
         Result result;
 
-        if (ctx.moving && sir::ResourceGenerator::is_resource(unary_expr.type)) {
+        if (ctx.moving && is_resource(unary_expr.type)) {
             analyzer.report_generator.report_err_move_out_pointer(&unary_expr);
             result = Result::ERROR;
         } else {
@@ -490,7 +504,7 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     }
 
     if (!ctx.cur_resource) {
-        if (ctx.moving && ctx.in_pointer && sir::ResourceGenerator::is_resource(field_expr.type)) {
+        if (ctx.moving && ctx.in_pointer && is_resource(field_expr.type)) {
             analyzer.report_generator.report_err_move_out_pointer(out_expr);
             return Result::ERROR;
         }
@@ -697,7 +711,12 @@ unsigned ResourceAnalyzer::get_scope_depth() {
 }
 
 std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
-    return sir::ResourceGenerator{analyzer.mod->trivial_arena}.create_resource(type);
+    sir::ResourceGenerator generator{analyzer.mod->trivial_arena, non_resources};
+    return generator.create_resource(type);
+}
+
+bool ResourceAnalyzer::is_resource(sir::Expr type) {
+    return create_resource(type).has_value();
 }
 
 void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional) {

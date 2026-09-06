@@ -6,6 +6,7 @@
 #include "banjo/sir/sir.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 namespace banjo::sema {
 
@@ -54,6 +55,7 @@ private:
     };
 
     std::vector<Scope> scopes;
+    std::vector<sir::GenericParam *> non_resources;
     std::unordered_map<sir::Resource *, ResourceLocation> resource_locations;
     std::unordered_map<sir::Symbol, sir::Resource *> resources_by_symbols;
 
@@ -105,6 +107,8 @@ private:
     unsigned get_scope_depth();
 
     std::optional<sir::Resource> create_resource(sir::Expr type);
+    bool is_resource(sir::Expr type);
+
     static void merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional);
 };
 

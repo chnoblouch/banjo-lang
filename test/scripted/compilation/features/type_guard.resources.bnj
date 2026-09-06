@@ -1,0 +1,53 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {}
+}
+
+# test:subtest
+# test:output "42"
+
+func f[T](pointer: *T) {
+    if T == i32 {
+        print_value(*pointer);
+    }
+}
+
+func print_value(value: i32) {
+    print(value);
+}
+
+func main() {
+    var a: i32 = 42;
+    var b = Resource {};
+
+    f(&a);
+    f(&b);
+}
+
+# test:subtest
+# test:output "42,64"
+
+func f[A, B](a: *A, b: *B) {
+    if A == i32 {
+        if B == u64 {
+            print_values(*a, *b);
+        }
+    }
+}
+
+func print_values(a: i32, b: u64) {
+    print(a);
+    print(',');
+    print(b);
+}
+
+func main() {
+    var a: i32 = 42;
+    var b: u64 = 64;
+    var c = Resource {};
+
+    f(&a, &b);
+    f(&a, &c);
+    f(&c, &b);
+}
