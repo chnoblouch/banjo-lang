@@ -6,6 +6,7 @@ meta if IS_UNIX {
     type ErrorCode = i32;
     type StdioStream = addr;
     type Mutex = *posix.PthreadMutex;
+    type Condition = *posix.PthreadCond;
     type Socket = i32;
 
     const SOCKET_INVALID: Socket = -1;
@@ -225,6 +226,28 @@ meta if IS_UNIX {
         }
 
         memory.free(mutex);
+    }
+
+    pub func condition_create() -> Condition {
+        var condition = memory.alloc_box[posix.PthreadCond]();
+        posix.pthread_cond_init(condition, null);
+        return condition;
+    }
+
+    pub func condition_notify_one(condition: Condition) {
+        posix.pthread_cond_signal(condition);
+    }
+
+    pub func condition_notify_all(condition: Condition) {
+        posix.pthread_cond_broadcast(condition);
+    }
+
+    pub func condition_wait(condition: Condition, mutex: Mutex) {
+        posix.pthread_cond_wait(condition, mutex);
+    }
+
+    pub func condition_destroy(condition: Condition) {
+        posix.pthread_cond_destroy(condition);
     }
 
     pub func time_system_ticks() -> u64 {

@@ -4,6 +4,7 @@ use std.{memory, io, unicode, convert.to_string, math.{min, max}};
 meta if IS_WINDOWS {
     type ErrorCode = winapi.Dword;
     type Mutex = winapi.Handle;
+    type Condition = u32;
     type Socket = winapi.Socket;
 
     const SOCKET_INVALID: Socket = winapi.INVALID_SOCKET;
@@ -365,6 +366,19 @@ meta if IS_WINDOWS {
     pub func mutex_destroy(mutex: Mutex) {
         winapi.close_handle(mutex);
     }
+
+    pub func condition_create() -> Condition {
+        panic("condition variables are currently unsupported on windows");
+        return 0;
+    }
+
+    pub func condition_notify_one(condition: Condition) {}
+
+    pub func condition_notify_all(condition: Condition) {}
+
+    pub func condition_wait(condition: Condition, mutex: Mutex) {}
+
+    pub func condition_destroy(condition: Condition) {}
 
     pub func time_system_ticks() -> u64 {
         var time: winapi.Filetime;

@@ -54,6 +54,7 @@ meta if config.OS == config.EMSCRIPTEN {
     native var stderr: addr;
 
     type PthreadMutex = [u8; 40];  # TODO
+    type PthreadCond = [u8; 48];  # TODO
 
     type ClockId = u32;
 

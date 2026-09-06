@@ -23,6 +23,7 @@ meta if config.OS == config.LINUX {
         stdout,
         stderr,
         PthreadMutex,
+        PthreadCond,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
@@ -62,6 +63,7 @@ meta if config.OS == config.LINUX {
         stdout,
         stderr,
         PthreadMutex,
+        PthreadCond,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
@@ -101,6 +103,7 @@ meta if config.OS == config.LINUX {
         stdout,
         stderr,
         PthreadMutex,
+        PthreadCond,
         Timespec,
         ClockId,
         CLOCK_REALTIME,
@@ -137,6 +140,11 @@ meta if os.IS_UNIX {
     native func pthread_mutex_lock(mutex: *PthreadMutex) -> i32;
     native func pthread_mutex_unlock(mutex: *PthreadMutex) -> i32;
     native func pthread_mutex_destroy(mutex: *PthreadMutex) -> i32;
+    native func pthread_cond_init(cond: *PthreadCond, cond_attr: addr) -> i32;
+    native func pthread_cond_signal(cond: *PthreadCond) -> i32;
+    native func pthread_cond_broadcast(cond: *PthreadCond) -> i32;
+    native func pthread_cond_wait(cond: *PthreadCond, mutex: *PthreadMutex) -> i32;
+    native func pthread_cond_destroy(cond: *PthreadCond) -> i32;
     native func nanosleep(req: *Timespec, rem: *Timespec) -> i32;
     native func get_nprocs() -> i32;
     native func clock_gettime(clk_id: ClockId, tp: *Timespec) -> i32;

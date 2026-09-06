@@ -69,6 +69,11 @@ meta if config.OS == config.MACOS {
         var opaque: [u8; 56];
     }
 
+    struct PthreadCond {
+        var sig: u64;
+        var opaque: [u8; 40];
+    }
+
     type ClockId = u64;
 
     struct Timespec {
