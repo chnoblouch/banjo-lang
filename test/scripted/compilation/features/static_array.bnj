@@ -3,7 +3,7 @@
 
 func main() {
 	var a: [i32; 3] = [2, 4, 10];
-	
+
 	print(a[0]);
     print(',');
 	print(a[1]);
@@ -23,4 +23,72 @@ func main() {
 	print(b[1]);
     print(',');
 	print(b[2]);
+}
+
+# test:subtest
+# test:output "2,4,10,"
+
+func main() {
+	var a: [i32; 3] = [2, 4, 10];
+	
+	for value in a {
+		print(value);
+		print(',');
+	}
+}
+
+# test:subtest
+# test:output "3,5,11,"
+
+func main() {
+	var a: [i32; 3] = [2, 4, 10];
+	
+	for ref mut value in a {
+		value += 1;
+	}
+	
+	for ref value in a {
+		print(value);
+		print(',');
+	}
+}
+
+# test:subtest
+# test:output "-0.1,1.5,4.25,true,false,false,true,42,B,284725,!"
+
+struct S {
+	var a: u64;
+	var b: char;
+}
+
+func main() {
+	var a: [f32; 3] = [-0.1, 1.5, 4.25];
+	var b: [bool; 4] = [true, false, false, true];
+	
+	var c: [S; 2] = [
+		S { a: 42, b: 'B' },
+		S { a: 284725, b: '!' },
+	];
+
+	print(a[0]);
+    print(',');
+	print(a[1]);
+    print(',');
+	print(a[2]);
+	print(',');
+	print(b[0]);
+	print(',');
+	print(b[1]);
+	print(',');
+	print(b[2]);
+	print(',');
+	print(b[3]);
+	print(',');
+	print(c[0].a);
+	print(',');
+	print(c[0].b);
+	print(',');
+	print(c[1].a);
+	print(',');
+	print(c[1].b);
 }

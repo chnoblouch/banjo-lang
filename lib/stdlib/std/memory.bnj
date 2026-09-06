@@ -58,17 +58,31 @@ pub func zero[T]() -> T {
     return value;
 }
 
-struct PointerMoveIter[T] {
-    var data: *T;
+struct RefIter[T] {
     var pointer: *T;
     var end: *T;
 
-    pub func new(data: *T, end: *T) -> PointerMoveIter[T] {
-        return PointerMoveIter[T] {
-            data,
-            pointer: data,
-            end,
-        };
+    pub func new(pointer: *T, end: *T) -> RefIter[T] {
+        return RefIter[T] { pointer, end };
+    }
+
+    func __next__(mut self) -> ?*T {
+        if self.pointer == self.end {
+            return none;
+        }
+
+        var pointer = self.pointer;
+        self.pointer += 1;
+        return pointer;
+    }
+}
+
+struct ArrayMoveIter[T] {
+    var pointer: *T;
+    var end: *T;
+
+    pub func new(pointer: *T, end: *T) -> ArrayMoveIter[T] {
+        return ArrayMoveIter[T] { pointer, end };
     }
 
     func __next__(mut self) -> ?T {
@@ -80,28 +94,5 @@ struct PointerMoveIter[T] {
         copy(self.pointer, &value, meta(T).size);
         self.pointer += 1;
         return value;
-    }
-
-    func __deinit__(self) {
-        free(self.data);
-    }
-}
-
-struct PointerRefIter[T] {
-    var pointer: *T;
-    var end: *T;
-
-    pub func new(pointer: *T, end: *T) -> PointerRefIter[T] {
-        return PointerRefIter[T] { pointer, end };
-    }
-
-    func __next__(mut self) -> ?*T {
-        if self.pointer == self.end {
-            return none;
-        }
-
-        var pointer = self.pointer;
-        self.pointer += 1;
-        return pointer;
     }
 }

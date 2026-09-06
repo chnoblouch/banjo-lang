@@ -40,7 +40,6 @@ private:
     void analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt);
 
     sir::Expr create_method_call(sir::Expr self, sir::FuncDef &method);
-    sir::Ident create_ident(std::string_view value);
 };
 
 } // namespace banjo::sema

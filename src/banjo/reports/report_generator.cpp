@@ -405,13 +405,7 @@ void ReportGenerator::report_err_cannot_iter_struct(const sir::Expr &expr, sir::
         .report();
 }
 
-void ReportGenerator::report_err_iter_no_next(
-    const sir::Expr &expr,
-    const sir::FuncDef &iter_func_def,
-    sir::IterKind kind
-) {
-    sir::Expr iter_type = iter_func_def.type.return_type;
-
+void ReportGenerator::report_err_iter_no_next(sir::Expr expr, sir::Expr iter_type, sir::IterKind kind) {
     std::string note_format_str = "iterator type for ";
 
     switch (kind) {

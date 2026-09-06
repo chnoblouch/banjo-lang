@@ -1,5 +1,5 @@
 use std.{
-    memory.{PointerMoveIter, PointerRefIter},
+    memory,
     protos.{Compare, ToRepr, ToString},
     convert,
 };
@@ -77,12 +77,12 @@ struct Slice[T]: Compare[Slice[T]], ToString, ToRepr {
         return self.data[index];
     }
 
-    pub func __refiter__(self) -> PointerRefIter[T] {
-        return PointerRefIter[T].new(self.data, self.data + self.length);
+    pub func __refiter__(self) -> memory.RefIter[T] {
+        return memory.RefIter[T].new(self.data, self.data + self.length);
     }
 
-    pub func __mutiter__(mut self) -> PointerRefIter[T] {
-        return PointerRefIter[T].new(self.data, self.data + self.length);
+    pub func __mutiter__(mut self) -> memory.RefIter[T] {
+        return memory.RefIter[T].new(self.data, self.data + self.length);
     }
 
     pub func __eq__(self, ref rhs: Slice[T]) -> bool {

@@ -205,6 +205,8 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_map_def = &find_std_symbol({"std", "map"}, "Map").as<sir::StructDef>();
     std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
     std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
+    std_memory_ref_iter_def = &find_std_symbol({"std", "memory"}, "RefIter").as<sir::StructDef>();
+    std_array_move_iter_def = &find_std_symbol({"std", "memory"}, "ArrayMoveIter").as<sir::StructDef>();
 
     std_compare_def = &find_std_symbol({"std", "protos"}, "Compare").as<sir::ProtoDef>();
     std_order_def = &find_std_symbol({"std", "protos"}, "Order").as<sir::ProtoDef>();

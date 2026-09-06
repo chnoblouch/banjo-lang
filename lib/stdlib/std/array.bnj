@@ -1,7 +1,6 @@
 use std.{
-    memory.{PointerMoveIter, PointerRefIter},
-    memory,
     convert,
+    memory,
     protos.{Copy, Compare, ToRepr, ToString},
 };
 
@@ -168,15 +167,15 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         return self.slice.__mutindex__(index);
     }
 
-    pub func __iter__(@unmanaged move self) -> PointerMoveIter[T] {
-        return PointerMoveIter[T].new(self.slice.data, self.slice.data + self.slice.length);
+    pub func __iter__(@unmanaged move self) -> MoveIter[T] {
+        return MoveIter[T].new(self.slice.data, self.slice.data + self.slice.length);
     }
 
-    pub func __refiter__(self) -> PointerRefIter[T] {
+    pub func __refiter__(self) -> memory.RefIter[T] {
         return self.slice.__refiter__();
     }
 
-    pub func __mutiter__(mut self) -> PointerRefIter[T] {
+    pub func __mutiter__(mut self) -> memory.RefIter[T] {
         return self.slice.__mutiter__();
     }
 
@@ -237,5 +236,34 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
 
         var size = self.capacity * meta(T).size;
         self.slice.data = memory.realloc(self.slice.data, size) as *T;
+    }
+}
+
+struct MoveIter[T] {
+    var data: *T;
+    var pointer: *T;
+    var end: *T;
+
+    pub func new(data: *T, end: *T) -> MoveIter[T] {
+        return MoveIter[T] {
+            data,
+            pointer: data,
+            end,
+        };
+    }
+
+    func __next__(mut self) -> ?T {
+        if self.pointer == self.end {
+            return none;
+        }
+
+        var value: T;
+        memory.copy(self.pointer, &value, meta(T).size);
+        self.pointer += 1;
+        return value;
+    }
+
+    func __deinit__(self) {
+        memory.free(self.data);
     }
 }

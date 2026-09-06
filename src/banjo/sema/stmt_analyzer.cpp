@@ -660,46 +660,118 @@ void StmtAnalyzer::analyze_for_range_stmt(sir::ForStmt &for_stmt, sir::Stmt &out
 }
 
 void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_stmt) {
-    Result partial_result;
-
     sir::Expr iterable_unanalyzed = sir::Cloner(analyzer.get_mod()).clone_expr(for_stmt.range);
 
-    partial_result = ExprAnalyzer(analyzer).analyze_value(for_stmt.range);
-    if (partial_result != Result::SUCCESS) {
+    if (ExprAnalyzer{analyzer}.analyze_value(for_stmt.range) != Result::SUCCESS) {
         return;
     }
 
     sir::Expr iterable_type = for_stmt.range.get_type();
-    auto iterable_struct_def = iterable_type.match_concrete<sir::StructDef>();
+    sir::Expr iter_init_expr = nullptr;
+    sir::Expr iter_type = nullptr;
 
-    if (!iterable_struct_def) {
+    if (auto iterable_struct_def = iterable_type.match_concrete<sir::StructDef>()) {
+        sir::SymbolTable *iterable_symbol_table = iterable_struct_def->def->block.symbol_table;
+        sir::Symbol iter_symbol =
+            iterable_symbol_table->look_up_local(sir::MagicMethods::look_up_iter(for_stmt.iter_kind));
+
+        if (!iter_symbol) {
+            analyzer.report_generator.report_err_cannot_iter_struct(for_stmt.range, for_stmt.iter_kind);
+            return;
+        }
+
+        // FIXME: error if it's not a method
+        sir::FuncDef &iter_func_def = iter_symbol.as<sir::FuncDef>();
+        sir::FuncType *iter_func_type = &iter_func_def.type;
+
+        if (iterable_struct_def->is_specialization()) {
+            sir::Specializer specializer{analyzer.mod->trivial_arena, *iterable_struct_def};
+            iter_func_type = specializer.specialize_func_type(*iter_func_type);
+        }
+
+        iter_init_expr = create_method_call(iterable_unanalyzed, iter_func_def);
+        iter_type = iter_func_type->return_type;
+    } else if (auto static_array_type = iterable_type.match<sir::StaticArrayType>()) {
+        sir::StructDef *struct_def;
+
+        switch (for_stmt.iter_kind) {
+            case sir::IterKind::MOVE: struct_def = analyzer.std_array_move_iter_def; break;
+            case sir::IterKind::REF: struct_def = analyzer.std_memory_ref_iter_def; break;
+            case sir::IterKind::MUT: struct_def = analyzer.std_memory_ref_iter_def; break;
+        }
+
+        sir::FuncDef &func_def = struct_def->block.symbol_table->look_up_local("new").as<sir::FuncDef>();
+
+        sir::Expr pointer_type = analyzer.create<sir::PointerType>({
+            .ast_node = nullptr,
+            .base_type = static_array_type->base_type,
+        });
+
+        std::span<sir::Expr> generic_args = analyzer.create_array({static_array_type->base_type});
+
+        sir::Specializer specializer{
+            analyzer.mod->trivial_arena,
+            func_def.generic_params,
+            generic_args,
+        };
+
+        sir::FuncType *func_type = specializer.specialize_func_type(func_def.type);
+
+        sir::Expr start = analyzer.create<sir::UnaryExpr>({
+            .ast_node = nullptr,
+            .type = pointer_type,
+            .op = sir::UnaryOp::ADDR,
+            .value = analyzer.create<sir::IndexExpr>({
+                .ast_node = nullptr,
+                .type = static_array_type->base_type,
+                .base = for_stmt.range,
+                .index = analyzer.create<sir::IntLiteral>({
+                    .ast_node = nullptr,
+                    .type = analyzer.create<sir::PrimitiveType>({
+                        .ast_node = nullptr,
+                        .primitive = sir::Primitive::USIZE,
+                    }),
+                    .value = 0,
+                }),
+            }),
+        });
+
+        sir::Expr end = analyzer.create<sir::UnaryExpr>({
+            .ast_node = nullptr,
+            .type = pointer_type,
+            .op = sir::UnaryOp::ADDR,
+            .value = analyzer.create<sir::IndexExpr>({
+                .ast_node = nullptr,
+                .type = static_array_type->base_type,
+                .base = for_stmt.range,
+                .index = static_array_type->length,
+            }),
+        });
+
+        iter_init_expr = analyzer.create<sir::CallExpr>({
+            .ast_node = nullptr,
+            .type = func_type->return_type,
+            .callee = analyzer.create<sir::SpecializeExpr>({
+                .ast_node = nullptr,
+                .type = func_type,
+                .symbol = &func_def,
+                .args = generic_args,
+            }),
+            .args = analyzer.create_array<sir::Expr>({start, end}),
+        });
+
+        iter_type = func_type->return_type;
+    } else {
         analyzer.report_generator.report_err_cannot_iter(for_stmt.range);
         return;
     }
 
-    sir::SymbolTable *iterable_symbol_table = iterable_struct_def->def->block.symbol_table;
-    sir::Symbol iter_symbol = iterable_symbol_table->look_up_local(sir::MagicMethods::look_up_iter(for_stmt.iter_kind));
-
-    if (!iter_symbol) {
-        analyzer.report_generator.report_err_cannot_iter_struct(for_stmt.range, for_stmt.iter_kind);
-        return;
-    }
-
-    // FIXME: error if it's not a method
-    sir::FuncDef &iter_func_def = iter_symbol.as<sir::FuncDef>();
-    sir::FuncType *iter_func_type = &iter_func_def.type;
-
-    if (iterable_struct_def->is_specialization()) {
-        sir::Specializer specializer{analyzer.mod->trivial_arena, *iterable_struct_def};
-        iter_func_type = specializer.specialize_func_type(*iter_func_type);
-    }
-
-    auto iter_struct_def = iter_func_type->return_type.match_concrete<sir::StructDef>();
+    auto iter_struct_def = iter_type.match_concrete<sir::StructDef>();
     sir::SymbolTable *iter_symbol_table = iter_struct_def->def->block.symbol_table;
     sir::Symbol next_symbol = iter_symbol_table->look_up_local(sir::MagicMethods::NEXT);
 
     if (!next_symbol) {
-        analyzer.report_generator.report_err_iter_no_next(for_stmt.range, iter_func_def, for_stmt.iter_kind);
+        analyzer.report_generator.report_err_iter_no_next(for_stmt.range, iter_type, for_stmt.iter_kind);
         return;
     }
 
@@ -712,167 +784,127 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         next_func_type = specializer.specialize_func_type(*next_func_type);
     }
 
-    sir::Block *block = analyzer.create(
-        sir::Block{
-            .ast_node = nullptr,
-            .stmts = {},
-            .symbol_table = analyzer.create(
-                sir::SymbolTable{
-                    .parent = &analyzer.get_symbol_table(),
-                    .symbols = {},
-                }
-            ),
-        }
-    );
+    sir::Block *block = analyzer.create<sir::Block>({
+        .ast_node = nullptr,
+        .stmts = {},
+        .symbol_table = analyzer.create<sir::SymbolTable>({
+            .parent = &analyzer.get_symbol_table(),
+            .symbols = {},
+        }),
+    });
 
-    sir::VarStmt *iter_var_stmt = analyzer.create(
-        sir::VarStmt{
-            .ast_node = nullptr,
-            .local{
-                .name = create_ident(".iter"),
-                .type = nullptr,
-            },
-            .value = create_method_call(iterable_unanalyzed, iter_func_def),
-        }
-    );
+    sir::VarStmt *iter_var_stmt = analyzer.create<sir::VarStmt>({
+        .ast_node = nullptr,
+        .local{
+            .name{.ast_node = nullptr, .value = ".iter"},
+            .type = nullptr,
+        },
+        .value = iter_init_expr,
+    });
 
-    sir::SymbolExpr *iter_ref_expr = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = iter_func_type->return_type,
-            .symbol = &iter_var_stmt->local,
-        }
-    );
+    sir::SymbolExpr *iter_ref_expr = analyzer.create<sir::SymbolExpr>({
+        .ast_node = nullptr,
+        .type = iter_type,
+        .symbol = &iter_var_stmt->local,
+    });
 
-    sir::VarStmt *next_var_stmt = analyzer.create(
-        sir::VarStmt{
-            .ast_node = nullptr,
-            .local{
-                .name = create_ident(".next"),
-                .type = nullptr,
-                .attrs = analyzer.create(sir::Attributes{.unmanaged = true}),
-            },
-            .value = create_method_call(iter_ref_expr, next_func_def),
-        }
-    );
+    sir::VarStmt *next_var_stmt = analyzer.create<sir::VarStmt>({
+        .ast_node = nullptr,
+        .local{
+            .name{.ast_node = nullptr, .value = ".next"},
+            .type = nullptr,
+            .attrs = analyzer.create(sir::Attributes{.unmanaged = true}),
+        },
+        .value = create_method_call(iter_ref_expr, next_func_def),
+    });
 
-    sir::SymbolExpr *next_ref_expr = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = nullptr,
-            .type = next_func_type->return_type,
-            .symbol = &next_var_stmt->local,
-        }
-    );
+    sir::SymbolExpr *next_ref_expr = analyzer.create<sir::SymbolExpr>({
+        .ast_node = nullptr,
+        .type = next_func_type->return_type,
+        .symbol = &next_var_stmt->local,
+    });
 
-    sir::DotExpr *loop_condition = analyzer.create(
-        sir::DotExpr{
-            .ast_node = nullptr,
-            .lhs = next_ref_expr,
-            .rhs = create_ident("has_value"),
-        }
-    );
+    sir::DotExpr *loop_condition = analyzer.create<sir::DotExpr>({
+        .ast_node = nullptr,
+        .lhs = next_ref_expr,
+        .rhs{.ast_node = nullptr, .value = "has_value"},
+    });
 
-    sir::Block *inner_loop_block = analyzer.create(
-        sir::Block{
-            .ast_node = for_stmt.block->ast_node,
-            .stmts = std::move(for_stmt.block->stmts),
-            .symbol_table = for_stmt.block->symbol_table,
-        }
-    );
+    sir::Block *inner_loop_block = analyzer.create<sir::Block>({
+        .ast_node = for_stmt.block->ast_node,
+        .stmts = std::move(for_stmt.block->stmts),
+        .symbol_table = for_stmt.block->symbol_table,
+    });
 
     sir::VarStmt *value_var_stmt;
 
     if (for_stmt.iter_kind == sir::IterKind::MOVE) {
-        value_var_stmt = analyzer.create(
-            sir::VarStmt{
+        value_var_stmt = analyzer.create<sir::VarStmt>({
+            .ast_node = nullptr,
+            .local{
+                .name = for_stmt.ident,
+                .type = nullptr,
+            },
+            .value = analyzer.create<sir::DotExpr>({
                 .ast_node = nullptr,
-                .local{
-                    .name = for_stmt.ident,
-                    .type = nullptr,
-                },
-                .value = analyzer.create(
-                    sir::DotExpr{
-                        .ast_node = nullptr,
-                        .lhs = next_ref_expr,
-                        .rhs = create_ident("value"),
-                    }
-                ),
-            }
-        );
+                .lhs = next_ref_expr,
+                .rhs{.ast_node = nullptr, .value = "value"},
+            }),
+        });
     } else {
-        value_var_stmt = analyzer.create(
-            sir::VarStmt{
+        value_var_stmt = analyzer.create<sir::VarStmt>({
+            .ast_node = nullptr,
+            .local{
+                .name = for_stmt.ident,
+                .type = analyzer.create<sir::ReferenceType>({
+                    .ast_node = nullptr,
+                    .mut = for_stmt.iter_kind == sir::IterKind::MUT,
+                    .base_type = nullptr,
+                }),
+            },
+            .value = analyzer.create<sir::StarExpr>({
                 .ast_node = nullptr,
-                .local{
-                    .name = for_stmt.ident,
-                    .type = analyzer.create(
-                        sir::ReferenceType{
-                            .ast_node = nullptr,
-                            .mut = for_stmt.iter_kind == sir::IterKind::MUT,
-                            .base_type = nullptr,
-                        }
-                    ),
-                },
-                .value = analyzer.create(
-                    sir::StarExpr{
-                        .ast_node = nullptr,
-                        .value = analyzer.create(
-                            sir::DotExpr{
-                                .ast_node = nullptr,
-                                .lhs = next_ref_expr,
-                                .rhs = create_ident("value"),
-                            }
-                        ),
-                    }
-                ),
-            }
-        );
+                .value = analyzer.create<sir::DotExpr>({
+                    .ast_node = nullptr,
+                    .lhs = next_ref_expr,
+                    .rhs{.ast_node = nullptr, .value = "value"},
+                }),
+            }),
+        });
     }
 
-    sir::Block *outer_loop_block = analyzer.create(
-        sir::Block{
-            .ast_node = nullptr,
-            .stmts = {value_var_stmt, inner_loop_block},
-            .symbol_table = analyzer.create(
-                sir::SymbolTable{
-                    .parent = block->symbol_table,
-                    .symbols = {},
-                }
-            )
-        }
+    sir::Block *outer_loop_block = analyzer.create<sir::Block>(
+        {.ast_node = nullptr,
+         .stmts = {value_var_stmt, inner_loop_block},
+         .symbol_table = analyzer.create<sir::SymbolTable>({
+             .parent = block->symbol_table,
+             .symbols = {},
+         })}
     );
 
     inner_loop_block->symbol_table->parent = outer_loop_block->symbol_table;
 
-    sir::AssignStmt *latch_next_stmt = analyzer.create(
-        sir::AssignStmt{
-            .ast_node = nullptr,
-            .lhs = next_ref_expr,
-            .rhs = create_method_call(iter_ref_expr, next_func_def),
-        }
-    );
+    sir::AssignStmt *latch_next_stmt = analyzer.create<sir::AssignStmt>({
+        .ast_node = nullptr,
+        .lhs = next_ref_expr,
+        .rhs = create_method_call(iter_ref_expr, next_func_def),
+    });
 
-    sir::Block *loop_latch = analyzer.create(
-        sir::Block{
-            .ast_node = nullptr,
-            .stmts = {latch_next_stmt},
-            .symbol_table = analyzer.create(
-                sir::SymbolTable{
-                    .parent = block->symbol_table,
-                    .symbols = {},
-                }
-            ),
-        }
-    );
+    sir::Block *loop_latch = analyzer.create<sir::Block>({
+        .ast_node = nullptr,
+        .stmts = {latch_next_stmt},
+        .symbol_table = analyzer.create<sir::SymbolTable>({
+            .parent = block->symbol_table,
+            .symbols = {},
+        }),
+    });
 
-    sir::LoopStmt *loop_stmt = analyzer.create(
-        sir::LoopStmt{
-            .ast_node = nullptr,
-            .condition = loop_condition,
-            .block = outer_loop_block,
-            .latch = loop_latch,
-        }
-    );
+    sir::LoopStmt *loop_stmt = analyzer.create<sir::LoopStmt>({
+        .ast_node = nullptr,
+        .condition = loop_condition,
+        .block = outer_loop_block,
+        .latch = loop_latch,
+    });
 
     block->stmts = {iter_var_stmt, next_var_stmt, loop_stmt};
 
@@ -894,13 +926,6 @@ sir::Expr StmtAnalyzer::create_method_call(sir::Expr self, sir::FuncDef &method)
             .args{},
         }
     );
-}
-
-sir::Ident StmtAnalyzer::create_ident(std::string_view value) {
-    return sir::Ident{
-        .ast_node = nullptr,
-        .value = analyzer.create_string(value),
-    };
 }
 
 } // namespace banjo::sema

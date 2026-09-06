@@ -1,6 +1,7 @@
 use std.{
+    array,
     convert,
-    memory.{PointerMoveIter, PointerRefIter},
+    memory,
     protos.{Compare, ToRepr, ToString},
 };
 
@@ -60,15 +61,15 @@ struct Set[T: Compare[T]]: ToString, ToRepr {
         return self.elements;
     }
 
-    pub func __iter__(@unmanaged move self) -> PointerMoveIter[T] {
+    pub func __iter__(@unmanaged move self) -> array.MoveIter[T] {
         return self.elements.__iter__();
     }
 
-    pub func __refiter__(self) -> PointerRefIter[T] {
+    pub func __refiter__(self) -> memory.RefIter[T] {
         return self.elements.__refiter__();
     }
 
-    pub func __mutiter__(mut self) -> PointerRefIter[T] {
+    pub func __mutiter__(mut self) -> memory.RefIter[T] {
         return self.elements.__mutiter__();
     }
 

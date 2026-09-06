@@ -107,6 +107,8 @@ public:
     sir::StructDef *std_map_def = nullptr;
     sir::StructDef *std_shared_def = nullptr;
     sir::StructDef *std_closure_def = nullptr;
+    sir::StructDef *std_memory_ref_iter_def = nullptr;
+    sir::StructDef *std_array_move_iter_def = nullptr;
 
     sir::ProtoDef *std_compare_def = nullptr;
     sir::ProtoDef *std_order_def = nullptr;
