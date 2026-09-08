@@ -237,13 +237,17 @@ void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
 
 void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
     debug_section.emplace(*this, BinSectionKind::BNJDBG);
+    add_label_symbol("__text_end");
 
-    unsigned header_size = 8;
+    unsigned header_size = 16;
     unsigned table_size = 16 * m_mod.get_functions().size();
     unsigned string_buffer_position = header_size + table_size;
 
     debug_section->add_symbol_def("__bnjdbg_start", BinSymbolKind::DEBUG_INFO, true);
     debug_section->write_u64(m_mod.get_functions().size());
+
+    debug_section->add_symbol_use(symbol_indices.at("__text_end"), BinSymbolUseKind::ABS64);
+    debug_section->write_u64(0);
 
     for (unsigned i = 0; i < m_mod.get_functions().size(); i++) {
         mcode::Function &func = *m_mod.get_functions()[i];

@@ -1,4 +1,4 @@
-use std.{config, memory};
+use std.{config, cursor.Cursor, memory};
 
 meta if config.OS == config.WINDOWS {
     use os.winapi;
@@ -25,29 +25,30 @@ struct DebugInfo {
         }
     }
 
-    pub func symbol_name(self, address: addr) -> ?StringSlice {
-        var slice = self.slice;
+    pub func symbol_name(mut self, address: addr) -> ?StringSlice {
+        var cursor = Cursor.new(self.slice);
 
-        var num_functions = *(&slice[0] as *u64);
-        var function_index: ?usize = none;
+        var num_functions = cursor.read_u64_native().unwrap();
+        var text_end = cursor.read_u64_native().unwrap();
+        var start = cursor.read_u64_native().unwrap();
 
-        for i in 0..num_functions as usize {
-            var current = *(&slice[8 + 16 * i] as *u64);
+        for i in 0..num_functions {
+            var name_offset = cursor.read_u64_native().unwrap();
+            var end = text_end;
 
-            if current <= address as u64 {
-                function_index = i;
+            if i != num_functions - 1 {
+                end = cursor.read_u64_native().unwrap();
+            }
+
+            if address as u64 >= start && address as u64 < end {
+                var pointer = &self.slice[name_offset as usize];
+                return StringSlice.of_cstring(pointer);
             } else {
-                break;
+                start = end;
             }
         }
 
-        try index in function_index {
-            var name_offset = *(&slice[8 + 16 * index + 8] as *u64);
-            var pointer = &slice[name_offset as usize] as *u8;
-            return StringSlice.of_cstring(pointer);
-        } else {
-            return none;
-        }
+        return none;
     }
 }
 
