@@ -1,36 +1,30 @@
-use std.{io, memory};
+use std.{io, memory, math};
 
-struct Buffer: io.Read, io.Write, io.Seek {
-    var data: Array[u8];
+struct Cursor: io.Read, io.Write, io.Seek {
+    var data: Slice[u8];
     var position: usize;
 
-    pub func new() -> Buffer {
-        return Buffer {
-            data: [],
+    pub func new(data: Slice[u8]) -> Cursor {
+        return Cursor {
+            data,
             position: 0,
         };
     }
 
     pub func read(mut self, data: Slice[u8]) -> usize except io.Error {
-        if self.position + data.length > self.data.length() {
-            return io.Error.new(.UNKNOWN);
-        }
-
-        memory.copy(&self.data[self.position], data.data, data.length);
-        self.position += data.length;
-
-        return data.length;
+        var size = math.min(self.position + data.length, self.data.length) - self.position;
+        memory.copy(&self.data[self.position], data.data, size);
+        self.position += size;
+        
+        return size;
     }
 
     pub func write(mut self, data: Slice[u8]) -> usize except io.Error {
-        if self.position + data.length > self.data.length() {
-            self.data.resize(self.position + data.length);
-        }
+        var size = math.min(self.position + data.length, self.data.length) - self.position;
+        memory.copy(data.data, &self.data[self.position], size);
+        self.position += size;
 
-        memory.copy(data.data, &self.data[self.position], data.length);
-        self.position += data.length;
-
-        return data.length;
+        return size;
     }
 
     pub func position(self) -> u64 except io.Error {
