@@ -53,3 +53,48 @@ struct Condition {
         platform.condition_destroy(self.handle);
     }
 }
+
+struct Channel[T] {
+    var values: Mutex[Array[T]];
+    var buffer_size: usize;
+    var updated: Condition;
+
+    pub func new() -> Channel[T] {
+        return Channel[T] {
+            values: Mutex[Array[T]].new([]),
+            buffer_size: 1,
+            updated: Condition.new(),
+        };
+    }
+
+    pub func buffered(size: usize) -> Channel[T] {
+        return Channel[T] {
+            values: Mutex[Array[T]].new([]),
+            buffer_size: size,
+            updated: Condition.new(),
+        };
+    }
+
+    pub func pull(mut self) -> T {
+        var lock = self.values.lock();
+
+        while lock.value.length() == 0 {
+            self.updated.wait(ref lock);
+        }
+
+        var value = lock.value.remove(0);
+        self.updated.notify_all();
+        return value;
+    }
+
+    pub func push(mut self, value: T) {
+        var lock = self.values.lock();
+
+        while lock.value.length() == self.buffer_size {
+            self.updated.wait(ref lock);
+        }
+
+        lock.value.append(value);
+        self.updated.notify_all();
+    }
+}

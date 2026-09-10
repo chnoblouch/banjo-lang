@@ -38,6 +38,13 @@ pub func swap[T](ref mut a: T, ref mut b: T) {
     copy(&tmp, &b, meta(T).size);
 }
 
+pub func replace[T](ref mut dst: T, src: T) -> T {
+    var prev: T;
+    copy(&dst, &prev, meta(T).size);
+    copy(&src, &dst, meta(T).size);
+    return prev;
+}
+
 pub func compare(addr0: addr, addr1: addr, size: usize) -> bool {
     return c.memcmp(addr0, addr1, size) == 0;
 }
@@ -74,25 +81,5 @@ struct RefIter[T] {
         var pointer = self.pointer;
         self.pointer += 1;
         return pointer;
-    }
-}
-
-struct ArrayMoveIter[T] {
-    var pointer: *T;
-    var end: *T;
-
-    pub func new(pointer: *T, end: *T) -> ArrayMoveIter[T] {
-        return ArrayMoveIter[T] { pointer, end };
-    }
-
-    func __next__(mut self) -> ?T {
-        if self.pointer == self.end {
-            return none;
-        }
-
-        var value: T;
-        copy(self.pointer, &value, meta(T).size);
-        self.pointer += 1;
-        return value;
     }
 }
