@@ -1234,6 +1234,7 @@ struct StructDef {
         NONE,
         OPTIONAL,
         RESULT,
+        SHARED,
     };
 
     ASTNode *ast_node;

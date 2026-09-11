@@ -1,0 +1,36 @@
+# test:subtest
+# test:error 8:14 "cannot apply operator '+' to 'bool' and 'bool'"
+# test:error 12:14 "cannot apply operator '/' to 'char' and 'char'"
+
+func main() {
+    var a1: bool = true;
+    var b1: bool = false;
+    var c1 = a1 + b1;
+
+    var a2: char = 'a';
+    var b2: char = '0';
+    var c2 = a2 / b2;
+}
+
+# test:subtest
+# test:error 22:14 "cannot apply operator '%' to 'f32' and 'f32'"
+# test:error 26:14 "cannot apply operator '|' to 'f64' and 'f64'"
+
+func main() {
+    var a1: f32 = 2.25;
+    var b1: f32 = 0.5;
+    var c1 = a1 % b1;
+
+    var a2: f64 = 0.75;
+    var b2: f64 = -4.0;
+    var c2 = a2 | b2;
+}
+
+# test:subtest
+# test:error 34:13 "cannot apply operator '-' to 'u64'"
+
+func main() {
+    var a: u64 = 42;
+    var b = -a;
+}
+

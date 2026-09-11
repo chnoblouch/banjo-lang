@@ -34,6 +34,7 @@ SemanticAnalyzer::SemanticAnalyzer(
     sir_unit{sir_unit},
     target{target},
     report_generator{report_manager},
+    builder{*this},
     mode{mode} {
 
     scope_stack.push_back(
@@ -206,7 +207,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_shared_def = &find_std_symbol({"std", "shared"}, "Shared").as<sir::StructDef>();
     std_closure_def = &find_std_symbol({"std", "closure"}, "Closure").as<sir::StructDef>();
     std_memory_ref_iter_def = &find_std_symbol({"std", "memory"}, "RefIter").as<sir::StructDef>();
-    std_array_move_iter_def = &find_std_symbol({"std", "array"}, "MoveIter").as<sir::StructDef>();
+    std_memory_move_iter_def = &find_std_symbol({"std", "memory"}, "MoveIter").as<sir::StructDef>();
 
     std_compare_def = &find_std_symbol({"std", "protos"}, "Compare").as<sir::ProtoDef>();
     std_order_def = &find_std_symbol({"std", "protos"}, "Order").as<sir::ProtoDef>();
@@ -226,6 +227,7 @@ void SemanticAnalyzer::populate_preamble_symbols() {
 
     std_optional_def->role = sir::StructDef::Role::OPTIONAL;
     std_result_def->role = sir::StructDef::Role::RESULT;
+    std_shared_def->role = sir::StructDef::Role::SHARED;
 
     std_compare_def->role = sir::ProtoDef::Role::COMPARE;
     std_order_def->role = sir::ProtoDef::Role::ORDER;

@@ -573,10 +573,7 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
     }
 
     if (ctx.moving) {
-        Result in_loop_result = check_for_move_in_loop(resource, inout_expr);
-        if (in_loop_result != Result::SUCCESS) {
-            return Result::ERROR;
-        }
+        RESULT_PROPAGATE(check_for_move_in_loop(resource, inout_expr));
 
         scopes.back().move_states[resource] = MoveState{
             .moved = true,

@@ -252,6 +252,7 @@ std::string ReportText::specialize_expr_to_string(const sir::SpecializeExpr &spe
             case sir::StructDef::Role::NONE: break;
             case sir::StructDef::Role::OPTIONAL: return "?" + to_string(args[0]);
             case sir::StructDef::Role::RESULT: return to_string(args[0]) + " except " + to_string(args[1]);
+            case sir::StructDef::Role::SHARED: return "share " + to_string(args[0]);
         }
     }
 

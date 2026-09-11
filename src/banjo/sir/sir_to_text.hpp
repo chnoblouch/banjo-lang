@@ -8,7 +8,8 @@
 namespace banjo::sir {
 
 std::string_view to_text(BinaryOp binary_op);
+std::string_view to_text(UnaryOp unary_op);
 
-}
+} // namespace banjo::sir
 
 #endif

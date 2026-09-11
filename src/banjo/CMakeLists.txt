@@ -157,6 +157,8 @@ add_library(banjo STATIC
     "reports/report_texts.hpp"
     "sema/attribute_analyzer.cpp"
     "sema/attribute_analyzer.hpp"
+    "sema/builder.cpp"
+    "sema/builder.hpp"
     "sema/completion_context.hpp"
     "sema/const_evaluator.cpp"
     "sema/const_evaluator.hpp"

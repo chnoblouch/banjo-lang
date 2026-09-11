@@ -25,4 +25,17 @@ std::string_view to_text(BinaryOp binary_op) {
     }
 }
 
+std::string_view to_text(UnaryOp unary_op) {
+    switch (unary_op) {
+        case UnaryOp::NEG: return "-";
+        case UnaryOp::BIT_NOT: return "~";
+        case UnaryOp::ADDR: return "&";
+        case UnaryOp::DEREF: return "*";
+        case UnaryOp::NOT: return "!";
+        case UnaryOp::REF: return "ref";
+        case UnaryOp::REF_MUT: return "ref mut";
+        case UnaryOp::SHARE: return "share";
+    }
+}
+
 } // namespace banjo::sir

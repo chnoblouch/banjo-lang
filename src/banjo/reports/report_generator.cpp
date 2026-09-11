@@ -318,6 +318,11 @@ void ReportGenerator::report_err_cannot_apply_operator(const sir::BinaryExpr &bi
     );
 }
 
+void ReportGenerator::report_err_cannot_apply_operator(const sir::UnaryExpr &unary_expr) {
+    std::string_view operator_name = sir::to_text(unary_expr.op);
+    report_error("cannot apply operator '$' to '$'", unary_expr.ast_node, operator_name, unary_expr.value.get_type());
+}
+
 void ReportGenerator::report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr) {
     std::string_view operator_name = sir::to_text(binary_expr.op);
     std::string_view impl_name = sir::MagicMethods::look_up(binary_expr.op);

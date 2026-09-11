@@ -87,6 +87,7 @@ public:
     void report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr);
     void report_err_cannot_infer_lhs(const sir::DotExpr &dot_expr, sir::Expr type);
     void report_err_cannot_apply_operator(const sir::BinaryExpr &binary_expr);
+    void report_err_cannot_apply_operator(const sir::UnaryExpr &unary_expr);
     void report_err_operator_overload_not_found(const sir::BinaryExpr &binary_expr);
     void report_err_operator_overload_not_found(const sir::UnaryExpr &unary_expr);
     void report_err_operator_overload_not_found(const sir::StarExpr &star_expr);

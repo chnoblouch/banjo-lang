@@ -83,3 +83,23 @@ struct RefIter[T] {
         return pointer;
     }
 }
+
+struct MoveIter[T] {
+    var pointer: *T;
+    var end: *T;
+
+    pub func new(pointer: *T, end: *T) -> MoveIter[T] {
+        return MoveIter[T] { pointer, end };
+    }
+
+    func __next__(mut self) -> ?T {
+        if self.pointer == self.end {
+            return none;
+        }
+
+        var value: T;
+        copy(self.pointer, &value, meta(T).size);
+        self.pointer += 1;
+        return value;
+    }
+}

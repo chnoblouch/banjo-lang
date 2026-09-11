@@ -3,6 +3,7 @@
 
 #include "banjo/reports/report_generator.hpp"
 #include "banjo/reports/report_manager.hpp"
+#include "banjo/sema/builder.hpp"
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
 #include "banjo/sema/symbol_context.hpp"
@@ -14,7 +15,6 @@
 #include <cstddef>
 #include <optional>
 #include <set>
-#include <stack>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
@@ -79,6 +79,7 @@ class SemanticAnalyzer {
     friend class MetaExprEvaluator;
     friend class DeclVisitor;
     friend class SymbolContext;
+    friend class Builder;
 
 public:
     SymbolContext symbol_ctx;
@@ -90,6 +91,7 @@ private:
 
 public:
     ReportGenerator report_generator;
+    Builder builder;
 
 private:
     Mode mode;
@@ -108,7 +110,7 @@ public:
     sir::StructDef *std_shared_def = nullptr;
     sir::StructDef *std_closure_def = nullptr;
     sir::StructDef *std_memory_ref_iter_def = nullptr;
-    sir::StructDef *std_array_move_iter_def = nullptr;
+    sir::StructDef *std_memory_move_iter_def = nullptr;
 
     sir::ProtoDef *std_compare_def = nullptr;
     sir::ProtoDef *std_order_def = nullptr;

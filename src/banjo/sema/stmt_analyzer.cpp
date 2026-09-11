@@ -695,7 +695,7 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
         sir::StructDef *struct_def;
 
         switch (for_stmt.iter_kind) {
-            case sir::IterKind::MOVE: struct_def = analyzer.std_array_move_iter_def; break;
+            case sir::IterKind::MOVE: struct_def = analyzer.std_memory_move_iter_def; break;
             case sir::IterKind::REF: struct_def = analyzer.std_memory_ref_iter_def; break;
             case sir::IterKind::MUT: struct_def = analyzer.std_memory_ref_iter_def; break;
         }

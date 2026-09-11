@@ -5,7 +5,6 @@
 #include "banjo/sir/sir.hpp"
 
 #include <optional>
-#include <utility>
 
 namespace banjo::sema {
 
@@ -17,11 +16,10 @@ public:
     static constexpr unsigned DONT_RESOLVE_TYPE_ALIASES = 0x00000004;
 
 private:
-    enum class BinaryOpType {
-        ARITHMETIC,
-        EQUALITY_COMP,
-        ORDER_COMP,
-        LOGICAL,
+    enum class OperatorImpl {
+        BUILTIN,
+        OVERLOAD,
+        NONE,
     };
 
     struct ResolvedGenericMethod {
@@ -62,10 +60,27 @@ private:
     Result analyze_closure_literal(sir::ClosureLiteral &closure_literal, sir::Expr &out_expr);
 
     Result analyze_binary_expr(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
-    Result create_type_check(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
-    Result create_type_comparison(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+    Result analyze_binary_expr_builtin(sir::BinaryExpr &binary_expr);
+    Result analyze_binary_expr_overload(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
+    Result analyze_binary_expr_generic(
+        sir::BinaryExpr &binary_expr,
+        sir::GenericParam &generic_param,
+        sir::Expr &out_expr
+    );
+    Result analyze_binary_expr_type_check(sir::BinaryExpr &binary_expr, sir::Expr &out_expr);
 
     Result analyze_unary_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
+    Result analyze_addr_expr(sir::UnaryExpr &unary_expr);
+    Result analyze_ref_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
+    Result analyze_share_expr(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
+    Result analyze_unary_expr_builtin(sir::UnaryExpr &unary_expr);
+    Result analyze_unary_expr_overload(sir::UnaryExpr &unary_expr, sir::Expr &out_expr);
+    Result analyze_unary_expr_generic(
+        sir::UnaryExpr &unary_expr,
+        sir::GenericParam &generic_param,
+        sir::Expr &out_expr
+    );
+
     Result analyze_cast_expr(sir::CastExpr &cast_expr);
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);
 
@@ -116,16 +131,23 @@ private:
 
     Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
     void resolve_type_aliases(sir::Expr &expr);
+    sir::Expr derefence_completely(sir::Expr value);
 
     sir::Expr specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node);
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident &rhs, sir::Symbol method);
-
     sir::Expr create_isize_cast(sir::Expr value);
     std::span<sir::Expr> prepend_arg(sir::Expr arg, std::span<sir::Expr> args);
 
     sir::ProtoDef *proto_of(sir::BinaryOp op);
     sir::ProtoDef *proto_of(sir::UnaryOp op);
-    BinaryOpType get_binary_op_type(sir::BinaryOp op);
+
+    OperatorImpl binary_op_impl(sir::BinaryOp op, sir::Expr type);
+    OperatorImpl unary_op_impl(sir::UnaryOp op, sir::Expr type);
+    bool primitive_supports(sir::Primitive primitive, sir::BinaryOp op);
+    bool primitive_supports(sir::Primitive primitive, sir::UnaryOp op);
+    OperatorImpl pseudo_type_impl(sir::PseudoTypeKind kind, sir::BinaryOp op);
+    OperatorImpl pseudo_type_impl(sir::PseudoTypeKind kind, sir::UnaryOp op);
+
     bool can_be_coerced(sir::Expr value);
     bool is_non_generic(sir::Expr type);
     bool is_method(sir::Symbol symbol);
