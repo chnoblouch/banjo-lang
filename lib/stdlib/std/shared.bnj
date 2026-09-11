@@ -14,11 +14,11 @@ struct Shared[T] {
         return Shared[T] { data };
     }
 
-    pub func get(self) -> *T {
+    pub func get(mut self) -> *T {
         return &self.data.value;
     }
 
-    pub func copy(self) -> Shared[T] {
+    pub func copy(mut self) -> Shared[T] {
         self.data.ref_count += 1;
         return Shared[T] { data: self.data };
     }
@@ -27,7 +27,7 @@ struct Shared[T] {
         return self.data.value;
     }
 
-    pub func __deinit__(self) {
+    pub func __deinit__(mut self) {
         self.data.ref_count -= 1;
 
         if self.data.ref_count == 0 {

@@ -39,7 +39,6 @@ public:
     void pop_meta_condition();
 
     SymbolLookupResult look_up(const sir::IdentExpr &ident_expr);
-    SymbolLookupResult look_up_rhs_local(sir::DotExpr &dot_expr);
     SymbolLookupResult look_up_rhs_local(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table);
     sir::Symbol try_resolve_meta_if(sir::SymbolTable &symbol_table, std::string_view name);
 

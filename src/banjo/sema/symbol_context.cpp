@@ -79,11 +79,6 @@ SymbolLookupResult SymbolContext::look_up(const sir::IdentExpr &ident_expr) {
     return resolve_if_guarded(result, ident_expr.ast_node);
 }
 
-SymbolLookupResult SymbolContext::look_up_rhs_local(sir::DotExpr &dot_expr) {
-    sir::DeclBlock *decl_block = dot_expr.lhs.get_decl_block();
-    return look_up_rhs_local(dot_expr, *decl_block->symbol_table);
-}
-
 SymbolLookupResult SymbolContext::look_up_rhs_local(sir::DotExpr &dot_expr, sir::SymbolTable &symbol_table) {
     std::string_view name = dot_expr.rhs.value;
 
