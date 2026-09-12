@@ -3,15 +3,20 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
-#include <string_view>
-
 namespace banjo::sema {
-
-static constexpr std::string_view SHARED_GET_NAME = "get";
 
 Builder::Builder(SemanticAnalyzer &analyzer) : analyzer{analyzer} {}
 
 sir::UnaryExpr *Builder::create_deref_expr(sir::Expr value, sir::PointerType &type) {
+    return analyzer.create<sir::UnaryExpr>({
+        .ast_node = nullptr,
+        .type = type.base_type,
+        .op = sir::UnaryOp::DEREF,
+        .value = value,
+    });
+}
+
+sir::UnaryExpr *Builder::create_deref_expr(sir::Expr value, sir::ReferenceType &type) {
     return analyzer.create<sir::UnaryExpr>({
         .ast_node = nullptr,
         .type = type.base_type,
@@ -74,29 +79,26 @@ sir::SymbolExpr *Builder::create_symbol_type(sir::Symbol symbol) {
     });
 }
 
-sir::CallExpr *Builder::create_deref_shared(
-    sir::Expr value,
-    sir::Concrete<sir::StructDef> &concrete_struct,
+sir::CallExpr *Builder::create_method_call(
+    sir::Expr base,
+    sir::Concrete<sir::FuncDef> &concrete_func,
     ASTNode *ast_node
 ) {
-    sir::Symbol symbol = concrete_struct.def->block.symbol_table->look_up_local(SHARED_GET_NAME);
-    sir::FuncDef &func_def = symbol.as<sir::FuncDef>();
-
-    sir::Specializer specializer{analyzer.mod->trivial_arena, concrete_struct};
-    sir::FuncType *func_type = specializer.specialize_func_type(func_def.type);
+    sir::Specializer specializer{analyzer.mod->trivial_arena, concrete_func};
+    sir::FuncType *func_type = specializer.specialize_func_type(concrete_func.def->type);
 
     sir::SpecializeExpr *callee = analyzer.create<sir::SpecializeExpr>({
         .ast_node = nullptr,
         .type = func_type,
-        .symbol = symbol,
-        .args = concrete_struct.generic_args,
+        .symbol = concrete_func.def,
+        .args = concrete_func.generic_args,
     });
 
     return analyzer.create<sir::CallExpr>({
         .ast_node = ast_node,
         .type = func_type->return_type,
         .callee = callee,
-        .args = analyzer.create_array({value}),
+        .args = analyzer.create_array<sir::Expr>({create_ref_expr(base, false)}),
     });
 }
 

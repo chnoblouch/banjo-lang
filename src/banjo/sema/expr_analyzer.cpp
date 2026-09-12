@@ -1929,8 +1929,8 @@ Result ExprAnalyzer::resolve_decl_member(sir::DotExpr &dot_expr, sir::Expr &out_
 }
 
 Result ExprAnalyzer::resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr) {
-    sir::Expr lhs = dot_expr.lhs;
-    sir::Expr base_type = analyzer.get_resolved_type(lhs);
+    sir::Expr base = dot_expr.lhs;
+    sir::Expr base_type = analyzer.get_resolved_type(base);
 
     std::optional<ResolvedField> field;
 
@@ -1948,10 +1948,14 @@ Result ExprAnalyzer::resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr) 
             }
         } else if (auto pointer_type = base_type.match<sir::PointerType>()) {
             if (!pointer_type->base_type.match_concrete<sir::ProtoDef>()) {
-                lhs = analyzer.builder.create_deref_expr(lhs, *pointer_type);
+                base = analyzer.builder.create_deref_expr(base, *pointer_type);
                 base_type = pointer_type->base_type;
                 continue;
             }
+        } else if (auto reference_type = base_type.match<sir::ReferenceType>()) {
+            base = analyzer.builder.create_deref_expr(base, *reference_type);
+            base_type = reference_type->base_type;
+            continue;
         } else {
             analyzer.report_generator.report_err_no_members(dot_expr);
             return Result::ERROR;
@@ -1961,6 +1965,17 @@ Result ExprAnalyzer::resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr) 
             break;
         }
 
+        if (auto concrete_struct = base_type.match_concrete<sir::StructDef>()) {
+            sir::SymbolTable &symbol_table = *concrete_struct->def->block.symbol_table;
+
+            if (auto func_def = symbol_table.look_up_local(sir::MagicMethods::OP_DEREF)) {
+                sir::Concrete<sir::FuncDef> func{&func_def.as<sir::FuncDef>(), concrete_struct->generic_args};
+                base = analyzer.builder.create_method_call(base, func, dot_expr.ast_node);
+                base_type = base.get_type();
+                continue;
+            }
+        }
+
         analyzer.report_generator.report_err_no_field(dot_expr.rhs, base_type);
         return Result::ERROR;
     }
@@ -1968,7 +1983,7 @@ Result ExprAnalyzer::resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr) 
     out_expr = analyzer.create<sir::FieldExpr>({
         .ast_node = dot_expr.ast_node,
         .type = field->type,
-        .base = lhs,
+        .base = base,
         .field_index = field->index,
     });
 
@@ -1980,86 +1995,129 @@ Result ExprAnalyzer::resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr) 
 }
 
 Result ExprAnalyzer::resolve_method_call(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr) {
-    sir::Expr lhs = derefence_completely(dot_expr.lhs);
-    sir::Expr lhs_type = analyzer.get_resolved_type(lhs);
+    sir::Expr base = dot_expr.lhs;
+    sir::Expr base_type = analyzer.get_resolved_type(base);
 
-    if (auto concrete_struct = lhs_type.match_concrete<sir::StructDef>()) {
-        sir::StructDef &struct_def = *concrete_struct->def;
+    sir::Symbol method = nullptr;
 
-        if (sir::Symbol symbol = struct_def.block.symbol_table->look_up_local(dot_expr.rhs.value)) {
-            if (is_method(symbol)) {
-                create_method_call(out_call_expr, lhs, dot_expr.rhs, symbol);
+    while (true) {
+        if (auto concrete_struct = base_type.match_concrete<sir::StructDef>()) {
+            sir::StructDef &struct_def = *concrete_struct->def;
+
+            if (auto symbol = struct_def.block.symbol_table->look_up_local(dot_expr.rhs.value)) {
+                if (is_method(symbol)) {
+                    method = symbol;
+                }
+            }
+        } else if (auto union_def = base_type.match_symbol<sir::UnionDef>()) {
+            method = union_def->block.symbol_table->look_up_local(dot_expr.rhs.value);
+
+            if (auto symbol = union_def->block.symbol_table->look_up_local(dot_expr.rhs.value)) {
+                if (is_method(symbol)) {
+                    method = symbol;
+                }
+            }
+        } else if (auto concrete_proto = base_type.match_proto_ptr()) {
+            sir::ProtoDef &proto_def = *concrete_proto->def;
+
+            if (sir::Symbol symbol = proto_def.block.symbol_table->look_up_local(dot_expr.rhs.value)) {
+                if (!is_method(symbol)) {
+                    analyzer.report_generator.report_err_not_a_method(dot_expr.rhs, symbol, proto_def.ident.value);
+                    return Result::ERROR;
+                }
+
+                analyzer.add_symbol_use(dot_expr.rhs.ast_node, symbol);
+
+                if (concrete_proto->is_specialization()) {
+                    out_call_expr.callee = specialize(symbol, concrete_proto->generic_args, out_call_expr.ast_node);
+                } else {
+                    out_call_expr.callee = analyzer.create<sir::SymbolExpr>({
+                        .ast_node = out_call_expr.ast_node,
+                        .type = symbol.get_type(),
+                        .symbol = symbol,
+                    });
+                }
+
+                out_call_expr.args = prepend_arg(base, out_call_expr.args);
                 return Result::SUCCESS;
-            } else {
-                analyzer.report_generator.report_err_not_a_method(dot_expr.rhs, symbol, struct_def.ident.value);
-                return Result::ERROR;
             }
-        }
-    } else if (auto union_def = lhs_type.match_symbol<sir::UnionDef>()) {
-        if (sir::Symbol symbol = union_def->block.symbol_table->look_up_local(dot_expr.rhs.value)) {
-            if (is_method(symbol)) {
-                create_method_call(out_call_expr, lhs, dot_expr.rhs, symbol);
-                return Result::SUCCESS;
-            } else {
-                analyzer.report_generator.report_err_not_a_method(dot_expr.rhs, symbol, union_def->ident.value);
-                return Result::ERROR;
-            }
-        }
-    } else if (auto concrete_proto = lhs_type.match_proto_ptr()) {
-        sir::ProtoDef &proto_def = *concrete_proto->def;
+        } else if (auto generic_param = base_type.match_symbol<sir::GenericParam>()) {
+            std::string_view name = dot_expr.rhs.value;
 
-        if (sir::Symbol symbol = proto_def.block.symbol_table->look_up_local(dot_expr.rhs.value)) {
-            if (!is_method(symbol)) {
-                analyzer.report_generator.report_err_not_a_method(dot_expr.rhs, symbol, proto_def.ident.value);
-                return Result::ERROR;
-            }
+            if (auto method = resolve_generic_method_call(*generic_param, name)) {
+                analyzer.add_symbol_use(dot_expr.rhs.ast_node, method->symbol);
 
-            analyzer.add_symbol_use(dot_expr.rhs.ast_node, symbol);
+                if (!utils::is_one_of(
+                        method->proto_def->role,
+                        {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY}
+                    )) {
+                    analyzer.report_generator.report_err_cannot_call_generic_operator_overload(dot_expr.rhs);
+                    return Result::ERROR;
+                }
 
-            if (concrete_proto->is_specialization()) {
-                out_call_expr.callee = specialize(symbol, concrete_proto->generic_args, out_call_expr.ast_node);
-            } else {
-                out_call_expr.callee = analyzer.create<sir::SymbolExpr>({
-                    .ast_node = out_call_expr.ast_node,
-                    .type = symbol.get_type(),
-                    .symbol = symbol,
+                out_call_expr.callee = analyzer.create<sir::PlaceholderExpr>({
+                    .ast_node = nullptr,
+                    .type = method->type,
+                    .kind = sir::PlaceholderExpr::GenericMethod{
+                        .param = generic_param,
+                        .proto_def = method->proto_def,
+                        .symbol_name = method->symbol.get_name(),
+                    },
                 });
+
+                out_call_expr.args = prepend_arg(base, out_call_expr.args);
+                return Result::SUCCESS;
             }
-
-            out_call_expr.args = prepend_arg(lhs, out_call_expr.args);
-            return Result::SUCCESS;
-        }
-    } else if (auto generic_param = lhs_type.match_symbol<sir::GenericParam>()) {
-        std::string_view name = dot_expr.rhs.value;
-
-        if (auto method = resolve_generic_method_call(*generic_param, name)) {
-            analyzer.add_symbol_use(dot_expr.rhs.ast_node, method->symbol);
-
-            if (!utils::is_one_of(method->proto_def->role, {sir::ProtoDef::Role::NONE, sir::ProtoDef::Role::COPY})) {
-                analyzer.report_generator.report_err_cannot_call_generic_operator_overload(dot_expr.rhs);
-                return Result::ERROR;
+        } else if (auto pointer_type = base_type.match<sir::PointerType>()) {
+            if (!pointer_type->base_type.match_concrete<sir::ProtoDef>()) {
+                base = analyzer.builder.create_deref_expr(base, *pointer_type);
+                base_type = pointer_type->base_type;
+                continue;
             }
-
-            out_call_expr.callee = analyzer.create<sir::PlaceholderExpr>({
-                .ast_node = nullptr,
-                .type = method->type,
-                .kind = sir::PlaceholderExpr::GenericMethod{
-                    .param = generic_param,
-                    .proto_def = method->proto_def,
-                    .symbol_name = method->symbol.get_name(),
-                },
-            });
-
-            out_call_expr.args = prepend_arg(lhs, out_call_expr.args);
-            return Result::SUCCESS;
+        } else if (auto reference_type = base_type.match<sir::ReferenceType>()) {
+            base = analyzer.builder.create_deref_expr(base, *reference_type);
+            base_type = reference_type->base_type;
+            continue;
+        } else {
+            analyzer.report_generator.report_err_no_members(dot_expr);
+            return Result::ERROR;
         }
-    } else {
-        analyzer.report_generator.report_err_no_members(dot_expr);
+
+        if (method) {
+            break;
+        }
+
+        if (auto concrete_struct = base_type.match_concrete<sir::StructDef>()) {
+            sir::SymbolTable &symbol_table = *concrete_struct->def->block.symbol_table;
+
+            if (auto func_def = symbol_table.look_up_local(sir::MagicMethods::OP_DEREF)) {
+                sir::Concrete<sir::FuncDef> func{&func_def.as<sir::FuncDef>(), concrete_struct->generic_args};
+                base = analyzer.builder.create_method_call(base, func, dot_expr.ast_node);
+                base_type = base.get_type();
+                continue;
+            }
+        }
+
+        analyzer.report_generator.report_err_no_method(dot_expr.rhs, base_type);
         return Result::ERROR;
     }
 
-    analyzer.report_generator.report_err_no_method(dot_expr.rhs, lhs_type);
-    return Result::ERROR;
+    // We used to specialize here using the generic arguments of the left-hand
+    // side, but this crashes when the method itself is generic because in that
+    // case not all arguments are known. Instead, we now leave the symbol
+    // expression as-is and let the `self` type be inferred by generic argument
+    // inference.
+
+    out_call_expr.callee = analyzer.create<sir::SymbolExpr>({
+        .ast_node = dot_expr.rhs.ast_node,
+        .type = method.get_type(),
+        .symbol = method,
+    });
+
+    out_call_expr.args = prepend_arg(base, out_call_expr.args);
+    analyzer.add_symbol_use(dot_expr.rhs.ast_node, method);
+
+    return Result::SUCCESS;
 }
 
 std::optional<ExprAnalyzer::ResolvedField> ExprAnalyzer::resolve_struct_field(
@@ -2186,31 +2244,6 @@ void ExprAnalyzer::resolve_type_aliases(sir::Expr &expr) {
     }
 }
 
-sir::Expr ExprAnalyzer::derefence_completely(sir::Expr value) {
-    sir::Expr type = analyzer.get_resolved_type(value);
-
-    while (true) {
-        if (auto pointer_type = type.match<sir::PointerType>()) {
-            if (pointer_type->base_type.match_concrete<sir::ProtoDef>()) {
-                break;
-            }
-
-            value = analyzer.create<sir::UnaryExpr>({
-                .ast_node = nullptr,
-                .type = pointer_type->base_type,
-                .op = sir::UnaryOp::DEREF,
-                .value = value,
-            });
-
-            type = pointer_type->base_type;
-        } else {
-            break;
-        }
-    }
-
-    return value;
-}
-
 sir::SpecializeExpr *ExprAnalyzer::specialize(
     sir::Symbol symbol,
     std::span<sir::Expr> generic_args,
@@ -2235,25 +2268,6 @@ sir::SpecializeExpr *ExprAnalyzer::specialize(
             .args = generic_args,
         }
     );
-}
-
-void ExprAnalyzer::create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident &rhs, sir::Symbol method) {
-    analyzer.add_symbol_use(rhs.ast_node, method);
-
-    // We used to specialize here using the generic arguments of the left-hand side, but this
-    // crashes when the method itself is generic because in that case not all arguments are known.
-    // Instead, we now leave the symbol expression as-is and let the `self` type be inferred by
-    // generic argument inference.
-
-    call_expr.callee = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = rhs.ast_node,
-            .type = method.get_type(),
-            .symbol = method,
-        }
-    );
-
-    call_expr.args = prepend_arg(lhs, call_expr.args);
 }
 
 sir::Expr ExprAnalyzer::create_isize_cast(sir::Expr value) {

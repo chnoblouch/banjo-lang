@@ -17,6 +17,7 @@ public:
     Builder(SemanticAnalyzer &analyzer);
 
     sir::UnaryExpr *create_deref_expr(sir::Expr value, sir::PointerType &type);
+    sir::UnaryExpr *create_deref_expr(sir::Expr value, sir::ReferenceType &type);
     sir::UnaryExpr *create_ref_expr(sir::Expr value, bool mut);
     sir::CallExpr *create_call_expr(sir::Concrete<sir::FuncDef> &concrete_func, std::span<sir::Expr> args);
 
@@ -26,11 +27,7 @@ public:
     sir::PseudoType *create_pseudo_type(sir::PseudoTypeKind kind);
     sir::SymbolExpr *create_symbol_type(sir::Symbol symbol);
 
-    sir::CallExpr *create_deref_shared(
-        sir::Expr value,
-        sir::Concrete<sir::StructDef> &concrete_struct,
-        ASTNode *ast_node
-    );
+    sir::CallExpr *create_method_call(sir::Expr base, sir::Concrete<sir::FuncDef> &concrete_func, ASTNode *ast_node);
 };
 
 } // namespace banjo::sema
