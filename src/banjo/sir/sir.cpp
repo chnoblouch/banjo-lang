@@ -705,7 +705,7 @@ std::optional<unsigned> UnionCase::find_field(std::string_view name) const {
     return {};
 }
 
-std::optional<unsigned> ProtoDef::get_index(std::string_view name) const {
+std::optional<unsigned> ProtoDef::find_method(std::string_view name) const {
     for (unsigned i = 0; i < func_decls.size(); i++) {
         if (func_decls[i].get_ident().value == name) {
             return i;

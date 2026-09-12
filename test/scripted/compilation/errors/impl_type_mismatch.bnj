@@ -5,7 +5,7 @@ proto Stream {
 }
 
 # test:subtest
-# test:error 12:10 "method type does not match declaration (expected 'func(ref Stream, *u8, usize)', got 'func(ref S)')"
+# test:error 12:10 "method type does not match declaration (expected 'func(ref self.type, *u8, usize)', got 'func(ref S)')"
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {
@@ -13,7 +13,7 @@ struct S: Stream {
 }
 
 # test:subtest
-# test:error 20:10 "method type does not match declaration (expected 'func(ref Stream, *u8, usize)', got 'func(ref S, *u8, i32)')"
+# test:error 20:10 "method type does not match declaration (expected 'func(ref self.type, *u8, usize)', got 'func(ref S, *u8, i32)')"
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {
@@ -21,11 +21,35 @@ struct S: Stream {
 }
 
 # test:subtest
-# test:error 28:10 "method type does not match declaration (expected 'func(ref Stream, *u8, usize)', got 'func(ref S, *u8, usize) -> bool')"
+# test:error 28:10 "method type does not match declaration (expected 'func(ref self.type, *u8, usize)', got 'func(ref S, *u8, usize) -> bool')"
 # test:note 4:10 "method declared here, in proto 'Stream'"
 
 struct S: Stream {
     func write(self, data: *u8, size: usize) -> bool {
         return false;
     }
+}
+
+# test:subtest
+# test:error 42:10 "method type does not match declaration (expected 'func(ref self.type)', got 'func(ref mut S)')"
+# test:note 38:10 "method declared here, in proto 'P'" 
+
+proto P {
+    func m(self);
+}
+
+struct S: P {
+    func m(mut self) {}
+}
+
+# test:subtest
+# test:error 54:10 "method type does not match declaration (expected 'func(self.type)', got 'func(ref S)')"
+# test:note 50:10 "method declared here, in proto 'P'" 
+
+proto P {
+    func m(move self);
+}
+
+struct S: P {
+    func m(self) {}
 }

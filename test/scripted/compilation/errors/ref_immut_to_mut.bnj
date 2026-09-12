@@ -21,3 +21,15 @@ func f(ref s: S) {
 }
 
 func f_mut(ref mut a: i32) {}
+
+# test:subtest
+# test:error 34:5 "cannot pass immutable by mutable reference ('ref mut T')"
+# test:note 33:14 "'p' is an immutable reference ('ref T')"
+
+proto P {
+    func m(mut self);
+}
+
+func f[T: P](p: ref T) {
+    p.m();
+}

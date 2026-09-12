@@ -587,7 +587,7 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
             concrete_proto->generic_args = specializer.specialize_expr_list(concrete_proto->generic_args);
         }
 
-        unsigned index = *concrete_proto->def->get_index(callee_symbol.get_ident().value);
+        unsigned index = *concrete_proto->def->find_method(callee_symbol.get_ident().value);
         ssa::Type vtable_type = ctx.ssa_proto_vtable_types.find(*concrete_proto);
 
         ssa_proto_self = generate(call_expr.args[0]).turn_into_reference(ctx).get_ptr();

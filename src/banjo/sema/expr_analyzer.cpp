@@ -26,6 +26,7 @@
 
 #include <optional>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace banjo::sema {
@@ -1893,17 +1894,11 @@ Result ExprAnalyzer::analyze_meta_call_expr(sir::MetaCallExpr &meta_call_expr, s
 
 Result ExprAnalyzer::analyze_completion_token() {
     if (analyzer.is_in_stmt_block()) {
-        analyzer.completion_context = CompleteInBlock{
-            .block = &analyzer.get_block(),
-        };
+        analyzer.completion_context = CompleteInBlock{.block = &analyzer.get_block()};
     } else if (analyzer.is_in_decl()) {
-        analyzer.completion_context = CompleteInDeclBlock{
-            .decl_block = &analyzer.get_decl_block(),
-        };
+        analyzer.completion_context = CompleteInDeclBlock{.decl_block = &analyzer.get_decl_block()};
     } else {
-        analyzer.completion_context = CompleteInDeclBlock{
-            .decl_block = &analyzer.get_mod().block,
-        };
+        analyzer.completion_context = CompleteInDeclBlock{.decl_block = &analyzer.get_mod().block};
     }
 
     // Return an error so as not to continue analysing expressions that contain
@@ -2159,25 +2154,32 @@ Result ExprAnalyzer::finalize_call_expr_args(
         return Result::ERROR;
     }
 
+    sir::FuncType *proto_method_type = nullptr;
+    sir::Expr proto_self_type = nullptr;
+
+    if (auto placeholder_expr = call_expr.callee.match<sir::PlaceholderExpr>()) {
+        if (auto generic_method = std::get_if<sir::PlaceholderExpr::GenericMethod>(&placeholder_expr->kind)) {
+            if (std::optional<unsigned> index = generic_method->proto_def->find_method(generic_method->symbol_name)) {
+                sir::ProtoFuncDecl &decl = generic_method->proto_def->func_decls[*index];
+                proto_method_type = &decl.get_type();
+            }
+        }
+    }
+
+    if (proto_method_type && !proto_method_type->params.empty()) {
+        proto_self_type = proto_method_type->params[0].type;
+    }
+
     for (unsigned i = 0; i < call_expr.args.size(); i++) {
         sir::Expr &arg = call_expr.args[i];
         sir::Expr expected_type = func_type.params[i].type;
 
-        // If we're calling a method on a generic type, the type of the `self` parameter
-        // is the type that is substituted for `T` and not a pointer to a `proto`.
-        // FIXME: `mut self`, `move self`
-        if (i == 0 && call_expr.callee.is<sir::PlaceholderExpr>()) {
-            auto &generic_method =
-                std::get<sir::PlaceholderExpr::GenericMethod>(call_expr.callee.as<sir::PlaceholderExpr>().kind);
-
-            expected_type = analyzer.builder.create_reference_type(
-                analyzer.create<sir::SymbolExpr>({
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .symbol = generic_method.param,
-                }),
-                false
-            );
+        if (i == 0 && proto_self_type) {
+            if (auto reference_type = proto_self_type.match<sir::ReferenceType>()) {
+                expected_type = analyzer.builder.create_reference_type(arg.get_type(), reference_type->mut);
+            } else {
+                expected_type = arg.get_type();
+            }
         }
 
         RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize_by_coercion(arg, expected_type));

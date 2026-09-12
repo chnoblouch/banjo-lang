@@ -345,34 +345,22 @@ void DeclInterfaceAnalyzer::analyze_self_param(sir::FuncType &func_type, unsigne
             std::span<sir::Expr> args = analyzer.allocate_array<sir::Expr>(struct_def->generic_params.size());
 
             for (unsigned i = 0; i < args.size(); i++) {
-                args[i] = analyzer.create(
-                    sir::SymbolExpr{
-                        .ast_node = nullptr,
-                        .type = nullptr,
-                        .symbol = struct_def->generic_params[i],
-                    }
-                );
+                args[i] = analyzer.builder.create_symbol_type(struct_def->generic_params[i]);
             }
 
-            base_type = analyzer.create(
-                sir::SpecializeExpr{
-                    .ast_node = nullptr,
-                    .type = nullptr,
-                    .symbol = func_parent,
-                    .args = args,
-                }
-            );
-        }
-    }
-
-    if (!base_type) {
-        base_type = analyzer.create(
-            sir::SymbolExpr{
+            base_type = analyzer.create<sir::SpecializeExpr>({
                 .ast_node = nullptr,
                 .type = nullptr,
                 .symbol = func_parent,
-            }
-        );
+                .args = args,
+            });
+        }
+    } else if (func_parent.is<sir::ProtoDef>()) {
+        base_type = analyzer.builder.create_pseudo_type(sir::PseudoTypeKind::SELF_TYPE);
+    }
+
+    if (!base_type) {
+        base_type = analyzer.builder.create_symbol_type(func_parent);
     }
 
     if (param.attrs && param.attrs->byval) {

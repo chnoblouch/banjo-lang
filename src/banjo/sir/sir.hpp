@@ -1359,7 +1359,7 @@ struct ProtoDef {
     std::span<GenericParam *> generic_params;
     SemaStage stage;
 
-    std::optional<unsigned> get_index(std::string_view name) const;
+    std::optional<unsigned> find_method(std::string_view name) const;
     bool is_generic() const { return !generic_params.empty(); }
 };
 

@@ -53,4 +53,12 @@ sir::PseudoType *Builder::create_pseudo_type(sir::PseudoTypeKind kind) {
     });
 }
 
+sir::SymbolExpr *Builder::create_symbol_type(sir::Symbol symbol) {
+    return analyzer.create<sir::SymbolExpr>({
+        .ast_node = nullptr,
+        .type = nullptr,
+        .symbol = symbol,
+    });
+}
+
 } // namespace banjo::sema

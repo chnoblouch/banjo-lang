@@ -76,7 +76,7 @@ struct File: Read, Write, Seek {
         return string;
     }
 
-    pub func read(self, data: Slice[u8]) -> usize except Error {
+    pub func read(mut self, data: Slice[u8]) -> usize except Error {
         var result = c.fread(data.data, 1, data.length, self.stream);
 
         if result == data.length || c.feof(self.stream) != 0 {
@@ -86,7 +86,7 @@ struct File: Read, Write, Seek {
         }
     }
 
-    pub func write(self, data: Slice[u8]) -> usize except Error {
+    pub func write(mut self, data: Slice[u8]) -> usize except Error {
         var result = c.fwrite(data.data, 1, data.length, self.stream);
 
         if result == data.length {

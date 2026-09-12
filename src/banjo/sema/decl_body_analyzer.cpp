@@ -150,15 +150,7 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concr
         }
 
         sir::Comparison comparison{[&](sir::Comparison &, sir::Expr lhs, sir::Expr rhs) {
-            if (auto pseudo_type = lhs.match<sir::PseudoType>()) {
-                if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
-                    if (auto concrete_struct = rhs.match_concrete<sir::StructDef>()) {
-                        return std::optional<bool>{concrete_struct->def == &struct_def};
-                    } else {
-                        return std::optional<bool>{false};
-                    }
-                }
-            } else if (auto pseudo_type = rhs.match<sir::PseudoType>()) {
+            if (auto pseudo_type = rhs.match<sir::PseudoType>()) {
                 if (pseudo_type->kind == sir::PseudoTypeKind::SELF_TYPE) {
                     if (auto concrete_struct = lhs.match_concrete<sir::StructDef>()) {
                         return std::optional<bool>{concrete_struct->def == &struct_def};
@@ -171,7 +163,7 @@ void DeclBodyAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::Concr
             return std::optional<bool>{};
         }};
 
-        if (!comparison.compare(def_type, *decl_type, 1)) {
+        if (!comparison.compare(def_type, *decl_type, 0)) {
             analyzer.report_generator.report_err_impl_type_mismatch(func_def, func_decl);
         }
     }

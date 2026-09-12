@@ -1,0 +1,97 @@
+# test:subtest
+# test:output "m"
+
+proto P {
+    func m(self);
+}
+
+struct S: P {
+    pub func m(self) {
+        print('m');
+    }
+}
+
+func f[T: P](p: T) {
+    p.m();
+}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:output "m"
+
+proto P {
+    func m(mut self) {
+        print('m');
+    }
+}
+
+struct S: P {}
+
+func f[T: P](p: T) {
+    p.m();
+}
+
+func main() {
+    f(S {});
+}
+
+# test:subtest
+# test:output "0,42"
+
+proto P {
+    func m(mut self);
+}
+
+struct S: P {
+    var i: u32;
+
+    pub func m(mut self) {
+        self.i = 42;
+    }
+}
+
+func f[T: P](p: ref mut T) {
+    p.m();
+}
+
+func main() {
+    var s = S { i: 0 };
+    print(s.i);
+    print(',');
+
+    f(ref mut s);
+    print(s.i);
+}
+
+# test:subtest
+# test:output "r42;"
+
+proto P {
+    func m(move self);
+}
+
+struct R: P {
+    var i: u32;
+
+    pub func m(move self) {
+        self.i = 42;
+    }
+
+    pub func __deinit__(self) {
+        print('r');
+        print(self.i);
+    }
+}
+
+func f[T: P](p: T) {
+    p.m();
+}
+
+func main() {
+    var r = R { i: 0 };
+    f(r);
+    print(';');
+}

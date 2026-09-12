@@ -22,6 +22,7 @@ public:
     sir::PointerType *create_pointer_type(sir::Expr base_type);
     sir::ReferenceType *create_reference_type(sir::Expr base_type, bool mut);
     sir::PseudoType *create_pseudo_type(sir::PseudoTypeKind kind);
+    sir::SymbolExpr *create_symbol_type(sir::Symbol symbol);
 };
 
 } // namespace banjo::sema
