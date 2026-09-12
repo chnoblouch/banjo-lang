@@ -90,7 +90,6 @@ private:
     Result analyze_cast_expr(sir::CastExpr &cast_expr);
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);
 
-    Result analyze_dot_expr_callee(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr, bool &is_method);
     std::optional<ResolvedGenericMethod> resolve_generic_method_call(
         sir::GenericParam &generic_param,
         std::string_view name
@@ -119,7 +118,6 @@ private:
 
     Result analyze_completion_token();
 
-    Result analyze_dot_expr_rhs(sir::DotExpr &dot_expr, sir::Expr &out_expr);
     Result analyze_index_expr(sir::BracketExpr &bracket_expr, sir::Expr base_type, sir::Expr &out_expr);
 
     Result analyze_operator_overload_call(
@@ -137,6 +135,7 @@ private:
 
     Result resolve_decl_member(sir::DotExpr &dot_expr, sir::Expr &out_expr, sir::DeclBlock &block);
     Result resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr);
+    Result resolve_method_call(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
     std::optional<ResolvedField> resolve_struct_field(sir::Concrete<sir::StructDef> struct_, std::string_view name);
     std::optional<ResolvedField> resolve_union_case_field(sir::UnionCase &union_case, std::string_view name);
     std::optional<ResolvedField> resolve_tuple_field(sir::TupleExpr &tuple_type, std::string_view name);
@@ -145,7 +144,7 @@ private:
     void resolve_type_aliases(sir::Expr &expr);
     sir::Expr derefence_completely(sir::Expr value);
 
-    sir::Expr specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node);
+    sir::SpecializeExpr *specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node);
     void create_method_call(sir::CallExpr &call_expr, sir::Expr lhs, sir::Ident &rhs, sir::Symbol method);
     sir::Expr create_isize_cast(sir::Expr value);
     std::span<sir::Expr> prepend_arg(sir::Expr arg, std::span<sir::Expr> args);
