@@ -15,6 +15,16 @@ struct ValueResource {
     }
 }
 
+struct BoolResource {
+    var id: i32;
+    var value: bool;
+
+    func __deinit__(self) {
+        print('v');
+        print(self.id);
+    }
+}
+
 # test:subtest
 # test:output "abrcd"
 
@@ -106,6 +116,27 @@ func main() {
 }
 
 # test:subtest
+# test:output "av0v1bc"
+
+func create_bool(id: i32, value: bool) -> BoolResource {
+    return BoolResource { id, value };
+}
+
+func main() {
+    print('a');
+
+    if create_bool(0, false).value {
+        print('!');
+    } else if create_bool(1, true).value {
+        print('b');
+    } else {
+        print('!');
+    }
+
+    print('c');
+}
+
+# test:subtest
 # test:output "abrcd"
 
 func consume(resource: Resource) -> bool {
@@ -115,7 +146,6 @@ func consume(resource: Resource) -> bool {
 
 func main() {
     var resource = Resource {};
-
     print('a');
 
     while consume(resource) {
@@ -124,6 +154,25 @@ func main() {
     }
 
     print('d');
+}
+
+# test:subtest
+# test:output "av3bv2bv1bv0c"
+
+func create_bool(index: i32) -> BoolResource {
+    return BoolResource { id: index, value: index > 0 };
+}
+
+func main() {
+    print('a');
+    var index = 3;
+
+    while create_bool(index).value {
+        print('b');
+        index -= 1;
+    }
+
+    print('c');
 }
 
 # test:subtest
