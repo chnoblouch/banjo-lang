@@ -146,6 +146,10 @@ meta if config.OS == config.LINUX {
 }
 
 meta if os.IS_UNIX {
+    const STDIN_FILENO: i32 = 0;
+    const STDOUT_FILENO: i32 = 1;
+    const STDERR_FILENO: i32 = 2;
+
     @c_variadic native func open(path: *u8, flags: i32) -> i32;
     native func read(fd: i32, buf: addr, count: usize) -> c.SSize;
     native func write(fd: i32, buf: addr, count: usize) -> c.SSize;

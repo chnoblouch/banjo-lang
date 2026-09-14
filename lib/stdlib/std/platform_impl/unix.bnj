@@ -13,7 +13,7 @@ meta if IS_UNIX {
         var value: i32;
     }
 
-    type StdioStream = addr;
+    type StdioStream = i32;
     type File = i32;
     type Mutex = *posix.PthreadMutex;
     type Condition = *posix.PthreadCond;
@@ -47,36 +47,24 @@ meta if IS_UNIX {
         return String.from_cstring(c.strerror(error.value));
     }
 
-    pub func io_get_stdin_stream() -> addr {
-        return posix.stdin;
+    pub func io_get_stdin_stream() -> i32 {
+        return posix.STDIN_FILENO;
     }
 
-    pub func io_get_stdout_stream() -> addr {
-        return posix.stdout;
+    pub func io_get_stdout_stream() -> i32 {
+        return posix.STDOUT_FILENO;
     }
 
-    pub func io_get_stderr_stream() -> addr {
-        return posix.stderr;
+    pub func io_get_stderr_stream() -> i32 {
+        return posix.STDERR_FILENO;
     }
 
     pub func io_stdio_read(stream: *StdioStream, data: Slice[u8]) -> usize except ErrorCode {
-        var result = c.fread(data.data, 1, data.length, *stream);
-
-        if result == data.length || c.feof(*stream) != 0 {
-            return result;
-        } else {
-            return error_last();
-        }
+        return file_read(*stream, data);
     }
 
     pub func io_stdio_write(stream: *StdioStream, data: Slice[u8]) -> usize except ErrorCode {
-        var result = c.fwrite(data.data, 1, data.length, *stream);
-
-        if result == data.length {
-            return result;
-        } else {
-            return error_last();
-        }
+        return file_write(*stream, data);
     }
 
     pub func file_open(path: StringSlice, mode: FileMode, access: FileAccess) -> File except ErrorCode {
