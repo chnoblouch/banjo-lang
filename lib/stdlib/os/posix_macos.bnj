@@ -12,6 +12,14 @@ meta if config.OS == config.MACOS {
         return __error();
     }
 
+    const O_RDONLY: i32 = 0x00000000;
+    const O_WRONLY: i32 = 0x00000001;
+    const O_RDWR: i32 = 0x00000002;
+    const O_CREAT: i32 = 0x00000200;
+    const O_EXCL: i32 = 0x00000800;
+    const O_TRUNC: i32 = 0x00000400;
+    const O_APPEND: i32 = 0x00000008;
+
     struct Stat {
         var dev: i32;
         var mode: u16;

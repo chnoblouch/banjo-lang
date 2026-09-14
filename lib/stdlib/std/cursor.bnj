@@ -31,7 +31,7 @@ struct Cursor: io.Read, io.Write, io.Seek {
         return self.position as u64;
     }
 
-    pub func seek(mut self, offset: i64, origin: io.Seek.Origin) -> void except io.Error {
+    pub func seek(mut self, offset: i64, origin: io.Seek.Origin) -> u64 except io.Error {
         # TODO: Check non-negative
         
         var reference: usize = undefined;
@@ -49,5 +49,7 @@ struct Cursor: io.Read, io.Write, io.Seek {
         } else {
             self.position = reference - (-offset as usize);
         }
+
+        return self.position as u64;
     }
 }

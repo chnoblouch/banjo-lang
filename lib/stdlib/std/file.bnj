@@ -1,57 +1,46 @@
 use std.{
     platform,
-    memory,
-    convert,
     path.Path,
     io.{Read, Write, Seek, Error},
 };
 
-use libc as c;
-
 struct File: Read, Write, Seek {
     enum Mode {
-        READ,
-        WRITE,
+        OPEN,
+        OPEN_OR_CREATE,
+        CREATE,
+        CREATE_NEW,
+        TRUNCATE,
         APPEND,
-        READ_WRITE,
-        READ_WRITE_ERASE,
-        READ_APPEND,
     }
 
-    var stream: addr;
+    enum Access {
+        READ,
+        WRITE,
+        READ_WRITE,
+    }
 
-    pub func open[PathLike: Path | String | StringSlice | *u8](path: PathLike, mode: Mode) -> File except Error {
-        var c_mode: *u8;
+    var handle: platform.File;
 
-        if mode == Mode.READ {
-            c_mode = "rb";
-        } else if mode == Mode.WRITE {
-            c_mode = "wb";
-        } else if mode == Mode.APPEND {
-            c_mode = "ab";
-        } else if mode == Mode.READ_WRITE {
-            c_mode = "r+b";
-        } else if mode == Mode.READ_WRITE_ERASE {
-            c_mode = "w+b";
-        } else if mode == Mode.READ_APPEND {
-            c_mode = "a+b";
+    pub func open[PathLike: Path | String | StringSlice | *u8](
+        path: PathLike,
+        mode: Mode,
+        access: Access,
+    ) -> File except Error {
+        var path_string = Path.from(path).str();
+
+        try handle in platform.file_open(path_string.slice, mode, access) {
+            return File { handle };   
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
-
-        var path_cstring = Path.from(path).str().to_cstring();
-        var stream = c.fopen(path_cstring.data(), c_mode);
-
-        if stream == null {
-            return Error.last();
-        }
-
-        return File { stream };
     }
 
     pub func read_all[PathLike: Path | String | StringSlice | *u8](path: PathLike) -> Array[u8] except Error {
-        var file = try open(path, File.Mode.READ);
-        try file.seek(0, .END);
+        var file = try open(path, .OPEN, .READ);
+        var position = try file.seek(0, .END);
         var size = try file.position() as usize;
-        try file.seek(0, .START);
+        position = try file.seek(0, .START);
 
         var buffer = Array[u8].sized(size);
         try file.read_full(buffer.slice);
@@ -59,81 +48,45 @@ struct File: Read, Write, Seek {
     }
 
     pub func read_all_string[PathLike: Path | String | StringSlice | *u8](path: PathLike) -> String except Error {
-        var file = try open(path, File.Mode.READ);
-        try file.seek(0, .END);
-        var size = try file.position() as usize;
-        try file.seek(0, .START);
-
-        var string = String {
-            slice: StringSlice {
-                data: memory.alloc(size) as *u8,
-                length: size,
-            },
-            capacity: size,
-        };
-
-        try file.read_full(Slice[u8].new(string.bytes(), string.length()));
-        return string;
+        # TODO: Unnecessary copy
+        
+        var buffer = try File.read_all(path);
+        return String.from(StringSlice.new(buffer.data(), buffer.length()));
     }
 
     pub func read(mut self, data: Slice[u8]) -> usize except Error {
-        var result = c.fread(data.data, 1, data.length, self.stream);
-
-        if result == data.length || c.feof(self.stream) != 0 {
-            return result;
-        } else {
-            return Error.last();
+        try count in platform.file_read(self.handle, data) {
+            return count;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
     }
 
     pub func write(mut self, data: Slice[u8]) -> usize except Error {
-        var result = c.fwrite(data.data, 1, data.length, self.stream);
-
-        if result == data.length {
-            return result;
-        } else {
-            return Error.last();
+        try count in platform.file_write(self.handle, data) {
+            return count;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
     }
 
     pub func position(self) -> u64 except Error {
-        # TODO: Actually support 64-bit offsets.
-
-        var result = c.ftell(self.stream);
-
-        if result != -1 {
-            return result as u64;
-        } else {
-            return Error.last();
+        try position in platform.file_position(self.handle) {
+            return position;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
     }
 
-    pub func seek(mut self, offset: i64, origin: Seek.Origin) -> void except Error {
-        # TODO: Actually support 64-bit offsets.
-
-        var libc_origin: i32 = 0;
-
-        if origin == .START {
-            libc_origin = c.SEEK_SET;
-        } else if origin == .END {
-            libc_origin = c.SEEK_END;
-        } else if origin == .CURRENT {
-            libc_origin = c.SEEK_CUR;
+    pub func seek(mut self, offset: i64, origin: Seek.Origin) -> u64 except Error {
+        try position in platform.file_seek(self.handle, offset, origin) {
+            return position;
+        } except error: platform.ErrorCode {
+            return Error.from_platform(error);
         }
-
-        var result = c.fseek(self.stream, offset as c.Long, libc_origin);
-        if result != 0 {
-            return Error.last();
-        }
-    }
-
-    pub func flush(self) {
-        # TODO: Error handling
-
-        c.fflush(self.stream);
     }
 
     func __deinit__(self) {
-        c.fclose(self.stream);
+        platform.file_close(self.handle);
     }
 }

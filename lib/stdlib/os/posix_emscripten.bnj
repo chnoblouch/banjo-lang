@@ -12,6 +12,14 @@ meta if config.OS == config.EMSCRIPTEN {
         return __errno_location();
     }
 
+    const O_RDONLY: i32 = 0o0000;
+    const O_WRONLY: i32 = 0o0001;
+    const O_RDWR: i32 = 0o0002;
+    const O_CREAT: i32 = 0o0100;
+    const O_EXCL: i32 = 0o0200;
+    const O_TRUNC: i32 = 0o1000;
+    const O_APPEND: i32 = 0o2000;
+
     struct Stat {
         var dev: u32;
         var mode: u32;

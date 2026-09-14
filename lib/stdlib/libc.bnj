@@ -21,6 +21,12 @@ meta if config.ARCH == config.X86_64 || config.ARCH == config.AARCH64 {
 type LongLong = i64;
 type ULongLong = u64;
 
+meta if config.ARCH == config.X86_64 || config.ARCH == config.AARCH64 {
+    type SSize = i64;
+} else if config.ARCH == config.WASM {
+    type SSize = i32;
+}
+
 # --- stdlib.h ---
 
 native func malloc(size: usize) -> addr;

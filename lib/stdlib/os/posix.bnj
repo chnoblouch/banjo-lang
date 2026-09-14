@@ -1,4 +1,5 @@
 use std.config;
+use libc as c;
 use os;
 
 meta if config.OS == config.LINUX {
@@ -7,6 +8,13 @@ meta if config.OS == config.LINUX {
         EACCES,
         EEXIST,
         errno,
+        O_RDONLY,
+        O_WRONLY,
+        O_RDWR,
+        O_CREAT,
+        O_EXCL,
+        O_TRUNC,
+        O_APPEND,
         Stat,
         Dirent,
         Mode,
@@ -47,6 +55,13 @@ meta if config.OS == config.LINUX {
         EACCES,
         EEXIST,
         errno,
+        O_RDONLY,
+        O_WRONLY,
+        O_RDWR,
+        O_CREAT,
+        O_EXCL,
+        O_TRUNC,
+        O_APPEND,
         Stat,
         Dirent,
         Mode,
@@ -87,6 +102,13 @@ meta if config.OS == config.LINUX {
         EACCES,
         EEXIST,
         errno,
+        O_RDONLY,
+        O_WRONLY,
+        O_RDWR,
+        O_CREAT,
+        O_EXCL,
+        O_TRUNC,
+        O_APPEND,
         Stat,
         Dirent,
         Mode,
@@ -124,10 +146,14 @@ meta if config.OS == config.LINUX {
 }
 
 meta if os.IS_UNIX {
+    @c_variadic native func open(path: *u8, flags: i32) -> i32;
+    native func read(fd: i32, buf: addr, count: usize) -> c.SSize;
+    native func write(fd: i32, buf: addr, count: usize) -> c.SSize;
+    native func lseek(fd: i32, offset: i64, whence: i32) -> i64;
+    native func close(fd: i32) -> i32;
     native func realpath(path: *u8, resolved_path: *u8) -> *u8;
     native func stat(pathname: *u8, statbuf: *Stat) -> i32;
     native func access(pathname: *u8, mode: i32) -> i32;
-    native func close(fd: i32) -> i32;
     native func unlink(path: *u8) -> i32;
     native func opendir(name: *u8) -> addr;
     native func readdir(dirp: addr) -> *Dirent;

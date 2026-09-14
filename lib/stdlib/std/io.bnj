@@ -163,7 +163,7 @@ proto Seek {
     }
 
     pub func position(self) -> u64 except Error;
-    pub func seek(mut self, offset: i64, origin: Origin) -> void except Error;
+    pub func seek(mut self, offset: i64, origin: Origin) -> u64 except Error;
 }
 
 struct Error: ToString {

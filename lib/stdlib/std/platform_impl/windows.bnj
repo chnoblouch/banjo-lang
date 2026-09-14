@@ -1,8 +1,17 @@
+use std.{
+    file.File.{Mode as FileMode, Access as FileAccess},
+    io,
+    math.{min, max},
+    memory,
+    convert.to_string,
+    unicode,
+};
+
 use os.{IS_WINDOWS, winapi};
-use std.{memory, io, unicode, convert.to_string, math.{min, max}};
 
 meta if IS_WINDOWS {
     type ErrorCode = winapi.Dword;
+    type File = winapi.Handle;
     type Mutex = winapi.Handle;
     type Condition = u32;
     type Socket = winapi.Socket;
@@ -175,11 +184,35 @@ meta if IS_WINDOWS {
         var data_utf16 = string.to_utf16();
 
         try result in write_console_utf16(stream.handle, data_utf16.slice()) {
-            # TODO: Calculate to actual number of bytes written.
+            # TODO: Calculate the actual number of bytes written.
             return data.length;
         } except error: ErrorCode {
             return error;
         }
+    }
+
+    pub func file_open(path: StringSlice, mode: FileMode, access: FileAccess) -> File except ErrorCode {
+        return null;
+    }
+
+    pub func file_read(file: File, data: Slice[u8]) -> usize except ErrorCode {
+        return 0 as usize;
+    }
+
+    pub func file_write(file: File, data: Slice[u8]) -> usize except ErrorCode {
+        return 0 as usize;
+    }
+
+    pub func file_position(file: File) -> u64 except ErrorCode {
+        return 0 as u64;
+    }
+
+    pub func file_seek(file: File, position: i64, origin: io.Seek.Origin) -> u64 except ErrorCode {
+        return 0 as u64;
+    }
+
+    pub func file_close(file: File) {
+        
     }
 
     pub func path_canonical(path: StringSlice) -> String except ErrorCode {

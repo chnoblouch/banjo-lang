@@ -8,7 +8,7 @@ use std.{file.File, path.Path};
 
 func main() {
     var path = Path.from("test.txt");
-    var file = File.open(path, File.Mode.READ).unwrap();
+    var file = File.open(path, File.Mode.OPEN, File.Access.READ).unwrap();
     var data = Array[u8].sized(7);
     file.read(data.slice);
     
@@ -23,7 +23,7 @@ func main() {
 
 func main() {
     var path = Path.from("test.txt");
-    var file = File.open(path, File.Mode.READ).unwrap();
+    var file = File.open(path, File.Mode.OPEN, File.Access.READ).unwrap();
     var data = Array[u8].sized(100);
     var result = file.read(data.slice);
 
@@ -40,7 +40,7 @@ func main() {
 
 func main() {
     var path = Path.from("test.txt");
-    var file = File.open(path, File.Mode.WRITE).unwrap();
+    var file = File.open(path, File.Mode.CREATE, File.Access.WRITE).unwrap();
     var data: Slice[u8] = ['F', 'i', 'l', 'e'];
     file.write(data).unwrap();
 }
@@ -51,7 +51,7 @@ func main() {
 
 func main() {
     var path = Path.from("test.txt");
-    var file = File.open(path, File.Mode.READ).unwrap();
+    var file = File.open(path, File.Mode.OPEN, File.Access.READ).unwrap();
 
     file.read(Array[u8].sized(5).slice);
     print(file.position());
@@ -67,7 +67,7 @@ func main() {
 
 func main() {
     var path = Path.from("test.txt");
-    var file = File.open(path, File.Mode.READ).unwrap();
+    var file = File.open(path, File.Mode.OPEN, File.Access.READ).unwrap();
 
     file.seek(5, .START);
     read_string(&file, 4);
