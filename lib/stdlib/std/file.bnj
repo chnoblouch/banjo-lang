@@ -27,6 +27,8 @@ struct File: Read, Write, Seek {
         mode: Mode,
         access: Access,
     ) -> File except Error {
+        # TODO: Consistent file inheritance on Unix and Windows.
+
         var path_string = Path.from(path).str();
 
         try handle in platform.file_open(path_string.slice, mode, access) {

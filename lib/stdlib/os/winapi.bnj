@@ -8,6 +8,7 @@ meta if os.IS_WINDOWS {
     type Dword64 = u64;
     type LargeInteger = u64;
     type Int = i32;
+    type Long = i32;
     type Ushort = u16;
     type Ulong = u32;
     type Ulong64 = u64;
@@ -108,6 +109,7 @@ meta if os.IS_WINDOWS {
     const GENERIC_WRITE: Dword = 0x40000000;
     const GENERIC_EXECUTE: Dword = 0x20000000;
     const GENERIC_ALL: Dword = 0x10000000;
+    const FILE_APPEND_DATA: Dword = 0x00000004;
 
     const CREATE_NEW: Dword = 1;
     const CREATE_ALWAYS: Dword = 2;
@@ -115,12 +117,19 @@ meta if os.IS_WINDOWS {
     const OPEN_ALWAYS: Dword = 4;
     const TRUNCATE_EXISTING: Dword = 5;
 
+    const FILE_ATTRIBUTE_DIRECTORY: Dword = 0x00000010;
+    const FILE_ATTRIBUTE_NORMAL: Dword = 0x00000080;
+
+    const FILE_BEGIN: Dword = 0;
+    const FILE_CURRENT: Dword = 1;
+    const FILE_END: Dword = 2;
+
+    const INVALID_SET_FILE_POINTER: Dword = 0xFFFFFFFF;
+
     const FILE_NAME_NORMALIZED: Dword = 0x0;
     const VOLUME_NAME_DOS: Dword = 0x0;
 
     const FILE_FLAG_BACKUP_SEMANTICS: Dword = 0x02000000;
-
-    const FILE_ATTRIBUTE_DIRECTORY: Dword = 0x00000010;
 
     @[link_name=CreateFileA]
     native func create_file(
@@ -150,6 +159,14 @@ meta if os.IS_WINDOWS {
         number_of_bytes_written: *Dword,
         overlapped: addr,
     ) -> Bool;
+
+    @[link_name=SetFilePointer]
+    native func set_file_pointer(
+        file: Handle,
+        distance_to_move: Long,
+        distance_to_move_high: *Long,
+        move_method: Dword,
+    ) -> Dword;
 
     @[link_name=GetFinalPathNameByHandleA]
     native func get_final_path_name_by_handle(

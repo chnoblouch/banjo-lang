@@ -82,6 +82,14 @@ meta if IS_UNIX {
     pub func file_open(path: StringSlice, mode: FileMode, access: FileAccess) -> File except ErrorCode {
         var flags: i32 = 0;
 
+        if access == .READ {
+            flags |= posix.O_RDONLY;
+        } else if access == .WRITE {
+            flags |= posix.O_WRONLY;
+        } else if access == .READ_WRITE {
+            flags |= posix.O_RDWR;
+        }
+
         if mode == .OPEN {
             # No extra flags required for OPEN.
         } else if mode == .OPEN_OR_CREATE {
@@ -94,14 +102,6 @@ meta if IS_UNIX {
             flags |= posix.O_TRUNC;
         } else if mode == .APPEND {
             flags |= posix.O_APPEND;
-        }
-
-        if access == .READ {
-            flags |= posix.O_RDONLY;
-        } else if access == .WRITE {
-            flags |= posix.O_WRONLY;
-        } else if access == .READ_WRITE {
-            flags |= posix.O_RDWR;
         }
 
         var result = posix.open(path.to_cstring().data(), flags, 0o666);

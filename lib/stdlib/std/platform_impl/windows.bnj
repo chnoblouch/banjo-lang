@@ -10,7 +10,10 @@ use std.{
 use os.{IS_WINDOWS, winapi};
 
 meta if IS_WINDOWS {
-    type ErrorCode = winapi.Dword;
+    struct ErrorCode {
+        var value: winapi.Dword;
+    }
+
     type File = winapi.Handle;
     type Mutex = winapi.Handle;
     type Condition = u32;
@@ -33,15 +36,15 @@ meta if IS_WINDOWS {
     var wsa_initialized: bool = false;
 
     pub func error_last() -> ErrorCode {
-        return winapi.get_last_error();
+        return ErrorCode { value: winapi.get_last_error() };
     }
 
     pub func error_kind(error: ErrorCode) -> io.Error.Kind {
-        if error == winapi.ERROR_FILE_NOT_FOUND {
+        if error.value == winapi.ERROR_FILE_NOT_FOUND {
             return .NOT_FOUND;
-        } else if error == winapi.ERROR_ACCESS_DENIED {
+        } else if error.value == winapi.ERROR_ACCESS_DENIED {
             return .PERMISSION_DENIED;
-        } else if error == winapi.ERROR_ALREADY_EXISTS {
+        } else if error.value == winapi.ERROR_ALREADY_EXISTS {
             return .ALREADY_EXISTS;
         } else {
             return .UNKNOWN;
@@ -54,7 +57,7 @@ meta if IS_WINDOWS {
         var length = winapi.format_message(
             winapi.FORMAT_MESSAGE_ALLOCATE_BUFFER | winapi.FORMAT_MESSAGE_FROM_SYSTEM | winapi.FORMAT_MESSAGE_IGNORE_INSERTS,
             null,
-            error,
+            error.value,
             0x400,  # MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
             &buffer,
             0,
@@ -98,7 +101,7 @@ meta if IS_WINDOWS {
         }
 
         if !is_console(stream.handle) {
-            return read_file(stream.handle, data);
+            return file_read(stream.handle, data);
         }
 
         var size: usize = 0;
@@ -177,7 +180,7 @@ meta if IS_WINDOWS {
         var bytes_written: winapi.Dword = undefined;
 
         if !is_console(stream.handle) {
-            return write_file(stream.handle, data);
+            return file_write(stream.handle, data);
         }
 
         var string = StringSlice.new(data.data, data.length);
@@ -192,27 +195,138 @@ meta if IS_WINDOWS {
     }
 
     pub func file_open(path: StringSlice, mode: FileMode, access: FileAccess) -> File except ErrorCode {
-        return null;
+        var winapi_access: winapi.Dword = 0;
+        var winapi_creation: winapi.Dword = 0;                                                   
+
+        if access == .READ {
+            winapi_access = winapi.GENERIC_READ;
+        } else if access == .WRITE {
+            winapi_access = winapi.GENERIC_WRITE;
+        } else if access == .READ_WRITE {
+            winapi_access = winapi.GENERIC_READ | winapi.GENERIC_WRITE;
+        }
+
+        if mode == .OPEN {
+            winapi_creation = winapi.OPEN_EXISTING;
+        } else if mode == .OPEN_OR_CREATE {
+            winapi_creation = winapi.OPEN_ALWAYS;
+        } else if mode == .CREATE {
+            winapi_creation = winapi.CREATE_ALWAYS;
+        } else if mode == .CREATE_NEW {
+            winapi_creation = winapi.CREATE_NEW;
+        } else if mode == .TRUNCATE {
+            winapi_creation = winapi.TRUNCATE_EXISTING;
+        } else if mode == .APPEND {
+            winapi_access = winapi.FILE_APPEND_DATA;
+        }
+
+        var handle = winapi.create_file(
+            path.to_cstring().data(),
+            winapi_access,
+            0,
+            null,
+            winapi_creation,
+            winapi.FILE_ATTRIBUTE_NORMAL,
+            null,
+        );
+
+        if handle != winapi.INVALID_HANDLE_VALUE {
+            return handle;
+        } else {
+            return error_last();
+        }
     }
 
-    pub func file_read(file: File, data: Slice[u8]) -> usize except ErrorCode {
-        return 0 as usize;
+    func file_read(handle: File, data: Slice[u8]) -> usize except ErrorCode {
+        var bytes_read: winapi.Dword = undefined;
+
+        var result = winapi.read_file(
+            handle,
+            data.data,
+            data.length as winapi.Dword,
+            &bytes_read,
+            null,
+        );
+
+        if result != 0 {
+            return bytes_read as usize;
+        } else {
+            return error_last();
+        }
     }
 
-    pub func file_write(file: File, data: Slice[u8]) -> usize except ErrorCode {
-        return 0 as usize;
+    func file_write(handle: File, data: Slice[u8]) -> usize except ErrorCode {
+        var bytes_written: winapi.Dword = undefined;
+
+        var result = winapi.write_file(
+            handle,
+            data.data,
+            data.length as winapi.Dword,
+            &bytes_written,
+            null,
+        );
+
+        if result != 0 {
+            return bytes_written as usize;
+        } else {
+            return error_last();
+        }
     }
 
     pub func file_position(file: File) -> u64 except ErrorCode {
-        return 0 as u64;
+        # TODO: 64-bit positions
+        
+        var position_low = winapi.set_file_pointer(
+            file,
+            0,
+            null,
+            winapi.FILE_CURRENT,
+        );
+
+        if position_low == winapi.INVALID_SET_FILE_POINTER {
+            var error = error_last();
+
+            if error.value != winapi.ERROR_SUCCESS {
+                return error;
+            }
+        }
+        
+        return position_low as u64;
     }
 
     pub func file_seek(file: File, position: i64, origin: io.Seek.Origin) -> u64 except ErrorCode {
-        return 0 as u64;
+        # TODO: 64-bit positions
+        
+        var move_method: winapi.Dword = 0;
+
+        if origin == .START {
+            move_method = winapi.FILE_BEGIN;
+        } else if origin == .END {
+            move_method = winapi.FILE_END;
+        } else if origin == .CURRENT {
+            move_method = winapi.FILE_CURRENT;
+        }
+
+        var position_low = winapi.set_file_pointer(
+            file,
+            position as winapi.Long,
+            null,
+            move_method,
+        );
+
+        if position_low == winapi.INVALID_SET_FILE_POINTER {
+            var error = error_last();
+
+            if error.value != winapi.ERROR_SUCCESS {
+                return error;
+            }
+        }
+        
+        return position_low as u64;
     }
 
     pub func file_close(file: File) {
-        
+        winapi.close_handle(file);
     }
 
     pub func path_canonical(path: StringSlice) -> String except ErrorCode {
@@ -268,7 +382,7 @@ meta if IS_WINDOWS {
         } else {
             var error = error_last();
 
-            if error == winapi.ERROR_FILE_NOT_FOUND {
+            if error.value == winapi.ERROR_FILE_NOT_FOUND {
                 return false;
             } else {
                 return error;
@@ -327,7 +441,7 @@ meta if IS_WINDOWS {
         var error = error_last();
         winapi.find_close(handle);
 
-        if error == winapi.ERROR_NO_MORE_FILES {
+        if error.value == winapi.ERROR_NO_MORE_FILES {
             return file_names;
         } else {
             return error;
@@ -513,42 +627,6 @@ meta if IS_WINDOWS {
 
     pub func exec_debug_section() -> ?Slice[u8] {
         return none;
-    }
-
-    func read_file(handle: winapi.Handle, data: Slice[u8]) -> usize except ErrorCode {
-        var bytes_read: winapi.Dword = undefined;
-
-        var result = winapi.read_file(
-            handle,
-            data.data,
-            data.length as winapi.Dword,
-            &bytes_read,
-            null,
-        );
-
-        if result != 0 {
-            return bytes_read as usize;
-        } else {
-            return error_last();
-        }
-    }
-
-    func write_file(handle: winapi.Handle, data: Slice[u8]) -> usize except ErrorCode {
-        var bytes_written: winapi.Dword = undefined;
-
-        var result = winapi.write_file(
-            handle,
-            data.data,
-            data.length as winapi.Dword,
-            &bytes_written,
-            null,
-        );
-
-        if result != 0 {
-            return bytes_written as usize;
-        } else {
-            return error_last();
-        }
     }
 
     func read_console_utf16(handle: winapi.Handle, data: Slice[u16]) -> usize except ErrorCode {
