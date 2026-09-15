@@ -1,5 +1,6 @@
 #include "legalizer.hpp"
 
+#include "banjo/passes/pass_utils.hpp"
 #include "banjo/ssa/builder.hpp"
 #include "banjo/ssa/opcode.hpp"
 #include "banjo/ssa/operand.hpp"
@@ -30,6 +31,7 @@ void Legalizer::run(ssa::Function &func, ssa::BasicBlockIter block) {
         switch (instr->get_opcode()) {
             case ssa::Opcode::LOAD: legalize_load(func, block, instr); break;
             case ssa::Opcode::STORE: legalize_store(func, block, instr); break;
+            case ssa::Opcode::LOADARG: legalize_loadarg(func, block, instr); break;
             default: break;
         }
 
@@ -46,6 +48,7 @@ void Legalizer::legalize_load(ssa::Function &func, ssa::BasicBlockIter block, ss
     unsigned size = get_target()->get_data_layout().get_size(type);
 
     if (size == 0) {
+        PassUtils::replace_in_func(func, *instr->get_dest(), ssa::Operand::from_int_immediate(0, type));
         block->remove(instr);
         return;
     }
@@ -184,6 +187,25 @@ void Legalizer::legalize_store(ssa::Function &func, ssa::BasicBlockIter block, s
         builder.emit_store(value2, addr2);
 
         block->remove(instr);
+    } else {
+        ASSERT(size == 1 || size == 2 || size == 4 || size == 8);
+    }
+}
+
+void Legalizer::legalize_loadarg(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr) {
+    ssa::Type type = instr->get_operand(0).get_type();
+    unsigned size = get_target()->get_data_layout().get_size(type);
+
+    if (size == 0) {
+        PassUtils::replace_in_func(func, *instr->get_dest(), ssa::Operand::from_int_immediate(0, type));
+        block->remove(instr);
+        return;
+    }
+
+    if (size == 3) {
+        instr->get_operand(0).set_type(ssa::Primitive::U32);
+    } else if (size == 5 || size == 6 || size == 7) {
+        instr->get_operand(0).set_type(ssa::Primitive::U64);
     } else {
         ASSERT(size == 1 || size == 2 || size == 4 || size == 8);
     }

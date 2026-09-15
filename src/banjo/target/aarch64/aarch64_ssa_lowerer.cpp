@@ -247,133 +247,49 @@ void AArch64SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
 }
 
 void AArch64SSALowerer::lower_load(ssa::Instruction &instr) {
-    const ssa::Type &type = instr.get_operand(0).get_type();
+    ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
-    unsigned flag = type.is_floating_point() ? mcode::Instruction::FLAG_FLOAT : 0;
-
-    if (size == 0) {
-        // HACK: When the size is zero, we zero the register to make sure the register allocator has
-        // a def for that register so it can assign a register class. Maybe we should instead just
-        // remove all uses of that register?
-
-        mcode::Opcode opcode = type.is_floating_point() ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
-        mcode::Operand m_dst = map_vreg_dst(instr, size);
-        mcode::Operand m_zero = mcode::Operand::from_int_immediate(0, 4);
-        emit({opcode, {m_dst, m_zero}});
-        return;
-    }
-
-    mcode::Operand m_dst = map_vreg_dst(instr, size).with_size(size > 4 ? 8 : 4);
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
-    if (size == 1) {
-        emit({AArch64Opcode::LDRB, {m_dst, lower_addr_mem_access(addr, 1)}, flag});
-    } else if (size == 2) {
-        emit({AArch64Opcode::LDRH, {m_dst, lower_addr_mem_access(addr, 2)}, flag});
-    } else if (size == 3) {
-        mcode::Operand m_reg0 = create_temp_value(4);
-        mcode::Operand m_reg1 = create_temp_value(4);
+    mcode::Opcode opcode;
 
-        emit({AArch64Opcode::LDRH, {m_reg0, lower_addr_mem_access(addr, 2)}});
-        emit({AArch64Opcode::LDRB, {m_reg1, lower_addr_mem_access(addr.offset(2), 1)}});
-        emit({AArch64Opcode::ORR, {m_dst, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(16)}});
-    } else if (size == 4) {
-        emit({AArch64Opcode::LDR, {m_dst, lower_addr_mem_access(addr, 4)}, flag});
-    } else if (size == 5) {
-        mcode::Operand m_reg0 = create_temp_value(8);
-        mcode::Operand m_reg1 = create_temp_value(8);
-
-        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_addr_mem_access(addr, 4)}});
-        emit({AArch64Opcode::LDRB, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(4), 1)}});
-        emit({AArch64Opcode::ORR, {m_dst, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(32)}});
-    } else if (size == 6) {
-        mcode::Operand m_reg0 = create_temp_value(8);
-        mcode::Operand m_reg1 = create_temp_value(8);
-
-        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_addr_mem_access(addr, 4)}});
-        emit({AArch64Opcode::LDRH, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
-        emit({AArch64Opcode::ORR, {m_dst, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(32)}});
-    } else if (size == 7) {
-        mcode::Operand m_reg0 = create_temp_value(8);
-        mcode::Operand m_reg1 = create_temp_value(8);
-        mcode::Operand m_reg2 = create_temp_value(8);
-        mcode::Operand m_reg3 = create_temp_value(8);
-
-        emit({AArch64Opcode::LDR, {m_reg0.with_size(4), lower_addr_mem_access(addr, 4)}});
-        emit({AArch64Opcode::LDRH, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
-        emit({AArch64Opcode::LDRB, {m_reg2.with_size(4), lower_addr_mem_access(addr.offset(6), 1)}});
-        emit({AArch64Opcode::ORR, {m_reg3, m_reg0, m_reg1, mcode::Operand::from_aarch64_left_shift(32)}});
-        emit({AArch64Opcode::ORR, {m_dst, m_reg3, m_reg2, mcode::Operand::from_aarch64_left_shift(48)}});
-    } else if (size == 8) {
-        emit({AArch64Opcode::LDR, {m_dst, lower_addr_mem_access(addr, 8)}, flag});
-    } else {
-        ASSERT_UNREACHABLE;
+    switch (size) {
+        case 1: opcode = AArch64Opcode::LDRB; break;
+        case 2: opcode = AArch64Opcode::LDRH; break;
+        case 4: opcode = AArch64Opcode::LDR; break;
+        case 8: opcode = AArch64Opcode::LDR; break;
+        default: ASSERT_UNREACHABLE;
     }
+
+    unsigned flag = type.is_floating_point() ? mcode::Instruction::FLAG_FLOAT : 0;
+
+    mcode::Operand m_dst = map_vreg_dst(instr, size).with_size(size > 4 ? 8 : 4);
+    emit({opcode, {m_dst, lower_addr_mem_access(addr, size)}, flag});
 }
 
 void AArch64SSALowerer::lower_store(ssa::Instruction &instr) {
-    const ssa::Type &type = instr.get_operand(0).get_type();
+    ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
 
-    if (size == 0) {
-        return;
+    mcode::Opcode opcode;
+
+    switch (size) {
+        case 1: opcode = AArch64Opcode::STRB; break;
+        case 2: opcode = AArch64Opcode::STRH; break;
+        case 4: opcode = AArch64Opcode::STR; break;
+        case 8: opcode = AArch64Opcode::STR; break;
+        default: ASSERT_UNREACHABLE;
     }
 
     mcode::Operand m_src = lower_value(instr.get_operand(0));
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-
-    if (size == 1) {
-        emit({AArch64Opcode::STRB, {m_src, lower_addr_mem_access(addr, 1)}});
-    } else if (size == 2) {
-        emit({AArch64Opcode::STRH, {m_src, lower_addr_mem_access(addr, 2)}});
-    } else if (size == 3) {
-        mcode::Operand m_reg = create_temp_value(4);
-        mcode::Operand m_shift_reg = create_temp_value(4); // TODO: Support immediates in the encoder.
-
-        emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(16)}});
-        emit({AArch64Opcode::LSR, {m_reg, m_src.with_size(4), m_shift_reg}});
-        emit({AArch64Opcode::STRH, {m_src, lower_addr_mem_access(addr, 2)}});
-        emit({AArch64Opcode::STRB, {m_reg.with_size(4), lower_addr_mem_access(addr.offset(2), 1)}});
-    } else if (size == 4) {
-        emit({AArch64Opcode::STR, {m_src, lower_addr_mem_access(addr, 4)}});
-    } else if (size == 5) {
-        mcode::Operand m_reg = create_temp_value(8);
-        mcode::Operand m_shift_reg = create_temp_value(8); // TODO: Support immediates in the encoder.
-
-        emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(32)}});
-        emit({AArch64Opcode::LSR, {m_reg, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_addr_mem_access(addr, 4)}});
-        emit({AArch64Opcode::STRB, {m_reg.with_size(4), lower_addr_mem_access(addr.offset(4), 1)}});
-    } else if (size == 6) {
-        mcode::Operand m_reg = create_temp_value(8);
-        mcode::Operand m_shift_reg = create_temp_value(8); // TODO: Support immediates in the encoder.
-
-        emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(32)}});
-        emit({AArch64Opcode::LSR, {m_reg, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_addr_mem_access(addr, 4)}});
-        emit({AArch64Opcode::STRH, {m_reg.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
-    } else if (size == 7) {
-        mcode::Operand m_reg0 = create_temp_value(8);
-        mcode::Operand m_reg1 = create_temp_value(8);
-        mcode::Operand m_shift_reg = create_temp_value(8); // TODO: Support immediates in the encoder.
-
-        emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(32)}});
-        emit({AArch64Opcode::LSR, {m_reg0, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::MOV, {m_shift_reg, mcode::Operand::from_int_immediate(48)}});
-        emit({AArch64Opcode::LSR, {m_reg1, m_src.with_size(8), m_shift_reg}});
-        emit({AArch64Opcode::STR, {m_src.with_size(4), lower_addr_mem_access(addr, 4)}});
-        emit({AArch64Opcode::STRH, {m_reg0.with_size(4), lower_addr_mem_access(addr.offset(4), 2)}});
-        emit({AArch64Opcode::STRB, {m_reg1.with_size(4), lower_addr_mem_access(addr.offset(6), 1)}});
-    } else if (size == 8) {
-        emit({AArch64Opcode::STR, {m_src, lower_addr_mem_access(addr, 8)}});
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+    emit({opcode, {m_src, lower_addr_mem_access(addr, size)}});
 }
 
 void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Opcode opcode;
 
@@ -386,8 +302,6 @@ void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     }
 
     mcode::Operand m_dst = map_vreg_dst(instr, size);
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-
     mcode::Register tmp_reg = create_tmp_reg();
     mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
 
@@ -398,6 +312,7 @@ void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
 void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Opcode opcode;
 
@@ -410,8 +325,6 @@ void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     }
 
     mcode::Operand m_src = lower_value(instr.get_operand(0));
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-
     mcode::Register tmp_reg = create_tmp_reg();
     mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
 
@@ -440,7 +353,7 @@ void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
         switch (size) {
             case 1: opcode = AArch64Opcode::LDRB; break;
             case 2: opcode = AArch64Opcode::LDRH; break;
-            case 4:
+            case 4: opcode = AArch64Opcode::LDR; break;
             case 8: opcode = AArch64Opcode::LDR; break;
             default: ASSERT_UNREACHABLE;
         }
