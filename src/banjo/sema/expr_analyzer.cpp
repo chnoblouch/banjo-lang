@@ -912,34 +912,8 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
     // TODO: move this into some kind of builtin module.
     if (auto ident_expr = call_expr.callee.match<sir::IdentExpr>()) {
-        if (ident_expr->value == "__builtin_deinit") {
-            analyze_value(call_expr.args[0]);
-
-            out_expr = analyzer.create<sir::DeinitExpr>({
-                .ast_node = nullptr,
-                .type = analyzer.get_resolved_type(call_expr.args[0]),
-                .value = call_expr.args[0],
-                .resource = nullptr,
-            });
-
-            return Result::SUCCESS;
-        } else if (ident_expr->value == "__builtin_pointer_to") {
-            analyze_value(call_expr.args[0]);
-
-            out_expr = analyzer.create<sir::UnaryExpr>({
-                .ast_node = nullptr,
-                .type = analyzer.create<sir::PointerType>({
-                    .ast_node = nullptr,
-                    .base_type = analyzer.get_resolved_type(call_expr.args[0]),
-                }),
-                .op = sir::UnaryOp::ADDR,
-                .value = call_expr.args[0],
-            });
-
-            return Result::SUCCESS;
-        } else if (ident_expr->value == "__builtin_frame_address") {
-            call_expr.type = analyzer.builder.create_primitive_type(sir::Primitive::ADDR);
-            return Result::SUCCESS;
+        if (ident_expr->value.starts_with("__builtin")) {
+            return analyze_builtin_call(ident_expr->value, call_expr.args, out_expr);
         }
     }
 
@@ -1147,6 +1121,68 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
         call_expr.args = prepend_arg(data_ptr, call_expr.args);
     }
 
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_builtin_call(std::string_view name, std::span<sir::Expr> args, sir::Expr &out_expr) {
+    if (name == "__builtin_deinit") {
+        return analyze_builtin_deinit(args, out_expr);
+    } else if (name == "__builtin_pointer_to") {
+        return analyze_builtin_pointer_to(args, out_expr);
+    } else if (name == "__builtin_frame_address") {
+        return analyze_builtin_frame_pointer(out_expr);
+    } else if (name == "__builtin_atomic_load") {
+        return analyze_builtin_atomic_load(args, out_expr);
+    } else if (name == "__builtin_atomic_store") {
+        return analyze_builtin_atomic_store(args, out_expr);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+Result ExprAnalyzer::analyze_builtin_deinit(std::span<sir::Expr> args, sir::Expr &out_expr) {
+    RESULT_PROPAGATE(analyze_value(args[0]));
+
+    out_expr = analyzer.create<sir::DeinitExpr>({
+        .ast_node = nullptr,
+        .type = analyzer.get_resolved_type(args[0]),
+        .value = args[0],
+        .resource = nullptr,
+    });
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_builtin_pointer_to(std::span<sir::Expr> args, sir::Expr &out_expr) {
+    RESULT_PROPAGATE(analyze_value(args[0]));
+
+    out_expr = analyzer.create<sir::UnaryExpr>({
+        .ast_node = nullptr,
+        .type = analyzer.builder.create_pointer_type(analyzer.get_resolved_type(args[0])),
+        .op = sir::UnaryOp::ADDR,
+        .value = args[0],
+    });
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_builtin_frame_pointer(sir::Expr &out_expr) {
+    out_expr.as<sir::CallExpr>().type = analyzer.builder.create_primitive_type(sir::Primitive::ADDR);
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_builtin_atomic_load(std::span<sir::Expr> args, sir::Expr &out_expr) {
+    RESULT_PROPAGATE(analyze_value(args[0]));
+
+    out_expr.as<sir::CallExpr>().type = args[0].get_type().as<sir::PointerType>().base_type;
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_builtin_atomic_store(std::span<sir::Expr> args, sir::Expr &out_expr) {
+    RESULT_PROPAGATE(analyze_value(args[0]));
+    RESULT_PROPAGATE(analyze_value(args[1]));
+
+    out_expr.as<sir::CallExpr>().type = analyzer.builder.create_primitive_type(sir::Primitive::VOID);
     return Result::SUCCESS;
 }
 

@@ -573,6 +573,16 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
             ctx.get_ssa_block()->append({ssa::Opcode::FRAME_ADDRESS, reg, {}});
             ssa::Type type = ctx.target->get_data_layout().get_usize_type();
             return StoredValue::create_value(ssa::Value::from_register(reg, type));
+        } else if (ident_expr->value == "__builtin_atomic_load") {
+            StoredValue arg = generate(call_expr.args[0]).turn_into_value(ctx);
+            ssa::Type type = TypeSSAGenerator{ctx}.generate(call_expr.type);
+            ssa::Value value = ctx.append_atomic_load(type, arg.get_value());
+            return StoredValue::create_value(value);
+        } else if (ident_expr->value == "__builtin_atomic_store") {
+            StoredValue value = generate(call_expr.args[0]).turn_into_value(ctx);
+            StoredValue dst = generate(call_expr.args[1]).turn_into_value(ctx);
+            ctx.append_atomic_store(value.get_value(), dst.get_value());
+            return StoredValue::create_value({});
         }
     }
 

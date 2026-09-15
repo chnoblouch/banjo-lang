@@ -88,7 +88,14 @@ private:
     );
 
     Result analyze_cast_expr(sir::CastExpr &cast_expr);
+
     Result analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr);
+    Result analyze_builtin_call(std::string_view name, std::span<sir::Expr> args, sir::Expr &out_expr);
+    Result analyze_builtin_deinit(std::span<sir::Expr> args, sir::Expr &out_expr);
+    Result analyze_builtin_pointer_to(std::span<sir::Expr> args, sir::Expr &out_expr);
+    Result analyze_builtin_frame_pointer(sir::Expr &out_expr);
+    Result analyze_builtin_atomic_load(std::span<sir::Expr> args, sir::Expr &out_expr);
+    Result analyze_builtin_atomic_store(std::span<sir::Expr> args, sir::Expr &out_expr);
 
     std::optional<ResolvedGenericMethod> resolve_generic_method_call(
         sir::GenericParam &generic_param,
