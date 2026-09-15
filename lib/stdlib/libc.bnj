@@ -35,6 +35,7 @@ native func realloc(pointer: addr, size: usize) -> addr;
 native func free(ptr: addr);
 
 native func exit(status: i32);
+native func getenv(name: *u8) -> *u8;
 
 native func atoi(str: *u8) -> i32;
 native func atof(str: *u8) -> f64;
