@@ -313,6 +313,27 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
     emit(m_instr);
 }
 
+void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
+    ssa::Type type = instr.get_operand(0).get_type();
+    unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+
+    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
+    mcode::Operand m_src = lower_addr_mem_access(addr);
+    emit({X8664Opcode::MOV, {m_dst, m_src}});
+}
+
+void X8664SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+
+    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+    mcode::Operand m_dst = lower_addr_mem_access(addr).with_size(m_src.get_size());
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), m_src.get_size());
+
+    emit({X8664Opcode::MOV, {m_tmp, m_src}});
+    emit({X8664Opcode::XCHG, {m_dst, m_tmp}});
+}
+
 void X8664SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();

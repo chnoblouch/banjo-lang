@@ -1,9 +1,7 @@
 #ifndef BANJO_TARGET_X86_64_OPCODE_H
 #define BANJO_TARGET_X86_64_OPCODE_H
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 namespace X8664ConditionCode {
 
@@ -42,6 +40,7 @@ enum {
     CWD, // TODO: Currently unused
     CDQ,
     CQO,
+    XCHG,
     JMP,
     CMP,
     JCC,
@@ -105,8 +104,6 @@ enum {
 
 } // namespace X8664Opcode
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

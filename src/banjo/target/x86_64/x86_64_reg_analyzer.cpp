@@ -242,7 +242,28 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
                 collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
             }
 
+        case XCHG:
+            collect_regs(instr.get_operand(0), mcode::RegUsage::USE_DEF, operands);
+            collect_regs(instr.get_operand(1), mcode::RegUsage::USE_DEF, operands);
             break;
+
+        case JMP:
+        case JE:
+        case JNE:
+        case JA:
+        case JAE:
+        case JB:
+        case JBE:
+        case JG:
+        case JGE:
+        case JL:
+        case JLE:
+        case RET:
+        case mcode::PseudoOpcode::EH_PUSHREG:
+        case mcode::PseudoOpcode::EH_ALLOCSTACK:
+        case mcode::PseudoOpcode::EH_ENDPROLOG: break;
+
+        default: ASSERT_UNREACHABLE;
     }
 
     return operands;

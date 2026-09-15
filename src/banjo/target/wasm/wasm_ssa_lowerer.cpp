@@ -283,6 +283,14 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     }
 }
 
+void WasmSSALowerer::lower_atomic_load(ssa::Instruction &instr) {
+    lower_load(instr);
+}
+
+void WasmSSALowerer::lower_atomic_store(ssa::Instruction &instr) {
+    lower_store(instr);
+}
+
 void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {
     unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();
     unsigned local_index = vregs2locals.at(*instr.get_dest());
@@ -807,6 +815,13 @@ void WasmSSALowerer::lower_memberptr(ssa::Instruction &instr) {
         ASSERT_UNREACHABLE;
     }
 
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_frame_address(ssa::Instruction &instr) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+
+    emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 

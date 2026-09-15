@@ -30,6 +30,7 @@ const std::unordered_map<mcode::Opcode, std::string> NASMEmitter::OPCODE_NAMES =
     {target::X8664Opcode::CWD, "cwd"},
     {target::X8664Opcode::CDQ, "cdq"},
     {target::X8664Opcode::CQO, "cqo"},
+    {target::X8664Opcode::XCHG, "xchg"},
     {target::X8664Opcode::JMP, "jmp"},
     {target::X8664Opcode::CMP, "cmp"},
     {target::X8664Opcode::JE, "je"},

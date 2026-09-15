@@ -8,31 +8,25 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <iostream>
+namespace banjo::codegen {
 
-#define WARN_UNIMPLEMENTED(instruction) std::cerr << "warning: cannot lower instruction " << (instruction) << '\n';
+SSALowerer::SSALowerer(target::Target *target) : target{target} {}
 
-namespace banjo {
-
-namespace codegen {
-
-SSALowerer::SSALowerer(target::Target *target) : target(target) {}
-
-mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
+mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
     PROFILE_SCOPE("ssa lowering");
 
-    this->module_ = &module_;
-    init_module(module_);
+    this->mod = &mod;
+    init_module(mod);
 
-    if (module_.get_addr_table()) {
+    if (mod.get_addr_table()) {
         machine_module.set_addr_table(
             mcode::AddrTable{
-                .entries = module_.get_addr_table()->get_entries(),
+                .entries = mod.get_addr_table()->get_entries(),
             }
         );
     }
 
-    for (ssa::FunctionDecl *external_func : module_.get_external_functions()) {
+    for (ssa::FunctionDecl *external_func : mod.get_external_functions()) {
         if (external_func->name == "memcpy") {
             memcpy_func = external_func;
         } else if (external_func->name == "sqrt") {
@@ -43,7 +37,7 @@ mcode::Module SSALowerer::lower_module(ssa::Module &module_) {
     lower_external_funcs();
     lower_external_globals();
 
-    for (ssa::Function *func : module_.get_functions()) {
+    for (ssa::Function *func : mod.get_functions()) {
         lower_func(*func);
     }
 
@@ -251,7 +245,7 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
 }
 
 void SSALowerer::lower_globals() {
-    for (ssa::Global *global : module_->get_globals()) {
+    for (ssa::Global *global : mod->get_globals()) {
         mcode::Global m_global{
             .name = global->name,
             .size = get_size(global->type),
@@ -292,19 +286,19 @@ void SSALowerer::lower_globals() {
 }
 
 void SSALowerer::lower_external_funcs() {
-    for (ssa::FunctionDecl *external_function : module_->get_external_functions()) {
+    for (ssa::FunctionDecl *external_function : mod->get_external_functions()) {
         machine_module.add_external_symbol(external_function->name);
     }
 }
 
 void SSALowerer::lower_external_globals() {
-    for (ssa::GlobalDecl *external_global : module_->get_external_globals()) {
+    for (ssa::GlobalDecl *external_global : mod->get_external_globals()) {
         machine_module.add_external_symbol(external_global->name);
     }
 }
 
 void SSALowerer::lower_dll_exports() {
-    for (const std::string &dll_export : module_->get_dll_exports()) {
+    for (const std::string &dll_export : mod->get_dll_exports()) {
         machine_module.add_dll_export(dll_export);
     }
 }
@@ -378,164 +372,6 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
     context.stack_regs.insert({*instr.get_dest(), index});
 }
 
-void SSALowerer::lower_load(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("load");
-}
-
-void SSALowerer::lower_store(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("store");
-}
-
-void SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
-    WARN_UNIMPLEMENTED("atomic_load");
-    lower_load(instr);
-}
-
-void SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
-    WARN_UNIMPLEMENTED("atomic_store");
-    lower_store(instr);
-}
-
-void SSALowerer::lower_loadarg(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("loadarg");
-}
-
-void SSALowerer::lower_add(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("add");
-}
-
-void SSALowerer::lower_sub(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("sub");
-}
-
-void SSALowerer::lower_mul(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("mul");
-}
-
-void SSALowerer::lower_sdiv(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("sdiv");
-}
-
-void SSALowerer::lower_srem(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("srem");
-}
-
-void SSALowerer::lower_udiv(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("udiv");
-}
-
-void SSALowerer::lower_urem(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("urem");
-}
-
-void SSALowerer::lower_fadd(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fadd");
-}
-
-void SSALowerer::lower_fsub(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fsub");
-}
-
-void SSALowerer::lower_fmul(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fmul");
-}
-
-void SSALowerer::lower_fdiv(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fdiv");
-}
-
-void SSALowerer::lower_and(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("and");
-}
-
-void SSALowerer::lower_or(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("or");
-}
-
-void SSALowerer::lower_xor(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("xor");
-}
-
-void SSALowerer::lower_lshl(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("lshl");
-}
-
-void SSALowerer::lower_lshr(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("lshr");
-}
-
-void SSALowerer::lower_ashr(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("ashr");
-}
-
-void SSALowerer::lower_jmp(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("jmp");
-}
-
-void SSALowerer::lower_cjmp(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("cjmp");
-}
-
-void SSALowerer::lower_fcjmp(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fcjmp");
-}
-
-void SSALowerer::lower_select(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("select");
-}
-
-void SSALowerer::lower_call(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("call");
-}
-
-void SSALowerer::lower_ret(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("ret");
-}
-
-void SSALowerer::lower_uextend(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("uextend");
-}
-
-void SSALowerer::lower_sextend(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("sextend");
-}
-
-void SSALowerer::lower_truncate(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("truncate");
-}
-
-void SSALowerer::lower_fpromote(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fpromote");
-}
-
-void SSALowerer::lower_fdemote(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("fdemote");
-}
-
-void SSALowerer::lower_utof(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("utof");
-}
-
-void SSALowerer::lower_stof(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("stof");
-}
-
-void SSALowerer::lower_ftou(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("ftou");
-}
-
-void SSALowerer::lower_ftos(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("ftos");
-}
-
-void SSALowerer::lower_offsetptr(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("offsetptr");
-}
-
-void SSALowerer::lower_memberptr(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("memberptr");
-}
-
 void SSALowerer::lower_copy(ssa::Instruction &instr) {
     ASSERT(memcpy_func);
 
@@ -559,10 +395,6 @@ void SSALowerer::lower_sqrt(ssa::Instruction &instr) {
 
     ssa::Instruction call_instr(ssa::Opcode::CALL, output_reg, {func_operand, input_operand});
     lower_call(call_instr);
-}
-
-void SSALowerer::lower_frame_address(ssa::Instruction &) {
-    WARN_UNIMPLEMENTED("frame_address");
 }
 
 ssa::InstrIter SSALowerer::get_producer(ssa::VirtualRegister reg) {
@@ -664,6 +496,4 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
     };
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen

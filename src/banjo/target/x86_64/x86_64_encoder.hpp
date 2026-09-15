@@ -5,13 +5,9 @@
 #include "banjo/emit/binary_module.hpp"
 
 #include <cstdint>
-#include <ostream>
 #include <variant>
-#include <vector>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class X8664Encoder final : public BinaryBuilder {
 
@@ -107,27 +103,30 @@ private:
     };
 
 private:
+    mcode::Function *cur_func;
+
     void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
 
-    void encode_mov(mcode::Instruction &instr, mcode::Function *func);
-    void encode_movsx(mcode::Instruction &instr, mcode::Function *func);
-    void encode_movzx(mcode::Instruction &instr, mcode::Function *func);
-    void encode_add(mcode::Instruction &instr, mcode::Function *func);
-    void encode_sub(mcode::Instruction &instr, mcode::Function *func);
-    void encode_imul(mcode::Instruction &instr, mcode::Function *func);
-    void encode_div(mcode::Instruction &instr, mcode::Function *func);
-    void encode_idiv(mcode::Instruction &instr, mcode::Function *func);
-    void encode_and(mcode::Instruction &instr, mcode::Function *func);
-    void encode_or(mcode::Instruction &instr, mcode::Function *func);
-    void encode_xor(mcode::Instruction &instr, mcode::Function *func);
-    void encode_shl(mcode::Instruction &instr, mcode::Function *func);
-    void encode_shr(mcode::Instruction &instr, mcode::Function *func);
-    void encode_sar(mcode::Instruction &instr, mcode::Function *func);
+    void encode_mov(mcode::Instruction &instr);
+    void encode_movsx(mcode::Instruction &instr);
+    void encode_movzx(mcode::Instruction &instr);
+    void encode_add(mcode::Instruction &instr);
+    void encode_sub(mcode::Instruction &instr);
+    void encode_imul(mcode::Instruction &instr);
+    void encode_div(mcode::Instruction &instr);
+    void encode_idiv(mcode::Instruction &instr);
+    void encode_and(mcode::Instruction &instr);
+    void encode_or(mcode::Instruction &instr);
+    void encode_xor(mcode::Instruction &instr);
+    void encode_shl(mcode::Instruction &instr);
+    void encode_shr(mcode::Instruction &instr);
+    void encode_sar(mcode::Instruction &instr);
     void encode_cwd();
     void encode_cdq();
     void encode_cqo();
+    void encode_xchg(mcode::Instruction &instr);
     void encode_jmp(mcode::Instruction &instr);
-    void encode_cmp(mcode::Instruction &instr, mcode::Function *func);
+    void encode_cmp(mcode::Instruction &instr);
     void encode_je(mcode::Instruction &instr);
     void encode_jne(mcode::Instruction &instr);
     void encode_ja(mcode::Instruction &instr);
@@ -138,64 +137,54 @@ private:
     void encode_jge(mcode::Instruction &instr);
     void encode_jl(mcode::Instruction &instr);
     void encode_jle(mcode::Instruction &instr);
-    void encode_cmove(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovne(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmova(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovae(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovb(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovbe(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovg(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovge(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovl(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cmovle(mcode::Instruction &instr, mcode::Function *func);
-    void encode_lea(mcode::Instruction &instr, mcode::Function *func);
-    void encode_call(mcode::Instruction &instr, mcode::Function *func);
+    void encode_cmove(mcode::Instruction &instr);
+    void encode_cmovne(mcode::Instruction &instr);
+    void encode_cmova(mcode::Instruction &instr);
+    void encode_cmovae(mcode::Instruction &instr);
+    void encode_cmovb(mcode::Instruction &instr);
+    void encode_cmovbe(mcode::Instruction &instr);
+    void encode_cmovg(mcode::Instruction &instr);
+    void encode_cmovge(mcode::Instruction &instr);
+    void encode_cmovl(mcode::Instruction &instr);
+    void encode_cmovle(mcode::Instruction &instr);
+    void encode_lea(mcode::Instruction &instr);
+    void encode_call(mcode::Instruction &instr);
     void encode_ret();
     void encode_push(mcode::Instruction &instr);
     void encode_pop(mcode::Instruction &instr);
-    void encode_movss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_movsd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_movaps(mcode::Instruction &instr, mcode::Function *func);
-    void encode_movups(mcode::Instruction &instr, mcode::Function *func);
+    void encode_movss(mcode::Instruction &instr);
+    void encode_movsd(mcode::Instruction &instr);
+    void encode_movaps(mcode::Instruction &instr);
+    void encode_movups(mcode::Instruction &instr);
     void encode_movq(mcode::Instruction &instr);
-    void encode_addss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_addsd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_subss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_subsd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_mulss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_mulsd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_divss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_divsd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_xorps(mcode::Instruction &instr, mcode::Function *func);
-    void encode_xorpd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_minss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_maxss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_sqrtss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_ucomiss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_ucomisd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cvtss2sd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cvtsd2ss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cvtsi2ss(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cvtsi2sd(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cvtss2si(mcode::Instruction &instr, mcode::Function *func);
-    void encode_cvtsd2si(mcode::Instruction &instr, mcode::Function *func);
+    void encode_addss(mcode::Instruction &instr);
+    void encode_addsd(mcode::Instruction &instr);
+    void encode_subss(mcode::Instruction &instr);
+    void encode_subsd(mcode::Instruction &instr);
+    void encode_mulss(mcode::Instruction &instr);
+    void encode_mulsd(mcode::Instruction &instr);
+    void encode_divss(mcode::Instruction &instr);
+    void encode_divsd(mcode::Instruction &instr);
+    void encode_xorps(mcode::Instruction &instr);
+    void encode_xorpd(mcode::Instruction &instr);
+    void encode_minss(mcode::Instruction &instr);
+    void encode_maxss(mcode::Instruction &instr);
+    void encode_sqrtss(mcode::Instruction &instr);
+    void encode_ucomiss(mcode::Instruction &instr);
+    void encode_ucomisd(mcode::Instruction &instr);
+    void encode_cvtss2sd(mcode::Instruction &instr);
+    void encode_cvtsd2ss(mcode::Instruction &instr);
+    void encode_cvtsi2ss(mcode::Instruction &instr);
+    void encode_cvtsi2sd(mcode::Instruction &instr);
+    void encode_cvtss2si(mcode::Instruction &instr);
+    void encode_cvtsd2si(mcode::Instruction &instr);
 
-    void encode_basic_instr(mcode::Instruction &instr, mcode::Function *func, const BasicInstrOpcodes &opcodes);
-
-    void encode_shift(mcode::Instruction &instr, mcode::Function *func, std::uint8_t digit);
+    void encode_basic_instr(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
+    void encode_shift(mcode::Instruction &instr, std::uint8_t digit);
     void encode_jcc(mcode::Instruction &instr, std::uint8_t opcode);
-    void encode_cmovcc(mcode::Instruction &instr, mcode::Function *func, std::uint8_t opcode);
-
-    void encode_sse_op(mcode::Instruction &instr, mcode::Function *func, std::uint8_t prefix, std::uint8_t opcode);
-
-    void encode_sse_cvt(
-        mcode::Instruction &instr,
-        mcode::Function *func,
-        std::uint8_t prefix,
-        std::uint8_t opcode,
-        std::uint8_t size
-    );
-
+    void encode_cmovcc(mcode::Instruction &instr, std::uint8_t opcode);
+    void encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode);
+    void encode_sse_cvt(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode, std::uint8_t size);
     void emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size);
     void emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size);
     void emit_mov_rm(RegCode dst, Address src, std::uint8_t size);
@@ -206,9 +195,7 @@ private:
     void emit_imul_rri(RegCode dst, Immediate imm, std::uint8_t size);
     void emit_lea_rm(RegCode dst, Address src, std::uint8_t size);
     void emit_ret();
-
     void emit_basic_rr(std::uint8_t opcode8, std::uint8_t opcode32, RegCode dst, RegCode src, std::uint8_t size);
-
     void emit_basic_ri(
         std::uint8_t opcode8,
         std::uint8_t opcode32,
@@ -218,10 +205,8 @@ private:
         Immediate imm,
         std::uint8_t size
     );
-
     void emit_basic_rm(std::uint8_t opcode8, std::uint8_t opcode32, RegCode dst, Address src, std::uint8_t size);
     void emit_basic_mr(std::uint8_t opcode8, std::uint8_t opcode32, Address dst, RegCode src, std::uint8_t size);
-
     void emit_basic_mi(
         std::uint8_t opcode8,
         std::uint8_t opcode32,
@@ -231,7 +216,6 @@ private:
         Immediate imm,
         std::uint8_t size
     );
-
     void emit_cmovcc(std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
     void emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
 
@@ -257,8 +241,8 @@ private:
 
     RegCode reg(mcode::Operand &operand);
     Immediate imm(mcode::Operand &operand);
-    Address addr(mcode::Operand &operand, mcode::Function *func);
-    RegOrAddr roa(mcode::Operand &operand, mcode::Function *func);
+    Address addr(mcode::Operand &operand);
+    RegOrAddr roa(mcode::Operand &operand);
     bool is_reg(mcode::Operand &operand);
     bool is_imm(mcode::Operand &operand);
     bool is_addr(mcode::Operand &operand);
@@ -280,8 +264,6 @@ private:
     bool fits_in_32_bits(Immediate imm);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

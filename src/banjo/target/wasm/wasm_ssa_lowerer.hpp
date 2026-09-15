@@ -38,6 +38,8 @@ private:
 
     void lower_load(ssa::Instruction &instr) override;
     void lower_store(ssa::Instruction &instr) override;
+    void lower_atomic_load(ssa::Instruction &instr) override;
+    void lower_atomic_store(ssa::Instruction &instr) override;
     void lower_loadarg(ssa::Instruction &instr) override;
     void lower_add(ssa::Instruction &instr) override;
     void lower_sub(ssa::Instruction &instr) override;
@@ -73,6 +75,7 @@ private:
     void lower_ftos(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
+    void lower_frame_address(ssa::Instruction &instr) override;
 
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);
     void push_operand(ssa::Operand &operand);

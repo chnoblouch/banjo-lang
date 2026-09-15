@@ -62,7 +62,7 @@ public:
     ssa::FunctionDecl *sqrt_func;
 
 protected:
-    ssa::Module *module_;
+    ssa::Module *mod;
     ssa::Function *func;
     ssa::BasicBlockIter basic_block_iter;
     ssa::InstrIter instr_iter;
@@ -76,11 +76,11 @@ public:
     SSALowerer(target::Target *target);
     virtual ~SSALowerer() = default;
 
-    mcode::Module lower_module(ssa::Module &module_);
+    mcode::Module lower_module(ssa::Module &mod);
 
     const target::Target *get_target() const { return target; }
 
-    ssa::Module &get_module() { return *module_; }
+    ssa::Module &get_module() { return *mod; }
     ssa::Function &get_func() { return *func; }
     ssa::BasicBlockIter get_basic_block_iter() { return basic_block_iter; }
     ssa::BasicBlock &get_block() { return *basic_block_iter; }
@@ -130,48 +130,48 @@ protected:
     virtual void generate_blocks(ssa::Function &func);
     virtual void emit_block_prologue(ssa::BasicBlock &block) {}
 
-    virtual void lower_load(ssa::Instruction &instr);
-    virtual void lower_store(ssa::Instruction &instr);
-    virtual void lower_atomic_load(ssa::Instruction &instr);
-    virtual void lower_atomic_store(ssa::Instruction &instr);
-    virtual void lower_loadarg(ssa::Instruction &instr);
-    virtual void lower_add(ssa::Instruction &instr);
-    virtual void lower_sub(ssa::Instruction &instr);
-    virtual void lower_mul(ssa::Instruction &instr);
-    virtual void lower_sdiv(ssa::Instruction &instr);
-    virtual void lower_srem(ssa::Instruction &instr);
-    virtual void lower_udiv(ssa::Instruction &instr);
-    virtual void lower_urem(ssa::Instruction &instr);
-    virtual void lower_fadd(ssa::Instruction &instr);
-    virtual void lower_fsub(ssa::Instruction &instr);
-    virtual void lower_fmul(ssa::Instruction &instr);
-    virtual void lower_fdiv(ssa::Instruction &instr);
-    virtual void lower_and(ssa::Instruction &instr);
-    virtual void lower_or(ssa::Instruction &instr);
-    virtual void lower_xor(ssa::Instruction &instr);
-    virtual void lower_lshl(ssa::Instruction &instr);
-    virtual void lower_lshr(ssa::Instruction &instr);
-    virtual void lower_ashr(ssa::Instruction &instr);
-    virtual void lower_jmp(ssa::Instruction &instr);
-    virtual void lower_cjmp(ssa::Instruction &instr);
-    virtual void lower_fcjmp(ssa::Instruction &instr);
-    virtual void lower_select(ssa::Instruction &instr);
-    virtual void lower_call(ssa::Instruction &instr);
-    virtual void lower_ret(ssa::Instruction &instr);
-    virtual void lower_uextend(ssa::Instruction &instr);
-    virtual void lower_sextend(ssa::Instruction &instr);
-    virtual void lower_truncate(ssa::Instruction &instr);
-    virtual void lower_fpromote(ssa::Instruction &instr);
-    virtual void lower_fdemote(ssa::Instruction &instr);
-    virtual void lower_utof(ssa::Instruction &instr);
-    virtual void lower_stof(ssa::Instruction &instr);
-    virtual void lower_ftou(ssa::Instruction &instr);
-    virtual void lower_ftos(ssa::Instruction &instr);
-    virtual void lower_offsetptr(ssa::Instruction &instr);
-    virtual void lower_memberptr(ssa::Instruction &instr);
+    virtual void lower_load(ssa::Instruction &instr) = 0;
+    virtual void lower_store(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_load(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_store(ssa::Instruction &instr) = 0;
+    virtual void lower_loadarg(ssa::Instruction &instr) = 0;
+    virtual void lower_add(ssa::Instruction &instr) = 0;
+    virtual void lower_sub(ssa::Instruction &instr) = 0;
+    virtual void lower_mul(ssa::Instruction &instr) = 0;
+    virtual void lower_sdiv(ssa::Instruction &instr) = 0;
+    virtual void lower_srem(ssa::Instruction &instr) = 0;
+    virtual void lower_udiv(ssa::Instruction &instr) = 0;
+    virtual void lower_urem(ssa::Instruction &instr) = 0;
+    virtual void lower_fadd(ssa::Instruction &instr) = 0;
+    virtual void lower_fsub(ssa::Instruction &instr) = 0;
+    virtual void lower_fmul(ssa::Instruction &instr) = 0;
+    virtual void lower_fdiv(ssa::Instruction &instr) = 0;
+    virtual void lower_and(ssa::Instruction &instr) = 0;
+    virtual void lower_or(ssa::Instruction &instr) = 0;
+    virtual void lower_xor(ssa::Instruction &instr) = 0;
+    virtual void lower_lshl(ssa::Instruction &instr) = 0;
+    virtual void lower_lshr(ssa::Instruction &instr) = 0;
+    virtual void lower_ashr(ssa::Instruction &instr) = 0;
+    virtual void lower_jmp(ssa::Instruction &instr) = 0;
+    virtual void lower_cjmp(ssa::Instruction &instr) = 0;
+    virtual void lower_fcjmp(ssa::Instruction &instr) = 0;
+    virtual void lower_select(ssa::Instruction &instr) = 0;
+    virtual void lower_call(ssa::Instruction &instr) = 0;
+    virtual void lower_ret(ssa::Instruction &instr) = 0;
+    virtual void lower_uextend(ssa::Instruction &instr) = 0;
+    virtual void lower_sextend(ssa::Instruction &instr) = 0;
+    virtual void lower_truncate(ssa::Instruction &instr) = 0;
+    virtual void lower_fpromote(ssa::Instruction &instr) = 0;
+    virtual void lower_fdemote(ssa::Instruction &instr) = 0;
+    virtual void lower_utof(ssa::Instruction &instr) = 0;
+    virtual void lower_stof(ssa::Instruction &instr) = 0;
+    virtual void lower_ftou(ssa::Instruction &instr) = 0;
+    virtual void lower_ftos(ssa::Instruction &instr) = 0;
+    virtual void lower_offsetptr(ssa::Instruction &instr) = 0;
+    virtual void lower_memberptr(ssa::Instruction &instr) = 0;
     virtual void lower_copy(ssa::Instruction &instr);
     virtual void lower_sqrt(ssa::Instruction &instr);
-    virtual void lower_frame_address(ssa::Instruction &instr);
+    virtual void lower_frame_address(ssa::Instruction &instr) = 0;
 };
 
 } // namespace banjo::codegen

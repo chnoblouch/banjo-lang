@@ -2,6 +2,7 @@
 
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/section_builder.hpp"
+#include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
@@ -13,85 +14,85 @@
 namespace banjo::target {
 
 void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) {
-    using namespace target::X8664Opcode;
-    using namespace mcode::PseudoOpcode;
+    cur_func = func;
 
     if (instr.is_flag(mcode::Instruction::FLAG_ALLOCA)) {
         frame_info.alloca_start_label = add_empty_label();
     }
 
     switch (instr.get_opcode()) {
-        case MOV: encode_mov(instr, func); break;
-        case MOVSX: encode_movsx(instr, func); break;
-        case MOVZX: encode_movzx(instr, func); break;
-        case ADD: encode_add(instr, func); break;
-        case SUB: encode_sub(instr, func); break;
-        case AND: encode_and(instr, func); break;
-        case OR: encode_or(instr, func); break;
-        case XOR: encode_xor(instr, func); break;
-        case SHL: encode_shl(instr, func); break;
-        case SHR: encode_shr(instr, func); break;
-        case SAR: encode_sar(instr, func); break;
-        case CWD: encode_cwd(); break;
-        case CDQ: encode_cdq(); break;
-        case CQO: encode_cqo(); break;
-        case IMUL: encode_imul(instr, func); break;
-        case DIV: encode_div(instr, func); break;
-        case IDIV: encode_idiv(instr, func); break;
-        case JMP: encode_jmp(instr); break;
-        case CMP: encode_cmp(instr, func); break;
-        case JE: encode_je(instr); break;
-        case JNE: encode_jne(instr); break;
-        case JA: encode_ja(instr); break;
-        case JAE: encode_jae(instr); break;
-        case JB: encode_jb(instr); break;
-        case JBE: encode_jbe(instr); break;
-        case JG: encode_jg(instr); break;
-        case JGE: encode_jge(instr); break;
-        case JL: encode_jl(instr); break;
-        case JLE: encode_jle(instr); break;
-        case CMOVE: encode_cmove(instr, func); break;
-        case CMOVNE: encode_cmovne(instr, func); break;
-        case CMOVA: encode_cmova(instr, func); break;
-        case CMOVAE: encode_cmovae(instr, func); break;
-        case CMOVB: encode_cmovb(instr, func); break;
-        case CMOVBE: encode_cmovbe(instr, func); break;
-        case CMOVG: encode_cmovg(instr, func); break;
-        case CMOVGE: encode_cmovge(instr, func); break;
-        case CMOVL: encode_cmovl(instr, func); break;
-        case CMOVLE: encode_cmovle(instr, func); break;
-        case LEA: encode_lea(instr, func); break;
-        case CALL: encode_call(instr, func); break;
-        case RET: encode_ret(); break;
-        case PUSH: encode_push(instr); break;
-        case POP: encode_pop(instr); break;
-        case MOVSS: encode_movss(instr, func); break;
-        case MOVSD: encode_movsd(instr, func); break;
-        case MOVAPS: encode_movaps(instr, func); break;
-        case MOVUPS: encode_movups(instr, func); break;
-        case MOVQ: encode_movq(instr); break;
-        case ADDSS: encode_addss(instr, func); break;
-        case ADDSD: encode_addsd(instr, func); break;
-        case SUBSS: encode_subss(instr, func); break;
-        case SUBSD: encode_subsd(instr, func); break;
-        case MULSS: encode_mulss(instr, func); break;
-        case MULSD: encode_mulsd(instr, func); break;
-        case DIVSS: encode_divss(instr, func); break;
-        case DIVSD: encode_divsd(instr, func); break;
-        case XORPS: encode_xorps(instr, func); break;
-        case XORPD: encode_xorpd(instr, func); break;
-        case MINSS: encode_minss(instr, func); break;
-        case MAXSS: encode_maxss(instr, func); break;
-        case SQRTSS: encode_sqrtss(instr, func); break;
-        case UCOMISS: encode_ucomiss(instr, func); break;
-        case UCOMISD: encode_ucomisd(instr, func); break;
-        case CVTSS2SD: encode_cvtss2sd(instr, func); break;
-        case CVTSD2SS: encode_cvtsd2ss(instr, func); break;
-        case CVTSI2SS: encode_cvtsi2ss(instr, func); break;
-        case CVTSI2SD: encode_cvtsi2sd(instr, func); break;
-        case CVTSS2SI: encode_cvtss2si(instr, func); break;
-        case CVTSD2SI: encode_cvtsd2si(instr, func); break;
-        case EH_PUSHREG: process_eh_pushreg(instr, frame_info); break;
+        case X8664Opcode::MOV: encode_mov(instr); break;
+        case X8664Opcode::MOVSX: encode_movsx(instr); break;
+        case X8664Opcode::MOVZX: encode_movzx(instr); break;
+        case X8664Opcode::ADD: encode_add(instr); break;
+        case X8664Opcode::SUB: encode_sub(instr); break;
+        case X8664Opcode::IMUL: encode_imul(instr); break;
+        case X8664Opcode::DIV: encode_div(instr); break;
+        case X8664Opcode::IDIV: encode_idiv(instr); break;
+        case X8664Opcode::AND: encode_and(instr); break;
+        case X8664Opcode::OR: encode_or(instr); break;
+        case X8664Opcode::XOR: encode_xor(instr); break;
+        case X8664Opcode::SHL: encode_shl(instr); break;
+        case X8664Opcode::SHR: encode_shr(instr); break;
+        case X8664Opcode::SAR: encode_sar(instr); break;
+        case X8664Opcode::CWD: encode_cwd(); break;
+        case X8664Opcode::CDQ: encode_cdq(); break;
+        case X8664Opcode::CQO: encode_cqo(); break;
+        case X8664Opcode::XCHG: encode_xchg(instr); break;
+        case X8664Opcode::JMP: encode_jmp(instr); break;
+        case X8664Opcode::CMP: encode_cmp(instr); break;
+        case X8664Opcode::JE: encode_je(instr); break;
+        case X8664Opcode::JNE: encode_jne(instr); break;
+        case X8664Opcode::JA: encode_ja(instr); break;
+        case X8664Opcode::JAE: encode_jae(instr); break;
+        case X8664Opcode::JB: encode_jb(instr); break;
+        case X8664Opcode::JBE: encode_jbe(instr); break;
+        case X8664Opcode::JG: encode_jg(instr); break;
+        case X8664Opcode::JGE: encode_jge(instr); break;
+        case X8664Opcode::JL: encode_jl(instr); break;
+        case X8664Opcode::JLE: encode_jle(instr); break;
+        case X8664Opcode::CMOVE: encode_cmove(instr); break;
+        case X8664Opcode::CMOVNE: encode_cmovne(instr); break;
+        case X8664Opcode::CMOVA: encode_cmova(instr); break;
+        case X8664Opcode::CMOVAE: encode_cmovae(instr); break;
+        case X8664Opcode::CMOVB: encode_cmovb(instr); break;
+        case X8664Opcode::CMOVBE: encode_cmovbe(instr); break;
+        case X8664Opcode::CMOVG: encode_cmovg(instr); break;
+        case X8664Opcode::CMOVGE: encode_cmovge(instr); break;
+        case X8664Opcode::CMOVL: encode_cmovl(instr); break;
+        case X8664Opcode::CMOVLE: encode_cmovle(instr); break;
+        case X8664Opcode::LEA: encode_lea(instr); break;
+        case X8664Opcode::CALL: encode_call(instr); break;
+        case X8664Opcode::RET: encode_ret(); break;
+        case X8664Opcode::PUSH: encode_push(instr); break;
+        case X8664Opcode::POP: encode_pop(instr); break;
+        case X8664Opcode::MOVSS: encode_movss(instr); break;
+        case X8664Opcode::MOVSD: encode_movsd(instr); break;
+        case X8664Opcode::MOVAPS: encode_movaps(instr); break;
+        case X8664Opcode::MOVUPS: encode_movups(instr); break;
+        case X8664Opcode::MOVQ: encode_movq(instr); break;
+        case X8664Opcode::ADDSS: encode_addss(instr); break;
+        case X8664Opcode::ADDSD: encode_addsd(instr); break;
+        case X8664Opcode::SUBSS: encode_subss(instr); break;
+        case X8664Opcode::SUBSD: encode_subsd(instr); break;
+        case X8664Opcode::MULSS: encode_mulss(instr); break;
+        case X8664Opcode::MULSD: encode_mulsd(instr); break;
+        case X8664Opcode::DIVSS: encode_divss(instr); break;
+        case X8664Opcode::DIVSD: encode_divsd(instr); break;
+        case X8664Opcode::XORPS: encode_xorps(instr); break;
+        case X8664Opcode::XORPD: encode_xorpd(instr); break;
+        case X8664Opcode::MINSS: encode_minss(instr); break;
+        case X8664Opcode::MAXSS: encode_maxss(instr); break;
+        case X8664Opcode::SQRTSS: encode_sqrtss(instr); break;
+        case X8664Opcode::UCOMISS: encode_ucomiss(instr); break;
+        case X8664Opcode::UCOMISD: encode_ucomisd(instr); break;
+        case X8664Opcode::CVTSS2SD: encode_cvtss2sd(instr); break;
+        case X8664Opcode::CVTSD2SS: encode_cvtsd2ss(instr); break;
+        case X8664Opcode::CVTSI2SS: encode_cvtsi2ss(instr); break;
+        case X8664Opcode::CVTSI2SD: encode_cvtsi2sd(instr); break;
+        case X8664Opcode::CVTSS2SI: encode_cvtss2si(instr); break;
+        case X8664Opcode::CVTSD2SI: encode_cvtsd2si(instr); break;
+        case mcode::PseudoOpcode::EH_PUSHREG: process_eh_pushreg(instr, frame_info); break;
         default: ASSERT_UNREACHABLE;
     }
 
@@ -100,26 +101,26 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
     }
 }
 
-void X8664Encoder::encode_mov(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_mov(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     if (is_reg(dst)) {
         if (is_reg(src)) emit_mov_rr(reg(dst), reg(src), dst.get_size());
         else if (is_imm(src)) emit_mov_ri(reg(dst), imm(src), dst.get_size());
-        else if (is_addr(src)) emit_mov_rm(reg(dst), addr(src, func), dst.get_size());
+        else if (is_addr(src)) emit_mov_rm(reg(dst), addr(src), dst.get_size());
     } else if (is_addr(dst)) {
-        if (is_reg(src)) emit_mov_mr(addr(dst, func), reg(src), dst.get_size());
-        else if (is_imm(src)) emit_mov_mi(addr(dst, func), imm(src), dst.get_size());
+        if (is_reg(src)) emit_mov_mr(addr(dst), reg(src), dst.get_size());
+        else if (is_imm(src)) emit_mov_mi(addr(dst), imm(src), dst.get_size());
     }
 }
 
-void X8664Encoder::encode_movsx(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_movsx(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     RegCode dst_reg = reg(dst);
-    RegOrAddr src_roa = roa(src, func);
+    RegOrAddr src_roa = roa(src);
     unsigned dst_size = dst.get_size();
     unsigned src_size = src.get_size();
 
@@ -139,12 +140,12 @@ void X8664Encoder::encode_movsx(mcode::Instruction &instr, mcode::Function *func
     emit_modrm_sib(dst_reg, src_roa);
 }
 
-void X8664Encoder::encode_movzx(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_movzx(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     RegCode dst_reg = reg(dst);
-    RegOrAddr src_roa = roa(src, func);
+    RegOrAddr src_roa = roa(src);
     unsigned dst_size = dst.get_size();
     unsigned src_size = src.get_size();
 
@@ -155,15 +156,15 @@ void X8664Encoder::encode_movzx(mcode::Instruction &instr, mcode::Function *func
     emit_modrm_sib(dst_reg, src_roa);
 }
 
-void X8664Encoder::encode_add(mcode::Instruction &instr, mcode::Function *func) {
-    encode_basic_instr(instr, func, {0, 0x04, 0x05, 0x80, 0x81, 0x83, 0x00, 0x01, 0x02, 0x03});
+void X8664Encoder::encode_add(mcode::Instruction &instr) {
+    encode_basic_instr(instr, {0, 0x04, 0x05, 0x80, 0x81, 0x83, 0x00, 0x01, 0x02, 0x03});
 }
 
-void X8664Encoder::encode_sub(mcode::Instruction &instr, mcode::Function *func) {
-    encode_basic_instr(instr, func, {5, 0x2C, 0x2D, 0x80, 0x81, 0x83, 0x28, 0x29, 0x2A, 0x2B});
+void X8664Encoder::encode_sub(mcode::Instruction &instr) {
+    encode_basic_instr(instr, {5, 0x2C, 0x2D, 0x80, 0x81, 0x83, 0x28, 0x29, 0x2A, 0x2B});
 }
 
-void X8664Encoder::encode_imul(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_imul(mcode::Instruction &instr) {
     ASSERT_MESSAGE(instr.get_operands().size() == 2, "imul must have two operands");
 
     mcode::Operand &dst = instr.get_operand(0);
@@ -172,12 +173,12 @@ void X8664Encoder::encode_imul(mcode::Instruction &instr, mcode::Function *func)
     ASSERT_MESSAGE(is_reg(dst), "imul destination must be a register");
 
     if (is_reg(src)) emit_imul_rr(reg(dst), reg(src), dst.get_size());
-    else if (is_addr(src)) emit_imul_rm(reg(dst), addr(src, func), dst.get_size());
+    else if (is_addr(src)) emit_imul_rm(reg(dst), addr(src), dst.get_size());
     else if (is_imm(src)) emit_imul_rri(reg(dst), imm(src), dst.get_size());
 }
 
-void X8664Encoder::encode_div(mcode::Instruction &instr, mcode::Function *func) {
-    RegOrAddr src = roa(instr.get_operand(0), func);
+void X8664Encoder::encode_div(mcode::Instruction &instr) {
+    RegOrAddr src = roa(instr.get_operand(0));
     int size = instr.get_operand(0).get_size();
 
     emit_16bit_prefix_if_required(size);
@@ -186,8 +187,8 @@ void X8664Encoder::encode_div(mcode::Instruction &instr, mcode::Function *func) 
     emit_modrm_sib(6, src);
 }
 
-void X8664Encoder::encode_idiv(mcode::Instruction &instr, mcode::Function *func) {
-    RegOrAddr src = roa(instr.get_operand(0), func);
+void X8664Encoder::encode_idiv(mcode::Instruction &instr) {
+    RegOrAddr src = roa(instr.get_operand(0));
     int size = instr.get_operand(0).get_size();
 
     emit_16bit_prefix_if_required(size);
@@ -196,28 +197,28 @@ void X8664Encoder::encode_idiv(mcode::Instruction &instr, mcode::Function *func)
     emit_modrm_sib(7, src);
 }
 
-void X8664Encoder::encode_and(mcode::Instruction &instr, mcode::Function *func) {
-    encode_basic_instr(instr, func, {4, 0x24, 0x25, 0x80, 0x81, 0x83, 0x20, 0x21, 0x22, 0x23});
+void X8664Encoder::encode_and(mcode::Instruction &instr) {
+    encode_basic_instr(instr, {4, 0x24, 0x25, 0x80, 0x81, 0x83, 0x20, 0x21, 0x22, 0x23});
 }
 
-void X8664Encoder::encode_or(mcode::Instruction &instr, mcode::Function *func) {
-    encode_basic_instr(instr, func, {1, 0x0C, 0x0D, 0x80, 0x81, 0x83, 0x08, 0x09, 0x0A, 0x0B});
+void X8664Encoder::encode_or(mcode::Instruction &instr) {
+    encode_basic_instr(instr, {1, 0x0C, 0x0D, 0x80, 0x81, 0x83, 0x08, 0x09, 0x0A, 0x0B});
 }
 
-void X8664Encoder::encode_xor(mcode::Instruction &instr, mcode::Function *func) {
-    encode_basic_instr(instr, func, {6, 0x34, 0x35, 0x80, 0x81, 0x83, 0x30, 0x31, 0x32, 0x33});
+void X8664Encoder::encode_xor(mcode::Instruction &instr) {
+    encode_basic_instr(instr, {6, 0x34, 0x35, 0x80, 0x81, 0x83, 0x30, 0x31, 0x32, 0x33});
 }
 
-void X8664Encoder::encode_shl(mcode::Instruction &instr, mcode::Function *func) {
-    encode_shift(instr, func, 4);
+void X8664Encoder::encode_shl(mcode::Instruction &instr) {
+    encode_shift(instr, 4);
 }
 
-void X8664Encoder::encode_shr(mcode::Instruction &instr, mcode::Function *func) {
-    encode_shift(instr, func, 5);
+void X8664Encoder::encode_shr(mcode::Instruction &instr) {
+    encode_shift(instr, 5);
 }
 
-void X8664Encoder::encode_sar(mcode::Instruction &instr, mcode::Function *func) {
-    encode_shift(instr, func, 7);
+void X8664Encoder::encode_sar(mcode::Instruction &instr) {
+    encode_shift(instr, 7);
 }
 
 void X8664Encoder::encode_cwd() {
@@ -234,6 +235,30 @@ void X8664Encoder::encode_cqo() {
     emit_opcode(0x99);
 }
 
+void X8664Encoder::encode_xchg(mcode::Instruction &instr) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    unsigned size = dst.get_size();
+
+    emit_16bit_prefix_if_required(size);
+
+    if (is_roa(dst) && is_reg(src)) {
+        RegOrAddr dst_roa = roa(dst);
+        RegCode src_reg = reg(src);
+
+        emit_rex_rroa(size, src_reg, dst_roa);
+        emit_opcode(size == 1 ? 0x86 : 0x87);
+        emit_modrm_sib(src_reg, dst_roa);
+    } else if (is_reg(dst) && is_roa(src)) {
+        RegCode dst_reg = reg(dst);
+        RegOrAddr src_roa = roa(src);
+
+        emit_rex_rroa(size, dst_reg, src_roa);
+        emit_opcode(size == 1 ? 0x86 : 0x87);
+        emit_modrm_sib(dst_reg, src_roa);
+    }
+}
+
 void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
     mcode::Operand &target = instr.get_operand(0);
 
@@ -246,8 +271,8 @@ void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
     }
 }
 
-void X8664Encoder::encode_cmp(mcode::Instruction &instr, mcode::Function *func) {
-    encode_basic_instr(instr, func, {7, 0x3C, 0x3D, 0x80, 0x81, 0x83, 0x38, 0x39, 0x3A, 0x3B});
+void X8664Encoder::encode_cmp(mcode::Instruction &instr) {
+    encode_basic_instr(instr, {7, 0x3C, 0x3D, 0x80, 0x81, 0x83, 0x38, 0x39, 0x3A, 0x3B});
 }
 
 void X8664Encoder::encode_je(mcode::Instruction &instr) {
@@ -290,54 +315,54 @@ void X8664Encoder::encode_jle(mcode::Instruction &instr) {
     encode_jcc(instr, 0x7E);
 }
 
-void X8664Encoder::encode_cmove(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x44);
+void X8664Encoder::encode_cmove(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x44);
 }
 
-void X8664Encoder::encode_cmovne(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x45);
+void X8664Encoder::encode_cmovne(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x45);
 }
 
-void X8664Encoder::encode_cmova(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x47);
+void X8664Encoder::encode_cmova(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x47);
 }
 
-void X8664Encoder::encode_cmovae(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x43);
+void X8664Encoder::encode_cmovae(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x43);
 }
 
-void X8664Encoder::encode_cmovb(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x42);
+void X8664Encoder::encode_cmovb(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x42);
 }
 
-void X8664Encoder::encode_cmovbe(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x46);
+void X8664Encoder::encode_cmovbe(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x46);
 }
 
-void X8664Encoder::encode_cmovg(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x4F);
+void X8664Encoder::encode_cmovg(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x4F);
 }
 
-void X8664Encoder::encode_cmovge(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x4D);
+void X8664Encoder::encode_cmovge(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x4D);
 }
 
-void X8664Encoder::encode_cmovl(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x4C);
+void X8664Encoder::encode_cmovl(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x4C);
 }
 
-void X8664Encoder::encode_cmovle(mcode::Instruction &instr, mcode::Function *func) {
-    encode_cmovcc(instr, func, 0x4E);
+void X8664Encoder::encode_cmovle(mcode::Instruction &instr) {
+    encode_cmovcc(instr, 0x4E);
 }
 
-void X8664Encoder::encode_lea(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_lea(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
-    emit_lea_rm(reg(dst), addr(src, func), dst.get_size());
+    emit_lea_rm(reg(dst), addr(src), dst.get_size());
 }
 
-void X8664Encoder::encode_call(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_call(mcode::Instruction &instr) {
     mcode::Operand &target = instr.get_operand(0);
 
     if (target.is_symbol()) {
@@ -349,7 +374,7 @@ void X8664Encoder::encode_call(mcode::Instruction &instr, mcode::Function *func)
         emit_opcode(0xFF);
         emit_modrm_rr(2, reg(target));
     } else if (is_addr(target)) {
-        Address a = addr(target, func);
+        Address a = addr(target);
         emit_rex_rm(0, 0, a);
         emit_opcode(0xFF);
         emit_mem_digit(a, 2);
@@ -382,14 +407,14 @@ void X8664Encoder::encode_pop(mcode::Instruction &instr) {
     emit_combined_opcode(0x58, reg(dst));
 }
 
-void X8664Encoder::encode_movss(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_movss(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     if (is_reg(dst)) {
-        emit_sse(0xF3, 0x10, reg(dst), roa(src, func), 0);
+        emit_sse(0xF3, 0x10, reg(dst), roa(src), 0);
     } else if (is_addr(dst)) {
-        Address dst_addr = addr(dst, func);
+        Address dst_addr = addr(dst);
         RegCode src_reg = reg(src);
 
         emit_opcode(0xF3);
@@ -400,14 +425,14 @@ void X8664Encoder::encode_movss(mcode::Instruction &instr, mcode::Function *func
     }
 }
 
-void X8664Encoder::encode_movsd(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_movsd(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     if (is_reg(dst)) {
-        emit_sse(0xF2, 0x10, reg(dst), roa(src, func), 0);
+        emit_sse(0xF2, 0x10, reg(dst), roa(src), 0);
     } else if (is_addr(dst)) {
-        Address dst_addr = addr(dst, func);
+        Address dst_addr = addr(dst);
         RegCode src_reg = reg(src);
 
         emit_opcode(0xF2);
@@ -418,20 +443,20 @@ void X8664Encoder::encode_movsd(mcode::Instruction &instr, mcode::Function *func
     }
 }
 
-void X8664Encoder::encode_movaps(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_movaps(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     if (is_reg(dst)) {
         RegCode dst_reg = reg(dst);
-        RegOrAddr src_roa = roa(src, func);
+        RegOrAddr src_roa = roa(src);
 
         emit_rex_rroa(0, dst_reg, src_roa);
         emit_opcode(0x0F);
         emit_opcode(0x28);
         emit_modrm_sib(dst_reg, src_roa);
     } else if (is_addr(dst)) {
-        RegOrAddr dst_roa = roa(dst, func);
+        RegOrAddr dst_roa = roa(dst);
         RegCode src_reg = reg(src);
 
         emit_rex_rroa(0, src_reg, dst_roa);
@@ -441,20 +466,20 @@ void X8664Encoder::encode_movaps(mcode::Instruction &instr, mcode::Function *fun
     }
 }
 
-void X8664Encoder::encode_movups(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_movups(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     if (is_reg(dst)) {
         RegCode dst_reg = reg(dst);
-        RegOrAddr src_roa = roa(src, func);
+        RegOrAddr src_roa = roa(src);
 
         emit_rex_rroa(0, dst_reg, src_roa);
         emit_opcode(0x0F);
         emit_opcode(0x10);
         emit_modrm_sib(dst_reg, src_roa);
     } else if (is_addr(dst)) {
-        RegOrAddr dst_roa = roa(dst, func);
+        RegOrAddr dst_roa = roa(dst);
         RegCode src_reg = reg(src);
 
         emit_rex_rroa(0, src_reg, dst_roa);
@@ -487,39 +512,39 @@ void X8664Encoder::encode_movq(mcode::Instruction &instr) {
     }
 }
 
-void X8664Encoder::encode_addss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x58);
+void X8664Encoder::encode_addss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x58);
 }
 
-void X8664Encoder::encode_addsd(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF2, 0x58);
+void X8664Encoder::encode_addsd(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF2, 0x58);
 }
 
-void X8664Encoder::encode_subss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x5C);
+void X8664Encoder::encode_subss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x5C);
 }
 
-void X8664Encoder::encode_subsd(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF2, 0x5C);
+void X8664Encoder::encode_subsd(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF2, 0x5C);
 }
 
-void X8664Encoder::encode_mulss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x59);
+void X8664Encoder::encode_mulss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x59);
 }
 
-void X8664Encoder::encode_mulsd(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF2, 0x59);
+void X8664Encoder::encode_mulsd(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF2, 0x59);
 }
 
-void X8664Encoder::encode_divss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x5E);
+void X8664Encoder::encode_divss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x5E);
 }
 
-void X8664Encoder::encode_divsd(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF2, 0x5E);
+void X8664Encoder::encode_divsd(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF2, 0x5E);
 }
 
-void X8664Encoder::encode_xorps(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_xorps(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
@@ -531,36 +556,36 @@ void X8664Encoder::encode_xorps(mcode::Instruction &instr, mcode::Function *func
         emit_opcode(0x57);
         emit_modrm_rr(reg(dst), reg(src));
     } else if (is_addr(src)) {
-        emit_rex_rm(0, reg(dst), addr(src, func));
+        emit_rex_rm(0, reg(dst), addr(src));
         emit_opcode(0x0F);
         emit_opcode(0x57);
-        emit_mem_reg(addr(src, func), reg(dst));
+        emit_mem_reg(addr(src), reg(dst));
     }
 }
 
-void X8664Encoder::encode_xorpd(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_xorpd(mcode::Instruction &instr) {
     emit_opcode(0x66);
-    encode_xorps(instr, func);
+    encode_xorps(instr);
 }
 
-void X8664Encoder::encode_minss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x5D);
+void X8664Encoder::encode_minss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x5D);
 }
 
-void X8664Encoder::encode_maxss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x5F);
+void X8664Encoder::encode_maxss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x5F);
 }
 
-void X8664Encoder::encode_sqrtss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_op(instr, func, 0xF3, 0x51);
+void X8664Encoder::encode_sqrtss(mcode::Instruction &instr) {
+    encode_sse_op(instr, 0xF3, 0x51);
 }
 
-void X8664Encoder::encode_ucomiss(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_ucomiss(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     RegCode dst_r = reg(dst);
-    RegOrAddr src_roa = roa(src, func);
+    RegOrAddr src_roa = roa(src);
 
     emit_rex_rroa(4, dst_r, src_roa);
     emit_opcode(0x0F);
@@ -568,12 +593,12 @@ void X8664Encoder::encode_ucomiss(mcode::Instruction &instr, mcode::Function *fu
     emit_modrm_sib(dst_r, src_roa);
 }
 
-void X8664Encoder::encode_ucomisd(mcode::Instruction &instr, mcode::Function *func) {
+void X8664Encoder::encode_ucomisd(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     RegCode dst_r = reg(dst);
-    RegOrAddr src_roa = roa(src, func);
+    RegOrAddr src_roa = roa(src);
 
     emit_rex_rroa(4, dst_r, src_roa);
     emit_opcode(0x66);
@@ -582,35 +607,31 @@ void X8664Encoder::encode_ucomisd(mcode::Instruction &instr, mcode::Function *fu
     emit_modrm_sib(dst_r, src_roa);
 }
 
-void X8664Encoder::encode_cvtss2sd(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_cvt(instr, func, 0xF3, 0x5A, 0);
+void X8664Encoder::encode_cvtss2sd(mcode::Instruction &instr) {
+    encode_sse_cvt(instr, 0xF3, 0x5A, 0);
 }
 
-void X8664Encoder::encode_cvtsd2ss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_cvt(instr, func, 0xF2, 0x5A, 0);
+void X8664Encoder::encode_cvtsd2ss(mcode::Instruction &instr) {
+    encode_sse_cvt(instr, 0xF2, 0x5A, 0);
 }
 
-void X8664Encoder::encode_cvtsi2ss(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_cvt(instr, func, 0xF3, 0x2A, 0);
+void X8664Encoder::encode_cvtsi2ss(mcode::Instruction &instr) {
+    encode_sse_cvt(instr, 0xF3, 0x2A, 0);
 }
 
-void X8664Encoder::encode_cvtsi2sd(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_cvt(instr, func, 0xF2, 0x2A, 8);
+void X8664Encoder::encode_cvtsi2sd(mcode::Instruction &instr) {
+    encode_sse_cvt(instr, 0xF2, 0x2A, 8);
 }
 
-void X8664Encoder::encode_cvtss2si(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_cvt(instr, func, 0xF3, 0x2D, 0);
+void X8664Encoder::encode_cvtss2si(mcode::Instruction &instr) {
+    encode_sse_cvt(instr, 0xF3, 0x2D, 0);
 }
 
-void X8664Encoder::encode_cvtsd2si(mcode::Instruction &instr, mcode::Function *func) {
-    encode_sse_cvt(instr, func, 0xF2, 0x2D, 8);
+void X8664Encoder::encode_cvtsd2si(mcode::Instruction &instr) {
+    encode_sse_cvt(instr, 0xF2, 0x2D, 8);
 }
 
-void X8664Encoder::encode_basic_instr(
-    mcode::Instruction &instr,
-    mcode::Function *func,
-    const BasicInstrOpcodes &opcodes
-) {
+void X8664Encoder::encode_basic_instr(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
     unsigned size = dst.get_size();
@@ -618,7 +639,7 @@ void X8664Encoder::encode_basic_instr(
     emit_16bit_prefix_if_required(size);
 
     if (is_roa(dst) && is_imm(src)) {
-        RegOrAddr dst_roa = roa(dst, func);
+        RegOrAddr dst_roa = roa(dst);
         Immediate src_imm = imm(src);
 
         bool is_imm8 = fits_in_i8(src_imm.value);
@@ -649,7 +670,7 @@ void X8664Encoder::encode_basic_instr(
             else if (size == 4 || size == 8) text.write_i32(src_imm.value);
         }
     } else if (is_roa(dst) && is_reg(src)) {
-        RegOrAddr dst_roa = roa(dst, func);
+        RegOrAddr dst_roa = roa(dst);
         RegCode src_reg = reg(src);
 
         emit_rex_rroa(size, src_reg, dst_roa);
@@ -657,7 +678,7 @@ void X8664Encoder::encode_basic_instr(
         emit_modrm_sib(src_reg, dst_roa);
     } else if (is_reg(dst) && is_roa(src)) {
         RegCode dst_reg = reg(dst);
-        RegOrAddr src_roa = roa(src, func);
+        RegOrAddr src_roa = roa(src);
 
         emit_rex_rroa(size, dst_reg, src_roa);
         emit_opcode(size == 1 ? opcodes.r8_rm8 : opcodes.r16_rm16);
@@ -665,12 +686,12 @@ void X8664Encoder::encode_basic_instr(
     }
 }
 
-void X8664Encoder::encode_shift(mcode::Instruction &instr, mcode::Function *func, std::uint8_t digit) {
+void X8664Encoder::encode_shift(mcode::Instruction &instr, std::uint8_t digit) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
     std::uint8_t size = dst.get_size();
 
-    RegOrAddr dst_roa = roa(dst, func);
+    RegOrAddr dst_roa = roa(dst);
 
     emit_16bit_prefix_if_required(size);
     emit_rex_rroa(size, 0, dst_roa);
@@ -707,37 +728,31 @@ void X8664Encoder::encode_jcc(mcode::Instruction &instr, std::uint8_t opcode) {
     }
 }
 
-void X8664Encoder::encode_cmovcc(mcode::Instruction &instr, mcode::Function *func, std::uint8_t opcode) {
+void X8664Encoder::encode_cmovcc(mcode::Instruction &instr, std::uint8_t opcode) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     ASSERT_MESSAGE(dst.get_size() != 1, "size of cmovcc must be 2, 4 or 8");
-    emit_cmovcc(opcode, reg(dst), roa(src, func), dst.get_size());
+    emit_cmovcc(opcode, reg(dst), roa(src), dst.get_size());
 }
 
-void X8664Encoder::encode_sse_op(
-    mcode::Instruction &instr,
-    mcode::Function *func,
-    std::uint8_t prefix,
-    std::uint8_t opcode
-) {
+void X8664Encoder::encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
 
     ASSERT_MESSAGE(is_reg(dst), "SSE instructions can only operate on registers");
-    emit_sse(prefix, opcode, reg(dst), roa(src, func), 0);
+    emit_sse(prefix, opcode, reg(dst), roa(src), 0);
 }
 
 void X8664Encoder::encode_sse_cvt(
     mcode::Instruction &instr,
-    mcode::Function *func,
     std::uint8_t prefix,
     std::uint8_t opcode,
     std::uint8_t size
 ) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
-    emit_sse(prefix, opcode, reg(dst), roa(src, func), size);
+    emit_sse(prefix, opcode, reg(dst), roa(src), size);
 }
 
 void X8664Encoder::emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size) {
@@ -1156,9 +1171,9 @@ X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
     }
 }
 
-X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Function *func) {
+X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand) {
     if (operand.is_stack_slot()) {
-        mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(operand.get_stack_slot());
+        mcode::StackSlot &slot = cur_func->get_stack_frame().get_stack_slot(operand.get_stack_slot());
 
         return RegAddress{
             .scale = 1,
@@ -1212,15 +1227,15 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand, mcode::Functio
     if (machine_addr.has_offset_imm()) {
         addr.displacement = machine_addr.get_offset_imm();
     } else if (machine_addr.has_offset_stack_addr()) {
-        addr.displacement = func->get_stack_frame().offset_of(machine_addr.get_offset_stack_addr());
+        addr.displacement = cur_func->get_stack_frame().offset_of(machine_addr.get_offset_stack_addr());
     }
 
     return addr;
 }
 
-X8664Encoder::RegOrAddr X8664Encoder::roa(mcode::Operand &operand, mcode::Function *func) {
+X8664Encoder::RegOrAddr X8664Encoder::roa(mcode::Operand &operand) {
     if (is_reg(operand)) return reg(operand);
-    else if (is_addr(operand)) return addr(operand, func);
+    else if (is_addr(operand)) return addr(operand);
     else ASSERT_UNREACHABLE;
 }
 
