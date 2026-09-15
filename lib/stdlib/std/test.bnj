@@ -1,4 +1,4 @@
-use std.{convert.to_repr, protos.Compare};
+use std.{convert.to_repr, process.exit, protos.Compare};
 
 func assert_eq[T: Compare[T]](ref a: T, ref b: T) {
     assert_eq_msg(a, b, "assertion failed");

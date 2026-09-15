@@ -1,5 +1,4 @@
-use std.{config, convert, debug, format, io};
-use libc as c;
+use std.{config, convert, debug, format, process.exit, io};
 use internal.std_panics.panic_assertion_failed;
 
 var stdout: io.StdWriteStream;
@@ -29,10 +28,6 @@ pub func fprintln[Args: ...](template: StringSlice, args: Args) {
 
     var line_ending: u8 = '\n';
     write_to_stdout(StringSlice.new(&line_ending, 1));
-}
-
-pub func exit(status: i32) {
-    c.exit(status);
 }
 
 pub func assert(condition: bool, message: String) {

@@ -1,0 +1,5 @@
+use libc as c;
+
+pub func exit(status: i32) {
+    c.exit(status);
+}
