@@ -1,0 +1,19 @@
+# test:subtest
+# test:encoding "5BFD9FC8"
+
+stlr x27, [x10]
+
+# test:subtest
+# test:encoding "5BFD9F88"
+
+stlr w27, [x10]
+
+# test:subtest
+# test:encoding "FBFF9FC8"
+
+stlr x27, [sp]
+
+# test:subtest
+# test:encoding "FBFF9F88"
+
+stlr w27, [sp]

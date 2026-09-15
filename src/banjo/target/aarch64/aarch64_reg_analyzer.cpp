@@ -116,6 +116,9 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
         case LDR:
         case LDRB:
         case LDRH:
+        case LDAR:
+        case LDARB:
+        case LDARH:
         case FCVT:
         case SCVTF:
         case UCVTF:
@@ -134,6 +137,9 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter
         case STR:
         case STRB:
         case STRH:
+        case STLR:
+        case STLRB:
+        case STLRH:
         case CMP:
         case FCMP:
             collect_regs(instr.get_operand(0), mcode::RegUsage::USE, operands);

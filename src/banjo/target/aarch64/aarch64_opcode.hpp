@@ -1,9 +1,7 @@
 #ifndef BANJO_TARGET_AARCH64_OPCODE_H
 #define BANJO_TARGET_AARCH64_OPCODE_H
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 namespace AArch64Opcode {
 
@@ -19,6 +17,12 @@ enum {
     STRH,
     LDP,
     STP,
+    LDAR,
+    LDARB,
+    LDARH,
+    STLR,
+    STLRB,
+    STLRH,
     ADD,
     SUB,
     MUL,
@@ -71,8 +75,6 @@ enum {
 
 } // namespace AArch64Opcode
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

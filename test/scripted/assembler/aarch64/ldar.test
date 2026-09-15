@@ -1,0 +1,19 @@
+# test:subtest
+# test:encoding "5BFDDFC8"
+
+ldar x27, [x10]
+
+# test:subtest
+# test:encoding "5BFDDF88"
+
+ldar w27, [x10]
+
+# test:subtest
+# test:encoding "FBFFDFC8"
+
+ldar x27, [sp]
+
+# test:subtest
+# test:encoding "FBFFDF88"
+
+ldar w27, [sp]

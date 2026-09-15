@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "5BFDDF48"
+
+ldarh w27, [x10]
+
+# test:subtest
+# test:encoding "FBFFDF48"
+
+ldarh w27, [sp]

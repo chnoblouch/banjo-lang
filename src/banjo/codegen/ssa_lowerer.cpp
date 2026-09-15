@@ -387,12 +387,12 @@ void SSALowerer::lower_store(ssa::Instruction &) {
 }
 
 void SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
-    // WARN_UNIMPLEMENTED("atomic_load");
+    WARN_UNIMPLEMENTED("atomic_load");
     lower_load(instr);
 }
 
 void SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
-    // WARN_UNIMPLEMENTED("atomic_store");
+    WARN_UNIMPLEMENTED("atomic_store");
     lower_store(instr);
 }
 

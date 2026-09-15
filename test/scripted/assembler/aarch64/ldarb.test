@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "5BFDDF08"
+
+ldarb w27, [x10]
+
+# test:subtest
+# test:encoding "FBFFDF08"
+
+ldarb w27, [sp]

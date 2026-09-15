@@ -33,6 +33,12 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::STRH: encode_strh(instr); break;
         case AArch64Opcode::LDP: encode_ldp(instr); break;
         case AArch64Opcode::STP: encode_stp(instr); break;
+        case AArch64Opcode::LDAR: encode_ldar(instr); break;
+        case AArch64Opcode::LDARB: encode_ldarb(instr); break;
+        case AArch64Opcode::LDARH: encode_ldarh(instr); break;
+        case AArch64Opcode::STLR: encode_stlr(instr); break;
+        case AArch64Opcode::STLRB: encode_stlrb(instr); break;
+        case AArch64Opcode::STLRH: encode_stlrh(instr); break;
         case AArch64Opcode::ADD: encode_add(instr); break;
         case AArch64Opcode::SUB: encode_sub(instr); break;
         case AArch64Opcode::MUL: encode_mul(instr); break;
@@ -173,6 +179,30 @@ void AArch64Encoder::encode_ldp(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_stp(mcode::Instruction &instr) {
     encode_ldp_family(instr, {0x28800000, 0x29800000});
+}
+
+void AArch64Encoder::encode_ldar(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x88DFFC00});
+}
+
+void AArch64Encoder::encode_ldarb(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x8DFFC00});
+}
+
+void AArch64Encoder::encode_ldarh(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x48DFFC00});
+}
+
+void AArch64Encoder::encode_stlr(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x889FFC00});
+}
+
+void AArch64Encoder::encode_stlrb(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x089FFC00});
+}
+
+void AArch64Encoder::encode_stlrh(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x489FFC00});
 }
 
 void AArch64Encoder::encode_add(mcode::Instruction &instr) {
@@ -576,6 +606,19 @@ void AArch64Encoder::encode_ldp_family(mcode::Instruction &instr, std::array<std
         // There are other addressing modes, but the compiler currently never generates them.
         ASSERT_UNREACHABLE;
     }
+}
+
+void AArch64Encoder::encode_ldar_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_reg = instr.get_operand(0);
+    mcode::Operand &m_addr = instr.get_operand(1);
+
+    ASSERT(is_gp_reg(m_reg.get_physical_reg()));
+    ASSERT(m_addr.get_aarch64_addr().get_type() == AArch64Address::Type::BASE);
+
+    bool sf = instr.get_operand(0).get_size() == 8;
+    std::uint32_t r_reg = encode_gp_reg(m_reg.get_physical_reg());
+    std::uint32_t r_addr_base = encode_gp_reg(m_addr.get_aarch64_addr().get_base().get_physical_reg());
+    text.write_u32(params[0] | (sf << 30) | (r_addr_base << 5) | r_reg);
 }
 
 void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 3> params) {
