@@ -5,9 +5,67 @@
 
 namespace banjo::ssa {
 
+bool Instruction::might_access_memory() const {
+    switch (opcode) {
+        case Opcode::LOAD:
+        case Opcode::STORE:
+        case Opcode::ATOMIC_LOAD:
+        case Opcode::ATOMIC_STORE:
+        case Opcode::CALL:
+        case Opcode::COPY: return true;
+
+        case Opcode::ALLOCA:
+        case Opcode::LOADARG:
+        case Opcode::ADD:
+        case Opcode::SUB:
+        case Opcode::MUL:
+        case Opcode::SDIV:
+        case Opcode::SREM:
+        case Opcode::UDIV:
+        case Opcode::UREM:
+        case Opcode::FADD:
+        case Opcode::FSUB:
+        case Opcode::FMUL:
+        case Opcode::FDIV:
+        case Opcode::AND:
+        case Opcode::OR:
+        case Opcode::XOR:
+        case Opcode::LSHL:
+        case Opcode::LSHR:
+        case Opcode::ASHR:
+        case Opcode::JMP:
+        case Opcode::CJMP:
+        case Opcode::FCJMP:
+        case Opcode::SELECT:
+        case Opcode::RET:
+        case Opcode::UEXTEND:
+        case Opcode::SEXTEND:
+        case Opcode::TRUNCATE:
+        case Opcode::FPROMOTE:
+        case Opcode::FDEMOTE:
+        case Opcode::UTOF:
+        case Opcode::STOF:
+        case Opcode::FTOU:
+        case Opcode::FTOS:
+        case Opcode::MEMBERPTR:
+        case Opcode::OFFSETPTR:
+        case Opcode::SQRT:
+        case Opcode::FRAME_ADDRESS: return false;
+    }
+}
+
+bool Instruction::is_branching() const {
+    return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;
+}
+
+bool Instruction::is_cond_branch() const {
+    return opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;
+}
+
 Type Instruction::get_type() const {
     switch (opcode) {
         case Opcode::STORE:
+        case Opcode::ATOMIC_STORE:
         case Opcode::JMP:
         case Opcode::CJMP:
         case Opcode::FCJMP:
@@ -16,6 +74,7 @@ Type Instruction::get_type() const {
         case Opcode::OFFSETPTR: return ssa::Primitive::ADDR;
         case Opcode::ALLOCA:
         case Opcode::LOAD:
+        case Opcode::ATOMIC_LOAD:
         case Opcode::LOADARG:
         case Opcode::ADD:
         case Opcode::SUB:

@@ -132,6 +132,8 @@ protected:
 
     virtual void lower_load(ssa::Instruction &instr);
     virtual void lower_store(ssa::Instruction &instr);
+    virtual void lower_atomic_load(ssa::Instruction &instr);
+    virtual void lower_atomic_store(ssa::Instruction &instr);
     virtual void lower_loadarg(ssa::Instruction &instr);
     virtual void lower_add(ssa::Instruction &instr);
     virtual void lower_sub(ssa::Instruction &instr);

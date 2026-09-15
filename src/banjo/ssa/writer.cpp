@@ -164,6 +164,8 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::ALLOCA: opcode = "alloca"; break;
             case Opcode::LOAD: opcode = "load"; break;
             case Opcode::STORE: opcode = "store"; break;
+            case Opcode::ATOMIC_LOAD: opcode = "atomic_load"; break;
+            case Opcode::ATOMIC_STORE: opcode = "atomic_store"; break;
             case Opcode::LOADARG: opcode = "loadarg"; break;
             case Opcode::ADD: opcode = "add"; break;
             case Opcode::SUB: opcode = "sub"; break;

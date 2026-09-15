@@ -207,6 +207,8 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
         case ssa::Opcode::ALLOCA: break;
         case ssa::Opcode::LOAD: lower_load(instr); break;
         case ssa::Opcode::STORE: lower_store(instr); break;
+        case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(instr); break;
+        case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(instr); break;
         case ssa::Opcode::LOADARG: lower_loadarg(instr); break;
         case ssa::Opcode::ADD: lower_add(instr); break;
         case ssa::Opcode::SUB: lower_sub(instr); break;
@@ -382,6 +384,16 @@ void SSALowerer::lower_load(ssa::Instruction &) {
 
 void SSALowerer::lower_store(ssa::Instruction &) {
     WARN_UNIMPLEMENTED("store");
+}
+
+void SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
+    // WARN_UNIMPLEMENTED("atomic_load");
+    lower_load(instr);
+}
+
+void SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
+    // WARN_UNIMPLEMENTED("atomic_store");
+    lower_store(instr);
 }
 
 void SSALowerer::lower_loadarg(ssa::Instruction &) {

@@ -35,6 +35,8 @@ const std::unordered_map<std::string_view, ssa::Opcode> OPS = {
     {"alloca", ssa::Opcode::ALLOCA},
     {"load", ssa::Opcode::LOAD},
     {"store", ssa::Opcode::STORE},
+    {"atomic_load", ssa::Opcode::ATOMIC_LOAD},
+    {"atomic_store", ssa::Opcode::ATOMIC_STORE},
     {"loadarg", ssa::Opcode::LOADARG},
     {"add", ssa::Opcode::ADD},
     {"sub", ssa::Opcode::SUB},

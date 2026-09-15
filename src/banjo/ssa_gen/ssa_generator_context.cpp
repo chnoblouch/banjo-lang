@@ -118,14 +118,6 @@ ssa::VirtualRegister SSAGeneratorContext::append_alloca(ssa::Type type) {
     return reg;
 }
 
-ssa::Instruction &SSAGeneratorContext::append_store(ssa::Operand src, ssa::Operand dst) {
-    return *get_ssa_block()->append(ssa::Instruction(ssa::Opcode::STORE, {std::move(src), std::move(dst)}));
-}
-
-ssa::Instruction &SSAGeneratorContext::append_store(ssa::Operand src, ssa::VirtualRegister dst) {
-    return append_store(std::move(src), ssa::Operand::from_register(dst, ssa::Primitive::ADDR));
-}
-
 ssa::Value SSAGeneratorContext::append_load(ssa::Type type, ssa::Operand src) {
     ssa::VirtualRegister reg = next_vreg();
     ssa::Operand type_operand = ssa::Operand::from_type(type);
@@ -135,6 +127,25 @@ ssa::Value SSAGeneratorContext::append_load(ssa::Type type, ssa::Operand src) {
 
 ssa::Value SSAGeneratorContext::append_load(ssa::Type type, ssa::VirtualRegister src) {
     return append_load(type, ssa::Value::from_register(src, ssa::Primitive::ADDR));
+}
+
+ssa::Instruction &SSAGeneratorContext::append_store(ssa::Operand src, ssa::Operand dst) {
+    return *get_ssa_block()->append(ssa::Instruction(ssa::Opcode::STORE, {std::move(src), std::move(dst)}));
+}
+
+ssa::Instruction &SSAGeneratorContext::append_store(ssa::Operand src, ssa::VirtualRegister dst) {
+    return append_store(std::move(src), ssa::Operand::from_register(dst, ssa::Primitive::ADDR));
+}
+
+ssa::Value SSAGeneratorContext::append_atomic_load(ssa::Type type, ssa::Operand src) {
+    ssa::VirtualRegister reg = next_vreg();
+    ssa::Operand type_operand = ssa::Operand::from_type(type);
+    get_ssa_block()->append({ssa::Opcode::ATOMIC_LOAD, reg, {type_operand, std::move(src)}});
+    return ssa::Value::from_register(reg, type);
+}
+
+ssa::Instruction &SSAGeneratorContext::append_atomic_store(ssa::Operand src, ssa::Operand dst) {
+    return *get_ssa_block()->append({ssa::Opcode::ATOMIC_STORE, {std::move(src), std::move(dst)}});
 }
 
 ssa::Instruction &SSAGeneratorContext::append_loadarg(ssa::VirtualRegister dst, ssa::Type type, unsigned index) {

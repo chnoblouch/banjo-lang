@@ -163,10 +163,12 @@ public:
 
     ssa::Instruction &append_alloca(ssa::VirtualRegister dst, ssa::Type type);
     ssa::VirtualRegister append_alloca(ssa::Type type);
-    ssa::Instruction &append_store(ssa::Operand src, ssa::Operand dst);
-    ssa::Instruction &append_store(ssa::Operand src, ssa::VirtualRegister dst);
     ssa::Value append_load(ssa::Type type, ssa::Operand src);
     ssa::Value append_load(ssa::Type type, ssa::VirtualRegister src);
+    ssa::Instruction &append_store(ssa::Operand src, ssa::Operand dst);
+    ssa::Instruction &append_store(ssa::Operand src, ssa::VirtualRegister dst);
+    ssa::Value append_atomic_load(ssa::Type type, ssa::Operand src);
+    ssa::Instruction &append_atomic_store(ssa::Operand src, ssa::Operand dst);
     ssa::Instruction &append_loadarg(ssa::VirtualRegister dst, ssa::Type type, unsigned index);
     ssa::VirtualRegister append_loadarg(ssa::Type type, unsigned index);
     void append_jmp(ssa::BasicBlockIter block_iter);
