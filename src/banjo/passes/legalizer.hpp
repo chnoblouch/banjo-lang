@@ -14,6 +14,10 @@ public:
 private:
     void run(ssa::Function &func);
     void run(ssa::Function &func, ssa::BasicBlockIter block);
+
+    void legalize_load(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
+    void legalize_store(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
+    void legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
 };
 
 } // namespace banjo::passes

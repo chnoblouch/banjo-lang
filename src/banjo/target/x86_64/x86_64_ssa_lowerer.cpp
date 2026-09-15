@@ -174,59 +174,12 @@ void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
 void X8664SSALowerer::lower_load(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Opcode opcode = get_move_opcode(type);
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
-
-    if (size == 3) {
-        m_dst = m_dst.with_size(4);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 4);
-
-        emit({X8664Opcode::MOVZX, {m_dst, lower_addr_mem_access(base_addr).with_size(2)}});
-        emit({X8664Opcode::MOVZX, {m_tmp, lower_addr_mem_access(base_addr.offset(2)).with_size(1)}});
-        emit({X8664Opcode::SHL, {m_tmp, mcode::Operand::from_int_immediate(16, 1)}});
-        emit({X8664Opcode::OR, {m_dst, m_tmp}});
-    } else if (size == 5) {
-        m_dst = m_dst.with_size(8);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 8);
-
-        emit({X8664Opcode::MOV, {m_dst.with_size(4), lower_addr_mem_access(base_addr).with_size(4)}});
-        emit({X8664Opcode::MOVZX, {m_tmp.with_size(4), lower_addr_mem_access(base_addr.offset(4)).with_size(1)}});
-        emit({X8664Opcode::SHL, {m_tmp, mcode::Operand::from_int_immediate(32, 1)}});
-        emit({X8664Opcode::OR, {m_dst, m_tmp}});
-    } else if (size == 6) {
-        m_dst = m_dst.with_size(8);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 8);
-
-        emit({X8664Opcode::MOV, {m_dst.with_size(4), lower_addr_mem_access(base_addr).with_size(4)}});
-        emit({X8664Opcode::MOVZX, {m_tmp.with_size(4), lower_addr_mem_access(base_addr.offset(4)).with_size(2)}});
-        emit({X8664Opcode::SHL, {m_tmp, mcode::Operand::from_int_immediate(32, 1)}});
-        emit({X8664Opcode::OR, {m_dst, m_tmp}});
-    } else if (size == 7) {
-        m_dst = m_dst.with_size(8);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp0 = mcode::Operand::from_register(create_tmp_reg(), 8);
-        mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), 8);
-
-        emit({X8664Opcode::MOV, {m_dst.with_size(4), lower_addr_mem_access(base_addr).with_size(4)}});
-        emit({X8664Opcode::MOVZX, {m_tmp0.with_size(4), lower_addr_mem_access(base_addr.offset(4)).with_size(2)}});
-        emit({X8664Opcode::MOVZX, {m_tmp1.with_size(4), lower_addr_mem_access(base_addr.offset(6)).with_size(1)}});
-        emit({X8664Opcode::SHL, {m_tmp0, mcode::Operand::from_int_immediate(32, 1)}});
-        emit({X8664Opcode::SHL, {m_tmp1, mcode::Operand::from_int_immediate(48, 1)}});
-        emit({X8664Opcode::OR, {m_dst, m_tmp0}});
-        emit({X8664Opcode::OR, {m_dst, m_tmp1}});
-    } else {
-        AddrComponents addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_src = lower_addr_mem_access(addr).with_size(size);
-        emit({opcode, {m_dst, m_src}});
-    }
+    mcode::Operand m_src = lower_addr_mem_access(addr).with_size(size);
+    emit({opcode, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
@@ -235,61 +188,8 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
     }
 
     ssa::Type type = instr.get_operand(0).get_type();
-    unsigned size = get_size(type);
-
-    if (size == 0) {
-        return;
-    } else if (size == 3) {
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(0)).with_size(4);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 4);
-
-        emit({X8664Opcode::MOV, {m_tmp, m_src}});
-        emit({X8664Opcode::SHR, {m_tmp, mcode::Operand::from_int_immediate(16, 1)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr).with_size(2), m_src}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr.offset(2)).with_size(1), m_tmp}});
-        return;
-    } else if (size == 5) {
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(0)).with_size(8);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 8);
-
-        emit({X8664Opcode::MOV, {m_tmp, m_src}});
-        emit({X8664Opcode::SHR, {m_tmp, mcode::Operand::from_int_immediate(32, 1)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr).with_size(4), m_src.with_size(4)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr.offset(4)).with_size(1), m_tmp.with_size(1)}});
-        return;
-    } else if (size == 6) {
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(0)).with_size(8);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 8);
-
-        emit({X8664Opcode::MOV, {m_tmp, m_src}});
-        emit({X8664Opcode::SHR, {m_tmp, mcode::Operand::from_int_immediate(32, 1)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr).with_size(4), m_src.with_size(4)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr.offset(4)).with_size(2), m_tmp.with_size(2)}});
-        return;
-    } else if (size == 7) {
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(0)).with_size(8);
-
-        AddrComponents base_addr = collect_addr(instr.get_operand(1));
-        mcode::Operand m_tmp0 = mcode::Operand::from_register(create_tmp_reg(), 8);
-        mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), 8);
-
-        emit({X8664Opcode::MOV, {m_tmp0, m_src}});
-        emit({X8664Opcode::SHR, {m_tmp0, mcode::Operand::from_int_immediate(32, 1)}});
-        emit({X8664Opcode::MOV, {m_tmp1, m_src}});
-        emit({X8664Opcode::SHR, {m_tmp1, mcode::Operand::from_int_immediate(48, 1)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr).with_size(4), m_src.with_size(4)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr.offset(4)).with_size(2), m_tmp0.with_size(2)}});
-        emit({X8664Opcode::MOV, {lower_addr_mem_access(base_addr.offset(6)).with_size(1), m_tmp1.with_size(1)}});
-        return;
-    }
-
     AddrComponents addr = collect_addr(instr.get_operand(1));
+
     mcode::Operand dst = lower_addr_mem_access(addr);
     mcode::Instruction m_instr;
 

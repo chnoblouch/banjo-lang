@@ -245,6 +245,8 @@ add_library(banjo STATIC
     "ssa/addr_table.hpp"
     "ssa/basic_block.cpp"
     "ssa/basic_block.hpp"
+    "ssa/builder.cpp"
+    "ssa/builder.hpp"
     "ssa/call_graph.cpp"
     "ssa/call_graph.hpp"
     "ssa/comparison.cpp"
