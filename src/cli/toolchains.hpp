@@ -61,6 +61,7 @@ private:
 public:
     std::string linker_path;
     std::vector<std::string> lib_dirs;
+    std::vector<std::string> crt_files;
 
     static MinGWToolchain detect();
     static std::unique_ptr<MinGWToolchain> deserialize(json::Object &object);
@@ -71,6 +72,8 @@ public:
 private:
     void find_linker();
     void find_lib_dirs();
+    void find_crt_files();
+    std::filesystem::path find_crt_file(const std::string &name);
     std::filesystem::path find_c_compiler();
 };
 

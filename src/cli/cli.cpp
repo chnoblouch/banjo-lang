@@ -1387,8 +1387,25 @@ void CLI::invoke_msvc_linker() {
 void CLI::invoke_mingw_linker() {
     MinGWToolchain &toolchain = *static_cast<MinGWToolchain *>(this->toolchain.get());
 
+    // Notes about linking order: First are crt2.o and then crtbegin.o, then the
+    // object file, then crtend.o. Derived from running `x86_64-w64-mingw32-gcc
+    // -v`.
+    // TODO: MinGW actually puts `crtend.o` after all the system libraries,
+    // does this change anything?
+
     std::vector<std::string> args;
+
+    if (package_type == PackageType::EXECUTABLE) {
+        args.push_back(toolchain.crt_files[0]);
+        args.push_back(toolchain.crt_files[1]);
+    }
+
     args.push_back("output.o");
+
+    if (package_type == PackageType::EXECUTABLE) {
+        args.push_back(toolchain.crt_files[2]);
+    }
+
     args.push_back("-o");
     args.push_back(get_output_path());
     args.push_back("--subsystem");

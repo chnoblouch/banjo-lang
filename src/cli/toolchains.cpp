@@ -33,6 +33,7 @@ const ToolchainProperties MSVCToolchain::PROPERTIES{
 const ToolchainProperties MinGWToolchain::PROPERTIES{
     {"linker_path", "Linker path"},
     {"lib_dirs", "Library directories"},
+    {"crt_files", "CRT files"},
 };
 
 const ToolchainProperties UnixToolchain::PROPERTIES{
@@ -349,6 +350,7 @@ MinGWToolchain MinGWToolchain::detect() {
     print_step("Locating MinGW toolchain...");
     toolchain.find_linker();
     toolchain.find_lib_dirs();
+    toolchain.find_crt_files();
 
     return toolchain;
 }
@@ -378,6 +380,32 @@ void MinGWToolchain::find_lib_dirs() {
     }
 }
 
+void MinGWToolchain::find_crt_files() {
+    crt_files = {
+        find_crt_file("crt2.o").string(),
+        find_crt_file("crtbegin.o").string(),
+        find_crt_file("crtend.o").string(),
+    };
+
+    print_step("  Found CRT files:");
+
+    for (const std::string &file : crt_files) {
+        print_step("    - " + file);
+    }
+}
+
+std::filesystem::path MinGWToolchain::find_crt_file(const std::string &name) {
+    for (const std::string &search_dir : lib_dirs) {
+        std::filesystem::path file = std::filesystem::path{search_dir} / name;
+
+        if (std::filesystem::is_regular_file(file)) {
+            return std::filesystem::canonical(file);
+        }
+    }
+
+    error("failed to find system crt file " + name);
+}
+
 std::filesystem::path MinGWToolchain::find_c_compiler() {
     std::optional<std::filesystem::path> gcc_path = find_tool("x86_64-w64-mingw32-gcc");
     if (gcc_path) {
@@ -391,14 +419,20 @@ std::filesystem::path MinGWToolchain::find_c_compiler() {
 std::unique_ptr<MinGWToolchain> MinGWToolchain::deserialize(json::Object &object) {
     auto linker_path = object.try_get_string("linker_path");
     auto lib_dirs = object.try_get_string_array("lib_dirs");
+    auto crt_files = object.try_get_string_array("crt_files");
 
-    if (!linker_path || !lib_dirs) {
+    if (!linker_path || !lib_dirs || !crt_files) {
+        return nullptr;
+    }
+
+    if (crt_files->size() != 3) {
         return nullptr;
     }
 
     MinGWToolchain toolchain;
     toolchain.linker_path = *linker_path;
     toolchain.lib_dirs = *lib_dirs;
+    toolchain.crt_files = *crt_files;
 
     return std::make_unique<MinGWToolchain>(toolchain);
 }
@@ -407,6 +441,7 @@ json::Object MinGWToolchain::serialize() {
     json::Object object;
     object.add("linker_path", linker_path);
     object.add("lib_dirs", json::Array{lib_dirs});
+    object.add("crt_files", json::Array{crt_files});
     return object;
 }
 
