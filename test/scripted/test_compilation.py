@@ -338,7 +338,6 @@ def run_executable(test):
             "user32.lib",
             "legacy_stdio_definitions.lib",
             "ws2_32.lib",
-            "dbghelp.lib",
             "/SUBSYSTEM:CONSOLE",
             "/STACK:4194304,4194304",
             "/OUT:test.exe",

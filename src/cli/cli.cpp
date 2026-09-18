@@ -1430,7 +1430,6 @@ void CLI::invoke_mingw_linker() {
     args.push_back("-lgdi32");
     args.push_back("-lshell32");
     args.push_back("-lws2_32");
-    args.push_back("-ldbghelp");
 
     for (const std::string &library_path : library_paths) {
         args.push_back("-L" + library_path);
