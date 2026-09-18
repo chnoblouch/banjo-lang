@@ -76,6 +76,7 @@ struct InitExpr;
 struct MoveExpr;
 struct DeinitExpr;
 struct TypeCheckExpr;
+struct BuiltinExpr;
 struct PlaceholderExpr;
 struct VarStmt;
 struct AssignStmt;
@@ -213,9 +214,10 @@ class Expr {
         MoveExpr *,         // 44
         DeinitExpr *,       // 45
         TypeCheckExpr *,    // 46
-        PlaceholderExpr *,  // 47
-        Error *,            // 48
-        std::nullptr_t>     // 49
+        BuiltinExpr *,      // 47
+        PlaceholderExpr *,  // 48
+        Error *,            // 49
+        std::nullptr_t>     // 50
         kind;
 
 public:
@@ -1015,6 +1017,19 @@ struct TypeCheckExpr {
     Expr type;
     Expr type_to_check;
     Expr constraint;
+};
+
+enum class Builtin {
+    ATOMIC_LOAD,
+    ATOMIC_STORE,
+    FRAME_ADDRESS,
+};
+
+struct BuiltinExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Builtin builtin;
+    std::span<sir::Expr> args;
 };
 
 struct PlaceholderExpr {

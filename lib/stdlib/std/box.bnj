@@ -1,4 +1,5 @@
 use std.memory;
+use internal.builtin;
 
 struct Box[T] {
     var data: *T;
@@ -18,7 +19,7 @@ struct Box[T] {
     }
 
     pub func __deinit__(self) {
-        __builtin_deinit(*self.data);
+        builtin.deinit(*self.data);
         memory.free(self.data);
     }
 }

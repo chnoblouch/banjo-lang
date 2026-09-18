@@ -95,6 +95,7 @@ private:
     Result analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx);
     Result analyze_coercion_expr(sir::CoercionExpr &coercion_expr, Context &ctx);
     Result analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::Expr &out_expr);
+    Result analyze_builtin_expr(sir::BuiltinExpr &builtin_expr, Context &ctx);
 
     Result analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx);
     MoveState *find_move_state(sir::Resource *resource);

@@ -352,6 +352,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_VISIT_IGNORE,                                 // move_expr
         result = analyze_deinit_expr(*inner, expr),       // deinit_expr
         SIR_VISIT_IGNORE,                                 // type_check_expr
+        result = analyze_builtin_expr(*inner, ctx),       // builtin_expr
         SIR_VISIT_IGNORE,                                 // placeholder_expr (TODO)
         SIR_VISIT_IGNORE                                  // error
     );
@@ -556,6 +557,16 @@ Result ResourceAnalyzer::analyze_deinit_expr(sir::DeinitExpr &deinit_expr, sir::
     }
 
     return Result::SUCCESS;
+}
+
+Result ResourceAnalyzer::analyze_builtin_expr(sir::BuiltinExpr &builtin_expr, Context &ctx) {
+    Result result = Result::SUCCESS;
+
+    for (sir::Expr &arg : builtin_expr.args) {
+        RESULT_MERGE(result, analyze_expr(arg, true, ctx.conditional));
+    }
+
+    return result;
 }
 
 Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr &inout_expr, Context &ctx) {

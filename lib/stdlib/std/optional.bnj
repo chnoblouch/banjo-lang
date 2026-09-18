@@ -1,5 +1,5 @@
 use std.{convert.to_string, protos.ToString};
-use internal.std_panics.panic_unwrap_optional;
+use internal.{builtin, std_panics.panic_unwrap_optional};
 
 struct Optional[T]: ToString {
     var has_value: bool;
@@ -47,7 +47,7 @@ struct Optional[T]: ToString {
 
     pub func __deinit__(self) {
         if self.has_value {
-            __builtin_deinit(self.value);
+            builtin.deinit(self.value);
         }
     }
 }

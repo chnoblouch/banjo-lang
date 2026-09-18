@@ -4,6 +4,8 @@ use std.{
     protos.{ToRepr, ToString},
 };
 
+use internal.builtin;
+
 struct Value: ToString, ToRepr {
     enum Kind { NULL, BOOL, U64, I64, F64, STRING, ARRAY, OBJECT }
 
@@ -193,11 +195,11 @@ struct Value: ToString, ToRepr {
 
     pub func __deinit__(self) {
         if self.kind == .STRING {
-            __builtin_deinit(self.data.value_string);
+            builtin.deinit(self.data.value_string);
         } else if self.kind == .ARRAY {
-            __builtin_deinit(self.data.value_array);
+            builtin.deinit(self.data.value_array);
         } else if self.kind == .OBJECT {
-            __builtin_deinit(self.data.value_object);
+            builtin.deinit(self.data.value_object);
         }
     }
 

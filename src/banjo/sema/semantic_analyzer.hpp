@@ -130,6 +130,12 @@ public:
     sir::ProtoDef *std_bit_not_def = nullptr;
     sir::ProtoDef *std_copy_def = nullptr;
 
+    sir::FuncDef *builtin_pointer_to = nullptr;
+    sir::FuncDef *builtin_deinit = nullptr;
+    sir::FuncDef *builtin_atomic_load = nullptr;
+    sir::FuncDef *builtin_atomic_store = nullptr;
+    sir::FuncDef *builtin_frame_address = nullptr;
+
 private:
     std::unordered_map<std::string_view, sir::Symbol> preamble_symbols;
     std::unordered_map<std::string_view, sir::Expr> meta_field_types;

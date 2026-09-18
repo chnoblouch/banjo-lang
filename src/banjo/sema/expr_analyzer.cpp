@@ -216,6 +216,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_VISIT_IMPOSSIBLE,                           // move_expr
         SIR_VISIT_IMPOSSIBLE,                           // deinit_expr
         result = analyze_type_check_expr(*inner),       // type_check_expr
+        SIR_VISIT_IMPOSSIBLE,                           // builtin_expr
         SIR_VISIT_IMPOSSIBLE,                           // placeholder_expr
         result = Result::ERROR                          // error
     );
@@ -910,13 +911,6 @@ Result ExprAnalyzer::analyze_cast_expr(sir::CastExpr &cast_expr) {
 Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_expr) {
     Result result = Result::SUCCESS;
 
-    // TODO: move this into some kind of builtin module.
-    if (auto ident_expr = call_expr.callee.match<sir::IdentExpr>()) {
-        if (ident_expr->value.starts_with("__builtin")) {
-            return analyze_builtin_call(ident_expr->value, call_expr.args, out_expr);
-        }
-    }
-
     if (auto dot_expr = call_expr.callee.match<sir::DotExpr>()) {
         RESULT_PROPAGATE(analyze(dot_expr->lhs));
 
@@ -975,13 +969,11 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
         analyzer.add_symbol_use(call_expr.callee.as<sir::SymbolExpr>().ast_node, callee_func_def);
 
-        call_expr.callee = analyzer.create(
-            sir::SymbolExpr{
-                .ast_node = nullptr,
-                .type = &callee_func_def->type,
-                .symbol = callee_func_def,
-            }
-        );
+        call_expr.callee = analyzer.create<sir::SymbolExpr>({
+            .ast_node = nullptr,
+            .type = &callee_func_def->type,
+            .symbol = callee_func_def,
+        });
     }
 
     if (callee_func_def && callee_func_def->is_generic()) {
@@ -1030,13 +1022,11 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
                 args[i] = call_expr.args[i];
             }
 
-            args[num_non_sequence_args] = analyzer.create(
-                sir::TupleExpr{
-                    .ast_node = nullptr,
-                    .type = generic_args.back(),
-                    .exprs = sequence_args,
-                }
-            );
+            args[num_non_sequence_args] = analyzer.create<sir::TupleExpr>({
+                .ast_node = nullptr,
+                .type = generic_args.back(),
+                .exprs = sequence_args,
+            });
 
             call_expr.args = args;
         }
@@ -1091,98 +1081,77 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
     call_expr.type = callee_func_type->return_type;
 
+    if (callee_func_def == analyzer.builtin_pointer_to) {
+        out_expr = analyzer.create<sir::UnaryExpr>({
+            .ast_node = call_expr.ast_node,
+            .type = call_expr.type,
+            .op = sir::UnaryOp::ADDR,
+            .value = call_expr.args[0],
+        });
+
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_deinit) {
+        out_expr = analyzer.create<sir::DeinitExpr>({
+            .ast_node = call_expr.ast_node,
+            .type = call_expr.type,
+            .value = call_expr.args[0],
+            .resource = nullptr,
+        });
+
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_load) {
+        out_expr = analyzer.create<sir::BuiltinExpr>({
+            .ast_node = call_expr.ast_node,
+            .type = call_expr.type,
+            .builtin = sir::Builtin::ATOMIC_LOAD,
+            .args = call_expr.args,
+        });
+
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_store) {
+        out_expr = analyzer.create<sir::BuiltinExpr>({
+            .ast_node = call_expr.ast_node,
+            .type = call_expr.type,
+            .builtin = sir::Builtin::ATOMIC_STORE,
+            .args = call_expr.args,
+        });
+
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_frame_address) {
+        out_expr = analyzer.create<sir::BuiltinExpr>({
+            .ast_node = call_expr.ast_node,
+            .type = call_expr.type,
+            .builtin = sir::Builtin::FRAME_ADDRESS,
+            .args = call_expr.args,
+        });
+
+        return Result::SUCCESS;
+    }
+
     if (auto closure_type = callee_type.match<sir::ClosureType>()) {
-        sir::Expr func_ptr = analyzer.create(
-            sir::FieldExpr{
-                .ast_node = nullptr,
-                .type = closure_type->underlying_struct->fields[0]->type,
-                .base = call_expr.callee,
-                .field_index = 0,
-            }
-        );
+        sir::Expr func_ptr = analyzer.create<sir::FieldExpr>({
+            .ast_node = nullptr,
+            .type = closure_type->underlying_struct->fields[0]->type,
+            .base = call_expr.callee,
+            .field_index = 0,
+        });
 
-        sir::Expr data_ptr = analyzer.create(
-            sir::FieldExpr{
-                .ast_node = nullptr,
-                .type = closure_type->underlying_struct->fields[1]->type,
-                .base = call_expr.callee,
-                .field_index = 1,
-            }
-        );
+        sir::Expr data_ptr = analyzer.create<sir::FieldExpr>({
+            .ast_node = nullptr,
+            .type = closure_type->underlying_struct->fields[1]->type,
+            .base = call_expr.callee,
+            .field_index = 1,
+        });
 
-        call_expr.callee = analyzer.create(
-            sir::CastExpr{
-                .ast_node = nullptr,
-                .type = &closure_type->func_type,
-                .value = func_ptr,
-            }
-        );
+        call_expr.callee = analyzer.create<sir::CastExpr>({
+            .ast_node = nullptr,
+            .type = &closure_type->func_type,
+            .value = func_ptr,
+        });
 
         call_expr.args = prepend_arg(data_ptr, call_expr.args);
     }
 
-    return Result::SUCCESS;
-}
-
-Result ExprAnalyzer::analyze_builtin_call(std::string_view name, std::span<sir::Expr> args, sir::Expr &out_expr) {
-    if (name == "__builtin_deinit") {
-        return analyze_builtin_deinit(args, out_expr);
-    } else if (name == "__builtin_pointer_to") {
-        return analyze_builtin_pointer_to(args, out_expr);
-    } else if (name == "__builtin_frame_address") {
-        return analyze_builtin_frame_pointer(out_expr);
-    } else if (name == "__builtin_atomic_load") {
-        return analyze_builtin_atomic_load(args, out_expr);
-    } else if (name == "__builtin_atomic_store") {
-        return analyze_builtin_atomic_store(args, out_expr);
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-}
-
-Result ExprAnalyzer::analyze_builtin_deinit(std::span<sir::Expr> args, sir::Expr &out_expr) {
-    RESULT_PROPAGATE(analyze_value(args[0]));
-
-    out_expr = analyzer.create<sir::DeinitExpr>({
-        .ast_node = nullptr,
-        .type = analyzer.get_resolved_type(args[0]),
-        .value = args[0],
-        .resource = nullptr,
-    });
-
-    return Result::SUCCESS;
-}
-
-Result ExprAnalyzer::analyze_builtin_pointer_to(std::span<sir::Expr> args, sir::Expr &out_expr) {
-    RESULT_PROPAGATE(analyze_value(args[0]));
-
-    out_expr = analyzer.create<sir::UnaryExpr>({
-        .ast_node = nullptr,
-        .type = analyzer.builder.create_pointer_type(analyzer.get_resolved_type(args[0])),
-        .op = sir::UnaryOp::ADDR,
-        .value = args[0],
-    });
-
-    return Result::SUCCESS;
-}
-
-Result ExprAnalyzer::analyze_builtin_frame_pointer(sir::Expr &out_expr) {
-    out_expr.as<sir::CallExpr>().type = analyzer.builder.create_primitive_type(sir::Primitive::ADDR);
-    return Result::SUCCESS;
-}
-
-Result ExprAnalyzer::analyze_builtin_atomic_load(std::span<sir::Expr> args, sir::Expr &out_expr) {
-    RESULT_PROPAGATE(analyze_value(args[0]));
-
-    out_expr.as<sir::CallExpr>().type = args[0].get_type().as<sir::PointerType>().base_type;
-    return Result::SUCCESS;
-}
-
-Result ExprAnalyzer::analyze_builtin_atomic_store(std::span<sir::Expr> args, sir::Expr &out_expr) {
-    RESULT_PROPAGATE(analyze_value(args[0]));
-    RESULT_PROPAGATE(analyze_value(args[1]));
-
-    out_expr.as<sir::CallExpr>().type = analyzer.builder.create_primitive_type(sir::Primitive::VOID);
     return Result::SUCCESS;
 }
 

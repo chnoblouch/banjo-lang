@@ -5,6 +5,7 @@ use std.{
 };
 
 use libc as c;
+use internal.builtin;
 
 use internal.std_panics.{
     panic_invalid_utf8,
@@ -297,6 +298,6 @@ struct StringSlice: Compare[StringSlice], ToString, ToRepr {
     }
 
     func pointer(self, index: usize) -> *u8 {
-        return __builtin_pointer_to(self.data[index]);
+        return builtin.pointer_to(self.data[index]);
     }
 }

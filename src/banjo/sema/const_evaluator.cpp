@@ -90,6 +90,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // move_expr
         return expr,                             // deinit_expr
         return expr,                             // type_check_expr
+        return expr,                             // builtin_expr
         return expr,                             // placeholder_expr
         return nullptr                           // error
     );

@@ -267,7 +267,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         SIR_VISIT_IMPOSSIBLE,            // map_type
         SIR_VISIT_IGNORE,                // closure_type (TODO)
         visit_reference_type(*inner),    // reference_type
-        SIR_VISIT_IGNORE,                // ident_expr (FIXME: Not impossible due to __builtins)
+        SIR_VISIT_IMPOSSIBLE,            // ident_expr
         SIR_VISIT_IMPOSSIBLE,            // star_expr
         SIR_VISIT_IMPOSSIBLE,            // bracket_expr
         SIR_VISIT_IMPOSSIBLE,            // dot_expr
@@ -279,6 +279,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_move_expr(*inner),         // move_expr
         visit_deinit_expr(*inner),       // deinit_expr
         SIR_VISIT_IGNORE,                // type_check_expr (TODO)
+        visit_builtin_expr(*inner),      // builtin_expr
         visit_placeholder_expr(*inner),  // placeholder_expr
         SIR_VISIT_IMPOSSIBLE             // error
     )
@@ -430,6 +431,14 @@ void SpecializationCollector::visit_deinit_expr(const sir::DeinitExpr &deinit_ex
     visit_expr(deinit_expr.type);
     visit_expr(deinit_expr.value);
     visit_resource(*deinit_expr.resource, true); // FIXME: Is this always top-level?
+}
+
+void SpecializationCollector::visit_builtin_expr(const sir::BuiltinExpr &builtin_expr) {
+    visit_expr(builtin_expr.type);
+
+    for (sir::Expr arg : builtin_expr.args) {
+        visit_expr(arg);
+    }
 }
 
 void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr) {

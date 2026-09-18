@@ -1,3 +1,5 @@
+use internal.builtin;
+
 struct Atomic[T: bool | i8 | i16 | i32 | i64 | u8 | u16 | u32 | u64 | usize] {
     var value: T;
 
@@ -6,10 +8,10 @@ struct Atomic[T: bool | i8 | i16 | i32 | i64 | u8 | u16 | u32 | u64 | usize] {
     }
 
     pub func load(mut self) -> T {
-        return __builtin_atomic_load(&self.value);
+        return builtin.atomic_load(&self.value);
     }
 
     pub func store(mut self, value: T) {
-        __builtin_atomic_store(value, &self.value);
+        builtin.atomic_store(value, &self.value);
     }
 }

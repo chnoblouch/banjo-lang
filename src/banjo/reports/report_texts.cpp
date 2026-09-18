@@ -176,6 +176,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<move expr>",
         return "<deinit expr>",
         return "<type guard expr>",
+        return "<builtin expr>",
         return "<placeholder expr>",
         return "invalid"
     );

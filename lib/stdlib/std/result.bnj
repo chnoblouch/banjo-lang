@@ -1,5 +1,9 @@
 use std.{convert.to_string, protos.ToString};
-use internal.std_panics.{panic_unwrap_result, panic_unwrap_error_result};
+
+use internal.{
+    builtin,
+    std_panics.{panic_unwrap_result, panic_unwrap_error_result},
+};
 
 @[layout=overlapping]
 struct Data[T, E] {
@@ -64,9 +68,9 @@ struct Result[T, E]: ToString {
 
     pub func __deinit__(self) {
         if self.successful {
-            __builtin_deinit(self.data.value);
+            builtin.deinit(self.data.value);
         } else {
-            __builtin_deinit(self.data.error);
+            builtin.deinit(self.data.error);
         }
     }
 }

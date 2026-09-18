@@ -1,5 +1,6 @@
 use std.{memory, protos.{ToRepr, ToString}, unicode};
 use libc as c;
+use internal.builtin;
 
 pub func to_string[T](ref value: T) -> String {
     if T == String {
@@ -270,13 +271,13 @@ func bool_to_string(value: bool) -> String {
 }
 
 func char_to_string(value: char) -> String {
-    var encoded = unicode.encode_utf8(*__builtin_pointer_to(value));
+    var encoded = unicode.encode_utf8(*builtin.pointer_to(value));
     return String.from(StringSlice.new(&encoded.bytes[0], encoded.length));
 }
 
 # TODO: Remove `ref`
 func pointer_to_string[T](ref value: T) -> String {
-    var address = *(__builtin_pointer_to(value) as *addr);
+    var address = *(builtin.pointer_to(value) as *addr);
 
     if address == null {
         return "null";
@@ -352,7 +353,7 @@ func enum_to_string[T](ref value: T) -> String {
     var variants = meta(T).variants;
 
     for i in 0..meta(T).num_variants {
-        if memory.compare(__builtin_pointer_to(value), &variants[i].1, 4) {
+        if memory.compare(builtin.pointer_to(value), &variants[i].1, 4) {
             return String.from_cstring(variants[i].0);
         }
     }

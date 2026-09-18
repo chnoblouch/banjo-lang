@@ -654,6 +654,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_move_expr(*inner),
         return clone_deinit_expr(*inner),
         return clone_type_check_expr(*inner),
+        return clone_builtin_expr(*inner),
         return clone_placeholder_expr(*inner),
         return clone_error(*inner)
     );
@@ -1157,6 +1158,17 @@ TypeCheckExpr *Cloner::clone_type_check_expr(const TypeCheckExpr &type_check_exp
             .type = clone_expr(type_check_expr.type),
             .type_to_check = clone_expr(type_check_expr.type_to_check),
             .constraint = clone_expr(type_check_expr.constraint),
+        }
+    );
+}
+
+BuiltinExpr *Cloner::clone_builtin_expr(const BuiltinExpr &builtin_expr) {
+    return mod.create(
+        BuiltinExpr{
+            .ast_node = builtin_expr.ast_node,
+            .type = clone_expr(builtin_expr.type),
+            .builtin = builtin_expr.builtin,
+            .args = clone_expr_span(builtin_expr.args),
         }
     );
 }

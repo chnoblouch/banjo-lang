@@ -111,6 +111,7 @@ public:
     void print_move_expr(const MoveExpr &move_expr);
     void print_deinit_expr(const DeinitExpr &deinit_expr);
     void print_type_check_expr(const TypeCheckExpr &type_check_expr);
+    void print_builtin_expr(const BuiltinExpr &builtin_expr);
     void print_placeholder_expr(const PlaceholderExpr &placeholder_expr);
 
     void print_generic_params(std::span<GenericParam *> generic_params);

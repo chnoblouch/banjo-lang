@@ -2,11 +2,9 @@
 
 #include "banjo/sir/sir_comparison.hpp"
 #include "banjo/sir/sir_visitor.hpp"
-#include "banjo/sir/type_constraints.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <utility>
-#include <variant>
 
 namespace banjo::sir {
 
@@ -65,6 +63,7 @@ Expr Expr::get_type() const {
         return inner->type, // move_expr
         return inner->type, // deinit_expr
         return inner->type, // type_check_expr
+        return inner->type, // builtin_expr
         return inner->type, // placeholder_expr
         return nullptr      // error
     );
@@ -121,6 +120,7 @@ ExprCategory Expr::get_category() const {
         return ExprCategory::VALUE,          // move_expr
         return ExprCategory::VALUE,          // deinit_expr
         return ExprCategory::VALUE,          // type_check_expr
+        return ExprCategory::VALUE,          // builtin_expr
         return ExprCategory::VALUE,          // placeholder_expr
         return ExprCategory::OTHER           // error
     );
@@ -244,6 +244,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_VISIT_EXPR(
         *this,
         SIR_VISIT_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

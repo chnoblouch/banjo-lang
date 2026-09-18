@@ -680,6 +680,7 @@ void Printer::print_expr(const Expr &expr) {
         print_move_expr(*inner),
         print_deinit_expr(*inner),
         print_type_check_expr(*inner),
+        print_builtin_expr(*inner),
         print_placeholder_expr(*inner),
         print_error(*inner)
     );
@@ -1082,6 +1083,20 @@ void Printer::print_type_check_expr(const TypeCheckExpr &type_check_expr) {
     PRINT_EXPR_FIELD("type", type_check_expr.type);
     PRINT_EXPR_FIELD("type_to_check", type_check_expr.type_to_check);
     PRINT_EXPR_FIELD("constraint", type_check_expr.constraint);
+    END_OBJECT();
+}
+
+void Printer::print_builtin_expr(const BuiltinExpr &builtin_expr) {
+    BEGIN_OBJECT("BuiltinExpr");
+    PRINT_EXPR_FIELD("type", builtin_expr.type);
+
+    switch (builtin_expr.builtin) {
+        case Builtin::ATOMIC_LOAD: PRINT_FIELD("builtin", "ATOMIC_LOAD"); break;
+        case Builtin::ATOMIC_STORE: PRINT_FIELD("builtin", "ATOMIC_STORE"); break;
+        case Builtin::FRAME_ADDRESS: PRINT_FIELD("builtin", "FRAME_ADDRESS"); break;
+    }
+
+    PRINT_EXPR_LIST_FIELD("args", builtin_expr.args);
     END_OBJECT();
 }
 

@@ -4,10 +4,13 @@ use std.{
     protos.{Copy, Compare, ToRepr, ToString},
 };
 
-use internal.std_panics.{
-    panic_out_of_bounds_insert_array,
-    panic_out_of_bounds_remove_array,
-    panic_cannot_copy_array,
+use internal.{
+    builtin,
+    std_panics.{
+        panic_out_of_bounds_insert_array,
+        panic_out_of_bounds_remove_array,
+        panic_cannot_copy_array,
+    },
 };
 
 struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
@@ -47,7 +50,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
 
     pub func __deinit__(self) {        
         for i in 0..self.slice.length {
-            __builtin_deinit(self.slice.data[i]);
+            builtin.deinit(self.slice.data[i]);
         }
 
         memory.free(self.slice.data);

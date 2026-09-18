@@ -64,6 +64,7 @@ private:
     StoredValue generate_move_expr(const sir::MoveExpr &move_expr, const StorageHints &hints);
     StoredValue generate_deinit_expr(const sir::DeinitExpr &deinit_expr);
     StoredValue generate_type_check(const sir::TypeCheckExpr &type_check_expr);
+    StoredValue generate_builtin_expr(const sir::BuiltinExpr &builtin_expr);
 
     StoredValue generate_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr, const StorageHints &hints);
     StoredValue generate_generic_method(const sir::PlaceholderExpr::GenericMethod &generic_method);

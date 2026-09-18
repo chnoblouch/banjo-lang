@@ -225,6 +225,12 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     std_bit_not_def = &find_std_symbol({"std", "protos"}, "BitNot").as<sir::ProtoDef>();
     std_copy_def = &find_std_symbol({"std", "protos"}, "Copy").as<sir::ProtoDef>();
 
+    builtin_pointer_to = &find_std_symbol({"internal", "builtin"}, "pointer_to").as<sir::FuncDef>();
+    builtin_deinit = &find_std_symbol({"internal", "builtin"}, "deinit").as<sir::FuncDef>();
+    builtin_atomic_load = &find_std_symbol({"internal", "builtin"}, "atomic_load").as<sir::FuncDef>();
+    builtin_atomic_store = &find_std_symbol({"internal", "builtin"}, "atomic_store").as<sir::FuncDef>();
+    builtin_frame_address = &find_std_symbol({"internal", "builtin"}, "frame_address").as<sir::FuncDef>();
+
     std_optional_def->role = sir::StructDef::Role::OPTIONAL;
     std_result_def->role = sir::StructDef::Role::RESULT;
     std_shared_def->role = sir::StructDef::Role::SHARED;

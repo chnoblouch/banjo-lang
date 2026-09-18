@@ -1,4 +1,5 @@
 use std.{platform, io.Error, protos.{ToRepr, ToString}};
+use internal.builtin;
 
 struct Path: ToString, ToRepr {
     var path: String;
@@ -15,7 +16,7 @@ struct Path: ToString, ToRepr {
         } else if T == String {
             path = Path { path: value.copy() };
         } else if T == StringSlice {
-            path = Path { path: String.from(*__builtin_pointer_to(value)) };
+            path = Path { path: String.from(*builtin.pointer_to(value)) };
         } else if T == *u8 {
             path = Path { path: String.from_cstring(value as *u8) };
         }
@@ -62,7 +63,7 @@ struct Path: ToString, ToRepr {
     }
 
     pub func exists(self) -> bool except Error {
-        try result in platform.path_exists(__builtin_pointer_to(self.path)) {
+        try result in platform.path_exists(builtin.pointer_to(self.path)) {
             return result;
         } except error: platform.ErrorCode {
             return Error.from_platform(error);
@@ -72,7 +73,7 @@ struct Path: ToString, ToRepr {
     pub func is_file(self) -> bool except Error {
         # TODO: Types other than regular files and directories.
 
-        try result in platform.path_is_file(__builtin_pointer_to(self.path)) {
+        try result in platform.path_is_file(builtin.pointer_to(self.path)) {
             return result;
         } except error: platform.ErrorCode {
             return Error.from_platform(error);
@@ -80,7 +81,7 @@ struct Path: ToString, ToRepr {
     }
 
     pub func is_dir(self) -> bool except Error {
-        try result in platform.path_is_dir(__builtin_pointer_to(self.path)) {
+        try result in platform.path_is_dir(builtin.pointer_to(self.path)) {
             return result;
         } except error: platform.ErrorCode {
             return Error.from_platform(error);
@@ -88,7 +89,7 @@ struct Path: ToString, ToRepr {
     }
 
     pub func list_dir(self) -> Array[Path] except Error {
-        try file_names in platform.path_list_dir(__builtin_pointer_to(self.path)) {
+        try file_names in platform.path_list_dir(builtin.pointer_to(self.path)) {
             var paths = Array[Path].sized(file_names.length());
 
             var prefix = self.path.copy() + '/';
@@ -104,7 +105,7 @@ struct Path: ToString, ToRepr {
     }
 
     pub func create_dir(self) -> void except Error {
-        var result = platform.path_create_dir(__builtin_pointer_to(self.path));
+        var result = platform.path_create_dir(builtin.pointer_to(self.path));
 
         if !result.successful {
             return Error.from_platform(result.unwrap_error());
@@ -112,7 +113,7 @@ struct Path: ToString, ToRepr {
     }
 
     pub func remove_file(self) -> void except Error {
-        var result = platform.path_remove_file(__builtin_pointer_to(self.path));
+        var result = platform.path_remove_file(builtin.pointer_to(self.path));
 
         if !result.successful {
             return Error.from_platform(result.unwrap_error());
@@ -120,7 +121,7 @@ struct Path: ToString, ToRepr {
     }
 
     pub func remove_dir(self) -> void except Error {
-        var result = platform.path_remove_dir(__builtin_pointer_to(self.path));
+        var result = platform.path_remove_dir(builtin.pointer_to(self.path));
 
         if !result.successful {
             return Error.from_platform(result.unwrap_error());

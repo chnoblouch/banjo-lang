@@ -96,6 +96,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
         return generate_type_check(*inner),                // type_check_expr
+        return generate_builtin_expr(*inner),              // builtin_expr
         return generate_placeholder_expr(*inner, hints),   // placeholder_expr
         SIR_VISIT_IMPOSSIBLE                               // error
     );
@@ -567,23 +568,6 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
                 }
             }
         }
-    } else if (auto ident_expr = call_expr.callee.match<sir::IdentExpr>()) {
-        if (ident_expr->value == "__builtin_frame_address") {
-            ssa::VirtualRegister reg = ctx.next_vreg();
-            ctx.get_ssa_block()->append({ssa::Opcode::FRAME_ADDRESS, reg, {}});
-            ssa::Type type = ctx.target->get_data_layout().get_usize_type();
-            return StoredValue::create_value(ssa::Value::from_register(reg, type));
-        } else if (ident_expr->value == "__builtin_atomic_load") {
-            StoredValue arg = generate(call_expr.args[0]).turn_into_value(ctx);
-            ssa::Type type = TypeSSAGenerator{ctx}.generate(call_expr.type);
-            ssa::Value value = ctx.append_atomic_load(type, arg.get_value());
-            return StoredValue::create_value(value);
-        } else if (ident_expr->value == "__builtin_atomic_store") {
-            StoredValue value = generate(call_expr.args[0]).turn_into_value(ctx);
-            StoredValue dst = generate(call_expr.args[1]).turn_into_value(ctx);
-            ctx.append_atomic_store(value.get_value(), dst.get_value());
-            return StoredValue::create_value({});
-        }
     }
 
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(call_expr.type);
@@ -913,6 +897,31 @@ StoredValue ExprSSAGenerator::generate_deinit_expr(const sir::DeinitExpr &deinit
 StoredValue ExprSSAGenerator::generate_type_check(const sir::TypeCheckExpr &type_check_expr) {
     bool value = ctx.is_type_check_satisfied(type_check_expr);
     return StoredValue::create_value(ssa::Value::from_int_immediate(value, ssa::Primitive::U8));
+}
+
+StoredValue ExprSSAGenerator::generate_builtin_expr(const sir::BuiltinExpr &builtin_expr) {
+    switch (builtin_expr.builtin) {
+        case sir::Builtin::ATOMIC_LOAD: {
+            StoredValue arg = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            ssa::Type type = TypeSSAGenerator{ctx}.generate(builtin_expr.type);
+            ssa::Value value = ctx.append_atomic_load(type, arg.get_value());
+            return StoredValue::create_value(value);
+        }
+
+        case sir::Builtin::ATOMIC_STORE: {
+            StoredValue value = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue dst = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ctx.append_atomic_store(value.get_value(), dst.get_value());
+            return StoredValue::create_value({});
+        }
+
+        case sir::Builtin::FRAME_ADDRESS: {
+            ssa::VirtualRegister reg = ctx.next_vreg();
+            ctx.get_ssa_block()->append({ssa::Opcode::FRAME_ADDRESS, reg, {}});
+            ssa::Type type = ctx.target->get_data_layout().get_usize_type();
+            return StoredValue::create_value(ssa::Value::from_register(reg, type));
+        }
+    }
 }
 
 StoredValue ExprSSAGenerator::generate_placeholder_expr(

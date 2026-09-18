@@ -1,0 +1,5 @@
+pub func pointer_to[T](value: T) -> *T { return undefined; }
+pub func deinit[T](value: T) -> T { return undefined; }
+pub func atomic_load[T](pointer: *T) -> T { return undefined; }
+pub func atomic_store[T](value: T, pointer: *T) {}
+pub func frame_address() -> addr { return undefined; }

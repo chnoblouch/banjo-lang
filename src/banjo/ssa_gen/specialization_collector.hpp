@@ -76,6 +76,7 @@ private:
     void visit_init_expr(const sir::InitExpr &init_expr);
     void visit_move_expr(const sir::MoveExpr &move_expr);
     void visit_deinit_expr(const sir::DeinitExpr &deinit_expr);
+    void visit_builtin_expr(const sir::BuiltinExpr &builtin_expr);
     void visit_placeholder_expr(const sir::PlaceholderExpr &placeholder_expr);
 
     void visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args);
