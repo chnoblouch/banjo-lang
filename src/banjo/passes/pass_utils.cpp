@@ -1,12 +1,11 @@
 #include "pass_utils.hpp"
 
 #include "banjo/passes/pass.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 using namespace ssa;
 
@@ -112,22 +111,6 @@ void PassUtils::iter_imms(std::vector<ssa::Operand> &operands, std::function<voi
     }
 }
 
-void PassUtils::replace_block(ssa::Function *func, ssa::ControlFlowGraph &cfg, unsigned node, unsigned replacement) {
-    ssa::BasicBlockIter node_iter = cfg.get_node(node).block;
-    ssa::BasicBlockIter replacement_iter = cfg.get_node(replacement).block;
-
-    for (unsigned pred : cfg.get_node(node).predecessors) {
-        ssa::BasicBlock &pred_block = *cfg.get_node(pred).block;
-        ssa::Instruction &branch_instr = pred_block.get_instrs().get_last();
-
-        for (ssa::Operand &operand : branch_instr.get_operands()) {
-            if (operand.is_branch_target() && operand.get_branch_target().block == node_iter) {
-                operand.get_branch_target().block = replacement_iter;
-            }
-        }
-    }
-}
-
 ssa::InstrIter PassUtils::find_def(ssa::Function &func, ssa::VirtualRegister reg) {
     for (ssa::BasicBlock &block : func) {
         for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
@@ -170,6 +153,4 @@ PassUtils::UseMap PassUtils::collect_uses(ssa::Function &func) {
     return uses;
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes

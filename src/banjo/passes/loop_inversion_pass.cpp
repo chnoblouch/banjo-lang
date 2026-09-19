@@ -2,15 +2,14 @@
 
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
 #include <iostream>
 #include <utility>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 LoopInversionPass::LoopInversionPass(target::Target *target) : Pass("loop-inversion", target) {
     enable_logging(std::cout);
@@ -18,18 +17,18 @@ LoopInversionPass::LoopInversionPass(target::Target *target) : Pass("loop-invers
 
 void LoopInversionPass::run(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
-        run(func);
+        run(*func);
     }
 }
 
-void LoopInversionPass::run(ssa::Function *func) {
+void LoopInversionPass::run(ssa::Function &func) {
     bool changed = true;
 
     while (changed) {
         changed = false;
 
-        ssa::ControlFlowGraph cfg(func);
-        ssa::DominatorTree domtree(cfg);
+        ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(func);
+        ssa::DominatorTree domtree = ssa::DominatorTree::build(cfg);
         ssa::LoopAnalyzer analyzer(cfg, domtree);
         std::vector<ssa::LoopAnalysis> loops = analyzer.analyze();
 
@@ -46,15 +45,15 @@ void LoopInversionPass::run(ssa::Function *func) {
     }
 }
 
-bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function *func) {
+bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function &func) {
     if (loop.exits.size() != 1 || loop.exits.begin()->from != loop.header) {
         return false;
     }
 
     canonicalize(loop, cfg);
 
-    ssa::BasicBlockIter header_iter = cfg.get_node(loop.header).block;
-    ssa::BasicBlock &tail = *cfg.get_node(loop.tail).block;
+    ssa::BasicBlockIter header_iter = cfg.block(loop.header);
+    ssa::BasicBlock &tail = *cfg.block(loop.tail);
 
     ssa::InstrIter cond_jump_iter = header_iter->get_instrs().get_last_iter();
     ssa::InstrIter back_jump_iter = tail.get_instrs().get_last_iter();
@@ -66,8 +65,7 @@ bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph
     }
 
     if (is_logging()) {
-        const std::string &label = cfg.get_node(loop.header).block->get_debug_label();
-        log() << func->name << ": inverting " << label << "\n";
+        log() << func.name << ": inverting " << cfg.node_label(loop.header) << "\n";
     }
 
     ssa::BranchTarget true_target = cond_jump_iter->get_operand(3).get_branch_target();
@@ -97,7 +95,7 @@ bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph
     // Replace the parameters of the header block because these registers are now the parameters of the entry block.
     for (unsigned i = 0; i < header_iter->get_param_regs().size(); i++) {
         ssa::VirtualRegister old_reg = header_iter->get_param_regs()[i];
-        ssa::VirtualRegister new_reg = func->next_virtual_reg();
+        ssa::VirtualRegister new_reg = func.next_virtual_reg();
 
         header_iter->get_param_regs()[i] = new_reg;
         PassUtils::replace_in_block(*header_iter, old_reg, new_reg);
@@ -110,7 +108,7 @@ bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph
     // Replace the registers in the header block because these registers are now defined in the tail block.
     for (ssa::Instruction &instr : header_iter->get_instrs()) {
         if (instr.get_dest()) {
-            PassUtils::replace_in_block(*header_iter, *instr.get_dest(), func->next_virtual_reg());
+            PassUtils::replace_in_block(*header_iter, *instr.get_dest(), func.next_virtual_reg());
         }
     }
 
@@ -118,8 +116,8 @@ bool LoopInversionPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph
 }
 
 void LoopInversionPass::canonicalize(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg) {
-    ssa::BasicBlockIter header_iter = cfg.get_node(loop.header).block;
-    ssa::BasicBlockIter exit_iter = cfg.get_node(loop.exits.begin()->to).block;
+    ssa::BasicBlockIter header_iter = cfg.block(loop.header);
+    ssa::BasicBlockIter exit_iter = cfg.block(loop.exits.begin()->to);
 
     ssa::InstrIter cond_jump_iter = header_iter->get_instrs().get_last_iter();
     ssa::Operand &cmp_operand = cond_jump_iter->get_operand(1);
@@ -133,6 +131,4 @@ void LoopInversionPass::canonicalize(const ssa::LoopAnalysis &loop, ssa::Control
     }
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes

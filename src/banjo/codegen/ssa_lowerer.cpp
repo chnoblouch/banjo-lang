@@ -170,27 +170,27 @@ void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::Basi
 }
 
 void SSALowerer::store_graphs() {
-    ssa::ControlFlowGraph cfg(func);
-    ssa::DominatorTree domtree(cfg);
+    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(*func);
+    ssa::DominatorTree domtree = ssa::DominatorTree::build(cfg);
 
-    for (unsigned i = 0; i < cfg.get_nodes().size(); i++) {
-        ssa::ControlFlowGraph::Node &cfg_node = cfg.get_node(i);
-        ssa::DominatorTree::Node &domtree_node = domtree.get_node(i);
-        mcode::BasicBlockIter m_iter = block_map.at(cfg_node.block);
+    for (ssa::ControlFlowGraph::NodeID id = 0; id < cfg.nodes.size(); id++) {
+        ssa::ControlFlowGraph::Node &cfg_node = cfg.nodes[id];
+        ssa::DominatorTree::Node &domtree_node = domtree.nodes[id];
+        mcode::BasicBlockIter m_iter = block_map.at(cfg.block(id));
 
-        for (unsigned pred : cfg_node.predecessors) {
-            m_iter->get_predecessors().push_back(block_map.at(cfg.get_node(pred).block));
+        for (ssa::ControlFlowGraph::NodeID pred : cfg_node.predecessors) {
+            m_iter->get_predecessors().push_back(block_map.at(cfg.block(pred)));
         }
 
-        for (unsigned succ : cfg_node.successors) {
-            m_iter->get_successors().push_back(block_map.at(cfg.get_node(succ).block));
+        for (ssa::ControlFlowGraph::NodeID succ : cfg_node.successors) {
+            m_iter->get_successors().push_back(block_map.at(cfg.block(succ)));
         }
 
-        ssa::BasicBlockIter domtree_parent_iter = cfg.get_node(domtree_node.parent_index).block;
+        ssa::BasicBlockIter domtree_parent_iter = cfg.block(domtree_node.parent);
         m_iter->set_domtree_parent(block_map.at(domtree_parent_iter));
 
-        for (unsigned domtree_child : domtree_node.children_indices) {
-            ssa::BasicBlockIter domtree_child_iter = cfg.get_node(domtree_child).block;
+        for (ssa::ControlFlowGraph::NodeID domtree_child : domtree_node.children) {
+            ssa::BasicBlockIter domtree_child_iter = cfg.block(domtree_child);
             m_iter->get_domtree_children().push_back(block_map.at(domtree_child_iter));
         }
     }

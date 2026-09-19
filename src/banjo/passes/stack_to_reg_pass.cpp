@@ -3,41 +3,42 @@
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/dead_code_elimination.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
 #include <unordered_set>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 StackToRegPass::StackToRegPass(target::Target *target) : Pass("stack-to-reg", target) {}
 
 void StackToRegPass::run(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
-        run(func);
+        run(*func);
     }
 }
 
-void StackToRegPass::run(ssa::Function *func) {
-    ssa::ControlFlowGraph cfg(func);
+void StackToRegPass::run(ssa::Function &func) {
+    this->func = &func;
+
+    cfg = ssa::ControlFlowGraph::build(func);
 
     if (is_logging()) {
-        log() << "--- CFG FOR " << func->name << " ---\n";
+        log() << "--- CFG FOR " << func.name << " ---\n";
         cfg.dump(log());
         log() << '\n';
     }
 
-    ssa::DominatorTree dt(cfg);
+    domtree = ssa::DominatorTree::build(cfg);
 
     if (is_logging()) {
-        log() << "--- DOMINATOR TREE FOR " << func->name << " ---\n";
-        dt.dump(log());
+        log() << "--- DOMINATOR TREE FOR " << func.name << " ---\n";
+        domtree.dump(cfg, log());
         log() << '\n';
     }
 
-    StackSlotMap slots = find_stack_slots(func);
+    StackSlotMap slots = find_stack_slots();
     BlockMap blocks;
 
     std::unordered_map<ssa::VirtualRegister, ssa::Value> init_replacements;
@@ -56,36 +57,36 @@ void StackToRegPass::run(ssa::Function *func) {
         }
 
         for (ssa::BasicBlockIter store_block_iter : slot.store_blocks) {
-            for (unsigned index : dt.get_node(store_block_iter).dominance_frontiers) {
-                ssa::ControlFlowGraph::Node &cfg_node = cfg.get_node(index);
+            for (ssa::ControlFlowGraph::NodeID node : domtree.nodes[store_block_iter].dominance_frontiers) {
+                ssa::BasicBlockIter block = cfg.block(node);
 
-                if (slot.blocks_having_val_as_param.contains(cfg_node.block)) {
+                if (slot.blocks_having_val_as_param.contains(block)) {
                     continue;
                 }
 
-                std::unordered_set<unsigned> nodes_visited;
-                if (!is_slot_loaded(slot, cfg, index, nodes_visited)) {
+                std::unordered_set<ssa::ControlFlowGraph::NodeID> nodes_visited;
+                if (!is_slot_loaded(slot, node, nodes_visited)) {
                     continue;
                 }
 
-                blocks[cfg_node.block].new_params.push_back({
-                    .param_index = static_cast<unsigned>(cfg_node.block->get_param_regs().size()),
+                blocks[block].new_params.push_back({
+                    .param_index = static_cast<unsigned>(block->get_param_regs().size()),
                     .stack_slot = reg,
                 });
 
-                ssa::VirtualRegister param_reg = func->next_virtual_reg();
-                cfg_node.block->get_param_regs().push_back(param_reg);
-                cfg_node.block->get_param_types().push_back(slot.type);
+                ssa::VirtualRegister param_reg = func.next_virtual_reg();
+                block->get_param_regs().push_back(param_reg);
+                block->get_param_types().push_back(slot.type);
 
-                slot.blocks_having_val_as_param.insert(cfg_node.block);
+                slot.blocks_having_val_as_param.insert(block);
 
                 ssa::Value replacement = create_undefined(slot.type);
                 init_replacements[reg] = replacement;
                 slot.cur_replacement = replacement;
 
-                if (!store_blocks_analyzed.contains(cfg_node.block)) {
-                    slot.store_blocks.push_back(cfg_node.block);
-                    store_blocks_analyzed.insert(cfg_node.block);
+                if (!store_blocks_analyzed.contains(block)) {
+                    slot.store_blocks.push_back(block);
+                    store_blocks_analyzed.insert(block);
                 }
             }
         }
@@ -95,13 +96,13 @@ void StackToRegPass::run(ssa::Function *func) {
         log() << '\n';
     }
 
-    rename(func->begin(), slots, blocks, init_replacements, dt);
+    rename(func.begin(), slots, blocks, init_replacements);
 
-    Precomputing::precompute_instrs(*func);
-    ssa::DeadCodeElimination().run(*func);
+    Precomputing::precompute_instrs(func);
+    ssa::DeadCodeElimination().run(func);
 }
 
-StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots(ssa::Function *func) {
+StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots() {
     StackSlotMap stack_slots;
 
     for (ssa::BasicBlock &block : *func) {
@@ -228,24 +229,21 @@ void StackToRegPass::analyze_reg_use(
 
 bool StackToRegPass::is_slot_loaded(
     StackSlotInfo &slot,
-    ssa::ControlFlowGraph &cfg,
-    unsigned node_index,
-    std::unordered_set<unsigned> &nodes_visited
+    ssa::ControlFlowGraph::NodeID node,
+    std::unordered_set<ssa::ControlFlowGraph::NodeID> &nodes_visited
 ) {
-    ssa::ControlFlowGraph::Node &node = cfg.get_node(node_index);
-
-    if (slot.load_blocks.contains(node.block)) {
+    if (slot.load_blocks.contains(cfg.block(node))) {
         return true;
     }
 
-    nodes_visited.insert(node_index);
+    nodes_visited.insert(node);
 
-    for (unsigned succ : node.successors) {
+    for (ssa::ControlFlowGraph::NodeID succ : cfg.nodes[node].successors) {
         if (nodes_visited.contains(succ)) {
             continue;
         }
 
-        if (is_slot_loaded(slot, cfg, succ, nodes_visited)) {
+        if (is_slot_loaded(slot, succ, nodes_visited)) {
             return true;
         }
     }
@@ -265,8 +263,7 @@ void StackToRegPass::rename(
     ssa::BasicBlockIter block_iter,
     StackSlotMap &slots,
     BlockMap &blocks,
-    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements,
-    ssa::DominatorTree &dominator_tree
+    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
 ) {
     ssa::BasicBlock &block = *block_iter;
 
@@ -324,9 +321,11 @@ void StackToRegPass::rename(
         }
     }
 
-    for (unsigned child_index : dominator_tree.get_node(block_iter).children_indices) {
-        ssa::BasicBlockIter child_block = dominator_tree.get_cfg().get_nodes()[child_index].block;
-        rename(child_block, slots, blocks, cur_replacements, dominator_tree);
+    ssa::ControlFlowGraph::NodeID cfg_node = cfg.node_id(block_iter);
+
+    for (ssa::ControlFlowGraph::NodeID child : domtree.nodes[cfg_node].children) {
+        ssa::BasicBlockIter child_block = cfg.block(child);
+        rename(child_block, slots, blocks, cur_replacements);
     }
 }
 
@@ -353,6 +352,4 @@ void StackToRegPass::update_branch_target(
     }
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes

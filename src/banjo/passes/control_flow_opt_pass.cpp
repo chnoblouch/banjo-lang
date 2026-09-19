@@ -65,8 +65,8 @@ void ControlFlowOptPass::run(ssa::Function &func) {
 }
 
 void ControlFlowOptPass::run_iteration(ssa::Function &func) {
-    ssa::ControlFlowGraph cfg{&func};
-    ssa::DominatorTree dom_tree{cfg};
+    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(func);
+    ssa::DominatorTree dom_tree = ssa::DominatorTree::build(cfg);
 
     this->dom_tree = &dom_tree;
 
@@ -84,16 +84,18 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
         }
     }
 
-    cfg = ssa::ControlFlowGraph{&func};
+    cfg = ssa::ControlFlowGraph::build(func);
 
     // Merge blocks into their predecessors if there is only one of them.
-    for (ssa::ControlFlowGraph::Node &node : cfg.get_nodes()) {
+    for (ssa::ControlFlowGraph::NodeID node_id = 0; node_id < cfg.nodes.size(); node_id++) {
+        ssa::ControlFlowGraph::Node &node = cfg.nodes[node_id];
+        ssa::BasicBlockIter block = cfg.block(node_id);
+
         if (node.predecessors.size() != 1) {
             continue;
         }
 
-        unsigned pred_index = node.predecessors[0];
-        ssa::BasicBlock &pred = *cfg.get_nodes()[pred_index].block;
+        ssa::BasicBlock &pred = *cfg.block(node.predecessors[0]);
         ssa::InstrIter branch_instr = pred.get_exit_iter();
 
         // Only inline the block if the jump is unconditional.
@@ -103,20 +105,20 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
 
         const std::vector<ssa::Operand> &args = branch_instr->get_operand(0).get_branch_target().args;
 
-        for (unsigned i = 0; i < node.block->get_param_regs().size(); i++) {
-            ssa::VirtualRegister reg = node.block->get_param_regs()[i];
-            ssa::Type type = node.block->get_param_types()[i];
+        for (unsigned i = 0; i < block->get_param_regs().size(); i++) {
+            ssa::VirtualRegister reg = block->get_param_regs()[i];
+            ssa::Type type = block->get_param_types()[i];
             PassUtils::replace_in_func(func, reg, args[i].with_type(type));
         }
 
         pred.remove(branch_instr);
 
-        for (ssa::Instruction &instr : node.block->get_instrs()) {
+        for (ssa::Instruction &instr : block->get_instrs()) {
             pred.append(instr);
         }
     }
 
-    cfg = ssa::ControlFlowGraph{&func};
+    cfg = ssa::ControlFlowGraph::build(func);
 
     // Remove all blocks that are not in the control flow graph and hence unreachable.
     for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {

@@ -11,9 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 class HeapToStackPass : public Pass {
 
@@ -48,8 +46,6 @@ private:
     void promote(ssa::Function &func, Allocation &alloc);
 };
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif

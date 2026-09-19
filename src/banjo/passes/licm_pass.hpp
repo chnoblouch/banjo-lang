@@ -4,9 +4,7 @@
 #include "banjo/passes/loop_analysis.hpp"
 #include "banjo/passes/pass.hpp"
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 class LICMPass : public Pass {
 
@@ -15,13 +13,11 @@ public:
     void run(ssa::Module &mod);
 
 private:
-    void run(ssa::Function *func);
-    void run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function *func);
-    bool is_volatile_load(ssa::InstrIter iter, ssa::Function *func);
+    void run(ssa::Function &func);
+    void run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function &func);
+    bool is_volatile_load(ssa::InstrIter iter, ssa::Function &func);
 };
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif

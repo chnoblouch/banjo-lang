@@ -8,9 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 class StackToRegPass : public Pass {
 
@@ -36,21 +34,24 @@ private:
     typedef std::unordered_map<ssa::VirtualRegister, StackSlotInfo> StackSlotMap;
     typedef std::unordered_map<ssa::BasicBlockIter, BlockInfo> BlockMap;
 
+    ssa::Function *func;
+    ssa::ControlFlowGraph cfg;
+    ssa::DominatorTree domtree;
+
 public:
     StackToRegPass(target::Target *target);
     void run(ssa::Module &mod);
 
 private:
-    void run(ssa::Function *func);
-    StackSlotMap find_stack_slots(ssa::Function *func);
+    void run(ssa::Function &func);
+    StackSlotMap find_stack_slots();
     void find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter block, ssa::Instruction &instr);
     void analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, ssa::BasicBlockIter block, ssa::Opcode opcode);
 
     bool is_slot_loaded(
         StackSlotInfo &slot,
-        ssa::ControlFlowGraph &cfg,
-        unsigned node_index,
-        std::unordered_set<unsigned> &nodes_visited
+        ssa::ControlFlowGraph::NodeID node,
+        std::unordered_set<ssa::ControlFlowGraph::NodeID> &nodes_visited
     );
 
     ssa::Value create_undefined(ssa::Type type);
@@ -59,8 +60,7 @@ private:
         ssa::BasicBlockIter block_iter,
         StackSlotMap &slots,
         BlockMap &blocks,
-        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements,
-        ssa::DominatorTree &dominator_tree
+        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
     );
 
     void replace_regs(
@@ -75,8 +75,6 @@ private:
     );
 };
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif

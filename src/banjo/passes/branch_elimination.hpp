@@ -3,9 +3,7 @@
 
 #include "banjo/passes/pass.hpp"
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 class BranchElimination : public Pass {
 
@@ -14,11 +12,9 @@ public:
     void run(ssa::Module &mod);
 
 private:
-    void run(ssa::Function *func);
+    void run(ssa::Function &func);
 };
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif

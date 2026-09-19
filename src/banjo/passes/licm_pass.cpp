@@ -1,30 +1,29 @@
 #include "licm_pass.hpp"
 
 #include "banjo/passes/pass_utils.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 
 #include <iostream>
 #include <unordered_set>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 LICMPass::LICMPass(target::Target *target) : Pass("licm", target) {}
 
 void LICMPass::run(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
-        run(func);
+        run(*func);
     }
 }
 
-void LICMPass::run(ssa::Function *func) {
-    ssa::ControlFlowGraph cfg(func);
-    ssa::DominatorTree domtree(cfg);
+void LICMPass::run(ssa::Function &func) {
+    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(func);
+    ssa::DominatorTree domtree = ssa::DominatorTree::build(cfg);
     ssa::LoopAnalyzer analyzer(cfg, domtree);
     std::vector<ssa::LoopAnalysis> loops = analyzer.analyze();
 
     if (!loops.empty()) {
-        std::cout << func->name << '\n' << std::string(16, '-') << '\n';
+        std::cout << func.name << '\n' << std::string(16, '-') << '\n';
         analyzer.dump(std::cout);
     }
 
@@ -33,15 +32,15 @@ void LICMPass::run(ssa::Function *func) {
     }
 }
 
-void LICMPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function *func) {
+void LICMPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ssa::Function &func) {
     if (loop.entries.size() != 1) {
         return;
     }
 
     std::unordered_set<ssa::VirtualRegister> in_loop_defs;
 
-    for (unsigned block_index : loop.body) {
-        ssa::BasicBlockIter block = cfg.get_node(block_index).block;
+    for (ssa::ControlFlowGraph::NodeID node_id : loop.body) {
+        ssa::BasicBlockIter block = cfg.block(node_id);
 
         for (ssa::VirtualRegister param_reg : block->get_param_regs()) {
             in_loop_defs.insert(param_reg);
@@ -54,11 +53,11 @@ void LICMPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ss
         }
     }
 
-    ssa::BasicBlockIter entry_block = cfg.get_node(*loop.entries.begin()).block;
+    ssa::BasicBlockIter entry_block = cfg.block(*loop.entries.begin());
     bool changed = false;
 
-    for (unsigned block_index : loop.body) {
-        ssa::BasicBlockIter block = cfg.get_node(block_index).block;
+    for (ssa::ControlFlowGraph::NodeID node_id : loop.body) {
+        ssa::BasicBlockIter block = cfg.block(node_id);
 
         for (ssa::InstrIter iter = block->begin(); iter != block->end(); ++iter) {
             if (iter->get_opcode() == ssa::Opcode::LOAD || iter->get_opcode() == ssa::Opcode::STORE ||
@@ -76,7 +75,7 @@ void LICMPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ss
 
             if (!uses_in_loop_def && iter->get_dest()) {
                 std::cout << "instr %" << *iter->get_dest() << " can be moved out of ";
-                std::cout << cfg.get_node(loop.header).block->get_debug_label() << '\n';
+                std::cout << cfg.node_label(loop.header) << '\n';
 
                 in_loop_defs.erase(*iter->get_dest());
 
@@ -114,6 +113,4 @@ void LICMPass::run(const ssa::LoopAnalysis &loop, ssa::ControlFlowGraph &cfg, ss
     */
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes

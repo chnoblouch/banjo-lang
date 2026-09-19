@@ -6,15 +6,13 @@
 #include <ostream>
 #include <unordered_set>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 struct LoopAnalysis {
-    unsigned header;
-    std::unordered_set<unsigned> body;
-    unsigned tail;
-    std::unordered_set<unsigned> entries;
+    ControlFlowGraph::NodeID header;
+    std::unordered_set<ControlFlowGraph::NodeID> body;
+    ControlFlowGraph::NodeID tail;
+    std::unordered_set<ControlFlowGraph::NodeID> entries;
     std::unordered_set<ControlFlowGraph::Edge> exits;
 };
 
@@ -31,15 +29,12 @@ public:
     void dump(std::ostream &stream);
 
 private:
-    bool is_dominated_by(unsigned a, unsigned b);
-    void analyze_back_edge(unsigned from, unsigned to);
-    void collect_body_nodes(LoopAnalysis &loop, unsigned node);
-    void collect_exit_nodes(LoopAnalysis &loop, unsigned node);
-    bool is_in_loop(LoopAnalysis &loop, unsigned node);
+    void analyze_back_edge(ControlFlowGraph::NodeID from, ControlFlowGraph::NodeID to);
+    void collect_body_nodes(LoopAnalysis &loop, ControlFlowGraph::NodeID node);
+    void collect_exit_nodes(LoopAnalysis &loop, ControlFlowGraph::NodeID node);
+    bool is_in_loop(LoopAnalysis &loop, ControlFlowGraph::NodeID node);
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

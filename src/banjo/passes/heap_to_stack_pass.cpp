@@ -13,9 +13,7 @@
 
 constexpr unsigned MAX_ALLOC_SIZE = 256;
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 HeapToStackPass::HeapToStackPass(target::Target *target) : Pass("heap-to-stack", target) {
     // enable_logging(std::cout);
@@ -29,7 +27,7 @@ void HeapToStackPass::run(ssa::Module &mod) {
 
 void HeapToStackPass::run(ssa::Function &func) {
     allocs.clear();
-    cfg = ssa::ControlFlowGraph{&func};
+    cfg = ssa::ControlFlowGraph::build(func);
 
     for (ssa::BasicBlockIter block = func.begin(); block != func.end(); ++block) {
         collect_heap_instrs(block);
@@ -138,8 +136,8 @@ bool HeapToStackPass::is_always_freed(
         return false;
     }
 
-    for (unsigned successor : cfg.get_node(block).successors) {
-        if (!is_always_freed(alloc, cfg.get_node(successor).block, visited_blocks)) {
+    for (ssa::ControlFlowGraph::NodeID successor : cfg.node(block).successors) {
+        if (!is_always_freed(alloc, cfg.block(successor), visited_blocks)) {
             return false;
         }
     }
@@ -164,6 +162,4 @@ void HeapToStackPass::promote(ssa::Function &func, Allocation &alloc) {
     }
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes

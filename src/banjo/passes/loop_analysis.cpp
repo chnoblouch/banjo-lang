@@ -1,18 +1,16 @@
 #include "loop_analysis.hpp"
 
-namespace banjo {
+#include "banjo/ssa/control_flow_graph.hpp"
 
-namespace ssa {
+namespace banjo::ssa {
 
-LoopAnalyzer::LoopAnalyzer(ControlFlowGraph &cfg, DominatorTree &domtree) : cfg(cfg), domtree(domtree) {}
+LoopAnalyzer::LoopAnalyzer(ControlFlowGraph &cfg, DominatorTree &domtree) : cfg{cfg}, domtree{domtree} {}
 
 std::vector<LoopAnalysis> LoopAnalyzer::analyze() {
-    for (unsigned i = 0; i < cfg.get_nodes().size(); i++) {
-        ControlFlowGraph::Node &node = cfg.get_node(i);
-
-        for (unsigned succ : node.successors) {
-            if (is_dominated_by(i, succ)) {
-                analyze_back_edge(i, succ);
+    for (ControlFlowGraph::NodeID node = 0; node < cfg.nodes.size(); node++) {
+        for (ControlFlowGraph::NodeID succ : cfg.nodes[node].successors) {
+            if (domtree.dominates(succ, node)) {
+                analyze_back_edge(node, succ);
             }
         }
     }
@@ -20,25 +18,7 @@ std::vector<LoopAnalysis> LoopAnalyzer::analyze() {
     return loops;
 }
 
-bool LoopAnalyzer::is_dominated_by(unsigned a, unsigned b) {
-    if (a == b) {
-        return true;
-    }
-
-    unsigned idom = domtree.get_node(a).parent_index;
-
-    while (domtree.get_node(idom).parent_index != idom) {
-        if (idom == b) {
-            return true;
-        }
-
-        idom = domtree.get_node(idom).parent_index;
-    }
-
-    return false;
-}
-
-void LoopAnalyzer::analyze_back_edge(unsigned from, unsigned to) {
+void LoopAnalyzer::analyze_back_edge(ControlFlowGraph::NodeID from, ControlFlowGraph::NodeID to) {
     LoopAnalysis loop{
         .header = to,
         .body = {to},
@@ -49,66 +29,63 @@ void LoopAnalyzer::analyze_back_edge(unsigned from, unsigned to) {
 
     collect_body_nodes(loop, loop.tail);
 
-    for (unsigned pred_node : cfg.get_node(loop.header).predecessors) {
+    for (ControlFlowGraph::NodeID pred_node : cfg.nodes[loop.header].predecessors) {
         if (!is_in_loop(loop, pred_node)) {
             loop.entries.insert(pred_node);
         }
     }
 
-    for (unsigned body_node : loop.body) {
+    for (ControlFlowGraph::NodeID body_node : loop.body) {
         collect_exit_nodes(loop, body_node);
     }
 
     loops.push_back(loop);
 }
 
-void LoopAnalyzer::collect_body_nodes(LoopAnalysis &loop, unsigned node) {
+void LoopAnalyzer::collect_body_nodes(LoopAnalysis &loop, ControlFlowGraph::NodeID node) {
     if (is_in_loop(loop, node)) {
         return;
     }
 
     loop.body.insert(node);
 
-    for (unsigned pred : cfg.get_node(node).predecessors) {
+    for (ControlFlowGraph::NodeID pred : cfg.nodes[node].predecessors) {
         collect_body_nodes(loop, pred);
     }
 }
 
-void LoopAnalyzer::collect_exit_nodes(LoopAnalysis &loop, unsigned node) {
-    for (unsigned succ : cfg.get_node(node).successors) {
+void LoopAnalyzer::collect_exit_nodes(LoopAnalysis &loop, ControlFlowGraph::NodeID node) {
+    for (ControlFlowGraph::NodeID succ : cfg.nodes[node].successors) {
         if (!is_in_loop(loop, succ)) {
             loop.exits.insert({.from = node, .to = succ});
         }
     }
 }
 
-bool LoopAnalyzer::is_in_loop(LoopAnalysis &loop, unsigned node) {
+bool LoopAnalyzer::is_in_loop(LoopAnalysis &loop, ControlFlowGraph::NodeID node) {
     return loop.body.contains(node);
 }
 
 void LoopAnalyzer::dump(std::ostream &stream) {
     for (LoopAnalysis &loop : loops) {
-        stream << "header: " << cfg.get_node(loop.header).block->get_debug_label() << '\n';
+        stream << "header: " << cfg.node_label(loop.header) << '\n';
 
         for (unsigned node : loop.body) {
             if (node == loop.header || node == loop.tail) {
                 continue;
             }
 
-            stream << "  " << cfg.get_node(node).block->get_debug_label() << '\n';
+            stream << "  " << cfg.node_label(node) << '\n';
         }
 
-        stream << "tail: " << cfg.get_node(loop.tail).block->get_debug_label() << '\n';
+        stream << "tail: " << cfg.node_label(loop.tail) << '\n';
 
         for (ControlFlowGraph::Edge exit : loop.exits) {
-            stream << "exit: " << cfg.get_node(exit.from).block->get_debug_label() << " -> "
-                   << cfg.get_node(exit.to).block->get_debug_label() << '\n';
+            stream << "exit: " << cfg.node_label(exit.from) << " -> " << cfg.node_label(exit.to) << '\n';
         }
 
         stream << '\n';
     }
 }
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa

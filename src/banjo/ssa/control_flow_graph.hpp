@@ -1,107 +1,39 @@
 #ifndef BANJO_SSA_CONTROL_FLOW_GRAPH_H
 #define BANJO_SSA_CONTROL_FLOW_GRAPH_H
 
+#include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/function.hpp"
+#include "banjo/utils/dominator_tree.hpp"
+#include "banjo/utils/generic_cfg.hpp"
 
-#include <optional>
-#include <ostream>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-namespace banjo {
+namespace banjo::ssa {
 
-namespace ssa {
-
-class ControlFlowGraph {
-
-public:
-    struct Node {
-        ssa::BasicBlockIter block;
-        std::vector<unsigned> predecessors;
-        std::vector<unsigned> successors;
-    };
-
-    struct Edge {
-        unsigned from;
-        unsigned to;
-
-        friend bool operator==(const Edge &lhs, const Edge &rhs) { return lhs.from == rhs.from && lhs.to == rhs.to; }
-        friend bool operator!=(const Edge &lhs, const Edge &rhs) { return !(lhs == rhs); }
-    };
+class ControlFlowGraph final : public utils::GenericCFG {
 
 private:
-    std::vector<Node> nodes;
-    unsigned entry_index;
     std::unordered_map<ssa::BasicBlockIter, int> blocks2nodes;
+    std::vector<ssa::BasicBlockIter> nodes2blocks;
 
 public:
-    ControlFlowGraph();
-    ControlFlowGraph(ssa::Function *func);
+    static ControlFlowGraph build(ssa::Function &func);
 
-    std::vector<Node> &get_nodes() { return nodes; }
-    unsigned get_node_index(ssa::BasicBlockIter iter) { return blocks2nodes[iter]; }
-    Node &get_node(unsigned index) { return nodes[index]; }
-    Node &get_node(ssa::BasicBlockIter iter) { return nodes[get_node_index(iter)]; }
+    NodeID node_id(ssa::BasicBlockIter iter) { return blocks2nodes.at(iter); }
+    Node &node(ssa::BasicBlockIter iter) { return nodes[node_id(iter)]; }
     bool contains(ssa::BasicBlockIter iter) { return blocks2nodes.contains(iter); }
-    unsigned get_entry_index() const { return entry_index; }
+    BasicBlockIter block(NodeID node) { return nodes2blocks[node]; }
 
-    void dump(std::ostream &stream);
+    std::string node_label(NodeID id) const override { return nodes2blocks[id]->get_debug_label(); }
 
 private:
-    void create_nodes(ssa::BasicBlockIter block);
+    void collect_nodes(ssa::BasicBlockIter block);
     void create_edge(ssa::BasicBlockIter from, ssa::BasicBlockIter to);
-    void sort_in_post_order();
-
-    void collect_nodes_in_post_order(
-        unsigned index,
-        std::unordered_map<unsigned, unsigned> &index_map,
-        unsigned &cur_new_index
-    );
 };
 
-// Based on: https://www.cs.rice.edu/~keith/EMBED/dom.pdf
-class DominatorTree {
+typedef utils::DominatorTree DominatorTree;
 
-public:
-    struct Node {
-        unsigned index;
-        unsigned parent_index;
-        std::vector<unsigned> children_indices;
-        std::vector<unsigned> dominance_frontiers;
-    };
-
-private:
-    ControlFlowGraph &cfg;
-    std::vector<Node> nodes;
-
-public:
-    DominatorTree(ControlFlowGraph &cfg);
-    ControlFlowGraph &get_cfg() { return cfg; }
-    Node &get_node(unsigned index) { return nodes[index]; }
-    Node &get_node(ssa::BasicBlockIter iter) { return nodes[cfg.get_node_index(iter)]; }
-    bool dominates(ssa::BasicBlockIter a, ssa::BasicBlockIter b);
-    std::vector<ControlFlowGraph::Node> get_dominance_frontiers(ssa::BasicBlockIter iter);
-    void dump(std::ostream &stream);
-
-private:
-    bool dominates(Node &a, Node &b);
-    unsigned intersect(unsigned b1, unsigned b2, const std::vector<int> &doms);
-    void compute_idoms();
-    void compute_dominance_frontiers();
-    void dump_tree(std::ostream &stream, Node &node, unsigned indentation);
-
-}; // namespace DominatorTree
-
-} // namespace ssa
-
-} // namespace banjo
-
-template <>
-struct std::hash<banjo::ssa::ControlFlowGraph::Edge> {
-    std::size_t operator()(const banjo::ssa::ControlFlowGraph::Edge &edge) const noexcept {
-        return (std::size_t)(edge.from) << 32 | (std::size_t)edge.to;
-    }
-};
+} // namespace banjo::ssa
 
 #endif

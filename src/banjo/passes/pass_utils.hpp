@@ -12,9 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 namespace PassUtils {
 
@@ -31,15 +29,12 @@ bool is_branch_opcode(ssa::Opcode opcode);
 void iter_values(std::vector<ssa::Operand> &operands, std::function<void(ssa::Value &value)> func);
 void iter_regs(std::vector<ssa::Operand> &operands, std::function<void(ssa::VirtualRegister reg)> func);
 void iter_imms(std::vector<ssa::Operand> &operands, std::function<void(ssa::Value &val)> func);
-void replace_block(ssa::Function *func, ssa::ControlFlowGraph &cfg, unsigned node, unsigned replacement);
 ssa::InstrIter find_def(ssa::Function &func, ssa::VirtualRegister reg);
 ssa::BasicBlockIter find_def_block(ssa::Function &func, ssa::VirtualRegister reg);
 UseMap collect_uses(ssa::Function &func);
 
 } // namespace PassUtils
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif
