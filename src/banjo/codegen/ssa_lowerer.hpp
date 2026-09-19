@@ -132,8 +132,6 @@ protected:
 
     virtual void lower_load(ssa::Instruction &instr) = 0;
     virtual void lower_store(ssa::Instruction &instr) = 0;
-    virtual void lower_atomic_load(ssa::Instruction &instr) = 0;
-    virtual void lower_atomic_store(ssa::Instruction &instr) = 0;
     virtual void lower_loadarg(ssa::Instruction &instr) = 0;
     virtual void lower_add(ssa::Instruction &instr) = 0;
     virtual void lower_sub(ssa::Instruction &instr) = 0;
@@ -167,6 +165,13 @@ protected:
     virtual void lower_stof(ssa::Instruction &instr) = 0;
     virtual void lower_ftou(ssa::Instruction &instr) = 0;
     virtual void lower_ftos(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_load(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_store(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_add(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_sub(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_and(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_or(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_xor(ssa::Instruction &instr) = 0;
     virtual void lower_offsetptr(ssa::Instruction &instr) = 0;
     virtual void lower_memberptr(ssa::Instruction &instr) = 0;
     virtual void lower_copy(ssa::Instruction &instr);

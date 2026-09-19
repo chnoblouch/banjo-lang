@@ -9,10 +9,15 @@ bool Instruction::might_access_memory() const {
     switch (opcode) {
         case Opcode::LOAD:
         case Opcode::STORE:
+        case Opcode::CALL:
+        case Opcode::COPY:
         case Opcode::ATOMIC_LOAD:
         case Opcode::ATOMIC_STORE:
-        case Opcode::CALL:
-        case Opcode::COPY: return true;
+        case Opcode::ATOMIC_ADD:
+        case Opcode::ATOMIC_SUB:
+        case Opcode::ATOMIC_AND:
+        case Opcode::ATOMIC_OR:
+        case Opcode::ATOMIC_XOR: return true;
 
         case Opcode::ALLOCA:
         case Opcode::LOADARG:
@@ -65,16 +70,15 @@ bool Instruction::is_cond_branch() const {
 Type Instruction::get_type() const {
     switch (opcode) {
         case Opcode::STORE:
-        case Opcode::ATOMIC_STORE:
         case Opcode::JMP:
         case Opcode::CJMP:
         case Opcode::FCJMP:
         case Opcode::RET:
+        case Opcode::ATOMIC_STORE:
         case Opcode::COPY: return ssa::Primitive::VOID;
         case Opcode::OFFSETPTR: return ssa::Primitive::ADDR;
         case Opcode::ALLOCA:
         case Opcode::LOAD:
-        case Opcode::ATOMIC_LOAD:
         case Opcode::LOADARG:
         case Opcode::ADD:
         case Opcode::SUB:
@@ -93,6 +97,12 @@ Type Instruction::get_type() const {
         case Opcode::LSHL:
         case Opcode::LSHR:
         case Opcode::ASHR:
+        case Opcode::ATOMIC_LOAD:
+        case Opcode::ATOMIC_ADD:
+        case Opcode::ATOMIC_SUB:
+        case Opcode::ATOMIC_AND:
+        case Opcode::ATOMIC_OR:
+        case Opcode::ATOMIC_XOR:
         case Opcode::SQRT: return operands[0].get_type();
         case Opcode::UEXTEND: return operands[1].get_type();
         case Opcode::SEXTEND: return operands[1].get_type();

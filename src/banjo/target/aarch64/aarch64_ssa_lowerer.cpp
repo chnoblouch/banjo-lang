@@ -286,52 +286,6 @@ void AArch64SSALowerer::lower_store(ssa::Instruction &instr) {
     emit({opcode, {m_src, lower_addr_mem_access(addr, size)}});
 }
 
-void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
-    ssa::Type type = instr.get_operand(0).get_type();
-    unsigned size = get_size(type);
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-
-    mcode::Opcode opcode;
-
-    switch (size) {
-        case 1: opcode = AArch64Opcode::LDARB; break;
-        case 2: opcode = AArch64Opcode::LDARH; break;
-        case 4: opcode = AArch64Opcode::LDAR; break;
-        case 8: opcode = AArch64Opcode::LDAR; break;
-        default: ASSERT_UNREACHABLE;
-    }
-
-    mcode::Operand m_dst = map_vreg_dst(instr, size);
-    mcode::Register tmp_reg = create_tmp_reg();
-    mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
-
-    emit({AArch64Opcode::MOV, {m_tmp, lower_addr_value(addr)}});
-    emit({opcode, {m_dst, mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg))}});
-}
-
-void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
-    ssa::Type type = instr.get_operand(0).get_type();
-    unsigned size = get_size(type);
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-
-    mcode::Opcode opcode;
-
-    switch (size) {
-        case 1: opcode = AArch64Opcode::STLRB; break;
-        case 2: opcode = AArch64Opcode::STLRH; break;
-        case 4: opcode = AArch64Opcode::STLR; break;
-        case 8: opcode = AArch64Opcode::STLR; break;
-        default: ASSERT_UNREACHABLE;
-    }
-
-    mcode::Operand m_src = lower_value(instr.get_operand(0));
-    mcode::Register tmp_reg = create_tmp_reg();
-    mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
-
-    emit({AArch64Opcode::MOV, {m_tmp, lower_addr_value(addr)}});
-    emit({opcode, {m_src, mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg))}});
-}
-
 void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();
@@ -648,6 +602,62 @@ void AArch64SSALowerer::lower_ftos(ssa::Instruction &instr) {
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
     emit({AArch64Opcode::FCVTZS, {m_dst, m_src}});
 }
+
+void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
+    ssa::Type type = instr.get_operand(0).get_type();
+    unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+
+    mcode::Opcode opcode;
+
+    switch (size) {
+        case 1: opcode = AArch64Opcode::LDARB; break;
+        case 2: opcode = AArch64Opcode::LDARH; break;
+        case 4: opcode = AArch64Opcode::LDAR; break;
+        case 8: opcode = AArch64Opcode::LDAR; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+    mcode::Register tmp_reg = create_tmp_reg();
+    mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
+
+    emit({AArch64Opcode::MOV, {m_tmp, lower_addr_value(addr)}});
+    emit({opcode, {m_dst, mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg))}});
+}
+
+void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
+    ssa::Type type = instr.get_operand(0).get_type();
+    unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(1));
+
+    mcode::Opcode opcode;
+
+    switch (size) {
+        case 1: opcode = AArch64Opcode::STLRB; break;
+        case 2: opcode = AArch64Opcode::STLRH; break;
+        case 4: opcode = AArch64Opcode::STLR; break;
+        case 8: opcode = AArch64Opcode::STLR; break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    mcode::Operand m_src = lower_value(instr.get_operand(0));
+    mcode::Register tmp_reg = create_tmp_reg();
+    mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
+
+    emit({AArch64Opcode::MOV, {m_tmp, lower_addr_value(addr)}});
+    emit({opcode, {m_src, mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg))}});
+}
+
+void AArch64SSALowerer::lower_atomic_add(ssa::Instruction &instr) {}
+
+void AArch64SSALowerer::lower_atomic_sub(ssa::Instruction &instr) {}
+
+void AArch64SSALowerer::lower_atomic_and(ssa::Instruction &instr) {}
+
+void AArch64SSALowerer::lower_atomic_or(ssa::Instruction &instr) {}
+
+void AArch64SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {}
 
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     ssa::Operand ssa_addr = ssa::Operand::from_register(*instr.get_dest(), ssa::Primitive::U64);

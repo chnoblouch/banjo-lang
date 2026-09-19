@@ -100,7 +100,7 @@ void WasmSSALowerer::init_func(ssa::Function &func) {
             }
 
             unsigned local_index = func.type.params.size() + func_data.locals.size();
-            ssa::Type type = ssa::get_result_type(instr, ssa::Primitive::U32);
+            ssa::Type type = instr.get_type();
             func_data.locals.push_back(lower_type(type));
             vregs2locals.emplace(*instr.get_dest(), local_index);
         }
@@ -281,14 +281,6 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     } else {
         ASSERT_UNREACHABLE;
     }
-}
-
-void WasmSSALowerer::lower_atomic_load(ssa::Instruction &instr) {
-    lower_load(instr);
-}
-
-void WasmSSALowerer::lower_atomic_store(ssa::Instruction &instr) {
-    lower_store(instr);
 }
 
 void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {
@@ -714,6 +706,34 @@ void WasmSSALowerer::lower_ftos(ssa::Instruction &instr) {
     }
 
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+}
+
+void WasmSSALowerer::lower_atomic_load(ssa::Instruction &instr) {
+    lower_load(instr);
+}
+
+void WasmSSALowerer::lower_atomic_store(ssa::Instruction &instr) {
+    lower_store(instr);
+}
+
+void WasmSSALowerer::lower_atomic_add(ssa::Instruction &instr) {
+    lower_add(instr);
+}
+
+void WasmSSALowerer::lower_atomic_sub(ssa::Instruction &instr) {
+    lower_sub(instr);
+}
+
+void WasmSSALowerer::lower_atomic_and(ssa::Instruction &instr) {
+    lower_and(instr);
+}
+
+void WasmSSALowerer::lower_atomic_or(ssa::Instruction &instr) {
+    lower_or(instr);
+}
+
+void WasmSSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
+    lower_xor(instr);
 }
 
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {

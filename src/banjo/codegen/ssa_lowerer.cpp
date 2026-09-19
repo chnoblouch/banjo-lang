@@ -201,8 +201,6 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
         case ssa::Opcode::ALLOCA: break;
         case ssa::Opcode::LOAD: lower_load(instr); break;
         case ssa::Opcode::STORE: lower_store(instr); break;
-        case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(instr); break;
-        case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(instr); break;
         case ssa::Opcode::LOADARG: lower_loadarg(instr); break;
         case ssa::Opcode::ADD: lower_add(instr); break;
         case ssa::Opcode::SUB: lower_sub(instr); break;
@@ -236,6 +234,13 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
         case ssa::Opcode::STOF: lower_stof(instr); break;
         case ssa::Opcode::FTOU: lower_ftou(instr); break;
         case ssa::Opcode::FTOS: lower_ftos(instr); break;
+        case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(instr); break;
+        case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(instr); break;
+        case ssa::Opcode::ATOMIC_ADD: lower_atomic_add(instr); break;
+        case ssa::Opcode::ATOMIC_SUB: lower_atomic_sub(instr); break;
+        case ssa::Opcode::ATOMIC_AND: lower_atomic_and(instr); break;
+        case ssa::Opcode::ATOMIC_OR: lower_atomic_or(instr); break;
+        case ssa::Opcode::ATOMIC_XOR: lower_atomic_xor(instr); break;
         case ssa::Opcode::OFFSETPTR: lower_offsetptr(instr); break;
         case ssa::Opcode::MEMBERPTR: lower_memberptr(instr); break;
         case ssa::Opcode::COPY: lower_copy(instr); break;
