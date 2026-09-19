@@ -1100,31 +1100,28 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
 
         return Result::SUCCESS;
     } else if (callee_func_def == analyzer.builtin_atomic_load) {
-        out_expr = analyzer.create<sir::BuiltinExpr>({
-            .ast_node = call_expr.ast_node,
-            .type = call_expr.type,
-            .builtin = sir::Builtin::ATOMIC_LOAD,
-            .args = call_expr.args,
-        });
-
+        out_expr = create_builtin(sir::Builtin::ATOMIC_LOAD, call_expr);
         return Result::SUCCESS;
     } else if (callee_func_def == analyzer.builtin_atomic_store) {
-        out_expr = analyzer.create<sir::BuiltinExpr>({
-            .ast_node = call_expr.ast_node,
-            .type = call_expr.type,
-            .builtin = sir::Builtin::ATOMIC_STORE,
-            .args = call_expr.args,
-        });
-
+        out_expr = create_builtin(sir::Builtin::ATOMIC_STORE, call_expr);
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_add) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_ADD, call_expr);
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_sub) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_SUB, call_expr);
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_and) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_AND, call_expr);
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_or) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_OR, call_expr);
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_xor) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_XOR, call_expr);
         return Result::SUCCESS;
     } else if (callee_func_def == analyzer.builtin_frame_address) {
-        out_expr = analyzer.create<sir::BuiltinExpr>({
-            .ast_node = call_expr.ast_node,
-            .type = call_expr.type,
-            .builtin = sir::Builtin::FRAME_ADDRESS,
-            .args = call_expr.args,
-        });
-
+        out_expr = create_builtin(sir::Builtin::FRAME_ADDRESS, call_expr);
         return Result::SUCCESS;
     }
 
@@ -1724,10 +1721,12 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (utils::is_one_of(
-                   meta_field_expr.field.value,
-                   {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
-               )) {
+    } else if (
+        utils::is_one_of(
+            meta_field_expr.field.value,
+            {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
+        )
+    ) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
         sir::Expr string_type = analyzer.create(
@@ -2325,6 +2324,15 @@ sir::ProtoDef *ExprAnalyzer::proto_of(sir::BinaryOp op) {
         case sir::BinaryOp::AND: return nullptr;
         case sir::BinaryOp::OR: return nullptr;
     }
+}
+
+sir::Expr ExprAnalyzer::create_builtin(sir::Builtin builtin, sir::CallExpr &call_expr) {
+    return analyzer.create<sir::BuiltinExpr>({
+        .ast_node = call_expr.ast_node,
+        .type = call_expr.type,
+        .builtin = builtin,
+        .args = call_expr.args,
+    });
 }
 
 sir::ProtoDef *ExprAnalyzer::proto_of(sir::UnaryOp op) {

@@ -146,6 +146,7 @@ private:
     sir::SpecializeExpr *specialize(sir::Symbol symbol, std::span<sir::Expr> generic_args, ASTNode *ast_node);
     sir::Expr create_isize_cast(sir::Expr value);
     std::span<sir::Expr> prepend_arg(sir::Expr arg, std::span<sir::Expr> args);
+    sir::Expr create_builtin(sir::Builtin builtin, sir::CallExpr &call_expr);
 
     sir::ProtoDef *proto_of(sir::BinaryOp op);
     sir::ProtoDef *proto_of(sir::UnaryOp op);

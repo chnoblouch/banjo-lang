@@ -1093,6 +1093,11 @@ void Printer::print_builtin_expr(const BuiltinExpr &builtin_expr) {
     switch (builtin_expr.builtin) {
         case Builtin::ATOMIC_LOAD: PRINT_FIELD("builtin", "ATOMIC_LOAD"); break;
         case Builtin::ATOMIC_STORE: PRINT_FIELD("builtin", "ATOMIC_STORE"); break;
+        case Builtin::ATOMIC_ADD: PRINT_FIELD("builtin", "ATOMIC_ADD"); break;
+        case Builtin::ATOMIC_SUB: PRINT_FIELD("builtin", "ATOMIC_SUB"); break;
+        case Builtin::ATOMIC_AND: PRINT_FIELD("builtin", "ATOMIC_AND"); break;
+        case Builtin::ATOMIC_OR: PRINT_FIELD("builtin", "ATOMIC_OR"); break;
+        case Builtin::ATOMIC_XOR: PRINT_FIELD("builtin", "ATOMIC_XOR"); break;
         case Builtin::FRAME_ADDRESS: PRINT_FIELD("builtin", "FRAME_ADDRESS"); break;
     }
 

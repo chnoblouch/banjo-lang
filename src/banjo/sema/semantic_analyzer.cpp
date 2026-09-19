@@ -229,6 +229,11 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     builtin_deinit = &find_std_symbol({"internal", "builtin"}, "deinit").as<sir::FuncDef>();
     builtin_atomic_load = &find_std_symbol({"internal", "builtin"}, "atomic_load").as<sir::FuncDef>();
     builtin_atomic_store = &find_std_symbol({"internal", "builtin"}, "atomic_store").as<sir::FuncDef>();
+    builtin_atomic_add = &find_std_symbol({"internal", "builtin"}, "atomic_add").as<sir::FuncDef>();
+    builtin_atomic_sub = &find_std_symbol({"internal", "builtin"}, "atomic_sub").as<sir::FuncDef>();
+    builtin_atomic_and = &find_std_symbol({"internal", "builtin"}, "atomic_and").as<sir::FuncDef>();
+    builtin_atomic_or = &find_std_symbol({"internal", "builtin"}, "atomic_or").as<sir::FuncDef>();
+    builtin_atomic_xor = &find_std_symbol({"internal", "builtin"}, "atomic_xor").as<sir::FuncDef>();
     builtin_frame_address = &find_std_symbol({"internal", "builtin"}, "frame_address").as<sir::FuncDef>();
 
     std_optional_def->role = sir::StructDef::Role::OPTIONAL;

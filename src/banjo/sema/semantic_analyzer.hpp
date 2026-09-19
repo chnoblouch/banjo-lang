@@ -134,6 +134,11 @@ public:
     sir::FuncDef *builtin_deinit = nullptr;
     sir::FuncDef *builtin_atomic_load = nullptr;
     sir::FuncDef *builtin_atomic_store = nullptr;
+    sir::FuncDef *builtin_atomic_add = nullptr;
+    sir::FuncDef *builtin_atomic_sub = nullptr;
+    sir::FuncDef *builtin_atomic_and = nullptr;
+    sir::FuncDef *builtin_atomic_or = nullptr;
+    sir::FuncDef *builtin_atomic_xor = nullptr;
     sir::FuncDef *builtin_frame_address = nullptr;
 
 private:

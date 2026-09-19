@@ -2,4 +2,9 @@ pub func pointer_to[T](value: T) -> *T { return undefined; }
 pub func deinit[T](value: T) -> T { return undefined; }
 pub func atomic_load[T](pointer: *T) -> T { return undefined; }
 pub func atomic_store[T](value: T, pointer: *T) {}
+pub func atomic_add[T](pointer: *T, value: T) -> T { return undefined; }
+pub func atomic_sub[T](pointer: *T, value: T) -> T { return undefined; }
+pub func atomic_and[T](pointer: *T, value: T) -> T { return undefined; }
+pub func atomic_or[T](pointer: *T, value: T) -> T { return undefined; }
+pub func atomic_xor[T](pointer: *T, value: T) -> T { return undefined; }
 pub func frame_address() -> addr { return undefined; }

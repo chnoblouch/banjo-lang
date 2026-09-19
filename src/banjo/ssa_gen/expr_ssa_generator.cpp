@@ -6,6 +6,7 @@
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/builder.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
@@ -900,6 +901,8 @@ StoredValue ExprSSAGenerator::generate_type_check(const sir::TypeCheckExpr &type
 }
 
 StoredValue ExprSSAGenerator::generate_builtin_expr(const sir::BuiltinExpr &builtin_expr) {
+    ssa::Builder builder{*ctx.get_ssa_func(), *ctx.get_ssa_block()};
+
     switch (builtin_expr.builtin) {
         case sir::Builtin::ATOMIC_LOAD: {
             StoredValue arg = generate(builtin_expr.args[0]).turn_into_value(ctx);
@@ -913,6 +916,41 @@ StoredValue ExprSSAGenerator::generate_builtin_expr(const sir::BuiltinExpr &buil
             StoredValue dst = generate(builtin_expr.args[1]).turn_into_value(ctx);
             ctx.append_atomic_store(value.get_value(), dst.get_value());
             return StoredValue::create_value({});
+        }
+
+        case sir::Builtin::ATOMIC_ADD: {
+            StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ssa::Value result = builder.emit_atomic_add(addr.get_value(), value.get_value());
+            return StoredValue::create_value(result);
+        }
+
+        case sir::Builtin::ATOMIC_SUB: {
+            StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ssa::Value result = builder.emit_atomic_sub(addr.get_value(), value.get_value());
+            return StoredValue::create_value(result);
+        }
+
+        case sir::Builtin::ATOMIC_AND: {
+            StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ssa::Value result = builder.emit_atomic_and(addr.get_value(), value.get_value());
+            return StoredValue::create_value(result);
+        }
+
+        case sir::Builtin::ATOMIC_OR: {
+            StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ssa::Value result = builder.emit_atomic_or(addr.get_value(), value.get_value());
+            return StoredValue::create_value(result);
+        }
+
+        case sir::Builtin::ATOMIC_XOR: {
+            StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ssa::Value result = builder.emit_atomic_xor(addr.get_value(), value.get_value());
+            return StoredValue::create_value(result);
         }
 
         case sir::Builtin::FRAME_ADDRESS: {

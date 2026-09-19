@@ -31,6 +31,12 @@ public:
     ssa::Operand emit_uextend(ssa::Operand value, ssa::Type type);
     ssa::Operand emit_truncate(ssa::Operand value, ssa::Type type);
 
+    ssa::Operand emit_atomic_add(ssa::Operand addr, ssa::Operand value);
+    ssa::Operand emit_atomic_sub(ssa::Operand addr, ssa::Operand value);
+    ssa::Operand emit_atomic_and(ssa::Operand addr, ssa::Operand value);
+    ssa::Operand emit_atomic_or(ssa::Operand addr, ssa::Operand value);
+    ssa::Operand emit_atomic_xor(ssa::Operand addr, ssa::Operand value);
+
     ssa::Operand emit_offsetptr(ssa::Operand base, unsigned offset, ssa::Type type);
     ssa::Operand emit_offsetptr(ssa::Operand base, ssa::Operand offset, ssa::Type type);
 

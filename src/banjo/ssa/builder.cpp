@@ -61,6 +61,26 @@ ssa::Operand Builder::emit_truncate(ssa::Operand value, ssa::Type type) {
     return emit_with_dst(ssa::Opcode::TRUNCATE, {std::move(value), type_operand}, type);
 }
 
+ssa::Operand Builder::emit_atomic_add(ssa::Operand addr, ssa::Operand value) {
+    return emit_with_dst(ssa::Opcode::ATOMIC_ADD, {std::move(addr), std::move(value)}, value.get_type());
+}
+
+ssa::Operand Builder::emit_atomic_sub(ssa::Operand addr, ssa::Operand value) {
+    return emit_with_dst(ssa::Opcode::ATOMIC_SUB, {std::move(addr), std::move(value)}, value.get_type());
+}
+
+ssa::Operand Builder::emit_atomic_and(ssa::Operand addr, ssa::Operand value) {
+    return emit_with_dst(ssa::Opcode::ATOMIC_AND, {std::move(addr), std::move(value)}, value.get_type());
+}
+
+ssa::Operand Builder::emit_atomic_or(ssa::Operand addr, ssa::Operand value) {
+    return emit_with_dst(ssa::Opcode::ATOMIC_OR, {std::move(addr), std::move(value)}, value.get_type());
+}
+
+ssa::Operand Builder::emit_atomic_xor(ssa::Operand addr, ssa::Operand value) {
+    return emit_with_dst(ssa::Opcode::ATOMIC_XOR, {std::move(addr), std::move(value)}, value.get_type());
+}
+
 ssa::Operand Builder::emit_offsetptr(ssa::Operand base, unsigned offset, ssa::Type type) {
     ssa::Operand offset_operand = ssa::Operand::from_int_immediate(offset);
     return emit_offsetptr(std::move(base), offset_operand, type);
