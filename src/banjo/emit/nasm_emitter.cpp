@@ -125,7 +125,7 @@ void NASMEmitter::generate() {
 
     if (target.get_operating_system() == target::OperatingSystem::MACOS) {
         for (mcode::Function *function : module.get_functions()) {
-            symbol_prefixes.insert({function->get_name(), "_"});
+            symbol_prefixes.insert({function->name, "_"});
         }
     }
 
@@ -212,9 +212,9 @@ void NASMEmitter::emit_func(mcode::Function *func) {
         stream << "_";
     }
 
-    stream << func->get_name() << ":\n";
+    stream << func->name << ":\n";
 
-    for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func->basic_blocks) {
         gen_basic_block(func, basic_block);
     }
 
@@ -306,7 +306,7 @@ std::string NASMEmitter::get_operand_name(
                 str += " + " + std::to_string(addr.get_offset_imm());
             }
         } else if (addr.has_offset_stack_addr()) {
-            str += " + " + std::to_string(func->get_stack_frame().offset_of(addr.get_offset_stack_addr()));
+            str += " + " + std::to_string(func->stack_frame.offset_of(addr.get_offset_stack_addr()));
         } else {
             ASSERT_UNREACHABLE;
         }
@@ -417,7 +417,7 @@ std::string NASMEmitter::get_physical_reg_name(long reg, int size) {
 
 std::string NASMEmitter::
     get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot, bool brackets /*= true*/) {
-    mcode::StackFrame &frame = func->get_stack_frame();
+    mcode::StackFrame &frame = func->stack_frame;
     mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
     int offset = slot.offset;
     std::string offset_str = offset >= 0 ? "+ " + std::to_string(offset) : "- " + std::to_string(-offset);

@@ -108,8 +108,8 @@ const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_CON
 AssemblyUtil::AssemblyUtil() : reader(std::cin) {}
 
 WriteBuffer AssemblyUtil::assemble() {
-    mcode::Function *m_func = new mcode::Function("f", nullptr);
-    mcode::BasicBlockIter m_block = m_func->get_basic_blocks().append({.label = "b"});
+    mcode::Function *m_func = new mcode::Function{.name = "f"};
+    mcode::BasicBlockIter m_block = m_func->basic_blocks.append({.label = "b"});
 
     while (reader.next_line()) {
         if (std::optional<mcode::Instruction> instr = parse_line()) {

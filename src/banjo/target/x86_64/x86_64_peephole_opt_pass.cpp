@@ -5,9 +5,7 @@
 #include "banjo/utils/timing.hpp"
 #include <unordered_set>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 const std::unordered_set<mcode::Opcode> STACK_LOADING_OPS = {
     X8664Opcode::ADD,
@@ -33,7 +31,7 @@ void X8664PeepholeOptPass::run(mcode::Module &module_) {
 void X8664PeepholeOptPass::run(mcode::Function *func) {
     PROFILE_SCOPE("x86-64 peephole opt");
 
-    for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func->basic_blocks) {
         for (mcode::Instruction &instr : basic_block) {
             if (instr.get_opcode() == X8664Opcode::MOVSS && instr.get_operand(0).is_register() &&
                 instr.get_operand(1).is_register()) {
@@ -43,6 +41,4 @@ void X8664PeepholeOptPass::run(mcode::Function *func) {
     }
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

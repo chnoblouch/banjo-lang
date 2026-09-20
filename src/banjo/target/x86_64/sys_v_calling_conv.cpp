@@ -106,7 +106,7 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
 }
 
 mcode::Operand SysVCallingConv::get_arg_dst(mcode::ArgStorage &storage, codegen::SSALowerer &lowerer) {
-    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
+    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->stack_frame;
 
     if (storage.in_reg) {
         return mcode::Operand::from_register(mcode::Register::from_physical(storage.reg));
@@ -248,10 +248,10 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
     std::vector<mcode::PhysicalReg> modified_volatile_regs =
         codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
-    if (func->get_stack_frame().get_size() > 0 || true) {
+    if (func->stack_frame.get_size() > 0 || true) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
-        mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->get_stack_frame().get_size());
+        mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->stack_frame.get_size());
 
         // Push frame pointer.
         prolog.push_back({X8664Opcode::PUSH, {rbp}});
@@ -277,7 +277,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
 
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
         if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
-            unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
+            unsigned slot_index = func->stack_frame.get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand slot_operand = mcode::Operand::from_stack_slot(slot_index, 8);
             mcode::Operand reg_operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
@@ -300,7 +300,7 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
     unsigned sse_slot_index = 0;
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
         if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
-            unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
+            unsigned slot_index = func->stack_frame.get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand reg_operand = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
             mcode::Operand slot_operand = mcode::Operand::from_stack_slot(slot_index, 8);
@@ -308,10 +308,10 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
         }
     }
 
-    if (func->get_stack_frame().get_size() > 0 || true) {
+    if (func->stack_frame.get_size() > 0 || true) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
-        mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->get_stack_frame().get_size());
+        mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->stack_frame.get_size());
 
         // Deallocate stack frame.
         epilog.push_back({X8664Opcode::ADD, {rsp, frame_size}});

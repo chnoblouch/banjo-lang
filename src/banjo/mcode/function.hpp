@@ -7,7 +7,6 @@
 
 #include <any>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace banjo::mcode {
@@ -23,32 +22,15 @@ struct UnwindInfo {
     unsigned alloc_size;
 };
 
-class Function {
-
-private:
+struct Function {
     std::string name;
     LinkedList<BasicBlock> basic_blocks;
     std::vector<Parameter> parameters;
-    CallingConvention *calling_conv;
+    CallingConvention *calling_conv = nullptr;
     StackFrame stack_frame;
     UnwindInfo unwind_info;
     std::any target_data;
-
-public:
     std::string debug_name;
-
-public:
-    Function(std::string name, CallingConvention *calling_conv);
-
-    const std::string &get_name() { return name; }
-    LinkedList<BasicBlock> &get_basic_blocks() { return basic_blocks; }
-    std::vector<Parameter> &get_parameters() { return parameters; }
-    CallingConvention *get_calling_conv() { return calling_conv; }
-    StackFrame &get_stack_frame() { return stack_frame; }
-    UnwindInfo &get_unwind_info() { return unwind_info; }
-    const std::any &get_target_data() { return target_data; }
-
-    void set_target_data(std::any target_data) { this->target_data = std::move(target_data); }
 
     BasicBlockIter begin() { return basic_blocks.begin(); }
     BasicBlockIter end() { return basic_blocks.end(); }

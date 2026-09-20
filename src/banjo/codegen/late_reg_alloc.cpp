@@ -19,7 +19,7 @@ std::optional<mcode::PhysicalReg> LateRegAlloc::alloc() {
     }
 
     std::cerr << "register allocator is out of registers\n";
-    std::cerr << "in function " << func.get_name() << '\n';
+    std::cerr << "in function " << func.name << '\n';
     std::exit(1);
 
     return -1;

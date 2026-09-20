@@ -21,7 +21,7 @@ class SSALowerer;
 
 namespace banjo::mcode {
 
-class Function;
+struct Function;
 class StackFrame;
 
 struct ArgStorage {

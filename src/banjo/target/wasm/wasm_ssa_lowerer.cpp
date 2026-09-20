@@ -110,7 +110,7 @@ void WasmSSALowerer::init_func(ssa::Function &func) {
         block_indices.insert({iter, block_indices.size()});
     }
 
-    machine_func->set_target_data(func_data);
+    machine_func->target_data = func_data;
 }
 
 void WasmSSALowerer::generate_blocks(ssa::Function &func) {
@@ -139,10 +139,7 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     entry_block.append({WasmOpcode::BR_TABLE, std::move(branch_targets)});
     entry_block.append({WasmOpcode::END_BLOCK});
-    machine_func->get_basic_blocks().insert_before(
-        machine_func->get_basic_blocks().get_first_iter(),
-        std::move(entry_block)
-    );
+    machine_func->basic_blocks.insert_before(machine_func->basic_blocks.get_first_iter(), std::move(entry_block));
 
     block_depth = func.get_basic_blocks().get_size();
 
@@ -162,7 +159,7 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
     }
 
     exit_block.append({WasmOpcode::END_FUNCTION});
-    machine_func->get_basic_blocks().append(std::move(exit_block));
+    machine_func->basic_blocks.append(std::move(exit_block));
 }
 
 void WasmSSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
@@ -467,7 +464,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
             push_operand(instr.get_operand(i));
         }
     } else {
-        mcode::StackFrame &stack_frame = machine_func->get_stack_frame();
+        mcode::StackFrame &stack_frame = machine_func->stack_frame;
 
         // TODO: Reuse the buffer for different calls.
         mcode::StackSlotID buffer = stack_frame.new_stack_slot({

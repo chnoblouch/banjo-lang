@@ -18,8 +18,8 @@ void StackFramePass::run(mcode::Function &func) {
     PROFILE_SCOPE("stack frame builder");
 
     this->func = &func;
-    mcode::StackFrame &frame = func.get_stack_frame();
-    mcode::CallingConvention *calling_conv = func.get_calling_conv();
+    mcode::StackFrame &frame = func.stack_frame;
+    mcode::CallingConvention *calling_conv = func.calling_conv;
 
     mcode::StackRegions regions;
     mcode::ImplicitStackRegion &implicit_region = regions.implicit_region;
@@ -52,9 +52,9 @@ void StackFramePass::run(mcode::Function &func) {
     frame.set_total_size(total_size);
     frame.set_size(alloca_size);
 
-    std::vector<ssa::Type> params(func.get_parameters().size());
-    for (unsigned i = 0; i < func.get_parameters().size(); i++) {
-        params[i] = func.get_parameters()[i].type;
+    std::vector<ssa::Type> params(func.parameters.size());
+    for (unsigned i = 0; i < func.parameters.size(); i++) {
+        params[i] = func.parameters[i].type;
     }
 
     std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage({
@@ -63,8 +63,8 @@ void StackFramePass::run(mcode::Function &func) {
         .calling_conv = {},
     });
 
-    for (unsigned i = 0; i < func.get_parameters().size(); i++) {
-        mcode::Parameter &param = func.get_parameters()[i];
+    for (unsigned i = 0; i < func.parameters.size(); i++) {
+        mcode::Parameter &param = func.parameters[i];
         if (arg_storage[i].in_reg) {
             continue;
         }
@@ -74,7 +74,7 @@ void StackFramePass::run(mcode::Function &func) {
         slot.offset = frame.get_total_size() + sp_offset;
     }
 
-    func.get_unwind_info().alloc_size = func.get_stack_frame().get_size();
+    func.unwind_info.alloc_size = func.stack_frame.get_size();
 }
 
 void StackFramePass::create_generic_region(
@@ -82,7 +82,7 @@ void StackFramePass::create_generic_region(
     std::unordered_map<int, int> &pre_alloca_offsets,
     int top
 ) {
-    mcode::StackFrame &frame = func->get_stack_frame();
+    mcode::StackFrame &frame = func->stack_frame;
 
     int generic_slot_offset = top;
 

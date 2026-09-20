@@ -83,9 +83,10 @@ void DebugEmitter::generate() {
 }
 
 void DebugEmitter::generate(mcode::Function *func) {
-    stream << "func " << func->get_name() << ":\n";
+    stream << "func " << func->name << ":\n";
 
-    mcode::StackFrame &frame = func->get_stack_frame();
+    mcode::StackFrame &frame = func->stack_frame;
+
     if (!frame.get_stack_slots().empty()) {
         for (unsigned i = 0; i < frame.get_stack_slots().size(); i++) {
             mcode::StackSlot &slot = frame.get_stack_slot(i);
@@ -114,7 +115,7 @@ void DebugEmitter::generate(mcode::Function *func) {
         stream << "\n";
     }
 
-    for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func->basic_blocks) {
         gen_basic_block(func, basic_block);
     }
 
@@ -437,7 +438,7 @@ std::string DebugEmitter::get_physical_reg_name(long reg, int size) {
 }
 
 std::string DebugEmitter::get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot) {
-    mcode::StackFrame &frame = func->get_stack_frame();
+    mcode::StackFrame &frame = func->stack_frame;
     mcode::StackSlot &slot = frame.get_stack_slot(stack_slot);
     unsigned offset = slot.offset;
 
@@ -457,7 +458,7 @@ std::string DebugEmitter::get_stack_slot_name(mcode::Function *func, mcode::Stac
 }
 
 std::string DebugEmitter::build_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr) {
-    mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(stack_addr.slot);
+    mcode::StackSlot &slot = func->stack_frame.get_stack_slot(stack_addr.slot);
 
     if (slot.offset == mcode::StackSlot::INVALID_OFFSET) {
         std::string string = "offset(s" + std::to_string(stack_addr.slot);
@@ -469,7 +470,7 @@ std::string DebugEmitter::build_stack_offset(mcode::Function *func, mcode::Stack
         string += ")";
         return string;
     } else {
-        unsigned offset = func->get_stack_frame().offset_of(stack_addr);
+        unsigned offset = func->stack_frame.offset_of(stack_addr);
         return "#" + std::to_string(offset);
     }
 }

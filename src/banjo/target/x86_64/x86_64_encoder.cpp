@@ -1173,7 +1173,7 @@ X8664Encoder::Immediate X8664Encoder::imm(mcode::Operand &operand) {
 
 X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand) {
     if (operand.is_stack_slot()) {
-        mcode::StackSlot &slot = cur_func->get_stack_frame().get_stack_slot(operand.get_stack_slot());
+        mcode::StackSlot &slot = cur_func->stack_frame.get_stack_slot(operand.get_stack_slot());
 
         return RegAddress{
             .scale = 1,
@@ -1227,7 +1227,7 @@ X8664Encoder::Address X8664Encoder::addr(mcode::Operand &operand) {
     if (machine_addr.has_offset_imm()) {
         addr.displacement = machine_addr.get_offset_imm();
     } else if (machine_addr.has_offset_stack_addr()) {
-        addr.displacement = cur_func->get_stack_frame().offset_of(machine_addr.get_offset_stack_addr());
+        addr.displacement = cur_func->stack_frame.offset_of(machine_addr.get_offset_stack_addr());
     }
 
     return addr;

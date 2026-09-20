@@ -169,9 +169,9 @@ void AArch64AsmEmitter::emit_global(const mcode::Global &global) {
 }
 
 void AArch64AsmEmitter::emit_func(mcode::Function *func) {
-    stream << symbol_prefix << func->get_name() << ":\n";
+    stream << symbol_prefix << func->name << ":\n";
 
-    for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func->basic_blocks) {
         emit_basic_block(func, basic_block);
     }
 
@@ -244,7 +244,7 @@ void AArch64AsmEmitter::emit_reg(int reg, int size) {
 }
 
 void AArch64AsmEmitter::emit_stack_slot(mcode::Function *func, int index) {
-    mcode::StackSlot &slot = func->get_stack_frame().get_stack_slot(index);
+    mcode::StackSlot &slot = func->stack_frame.get_stack_slot(index);
     stream << "[sp, #" << slot.offset << "]";
 }
 
@@ -283,7 +283,7 @@ void AArch64AsmEmitter::emit_addr(mcode::Function *func, const target::AArch64Ad
             break;
         case target::AArch64Address::Type::BASE_OFFSET_STACK_ADDR:
             emit_reg(addr.get_base().get_physical_reg(), 8);
-            stream << ", #" << func->get_stack_frame().offset_of(addr.get_offset_stack_addr()) << "]";
+            stream << ", #" << func->stack_frame.offset_of(addr.get_offset_stack_addr()) << "]";
             break;
         case target::AArch64Address::Type::BASE_OFFSET_REG:
             emit_reg(addr.get_base().get_physical_reg(), 8);
@@ -306,7 +306,7 @@ void AArch64AsmEmitter::emit_addr(mcode::Function *func, const target::AArch64Ad
 }
 
 void AArch64AsmEmitter::emit_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr) {
-    stream << "#" << func->get_stack_frame().offset_of(stack_addr);
+    stream << "#" << func->stack_frame.offset_of(stack_addr);
 }
 
 void AArch64AsmEmitter::emit_condition(target::AArch64Condition condition) {

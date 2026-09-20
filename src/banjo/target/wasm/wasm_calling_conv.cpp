@@ -56,8 +56,8 @@ int WasmCallingConv::get_alloca_size(mcode::StackRegions &regions) {
 }
 
 std::vector<mcode::Instruction> WasmCallingConv::get_prolog(mcode::Function *func) {
-    const WasmFuncData &func_data = std::any_cast<const WasmFuncData &>(func->get_target_data());
-    unsigned alloca_size = func->get_stack_frame().get_size();
+    const WasmFuncData &func_data = std::any_cast<const WasmFuncData &>(func->target_data);
+    unsigned alloca_size = func->stack_frame.get_size();
 
     if (alloca_size == 0) {
         return {};
@@ -73,8 +73,8 @@ std::vector<mcode::Instruction> WasmCallingConv::get_prolog(mcode::Function *fun
 }
 
 std::vector<mcode::Instruction> WasmCallingConv::get_epilog(mcode::Function *func) {
-    const WasmFuncData &func_data = std::any_cast<const WasmFuncData &>(func->get_target_data());
-    unsigned alloca_size = func->get_stack_frame().get_size();
+    const WasmFuncData &func_data = std::any_cast<const WasmFuncData &>(func->target_data);
+    unsigned alloca_size = func->stack_frame.get_size();
 
     if (alloca_size == 0) {
         return {};

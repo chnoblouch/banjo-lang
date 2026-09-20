@@ -127,7 +127,7 @@ void AAPCSCallingConv::emit_reg_arg_move(AArch64SSALowerer &lowerer, ssa::Operan
 }
 
 void AAPCSCallingConv::emit_stack_arg_move(AArch64SSALowerer &lowerer, ssa::Operand &operand, unsigned arg_slot_index) {
-    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
+    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->stack_frame;
     mcode::StackSlotID slot_index = stack_frame.create_call_arg_slot(arg_slot_index, 8, 1);
 
     unsigned size = lowerer.get_size(operand.get_type());
@@ -230,7 +230,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
     mcode::Operand m_lr = mcode::Operand::from_register(lr, 8);
     mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
 
-    int size = func->get_stack_frame().get_size();
+    int size = func->stack_frame.get_size();
 
     std::vector<mcode::Instruction> prolog;
 
@@ -311,7 +311,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
     mcode::Operand m_fp = mcode::Operand::from_register(fp, 8);
     mcode::Operand m_lr = mcode::Operand::from_register(lr, 8);
 
-    int size = func->get_stack_frame().get_size();
+    int size = func->stack_frame.get_size();
 
     std::vector<mcode::Instruction> epilog;
 

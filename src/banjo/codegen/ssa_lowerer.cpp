@@ -50,20 +50,22 @@ mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
 void SSALowerer::lower_func(ssa::Function &func) {
     this->func = &func;
 
-    mcode::CallingConvention *calling_conv = get_calling_convention(func.type.calling_conv);
+    mcode::Function *m_func = new mcode::Function{
+        .name = func.name,
+        .calling_conv = get_calling_convention(func.type.calling_conv),
+    };
 
-    mcode::Function *machine_func = new mcode::Function(func.name, calling_conv);
-    machine_func->debug_name = func.debug_name;
+    m_func->debug_name = func.debug_name;
 
-    this->machine_func = machine_func;
+    this->machine_func = m_func;
 
     context = {};
 
-    std::vector<mcode::ArgStorage> storage = calling_conv->get_arg_storage(func.type);
+    std::vector<mcode::ArgStorage> storage = m_func->calling_conv->get_arg_storage(func.type);
 
     for (unsigned i = 0; i < func.type.params.size(); i++) {
-        mcode::Parameter param = lower_param(func.type.params[i], storage[i], *machine_func);
-        machine_func->get_parameters().push_back(param);
+        mcode::Parameter param = lower_param(func.type.params[i], storage[i], *m_func);
+        m_func->parameters.push_back(param);
     }
 
     context.reg_use_counts.clear();
@@ -101,7 +103,7 @@ void SSALowerer::lower_func(ssa::Function &func) {
     generate_blocks(func);
     store_graphs();
 
-    machine_module.add(machine_func);
+    machine_module.add(m_func);
 
     if (func.global) {
         machine_module.add_global_symbol(func.name);
@@ -129,7 +131,7 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
 
         return mcode::Parameter{
             .type = type,
-            .storage = m_func.get_stack_frame().new_stack_slot(slot),
+            .storage = m_func.stack_frame.new_stack_slot(slot),
         };
     }
 }
@@ -141,7 +143,7 @@ void SSALowerer::create_basic_block(ssa::BasicBlockIter ssa_block) {
         m_block.params.push_back(reg);
     }
 
-    mcode::BasicBlockIter m_block_iter = machine_func->get_basic_blocks().append(m_block);
+    mcode::BasicBlockIter m_block_iter = machine_func->basic_blocks.append(m_block);
     block_map.insert({ssa_block, m_block_iter});
 }
 
@@ -363,7 +365,7 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
     mcode::StackSlot::Type type = is_arg_store ? mcode::StackSlot::Type::ARG_STORE : mcode::StackSlot::Type::GENERIC;
     mcode::StackSlot slot{.type = type, .size = size, .alignment = 1};
 
-    mcode::StackSlotID index = get_machine_func()->get_stack_frame().new_stack_slot(slot);
+    mcode::StackSlotID index = get_machine_func()->stack_frame.new_stack_slot(slot);
     context.stack_regs.insert({*instr.get_dest(), index});
 }
 

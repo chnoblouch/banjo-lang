@@ -291,7 +291,7 @@ void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
     unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();
     unsigned size = get_size(type);
 
-    mcode::CallingConvention *calling_conv = get_machine_func()->get_calling_conv();
+    mcode::CallingConvention *calling_conv = get_machine_func()->calling_conv;
     std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type);
     mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
 
@@ -312,7 +312,7 @@ void AArch64SSALowerer::lower_loadarg(ssa::Instruction &instr) {
             default: ASSERT_UNREACHABLE;
         }
 
-        mcode::Parameter &param = get_machine_func()->get_parameters()[param_index];
+        mcode::Parameter &param = get_machine_func()->parameters[param_index];
         mcode::StackSlotID slot_index = std::get<mcode::StackSlotID>(param.storage);
         mcode::Operand m_src = mcode::Operand::from_stack_slot(slot_index, size);
         emit({opcode, {m_dst, m_src}});
@@ -490,7 +490,7 @@ void AArch64SSALowerer::lower_select(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_call(ssa::Instruction &instr) {
-    get_machine_func()->get_calling_conv()->lower_call(*this, instr);
+    get_machine_func()->calling_conv->lower_call(*this, instr);
 }
 
 void AArch64SSALowerer::lower_ret(ssa::Instruction &instr) {

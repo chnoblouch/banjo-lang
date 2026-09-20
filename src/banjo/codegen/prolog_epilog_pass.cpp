@@ -19,8 +19,8 @@ void PrologEpilogPass::run(mcode::Function &func) {
 }
 
 void PrologEpilogPass::insert_prolog(mcode::Function &func) {
-    mcode::BasicBlock &basic_block = func.get_basic_blocks().get_first();
-    mcode::CallingConvention *calling_conv = func.get_calling_conv();
+    mcode::BasicBlock &basic_block = func.basic_blocks.get_first();
+    mcode::CallingConvention *calling_conv = func.calling_conv;
 
     mcode::InstrIter insertion_instr = basic_block.begin();
     for (mcode::Instruction &instr : calling_conv->get_prolog(&func)) {
@@ -29,9 +29,9 @@ void PrologEpilogPass::insert_prolog(mcode::Function &func) {
 }
 
 void PrologEpilogPass::insert_epilog(mcode::Function &func) {
-    mcode::CallingConvention *calling_conv = func.get_calling_conv();
+    mcode::CallingConvention *calling_conv = func.calling_conv;
 
-    for (mcode::BasicBlock &basic_block : func.get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func.basic_blocks) {
         for (mcode::InstrIter iter = basic_block.begin(); iter != basic_block.end(); ++iter) {
             // Only insert epilogs before exit instructions.
             mcode::Opcode opcode = iter->get_opcode();

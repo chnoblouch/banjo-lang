@@ -136,7 +136,7 @@ void MSABICallingConv::emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Op
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
     unsigned arg_slot_index = index - 4;
-    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->get_stack_frame();
+    mcode::StackFrame &stack_frame = lowerer.get_machine_func()->stack_frame;
     mcode::StackSlotID slot_index;
 
     if (stack_frame.get_call_arg_slot_indices().size() <= arg_slot_index) {
@@ -238,7 +238,7 @@ void MSABICallingConv::create_call_arg_region(
     mcode::CallArgStackRegion &region = regions.call_arg_region;
 
     bool has_call_instr = false;
-    for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func->basic_blocks) {
         for (mcode::Instruction &instr : basic_block) {
             if (instr.get_opcode() == X8664Opcode::CALL) {
                 has_call_instr = true;
@@ -320,13 +320,13 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
     }
 
     // Allocate stack frame.
-    if (func->get_stack_frame().get_size() > 0) {
+    if (func->stack_frame.get_size() > 0) {
         prolog.push_back(
             mcode::Instruction(
                 X8664Opcode::SUB,
                 {
                     mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-                    mcode::Operand::from_int_immediate(func->get_stack_frame().get_size()),
+                    mcode::Operand::from_int_immediate(func->stack_frame.get_size()),
                 },
                 mcode::Instruction::FLAG_ALLOCA
             )
@@ -337,7 +337,7 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
     unsigned sse_slot_index = 0;
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
         if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
-            unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
+            unsigned slot_index = func->stack_frame.get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand m_dst = mcode::Operand::from_stack_slot(slot_index, 8);
             mcode::Operand m_src = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
@@ -360,7 +360,7 @@ std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *fu
     unsigned sse_slot_index = 0;
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
         if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
-            unsigned slot_index = func->get_stack_frame().get_reg_save_slot_indices()[sse_slot_index++];
+            unsigned slot_index = func->stack_frame.get_reg_save_slot_indices()[sse_slot_index++];
 
             mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(reg), 8);
             mcode::Operand m_src = mcode::Operand::from_stack_slot(slot_index, 8);
@@ -369,13 +369,13 @@ std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *fu
     }
 
     // Deallocate stack frame.
-    if (func->get_stack_frame().get_size() > 0) {
+    if (func->stack_frame.get_size() > 0) {
         epilog.push_back(
             mcode::Instruction(
                 X8664Opcode::ADD,
                 {
                     mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8),
-                    mcode::Operand::from_int_immediate(func->get_stack_frame().get_size()),
+                    mcode::Operand::from_int_immediate(func->stack_frame.get_size()),
                 }
             )
         );

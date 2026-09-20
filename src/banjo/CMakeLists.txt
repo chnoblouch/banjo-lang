@@ -77,7 +77,6 @@ add_library(banjo STATIC
     "mcode/basic_block.cpp"
     "mcode/basic_block.hpp"
     "mcode/calling_convention.hpp"
-    "mcode/function.cpp"
     "mcode/function.hpp"
     "mcode/global.hpp"
     "mcode/instruction.hpp"

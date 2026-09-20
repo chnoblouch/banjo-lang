@@ -61,7 +61,7 @@ void RegAllocPass::run(mcode::Function &func) {
         apply_alloc(ctx, alloc);
     }
 
-    for (mcode::BasicBlock &block : func.get_basic_blocks()) {
+    for (mcode::BasicBlock &block : func.basic_blocks) {
         remove_useless_instrs(block);
     }
 }
@@ -387,7 +387,7 @@ bool RegAllocPass::can_evict(Bundle &bundle, Alloc &alloc) {
 }
 
 void RegAllocPass::spill(Context &ctx, Bundle &bundle) {
-    mcode::StackFrame &stack_frame = ctx.func.m_func.get_stack_frame();
+    mcode::StackFrame &stack_frame = ctx.func.m_func.stack_frame;
 
     mcode::StackSlotID stack_slot = stack_frame.new_stack_slot({
         .type = mcode::StackSlot::Type::GENERIC,

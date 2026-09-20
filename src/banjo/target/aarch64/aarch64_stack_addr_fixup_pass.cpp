@@ -44,7 +44,7 @@ void AArch64StackAddrFixupPass::run(mcode::BasicBlock &block) {
 }
 
 void AArch64StackAddrFixupPass::process_add_sub(mcode::InstrIter instr) {
-    mcode::StackFrame &frame = func->get_stack_frame();
+    mcode::StackFrame &frame = func->stack_frame;
 
     mcode::Operand &m_offset = instr->get_operand(2);
     if (!m_offset.is_stack_offset() || instr->get_operands().size() == 4) {
@@ -61,7 +61,7 @@ void AArch64StackAddrFixupPass::process_add_sub(mcode::InstrIter instr) {
 }
 
 void AArch64StackAddrFixupPass::process_ldr_str(mcode::InstrIter instr, unsigned size) {
-    mcode::StackFrame &frame = func->get_stack_frame();
+    mcode::StackFrame &frame = func->stack_frame;
     mcode::Operand &m_addr = instr->get_operand(1);
 
     if (m_addr.is_stack_slot()) {

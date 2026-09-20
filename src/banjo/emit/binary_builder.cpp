@@ -16,9 +16,9 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
     std::uint32_t first_text_symbol_index = defs.size();
 
     for (mcode::Function *func : m_mod.get_functions()) {
-        add_func_symbol(func->get_name(), m_mod);
+        add_func_symbol(func->name, m_mod);
 
-        for (mcode::BasicBlock &block : func->get_basic_blocks()) {
+        for (mcode::BasicBlock &block : func->basic_blocks) {
             if (!block.label.empty()) {
                 add_label_symbol(block.label);
             }
@@ -40,12 +40,12 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
     for (mcode::Function *func : m_mod.get_functions()) {
         UnwindInfo frame_info{
             .start_symbol_index = symbol_index,
-            .alloca_size = func->get_unwind_info().alloc_size,
+            .alloca_size = func->unwind_info.alloc_size,
         };
 
         text.attach_symbol_def(symbol_index++);
 
-        for (mcode::BasicBlock &block : func->get_basic_blocks()) {
+        for (mcode::BasicBlock &block : func->basic_blocks) {
             if (!block.label.empty()) {
                 text.attach_symbol_def(symbol_index++);
             }
@@ -251,7 +251,7 @@ void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
 
     for (unsigned i = 0; i < m_mod.get_functions().size(); i++) {
         mcode::Function &func = *m_mod.get_functions()[i];
-        const std::string &name = func.get_name();
+        const std::string &name = func.name;
         const std::string &debug_name = func.debug_name.empty() ? name : func.debug_name;
 
         debug_section->seek(header_size + 16 * i);

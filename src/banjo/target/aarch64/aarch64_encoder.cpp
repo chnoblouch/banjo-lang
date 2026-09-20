@@ -666,7 +666,7 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
     } else if (m_rhs.is_stack_offset()) {
         mcode::StackAddress stack_addr = m_rhs.get_stack_offset();
 
-        mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
+        mcode::StackFrame &stack_frame = cur_func->stack_frame;
         mcode::StackSlot &slot = stack_frame.get_stack_slot(stack_addr.slot);
         std::uint64_t total_offset = slot.offset + stack_addr.offset;
 
@@ -916,7 +916,7 @@ std::uint32_t AArch64Encoder::encode_cond(AArch64Condition cond) {
 
 AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcode::Operand *post_operand) {
     if (operand.is_stack_slot()) {
-        mcode::StackFrame &stack_frame = cur_func->get_stack_frame();
+        mcode::StackFrame &stack_frame = cur_func->stack_frame;
         mcode::StackSlot &slot = stack_frame.get_stack_slot(operand.get_stack_slot());
 
         return Address{
@@ -971,7 +971,7 @@ AArch64Encoder::Address AArch64Encoder::lower_addr(mcode::Operand &operand, mcod
             return Address{
                 .mode = AddressingMode::OFFSET_CONST,
                 .base = addr.get_base(),
-                .offset_const = cur_func->get_stack_frame().offset_of(stack_addr),
+                .offset_const = cur_func->stack_frame.offset_of(stack_addr),
             };
         } else if (addr.get_type() == AArch64Address::Type::BASE_OFFSET_REG) {
             return Address{

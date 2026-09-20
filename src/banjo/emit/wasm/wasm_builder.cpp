@@ -130,8 +130,8 @@ void WasmBuilder::collect_symbol_indices(mcode::Module &mod) {
     }
 
     for (mcode::Function *func : mod.get_functions()) {
-        symbol_indices.insert({func->get_name(), index});
-        func_symbols.insert(func->get_name());
+        symbol_indices.insert({func->name, index});
+        func_symbols.insert(func->name);
         index += 1;
     }
 }
@@ -226,7 +226,7 @@ void WasmBuilder::build_global(WasmObjectFile &file, mcode::Global &global) {
 }
 
 void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {
-    const target::WasmFuncData &func_data = std::any_cast<const target::WasmFuncData &>(func.get_target_data());
+    const target::WasmFuncData &func_data = std::any_cast<const target::WasmFuncData &>(func.target_data);
 
     file.types.push_back(build_func_type(func_data.type));
 
@@ -251,7 +251,7 @@ void WasmBuilder::build_func(WasmObjectFile &file, mcode::Function &func) {
         WasmSymbol{
             .type = WasmSymbolType::FUNCTION,
             .flags = WasmSymbolFlags::EXPORTED,
-            .name = func.get_name(),
+            .name = func.name,
             .index = static_cast<std::uint32_t>(num_func_imports + file.functions.size() - 1),
         }
     );
@@ -653,7 +653,7 @@ void WasmBuilder::encode_i32_const(FuncContext &ctx, mcode::Instruction &instr) 
         write_reloc_placeholder_32(ctx.body);
     } else if (operand.is_stack_offset()) {
         const mcode::StackAddress &stack_addr = operand.get_stack_offset();
-        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(stack_addr.slot);
+        mcode::StackSlot &slot = ctx.func.stack_frame.get_stack_slot(stack_addr.slot);
         LargeInt value = slot.offset + stack_addr.offset;
 
         if (value > 0x7FFFFFFF) {
@@ -683,7 +683,7 @@ void WasmBuilder::encode_load_store_addr(FuncContext &ctx, mcode::Operand &addr)
         ctx.body.write_uleb128(addr.get_int_immediate().to_u64());
     } else if (addr.is_stack_offset()) {
         const mcode::StackAddress &stack_addr = addr.get_stack_offset();
-        mcode::StackSlot &slot = ctx.func.get_stack_frame().get_stack_slot(stack_addr.slot);
+        mcode::StackSlot &slot = ctx.func.stack_frame.get_stack_slot(stack_addr.slot);
         ctx.body.write_uleb128(slot.offset + stack_addr.offset);
     } else if (addr.is_symbol()) {
         ctx.relocs.push_back(
@@ -721,7 +721,7 @@ WasmFunctionType WasmBuilder::build_func_type(const target::WasmFuncType &type) 
 }
 
 std::vector<WasmLocalGroup> WasmBuilder::build_local_groups(mcode::Function &func) {
-    const target::WasmFuncData &func_data = std::any_cast<const target::WasmFuncData &>(func.get_target_data());
+    const target::WasmFuncData &func_data = std::any_cast<const target::WasmFuncData &>(func.target_data);
 
     std::vector<WasmLocalGroup> local_groups;
     std::optional<target::WasmType> last_type;

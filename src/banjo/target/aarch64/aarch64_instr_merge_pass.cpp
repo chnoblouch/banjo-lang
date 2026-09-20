@@ -23,7 +23,7 @@ void AArch64InstrMergePass::run(mcode::Module &module_) {
 }
 
 void AArch64InstrMergePass::run(mcode::Function *func) {
-    for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
+    for (mcode::BasicBlock &basic_block : func->basic_blocks) {
         run(basic_block);
     }
 }

@@ -83,7 +83,7 @@ bool X8664RegAnalyzer::is_reg_overridden(mcode::PhysicalReg reg, InstrContext &i
 
     if (instr.get_opcode() == X8664Opcode::CALL) {
         // TODO: dest calling conv instead of origin calling conv
-        return instr_ctx.func.get_calling_conv()->is_volatile(reg);
+        return instr_ctx.func.calling_conv->is_volatile(reg);
     }
 
     if (instr.get_opcode() == X8664Opcode::DIV || instr.get_opcode() == X8664Opcode::IDIV) {
@@ -106,7 +106,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(InstrContext &instr_ctx
     std::vector<mcode::RegOp> operands;
 
     if (instr.get_opcode() == CALL) {
-        for (mcode::PhysicalReg physical_reg : instr_ctx.func.get_calling_conv()->get_volatile_regs()) {
+        for (mcode::PhysicalReg physical_reg : instr_ctx.func.calling_conv->get_volatile_regs()) {
             operands.push_back({mcode::Register::from_physical(physical_reg), mcode::RegUsage::KILL});
         }
 
@@ -301,7 +301,7 @@ bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegis
 }
 
 void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
-    unsigned size = use.instr_ctx.func.get_stack_frame().get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func.stack_frame.get_stack_slot(use.stack_slot).size;
     mcode::Operand src = mcode::Operand::from_stack_slot(use.stack_slot, size);
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
 
@@ -315,7 +315,7 @@ void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
 }
 
 void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
-    unsigned size = use.instr_ctx.func.get_stack_frame().get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func.stack_frame.get_stack_slot(use.stack_slot).size;
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
     mcode::Operand dst = mcode::Operand::from_stack_slot(use.stack_slot, size);
 
