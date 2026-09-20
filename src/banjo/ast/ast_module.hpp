@@ -23,6 +23,7 @@ private:
 
 public:
     ASTModule(SourceFile &file) : ASTNode{AST_MODULE}, file{file} {}
+    virtual ~ASTModule() = default;
 
     template <typename... Args>
     ASTNode *create_node(Args... args) {

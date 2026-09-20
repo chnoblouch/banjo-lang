@@ -411,7 +411,7 @@ ssa::InstrIter SSALowerer::get_producer_globally(ssa::VirtualRegister reg) {
     }
     */
 
-    return basic_block_iter->end();
+    return nullptr;
 }
 
 unsigned SSALowerer::get_num_uses(ssa::VirtualRegister reg) {

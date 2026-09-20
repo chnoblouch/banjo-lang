@@ -51,6 +51,8 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
     for (ssa::FunctionDecl *extern_func : mod.get_external_functions()) {
         if (used_extern_funcs.contains(extern_func->name)) {
             new_extern_funcs.push_back(extern_func);
+        } else {
+            delete extern_func;
         }
     }
 
