@@ -2,23 +2,21 @@
 
 #include "banjo/codegen/liveness.hpp"
 #include "banjo/codegen/reg_alloc_func.hpp"
-#include "banjo/emit/debug_emitter.hpp"
+#include "banjo/emit/debug_emitter.hpp" // IWYU pragma: keep
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/aarch64/aarch64_address.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <iostream>
-#include <queue>
+#include <iostream> // IWYU pragma: keep
 #include <vector>
 
-namespace banjo {
+namespace banjo::codegen {
 
-namespace codegen {
-
-RegAllocPass::RegAllocPass(target::TargetRegAnalyzer &analyzer) : analyzer(analyzer) {}
+RegAllocPass::RegAllocPass(target::TargetRegAnalyzer &analyzer) : analyzer{analyzer} {}
 
 void RegAllocPass::run(mcode::Module &mod) {
     PROFILE_SCOPE("register allocation");
@@ -78,21 +76,21 @@ RegAllocFunc RegAllocPass::create_reg_alloc_func(mcode::Function &func) {
 
     RegAllocFunc ra_func{func};
 
-    for (mcode::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
+    for (mcode::BasicBlockIter block = func.begin(); block != func.end(); ++block) {
         std::vector<unsigned> ra_preds;
-        for (mcode::BasicBlockIter pred : iter->get_predecessors()) {
+        for (mcode::BasicBlockIter pred : block->predecessors) {
             ra_preds.push_back(block_indices[pred]);
         }
 
         std::vector<unsigned> ra_succs;
-        for (mcode::BasicBlockIter succ : iter->get_successors()) {
+        for (mcode::BasicBlockIter succ : block->successors) {
             ra_succs.push_back(block_indices[succ]);
         }
 
         ra_func.blocks.push_back(
             RegAllocBlock{
-                .m_block = iter,
-                .instrs = collect_instrs(*iter),
+                .m_block = block,
+                .instrs = collect_instrs(func, block),
                 .preds = ra_preds,
                 .succs = ra_succs,
             }
@@ -102,15 +100,21 @@ RegAllocFunc RegAllocPass::create_reg_alloc_func(mcode::Function &func) {
     return ra_func;
 }
 
-std::vector<RegAllocInstr> RegAllocPass::collect_instrs(mcode::BasicBlock &basic_block) {
-    std::vector<RegAllocInstr> instrs(basic_block.get_instrs().get_size());
+std::vector<RegAllocInstr> RegAllocPass::collect_instrs(mcode::Function &func, mcode::BasicBlockIter block) {
+    std::vector<RegAllocInstr> instrs(block->instrs.get_size());
     unsigned index = 0;
 
-    for (mcode::InstrIter iter = basic_block.begin(); iter != basic_block.end(); ++iter) {
+    for (mcode::InstrIter instr = block->begin(); instr != block->end(); ++instr) {
+        target::InstrContext instr_ctx{
+            .func = func,
+            .block = block,
+            .instr = instr,
+        };
+
         instrs[index] = RegAllocInstr{
             .index = index,
-            .iter = iter,
-            .regs = analyzer.get_operands(iter, basic_block),
+            .iter = instr,
+            .regs = analyzer.get_operands(instr_ctx),
         };
 
         index += 1;
@@ -450,9 +454,14 @@ void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
         const Segment &segment = alloc.bundle.segments[0];
         RegAllocBlock &block = ctx.func.blocks[segment.range.block];
 
+        target::InstrContext instr_ctx{
+            .func = ctx.func.m_func,
+            .block = block.m_block,
+            .instr = block.instrs[segment.range.start.instr].iter,
+        };
+
         analyzer.insert_load({
-            .instr_iter = block.instrs[segment.range.start.instr].iter,
-            .block = *block.m_block,
+            .instr_ctx = instr_ctx,
             .stack_slot = *alloc.bundle.src_stack_slot,
             .reg = alloc.physical_reg,
             .reg_class = alloc.bundle.reg_class,
@@ -476,9 +485,14 @@ void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
         const Segment &segment = alloc.bundle.segments[0];
         RegAllocBlock &block = ctx.func.blocks[segment.range.block];
 
+        target::InstrContext instr_ctx{
+            .func = ctx.func.m_func,
+            .block = block.m_block,
+            .instr = block.instrs[segment.range.end.instr].iter,
+        };
+
         analyzer.insert_store({
-            .instr_iter = block.instrs[segment.range.end.instr].iter,
-            .block = *block.m_block,
+            .instr_ctx = instr_ctx,
             .stack_slot = *alloc.bundle.dst_stack_slot,
             .reg = alloc.physical_reg,
             .reg_class = alloc.bundle.reg_class,
@@ -586,6 +600,4 @@ void RegAllocPass::write_debug_report(Context &ctx) {
 #endif
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen

@@ -234,8 +234,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
 
     std::vector<mcode::Instruction> prolog;
 
-    std::vector<long> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
-    for (long modified_reg : modified_regs) {
+    for (mcode::PhysicalReg modified_reg : codegen::MachinePassUtils::get_modified_volatile_regs(func)) {
         if (modified_reg == AArch64Register::R29 || modified_reg == AArch64Register::R30) {
             continue;
         }
@@ -326,9 +325,10 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
          mcode::Operand::from_int_immediate(16)},
     });
 
-    std::vector<long> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
+    std::vector<mcode::PhysicalReg> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
+
     for (auto it = modified_regs.rbegin(); it != modified_regs.rend(); it++) {
-        long modified_reg = *it;
+        mcode::PhysicalReg modified_reg = *it;
 
         if (modified_reg == AArch64Register::R29 || modified_reg == AArch64Register::R30) {
             continue;

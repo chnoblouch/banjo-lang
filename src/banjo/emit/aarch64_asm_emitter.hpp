@@ -7,9 +7,7 @@
 
 #include <unordered_map>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class AArch64AsmEmitter : public Emitter {
 
@@ -27,7 +25,7 @@ public:
 private:
     void emit_global(const mcode::Global &global);
     void emit_func(mcode::Function *func);
-    void emit_basic_block(mcode::BasicBlock &basic_block);
+    void emit_basic_block(mcode::Function *func, mcode::BasicBlock &basic_block);
     void emit_instr(mcode::Function *func, mcode::Instruction &instr);
     void emit_operand(mcode::Function *func, const mcode::Operand &operand);
     void emit_reg(int reg, int size);
@@ -38,8 +36,6 @@ private:
     void emit_condition(target::AArch64Condition condition);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

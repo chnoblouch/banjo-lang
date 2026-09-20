@@ -2,21 +2,18 @@
 #define BANJO_CODEGEN_MACHINE_PASS_UTILS_H
 
 #include "banjo/mcode/function.hpp"
+#include "banjo/mcode/register.hpp"
 
 #include <vector>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 namespace MachinePassUtils {
 
-std::vector<long> get_modified_volatile_regs(mcode::Function *func);
+std::vector<mcode::PhysicalReg> get_modified_volatile_regs(mcode::Function *func);
 
 } // namespace MachinePassUtils
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

@@ -244,7 +244,9 @@ int SysVCallingConv::get_alloca_size(mcode::StackRegions &regions) {
 
 std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *func) {
     std::vector<mcode::Instruction> prolog;
-    std::vector<long> modified_volatile_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
+
+    std::vector<mcode::PhysicalReg> modified_volatile_regs =
+        codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
     if (func->get_stack_frame().get_size() > 0 || true) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
@@ -288,7 +290,9 @@ std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *fun
 
 std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *func) {
     std::vector<mcode::Instruction> epilog;
-    std::vector<long> modified_volatile_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
+
+    std::vector<mcode::PhysicalReg> modified_volatile_regs =
+        codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
     // Pop modified non-volatile SSE registers.
     // TODO: reverse order for aesthetics?

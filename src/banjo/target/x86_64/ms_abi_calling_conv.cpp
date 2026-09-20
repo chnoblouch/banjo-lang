@@ -3,6 +3,7 @@
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_address.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
@@ -305,7 +306,9 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
     // FIXME: Insert stack probes for large stack sizes.
 
     std::vector<mcode::Instruction> prolog;
-    std::vector<long> modified_volatile_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
+
+    std::vector<mcode::PhysicalReg> modified_volatile_regs =
+        codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
     // Push modified non-volatile general-purpose registers.
     for (mcode::PhysicalReg reg : modified_volatile_regs) {
@@ -347,7 +350,9 @@ std::vector<mcode::Instruction> MSABICallingConv::get_prolog(mcode::Function *fu
 
 std::vector<mcode::Instruction> MSABICallingConv::get_epilog(mcode::Function *func) {
     std::vector<mcode::Instruction> epilog;
-    std::vector<long> modified_volatile_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
+
+    std::vector<mcode::PhysicalReg> modified_volatile_regs =
+        codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
     // Pop modified non-volatile SSE registers.
     // TODO: reverse order for aesthetics?

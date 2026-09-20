@@ -9,6 +9,7 @@ namespace banjo::target {
 class AArch64StackAddrFixupPass final : public codegen::MachinePass {
 
 private:
+    mcode::Function *func;
     mcode::BasicBlock *block;
 
 public:

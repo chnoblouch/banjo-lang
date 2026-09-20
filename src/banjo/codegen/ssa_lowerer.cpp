@@ -124,7 +124,7 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
         mcode::StackSlot slot{
             .type = mcode::StackSlot::Type::GENERIC,
             .size = 8,
-            .alignment = 1,
+            .alignment = 8,
         };
 
         return mcode::Parameter{
@@ -135,10 +135,10 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
 }
 
 void SSALowerer::create_basic_block(ssa::BasicBlockIter ssa_block) {
-    mcode::BasicBlock m_block(ssa_block->get_label(), machine_func);
+    mcode::BasicBlock m_block{.label = ssa_block->get_label()};
 
     for (ssa::VirtualRegister reg : ssa_block->get_param_regs()) {
-        m_block.get_params().push_back(reg);
+        m_block.params.push_back(reg);
     }
 
     mcode::BasicBlockIter m_block_iter = machine_func->get_basic_blocks().append(m_block);
@@ -156,7 +156,7 @@ void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::Basi
     };
 
     emit_block_prologue(*ssa_block);
-    mcode::InstrIter insertion_point = m_block.get_instrs().get_trailer().get_prev();
+    mcode::InstrIter insertion_point = m_block.instrs.get_trailer().get_prev();
 
     for (ssa::InstrIter iter = ssa_block->get_instrs().get_last_iter(); iter != ssa_block->get_header(); --iter) {
         if (iter->get_opcode() != ssa::Opcode::CALL && iter->get_dest() && get_num_uses(*iter->get_dest()) == 0) {
@@ -171,27 +171,17 @@ void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::Basi
 
 void SSALowerer::store_graphs() {
     ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(*func);
-    ssa::DominatorTree domtree = ssa::DominatorTree::build(cfg);
 
     for (ssa::ControlFlowGraph::NodeID id = 0; id < cfg.nodes.size(); id++) {
         ssa::ControlFlowGraph::Node &cfg_node = cfg.nodes[id];
-        ssa::DominatorTree::Node &domtree_node = domtree.nodes[id];
         mcode::BasicBlockIter m_iter = block_map.at(cfg.block(id));
 
         for (ssa::ControlFlowGraph::NodeID pred : cfg_node.predecessors) {
-            m_iter->get_predecessors().push_back(block_map.at(cfg.block(pred)));
+            m_iter->predecessors.push_back(block_map.at(cfg.block(pred)));
         }
 
         for (ssa::ControlFlowGraph::NodeID succ : cfg_node.successors) {
-            m_iter->get_successors().push_back(block_map.at(cfg.block(succ)));
-        }
-
-        ssa::BasicBlockIter domtree_parent_iter = cfg.block(domtree_node.parent);
-        m_iter->set_domtree_parent(block_map.at(domtree_parent_iter));
-
-        for (ssa::ControlFlowGraph::NodeID domtree_child : domtree_node.children) {
-            ssa::BasicBlockIter domtree_child_iter = cfg.block(domtree_child);
-            m_iter->get_domtree_children().push_back(block_map.at(domtree_child_iter));
+            m_iter->successors.push_back(block_map.at(cfg.block(succ)));
         }
     }
 }

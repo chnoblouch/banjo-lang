@@ -5,6 +5,7 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo::target {
@@ -56,14 +57,12 @@ void AArch64RegAnalyzer::suggest_regs(
     }
 }
 
-bool AArch64RegAnalyzer::is_reg_overridden(
-    mcode::Instruction &instr,
-    mcode::BasicBlock &basic_block,
-    mcode::PhysicalReg reg
-) {
+bool AArch64RegAnalyzer::is_reg_overridden(mcode::PhysicalReg reg, InstrContext &instr_ctx) {
+    mcode::Instruction &instr = *instr_ctx.instr;
+
     if (instr.get_opcode() == AArch64Opcode::BL || instr.get_opcode() == AArch64Opcode::BLR) {
         // TODO: dest calling conv instead of origin calling conv
-        return basic_block.get_func()->get_calling_conv()->is_volatile(reg);
+        return instr_ctx.func.get_calling_conv()->is_volatile(reg);
     }
 
     if (instr.get_opcode() >= AArch64Opcode::MOV && instr.get_opcode() <= AArch64Opcode::MOVK) {
@@ -76,19 +75,21 @@ bool AArch64RegAnalyzer::is_reg_overridden(
     return false;
 }
 
-std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) {
+std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(InstrContext &instr_ctx) {
     using namespace AArch64Opcode;
 
-    mcode::Instruction &instr = *iter;
+    mcode::Instruction &instr = *instr_ctx.instr;
     std::vector<mcode::RegOp> operands;
 
     if (instr.get_opcode() == BL || instr.get_opcode() == BLR) {
-        for (mcode::PhysicalReg physical_reg : block.get_func()->get_calling_conv()->get_volatile_regs()) {
+        for (mcode::PhysicalReg physical_reg : instr_ctx.func.get_calling_conv()->get_volatile_regs()) {
             operands.push_back({mcode::Register::from_physical(physical_reg), mcode::RegUsage::KILL});
         }
 
-        mcode::InstrIter prev = iter.get_prev();
-        while (prev != block.begin().get_prev() && prev->get_opcode() != BL && prev->get_opcode() != BLR) {
+        mcode::InstrIter header_instr = instr_ctx.block->begin().get_prev();
+        mcode::InstrIter prev = instr_ctx.instr.get_prev();
+
+        while (prev != header_instr && prev->get_opcode() != BL && prev->get_opcode() != BLR) {
             if (prev->get_dest().is_physical_reg()) {
                 operands.push_back({prev->get_dest().get_register(), mcode::RegUsage::USE});
             }
@@ -239,7 +240,7 @@ bool AArch64RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualReg
 }
 
 void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func.get_stack_frame().get_stack_slot(use.stack_slot).size;
     unsigned reg_size = size == 8 ? 8 : 4;
 
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);
@@ -255,11 +256,11 @@ void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
         default: ASSERT_UNREACHABLE;
     }
 
-    use.block.insert_before(use.instr_iter, {opcode, {dst, addr}});
+    use.instr_ctx.block->insert_before(use.instr_ctx.instr, {opcode, {dst, addr}});
 }
 
 void AArch64RegAnalyzer::insert_store(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func.get_stack_frame().get_stack_slot(use.stack_slot).size;
     unsigned reg_size = size == 8 ? 8 : 4;
 
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);
@@ -275,7 +276,7 @@ void AArch64RegAnalyzer::insert_store(SpilledRegUse use) {
         default: ASSERT_UNREACHABLE;
     }
 
-    use.block.insert_after(use.instr_iter, {opcode, {src, addr}});
+    use.instr_ctx.block->insert_after(use.instr_ctx.instr, {opcode, {src, addr}});
 }
 
 bool AArch64RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {

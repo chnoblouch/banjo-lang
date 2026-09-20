@@ -2,15 +2,7 @@
 
 #include <utility>
 
-namespace banjo {
-
-namespace mcode {
-
-BasicBlock::BasicBlock() {}
-
-BasicBlock::BasicBlock(std::string label, Function *func) : label(std::move(label)), func(func) {}
-
-BasicBlock::BasicBlock(Function *func) : func(func) {}
+namespace banjo::mcode {
 
 InstrIter BasicBlock::append(Instruction instr) {
     return instrs.append(std::move(instr));
@@ -32,6 +24,4 @@ InstrIter BasicBlock::replace(InstrIter iter, Instruction instr) {
     return instrs.replace(iter, std::move(instr));
 }
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode

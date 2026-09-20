@@ -3,38 +3,36 @@
 
 #include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/basic_block.hpp"
+#include "banjo/mcode/function.hpp"
 #include "banjo/target/target_reg_analyzer.hpp"
 
 #include <optional>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class LateRegAlloc {
 
 public:
     struct Range {
-        mcode::BasicBlock &block;
+        mcode::BasicBlockIter block;
         mcode::InstrIter start;
         mcode::InstrIter end;
     };
 
 private:
+    mcode::Function &func;
     Range range;
     RegClass reg_class;
     target::TargetRegAnalyzer &analyzer;
 
 public:
-    LateRegAlloc(Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer);
+    LateRegAlloc(mcode::Function &func, Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer);
     std::optional<mcode::PhysicalReg> alloc();
 
 private:
     bool check_alloc(mcode::PhysicalReg reg);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

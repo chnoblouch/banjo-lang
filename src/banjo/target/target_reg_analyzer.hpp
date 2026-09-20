@@ -9,13 +9,16 @@
 
 #include <vector>
 
-namespace banjo {
+namespace banjo::target {
 
-namespace target {
+struct InstrContext {
+    mcode::Function &func;
+    mcode::BasicBlockIter block;
+    mcode::InstrIter instr;
+};
 
 struct SpilledRegUse {
-    mcode::InstrIter instr_iter;
-    mcode::BasicBlock &block;
+    InstrContext &instr_ctx;
     mcode::StackSlotID stack_slot;
     mcode::PhysicalReg reg;
     codegen::RegClass reg_class;
@@ -33,13 +36,8 @@ public:
         std::vector<mcode::PhysicalReg> &suggested_regs
     ) = 0;
 
-    virtual bool is_reg_overridden(
-        mcode::Instruction &instr,
-        mcode::BasicBlock &basic_block,
-        mcode::PhysicalReg reg
-    ) = 0;
-
-    virtual std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) = 0;
+    virtual bool is_reg_overridden(mcode::PhysicalReg reg, InstrContext &instr_ctx) = 0;
+    virtual std::vector<mcode::RegOp> get_operands(InstrContext &instr_ctx) = 0;
     virtual void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) = 0;
     virtual bool is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) { return false; }
     virtual void insert_load(SpilledRegUse use) = 0;
@@ -47,8 +45,6 @@ public:
     virtual bool is_instr_removable(mcode::Instruction &instr) = 0;
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

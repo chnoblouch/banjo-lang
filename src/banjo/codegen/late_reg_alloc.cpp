@@ -1,15 +1,15 @@
 #include "late_reg_alloc.hpp"
+#include "banjo/target/target_reg_analyzer.hpp"
 
 #include <iostream>
 
-namespace banjo {
+namespace banjo::codegen {
 
-namespace codegen {
-
-LateRegAlloc::LateRegAlloc(Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer)
-  : range(range),
-    reg_class(reg_class),
-    analyzer(analyzer) {}
+LateRegAlloc::LateRegAlloc(mcode::Function &func, Range range, RegClass reg_class, target::TargetRegAnalyzer &analyzer)
+  : func{func},
+    range{range},
+    reg_class{reg_class},
+    analyzer{analyzer} {}
 
 std::optional<mcode::PhysicalReg> LateRegAlloc::alloc() {
     for (mcode::PhysicalReg candidate : analyzer.get_candidates(reg_class)) {
@@ -18,8 +18,8 @@ std::optional<mcode::PhysicalReg> LateRegAlloc::alloc() {
         }
     }
 
-    std::cerr << "register allocator is out of registers" << std::endl;
-    std::cerr << "in function " << range.block.get_func()->get_name() << std::endl;
+    std::cerr << "register allocator is out of registers\n";
+    std::cerr << "in function " << func.get_name() << '\n';
     std::exit(1);
 
     return -1;
@@ -27,7 +27,13 @@ std::optional<mcode::PhysicalReg> LateRegAlloc::alloc() {
 
 bool LateRegAlloc::check_alloc(mcode::PhysicalReg reg) {
     for (mcode::InstrIter iter = range.start; iter != range.end.get_next(); ++iter) {
-        if (analyzer.is_reg_overridden(*iter, range.block, reg)) {
+        target::InstrContext instr_ctx{
+            .func = func,
+            .block = range.block,
+            .instr = iter,
+        };
+
+        if (analyzer.is_reg_overridden(reg, instr_ctx)) {
             return false;
         }
 
@@ -56,6 +62,4 @@ bool LateRegAlloc::check_alloc(mcode::PhysicalReg reg) {
     return true;
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen

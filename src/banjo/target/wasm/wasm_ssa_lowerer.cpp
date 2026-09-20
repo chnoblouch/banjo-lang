@@ -114,8 +114,8 @@ void WasmSSALowerer::init_func(ssa::Function &func) {
 }
 
 void WasmSSALowerer::generate_blocks(ssa::Function &func) {
-    mcode::BasicBlock entry_block{machine_func};
-    mcode::BasicBlock exit_block{machine_func};
+    mcode::BasicBlock entry_block;
+    mcode::BasicBlock exit_block;
 
     entry_block.append({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
     entry_block.append({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});

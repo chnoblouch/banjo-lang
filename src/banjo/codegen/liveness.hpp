@@ -9,9 +9,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 struct BlockLiveness {
     mcode::RegisterSet defs;
@@ -55,8 +53,6 @@ private:
     static void compute_precise_live_ranges(RegAllocFunc &func, LivenessAnalysis &analysis);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

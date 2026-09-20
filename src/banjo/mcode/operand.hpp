@@ -14,7 +14,7 @@
 
 namespace banjo::mcode {
 
-class BasicBlock;
+struct BasicBlock;
 
 class Operand {
 

@@ -115,22 +115,22 @@ void DebugEmitter::generate(mcode::Function *func) {
     }
 
     for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
-        gen_basic_block(basic_block);
+        gen_basic_block(func, basic_block);
     }
 
     stream << "\n";
 }
 
-void DebugEmitter::gen_basic_block(mcode::BasicBlock &basic_block) {
-    if (!basic_block.get_label().empty()) {
-        stream << basic_block.get_label();
+void DebugEmitter::gen_basic_block(mcode::Function *func, mcode::BasicBlock &basic_block) {
+    if (!basic_block.label.empty()) {
+        stream << basic_block.label;
 
-        if (!basic_block.get_params().empty()) {
+        if (!basic_block.params.empty()) {
             stream << "(";
 
-            for (unsigned i = 0; i < basic_block.get_params().size(); i++) {
-                stream << "%" << basic_block.get_params()[i];
-                if (i != basic_block.get_params().size() - 1) {
+            for (unsigned i = 0; i < basic_block.params.size(); i++) {
+                stream << "%" << basic_block.params[i];
+                if (i != basic_block.params.size() - 1) {
                     stream << ", ";
                 }
             }
@@ -166,11 +166,15 @@ void DebugEmitter::gen_basic_block(mcode::BasicBlock &basic_block) {
     }
 
     for (mcode::Instruction &instr : basic_block) {
-        stream << instr_to_string(basic_block, instr) << "\n";
+        stream << instr_to_string(func, basic_block, instr) << "\n";
     }
 }
 
-std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode::Instruction &instr) {
+std::string DebugEmitter::instr_to_string(
+    mcode::Function *func,
+    mcode::BasicBlock &basic_block,
+    mcode::Instruction &instr
+) {
     std::string string = "  ";
 
     string += get_opcode_name(instr.get_opcode());
@@ -184,7 +188,7 @@ std::string DebugEmitter::instr_to_string(mcode::BasicBlock &basic_block, mcode:
             string += std::to_string(operand.get_size()) + "b ";
         }
 
-        string += get_operand_name(basic_block, operand);
+        string += get_operand_name(func, basic_block, operand);
     }
 
     if (instr.get_flags() & mcode::Instruction::FLAG_ARG_STORE) string += " !arg_store";
@@ -210,13 +214,17 @@ std::string_view DebugEmitter::get_opcode_name(mcode::Opcode opcode) {
     return "";
 }
 
-std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand) {
+std::string DebugEmitter::get_operand_name(
+    mcode::Function *func,
+    mcode::BasicBlock &basic_block,
+    mcode::Operand operand
+) {
     if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
     else if (operand.is_fp_immediate()) return std::to_string(operand.get_fp_immediate());
     else if (operand.is_register()) return get_reg_name(operand.get_register(), operand.get_size());
-    else if (operand.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot());
+    else if (operand.is_stack_slot()) return get_stack_slot_name(func, operand.get_stack_slot());
     else if (operand.is_symbol()) return operand.get_symbol().name;
-    else if (operand.is_basic_block()) return operand.get_basic_block().get_debug_label();
+    else if (operand.is_basic_block()) return operand.get_basic_block().debug_label();
     else if (operand.is_symbol_deref()) return "[" + operand.get_deref_symbol().name + "]";
     else if (operand.is_x86_64_addr()) {
         const target::X8664Address &addr = operand.get_x86_64_addr();
@@ -241,7 +249,7 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
                 str += " + " + std::to_string(addr.get_offset_imm());
             }
         } else if (addr.has_offset_stack_addr()) {
-            str += " + " + build_stack_offset(basic_block.get_func(), addr.get_offset_stack_addr());
+            str += " + " + build_stack_offset(func, addr.get_offset_stack_addr());
         } else {
             ASSERT_UNREACHABLE;
         }
@@ -263,7 +271,7 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
                 break;
             case target::AArch64Address::Type::BASE_OFFSET_STACK_ADDR: {
                 str += get_reg_name(addr.get_base(), 8);
-                str += ", " + build_stack_offset(basic_block.get_func(), addr.get_offset_stack_addr()) + "]";
+                str += ", " + build_stack_offset(func, addr.get_offset_stack_addr()) + "]";
                 break;
             }
             case target::AArch64Address::Type::BASE_OFFSET_REG:
@@ -287,7 +295,7 @@ std::string DebugEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode
 
         return str;
     } else if (operand.is_stack_offset()) {
-        return build_stack_offset(basic_block.get_func(), operand.get_stack_offset());
+        return build_stack_offset(func, operand.get_stack_offset());
     } else if (operand.is_aarch64_left_shift()) {
         return "lsl #" + std::to_string(operand.get_aarch64_left_shift());
     } else if (operand.is_aarch64_condition()) {

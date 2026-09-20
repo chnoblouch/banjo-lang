@@ -5,11 +5,9 @@
 
 #include <unordered_set> // IWYU pragma: keep
 
-namespace banjo {
+namespace banjo::mcode {
 
-namespace mcode {
-
-class BasicBlock;
+struct BasicBlock;
 
 typedef unsigned VirtualReg;
 typedef unsigned PhysicalReg;
@@ -79,9 +77,7 @@ public:
     Iterator end() const { return Iterator(set.end()); }
 };
 
-} // namespace mcode
-
-} // namespace banjo
+} // namespace banjo::mcode
 
 template <>
 struct std::hash<banjo::mcode::Register> {

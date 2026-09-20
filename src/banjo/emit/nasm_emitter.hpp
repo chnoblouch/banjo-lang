@@ -7,9 +7,7 @@
 
 #include <unordered_map>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class NASMEmitter : public Emitter {
 
@@ -21,15 +19,15 @@ public:
 
     NASMEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target);
     void generate();
-    void emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction &instr);
+    void emit_instr(mcode::Function *func, mcode::BasicBlock &basic_block, mcode::Instruction &instr);
 
 private:
     std::unordered_map<std::string, std::string> symbol_prefixes;
 
     void emit_func(mcode::Function *func);
-    void gen_basic_block(mcode::BasicBlock &basic_block);
+    void gen_basic_block(mcode::Function *func, mcode::BasicBlock &basic_block);
 
-    std::string get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand);
+    std::string get_operand_name(mcode::Function *func, mcode::BasicBlock &basic_block, mcode::Operand operand);
     std::string get_reg_name(mcode::BasicBlock &basic_block, mcode::Register reg, int size);
     std::string get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot, bool brackets = true);
     std::string get_physical_reg_name(long reg, int size);
@@ -38,8 +36,6 @@ private:
     std::string get_size_declaration(int size);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

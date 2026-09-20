@@ -7,9 +7,7 @@
 #include <iomanip>
 #include <iostream>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 LivenessAnalysis::LivenessAnalysis(RegAllocFunc &func) : func(func) {}
 
@@ -187,7 +185,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
         if (!used) stream << " %" << reg.get_virtual_reg();
     }
 
-    stream << std::endl;
+    stream << '\n';
 
     unsigned long long interval_spacing = 50;
     std::string header = "vregs: ";
@@ -209,13 +207,12 @@ void LivenessAnalysis::dump(std::ostream &stream) {
         line_widths.push_back(vreg_header.size());
     }
 
-    stream << header << std::endl;
+    stream << header << '\n';
 
     for (unsigned i = 0; i < func.blocks.size(); i++) {
         RegAllocBlock &block = func.blocks[i];
 
-        const std::string &name = block.m_block->get_label();
-        stream << (name.empty() ? "<entry>" : name) << std::endl;
+        std::string name = block.m_block->debug_label();
 
         std::vector<std::vector<char>> lines(block.instrs.size(), std::vector<char>(reg_ranges.size(), '.'));
         unsigned vreg_index = 0;
@@ -250,7 +247,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
         }
 
         for (unsigned j = 0; j < block.instrs.size(); j++) {
-            std::string instr = DebugEmitter::instr_to_string(*block.m_block, *block.instrs[j].iter);
+            std::string instr = DebugEmitter::instr_to_string(&func.m_func, *block.m_block, *block.instrs[j].iter);
             instr = instr.substr(0, interval_spacing);
 
             std::string spaces = std::string(std::min(interval_spacing - instr.size(), interval_spacing), ' ');
@@ -276,11 +273,9 @@ void LivenessAnalysis::dump(std::ostream &stream) {
                 stream << "killed: " << killed_str;
             }
 
-            stream << std::endl;
+            stream << '\n';
         }
     }
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen

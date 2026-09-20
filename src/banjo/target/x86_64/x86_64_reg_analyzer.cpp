@@ -78,14 +78,12 @@ void X8664RegAnalyzer::suggest_regs(
     }
 }
 
-bool X8664RegAnalyzer::is_reg_overridden(
-    mcode::Instruction &instr,
-    mcode::BasicBlock &basic_block,
-    mcode::PhysicalReg reg
-) {
+bool X8664RegAnalyzer::is_reg_overridden(mcode::PhysicalReg reg, InstrContext &instr_ctx) {
+    mcode::Instruction &instr = *instr_ctx.instr;
+
     if (instr.get_opcode() == X8664Opcode::CALL) {
         // TODO: dest calling conv instead of origin calling conv
-        return basic_block.get_func()->get_calling_conv()->is_volatile(reg);
+        return instr_ctx.func.get_calling_conv()->is_volatile(reg);
     }
 
     if (instr.get_opcode() == X8664Opcode::DIV || instr.get_opcode() == X8664Opcode::IDIV) {
@@ -101,19 +99,21 @@ bool X8664RegAnalyzer::is_reg_overridden(
     }
 }
 
-std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) {
+std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(InstrContext &instr_ctx) {
     using namespace X8664Opcode;
 
-    mcode::Instruction &instr = *iter;
+    mcode::Instruction &instr = *instr_ctx.instr;
     std::vector<mcode::RegOp> operands;
 
     if (instr.get_opcode() == CALL) {
-        for (mcode::PhysicalReg physical_reg : block.get_func()->get_calling_conv()->get_volatile_regs()) {
+        for (mcode::PhysicalReg physical_reg : instr_ctx.func.get_calling_conv()->get_volatile_regs()) {
             operands.push_back({mcode::Register::from_physical(physical_reg), mcode::RegUsage::KILL});
         }
 
-        mcode::InstrIter prev = iter.get_prev();
-        while (prev != block.begin().get_prev() && prev->get_opcode() != CALL) {
+        mcode::InstrIter header_instr = instr_ctx.block->begin().get_prev();
+        mcode::InstrIter prev = instr_ctx.instr.get_prev();
+
+        while (prev != header_instr && prev->get_opcode() != CALL) {
             if (prev->has_dest() && prev->get_dest().is_physical_reg()) {
                 operands.push_back({prev->get_dest().get_register(), mcode::RegUsage::USE});
             }
@@ -177,6 +177,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(mcode::InstrIter iter, 
         case OR:
         case SHL:
         case SHR:
+        case SAR:
         case CMOVE:
         case CMOVNE:
         case CMOVA:
@@ -300,31 +301,31 @@ bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegis
 }
 
 void X8664RegAnalyzer::insert_load(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func.get_stack_frame().get_stack_slot(use.stack_slot).size;
     mcode::Operand src = mcode::Operand::from_stack_slot(use.stack_slot, size);
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
 
-    if (is_memory_operand_allowed(*use.instr_iter)) {
-        use.instr_iter->get_operand(1) = src;
+    if (is_memory_operand_allowed(*use.instr_ctx.instr)) {
+        use.instr_ctx.instr->get_operand(1) = src;
         return;
     }
 
     mcode::Opcode move_opcode = get_move_opcode(use.reg_class, size);
-    use.block.insert_before(use.instr_iter, mcode::Instruction(move_opcode, {dst, src}));
+    use.instr_ctx.block->insert_before(use.instr_ctx.instr, {move_opcode, {dst, src}});
 }
 
 void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
-    unsigned size = use.block.get_func()->get_stack_frame().get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func.get_stack_frame().get_stack_slot(use.stack_slot).size;
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), size);
     mcode::Operand dst = mcode::Operand::from_stack_slot(use.stack_slot, size);
 
-    if (is_memory_operand_allowed(*use.instr_iter)) {
-        use.instr_iter->get_operand(0) = dst;
+    if (is_memory_operand_allowed(*use.instr_ctx.instr)) {
+        use.instr_ctx.instr->get_operand(0) = dst;
         return;
     }
 
     mcode::Opcode move_opcode = get_move_opcode(use.reg_class, size);
-    use.block.insert_after(use.instr_iter, mcode::Instruction(move_opcode, {dst, src}));
+    use.instr_ctx.block->insert_after(use.instr_ctx.instr, {move_opcode, {dst, src}});
 }
 
 bool X8664RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {

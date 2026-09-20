@@ -12,9 +12,7 @@ namespace mcode {
 class Operand;
 } // namespace mcode
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class MSABICallingConv : public mcode::CallingConvention {
 
@@ -47,8 +45,6 @@ private:
     void emit_ret_val_move(codegen::SSALowerer &lowerer);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

@@ -109,7 +109,7 @@ AssemblyUtil::AssemblyUtil() : reader(std::cin) {}
 
 WriteBuffer AssemblyUtil::assemble() {
     mcode::Function *m_func = new mcode::Function("f", nullptr);
-    mcode::BasicBlockIter m_block = m_func->get_basic_blocks().append({"b", m_func});
+    mcode::BasicBlockIter m_block = m_func->get_basic_blocks().append({.label = "b"});
 
     while (reader.next_line()) {
         if (std::optional<mcode::Instruction> instr = parse_line()) {

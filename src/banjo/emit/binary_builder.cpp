@@ -19,8 +19,8 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
         add_func_symbol(func->get_name(), m_mod);
 
         for (mcode::BasicBlock &block : func->get_basic_blocks()) {
-            if (!block.get_label().empty()) {
-                add_label_symbol(block.get_label());
+            if (!block.label.empty()) {
+                add_label_symbol(block.label);
             }
         }
 
@@ -46,7 +46,7 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
         text.attach_symbol_def(symbol_index++);
 
         for (mcode::BasicBlock &block : func->get_basic_blocks()) {
-            if (!block.get_label().empty()) {
+            if (!block.label.empty()) {
                 text.attach_symbol_def(symbol_index++);
             }
 

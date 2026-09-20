@@ -8,9 +8,7 @@
 
 #include <variant>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 // clang-format off
 const std::unordered_map<mcode::Opcode, std::string> AArch64AsmEmitter::OPCODE_NAMES = {
@@ -174,19 +172,19 @@ void AArch64AsmEmitter::emit_func(mcode::Function *func) {
     stream << symbol_prefix << func->get_name() << ":\n";
 
     for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
-        emit_basic_block(basic_block);
+        emit_basic_block(func, basic_block);
     }
 
     stream << "\n";
 }
 
-void AArch64AsmEmitter::emit_basic_block(mcode::BasicBlock &basic_block) {
-    if (!basic_block.get_label().empty()) {
-        stream << basic_block.get_label() << ":\n";
+void AArch64AsmEmitter::emit_basic_block(mcode::Function *func, mcode::BasicBlock &basic_block) {
+    if (!basic_block.label.empty()) {
+        stream << basic_block.label << ":\n";
     }
 
     for (mcode::Instruction &instr : basic_block) {
-        emit_instr(basic_block.get_func(), instr);
+        emit_instr(func, instr);
         stream << "\n";
     }
 
@@ -216,7 +214,7 @@ void AArch64AsmEmitter::emit_operand(mcode::Function *func, const mcode::Operand
     else if (operand.is_physical_reg()) emit_reg(operand.get_physical_reg(), operand.get_size());
     else if (operand.is_stack_slot()) emit_stack_slot(func, operand.get_stack_slot());
     else if (operand.is_symbol()) emit_symbol(operand.get_symbol());
-    else if (operand.is_basic_block()) stream << operand.get_basic_block().get_label();
+    else if (operand.is_basic_block()) stream << operand.get_basic_block().label;
     else if (operand.is_aarch64_addr()) emit_addr(func, operand.get_aarch64_addr());
     else if (operand.is_stack_offset()) emit_stack_offset(func, operand.get_stack_offset());
     else if (operand.is_aarch64_left_shift()) stream << "lsl #" << operand.get_aarch64_left_shift();
@@ -326,6 +324,4 @@ void AArch64AsmEmitter::emit_condition(target::AArch64Condition condition) {
     }
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen

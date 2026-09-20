@@ -8,9 +8,7 @@
 #include <unordered_map>
 #include <variant>
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 const std::unordered_map<mcode::Opcode, std::string> NASMEmitter::OPCODE_NAMES = {
     {target::X8664Opcode::MOV, "mov"},
@@ -217,15 +215,15 @@ void NASMEmitter::emit_func(mcode::Function *func) {
     stream << func->get_name() << ":\n";
 
     for (mcode::BasicBlock &basic_block : func->get_basic_blocks()) {
-        gen_basic_block(basic_block);
+        gen_basic_block(func, basic_block);
     }
 
     stream << "\n";
 }
 
-void NASMEmitter::gen_basic_block(mcode::BasicBlock &basic_block) {
-    if (!basic_block.get_label().empty()) {
-        stream << basic_block.get_label() << ":\n";
+void NASMEmitter::gen_basic_block(mcode::Function *func, mcode::BasicBlock &basic_block) {
+    if (!basic_block.label.empty()) {
+        stream << basic_block.label << ":\n";
     }
 
     for (mcode::Instruction &instr : basic_block) {
@@ -234,12 +232,12 @@ void NASMEmitter::gen_basic_block(mcode::BasicBlock &basic_block) {
         }
 
         stream << "    ";
-        emit_instr(basic_block, instr);
+        emit_instr(func, basic_block, instr);
         stream << "\n";
     }
 }
 
-void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction &instr) {
+void NASMEmitter::emit_instr(mcode::Function *func, mcode::BasicBlock &basic_block, mcode::Instruction &instr) {
     std::string line = OPCODE_NAMES.find(instr.get_opcode())->second;
 
     bool has_reg_operand = false;
@@ -268,20 +266,22 @@ void NASMEmitter::emit_instr(mcode::BasicBlock &basic_block, mcode::Instruction 
             line += get_size_specifier(operand.get_size()) + " ";
         }
 
-        line += get_operand_name(basic_block, operand);
+        line += get_operand_name(func, basic_block, operand);
     }
 
     stream << line;
 }
 
-std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand) {
-    mcode::Function &func = *basic_block.get_func();
-
+std::string NASMEmitter::get_operand_name(
+    mcode::Function *func,
+    mcode::BasicBlock &basic_block,
+    mcode::Operand operand
+) {
     if (operand.is_int_immediate()) return operand.get_int_immediate().to_string();
     else if (operand.is_register()) return get_reg_name(basic_block, operand.get_register(), operand.get_size());
-    else if (operand.is_stack_slot()) return get_stack_slot_name(basic_block.get_func(), operand.get_stack_slot());
+    else if (operand.is_stack_slot()) return get_stack_slot_name(func, operand.get_stack_slot());
     else if (operand.is_symbol()) return gen_symbol(operand.get_symbol());
-    else if (operand.is_basic_block()) return operand.get_basic_block().get_label();
+    else if (operand.is_basic_block()) return operand.get_basic_block().label;
     else if (operand.is_symbol_deref()) return "[" + gen_symbol(operand.get_deref_symbol()) + "]";
     else if (operand.is_x86_64_addr()) {
         const target::X8664Address &addr = operand.get_x86_64_addr();
@@ -306,7 +306,7 @@ std::string NASMEmitter::get_operand_name(mcode::BasicBlock &basic_block, mcode:
                 str += " + " + std::to_string(addr.get_offset_imm());
             }
         } else if (addr.has_offset_stack_addr()) {
-            str += " + " + std::to_string(func.get_stack_frame().offset_of(addr.get_offset_stack_addr()));
+            str += " + " + std::to_string(func->get_stack_frame().offset_of(addr.get_offset_stack_addr()));
         } else {
             ASSERT_UNREACHABLE;
         }
@@ -456,6 +456,4 @@ std::string NASMEmitter::get_size_declaration(int size) {
     }
 }
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen

@@ -6,9 +6,7 @@
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/target/target_description.hpp"
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class DebugEmitter : public Emitter {
 
@@ -19,15 +17,19 @@ public:
     DebugEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target);
     void generate();
 
-    static std::string instr_to_string(mcode::BasicBlock &basic_block, mcode::Instruction &instr);
+    static std::string instr_to_string(
+        mcode::Function *func,
+        mcode::BasicBlock &basic_block,
+        mcode::Instruction &instr
+    );
     static std::string get_physical_reg_name(long reg, int size);
 
 private:
     void generate(mcode::Function *func);
-    void gen_basic_block(mcode::BasicBlock &basic_block);
+    void gen_basic_block(mcode::Function *func, mcode::BasicBlock &basic_block);
 
     static std::string_view get_opcode_name(mcode::Opcode opcode);
-    static std::string get_operand_name(mcode::BasicBlock &basic_block, mcode::Operand operand);
+    static std::string get_operand_name(mcode::Function *func, mcode::BasicBlock &basic_block, mcode::Operand operand);
     static std::string get_reg_name(mcode::Register reg, unsigned size);
     static std::string get_stack_slot_name(mcode::Function *func, mcode::StackSlotID stack_slot);
     static std::string build_stack_offset(mcode::Function *func, mcode::StackAddress stack_addr);
@@ -35,8 +37,6 @@ private:
     static std::string get_size_specifier(int size);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif

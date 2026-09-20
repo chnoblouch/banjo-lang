@@ -31,15 +31,15 @@ public:
     AArch64RegAnalyzer(std::optional<mcode::PhysicalReg> fixed_reg);
 
     const std::vector<mcode::PhysicalReg> &get_candidates(codegen::RegClass reg_class) override;
-    
+
     void suggest_regs(
         codegen::RegAllocFunc &func,
         const codegen::Bundle &bundle,
         std::vector<mcode::PhysicalReg> &suggested_regs
     ) override;
 
-    bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, mcode::PhysicalReg reg) override;
-    std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) override;
+    bool is_reg_overridden(mcode::PhysicalReg reg, InstrContext &instr_ctx) override;
+    std::vector<mcode::RegOp> get_operands(InstrContext &instr_ctx) override;
     void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) override;
     bool is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) override;
     void insert_load(SpilledRegUse use) override;

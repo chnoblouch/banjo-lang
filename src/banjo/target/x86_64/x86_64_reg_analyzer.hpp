@@ -6,9 +6,7 @@
 #include "banjo/target/target_reg_analyzer.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 namespace X8664RegClass {
 enum {
@@ -35,8 +33,8 @@ public:
         std::vector<mcode::PhysicalReg> &suggested_regs
     ) override;
 
-    bool is_reg_overridden(mcode::Instruction &instr, mcode::BasicBlock &basic_block, mcode::PhysicalReg reg) override;
-    std::vector<mcode::RegOp> get_operands(mcode::InstrIter iter, mcode::BasicBlock &block) override;
+    bool is_reg_overridden(mcode::PhysicalReg reg, InstrContext &instr_ctx) override;
+    std::vector<mcode::RegOp> get_operands(InstrContext &instr_ctx) override;
     void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) override;
     bool is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) override;
     void insert_load(SpilledRegUse use) override;
@@ -52,8 +50,6 @@ private:
     void collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

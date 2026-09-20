@@ -14,9 +14,7 @@
 
 #define DEBUG_REG_ALLOC 0
 
-namespace banjo {
-
-namespace codegen {
+namespace banjo::codegen {
 
 class RegAllocPass : public MachinePass {
 
@@ -56,7 +54,7 @@ public:
 
 private:
     RegAllocFunc create_reg_alloc_func(mcode::Function &func);
-    std::vector<RegAllocInstr> collect_instrs(mcode::BasicBlock &basic_block);
+    std::vector<RegAllocInstr> collect_instrs(mcode::Function &func, mcode::BasicBlockIter block);
     void assign_reg_classes(Context &ctx);
     void reserve_fixed_ranges(Context &ctx);
 
@@ -82,8 +80,6 @@ private:
     void write_debug_report(Context &ctx);
 };
 
-} // namespace codegen
-
-} // namespace banjo
+} // namespace banjo::codegen
 
 #endif
