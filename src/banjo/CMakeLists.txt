@@ -7,6 +7,7 @@ add_library(banjo STATIC
     "ast/module_list.hpp"
     "ast/std_config_module.cpp"
     "ast/std_config_module.hpp"
+    "codegen/instr_context.hpp"
     "codegen/late_reg_alloc.cpp"
     "codegen/late_reg_alloc.hpp"
     "codegen/liveness.cpp"

@@ -60,6 +60,7 @@ public:
     void set_attrs_data(unsigned attr_data) { this->attr_data = attr_data; }
 
     bool might_access_memory() const;
+    bool has_side_effects() const;
     bool is_branching() const;
     bool is_cond_branch() const;
 

@@ -56,7 +56,7 @@ void WasmSSALowerer::init_module(ssa::Module &mod) {
         mod_data.extern_globals.push_back(global_decl->name);
     }
 
-    machine_module.set_target_data(std::move(mod_data));
+    m_module.set_target_data(std::move(mod_data));
 }
 
 void WasmSSALowerer::init_func(ssa::Function &func) {
@@ -110,10 +110,12 @@ void WasmSSALowerer::init_func(ssa::Function &func) {
         block_indices.insert({iter, block_indices.size()});
     }
 
-    machine_func->target_data = func_data;
+    instr_ctx.func->target_data = func_data;
 }
 
 void WasmSSALowerer::generate_blocks(ssa::Function &func) {
+    mcode::Function &m_func = *instr_ctx.func;
+
     mcode::BasicBlock entry_block;
     mcode::BasicBlock exit_block;
 
@@ -139,13 +141,13 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     entry_block.append({WasmOpcode::BR_TABLE, std::move(branch_targets)});
     entry_block.append({WasmOpcode::END_BLOCK});
-    machine_func->basic_blocks.insert_before(machine_func->basic_blocks.get_first_iter(), std::move(entry_block));
+    m_func.basic_blocks.insert_before(m_func.basic_blocks.get_first_iter(), std::move(entry_block));
 
     block_depth = func.get_basic_blocks().get_size();
 
     for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
         mcode::BasicBlockIter m_block = block_map.at(ssa_block);
-        generate_basic_block(ssa_block, *m_block);
+        generate_basic_block(ssa_block, m_block);
         m_block->append({WasmOpcode::END_BLOCK});
 
         block_depth -= 1;
@@ -159,7 +161,7 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
     }
 
     exit_block.append({WasmOpcode::END_FUNCTION});
-    machine_func->basic_blocks.append(std::move(exit_block));
+    m_func.basic_blocks.append(std::move(exit_block));
 }
 
 void WasmSSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
@@ -464,7 +466,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
             push_operand(instr.get_operand(i));
         }
     } else {
-        mcode::StackFrame &stack_frame = machine_func->stack_frame;
+        mcode::StackFrame &stack_frame = instr_ctx.func->stack_frame;
 
         // TODO: Reuse the buffer for different calls.
         mcode::StackSlotID buffer = stack_frame.new_stack_slot({
@@ -524,7 +526,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         unsigned local_index = vregs2locals.at(callee.get_register());
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
 
-        WasmModData &mod_data = std::any_cast<WasmModData &>(machine_module.get_target_data());
+        WasmModData &mod_data = std::any_cast<WasmModData &>(m_module.get_target_data());
         unsigned type_index = mod_data.indirect_call_types.size();
         mod_data.indirect_call_types.push_back(lower_func_type(ssa::get_call_func_type(instr)));
 

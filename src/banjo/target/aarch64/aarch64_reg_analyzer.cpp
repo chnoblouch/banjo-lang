@@ -57,12 +57,12 @@ void AArch64RegAnalyzer::suggest_regs(
     }
 }
 
-bool AArch64RegAnalyzer::is_reg_overridden(mcode::PhysicalReg reg, InstrContext &instr_ctx) {
+bool AArch64RegAnalyzer::is_reg_overridden(mcode::PhysicalReg reg, codegen::InstrContext &instr_ctx) {
     mcode::Instruction &instr = *instr_ctx.instr;
 
     if (instr.get_opcode() == AArch64Opcode::BL || instr.get_opcode() == AArch64Opcode::BLR) {
         // TODO: dest calling conv instead of origin calling conv
-        return instr_ctx.func.calling_conv->is_volatile(reg);
+        return instr_ctx.func->calling_conv->is_volatile(reg);
     }
 
     if (instr.get_opcode() >= AArch64Opcode::MOV && instr.get_opcode() <= AArch64Opcode::MOVK) {
@@ -75,14 +75,14 @@ bool AArch64RegAnalyzer::is_reg_overridden(mcode::PhysicalReg reg, InstrContext 
     return false;
 }
 
-std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(InstrContext &instr_ctx) {
+std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(codegen::InstrContext &instr_ctx) {
     using namespace AArch64Opcode;
 
     mcode::Instruction &instr = *instr_ctx.instr;
     std::vector<mcode::RegOp> operands;
 
     if (instr.get_opcode() == BL || instr.get_opcode() == BLR) {
-        for (mcode::PhysicalReg physical_reg : instr_ctx.func.calling_conv->get_volatile_regs()) {
+        for (mcode::PhysicalReg physical_reg : instr_ctx.func->calling_conv->get_volatile_regs()) {
             operands.push_back({mcode::Register::from_physical(physical_reg), mcode::RegUsage::KILL});
         }
 
@@ -240,7 +240,7 @@ bool AArch64RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualReg
 }
 
 void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
-    unsigned size = use.instr_ctx.func.stack_frame.get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func->stack_frame.get_stack_slot(use.stack_slot).size;
     unsigned reg_size = size == 8 ? 8 : 4;
 
     mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);
@@ -260,7 +260,7 @@ void AArch64RegAnalyzer::insert_load(SpilledRegUse use) {
 }
 
 void AArch64RegAnalyzer::insert_store(SpilledRegUse use) {
-    unsigned size = use.instr_ctx.func.stack_frame.get_stack_slot(use.stack_slot).size;
+    unsigned size = use.instr_ctx.func->stack_frame.get_stack_slot(use.stack_slot).size;
     unsigned reg_size = size == 8 ? 8 : 4;
 
     mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_physical(use.reg), reg_size);

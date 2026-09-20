@@ -1,6 +1,7 @@
 #ifndef BANJO_CODEGEN_SSA_LOWERER_H
 #define BANJO_CODEGEN_SSA_LOWERER_H
 
+#include "banjo/codegen/instr_context.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/module.hpp"
 #include "banjo/mcode/stack_frame.hpp"
@@ -13,23 +14,12 @@
 
 namespace banjo::codegen {
 
-struct SSALoweringContext {
-    std::unordered_map<ssa::VirtualRegister, mcode::StackSlotID> stack_regs;
-    std::unordered_map<ssa::VirtualRegister, int> reg_use_counts;
-};
-
 class SSALowerer {
 
 private:
     struct RegUsage {
         int def_index;
         int use_count;
-    };
-
-    struct BasicBlockContext {
-        mcode::BasicBlock *basic_block;
-        mcode::InstrIter insertion_iter;
-        std::unordered_map<int, RegUsage> regs;
     };
 
 public:
@@ -42,21 +32,14 @@ public:
         ssa::Operand &base;
         LargeInt const_offset;
         std::optional<RegOffset> reg_offset;
-
-        AddrComponents offset(unsigned offset) {
-            return AddrComponents{
-                .base = base,
-                .const_offset = const_offset + offset,
-                .reg_offset = reg_offset,
-            };
-        }
     };
 
     typedef std::unordered_map<ssa::BasicBlockIter, mcode::BasicBlockIter> BlockMap;
 
     target::Target *target;
-    SSALoweringContext context;
-    BasicBlockContext basic_block_context;
+    std::unordered_map<ssa::VirtualRegister, mcode::StackSlotID> stack_regs;
+    std::unordered_map<ssa::VirtualRegister, int> reg_use_counts;
+    InstrContext instr_ctx;
 
     ssa::FunctionDecl *memcpy_func;
     ssa::FunctionDecl *sqrt_func;
@@ -67,9 +50,7 @@ protected:
     ssa::BasicBlockIter basic_block_iter;
     ssa::InstrIter instr_iter;
 
-    mcode::Module machine_module;
-    mcode::Function *machine_func;
-    mcode::BasicBlock *machine_basic_block;
+    mcode::Module m_module;
     BlockMap block_map;
 
 public:
@@ -85,9 +66,8 @@ public:
     ssa::BasicBlockIter get_basic_block_iter() { return basic_block_iter; }
     ssa::BasicBlock &get_block() { return *basic_block_iter; }
     ssa::InstrIter &get_instr_iter() { return instr_iter; }
-    mcode::Module &get_machine_module() { return machine_module; }
-    mcode::Function *get_machine_func() { return machine_func; }
-    mcode::BasicBlock &get_machine_basic_block() { return *machine_basic_block; }
+    mcode::Module &get_machine_module() { return m_module; }
+    mcode::Function *get_machine_func() { return instr_ctx.func; }
 
     mcode::InstrIter emit(mcode::Instruction instr);
 
@@ -114,14 +94,10 @@ protected:
     void lower_func(ssa::Function &func);
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
     void create_basic_block(ssa::BasicBlockIter ssa_block);
-    void generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlock &m_block);
+    void generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block);
     void store_graphs();
     void lower_instr(ssa::Instruction &instr);
-
-    void lower_globals();
-    void lower_external_funcs();
-    void lower_external_globals();
-    void lower_dll_exports();
+    void lower_global(ssa::Global &global);
 
     void lower_alloca(ssa::Instruction &instr);
 

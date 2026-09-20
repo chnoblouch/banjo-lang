@@ -105,8 +105,8 @@ std::vector<RegAllocInstr> RegAllocPass::collect_instrs(mcode::Function &func, m
     unsigned index = 0;
 
     for (mcode::InstrIter instr = block->begin(); instr != block->end(); ++instr) {
-        target::InstrContext instr_ctx{
-            .func = func,
+        InstrContext instr_ctx{
+            .func = &func,
             .block = block,
             .instr = instr,
         };
@@ -454,8 +454,8 @@ void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
         const Segment &segment = alloc.bundle.segments[0];
         RegAllocBlock &block = ctx.func.blocks[segment.range.block];
 
-        target::InstrContext instr_ctx{
-            .func = ctx.func.m_func,
+        InstrContext instr_ctx{
+            .func = &ctx.func.m_func,
             .block = block.m_block,
             .instr = block.instrs[segment.range.start.instr].iter,
         };
@@ -485,8 +485,8 @@ void RegAllocPass::apply_alloc(Context &ctx, const Alloc &alloc) {
         const Segment &segment = alloc.bundle.segments[0];
         RegAllocBlock &block = ctx.func.blocks[segment.range.block];
 
-        target::InstrContext instr_ctx{
-            .func = ctx.func.m_func,
+        InstrContext instr_ctx{
+            .func = &ctx.func.m_func,
             .block = block.m_block,
             .instr = block.instrs[segment.range.end.instr].iter,
         };

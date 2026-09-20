@@ -1,5 +1,6 @@
 #include "ssa_lowerer.hpp"
 
+#include "banjo/mcode/basic_block.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/stack_address.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
@@ -19,7 +20,7 @@ mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
     init_module(mod);
 
     if (mod.get_addr_table()) {
-        machine_module.set_addr_table(
+        m_module.set_addr_table(
             mcode::AddrTable{
                 .entries = mod.get_addr_table()->get_entries(),
             }
@@ -34,17 +35,27 @@ mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
         }
     }
 
-    lower_external_funcs();
-    lower_external_globals();
+    for (ssa::FunctionDecl *external_function : mod.get_external_functions()) {
+        m_module.add_external_symbol(external_function->name);
+    }
+
+    for (ssa::GlobalDecl *external_global : mod.get_external_globals()) {
+        m_module.add_external_symbol(external_global->name);
+    }
 
     for (ssa::Function *func : mod.get_functions()) {
         lower_func(*func);
     }
 
-    lower_globals();
-    lower_dll_exports();
+    for (ssa::Global *global : mod.get_globals()) {
+        lower_global(*global);
+    }
 
-    return std::move(machine_module);
+    for (const std::string &dll_export : mod.get_dll_exports()) {
+        m_module.add_dll_export(dll_export);
+    }
+
+    return std::move(m_module);
 }
 
 void SSALowerer::lower_func(ssa::Function &func) {
@@ -53,13 +64,17 @@ void SSALowerer::lower_func(ssa::Function &func) {
     mcode::Function *m_func = new mcode::Function{
         .name = func.name,
         .calling_conv = get_calling_convention(func.type.calling_conv),
+        .debug_name = func.debug_name,
     };
 
-    m_func->debug_name = func.debug_name;
+    instr_ctx = {
+        .func = m_func,
+        .block = nullptr,
+        .instr = nullptr,
+    };
 
-    this->machine_func = m_func;
-
-    context = {};
+    stack_regs.clear();
+    reg_use_counts.clear();
 
     std::vector<mcode::ArgStorage> storage = m_func->calling_conv->get_arg_storage(func.type);
 
@@ -68,19 +83,17 @@ void SSALowerer::lower_func(ssa::Function &func) {
         m_func->parameters.push_back(param);
     }
 
-    context.reg_use_counts.clear();
-
     for (ssa::BasicBlock &basic_block : func) {
         for (ssa::Instruction &instr : basic_block.get_instrs()) {
             for (ssa::Operand &operand : instr.get_operands()) {
                 if (operand.is_register()) {
-                    context.reg_use_counts[operand.get_register()]++;
+                    reg_use_counts[operand.get_register()] += 1;
                 }
 
                 if (operand.is_branch_target()) {
                     for (ssa::Operand &arg : operand.get_branch_target().args) {
                         if (arg.is_register()) {
-                            context.reg_use_counts[arg.get_register()]++;
+                            reg_use_counts[arg.get_register()] += 1;
                         }
                     }
                 }
@@ -103,16 +116,16 @@ void SSALowerer::lower_func(ssa::Function &func) {
     generate_blocks(func);
     store_graphs();
 
-    machine_module.add(m_func);
+    m_module.add(m_func);
 
     if (func.global) {
-        machine_module.add_global_symbol(func.name);
+        m_module.add_global_symbol(func.name);
     }
 }
 
 void SSALowerer::generate_blocks(ssa::Function &func) {
     for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
-        generate_basic_block(ssa_block, *block_map.at(ssa_block));
+        generate_basic_block(ssa_block, block_map.at(ssa_block));
     }
 }
 
@@ -143,30 +156,26 @@ void SSALowerer::create_basic_block(ssa::BasicBlockIter ssa_block) {
         m_block.params.push_back(reg);
     }
 
-    mcode::BasicBlockIter m_block_iter = machine_func->basic_blocks.append(m_block);
+    mcode::BasicBlockIter m_block_iter = instr_ctx.func->basic_blocks.append(m_block);
     block_map.insert({ssa_block, m_block_iter});
 }
 
-void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlock &m_block) {
+void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block) {
     this->basic_block_iter = ssa_block;
-    this->machine_basic_block = &m_block;
 
-    basic_block_context = {
-        .basic_block = &m_block,
-        .insertion_iter = m_block.begin(),
-        .regs = {},
-    };
+    instr_ctx.block = m_block;
+    instr_ctx.instr = m_block->begin();
 
     emit_block_prologue(*ssa_block);
-    mcode::InstrIter insertion_point = m_block.instrs.get_trailer().get_prev();
+    mcode::InstrIter insertion_point = m_block->instrs.get_trailer().get_prev();
 
     for (ssa::InstrIter iter = ssa_block->get_instrs().get_last_iter(); iter != ssa_block->get_header(); --iter) {
-        if (iter->get_opcode() != ssa::Opcode::CALL && iter->get_dest() && get_num_uses(*iter->get_dest()) == 0) {
+        if (iter->get_dest() && get_num_uses(*iter->get_dest()) == 0 && !iter->has_side_effects()) {
             continue;
         }
 
         instr_iter = iter;
-        basic_block_context.insertion_iter = insertion_point.get_next();
+        instr_ctx.instr = insertion_point.get_next();
         lower_instr(*iter);
     }
 }
@@ -241,73 +250,49 @@ void SSALowerer::lower_instr(ssa::Instruction &instr) {
     }
 }
 
-void SSALowerer::lower_globals() {
-    for (ssa::Global *global : mod->get_globals()) {
-        mcode::Global m_global{
-            .name = global->name,
-            .size = get_size(global->type),
-            .alignment = get_alignment(global->type),
-            .value = {},
-        };
+void SSALowerer::lower_global(ssa::Global &global) {
+    mcode::Global m_global{
+        .name = global.name,
+        .size = get_size(global.type),
+        .alignment = get_alignment(global.type),
+        .value = {},
+    };
 
-        ssa::Global::Value &value = global->initial_value;
+    ssa::Global::Value &value = global.initial_value;
 
-        if (std::holds_alternative<ssa::Global::None>(value)) {
-            m_global.value = mcode::Global::None{};
-        } else if (auto int_value = std::get_if<ssa::Global::Integer>(&value)) {
-            m_global.value = *int_value;
-        } else if (auto fp_value = std::get_if<ssa::Global::FloatingPoint>(&value)) {
-            m_global.value = *fp_value;
-        } else if (auto bytes = std::get_if<ssa::Global::Bytes>(&value)) {
-            m_global.value = *bytes;
-        } else if (auto string = std::get_if<ssa::Global::String>(&value)) {
-            m_global.value = *string;
-        } else if (auto func = std::get_if<ssa::Function *>(&value)) {
-            m_global.value = mcode::Global::SymbolRef{.name = (*func)->name};
-        } else if (auto global_ref = std::get_if<ssa::Global::GlobalRef>(&value)) {
-            m_global.value = mcode::Global::SymbolRef{.name = global_ref->name};
-        } else if (auto extern_func_ref = std::get_if<ssa::Global::ExternFuncRef>(&value)) {
-            m_global.value = mcode::Global::SymbolRef{.name = extern_func_ref->name};
-        } else if (auto extern_global_ref = std::get_if<ssa::Global::ExternGlobalRef>(&value)) {
-            m_global.value = mcode::Global::SymbolRef{.name = extern_global_ref->name};
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-
-        machine_module.add(m_global);
-
-        if (global->external) {
-            machine_module.add_global_symbol(m_global.name);
-        }
+    if (std::holds_alternative<ssa::Global::None>(value)) {
+        m_global.value = mcode::Global::None{};
+    } else if (auto int_value = std::get_if<ssa::Global::Integer>(&value)) {
+        m_global.value = *int_value;
+    } else if (auto fp_value = std::get_if<ssa::Global::FloatingPoint>(&value)) {
+        m_global.value = *fp_value;
+    } else if (auto bytes = std::get_if<ssa::Global::Bytes>(&value)) {
+        m_global.value = *bytes;
+    } else if (auto string = std::get_if<ssa::Global::String>(&value)) {
+        m_global.value = *string;
+    } else if (auto func = std::get_if<ssa::Function *>(&value)) {
+        m_global.value = mcode::Global::SymbolRef{.name = (*func)->name};
+    } else if (auto global_ref = std::get_if<ssa::Global::GlobalRef>(&value)) {
+        m_global.value = mcode::Global::SymbolRef{.name = global_ref->name};
+    } else if (auto extern_func_ref = std::get_if<ssa::Global::ExternFuncRef>(&value)) {
+        m_global.value = mcode::Global::SymbolRef{.name = extern_func_ref->name};
+    } else if (auto extern_global_ref = std::get_if<ssa::Global::ExternGlobalRef>(&value)) {
+        m_global.value = mcode::Global::SymbolRef{.name = extern_global_ref->name};
+    } else {
+        ASSERT_UNREACHABLE;
     }
-}
 
-void SSALowerer::lower_external_funcs() {
-    for (ssa::FunctionDecl *external_function : mod->get_external_functions()) {
-        machine_module.add_external_symbol(external_function->name);
-    }
-}
-
-void SSALowerer::lower_external_globals() {
-    for (ssa::GlobalDecl *external_global : mod->get_external_globals()) {
-        machine_module.add_external_symbol(external_global->name);
-    }
-}
-
-void SSALowerer::lower_dll_exports() {
-    for (const std::string &dll_export : mod->get_dll_exports()) {
-        machine_module.add_dll_export(dll_export);
-    }
+    m_module.add(m_global);
 }
 
 mcode::InstrIter SSALowerer::emit(mcode::Instruction instr) {
-    return basic_block_context.basic_block->insert_before(basic_block_context.insertion_iter, std::move(instr));
+    return instr_ctx.block->insert_before(instr_ctx.instr, std::move(instr));
 }
 
 std::optional<mcode::StackSlotID> SSALowerer::find_stack_slot(ssa::VirtualRegister reg) {
-    auto iter = context.stack_regs.find(reg);
+    auto iter = stack_regs.find(reg);
 
-    if (iter != context.stack_regs.end()) {
+    if (iter != stack_regs.end()) {
         return iter->second;
     } else {
         return {};
@@ -315,9 +300,9 @@ std::optional<mcode::StackSlotID> SSALowerer::find_stack_slot(ssa::VirtualRegist
 }
 
 std::variant<mcode::Register, mcode::StackSlotID> SSALowerer::map_vreg(ssa::VirtualRegister reg) {
-    auto iter = context.stack_regs.find(reg);
+    auto iter = stack_regs.find(reg);
 
-    if (iter != context.stack_regs.end()) {
+    if (iter != stack_regs.end()) {
         return iter->second;
     } else {
         return mcode::Register::from_virtual(reg);
@@ -325,14 +310,14 @@ std::variant<mcode::Register, mcode::StackSlotID> SSALowerer::map_vreg(ssa::Virt
 }
 
 mcode::Register SSALowerer::map_vreg_as_reg(ssa::VirtualRegister reg) {
-    ASSERT(!context.stack_regs.contains(reg));
+    ASSERT(!stack_regs.contains(reg));
     return mcode::Register::from_virtual(reg);
 }
 
 mcode::Operand SSALowerer::map_vreg_as_operand(ssa::VirtualRegister reg, unsigned size) {
-    auto iter = context.stack_regs.find(reg);
+    auto iter = stack_regs.find(reg);
 
-    if (iter != context.stack_regs.end()) {
+    if (iter != stack_regs.end()) {
         return mcode::Operand::from_stack_slot(iter->second, size);
     } else {
         return mcode::Operand::from_register(mcode::Register::from_virtual(reg), size);
@@ -365,8 +350,8 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
     mcode::StackSlot::Type type = is_arg_store ? mcode::StackSlot::Type::ARG_STORE : mcode::StackSlot::Type::GENERIC;
     mcode::StackSlot slot{.type = type, .size = size, .alignment = 1};
 
-    mcode::StackSlotID index = get_machine_func()->stack_frame.new_stack_slot(slot);
-    context.stack_regs.insert({*instr.get_dest(), index});
+    mcode::StackSlotID index = instr_ctx.func->stack_frame.new_stack_slot(slot);
+    stack_regs.insert({*instr.get_dest(), index});
 }
 
 void SSALowerer::lower_copy(ssa::Instruction &instr) {
@@ -430,11 +415,11 @@ ssa::InstrIter SSALowerer::get_producer_globally(ssa::VirtualRegister reg) {
 }
 
 unsigned SSALowerer::get_num_uses(ssa::VirtualRegister reg) {
-    return context.reg_use_counts[reg];
+    return reg_use_counts[reg];
 }
 
 void SSALowerer::discard_use(ssa::VirtualRegister reg) {
-    context.reg_use_counts[reg] -= 1;
+    reg_use_counts[reg] -= 1;
 }
 
 SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {

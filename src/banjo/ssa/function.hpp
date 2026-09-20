@@ -27,6 +27,7 @@ public:
     LinkedList<BasicBlock> basic_blocks;
 
     ssa::VirtualRegister last_virtual_reg = 0;
+    unsigned block_id = 0;
 
 public:
     Function(std::string name, FunctionType type);
@@ -42,7 +43,9 @@ public:
     BasicBlockIter split_block_after(BasicBlockIter block, InstrIter instr);
     BasicBlockIter insert_after(BasicBlockIter block);
     BasicBlockIter find_basic_block(const std::string &label);
+
     VirtualRegister next_virtual_reg();
+    std::string next_block_label();
 
     void set_next_reg(ssa::VirtualRegister reg) { last_virtual_reg = reg; }
 

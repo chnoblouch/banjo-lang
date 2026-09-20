@@ -2,13 +2,9 @@
 
 #include <utility>
 
-static int block_index = 0;
+namespace banjo::ssa {
 
-namespace banjo {
-
-namespace ssa {
-
-Function::Function(std::string name, FunctionType type) : name(std::move(name)), type(std::move(type)) {
+Function::Function(std::string name, FunctionType type) : name{std::move(name)}, type{std::move(type)} {
     basic_blocks.append(BasicBlock());
 }
 
@@ -31,8 +27,7 @@ void Function::merge_blocks(BasicBlockIter first, BasicBlockIter second) {
 BasicBlockIter Function::split_block_after(BasicBlockIter block, InstrIter instr) {
     // TODO: this could be optimized by moving instruction iterators instead of copying them.
 
-    std::string label = "block." + std::to_string(block_index++);
-    ssa::BasicBlockIter new_block = basic_blocks.insert_after(block, BasicBlock(label));
+    ssa::BasicBlockIter new_block = basic_blocks.insert_after(block, BasicBlock{next_block_label()});
 
     for (ssa::InstrIter iter = instr.get_next(); iter != block->end();) {
         new_block->append(*iter);
@@ -44,8 +39,7 @@ BasicBlockIter Function::split_block_after(BasicBlockIter block, InstrIter instr
 }
 
 BasicBlockIter Function::insert_after(BasicBlockIter block) {
-    std::string label = "block." + std::to_string(block_index++);
-    return basic_blocks.insert_after(block, BasicBlock(label));
+    return basic_blocks.insert_after(block, BasicBlock{next_block_label()});
 }
 
 BasicBlockIter Function::find_basic_block(const std::string &label) {
@@ -62,6 +56,8 @@ VirtualRegister Function::next_virtual_reg() {
     return VirtualRegister(last_virtual_reg++);
 }
 
-} // namespace ssa
+std::string Function::next_block_label() {
+    return "block." + std::to_string(block_id++);
+}
 
-} // namespace banjo
+} // namespace banjo::ssa

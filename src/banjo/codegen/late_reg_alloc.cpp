@@ -27,8 +27,8 @@ std::optional<mcode::PhysicalReg> LateRegAlloc::alloc() {
 
 bool LateRegAlloc::check_alloc(mcode::PhysicalReg reg) {
     for (mcode::InstrIter iter = range.start; iter != range.end.get_next(); ++iter) {
-        target::InstrContext instr_ctx{
-            .func = func,
+        InstrContext instr_ctx{
+            .func = &func,
             .block = range.block,
             .instr = iter,
         };

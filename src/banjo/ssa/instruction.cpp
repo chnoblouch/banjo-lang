@@ -59,6 +59,60 @@ bool Instruction::might_access_memory() const {
     }
 }
 
+bool Instruction::has_side_effects() const {
+    switch (opcode) {
+        case Opcode::ALLOCA:
+        case Opcode::STORE:
+        case Opcode::JMP:
+        case Opcode::CJMP:
+        case Opcode::FCJMP:
+        case Opcode::CALL:
+        case Opcode::RET:
+        case Opcode::ATOMIC_LOAD:
+        case Opcode::ATOMIC_STORE:
+        case Opcode::ATOMIC_ADD:
+        case Opcode::ATOMIC_SUB:
+        case Opcode::ATOMIC_AND:
+        case Opcode::ATOMIC_OR:
+        case Opcode::ATOMIC_XOR:
+        case Opcode::COPY: return true;
+
+        case Opcode::LOAD:
+        case Opcode::LOADARG:
+        case Opcode::ADD:
+        case Opcode::SUB:
+        case Opcode::MUL:
+        case Opcode::SDIV:
+        case Opcode::SREM:
+        case Opcode::UDIV:
+        case Opcode::UREM:
+        case Opcode::FADD:
+        case Opcode::FSUB:
+        case Opcode::FMUL:
+        case Opcode::FDIV:
+        case Opcode::AND:
+        case Opcode::OR:
+        case Opcode::XOR:
+        case Opcode::LSHL:
+        case Opcode::LSHR:
+        case Opcode::ASHR:
+        case Opcode::SELECT:
+        case Opcode::UEXTEND:
+        case Opcode::SEXTEND:
+        case Opcode::TRUNCATE:
+        case Opcode::FPROMOTE:
+        case Opcode::FDEMOTE:
+        case Opcode::UTOF:
+        case Opcode::STOF:
+        case Opcode::FTOU:
+        case Opcode::FTOS:
+        case Opcode::MEMBERPTR:
+        case Opcode::OFFSETPTR:
+        case Opcode::SQRT:
+        case Opcode::FRAME_ADDRESS: return false;
+    }
+}
+
 bool Instruction::is_branching() const {
     return opcode == ssa::Opcode::JMP || opcode == ssa::Opcode::CJMP || opcode == ssa::Opcode::FCJMP;
 }
