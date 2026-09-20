@@ -913,19 +913,15 @@ void StmtAnalyzer::analyze_for_iter_stmt(sir::ForStmt &for_stmt, sir::Stmt &out_
 }
 
 sir::Expr StmtAnalyzer::create_method_call(sir::Expr self, sir::FuncDef &method) {
-    return analyzer.create(
-        sir::CallExpr{
+    return analyzer.create<sir::CallExpr>({
+        .ast_node = nullptr,
+        .callee = analyzer.create<sir::DotExpr>({
             .ast_node = nullptr,
-            .callee = analyzer.create(
-                sir::DotExpr{
-                    .ast_node = nullptr,
-                    .lhs = self,
-                    .rhs = method.ident,
-                }
-            ),
-            .args{},
-        }
-    );
+            .lhs = self,
+            .rhs{.ast_node = nullptr, .value = method.ident.value},
+        }),
+        .args{},
+    });
 }
 
 } // namespace banjo::sema

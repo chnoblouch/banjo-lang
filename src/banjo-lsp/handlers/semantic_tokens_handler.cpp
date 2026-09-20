@@ -30,6 +30,7 @@ json::Value SemanticTokensHandler::handle(const json::Object &params, Connection
     std::vector<SemanticToken> tokens;
 
     for (const SymbolRef &symbol_ref : index->symbol_refs) {
+        ASSERT(symbol_ref.range.start < file->get_content().size());
         add_symbol_token(tokens, symbol_ref.range, symbol_ref.symbol);
     }
 
