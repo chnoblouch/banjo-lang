@@ -17,7 +17,6 @@ struct BasicBlock {
     LinkedList<Instruction> instrs;
     std::string label;
     std::vector<PhysicalReg> params;
-    std::vector<BasicBlockIter> predecessors;
     std::vector<BasicBlockIter> successors;
 
     std::string debug_label() { return label.empty() ? "<entry>" : label; }

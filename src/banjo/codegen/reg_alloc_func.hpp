@@ -55,7 +55,6 @@ struct ReservedSegment {
 struct RegAllocBlock {
     mcode::BasicBlockIter m_block;
     std::vector<RegAllocInstr> instrs;
-    std::vector<unsigned> preds;
     std::vector<unsigned> succs;
     std::vector<ReservedSegment> reserved_segments;
 };

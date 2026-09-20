@@ -16,7 +16,7 @@ SSALowerer::SSALowerer(target::Target *target) : target{target} {}
 mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
     PROFILE_SCOPE("ssa lowering");
 
-    this->mod = &mod;
+    this->ssa_mod = &mod;
     init_module(mod);
 
     if (mod.get_addr_table()) {
@@ -59,7 +59,7 @@ mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
 }
 
 void SSALowerer::lower_func(ssa::Function &func) {
-    this->func = &func;
+    this->ssa_func = &func;
 
     mcode::Function *m_func = new mcode::Function{
         .name = func.name,
@@ -110,7 +110,7 @@ void SSALowerer::lower_func(ssa::Function &func) {
     block_map.clear();
 
     for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
-        create_basic_block(ssa_block);
+        create_block(ssa_block);
     }
 
     generate_blocks(func);
@@ -125,7 +125,7 @@ void SSALowerer::lower_func(ssa::Function &func) {
 
 void SSALowerer::generate_blocks(ssa::Function &func) {
     for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
-        generate_basic_block(ssa_block, block_map.at(ssa_block));
+        generate_block(ssa_block, block_map.at(ssa_block));
     }
 }
 
@@ -149,7 +149,7 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
     }
 }
 
-void SSALowerer::create_basic_block(ssa::BasicBlockIter ssa_block) {
+void SSALowerer::create_block(ssa::BasicBlockIter ssa_block) {
     mcode::BasicBlock m_block{.label = ssa_block->get_label()};
 
     for (ssa::VirtualRegister reg : ssa_block->get_param_regs()) {
@@ -160,36 +160,34 @@ void SSALowerer::create_basic_block(ssa::BasicBlockIter ssa_block) {
     block_map.insert({ssa_block, m_block_iter});
 }
 
-void SSALowerer::generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block) {
-    this->basic_block_iter = ssa_block;
-
-    instr_ctx.block = m_block;
-    instr_ctx.instr = m_block->begin();
-
-    emit_block_prologue(*ssa_block);
-    mcode::InstrIter insertion_point = m_block->instrs.get_trailer().get_prev();
+void SSALowerer::generate_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block) {
+    this->ssa_block = ssa_block;
 
     for (ssa::InstrIter iter = ssa_block->get_instrs().get_last_iter(); iter != ssa_block->get_header(); --iter) {
         if (iter->get_dest() && get_num_uses(*iter->get_dest()) == 0 && !iter->has_side_effects()) {
             continue;
         }
 
-        instr_iter = iter;
-        instr_ctx.instr = insertion_point.get_next();
+        ssa_instr = iter;
+
+        instr_ctx.block = m_block;
+        instr_ctx.instr = m_block->instrs.begin();
+
         lower_instr(*iter);
     }
+
+    instr_ctx.block = m_block;
+    instr_ctx.instr = m_block->instrs.begin();
+
+    emit_block_prologue(*ssa_block);
 }
 
 void SSALowerer::store_graphs() {
-    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(*func);
+    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(*ssa_func);
 
     for (ssa::ControlFlowGraph::NodeID id = 0; id < cfg.nodes.size(); id++) {
         ssa::ControlFlowGraph::Node &cfg_node = cfg.nodes[id];
         mcode::BasicBlockIter m_iter = block_map.at(cfg.block(id));
-
-        for (ssa::ControlFlowGraph::NodeID pred : cfg_node.predecessors) {
-            m_iter->predecessors.push_back(block_map.at(cfg.block(pred)));
-        }
 
         for (ssa::ControlFlowGraph::NodeID succ : cfg_node.successors) {
             m_iter->successors.push_back(block_map.at(cfg.block(succ)));
@@ -289,6 +287,21 @@ mcode::InstrIter SSALowerer::emit(mcode::Instruction instr) {
     return instr_ctx.block->insert_before(instr_ctx.instr, std::move(instr));
 }
 
+mcode::BasicBlockIter SSALowerer::split_block() {
+    mcode::BasicBlock block{.label = ssa_func->next_block_label()};
+    block.instrs = std::move(instr_ctx.block->instrs);
+
+    instr_ctx.block->instrs = {};
+    instr_ctx.instr = instr_ctx.block->begin();
+
+    return instr_ctx.func->basic_blocks.insert_after(instr_ctx.block, std::move(block));
+}
+
+void SSALowerer::switch_block(mcode::BasicBlockIter block) {
+    instr_ctx.block = block;
+    instr_ctx.instr = block->begin();
+}
+
 std::optional<mcode::StackSlotID> SSALowerer::find_stack_slot(ssa::VirtualRegister reg) {
     auto iter = stack_regs.find(reg);
 
@@ -341,7 +354,7 @@ unsigned SSALowerer::get_member_offset(ssa::Structure *struct_, unsigned index) 
 }
 
 mcode::Register SSALowerer::create_tmp_reg() {
-    return mcode::Register::from_virtual(func->next_virtual_reg());
+    return mcode::Register::from_virtual(ssa_func->next_virtual_reg());
 }
 
 void SSALowerer::lower_alloca(ssa::Instruction &instr) {
@@ -393,7 +406,7 @@ ssa::InstrIter SSALowerer::get_producer(ssa::VirtualRegister reg) {
 
 ssa::InstrIter SSALowerer::get_producer_globally(ssa::VirtualRegister reg) {
     ssa::InstrIter iter = get_producer(reg);
-    if (iter != basic_block_iter->end()) {
+    if (iter != ssa_block->end()) {
         return iter;
     }
 

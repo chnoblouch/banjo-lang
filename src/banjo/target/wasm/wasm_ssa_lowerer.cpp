@@ -147,7 +147,7 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
 
     for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
         mcode::BasicBlockIter m_block = block_map.at(ssa_block);
-        generate_basic_block(ssa_block, m_block);
+        generate_block(ssa_block, m_block);
         m_block->append({WasmOpcode::END_BLOCK});
 
         block_depth -= 1;
@@ -551,7 +551,7 @@ void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
         emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(return_value_local)}});
     }
 
-    unsigned block_index = func->basic_blocks.get_size();
+    unsigned block_index = ssa_func->basic_blocks.get_size();
 
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index)}});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(block_index_local)}});

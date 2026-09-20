@@ -14,7 +14,7 @@ namespace banjo::ssa {
 class ControlFlowGraph final : public utils::GenericCFG {
 
 private:
-    std::unordered_map<ssa::BasicBlockIter, int> blocks2nodes;
+    std::unordered_map<ssa::BasicBlockIter, NodeID> blocks2nodes;
     std::vector<ssa::BasicBlockIter> nodes2blocks;
 
 public:

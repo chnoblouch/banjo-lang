@@ -2,6 +2,7 @@
 #define BANJO_CODEGEN_SSA_LOWERER_H
 
 #include "banjo/codegen/instr_context.hpp"
+#include "banjo/mcode/basic_block.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/module.hpp"
 #include "banjo/mcode/stack_frame.hpp"
@@ -45,10 +46,10 @@ public:
     ssa::FunctionDecl *sqrt_func;
 
 protected:
-    ssa::Module *mod;
-    ssa::Function *func;
-    ssa::BasicBlockIter basic_block_iter;
-    ssa::InstrIter instr_iter;
+    ssa::Module *ssa_mod;
+    ssa::Function *ssa_func;
+    ssa::BasicBlockIter ssa_block;
+    ssa::InstrIter ssa_instr;
 
     mcode::Module m_module;
     BlockMap block_map;
@@ -61,15 +62,17 @@ public:
 
     const target::Target *get_target() const { return target; }
 
-    ssa::Module &get_module() { return *mod; }
-    ssa::Function &get_func() { return *func; }
-    ssa::BasicBlockIter get_basic_block_iter() { return basic_block_iter; }
-    ssa::BasicBlock &get_block() { return *basic_block_iter; }
-    ssa::InstrIter &get_instr_iter() { return instr_iter; }
+    ssa::Module &get_module() { return *ssa_mod; }
+    ssa::Function &get_func() { return *ssa_func; }
+    ssa::BasicBlockIter get_basic_block_iter() { return ssa_block; }
+    ssa::BasicBlock &get_block() { return *ssa_block; }
+    ssa::InstrIter &get_instr_iter() { return ssa_instr; }
     mcode::Module &get_machine_module() { return m_module; }
     mcode::Function *get_machine_func() { return instr_ctx.func; }
 
     mcode::InstrIter emit(mcode::Instruction instr);
+    mcode::BasicBlockIter split_block();
+    void switch_block(mcode::BasicBlockIter block);
 
     std::optional<mcode::StackSlotID> find_stack_slot(ssa::VirtualRegister reg);
     std::variant<mcode::Register, mcode::StackSlotID> map_vreg(ssa::VirtualRegister reg);
@@ -93,8 +96,8 @@ public:
 protected:
     void lower_func(ssa::Function &func);
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
-    void create_basic_block(ssa::BasicBlockIter ssa_block);
-    void generate_basic_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block);
+    void create_block(ssa::BasicBlockIter ssa_block);
+    void generate_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block);
     void store_graphs();
     void lower_instr(ssa::Instruction &instr);
     void lower_global(ssa::Global &global);
