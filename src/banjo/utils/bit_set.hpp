@@ -39,6 +39,7 @@ private:
 public:
     bool get(unsigned position) const;
     unsigned size() const;
+    bool empty() const;
 
     void set(unsigned position);
     void clear(unsigned position);

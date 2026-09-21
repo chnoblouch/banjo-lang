@@ -7,8 +7,6 @@
 #include "banjo/ssa/dead_code_elimination.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 
-#include <unordered_set>
-
 namespace banjo::passes {
 
 StackToRegPass::StackToRegPass(target::Target *target) : Pass("stack-to-reg", target) {}
@@ -44,29 +42,24 @@ void StackToRegPass::run(ssa::Function &func) {
     std::unordered_map<ssa::VirtualRegister, ssa::Value> init_replacements;
 
     for (auto &[reg, slot] : slots) {
-        if (slot.store_blocks.empty()) {
+        if (slot.store_nodes.empty()) {
             ssa::Value replacement = create_undefined(slot.type);
             init_replacements[reg] = replacement;
             slot.cur_replacement = replacement;
             continue;
         }
 
-        std::unordered_set<ssa::BasicBlockIter> store_blocks_analyzed;
-        for (ssa::BasicBlockIter store_block : slot.store_blocks) {
-            store_blocks_analyzed.insert(store_block);
-        }
+        BitSet store_blocks_analyzed = slot.store_nodes;
 
-        for (ssa::BasicBlockIter store_block_iter : slot.store_blocks) {
-            ssa::ControlFlowGraph::NodeID store_node = cfg.node_id(store_block_iter);
-
+        for (ssa::ControlFlowGraph::NodeID store_node : slot.store_nodes) {
             for (ssa::ControlFlowGraph::NodeID node : domtree.nodes[store_node].dominance_frontiers) {
                 ssa::BasicBlockIter block = cfg.block(node);
 
-                if (slot.blocks_having_val_as_param.contains(block)) {
+                if (slot.nodes_having_val_as_param.get(node)) {
                     continue;
                 }
 
-                std::unordered_set<ssa::ControlFlowGraph::NodeID> nodes_visited;
+                BitSet nodes_visited;
                 if (!is_slot_loaded(slot, node, nodes_visited)) {
                     continue;
                 }
@@ -80,15 +73,15 @@ void StackToRegPass::run(ssa::Function &func) {
                 block->get_param_regs().push_back(param_reg);
                 block->get_param_types().push_back(slot.type);
 
-                slot.blocks_having_val_as_param.insert(block);
+                slot.nodes_having_val_as_param.set(node);
 
                 ssa::Value replacement = create_undefined(slot.type);
                 init_replacements[reg] = replacement;
                 slot.cur_replacement = replacement;
 
-                if (!store_blocks_analyzed.contains(block)) {
-                    slot.store_blocks.push_back(block);
-                    store_blocks_analyzed.insert(block);
+                if (!store_blocks_analyzed.get(node)) {
+                    slot.store_nodes.set(node);
+                    store_blocks_analyzed.set(block);
                 }
             }
         }
@@ -101,7 +94,7 @@ void StackToRegPass::run(ssa::Function &func) {
     rename(func.begin(), slots, blocks, init_replacements);
 
     Precomputing::precompute_instrs(func);
-    ssa::DeadCodeElimination().run(func);
+    ssa::DeadCodeElimination{}.run(func);
 }
 
 StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots() {
@@ -120,7 +113,7 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots() {
 
             StackSlotInfo slot{
                 .type = type,
-                .store_blocks = {},
+                .store_nodes{},
                 .promotable = true,
             };
 
@@ -131,7 +124,7 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots() {
 
     for (ssa::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
         for (ssa::Instruction &instr : block_iter->get_instrs()) {
-            find_slot_uses(stack_slots, block_iter, instr);
+            find_slot_uses(stack_slots, cfg.node_id(block_iter), instr);
         }
     }
 
@@ -147,7 +140,7 @@ StackToRegPass::StackSlotMap StackToRegPass::find_stack_slots() {
     return stack_slots;
 }
 
-void StackToRegPass::find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter block, ssa::Instruction &instr) {
+void StackToRegPass::find_slot_uses(StackSlotMap &slots, NodeID node, ssa::Instruction &instr) {
     ssa::Opcode opcode = instr.get_opcode();
 
     if (opcode == ssa::Opcode::LOAD) {
@@ -155,7 +148,7 @@ void StackToRegPass::find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter blo
         ssa::Operand &src = instr.get_operand(1);
 
         if (src.is_register()) {
-            analyze_reg_use(slots, src.get_register(), block, opcode);
+            analyze_reg_use(slots, src.get_register(), node, opcode);
 
             auto iter = slots.find(src.get_register());
             if (iter == slots.end()) {
@@ -174,7 +167,7 @@ void StackToRegPass::find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter blo
         ssa::Operand &dst = instr.get_operand(1);
 
         if (src.is_register()) {
-            analyze_reg_use(slots, src.get_register(), block, opcode);
+            analyze_reg_use(slots, src.get_register(), node, opcode);
         }
 
         if (dst.is_register()) {
@@ -190,21 +183,16 @@ void StackToRegPass::find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter blo
                 slot.promotable = false;
             }
 
-            slot.store_blocks.push_back(block);
+            slot.store_nodes.set(node);
         }
     } else if (opcode != ssa::Opcode::ALLOCA) {
-        PassUtils::iter_regs(instr.get_operands(), [this, &slots, opcode, block](ssa::VirtualRegister reg) {
-            analyze_reg_use(slots, reg, block, opcode);
+        PassUtils::iter_regs(instr.get_operands(), [&](ssa::VirtualRegister reg) {
+            analyze_reg_use(slots, reg, node, opcode);
         });
     }
 }
 
-void StackToRegPass::analyze_reg_use(
-    StackSlotMap &slots,
-    ssa::VirtualRegister reg,
-    ssa::BasicBlockIter block,
-    ssa::Opcode opcode
-) {
+void StackToRegPass::analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, NodeID node, ssa::Opcode opcode) {
     auto iter = slots.find(reg);
     if (iter == slots.end()) {
         return;
@@ -212,15 +200,15 @@ void StackToRegPass::analyze_reg_use(
 
     bool is_store_block = false;
 
-    for (ssa::BasicBlockIter store_block : iter->second.store_blocks) {
-        if (store_block == block) {
+    for (NodeID store_node : iter->second.store_nodes) {
+        if (store_node == node) {
             is_store_block = true;
             break;
         }
     }
 
     if (!is_store_block) {
-        iter->second.load_blocks.insert(block);
+        iter->second.load_nodes.set(node);
     }
 
     // Can't promote registers whose address is stored somewhere.
@@ -229,19 +217,15 @@ void StackToRegPass::analyze_reg_use(
     }
 }
 
-bool StackToRegPass::is_slot_loaded(
-    StackSlotInfo &slot,
-    ssa::ControlFlowGraph::NodeID node,
-    std::unordered_set<ssa::ControlFlowGraph::NodeID> &nodes_visited
-) {
-    if (slot.load_blocks.contains(cfg.block(node))) {
+bool StackToRegPass::is_slot_loaded(StackSlotInfo &slot, NodeID node, BitSet &nodes_visited) {
+    if (slot.load_nodes.get(node)) {
         return true;
     }
 
-    nodes_visited.insert(node);
+    nodes_visited.set(node);
 
     for (ssa::ControlFlowGraph::NodeID succ : cfg.nodes[node].successors) {
-        if (nodes_visited.contains(succ)) {
+        if (nodes_visited.get(succ)) {
             continue;
         }
 

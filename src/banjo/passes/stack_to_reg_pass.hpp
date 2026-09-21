@@ -3,23 +3,24 @@
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
+#include "banjo/utils/bit_set.hpp"
 
-#include <list>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace banjo::passes {
 
 class StackToRegPass : public Pass {
 
 private:
+    typedef ssa::ControlFlowGraph::NodeID NodeID;
+
     struct StackSlotInfo {
         ssa::Type type;
-        std::list<ssa::BasicBlockIter> store_blocks;
-        std::unordered_set<ssa::BasicBlockIter> load_blocks;
+        BitSet store_nodes;
+        BitSet load_nodes;
+        BitSet nodes_having_val_as_param;
         bool promotable;
         ssa::Value cur_replacement;
-        std::unordered_set<ssa::BasicBlockIter> blocks_having_val_as_param;
     };
 
     struct ParamInfo {
@@ -45,15 +46,9 @@ public:
 private:
     void run(ssa::Function &func);
     StackSlotMap find_stack_slots();
-    void find_slot_uses(StackSlotMap &slots, ssa::BasicBlockIter block, ssa::Instruction &instr);
-    void analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, ssa::BasicBlockIter block, ssa::Opcode opcode);
-
-    bool is_slot_loaded(
-        StackSlotInfo &slot,
-        ssa::ControlFlowGraph::NodeID node,
-        std::unordered_set<ssa::ControlFlowGraph::NodeID> &nodes_visited
-    );
-
+    void find_slot_uses(StackSlotMap &slots, NodeID node, ssa::Instruction &instr);
+    void analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, NodeID node, ssa::Opcode opcode);
+    bool is_slot_loaded(StackSlotInfo &slot, NodeID node, BitSet &nodes_visited);
     ssa::Value create_undefined(ssa::Type type);
 
     void rename(

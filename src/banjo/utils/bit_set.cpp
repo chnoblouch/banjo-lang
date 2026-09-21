@@ -21,6 +21,16 @@ unsigned BitSet::size() const {
     return size;
 }
 
+bool BitSet::empty() const {
+    for (const Word &word : words) {
+        if (word != 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void BitSet::set(unsigned position) {
     unsigned word_index = get_word_index(position);
     if (word_index >= words.size()) {
