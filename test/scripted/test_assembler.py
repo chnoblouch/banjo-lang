@@ -3,10 +3,11 @@ from framework import TestResult, run_tests, find_executable
 
 
 def run_test(test, conditions):
+    arch = test.name.split(".")[0]
     util_path = find_executable("banjo-test-util")
     
     result = subprocess.run(
-        [util_path, "assemble"],
+        [util_path, "assemble", arch],
         stdout=subprocess.PIPE,
         text=True,
         input=test.source,

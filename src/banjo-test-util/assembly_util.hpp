@@ -2,22 +2,23 @@
 #define BANJO_TEST_UTIL_ASSEMBLY_UTIL_H
 
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/target/target_description.hpp"
 #include "banjo/utils/write_buffer.hpp"
 #include "line_based_reader.hpp"
 
 #include <optional>
 #include <string>
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 class AssemblyUtil {
 
 private:
+    target::Architecture arch;
     LineBasedReader reader;
 
 public:
-    AssemblyUtil();
+    AssemblyUtil(target::Architecture arch);
     WriteBuffer assemble();
 
 private:
@@ -31,7 +32,6 @@ private:
     std::string read_operand();
 };
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test
 
 #endif

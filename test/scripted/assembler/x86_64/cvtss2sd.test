@@ -1,0 +1,14 @@
+# test:subtest
+# test:encoding "F30F5ACF"
+
+cvtss2sd xmm1, xmm7
+
+# test:subtest
+# test:encoding "F3440F5AD7"
+
+cvtss2sd xmm10, xmm7
+
+# test:subtest
+# test:encoding "F3410F5ACD"
+
+cvtss2sd xmm1, xmm13

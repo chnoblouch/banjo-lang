@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "F2480F2DD6"
+
+cvtsd2si rdx, xmm6
+
+# test:subtest
+# test:encoding "F20F2DD6"
+
+cvtsd2si edx, xmm6
+
+# test:subtest
+# test:encoding "F24C0F2DF6"
+
+cvtsd2si r14, xmm6
+
+# test:subtest
+# test:encoding "F2440F2DF6"
+
+cvtsd2si r14d, xmm6
+
+# test:subtest
+# test:encoding "F2490F2DD5"
+
+cvtsd2si rdx, xmm13
+
+# test:subtest
+# test:encoding "F2410F2DD5"
+
+cvtsd2si edx, xmm13

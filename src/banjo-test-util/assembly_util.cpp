@@ -10,6 +10,10 @@
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/target_description.hpp"
+#include "banjo/target/x86_64/x86_64_encoder.hpp"
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/hash_map.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include "line_based_reader.hpp"
@@ -23,7 +27,87 @@
 namespace banjo::test {
 
 // clang-format off
-const std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
+const std::unordered_map<std::string_view, mcode::Opcode> X86_64_OPCODE_MAP{
+    {"mov", target::X8664Opcode::MOV},
+    {"push", target::X8664Opcode::PUSH},
+    {"pop", target::X8664Opcode::POP},
+    {"add", target::X8664Opcode::ADD},
+    {"sub", target::X8664Opcode::SUB},
+    {"imul", target::X8664Opcode::IMUL},
+    {"div", target::X8664Opcode::DIV},
+    {"idiv", target::X8664Opcode::IDIV},
+    {"and", target::X8664Opcode::AND},
+    {"or", target::X8664Opcode::OR},
+    {"xor", target::X8664Opcode::XOR},
+    {"shl", target::X8664Opcode::SHL},
+    {"shr", target::X8664Opcode::SHR},
+    {"sar", target::X8664Opcode::SAR},
+    {"cwd", target::X8664Opcode::CWD},
+    {"cdq", target::X8664Opcode::CDQ},
+    {"cqo", target::X8664Opcode::CQO},
+    {"xchg", target::X8664Opcode::XCHG},
+    {"jmp", target::X8664Opcode::JMP},
+    {"cmp", target::X8664Opcode::CMP},
+    {"je", target::X8664Opcode::JE},
+    {"jne", target::X8664Opcode::JNE},
+    {"ja", target::X8664Opcode::JA},
+    {"jae", target::X8664Opcode::JAE},
+    {"jb", target::X8664Opcode::JB},
+    {"jbe", target::X8664Opcode::JBE},
+    {"jg", target::X8664Opcode::JG},
+    {"jge", target::X8664Opcode::JGE},
+    {"jl", target::X8664Opcode::JL},
+    {"jle", target::X8664Opcode::JLE},
+    {"cmove", target::X8664Opcode::CMOVE},
+    {"cmovne", target::X8664Opcode::CMOVNE},
+    {"cmova", target::X8664Opcode::CMOVA},
+    {"cmovae", target::X8664Opcode::CMOVAE},
+    {"cmovb", target::X8664Opcode::CMOVB},
+    {"cmovbe", target::X8664Opcode::CMOVBE},
+    {"cmovg", target::X8664Opcode::CMOVG},
+    {"cmovge", target::X8664Opcode::CMOVGE},
+    {"cmovl", target::X8664Opcode::CMOVL},
+    {"cmovle", target::X8664Opcode::CMOVLE},
+    {"call", target::X8664Opcode::CALL},
+    {"ret", target::X8664Opcode::RET},
+    {"lea", target::X8664Opcode::LEA},
+    {"movsx", target::X8664Opcode::MOVSX},
+    {"movzx", target::X8664Opcode::MOVZX},
+    {"movss", target::X8664Opcode::MOVSS},
+    {"movsd", target::X8664Opcode::MOVSD},
+    {"movaps", target::X8664Opcode::MOVAPS},
+    {"movups", target::X8664Opcode::MOVUPS},
+    {"movd", target::X8664Opcode::MOVD},
+    {"movq", target::X8664Opcode::MOVQ},
+    {"addss", target::X8664Opcode::ADDSS},
+    {"addsd", target::X8664Opcode::ADDSD},
+    {"subss", target::X8664Opcode::SUBSS},
+    {"subsd", target::X8664Opcode::SUBSD},
+    {"mulss", target::X8664Opcode::MULSS},
+    {"mulsd", target::X8664Opcode::MULSD},
+    {"divss", target::X8664Opcode::DIVSS},
+    {"divsd", target::X8664Opcode::DIVSD},
+    {"xorps", target::X8664Opcode::XORPS},
+    {"xorpd", target::X8664Opcode::XORPD},
+    {"minss", target::X8664Opcode::MINSS},
+    {"minsd", target::X8664Opcode::MINSD},
+    {"maxss", target::X8664Opcode::MAXSS},
+    {"maxsd", target::X8664Opcode::MAXSD},
+    {"sqrtss", target::X8664Opcode::SQRTSS},
+    {"sqrtsd", target::X8664Opcode::SQRTSD},
+    {"ucomiss", target::X8664Opcode::UCOMISS},
+    {"ucomisd", target::X8664Opcode::UCOMISD},
+    {"cvtss2sd", target::X8664Opcode::CVTSS2SD},
+    {"cvtsd2ss", target::X8664Opcode::CVTSD2SS},
+    {"cvtsi2ss", target::X8664Opcode::CVTSI2SS},
+    {"cvtsi2sd", target::X8664Opcode::CVTSI2SD},
+    {"cvtss2si", target::X8664Opcode::CVTSS2SI},
+    {"cvtsd2si", target::X8664Opcode::CVTSD2SI},
+};
+// clang-format on
+
+// clang-format off
+const std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP{
     {"mov", target::AArch64Opcode::MOV},
     {"movz", target::AArch64Opcode::MOVZ},
     {"movk", target::AArch64Opcode::MOVK},
@@ -92,7 +176,76 @@ const std::unordered_map<std::string_view, mcode::Opcode> AARCH64_OPCODE_MAP = {
 };
 // clang-format on
 
-const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_COND_MAP = {
+// clang-format off
+const HashMap<std::string_view, std::pair<mcode::PhysicalReg, unsigned>> X86_64_GP_REG_MAP{
+    {"rax", {target::X8664Register::RAX, 8}},
+    {"rcx", {target::X8664Register::RCX, 8}},
+    {"rdx", {target::X8664Register::RDX, 8}},
+    {"rbx", {target::X8664Register::RBX, 8}},
+    {"rsi", {target::X8664Register::RSI, 8}},
+    {"rdi", {target::X8664Register::RDI, 8}},
+    {"rsp", {target::X8664Register::RSP, 8}},
+    {"rbp", {target::X8664Register::RBP, 8}},
+    {"r8", {target::X8664Register::R8, 8}},
+    {"r9", {target::X8664Register::R9, 8}},
+    {"r10", {target::X8664Register::R10, 8}},
+    {"r11", {target::X8664Register::R11, 8}},
+    {"r12", {target::X8664Register::R12, 8}},
+    {"r13", {target::X8664Register::R13, 8}},
+    {"r14", {target::X8664Register::R14, 8}},
+    {"r15", {target::X8664Register::R15, 8}},
+    {"eax", {target::X8664Register::RAX, 4}},
+    {"ecx", {target::X8664Register::RCX, 4}},
+    {"edx", {target::X8664Register::RDX, 4}},
+    {"ebx", {target::X8664Register::RBX, 4}},
+    {"esi", {target::X8664Register::RSI, 4}},
+    {"edi", {target::X8664Register::RDI, 4}},
+    {"esp", {target::X8664Register::RSP, 4}},
+    {"ebp", {target::X8664Register::RBP, 4}},
+    {"r8d", {target::X8664Register::R8, 4}},
+    {"r9d", {target::X8664Register::R9, 4}},
+    {"r10d", {target::X8664Register::R10, 4}},
+    {"r11d", {target::X8664Register::R11, 4}},
+    {"r12d", {target::X8664Register::R12, 4}},
+    {"r13d", {target::X8664Register::R13, 4}},
+    {"r14d", {target::X8664Register::R14, 4}},
+    {"r15d", {target::X8664Register::R15, 4}},
+    {"ax", {target::X8664Register::RAX, 2}},
+    {"cx", {target::X8664Register::RCX, 2}},
+    {"dx", {target::X8664Register::RDX, 2}},
+    {"bx", {target::X8664Register::RBX, 2}},
+    {"si", {target::X8664Register::RSI, 2}},
+    {"di", {target::X8664Register::RDI, 2}},
+    {"sp", {target::X8664Register::RSP, 2}},
+    {"bp", {target::X8664Register::RBP, 2}},
+    {"r8w", {target::X8664Register::R8, 2}},
+    {"r9w", {target::X8664Register::R9, 2}},
+    {"r10w", {target::X8664Register::R10, 2}},
+    {"r11w", {target::X8664Register::R11, 2}},
+    {"r12w", {target::X8664Register::R12, 2}},
+    {"r13w", {target::X8664Register::R13, 2}},
+    {"r14w", {target::X8664Register::R14, 2}},
+    {"r15w", {target::X8664Register::R15, 2}},
+    {"al", {target::X8664Register::RAX, 1}},
+    {"cl", {target::X8664Register::RCX, 1}},
+    {"dl", {target::X8664Register::RDX, 1}},
+    {"bl", {target::X8664Register::RBX, 1}},
+    {"sil", {target::X8664Register::RSI, 1}},
+    {"dil", {target::X8664Register::RDI, 1}},
+    {"spl", {target::X8664Register::RSP, 1}},
+    {"bpl", {target::X8664Register::RBP, 1}},
+    {"r8b", {target::X8664Register::R8, 1}},
+    {"r9b", {target::X8664Register::R9, 1}},
+    {"r10b", {target::X8664Register::R10, 1}},
+    {"r11b", {target::X8664Register::R11, 1}},
+    {"r12b", {target::X8664Register::R12, 1}},
+    {"r13b", {target::X8664Register::R13, 1}},
+    {"r14b", {target::X8664Register::R14, 1}},
+    {"r15b", {target::X8664Register::R15, 1}},
+};
+// clang-format on
+
+const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_COND_MAP{
     {"eq", target::AArch64Condition::EQ},
     {"ne", target::AArch64Condition::NE},
     {"hs", target::AArch64Condition::HS},
@@ -105,7 +258,7 @@ const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_CON
     {"le", target::AArch64Condition::LE},
 };
 
-AssemblyUtil::AssemblyUtil() : reader(std::cin) {}
+AssemblyUtil::AssemblyUtil(target::Architecture arch) : arch{arch}, reader{std::cin} {}
 
 WriteBuffer AssemblyUtil::assemble() {
     mcode::Function *m_func = new mcode::Function{.name = "f"};
@@ -121,14 +274,20 @@ WriteBuffer AssemblyUtil::assemble() {
     m_mod.add(m_func);
 
     target::TargetDescription target{
-        target::Architecture::AARCH64,
+        arch,
         target::OperatingSystem::LINUX,
         target::Environment::GNU,
     };
 
-    BinModule bin_mod = target::AArch64Encoder(target).encode(m_mod);
-
-    return std::move(bin_mod.text);
+    if (arch == target::Architecture::X86_64) {
+        BinModule bin_mod = target::X8664Encoder{}.encode(m_mod);
+        return std::move(bin_mod.text);
+    } else if (arch == target::Architecture::AARCH64) {
+        BinModule bin_mod = target::AArch64Encoder{target}.encode(m_mod);
+        return std::move(bin_mod.text);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 std::optional<mcode::Instruction> AssemblyUtil::parse_line() {
@@ -162,15 +321,29 @@ mcode::Opcode AssemblyUtil::parse_opcode() {
 mcode::Operand AssemblyUtil::parse_operand() {
     std::string string = read_operand();
 
-    if (AARCH64_COND_MAP.contains(string)) {
-        return mcode::Operand::from_aarch64_condition(AARCH64_COND_MAP.at(string));
-    } else if (string == "sp") {
-        return mcode::Operand::from_register(convert_register(string), 8);
-    } else if (string[0] == 'w' || string[0] == 's') {
-        return mcode::Operand::from_register(convert_register(string), 4);
-    } else if (string[0] == 'x' || string[0] == 'd') {
-        return mcode::Operand::from_register(convert_register(string), 8);
-    } else if (string[0] == '#') {
+    if (arch == target::Architecture::AARCH64) {
+        if (AARCH64_COND_MAP.contains(string)) {
+            return mcode::Operand::from_aarch64_condition(AARCH64_COND_MAP.at(string));
+        } else if (string == "sp") {
+            return mcode::Operand::from_register(convert_register(string), 8);
+        } else if (string[0] == 'w' || string[0] == 's') {
+            return mcode::Operand::from_register(convert_register(string), 4);
+        } else if (string[0] == 'x' || string[0] == 'd') {
+            return mcode::Operand::from_register(convert_register(string), 8);
+        }
+    } else if (arch == target::Architecture::X86_64) {
+        if (auto result = X86_64_GP_REG_MAP.try_find(string)) {
+            mcode::Register reg = mcode::Register::from_physical(result->first);
+            return mcode::Operand::from_register(reg, result->second);
+        } else if (string.starts_with("xmm")) {
+            unsigned n = std::stoul(string.substr(3));
+            mcode::PhysicalReg p_reg = target::X8664Register::XMM0 + n;
+            mcode::Register reg = mcode::Register::from_physical(p_reg);
+            return mcode::Operand::from_register(reg, 8);
+        }
+    }
+
+    if (string[0] == '#') {
         std::string value = string.substr(1);
 
         if (value.find('.') == std::string::npos) {
@@ -258,7 +431,13 @@ mcode::Operand AssemblyUtil::parse_operand() {
 }
 
 mcode::Opcode AssemblyUtil::convert_opcode(const std::string &string) {
-    return AARCH64_OPCODE_MAP.at(string);
+    if (arch == target::Architecture::X86_64) {
+        return X86_64_OPCODE_MAP.at(string);
+    } else if (arch == target::Architecture::AARCH64) {
+        return AARCH64_OPCODE_MAP.at(string);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 mcode::Register AssemblyUtil::convert_register(const std::string &string) {

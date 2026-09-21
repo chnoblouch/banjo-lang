@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "F3480F2AF2"
+
+cvtsi2ss xmm6, rdx
+
+# test:subtest
+# test:encoding "F30F2AF2"
+
+cvtsi2ss xmm6, edx
+
+# test:subtest
+# test:encoding "F3490F2AF6"
+
+cvtsi2ss xmm6, r14
+
+# test:subtest
+# test:encoding "F3410F2AF6"
+
+cvtsi2ss xmm6, r14d
+
+# test:subtest
+# test:encoding "F34C0F2AEA"
+
+cvtsi2ss xmm13, rdx
+
+# test:subtest
+# test:encoding "F3440F2AEA"
+
+cvtsi2ss xmm13, edx

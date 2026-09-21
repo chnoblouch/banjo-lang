@@ -2,8 +2,7 @@
 
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 LineBasedReader::LineBasedReader(std::istream &source_stream) {
     std::string line;
@@ -55,5 +54,4 @@ std::string_view LineBasedReader::read_until_whitespace() {
     return std::string_view(&line[start], &line[char_index]);
 }
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test

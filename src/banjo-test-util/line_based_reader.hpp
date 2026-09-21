@@ -6,8 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 class LineBasedReader {
 
@@ -35,7 +34,6 @@ public:
     static bool is_whitespace(char c) { return c == ' ' || c == '\t' || c == '\0'; }
 };
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test
 
 #endif

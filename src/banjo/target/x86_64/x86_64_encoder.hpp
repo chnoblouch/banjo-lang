@@ -4,6 +4,7 @@
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/emit/binary_module.hpp"
 
+#include <array>
 #include <cstdint>
 #include <variant>
 
@@ -184,7 +185,6 @@ private:
     void encode_jcc(mcode::Instruction &instr, std::uint8_t opcode);
     void encode_cmovcc(mcode::Instruction &instr, std::uint8_t opcode);
     void encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode);
-    void encode_sse_cvt(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode, std::uint8_t size);
     void emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size);
     void emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size);
     void emit_mov_rm(RegCode dst, Address src, std::uint8_t size);
@@ -218,6 +218,10 @@ private:
     );
     void emit_cmovcc(std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
     void emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
+
+    void encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_cvtsi2ss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_cvtss2si_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
 
     void emit_opcode(std::uint8_t opcode);
     void emit_mem_reg(Address addr, RegCode reg);

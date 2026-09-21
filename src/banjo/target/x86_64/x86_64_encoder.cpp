@@ -608,27 +608,27 @@ void X8664Encoder::encode_ucomisd(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_cvtss2sd(mcode::Instruction &instr) {
-    encode_sse_cvt(instr, 0xF3, 0x5A, 0);
+    encode_cvtss2sd_family(instr, {0xF3});
 }
 
 void X8664Encoder::encode_cvtsd2ss(mcode::Instruction &instr) {
-    encode_sse_cvt(instr, 0xF2, 0x5A, 0);
+    encode_cvtss2sd_family(instr, {0xF2});
 }
 
 void X8664Encoder::encode_cvtsi2ss(mcode::Instruction &instr) {
-    encode_sse_cvt(instr, 0xF3, 0x2A, 0);
+    encode_cvtsi2ss_family(instr, {0xF3});
 }
 
 void X8664Encoder::encode_cvtsi2sd(mcode::Instruction &instr) {
-    encode_sse_cvt(instr, 0xF2, 0x2A, 8);
+    encode_cvtsi2ss_family(instr, {0xF2});
 }
 
 void X8664Encoder::encode_cvtss2si(mcode::Instruction &instr) {
-    encode_sse_cvt(instr, 0xF3, 0x2D, 0);
+    encode_cvtss2si_family(instr, {0xF3});
 }
 
 void X8664Encoder::encode_cvtsd2si(mcode::Instruction &instr) {
-    encode_sse_cvt(instr, 0xF2, 0x2D, 8);
+    encode_cvtss2si_family(instr, {0xF2});
 }
 
 void X8664Encoder::encode_basic_instr(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
@@ -742,17 +742,6 @@ void X8664Encoder::encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix,
 
     ASSERT_MESSAGE(is_reg(dst), "SSE instructions can only operate on registers");
     emit_sse(prefix, opcode, reg(dst), roa(src), 0);
-}
-
-void X8664Encoder::encode_sse_cvt(
-    mcode::Instruction &instr,
-    std::uint8_t prefix,
-    std::uint8_t opcode,
-    std::uint8_t size
-) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-    emit_sse(prefix, opcode, reg(dst), roa(src), size);
 }
 
 void X8664Encoder::emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size) {
@@ -967,6 +956,50 @@ void X8664Encoder::emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode ds
     emit_modrm_sib(dst, src);
 }
 
+void X8664Encoder::encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+
+    RegCode dst_reg = reg(dst);
+    RegOrAddr src_roa = roa(src);
+
+    emit_opcode(params[0]);
+    emit_rex_rroa(0, dst_reg, src_roa);
+    emit_opcode(0x0F);
+    emit_opcode(0x5A);
+    emit_modrm_sib(dst_reg, src_roa);
+}
+
+void X8664Encoder::encode_cvtsi2ss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    unsigned size = src.get_size();
+
+    RegCode dst_reg = reg(dst);
+    RegOrAddr src_roa = roa(src);
+
+    emit_opcode(params[0]);
+    emit_rex_rroa(size, dst_reg, src_roa);
+    emit_opcode(0x0F);
+    emit_opcode(0x2A);
+    emit_modrm_sib(dst_reg, src_roa);
+}
+
+void X8664Encoder::encode_cvtss2si_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    unsigned size = dst.get_size();
+
+    RegCode dst_reg = reg(dst);
+    RegOrAddr src_roa = roa(src);
+
+    emit_opcode(params[0]);
+    emit_rex_rroa(size, dst_reg, src_roa);
+    emit_opcode(0x0F);
+    emit_opcode(0x2D);
+    emit_modrm_sib(dst_reg, src_roa);
+}
+
 void X8664Encoder::emit_opcode(std::uint8_t opcode) {
     text.write_u8(opcode);
 }
@@ -1107,8 +1140,13 @@ void X8664Encoder::emit_rex_rm(std::uint8_t size, std::uint8_t reg, Address addr
 }
 
 void X8664Encoder::emit_rex_rroa(std::uint8_t size, std::uint8_t reg, RegOrAddr roa) {
-    if (std::holds_alternative<RegCode>(roa)) emit_rex_rr(size, reg, std::get<RegCode>(roa));
-    else if (std::holds_alternative<Address>(roa)) emit_rex_rm(size, reg, std::get<Address>(roa));
+    if (std::holds_alternative<RegCode>(roa)) {
+        emit_rex_rr(size, reg, std::get<RegCode>(roa));
+    } else if (std::holds_alternative<Address>(roa)) {
+        emit_rex_rm(size, reg, std::get<Address>(roa));
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void X8664Encoder::emit_rex_o(std::uint8_t size, std::uint8_t opcode_ext) {
