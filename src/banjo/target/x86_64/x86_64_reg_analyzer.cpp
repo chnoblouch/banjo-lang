@@ -364,9 +364,9 @@ bool X8664RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
         return false;
     }
 
-    mcode::Operand &dst = instr.get_dest();
-    mcode::Operand &src = instr.get_operands()[1];
-    return dst.is_register() && src.is_register() && dst.get_register() == src.get_register();
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    return src == dst && src.get_size() == dst.get_size();
 }
 
 bool X8664RegAnalyzer::is_move_opcode(mcode::Opcode opcode) {

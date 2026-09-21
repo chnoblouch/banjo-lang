@@ -320,9 +320,9 @@ bool AArch64RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
         return false;
     }
 
-    const mcode::Operand &dest = instr.get_operand(0);
-    const mcode::Operand &src = instr.get_operand(1);
-    return src.is_register() && dest.is_register() && src.get_register() == dest.get_register();
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    return src == dst && src.get_size() == dst.get_size();
 }
 
 bool AArch64RegAnalyzer::is_move_opcode(mcode::Opcode opcode) {
