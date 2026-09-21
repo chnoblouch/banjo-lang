@@ -28,11 +28,6 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
     }
 
     generate_data_slices(m_mod);
-
-    if (!Config::instance().target.is_wasm()) {
-        generate_debug_section(m_mod);
-    }
-
     generate_addr_table_slices(m_mod);
 
     std::uint32_t symbol_index = first_text_symbol_index;
@@ -59,6 +54,10 @@ BinModule BinaryBuilder::encode(mcode::Module &m_mod) {
         text.attach_symbol_def(symbol_index++);
 
         unwind_info.push_back(frame_info);
+    }
+
+    if (!Config::instance().target.is_wasm()) {
+        generate_debug_section(m_mod);
     }
 
     compute_slice_offsets();
@@ -237,7 +236,10 @@ void BinaryBuilder::generate_data_slices(mcode::Module &m_mod) {
 
 void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
     debug_section.emplace(*this, BinSectionKind::BNJDBG);
-    add_label_symbol("__text_end");
+
+    // TODO: This should not be a label, not a func.
+    unsigned text_end_symbol = defs.size();
+    text.add_symbol_def("__text_end", BinSymbolKind::TEXT_FUNC, true);
 
     unsigned header_size = 16;
     unsigned table_size = 16 * m_mod.get_functions().size();
@@ -246,7 +248,7 @@ void BinaryBuilder::generate_debug_section(mcode::Module &m_mod) {
     debug_section->add_symbol_def("__bnjdbg_start", BinSymbolKind::DEBUG_INFO, true);
     debug_section->write_u64(m_mod.get_functions().size());
 
-    debug_section->add_symbol_use(symbol_indices.at("__text_end"), BinSymbolUseKind::ABS64);
+    debug_section->add_symbol_use(text_end_symbol, BinSymbolUseKind::ABS64);
     debug_section->write_u64(0);
 
     for (unsigned i = 0; i < m_mod.get_functions().size(); i++) {
