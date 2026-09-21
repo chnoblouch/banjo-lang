@@ -67,21 +67,25 @@ void RegAllocPass::run(mcode::Function &func) {
 }
 
 RegAllocFunc RegAllocPass::create_reg_alloc_func(mcode::Function &func) {
-    std::unordered_map<mcode::BasicBlockIter, unsigned> block_indices;
+    std::unordered_map<mcode::BasicBlock *, unsigned> block_indices;
 
-    unsigned index = 0;
-
-    for (mcode::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
-        block_indices.insert({iter, index++});
+    for (mcode::BasicBlock &block : func) {
+        unsigned index = static_cast<unsigned>(block_indices.size());
+        block_indices.insert({&block, index});
     }
 
     RegAllocFunc ra_func{func};
+    std::vector<mcode::BasicBlock *> succs;
 
     for (mcode::BasicBlockIter block = func.begin(); block != func.end(); ++block) {
-        std::vector<unsigned> ra_succs;
+        succs.clear();
+        analyzer.collect_successors(block, succs);
 
-        for (mcode::BasicBlockIter succ : block->successors) {
-            ra_succs.push_back(block_indices[succ]);
+        std::vector<unsigned> ra_succs;
+        ra_succs.reserve(succs.size());
+
+        for (mcode::BasicBlock *succ : succs) {
+            ra_succs.push_back(block_indices.at(succ));
         }
 
         ra_func.blocks.push_back({

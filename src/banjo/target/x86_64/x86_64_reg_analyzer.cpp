@@ -7,9 +7,7 @@
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 X8664RegAnalyzer::X8664RegAnalyzer() {
     general_purpose_regs = {
@@ -270,6 +268,39 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
     return operands;
 }
 
+void X8664RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vector<mcode::BasicBlock *> &out_succs) {
+    if (block->instrs.get_size() == 0) {
+        return;
+    }
+
+    for (mcode::Instruction &instr : block->instrs) {
+        switch (instr.get_opcode()) {
+            case X8664Opcode::JMP:
+            case X8664Opcode::JE:
+            case X8664Opcode::JNE:
+            case X8664Opcode::JA:
+            case X8664Opcode::JAE:
+            case X8664Opcode::JB:
+            case X8664Opcode::JBE:
+            case X8664Opcode::JG:
+            case X8664Opcode::JGE:
+            case X8664Opcode::JL:
+            case X8664Opcode::JLE: {
+                mcode::Operand &operand = instr.get_operand(0);
+                out_succs.push_back(&operand.get_basic_block());
+                break;
+            }
+        }
+    }
+
+    switch (block->instrs.get_last().get_opcode()) {
+        case X8664Opcode::JMP:
+        case X8664Opcode::RET: return;
+
+        default: out_succs.push_back(&*block.get_next());
+    }
+}
+
 void X8664RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) {
     using namespace X8664Opcode;
 
@@ -391,6 +422,4 @@ void X8664RegAnalyzer::collect_addr_regs(mcode::Operand &operand, std::vector<mc
     }
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target

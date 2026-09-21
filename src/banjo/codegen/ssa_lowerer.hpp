@@ -98,7 +98,6 @@ protected:
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
     void create_block(ssa::BasicBlockIter ssa_block);
     void generate_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block);
-    void store_graphs();
     void lower_instr(ssa::Instruction &instr);
     void lower_global(ssa::Global &global);
 

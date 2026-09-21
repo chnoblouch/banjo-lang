@@ -212,6 +212,42 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(codegen::InstrContext
     return operands;
 }
 
+void AArch64RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vector<mcode::BasicBlock *> &out_succs) {
+    if (block->instrs.get_size() == 0) {
+        return;
+    }
+
+    for (mcode::Instruction &instr : *block) {
+        switch (instr.get_opcode()) {
+            case AArch64Opcode::B:
+            case AArch64Opcode::B_EQ:
+            case AArch64Opcode::B_NE:
+            case AArch64Opcode::B_HS:
+            case AArch64Opcode::B_LO:
+            case AArch64Opcode::B_HI:
+            case AArch64Opcode::B_LS:
+            case AArch64Opcode::B_GE:
+            case AArch64Opcode::B_LT:
+            case AArch64Opcode::B_GT:
+            case AArch64Opcode::B_LE: {
+                mcode::Operand &operand = instr.get_operand(0);
+                out_succs.push_back(&operand.get_basic_block());
+                break;
+            }
+
+            default: break;
+        }
+    }
+
+    switch (block->instrs.get_last().get_opcode()) {
+        case AArch64Opcode::B:
+        case AArch64Opcode::BR:
+        case AArch64Opcode::RET: return;
+
+        default: out_succs.push_back(&*block.get_next());
+    }
+}
+
 void AArch64RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) {
     if (instr.get_operands().size() == 0 || !instr.get_operand(0).is_virtual_reg()) {
         return;

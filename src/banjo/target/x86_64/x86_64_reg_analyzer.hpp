@@ -35,6 +35,7 @@ public:
 
     bool is_reg_overridden(mcode::PhysicalReg reg, codegen::InstrContext &instr_ctx) override;
     std::vector<mcode::RegOp> get_operands(codegen::InstrContext &instr_ctx) override;
+    void collect_successors(mcode::BasicBlockIter block, std::vector<mcode::BasicBlock *> &out_succs) override;
     void assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) override;
     bool is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) override;
     void insert_load(SpilledRegUse use) override;

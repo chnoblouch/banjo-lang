@@ -106,7 +106,6 @@ void SSALowerer::lower_func(ssa::Function &func) {
     }
 
     init_func(func);
-
     block_map.clear();
 
     for (ssa::BasicBlockIter ssa_block = func.begin(); ssa_block != func.end(); ++ssa_block) {
@@ -114,8 +113,6 @@ void SSALowerer::lower_func(ssa::Function &func) {
     }
 
     generate_blocks(func);
-    store_graphs();
-
     m_module.add(m_func);
 
     if (func.global) {
@@ -180,19 +177,6 @@ void SSALowerer::generate_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlock
     instr_ctx.instr = m_block->instrs.begin();
 
     emit_block_prologue(*ssa_block);
-}
-
-void SSALowerer::store_graphs() {
-    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(*ssa_func);
-
-    for (ssa::ControlFlowGraph::NodeID id = 0; id < cfg.nodes.size(); id++) {
-        ssa::ControlFlowGraph::Node &cfg_node = cfg.nodes[id];
-        mcode::BasicBlockIter m_iter = block_map.at(cfg.block(id));
-
-        for (ssa::ControlFlowGraph::NodeID succ : cfg_node.successors) {
-            m_iter->successors.push_back(block_map.at(cfg.block(succ)));
-        }
-    }
 }
 
 void SSALowerer::lower_instr(ssa::Instruction &instr) {
