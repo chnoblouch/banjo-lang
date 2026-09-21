@@ -34,16 +34,16 @@
 
 namespace banjo::target {
 
-MSABICallingConv const MSABICallingConv::INSTANCE{};
+const MSABICallingConv MSABICallingConv::INSTANCE{};
 
-std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_INT{
+const std::vector<mcode::PhysicalReg> MSABICallingConv::ARG_REGS_INT{
     X8664Register::RCX,
     X8664Register::RDX,
     X8664Register::R8,
     X8664Register::R9,
 };
 
-std::vector<mcode::PhysicalReg> const MSABICallingConv::ARG_REGS_FP = {
+const std::vector<mcode::PhysicalReg> MSABICallingConv::ARG_REGS_FP = {
     X8664Register::XMM0,
     X8664Register::XMM1,
     X8664Register::XMM2,
@@ -81,7 +81,7 @@ void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
     emit_call(lowerer, instr.get_operand(0));
 
     if (instr.get_dest()) {
-        emit_ret_val_move(lowerer);
+        emit_ret_val_move(lowerer, instr);
     }
 }
 
@@ -180,11 +180,9 @@ void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operan
     lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL));
 }
 
-void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer) {
-    ssa::Instruction &instr = *lowerer.get_instr_iter();
-
-    bool is_floating_point = instr.get_operand(0).get_type().is_floating_point();
-    unsigned return_size = lowerer.get_size(instr.get_operand(0).get_type());
+void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {
+    bool is_floating_point = call_instr.get_operand(0).get_type().is_floating_point();
+    unsigned return_size = lowerer.get_size(call_instr.get_operand(0).get_type());
 
     mcode::Opcode opcode;
     mcode::PhysicalReg src_reg;
@@ -207,7 +205,7 @@ void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer) {
     lowerer.emit(
         mcode::Instruction(
             opcode,
-            {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
+            {mcode::Operand::from_register(mcode::Register::from_virtual(*call_instr.get_dest()), return_size),
              mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
         )
     );

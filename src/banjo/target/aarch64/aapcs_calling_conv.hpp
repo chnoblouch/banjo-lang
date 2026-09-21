@@ -22,8 +22,8 @@ public:
     static AAPCSCallingConv INSTANCE_STANDARD;
     static AAPCSCallingConv INSTANCE_APPLE;
 
-    static const std::vector<int> ARG_REGS_INT;
-    static const std::vector<int> ARG_REGS_FP;
+    static const std::vector<mcode::PhysicalReg> ARG_REGS_INT;
+    static const std::vector<mcode::PhysicalReg> ARG_REGS_FP;
 
 private:
     Variant variant;

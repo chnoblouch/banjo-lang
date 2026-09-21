@@ -3,7 +3,6 @@
 #include "banjo/mcode/basic_block.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/stack_address.hpp"
-#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
@@ -160,75 +159,73 @@ void SSALowerer::create_block(ssa::BasicBlockIter ssa_block) {
 void SSALowerer::generate_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block) {
     this->ssa_block = ssa_block;
 
-    for (ssa::InstrIter iter = ssa_block->get_instrs().get_last_iter(); iter != ssa_block->get_header(); --iter) {
-        if (iter->get_dest() && get_num_uses(*iter->get_dest()) == 0 && !iter->has_side_effects()) {
+    for (ssa::InstrIter instr = ssa_block->get_instrs().get_last_iter(); instr != ssa_block->get_header(); --instr) {
+        if (instr->get_dest() && get_num_uses(*instr->get_dest()) == 0 && !instr->has_side_effects()) {
             continue;
         }
 
-        ssa_instr = iter;
-
-        instr_ctx.block = m_block;
         instr_ctx.instr = m_block->instrs.begin();
-
-        lower_instr(*iter);
+        instr_ctx.block = m_block;
+        lower_instr(instr);
     }
 
-    instr_ctx.block = m_block;
     instr_ctx.instr = m_block->instrs.begin();
-
+    instr_ctx.block = m_block;
     emit_block_prologue(*ssa_block);
 }
 
-void SSALowerer::lower_instr(ssa::Instruction &instr) {
-    switch (instr.get_opcode()) {
+void SSALowerer::lower_instr(ssa::InstrIter instr) {
+    ssa_instr = instr;
+
+    switch (instr->get_opcode()) {
         case ssa::Opcode::ALLOCA: break;
-        case ssa::Opcode::LOAD: lower_load(instr); break;
-        case ssa::Opcode::STORE: lower_store(instr); break;
-        case ssa::Opcode::LOADARG: lower_loadarg(instr); break;
-        case ssa::Opcode::ADD: lower_add(instr); break;
-        case ssa::Opcode::SUB: lower_sub(instr); break;
-        case ssa::Opcode::MUL: lower_mul(instr); break;
-        case ssa::Opcode::SDIV: lower_sdiv(instr); break;
-        case ssa::Opcode::SREM: lower_srem(instr); break;
-        case ssa::Opcode::UDIV: lower_udiv(instr); break;
-        case ssa::Opcode::UREM: lower_urem(instr); break;
-        case ssa::Opcode::FADD: lower_fadd(instr); break;
-        case ssa::Opcode::FSUB: lower_fsub(instr); break;
-        case ssa::Opcode::FMUL: lower_fmul(instr); break;
-        case ssa::Opcode::FDIV: lower_fdiv(instr); break;
-        case ssa::Opcode::AND: lower_and(instr); break;
-        case ssa::Opcode::OR: lower_or(instr); break;
-        case ssa::Opcode::XOR: lower_xor(instr); break;
-        case ssa::Opcode::LSHL: lower_lshl(instr); break;
-        case ssa::Opcode::LSHR: lower_lshr(instr); break;
-        case ssa::Opcode::ASHR: lower_ashr(instr); break;
-        case ssa::Opcode::JMP: lower_jmp(instr); break;
-        case ssa::Opcode::CJMP: lower_cjmp(instr); break;
-        case ssa::Opcode::FCJMP: lower_fcjmp(instr); break;
-        case ssa::Opcode::SELECT: lower_select(instr); break;
-        case ssa::Opcode::CALL: lower_call(instr); break;
-        case ssa::Opcode::RET: lower_ret(instr); break;
-        case ssa::Opcode::UEXTEND: lower_uextend(instr); break;
-        case ssa::Opcode::SEXTEND: lower_sextend(instr); break;
-        case ssa::Opcode::TRUNCATE: lower_truncate(instr); break;
-        case ssa::Opcode::FPROMOTE: lower_fpromote(instr); break;
-        case ssa::Opcode::FDEMOTE: lower_fdemote(instr); break;
-        case ssa::Opcode::UTOF: lower_utof(instr); break;
-        case ssa::Opcode::STOF: lower_stof(instr); break;
-        case ssa::Opcode::FTOU: lower_ftou(instr); break;
-        case ssa::Opcode::FTOS: lower_ftos(instr); break;
-        case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(instr); break;
-        case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(instr); break;
-        case ssa::Opcode::ATOMIC_ADD: lower_atomic_add(instr); break;
-        case ssa::Opcode::ATOMIC_SUB: lower_atomic_sub(instr); break;
-        case ssa::Opcode::ATOMIC_AND: lower_atomic_and(instr); break;
-        case ssa::Opcode::ATOMIC_OR: lower_atomic_or(instr); break;
-        case ssa::Opcode::ATOMIC_XOR: lower_atomic_xor(instr); break;
-        case ssa::Opcode::OFFSETPTR: lower_offsetptr(instr); break;
-        case ssa::Opcode::MEMBERPTR: lower_memberptr(instr); break;
-        case ssa::Opcode::COPY: lower_copy(instr); break;
-        case ssa::Opcode::SQRT: lower_sqrt(instr); break;
-        case ssa::Opcode::FRAME_ADDRESS: lower_frame_address(instr); break;
+        case ssa::Opcode::LOAD: lower_load(*instr); break;
+        case ssa::Opcode::STORE: lower_store(*instr); break;
+        case ssa::Opcode::LOADARG: lower_loadarg(*instr); break;
+        case ssa::Opcode::ADD: lower_add(*instr); break;
+        case ssa::Opcode::SUB: lower_sub(*instr); break;
+        case ssa::Opcode::MUL: lower_mul(*instr); break;
+        case ssa::Opcode::SDIV: lower_sdiv(*instr); break;
+        case ssa::Opcode::SREM: lower_srem(*instr); break;
+        case ssa::Opcode::UDIV: lower_udiv(*instr); break;
+        case ssa::Opcode::UREM: lower_urem(*instr); break;
+        case ssa::Opcode::FADD: lower_fadd(*instr); break;
+        case ssa::Opcode::FSUB: lower_fsub(*instr); break;
+        case ssa::Opcode::FMUL: lower_fmul(*instr); break;
+        case ssa::Opcode::FDIV: lower_fdiv(*instr); break;
+        case ssa::Opcode::AND: lower_and(*instr); break;
+        case ssa::Opcode::OR: lower_or(*instr); break;
+        case ssa::Opcode::XOR: lower_xor(*instr); break;
+        case ssa::Opcode::LSHL: lower_lshl(*instr); break;
+        case ssa::Opcode::LSHR: lower_lshr(*instr); break;
+        case ssa::Opcode::ASHR: lower_ashr(*instr); break;
+        case ssa::Opcode::JMP: lower_jmp(*instr); break;
+        case ssa::Opcode::CJMP: lower_cjmp(*instr); break;
+        case ssa::Opcode::FCJMP: lower_fcjmp(*instr); break;
+        case ssa::Opcode::SELECT: lower_select(*instr); break;
+        case ssa::Opcode::CALL: lower_call(*instr); break;
+        case ssa::Opcode::RET: lower_ret(*instr); break;
+        case ssa::Opcode::UEXTEND: lower_uextend(*instr); break;
+        case ssa::Opcode::SEXTEND: lower_sextend(*instr); break;
+        case ssa::Opcode::TRUNCATE: lower_truncate(*instr); break;
+        case ssa::Opcode::FPROMOTE: lower_fpromote(*instr); break;
+        case ssa::Opcode::FDEMOTE: lower_fdemote(*instr); break;
+        case ssa::Opcode::UTOF: lower_utof(*instr); break;
+        case ssa::Opcode::STOF: lower_stof(*instr); break;
+        case ssa::Opcode::FTOU: lower_ftou(*instr); break;
+        case ssa::Opcode::FTOS: lower_ftos(*instr); break;
+        case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(*instr); break;
+        case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(*instr); break;
+        case ssa::Opcode::ATOMIC_ADD: lower_atomic_add(*instr); break;
+        case ssa::Opcode::ATOMIC_SUB: lower_atomic_sub(*instr); break;
+        case ssa::Opcode::ATOMIC_AND: lower_atomic_and(*instr); break;
+        case ssa::Opcode::ATOMIC_OR: lower_atomic_or(*instr); break;
+        case ssa::Opcode::ATOMIC_XOR: lower_atomic_xor(*instr); break;
+        case ssa::Opcode::OFFSETPTR: lower_offsetptr(*instr); break;
+        case ssa::Opcode::MEMBERPTR: lower_memberptr(*instr); break;
+        case ssa::Opcode::COPY: lower_copy(*instr); break;
+        case ssa::Opcode::SQRT: lower_sqrt(*instr); break;
+        case ssa::Opcode::FRAME_ADDRESS: lower_frame_address(*instr); break;
     }
 }
 
@@ -271,17 +268,22 @@ mcode::InstrIter SSALowerer::emit(mcode::Instruction instr) {
     return instr_ctx.block->insert_before(instr_ctx.instr, std::move(instr));
 }
 
-mcode::BasicBlockIter SSALowerer::split_block() {
+mcode::BasicBlockIter SSALowerer::create_block() {
     mcode::BasicBlock block{.label = ssa_func->next_block_label()};
-    block.instrs = std::move(instr_ctx.block->instrs);
-
-    instr_ctx.block->instrs = {};
-    instr_ctx.instr = instr_ctx.block->begin();
-
-    return instr_ctx.func->basic_blocks.insert_after(instr_ctx.block, std::move(block));
+    return instr_ctx.func->basic_blocks.create_iter(std::move(block));
 }
 
-void SSALowerer::switch_block(mcode::BasicBlockIter block) {
+void SSALowerer::start_block(mcode::BasicBlockIter block) {
+    mcode::InstrIter first_emitted_instr = instr_ctx.instr.get_prev();
+
+    while (first_emitted_instr.get_next() != instr_ctx.block->end()) {
+        mcode::InstrIter instr_to_move = first_emitted_instr.get_next();
+        block->append(*instr_to_move);
+        instr_ctx.block->remove(instr_to_move);
+    }
+
+    instr_ctx.func->basic_blocks.insert_after(instr_ctx.block, block);
+
     instr_ctx.block = block;
     instr_ctx.instr = block->begin();
 }

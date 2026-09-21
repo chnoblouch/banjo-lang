@@ -13,9 +13,9 @@
 
 namespace banjo::target {
 
-SysVCallingConv const SysVCallingConv::INSTANCE{};
+const SysVCallingConv SysVCallingConv::INSTANCE{};
 
-std::vector<int> const SysVCallingConv::ARG_REGS_INT = {
+const std::vector<mcode::PhysicalReg> SysVCallingConv::ARG_REGS_INT = {
     X8664Register::RDI,
     X8664Register::RSI,
     X8664Register::RDX,
@@ -24,7 +24,7 @@ std::vector<int> const SysVCallingConv::ARG_REGS_INT = {
     X8664Register::R9,
 };
 
-std::vector<int> const SysVCallingConv::ARG_REGS_FLOAT = {
+const std::vector<mcode::PhysicalReg> SysVCallingConv::ARG_REGS_FLOAT = {
     X8664Register::XMM0,
     X8664Register::XMM1,
     X8664Register::XMM2,
@@ -101,7 +101,7 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
     append_call(instr.get_operand(0), lowerer);
 
     if (instr.get_dest().has_value()) {
-        append_ret_val_move(lowerer);
+        append_ret_val_move(lowerer, instr);
     }
 }
 
@@ -147,14 +147,12 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
     lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL));
 }
 
-void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {
-    ssa::Instruction &instr = *lowerer.get_instr_iter();
-
-    bool is_floating_point = instr.get_operand(0).get_type().is_floating_point();
-    int return_size = lowerer.get_size(instr.get_operand(0).get_type());
+void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {
+    bool is_floating_point = call_instr.get_operand(0).get_type().is_floating_point();
+    int return_size = lowerer.get_size(call_instr.get_operand(0).get_type());
 
     mcode::Opcode opcode;
-    long src_reg;
+    mcode::PhysicalReg src_reg;
 
     if (!is_floating_point) {
         opcode = X8664Opcode::MOV;
@@ -174,7 +172,7 @@ void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer) {
     lowerer.emit(
         mcode::Instruction(
             opcode,
-            {mcode::Operand::from_register(mcode::Register::from_virtual(*instr.get_dest()), return_size),
+            {mcode::Operand::from_register(mcode::Register::from_virtual(*call_instr.get_dest()), return_size),
              mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
         )
     );

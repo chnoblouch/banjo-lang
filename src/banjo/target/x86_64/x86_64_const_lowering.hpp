@@ -10,9 +10,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class X8664SSALowerer;
 
@@ -41,7 +39,7 @@ private:
 
 public:
     X8664ConstLowering(X8664SSALowerer &lowerer);
-    mcode::Operand load_f32(float value);
+    mcode::Operand load_f32(float value, ssa::InstrIter instr);
     mcode::Operand load_f64(double value);
 
 private:
@@ -50,8 +48,6 @@ private:
     bool is_discarding_instr(ssa::Opcode opcode);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

@@ -1,0 +1,193 @@
+# test:common
+
+use std.memory;
+
+func print_f32(value: f32) {
+    var bits: u32;
+    memory.copy(&value, &bits, 4);
+    
+    fprint("{:08x},", bits);
+}
+
+func print_f64(value: f64) {
+    var bits: u64;
+    memory.copy(&value, &bits, 8);
+    
+    fprint("{:016x},", bits);
+}
+
+# test:subtest
+# test:output "40800000,42fe0000,43000000,43010000,437f0000,"
+
+func main() {
+    var a: u8 = 4;
+    var b: u8 = 0x7F;
+    var c: u8 = 0x80;
+    var d: u8 = 0x81;
+    var e: u8 = 0xFF;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+    print_f32(c as f32);
+    print_f32(d as f32);
+    print_f32(e as f32);
+}
+
+# test:subtest
+# test:output "40800000,46eefe00,47000000,47000100,477fff00,"
+
+func main() {
+    var a: u16 = 4;
+    var b: u16 = 0x777F;
+    var c: u16 = 0x8000;
+    var d: u16 = 0x8001;
+    var e: u16 = 0xFFFF;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+    print_f32(c as f32);
+    print_f32(d as f32);
+    print_f32(e as f32);
+}
+
+# test:subtest
+# test:output "40800000,4eeeeeef,4f000000,4f000000,4f800000,"
+
+func main() {
+    var a: u32 = 4;
+    var b: u32 = 0x7777777F;
+    var c: u32 = 0x80000000;
+    var d: u32 = 0x80000001;
+    var e: u32 = 0xFFFFFFFF;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+    print_f32(c as f32);
+    print_f32(d as f32);
+    print_f32(e as f32);
+}
+
+# test:subtest
+# test:output "4010000000000000,405fc00000000000,4060000000000000,4060200000000000,406fe00000000000,"
+
+func main() {
+    var a: u8 = 4;
+    var b: u8 = 0x7F;
+    var c: u8 = 0x80;
+    var d: u8 = 0x81;
+    var e: u8 = 0xFF;
+
+    print_f64(a as f64);
+    print_f64(b as f64);
+    print_f64(c as f64);
+    print_f64(d as f64);
+    print_f64(e as f64);
+}
+
+# test:subtest
+# test:output "4010000000000000,40dddfc000000000,40e0000000000000,40e0002000000000,40efffe000000000,"
+
+func main() {
+    var a: u16 = 4;
+    var b: u16 = 0x777F;
+    var c: u16 = 0x8000;
+    var d: u16 = 0x8001;
+    var e: u16 = 0xFFFF;
+
+    print_f64(a as f64);
+    print_f64(b as f64);
+    print_f64(c as f64);
+    print_f64(d as f64);
+    print_f64(e as f64);
+}
+
+# test:subtest
+# test:output "4010000000000000,41dddddddfc00000,41e0000000000000,41e0000000200000,41efffffffe00000,"
+
+func main() {
+    var a: u32 = 4;
+    var b: u32 = 0x7777777F;
+    var c: u32 = 0x80000000;
+    var d: u32 = 0x80000001;
+    var e: u32 = 0xFFFFFFFF;
+
+    print_f64(a as f64);
+    print_f64(b as f64);
+    print_f64(c as f64);
+    print_f64(d as f64);
+    print_f64(e as f64);
+}
+
+# test:subtest
+# test:output "43800000,5f000000,4070000000000000,43e0000000000000,"
+
+func main() {
+    var a: u64 = 256;
+    var b: u64 = 0x7FFFFFFFFFFFFFFF;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+    print_f64(a as f64);
+    print_f64(b as f64);
+}
+
+# test:subtest
+# test:output "43800000,5f000000,4070000000000000,43e0000000000000,"
+
+func main() {
+    var a: u64 = 256;
+    var b: u64 = 0x7FFFFFFFFFFFFFFF;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+    print_f64(a as f64);
+    print_f64(b as f64);
+}
+
+# test:subtest
+# test:output "5f000000,5f800000,"
+
+func main() {
+    var a: u64 = 0x8000000000000000;
+    var b: u64 = 0xFFFFFFFFFFFFFFFF;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+}
+
+# test:subtest
+# test:output "43e0000000000000,43f0000000000000,"
+
+func main() {
+    var a: u64 = 0x8000000000000000;
+    var b: u64 = 0xFFFFFFFFFFFFFFFF;
+
+    print_f64(a as f64);
+    print_f64(b as f64);
+}
+
+# test:subtest
+# test:output "5f000000,5f000000,5f000001,"
+
+func main() {
+    var a: u64 = 0x8000007FFFFFFFFF;
+    var b: u64 = 0x8000008000000000;
+    var c: u64 = 0x8000008000000001;
+
+    print_f32(a as f32);
+    print_f32(b as f32);
+    print_f32(c as f32);
+}
+
+# test:subtest
+# test:output "43e0000000000000,43e0000000000000,43e0000000000001,"
+
+func main() {
+    var a: u64 = 0x80000000000003FF;
+    var b: u64 = 0x8000000000000400;
+    var c: u64 = 0x8000000000000401;
+
+    print_f64(a as f64);
+    print_f64(b as f64);
+    print_f64(c as f64);
+}

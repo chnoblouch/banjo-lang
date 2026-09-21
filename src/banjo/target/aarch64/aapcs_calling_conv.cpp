@@ -12,14 +12,12 @@
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
-#include <cstdlib>
-
 namespace banjo::target {
 
 AAPCSCallingConv AAPCSCallingConv::INSTANCE_STANDARD{AAPCSCallingConv::Variant::STANDARD};
 AAPCSCallingConv AAPCSCallingConv::INSTANCE_APPLE{AAPCSCallingConv::Variant::APPLE};
 
-std::vector<int> const AAPCSCallingConv::ARG_REGS_INT = {
+const std::vector<mcode::PhysicalReg> AAPCSCallingConv::ARG_REGS_INT = {
     AArch64Register::R0,
     AArch64Register::R1,
     AArch64Register::R2,
@@ -30,7 +28,7 @@ std::vector<int> const AAPCSCallingConv::ARG_REGS_INT = {
     AArch64Register::R7,
 };
 
-std::vector<int> const AAPCSCallingConv::ARG_REGS_FP = {
+const std::vector<mcode::PhysicalReg> AAPCSCallingConv::ARG_REGS_FP = {
     AArch64Register::V0,
     AArch64Register::V1,
     AArch64Register::V2,

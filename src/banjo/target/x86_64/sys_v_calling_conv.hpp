@@ -3,25 +3,14 @@
 
 #include "banjo/mcode/calling_convention.hpp"
 
-namespace ssa {
-class Operand;
-} // namespace ssa
-
-// TODO: reformat
-namespace codegen {
-class Operand;
-} // namespace codegen
-
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 class SysVCallingConv : public mcode::CallingConvention {
 
 public:
     static const SysVCallingConv INSTANCE;
-    static const std::vector<int> ARG_REGS_INT;
-    static const std::vector<int> ARG_REGS_FLOAT;
+    static const std::vector<mcode::PhysicalReg> ARG_REGS_INT;
+    static const std::vector<mcode::PhysicalReg> ARG_REGS_FLOAT;
 
 public:
     SysVCallingConv();
@@ -40,11 +29,9 @@ public:
 private:
     mcode::Operand get_arg_dst(mcode::ArgStorage &storage, codegen::SSALowerer &lowerer);
     void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
-    void append_ret_val_move(codegen::SSALowerer &lowerer);
+    void append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr);
 };
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
 
 #endif

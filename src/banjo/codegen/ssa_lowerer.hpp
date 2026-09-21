@@ -66,13 +66,12 @@ public:
     ssa::Function &get_func() { return *ssa_func; }
     ssa::BasicBlockIter get_basic_block_iter() { return ssa_block; }
     ssa::BasicBlock &get_block() { return *ssa_block; }
-    ssa::InstrIter &get_instr_iter() { return ssa_instr; }
     mcode::Module &get_machine_module() { return m_module; }
     mcode::Function *get_machine_func() { return instr_ctx.func; }
 
     mcode::InstrIter emit(mcode::Instruction instr);
-    mcode::BasicBlockIter split_block();
-    void switch_block(mcode::BasicBlockIter block);
+    mcode::BasicBlockIter create_block();
+    void start_block(mcode::BasicBlockIter block);
 
     std::optional<mcode::StackSlotID> find_stack_slot(ssa::VirtualRegister reg);
     std::variant<mcode::Register, mcode::StackSlotID> map_vreg(ssa::VirtualRegister reg);
@@ -98,7 +97,7 @@ protected:
     mcode::Parameter lower_param(ssa::Type type, mcode::ArgStorage storage, mcode::Function &m_func);
     void create_block(ssa::BasicBlockIter ssa_block);
     void generate_block(ssa::BasicBlockIter ssa_block, mcode::BasicBlockIter m_block);
-    void lower_instr(ssa::Instruction &instr);
+    void lower_instr(ssa::InstrIter instr);
     void lower_global(ssa::Global &global);
 
     void lower_alloca(ssa::Instruction &instr);

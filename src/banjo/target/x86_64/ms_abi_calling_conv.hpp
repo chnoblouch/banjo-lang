@@ -2,15 +2,15 @@
 #define BANJO_TARGET_X86_64_MS_ABI_CALLING_CONV_H
 
 #include "banjo/mcode/calling_convention.hpp"
+#include "banjo/ssa/instruction.hpp"
 
-namespace ssa {
+namespace banjo::ssa {
 class Operand;
-} // namespace ssa
+} // namespace banjo::ssa
 
-// TODO: reformat
-namespace mcode {
+namespace banjo::mcode {
 class Operand;
-} // namespace mcode
+} // namespace banjo::mcode
 
 namespace banjo::target {
 
@@ -42,7 +42,7 @@ private:
     void emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index);
 
     void emit_call(codegen::SSALowerer &lowerer, const ssa::Operand &func_operand);
-    void emit_ret_val_move(codegen::SSALowerer &lowerer);
+    void emit_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr);
 };
 
 } // namespace banjo::target

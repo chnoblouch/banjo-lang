@@ -504,8 +504,88 @@ void X8664SSALowerer::lower_fdemote(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
-    // TODO
-    lower_stof(instr);
+    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
+    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
+
+    unsigned src_size = get_size(src_type);
+    unsigned dst_size = get_size(dst_type);
+
+    mcode::Opcode cvt_opcode;
+    mcode::Opcode add_opcode;
+
+    if (dst_type == ssa::Primitive::F64) {
+        cvt_opcode = X8664Opcode::CVTSI2SD;
+        add_opcode = X8664Opcode::ADDSD;
+    } else {
+        cvt_opcode = X8664Opcode::CVTSI2SS;
+        add_opcode = X8664Opcode::ADDSS;
+    }
+
+    if (src_size == 8) {
+        // x86_64 does not provide an unsigned integer to float conversion
+        // instruction, so when converting an unsigned 64-bit integer to a
+        // float, there are three cases:
+        //
+        //   - The value can be represented as a signed 64-bit integer: Use the
+        //     conversion instruction directly.
+        //   - The value is greater than 2**63-1 and even: Divide the integer by
+        //     two, perform the conversion and multiply the float by two.
+        //   - The value is greater than 2**63-1 and odd: This case requires
+        //     careful rounding. A 64-bit float mantissa is 53 bits, so 11 bits
+        //     of our integer get discarded. Therefore, we set the LSB of the
+        //     division result so it doesn't get rounded down if it ends up at
+        //     the half-way point between two representable values. For more
+        //     information, see:
+        //     https://github.com/golang/go/blob/go1.27.0/src/cmd/compile/internal/ssagen/ssa.go#L5920
+        //
+        // The cases where the value is greater than 2**63-1 generate the
+        // following operation: `f = 2 * float((i >> 1) | (i & 1))`
+
+        mcode::BasicBlockIter end_block = create_block();
+        mcode::BasicBlockIter signed_block = create_block();
+
+        mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+        mcode::Operand m_src = lower_as_move_into_reg(create_tmp_reg(), instr.get_operand(0));
+
+        mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), 8);
+        mcode::Operand m_tmp2 = mcode::Operand::from_register(create_tmp_reg(), 4);
+
+        emit({X8664Opcode::CMP, {m_src, mcode::Operand::from_int_immediate(0)}});
+        emit({X8664Opcode::JL, {mcode::Operand::from_basic_block(*signed_block)}});
+        emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+        emit({cvt_opcode, {m_dst, m_src}});
+        emit({X8664Opcode::JMP, {mcode::Operand::from_basic_block(*end_block)}});
+
+        start_block(signed_block);
+
+        emit({X8664Opcode::MOV, {m_tmp2, m_src.with_size(4)}});
+        emit({X8664Opcode::AND, {m_tmp2, mcode::Operand::from_int_immediate(1, 8)}});
+        emit({X8664Opcode::SHR, {m_src, mcode::Operand::from_int_immediate(1, 1)}});
+        emit({X8664Opcode::OR, {m_src, m_tmp2.with_size(8)}});
+        emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+        emit({cvt_opcode, {m_dst, m_src}});
+        emit({add_opcode, {m_dst, m_dst}});
+
+        start_block(end_block);
+    } else {
+        mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+        mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+
+        if (src_size == 1 || src_size == 2) {
+            mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
+            emit({X8664Opcode::MOVZX, {m_ext, m_src}});
+            m_src = m_ext;
+        } else if (src_size == 4) {
+            mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 8);
+            emit({X8664Opcode::MOV, {m_ext, m_src}});
+            m_src = m_ext;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+
+        emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+        emit({cvt_opcode, {m_dst, m_src}});
+    }
 }
 
 void X8664SSALowerer::lower_stof(ssa::Instruction &instr) {
@@ -1184,7 +1264,7 @@ mcode::Register X8664SSALowerer::create_reg() {
 
 mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size) {
     if (size == 4) {
-        return const_lowering.load_f32(static_cast<float>(value));
+        return const_lowering.load_f32(static_cast<float>(value), ssa_instr);
     } else if (size == 8) {
         return const_lowering.load_f64(value);
     } else {

@@ -7,13 +7,11 @@
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 #include "banjo/utils/macros.hpp"
 
-namespace banjo {
-
-namespace target {
+namespace banjo::target {
 
 X8664ConstLowering::X8664ConstLowering(X8664SSALowerer &lowerer) : lowerer(lowerer) {}
 
-mcode::Operand X8664ConstLowering::load_f32(float value) {
+mcode::Operand X8664ConstLowering::load_f32(float value, ssa::InstrIter instr) {
     ASSERT(value != 0.0);
 
     if (lowerer.get_basic_block_iter() != last_block) {
@@ -22,7 +20,7 @@ mcode::Operand X8664ConstLowering::load_f32(float value) {
         process_block();
     }
 
-    ConstStorage storage = f32_storage.at(lowerer.get_instr_iter()).at(value);
+    ConstStorage storage = f32_storage.at(instr).at(value);
 
     if (storage.access == ConstStorageAccess::LOAD) {
         X8664Address m_addr{mcode::Symbol{storage.const_label, mcode::Relocation::NONE}};
@@ -140,6 +138,4 @@ bool X8664ConstLowering::is_discarding_instr(ssa::Opcode opcode) {
     return opcode == ssa::Opcode::CALL || opcode == ssa::Opcode::COPY;
 }
 
-} // namespace target
-
-} // namespace banjo
+} // namespace banjo::target
