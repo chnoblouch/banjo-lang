@@ -65,10 +65,8 @@ void ControlFlowOptPass::run(ssa::Function &func) {
 }
 
 void ControlFlowOptPass::run_iteration(ssa::Function &func) {
-    ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(func);
-    ssa::DominatorTree dom_tree = ssa::DominatorTree::build(cfg);
-
-    this->dom_tree = &dom_tree;
+    cfg = ssa::ControlFlowGraph::build(func);
+    dom_tree = ssa::DominatorTree::build(cfg);
 
     for (ssa::BasicBlockIter block = func.begin(); block != func.end(); ++block) {
         ssa::Instruction &branch_instr = *block->get_exit_iter();
@@ -85,6 +83,7 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
     }
 
     cfg = ssa::ControlFlowGraph::build(func);
+    dom_tree = ssa::DominatorTree::build(cfg);
 
     // Merge blocks into their predecessors if there is only one of them.
     for (ssa::ControlFlowGraph::NodeID node_id = 0; node_id < cfg.nodes.size(); node_id++) {
@@ -120,7 +119,8 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
 
     cfg = ssa::ControlFlowGraph::build(func);
 
-    // Remove all blocks that are not in the control flow graph and hence unreachable.
+    // Remove all blocks that are not in the control flow graph and therefore
+    // unreachable.
     for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
         if (!cfg.contains(iter)) {
             iter = iter.get_prev();
@@ -292,7 +292,7 @@ bool ControlFlowOptPass::is_reg_always_defined(ssa::VirtualRegister reg, ssa::Ba
         return false;
     }
 
-    return dom_tree->dominates(def_block, block);
+    return dom_tree.dominates(def_block, block);
 }
 
 } // namespace banjo::passes

@@ -57,7 +57,9 @@ void StackToRegPass::run(ssa::Function &func) {
         }
 
         for (ssa::BasicBlockIter store_block_iter : slot.store_blocks) {
-            for (ssa::ControlFlowGraph::NodeID node : domtree.nodes[store_block_iter].dominance_frontiers) {
+            ssa::ControlFlowGraph::NodeID store_node = cfg.node_id(store_block_iter);
+
+            for (ssa::ControlFlowGraph::NodeID node : domtree.nodes[store_node].dominance_frontiers) {
                 ssa::BasicBlockIter block = cfg.block(node);
 
                 if (slot.blocks_having_val_as_param.contains(block)) {

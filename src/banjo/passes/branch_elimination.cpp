@@ -17,7 +17,7 @@ void BranchElimination::run(ssa::Function &func) {
     ssa::ControlFlowGraph cfg = ssa::ControlFlowGraph::build(func);
 
     for (ssa::BasicBlockIter iter = func.begin(); iter != func.end(); ++iter) {
-        if (cfg.node(iter).successors.size() != 2) {
+        if (!cfg.contains(iter) || cfg.node(iter).successors.size() != 2) {
             continue;
         }
 

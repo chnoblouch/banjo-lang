@@ -16,7 +16,8 @@ class ControlFlowOptPass : public Pass {
 
 private:
     ssa::Function *func;
-    ssa::DominatorTree *dom_tree;
+    ssa::ControlFlowGraph cfg;
+    ssa::DominatorTree dom_tree;
 
     std::unordered_map<ssa::VirtualRegister, ssa::BasicBlockIter> arg_blocks;
     std::unordered_set<ssa::BasicBlockIter> blocks_with_escaping_args;
