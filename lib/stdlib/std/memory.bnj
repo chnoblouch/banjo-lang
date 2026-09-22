@@ -39,7 +39,9 @@ pub func swap[T](ref mut a: T, ref mut b: T) {
 }
 
 pub func replace[T](ref mut dst: T, src: T) -> T {
-    var prev: T;
+    # TODO: `prev` shouldn't be required to be `unmanaged`.
+
+    @unmanaged var prev: T;
     copy(&dst, &prev, meta(T).size);
     copy(&src, &dst, meta(T).size);
     return prev;

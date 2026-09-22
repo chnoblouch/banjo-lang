@@ -33,11 +33,18 @@ private:
         LOOP,
     };
 
+    enum class ExitBehavior {
+        NEVER,
+        RETURN,
+        CONTINUE_BREAK,
+    };
+
     struct Scope {
         ScopeType type;
         sir::Block *block;
         std::unordered_map<sir::Resource *, InitState> init_states;
         std::unordered_map<sir::Resource *, MoveState> move_states;
+        ExitBehavior exit_behavior;
     };
 
     struct Context {
@@ -103,14 +110,13 @@ private:
     void move_sub_resources(sir::Resource *resource, sir::Expr move_expr, Context &ctx);
     void partially_move_super_resources(sir::Resource *resource, sir::Expr move_expr, Context &ctx);
     void update_init_state(Scope &scope, sir::Resource *resource, InitState value);
-    void analyze_loop_jump();
-    void mark_uninit_as_cond_init(Scope &scope);
-    unsigned get_scope_depth();
+    bool scope_exits_early();
 
     std::optional<sir::Resource> create_resource(sir::Expr type);
     bool is_resource(sir::Expr type);
 
     static void merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional);
+    static void update_exit_behavior(Scope &scope, ExitBehavior value);
 };
 
 } // namespace banjo::sema

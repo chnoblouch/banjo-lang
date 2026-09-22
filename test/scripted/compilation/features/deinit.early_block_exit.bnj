@@ -29,7 +29,7 @@ func test(a: i32, b: i32) {
         }
     }
 
-    var never_initialized = 0;
+    var never_initialized = ValueResource { value: 0 };
 }
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
             continue;
         }
 
-        var never_initialized = 0;
+        var never_initialized = ValueResource { value: 0 };
     }
 }
 
@@ -62,7 +62,7 @@ func main() {
             break;
         }
 
-        var never_initialized = 0;
+        var never_initialized = ValueResource { value: 0 };
     }
 }
 

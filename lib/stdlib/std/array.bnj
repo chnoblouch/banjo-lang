@@ -48,7 +48,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
         return from(Slice[T].new(pointer, length));
     }
 
-    pub func __deinit__(self) {        
+    pub func __deinit__(self) {
         for i in 0..self.slice.length {
             builtin.deinit(self.slice.data[i]);
         }
@@ -95,7 +95,7 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
 
         var element: T;
         memory.copy(&self.slice.data[index], &element, meta(T).size);
-        
+
         var num_bytes = meta(T).size * (self.slice.length - index);
         memory.copy(&self.slice.data[index + 1], &self.slice.data[index], num_bytes);
 
@@ -138,19 +138,19 @@ struct Array[T]: Copy, Compare[Array[T]], ToString, ToRepr {
                 return i;
             }
         }
-        
+
         return none;
     }
 
     pub func filter(move self, predicate: |value: ref T| -> bool) -> Array[T] {
         var result: Array[T] = [];
-        
+
         for value in self {
             if predicate(value) {
                 result.append(value);
             }
         }
-        
+
         return result;
     }
 
@@ -262,7 +262,9 @@ struct MoveIter[T] {
             return none;
         }
 
-        var value: T;
+        # TODO: The value shouldn't be required to be `unmanaged`.
+
+        @unmanaged var value: T;
         memory.copy(self.pointer, &value, meta(T).size);
         self.pointer += 1;
         return value;

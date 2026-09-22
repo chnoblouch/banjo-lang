@@ -1,5 +1,4 @@
-# test:subtest
-# test:output "cdm"
+# test:common
 
 struct Resource {
     func __deinit__(self) {
@@ -7,26 +6,7 @@ struct Resource {
     }
 }
 
-func consume(resource: Resource) {
-    print('c');
-}
-
-func main() {
-    var skip = false;
-
-    if skip {
-        return;
-    }
-
-    var resource = Resource {};
-    consume(resource);
-    print('m');
-}
-
-# test:subtest
-# test:output "c,-37,m,104,"
-
-struct Resource {
+struct ValueResource {
     var value: i32;
 
     func __deinit__(self) {
@@ -36,21 +16,266 @@ struct Resource {
 }
 
 func consume(resource: Resource) {
+    print('c');
+}
+
+func consume_value(resource: ValueResource) {
     print("c,");
 }
 
-func main() {
-    var skip = false;
+# test:subtest
+# test:output "cde,s"
 
+func f(skip: bool) {
     if skip {
+        print('s');
+        return;
+    }
+
+    var resource = Resource {};
+    consume(resource);
+    print('e');
+}
+
+func main() {
+    f(false);
+    print(',');
+    f(true);
+}
+
+# test:subtest
+# test:output "cde,sd"
+
+func f(skip: bool) {
+    var resource = Resource {};
+    
+    if skip {
+        print('s');
+        return;
+    }
+
+    consume(resource);
+    print('e');
+}
+
+func main() {
+    f(false);
+    print(',');
+    f(true);
+}
+
+# test:subtest
+# test:output "cde,sd"
+
+func f(skip: bool, resource: Resource) {
+    if skip {
+        print('s');
+        return;
+    }
+
+    consume(resource);
+    print('e');
+}
+
+func main() {
+    f(false, Resource {});
+    print(',');
+    f(true, Resource {});
+}
+
+# test:subtest
+# test:output "c,-37,e,104,;s,"
+
+func f(skip: bool) {
+    if skip {
+        print("s,");
         return;
     }
 
     var pair = (
-        Resource { value: 104 },
-        Resource { value: -37 },
+        ValueResource { value: 104 },
+        ValueResource { value: -37 },
     );
 
-    consume(pair.1);
-    print("m,");
+    consume_value(pair.1);
+    print("e,");
 }
+
+func main() {
+    f(false);
+    print(';');
+    f(true);
+}
+
+# test:subtest
+# test:output "cd,cd,be"
+
+func main() {
+    var i = 0;
+
+    while true {
+        if i == 2 {
+            print('b');
+            break;
+        }
+
+        var resource = Resource {};
+        consume(resource);
+        print(',');
+
+        i += 1;
+    }
+
+    print('e');
+}
+
+# test:subtest
+# test:output "cd,cd,bde"
+
+func main() {
+    var i = 0;
+
+    while true {
+        var resource = Resource {};
+        
+        if i == 2 {
+            print('b');
+            break;
+        }
+
+        consume(resource);
+        print(',');
+
+        i += 1;
+    }
+
+    print('e');
+}
+
+# test:subtest
+# test:output "cd,cd,se"
+
+func main() {
+    var i = 0;
+
+    while i < 3 {
+        if i == 2 {
+            print('s');
+            i += 1;
+            continue;
+        }
+
+        var resource = Resource {};
+        consume(resource);
+        print(',');
+
+        i += 1;
+    }
+
+    print('e');
+}
+
+# test:subtest
+# test:output "cd,cd,sde"
+
+func main() {
+    var i = 0;
+
+    while i < 3 {
+        var resource = Resource {};
+
+        if i == 2 {
+            print('s');
+            i += 1;
+            continue;
+        }
+
+        consume(resource);
+        print(',');
+
+        i += 1;
+    }
+
+    print('e');
+}
+
+# test:subtest
+# test:output "cde,s"
+
+func f(skip: bool, flag1: bool, flag2: bool) {
+    if skip {
+        if flag1 {
+            print('!');
+        } else if flag2 {
+            print('!');
+        } else {
+            print('s');
+            return;
+        }
+    }
+
+    var resource = Resource {};
+    consume(resource);
+    print('e');
+}
+
+func main() {
+    f(false, false, false);
+    print(',');
+    f(true, false, false);
+}
+
+# test:subtest
+# test:output "cd,cd,be"
+
+func main() {
+    var i = 0;
+    var flag1 = false;
+    var flag2 = false;
+
+    while true {
+        if i == 2 {
+            if flag1 {
+                print('!');
+            } else if flag2 {
+                print('!');
+            } else {
+                print('b');
+                break;
+            }
+        }
+
+        var resource = Resource {};
+        consume(resource);
+        print(',');
+
+        i += 1;
+    }
+
+    print('e');
+}
+
+# test:subtest
+# test:output "cde,sd"
+
+func f(skip: bool) {
+    var resource = Resource {};
+    
+    if skip {
+        print('s');
+        return;
+    }
+
+    {
+        consume(resource);
+        print('e');
+    }
+}
+
+func main() {
+    f(false);
+    print(',');
+    f(true);
+}
+
+# TODO: Add more tests mixing return, break, and continue statements.

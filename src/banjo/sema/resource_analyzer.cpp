@@ -11,7 +11,7 @@
 
 namespace banjo::sema {
 
-ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor(analyzer) {}
+ResourceAnalyzer::ResourceAnalyzer(SemanticAnalyzer &analyzer) : DeclVisitor{analyzer} {}
 
 Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     // Don't analyze default implementations in `proto`s.
@@ -33,12 +33,16 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
 }
 
 ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type /*= ScopeType::GENERIC*/) {
-    // TODO: There are performance issues here when analyzing large numbers of resources.
-    // One example is `convert.enum_to_repr` with enums that have lots of variants.
+    // TODO: There are performance issues here when analyzing large numbers of
+    // resources. One example is `convert.enum_to_repr` with enums that have
+    // lots of variants.
 
     scopes.push_back({
         .type = type,
         .block = &block,
+        .init_states{},
+        .move_states{},
+        .exit_behavior = scopes.empty() ? ExitBehavior::NEVER : scopes.back().exit_behavior,
     });
 
     for (sir::Symbol symbol : block.symbol_table->local_symbols_ordered) {
@@ -119,6 +123,13 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
             continue;
         }
 
+        // If a child scope has set the resource to conditionally initialized,
+        // there's no need to check if it has been moved because INIT_COND is
+        // already the most restricting ownership type.
+        if (resource->ownership == sir::Ownership::INIT_COND) {
+            continue;
+        }
+
         if (state.moved) {
             resource->ownership = state.conditional ? sir::Ownership::MOVED_COND : sir::Ownership::MOVED;
         } else {
@@ -167,10 +178,11 @@ void ResourceAnalyzer::analyze_var_stmt(sir::VarStmt &var_stmt) {
     }
 
     sir::Resource *resource = iter->second;
-
     InitState &init_state = scopes.back().init_states.at(iter->second);
+
     if (init_state == InitState::UNINITIALIZED) {
-        update_init_state(scopes.back(), resource, InitState::INITIALIZED);
+        InitState new_state = scope_exits_early() ? InitState::COND_INITIALIZED : InitState::INITIALIZED;
+        update_init_state(scopes.back(), resource, new_state);
     }
 
     value = analyzer.create(
@@ -195,10 +207,7 @@ void ResourceAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign
 
 void ResourceAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     analyze_expr(return_stmt.value, true, false);
-
-    for (auto scope_iter = scopes.rbegin(); scope_iter != scopes.rend(); scope_iter++) {
-        mark_uninit_as_cond_init(*scope_iter);
-    }
+    scopes.back().exit_behavior = ExitBehavior::RETURN;
 }
 
 void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
@@ -274,11 +283,11 @@ void ResourceAnalyzer::analyze_loop_stmt(sir::LoopStmt &loop_stmt) {
 }
 
 void ResourceAnalyzer::analyze_continue_stmt(sir::ContinueStmt & /*continue_stmt*/) {
-    analyze_loop_jump();
+    update_exit_behavior(scopes.back(), ExitBehavior::CONTINUE_BREAK);
 }
 
 void ResourceAnalyzer::analyze_break_stmt(sir::BreakStmt & /*break_stmt*/) {
-    analyze_loop_jump();
+    update_exit_behavior(scopes.back(), ExitBehavior::CONTINUE_BREAK);
 }
 
 void ResourceAnalyzer::analyze_block_stmt(sir::Block &block) {
@@ -588,7 +597,7 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
 
         scopes.back().move_states[resource] = MoveState{
             .moved = true,
-            .conditional = ctx.conditional,
+            .conditional = ctx.conditional || scope_exits_early(),
             .partial = false,
             .move_expr = inout_expr,
         };
@@ -651,7 +660,7 @@ void ResourceAnalyzer::move_sub_resources(sir::Resource *resource, sir::Expr mov
     for (sir::Resource &sub_resource : resource->sub_resources) {
         scopes.back().move_states[&sub_resource] = MoveState{
             .moved = true,
-            .conditional = ctx.conditional,
+            .conditional = ctx.conditional || scope_exits_early(),
             .partial = true,
             .move_expr = move_expr,
         };
@@ -676,7 +685,7 @@ void ResourceAnalyzer::partially_move_super_resources(sir::Resource *resource, s
 
         scopes.back().move_states[super_resource] = MoveState{
             .moved = true,
-            .conditional = ctx.conditional,
+            .conditional = ctx.conditional || scope_exits_early(),
             .partial = true,
             .move_expr = move_expr,
         };
@@ -693,29 +702,8 @@ void ResourceAnalyzer::update_init_state(Scope &scope, sir::Resource *resource, 
     }
 }
 
-void ResourceAnalyzer::analyze_loop_jump() {
-    for (auto scope_iter = scopes.rbegin(); scope_iter != scopes.rend(); scope_iter++) {
-        mark_uninit_as_cond_init(*scope_iter);
-
-        if (scope_iter->type == ScopeType::LOOP) {
-            break;
-        }
-    }
-}
-
-void ResourceAnalyzer::mark_uninit_as_cond_init(Scope &scope) {
-    // All resources that aren't initialized at the point of a branch are only initialized if
-    // the branch is not taken, so mark them as conditionally initialized.
-
-    for (auto &[resource, state] : scope.init_states) {
-        if (state == InitState::UNINITIALIZED) {
-            update_init_state(scope, resource, InitState::COND_INITIALIZED);
-        }
-    }
-}
-
-unsigned ResourceAnalyzer::get_scope_depth() {
-    return static_cast<unsigned>(scopes.size() - 1);
+bool ResourceAnalyzer::scope_exits_early() {
+    return scopes.back().exit_behavior != ExitBehavior::NEVER;
 }
 
 std::optional<sir::Resource> ResourceAnalyzer::create_resource(sir::Expr type) {
@@ -728,6 +716,24 @@ bool ResourceAnalyzer::is_resource(sir::Expr type) {
 }
 
 void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope, bool conditional) {
+    // If a block contains a return/break/continue statement, all code
+    // afterwards is executed conditionally. For example, if a function body is
+    // guarded by a return statement inside an if statement, all resources after
+    // the guard are initialized conditionally and moved conditionally.
+    switch (child_scope.exit_behavior) {
+        case ExitBehavior::NEVER: break;
+        case ExitBehavior::RETURN: parent_scope.exit_behavior = ExitBehavior::RETURN; break;
+
+        case ExitBehavior::CONTINUE_BREAK:
+            // The exit behavior of a loop containing a continue/break statement
+            // is not transferred to the enclosing scope.
+            if (child_scope.type != ScopeType::LOOP) {
+                update_exit_behavior(parent_scope, ExitBehavior::CONTINUE_BREAK);
+            }
+
+            break;
+    }
+
     for (auto &[symbol, state] : child_scope.move_states) {
         if (!state.moved) {
             continue;
@@ -737,7 +743,8 @@ void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope
         auto iter = parent_scope.move_states.find(symbol);
 
         if (iter == parent_scope.move_states.end()) {
-            // If the resource does not exist in the parent scope, set it to moved.
+            // If the resource does not exist in the parent scope, set it to
+            // moved.
 
             state.conditional = moved_conditionally;
             parent_scope.move_states.insert({symbol, state});
@@ -748,21 +755,38 @@ void ResourceAnalyzer::merge_move_states(Scope &parent_scope, Scope &child_scope
 
         if (parent_state.moved) {
             if (!moved_conditionally && parent_state.conditional) {
-                // If the resource is moved only conditionally in the parent scope, but
-                // unconditionally in the child scope, set it to unconditionally moved
-                // in the parent scope and update the expression that moved it.
+                // If the resource is moved only conditionally in the parent
+                // scope, but unconditionally in the child scope, set it to
+                // unconditionally moved in the parent scope and update the
+                // expression that moved it.
 
                 parent_state.conditional = false;
                 parent_state.move_expr = state.move_expr;
             }
         } else {
-            // If the resource is not moved in the parent scope, set it to moved.
+            // If the resource is not moved in the parent scope, set it to
+            // moved.
 
             parent_state.moved = true;
             parent_state.conditional = moved_conditionally;
             parent_state.partial = state.partial;
             parent_state.move_expr = state.move_expr;
         }
+    }
+}
+
+void ResourceAnalyzer::update_exit_behavior(Scope &scope, ExitBehavior value) {
+    switch (scope.exit_behavior) {
+        case ExitBehavior::NEVER: scope.exit_behavior = value; break;
+
+        case ExitBehavior::CONTINUE_BREAK:
+            if (value == ExitBehavior::RETURN) {
+                scope.exit_behavior = value;
+            }
+
+            break;
+
+        case ExitBehavior::RETURN: break;
     }
 }
 
