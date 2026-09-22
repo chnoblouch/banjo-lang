@@ -92,12 +92,8 @@ bool SSAGeneratorContext::is_type_check_satisfied(const sir::TypeCheckExpr &type
     }
 }
 
-ssa::BasicBlockIter SSAGeneratorContext::create_block(std::string label) {
-    return get_ssa_func()->create_block(std::move(label));
-}
-
 ssa::BasicBlockIter SSAGeneratorContext::create_block() {
-    return create_block("b." + std::to_string(next_block_id()));
+    return get_ssa_func()->create_block(ssa_mod->next_block_label());
 }
 
 void SSAGeneratorContext::append_block(ssa::BasicBlockIter block) {

@@ -18,7 +18,7 @@
 
 namespace banjo {
 
-BlockSSAGenerator::BlockSSAGenerator(SSAGeneratorContext &ctx) : ctx(ctx) {}
+BlockSSAGenerator::BlockSSAGenerator(SSAGeneratorContext &ctx) : ctx{ctx} {}
 
 void BlockSSAGenerator::generate_block(const sir::Block &block) {
     generate_block_allocas(block);
@@ -32,7 +32,7 @@ void BlockSSAGenerator::generate_block_allocas(const sir::Block &block, const si
                 continue;
             }
 
-            ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(local->type);
+            ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(local->type);
             ssa::VirtualRegister reg = ctx.append_alloca(ssa_type);
             ctx.ssa_local_regs[local] = reg;
         }
@@ -79,7 +79,7 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
 }
 
 void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
-    for (const auto &[symbol, resource] : std::ranges::reverse_view(block.resources)) {
+    for (const auto &[symbol, resource] : std::ranges::reverse_view{block.resources}) {
         generate_deinit(resource, symbol);
     }
 }
@@ -485,8 +485,9 @@ void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Valu
 
     if (final_resource.ownership == sir::Ownership::OWNED) {
         generate_deinit_call(final_resource, std::move(ssa_ptr));
-    } else if (final_resource.ownership == sir::Ownership::MOVED_COND ||
-               final_resource.ownership == sir::Ownership::INIT_COND) {
+    } else if (
+        final_resource.ownership == sir::Ownership::MOVED_COND || final_resource.ownership == sir::Ownership::INIT_COND
+    ) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
 

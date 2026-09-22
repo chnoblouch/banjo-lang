@@ -157,7 +157,6 @@ public:
     std::string next_string_name() { return "str." + std::to_string(string_name_id++); }
     int next_block_id() { return block_id++; }
 
-    ssa::BasicBlockIter create_block(std::string label);
     ssa::BasicBlockIter create_block();
     void append_block(ssa::BasicBlockIter block);
 
