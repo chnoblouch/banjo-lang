@@ -23,6 +23,7 @@ private:
     void legalize_store(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
     void legalize_loadarg(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
     void legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
+    void legalize_ret(ssa::InstrIter instr);
 };
 
 } // namespace banjo::passes

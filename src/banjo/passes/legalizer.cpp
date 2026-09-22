@@ -2,6 +2,7 @@
 
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/ssa/builder.hpp"
+#include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/opcode.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
@@ -40,8 +41,12 @@ void Legalizer::run(ssa::Function &func, ssa::BasicBlockIter block) {
         instr = next;
     }
 
-    if (block->get_exit_iter()->is_cond_branch()) {
-        legalize_cjmp(func, block, block->get_exit_iter());
+    ssa::InstrIter exit_instr = block->get_exit_iter();
+
+    if (exit_instr->is_cond_branch()) {
+        legalize_cjmp(func, block, exit_instr);
+    } else if (exit_instr->get_opcode() == ssa::Opcode::RET) {
+        legalize_ret(exit_instr);
     }
 }
 
@@ -233,6 +238,21 @@ void Legalizer::legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ss
 
     true_target = ssa::BranchTarget{.block = new_true_target};
     false_target = ssa::BranchTarget{.block = new_false_target};
+}
+
+void Legalizer::legalize_ret(ssa::InstrIter instr) {
+    // TODO: Update the actual return type of the function.
+
+    if (instr->get_operands().empty()) {
+        return;
+    }
+
+    ssa::Type type = instr->get_operand(0).get_type();
+    unsigned size = get_target()->get_data_layout().get_size(type);
+
+    if (size == 0) {
+        *instr = ssa::Instruction{ssa::Opcode::RET};
+    }
 }
 
 } // namespace banjo::passes
