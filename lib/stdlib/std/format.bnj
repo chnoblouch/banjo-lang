@@ -75,7 +75,7 @@ func format_arg[T](format: StringSlice, arg: ref T) -> String {
                     i += 1;
                 }
 
-                var substring = format.substring(start_index, i);
+                var substring = format.substring(start_index, i + 1);
                 width = convert.parse_u64(substring).unwrap() as usize;
                 width_set = true;
             } else {

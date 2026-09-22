@@ -92,3 +92,10 @@ func main() {
 func main() {
     print(format("{:010}", 3));
 }
+
+# test:subtest
+# test:output "000053cffe"
+
+func main() {
+    print(format("{:010x}", 5492734));
+}
