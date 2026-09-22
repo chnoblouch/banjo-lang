@@ -11,6 +11,8 @@ namespace banjo::passes {
 Legalizer::Legalizer(target::Target *target) : Pass{"legalizer", target} {}
 
 void Legalizer::run(ssa::Module &mod) {
+    this->mod = &mod;
+
     for (ssa::Function *func : mod.get_functions()) {
         run(*func);
     }
@@ -223,8 +225,8 @@ void Legalizer::legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ss
         return;
     }
 
-    ssa::BasicBlockIter new_true_target = func.insert_after(block);
-    ssa::BasicBlockIter new_false_target = func.insert_after(new_true_target);
+    ssa::BasicBlockIter new_true_target = func.insert_after(block, mod->next_block_label());
+    ssa::BasicBlockIter new_false_target = func.insert_after(new_true_target, mod->next_block_label());
 
     new_true_target->append({ssa::Opcode::JMP, {ssa::Operand::from_branch_target(true_target)}});
     new_false_target->append({ssa::Opcode::JMP, {ssa::Operand::from_branch_target(false_target)}});

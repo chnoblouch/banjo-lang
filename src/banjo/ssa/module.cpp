@@ -1,10 +1,9 @@
 #include "module.hpp"
 
 #include <algorithm>
+#include <string>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 Module::~Module() {
     for (Function *func : functions) {
@@ -54,6 +53,10 @@ void Module::forget_pointers() {
     external_globals.clear();
 }
 
-} // namespace ssa
+std::string Module::next_block_label() {
+    std::string label = "b." + std::to_string(block_id);
+    block_id += 1;
+    return label;
+}
 
-} // namespace banjo
+} // namespace banjo::ssa

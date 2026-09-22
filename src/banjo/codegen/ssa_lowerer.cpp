@@ -269,7 +269,7 @@ mcode::InstrIter SSALowerer::emit(mcode::Instruction instr) {
 }
 
 mcode::BasicBlockIter SSALowerer::create_block() {
-    mcode::BasicBlock block{.label = ssa_func->next_block_label()};
+    mcode::BasicBlock block{.label = ssa_mod->next_block_label()};
     return instr_ctx.func->basic_blocks.create_iter(std::move(block));
 }
 

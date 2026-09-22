@@ -23,11 +23,9 @@ public:
     bool global = false;
     bool never_inline = false;
     std::string debug_name;
-
     LinkedList<BasicBlock> basic_blocks;
 
     ssa::VirtualRegister last_virtual_reg = 0;
-    unsigned block_id = 0;
 
 public:
     Function(std::string name, FunctionType type);
@@ -40,12 +38,12 @@ public:
     BasicBlockIter create_block(std::string label);
     void append_block(BasicBlockIter block);
     void merge_blocks(BasicBlockIter first, BasicBlockIter second);
-    BasicBlockIter split_block_after(BasicBlockIter block, InstrIter instr);
-    BasicBlockIter insert_after(BasicBlockIter block);
+    BasicBlockIter split_block_after(BasicBlockIter block, InstrIter instr, std::string label);
+    BasicBlockIter insert_before(BasicBlockIter block, std::string label);
+    BasicBlockIter insert_after(BasicBlockIter block, std::string label);
     BasicBlockIter find_basic_block(const std::string &label);
 
     VirtualRegister next_virtual_reg();
-    std::string next_block_label();
 
     void set_next_reg(ssa::VirtualRegister reg) { last_virtual_reg = reg; }
 

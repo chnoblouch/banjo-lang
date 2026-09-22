@@ -3,15 +3,14 @@
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/call_graph.hpp"
+#include "banjo/ssa/module.hpp"
 
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 class InliningPass : public Pass {
 
@@ -35,6 +34,7 @@ private:
     };
 
 private:
+    ssa::Module *mod;
     std::unordered_set<ssa::Function *> funcs_visited;
     std::set<std::pair<ssa::Function *, ssa::Function *>> inlined_funcs;
 
@@ -57,8 +57,6 @@ private:
     bool is_inlining_legal(ssa::Function *caller, ssa::Function *callee);
 };
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif

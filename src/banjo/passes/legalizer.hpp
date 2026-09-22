@@ -2,10 +2,14 @@
 #define BANJO_PASSESS_LEGALIZER_H
 
 #include "banjo/passes/pass.hpp"
+#include "banjo/ssa/module.hpp"
 
 namespace banjo::passes {
 
 class Legalizer : public Pass {
+
+private:
+    ssa::Module *mod;
 
 public:
     Legalizer(target::Target *target);

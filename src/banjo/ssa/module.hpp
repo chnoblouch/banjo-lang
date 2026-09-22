@@ -6,11 +6,10 @@
 #include "banjo/ssa/global.hpp"
 #include "banjo/ssa/structure.hpp"
 
+#include <string>
 #include <vector>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 class Module {
 
@@ -22,6 +21,8 @@ private:
     std::vector<GlobalDecl *> external_globals;
     std::vector<std::string> dll_exports;
     std::optional<AddrTable> addr_table;
+
+    unsigned block_id = 0;
 
 public:
     Module() {}
@@ -59,10 +60,10 @@ public:
     void set_addr_table(AddrTable addr_table) { this->addr_table = std::move(addr_table); }
 
     void forget_pointers();
+
+    std::string next_block_label();
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

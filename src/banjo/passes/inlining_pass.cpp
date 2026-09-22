@@ -4,25 +4,21 @@
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/basic_block.hpp"
 
-#include <iostream>
 #include <string>
 #include <vector>
 
 #define DEBUG_LOG is_logging() && log()
 
-namespace banjo {
-
-namespace passes {
+namespace banjo::passes {
 
 constexpr int GAIN_BIAS = 3;
-
-static int inlining_label = 0;
 
 InliningPass::InliningPass(target::Target *target) : Pass("inlining", target) {
     // enable_logging(std::cout);
 }
 
 void InliningPass::run(ssa::Module &mod) {
+    this->mod = &mod;
     call_graph = ssa::CallGraph(mod);
 
     std::vector<ssa::Function *> roots;
@@ -121,7 +117,7 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
 
     ssa::BasicBlockIter end_block;
     if (!is_single_block) {
-        end_block = func.split_block_after(block_iter, call_iter);
+        end_block = func.split_block_after(block_iter, call_iter, mod->next_block_label());
     }
 
     Context ctx{
@@ -173,22 +169,20 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
 
     if (!is_single_block) {
         for (ssa::BasicBlockIter iter = callee.begin(); iter != callee.end(); ++iter) {
-            ssa::BasicBlock inline_block("inlined." + std::to_string(inlining_label++));
+            ssa::BasicBlockIter inline_block = func.insert_before(ctx.end_block, mod->next_block_label());
+            ctx.block_map.insert({iter, inline_block});
 
             if (iter != callee.get_entry_block_iter()) {
-                inline_block.get_param_regs().resize(iter->get_param_regs().size());
-                inline_block.get_param_types().resize(iter->get_param_regs().size());
+                inline_block->get_param_regs().resize(iter->get_param_regs().size());
+                inline_block->get_param_types().resize(iter->get_param_regs().size());
 
                 for (unsigned i = 0; i < iter->get_param_regs().size(); i++) {
                     ssa::VirtualRegister inline_param_reg = func.next_virtual_reg();
-                    inline_block.get_param_regs()[i] = inline_param_reg;
-                    inline_block.get_param_types()[i] = iter->get_param_types()[i];
+                    inline_block->get_param_regs()[i] = inline_param_reg;
+                    inline_block->get_param_types()[i] = iter->get_param_types()[i];
                     ctx.reg2reg.insert({iter->get_param_regs()[i], inline_param_reg});
                 }
             }
-
-            ssa::BasicBlockIter inline_block_iter = func.get_basic_blocks().insert_before(ctx.end_block, inline_block);
-            ctx.block_map.insert({iter, inline_block_iter});
         }
     } else {
         ctx.block_map.insert({callee.begin(), block_iter});
@@ -359,6 +353,4 @@ bool InliningPass::is_inlining_legal(ssa::Function *caller, ssa::Function *calle
     return true;
 }
 
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
