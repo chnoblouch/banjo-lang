@@ -11,10 +11,8 @@ pub func print[T](ref value: T) {
 
 pub func println[T](ref value: T) {
     var string = convert.to_string(value);
+    string.append('\n');
     write_to_stdout(string.slice());
-
-    var line_ending: u8 = '\n';
-    write_to_stdout(StringSlice.new(&line_ending, 1));
 }
 
 pub func fprint[Args: ...](template: StringSlice, args: Args) {
@@ -24,10 +22,8 @@ pub func fprint[Args: ...](template: StringSlice, args: Args) {
 
 pub func fprintln[Args: ...](template: StringSlice, args: Args) {
     var string = format.format_packed(template, args);
+    string.append('\n');
     write_to_stdout(string.slice());
-
-    var line_ending: u8 = '\n';
-    write_to_stdout(StringSlice.new(&line_ending, 1));
 }
 
 pub func assert(condition: bool, message: String) {
