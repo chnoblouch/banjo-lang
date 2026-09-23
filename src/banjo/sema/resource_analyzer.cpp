@@ -592,28 +592,37 @@ Result ResourceAnalyzer::analyze_resource_use(sir::Resource *resource, sir::Expr
         return Result::ERROR;
     }
 
-    if (ctx.moving) {
-        RESULT_PROPAGATE(check_for_move_in_loop(resource, inout_expr));
-
-        scopes.back().move_states[resource] = MoveState{
-            .moved = true,
-            .conditional = ctx.conditional || scope_exits_early(),
-            .partial = false,
-            .move_expr = inout_expr,
-        };
-
-        move_sub_resources(resource, inout_expr, ctx);
-        partially_move_super_resources(resource, inout_expr, ctx);
-
-        inout_expr = analyzer.create(
-            sir::MoveExpr{
-                .ast_node = inout_expr.get_ast_node(),
-                .type = inout_expr.get_type(),
-                .value = inout_expr,
-                .resource = resource,
-            }
-        );
+    if (!ctx.moving) {
+        return Result::SUCCESS;
     }
+
+    if (auto concrete_struct = resource->type.match_concrete<sir::StructDef>()) {
+        if (concrete_struct->def->role == sir::StructDef::Role::SHARED) {
+            sir::Symbol func_def = concrete_struct->def->block.symbol_table->look_up_local("copy");
+            sir::Concrete<sir::FuncDef> func{&func_def.as<sir::FuncDef>(), concrete_struct->generic_args};
+            inout_expr = analyzer.builder.create_method_call(inout_expr, func, nullptr);
+            return Result::SUCCESS;
+        }
+    }
+
+    RESULT_PROPAGATE(check_for_move_in_loop(resource, inout_expr));
+
+    scopes.back().move_states[resource] = MoveState{
+        .moved = true,
+        .conditional = ctx.conditional || scope_exits_early(),
+        .partial = false,
+        .move_expr = inout_expr,
+    };
+
+    move_sub_resources(resource, inout_expr, ctx);
+    partially_move_super_resources(resource, inout_expr, ctx);
+
+    inout_expr = analyzer.create<sir::MoveExpr>({
+        .ast_node = inout_expr.get_ast_node(),
+        .type = inout_expr.get_type(),
+        .value = inout_expr,
+        .resource = resource,
+    });
 
     return Result::SUCCESS;
 }

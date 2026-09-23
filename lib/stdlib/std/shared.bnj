@@ -10,7 +10,7 @@ struct Shared[T] {
     var data: *Data[T];
 
     pub func new(value: T) -> Shared[T] {
-        var data = memory.alloc(meta(T).size) as *Data[T];
+        var data = memory.alloc_box[Data[T]]();
         *data = Data[T] { value, ref_count: 1 };
         return Shared[T] { data };
     }
@@ -30,6 +30,7 @@ struct Shared[T] {
 
     pub func __deinit__(mut self) {
         self.data.ref_count -= 1;
+        println(self.data.ref_count);
 
         if self.data.ref_count == 0 {
             builtin.deinit(self.data.value);
