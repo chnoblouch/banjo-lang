@@ -504,7 +504,9 @@ struct Decoder {
 
             if c == ']' {
                 break;
-            } else if c != ',' {
+            } else if c == ',' {
+                self.skip_whitespace();
+            } else {
                 return Error {};
             }
         }
@@ -542,7 +544,9 @@ struct Decoder {
 
             if c == '}' {
                 break;
-            } else if c != ',' {
+            } else if c == ',' {
+                self.skip_whitespace();
+            } else {
                 return Error {};
             }
         }
