@@ -1,15 +1,10 @@
+use std.platform;
 use libc as c;
 
 pub func exit(status: i32) {
     c.exit(status);
 }
 
-pub func env_var(name: StringSlice) -> ?StringSlice {
-    var result = c.getenv(name.to_cstring().data());
-
-    if result != null {
-        return StringSlice.of_cstring(result);
-    } else {
-        return none;
-    }
+pub func env_var(name: StringSlice) -> ?String {
+    return platform.env_var(name);
 }

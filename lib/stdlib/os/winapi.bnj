@@ -50,6 +50,13 @@ meta if os.IS_WINDOWS {
     @[link_name=LocalFree]
     native func local_free(mem: addr) -> addr;
 
+    @[link_name=GetEnvironmentVariableW]
+    native func get_environment_variable(
+        name: *u16,
+        buffer: *u16,
+        size: Dword,
+    ) -> Dword;
+
     @[link_name=FormatMessageA]
     native func format_message(
         flags: Dword,

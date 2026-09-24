@@ -71,6 +71,40 @@ meta if IS_WINDOWS {
         return string;
     }
 
+    pub func env_var(name: StringSlice) -> ?String {
+        var winapi_name = name.to_utf16();
+        winapi_name.append(0);
+
+        var buffer_size = winapi.get_environment_variable(
+            winapi_name.data(),
+            null,
+            0,
+        );
+
+        if buffer_size == 0 {
+            return none;
+        }
+
+        var buffer = Array[u16].sized(buffer_size as usize);
+
+        var length = winapi.get_environment_variable(
+            winapi_name.data(),
+            buffer.data(),
+            buffer.length() as winapi.Dword,
+        );
+
+        # There is potential for a TOCTOU error here, but since we don't provide
+        # an API to modify environment variables, this can only happen if some
+        # foreign code modifies the environment between the two Windows API
+        # calls, which should be extremely rare.
+        if length as usize != buffer.length() - 1 {
+            return none;
+        }
+
+        var slice = buffer.slice().subslice(0, length as usize);
+        return String.from_utf16(slice);
+    }
+
     pub func io_get_stdin_stream() -> StdioStream {
         return StdioStream {
             handle: winapi.get_std_handle(winapi.STD_INPUT_HANDLE),

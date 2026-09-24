@@ -47,6 +47,16 @@ meta if IS_UNIX {
         return String.from_cstring(c.strerror(error.value));
     }
 
+    pub func env_var(name: StringSlice) -> ?String {
+        var result = c.getenv(name.to_cstring().data());
+
+        if result != null {
+            return String.from_cstring(result);
+        } else {
+            return none;
+        }
+    }
+
     pub func io_get_stdin_stream() -> i32 {
         return posix.STDIN_FILENO;
     }
