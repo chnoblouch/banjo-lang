@@ -105,6 +105,38 @@ meta if IS_WINDOWS {
         return String.from_utf16(slice);
     }
 
+    pub func env_vars() -> Array[(String, String)] {
+        var strings = winapi.get_environment_strings();
+        if strings == null {
+            return [];
+        }
+
+        var vars: Array[(String, String)] = [];
+        var index: usize = 0;
+
+        while strings[index] != 0 {
+            var separator = index;
+            
+            while strings[separator] != '=' as u16 {
+                separator += 1;
+            }
+
+            var end = separator + 1;
+
+            while strings[end] != 0 {
+                end += 1;
+            }
+
+            var name = Slice[u16].new(&strings[index], separator - index);
+            var value = Slice[u16].new(&strings[separator + 1], end - separator - 1);
+            vars.append((String.from_utf16(name), String.from_utf16(value)));
+
+            index = end + 1;
+        }
+
+        return vars;
+    }
+
     pub func io_get_stdin_stream() -> StdioStream {
         return StdioStream {
             handle: winapi.get_std_handle(winapi.STD_INPUT_HANDLE),

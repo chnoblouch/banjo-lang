@@ -8,3 +8,7 @@ pub func exit(status: i32) {
 pub func env_var(name: StringSlice) -> ?String {
     return platform.env_var(name);
 }
+
+pub func env_vars() -> Array[(String, String)] {
+    return platform.env_vars();
+}

@@ -57,6 +57,25 @@ meta if IS_UNIX {
         }
     }
 
+    pub func env_vars() -> Array[(String, String)] {
+        var vars: Array[(String, String)] = [];
+        var index: usize = 0;
+
+        while posix.environ[index] != null {
+            var string = StringSlice.of_cstring(posix.environ[index]);
+            
+            try separator in string.find('=') {
+                var name = string.substring(0, separator);
+                var value = string.substring(separator + 1, string.length());
+                vars.append((String.from(name), String.from(value)));
+            }
+
+            index += 1;
+        }
+
+        return vars;
+    }
+
     pub func io_get_stdin_stream() -> i32 {
         return posix.STDIN_FILENO;
     }

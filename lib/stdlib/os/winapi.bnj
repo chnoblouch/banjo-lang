@@ -57,6 +57,9 @@ meta if os.IS_WINDOWS {
         size: Dword,
     ) -> Dword;
 
+    @[link_name=GetEnvironmentStringsW]
+    native func get_environment_strings() -> *u16;
+
     @[link_name=FormatMessageA]
     native func format_message(
         flags: Dword,
