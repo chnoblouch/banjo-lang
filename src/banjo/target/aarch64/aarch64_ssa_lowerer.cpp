@@ -574,17 +574,35 @@ void AArch64SSALowerer::lower_fdemote(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_utof(ssa::Instruction &instr) {
-    // FIXME: Conversion from 8-bit and 16-bit values.
-
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
+
     mcode::Operand m_src = lower_value(instr.get_operand(0));
+
+    if (src_size == 1 || src_size == 2) {
+        mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
+        mcode::Opcode opcode = src_size == 1 ? AArch64Opcode::UXTB : AArch64Opcode::UXTH;
+        emit({opcode, {m_ext, m_src}});
+        m_src = m_ext;
+    }
+
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
     emit({AArch64Opcode::UCVTF, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_stof(ssa::Instruction &instr) {
+    unsigned src_size = get_size(instr.get_operand(0).get_type());
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
+
     mcode::Operand m_src = lower_value(instr.get_operand(0));
+
+    if (src_size == 1 || src_size == 2) {
+        mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
+        mcode::Opcode opcode = src_size == 1 ? AArch64Opcode::SXTB : AArch64Opcode::SXTH;
+        emit({opcode, {m_ext, m_src}});
+        m_src = m_ext;
+    }
+
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
     emit({AArch64Opcode::SCVTF, {m_dst, m_src}});
 }
@@ -592,14 +610,14 @@ void AArch64SSALowerer::lower_stof(ssa::Instruction &instr) {
 void AArch64SSALowerer::lower_ftou(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
-    mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
     emit({AArch64Opcode::FCVTZU, {m_dst, m_src}});
 }
 
 void AArch64SSALowerer::lower_ftos(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     mcode::Operand m_src = lower_value(instr.get_operand(0));
-    mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
     emit({AArch64Opcode::FCVTZS, {m_dst, m_src}});
 }
 
