@@ -39,7 +39,21 @@ mcode::Operand X8664ConstLowering::load_f32(float value, ssa::InstrIter instr) {
     }
 }
 
-mcode::Operand X8664ConstLowering::load_f64(double value) {
+mcode::Operand X8664ConstLowering::load_f32_from_memory(float value) {
+    mcode::Global global{
+        .name = "float." + std::to_string(cur_id++),
+        .size = 4,
+        .alignment = 4,
+        .value = value,
+    };
+
+    lowerer.get_machine_module().add(global);
+
+    X8664Address m_addr{mcode::Symbol{global.name, mcode::Relocation::NONE}};
+    return mcode::Operand::from_x86_64_addr(m_addr, global.size);
+}
+
+mcode::Operand X8664ConstLowering::load_f64_from_memory(double value) {
     mcode::Global global{
         .name = "float." + std::to_string(cur_id++),
         .size = 8,

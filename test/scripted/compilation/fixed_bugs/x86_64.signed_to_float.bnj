@@ -1,0 +1,47 @@
+# test:subtest
+# test:output "10,-42"
+
+func main() {
+    var a: i8 = 10;
+    var b: i8 = -42;
+
+    print(a as f32);
+    print(',');
+    print(b as f32);
+}
+
+# test:subtest
+# test:output "10,-42"
+
+func main() {
+    var a: i8 = 10;
+    var b: i8 = -42;
+
+    print(a as f64);
+    print(',');
+    print(b as f64);
+}
+
+# test:subtest
+# test:output "10,-42"
+
+func main() {
+    var a: i16 = 10;
+    var b: i16 = -42;
+
+    print(a as f32);
+    print(',');
+    print(b as f32);
+}
+
+# test:subtest
+# test:output "10,-42"
+
+func main() {
+    var a: i16 = 10;
+    var b: i16 = -42;
+
+    print(a as f64);
+    print(',');
+    print(b as f64);
+}

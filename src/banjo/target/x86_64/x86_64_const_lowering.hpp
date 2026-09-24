@@ -40,7 +40,9 @@ private:
 public:
     X8664ConstLowering(X8664SSALowerer &lowerer);
     mcode::Operand load_f32(float value, ssa::InstrIter instr);
-    mcode::Operand load_f64(double value);
+
+    mcode::Operand load_f32_from_memory(float value);
+    mcode::Operand load_f64_from_memory(double value);
 
 private:
     void process_block();

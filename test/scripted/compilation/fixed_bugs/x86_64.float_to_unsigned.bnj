@@ -1,0 +1,73 @@
+# TODO: Tests for u8 and u16
+
+# test:subtest
+# test:output "2147483520,2147483648,2147483904,4294967040"
+
+func main() {
+    var a: f32 = 2147483520.0;
+    var b: f32 = 2147483648.0;
+    var c: f32 = 2147483904.0;
+    var d: f32 = 4294967040.0;
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+    print(',');
+    print(d as u32);
+}
+
+# test:subtest
+# test:output "2147483646,2147483647,2147483648,4294967294"
+
+func main() {
+    var a: f64 = 2147483646.0;
+    var b: f64 = 2147483647.0;
+    var c: f64 = 2147483648.0;
+    var d: f64 = 4294967294.0;
+
+    print(a as u32);
+    print(',');
+    print(b as u32);
+    print(',');
+    print(c as u32);
+    print(',');
+    print(d as u32);
+}
+
+# test:subtest
+# test:output "9223371487098961920,9223372036854775808,9223373136366403584,18446742974197923840"
+
+func main() {
+    var a: f32 = 9223371487098961920.0;
+    var b: f32 = 9223372036854775808.0;
+    var c: f32 = 9223373136366403584.0;
+    var d: f32 = 18446742974197923840.0;
+
+    print(a as u64);
+    print(',');
+    print(b as u64);
+    print(',');
+    print(c as u64);
+    print(',');
+    print(d as u64);
+}
+
+# test:subtest
+# test:output "9223372036854774784,9223372036854775808,9223372036854777856,18446744073709549568"
+
+func main() {
+    var a: f64 = 9223372036854774784.0;
+    var b: f64 = 9223372036854775808.0;
+    var c: f64 = 9223372036854777856.0;
+    var d: f64 = 18446744073709549568.0;
+
+    print(a as u64);
+    print(',');
+    print(b as u64);
+    print(',');
+    print(c as u64);
+    print(',');
+    print(d as u64);
+}

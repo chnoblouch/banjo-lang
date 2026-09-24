@@ -510,16 +510,7 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
     unsigned src_size = get_size(src_type);
     unsigned dst_size = get_size(dst_type);
 
-    mcode::Opcode cvt_opcode;
-    mcode::Opcode add_opcode;
-
-    if (dst_type == ssa::Primitive::F64) {
-        cvt_opcode = X8664Opcode::CVTSI2SD;
-        add_opcode = X8664Opcode::ADDSD;
-    } else {
-        cvt_opcode = X8664Opcode::CVTSI2SS;
-        add_opcode = X8664Opcode::ADDSS;
-    }
+    mcode::Opcode cvt_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
 
     if (src_size == 8) {
         // x86_64 does not provide an unsigned integer to float conversion
@@ -534,8 +525,7 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
         //     careful rounding. A 64-bit float mantissa is 53 bits, so 11 bits
         //     of our integer get discarded. Therefore, we set the LSB of the
         //     division result so it doesn't get rounded down if it ends up at
-        //     the half-way point between two representable values. For more
-        //     information, see:
+        //     the half-way point between two representable values. See also:
         //     https://github.com/golang/go/blob/go1.27.0/src/cmd/compile/internal/ssagen/ssa.go#L5920
         //
         // The cases where the value is greater than 2**63-1 generate the
@@ -549,6 +539,8 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
 
         mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), 8);
         mcode::Operand m_tmp2 = mcode::Operand::from_register(create_tmp_reg(), 4);
+
+        mcode::Opcode add_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
 
         emit({X8664Opcode::CMP, {m_src, mcode::Operand::from_int_immediate(0)}});
         emit({X8664Opcode::JL, {mcode::Operand::from_basic_block(*signed_block)}});
@@ -576,6 +568,9 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
             emit({X8664Opcode::MOVZX, {m_ext, m_src}});
             m_src = m_ext;
         } else if (src_size == 4) {
+            // TODO: Add a "do not remove" flag here so the register allocator
+            // doesn't delete this.
+
             mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 8);
             emit({X8664Opcode::MOV, {m_ext, m_src}});
             m_src = m_ext;
@@ -589,33 +584,86 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_stof(ssa::Instruction &instr) {
-    // FIXME: Extend smaller integer sizes
+    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
+    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
 
-    ssa::Primitive type = instr.get_operand(1).get_type().get_primitive();
+    unsigned src_size = get_size(src_type);
+    unsigned dst_size = get_size(dst_type);
 
-    mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
-    mcode::Operand m_dst = map_vreg_dst(instr, type == ssa::Primitive::F64 ? 8 : 4);
+    mcode::Opcode cvt_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
     mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
 
-    emit(mcode::Instruction(X8664Opcode::XORPS, {m_dst, m_dst}));
-    emit(mcode::Instruction(opcode, {m_dst, m_src}));
+    if (src_size == 1 || src_size == 2) {
+        mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
+        emit({X8664Opcode::MOVSX, {m_ext, m_src}});
+        m_src = m_ext;
+    }
+
+    emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+    emit({cvt_opcode, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_ftou(ssa::Instruction &instr) {
-    // TODO
-    lower_ftos(instr);
+    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
+    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
+
+    unsigned dst_size = get_size(dst_type);
+    mcode::Opcode cvt_opcode = src_type == ssa::Primitive::F64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
+
+    if (dst_size == 8) {
+        mcode::BasicBlockIter end_block = create_block();
+        mcode::BasicBlockIter signed_block = create_block();
+
+        mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+        mcode::Operand m_src = lower_as_move_into_reg(create_tmp_reg(), instr.get_operand(0));
+
+        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 8);
+
+        mcode::Opcode cmp_opcode;
+        mcode::Opcode sub_opcode;
+        mcode::Operand m_limit;
+
+        if (src_type == ssa::Primitive::F64) {
+            cmp_opcode = X8664Opcode::UCOMISD;
+            sub_opcode = X8664Opcode::SUBSD;
+            m_limit = const_lowering.load_f64_from_memory(static_cast<double>(0x8000000000000000ull));
+        } else {
+            cmp_opcode = X8664Opcode::UCOMISS;
+            sub_opcode = X8664Opcode::SUBSS;
+            m_limit = const_lowering.load_f32_from_memory(static_cast<float>(0x8000000000000000ull));
+        }
+
+        emit({cmp_opcode, {m_src, m_limit}});
+        emit({X8664Opcode::JAE, {mcode::Operand::from_basic_block(*signed_block)}});
+        emit({cvt_opcode, {m_dst, m_src}});
+        emit({X8664Opcode::JMP, {mcode::Operand::from_basic_block(*end_block)}});
+
+        start_block(signed_block);
+
+        emit({sub_opcode, {m_src, m_limit}});
+        emit({cvt_opcode, {m_dst, m_src}});
+        emit({X8664Opcode::MOV, {m_tmp, mcode::Operand::from_int_immediate(0x8000000000000000ull)}});
+        emit({X8664Opcode::OR, {m_dst, m_tmp}});
+
+        start_block(end_block);
+    } else {
+        mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 4 ? 8 : 4);
+        mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+        emit({cvt_opcode, {m_dst, m_src}});
+    }
 }
 
 void X8664SSALowerer::lower_ftos(ssa::Instruction &instr) {
-    bool is_double = instr.get_operand(0).get_type().is_primitive(ssa::Primitive::F64);
+    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
+    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
 
-    unsigned dst_size = get_size(instr.get_operand(1).get_type());
-    dst_size = dst_size == 8 ? 8 : 4;
+    unsigned dst_size = get_size(dst_type);
 
-    mcode::Opcode opcode = is_double ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
-    mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+    mcode::Opcode cvt_opcode = src_type == ssa::Primitive::F64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
     mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    emit(mcode::Instruction(opcode, {m_dst, m_src}));
+    emit({cvt_opcode, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
@@ -1266,7 +1314,7 @@ mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size
     if (size == 4) {
         return const_lowering.load_f32(static_cast<float>(value), ssa_instr);
     } else if (size == 8) {
-        return const_lowering.load_f64(value);
+        return const_lowering.load_f64_from_memory(value);
     } else {
         ASSERT_UNREACHABLE;
     }
