@@ -26,6 +26,32 @@ func main() {
 }
 
 # test:subtest
+# test:output "true,true,false;false,false,true"
+
+proto P {}
+struct S: P {}
+
+func main() {
+    var a: S = {};
+    var b: S = {};
+
+    var pa: *P = &a;
+    var pb: *P = &b;
+
+    print(pa == pa);
+    print(',');
+    print(pb == pb);
+    print(',');
+    print(pa == pb);
+    print(';');
+    print(pa != pa);
+    print(',');
+    print(pb != pb);
+    print(',');
+    print(pa != pb);
+}
+
+# test:subtest
 # test:output "f"
 
 proto P {

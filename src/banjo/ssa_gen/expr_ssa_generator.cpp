@@ -109,54 +109,67 @@ void ExprSSAGenerator::generate_branch(const sir::Expr &expr, CondBranchTargets 
 
         if (type.is_signed_type()) {
             switch (binary_expr->op) {
-                case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);
-                case sir::BinaryOp::NE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets);
-                case sir::BinaryOp::GT: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SGT, targets);
-                case sir::BinaryOp::LT: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SLT, targets);
-                case sir::BinaryOp::GE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SGE, targets);
-                case sir::BinaryOp::LE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::SLE, targets);
-                case sir::BinaryOp::AND: return generate_and_branch(*binary_expr, targets);
-                case sir::BinaryOp::OR: return generate_or_branch(*binary_expr, targets);
+                case sir::BinaryOp::EQ: generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets); break;
+                case sir::BinaryOp::NE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets); break;
+                case sir::BinaryOp::GT: generate_int_cmp_branch(*binary_expr, ssa::Comparison::SGT, targets); break;
+                case sir::BinaryOp::LT: generate_int_cmp_branch(*binary_expr, ssa::Comparison::SLT, targets); break;
+                case sir::BinaryOp::GE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::SGE, targets); break;
+                case sir::BinaryOp::LE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::SLE, targets); break;
+                case sir::BinaryOp::AND: generate_and_branch(*binary_expr, targets); break;
+                case sir::BinaryOp::OR: generate_or_branch(*binary_expr, targets); break;
                 default: ASSERT_UNREACHABLE;
             }
         } else if (type.is_unsigned_type()) {
             switch (binary_expr->op) {
-                case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);
-                case sir::BinaryOp::NE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets);
-                case sir::BinaryOp::GT: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::UGT, targets);
-                case sir::BinaryOp::LT: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::ULT, targets);
-                case sir::BinaryOp::GE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::UGE, targets);
-                case sir::BinaryOp::LE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::ULE, targets);
-                case sir::BinaryOp::AND: return generate_and_branch(*binary_expr, targets);
-                case sir::BinaryOp::OR: return generate_or_branch(*binary_expr, targets);
+                case sir::BinaryOp::EQ: generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets); break;
+                case sir::BinaryOp::NE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets); break;
+                case sir::BinaryOp::GT: generate_int_cmp_branch(*binary_expr, ssa::Comparison::UGT, targets); break;
+                case sir::BinaryOp::LT: generate_int_cmp_branch(*binary_expr, ssa::Comparison::ULT, targets); break;
+                case sir::BinaryOp::GE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::UGE, targets); break;
+                case sir::BinaryOp::LE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::ULE, targets); break;
+                case sir::BinaryOp::AND: generate_and_branch(*binary_expr, targets); break;
+                case sir::BinaryOp::OR: generate_or_branch(*binary_expr, targets); break;
                 default: ASSERT_UNREACHABLE;
             }
         } else if (type.is_fp_type()) {
             switch (binary_expr->op) {
-                case sir::BinaryOp::EQ: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FEQ, targets);
-                case sir::BinaryOp::NE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FNE, targets);
-                case sir::BinaryOp::GT: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FGT, targets);
-                case sir::BinaryOp::LT: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLT, targets);
-                case sir::BinaryOp::GE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FGE, targets);
-                case sir::BinaryOp::LE: return generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLE, targets);
+                case sir::BinaryOp::EQ: generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FEQ, targets); break;
+                case sir::BinaryOp::NE: generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FNE, targets); break;
+                case sir::BinaryOp::GT: generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FGT, targets); break;
+                case sir::BinaryOp::LT: generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLT, targets); break;
+                case sir::BinaryOp::GE: generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FGE, targets); break;
+                case sir::BinaryOp::LE: generate_fp_cmp_branch(*binary_expr, ssa::Comparison::FLE, targets); break;
                 default: ASSERT_UNREACHABLE;
             }
+        } else if (type.match_proto_ptr()) {
+            ASSERT(binary_expr->op == sir::BinaryOp::EQ || binary_expr->op == sir::BinaryOp::NE);
+
+            ssa::Value ssa_lhs = generate_as_reference(binary_expr->lhs).get_ptr();
+            ssa::Value ssa_rhs = generate_as_reference(binary_expr->rhs).get_ptr();
+
+            ssa::Operand ssa_lhs_self = ctx.append_load(ssa::Primitive::ADDR, ssa_lhs);
+            ssa::Operand ssa_rhs_self = ctx.append_load(ssa::Primitive::ADDR, ssa_rhs);
+
+            ssa::Comparison ssa_cmp = binary_expr->op == sir::BinaryOp::EQ ? ssa::Comparison::EQ : ssa::Comparison::NE;
+            ctx.append_cjmp(ssa_lhs_self, ssa_cmp, ssa_rhs_self, targets.target_if_true, targets.target_if_false);
         } else {
             switch (binary_expr->op) {
-                case sir::BinaryOp::EQ: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets);
-                case sir::BinaryOp::NE: return generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets);
-                case sir::BinaryOp::AND: return generate_and_branch(*binary_expr, targets);
-                case sir::BinaryOp::OR: return generate_or_branch(*binary_expr, targets);
+                case sir::BinaryOp::EQ: generate_int_cmp_branch(*binary_expr, ssa::Comparison::EQ, targets); break;
+                case sir::BinaryOp::NE: generate_int_cmp_branch(*binary_expr, ssa::Comparison::NE, targets); break;
+                case sir::BinaryOp::AND: generate_and_branch(*binary_expr, targets); break;
+                case sir::BinaryOp::OR: generate_or_branch(*binary_expr, targets); break;
                 default: ASSERT_UNREACHABLE;
             }
         }
     } else if (auto unary_expr = expr.match<sir::UnaryExpr>()) {
         if (unary_expr->op == sir::UnaryOp::NOT) {
             return generate_not_branch(*unary_expr, targets);
+        } else {
+            return generate_zero_check_branch(expr, targets);
         }
+    } else {
+        return generate_zero_check_branch(expr, targets);
     }
-
-    return generate_zero_check_branch(expr, targets);
 }
 
 StoredValue ExprSSAGenerator::generate_int_literal(const sir::IntLiteral &int_literal) {
