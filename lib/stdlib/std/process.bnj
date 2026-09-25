@@ -1,8 +1,20 @@
 use std.platform;
 use libc as c;
 
-pub func exit(status: i32) {
-    c.exit(status);
+@[link_name=global_argc]
+var argc: i32 = 0;
+
+@[link_name=global_argv]
+var argv: **u8 = null;
+
+pub func args() -> Array[String] {
+    var array = Array[String].sized(argc as usize);
+
+    for i in 0..argc as usize {
+        array[i] = String.from_cstring(argv[i]);
+    }
+
+    return array;
 }
 
 pub func env_var(name: StringSlice) -> ?String {
@@ -11,4 +23,8 @@ pub func env_var(name: StringSlice) -> ?String {
 
 pub func env_vars() -> Array[(String, String)] {
     return platform.env_vars();
+}
+
+pub func exit(status: i32) {
+    c.exit(status);
 }

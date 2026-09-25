@@ -259,8 +259,13 @@ ssa::Structure *SSAGenerator::create_vtable_type(const sir::ProtoDef &sir_proto_
 void SSAGenerator::create_var_decl(const sir::VarDecl &sir_var_decl) {
     ctx.ssa_globals.insert({&sir_var_decl, ssa_mod.get_globals().size()});
 
+    std::string name{sir_var_decl.ident.value};
+    if (sir_var_decl.attrs && sir_var_decl.attrs->link_name) {
+        name = *sir_var_decl.attrs->link_name;
+    }
+
     ssa_mod.add(new ssa::Global{
-        .name = std::string{sir_var_decl.ident.value},
+        .name = name,
         .type = {},
         .initial_value = {},
         .external = false,
@@ -362,6 +367,9 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
         .calling_conv = ctx.target->get_default_calling_conv(),
     };
 
+    ctx.push_func_context(sir_func, &ssa_func);
+    ctx.get_func_context().ssa_func_exit = ctx.create_block();
+
     if (sir_func.is_main()) {
         if (ssa_func_type.params.empty()) {
             ssa_func_type.params = {SSA_MAIN_ARGC_TYPE, SSA_MAIN_ARGV_TYPE};
@@ -370,12 +378,22 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
         if (ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
             ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
         }
+
+        // FIXME: This will break if the link name for these globals is changed.
+        for (ssa::Global *global : ctx.ssa_mod->get_globals()) {
+            if (global->name == "global_argc") {
+                ssa::VirtualRegister argc_reg = ctx.append_loadarg(ssa::Primitive::I32, 0);
+                ssa::Operand argc_value = ssa::Operand::from_register(argc_reg, ssa::Primitive::I32);
+                ctx.append_store(argc_value, ssa::Operand::from_global(global, ssa::Primitive::ADDR));
+            } else if (global->name == "global_argv") {
+                ssa::VirtualRegister argv_reg = ctx.append_loadarg(ssa::Primitive::ADDR, 1);
+                ssa::Operand argv_value = ssa::Operand::from_register(argv_reg, ssa::Primitive::ADDR);
+                ctx.append_store(argv_value, ssa::Operand::from_global(global, ssa::Primitive::ADDR));
+            }
+        }
     }
 
     ssa_func.type = ssa_func_type;
-
-    ctx.push_func_context(sir_func, &ssa_func);
-    ctx.get_func_context().ssa_func_exit = ctx.create_block();
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
     ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
