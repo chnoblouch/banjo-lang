@@ -139,6 +139,8 @@ add_library(banjo STATIC
     "passes/precomputing.hpp"
     "passes/sroa_pass.cpp"
     "passes/sroa_pass.hpp"
+    "passes/sroa_pass_2.cpp"
+    "passes/sroa_pass_2.hpp"
     "passes/stack_slot_merge_pass.cpp"
     "passes/stack_slot_merge_pass.hpp"
     "passes/stack_to_reg_pass.cpp"

@@ -11,9 +11,10 @@ template <typename Key, typename Value>
 class HashMap {
 
 private:
-    typedef std::unordered_map<Key, Value>::value_type ImplValueType;
+    typedef std::unordered_map<Key, Value> ImplType;
+    typedef ImplType::value_type ImplValueType;
 
-    std::unordered_map<Key, Value> impl;
+    ImplType impl;
 
 public:
     HashMap() {}
@@ -24,6 +25,8 @@ public:
 
     void overwrite(Key &&key, Value &&value) { impl[key] = value; }
     void overwrite(Key key, Value value) { impl[std::move(key)] = std::move(value); }
+
+    void clear() { impl.clear(); }
 
     Value *try_find(const Key &key) {
         auto iter = impl.find(key);
@@ -41,10 +44,11 @@ public:
     Value &find_or_create(const Key &key) { return impl[key]; }
     const Value &find_or_create(const Key &key) const { return impl[key]; }
 
-    auto begin() { return impl.begin(); }
-    auto end() { return impl.end(); }
-    auto begin() const { return impl.begin(); }
-    auto end() const { return impl.end(); }
+    ImplType::iterator begin() { return impl.begin(); }
+    ImplType::iterator end() { return impl.end(); }
+
+    ImplType::const_iterator begin() const { return impl.begin(); }
+    ImplType::const_iterator end() const { return impl.end(); }
 };
 
 } // namespace banjo

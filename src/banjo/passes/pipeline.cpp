@@ -14,6 +14,7 @@
 #include "banjo/passes/loop_inversion_pass.hpp"
 #include "banjo/passes/peephole_optimizer.hpp"
 #include "banjo/passes/sroa_pass.hpp"
+#include "banjo/passes/sroa_pass_2.hpp"
 #include "banjo/passes/stack_slot_merge_pass.hpp"
 #include "banjo/passes/stack_to_reg_pass.hpp"
 
@@ -23,6 +24,8 @@
 
 #include <fstream>
 #include <iostream>
+
+#define SROA_PASS SROAPass
 
 namespace banjo::passes {
 
@@ -48,7 +51,7 @@ std::vector<Pass *> Pipeline::create_opt_passes() {
     if (config.opt_level >= 1) {
         passes.push_back(new ControlFlowOptPass(target));
         passes.push_back(new CanonicalizationPass(target));
-        passes.push_back(new SROAPass(target));
+        passes.push_back(new SROA_PASS(target));
         passes.push_back(new StackToRegPass(target));
     }
 
@@ -63,7 +66,7 @@ std::vector<Pass *> Pipeline::create_opt_passes() {
         passes.push_back(new DeadFuncEliminationPass(target));
         passes.push_back(new ControlFlowOptPass(target));
         passes.push_back(new CanonicalizationPass(target));
-        passes.push_back(new SROAPass(target));
+        passes.push_back(new SROA_PASS(target));
         passes.push_back(new StackToRegPass(target));
     }
 
@@ -76,7 +79,7 @@ std::vector<Pass *> Pipeline::create_opt_passes() {
         passes.push_back(new PeepholeOptimizer(target));
         passes.push_back(new ControlFlowOptPass(target));
         passes.push_back(new HeapToStackPass(target));
-        passes.push_back(new SROAPass(target));
+        passes.push_back(new SROA_PASS(target));
         passes.push_back(new StackToRegPass(target));
         passes.push_back(new DeadCodeEliminationPass(target));
         // passes.push_back(new StackSlotMergePass(target));
