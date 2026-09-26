@@ -20,7 +20,10 @@ public:
     HashMap(std::initializer_list<ImplValueType> values) : impl{values} {}
 
     void insert(Key &&key, Value &&value) { impl.emplace(key, value); }
-    void insert(Key &key, Value &value) { impl.emplace(std::move(key), std::move(value)); }
+    void insert(Key key, Value value) { impl.emplace(std::move(key), std::move(value)); }
+
+    void overwrite(Key &&key, Value &&value) { impl[key] = value; }
+    void overwrite(Key key, Value value) { impl[std::move(key)] = std::move(value); }
 
     Value *try_find(const Key &key) {
         auto iter = impl.find(key);
@@ -31,6 +34,17 @@ public:
         auto iter = impl.find(key);
         return iter == impl.end() ? nullptr : &iter->second;
     }
+
+    Value &find(const Key &key) { return *try_find(key); }
+    const Value &find(const Key &key) const { return *try_find(key); }
+
+    Value &find_or_create(const Key &key) { return impl[key]; }
+    const Value &find_or_create(const Key &key) const { return impl[key]; }
+
+    auto begin() { return impl.begin(); }
+    auto end() { return impl.end(); }
+    auto begin() const { return impl.begin(); }
+    auto end() const { return impl.end(); }
 };
 
 } // namespace banjo

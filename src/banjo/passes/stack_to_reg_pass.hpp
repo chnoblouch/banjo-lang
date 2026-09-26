@@ -3,6 +3,8 @@
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
+#include "banjo/ssa/virtual_register.hpp"
+#include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/bit_set.hpp"
 
 #include <unordered_map>
@@ -34,6 +36,9 @@ private:
 
     typedef std::unordered_map<ssa::VirtualRegister, StackSlotInfo> StackSlotMap;
     typedef std::unordered_map<ssa::BasicBlockIter, BlockInfo> BlockMap;
+    typedef std::unordered_map<ssa::VirtualRegister, ssa::Value> ValueMap;
+
+    target::TargetDataLayout &data_layout;
 
     ssa::Function *func;
     ssa::ControlFlowGraph cfg;
@@ -49,25 +54,18 @@ private:
     void find_slot_uses(StackSlotMap &slots, NodeID node, ssa::Instruction &instr);
     void analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, NodeID node, ssa::Opcode opcode);
     bool is_slot_loaded(StackSlotInfo &slot, NodeID node, BitSet &nodes_visited);
-    ssa::Value create_undefined(ssa::Type type);
 
-    void rename(
-        ssa::BasicBlockIter block_iter,
+    void rename(ssa::BasicBlockIter block_iter, StackSlotMap &slots, BlockMap &blocks, ValueMap cur_replacements);
+    void rename_in_load(ssa::BasicBlock &block, ssa::InstrIter &instr, StackSlotMap &slots, ValueMap &cur_replacements);
+    void rename_in_store(
+        ssa::BasicBlock &block,
+        ssa::InstrIter &instr,
         StackSlotMap &slots,
-        BlockMap &blocks,
-        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
+        ValueMap &cur_replacements
     );
 
-    void replace_regs(
-        std::vector<ssa::Operand> &operands,
-        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
-    );
-
-    void update_branch_target(
-        ssa::Operand &operand,
-        BlockMap &blocks,
-        std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
-    );
+    void replace_regs(std::vector<ssa::Operand> &operands, ValueMap cur_replacements);
+    void update_branch_target(ssa::Operand &operand, BlockMap &blocks, ValueMap cur_replacements);
 };
 
 } // namespace banjo::passes

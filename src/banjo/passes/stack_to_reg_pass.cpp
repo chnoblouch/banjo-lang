@@ -9,7 +9,17 @@
 
 namespace banjo::passes {
 
-StackToRegPass::StackToRegPass(target::Target *target) : Pass("stack-to-reg", target) {}
+static ssa::Value create_undefined(ssa::Type type) {
+    if (type.is_floating_point()) {
+        return ssa::Value::from_fp_immediate(0.0, type);
+    } else {
+        return ssa::Value::from_int_immediate(0, type);
+    }
+}
+
+StackToRegPass::StackToRegPass(target::Target *target)
+  : Pass{"stack-to-reg", target},
+    data_layout{target->get_data_layout()} {}
 
 void StackToRegPass::run(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
@@ -38,8 +48,7 @@ void StackToRegPass::run(ssa::Function &func) {
 
     StackSlotMap slots = find_stack_slots();
     BlockMap blocks;
-
-    std::unordered_map<ssa::VirtualRegister, ssa::Value> init_replacements;
+    ValueMap init_replacements;
 
     for (auto &[reg, slot] : slots) {
         if (slot.store_nodes.empty()) {
@@ -157,8 +166,9 @@ void StackToRegPass::find_slot_uses(StackSlotMap &slots, NodeID node, ssa::Instr
 
             StackSlotInfo &slot = iter->second;
 
-            // Can't promote if a different type than allocated is loaded from this slot.
-            if (slot.type != type) {
+            // Can't promote if a type with a different size than allocated is
+            // loaded from this slot.
+            if (data_layout.get_size(slot.type) != data_layout.get_size(type)) {
                 slot.promotable = false;
             }
         }
@@ -178,8 +188,9 @@ void StackToRegPass::find_slot_uses(StackSlotMap &slots, NodeID node, ssa::Instr
 
             StackSlotInfo &slot = iter->second;
 
-            // Can't promote if a different type than allocated is stored into this slot.
-            if (slot.type != src.get_type()) {
+            // Can't promote if a type with a different size than allocated is
+            // stored to this slot.
+            if (data_layout.get_size(slot.type) != data_layout.get_size(src.get_type())) {
                 slot.promotable = false;
             }
 
@@ -237,19 +248,11 @@ bool StackToRegPass::is_slot_loaded(StackSlotInfo &slot, NodeID node, BitSet &no
     return false;
 }
 
-ssa::Value StackToRegPass::create_undefined(ssa::Type type) {
-    if (type.is_floating_point()) {
-        return ssa::Value::from_fp_immediate(0.0, type);
-    } else {
-        return ssa::Value::from_int_immediate(0, type);
-    }
-}
-
 void StackToRegPass::rename(
     ssa::BasicBlockIter block_iter,
     StackSlotMap &slots,
     BlockMap &blocks,
-    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
+    ValueMap cur_replacements
 ) {
     ssa::BasicBlock &block = *block_iter;
 
@@ -267,34 +270,10 @@ void StackToRegPass::rename(
         if (iter->get_opcode() == ssa::Opcode::ALLOCA && slots[*iter->get_dest()].promotable) {
             block.remove(iter);
             iter = prev;
-        } else if (iter->get_opcode() == ssa::Opcode::STORE && iter->get_operand(1).is_register()) {
-            ssa::VirtualRegister store_reg = iter->get_operand(1).get_register();
-
-            if (slots.contains(store_reg) && slots[store_reg].promotable) {
-                ssa::Value &value = iter->get_operand(0);
-
-                if (value.is_register() && cur_replacements.contains(value.get_register())) {
-                    cur_replacements[store_reg] = cur_replacements[value.get_register()];
-                } else {
-                    cur_replacements[store_reg] = value;
-                }
-
-                block.remove(iter);
-                iter = prev;
-            } else {
-                replace_regs(iter->get_operands(), cur_replacements);
-            }
-        } else if (iter->get_opcode() == ssa::Opcode::LOAD && iter->get_operand(1).is_register()) {
-            ssa::VirtualRegister dst = *iter->get_dest();
-            ssa::VirtualRegister load_reg = iter->get_operand(1).get_register();
-
-            if (slots.contains(load_reg) && slots[load_reg].promotable) {
-                cur_replacements[dst] = cur_replacements[load_reg];
-                block.remove(iter);
-                iter = prev;
-            } else {
-                replace_regs(iter->get_operands(), cur_replacements);
-            }
+        } else if (iter->get_opcode() == ssa::Opcode::LOAD) {
+            rename_in_load(block, iter, slots, cur_replacements);
+        } else if (iter->get_opcode() == ssa::Opcode::STORE) {
+            rename_in_store(block, iter, slots, cur_replacements);
         } else if (iter->get_opcode() == ssa::Opcode::JMP) {
             update_branch_target(iter->get_operand(0), blocks, cur_replacements);
             replace_regs(iter->get_operands(), cur_replacements);
@@ -315,10 +294,79 @@ void StackToRegPass::rename(
     }
 }
 
-void StackToRegPass::replace_regs(
-    std::vector<ssa::Operand> &operands,
-    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
+void StackToRegPass::rename_in_load(
+    ssa::BasicBlock &block,
+    ssa::InstrIter &instr,
+    StackSlotMap &slots,
+    ValueMap &cur_replacements
 ) {
+    ssa::VirtualRegister dst = *instr->get_dest();
+    ssa::Type type = instr->get_operand(0).get_type();
+    ssa::Operand &addr = instr->get_operand(1);
+
+    if (!addr.is_register()) {
+        replace_regs(instr->get_operands(), cur_replacements);
+        return;
+    }
+
+    ssa::VirtualRegister addr_reg = addr.get_register();
+
+    if (!slots.contains(addr_reg) || !slots[addr_reg].promotable) {
+        replace_regs(instr->get_operands(), cur_replacements);
+        return;
+    }
+
+    ssa::Value value = cur_replacements[addr_reg];
+
+    // TODO: Test this, and probably also insert a bitcast before loading.
+    if (value.get_type().is_floating_point() != type.is_floating_point()) {
+        ssa::VirtualRegister reg = func->next_virtual_reg();
+        ssa::Operand type_operand = ssa::Operand::from_type(type);
+        block.insert_before(instr, {ssa::Opcode::BITCAST, reg, {value, type_operand}});
+
+        value = ssa::Operand::from_register(reg, type);
+    }
+
+    cur_replacements[dst] = value;
+
+    ssa::InstrIter prev = instr.get_prev();
+    block.remove(instr);
+    instr = prev;
+}
+
+void StackToRegPass::rename_in_store(
+    ssa::BasicBlock &block,
+    ssa::InstrIter &instr,
+    StackSlotMap &slots,
+    ValueMap &cur_replacements
+) {
+    ssa::Operand &value = instr->get_operand(0);
+    ssa::Operand &addr = instr->get_operand(1);
+
+    if (!addr.is_register()) {
+        replace_regs(instr->get_operands(), cur_replacements);
+        return;
+    }
+
+    ssa::VirtualRegister addr_reg = instr->get_operand(1).get_register();
+
+    if (!slots.contains(addr_reg) || !slots[addr_reg].promotable) {
+        replace_regs(instr->get_operands(), cur_replacements);
+        return;
+    }
+
+    if (value.is_register() && cur_replacements.contains(value.get_register())) {
+        value = cur_replacements[value.get_register()];
+    }
+
+    cur_replacements[addr_reg] = value;
+
+    ssa::InstrIter prev = instr.get_prev();
+    block.remove(instr);
+    instr = prev;
+}
+
+void StackToRegPass::replace_regs(std::vector<ssa::Operand> &operands, ValueMap cur_replacements) {
     PassUtils::iter_values(operands, [&cur_replacements](ssa::Value &value) {
         if (value.is_register() && cur_replacements.count(value.get_register())) {
             value = cur_replacements[value.get_register()];
@@ -326,11 +374,7 @@ void StackToRegPass::replace_regs(
     });
 }
 
-void StackToRegPass::update_branch_target(
-    ssa::Operand &operand,
-    BlockMap &blocks,
-    std::unordered_map<ssa::VirtualRegister, ssa::Value> cur_replacements
-) {
+void StackToRegPass::update_branch_target(ssa::Operand &operand, BlockMap &blocks, ValueMap cur_replacements) {
     ssa::BranchTarget &target = operand.get_branch_target();
 
     for (ParamInfo &param : blocks[target.block].new_params) {
