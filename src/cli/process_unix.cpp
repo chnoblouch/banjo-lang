@@ -53,7 +53,7 @@ std::optional<Process> Process::spawn(const Command &command) {
     pid_t pid = fork();
 
     if (pid == -1) {
-        std::string message(strerror(errno));
+        std::string message{strerror(errno)};
         error("failed to spawn process: " + message);
         return {};
     }
@@ -90,17 +90,19 @@ std::optional<Process> Process::spawn(const Command &command) {
         }
 
         if (execvp(executable, argv) == -1) {
-            std::string message(strerror(errno));
+            std::string message{strerror(errno)};
             error("failed to spawn process: " + message);
         }
 
         ASSERT_UNREACHABLE;
     } else {
-        delete executable;
+        delete[] executable;
 
         for (unsigned i = 0; i < command.args.size() + 1; i++) {
-            delete argv[i];
+            delete[] argv[i];
         }
+
+        delete[] argv;
 
         if (command.stdin_stream == Command::Stream::PIPE) {
             if (close(stdin_fd[0]) == -1) {
@@ -144,7 +146,7 @@ ProcessResult Process::wait() {
         int poll_result = poll(poll_fds, 2, -1);
 
         if (poll_result <= 0) {
-            std::string message(strerror(errno));
+            std::string message{strerror(errno)};
             error("`poll` failed: " + message);
         }
 
@@ -166,7 +168,7 @@ ProcessResult Process::wait() {
     int status = 0;
 
     if (waitpid(pid, &status, 0) == -1) {
-        std::string message(strerror(errno));
+        std::string message{strerror(errno)};
         error("failed to wait for process to terminate: " + message);
     }
 
