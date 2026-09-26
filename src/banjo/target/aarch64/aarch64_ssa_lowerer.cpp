@@ -621,7 +621,12 @@ void AArch64SSALowerer::lower_ftos(ssa::Instruction &instr) {
     emit({AArch64Opcode::FCVTZS, {m_dst, m_src}});
 }
 
-void AArch64SSALowerer::lower_bitcast(ssa::Instruction &instr) {}
+void AArch64SSALowerer::lower_bitcast(ssa::Instruction &instr) {
+    unsigned dst_size = get_size(instr.get_operand(1).get_type());
+    mcode::Operand m_src = lower_value(instr.get_operand(0));
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
+    emit({AArch64Opcode::FMOV, {m_dst, m_src}});
+}
 
 void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
