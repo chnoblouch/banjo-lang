@@ -68,6 +68,7 @@ const std::unordered_map<std::string_view, ssa::Opcode> OPS = {
     {"stof", ssa::Opcode::STOF},
     {"ftou", ssa::Opcode::FTOU},
     {"ftos", ssa::Opcode::FTOS},
+    {"bitcast", ssa::Opcode::BITCAST},
     {"atomic_load", ssa::Opcode::ATOMIC_LOAD},
     {"atomic_store", ssa::Opcode::ATOMIC_STORE},
     {"atomic_add", ssa::Opcode::ATOMIC_ADD},

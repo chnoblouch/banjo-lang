@@ -142,6 +142,7 @@ protected:
     virtual void lower_stof(ssa::Instruction &instr) = 0;
     virtual void lower_ftou(ssa::Instruction &instr) = 0;
     virtual void lower_ftos(ssa::Instruction &instr) = 0;
+    virtual void lower_bitcast(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_load(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_store(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_add(ssa::Instruction &instr) = 0;

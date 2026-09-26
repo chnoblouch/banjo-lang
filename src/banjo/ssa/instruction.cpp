@@ -52,6 +52,7 @@ bool Instruction::might_access_memory() const {
         case Opcode::STOF:
         case Opcode::FTOU:
         case Opcode::FTOS:
+        case Opcode::BITCAST:
         case Opcode::MEMBERPTR:
         case Opcode::OFFSETPTR:
         case Opcode::SQRT:
@@ -106,6 +107,7 @@ bool Instruction::has_side_effects() const {
         case Opcode::STOF:
         case Opcode::FTOU:
         case Opcode::FTOS:
+        case Opcode::BITCAST:
         case Opcode::MEMBERPTR:
         case Opcode::OFFSETPTR:
         case Opcode::SQRT:
@@ -158,15 +160,16 @@ Type Instruction::get_type() const {
         case Opcode::ATOMIC_OR:
         case Opcode::ATOMIC_XOR:
         case Opcode::SQRT: return operands[0].get_type();
-        case Opcode::UEXTEND: return operands[1].get_type();
-        case Opcode::SEXTEND: return operands[1].get_type();
-        case Opcode::TRUNCATE: return operands[1].get_type();
-        case Opcode::FPROMOTE: return operands[1].get_type();
-        case Opcode::FDEMOTE: return operands[1].get_type();
-        case Opcode::UTOF: return operands[1].get_type();
-        case Opcode::STOF: return operands[1].get_type();
-        case Opcode::FTOU: return operands[1].get_type();
-        case Opcode::FTOS: return operands[1].get_type();
+        case Opcode::UEXTEND:
+        case Opcode::SEXTEND:
+        case Opcode::TRUNCATE:
+        case Opcode::FPROMOTE:
+        case Opcode::FDEMOTE:
+        case Opcode::UTOF:
+        case Opcode::STOF:
+        case Opcode::FTOU:
+        case Opcode::FTOS:
+        case Opcode::BITCAST: return operands[1].get_type();
         case Opcode::SELECT: return operands[3].get_type();
         case Opcode::CALL: return dest ? operands[0].get_type() : ssa::Primitive::VOID;
         case Opcode::MEMBERPTR: {

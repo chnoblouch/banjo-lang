@@ -197,6 +197,7 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::STOF: opcode = "stof"; break;
             case Opcode::FTOU: opcode = "ftou"; break;
             case Opcode::FTOS: opcode = "ftos"; break;
+            case Opcode::BITCAST: opcode = "bitcast"; break;
             case Opcode::ATOMIC_LOAD: opcode = "atomic_load"; break;
             case Opcode::ATOMIC_STORE: opcode = "atomic_store"; break;
             case Opcode::ATOMIC_ADD: opcode = "atomic_add"; break;

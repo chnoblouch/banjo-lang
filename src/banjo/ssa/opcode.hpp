@@ -40,6 +40,7 @@ enum class Opcode {
     STOF,
     FTOU,
     FTOS,
+    BITCAST,
     ATOMIC_LOAD,
     ATOMIC_STORE,
     ATOMIC_ADD,

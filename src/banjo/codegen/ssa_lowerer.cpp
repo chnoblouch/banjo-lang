@@ -214,6 +214,7 @@ void SSALowerer::lower_instr(ssa::InstrIter instr) {
         case ssa::Opcode::STOF: lower_stof(*instr); break;
         case ssa::Opcode::FTOU: lower_ftou(*instr); break;
         case ssa::Opcode::FTOS: lower_ftos(*instr); break;
+        case ssa::Opcode::BITCAST: lower_ftos(*instr); break;
         case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(*instr); break;
         case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(*instr); break;
         case ssa::Opcode::ATOMIC_ADD: lower_atomic_add(*instr); break;

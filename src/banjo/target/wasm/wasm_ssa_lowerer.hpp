@@ -71,6 +71,7 @@ private:
     void lower_stof(ssa::Instruction &instr) override;
     void lower_ftou(ssa::Instruction &instr) override;
     void lower_ftos(ssa::Instruction &instr) override;
+    void lower_bitcast(ssa::Instruction &instr) override;
     void lower_atomic_load(ssa::Instruction &instr) override;
     void lower_atomic_store(ssa::Instruction &instr) override;
     void lower_atomic_add(ssa::Instruction &instr) override;

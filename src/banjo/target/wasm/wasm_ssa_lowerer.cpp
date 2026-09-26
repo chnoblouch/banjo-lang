@@ -707,6 +707,8 @@ void WasmSSALowerer::lower_ftos(ssa::Instruction &instr) {
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
+void WasmSSALowerer::lower_bitcast(ssa::Instruction &instr) {}
+
 void WasmSSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     lower_load(instr);
 }

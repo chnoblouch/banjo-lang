@@ -666,6 +666,8 @@ void X8664SSALowerer::lower_ftos(ssa::Instruction &instr) {
     emit({cvt_opcode, {m_dst, m_src}});
 }
 
+void X8664SSALowerer::lower_bitcast(ssa::Instruction &instr) {}
+
 void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
     unsigned size = get_size(type);
