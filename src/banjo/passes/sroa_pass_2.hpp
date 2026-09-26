@@ -48,6 +48,8 @@ private:
         StackReference reference;
     };
 
+    target::TargetDataLayout &data_layout;
+
     std::vector<StackSlot> stack_slots;
     HashMap<ssa::VirtualRegister, StackReference> stack_refs;
     std::vector<StackRefInstr> stack_ref_instrs;

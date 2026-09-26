@@ -3,6 +3,7 @@
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_data_layout.hpp"
@@ -12,7 +13,7 @@
 
 namespace banjo::passes {
 
-SROAPass2::SROAPass2(target::Target *target) : Pass{"sroa", target} {}
+SROAPass2::SROAPass2(target::Target *target) : Pass{"sroa", target}, data_layout{target->get_data_layout()} {}
 
 void SROAPass2::run(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
@@ -25,6 +26,59 @@ void SROAPass2::run(ssa::Function &func) {
     stack_refs.clear();
     stack_ref_instrs.clear();
     stack_accesses.clear();
+
+    for (ssa::BasicBlock &block : func.basic_blocks) {
+        for (ssa::InstrIter instr = block.begin(); instr != block.end(); ++instr) {
+            if (instr->get_opcode() != ssa::Opcode::COPY) {
+                continue;
+            }
+
+            ssa::Operand &type_operand = instr->get_operand(2);
+            ssa::Type type = type_operand.get_type();
+
+            if (!type.is_struct() && type.get_array_length() != 1) {
+                continue;
+            }
+
+            ssa::Structure &struct_ = *type.get_struct();
+            if (struct_.is_union) {
+                continue;
+            }
+
+            ssa::InstrIter prev = instr.get_prev();
+
+            ssa::Operand &dst = instr->get_operand(0);
+            ssa::Operand &src = instr->get_operand(1);
+
+            for (unsigned i = 0; i < struct_.members.size(); i++) {
+                ssa::Type member_type = struct_.members[i].type;
+
+                ssa::VirtualRegister dst_reg = func.next_virtual_reg();
+                ssa::VirtualRegister src_reg = func.next_virtual_reg();
+
+                ssa::Operand index_operand = ssa::Operand::from_int_immediate(i);
+                block.insert_before(instr, {ssa::Opcode::MEMBERPTR, dst_reg, {type_operand, dst, index_operand}});
+                block.insert_before(instr, {ssa::Opcode::MEMBERPTR, src_reg, {type_operand, src, index_operand}});
+
+                ssa::Operand dst_operand = ssa::Operand::from_register(dst_reg, ssa::Primitive::ADDR);
+                ssa::Operand src_operand = ssa::Operand::from_register(src_reg, ssa::Primitive::ADDR);
+                ssa::Operand type_operand = ssa::Operand::from_type(member_type);
+
+                if (member_type.is_primitive() && member_type.get_array_length() == 1) {
+                    ssa::VirtualRegister value_reg = func.next_virtual_reg();
+                    ssa::Operand value_operand = ssa::Operand::from_register(value_reg, member_type);
+
+                    block.insert_before(instr, {ssa::Opcode::LOAD, value_reg, {type_operand, src_operand}});
+                    block.insert_before(instr, {ssa::Opcode::STORE, {value_operand, dst_operand}});
+                } else {
+                    block.insert_before(instr, {ssa::Opcode::COPY, {dst_operand, src_operand, type_operand}});
+                }
+            }
+
+            block.remove(instr);
+            instr = prev;
+        }
+    }
 
     for (ssa::BasicBlock &block : func.basic_blocks) {
         collect_stack_slots(block);
@@ -113,8 +167,6 @@ void SROAPass2::collect_stack_slots(ssa::BasicBlock &block) {
 }
 
 bool SROAPass2::collect_members(StackSlot &slot, ssa::Structure &struct_, unsigned base_offset) {
-    target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-
     if (struct_.is_union || struct_.members.empty()) {
         return false;
     }
@@ -163,8 +215,6 @@ void SROAPass2::collect_stack_refs(ssa::BasicBlock &block) {
 }
 
 void SROAPass2::collect_memberptr(ssa::InstrIter instr, ssa::BasicBlock &block) {
-    target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-
     ssa::Operand &base = instr->get_operand(1);
     if (!base.is_register()) {
         return;
@@ -177,8 +227,6 @@ void SROAPass2::collect_memberptr(ssa::InstrIter instr, ssa::BasicBlock &block) 
 }
 
 void SROAPass2::collect_offsetptr(ssa::InstrIter instr, ssa::BasicBlock &block) {
-    target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-
     ssa::Operand &base = instr->get_operand(0);
     if (!base.is_register()) {
         return;
@@ -195,8 +243,6 @@ void SROAPass2::collect_offsetptr(ssa::InstrIter instr, ssa::BasicBlock &block) 
 }
 
 void SROAPass2::collect_load(ssa::Instruction &instr) {
-    target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-
     ssa::Operand &addr = instr.get_operand(1);
     if (!addr.is_register()) {
         return;
@@ -219,8 +265,6 @@ void SROAPass2::collect_load(ssa::Instruction &instr) {
 }
 
 void SROAPass2::collect_store(ssa::Instruction &instr) {
-    target::TargetDataLayout &data_layout = get_target()->get_data_layout();
-
     if (instr.get_operand(0).is_register()) {
         ssa::VirtualRegister reg = instr.get_operand(0).get_register();
 
