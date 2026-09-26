@@ -40,7 +40,10 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block) {
             continue;
         }
 
-        switch (iter->get_opcode()) {
+        ssa::Opcode opcode = iter->get_opcode();
+        bool discard_stack = opcode != ssa::Opcode::LOAD && opcode != ssa::Opcode::STORE && iter->might_access_memory();
+
+        switch (opcode) {
             case ssa::Opcode::LOAD: process_load(iter, block); break;
             case ssa::Opcode::STORE: process_store(iter); break;
             case ssa::Opcode::ADD: process_add(iter, block); break;
@@ -55,8 +58,7 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block) {
             default: break;
         }
 
-        if (iter->get_opcode() != ssa::Opcode::LOAD && iter->get_opcode() != ssa::Opcode::STORE &&
-            iter->might_access_memory()) {
+        if (discard_stack) {
             discard_stack_values();
         }
     }
