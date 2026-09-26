@@ -77,8 +77,14 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
             ssa::BranchTarget &target_true = branch_instr.get_operand(3).get_branch_target();
             ssa::BranchTarget &target_false = branch_instr.get_operand(4).get_branch_target();
 
-            try_inline_into_cjmp(block, target_true);
-            try_inline_into_cjmp(block, target_false);
+            if (target_true == target_false) {
+                // Replace conditional branches to the same blocks using the
+                // same arguments with a direct branch.
+                branch_instr = {ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target_true)}};
+            } else {
+                try_inline_into_cjmp(block, target_true);
+                try_inline_into_cjmp(block, target_false);
+            }
         }
     }
 
@@ -198,8 +204,8 @@ void ControlFlowOptPass::try_inline_into_cjmp(ssa::BasicBlockIter origin_block, 
     ssa::Instruction &branch_instr = *target.block->get_exit_iter();
 
     if (branch_instr.get_opcode() == ssa::Opcode::JMP) {
-        // If the target block contains an uncoditional branch, try to inline it into the
-        // conditional branch.
+        // If the target block contains an uncoditional branch, try to inline it
+        // into the conditional branch.
 
         ssa::BranchTarget new_target = branch_instr.get_operand(0).get_branch_target();
 
@@ -218,8 +224,8 @@ void ControlFlowOptPass::try_inline_into_cjmp(ssa::BasicBlockIter origin_block, 
 
         target = new_target;
     } else if (branch_instr.is_cond_branch()) {
-        // If the target block only contains a conditional branch instruction, try to precompute
-        // which branch will be taken and inline it.
+        // If the target block only contains a conditional branch instruction,
+        // try to precompute which branch will be taken and inline it.
 
         ssa::Operand lhs = branch_instr.get_operand(0);
         ssa::Comparison comparison = branch_instr.get_operand(1).get_comparison();

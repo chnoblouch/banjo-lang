@@ -230,6 +230,13 @@ void Legalizer::legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ss
         return;
     }
 
+    // If both branches pass the same arguments, this entire comparison is
+    // useless and we can branch directly to the target.
+    if (true_target.args == false_target.args) {
+        *instr = ssa::Instruction{ssa::Opcode::JMP, {ssa::Operand::from_branch_target(true_target)}};
+        return;
+    }
+
     ssa::BasicBlockIter new_true_target = func.insert_after(block, mod->next_block_label());
     ssa::BasicBlockIter new_false_target = func.insert_after(new_true_target, mod->next_block_label());
 
