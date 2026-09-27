@@ -132,6 +132,7 @@ Type Instruction::get_type() const {
         case Opcode::RET:
         case Opcode::ATOMIC_STORE:
         case Opcode::COPY: return ssa::Primitive::VOID;
+        case Opcode::MEMBERPTR:
         case Opcode::OFFSETPTR: return ssa::Primitive::ADDR;
         case Opcode::ALLOCA:
         case Opcode::LOAD:
@@ -172,11 +173,6 @@ Type Instruction::get_type() const {
         case Opcode::BITCAST: return operands[1].get_type();
         case Opcode::SELECT: return operands[3].get_type();
         case Opcode::CALL: return dest ? operands[0].get_type() : ssa::Primitive::VOID;
-        case Opcode::MEMBERPTR: {
-            ssa::Structure &struct_ = *operands[0].get_type().get_struct();
-            unsigned member_index = operands[2].get_int_immediate().to_unsigned();
-            return struct_.members[member_index].type;
-        }
         case Opcode::FRAME_ADDRESS: return ssa::Primitive::ADDR;
     }
 }
