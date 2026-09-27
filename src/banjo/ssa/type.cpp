@@ -34,7 +34,24 @@ bool Type::is_floating_point() const {
 }
 
 bool Type::is_integer() const {
-    return array_length == 1 && !is_floating_point();
+    if (array_length != 1 || !is_primitive()) {
+        return false;
+    }
+
+    switch (get_primitive()) {
+        case Primitive::I8:
+        case Primitive::I16:
+        case Primitive::I32:
+        case Primitive::I64:
+        case Primitive::U8:
+        case Primitive::U16:
+        case Primitive::U32:
+        case Primitive::U64:
+        case Primitive::ADDR: return true;
+        case Primitive::VOID:
+        case Primitive::F32:
+        case Primitive::F64: return false;
+    }
 }
 
 bool Type::is_struct_aggregate() const {
