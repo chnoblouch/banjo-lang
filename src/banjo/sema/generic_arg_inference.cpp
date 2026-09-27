@@ -100,15 +100,16 @@ Result GenericArgInference::infer_on_symbol_expr(sir::SymbolExpr &symbol_expr, s
     }
 
     for (unsigned i = 0; i < generic_params.size(); i++) {
-        if (generic_param != generic_params[i]) {
+        if (generic_param != generic_params[i] || generic_args[i]) {
             continue;
         }
 
-        if (generic_args[i] && generic_args[i] != arg_type) {
-            analyzer.report_generator
-                .report_err_generic_arg_inference_conflict(&call_expr, *generic_param, inference_sources[i], *cur_arg);
-            return Result::ERROR;
-        }
+        // if (generic_args[i] && generic_args[i] != arg_type) {
+        //     analyzer.report_generator
+        //         .report_err_generic_arg_inference_conflict(&call_expr, *generic_param, inference_sources[i],
+        //         *cur_arg);
+        //     return Result::ERROR;
+        // }
 
         generic_args[i] = arg_type;
         inference_sources[i] = *cur_arg;

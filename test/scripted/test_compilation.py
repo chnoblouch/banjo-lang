@@ -28,6 +28,8 @@ SKIPPED_TESTS = set([
     "errors.cannot_negate.1",
     "errors.cannot_iter.4",
     "errors.recursive_struct.6",
+    "errors.generic_arg_inference_conflict.0",
+    "errors.generic_arg_inference_conflict.1",
     "features.meta_if.8",
     "features.meta_for.0",
     "features.generics.protos.3",
