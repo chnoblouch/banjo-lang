@@ -347,7 +347,7 @@ ParseResult Parser::check_stmt_terminator(NodeBuilder &builder, ASTNodeType type
     if (stream.get()->is(TKN_SEMI)) {
         builder.consume();
         return builder.build(type);
-    } else if (stream.previous()->end_of_line) {
+    } else if (stream.get()->is(TKN_RBRACE) || stream.previous()->end_of_line) {
         return builder.build(type);
     } else {
         report_generator.report_err_expected(file, *stream.get(), TKN_SEMI);
