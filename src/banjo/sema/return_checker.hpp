@@ -25,8 +25,8 @@ public:
     Result check(sir::Block &block);
 
 private:
-    Result check_if_stmt(sir::IfStmt &if_stmt);
-    void check_if_stmt_branch(sir::Block &block, bool &returns_always, bool &has_any_return);
+    Result check_if_expr(sir::IfExpr &if_expr);
+    void check_if_branch(sir::Block &block, bool &returns_always, bool &has_any_return);
 };
 
 } // namespace banjo::sema

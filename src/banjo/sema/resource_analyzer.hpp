@@ -79,7 +79,6 @@ private:
     void analyze_assign_stmt(sir::AssignStmt &assign_stmt);
     void analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt);
     void analyze_return_stmt(sir::ReturnStmt &return_stmt);
-    void analyze_if_stmt(sir::IfStmt &if_stmt);
     void analyze_try_stmt(sir::TryStmt &try_stmt);
     void analyze_loop_stmt(sir::LoopStmt &loop_stmt);
     void analyze_continue_stmt(sir::ContinueStmt &continue_stmt);
@@ -98,6 +97,7 @@ private:
     Result analyze_symbol_expr(sir::SymbolExpr &symbol_expr, sir::Expr &out_expr, Context &ctx);
     Result analyze_call_expr(sir::CallExpr &call_expr, Context &ctx);
     Result analyze_field_expr(sir::FieldExpr &field_expr, sir::Expr &out_expr, Context &ctx);
+    Result analyze_if_expr(sir::IfExpr &if_expr, Context &ctx);
     Result analyze_try_expr(sir::TryExpr &try_expr, Context &ctx);
     Result analyze_tuple_expr(sir::TupleExpr &tuple_expr, Context &ctx);
     Result analyze_coercion_expr(sir::CoercionExpr &coercion_expr, Context &ctx);

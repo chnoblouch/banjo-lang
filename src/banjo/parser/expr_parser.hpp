@@ -23,7 +23,6 @@ public:
     ParseResult parse();
     ParseResult parse_type();
 
-private:
     ParseResult parse_range_level();
     ParseResult parse_or_level();
     ParseResult parse_and_level();
@@ -51,6 +50,7 @@ private:
     ParseResult parse_closure();
     ParseResult parse_func_type();
     ParseResult parse_self();
+    ParseResult parse_if_expr();
     ParseResult parse_meta_expr();
 
     ParseResult parse_dot_expr(ASTNode *lhs_node);

@@ -78,7 +78,6 @@ private:
     sir::Stmt generate_assign_stmt(ASTNode *node);
     sir::Stmt generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp op);
     sir::Stmt generate_return_stmt(ASTNode *node);
-    sir::Stmt generate_if_stmt(ASTNode *node);
     sir::Stmt generate_switch_stmt(ASTNode *node);
     sir::Stmt generate_try_stmt(ASTNode *node);
     sir::Stmt generate_while_stmt(ASTNode *node);
@@ -113,6 +112,7 @@ private:
     sir::Expr generate_dot_expr(ASTNode *node);
     sir::Expr generate_implicit_dot_expr(ASTNode *node);
     sir::Expr generate_range_expr(ASTNode *node);
+    sir::Expr generate_if_expr(ASTNode *node);
     sir::Expr generate_try_expr(ASTNode *node);
     sir::Expr generate_tuple_expr(ASTNode *node);
     sir::Expr generate_star_expr(ASTNode *node);

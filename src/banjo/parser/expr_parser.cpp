@@ -236,6 +236,7 @@ ParseResult ExprParser::parse_operand() {
         case TKN_VOID: return parser.consume_into_node(AST_VOID);
         case TKN_FUNC: return parse_func_type();
         case TKN_SELF: return parse_self();
+        case TKN_IF: return parse_if_expr();
         case TKN_META: return parse_meta_expr();
         default: {
             parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
@@ -570,6 +571,63 @@ ParseResult ExprParser::parse_self() {
     }
 
     return node.build(AST_SELF);
+}
+
+ParseResult ExprParser::parse_if_expr() {
+    NodeBuilder node = parser.build_node();
+
+    NodeBuilder first_if = parser.build_node();
+    first_if.consume(); // Consume 'if'
+
+    ParseResult result = ExprParser(parser).parse();
+    first_if.append_child(result.node);
+
+    if (!result.is_valid) {
+        first_if.append_child(parser.create_node(AST_ERROR));
+        node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
+        return {node.build_with_inferred_range(AST_IF_EXPR), false};
+    }
+
+    result = parser.parse_block();
+    first_if.append_child(result.node);
+
+    if (!result.is_valid) {
+        node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
+        return {node.build_with_inferred_range(AST_IF_EXPR), false};
+    }
+
+    node.append_child(first_if.build(AST_IF_BRANCH));
+
+    while (stream.get()->is(TKN_ELSE)) {
+        if (stream.peek(1)->is(TKN_IF)) {
+            NodeBuilder else_if_node = parser.build_node();
+            else_if_node.consume(); // Consume 'else'
+            else_if_node.consume(); // Consume 'if'
+
+            result = ExprParser(parser).parse();
+            else_if_node.append_child(result.node);
+
+            if (!result.is_valid) {
+                else_if_node.append_child(parser.create_node(AST_ERROR));
+                node.append_child(else_if_node.build_with_inferred_range(AST_ELSE_IF_BRANCH));
+                return {node.build_with_inferred_range(AST_IF_BRANCH), false};
+            }
+
+            else_if_node.append_child(parser.parse_block().node);
+            node.append_child(else_if_node.build(AST_ELSE_IF_BRANCH));
+        } else if (stream.peek(1)->is(TKN_LBRACE)) {
+            NodeBuilder else_node = parser.build_node();
+            else_node.consume(); // Consume 'else'
+            else_node.append_child(parser.parse_block().node);
+            node.append_child(else_node.build(AST_ELSE_BRANCH));
+        } else {
+            stream.consume(); // Consume 'else'
+            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
+            return node.build(AST_IF_EXPR);
+        }
+    }
+
+    return node.build(AST_IF_EXPR);
 }
 
 ParseResult ExprParser::parse_meta_expr() {

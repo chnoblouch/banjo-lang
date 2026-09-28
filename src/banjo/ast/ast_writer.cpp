@@ -81,10 +81,6 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_SHL_ASSIGN_STMT: return "SHL_ASSIGN_STMT";
         case AST_SHR_ASSIGN_STMT: return "SHR_ASSIGN_STMT";
         case AST_RETURN_STMT: return "RETURN_STMT";
-        case AST_IF_STMT: return "IF_STMT";
-        case AST_IF_BRANCH: return "IF_BRANCH";
-        case AST_ELSE_IF_BRANCH: return "ELSE_IF_BRANCH";
-        case AST_ELSE_BRANCH: return "ELSE_BRANCH";
         case AST_SWITCH_STMT: return "SWITCH_STMT";
         case AST_SWITCH_CASE_LIST: return "SWITCH_CASE_LIST";
         case AST_SWITCH_CASE_BRANCH: return "SWITCH_CASE_BRANCH";
@@ -153,6 +149,10 @@ const char *ASTWriter::get_type_name(ASTNodeType type) {
         case AST_REF_EXPR: return "REF_EXPR";
         case AST_REF_MUT_EXPR: return "REF_MUT_EXPR";
         case AST_SHARE_EXPR: return "SHARE_EXPR";
+        case AST_IF_EXPR: return "IF_EXPR";
+        case AST_IF_BRANCH: return "IF_BRANCH";
+        case AST_ELSE_IF_BRANCH: return "ELSE_IF_BRANCH";
+        case AST_ELSE_BRANCH: return "ELSE_BRANCH";
         case AST_TRY_EXPR: return "TRY_EXPR";
         case AST_TUPLE_EXPR: return "TUPLE_EXPR";
         case AST_BRACKET_EXPR: return "BRACKET_EXPR";

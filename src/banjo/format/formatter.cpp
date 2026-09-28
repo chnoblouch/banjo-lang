@@ -80,10 +80,6 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_SHL_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
         case AST_SHR_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
         case AST_RETURN_STMT: format_return_stmt(node, whitespace); break;
-        case AST_IF_STMT: format_if_stmt(node, whitespace); break;
-        case AST_IF_BRANCH: format_if_branch(node, whitespace); break;
-        case AST_ELSE_IF_BRANCH: format_else_if_branch(node, whitespace); break;
-        case AST_ELSE_BRANCH: format_else_branch(node, whitespace); break;
         case AST_SWITCH_STMT: format_switch_stmt(node, whitespace); break;
         case AST_SWITCH_CASE_LIST: format_block(node, whitespace); break;
         case AST_SWITCH_CASE_BRANCH: format_switch_case_branch(node, whitespace); break;
@@ -155,6 +151,10 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_REF_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_REF_MUT_EXPR: format_ref_mut_expr(node, whitespace); break;
         case AST_SHARE_EXPR: format_unary_expr(node, whitespace, true); break;
+        case AST_IF_EXPR: format_if_expr(node, whitespace); break;
+        case AST_IF_BRANCH: format_if_branch(node, whitespace); break;
+        case AST_ELSE_IF_BRANCH: format_else_if_branch(node, whitespace); break;
+        case AST_ELSE_BRANCH: format_else_branch(node, whitespace); break;
         case AST_TRY_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_TUPLE_EXPR: format_list(node, whitespace); break;
         case AST_I8: format_single_token_node(node, whitespace); break;
@@ -752,48 +752,6 @@ void Formatter::format_return_stmt(ASTNode *node, WhitespaceKind whitespace) {
     }
 }
 
-void Formatter::format_if_stmt(ASTNode *node, WhitespaceKind whitespace) {
-    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->next_sibling) {
-            format_node(child, WhitespaceKind::SPACE);
-        } else {
-            format_node(child, whitespace);
-        }
-    }
-}
-
-void Formatter::format_if_branch(ASTNode *node, WhitespaceKind whitespace) {
-    ASTNode *condition_node = node->first_child;
-    ASTNode *block_node = condition_node->next_sibling;
-
-    unsigned tkn_if = node->tokens[0];
-
-    ensure_space_after(tkn_if);
-    format_node(condition_node, WhitespaceKind::SPACE);
-    format_node(block_node, whitespace);
-}
-
-void Formatter::format_else_if_branch(ASTNode *node, WhitespaceKind whitespace) {
-    ASTNode *condition_node = node->first_child;
-    ASTNode *block_node = condition_node->next_sibling;
-
-    unsigned tkn_else = node->tokens[0];
-    unsigned tkn_if = node->tokens[1];
-
-    ensure_space_after(tkn_else);
-    ensure_space_after(tkn_if);
-    format_node(condition_node, WhitespaceKind::SPACE);
-    format_node(block_node, whitespace);
-}
-
-void Formatter::format_else_branch(ASTNode *node, WhitespaceKind whitespace) {
-    ASTNode *block_node = node->first_child;
-    unsigned tkn_else = node->tokens[0];
-
-    ensure_space_after(tkn_else);
-    format_node(block_node, whitespace);
-}
-
 void Formatter::format_switch_stmt(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *value_node = node->first_child;
     ASTNode *cases_node = value_node->next_sibling;
@@ -1063,6 +1021,48 @@ void Formatter::format_ref_mut_expr(ASTNode *node, WhitespaceKind whitespace) {
     ensure_space_after(tkn_ref);
     ensure_space_after(tkn_mut);
     format_node(value_node, whitespace);
+}
+
+void Formatter::format_if_expr(ASTNode *node, WhitespaceKind whitespace) {
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->next_sibling) {
+            format_node(child, WhitespaceKind::SPACE);
+        } else {
+            format_node(child, whitespace);
+        }
+    }
+}
+
+void Formatter::format_if_branch(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *condition_node = node->first_child;
+    ASTNode *block_node = condition_node->next_sibling;
+
+    unsigned tkn_if = node->tokens[0];
+
+    ensure_space_after(tkn_if);
+    format_node(condition_node, WhitespaceKind::SPACE);
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_else_if_branch(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *condition_node = node->first_child;
+    ASTNode *block_node = condition_node->next_sibling;
+
+    unsigned tkn_else = node->tokens[0];
+    unsigned tkn_if = node->tokens[1];
+
+    ensure_space_after(tkn_else);
+    ensure_space_after(tkn_if);
+    format_node(condition_node, WhitespaceKind::SPACE);
+    format_node(block_node, whitespace);
+}
+
+void Formatter::format_else_branch(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *block_node = node->first_child;
+    unsigned tkn_else = node->tokens[0];
+
+    ensure_space_after(tkn_else);
+    format_node(block_node, whitespace);
 }
 
 void Formatter::format_static_array_type(ASTNode *node, WhitespaceKind whitespace) {

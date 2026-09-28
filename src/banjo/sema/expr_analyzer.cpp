@@ -12,6 +12,7 @@
 #include "banjo/sema/resource_analyzer.hpp"
 #include "banjo/sema/result_macros.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
+#include "banjo/sema/stmt_analyzer.hpp"
 #include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sema/symbol_context.hpp"
 #include "banjo/sir/magic_methods.hpp"
@@ -190,6 +191,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_call_expr(*inner, expr),       // call_expr
         SIR_VISIT_IGNORE,                               // field_expr
         analyze_range_expr(*inner),                     // range_expr
+        result = analyze_if_expr(*inner),               // if_expr
         result = analyze_try_expr(*inner),              // try_expr
         analyze_tuple_expr(*inner),                     // tuple_expr
         SIR_VISIT_IGNORE,                               // coercion_expr
@@ -1366,6 +1368,29 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
     }
 
     return result;
+}
+
+Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
+    for (sir::IfCondBranch &cond_branch : if_expr.cond_branches) {
+        ExprAnalyzer cond_analyzer{analyzer};
+        Result result = cond_analyzer.analyze_value(cond_branch.condition);
+
+        if (result == Result::SUCCESS) {
+            sir::Expr type = analyzer.get_resolved_type(cond_branch.condition);
+
+            if (!type.is_primitive_type(sir::Primitive::BOOL)) {
+                analyzer.report_generator.report_err_expected_bool(cond_branch.condition);
+            }
+        }
+
+        StmtAnalyzer{analyzer}.analyze_block(*cond_branch.block, cond_analyzer.type_narrowing);
+    }
+
+    if (if_expr.else_branch) {
+        StmtAnalyzer{analyzer}.analyze_block(*if_expr.else_branch->block);
+    }
+
+    return Result::SUCCESS;
 }
 
 Result ExprAnalyzer::analyze_try_expr(sir::TryExpr &try_expr) {

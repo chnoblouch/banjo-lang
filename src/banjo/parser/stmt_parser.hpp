@@ -18,7 +18,7 @@ public:
     ParseResult parse_assign(ASTNode *lhs_node, ASTNodeType type);
     ParseResult parse_var();
     ParseResult parse_ref();
-    ParseResult parse_if_chain();
+    ParseResult parse_if();
     ParseResult parse_switch();
     ParseResult parse_try();
     ParseResult parse_while();

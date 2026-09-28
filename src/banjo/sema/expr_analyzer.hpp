@@ -97,6 +97,7 @@ private:
 
     Result analyze_union_case_literal(sir::CallExpr &call_expr, sir::Expr &out_expr);
     Result analyze_range_expr(sir::RangeExpr &range_expr);
+    Result analyze_if_expr(sir::IfExpr &if_expr);
     Result analyze_try_expr(sir::TryExpr &try_expr);
     void analyze_tuple_expr(sir::TupleExpr &tuple_expr);
     Result analyze_static_array_type(sir::StaticArrayType &static_array_type);

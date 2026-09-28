@@ -97,7 +97,6 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
             analyze_assign_stmt(*inner),        // assign_stmt
             analyze_comp_assign_stmt(*inner),   // comp_assign_stmt
             analyze_return_stmt(*inner),        // return_stmt
-            analyze_if_stmt(*inner),            // if_stmt
             SIR_VISIT_IGNORE,                   // switch_stmt (TODO!)
             analyze_try_stmt(*inner),           // try_stmt
             SIR_VISIT_IGNORE,                   // while_stmt
@@ -210,42 +209,6 @@ void ResourceAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     scopes.back().exit_behavior = ExitBehavior::RETURN;
 }
 
-void ResourceAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
-    std::vector<Scope> child_scopes(if_stmt.cond_branches.size());
-
-    for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
-        sir::IfCondBranch &cond_branch = if_stmt.cond_branches[i];
-
-        bool conditional = i != 0;
-        analyze_expr(cond_branch.condition, true, conditional);
-
-        bool non_resource_added = false;
-
-        if (auto type_check = cond_branch.condition.match<sir::TypeCheckExpr>()) {
-            if (auto generic_param = type_check->type_to_check.match_symbol<sir::GenericParam>()) {
-                if (!is_resource(type_check->constraint)) {
-                    non_resources.push_back(generic_param);
-                    non_resource_added = true;
-                }
-            }
-        }
-
-        child_scopes[i] = analyze_block(*cond_branch.block, ScopeType::GENERIC);
-
-        if (non_resource_added) {
-            non_resources.pop_back();
-        }
-    }
-
-    if (if_stmt.else_branch) {
-        child_scopes.push_back(analyze_block(*if_stmt.else_branch->block));
-    }
-
-    for (Scope &child_scope : child_scopes) {
-        merge_move_states(scopes.back(), child_scope, true);
-    }
-}
-
 void ResourceAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt) {
     std::vector<Scope> child_scopes{
         analyze_block(*try_stmt.success_branch.block),
@@ -335,6 +298,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_call_expr(*inner, ctx),          // call_expr
         result = analyze_field_expr(*inner, expr, ctx),   // field_expr
         SIR_VISIT_IGNORE,                                 // range_expr
+        result = analyze_if_expr(*inner, ctx),            // if_expr
         result = analyze_try_expr(*inner, ctx),           // try_expr
         result = analyze_tuple_expr(*inner, ctx),         // tuple_expr
         result = analyze_coercion_expr(*inner, ctx),      // coercion_expr
@@ -535,6 +499,44 @@ Result ResourceAnalyzer::analyze_field_expr(sir::FieldExpr &field_expr, sir::Exp
     }
 
     ctx.cur_resource = nullptr;
+    return Result::SUCCESS;
+}
+
+Result ResourceAnalyzer::analyze_if_expr(sir::IfExpr &if_expr, Context &ctx) {
+    std::vector<Scope> child_scopes(if_expr.cond_branches.size());
+
+    for (unsigned i = 0; i < if_expr.cond_branches.size(); i++) {
+        sir::IfCondBranch &cond_branch = if_expr.cond_branches[i];
+
+        bool conditional = i != 0;
+        analyze_expr(cond_branch.condition, true, conditional);
+
+        bool non_resource_added = false;
+
+        if (auto type_check = cond_branch.condition.match<sir::TypeCheckExpr>()) {
+            if (auto generic_param = type_check->type_to_check.match_symbol<sir::GenericParam>()) {
+                if (!is_resource(type_check->constraint)) {
+                    non_resources.push_back(generic_param);
+                    non_resource_added = true;
+                }
+            }
+        }
+
+        child_scopes[i] = analyze_block(*cond_branch.block, ScopeType::GENERIC);
+
+        if (non_resource_added) {
+            non_resources.pop_back();
+        }
+    }
+
+    if (if_expr.else_branch) {
+        child_scopes.push_back(analyze_block(*if_expr.else_branch->block));
+    }
+
+    for (Scope &child_scope : child_scopes) {
+        merge_move_states(scopes.back(), child_scope, true);
+    }
+
     return Result::SUCCESS;
 }
 

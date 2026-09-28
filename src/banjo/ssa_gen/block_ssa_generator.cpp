@@ -1,10 +1,10 @@
 #include "block_ssa_generator.hpp"
 
-#include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_visitor.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+#include "banjo/ssa_gen/deinit_ssa_generator.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
@@ -80,7 +80,7 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
 
 void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
     for (const auto &[symbol, resource] : std::ranges::reverse_view{block.resources}) {
-        generate_deinit(resource, symbol);
+        DeinitSSAGenerator{ctx}.generate_deinit(resource, symbol);
     }
 }
 
@@ -92,7 +92,6 @@ void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt) {
         generate_assign_stmt(*inner),   // assign_stmt
         SIR_VISIT_IMPOSSIBLE,           // comp_assign_stmt
         generate_return_stmt(*inner),   // return_stmt
-        generate_if_stmt(*inner),       // if_stmt
         generate_switch_stmt(*inner),   // switch_stmt
         SIR_VISIT_IMPOSSIBLE,           // try_stmt
         SIR_VISIT_IMPOSSIBLE,           // while_stmt
@@ -115,7 +114,7 @@ void BlockSSAGenerator::generate_var_stmt(const sir::VarStmt &var_stmt) {
         ssa::Value ssa_ptr = ssa::Value::from_register(reg, ssa::Primitive::ADDR);
         ExprSSAGenerator{ctx}.generate_into_dst(var_stmt.value, ssa_ptr);
 
-        generate_deferred_deinits();
+        DeinitSSAGenerator{ctx}.generate_deferred_deinits();
     }
 }
 
@@ -123,7 +122,7 @@ void BlockSSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt)
     StoredValue dst = ExprSSAGenerator{ctx}.generate(assign_stmt.lhs, StorageHints::prefer_reference());
     ExprSSAGenerator{ctx}.generate_into_dst(assign_stmt.rhs, dst.get_ptr());
 
-    generate_deferred_deinits();
+    DeinitSSAGenerator{ctx}.generate_deferred_deinits();
 }
 
 void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
@@ -133,77 +132,13 @@ void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt)
         ExprSSAGenerator{ctx}.generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
     }
 
-    generate_deferred_deinits();
+    DeinitSSAGenerator{ctx}.generate_deferred_deinits();
 
     for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
         generate_block_deinit(**iter);
     }
 
     ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
-}
-
-void BlockSSAGenerator::generate_if_stmt(const sir::IfStmt &if_stmt) {
-    std::vector<unsigned> branches;
-    std::optional<unsigned> else_branch;
-
-    if (if_stmt.else_branch) {
-        else_branch = if_stmt.cond_branches.size();
-    }
-
-    for (unsigned i = 0; i < if_stmt.cond_branches.size(); i++) {
-        const sir::IfCondBranch &sir_branch = if_stmt.cond_branches[i];
-
-        if (auto type_check_expr = sir_branch.condition.match<sir::TypeCheckExpr>()) {
-            if (ctx.is_type_check_satisfied(*type_check_expr)) {
-                else_branch = i;
-                break;
-            }
-        } else {
-            branches.push_back(i);
-        }
-    }
-
-    ssa::BasicBlockIter ssa_end_block;
-
-    if (!branches.empty()) {
-        ssa_end_block = ctx.create_block();
-    }
-
-    for (unsigned i = 0; i < branches.size(); i++) {
-        const sir::IfCondBranch &sir_branch = if_stmt.cond_branches[branches[i]];
-        bool is_final_branch = i == branches.size() - 1 && !else_branch;
-
-        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
-        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
-
-        ExprSSAGenerator{ctx}.generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
-        generate_deferred_deinits();
-
-        ctx.append_block(ssa_target_if_true);
-        generate_block(*sir_branch.block);
-        ctx.append_jmp(ssa_end_block);
-
-        if (!is_final_branch) {
-            ctx.append_block(ssa_next_block);
-        }
-    }
-
-    if (else_branch) {
-        if (*else_branch == if_stmt.cond_branches.size()) {
-            generate_block(*if_stmt.else_branch->block);
-        } else {
-            generate_block(*if_stmt.cond_branches[*else_branch].block);
-        }
-
-        if (!branches.empty()) {
-            ctx.append_jmp(ssa_end_block);
-        }
-    }
-
-    if (!branches.empty()) {
-        ctx.append_block(ssa_end_block);
-    }
 }
 
 void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt) {
@@ -258,7 +193,7 @@ void BlockSSAGenerator::generate_loop_stmt(const sir::LoopStmt &loop_stmt) {
     ctx.append_block(ssa_cond_block);
 
     ExprSSAGenerator{ctx}.generate_branch(loop_stmt.condition, {ssa_body_entry_block, ssa_end_block});
-    generate_deferred_deinits();
+    DeinitSSAGenerator{ctx}.generate_deferred_deinits();
 
     ctx.push_loop_context({
         .sir_block = loop_stmt.block,
@@ -432,7 +367,7 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
 
 void BlockSSAGenerator::generate_expr_stmt(const sir::Expr &expr) {
     ExprSSAGenerator(ctx).generate(expr, StorageHints::unused());
-    generate_deferred_deinits();
+    DeinitSSAGenerator{ctx}.generate_deferred_deinits();
 }
 
 void BlockSSAGenerator::generate_loop_jump_deinit() {
@@ -446,92 +381,6 @@ void BlockSSAGenerator::generate_loop_jump_deinit() {
             break;
         }
     }
-}
-
-void BlockSSAGenerator::generate_deferred_deinits() {
-    std::optional<ssa::Instruction> branch_instr;
-
-    if (ctx.get_ssa_block()->is_branching()) {
-        branch_instr = *ctx.get_ssa_block()->get_exit_iter();
-        ctx.get_ssa_block()->remove(ctx.get_ssa_block()->get_exit_iter());
-    }
-
-    for (DeferredDeinit &deferred_deinit : ctx.get_func_context().cur_deferred_deinits) {
-        generate_deinit(*deferred_deinit.resource, deferred_deinit.ssa_ptr);
-    }
-
-    ctx.get_func_context().cur_deferred_deinits.clear();
-
-    if (branch_instr) {
-        ctx.get_ssa_block()->append(*std::move(branch_instr));
-    }
-}
-
-void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, sir::Symbol symbol) {
-    sir::Expr type = symbol.get_type();
-
-    sir::SymbolExpr ptr{
-        .ast_node = nullptr,
-        .type = type,
-        .symbol = symbol,
-    };
-
-    ssa::Value ssa_ptr = ExprSSAGenerator(ctx).generate_as_reference(&ptr).get_ptr();
-    generate_deinit(resource, ssa_ptr);
-}
-
-void BlockSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr) {
-    const sir::Resource &final_resource = ctx.resolve_resource(resource);
-
-    if (final_resource.ownership == sir::Ownership::OWNED) {
-        generate_deinit_call(final_resource, std::move(ssa_ptr));
-    } else if (
-        final_resource.ownership == sir::Ownership::MOVED_COND || final_resource.ownership == sir::Ownership::INIT_COND
-    ) {
-        ssa::BasicBlockIter deinit_block = ctx.create_block();
-        ssa::BasicBlockIter end_block = ctx.create_block();
-
-        ssa::VirtualRegister flag_slot = ctx.get_func_context().resource_deinit_flags.at(&final_resource);
-        ssa::Value flag_val = ctx.append_load(ssa::Primitive::U8, flag_slot);
-        ctx.append_cjmp(flag_val, ssa::Comparison::NE, DEINIT_FLAG_FALSE, deinit_block, end_block);
-
-        ctx.append_block(deinit_block);
-        generate_deinit_call(final_resource, std::move(ssa_ptr));
-        ctx.append_jmp(end_block);
-        ctx.append_block(end_block);
-    }
-
-    ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(final_resource.type);
-
-    for (const sir::Resource &sub_resource : final_resource.sub_resources) {
-        ssa::VirtualRegister field_ptr_reg = ctx.append_memberptr(ssa_type, ssa_ptr, sub_resource.field_index);
-        ssa::Value field_ptr = ssa::Value::from_register(field_ptr_reg, ssa::Primitive::ADDR);
-        generate_deinit(sub_resource, field_ptr);
-    }
-}
-
-void BlockSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa::Value ssa_ptr) {
-    sir::SymbolTable *symbol_table;
-    std::span<sir::Expr> generic_args{static_cast<sir::Expr *>(nullptr), 0};
-
-    if (auto concrete_struct = resource.type.match_concrete<sir::StructDef>()) {
-        symbol_table = concrete_struct->def->block.symbol_table;
-        generic_args = concrete_struct->generic_args;
-    } else if (auto closure_type = resource.type.match<sir::ClosureType>()) {
-        symbol_table = closure_type->underlying_struct->block.symbol_table;
-        return; // TODO: generics
-    } else {
-        return;
-    }
-
-    sir::Symbol deinit_symbol = symbol_table->look_up_local(sir::MagicMethods::DEINIT);
-    if (!deinit_symbol) {
-        return;
-    }
-
-    ssa::Function *ssa_func = ctx.ssa_funcs.find({&deinit_symbol.as<sir::FuncDef>(), generic_args});
-    ssa::Value ssa_callee = ssa::Operand::from_func(ssa_func, ssa::Primitive::ADDR);
-    ctx.get_ssa_block()->append({ssa::Opcode::CALL, {ssa_callee, std::move(ssa_ptr)}});
 }
 
 } // namespace banjo

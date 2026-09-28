@@ -31,6 +31,7 @@
     call_expr_visitor,                                                                                                 \
     field_expr_visitor,                                                                                                \
     range_expr_visitor,                                                                                                \
+    if_expr_visitor,                                                                                                   \
     try_expr_visitor,                                                                                                  \
     tuple_expr_visitor,                                                                                                \
     coercion_expr_visitor,                                                                                             \
@@ -105,6 +106,8 @@
         field_expr_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::RangeExpr>()) {                                  \
         range_expr_visitor;                                                                                            \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::IfExpr>()) {                                     \
+        if_expr_visitor;                                                                                               \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::TryExpr>()) {                                    \
         try_expr_visitor;                                                                                              \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::TupleExpr>()) {                                  \
@@ -174,7 +177,6 @@
     assign_stmt_visitor,                                                                                               \
     comp_assign_stmt_visitor,                                                                                          \
     return_stmt_visitor,                                                                                               \
-    if_stmt_visitor,                                                                                                   \
     switch_stmt_visitor,                                                                                               \
     try_stmt_visitor,                                                                                                  \
     while_stmt_visitor,                                                                                                \
@@ -199,8 +201,6 @@
         comp_assign_stmt_visitor;                                                                                      \
     } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::sir::ReturnStmt>()) {                                 \
         return_stmt_visitor;                                                                                           \
-    } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::sir::IfStmt>()) {                                     \
-        if_stmt_visitor;                                                                                               \
     } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::sir::SwitchStmt>()) {                                 \
         switch_stmt_visitor;                                                                                           \
     } else if ([[maybe_unused]] auto inner = (stmt).match<banjo::sir::TryStmt>()) {                                    \

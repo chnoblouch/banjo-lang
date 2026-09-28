@@ -505,7 +505,6 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_SHL_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SHL);
         case AST_SHR_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SHR);
         case AST_RETURN_STMT: return generate_return_stmt(node);
-        case AST_IF_STMT: return generate_if_stmt(node);
         case AST_SWITCH_STMT: return generate_switch_stmt(node);
         case AST_TRY_STMT: return generate_try_stmt(node);
         case AST_WHILE_STMT: return generate_while_stmt(node);
@@ -636,41 +635,6 @@ sir::Stmt SIRGenerator::generate_return_stmt(ASTNode *node) {
         sir::ReturnStmt{
             .ast_node = node,
             .value = value_node ? generate_expr(value_node) : nullptr,
-        }
-    );
-}
-
-sir::Stmt SIRGenerator::generate_if_stmt(ASTNode *node) {
-    std::vector<sir::IfCondBranch> cond_branches;
-    std::optional<sir::IfElseBranch> else_branch;
-
-    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
-        if (child->type == AST_IF_BRANCH || child->type == AST_ELSE_IF_BRANCH) {
-            ASTNode *condition_node = child->first_child;
-            ASTNode *block_node = condition_node->next_sibling;
-
-            cond_branches.push_back({
-                .ast_node = child,
-                .condition = generate_expr(condition_node),
-                .block = create(generate_block(block_node)),
-            });
-        } else if (child->type == AST_ELSE_BRANCH) {
-            ASTNode *block_node = child->first_child;
-
-            else_branch = sir::IfElseBranch{
-                .ast_node = child,
-                .block = create(generate_block(block_node)),
-            };
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    }
-
-    return create(
-        sir::IfStmt{
-            .ast_node = node,
-            .cond_branches = create_array<sir::IfCondBranch>(cond_branches),
-            .else_branch = else_branch,
         }
     );
 }
@@ -912,6 +876,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_BRACKET_EXPR: return generate_bracket_expr(node);
         case AST_RANGE_EXPR: return generate_range_expr(node);
         case AST_TYPE_CHECK_EXPR: return generate_type_check_expr(node);
+        case AST_IF_EXPR: return generate_if_expr(node);
         case AST_TRY_EXPR: return generate_try_expr(node);
         case AST_TUPLE_EXPR: return generate_tuple_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
@@ -1314,6 +1279,42 @@ sir::Expr SIRGenerator::generate_range_expr(ASTNode *node) {
             .ast_node = node,
             .lhs = generate_expr(lhs_node),
             .rhs = generate_expr(rhs_node),
+        }
+    );
+}
+
+sir::Expr SIRGenerator::generate_if_expr(ASTNode *node) {
+    std::vector<sir::IfCondBranch> cond_branches;
+    std::optional<sir::IfElseBranch> else_branch;
+
+    for (ASTNode *child = node->first_child; child; child = child->next_sibling) {
+        if (child->type == AST_IF_BRANCH || child->type == AST_ELSE_IF_BRANCH) {
+            ASTNode *condition_node = child->first_child;
+            ASTNode *block_node = condition_node->next_sibling;
+
+            cond_branches.push_back({
+                .ast_node = child,
+                .condition = generate_expr(condition_node),
+                .block = create(generate_block(block_node)),
+            });
+        } else if (child->type == AST_ELSE_BRANCH) {
+            ASTNode *block_node = child->first_child;
+
+            else_branch = sir::IfElseBranch{
+                .ast_node = child,
+                .block = create(generate_block(block_node)),
+            };
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+
+    return create(
+        sir::IfExpr{
+            .ast_node = node,
+            .type = nullptr,
+            .cond_branches = create_array<sir::IfCondBranch>(cond_branches),
+            .else_branch = else_branch,
         }
     );
 }

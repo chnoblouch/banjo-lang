@@ -42,7 +42,6 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
         analyze_assign_stmt(*inner),                                 // assign_stmt
         analyze_comp_assign_stmt(*inner, stmt),                      // comp_assign_stmt
         analyze_return_stmt(*inner),                                 // return_stmt
-        analyze_if_stmt(*inner),                                     // if_stmt
         analyze_switch_stmt(*inner),                                 // switch_stmt
         analyze_try_stmt(*inner, stmt),                              // try_stmt
         analyze_while_stmt(*inner, stmt),                            // while_stmt
@@ -189,27 +188,6 @@ void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
     }
 }
 
-void StmtAnalyzer::analyze_if_stmt(sir::IfStmt &if_stmt) {
-    for (sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
-        ExprAnalyzer cond_analyzer{analyzer};
-        Result result = cond_analyzer.analyze_value(cond_branch.condition);
-
-        if (result == Result::SUCCESS) {
-            sir::Expr type = analyzer.get_resolved_type(cond_branch.condition);
-
-            if (!type.is_primitive_type(sir::Primitive::BOOL)) {
-                analyzer.report_generator.report_err_expected_bool(cond_branch.condition);
-            }
-        }
-
-        analyze_block(*cond_branch.block, cond_analyzer.type_narrowing);
-    }
-
-    if (if_stmt.else_branch) {
-        analyze_block(*if_stmt.else_branch->block);
-    }
-}
-
 void StmtAnalyzer::analyze_switch_stmt(sir::SwitchStmt &switch_stmt) {
     Result partial_result;
 
@@ -295,13 +273,13 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
 
     wrapper_block->symbol_table->insert_local(result_var_stmt->local.name.value, &result_var_stmt->local);
 
-    sir::IfStmt *if_stmt = analyzer.create(
-        sir::IfStmt{
+    sir::IfExpr *if_expr = analyzer.create(
+        sir::IfExpr{
             .ast_node = nullptr,
             .cond_branches = {},
         }
     );
-    wrapper_block->stmts.push_back(if_stmt);
+    wrapper_block->stmts.push_back(analyzer.create<sir::Expr>(if_expr));
 
     sir::Block *success_block = analyzer.create(
         sir::Block{
@@ -338,7 +316,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
     try_stmt.success_branch.block->symbol_table->parent = success_block->symbol_table;
     analyze_block(*success_block);
 
-    if_stmt->cond_branches = analyzer.create_array({
+    if_expr->cond_branches = analyzer.create_array({
         sir::IfCondBranch{
             .ast_node = nullptr,
             .condition = analyzer.create(
@@ -392,7 +370,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
             try_stmt.except_branch->block->symbol_table->parent = except_block->symbol_table;
             analyze_block(*except_block);
 
-            if_stmt->else_branch = sir::IfElseBranch{
+            if_expr->else_branch = sir::IfElseBranch{
                 .ast_node = nullptr,
                 .block = except_block,
             };
@@ -408,7 +386,7 @@ void StmtAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt)
         sir::Block *else_block = try_stmt.else_branch->block;
         analyze_block(*else_block);
 
-        if_stmt->else_branch = sir::IfElseBranch{
+        if_expr->else_branch = sir::IfElseBranch{
             .ast_node = nullptr,
             .block = else_block,
         };

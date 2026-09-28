@@ -23,7 +23,6 @@ private:
     void analyze_assign_stmt(sir::AssignStmt &assign_stmt);
     void analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stmt, sir::Stmt &out_stmt);
     void analyze_return_stmt(sir::ReturnStmt &return_stmt);
-    void analyze_if_stmt(sir::IfStmt &if_stmt);
     void analyze_switch_stmt(sir::SwitchStmt &switch_stmt);
     void analyze_try_stmt(sir::TryStmt &try_stmt, sir::Stmt &out_stmt);
     void analyze_while_stmt(sir::WhileStmt &while_stmt, sir::Stmt &out_stmt);

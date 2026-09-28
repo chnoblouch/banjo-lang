@@ -98,61 +98,16 @@ ParseResult StmtParser::parse_var_without_type(NodeBuilder &node, ASTNodeType ty
     return parser.check_stmt_terminator(node, type);
 }
 
-ParseResult StmtParser::parse_if_chain() {
+ParseResult StmtParser::parse_if() {
     NodeBuilder node = parser.build_node();
 
-    NodeBuilder first_if = parser.build_node();
-    first_if.consume(); // Consume 'if'
-
-    ParseResult result = ExprParser(parser).parse();
-    first_if.append_child(result.node);
-    
+    ParseResult result = ExprParser{parser}.parse_if_expr();
     if (!result.is_valid) {
-        first_if.append_child(parser.create_node(AST_ERROR));
-        node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
-        return {node.build_with_inferred_range(AST_IF_STMT), false};
+        return result;
     }
 
-    result = parser.parse_block();
-    first_if.append_child(result.node);
-
-    if (!result.is_valid) {
-        node.append_child(first_if.build_with_inferred_range(AST_IF_BRANCH));
-        return {node.build_with_inferred_range(AST_IF_STMT), false};
-    }
-
-    node.append_child(first_if.build(AST_IF_BRANCH));
-
-    while (stream.get()->is(TKN_ELSE)) {
-        if (stream.peek(1)->is(TKN_IF)) {
-            NodeBuilder else_if_node = parser.build_node();
-            else_if_node.consume(); // Consume 'else'
-            else_if_node.consume(); // Consume 'if'
-
-            result = ExprParser(parser).parse();
-            else_if_node.append_child(result.node);
-            
-            if (!result.is_valid) {
-                else_if_node.append_child(parser.create_node(AST_ERROR));
-                node.append_child(else_if_node.build_with_inferred_range(AST_ELSE_IF_BRANCH));
-                return {node.build_with_inferred_range(AST_IF_BRANCH), false};
-            }
-
-            else_if_node.append_child(parser.parse_block().node);
-            node.append_child(else_if_node.build(AST_ELSE_IF_BRANCH));
-        } else if (stream.peek(1)->is(TKN_LBRACE)) {
-            NodeBuilder else_node = parser.build_node();
-            else_node.consume(); // Consume 'else'
-            else_node.append_child(parser.parse_block().node);
-            node.append_child(else_node.build(AST_ELSE_BRANCH));
-        } else {
-            stream.consume(); // Consume 'else'
-            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
-            return node.build(AST_IF_STMT);
-        }
-    }
-
-    return node.build(AST_IF_STMT);
+    node.append_child(result.node);
+    return node.build(AST_EXPR_STMT);
 }
 
 ParseResult StmtParser::parse_switch() {

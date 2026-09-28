@@ -49,7 +49,6 @@ public:
     void print_assign_stmt(const AssignStmt &assign_stmt);
     void print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     void print_return_stmt(const ReturnStmt &return_stmt);
-    void print_if_stmt(const IfStmt &if_stmt);
     void print_switch_stmt(const SwitchStmt &switch_stmt);
     void print_try_stmt(const TryStmt &try_stmt);
     void print_while_stmt(const WhileStmt &while_stmt);
@@ -84,6 +83,7 @@ public:
     void print_index_expr(const IndexExpr &index_expr);
     void print_call_expr(const CallExpr &call_expr);
     void print_field_expr(const FieldExpr &field_expr);
+    void print_if_expr(const IfExpr &if_expr);
     void print_try_expr(const TryExpr &try_expr);
     void print_range_expr(const RangeExpr &range_expr);
     void print_tuple_expr(const TupleExpr &tuple_expr);

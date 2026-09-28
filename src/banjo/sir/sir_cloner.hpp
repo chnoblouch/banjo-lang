@@ -59,7 +59,6 @@ public:
     AssignStmt *clone_assign_stmt(const AssignStmt &assign_stmt);
     CompAssignStmt *clone_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt);
     ReturnStmt *clone_return_stmt(const ReturnStmt &return_stmt);
-    IfStmt *clone_if_stmt(const IfStmt &if_stmt);
     SwitchStmt *clone_switch_stmt(const SwitchStmt &switch_stmt);
     TryStmt *clone_try_stmt(const TryStmt &try_stmt);
     WhileStmt *clone_while_stmt(const WhileStmt &while_stmt);
@@ -94,6 +93,7 @@ public:
     CallExpr *clone_call_expr(const CallExpr &call_expr);
     FieldExpr *clone_field_expr(const FieldExpr &field_expr);
     RangeExpr *clone_range_expr(const RangeExpr &range_expr);
+    IfExpr *clone_if_expr(const IfExpr &if_expr);
     TryExpr *clone_try_expr(const TryExpr &try_expr);
     TupleExpr *clone_tuple_expr(const TupleExpr &tuple_expr);
     CoercionExpr *clone_coercion_expr(const CoercionExpr &coercion_expr);

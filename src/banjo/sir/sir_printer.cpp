@@ -406,7 +406,6 @@ void Printer::print_stmt(const Stmt &stmt) {
         print_assign_stmt(*inner),
         print_comp_assign_stmt(*inner),
         print_return_stmt(*inner),
-        print_if_stmt(*inner),
         print_switch_stmt(*inner),
         print_try_stmt(*inner),
         print_while_stmt(*inner),
@@ -449,32 +448,6 @@ void Printer::print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt) {
 void Printer::print_return_stmt(const ReturnStmt &return_stmt) {
     BEGIN_OBJECT("ReturnStmt");
     PRINT_EXPR_FIELD("value", return_stmt.value);
-    END_OBJECT();
-}
-
-void Printer::print_if_stmt(const IfStmt &if_stmt) {
-    BEGIN_OBJECT("IfStmt");
-    BEGIN_LIST_FIELD("cond_branches");
-
-    for (const IfCondBranch &cond_branch : if_stmt.cond_branches) {
-        INDENT_LIST_ELEMENT();
-        BEGIN_OBJECT("IfCondBranch");
-        PRINT_EXPR_FIELD("condition", cond_branch.condition);
-        PRINT_BLOCK_FIELD("block", *cond_branch.block);
-        END_OBJECT();
-    }
-
-    END_LIST();
-    PRINT_FIELD_NAME("else_branch");
-
-    if (if_stmt.else_branch) {
-        BEGIN_OBJECT("IfElseBranch");
-        PRINT_BLOCK_FIELD("block", *if_stmt.else_branch->block);
-        END_OBJECT();
-    } else {
-        stream << "none\n";
-    }
-
     END_OBJECT();
 }
 
@@ -654,6 +627,7 @@ void Printer::print_expr(const Expr &expr) {
         print_call_expr(*inner),
         print_field_expr(*inner),
         print_range_expr(*inner),
+        print_if_expr(*inner),
         print_try_expr(*inner),
         print_tuple_expr(*inner),
         print_coercion_expr(*inner),
@@ -855,6 +829,33 @@ void Printer::print_range_expr(const RangeExpr &range_expr) {
     BEGIN_OBJECT("RangeExpr");
     PRINT_EXPR_FIELD("lhs", range_expr.lhs);
     PRINT_EXPR_FIELD("rhs", range_expr.rhs);
+    END_OBJECT();
+}
+
+void Printer::print_if_expr(const IfExpr &if_expr) {
+    BEGIN_OBJECT("IfStmt");
+    PRINT_EXPR_FIELD("type", if_expr.type);
+    BEGIN_LIST_FIELD("cond_branches");
+
+    for (const IfCondBranch &cond_branch : if_expr.cond_branches) {
+        INDENT_LIST_ELEMENT();
+        BEGIN_OBJECT("IfCondBranch");
+        PRINT_EXPR_FIELD("condition", cond_branch.condition);
+        PRINT_BLOCK_FIELD("block", *cond_branch.block);
+        END_OBJECT();
+    }
+
+    END_LIST();
+    PRINT_FIELD_NAME("else_branch");
+
+    if (if_expr.else_branch) {
+        BEGIN_OBJECT("IfElseBranch");
+        PRINT_BLOCK_FIELD("block", *if_expr.else_branch->block);
+        END_OBJECT();
+    } else {
+        stream << "none\n";
+    }
+
     END_OBJECT();
 }
 

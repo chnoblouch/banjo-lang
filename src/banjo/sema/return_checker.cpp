@@ -2,7 +2,7 @@
 
 namespace banjo::sema {
 
-ReturnChecker::ReturnChecker(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
+ReturnChecker::ReturnChecker(SemanticAnalyzer &analyzer) : analyzer{analyzer} {}
 
 ReturnChecker::Result ReturnChecker::check(sir::Block &block) {
     if (block.stmts.empty()) {
@@ -21,24 +21,26 @@ ReturnChecker::Result ReturnChecker::check(sir::Block &block) {
             result = Result::RETURNS_ALWAYS;
         } else if (auto block = stmt.match<sir::Block>()) {
             result = check(*block);
-        } else if (auto if_stmt = stmt.match<sir::IfStmt>()) {
-            result = check_if_stmt(*if_stmt);
+        } else if (auto expr = stmt.match<sir::Expr>()) {
+            if (auto if_expr = expr->match<sir::IfExpr>()) {
+                result = check_if_expr(*if_expr);
+            }
         }
     }
 
     return result;
 }
 
-ReturnChecker::Result ReturnChecker::check_if_stmt(sir::IfStmt &if_stmt) {
+ReturnChecker::Result ReturnChecker::check_if_expr(sir::IfExpr &if_expr) {
     bool returns_always = true;
     bool has_any_return = false;
 
-    for (sir::IfCondBranch &branch : if_stmt.cond_branches) {
-        check_if_stmt_branch(*branch.block, returns_always, has_any_return);
+    for (sir::IfCondBranch &branch : if_expr.cond_branches) {
+        check_if_branch(*branch.block, returns_always, has_any_return);
     }
 
-    if (if_stmt.else_branch) {
-        check_if_stmt_branch(*if_stmt.else_branch->block, returns_always, has_any_return);
+    if (if_expr.else_branch) {
+        check_if_branch(*if_expr.else_branch->block, returns_always, has_any_return);
     } else {
         returns_always = false;
     }
@@ -50,7 +52,7 @@ ReturnChecker::Result ReturnChecker::check_if_stmt(sir::IfStmt &if_stmt) {
     }
 }
 
-void ReturnChecker::check_if_stmt_branch(sir::Block &block, bool &returns_always, bool &has_any_return) {
+void ReturnChecker::check_if_branch(sir::Block &block, bool &returns_always, bool &has_any_return) {
     switch (check(block)) {
         case Result::RETURNS_ALWAYS: has_any_return = true; break;
         case Result::RETURNS_SOMETIMES:

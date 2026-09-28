@@ -102,7 +102,6 @@ void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
         visit_assign_stmt(*inner),   // assign_stmt
         SIR_VISIT_IMPOSSIBLE,        // comp_assign_stmt
         visit_return_stmt(*inner),   // return_stmt
-        visit_if_stmt(*inner),       // if_stmt
         visit_switch_stmt(*inner),   // switch_stmt
         SIR_VISIT_IMPOSSIBLE,        // try_stmt
         SIR_VISIT_IMPOSSIBLE,        // while_stmt
@@ -131,17 +130,6 @@ void SpecializationCollector::visit_assign_stmt(const sir::AssignStmt &assign_st
 
 void SpecializationCollector::visit_return_stmt(const sir::ReturnStmt &return_stmt) {
     visit_expr(return_stmt.value);
-}
-
-void SpecializationCollector::visit_if_stmt(const sir::IfStmt &if_stmt) {
-    for (const sir::IfCondBranch &cond_branch : if_stmt.cond_branches) {
-        visit_expr(cond_branch.condition);
-        visit_block(*cond_branch.block);
-    }
-
-    if (if_stmt.else_branch) {
-        visit_block(*if_stmt.else_branch->block);
-    }
 }
 
 void SpecializationCollector::visit_switch_stmt(const sir::SwitchStmt &switch_stmt) {
@@ -253,6 +241,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_call_expr(*inner),         // call_expr
         visit_field_expr(*inner),        // field_expr
         visit_range_expr(*inner),        // range_expr
+        visit_if_expr(*inner),           // if_expr
         visit_try_expr(*inner),          // try_expr
         visit_tuple_expr(*inner),        // tuple_expr
         visit_coercion_expr(*inner),     // coercion_expr
@@ -340,6 +329,17 @@ void SpecializationCollector::visit_field_expr(const sir::FieldExpr &field_expr)
 void SpecializationCollector::visit_range_expr(const sir::RangeExpr &range_expr) {
     visit_expr(range_expr.lhs);
     visit_expr(range_expr.rhs);
+}
+
+void SpecializationCollector::visit_if_expr(const sir::IfExpr &if_expr) {
+    for (const sir::IfCondBranch &cond_branch : if_expr.cond_branches) {
+        visit_expr(cond_branch.condition);
+        visit_block(*cond_branch.block);
+    }
+
+    if (if_expr.else_branch) {
+        visit_block(*if_expr.else_branch->block);
+    }
 }
 
 void SpecializationCollector::visit_try_expr(const sir::TryExpr &try_expr) {

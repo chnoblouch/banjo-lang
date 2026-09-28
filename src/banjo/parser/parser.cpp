@@ -86,7 +86,7 @@ ParseResult Parser::parse_block_child() {
         case TKN_REF: return StmtParser(*this).parse_ref();
         case TKN_CONST: return DeclParser(*this).parse_const();
         case TKN_FUNC: return DeclParser(*this).parse_func(nullptr);
-        case TKN_IF: return StmtParser(*this).parse_if_chain();
+        case TKN_IF: return StmtParser(*this).parse_if();
         case TKN_SWITCH: return StmtParser(*this).parse_switch();
         case TKN_TRY: return parse_try();
         case TKN_WHILE: return StmtParser(*this).parse_while();

@@ -47,7 +47,6 @@ private:
     void visit_var_stmt(const sir::VarStmt &var_stmt);
     void visit_assign_stmt(const sir::AssignStmt &assign_stmt);
     void visit_return_stmt(const sir::ReturnStmt &return_stmt);
-    void visit_if_stmt(const sir::IfStmt &if_stmt);
     void visit_switch_stmt(const sir::SwitchStmt &switch_stmt);
     void visit_loop_stmt(const sir::LoopStmt &loop_stmt);
     void visit_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt);
@@ -62,6 +61,7 @@ private:
     void visit_call_expr(const sir::CallExpr &call_expr);
     void visit_field_expr(const sir::FieldExpr &field_expr);
     void visit_range_expr(const sir::RangeExpr &range_expr);
+    void visit_if_expr(const sir::IfExpr &if_expr);
     void visit_try_expr(const sir::TryExpr &try_expr);
     void visit_tuple_expr(const sir::TupleExpr &tuple_expr);
     void visit_coercion_expr(const sir::CoercionExpr &coercion_expr);

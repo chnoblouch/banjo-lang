@@ -12,7 +12,9 @@
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+#include "banjo/ssa_gen/block_ssa_generator.hpp"
 #include "banjo/ssa_gen/call_ssa_builder.hpp"
+#include "banjo/ssa_gen/deinit_ssa_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/storage_hints.hpp"
 #include "banjo/ssa_gen/stored_value.hpp"
@@ -71,6 +73,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_call_expr(*inner, hints),          // call_expr
         return generate_field_expr(*inner),                // field_expr
         SIR_VISIT_IMPOSSIBLE,                              // range_expr
+        return generate_if_expr(*inner),                   // if_expr
         return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
@@ -635,6 +638,72 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(field_expr.type);
 
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
+}
+
+StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr) {
+    std::vector<unsigned> branches;
+    std::optional<unsigned> else_branch;
+
+    if (if_expr.else_branch) {
+        else_branch = if_expr.cond_branches.size();
+    }
+
+    for (unsigned i = 0; i < if_expr.cond_branches.size(); i++) {
+        const sir::IfCondBranch &sir_branch = if_expr.cond_branches[i];
+
+        if (auto type_check_expr = sir_branch.condition.match<sir::TypeCheckExpr>()) {
+            if (ctx.is_type_check_satisfied(*type_check_expr)) {
+                else_branch = i;
+                break;
+            }
+        } else {
+            branches.push_back(i);
+        }
+    }
+
+    ssa::BasicBlockIter ssa_end_block;
+
+    if (!branches.empty()) {
+        ssa_end_block = ctx.create_block();
+    }
+
+    for (unsigned i = 0; i < branches.size(); i++) {
+        const sir::IfCondBranch &sir_branch = if_expr.cond_branches[branches[i]];
+        bool is_final_branch = i == branches.size() - 1 && !else_branch;
+
+        ssa::BasicBlockIter ssa_next_block = is_final_branch ? nullptr : ctx.create_block();
+        ssa::BasicBlockIter ssa_target_if_true = ctx.create_block();
+        ssa::BasicBlockIter ssa_target_if_false = is_final_branch ? ssa_end_block : ssa_next_block;
+
+        ExprSSAGenerator{ctx}.generate_branch(sir_branch.condition, {ssa_target_if_true, ssa_target_if_false});
+        DeinitSSAGenerator{ctx}.generate_deferred_deinits();
+
+        ctx.append_block(ssa_target_if_true);
+        BlockSSAGenerator{ctx}.generate_block(*sir_branch.block);
+        ctx.append_jmp(ssa_end_block);
+
+        if (!is_final_branch) {
+            ctx.append_block(ssa_next_block);
+        }
+    }
+
+    if (else_branch) {
+        if (*else_branch == if_expr.cond_branches.size()) {
+            BlockSSAGenerator{ctx}.generate_block(*if_expr.else_branch->block);
+        } else {
+            BlockSSAGenerator{ctx}.generate_block(*if_expr.cond_branches[*else_branch].block);
+        }
+
+        if (!branches.empty()) {
+            ctx.append_jmp(ssa_end_block);
+        }
+    }
+
+    if (!branches.empty()) {
+        ctx.append_block(ssa_end_block);
+    }
+
+    return StoredValue::create_value({});
 }
 
 StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {
