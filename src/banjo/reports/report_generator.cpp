@@ -709,6 +709,19 @@ void ReportGenerator::report_err_cannot_call_generic_operator_overload(sir::Iden
     report_error("cannot call operator overload by name, use the corresponding operator instead", ident.ast_node);
 }
 
+void ReportGenerator::report_err_if_expr_branch_no_value(sir::Block &block) {
+    report_error("if expression branch does not return a value", block.ast_node);
+}
+
+void ReportGenerator::report_err_if_expr_branch_no_value(sir::Stmt &stmt) {
+    // TODO: Highlight parent `if`.
+    report_error("if expression branch does not return a value", stmt.get_ast_node());
+}
+
+void ReportGenerator::report_err_if_expr_missing_else(sir::IfExpr &if_expr) {
+    report_error("missing 'else' branch for if expression", if_expr.ast_node);
+}
+
 void ReportGenerator::report_err_cannot_use_in_try(const sir::Expr &expr) {
     report_error("type '$' is not a result or optional type", expr.get_ast_node(), expr.get_type());
 }

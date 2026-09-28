@@ -152,6 +152,9 @@ public:
     void report_err_constraint_not_satisfied(ASTNode *ast_node, sir::Expr arg, const sir::GenericParam &generic_param);
     void report_err_cannot_call_generic_operator_overload(sir::Ident &ident);
 
+    void report_err_if_expr_branch_no_value(sir::Block &block);
+    void report_err_if_expr_branch_no_value(sir::Stmt &stmt);
+    void report_err_if_expr_missing_else(sir::IfExpr &if_expr);
     void report_err_cannot_use_in_try(const sir::Expr &expr);
     void report_err_cannot_use_in_try_expr(const sir::Expr &expr);
     void report_err_try_no_error_field(const sir::TryExceptBranch &branch);

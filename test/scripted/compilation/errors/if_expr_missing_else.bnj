@@ -1,0 +1,14 @@
+# test:subtest
+# test:error 5:13 "missing 'else' branch for if expression"
+
+func main() {
+    var a = if true { 0 };
+}
+
+# test:subtest
+# test:error 13:13 "missing 'else' branch for if expression"
+
+func main() {
+    var a = 0;
+    var b = if a == 0 { 0 } else if a == 1 { 1 };
+}

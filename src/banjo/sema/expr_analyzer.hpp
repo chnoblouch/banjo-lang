@@ -11,9 +11,10 @@ namespace banjo::sema {
 class ExprAnalyzer {
 
 public:
-    static constexpr unsigned DONT_EVAL_META_EXPRS = 0x00000001;
-    static constexpr unsigned ANALYZE_SYMBOL_INTERFACES = 0x00000002;
-    static constexpr unsigned DONT_RESOLVE_TYPE_ALIASES = 0x00000004;
+    static constexpr unsigned UNUSED = 0x00000001;
+    static constexpr unsigned DONT_EVAL_META_EXPRS = 0x00000002;
+    static constexpr unsigned ANALYZE_SYMBOL_INTERFACES = 0x00000004;
+    static constexpr unsigned DONT_RESOLVE_TYPE_ALIASES = 0x00000008;
 
 private:
     enum class OperatorImpl {

@@ -1,0 +1,29 @@
+# test:subtest
+# test:output "42"
+
+func main() {
+    var a = if true { 42 } else { 127 };
+    print(a);
+}
+
+
+# test:subtest
+# test:output "ZERO,ONE,UNKNOWN"
+
+enum Number {
+    ZERO,
+    ONE,
+    UNKNOWN,
+}
+
+func f(value: i32) -> Number {
+    return if value == 0 { Number.ZERO } else if value == 1 { Number.ONE } else { Number.UNKNOWN }
+}
+
+func main() {
+    print(f(0));
+    print(',');
+    print(f(1));
+    print(',');
+    print(f(2));
+}

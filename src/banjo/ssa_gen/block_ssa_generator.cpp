@@ -20,9 +20,9 @@ namespace banjo {
 
 BlockSSAGenerator::BlockSSAGenerator(SSAGeneratorContext &ctx) : ctx{ctx} {}
 
-void BlockSSAGenerator::generate_block(const sir::Block &block) {
+void BlockSSAGenerator::generate_block(const sir::Block &block, ssa::Value *dst /* = nullptr */) {
     generate_block_allocas(block);
-    generate_block_body(block);
+    generate_block_body(block, dst);
 }
 
 void BlockSSAGenerator::generate_block_allocas(const sir::Block &block, const sir::Local *excluded /* = nullptr */) {
@@ -61,11 +61,15 @@ void BlockSSAGenerator::generate_resource_flag_slot(const sir::Resource &resourc
     ctx.get_func_context().resource_deinit_flags.emplace(&resource, flag_slot);
 }
 
-void BlockSSAGenerator::generate_block_body(const sir::Block &block) {
+void BlockSSAGenerator::generate_block_body(const sir::Block &block, ssa::Value *dst) {
     ctx.get_func_context().sir_scopes.push_back(&block);
 
     for (sir::Stmt sir_stmt : block.stmts) {
-        generate_stmt(sir_stmt);
+        if (sir_stmt == block.stmts.back()) {
+            generate_stmt(sir_stmt, dst);
+        } else {
+            generate_stmt(sir_stmt, nullptr);
+        }
 
         if (ctx.get_ssa_block()->is_branching()) {
             ctx.get_func_context().sir_scopes.pop_back();
@@ -84,27 +88,27 @@ void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
     }
 }
 
-void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt) {
+void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt, ssa::Value *dst) {
     SIR_VISIT_STMT(
         sir_stmt,
-        SIR_VISIT_IMPOSSIBLE,           // empty
-        generate_var_stmt(*inner),      // var_stmt
-        generate_assign_stmt(*inner),   // assign_stmt
-        SIR_VISIT_IMPOSSIBLE,           // comp_assign_stmt
-        generate_return_stmt(*inner),   // return_stmt
-        generate_switch_stmt(*inner),   // switch_stmt
-        SIR_VISIT_IMPOSSIBLE,           // try_stmt
-        SIR_VISIT_IMPOSSIBLE,           // while_stmt
-        SIR_VISIT_IMPOSSIBLE,           // for_stmt
-        generate_loop_stmt(*inner),     // loop_stmt
-        generate_continue_stmt(*inner), // continue_stmt
-        generate_break_stmt(*inner),    // break_stmt
-        SIR_VISIT_IGNORE,               // meta_if_stmt
-        generate_meta_for_stmt(*inner), // meta_for_stmt
-        SIR_VISIT_IGNORE,               // expanded_meta_stmt
-        generate_expr_stmt(*inner),     // expr_stmt
-        generate_block(*inner),         // block_stmt
-        return                          // error
+        SIR_VISIT_IMPOSSIBLE,            // empty
+        generate_var_stmt(*inner),       // var_stmt
+        generate_assign_stmt(*inner),    // assign_stmt
+        SIR_VISIT_IMPOSSIBLE,            // comp_assign_stmt
+        generate_return_stmt(*inner),    // return_stmt
+        generate_switch_stmt(*inner),    // switch_stmt
+        SIR_VISIT_IMPOSSIBLE,            // try_stmt
+        SIR_VISIT_IMPOSSIBLE,            // while_stmt
+        SIR_VISIT_IMPOSSIBLE,            // for_stmt
+        generate_loop_stmt(*inner),      // loop_stmt
+        generate_continue_stmt(*inner),  // continue_stmt
+        generate_break_stmt(*inner),     // break_stmt
+        SIR_VISIT_IGNORE,                // meta_if_stmt
+        generate_meta_for_stmt(*inner),  // meta_for_stmt
+        SIR_VISIT_IGNORE,                // expanded_meta_stmt
+        generate_expr_stmt(*inner, dst), // expr_stmt
+        generate_block(*inner),          // block_stmt
+        return                           // error
     );
 }
 
@@ -172,7 +176,7 @@ void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt)
         ssa::VirtualRegister ssa_local_reg = ctx.ssa_local_regs.at(&sir_branch.local);
         ssa_data_ptr.copy_to(ssa_local_reg, ctx);
 
-        generate_block_body(*sir_branch.block);
+        generate_block_body(*sir_branch.block, nullptr);
         ctx.append_jmp(ssa_end_block);
 
         if (!is_final_branch) {
@@ -360,13 +364,18 @@ void BlockSSAGenerator::generate_meta_for_stmt(const sir::MetaForStmt &meta_for_
 
         ctx.push_specialization(*specialization);
         generate_block_allocas(block, &meta_for_stmt.local);
-        generate_block_body(block);
+        generate_block_body(block, nullptr);
         ctx.pop_specialization(*specialization);
     }
 }
 
-void BlockSSAGenerator::generate_expr_stmt(const sir::Expr &expr) {
-    ExprSSAGenerator(ctx).generate(expr, StorageHints::unused());
+void BlockSSAGenerator::generate_expr_stmt(const sir::Expr &expr, ssa::Value *dst) {
+    if (dst) {
+        ExprSSAGenerator{ctx}.generate_into_dst(expr, *dst);
+    } else {
+        ExprSSAGenerator{ctx}.generate(expr);
+    }
+
     DeinitSSAGenerator{ctx}.generate_deferred_deinits();
 }
 

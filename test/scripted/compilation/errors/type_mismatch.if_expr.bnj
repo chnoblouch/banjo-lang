@@ -1,0 +1,26 @@
+# test:subtest
+# test:error 8:34 "type mismatch (expected 'i32', got 'f32')"
+
+func main() {
+    var a: i32 = 42;
+    var b: f32 = 0.5;
+
+    var c = if true { a } else { b };
+}
+
+# test:subtest
+# test:error 22:10 "type mismatch (expected 'bool', got 'S')"
+
+struct S {}
+
+func main() {
+    var a = 0;
+
+    var b = if a == 0 {
+        true;
+    } else if a == 1 {
+        (S {});  # FIXME: These parentheses shouldn't be necessary
+    } else {
+        false;
+    };
+}

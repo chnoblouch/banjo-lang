@@ -14,13 +14,13 @@ private:
 public:
     BlockSSAGenerator(SSAGeneratorContext &ctx);
 
-    void generate_block(const sir::Block &block);
+    void generate_block(const sir::Block &block, ssa::Value *dst = nullptr);
     void generate_block_allocas(const sir::Block &block, const sir::Local *excluded = nullptr);
     void generate_resource_flags(const sir::Resource &resource);
-    void generate_block_body(const sir::Block &block);
+    void generate_block_body(const sir::Block &block, ssa::Value *dst);
     void generate_block_deinit(const sir::Block &block);
 
-    void generate_stmt(sir::Stmt stmt);
+    void generate_stmt(sir::Stmt stmt, ssa::Value *dst);
 
 private:
     void generate_var_stmt(const sir::VarStmt &var_stmt);
@@ -31,7 +31,7 @@ private:
     void generate_continue_stmt(const sir::ContinueStmt &continue_stmt);
     void generate_break_stmt(const sir::BreakStmt &break_stmt);
     void generate_meta_for_stmt(const sir::MetaForStmt &meta_for_stmt);
-    void generate_expr_stmt(const sir::Expr &expr);
+    void generate_expr_stmt(const sir::Expr &expr, ssa::Value *dst);
 
     void generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value);
     void generate_loop_jump_deinit();

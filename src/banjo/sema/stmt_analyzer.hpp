@@ -15,8 +15,14 @@ private:
 
 public:
     StmtAnalyzer(SemanticAnalyzer &analyzer);
-    void analyze_block(sir::Block &block, std::optional<sir::TypeNarrowing> type_narrowing = {});
-    void analyze(sir::Block &block, unsigned &index);
+
+    void analyze_block(
+        sir::Block &block,
+        sir::Expr expected_type = nullptr,
+        std::optional<sir::TypeNarrowing> type_narrowing = {}
+    );
+
+    void analyze(sir::Block &block, unsigned &index, sir::Expr expected_type = nullptr);
 
 private:
     void analyze_var_stmt(sir::VarStmt &var_stmt);
@@ -31,7 +37,7 @@ private:
     void analyze_continue_stmt(sir::ContinueStmt &continue_stmt);
     void analyze_break_stmt(sir::BreakStmt &break_stmt);
     void analyze_meta_for_stmt(sir::MetaForStmt &meta_for_stmt);
-    void analyze_expr_stmt(sir::Expr &expr);
+    void analyze_expr_stmt(sir::Expr &expr, sir::Expr expected_type);
 
     void insert_symbol(sir::Ident &ident, sir::Symbol symbol);
     void insert_symbol(sir::SymbolTable &symbol_table, sir::Ident &ident, sir::Symbol symbol);

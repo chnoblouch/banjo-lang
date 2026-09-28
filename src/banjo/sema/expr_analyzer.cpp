@@ -1371,6 +1371,11 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
 }
 
 Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
+    // TODO: Coercion.
+
+    sir::Expr expected_type = nullptr;
+    bool is_used = !(flags & UNUSED);
+
     for (sir::IfCondBranch &cond_branch : if_expr.cond_branches) {
         ExprAnalyzer cond_analyzer{analyzer};
         Result result = cond_analyzer.analyze_value(cond_branch.condition);
@@ -1383,11 +1388,54 @@ Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
             }
         }
 
-        StmtAnalyzer{analyzer}.analyze_block(*cond_branch.block, cond_analyzer.type_narrowing);
+        sir::Block &block = *cond_branch.block;
+        StmtAnalyzer{analyzer}.analyze_block(block, expected_type, cond_analyzer.type_narrowing);
+
+        if (is_used && !expected_type && !block.stmts.empty()) {
+            if (auto expr_stmt = block.stmts.back().match<sir::Expr>()) {
+                expected_type = expr_stmt->get_type();
+            }
+        }
     }
 
     if (if_expr.else_branch) {
-        StmtAnalyzer{analyzer}.analyze_block(*if_expr.else_branch->block);
+        sir::Block &block = *if_expr.else_branch->block;
+        StmtAnalyzer{analyzer}.analyze_block(block, expected_type);
+    }
+
+    if (is_used) {
+        Result result = Result::SUCCESS;
+
+        for (sir::IfCondBranch &cond_branch : if_expr.cond_branches) {
+            sir::Block &block = *cond_branch.block;
+
+            if (block.stmts.empty()) {
+                analyzer.report_generator.report_err_if_expr_branch_no_value(block);
+                result = Result::ERROR;
+            } else if (!block.stmts.back().is<sir::Expr>()) {
+                analyzer.report_generator.report_err_if_expr_branch_no_value(block.stmts.back());
+                result = Result::ERROR;
+            }
+        }
+
+        if (if_expr.else_branch) {
+            sir::Block &block = *if_expr.else_branch->block;
+
+            if (block.stmts.empty()) {
+                analyzer.report_generator.report_err_if_expr_branch_no_value(block);
+                result = Result::ERROR;
+            } else if (!block.stmts.back().is<sir::Expr>()) {
+                analyzer.report_generator.report_err_if_expr_branch_no_value(block.stmts.back());
+                result = Result::ERROR;
+            }
+        } else {
+            analyzer.report_generator.report_err_if_expr_missing_else(if_expr);
+            result = Result::ERROR;
+        }
+
+        RESULT_PROPAGATE(result);
+
+        if_expr.type = if_expr.cond_branches[0].block->stmts.back().as<sir::Expr>().get_type();
     }
 
     return Result::SUCCESS;

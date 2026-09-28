@@ -18,7 +18,11 @@ namespace banjo::sema {
 
 StmtAnalyzer::StmtAnalyzer(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void StmtAnalyzer::analyze_block(sir::Block &block, std::optional<sir::TypeNarrowing> type_narrowing /* = {} */) {
+void StmtAnalyzer::analyze_block(
+    sir::Block &block,
+    sir::Expr expected_type /* = nullptr */,
+    std::optional<sir::TypeNarrowing> type_narrowing /* = {} */
+) {
     analyzer.enter_block(block);
 
     if (type_narrowing) {
@@ -26,13 +30,13 @@ void StmtAnalyzer::analyze_block(sir::Block &block, std::optional<sir::TypeNarro
     }
 
     for (unsigned i = 0; i < block.stmts.size(); i++) {
-        analyze(block, i);
+        analyze(block, i, expected_type);
     }
 
     analyzer.exit_block();
 }
 
-void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
+void StmtAnalyzer::analyze(sir::Block &block, unsigned &index, sir::Expr expected_type /* = nullptr */) {
     sir::Stmt &stmt = block.stmts[index];
 
     SIR_VISIT_STMT(
@@ -49,10 +53,10 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index) {
         analyze_loop_stmt(*inner),                                   // loop_stmt
         analyze_continue_stmt(*inner),                               // continue_stmt
         analyze_break_stmt(*inner),                                  // break_stmt
-        MetaExpansion(analyzer).evaluate_meta_if_stmt(block, index), // meta_if_stmt
+        MetaExpansion{analyzer}.evaluate_meta_if_stmt(block, index), // meta_if_stmt
         analyze_meta_for_stmt(*inner),                               // meta_for_stmt
         SIR_VISIT_IGNORE,                                            // expanded_meta_stmt
-        analyze_expr_stmt(*inner),                                   // expr_stmt
+        analyze_expr_stmt(*inner, expected_type),                    // expr_stmt
         analyze_block(*inner),                                       // block_stmt
         SIR_VISIT_IGNORE                                             // error
     )
@@ -504,8 +508,16 @@ void StmtAnalyzer::analyze_meta_for_stmt(sir::MetaForStmt &meta_for_stmt) {
     analyze_block(block);
 }
 
-void StmtAnalyzer::analyze_expr_stmt(sir::Expr &expr) {
-    Result result = ExprAnalyzer(analyzer).analyze(expr);
+void StmtAnalyzer::analyze_expr_stmt(sir::Expr &expr, sir::Expr expected_type) {
+    Result result = Result::SUCCESS;
+
+    if (expected_type) {
+        result = ExprAnalyzer{analyzer}.analyze_value(expr, expected_type);
+    } else {
+        // FIXME: The last statement of the first if condition branch should not
+        // be unused!
+        result = ExprAnalyzer{analyzer, ExprAnalyzer::UNUSED}.analyze_value(expr);
+    }
 
     if (result != Result::SUCCESS) {
         return;

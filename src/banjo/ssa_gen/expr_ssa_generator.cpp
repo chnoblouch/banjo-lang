@@ -73,7 +73,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_call_expr(*inner, hints),          // call_expr
         return generate_field_expr(*inner),                // field_expr
         SIR_VISIT_IMPOSSIBLE,                              // range_expr
-        return generate_if_expr(*inner),                   // if_expr
+        return generate_if_expr(*inner, hints),            // if_expr
         return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
@@ -640,7 +640,7 @@ StoredValue ExprSSAGenerator::generate_field_expr(const sir::FieldExpr &field_ex
     return StoredValue::create_reference(ssa_field_ptr, ssa_type);
 }
 
-StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr) {
+StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr, const StorageHints &hints) {
     std::vector<unsigned> branches;
     std::optional<unsigned> else_branch;
 
@@ -667,6 +667,15 @@ StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr) {
         ssa_end_block = ctx.create_block();
     }
 
+    StoredValue stored_val = StoredValue::create_value({});
+    ssa::Value *dst = nullptr;
+
+    if (if_expr.type) {
+        ssa::Type ssa_type = TypeSSAGenerator{ctx}.generate(if_expr.type);
+        stored_val = StoredValue::alloc(ssa_type, hints, ctx);
+        dst = &stored_val.value_or_ptr;
+    }
+
     for (unsigned i = 0; i < branches.size(); i++) {
         const sir::IfCondBranch &sir_branch = if_expr.cond_branches[branches[i]];
         bool is_final_branch = i == branches.size() - 1 && !else_branch;
@@ -679,7 +688,7 @@ StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr) {
         DeinitSSAGenerator{ctx}.generate_deferred_deinits();
 
         ctx.append_block(ssa_target_if_true);
-        BlockSSAGenerator{ctx}.generate_block(*sir_branch.block);
+        BlockSSAGenerator{ctx}.generate_block(*sir_branch.block, dst);
         ctx.append_jmp(ssa_end_block);
 
         if (!is_final_branch) {
@@ -688,11 +697,15 @@ StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr) {
     }
 
     if (else_branch) {
+        sir::Block *block;
+
         if (*else_branch == if_expr.cond_branches.size()) {
-            BlockSSAGenerator{ctx}.generate_block(*if_expr.else_branch->block);
+            block = if_expr.else_branch->block;
         } else {
-            BlockSSAGenerator{ctx}.generate_block(*if_expr.cond_branches[*else_branch].block);
+            block = if_expr.cond_branches[*else_branch].block;
         }
+
+        BlockSSAGenerator{ctx}.generate_block(*block, dst);
 
         if (!branches.empty()) {
             ctx.append_jmp(ssa_end_block);
@@ -703,7 +716,7 @@ StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr) {
         ctx.append_block(ssa_end_block);
     }
 
-    return StoredValue::create_value({});
+    return stored_val;
 }
 
 StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {

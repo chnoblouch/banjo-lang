@@ -1,0 +1,47 @@
+# test:subtest
+# test:error 5:21 "if expression branch does not return a value"
+
+func main() {
+    var a = if true {} else { 0 }
+}
+
+# test:subtest
+# test:error 12:32 "if expression branch does not return a value"
+
+func main() {
+    var a = if true { 0 } else {}
+}
+
+# test:subtest
+# test:error 20:44 "if expression branch does not return a value"
+
+func main() {
+    var a = 1;
+    var b = if a == 1 { 0 } else if a == 2 {} else { 0 }
+}
+
+# test:subtest
+# test:error 30:9 "if expression branch does not return a value"
+
+func main() {
+    var a = 0;
+    
+    var b = if true {
+        a = 42;
+    } else {
+        0;
+    }
+}
+
+# test:subtest
+# test:error 45:9 "if expression branch does not return a value"
+
+func main() {
+    var a = 0;
+    
+    var b = if true {
+        0;
+    } else {
+        a = 42;
+    }
+}

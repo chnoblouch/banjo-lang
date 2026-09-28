@@ -12,6 +12,7 @@ StmtParser::StmtParser(Parser &parser) : parser(parser), stream(parser.stream) {
 
 ParseResult StmtParser::parse_assign(ASTNode *lhs_node, ASTNodeType type) {
     NodeBuilder node = parser.build_node();
+    node.set_start_position(lhs_node->range.start);
     node.consume(); // Consume operator
     node.append_child(lhs_node);
 
