@@ -1389,7 +1389,14 @@ Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
         }
 
         sir::Block &block = *cond_branch.block;
-        StmtAnalyzer{analyzer}.analyze_block(block, expected_type, cond_analyzer.type_narrowing);
+
+        StmtContext stmt_context{
+            .is_used = is_used,
+            .expected_type = expected_type,
+            .type_narrowing = cond_analyzer.type_narrowing,
+        };
+
+        StmtAnalyzer{analyzer}.analyze_block(block, stmt_context);
 
         if (is_used && !expected_type && !block.stmts.empty()) {
             if (auto expr_stmt = block.stmts.back().match<sir::Expr>()) {
@@ -1400,7 +1407,13 @@ Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
 
     if (if_expr.else_branch) {
         sir::Block &block = *if_expr.else_branch->block;
-        StmtAnalyzer{analyzer}.analyze_block(block, expected_type);
+
+        StmtContext stmt_context{
+            .is_used = is_used,
+            .expected_type = expected_type,
+        };
+
+        StmtAnalyzer{analyzer}.analyze_block(block, stmt_context);
     }
 
     if (is_used) {

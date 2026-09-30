@@ -114,7 +114,7 @@ ParseResult Parser::parse_block_child() {
 ParseResult Parser::parse_expr_or_assign() {
     NodeBuilder node = build_node();
 
-    ParseResult result = ExprParser(*this, false).parse();
+    ParseResult result = ExprParser(*this, true).parse();
     if (!result.is_valid) {
         node.append_child(result.node);
         return node.build_error(AST_EXPR_STMT);

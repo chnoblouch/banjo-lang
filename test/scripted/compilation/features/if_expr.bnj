@@ -17,7 +17,13 @@ enum Number {
 }
 
 func f(value: i32) -> Number {
-    return if value == 0 { Number.ZERO } else if value == 1 { Number.ONE } else { Number.UNKNOWN }
+    return if value == 0 {
+        Number.ZERO
+    } else if value == 1 {
+        Number.ONE
+    } else {
+        Number.UNKNOWN
+    }
 }
 
 func main() {
@@ -26,4 +32,54 @@ func main() {
     print(f(1));
     print(',');
     print(f(2));
+}
+
+# test:subtest
+# test:output "274,146,563,198"
+
+func f(a: bool, b: bool) -> i32 {
+    return if a {
+        if b { 274 } else { 146 }
+    } else {
+        if b { 563 } else { 198 } 
+    }
+}
+
+func main() {
+    print(f(true, true));
+    print(',');
+    print(f(true, false));
+    print(',');
+    print(f(false, true));
+    print(',');
+    print(f(false, false));
+}
+
+# test:subtest
+# test:output "abc,0;test,42"
+
+struct S {
+    var a: StringSlice;
+    var b: u64;
+}
+
+func f(flag: bool) -> S {
+    return if flag {
+        S { a: "abc", b: 0 }
+    } else {
+        S { a: "test", b: 42 }
+    }
+}
+
+func main() {
+    var a = f(true);
+    var b = f(false);
+
+    print(a.a);
+    print(',');
+    print(a.b);
+    print(';');
+    print(b.a);
+    print(',');
+    print(b.b);
 }

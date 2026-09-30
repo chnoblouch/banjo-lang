@@ -29,7 +29,7 @@ func main() {
     var b = if true {
         a = 42;
     } else {
-        0;
+        0
     }
 }
 
@@ -40,8 +40,22 @@ func main() {
     var a = 0;
     
     var b = if true {
-        0;
+        0
     } else {
         a = 42;
+    }
+}
+
+# test:subtest
+# test:error 57:19 "if expression branch does not return a value"
+
+func main() {
+    var a = 0;
+    var b = 0;
+    
+    var c = if true {
+        if b == 0 {} else { 1 }
+    } else {
+        0
     }
 }

@@ -12,3 +12,17 @@ func main() {
     var a = 0;
     var b = if a == 0 { 0 } else if a == 1 { 1 };
 }
+
+# test:subtest
+# test:error 24:9 "missing 'else' branch for if expression"
+
+func main() {
+    var a = 0;
+    var b = 0;
+
+    var c = if a == 0 {
+        if b == 0 { 1 }
+    } else {
+        0
+    };
+}
