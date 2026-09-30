@@ -1171,6 +1171,10 @@ std::optional<ExprAnalyzer::ResolvedGenericMethod> ExprAnalyzer::resolve_generic
 
     for (sir::Expr component : components) {
         concrete_proto = component.match_concrete<sir::ProtoDef>();
+        if (!concrete_proto) {
+            continue;
+        }
+
         sir::Symbol candidate = concrete_proto->def->block.symbol_table->look_up_local(name);
 
         if (auto func_decl = candidate.match<sir::FuncDecl>()) {
@@ -1807,12 +1811,10 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (
-        utils::is_one_of(
-            meta_field_expr.field.value,
-            {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
-        )
-    ) {
+    } else if (utils::is_one_of(
+                   meta_field_expr.field.value,
+                   {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
+               )) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
         sir::Expr string_type = analyzer.create(

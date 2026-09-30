@@ -354,7 +354,7 @@ const Ident &Symbol::get_ident() const {
         return inner->ident,               // proto_def
         return inner->ident,               // type_alias
         return inner->ident,               // use_ident
-        SIR_VISIT_IMPOSSIBLE,              // use_rebind
+        return inner->local_ident,         // use_rebind
         return inner->name,                // local
         return inner->name,                // param
         return inner->func_defs[0]->ident, // overload_set
