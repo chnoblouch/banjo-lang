@@ -120,6 +120,9 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(codegen::InstrContext
         case LDAR:
         case LDARB:
         case LDARH:
+        case LDAXR:
+        case LDAXRB:
+        case LDAXRH:
         case FCVT:
         case SCVTF:
         case UCVTF:
@@ -141,6 +144,9 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(codegen::InstrContext
         case STLR:
         case STLRB:
         case STLRH:
+        case STLXR:
+        case STLXRB:
+        case STLXRH:
         case CMP:
         case FCMP:
             collect_regs(instr.get_operand(0), mcode::RegUsage::USE, operands);

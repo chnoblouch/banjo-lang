@@ -36,9 +36,15 @@ void AArch64Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *fu
         case AArch64Opcode::LDAR: encode_ldar(instr); break;
         case AArch64Opcode::LDARB: encode_ldarb(instr); break;
         case AArch64Opcode::LDARH: encode_ldarh(instr); break;
+        case AArch64Opcode::LDAXR: encode_ldaxr(instr); break;
+        case AArch64Opcode::LDAXRB: encode_ldaxrb(instr); break;
+        case AArch64Opcode::LDAXRH: encode_ldaxrh(instr); break;
         case AArch64Opcode::STLR: encode_stlr(instr); break;
         case AArch64Opcode::STLRB: encode_stlrb(instr); break;
         case AArch64Opcode::STLRH: encode_stlrh(instr); break;
+        case AArch64Opcode::STLXR: encode_stlxr(instr); break;
+        case AArch64Opcode::STLXRB: encode_stlxrb(instr); break;
+        case AArch64Opcode::STLXRH: encode_stlxrh(instr); break;
         case AArch64Opcode::ADD: encode_add(instr); break;
         case AArch64Opcode::SUB: encode_sub(instr); break;
         case AArch64Opcode::MUL: encode_mul(instr); break;
@@ -186,11 +192,23 @@ void AArch64Encoder::encode_ldar(mcode::Instruction &instr) {
 }
 
 void AArch64Encoder::encode_ldarb(mcode::Instruction &instr) {
-    encode_ldar_family(instr, {0x8DFFC00});
+    encode_ldar_family(instr, {0x08DFFC00});
 }
 
 void AArch64Encoder::encode_ldarh(mcode::Instruction &instr) {
     encode_ldar_family(instr, {0x48DFFC00});
+}
+
+void AArch64Encoder::encode_ldaxr(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x885FFC00});
+}
+
+void AArch64Encoder::encode_ldaxrb(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x085FFC00});
+}
+
+void AArch64Encoder::encode_ldaxrh(mcode::Instruction &instr) {
+    encode_ldar_family(instr, {0x485FFC00});
 }
 
 void AArch64Encoder::encode_stlr(mcode::Instruction &instr) {
@@ -203,6 +221,18 @@ void AArch64Encoder::encode_stlrb(mcode::Instruction &instr) {
 
 void AArch64Encoder::encode_stlrh(mcode::Instruction &instr) {
     encode_ldar_family(instr, {0x489FFC00});
+}
+
+void AArch64Encoder::encode_stlxr(mcode::Instruction &instr) {
+    encode_stlxr_family(instr, {0x8800FC00});
+}
+
+void AArch64Encoder::encode_stlxrb(mcode::Instruction &instr) {
+    encode_stlxr_family(instr, {0x0800FC00});
+}
+
+void AArch64Encoder::encode_stlxrh(mcode::Instruction &instr) {
+    encode_stlxr_family(instr, {0x4800FC00});
 }
 
 void AArch64Encoder::encode_add(mcode::Instruction &instr) {
@@ -612,13 +642,26 @@ void AArch64Encoder::encode_ldar_family(mcode::Instruction &instr, std::array<st
     mcode::Operand &m_reg = instr.get_operand(0);
     mcode::Operand &m_addr = instr.get_operand(1);
 
-    ASSERT(is_gp_reg(m_reg.get_physical_reg()));
     ASSERT(m_addr.get_aarch64_addr().get_type() == AArch64Address::Type::BASE);
 
     bool sf = instr.get_operand(0).get_size() == 8;
     std::uint32_t r_reg = encode_gp_reg(m_reg.get_physical_reg());
     std::uint32_t r_addr_base = encode_gp_reg(m_addr.get_aarch64_addr().get_base().get_physical_reg());
     text.write_u32(params[0] | (sf << 30) | (r_addr_base << 5) | r_reg);
+}
+
+void AArch64Encoder::encode_stlxr_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_success = instr.get_operand(0);
+    mcode::Operand &m_value = instr.get_operand(1);
+    mcode::Operand &m_addr = instr.get_operand(2);
+
+    ASSERT(m_addr.get_aarch64_addr().get_type() == AArch64Address::Type::BASE);
+
+    bool sf = instr.get_operand(1).get_size() == 8;
+    std::uint32_t r_value = encode_gp_reg(m_value.get_physical_reg());
+    std::uint32_t r_success = encode_gp_reg(m_success.get_physical_reg());
+    std::uint32_t r_addr_base = encode_gp_reg(m_addr.get_aarch64_addr().get_base().get_physical_reg());
+    text.write_u32(params[0] | (sf << 30) | (r_success << 16) | (r_addr_base << 5) | r_value);
 }
 
 void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std::uint32_t, 3> params) {

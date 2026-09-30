@@ -82,6 +82,7 @@ public:
 
     void lower_fp_operation(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
+    void lower_atomic_ll_sc_loop(mcode::Opcode opcode, ssa::Instruction &instr);
 
     mcode::Operand lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size);
     mcode::Operand move_const_into_register(const ssa::Value &value, ssa::Type type);

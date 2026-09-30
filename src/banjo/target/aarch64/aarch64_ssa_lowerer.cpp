@@ -79,6 +79,56 @@ void AArch64SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruc
     }
 }
 
+void AArch64SSALowerer::lower_atomic_ll_sc_loop(mcode::Opcode opcode, ssa::Instruction &instr) {
+    // TODO: Generate ldaddal, ldclral, etc. on macOS and call outline atomic
+    // functions on Linux.
+
+    ssa::Type type = instr.get_operand(1).get_type();
+    unsigned size = get_size(type);
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+
+    mcode::Opcode load_opcode;
+    mcode::Opcode store_opcode;
+
+    switch (size) {
+        case 1:
+            load_opcode = AArch64Opcode::LDAXRB;
+            store_opcode = AArch64Opcode::STLXRB;
+            break;
+        case 2:
+            load_opcode = AArch64Opcode::LDAXRH;
+            store_opcode = AArch64Opcode::STLXRH;
+            break;
+        case 4:
+            load_opcode = AArch64Opcode::LDAXR;
+            store_opcode = AArch64Opcode::STLXR;
+            break;
+        case 8:
+            load_opcode = AArch64Opcode::LDAXR;
+            store_opcode = AArch64Opcode::STLXR;
+            break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    unsigned reg_size = size == 8 ? 8 : 4;
+    mcode::Register addr_reg = create_tmp_reg();
+
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+    mcode::Operand m_new = mcode::Operand::from_register(create_tmp_reg(), reg_size);
+    mcode::Operand m_success = mcode::Operand::from_register(create_tmp_reg(), 4);
+    mcode::Operand m_addr = mcode::Operand::from_aarch64_addr(AArch64Address::new_base(addr_reg));
+
+    mcode::BasicBlockIter ll_sc_loop_block = create_block();
+
+    emit({AArch64Opcode::MOV, {mcode::Operand::from_register(addr_reg, 8), lower_addr_value(addr)}});
+    start_block(ll_sc_loop_block);
+    emit({load_opcode, {m_dst, m_addr}});
+    emit({opcode, {m_new, m_dst, lower_value(instr.get_operand(1))}});
+    emit({store_opcode, {m_success, m_new, m_addr}});
+    emit({AArch64Opcode::CMP, {m_success, mcode::Operand::from_int_immediate(0, 4)}});
+    emit({AArch64Opcode::B_NE, {mcode::Operand::from_basic_block(*ll_sc_loop_block)}});
+}
+
 mcode::Operand AArch64SSALowerer::lower_reg_val(ssa::VirtualRegister virtual_reg, unsigned size) {
     std::variant<mcode::Register, mcode::StackSlotID> m_vreg = map_vreg(virtual_reg);
 
@@ -674,15 +724,25 @@ void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     emit({opcode, {m_src, mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg))}});
 }
 
-void AArch64SSALowerer::lower_atomic_add(ssa::Instruction &instr) {}
+void AArch64SSALowerer::lower_atomic_add(ssa::Instruction &instr) {
+    lower_atomic_ll_sc_loop(AArch64Opcode::ADD, instr);
+}
 
-void AArch64SSALowerer::lower_atomic_sub(ssa::Instruction &instr) {}
+void AArch64SSALowerer::lower_atomic_sub(ssa::Instruction &instr) {
+    lower_atomic_ll_sc_loop(AArch64Opcode::SUB, instr);
+}
 
-void AArch64SSALowerer::lower_atomic_and(ssa::Instruction &instr) {}
+void AArch64SSALowerer::lower_atomic_and(ssa::Instruction &instr) {
+    lower_atomic_ll_sc_loop(AArch64Opcode::AND, instr);
+}
 
-void AArch64SSALowerer::lower_atomic_or(ssa::Instruction &instr) {}
+void AArch64SSALowerer::lower_atomic_or(ssa::Instruction &instr) {
+    lower_atomic_ll_sc_loop(AArch64Opcode::ORR, instr);
+}
 
-void AArch64SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {}
+void AArch64SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
+    lower_atomic_ll_sc_loop(AArch64Opcode::EOR, instr);
+}
 
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     ssa::Operand ssa_addr = ssa::Operand::from_register(*instr.get_dest(), ssa::Primitive::U64);

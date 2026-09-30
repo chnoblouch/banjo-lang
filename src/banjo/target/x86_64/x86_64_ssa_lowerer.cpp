@@ -666,7 +666,9 @@ void X8664SSALowerer::lower_ftos(ssa::Instruction &instr) {
     emit({cvt_opcode, {m_dst, m_src}});
 }
 
-void X8664SSALowerer::lower_bitcast(ssa::Instruction &instr) {}
+void X8664SSALowerer::lower_bitcast(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
 
 void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(0).get_type();
@@ -1005,7 +1007,6 @@ void X8664SSALowerer::lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instructi
     mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), m_src.get_size());
 
     mcode::BasicBlockIter cas_loop_block = create_block();
-    mcode::BasicBlockIter end_block = create_block();
 
     emit({X8664Opcode::MOV, {m_rax, m_addr}});
     start_block(cas_loop_block);
@@ -1013,7 +1014,6 @@ void X8664SSALowerer::lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instructi
     emit({opcode, {m_tmp, m_src}});
     emit({X8664Opcode::LOCK_CMPXCHG, {m_addr, m_tmp}});
     emit({X8664Opcode::JNE, {mcode::Operand::from_basic_block(*cas_loop_block)}});
-    start_block(end_block);
     emit({X8664Opcode::MOV, {m_dst, m_rax}});
 }
 
