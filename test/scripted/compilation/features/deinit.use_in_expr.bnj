@@ -287,3 +287,76 @@ func main() {
     var a: addr = consume(r, &i);
     print('c');
 }
+
+# test:subtest
+# test:output "abv0,abv1v0"
+
+func test(f: bool) {
+    var a = ValueResource { value: 0 };
+
+    print('a');
+    var b = if f { a } else { ValueResource { value: 1 } };
+    print('b');
+}
+
+func main() {
+    test(true);
+    print(',');
+    test(false);
+}
+
+# test:subtest
+# test:output "acv0,abv0cv1"
+
+func consume(r: ValueResource) {
+    print('b');
+}
+
+func test(f: bool) {
+    var a = ValueResource { value: 0 };
+
+    print('a');
+    
+    var b = if f {
+        a
+    } else {
+        consume(a);
+        ValueResource { value: 1 }
+    };
+
+    print('c');
+}
+
+func main() {
+    test(true);
+    print(',');
+    test(false);
+}
+
+# test:subtest
+# test:output "abv0v1,abv2v1v0,abv3v1v0,abv1v0"
+
+func test(f1: bool, f2: bool) {
+    var a = ValueResource { value: 0 };
+    var b = ValueResource { value: 1 };
+
+    print('a');
+    
+    var c = if f1 {
+        if f2 { a } else { ValueResource { value: 2 } }
+    } else {
+        if f2 { ValueResource { value: 3 } } else { b }
+    };
+
+    print('b');
+}
+
+func main() {
+    test(true, true);
+    print(',');
+    test(true, false);
+    print(',');
+    test(false, true);
+    print(',');
+    test(false, false);
+}

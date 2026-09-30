@@ -32,7 +32,20 @@ Result ResourceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     return Result::SUCCESS;
 }
 
-ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type /*= ScopeType::GENERIC*/) {
+ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, ScopeType type) {
+    Context ctx{
+        .moving = false,
+        .conditional = false,
+        .field_expr_lhs = false,
+        .in_resource_with_deinit = false,
+        .in_pointer = false,
+        .cur_resource = nullptr,
+    };
+
+    return analyze_block(block, ctx, type);
+}
+
+ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Context &ctx, ScopeType type) {
     // TODO: There are performance issues here when analyzing large numbers of
     // resources. One example is `convert.enum_to_repr` with enums that have
     // lots of variants.
@@ -90,26 +103,29 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Scope
     }
 
     for (sir::Stmt &stmt : block.stmts) {
+        bool is_last = stmt == block.stmts.back();
+        Context stmt_ctx = is_last ? ctx : Context{};
+
         SIR_VISIT_STMT(
             stmt,
-            SIR_VISIT_IGNORE,                   // empty
-            analyze_var_stmt(*inner),           // var_stmt
-            analyze_assign_stmt(*inner),        // assign_stmt
-            analyze_comp_assign_stmt(*inner),   // comp_assign_stmt
-            analyze_return_stmt(*inner),        // return_stmt
-            SIR_VISIT_IGNORE,                   // switch_stmt (TODO!)
-            analyze_try_stmt(*inner),           // try_stmt
-            SIR_VISIT_IGNORE,                   // while_stmt
-            SIR_VISIT_IGNORE,                   // for_stmt
-            analyze_loop_stmt(*inner),          // loop_stmt
-            analyze_continue_stmt(*inner),      // continue_stmt
-            analyze_break_stmt(*inner),         // break_stmt
-            SIR_VISIT_IGNORE,                   // meta_if_stmt
-            SIR_VISIT_IGNORE,                   // meta_for_stmt
-            SIR_VISIT_IGNORE,                   // expanded_meta_stmt
-            analyze_expr(*inner, false, false), // expr_stmt
-            analyze_block_stmt(*inner),         // block_stmt
-            SIR_VISIT_IGNORE                    // error
+            SIR_VISIT_IGNORE,                 // empty
+            analyze_var_stmt(*inner),         // var_stmt
+            analyze_assign_stmt(*inner),      // assign_stmt
+            analyze_comp_assign_stmt(*inner), // comp_assign_stmt
+            analyze_return_stmt(*inner),      // return_stmt
+            SIR_VISIT_IGNORE,                 // switch_stmt (TODO!)
+            analyze_try_stmt(*inner),         // try_stmt
+            SIR_VISIT_IGNORE,                 // while_stmt
+            SIR_VISIT_IGNORE,                 // for_stmt
+            analyze_loop_stmt(*inner),        // loop_stmt
+            analyze_continue_stmt(*inner),    // continue_stmt
+            analyze_break_stmt(*inner),       // break_stmt
+            SIR_VISIT_IGNORE,                 // meta_if_stmt
+            SIR_VISIT_IGNORE,                 // meta_for_stmt
+            SIR_VISIT_IGNORE,                 // expanded_meta_stmt
+            analyze_expr(*inner, stmt_ctx),   // expr_stmt
+            analyze_block_stmt(*inner),       // block_stmt
+            SIR_VISIT_IGNORE                  // error
         );
     }
 
@@ -522,7 +538,7 @@ Result ResourceAnalyzer::analyze_if_expr(sir::IfExpr &if_expr, Context &ctx) {
             }
         }
 
-        child_scopes[i] = analyze_block(*cond_branch.block, ScopeType::GENERIC);
+        child_scopes[i] = analyze_block(*cond_branch.block, ctx, ScopeType::GENERIC);
 
         if (non_resource_added) {
             non_resources.pop_back();
@@ -530,7 +546,7 @@ Result ResourceAnalyzer::analyze_if_expr(sir::IfExpr &if_expr, Context &ctx) {
     }
 
     if (if_expr.else_branch) {
-        child_scopes.push_back(analyze_block(*if_expr.else_branch->block));
+        child_scopes.push_back(analyze_block(*if_expr.else_branch->block, ctx));
     }
 
     for (Scope &child_scope : child_scopes) {

@@ -48,12 +48,12 @@ private:
     };
 
     struct Context {
-        bool moving;
-        bool conditional;
-        bool field_expr_lhs;
-        bool in_resource_with_deinit;
-        bool in_pointer;
-        sir::Resource *cur_resource;
+        bool moving = false;
+        bool conditional = false;
+        bool field_expr_lhs = false;
+        bool in_resource_with_deinit = false;
+        bool in_pointer = false;
+        sir::Resource *cur_resource = nullptr;
     };
 
     struct ResourceLocation {
@@ -72,6 +72,7 @@ public:
 private:
     Result analyze_func_def(sir::FuncDef &func_def) override;
     Scope analyze_block(sir::Block &block, ScopeType type = ScopeType::GENERIC);
+    Scope analyze_block(sir::Block &block, Context &ctx, ScopeType type = ScopeType::GENERIC);
 
     void insert_states(sir::Resource *resource, InitState init_state, ResourceLocation location);
 

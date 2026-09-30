@@ -277,3 +277,66 @@ func main() {
     consume(a);
     consume(b);
 }
+
+# test:subtest
+# test:error 291:14 "resource used after move"
+# test:note 289:20 "previously moved in conditional branch here"
+
+func main() {
+    var a = Resource {};
+    var f = true;
+
+    var b = if f { a } else { Resource {}; };
+    
+    var a2 = a;
+}
+
+# test:subtest
+# test:error 316:14 "resource used after move"
+# test:note 309:9 "previously moved in conditional branch here"
+# test:error 317:14 "resource used after move"
+# test:note 311:9 "previously moved in conditional branch here"
+# test:error 318:14 "resource used after move"
+# test:note 313:9 "previously moved in conditional branch here"
+
+func main() {
+    var a = Resource {};
+    var b = Resource {};
+    var c = Resource {};
+    var v = 0;
+
+    var d = if v == 0 {
+        a
+    } else if v == 1 {
+        b
+    } else {
+        c
+    };
+
+    var a2 = a;
+    var b2 = b;
+    var c2 = c;
+}
+
+# test:subtest
+# test:error 340:14 "resource used after move"
+# test:note 335:17 "previously moved in conditional branch here"
+# test:error 341:14 "resource used after move"
+# test:note 337:38 "previously moved in conditional branch here"
+
+func main() {
+    var a = Resource {};
+    var b = Resource {};
+    
+    var f1 = true;
+    var f2 = false;
+
+    var c = if f1 {
+        if f2 { a } else { Resource {} }
+    } else {
+        if f2 { Resource {} } else { b }
+    };
+
+    var a2 = a;
+    var b2 = b;
+}
