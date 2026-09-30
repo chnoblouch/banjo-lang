@@ -39,6 +39,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::CDQ: encode_cdq(); break;
         case X8664Opcode::CQO: encode_cqo(); break;
         case X8664Opcode::XCHG: encode_xchg(instr); break;
+        case X8664Opcode::LOCK_CMPXCHG: encode_lock_cmpxchg(instr); break;
         case X8664Opcode::JMP: encode_jmp(instr); break;
         case X8664Opcode::CMP: encode_cmp(instr); break;
         case X8664Opcode::JE: encode_je(instr); break;
@@ -257,6 +258,22 @@ void X8664Encoder::encode_xchg(mcode::Instruction &instr) {
         emit_opcode(size == 1 ? 0x86 : 0x87);
         emit_modrm_sib(dst_reg, src_roa);
     }
+}
+
+void X8664Encoder::encode_lock_cmpxchg(mcode::Instruction &instr) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    unsigned size = src.get_size();
+
+    RegOrAddr dst_roa = roa(dst);
+    RegCode src_reg = reg(src);
+
+    emit_lock_prefix();
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rroa(size, src_reg, dst_roa);
+    emit_opcode(0x0F);
+    emit_opcode(size == 1 ? 0xB0 : 0xB1);
+    emit_mem_reg(std::get<Address>(dst_roa), src_reg);
 }
 
 void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
@@ -1179,6 +1196,10 @@ void X8664Encoder::emit_sib(std::uint8_t scale, std::uint8_t index, std::uint8_t
 
 void X8664Encoder::emit_16bit_prefix() {
     text.write_u8(0x66);
+}
+
+void X8664Encoder::emit_lock_prefix() {
+    text.write_u8(0xF0);
 }
 
 void X8664Encoder::emit_rex(bool w, bool r, bool x, bool b) {

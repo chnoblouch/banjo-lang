@@ -126,6 +126,7 @@ private:
     void encode_cdq();
     void encode_cqo();
     void encode_xchg(mcode::Instruction &instr);
+    void encode_lock_cmpxchg(mcode::Instruction &instr);
     void encode_jmp(mcode::Instruction &instr);
     void encode_cmp(mcode::Instruction &instr);
     void encode_je(mcode::Instruction &instr);
@@ -241,6 +242,7 @@ private:
     void emit_modrm(std::uint8_t mod, std::uint8_t reg, std::uint8_t rm);
     void emit_sib(std::uint8_t scale, std::uint8_t index, std::uint8_t base);
     void emit_16bit_prefix();
+    void emit_lock_prefix();
     void emit_rex(bool w, bool r, bool x, bool b);
 
     RegCode reg(mcode::Operand &operand);

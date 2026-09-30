@@ -110,6 +110,7 @@ public:
     void lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_shift(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
+    void lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instruction &instr);
 
     X8664Condition lower_condition(ssa::Comparison comparison);
     void move_branch_args(ssa::BranchTarget &target);

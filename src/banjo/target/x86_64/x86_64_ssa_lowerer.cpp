@@ -531,8 +531,8 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
         // The cases where the value is greater than 2**63-1 generate the
         // following operation: `f = 2 * float((i >> 1) | (i & 1))`
 
-        mcode::BasicBlockIter end_block = create_block();
         mcode::BasicBlockIter signed_block = create_block();
+        mcode::BasicBlockIter end_block = create_block();
 
         mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
         mcode::Operand m_src = lower_as_move_into_reg(create_tmp_reg(), instr.get_operand(0));
@@ -612,8 +612,8 @@ void X8664SSALowerer::lower_ftou(ssa::Instruction &instr) {
     mcode::Opcode cvt_opcode = src_type == ssa::Primitive::F64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
 
     if (dst_size == 8) {
-        mcode::BasicBlockIter end_block = create_block();
         mcode::BasicBlockIter signed_block = create_block();
+        mcode::BasicBlockIter end_block = create_block();
 
         mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
         mcode::Operand m_src = lower_as_move_into_reg(create_tmp_reg(), instr.get_operand(0));
@@ -674,30 +674,42 @@ void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
-    mcode::Operand m_src = lower_addr_mem_access(addr);
-    emit({X8664Opcode::MOV, {m_dst, m_src}});
+    mcode::Operand m_addr = lower_addr_mem_access(addr);
+    emit({X8664Opcode::MOV, {m_dst, m_addr}});
 }
 
 void X8664SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    mcode::Operand m_dst = lower_addr_mem_access(addr).with_size(m_src.get_size());
+    mcode::Operand m_addr = lower_addr_mem_access(addr).with_size(m_src.get_size());
     mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), m_src.get_size());
 
     emit({X8664Opcode::MOV, {m_tmp, m_src}});
-    emit({X8664Opcode::XCHG, {m_dst, m_tmp}});
+    emit({X8664Opcode::XCHG, {m_addr, m_tmp}});
 }
 
-void X8664SSALowerer::lower_atomic_add(ssa::Instruction &instr) {}
+void X8664SSALowerer::lower_atomic_add(ssa::Instruction &instr) {
+    // TODO: Implement using `xadd`.
+    lower_atomic_cas_loop(X8664Opcode::ADD, instr);
+}
 
-void X8664SSALowerer::lower_atomic_sub(ssa::Instruction &instr) {}
+void X8664SSALowerer::lower_atomic_sub(ssa::Instruction &instr) {
+    // TODO: Implement using `xadd`.
+    lower_atomic_cas_loop(X8664Opcode::SUB, instr);
+}
 
-void X8664SSALowerer::lower_atomic_and(ssa::Instruction &instr) {}
+void X8664SSALowerer::lower_atomic_and(ssa::Instruction &instr) {
+    lower_atomic_cas_loop(X8664Opcode::AND, instr);
+}
 
-void X8664SSALowerer::lower_atomic_or(ssa::Instruction &instr) {}
+void X8664SSALowerer::lower_atomic_or(ssa::Instruction &instr) {
+    lower_atomic_cas_loop(X8664Opcode::OR, instr);
+}
 
-void X8664SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {}
+void X8664SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
+    lower_atomic_cas_loop(X8664Opcode::XOR, instr);
+}
 
 void X8664SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     ssa::Operand ssa_addr = ssa::Operand::from_register(*instr.get_dest(), ssa::Primitive::U64);
@@ -979,6 +991,30 @@ void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instructi
             emit({X8664Opcode::JMP, {m_target_false}});
         }
     }
+}
+
+void X8664SSALowerer::lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instruction &instr) {
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+    unsigned size = get_size(instr.get_operand(1).get_type());
+
+    mcode::Operand m_addr = lower_addr_mem_access(addr);
+    mcode::Operand m_src = lower_as_operand(instr.get_operand(1));
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+
+    mcode::Operand m_rax = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RAX), size);
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), m_src.get_size());
+
+    mcode::BasicBlockIter cas_loop_block = create_block();
+    mcode::BasicBlockIter end_block = create_block();
+
+    emit({X8664Opcode::MOV, {m_rax, m_addr}});
+    start_block(cas_loop_block);
+    emit({X8664Opcode::MOV, {m_tmp, m_rax}});
+    emit({opcode, {m_tmp, m_src}});
+    emit({X8664Opcode::LOCK_CMPXCHG, {m_addr, m_tmp}});
+    emit({X8664Opcode::JNE, {mcode::Operand::from_basic_block(*cas_loop_block)}});
+    start_block(end_block);
+    emit({X8664Opcode::MOV, {m_dst, m_rax}});
 }
 
 X8664Condition X8664SSALowerer::lower_condition(ssa::Comparison comparison) {

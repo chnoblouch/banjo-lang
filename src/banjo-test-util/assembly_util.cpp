@@ -46,6 +46,7 @@ const std::unordered_map<std::string_view, mcode::Opcode> X86_64_OPCODE_MAP{
     {"cdq", target::X8664Opcode::CDQ},
     {"cqo", target::X8664Opcode::CQO},
     {"xchg", target::X8664Opcode::XCHG},
+    {"lock_cmpxchg", target::X8664Opcode::LOCK_CMPXCHG},
     {"jmp", target::X8664Opcode::JMP},
     {"cmp", target::X8664Opcode::CMP},
     {"je", target::X8664Opcode::JE},

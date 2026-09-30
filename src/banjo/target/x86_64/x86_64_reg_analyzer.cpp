@@ -242,6 +242,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
             }
 
         case XCHG:
+        case LOCK_CMPXCHG:
             collect_regs(instr.get_operand(0), mcode::RegUsage::USE_DEF, operands);
             collect_regs(instr.get_operand(1), mcode::RegUsage::USE_DEF, operands);
             break;

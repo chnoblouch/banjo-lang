@@ -41,6 +41,7 @@ enum {
     CDQ,
     CQO,
     XCHG,
+    LOCK_CMPXCHG,
     JMP,
     CMP,
     JCC,
