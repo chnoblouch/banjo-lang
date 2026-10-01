@@ -1,7 +1,6 @@
 #include "instruction.hpp"
 
 #include "banjo/ssa/primitive.hpp"
-#include "banjo/ssa/structure.hpp"
 
 namespace banjo::ssa {
 
@@ -13,13 +12,13 @@ bool Instruction::might_access_memory() const {
         case Opcode::COPY:
         case Opcode::ATOMIC_LOAD:
         case Opcode::ATOMIC_STORE:
+        case Opcode::ATOMIC_SWAP:
+        case Opcode::ATOMIC_CMPSWAP:
         case Opcode::ATOMIC_ADD:
         case Opcode::ATOMIC_SUB:
         case Opcode::ATOMIC_AND:
         case Opcode::ATOMIC_OR:
-        case Opcode::ATOMIC_XOR:
-        case Opcode::ATOMIC_SWAP:
-        case Opcode::ATOMIC_CMPSWAP: return true;
+        case Opcode::ATOMIC_XOR: return true;
 
         case Opcode::ALLOCA:
         case Opcode::LOADARG:

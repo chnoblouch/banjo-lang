@@ -229,6 +229,8 @@ void SemanticAnalyzer::populate_preamble_symbols() {
     builtin_deinit = &find_std_symbol({"internal", "builtin"}, "deinit").as<sir::FuncDef>();
     builtin_atomic_load = &find_std_symbol({"internal", "builtin"}, "atomic_load").as<sir::FuncDef>();
     builtin_atomic_store = &find_std_symbol({"internal", "builtin"}, "atomic_store").as<sir::FuncDef>();
+    builtin_atomic_swap = &find_std_symbol({"internal", "builtin"}, "atomic_swap").as<sir::FuncDef>();
+    builtin_atomic_cmpswap = &find_std_symbol({"internal", "builtin"}, "atomic_cmpswap").as<sir::FuncDef>();
     builtin_atomic_add = &find_std_symbol({"internal", "builtin"}, "atomic_add").as<sir::FuncDef>();
     builtin_atomic_sub = &find_std_symbol({"internal", "builtin"}, "atomic_sub").as<sir::FuncDef>();
     builtin_atomic_and = &find_std_symbol({"internal", "builtin"}, "atomic_and").as<sir::FuncDef>();

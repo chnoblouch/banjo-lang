@@ -1013,6 +1013,23 @@ StoredValue ExprSSAGenerator::generate_builtin_expr(const sir::BuiltinExpr &buil
             return StoredValue::create_value({});
         }
 
+        case sir::Builtin::ATOMIC_SWAP: {
+            StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
+            StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);
+            ssa::Value result = builder.emit_atomic_swap(addr.get_value(), value.get_value());
+            return StoredValue::create_value(result);
+        }
+
+        case sir::Builtin::ATOMIC_CMPSWAP: {
+            ssa::Value addr = generate(builtin_expr.args[0]).turn_into_value(ctx).get_value();
+            ssa::Value current = generate(builtin_expr.args[1]).turn_into_value(ctx).get_value();
+            ssa::Value new_ = generate(builtin_expr.args[2]).turn_into_value(ctx).get_value();
+            ssa::Value success = generate(builtin_expr.args[3]).turn_into_value(ctx).get_value();
+
+            ssa::Value result = builder.emit_atomic_cmpswap(addr, current, new_, success);
+            return StoredValue::create_value(result);
+        }
+
         case sir::Builtin::ATOMIC_ADD: {
             StoredValue addr = generate(builtin_expr.args[0]).turn_into_value(ctx);
             StoredValue value = generate(builtin_expr.args[1]).turn_into_value(ctx);

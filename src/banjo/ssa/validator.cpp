@@ -128,13 +128,13 @@ bool Validator::validate(Module &mod, Function &func) {
                 case Opcode::BITCAST: instr_valid = validate_bitcast(instr); break;
                 case Opcode::ATOMIC_LOAD: instr_valid = validate_atomic_load(instr); break;
                 case Opcode::ATOMIC_STORE: instr_valid = validate_atomic_store(instr); break;
+                case Opcode::ATOMIC_SWAP: instr_valid = validate_atomic_swap(instr); break;
+                case Opcode::ATOMIC_CMPSWAP: instr_valid = validate_atomic_cmpswap(instr); break;
                 case Opcode::ATOMIC_ADD: instr_valid = validate_atomic_add(instr); break;
                 case Opcode::ATOMIC_SUB: instr_valid = validate_atomic_sub(instr); break;
                 case Opcode::ATOMIC_AND: instr_valid = validate_atomic_and(instr); break;
                 case Opcode::ATOMIC_OR: instr_valid = validate_atomic_or(instr); break;
                 case Opcode::ATOMIC_XOR: instr_valid = validate_atomic_xor(instr); break;
-                case Opcode::ATOMIC_SWAP: instr_valid = validate_atomic_swap(instr); break;
-                case Opcode::ATOMIC_CMPSWAP: instr_valid = validate_atomic_cmpswap(instr); break;
                 case Opcode::MEMBERPTR: instr_valid = validate_memberptr(instr); break;
                 case Opcode::OFFSETPTR: instr_valid = validate_offsetptr(instr); break;
                 case Opcode::COPY: instr_valid = validate_copy(instr); break;

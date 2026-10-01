@@ -3,6 +3,7 @@
 
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/function.hpp"
+#include "banjo/ssa/operand.hpp"
 
 #include <vector>
 
@@ -31,6 +32,8 @@ public:
     ssa::Operand emit_uextend(ssa::Operand value, ssa::Type type);
     ssa::Operand emit_truncate(ssa::Operand value, ssa::Type type);
 
+    ssa::Operand emit_atomic_swap(ssa::Operand addr, ssa::Operand value);
+    ssa::Operand emit_atomic_cmpswap(ssa::Operand addr, ssa::Operand current, ssa::Operand new_, ssa::Operand success);
     ssa::Operand emit_atomic_add(ssa::Operand addr, ssa::Operand value);
     ssa::Operand emit_atomic_sub(ssa::Operand addr, ssa::Operand value);
     ssa::Operand emit_atomic_and(ssa::Operand addr, ssa::Operand value);

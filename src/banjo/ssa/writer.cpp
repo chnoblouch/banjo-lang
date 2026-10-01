@@ -200,13 +200,13 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::BITCAST: opcode = "bitcast"; break;
             case Opcode::ATOMIC_LOAD: opcode = "atomic_load"; break;
             case Opcode::ATOMIC_STORE: opcode = "atomic_store"; break;
+            case Opcode::ATOMIC_SWAP: opcode = "atomic_swap"; break;
+            case Opcode::ATOMIC_CMPSWAP: opcode = "atomic_cmpswap"; break;
             case Opcode::ATOMIC_ADD: opcode = "atomic_add"; break;
             case Opcode::ATOMIC_SUB: opcode = "atomic_sub"; break;
             case Opcode::ATOMIC_AND: opcode = "atomic_and"; break;
             case Opcode::ATOMIC_OR: opcode = "atomic_or"; break;
             case Opcode::ATOMIC_XOR: opcode = "atomic_xor"; break;
-            case Opcode::ATOMIC_SWAP: opcode = "atomic_swap"; break;
-            case Opcode::ATOMIC_CMPSWAP: opcode = "atomic_cmpswap"; break;
             case Opcode::MEMBERPTR: opcode = "memberptr"; break;
             case Opcode::OFFSETPTR: opcode = "offsetptr"; break;
             case Opcode::COPY: opcode = "copy"; break;

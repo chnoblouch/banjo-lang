@@ -88,13 +88,13 @@ public:
     void lower_bitcast(ssa::Instruction &instr) override;
     void lower_atomic_load(ssa::Instruction &instr) override;
     void lower_atomic_store(ssa::Instruction &instr) override;
+    void lower_atomic_swap(ssa::Instruction &instr) override;
+    void lower_atomic_cmpswap(ssa::Instruction &instr) override;
     void lower_atomic_add(ssa::Instruction &instr) override;
     void lower_atomic_sub(ssa::Instruction &instr) override;
     void lower_atomic_and(ssa::Instruction &instr) override;
     void lower_atomic_or(ssa::Instruction &instr) override;
     void lower_atomic_xor(ssa::Instruction &instr) override;
-    void lower_atomic_swap(ssa::Instruction &instr) override;
-    void lower_atomic_cmpswap(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
     void lower_copy(ssa::Instruction &instr) override;

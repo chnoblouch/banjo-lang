@@ -6,6 +6,7 @@
 #include "banjo/ssa/virtual_register.hpp"
 
 #include <utility>
+#include <vector>
 
 namespace banjo::ssa {
 
@@ -59,6 +60,20 @@ ssa::Operand Builder::emit_uextend(ssa::Operand value, ssa::Type type) {
 ssa::Operand Builder::emit_truncate(ssa::Operand value, ssa::Type type) {
     ssa::Operand type_operand = ssa::Operand::from_type(type);
     return emit_with_dst(ssa::Opcode::TRUNCATE, {std::move(value), type_operand}, type);
+}
+
+ssa::Operand Builder::emit_atomic_swap(ssa::Operand addr, ssa::Operand value) {
+    return emit_with_dst(ssa::Opcode::ATOMIC_SWAP, {std::move(addr), std::move(value)}, value.get_type());
+}
+
+ssa::Operand Builder::emit_atomic_cmpswap(
+    ssa::Operand addr,
+    ssa::Operand current,
+    ssa::Operand new_,
+    ssa::Operand success
+) {
+    std::vector<ssa::Operand> operands{std::move(addr), std::move(current), std::move(new_), std::move(success)};
+    return emit_with_dst(ssa::Opcode::ATOMIC_CMPSWAP, operands, current.get_type());
 }
 
 ssa::Operand Builder::emit_atomic_add(ssa::Operand addr, ssa::Operand value) {

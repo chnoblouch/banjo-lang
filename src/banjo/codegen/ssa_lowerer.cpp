@@ -217,13 +217,13 @@ void SSALowerer::lower_instr(ssa::InstrIter instr) {
         case ssa::Opcode::BITCAST: lower_bitcast(*instr); break;
         case ssa::Opcode::ATOMIC_LOAD: lower_atomic_load(*instr); break;
         case ssa::Opcode::ATOMIC_STORE: lower_atomic_store(*instr); break;
+        case ssa::Opcode::ATOMIC_SWAP: lower_atomic_swap(*instr); break;
+        case ssa::Opcode::ATOMIC_CMPSWAP: lower_atomic_cmpswap(*instr); break;
         case ssa::Opcode::ATOMIC_ADD: lower_atomic_add(*instr); break;
         case ssa::Opcode::ATOMIC_SUB: lower_atomic_sub(*instr); break;
         case ssa::Opcode::ATOMIC_AND: lower_atomic_and(*instr); break;
         case ssa::Opcode::ATOMIC_OR: lower_atomic_or(*instr); break;
         case ssa::Opcode::ATOMIC_XOR: lower_atomic_xor(*instr); break;
-        case ssa::Opcode::ATOMIC_SWAP: lower_atomic_swap(*instr); break;
-        case ssa::Opcode::ATOMIC_CMPSWAP: lower_atomic_cmpswap(*instr); break;
         case ssa::Opcode::OFFSETPTR: lower_offsetptr(*instr); break;
         case ssa::Opcode::MEMBERPTR: lower_memberptr(*instr); break;
         case ssa::Opcode::COPY: lower_copy(*instr); break;

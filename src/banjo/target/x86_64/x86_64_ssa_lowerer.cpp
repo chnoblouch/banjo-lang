@@ -691,6 +691,14 @@ void X8664SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     emit({X8664Opcode::XCHG, {m_addr, m_tmp}});
 }
 
+void X8664SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
+void X8664SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
 void X8664SSALowerer::lower_atomic_add(ssa::Instruction &instr) {
     // TODO: Implement using `xadd`.
     lower_atomic_cas_loop(X8664Opcode::ADD, instr);
@@ -711,14 +719,6 @@ void X8664SSALowerer::lower_atomic_or(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
     lower_atomic_cas_loop(X8664Opcode::XOR, instr);
-}
-
-void X8664SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
-}
-
-void X8664SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
 }
 
 void X8664SSALowerer::lower_offsetptr(ssa::Instruction &instr) {

@@ -719,6 +719,14 @@ void WasmSSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     lower_store(instr);
 }
 
+void WasmSSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
+void WasmSSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
 void WasmSSALowerer::lower_atomic_add(ssa::Instruction &instr) {
     ASSERT_UNREACHABLE;
 }
@@ -736,14 +744,6 @@ void WasmSSALowerer::lower_atomic_or(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
-}
-
-void WasmSSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
-}
-
-void WasmSSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
     ASSERT_UNREACHABLE;
 }
 

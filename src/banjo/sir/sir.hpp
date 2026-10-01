@@ -1040,6 +1040,8 @@ struct TypeCheckExpr {
 enum class Builtin {
     ATOMIC_LOAD,
     ATOMIC_STORE,
+    ATOMIC_SWAP,
+    ATOMIC_CMPSWAP,
     ATOMIC_ADD,
     ATOMIC_SUB,
     ATOMIC_AND,

@@ -1107,6 +1107,12 @@ Result ExprAnalyzer::analyze_call_expr(sir::CallExpr &call_expr, sir::Expr &out_
     } else if (callee_func_def == analyzer.builtin_atomic_store) {
         out_expr = create_builtin(sir::Builtin::ATOMIC_STORE, call_expr);
         return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_swap) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_SWAP, call_expr);
+        return Result::SUCCESS;
+    } else if (callee_func_def == analyzer.builtin_atomic_cmpswap) {
+        out_expr = create_builtin(sir::Builtin::ATOMIC_CMPSWAP, call_expr);
+        return Result::SUCCESS;
     } else if (callee_func_def == analyzer.builtin_atomic_add) {
         out_expr = create_builtin(sir::Builtin::ATOMIC_ADD, call_expr);
         return Result::SUCCESS;
@@ -1811,10 +1817,12 @@ Result ExprAnalyzer::analyze_meta_field_expr(sir::MetaFieldExpr &meta_field_expr
                 .base_type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::U8),
             }
         );
-    } else if (utils::is_one_of(
-                   meta_field_expr.field.value,
-                   {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
-               )) {
+    } else if (
+        utils::is_one_of(
+            meta_field_expr.field.value,
+            {"is_pointer", "is_static_array", "is_tuple", "is_struct", "is_enum"}
+        )
+    ) {
         meta_field_expr.type = sir::create_primitive_type(analyzer.get_mod(), sir::Primitive::BOOL);
     } else if (meta_field_expr.field.value == "variants") {
         sir::Expr string_type = analyzer.create(

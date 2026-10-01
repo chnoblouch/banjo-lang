@@ -724,6 +724,14 @@ void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
     emit({opcode, {m_src, mcode::Operand::from_aarch64_addr(AArch64Address::new_base(tmp_reg))}});
 }
 
+void AArch64SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
+void AArch64SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
 void AArch64SSALowerer::lower_atomic_add(ssa::Instruction &instr) {
     lower_atomic_ll_sc_loop(AArch64Opcode::ADD, instr);
 }
@@ -742,14 +750,6 @@ void AArch64SSALowerer::lower_atomic_or(ssa::Instruction &instr) {
 
 void AArch64SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
     lower_atomic_ll_sc_loop(AArch64Opcode::EOR, instr);
-}
-
-void AArch64SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
-}
-
-void AArch64SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
 }
 
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {

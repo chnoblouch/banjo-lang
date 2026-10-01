@@ -145,13 +145,13 @@ protected:
     virtual void lower_bitcast(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_load(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_store(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_swap(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_cmpswap(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_add(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_sub(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_and(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_or(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_xor(ssa::Instruction &instr) = 0;
-    virtual void lower_atomic_swap(ssa::Instruction &instr) = 0;
-    virtual void lower_atomic_cmpswap(ssa::Instruction &instr) = 0;
     virtual void lower_offsetptr(ssa::Instruction &instr) = 0;
     virtual void lower_memberptr(ssa::Instruction &instr) = 0;
     virtual void lower_copy(ssa::Instruction &instr);
