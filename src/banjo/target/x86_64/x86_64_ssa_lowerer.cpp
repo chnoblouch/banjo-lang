@@ -692,7 +692,17 @@ void X8664SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+    unsigned size = get_size(instr.get_operand(1).get_type());
+
+    mcode::Operand m_addr = lower_addr_mem_access(addr);
+    mcode::Operand m_value = lower_as_operand(instr.get_operand(1));
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
+
+    emit({X8664Opcode::MOV, {m_tmp, m_value}});
+    emit({X8664Opcode::XCHG, {m_addr, m_tmp}});
+    emit({X8664Opcode::MOV, {m_dst, m_tmp}});
 }
 
 void X8664SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
