@@ -63,6 +63,8 @@ private:
     bool validate_atomic_and(Instruction &instr);
     bool validate_atomic_or(Instruction &instr);
     bool validate_atomic_xor(Instruction &instr);
+    bool validate_atomic_swap(Instruction &instr);
+    bool validate_atomic_cmpswap(Instruction &instr);
     bool validate_memberptr(Instruction &instr);
     bool validate_offsetptr(Instruction &instr);
     bool validate_copy(Instruction &instr);

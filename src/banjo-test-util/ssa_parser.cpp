@@ -76,6 +76,8 @@ const std::unordered_map<std::string_view, ssa::Opcode> OPS = {
     {"atomic_and", ssa::Opcode::ATOMIC_AND},
     {"atomic_or", ssa::Opcode::ATOMIC_OR},
     {"atomic_xor", ssa::Opcode::ATOMIC_XOR},
+    {"atomic_swap", ssa::Opcode::ATOMIC_SWAP},
+    {"atomic_cmpswap", ssa::Opcode::ATOMIC_CMPSWAP},
     {"memberptr", ssa::Opcode::MEMBERPTR},
     {"offsetptr", ssa::Opcode::OFFSETPTR},
     {"copy", ssa::Opcode::COPY},

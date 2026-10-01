@@ -17,7 +17,9 @@ bool Instruction::might_access_memory() const {
         case Opcode::ATOMIC_SUB:
         case Opcode::ATOMIC_AND:
         case Opcode::ATOMIC_OR:
-        case Opcode::ATOMIC_XOR: return true;
+        case Opcode::ATOMIC_XOR:
+        case Opcode::ATOMIC_SWAP:
+        case Opcode::ATOMIC_CMPSWAP: return true;
 
         case Opcode::ALLOCA:
         case Opcode::LOADARG:

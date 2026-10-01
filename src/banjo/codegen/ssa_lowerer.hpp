@@ -150,6 +150,8 @@ protected:
     virtual void lower_atomic_and(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_or(ssa::Instruction &instr) = 0;
     virtual void lower_atomic_xor(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_swap(ssa::Instruction &instr) = 0;
+    virtual void lower_atomic_cmpswap(ssa::Instruction &instr) = 0;
     virtual void lower_offsetptr(ssa::Instruction &instr) = 0;
     virtual void lower_memberptr(ssa::Instruction &instr) = 0;
     virtual void lower_copy(ssa::Instruction &instr);

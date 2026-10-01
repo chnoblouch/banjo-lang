@@ -76,6 +76,8 @@ public:
     void lower_atomic_and(ssa::Instruction &instr) override;
     void lower_atomic_or(ssa::Instruction &instr) override;
     void lower_atomic_xor(ssa::Instruction &instr) override;
+    void lower_atomic_swap(ssa::Instruction &instr) override;
+    void lower_atomic_cmpswap(ssa::Instruction &instr) override;
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
     void lower_frame_address(ssa::Instruction &instr) override;

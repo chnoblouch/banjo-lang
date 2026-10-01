@@ -133,6 +133,8 @@ bool Validator::validate(Module &mod, Function &func) {
                 case Opcode::ATOMIC_AND: instr_valid = validate_atomic_and(instr); break;
                 case Opcode::ATOMIC_OR: instr_valid = validate_atomic_or(instr); break;
                 case Opcode::ATOMIC_XOR: instr_valid = validate_atomic_xor(instr); break;
+                case Opcode::ATOMIC_SWAP: instr_valid = validate_atomic_swap(instr); break;
+                case Opcode::ATOMIC_CMPSWAP: instr_valid = validate_atomic_cmpswap(instr); break;
                 case Opcode::MEMBERPTR: instr_valid = validate_memberptr(instr); break;
                 case Opcode::OFFSETPTR: instr_valid = validate_offsetptr(instr); break;
                 case Opcode::COPY: instr_valid = validate_copy(instr); break;
@@ -365,6 +367,16 @@ bool Validator::validate_atomic_or(Instruction &instr) {
 }
 
 bool Validator::validate_atomic_xor(Instruction &instr) {
+    // TODO
+    return true;
+}
+
+bool Validator::validate_atomic_swap(Instruction &instr) {
+    // TODO
+    return true;
+}
+
+bool Validator::validate_atomic_cmpswap(Instruction &instr) {
     // TODO
     return true;
 }

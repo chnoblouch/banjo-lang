@@ -707,7 +707,9 @@ void WasmSSALowerer::lower_ftos(ssa::Instruction &instr) {
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
-void WasmSSALowerer::lower_bitcast(ssa::Instruction &instr) {}
+void WasmSSALowerer::lower_bitcast(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
 
 void WasmSSALowerer::lower_atomic_load(ssa::Instruction &instr) {
     lower_load(instr);
@@ -718,23 +720,31 @@ void WasmSSALowerer::lower_atomic_store(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_atomic_add(ssa::Instruction &instr) {
-    lower_add(instr);
+    ASSERT_UNREACHABLE;
 }
 
 void WasmSSALowerer::lower_atomic_sub(ssa::Instruction &instr) {
-    lower_sub(instr);
+    ASSERT_UNREACHABLE;
 }
 
 void WasmSSALowerer::lower_atomic_and(ssa::Instruction &instr) {
-    lower_and(instr);
+    ASSERT_UNREACHABLE;
 }
 
 void WasmSSALowerer::lower_atomic_or(ssa::Instruction &instr) {
-    lower_or(instr);
+    ASSERT_UNREACHABLE;
 }
 
 void WasmSSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
-    lower_xor(instr);
+    ASSERT_UNREACHABLE;
+}
+
+void WasmSSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
+void WasmSSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
 }
 
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {

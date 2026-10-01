@@ -744,6 +744,14 @@ void AArch64SSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
     lower_atomic_ll_sc_loop(AArch64Opcode::EOR, instr);
 }
 
+void AArch64SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
+void AArch64SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
+    ASSERT_UNREACHABLE;
+}
+
 void AArch64SSALowerer::lower_offsetptr(ssa::Instruction &instr) {
     ssa::Operand ssa_addr = ssa::Operand::from_register(*instr.get_dest(), ssa::Primitive::U64);
     AddrComponents addr = collect_addr(ssa_addr);

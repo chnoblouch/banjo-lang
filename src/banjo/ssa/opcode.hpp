@@ -48,6 +48,8 @@ enum class Opcode {
     ATOMIC_AND,
     ATOMIC_OR,
     ATOMIC_XOR,
+    ATOMIC_SWAP,
+    ATOMIC_CMPSWAP,
     MEMBERPTR,
     OFFSETPTR,
     COPY,
