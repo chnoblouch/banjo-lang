@@ -1,0 +1,56 @@
+# TODO: Memory operand
+
+# test:subtest
+# test:encoding "0F94C3"
+
+sete bl
+
+# test:subtest
+# test:encoding "410F94C2"
+
+sete r10b
+
+# test:subtest
+# test:encoding "0F95C3"
+
+setne bl
+
+# test:subtest
+# test:encoding "0F97C3"
+
+seta bl
+
+# test:subtest
+# test:encoding "0F93C3"
+
+setae bl
+
+# test:subtest
+# test:encoding "0F92C3"
+
+setb bl
+
+# test:subtest
+# test:encoding "0F96C3"
+
+setbe bl
+
+# test:subtest
+# test:encoding "0F9FC3"
+
+setg bl
+
+# test:subtest
+# test:encoding "0F9DC3"
+
+setge bl
+
+# test:subtest
+# test:encoding "0F9CC3"
+
+setl bl
+
+# test:subtest
+# test:encoding "0F9EC3"
+
+setle bl

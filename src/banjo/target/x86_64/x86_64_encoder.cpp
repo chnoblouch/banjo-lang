@@ -52,6 +52,16 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::JGE: encode_jge(instr); break;
         case X8664Opcode::JL: encode_jl(instr); break;
         case X8664Opcode::JLE: encode_jle(instr); break;
+        case X8664Opcode::SETE: encode_sete(instr); break;
+        case X8664Opcode::SETNE: encode_setne(instr); break;
+        case X8664Opcode::SETA: encode_seta(instr); break;
+        case X8664Opcode::SETAE: encode_setae(instr); break;
+        case X8664Opcode::SETB: encode_setb(instr); break;
+        case X8664Opcode::SETBE: encode_setbe(instr); break;
+        case X8664Opcode::SETG: encode_setg(instr); break;
+        case X8664Opcode::SETGE: encode_setge(instr); break;
+        case X8664Opcode::SETL: encode_setl(instr); break;
+        case X8664Opcode::SETLE: encode_setle(instr); break;
         case X8664Opcode::CMOVE: encode_cmove(instr); break;
         case X8664Opcode::CMOVNE: encode_cmovne(instr); break;
         case X8664Opcode::CMOVA: encode_cmova(instr); break;
@@ -330,6 +340,46 @@ void X8664Encoder::encode_jl(mcode::Instruction &instr) {
 
 void X8664Encoder::encode_jle(mcode::Instruction &instr) {
     encode_jcc(instr, 0x7E);
+}
+
+void X8664Encoder::encode_sete(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x94});
+}
+
+void X8664Encoder::encode_setne(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x95});
+}
+
+void X8664Encoder::encode_seta(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x97});
+}
+
+void X8664Encoder::encode_setae(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x93});
+}
+
+void X8664Encoder::encode_setb(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x92});
+}
+
+void X8664Encoder::encode_setbe(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x96});
+}
+
+void X8664Encoder::encode_setg(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x9F});
+}
+
+void X8664Encoder::encode_setge(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x9D});
+}
+
+void X8664Encoder::encode_setl(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x9C});
+}
+
+void X8664Encoder::encode_setle(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x9E});
 }
 
 void X8664Encoder::encode_cmove(mcode::Instruction &instr) {
@@ -971,6 +1021,16 @@ void X8664Encoder::emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode ds
     emit_opcode(0x0F);
     emit_opcode(opcode);
     emit_modrm_sib(dst, src);
+}
+
+void X8664Encoder::encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &dst = instr.get_operand(0);
+    RegOrAddr dst_roa = roa(dst);
+
+    emit_rex_rroa(1, 0, dst_roa);
+    emit_opcode(0x0F);
+    emit_opcode(params[0]);
+    emit_modrm_sib(0, dst_roa);
 }
 
 void X8664Encoder::encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

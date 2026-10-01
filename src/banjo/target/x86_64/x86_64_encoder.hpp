@@ -139,6 +139,16 @@ private:
     void encode_jge(mcode::Instruction &instr);
     void encode_jl(mcode::Instruction &instr);
     void encode_jle(mcode::Instruction &instr);
+    void encode_sete(mcode::Instruction &instr);
+    void encode_setne(mcode::Instruction &instr);
+    void encode_seta(mcode::Instruction &instr);
+    void encode_setae(mcode::Instruction &instr);
+    void encode_setb(mcode::Instruction &instr);
+    void encode_setbe(mcode::Instruction &instr);
+    void encode_setg(mcode::Instruction &instr);
+    void encode_setge(mcode::Instruction &instr);
+    void encode_setl(mcode::Instruction &instr);
+    void encode_setle(mcode::Instruction &instr);
     void encode_cmove(mcode::Instruction &instr);
     void encode_cmovne(mcode::Instruction &instr);
     void encode_cmova(mcode::Instruction &instr);
@@ -220,6 +230,7 @@ private:
     void emit_cmovcc(std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
     void emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
 
+    void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtsi2ss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2si_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);

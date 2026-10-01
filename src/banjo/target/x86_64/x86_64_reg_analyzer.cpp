@@ -247,6 +247,17 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
             collect_regs(instr.get_operand(1), mcode::RegUsage::USE_DEF, operands);
             break;
 
+        case SETE:
+        case SETNE:
+        case SETA:
+        case SETAE:
+        case SETB:
+        case SETBE:
+        case SETG:
+        case SETGE:
+        case SETL:
+        case SETLE: collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands); break;
+
         case JMP:
         case JE:
         case JNE:
