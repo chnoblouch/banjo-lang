@@ -2,6 +2,7 @@
 
 #include "banjo/codegen/machine_pass_utils.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/mcode/function.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/ssa/utils.hpp"
@@ -38,6 +39,18 @@ const std::vector<mcode::PhysicalReg> AAPCSCallingConv::ARG_REGS_FP = {
     AArch64Register::V6,
     AArch64Register::V7,
 };
+
+static bool is_leaf_func(mcode::Function &func) {
+    for (mcode::BasicBlock &block : func.basic_blocks) {
+        for (mcode::Instruction &instr : block.instrs) {
+            if (instr.get_opcode() == AArch64Opcode::BL || instr.get_opcode() == AArch64Opcode::BLR) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 AAPCSCallingConv::AAPCSCallingConv(Variant variant) : variant(variant) {
     // clang-format off
@@ -216,7 +229,7 @@ int AAPCSCallingConv::get_alloca_size(mcode::StackRegions &regions) {
     int call_arg_bytes = regions.call_arg_region.size;
 
     int minimum_size = arg_store_bytes + generic_bytes + call_arg_bytes;
-    return utils::align(minimum_size, 16) + 16;
+    return utils::align(minimum_size, 16);
 }
 
 std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *func) {
@@ -228,8 +241,7 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
     mcode::Operand m_lr = mcode::Operand::from_register(lr, 8);
     mcode::Operand m_sp = mcode::Operand::from_register(sp, 8);
 
-    int size = func->stack_frame.get_size();
-
+    unsigned size = func->stack_frame.get_size();
     std::vector<mcode::Instruction> prolog;
 
     for (mcode::PhysicalReg modified_reg : codegen::MachinePassUtils::get_modified_volatile_regs(func)) {
@@ -246,14 +258,16 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_prolog(mcode::Function *fu
         );
     }
 
-    AArch64Address stp_addr = AArch64Address::new_base_offset_write(sp, -16);
-    prolog.push_back({AArch64Opcode::STP, {m_fp, m_lr, mcode::Operand::from_aarch64_addr(stp_addr)}});
-    prolog.push_back({AArch64Opcode::MOV, {m_fp, m_sp}});
+    if (size > 0 || !is_leaf_func(*func)) {
+        AArch64Address stp_addr = AArch64Address::new_base_offset_write(sp, -16);
+        prolog.push_back({AArch64Opcode::STP, {m_fp, m_lr, mcode::Operand::from_aarch64_addr(stp_addr)}});
+        prolog.push_back({AArch64Opcode::MOV, {m_fp, m_sp}});
 
-    modify_sp(AArch64Opcode::SUB, size, [&prolog](mcode::Instruction instr) {
-        instr.set_flag(mcode::Instruction::FLAG_ALLOCA);
-        prolog.push_back(std::move(instr));
-    });
+        modify_sp(AArch64Opcode::SUB, size, [&prolog](mcode::Instruction instr) {
+            instr.set_flag(mcode::Instruction::FLAG_ALLOCA);
+            prolog.push_back(std::move(instr));
+        });
+    }
 
     return prolog;
 
@@ -309,19 +323,22 @@ std::vector<mcode::Instruction> AAPCSCallingConv::get_epilog(mcode::Function *fu
     mcode::Operand m_fp = mcode::Operand::from_register(fp, 8);
     mcode::Operand m_lr = mcode::Operand::from_register(lr, 8);
 
-    int size = func->stack_frame.get_size();
-
+    unsigned size = func->stack_frame.get_size();
     std::vector<mcode::Instruction> epilog;
 
-    modify_sp(AArch64Opcode::ADD, size, [&epilog](mcode::Instruction instr) { epilog.push_back(std::move(instr)); });
+    if (size > 0 || !is_leaf_func(*func)) {
+        modify_sp(AArch64Opcode::ADD, size, [&epilog](mcode::Instruction instr) {
+            epilog.push_back(std::move(instr));
+        });
 
-    epilog.push_back({
-        AArch64Opcode::LDP,
-        {m_fp,
-         m_lr,
-         mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
-         mcode::Operand::from_int_immediate(16)},
-    });
+        epilog.push_back({
+            AArch64Opcode::LDP,
+            {m_fp,
+             m_lr,
+             mcode::Operand::from_aarch64_addr(AArch64Address::new_base(sp)),
+             mcode::Operand::from_int_immediate(16)},
+        });
+    }
 
     std::vector<mcode::PhysicalReg> modified_regs = codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
