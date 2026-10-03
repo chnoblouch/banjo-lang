@@ -12,7 +12,7 @@ static bool is_digit(char c) {
 
 Lexer::Lexer(std::string_view source) : source{source}, position{0} {}
 
-std::vector<Token> Lexer::tokenize() {
+TokenStream Lexer::tokenize() {
     while (position < source.size()) {
         skip_whitespace();
 
@@ -54,7 +54,11 @@ std::vector<Token> Lexer::tokenize() {
     }
 
     tokens.push_back(Token{.type = TokenType::END_OF_FILE, .value{}});
-    return std::move(tokens);
+
+    return TokenStream{
+        .tokens = std::move(tokens),
+        .position = 0,
+    };
 }
 
 void Lexer::read_identifier() {

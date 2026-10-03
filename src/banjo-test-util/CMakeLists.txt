@@ -1,4 +1,6 @@
 add_executable(banjo-test-util
+    "aarch64_asm_parser.cpp"
+    "aarch64_asm_parser.hpp"    
     "assembler_lexer.cpp"
     "assembler_lexer.hpp"
     "assembly_util.cpp"
@@ -12,6 +14,8 @@ add_executable(banjo-test-util
     "ssa_parser.hpp"
     "ssa_util.cpp"
     "ssa_util.hpp"
+    "x86_64_asm_parser.cpp"
+    "x86_64_asm_parser.hpp"
 )
 
 target_include_directories(banjo-test-util PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

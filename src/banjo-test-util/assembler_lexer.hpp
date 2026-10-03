@@ -26,6 +26,14 @@ struct Token {
     std::string_view value;
 };
 
+struct TokenStream {
+    std::vector<Token> tokens;
+    unsigned position;
+
+    Token &get() { return tokens[position]; }
+    void advance() { position += 1; }
+};
+
 class Lexer {
 
 private:
@@ -37,7 +45,7 @@ private:
 
 public:
     Lexer(std::string_view source);
-    std::vector<Token> tokenize();
+    TokenStream tokenize();
 
 private:
     void read_identifier();
