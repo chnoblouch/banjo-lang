@@ -1,5 +1,6 @@
 #include "assembly_util.hpp"
 
+#include "assembler_lexer.hpp"
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/module.hpp"
@@ -15,16 +16,16 @@
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/hash_map.hpp"
 #include "banjo/utils/macros.hpp"
+#include "banjo/utils/utils.hpp"
 
-#include "line_based_reader.hpp"
-
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
 
 namespace banjo::test {
+
+using namespace assembler;
 
 // clang-format off
 const std::unordered_map<std::string_view, mcode::Opcode> X86_64_OPCODE_MAP{
@@ -275,14 +276,19 @@ const std::unordered_map<std::string_view, target::AArch64Condition> AARCH64_CON
     {"le", target::AArch64Condition::LE},
 };
 
-AssemblyUtil::AssemblyUtil(target::Architecture arch) : arch{arch}, reader{std::cin} {}
+AssemblyUtil::AssemblyUtil(target::Architecture arch, std::string_view source) : arch{arch}, source{source} {}
 
 WriteBuffer AssemblyUtil::assemble() {
+    tokens = Lexer{source}.tokenize();
+    position = 0;
+
     mcode::Function *m_func = new mcode::Function{.name = "f"};
     mcode::BasicBlockIter m_block = m_func->basic_blocks.append({.label = "b"});
 
-    while (reader.next_line()) {
-        if (std::optional<mcode::Instruction> instr = parse_line()) {
+    while (get().type != TokenType::END_OF_FILE) {
+        if (get().type == TokenType::END_OF_LINE) {
+            consume();
+        } else if (std::optional<mcode::Instruction> instr = parse_line()) {
             m_block->append(*instr);
         }
     }
@@ -308,137 +314,112 @@ WriteBuffer AssemblyUtil::assemble() {
 }
 
 std::optional<mcode::Instruction> AssemblyUtil::parse_line() {
-    reader.skip_whitespace();
-
-    if (reader.get() == '\0' || reader.get() == '#') {
-        return {};
-    }
-
     mcode::Opcode opcode = parse_opcode();
     mcode::Instruction::OperandList operands;
 
-    while (reader.get() != '\0') {
-        operands.push_back(parse_operand());
+    if (get().type != TokenType::END_OF_LINE) {
+        while (true) {
+            operands.push_back(parse_operand());
+
+            if (get().type == TokenType::COMMA) {
+                consume();
+            } else {
+                break;
+            }
+        }
     }
 
+    ASSERT(consume().type == TokenType::END_OF_LINE);
     return mcode::Instruction(opcode, operands);
 }
 
 mcode::Opcode AssemblyUtil::parse_opcode() {
-    std::string string;
-
-    while (!LineBasedReader::is_whitespace(reader.get())) {
-        string += reader.consume();
-    }
-
-    reader.skip_whitespace();
-    return convert_opcode(string);
+    Token &token = consume();
+    ASSERT(token.type == TokenType::IDENTIFIER);
+    return convert_opcode(token.value);
 }
 
 mcode::Operand AssemblyUtil::parse_operand() {
-    std::string string = read_operand();
+    Token &token = consume();
+    std::string_view value = token.value;
 
     if (arch == target::Architecture::AARCH64) {
-        if (AARCH64_COND_MAP.contains(string)) {
-            return mcode::Operand::from_aarch64_condition(AARCH64_COND_MAP.at(string));
-        } else if (string == "sp") {
-            return mcode::Operand::from_register(convert_register(string), 8);
-        } else if (string[0] == 'w' || string[0] == 's') {
-            return mcode::Operand::from_register(convert_register(string), 4);
-        } else if (string[0] == 'x' || string[0] == 'd') {
-            return mcode::Operand::from_register(convert_register(string), 8);
+        if (token.type == TokenType::IDENTIFIER) {
+            if (AARCH64_COND_MAP.contains(value)) {
+                return mcode::Operand::from_aarch64_condition(AARCH64_COND_MAP.at(value));
+            } else if (value == "sp") {
+                return mcode::Operand::from_register(convert_register(value), 8);
+            } else if (value[0] == 'w' || value[0] == 's') {
+                return mcode::Operand::from_register(convert_register(value), 4);
+            } else if (value[0] == 'x' || value[0] == 'd') {
+                return mcode::Operand::from_register(convert_register(value), 8);
+            }
         }
     } else if (arch == target::Architecture::X86_64) {
-        if (auto result = X86_64_GP_REG_MAP.try_find(string)) {
-            mcode::Register reg = mcode::Register::from_physical(result->first);
-            return mcode::Operand::from_register(reg, result->second);
-        } else if (string.starts_with("xmm")) {
-            unsigned n = std::stoul(string.substr(3));
-            mcode::PhysicalReg p_reg = target::X8664Register::XMM0 + n;
-            mcode::Register reg = mcode::Register::from_physical(p_reg);
-            return mcode::Operand::from_register(reg, 8);
+        if (token.type == TokenType::IDENTIFIER) {
+            if (auto result = X86_64_GP_REG_MAP.try_find(value)) {
+                mcode::Register reg = mcode::Register::from_physical(result->first);
+                return mcode::Operand::from_register(reg, result->second);
+            } else if (value.starts_with("xmm")) {
+                unsigned n = std::stoul(std::string{value.substr(3)});
+                mcode::PhysicalReg p_reg = target::X8664Register::XMM0 + n;
+                mcode::Register reg = mcode::Register::from_physical(p_reg);
+                return mcode::Operand::from_register(reg, 8);
+            }
         }
     }
 
-    if (string[0] == '#') {
-        std::string value = string.substr(1);
+    if (token.type == TokenType::IDENTIFIER) {
+        if (value.starts_with("lsl")) {
+            Token &shift_token = consume();
+            ASSERT(shift_token.type == TokenType::NUMBER);
 
-        if (value.find('.') == std::string::npos) {
-            return mcode::Operand::from_int_immediate(LargeInt(value));
+            std::optional<std::uint64_t> value = utils::parse_u64(shift_token.value);
+            ASSERT(value);
+
+            return mcode::Operand::from_aarch64_left_shift(*value);
         } else {
-            return mcode::Operand::from_fp_immediate(std::stod(value));
+            ASSERT_UNREACHABLE;
         }
-    } else if (string.starts_with("lsl")) {
-        unsigned shift_start = 0;
-
-        while (string[shift_start] != '#') {
-            shift_start += 1;
+    } else if (token.type == TokenType::NUMBER) {
+        if (value.find('.') == std::string::npos) {
+            return mcode::Operand::from_int_immediate(LargeInt{value});
+        } else {
+            return mcode::Operand::from_fp_immediate(std::stod(std::string{value}));
         }
-
-        std::string shift_string = string.substr(shift_start + 1);
-        return mcode::Operand::from_aarch64_left_shift(std::stoul(shift_string));
-    } else if (string[0] == '[') {
-        unsigned index = 1;
-
-        while (LineBasedReader::is_whitespace(string[index])) {
-            index += 1;
-        }
-        unsigned reg_start = index;
-
-        index += 1;
-        while (!LineBasedReader::is_whitespace(string[index]) && string[index] != ']' && string[index] != ',') {
-            index += 1;
-        }
-        unsigned reg_end = index;
-
-        while (LineBasedReader::is_whitespace(string[index])) {
-            index += 1;
-        }
-
+    } else if (token.type == TokenType::LBRACKET) {
         target::AArch64Address addr;
-        mcode::Register base = convert_register(string.substr(reg_start, reg_end - reg_start));
 
-        if (string[index] == ']') {
+        Token &base_token = consume();
+        ASSERT(base_token.type == TokenType::IDENTIFIER);
+        mcode::Register base = convert_register(base_token.value);
+
+        Token &next = get();
+
+        if (next.type == TokenType::RBRACKET) {
+            consume();
             addr = target::AArch64Address::new_base(base);
-        } else if (string[index] == ',') {
-            index += 1;
-            while (LineBasedReader::is_whitespace(string[index])) {
-                index += 1;
-            }
+        } else if (next.type == TokenType::COMMA) {
+            consume();
+            Token &next = get();
 
-            unsigned offset_start = index;
-            bool is_imm = string[index] == '#';
+            if (next.type == TokenType::IDENTIFIER) {
+                mcode::Register offset = convert_register(consume().value);
+                ASSERT(consume().type == TokenType::RBRACKET);
+                addr = target::AArch64Address::new_base_offset(base, offset);
+            } else if (next.type == TokenType::NUMBER) {
+                int offset = std::stol(std::string{consume().value});
+                ASSERT(consume().type == TokenType::RBRACKET);
 
-            index += 1;
-
-            while (!LineBasedReader::is_whitespace(string[index]) && string[index] != ']') {
-                index += 1;
-            }
-
-            unsigned offset_end = index;
-
-            while (LineBasedReader::is_whitespace(string[index])) {
-                index += 1;
-            }
-
-            ASSERT(string[index] == ']');
-            index += 1;
-
-            if (is_imm) {
-                std::string offset_string = string.substr(offset_start + 1, offset_end - offset_start - 1);
-                int offset = std::stol(offset_string);
-
-                if (string[index] == '!') {
+                if (get().type == TokenType::EXCLAMATION) {
+                    consume();
                     addr = target::AArch64Address::new_base_offset_write(base, offset);
                 } else {
                     addr = target::AArch64Address::new_base_offset(base, offset);
                 }
             } else {
-                std::string offset_string = string.substr(offset_start, offset_end - offset_start);
-                addr = target::AArch64Address::new_base_offset(base, convert_register(offset_string));
+                ASSERT_UNREACHABLE;
             }
-        } else {
-            ASSERT_UNREACHABLE;
         }
 
         return mcode::Operand::from_aarch64_addr(addr);
@@ -447,7 +428,7 @@ mcode::Operand AssemblyUtil::parse_operand() {
     }
 }
 
-mcode::Opcode AssemblyUtil::convert_opcode(const std::string &string) {
+mcode::Opcode AssemblyUtil::convert_opcode(std::string_view string) {
     if (arch == target::Architecture::X86_64) {
         return X86_64_OPCODE_MAP.at(string);
     } else if (arch == target::Architecture::AARCH64) {
@@ -457,50 +438,20 @@ mcode::Opcode AssemblyUtil::convert_opcode(const std::string &string) {
     }
 }
 
-mcode::Register AssemblyUtil::convert_register(const std::string &string) {
+mcode::Register AssemblyUtil::convert_register(std::string_view string) {
     if (string == "sp") {
         return mcode::Register::from_physical(target::AArch64Register::SP);
     } else if (string[0] == 'w' || string[0] == 'x') {
-        unsigned n = std::stoul(string.substr(1));
+        unsigned n = utils::parse_u64(string.substr(1)).value();
         mcode::PhysicalReg m_reg = target::AArch64Register::R0 + n;
         return mcode::Register::from_physical(m_reg);
     } else if (string[0] == 's' || string[0] == 'd') {
-        unsigned n = std::stoul(string.substr(1));
+        unsigned n = utils::parse_u64(string.substr(1)).value();
         mcode::PhysicalReg m_reg = target::AArch64Register::V0 + n;
         return mcode::Register::from_physical(m_reg);
     } else {
         ASSERT_UNREACHABLE;
     }
-}
-
-std::string AssemblyUtil::read_operand() {
-    reader.skip_whitespace();
-
-    std::string string;
-    bool in_brackets = false;
-
-    while (reader.get() != '\0') {
-        if (reader.get() == '[') {
-            in_brackets = true;
-        } else if (reader.get() == ']') {
-            in_brackets = false;
-        }
-
-        string += reader.consume();
-
-        if (reader.get() == ',' && !in_brackets) {
-            reader.consume();
-            break;
-        }
-    }
-
-    unsigned length = string.size();
-
-    while (length > 0 && LineBasedReader::is_whitespace(string[length - 1])) {
-        length -= 1;
-    }
-
-    return string.substr(0, length);
 }
 
 } // namespace banjo::test

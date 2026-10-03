@@ -11,4 +11,4 @@ eor w15, w23, w6
 # test:subtest
 # test:encoding "EF3E06CA"
 
-eor x15, x23, x6, lsl #15
+eor x15, x23, x6, lsl 15

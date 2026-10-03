@@ -11,27 +11,27 @@ sub w1, w18, w27
 # test:subtest
 # test:encoding "C53D16CB"
 
-sub x5, x14, x22, lsl #15
+sub x5, x14, x22, lsl 15
 
 # test:subtest
 # test:encoding "47910151"
 
-sub w7, w10, #100
+sub w7, w10, 100
 
 # test:subtest
 # test:encoding "47495351"
 
-sub w7, w10, #1234, lsl #12
+sub w7, w10, 1234, lsl 12
 
 # test:subtest
 # test:encoding "479101D1"
 
-sub x7, x10, #100
+sub x7, x10, 100
 
 # test:subtest
 # test:encoding "474953D1"
 
-sub x7, x10, #1234, lsl #12
+sub x7, x10, 1234, lsl 12
 
 # test:subtest
 # test:encoding "E1633BCB"

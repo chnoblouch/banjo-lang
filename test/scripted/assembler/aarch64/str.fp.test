@@ -11,17 +11,17 @@ str d27, [x10]
 # test:subtest
 # test:encoding "5BD107BD"
 
-str s27, [x10, #2000]
+str s27, [x10, 2000]
 
 # test:subtest
 # test:encoding "5B5102BC"
 
-str s27, [x10, #37]
+str s27, [x10, 37]
 
 # test:subtest
 # test:encoding "5BF118BC"
 
-str s27, [x10, #-113]
+str s27, [x10, -113]
 
 # test:subtest
 # test:encoding "FB0300BD"
@@ -31,29 +31,29 @@ str s27, [sp]
 # test:subtest
 # test:encoding "5B7503BC"
 
-str s27, [x10], #55
+str s27, [x10], 55
 
 # test:subtest
 # test:encoding "5B7503FC"
 
-str d27, [x10], #55
+str d27, [x10], 55
 
 # test:subtest
 # test:encoding "5B451FBC"
 
-str s27, [x10], #-12
+str s27, [x10], -12
 
 # test:subtest
 # test:encoding "5B7D03BC"
 
-str s27, [x10, #55]!
+str s27, [x10, 55]!
 
 # test:subtest
 # test:encoding "5B7D03FC"
 
-str d27, [x10, #55]!
+str d27, [x10, 55]!
 
 # test:subtest
 # test:encoding "5B4D1FBC"
 
-str s27, [x10, #-12]!
+str s27, [x10, -12]!

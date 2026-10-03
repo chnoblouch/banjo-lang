@@ -1,4 +1,6 @@
 add_executable(banjo-test-util
+    "assembler_lexer.cpp"
+    "assembler_lexer.hpp"
     "assembly_util.cpp"
     "assembly_util.hpp"
     "formatter_util.cpp"
