@@ -36,6 +36,18 @@ const std::vector<mcode::PhysicalReg> SysVCallingConv::ARG_REGS_FLOAT = {
     X8664Register::XMM8,
 };
 
+static bool is_leaf_func(mcode::Function &func) {
+    for (mcode::BasicBlock &block : func.basic_blocks) {
+        for (mcode::Instruction &instr : block.instrs) {
+            if (instr.get_opcode() == X8664Opcode::CALL) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 SysVCallingConv::SysVCallingConv() {
     // clang-format off
     volatile_regs = {
@@ -243,13 +255,15 @@ int SysVCallingConv::get_alloca_size(mcode::StackRegions &regions) {
 std::vector<mcode::Instruction> SysVCallingConv::get_prolog(mcode::Function *func) {
     std::vector<mcode::Instruction> prolog;
 
+    unsigned size = func->stack_frame.get_size();
+
     std::vector<mcode::PhysicalReg> modified_volatile_regs =
         codegen::MachinePassUtils::get_modified_volatile_regs(func);
 
-    if (func->stack_frame.get_size() > 0 || true) {
+    if (size > 0 || !is_leaf_func(*func)) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
-        mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->stack_frame.get_size());
+        mcode::Operand frame_size = mcode::Operand::from_int_immediate(size);
 
         // Push frame pointer.
         prolog.push_back({X8664Opcode::PUSH, {rbp}});
@@ -306,7 +320,9 @@ std::vector<mcode::Instruction> SysVCallingConv::get_epilog(mcode::Function *fun
         }
     }
 
-    if (func->stack_frame.get_size() > 0 || true) {
+    unsigned size = func->stack_frame.get_size();
+
+    if (size > 0 || !is_leaf_func(*func)) {
         mcode::Operand rbp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RBP), 8);
         mcode::Operand rsp = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RSP), 8);
         mcode::Operand frame_size = mcode::Operand::from_int_immediate(func->stack_frame.get_size());
