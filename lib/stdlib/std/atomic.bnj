@@ -14,4 +14,34 @@ struct Atomic[T: bool | i8 | i16 | i32 | i64 | u8 | u16 | u32 | u64 | usize] {
     pub func store(mut self, value: T) {
         builtin.atomic_store(value, &self.value);
     }
+
+    pub func swap(mut self, value: T) -> T {
+        return builtin.atomic_swap(&self.value, value);
+    }
+
+    pub func compare_swap(mut self, current: T, new: T) -> (T, bool) {
+        var success: bool = undefined;
+        var result = builtin.atomic_cmpswap(&self.value, current, new, &success);
+        return (result, success);
+    }
+
+    pub func fetch_add(mut self, value: T) -> T {
+        return builtin.atomic_add(&self.value, value);
+    }
+
+    pub func fetch_sub(mut self, value: T) -> T {
+        return builtin.atomic_sub(&self.value, value);
+    }
+
+    pub func fetch_and(mut self, value: T) -> T {
+        return builtin.atomic_and(&self.value, value);
+    }
+
+    pub func fetch_or(mut self, value: T) -> T {
+        return builtin.atomic_or(&self.value, value);
+    }
+
+    pub func fetch_xor(mut self, value: T) -> T {
+        return builtin.atomic_xor(&self.value, value);
+    }
 }

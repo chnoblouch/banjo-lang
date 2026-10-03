@@ -1,0 +1,352 @@
+# test:common
+
+use std.atomic.Atomic;
+
+# test:subtest
+# test:output "true,-73,-4968,-248951033,-1392076915721959821,73,4968,248951033,1392076915721959821"
+
+func main() {
+    var a1 = Atomic[bool].new(true);
+    var a2 = Atomic[i8].new(-73);
+    var a3 = Atomic[i16].new(-4968);
+    var a4 = Atomic[i32].new(-248951033);
+    var a5 = Atomic[i64].new(-1392076915721959821);
+    var a6 = Atomic[u8].new(73);
+    var a7 = Atomic[u16].new(4968);
+    var a8 = Atomic[u32].new(248951033);
+    var a9 = Atomic[u64].new(1392076915721959821);
+
+    print(a1.load());
+    print(',');
+    print(a2.load());
+    print(',');
+    print(a3.load());
+    print(',');
+    print(a4.load());
+    print(',');
+    print(a5.load());
+    print(',');
+    print(a6.load());
+    print(',');
+    print(a7.load());
+    print(',');
+    print(a8.load());
+    print(',');
+    print(a9.load());
+}
+
+# test:subtest
+# test:output "73,4968,248951033,1392076915721959821"
+
+func main() {
+    var a1 = Atomic[i8].new(0);
+    var a2 = Atomic[i16].new(0);
+    var a3 = Atomic[i32].new(0);
+    var a4 = Atomic[i64].new(0);
+
+    # FIXME: Coercion when calling generic methods.
+    var v1: i8 = 73;
+    var v2: i16 = 4968;
+    var v3: i32 = 248951033;
+    var v4: i64 = 1392076915721959821;
+
+    a1.store(v1);
+    a2.store(v2);
+    a3.store(v3);
+    a4.store(v4);
+
+    print(a1.load());
+    print(',');
+    print(a2.load());
+    print(',');
+    print(a3.load());
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "26,73;13564,4968;1135806690,248951033;7344726167368696967,1392076915721959821"
+
+func main() {
+    var a1 = Atomic[i8].new(26);
+    var a2 = Atomic[i16].new(13564);
+    var a3 = Atomic[i32].new(1135806690);
+    var a4 = Atomic[i64].new(7344726167368696967);
+
+    # FIXME: Coercion when calling generic methods.
+    var n1: i8 = 73;
+    var n2: i16 = 4968;
+    var n3: i32 = 248951033;
+    var n4: i64 = 1392076915721959821;
+
+    var v1 = a1.swap(n1);
+    var v2 = a2.swap(n2);
+    var v3 = a3.swap(n3);
+    var v4 = a4.swap(n4);
+
+    print(v1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "26,true,73;13564,true,4968;1135806690,true,248951033;7344726167368696967,true,1392076915721959821"
+
+func main() {
+    var a1 = Atomic[i8].new(26);
+    var a2 = Atomic[i16].new(13564);
+    var a3 = Atomic[i32].new(1135806690);
+    var a4 = Atomic[i64].new(7344726167368696967);
+
+    # FIXME: Coercion when calling generic methods.
+    var c1: i8 = 26;
+    var c2: i16 = 13564;
+    var c3: i32 = 1135806690;
+    var c4: i64 = 7344726167368696967;
+
+    var n1: i8 = 73;
+    var n2: i16 = 4968;
+    var n3: i32 = 248951033;
+    var n4: i64 = 1392076915721959821;
+
+    var v1 = a1.compare_swap(c1, n1);
+    var v2 = a2.compare_swap(c2, n2);
+    var v3 = a3.compare_swap(c3, n3);
+    var v4 = a4.compare_swap(c4, n4);
+
+    print(v1.0);
+    print(',');
+    print(v1.1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2.0);
+    print(',');
+    print(v2.1);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3.0);
+    print(',');
+    print(v3.1);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4.0);
+    print(',');
+    print(v4.1);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "26,false,26;13564,false,13564;1135806690,false,1135806690;7344726167368696967,false,7344726167368696967"
+
+func main() {
+    var a1 = Atomic[i8].new(26);
+    var a2 = Atomic[i16].new(13564);
+    var a3 = Atomic[i32].new(1135806690);
+    var a4 = Atomic[i64].new(7344726167368696967);
+
+    # FIXME: Coercion when calling generic methods.
+    var n1: i8 = 73;
+    var n2: i16 = 4968;
+    var n3: i32 = 248951033;
+    var n4: i64 = 1392076915721959821;
+
+    var v1 = a1.compare_swap(0, n1);
+    var v2 = a2.compare_swap(0, n2);
+    var v3 = a3.compare_swap(0, n3);
+    var v4 = a4.compare_swap(0, n4);
+
+    print(v1.0);
+    print(',');
+    print(v1.1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2.0);
+    print(',');
+    print(v2.1);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3.0);
+    print(',');
+    print(v3.1);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4.0);
+    print(',');
+    print(v4.1);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "73,115;4968,5010;248951033,248951075;1392076915721959821,1392076915721959863"
+
+func main() {
+    var a1 = Atomic[i8].new(73);
+    var a2 = Atomic[i16].new(4968);
+    var a3 = Atomic[i32].new(248951033);
+    var a4 = Atomic[i64].new(1392076915721959821);
+
+    var v1 = a1.fetch_add(42);
+    var v2 = a2.fetch_add(42);
+    var v3 = a3.fetch_add(42);
+    var v4 = a4.fetch_add(42);
+
+    print(v1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "73,31;4968,4926;248951033,248950991;1392076915721959821,1392076915721959779"
+
+func main() {
+    var a1 = Atomic[i8].new(73);
+    var a2 = Atomic[i16].new(4968);
+    var a3 = Atomic[i32].new(248951033);
+    var a4 = Atomic[i64].new(1392076915721959821);
+
+    var v1 = a1.fetch_sub(42);
+    var v2 = a2.fetch_sub(42);
+    var v3 = a3.fetch_sub(42);
+    var v4 = a4.fetch_sub(42);
+
+    print(v1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "73,65;4968,64;248951033,193;1392076915721959821,129"
+
+func main() {
+    var a1 = Atomic[u8].new(73);
+    var a2 = Atomic[u16].new(4968);
+    var a3 = Atomic[u32].new(248951033);
+    var a4 = Atomic[u64].new(1392076915721959821);
+
+    var v1 = a1.fetch_and(195);
+    var v2 = a2.fetch_and(195);
+    var v3 = a3.fetch_and(195);
+    var v4 = a4.fetch_and(195);
+
+    print(v1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "73,203;4968,5099;248951033,248951035;1392076915721959821,1392076915721959887"
+
+func main() {
+    var a1 = Atomic[u8].new(73);
+    var a2 = Atomic[u16].new(4968);
+    var a3 = Atomic[u32].new(248951033);
+    var a4 = Atomic[u64].new(1392076915721959821);
+
+    var v1 = a1.fetch_or(195);
+    var v2 = a2.fetch_or(195);
+    var v3 = a3.fetch_or(195);
+    var v4 = a4.fetch_or(195);
+
+    print(v1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4);
+    print(',');
+    print(a4.load());
+}
+
+# test:subtest
+# test:output "73,138;4968,5035;248951033,248950842;1392076915721959821,1392076915721959758"
+
+func main() {
+    var a1 = Atomic[u8].new(73);
+    var a2 = Atomic[u16].new(4968);
+    var a3 = Atomic[u32].new(248951033);
+    var a4 = Atomic[u64].new(1392076915721959821);
+
+    var v1 = a1.fetch_xor(195);
+    var v2 = a2.fetch_xor(195);
+    var v3 = a3.fetch_xor(195);
+    var v4 = a4.fetch_xor(195);
+
+    print(v1);
+    print(',');
+    print(a1.load());
+    print(';');
+    print(v2);
+    print(',');
+    print(a2.load());
+    print(';');
+    print(v3);
+    print(',');
+    print(a3.load());
+    print(';');
+    print(v4);
+    print(',');
+    print(a4.load());
+}
