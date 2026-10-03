@@ -1,0 +1,13 @@
+# test:section ssa
+
+func void @add(i32, i32):
+    %0 = loadarg i32, void 0
+    %1 = loadarg i32, void 1
+    %2 = add i32 %0, i32 %1
+    ret i32 %2
+
+# test:section mcode
+
+func add:
+    add w0, w0, w1
+    ret

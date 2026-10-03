@@ -3,11 +3,10 @@
 
 #include "banjo/ssa/module.hpp"
 
-#include <unordered_map>
 #include <string_view>
+#include <unordered_map>
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 class SSAUtil {
 
@@ -22,7 +21,6 @@ private:
     void replace_regs(const RegMap &reg_map, ssa::Operand &operand);
 };
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test
 
 #endif

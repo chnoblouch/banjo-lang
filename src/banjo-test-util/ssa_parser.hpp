@@ -10,20 +10,20 @@
 #include <string>
 #include <vector>
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 class SSAParser {
 
 private:
     LineBasedReader reader;
+    ssa::CallingConv calling_conv;
 
     ssa::Module mod;
     std::unordered_map<std::string_view, ssa::Function *> funcs;
     std::unordered_map<std::string_view, ssa::BasicBlockIter> blocks;
 
 public:
-    SSAParser();
+    SSAParser(ssa::CallingConv calling_conv);
     ssa::Module parse();
 
 private:
@@ -37,7 +37,6 @@ private:
     std::optional<ssa::Operand> parse_operand();
 };
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test
 
 #endif

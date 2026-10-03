@@ -13,8 +13,7 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 const std::unordered_map<std::string_view, ssa::Primitive> PRIMITIVES = {
     {"void", ssa::Primitive::VOID},
@@ -103,7 +102,7 @@ const std::unordered_map<std::string_view, ssa::Comparison> COMPARISONS = {
     {"fle", ssa::Comparison::FLE},
 };
 
-SSAParser::SSAParser() : reader(std::cin) {}
+SSAParser::SSAParser(ssa::CallingConv calling_conv) : reader{std::cin}, calling_conv{calling_conv} {}
 
 ssa::Module SSAParser::parse() {
     while (reader.next_line()) {
@@ -123,7 +122,7 @@ ssa::Module SSAParser::parse() {
             ssa::FunctionType type{
                 .params = params,
                 .return_type = return_type,
-                .calling_conv = ssa::CallingConv::NONE,
+                .calling_conv = calling_conv,
                 .variadic = false,
                 .first_variadic_index = 0,
             };
@@ -405,5 +404,4 @@ std::optional<ssa::Operand> SSAParser::parse_operand() {
     }
 }
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test

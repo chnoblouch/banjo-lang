@@ -176,7 +176,7 @@ std::string DebugEmitter::instr_to_string(
     mcode::BasicBlock &basic_block,
     mcode::Instruction &instr
 ) {
-    std::string string = "  ";
+    std::string string = "    ";
 
     string += get_opcode_name(instr.get_opcode());
 

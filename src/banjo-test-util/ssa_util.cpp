@@ -13,8 +13,7 @@
 
 #include <iostream>
 
-namespace banjo {
-namespace test {
+namespace banjo::test {
 
 void SSAUtil::optimize(std::string_view pass_name) {
     target::TargetDescription target_descr(
@@ -25,7 +24,7 @@ void SSAUtil::optimize(std::string_view pass_name) {
 
     target::Target *target = target::Target::create(target_descr, target::CodeModel::LARGE);
 
-    ssa::Module ssa_mod = SSAParser().parse();
+    ssa::Module ssa_mod = SSAParser{target->get_default_calling_conv()}.parse();
 
     if (pass_name == "peephole") {
         passes::PeepholeOptimizer(target).run(ssa_mod);
@@ -85,5 +84,4 @@ void SSAUtil::replace_regs(const RegMap &reg_map, ssa::Operand &operand) {
     }
 }
 
-} // namespace test
-} // namespace banjo
+} // namespace banjo::test
