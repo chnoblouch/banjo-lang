@@ -348,8 +348,8 @@ std::optional<target::AArch64Address> AArch64AsmParser::parse_address() {
     // TODO: Check register sizes
 
     tokens.advance();
-    std::optional<mcode::Register> base = parse_register();
 
+    std::optional<mcode::Register> base = parse_register();
     if (!base) {
         return {};
     }

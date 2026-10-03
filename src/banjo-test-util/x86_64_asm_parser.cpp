@@ -261,8 +261,49 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
         } else {
             RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
         }
+    } else if (token.type == TokenType::LBRACKET) {
+        if (std::optional<target::X8664Address> address = parse_address()) {
+            return mcode::Operand::from_x86_64_addr(*address);
+        } else {
+            return {};
+        }
     } else {
         RETURN_ERROR("expected operand, got '" + std::string{token.value} + "'");
+    }
+}
+
+std::optional<target::X8664Address> X8664AsmParser::parse_address() {
+    // TODO: Check register sizes
+
+    tokens.advance();
+
+    std::optional<mcode::Register> base = parse_register();
+    if (!base) {
+        return {};
+    }
+
+    Token &next = tokens.get();
+
+    if (next.type == TokenType::RBRACKET) {
+        tokens.advance();
+        return target::X8664Address{.base = *base};
+    } else {
+        RETURN_ERROR("expected ']', got '" + std::string{next.value} + "'");
+    }
+}
+
+std::optional<mcode::Register> X8664AsmParser::parse_register() {
+    Token &token = tokens.get();
+
+    if (token.type != TokenType::IDENTIFIER) {
+        RETURN_ERROR("expected register, got '" + std::string{token.value} + "'");
+    }
+
+    if (const auto *pair = REGISTERS.try_find(token.value)) {
+        tokens.advance();
+        return mcode::Register::from_physical(pair->first);
+    } else {
+        RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
     }
 }
 

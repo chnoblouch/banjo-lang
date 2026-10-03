@@ -1,5 +1,3 @@
-# TODO: Memory operand
-
 # test:subtest
 # test:encoding "0F94C3"
 
@@ -9,6 +7,11 @@ sete bl
 # test:encoding "410F94C2"
 
 sete r10b
+
+# test:subtest
+# test:encoding "410F944500"
+
+sete [r13]
 
 # test:subtest
 # test:encoding "0F95C3"
