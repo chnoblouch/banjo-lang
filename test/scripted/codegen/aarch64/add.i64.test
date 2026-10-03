@@ -1,0 +1,13 @@
+# test:section ssa
+
+func void @f(i64, i64):
+    %0 = loadarg i64, void 0
+    %1 = loadarg i64, void 1
+    %2 = add i64 %0, i64 %1
+    ret i64 %2
+
+# test:section mcode
+
+func f:
+    add x0, x0, x1
+    ret

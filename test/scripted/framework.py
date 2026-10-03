@@ -141,6 +141,9 @@ def load_test_file(name, file_path):
                     tests.append(Test(name, ""))
                 
                 tests[-1].name += f".{len(tests) - 1}"
+            elif line.startswith(CONDITION_PREFIX + "section"):
+                section_name = line.strip().split(" ")[2]
+                tests[-1].sections[section_name] = ""
 
         f.seek(0)
 
@@ -163,18 +166,15 @@ def load_test_file(name, file_path):
             for j, test in enumerate(tests):
                 if line.startswith(CONDITION_PREFIX + "section"):
                     section_name = line.strip().split(" ")[2]
-                    test.sections[section_name] = ""
-                    continue
-
-                if has_subtests:
-                    enabled = common or j == subtest_index
-                else:
-                    enabled = True
-
-                if section_name is None:
+                elif section_name is None:
+                    if has_subtests:
+                        enabled = common or j == subtest_index
+                    else:
+                        enabled = True
+                    
                     test.source += line if enabled else f"# DISABLED: {line}"
-                else:
-                    if not has_subtests or j == subtest_index:
+                elif not has_subtests or j == subtest_index:
+                    if not line.startswith(CONDITION_PREFIX):
                         test.sections[section_name] += line
 
     return tests
