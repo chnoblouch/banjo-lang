@@ -679,8 +679,7 @@ void AArch64SSALowerer::lower_bitcast(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
-    ssa::Type type = instr.get_operand(0).get_type();
-    unsigned size = get_size(type);
+    unsigned size = get_size(instr.get_operand(0).get_type());
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Opcode opcode;
@@ -702,8 +701,7 @@ void AArch64SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
-    ssa::Type type = instr.get_operand(0).get_type();
-    unsigned size = get_size(type);
+    unsigned size = get_size(instr.get_operand(0).get_type());
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
     mcode::Opcode opcode;
@@ -725,11 +723,100 @@ void AArch64SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
 }
 
 void AArch64SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+    unsigned size = get_size(instr.get_operand(1).get_type());
+
+    mcode::Opcode load_opcode;
+    mcode::Opcode store_opcode;
+
+    switch (size) {
+        case 1:
+            load_opcode = AArch64Opcode::LDAXRB;
+            store_opcode = AArch64Opcode::STLXRB;
+            break;
+        case 2:
+            load_opcode = AArch64Opcode::LDAXRH;
+            store_opcode = AArch64Opcode::STLXRH;
+            break;
+        case 4:
+            load_opcode = AArch64Opcode::LDAXR;
+            store_opcode = AArch64Opcode::STLXR;
+            break;
+        case 8:
+            load_opcode = AArch64Opcode::LDAXR;
+            store_opcode = AArch64Opcode::STLXR;
+            break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    mcode::Register addr_reg = create_tmp_reg();
+
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+    mcode::Operand m_success = mcode::Operand::from_register(create_tmp_reg(), 4);
+    mcode::Operand m_addr = mcode::Operand::from_aarch64_addr(AArch64Address::new_base(addr_reg));
+
+    mcode::BasicBlockIter ll_sc_loop_block = create_block();
+
+    emit({AArch64Opcode::MOV, {mcode::Operand::from_register(addr_reg, 8), lower_addr_value(addr)}});
+    start_block(ll_sc_loop_block);
+    emit({load_opcode, {m_dst, m_addr}});
+    emit({store_opcode, {m_success, lower_value(instr.get_operand(1)), m_addr}});
+    emit({AArch64Opcode::CMP, {m_success, mcode::Operand::from_int_immediate(0, 4)}});
+    emit({AArch64Opcode::B_NE, {mcode::Operand::from_basic_block(*ll_sc_loop_block)}});
 }
 
 void AArch64SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    AddrComponents addr = collect_addr(instr.get_operand(0));
+    unsigned size = get_size(instr.get_operand(1).get_type());
+
+    mcode::Opcode load_opcode;
+    mcode::Opcode store_opcode;
+
+    switch (size) {
+        case 1:
+            load_opcode = AArch64Opcode::LDAXRB;
+            store_opcode = AArch64Opcode::STLXRB;
+            break;
+        case 2:
+            load_opcode = AArch64Opcode::LDAXRH;
+            store_opcode = AArch64Opcode::STLXRH;
+            break;
+        case 4:
+            load_opcode = AArch64Opcode::LDAXR;
+            store_opcode = AArch64Opcode::STLXR;
+            break;
+        case 8:
+            load_opcode = AArch64Opcode::LDAXR;
+            store_opcode = AArch64Opcode::STLXR;
+            break;
+        default: ASSERT_UNREACHABLE;
+    }
+
+    mcode::Register addr_reg = create_tmp_reg();
+
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+    mcode::Operand m_addr = mcode::Operand::from_aarch64_addr(AArch64Address::new_base(addr_reg));
+    mcode::Operand m_current = lower_value(instr.get_operand(1));
+    mcode::Operand m_new = lower_value(instr.get_operand(2));
+
+    mcode::Operand m_success = mcode::Operand::from_register(create_tmp_reg(), 4);
+    mcode::Operand m_equal = mcode::Operand::from_register(create_tmp_reg(), 4);
+
+    mcode::BasicBlockIter ll_sc_loop_block = create_block();
+    mcode::BasicBlockIter end_block = create_block();
+
+    emit({AArch64Opcode::MOV, {m_equal, mcode::Operand::from_int_immediate(0)}});
+    emit({AArch64Opcode::MOV, {mcode::Operand::from_register(addr_reg, 8), lower_addr_value(addr)}});
+    start_block(ll_sc_loop_block);
+    emit({load_opcode, {m_dst, m_addr}});
+    emit({AArch64Opcode::CMP, {m_dst, m_current}});
+    emit({AArch64Opcode::B_NE, {mcode::Operand::from_basic_block(*end_block)}});
+    emit({store_opcode, {m_success, m_new, m_addr}});
+    emit({AArch64Opcode::CMP, {m_success, mcode::Operand::from_int_immediate(0, 4)}});
+    emit({AArch64Opcode::B_NE, {mcode::Operand::from_basic_block(*ll_sc_loop_block)}});
+    emit({AArch64Opcode::MOV, {m_equal, mcode::Operand::from_int_immediate(1)}});
+    start_block(end_block);
+    emit({AArch64Opcode::STRB, {m_equal, lower_addr_mem_access(collect_addr(instr.get_operand(3)), 1)}});
 }
 
 void AArch64SSALowerer::lower_atomic_add(ssa::Instruction &instr) {
