@@ -10,6 +10,7 @@
 #include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/target/x86_64/x86_64_peephole_opt_pass.hpp"
+#include "banjo/target/x86_64/x86_64_printer.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
 
 namespace banjo::target {
@@ -36,6 +37,10 @@ std::vector<std::unique_ptr<codegen::MachinePass>> X8664Target::create_passes() 
     return passes;
 }
 
+std::unique_ptr<mcode::Printer> X8664Target::create_printer(std::string &buffer) {
+    return std::make_unique<X8664Printer>(X8664Printer{buffer});
+}
+
 std::string X8664Target::get_output_file_ext() {
     if (Config::instance().force_asm) {
         return descr.get_environment() == Environment::MSVC ? "asm" : "s";
@@ -56,4 +61,4 @@ codegen::Emitter *X8664Target::create_emitter(mcode::Module &module, std::ostrea
     }
 }
 
-} // namespace banjo
+} // namespace banjo::target

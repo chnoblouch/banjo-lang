@@ -9,5 +9,6 @@ func void @f(i32, i32):
 # test:section mcode
 
 func f:
-    add w0, w0, w1
+    add edi, esi
+    mov eax, edi
     ret

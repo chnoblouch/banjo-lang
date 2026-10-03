@@ -2,8 +2,6 @@
 
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
-#include "banjo/config/config.hpp"
-#include "banjo/emit/debug_emitter.hpp"
 #include "banjo/target/target.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
@@ -23,8 +21,9 @@ void CodegenUtil::lower(target::Architecture arch) {
     mcode::Module mcode_mod = ssa_lowerer->lower_module(ssa_mod);
     codegen::MachinePassRunner{target}.create_and_run(mcode_mod);
 
-    Config::instance().target = target_descr;
-    codegen::DebugEmitter{mcode_mod, std::cout, target_descr}.generate();
+    std::string buffer;
+    target->create_printer(buffer)->print(mcode_mod);
+    std::cout << buffer;
 
     delete ssa_lowerer;
     delete target;

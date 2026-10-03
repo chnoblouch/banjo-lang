@@ -1,0 +1,12 @@
+# test:section ssa
+
+func i32 @f(addr):
+    %0 = loadarg addr, void 0
+    %1 = load i32, addr %0
+    ret i32 %1
+
+# test:section mcode
+
+func f:
+    ldr w0, [x0]
+    ret

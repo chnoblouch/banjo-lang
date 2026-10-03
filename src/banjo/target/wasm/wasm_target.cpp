@@ -29,6 +29,11 @@ std::vector<std::unique_ptr<codegen::MachinePass>> WasmTarget::create_passes() {
     return passes;
 }
 
+std::unique_ptr<mcode::Printer> WasmTarget::create_printer([[maybe_unused]] std::string &buffer) {
+    // TODO
+    return nullptr;
+}
+
 std::string WasmTarget::get_output_file_ext() {
     return "o";
 }
