@@ -1,24 +1,10 @@
 #include "banjo/utils/large_int.hpp"
 
-#include <cstdlib>
-#include <iostream>
+#include "unit_test.hpp"
 
-using namespace banjo;
+int main(int, const char *[]) {
+    using namespace banjo;
 
-template <typename R, typename E>
-void check_assertion(std::string description, R result, E expected) {
-    if (result != expected) {
-        std::cout << "assertion failed: " << description << std::endl;
-        std::cout << "    result: " << result << std::endl;
-        std::cout << "  expected: " << expected << std::endl;
-        std::exit(1);
-    }
-}
-
-#define ASSERT_EQUAL(result, expected) check_assertion(std::string(#result) + " == " + #expected, (result), (expected))
-#define ASSERT_TRUE(result) check_assertion(std::string(#result), (result), true)
-
-int main(int argc, const char *argv[]) {
     ASSERT_EQUAL(LargeInt{"100"}.get_magnitude(), 100);
     ASSERT_TRUE(LargeInt{"100"}.is_positive());
     ASSERT_EQUAL(LargeInt{"50"}.get_magnitude(), 50);
