@@ -167,8 +167,10 @@ void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operan
     if (func_operand.is_symbol()) {
         operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
     } else if (func_operand.is_register()) {
-        ssa::InstrIter producer = lowerer.get_producer(func_operand.get_register());
-        if (producer->get_opcode() == ssa::Opcode::LOAD) {
+        ssa::InstrIter producer =
+            lowerer.find_def(func_operand.get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
+
+        if (producer && producer->get_opcode() == ssa::Opcode::LOAD) {
             codegen::SSALowerer::AddrComponents addr = lowerer.collect_addr(producer->get_operand(1));
             operand = x86_64_lowerer.lower_addr_mem_access(addr);
             lowerer.discard_use(func_operand.get_register());

@@ -38,12 +38,7 @@ public:
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 public:
-    void append_mov_and_operation(
-        mcode::Opcode machine_opcode,
-        ssa::VirtualRegister dst,
-        ssa::Value &lhs,
-        ssa::Value &rhs
-    );
+    void append_mov_and_operation(mcode::Opcode m_opcode, ssa::VirtualRegister dst, ssa::Value &lhs, ssa::Value &rhs);
     bool lower_stored_operation(ssa::Instruction &store);
 
     void init_module(ssa::Module &mod) override;

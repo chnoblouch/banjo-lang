@@ -15,6 +15,12 @@
 
 namespace banjo::codegen {
 
+enum DefSearchScope {
+    BLOCK_NO_SIDE_EFFECTS,
+    BLOCK,
+    FUNCTION,
+};
+
 class SSALowerer {
 
 private:
@@ -84,8 +90,7 @@ public:
     unsigned get_member_offset(ssa::Structure *struct_, unsigned index);
     mcode::Register create_tmp_reg();
 
-    ssa::InstrIter get_producer(ssa::VirtualRegister reg);
-    ssa::InstrIter get_producer_globally(ssa::VirtualRegister reg);
+    ssa::InstrIter find_def(ssa::VirtualRegister reg, DefSearchScope scope);
     unsigned get_num_uses(ssa::VirtualRegister reg);
     void discard_use(ssa::VirtualRegister reg);
     AddrComponents collect_addr(ssa::Operand &addr);

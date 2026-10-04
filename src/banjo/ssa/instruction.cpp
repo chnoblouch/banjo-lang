@@ -72,6 +72,8 @@ bool Instruction::has_side_effects() const {
         case Opcode::RET:
         case Opcode::ATOMIC_LOAD:
         case Opcode::ATOMIC_STORE:
+        case Opcode::ATOMIC_SWAP:
+        case Opcode::ATOMIC_CMPSWAP:
         case Opcode::ATOMIC_ADD:
         case Opcode::ATOMIC_SUB:
         case Opcode::ATOMIC_AND:
@@ -156,11 +158,6 @@ Type Instruction::get_type() const {
         case Opcode::LSHR:
         case Opcode::ASHR:
         case Opcode::ATOMIC_LOAD:
-        case Opcode::ATOMIC_ADD:
-        case Opcode::ATOMIC_SUB:
-        case Opcode::ATOMIC_AND:
-        case Opcode::ATOMIC_OR:
-        case Opcode::ATOMIC_XOR:
         case Opcode::SQRT: return operands[0].get_type();
         case Opcode::UEXTEND:
         case Opcode::SEXTEND:
@@ -171,7 +168,14 @@ Type Instruction::get_type() const {
         case Opcode::STOF:
         case Opcode::FTOU:
         case Opcode::FTOS:
-        case Opcode::BITCAST: return operands[1].get_type();
+        case Opcode::BITCAST:
+        case Opcode::ATOMIC_SWAP:
+        case Opcode::ATOMIC_CMPSWAP:
+        case Opcode::ATOMIC_ADD:
+        case Opcode::ATOMIC_SUB:
+        case Opcode::ATOMIC_AND:
+        case Opcode::ATOMIC_OR:
+        case Opcode::ATOMIC_XOR: return operands[1].get_type();
         case Opcode::SELECT: return operands[3].get_type();
         case Opcode::CALL: return dest ? operands[0].get_type() : ssa::Primitive::VOID;
         case Opcode::FRAME_ADDRESS: return ssa::Primitive::ADDR;

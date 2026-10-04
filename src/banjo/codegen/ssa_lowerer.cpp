@@ -381,37 +381,26 @@ void SSALowerer::lower_sqrt(ssa::Instruction &instr) {
     lower_call(call_instr);
 }
 
-ssa::InstrIter SSALowerer::get_producer(ssa::VirtualRegister reg) {
-    ssa::BasicBlock &cur_block = get_block();
+ssa::InstrIter SSALowerer::find_def(ssa::VirtualRegister reg, DefSearchScope scope) {
+    for (ssa::InstrIter instr = ssa_instr.get_prev(); instr != ssa_block->get_header(); --instr) {
+        if (instr->get_dest() == reg) {
+            return instr;
+        }
 
-    for (ssa::InstrIter iter = cur_block.get_trailer().get_prev(); iter != cur_block.get_header(); --iter) {
-        if (iter->get_dest() == reg) {
-            return iter;
+        if (scope == DefSearchScope::BLOCK_NO_SIDE_EFFECTS && instr->has_side_effects()) {
+            return nullptr;
         }
     }
 
-    return cur_block.end();
-}
-
-ssa::InstrIter SSALowerer::get_producer_globally(ssa::VirtualRegister reg) {
-    ssa::InstrIter iter = get_producer(reg);
-    if (iter != ssa_block->end()) {
-        return iter;
-    }
-
-    /*
-    for (ssa::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
-        if (block_iter == basic_block_iter) {
-            continue;
-        }
-
-        for (ssa::InstrIter iter = block_iter->begin(); iter != block_iter->end(); ++iter) {
-            if (iter->get_dest() == reg) {
-                return iter;
+    if (scope == DefSearchScope::FUNCTION) {
+        for (ssa::BasicBlock &block : ssa_func->basic_blocks) {
+            for (ssa::InstrIter instr = block.begin(); instr != block.end(); ++instr) {
+                if (instr->get_dest() == reg) {
+                    return instr;
+                }
             }
         }
     }
-    */
 
     return nullptr;
 }
@@ -430,7 +419,7 @@ SSALowerer::AddrComponents SSALowerer::collect_addr(ssa::Operand &addr) {
     std::optional<RegOffset> reg_offset;
 
     while (base->is_register()) {
-        ssa::InstrIter producer = get_producer_globally(base->get_register());
+        ssa::InstrIter producer = find_def(base->get_register(), DefSearchScope::FUNCTION);
         if (!producer) {
             break;
         }

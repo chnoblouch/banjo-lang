@@ -1,5 +1,6 @@
 #include "x86_64_ssa_lowerer.hpp"
 
+#include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/global.hpp"
 #include "banjo/mcode/operand.hpp"
@@ -10,18 +11,21 @@
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/x86_64/ms_abi_calling_conv.hpp"
 #include "banjo/target/x86_64/sys_v_calling_conv.hpp"
 #include "banjo/target/x86_64/x86_64_address.hpp"
 #include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
+#include "banjo/utils/fixed_vector.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <variant>
 
 namespace banjo::target {
@@ -59,7 +63,7 @@ void X8664SSALowerer::init_func(ssa::Function &func) {
 }
 
 void X8664SSALowerer::append_mov_and_operation(
-    mcode::Opcode machine_opcode,
+    mcode::Opcode m_opcode,
     ssa::VirtualRegister dst,
     ssa::Value &lhs,
     ssa::Value &rhs
@@ -69,89 +73,68 @@ void X8664SSALowerer::append_mov_and_operation(
 
     lower_as_move(m_dst, lhs);
     mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = m_dst.is_register()});
-    emit(mcode::Instruction(machine_opcode, {m_dst, m_rhs}));
+    emit({m_opcode, {m_dst, m_rhs}});
 }
 
 bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
-    const ssa::Operand result = store.get_operand(0);
-    if (!result.is_register()) {
+    if (!store.get_operand(0).is_register()) {
         return false;
     }
 
-    ssa::InstrIter operation_iter = get_producer(result.get_register());
-    if (operation_iter == get_block().end()) {
+    ssa::VirtualRegister store_value = store.get_operand(0).get_register();
+    ssa::Operand &store_addr = store.get_operand(1);
+
+    ssa::InstrIter operation = find_def(store_value, codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
+    if (!operation) {
         return false;
     }
 
-    // int size = get_size(operation_iter->get_operand(0).get_type());
+    mcode::Opcode m_opcode;
+    bool commutative = false;
 
-    mcode::Opcode machine_opcode;
-    switch (operation_iter->get_opcode()) {
-        // case ssa::Opcode::ADD: machine_opcode = X8664Opcode::ADD; break;
-        // case ssa::Opcode::SUB: machine_opcode = X8664Opcode::SUB; break;
-        // case ssa::Opcode::MUL: machine_opcode = X8664Opcode::IMUL; break;
-        // case ssa::Opcode::FADD: machine_opcode = size == 8 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS; break;
-        // case ssa::Opcode::FSUB: machine_opcode = size == 8 ? X8664Opcode::SUBSD : X8664Opcode::SUBSS; break;
-        // case ssa::Opcode::FMUL: machine_opcode = size == 8 ? X8664Opcode::MULSD : X8664Opcode::MULSS; break;
-        // case ssa::Opcode::FDIV: machine_opcode = size == 8 ? X8664Opcode::DIVSD : X8664Opcode::DIVSS; break;
+    switch (operation->get_opcode()) {
+        case ssa::Opcode::ADD:
+            m_opcode = X8664Opcode::ADD;
+            commutative = true;
+            break;
+        case ssa::Opcode::SUB:
+            m_opcode = X8664Opcode::SUB;
+            commutative = false;
+            break;
         default: return false;
     }
 
-    // const ssa::Operand &lhs = operation_iter->get_operand(0);
-    // const ssa::Operand &rhs = operation_iter->get_operand(1);
+    FixedVector<std::pair<ssa::Operand *, ssa::Operand *>, 2> candidates;
+    candidates.append({&operation->get_operand(0), &operation->get_operand(1)});
 
-    // if (lhs.is_register() && rhs.is_register()) {
-    //     ssa::InstrIter lhs_producer_iter = get_producer(lhs.get_register());
-    //     ssa::InstrIter rhs_producer_iter = get_producer(lhs.get_register());
-    //     if (lhs_producer_iter == get_block().end() || rhs_producer_iter == get_block().end()) {
-    //         return false;
-    //     }
+    if (commutative) {
+        candidates.append({&operation->get_operand(1), &operation->get_operand(0)});
+    }
 
-    //     ssa::Instruction &lhs_producer = *lhs_producer_iter;
-    //     ssa::Instruction &rhs_producer = *lhs_producer_iter;
+    for (auto [lhs, rhs] : candidates) {
+        if (!lhs->is_register()) {
+            continue;
+        }
 
-    //     if (lhs_producer.get_opcode() == ssa::Opcode::LOAD && rhs_producer.get_opcode() == ssa::Opcode::LOAD &&
-    //         lhs_producer.get_operand(1) == store.get_operand(1)) {
-    //         discard_use(*operation_iter->get_dest());
-    //         discard_use(*lhs_producer.get_dest());
+        ssa::InstrIter lhs_def = find_def(lhs->get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
 
-    //         mcode::Operand dest = lower_address(store.get_operand(1));
-    //         if (dest.is_register()) {
-    //             dest = mcode::Operand::from_x86_64_addr({dest.get_register()});
-    //         }
-    //         dest.set_size(get_size(store.get_operand(0).get_type()));
-    //         emit(
-    //             mcode::Instruction(
-    //                 machine_opcode,
-    //                 {dest, map_vreg_as_operand(*rhs_producer.get_dest(), dest.get_size())}
-    //             )
-    //         );
+        if (!lhs_def || lhs_def->get_opcode() != ssa::Opcode::LOAD) {
+            continue;
+        }
 
-    //         return true;
-    //     }
-    // } else if (lhs.is_register() && rhs.is_immediate()) {
-    //     ssa::InstrIter lhs_producer_iter = get_producer(lhs.get_register());
-    //     if (lhs_producer_iter == get_block().end()) {
-    //         return false;
-    //     }
+        if (lhs_def->get_operand(1) == store_addr) {
+            if (store_addr.is_register()) {
+                discard_use(store_addr.get_register());
+            }
 
-    //     ssa::Instruction &lhs_producer = *lhs_producer_iter;
+            discard_use(store_value);
+            discard_use(lhs->get_register());
 
-    //     if (lhs_producer.get_opcode() == ssa::Opcode::LOAD && lhs_producer.get_operand(1) == store.get_operand(1)) {
-    //         discard_use(*operation_iter->get_dest());
-    //         discard_use(*lhs_producer.get_dest());
-    //         discard_use(store.get_operand(1).get_register());
-
-    //         mcode::Operand dst = lower_address(store.get_operand(1));
-    //         if (dst.is_register()) {
-    //             dst = mcode::Operand::from_x86_64_addr({dst.get_register()});
-    //         }
-    //         dst.set_size(get_size(store.get_operand(0).get_type()));
-    //         emit(mcode::Instruction(machine_opcode, {dst, lower_as_operand(rhs)}));
-
-    //         return true;
-    //     }
-    // }
+            AddrComponents addr = collect_addr(store_addr);
+            emit({m_opcode, {lower_addr_mem_access(addr), lower_as_operand(*rhs)}});
+            return true;
+        }
+    }
 
     return false;
 }
@@ -801,11 +784,11 @@ void X8664SSALowerer::lower_frame_address(ssa::Instruction &instr) {
 
 mcode::Operand X8664SSALowerer::into_reg_or_addr(ssa::Operand &operand) {
     if (operand.is_register()) {
-        ssa::InstrIter producer = get_producer(operand.get_register());
+        ssa::InstrIter def = find_def(operand.get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
 
-        if (producer->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*producer->get_dest()) == 1) {
-            discard_use(*producer->get_dest());
-            AddrComponents addr = collect_addr(producer->get_operand(1));
+        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*def->get_dest()) == 1) {
+            discard_use(*def->get_dest());
+            AddrComponents addr = collect_addr(def->get_operand(1));
             return lower_addr_mem_access(addr);
         }
     }
@@ -1178,7 +1161,8 @@ mcode::Operand X8664SSALowerer::lower_reg_as_move(mcode::Operand m_dst, ssa::Vir
         mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
         emit({m_opcode, {m_dst, m_src}});
     } else {
-        emit({X8664Opcode::MOV, {m_dst, m_src}});
+        unsigned size = m_dst.get_size() == 8 ? 8 : 4;
+        emit({X8664Opcode::MOV, {m_dst.with_size(size), m_src.with_size(size)}});
     }
 
     return m_dst;
@@ -1251,14 +1235,14 @@ mcode::Operand X8664SSALowerer::lower_reg_as_operand(
     }
 
     if (flags.allow_addrs) {
-        ssa::InstrIter producer = get_producer(src_reg);
+        ssa::InstrIter def = find_def(src_reg, codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
 
         // If this register was produced by a load, use the loaded value directly instead of first
         // loading it into a register.
-        if (producer->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*producer->get_dest()) == 1) {
-            AddrComponents addr = collect_addr(producer->get_operand(1));
+        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*def->get_dest()) == 1) {
+            AddrComponents addr = collect_addr(def->get_operand(1));
             mcode::Operand m_load_dst = lower_addr_mem_access(addr);
-            discard_use(*producer->get_dest());
+            discard_use(*def->get_dest());
             return m_load_dst;
         }
     }
