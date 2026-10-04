@@ -19,6 +19,7 @@ protected:
 private:
     void print_register(mcode::Register reg, unsigned size);
     void print_address(const X8664Address &address);
+    void print_size(unsigned size);
 };
 
 }; // namespace banjo::target

@@ -36,6 +36,8 @@ protected:
     void emit(unsigned value);
     void emit(long long value);
     void emit(unsigned long long value);
+    void emit(float value);
+    void emit(double value);
 };
 
 } // namespace banjo::mcode

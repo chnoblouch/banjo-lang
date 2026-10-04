@@ -1,0 +1,63 @@
+# test:subtest
+# test:section ssa
+
+func void @f(addr):
+    %0 = loadarg addr, void 0
+    %1 = load i8, addr %0
+    %2 = add i8 %1, i8 42
+    store i8 %2, addr %0
+    ret
+
+# test:section mcode
+
+func f:
+    add byte [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr):
+    %0 = loadarg addr, void 0
+    %1 = load i16, addr %0
+    %2 = add i16 %1, i16 42
+    store i16 %2, addr %0
+    ret
+
+# test:section mcode
+
+func f:
+    add word [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr):
+    %0 = loadarg addr, void 0
+    %1 = load i32, addr %0
+    %2 = add i32 %1, i32 42
+    store i32 %2, addr %0
+    ret
+
+# test:section mcode
+
+func f:
+    add dword [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr):
+    %0 = loadarg addr, void 0
+    %1 = load i64, addr %0
+    %2 = add i64 %1, i64 42
+    store i64 %2, addr %0
+    ret
+
+# test:section mcode
+
+func f:
+    add qword [rdi], 42
+    ret

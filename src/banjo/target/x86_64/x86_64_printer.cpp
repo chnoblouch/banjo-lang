@@ -223,12 +223,29 @@ X8664Printer::X8664Printer(std::string &buffer) : mcode::Printer{buffer} {}
 
 void X8664Printer::print_opcode(mcode::Instruction &instr) {
     emit(OPCODES.find(instr.get_opcode()));
+
+    if (instr.get_operands().size() == 2) {
+        mcode::Operand &op0 = instr.get_operand(0);
+        mcode::Operand &op1 = instr.get_operand(1);
+
+        if (op0.is_x86_64_addr() && op1.is_int_immediate()) {
+            emit(' ');
+            print_size(op1.get_size());
+        } else if (op0.is_int_immediate() && op1.is_x86_64_addr()) {
+            emit(' ');
+            print_size(op0.get_size());
+        }
+    }
 }
 
 void X8664Printer::print_operand(mcode::Instruction &instr, unsigned index) {
     mcode::Operand &operand = instr.get_operand(index);
 
-    if (operand.is_register()) {
+    if (operand.is_int_immediate()) {
+        emit(operand.get_int_immediate().to_string());
+    } else if (operand.is_fp_immediate()) {
+        emit(operand.get_fp_immediate());
+    } else if (operand.is_register()) {
         print_register(operand.get_register(), operand.get_size());
     } else if (operand.is_x86_64_addr()) {
         print_address(operand.get_x86_64_addr());
@@ -257,6 +274,16 @@ void X8664Printer::print_address([[maybe_unused]] const X8664Address &address) {
     emit('[');
     print_register(address.get_base_reg(), 8);
     emit(']');
+}
+
+void X8664Printer::print_size(unsigned size) {
+    switch (size) {
+        case 1: emit("byte"); break;
+        case 2: emit("word"); break;
+        case 4: emit("dword"); break;
+        case 8: emit("qword"); break;
+        default: ASSERT_UNREACHABLE;
+    }
 }
 
 } // namespace banjo::target

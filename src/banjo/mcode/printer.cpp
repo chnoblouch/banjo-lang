@@ -77,4 +77,12 @@ void Printer::emit(unsigned long long value) {
     buffer += std::to_string(value);
 }
 
+void Printer::emit(float value) {
+    buffer += std::to_string(value);
+}
+
+void Printer::emit(double value) {
+    buffer += std::to_string(value);
+}
+
 } // namespace banjo::mcode

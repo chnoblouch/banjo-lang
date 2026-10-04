@@ -229,7 +229,11 @@ void AArch64Printer::print_opcode(mcode::Instruction &instr) {
 void AArch64Printer::print_operand(mcode::Instruction &instr, unsigned index) {
     mcode::Operand &operand = instr.get_operand(index);
 
-    if (operand.is_register()) {
+    if (operand.is_int_immediate()) {
+        emit(operand.get_int_immediate().to_string());
+    } else if (operand.is_fp_immediate()) {
+        emit(operand.get_fp_immediate());
+    } else if (operand.is_register()) {
         print_register(operand.get_register(), operand.get_size());
     } else if (operand.is_aarch64_addr()) {
         print_address(operand.get_aarch64_addr());
